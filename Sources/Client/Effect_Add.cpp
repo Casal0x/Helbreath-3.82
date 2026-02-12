@@ -401,7 +401,7 @@ void EffectManager::AddEffectImpl(EffectType sType, int sX, int sY, int dX, int 
 			case EffectType::SPARKLE_SMALL:
 				m_pEffectList[i]->m_mX = sX;
 				m_pEffectList[i]->m_mY = sY;
-				m_pEffectList[i]->m_cMaxFrame = 9; //15;
+				m_pEffectList[i]->m_cMaxFrame = 9;
 				m_pEffectList[i]->m_dwFrameTime = 80;
 				break;
 
@@ -547,7 +547,6 @@ void EffectManager::AddEffectImpl(EffectType sType, int sX, int sY, int dX, int 
 				lPan = -(((m_pGame->m_Camera.GetX() / 32) + fixx) - sX) * fixpan;
 				m_pGame->PlayGameSound('E', 4, sDist, lPan);
 				m_pEffectList[i]->m_iV1 = sDist;
-				//game->SetCameraShakingEffect(sDist, 2);
 				break;
 
 			case EffectType::LIGHT_EFFECT_1: // identique au cas 70

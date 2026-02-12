@@ -70,7 +70,8 @@ void QuestManager::HandleQuestReward(char* pData)
 		iIndex = m_pGame->m_dialogBoxManager.Info(DialogBoxId::NpcTalk).sV1;
 		m_pGame->m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, "  ", 0);
 		iIndex++;
-		if (memcmp(cRewardName, "ġ", 6) == 0)
+		// Gold reward sentinel — raw bytes from EUC-KR source (encoding was corrupted during UTF-8 conversion)
+		if (memcmp(cRewardName, "\xC4\xA1", 6) == 0)
 		{
 			if (iAmount > 0) cTxt = std::format(NOTIFYMSG_QUEST_REWARD1, iAmount);
 		}

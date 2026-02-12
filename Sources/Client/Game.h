@@ -92,21 +92,21 @@ public:
 	void WriteSettings();
 
 	bool FindGuildName(const char* pName, int* ipIndex);
-	void bItemDrop_ExternalScreen(char cItemID, short msX, short msY);
+	void bItemDrop_ExternalScreen(char item_id, short mouse_x, short mouse_y);
 	void CreateScreenShot();
-	void CrusadeWarResult(int iWinnerSide);
-	void CrusadeContributionResult(int iWarContribution);
+	void CrusadeWarResult(int winner_side);
+	void CrusadeContributionResult(int war_contribution);
 	void CannotConstruct(int iCode);
 	void DrawTopMsg();
 	void SetTopMsg(const char* pString, unsigned char iLastSec);
 	void DrawObjectFOE(int ix, int iy, int iFrame);
-	void GrandMagicResult(const char* pMapName, int iV1, int iV2, int iV3, int iV4, int iHP1, int iHP2, int iHP3, int iHP4);
+	void GrandMagicResult(const char* map_name, int ares_crusade_points, int elv_crusade_points, int ares_industry_points, int elv_industry_points, int ares_crusade_casualties, int ares_industry_casualties, int elv_crusade_casualties, int elv_industry_casualties);
 	void MeteorStrikeComing(int iCode);
 
 	void DrawNewDialogBox(char cType, int sX, int sY, int iFrame, bool bIsNoColorKey = false, bool bIsTrans = false);
 	void AddMapStatusInfo(const char* pData, bool bIsLastData);
 	void _RequestMapStatus(const char* pMapName, int iMode);
-	void DrawDialogBoxs(short msX, short msY, short msZ, char cLB);
+	void DrawDialogBoxs(short mouse_x, short mouse_y, short mouse_z, char left_button);
 	std::string FormatCommaNumber(uint32_t value);
 
 	void ResponsePanningHandler(char * pData);
@@ -124,7 +124,7 @@ public:
 	void UpdateFrame();       // Logic update: audio, timers, network, game state (runs every iteration)
 	void RenderFrame();       // Render only: clear backbuffer -> draw -> flip (gated by frame limit)
 
-	void NpcTalkHandler(char * pData);
+	void NpcTalkHandler(char * packet_data);
 	void SetCameraShakingEffect(short sDist, int iMul = 0);
 	void ClearSkillUsingStatus();
 	bool bCheckExID(const char* pName);
@@ -135,8 +135,8 @@ public:
 	bool _bIsItemOnHand();
 	void DynamicObjectHandler(char * pData);
 	bool _bCheckItemByType(hb::shared::item::ItemType type);
-	void DrawNpcName(   short sX, short sY, short sOwnerType, const hb::shared::entity::PlayerStatus& status, short npcConfigId = -1);
-	void DrawObjectName(short sX, short sY, const char* pName, const hb::shared::entity::PlayerStatus& status, uint16_t wObjectID);
+	void DrawNpcName(   short screen_x, short screen_y, short owner_type, const hb::shared::entity::PlayerStatus& status, short npc_config_id = -1);
+	void DrawObjectName(short screen_x, short screen_y, const char* name, const hb::shared::entity::PlayerStatus& status, uint16_t object_id);
 	void PlayGameSound(char cType, int iNum, int iDist, long lPan = 0);  // Forwards to AudioManager
 	void _LoadTextDlgContents(int cType);
 	int  _iLoadTextDlgContents2(int iType);
@@ -158,7 +158,7 @@ public:
 	int iGetTopDialogBoxIndex();
 	void DisableDialogBox(int iBoxID);
 	void EnableDialogBox(int iBoxID, int cType, int sV1, int sV2, char * pString = 0);
-	void InitItemList(char * pData);
+	void InitItemList(char * packet_data);
 	hb::shared::sprite::BoundRect __fastcall DrawObject_OnDead(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime);
 	hb::shared::sprite::BoundRect __fastcall DrawObject_OnDying(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime);
 	hb::shared::sprite::BoundRect __fastcall DrawObject_OnMagic(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime);
@@ -173,29 +173,29 @@ public:
 	hb::shared::sprite::BoundRect __fastcall DrawObject_OnGetItem(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime);
 	void ClearGuildNameList();
 	void DrawBackground(short sDivX, short sModX, short sDivY, short sModY);
-	void ChatMsgHandler(char * pData);
+	void ChatMsgHandler(char * packet_data);
 	void ReleaseUnusedSprites();
 	void OnKeyUp(KeyCode key);
 	void ChangeGameMode(GameMode mode);
 	void LogRecvMsgHandler(char * pData);
-	void LogResponseHandler(char * pData);
+	void LogResponseHandler(char * packet_data);
 	void OnLogSocketEvent();  // MODERNIZED: Polls socket instead of handling window messages
 	void OnTimer();
 	void LogEventHandler(char * pData);
-	void _ReadMapData(short sPivotX, short sPivotY, const char* pData);
-	void MotionEventHandler(char * pData);
-	void InitDataResponseHandler(char * pData);
+	void _ReadMapData(short pivot_x, short pivot_y, const char* packet_data);
+	void MotionEventHandler(char * packet_data);
+	void InitDataResponseHandler(char * packet_data);
 	void InitPlayerResponseHandler(char * pData);
 	void ConnectionEstablishHandler(char cWhere);
-	void MotionResponseHandler(char * pData);
+	void MotionResponseHandler(char * packet_data);
 	void GameRecvMsgHandler(uint32_t dwMsgSize, char * pData);
 	void DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, short sModX, short sModY, short msX, short msY);
-	bool bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1, int iV2, int iV3, const char* pString, int iV4 = 0); // v1.4
+	bool bSendCommand(uint32_t message_id, uint16_t command, char direction, int value1, int value2, int value3, const char* text, int value4 = 0); // v1.4
 	void RestoreSprites();
-	void CommandProcessor(short msX, short msY, short indexX, short indexY, char cLB, char cRB);
-	bool ProcessLeftClick(short msX, short msY, short indexX, short indexY, uint32_t dwTime, uint16_t& wType);
-	bool ProcessRightClick(short msX, short msY, short indexX, short indexY, uint32_t dwTime, uint16_t& wType);
-	void ProcessMotionCommands(uint16_t wType);
+	void CommandProcessor(short mouse_x, short mouse_y, short tile_x, short tile_y, char left_button, char right_button);
+	bool ProcessLeftClick(short mouse_x, short mouse_y, short tile_x, short tile_y, uint32_t current_time, uint16_t& action_type);
+	bool ProcessRightClick(short mouse_x, short mouse_y, short tile_x, short tile_y, uint32_t current_time, uint16_t& action_type);
+	void ProcessMotionCommands(uint16_t action_type);
 	void OnGameSocketEvent();  // MODERNIZED: Polls socket instead of handling window messages
 	void OnKeyDown(KeyCode key);
 	void RegisterHotkeys();
@@ -239,7 +239,7 @@ public:
 	void StartBGM();  // Forwards to AudioManager based on current location
 
 	int bHasHeroSet(const hb::shared::entity::PlayerAppearance& appr, short OwnerType);
-	void ShowHeldenianVictory(short sSide);
+	void ShowHeldenianVictory(short side);
 	void DKGlare(int iWeaponColor, int iWeaponIndex, int *iWeaponGlare);
 	void Abaddon_corpse(int sX, int sY);
 	void DrawAngel(int iSprite, short sX, short sY, char cFrame, uint32_t dwTime);

@@ -487,8 +487,8 @@ void DialogBox_SysMenu::DrawGraphicsTab(short sX, short sY, short msX, short msY
 	lineY += 18;
 
 	// --- hb::shared::render::Window Style --- wide box (Borderless / Bordered, disabled when fullscreen)
-	PutString(labelX, lineY, "hb::shared::render::Window Style:", GameColors::UILabel);
-	PutString(labelX + 1, lineY, "hb::shared::render::Window Style:", GameColors::UILabel);
+	PutString(labelX, lineY, "Window Style:", GameColors::UILabel);
+	PutString(labelX + 1, lineY, "Window Style:", GameColors::UILabel);
 
 	const int styleBoxY = lineY - 2;
 	DrawNewDialogBox(InterfaceNdButton, wideBoxX, styleBoxY, 78);

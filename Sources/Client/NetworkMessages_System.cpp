@@ -54,7 +54,6 @@ void HandleTimeChange(CGame* pGame, char* pData)
 
 void HandleNoticeMsg(CGame* pGame, char* pData)
 {
-	char cMsg[1000];
 	const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyNoticeMsg>(
 		pData, sizeof(hb::net::PacketNotifyNoticeMsg));
 	if (!pkt) return;
@@ -79,7 +78,6 @@ void HandleForceDisconn(CGame* pGame, char* pData)
 	if (!pkt) return;
 	const auto wpCount = pkt->seconds;
 	pGame->m_bForceDisconn = true;
-	//m_cLogOutCount = (char)*wpCount;
 	if (pGame->m_cLogOutCount < 0 || pGame->m_cLogOutCount > 5) pGame->m_cLogOutCount = 5;
 	pGame->AddEventList(NOTIFYMSG_FORCE_DISCONN1, 10);
 }

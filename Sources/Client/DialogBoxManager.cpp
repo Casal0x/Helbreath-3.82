@@ -151,8 +151,8 @@ void DialogBoxManager::InitDefaults()
 	//Magic Circle Dialog(F7)
 	m_info[DialogBoxId::Magic].sX = 337 ;
 	m_info[DialogBoxId::Magic].sY = 57 ;
-	m_info[DialogBoxId::Magic].sSizeX = 258;//280;
-	m_info[DialogBoxId::Magic].sSizeY = 328;//346;
+	m_info[DialogBoxId::Magic].sSizeX = 258;
+	m_info[DialogBoxId::Magic].sSizeY = 328;
 
 	// Item drop confirmation
 	m_info[DialogBoxId::ItemDropConfirm].sX = 0 ;
@@ -242,8 +242,8 @@ void DialogBoxManager::InitDefaults()
 	//System Menu Dialog(F12)
 	m_info[DialogBoxId::SystemMenu].sX = 337 ;
 	m_info[DialogBoxId::SystemMenu].sY = 107 ;
-	m_info[DialogBoxId::SystemMenu].sSizeX = 258;//270; //v2.18
-	m_info[DialogBoxId::SystemMenu].sSizeY = 268;//346;
+	m_info[DialogBoxId::SystemMenu].sSizeX = 258;
+	m_info[DialogBoxId::SystemMenu].sSizeY = 268;
 
 	//NpcActionQuery Dialog
 	m_info[DialogBoxId::NpcActionQuery].sX = 237 ;
@@ -642,8 +642,6 @@ void DialogBoxManager::EnableDialogBox(int iBoxID, int cType, int sV1, int sV2, 
 				Info(DialogBoxId::Manufacture).cStr[4] = 0;
 				m_game->m_bSkillUsingStatus = true;
 				BuildItemManager::Get().UpdateAvailableRecipes();
-				//Info(DialogBoxId::Manufacture).sX = 0;
-				//Info(DialogBoxId::Manufacture).sY = 0;
 				Info(DialogBoxId::Manufacture).sSizeX = 270;
 				Info(DialogBoxId::Manufacture).sSizeY = 381;
 				DisableDialogBox(DialogBoxId::ItemDropExternal);
@@ -682,7 +680,6 @@ void DialogBoxManager::EnableDialogBox(int iBoxID, int cType, int sV1, int sV2, 
 				Info(DialogBoxId::Manufacture).cStr[0] = 0;
 				Info(DialogBoxId::Manufacture).cStr[1] = 0;
 				m_game->m_bSkillUsingStatus = true;
-				//_bCheckCraftItemStatus();
 				Info(DialogBoxId::Manufacture).sSizeX = 195;
 				Info(DialogBoxId::Manufacture).sSizeY = 215;
 				DisableDialogBox(DialogBoxId::ItemDropExternal);

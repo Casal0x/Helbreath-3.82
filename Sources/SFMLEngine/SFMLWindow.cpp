@@ -355,6 +355,10 @@ void SFMLWindow::SetTitle(const char* title)
 void SFMLWindow::SetFramerateLimit(int limit)
 {
     m_iFpsLimit = limit;
+    // When VSync is active, the monitor refresh rate controls timing —
+    // don't let an FPS limit override it. The saved m_iFpsLimit will be
+    // applied when VSync is turned off (see SetVSyncEnabled).
+    if (m_bVSync) return;
     // Forward to renderer for engine-owned frame limiting
     hb::shared::render::IRenderer* pRenderer = hb::shared::render::Renderer::Get();
     if (pRenderer)

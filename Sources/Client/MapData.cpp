@@ -557,7 +557,7 @@ CMapData::CMapData(class CGame* pGame)
 	m_stFrame[hb::shared::owner::Frost][Type::Damage].m_sFrameTime = 60;
 	m_stFrame[hb::shared::owner::Frost][Type::Damage].m_sMaxFrame = 7;
 	m_stFrame[hb::shared::owner::Frost][Type::Dying].m_sFrameTime = 150;
-	m_stFrame[hb::shared::owner::Frost][Type::Dying].m_sMaxFrame = 5 + 3;//7 +3;
+	m_stFrame[hb::shared::owner::Frost][Type::Dying].m_sMaxFrame = 5 + 3;
 	m_stFrame[hb::shared::owner::Crops][Type::Stop].m_sFrameTime = 200;
 	m_stFrame[hb::shared::owner::Crops][Type::Stop].m_sMaxFrame = 40;
 	m_stFrame[hb::shared::owner::Crops][Type::Move].m_sFrameTime = 160;
@@ -1241,7 +1241,6 @@ bool __fastcall CMapData::bSetOwner(uint16_t wObjectID, int sX, int sY, int sTyp
 				else if (iX >= m_sPivotX + MapDataSizeX) break;
 				if (iY < m_sPivotY) break;
 				else if (iY >= m_sPivotY + MapDataSizeY) break;
-				//if (memcmp(m_pData[iX - m_sPivotX][iY - m_sPivotY].m_cOwnerName, cTmpName, 10) == 0) {
 				if (m_pData[iX - m_sPivotX][iY - m_sPivotY].m_wObjectID == wObjectID)
 				{
 					iChatIndex = m_pData[iX - m_sPivotX][iY - m_sPivotY].m_iChatMsg;
@@ -1259,7 +1258,6 @@ bool __fastcall CMapData::bSetOwner(uint16_t wObjectID, int sX, int sY, int sTyp
 					goto EXIT_SEARCH_LOOP;
 				}
 
-				//if (memcmp(m_pData[iX - m_sPivotX][iY - m_sPivotY].m_cDeadOwnerName, cTmpName, 10) == 0) {
 				if (m_pData[iX - m_sPivotX][iY - m_sPivotY].m_wDeadObjectID == wObjectID)
 				{
 					iChatIndex = m_pData[iX - m_sPivotX][iY - m_sPivotY].m_iDeadChatMsg;
@@ -1540,8 +1538,8 @@ EXIT_SEARCH_LOOP:;
 			m_pData[dX][dY].m_sNpcConfigId = -1;
 			m_pData[dX][dY].m_iChatMsg = 0;
 			m_pData[dX][dY].m_cOwnerName.clear();
-			m_iObjectIDcacheLocX[m_pData[dX][dY].m_wDeadObjectID] = -1 * m_iObjectIDcacheLocX[m_pData[dX][dY].m_wDeadObjectID];//dX; // v1.4
-			m_iObjectIDcacheLocY[m_pData[dX][dY].m_wDeadObjectID] = -1 * m_iObjectIDcacheLocY[m_pData[dX][dY].m_wDeadObjectID];//dY;
+			m_iObjectIDcacheLocX[m_pData[dX][dY].m_wDeadObjectID] = -1 * m_iObjectIDcacheLocX[m_pData[dX][dY].m_wDeadObjectID];
+			m_iObjectIDcacheLocY[m_pData[dX][dY].m_wDeadObjectID] = -1 * m_iObjectIDcacheLocY[m_pData[dX][dY].m_wDeadObjectID];
 
 			if (m_pData[dX][dY].m_iEffectType != 0)
 			{
@@ -1741,7 +1739,7 @@ int CMapData::iObjectFrameCounter(const std::string& cPlayerName, short sViewPoi
 	int  iRet, iSoundIndex;
 	int  cDir, cTotalFrame, cFrameMoveDots;
 	static DWORD S_dwUpdateTime = GameClock::GetTimeMS();
-	int   sWeaponType, sCenterX, sCenterY, sDist;//, sAbsX, sAbsY;
+	int   sWeaponType, sCenterX, sCenterY, sDist;
 	bool  bAutoUpdate = false, dynObjsNeedUpdate = false;
 	short dx, dy;
 	long  lPan;
@@ -1810,8 +1808,6 @@ int CMapData::iObjectFrameCounter(const std::string& cPlayerName, short sViewPoi
 					case dynamic_object::IceStorm:
 						if (m_pData[dX][dY].m_cDynamicObjectFrame >= 10)
 							m_pData[dX][dY].m_cDynamicObjectFrame = 0;
-						//if (m_pData[dX][dY].m_cDynamicObjectFrame == 1)
-						//	m_pGame->PlayGameSound('E', 16, sDist);
 						break;
 
 					case dynamic_object::Fire:// Firewall
@@ -2025,8 +2021,8 @@ int CMapData::iObjectFrameCounter(const std::string& cPlayerName, short sViewPoi
 								m_pData[dX][dY].m_sOwnerType = 0;
 								m_pData[dX][dY].m_sNpcConfigId = -1;
 								m_pData[dX][dY].m_cOwnerName.clear();
-								m_iObjectIDcacheLocX[m_pData[dX][dY].m_wDeadObjectID] = -1 * m_iObjectIDcacheLocX[m_pData[dX][dY].m_wDeadObjectID]; //dX; // v1.4
-								m_iObjectIDcacheLocY[m_pData[dX][dY].m_wDeadObjectID] = -1 * m_iObjectIDcacheLocY[m_pData[dX][dY].m_wDeadObjectID]; //dY;
+								m_iObjectIDcacheLocX[m_pData[dX][dY].m_wDeadObjectID] = -1 * m_iObjectIDcacheLocX[m_pData[dX][dY].m_wDeadObjectID];
+								m_iObjectIDcacheLocY[m_pData[dX][dY].m_wDeadObjectID] = -1 * m_iObjectIDcacheLocY[m_pData[dX][dY].m_wDeadObjectID];
 							}
 							else
 							{
@@ -3587,8 +3583,6 @@ int CMapData::iObjectFrameCounter(const std::string& cPlayerName, short sViewPoi
 								break;
 
 							case hb::shared::owner::IceGolem: // IceGolem
-								//							if (m_pData[dX][dY].m_animation.cCurrentFrame == 1)
-								//								m_pGame->m_pEffectManager->AddEffect(EffectType::AURA_EFFECT_2, (m_sPivotX+dX)*32, (m_sPivotY+dY)*32, 0, 0, 0 );
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5) {
 									m_pGame->m_pEffectManager->AddEffect(EffectType::AURA_EFFECT_2, (m_sPivotX + dX) * 32, (m_sPivotY + dY) * 32, 0, 0, 0);
 									m_pGame->PlayGameSound('M', 36, sDist, lPan);
@@ -4009,8 +4003,8 @@ bool __fastcall CMapData::bSetDeadOwner(uint16_t wObjectID, short sX, short sY, 
 	m_pData[dX][dY].m_cDeadOwnerFrame = -1;
 	m_pData[dX][dY].m_cDeadOwnerName = pTmpName;
 
-	m_iObjectIDcacheLocX[wObjectID] = -1 * sX; //dX;
-	m_iObjectIDcacheLocY[wObjectID] = -1 * sY; //dY;
+	m_iObjectIDcacheLocX[wObjectID] = -1 * sX;
+	m_iObjectIDcacheLocY[wObjectID] = -1 * sY;
 
 
 

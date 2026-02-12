@@ -91,6 +91,5 @@ void MagicCastingSystem::BeginCast(int iMagicNo)
 	m_game->m_sMagicShortCut = iMagicNo;
 	m_game->m_sRecentShortCut = iMagicNo + 100;
 	m_game->m_iPointCommandType = iMagicNo + 100;
-	//m_bIsGetPointingMode = true;
 	m_game->m_dialogBoxManager.DisableDialogBox(DialogBoxId::Magic);
 }

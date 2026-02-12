@@ -328,7 +328,6 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 	// Initialize Picking system for this frame
 	CursorTarget::BeginFrame();
 
-	//dwTime = GameClock::GetTimeMS();
 	uint32_t dwTime = m_dwCurTime;
 
 	// Pre-calculate map data bounds for efficient boundary checking

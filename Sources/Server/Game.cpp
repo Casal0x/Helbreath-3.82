@@ -4595,11 +4595,12 @@ void CGame::BroadcastServerMessage(const char* pMessage)
 	std::memcpy(chatPkt.name, "Server", 6);
 	chatPkt.chat_type = 10;
 
-	// message at offset 21
-	std::memcpy(pkt + 21, pMessage, msgLen);
-	pkt[21 + msgLen] = '\0';
+	// Message text follows immediately after the chat header
+	constexpr size_t chat_header_size = sizeof(hb::net::PacketChatMsg);
+	std::memcpy(pkt + chat_header_size, pMessage, msgLen);
+	pkt[chat_header_size + msgLen] = '\0';
 
-	uint32_t dwSize = (uint32_t)(21 + msgLen + 1);
+	uint32_t dwSize = static_cast<uint32_t>(chat_header_size + msgLen + 1);
 
 	for(int i = 1; i < MaxClients; i++)
 	{
@@ -4633,8 +4634,7 @@ void CGame::ChatMsgHandler(int iClientH, char* pData, size_t dwMsgSize)
 	if (!header) return;
 	const auto* pkt = hb::net::PacketCast<hb::net::PacketCommandChatMsgHeader>(pData, sizeof(hb::net::PacketCommandChatMsgHeader));
 	if (!pkt) return;
-	char* payload = reinterpret_cast<char*>(header) + sizeof(hb::net::PacketHeader);
-	char* message = payload + 15;
+	char* message = pData + sizeof(hb::net::PacketCommandChatMsgHeader);
 
 	if (_strnicmp(pkt->name, m_pClientList[iClientH]->m_cCharName, strlen(m_pClientList[iClientH]->m_cCharName)) != 0) return;
 
@@ -4739,7 +4739,7 @@ void CGame::ChatMsgHandler(int iClientH, char* pData, size_t dwMsgSize)
 		break;
 
 	case '/':
-		if (GameChatCommandManager::Get().ProcessCommand(iClientH, cp, dwMsgSize - 21))
+		if (GameChatCommandManager::Get().ProcessCommand(iClientH, cp, dwMsgSize - sizeof(hb::net::PacketCommandChatMsgHeader)))
 			return;
 		// Not a recognized command - fall through as normal chat
 		break;
@@ -4782,8 +4782,8 @@ void CGame::ChatMsgHandler(int iClientH, char* pData, size_t dwMsgSize)
 		(cSendMode == 20) ? m_pClientList[iClientH]->m_cWhisperPlayerName : nullptr);
 
 	header->msg_type = (uint16_t)iClientH;
-	cp = payload + 14;
-	*cp = cSendMode;
+	// Write chat send mode into the packet's chat_type field before relaying to clients
+	pData[offsetof(hb::net::PacketCommandChatMsgHeader, chat_type)] = cSendMode;
 
 	if (cSendMode != 20) {
 		for(int i = 1; i < MaxClients; i++)

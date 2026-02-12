@@ -647,31 +647,28 @@ void CGame::RestoreSprites()
 	}
 }
 
-bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1, int iV2, int iV3, const char* pString, int iV4)
+bool CGame::bSendCommand(uint32_t message_id, uint16_t command, char direction, int value1, int value2, int value3, const char* text, int value4)
 {
-	char cMsg[300], cKey;
-	DWORD dwTime;
-	int iRet, i;
+	int result = 0;
 
 	if ((m_pGSock == 0) && (m_pLSock == 0)) return false;
-	dwTime = GameClock::GetTimeMS();
-	std::memset(cMsg, 0, sizeof(cMsg));
-	cKey = static_cast<char>(rand() % 255) + 1;
+	uint32_t current_time = GameClock::GetTimeMS();
+	char key = static_cast<char>(rand() % 255) + 1;
 
-	switch (dwMsgID) {
+	switch (message_id) {
 
 	case MsgId::RequestAngel:	// to Game Server
 	{
 		hb::net::PacketRequestAngel req{};
-		req.header.msg_id = dwMsgID;
+		req.header.msg_id = message_id;
 		req.header.msg_type = 0;
-		if (pString != nullptr) {
-			std::size_t name_len = std::strlen(pString);
+		if (text != nullptr) {
+			std::size_t name_len = std::strlen(text);
 			if (name_len >= sizeof(req.name)) name_len = sizeof(req.name) - 1;
-			std::memcpy(req.name, pString, name_len);
+			std::memcpy(req.name, text, name_len);
 		}
-		req.angel_id = iV1;
-		iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), cKey);
+		req.angel_id = value1;
+		result = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), key);
 	}
 	break;
 
@@ -679,44 +676,44 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 	case MsgId::RequestResurrectNo:  // By snoopy
 	{
 		hb::net::PacketRequestHeaderOnly req{};
-		req.header.msg_id = dwMsgID;
+		req.header.msg_id = message_id;
 		req.header.msg_type = 0;
-		iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), cKey);
+		result = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), key);
 	}
 	break;
 
 	case MsgId::RequestHeldenianScroll:// By snoopy
 	{
 		hb::net::PacketRequestHeldenianScroll req{};
-		req.header.msg_id = dwMsgID;
+		req.header.msg_id = message_id;
 		req.header.msg_type = 0;
-		if (pString != nullptr) {
-			std::size_t name_len = std::strlen(pString);
+		if (text != nullptr) {
+			std::size_t name_len = std::strlen(text);
 			if (name_len >= sizeof(req.name)) name_len = sizeof(req.name) - 1;
-			std::memcpy(req.name, pString, name_len);
+			std::memcpy(req.name, text, name_len);
 		}
-		req.item_id = wCommand;
-		iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), cKey);
+		req.item_id = command;
+		result = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), key);
 	}
 	break;
 
 	case ClientMsgId::RequestTeleportList:
 	{
 		hb::net::PacketRequestName20 req{};
-		req.header.msg_id = dwMsgID;
+		req.header.msg_id = message_id;
 		req.header.msg_type = 0;
 		std::snprintf(req.name, sizeof(req.name), "%s", "William");
-		iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), cKey);
+		result = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), key);
 	}
 	break;
 
 	case ClientMsgId::RequestHeldenianTpList: // Snoopy: Heldenian TP
 	{
 		hb::net::PacketRequestName20 req{};
-		req.header.msg_id = dwMsgID;
+		req.header.msg_id = message_id;
 		req.header.msg_type = 0;
 		std::snprintf(req.name, sizeof(req.name), "%s", "Gail");
-		iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), cKey);
+		result = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), key);
 	}
 	break;
 
@@ -724,42 +721,42 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 	case ClientMsgId::RequestChargedTeleport:
 	{
 		hb::net::PacketRequestTeleportId req{};
-		req.header.msg_id = dwMsgID;
+		req.header.msg_id = message_id;
 		req.header.msg_type = 0;
-		req.teleport_id = iV1;
-		iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), cKey);
+		req.teleport_id = value1;
+		result = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), key);
 	}
 	break;
 
 	case MsgId::RequestSellItemList:
 	{
 		hb::net::PacketRequestSellItemList req{};
-		req.header.msg_id = dwMsgID;
+		req.header.msg_id = message_id;
 		req.header.msg_type = 0;
-		for (i = 0; i < game_limits::max_sell_list; i++) {
+		for (int i = 0; i < game_limits::max_sell_list; i++) {
 			req.entries[i].index = static_cast<uint8_t>(m_stSellItemList[i].iIndex);
 			req.entries[i].amount = m_stSellItemList[i].iAmount;
 		}
-		iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), cKey);
+		result = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), key);
 	}
 	break;
 
 	case MsgId::RequestRestart:
 	{
 		hb::net::PacketRequestHeaderOnly req{};
-		req.header.msg_id = dwMsgID;
+		req.header.msg_id = message_id;
 		req.header.msg_type = 0;
-		iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), cKey);
+		result = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), key);
 	}
 	break;
 
 	case MsgId::RequestPanning:
 	{
 		hb::net::PacketRequestPanning req{};
-		req.header.msg_id = dwMsgID;
+		req.header.msg_id = message_id;
 		req.header.msg_type = 0;
-		req.dir = static_cast<uint8_t>(cDir);
-		iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), cKey);
+		req.dir = static_cast<uint8_t>(direction);
+		result = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), key);
 	}
 	break;
 
@@ -769,12 +766,12 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 		// to Log Server
 	{
 		hb::net::LoginRequest req{};
-		req.header.msg_id = dwMsgID;
+		req.header.msg_id = message_id;
 		req.header.msg_type = 0;
 		std::snprintf(req.account_name, sizeof(req.account_name), "%s", m_pPlayer->m_cAccountName.c_str());
 		std::snprintf(req.password, sizeof(req.password), "%s", m_pPlayer->m_cAccountPassword.c_str());
 		std::snprintf(req.world_name, sizeof(req.world_name), "%s", m_cWorldServerName.c_str());
-		iRet = m_pLSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), cKey);
+		result = m_pLSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), key);
 	}
 
 	break;
@@ -783,7 +780,7 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 		// to Log Server
 	{
 		hb::net::CreateCharacterRequest req{};
-		req.header.msg_id = dwMsgID;
+		req.header.msg_id = message_id;
 		req.header.msg_type = 0;
 		std::snprintf(req.character_name, sizeof(req.character_name), "%s", m_pPlayer->m_cPlayerName.c_str());
 		std::snprintf(req.account_name, sizeof(req.account_name), "%s", m_pPlayer->m_cAccountName.c_str());
@@ -800,7 +797,7 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 		req.intl = static_cast<uint8_t>(m_pPlayer->m_iStatModInt);
 		req.mag = static_cast<uint8_t>(m_pPlayer->m_iStatModMag);
 		req.chr = static_cast<uint8_t>(m_pPlayer->m_iStatModChr);
-		iRet = m_pLSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), cKey);
+		result = m_pLSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), key);
 	}
 	break;
 
@@ -808,7 +805,7 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 		// to Log Server
 	{
 		hb::net::EnterGameRequestFull req{};
-		req.header.msg_id = dwMsgID;
+		req.header.msg_id = message_id;
 		req.header.msg_type = static_cast<uint16_t>(m_wEnterGameType);
 		std::snprintf(req.character_name, sizeof(req.character_name), "%s", m_pPlayer->m_cPlayerName.c_str());
 		std::snprintf(req.map_name, sizeof(req.map_name), "%s", m_cMapName.c_str());
@@ -816,7 +813,7 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 		std::snprintf(req.password, sizeof(req.password), "%s", m_pPlayer->m_cAccountPassword.c_str());
 		req.level = m_pPlayer->m_iLevel;
 		std::snprintf(req.world_name, sizeof(req.world_name), "%s", m_cWorldServerName.c_str());
-		iRet = m_pLSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), cKey);
+		result = m_pLSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), key);
 	}
 	break;
 
@@ -824,13 +821,13 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 		// to Log Server
 	{
 		hb::net::DeleteCharacterRequest req{};
-		req.header.msg_id = dwMsgID;
+		req.header.msg_id = message_id;
 		req.header.msg_type = static_cast<uint16_t>(m_wEnterGameType);
 		std::snprintf(req.character_name, sizeof(req.character_name), "%s", m_pCharList[m_wEnterGameType - 1]->m_cName.c_str());
 		std::snprintf(req.account_name, sizeof(req.account_name), "%s", m_pPlayer->m_cAccountName.c_str());
 		std::snprintf(req.password, sizeof(req.password), "%s", m_pPlayer->m_cAccountPassword.c_str());
 		std::snprintf(req.world_name, sizeof(req.world_name), "%s", m_cWorldServerName.c_str());
-		iRet = m_pLSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), cKey);
+		result = m_pLSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), key);
 	}
 	break;
 
@@ -838,22 +835,22 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 		// to Game Server
 	{
 		hb::net::PacketRequestSetItemPos req{};
-		req.header.msg_id = dwMsgID;
+		req.header.msg_id = message_id;
 		req.header.msg_type = 0;
-		req.dir = static_cast<uint8_t>(cDir);
-		req.x = static_cast<int16_t>(iV1);
-		req.y = static_cast<int16_t>(iV2);
-		iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req));
+		req.dir = static_cast<uint8_t>(direction);
+		req.x = static_cast<int16_t>(value1);
+		req.y = static_cast<int16_t>(value2);
+		result = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req));
 	}
 	break;
 
 	case MsgId::CommandCheckConnection:
 	{
 		hb::net::PacketCommandCheckConnection req{};
-		req.header.msg_id = dwMsgID;
+		req.header.msg_id = message_id;
 		req.header.msg_type = 0;
-		req.time_ms = dwTime;
-		iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), cKey);
+		req.time_ms = current_time;
+		result = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), key);
 	}
 
 	break;
@@ -861,7 +858,7 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 	case MsgId::RequestInitData:
 	{
 		hb::net::PacketRequestInitDataEx req{};
-		req.header.msg_id = dwMsgID;
+		req.header.msg_id = message_id;
 		req.header.msg_type = 0;
 		std::snprintf(req.player, sizeof(req.player), "%s", m_pPlayer->m_cPlayerName.c_str());
 		std::snprintf(req.account, sizeof(req.account), "%s", m_pPlayer->m_cAccountName.c_str());
@@ -873,14 +870,14 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 		req.magicConfigHash = LocalCacheManager::Get().GetHash(ConfigCacheType::Magic);
 		req.skillConfigHash = LocalCacheManager::Get().GetHash(ConfigCacheType::Skills);
 		req.npcConfigHash = LocalCacheManager::Get().GetHash(ConfigCacheType::Npcs);
-		iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), cKey);
+		result = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), key);
 	}
 	break;
 
 	case MsgId::RequestInitPlayer:
 	{
 		hb::net::PacketRequestInitPlayer req{};
-		req.header.msg_id = dwMsgID;
+		req.header.msg_id = message_id;
 		req.header.msg_type = 0;
 		std::snprintf(req.player, sizeof(req.player), "%s", m_pPlayer->m_cPlayerName.c_str());
 		std::snprintf(req.account, sizeof(req.account), "%s", m_pPlayer->m_cAccountName.c_str());
@@ -888,13 +885,13 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 		req.is_observer = static_cast<uint8_t>(m_bIsObserverMode);
 		std::snprintf(req.server, sizeof(req.server), "%s", m_cGameServerName.c_str());
 		req.padding = 0;
-		iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), cKey);
+		result = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), key);
 	}
 	break;
 	case MsgId::LevelUpSettings:
 	{
 		hb::net::PacketRequestLevelUpSettings req{};
-		req.header.msg_id = dwMsgID;
+		req.header.msg_id = message_id;
 		req.header.msg_type = 0;
 		req.str = m_pPlayer->m_wLU_Str;
 		req.vit = m_pPlayer->m_wLU_Vit;
@@ -902,47 +899,48 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 		req.intel = m_pPlayer->m_wLU_Int;
 		req.mag = m_pPlayer->m_wLU_Mag;
 		req.chr = m_pPlayer->m_wLU_Char;
-		iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), cKey);
+		result = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), key);
 	}
 	break;
 
 	case MsgId::CommandChatMsg:
 		if (TeleportManager::Get().IsRequested()) return false;
-		if (pString == 0) return false;
+		if (text == 0) return false;
 
 		// to Game Server
 		{
 			hb::net::PacketCommandChatMsgHeader req{};
-			req.header.msg_id = dwMsgID;
+			req.header.msg_id = message_id;
 			req.header.msg_type = 0;
 			req.x = m_pPlayer->m_sPlayerX;
 			req.y = m_pPlayer->m_sPlayerY;
 			std::snprintf(req.name, sizeof(req.name), "%s", m_pPlayer->m_cPlayerName.c_str());
-			req.chat_type = static_cast<uint8_t>(iV1);
-			if (bCheckLocalChatCommand(pString) == true) return false;
-			std::size_t text_len = std::strlen(pString);
-			std::memset(cMsg, 0, sizeof(cMsg));
-			std::memcpy(cMsg, &req, sizeof(req));
-			std::memcpy(cMsg + sizeof(req), pString, text_len + 1);
-			iRet = m_pGSock->iSendMsg(cMsg, static_cast<int>(sizeof(req) + text_len + 1));
+			req.chat_type = static_cast<uint8_t>(value1);
+			if (bCheckLocalChatCommand(text) == true) return false;
+			std::size_t text_len = std::strlen(text);
+			char message[300]{};
+			std::memset(message, 0, sizeof(message));
+			std::memcpy(message, &req, sizeof(req));
+			std::memcpy(message + sizeof(req), text, text_len + 1);
+			result = m_pGSock->iSendMsg(message, static_cast<int>(sizeof(req) + text_len + 1));
 		}
 		break;
 
 	case MsgId::CommandCommon:
 		if (TeleportManager::Get().IsRequested()) return false;
-		switch (wCommand) {
+		switch (command) {
 		case CommonType::BuildItem:
 		{
 			hb::net::PacketCommandCommonBuild req{};
-			req.base.header.msg_id = dwMsgID;
-			req.base.header.msg_type = wCommand;
+			req.base.header.msg_id = message_id;
+			req.base.header.msg_type = command;
 			req.base.x = m_pPlayer->m_sPlayerX;
 			req.base.y = m_pPlayer->m_sPlayerY;
-			req.base.dir = static_cast<uint8_t>(cDir);
-			if (pString != 0) {
-				std::size_t name_len = std::strlen(pString);
+			req.base.dir = static_cast<uint8_t>(direction);
+			if (text != 0) {
+				std::size_t name_len = std::strlen(text);
 				if (name_len > sizeof(req.name)) name_len = sizeof(req.name);
-				std::memcpy(req.name, pString, name_len);
+				std::memcpy(req.name, text, name_len);
 			}
 			req.item_ids[0] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV1);
 			req.item_ids[1] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV2);
@@ -950,18 +948,18 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 			req.item_ids[3] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV4);
 			req.item_ids[4] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV5);
 			req.item_ids[5] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV6);
-			iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req));
+			result = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req));
 		}
 		break;
 
 		case CommonType::ReqCreatePortion:
 		{
 			hb::net::PacketCommandCommonItems req{};
-			req.base.header.msg_id = dwMsgID;
-			req.base.header.msg_type = wCommand;
+			req.base.header.msg_id = message_id;
+			req.base.header.msg_type = command;
 			req.base.x = m_pPlayer->m_sPlayerX;
 			req.base.y = m_pPlayer->m_sPlayerY;
-			req.base.dir = static_cast<uint8_t>(cDir);
+			req.base.dir = static_cast<uint8_t>(direction);
 			req.item_ids[0] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV1);
 			req.item_ids[1] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV2);
 			req.item_ids[2] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV3);
@@ -969,7 +967,7 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 			req.item_ids[4] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV5);
 			req.item_ids[5] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV6);
 			req.padding = 0;
-			iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req));
+			result = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req));
 		}
 		break;
 
@@ -977,11 +975,11 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 		case CommonType::CraftItem:
 		{
 			hb::net::PacketCommandCommonBuild req{};
-			req.base.header.msg_id = dwMsgID;
-			req.base.header.msg_type = wCommand;
+			req.base.header.msg_id = message_id;
+			req.base.header.msg_type = command;
 			req.base.x = m_pPlayer->m_sPlayerX;
 			req.base.y = m_pPlayer->m_sPlayerY;
-			req.base.dir = static_cast<uint8_t>(cDir);
+			req.base.dir = static_cast<uint8_t>(direction);
 			std::memset(req.name, ' ', sizeof(req.name));
 			req.item_ids[0] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV1);
 			req.item_ids[1] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV2);
@@ -989,7 +987,7 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 			req.item_ids[3] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV4);
 			req.item_ids[4] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV5);
 			req.item_ids[5] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV6);
-			iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req));
+			result = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req));
 		}
 		break;
 
@@ -997,11 +995,11 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 		case CommonType::ReqCreateSlate:
 		{
 			hb::net::PacketCommandCommonItems req{};
-			req.base.header.msg_id = dwMsgID;
-			req.base.header.msg_type = wCommand;
+			req.base.header.msg_id = message_id;
+			req.base.header.msg_type = command;
 			req.base.x = m_pPlayer->m_sPlayerX;
 			req.base.y = m_pPlayer->m_sPlayerY;
-			req.base.dir = static_cast<uint8_t>(cDir);
+			req.base.dir = static_cast<uint8_t>(direction);
 			req.item_ids[0] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Slates).sV1);
 			req.item_ids[1] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Slates).sV2);
 			req.item_ids[2] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Slates).sV3);
@@ -1009,7 +1007,7 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 			req.item_ids[4] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Slates).sV5);
 			req.item_ids[5] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Slates).sV6);
 			req.padding = 0;
-			iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req));
+			result = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req));
 		}
 		break;
 
@@ -1017,51 +1015,51 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 		case CommonType::Magic:
 		{
 			hb::net::PacketCommandCommonWithTime req{};
-			req.base.header.msg_id = dwMsgID;
-			req.base.header.msg_type = wCommand;
+			req.base.header.msg_id = message_id;
+			req.base.header.msg_type = command;
 			req.base.x = m_pPlayer->m_sPlayerX;
 			req.base.y = m_pPlayer->m_sPlayerY;
-			req.base.dir = static_cast<uint8_t>(cDir);
-			req.v1 = iV1;  // target X
-			req.v2 = iV2;  // target Y
-			req.v3 = iV3;  // magic type (100-199)
-			req.time_ms = static_cast<uint32_t>(iV4);  // target object ID (0 = tile-based, >0 = entity tracking)
-			iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req));
+			req.base.dir = static_cast<uint8_t>(direction);
+			req.v1 = value1;  // target X
+			req.v2 = value2;  // target Y
+			req.v3 = value3;  // magic type (100-199)
+			req.time_ms = static_cast<uint32_t>(value4);  // target object ID (0 = tile-based, >0 = entity tracking)
+			result = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req));
 		}
 		break;
 
 		default:
-			if (pString == 0)
+			if (text == 0)
 			{
 				hb::net::PacketCommandCommonWithTime req{};
-				req.base.header.msg_id = dwMsgID;
-				req.base.header.msg_type = wCommand;
+				req.base.header.msg_id = message_id;
+				req.base.header.msg_type = command;
 				req.base.x = m_pPlayer->m_sPlayerX;
 				req.base.y = m_pPlayer->m_sPlayerY;
-				req.base.dir = static_cast<uint8_t>(cDir);
-				req.v1 = iV1;
-				req.v2 = iV2;
-				req.v3 = iV3;
-				req.time_ms = dwTime;
-				iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req));
+				req.base.dir = static_cast<uint8_t>(direction);
+				req.v1 = value1;
+				req.v2 = value2;
+				req.v3 = value3;
+				req.time_ms = current_time;
+				result = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req));
 			}
 			else
 			{
 				hb::net::PacketCommandCommonWithString req{};
-				req.base.header.msg_id = dwMsgID;
-				req.base.header.msg_type = wCommand;
+				req.base.header.msg_id = message_id;
+				req.base.header.msg_type = command;
 				req.base.x = m_pPlayer->m_sPlayerX;
 				req.base.y = m_pPlayer->m_sPlayerY;
-				req.base.dir = static_cast<uint8_t>(cDir);
-				req.v1 = iV1;
-				req.v2 = iV2;
-				req.v3 = iV3;
+				req.base.dir = static_cast<uint8_t>(direction);
+				req.v1 = value1;
+				req.v2 = value2;
+				req.v3 = value3;
 				std::memset(req.text, 0, sizeof(req.text));
-				std::size_t text_len = std::strlen(pString);
+				std::size_t text_len = std::strlen(text);
 				if (text_len > sizeof(req.text)) text_len = sizeof(req.text);
-				std::memcpy(req.text, pString, text_len);
-				req.v4 = iV4;
-				iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req));
+				std::memcpy(req.text, text, text_len);
+				req.v4 = value4;
+				result = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req));
 			}
 			break;
 		}
@@ -1073,23 +1071,23 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 		// to Game Server
 	{
 		hb::net::PacketRequestGuildAction req{};
-		req.header.msg_id = dwMsgID;
+		req.header.msg_id = message_id;
 		req.header.msg_type = MsgType::Confirm;
 		std::snprintf(req.player, sizeof(req.player), "%s", m_pPlayer->m_cPlayerName.c_str());
 		std::snprintf(req.account, sizeof(req.account), "%s", m_pPlayer->m_cAccountName.c_str());
 		std::snprintf(req.password, sizeof(req.password), "%s", m_pPlayer->m_cAccountPassword.c_str());
 		std::snprintf(req.guild, sizeof(req.guild), "%s", m_pPlayer->m_cGuildName.c_str());
 		CMisc::ReplaceString(req.guild, ' ', '_');
-		iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), cKey);
+		result = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), key);
 	}
 	break;
 
 	case MsgId::RequestTeleport:
 	{
 		hb::net::PacketRequestHeaderOnly req{};
-		req.header.msg_id = dwMsgID;
+		req.header.msg_id = message_id;
 		req.header.msg_type = MsgType::Confirm;
-		iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req));
+		result = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req));
 	}
 
 	TeleportManager::Get().SetRequested(true);
@@ -1098,46 +1096,46 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 	case MsgId::RequestCivilRight:
 	{
 		hb::net::PacketRequestHeaderOnly req{};
-		req.header.msg_id = dwMsgID;
+		req.header.msg_id = message_id;
 		req.header.msg_type = MsgType::Confirm;
-		iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req));
+		result = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req));
 	}
 	break;
 
 	case MsgId::RequestRetrieveItem:
 	{
 		hb::net::PacketRequestRetrieveItem req{};
-		req.header.msg_id = dwMsgID;
+		req.header.msg_id = message_id;
 		req.header.msg_type = MsgType::Confirm;
-		req.item_slot = static_cast<uint8_t>(iV1);
-		iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req));
+		req.item_slot = static_cast<uint8_t>(value1);
+		result = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req));
 	}
 	break;
 
 	case MsgId::RequestNoticement:
 	{
 		hb::net::PacketRequestNoticement req{};
-		req.header.msg_id = dwMsgID;
+		req.header.msg_id = message_id;
 		req.header.msg_type = 0;
-		req.value = iV1;
-		iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), cKey);
+		req.value = value1;
+		result = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), key);
 	}
 	break;
 
 	case  MsgId::RequestFightZoneReserve:
 	{
 		hb::net::PacketRequestFightzoneReserve req{};
-		req.header.msg_id = dwMsgID;
+		req.header.msg_id = message_id;
 		req.header.msg_type = 0;
-		req.fightzone = iV1;
-		iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req));
+		req.fightzone = value1;
+		result = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req));
 	}
 	break;
 
 	case MsgId::StateChangePoint:
 	{
 		hb::net::PacketRequestStateChange req{};
-		req.header.msg_id = dwMsgID;
+		req.header.msg_id = message_id;
 		req.header.msg_type = 0;
 		req.str = static_cast<int16_t>(-m_pPlayer->m_wLU_Str);
 		req.vit = static_cast<int16_t>(-m_pPlayer->m_wLU_Vit);
@@ -1145,49 +1143,49 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 		req.intel = static_cast<int16_t>(-m_pPlayer->m_wLU_Int);
 		req.mag = static_cast<int16_t>(-m_pPlayer->m_wLU_Mag);
 		req.chr = static_cast<int16_t>(-m_pPlayer->m_wLU_Char);
-		iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req));
+		result = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req));
 	}
 	break;
 
 	default:
 		if (TeleportManager::Get().IsRequested()) return false;
-		if ((wCommand == Type::Attack) || (wCommand == Type::AttackMove))
+		if ((command == Type::Attack) || (command == Type::AttackMove))
 		{
 			hb::net::PacketCommandMotionAttack req{};
-			req.base.header.msg_id = dwMsgID;
-			req.base.header.msg_type = wCommand;
+			req.base.header.msg_id = message_id;
+			req.base.header.msg_type = command;
 			req.base.x = m_pPlayer->m_sPlayerX;
 			req.base.y = m_pPlayer->m_sPlayerY;
-			req.base.dir = static_cast<uint8_t>(cDir);
-			req.base.dx = static_cast<int16_t>(iV1);
-			req.base.dy = static_cast<int16_t>(iV2);
-			req.base.type = static_cast<int16_t>(iV3);
-			req.target_id = static_cast<uint16_t>(iV4);
-			req.time_ms = dwTime;
-			iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req));
+			req.base.dir = static_cast<uint8_t>(direction);
+			req.base.dx = static_cast<int16_t>(value1);
+			req.base.dy = static_cast<int16_t>(value2);
+			req.base.type = static_cast<int16_t>(value3);
+			req.target_id = static_cast<uint16_t>(value4);
+			req.time_ms = current_time;
+			result = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req));
 		}
 		else
 		{
 			hb::net::PacketCommandMotionSimple req{};
-			req.base.header.msg_id = dwMsgID;
-			req.base.header.msg_type = wCommand;
+			req.base.header.msg_id = message_id;
+			req.base.header.msg_type = command;
 			req.base.x = m_pPlayer->m_sPlayerX;
 			req.base.y = m_pPlayer->m_sPlayerY;
-			req.base.dir = static_cast<uint8_t>(cDir);
-			req.base.dx = static_cast<int16_t>(iV1);
-			req.base.dy = static_cast<int16_t>(iV2);
-			req.base.type = static_cast<int16_t>(iV3);
-			req.time_ms = dwTime;
-			iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req)); //v2.171
+			req.base.dir = static_cast<uint8_t>(direction);
+			req.base.dx = static_cast<int16_t>(value1);
+			req.base.dy = static_cast<int16_t>(value2);
+			req.base.type = static_cast<int16_t>(value3);
+			req.time_ms = current_time;
+			result = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req)); //v2.171
 		}
 		m_pPlayer->m_Controller.IncrementCommandCount();
 		break;
 	}
-	switch (iRet) {
+	switch (result) {
 	case sock::Event::SocketClosed:
 	case sock::Event::SocketError:
 	case sock::Event::QueueFull:
-		printf("[ERROR] bSendCommand failed: ret=%d msgid=0x%X cmd=0x%X\n", iRet, dwMsgID, wCommand);
+		printf("[ERROR] bSendCommand failed: ret=%d msgid=0x%X cmd=0x%X\n", result, message_id, command);
 		ChangeGameMode(GameMode::ConnectionLost);
 	m_pGSock.reset();
 	break;
@@ -1195,7 +1193,7 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 	case sock::Event::CriticalError:
 	{
 		std::string cDbg;
-		cDbg = std::format("[NETWARN] bSendCommand: CRITICAL ret={} msgid=0x{:X} cmd=0x{:X}\n", iRet, dwMsgID, wCommand);
+		cDbg = std::format("[NETWARN] bSendCommand: CRITICAL ret={} msgid=0x{:X} cmd=0x{:X}\n", result, message_id, command);
 		printf("%s", cDbg.c_str());
 	}
 	m_pGSock.reset();
@@ -1900,157 +1898,155 @@ void CGame::OnTimer()
 	}
 }
 
-void CGame::bItemDrop_ExternalScreen(char cItemID, short msX, short msY)
+void CGame::bItemDrop_ExternalScreen(char item_id, short mouse_x, short mouse_y)
 {
-	std::string cName;
-	short sType, tX, tY;
-	hb::shared::entity::PlayerStatus iStatus;
+	std::string name;
+	short owner_type, dialog_x, dialog_y;
+	hb::shared::entity::PlayerStatus status;
 
-	if (InventoryManager::Get().CheckItemOperationEnabled(cItemID) == false) return;
+	if (InventoryManager::Get().CheckItemOperationEnabled(item_id) == false) return;
 
 	if ((m_sMCX != 0) && (m_sMCY != 0) && (abs(m_pPlayer->m_sPlayerX - m_sMCX) <= 8) && (abs(m_pPlayer->m_sPlayerY - m_sMCY) <= 8))
 	{
-		cName.clear();
-		m_pMapData->bGetOwner(m_sMCX, m_sMCY, cName, &sType, &iStatus, &m_wCommObjectID);
-		if (m_pPlayer->m_cPlayerName == cName)
+		name.clear();
+		m_pMapData->bGetOwner(m_sMCX, m_sMCY, name, &owner_type, &status, &m_wCommObjectID);
+		if (m_pPlayer->m_cPlayerName == name)
 		{
 		}
 		else
 		{
-			CItem* pCfg = GetItemConfig(m_pItemList[cItemID]->m_sIDnum);
+			CItem* pCfg = GetItemConfig(m_pItemList[item_id]->m_sIDnum);
 			if (pCfg && ((pCfg->GetItemType() == ItemType::Consume) || (pCfg->GetItemType() == ItemType::Arrow))
-				&& (m_pItemList[cItemID]->m_dwCount > 1))
+				&& (m_pItemList[item_id]->m_dwCount > 1))
 			{
-				m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sX = msX - 140;
-				m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sY = msY - 70;
+				m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sX = mouse_x - 140;
+				m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sY = mouse_y - 70;
 				if (m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sY < 0) m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sY = 0;
 				m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV1 = m_sMCX;
 				m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV2 = m_sMCY;
-				m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV3 = sType;
+				m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV3 = owner_type;
 				m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV4 = m_wCommObjectID;
 				std::memset(m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).cStr, 0, sizeof(m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).cStr));
-				if (sType < 10)
-					std::snprintf(m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).cStr, sizeof(m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).cStr), "%s", cName.c_str());
+				if (owner_type < 10)
+					std::snprintf(m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).cStr, sizeof(m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).cStr), "%s", name.c_str());
 				else
 				{
-					std::snprintf(m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).cStr, sizeof(m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).cStr), "%s", GetNpcConfigName(sType));
+					std::snprintf(m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).cStr, sizeof(m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).cStr), "%s", GetNpcConfigName(owner_type));
 				}
-				m_dialogBoxManager.EnableDialogBox(DialogBoxId::ItemDropExternal, cItemID, m_pItemList[cItemID]->m_dwCount, 0);
+				m_dialogBoxManager.EnableDialogBox(DialogBoxId::ItemDropExternal, item_id, m_pItemList[item_id]->m_dwCount, 0);
 			}
 			else
 			{
-				switch (sType) {
+				switch (owner_type) {
 				case 1:
 				case 2:
 				case 3:
 				case 4:
 				case 5:
 				case 6:
-					m_dialogBoxManager.EnableDialogBox(DialogBoxId::NpcActionQuery, 1, cItemID, sType);
+					m_dialogBoxManager.EnableDialogBox(DialogBoxId::NpcActionQuery, 1, item_id, owner_type);
 					m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV3 = 1;
 					m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV4 = m_wCommObjectID;
 					m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV5 = m_sMCX;
 					m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV6 = m_sMCY;
 
-					tX = msX - 117;
-					tY = msY - 50;
-					if (tX < 0) tX = 0;
-					if ((tX + 235) > LOGICAL_MAX_X()) tX = LOGICAL_MAX_X() - 235;
-					if (tY < 0) tY = 0;
-					if ((tY + 100) > LOGICAL_MAX_Y()) tY = LOGICAL_MAX_Y() - 100;
-					m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sX = tX;
-					m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sY = tY;
+					dialog_x = mouse_x - 117;
+					dialog_y = mouse_y - 50;
+					if (dialog_x < 0) dialog_x = 0;
+					if ((dialog_x + 235) > LOGICAL_MAX_X()) dialog_x = LOGICAL_MAX_X() - 235;
+					if (dialog_y < 0) dialog_y = 0;
+					if ((dialog_y + 100) > LOGICAL_MAX_Y()) dialog_y = LOGICAL_MAX_Y() - 100;
+					m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sX = dialog_x;
+					m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sY = dialog_y;
 
-					std::snprintf(m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cStr, sizeof(m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cStr), "%s", cName.c_str());
+					std::snprintf(m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cStr, sizeof(m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cStr), "%s", name.c_str());
 					//bSendCommand(MsgId::CommandCommon, CommonType::GiveItemToChar, cItemID, 1, m_sMCX, m_sMCY, m_pItemList[cItemID]->m_cName); //v1.4
 					break;
 
 				case hb::shared::owner::Howard: // Howard
-					m_dialogBoxManager.EnableDialogBox(DialogBoxId::NpcActionQuery, 3, cItemID, sType);
+					m_dialogBoxManager.EnableDialogBox(DialogBoxId::NpcActionQuery, 3, item_id, owner_type);
 					m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV3 = 1;
 					m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV4 = m_wCommObjectID; // v1.4
 					m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV5 = m_sMCX;
 					m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV6 = m_sMCY;
 
-					tX = msX - 117;
-					tY = msY - 50;
-					if (tX < 0) tX = 0;
-					if ((tX + 235) > LOGICAL_MAX_X()) tX = LOGICAL_MAX_X() - 235;
-					if (tY < 0) tY = 0;
-					if ((tY + 100) > LOGICAL_MAX_Y()) tY = LOGICAL_MAX_Y() - 100;
-					m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sX = tX;
-					m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sY = tY;
+					dialog_x = mouse_x - 117;
+					dialog_y = mouse_y - 50;
+					if (dialog_x < 0) dialog_x = 0;
+					if ((dialog_x + 235) > LOGICAL_MAX_X()) dialog_x = LOGICAL_MAX_X() - 235;
+					if (dialog_y < 0) dialog_y = 0;
+					if ((dialog_y + 100) > LOGICAL_MAX_Y()) dialog_y = LOGICAL_MAX_Y() - 100;
+					m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sX = dialog_x;
+					m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sY = dialog_y;
 
-					std::snprintf(m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cStr, hb::shared::limits::NpcNameLen, "%s", GetNpcConfigName(sType));
-					//bSendCommand(MsgId::CommandCommon, CommonType::GiveItemToChar, cItemID, 1, m_sMCX, m_sMCY, m_pItemList[cItemID]->m_cName);
+					std::snprintf(m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cStr, hb::shared::limits::NpcNameLen, "%s", GetNpcConfigName(owner_type));
 					break;
 
 				case hb::shared::owner::ShopKeeper: // ShopKeeper-W
 				case hb::shared::owner::Tom: // Tom
-					m_dialogBoxManager.EnableDialogBox(DialogBoxId::NpcActionQuery, 2, cItemID, sType);
+					m_dialogBoxManager.EnableDialogBox(DialogBoxId::NpcActionQuery, 2, item_id, owner_type);
 					m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV3 = 1;
 					m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV4 = m_wCommObjectID; // v1.4
 					m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV5 = m_sMCX;
 					m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV6 = m_sMCY;
 
-					tX = msX - 117;
-					tY = msY - 50;
-					if (tX < 0) tX = 0;
-					if ((tX + 235) > LOGICAL_MAX_X()) tX = LOGICAL_MAX_X() - 235;
-					if (tY < 0) tY = 0;
-					if ((tY + 100) > LOGICAL_MAX_Y()) tY = LOGICAL_MAX_Y() - 100;
-					m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sX = tX;
-					m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sY = tY;
+					dialog_x = mouse_x - 117;
+					dialog_y = mouse_y - 50;
+					if (dialog_x < 0) dialog_x = 0;
+					if ((dialog_x + 235) > LOGICAL_MAX_X()) dialog_x = LOGICAL_MAX_X() - 235;
+					if (dialog_y < 0) dialog_y = 0;
+					if ((dialog_y + 100) > LOGICAL_MAX_Y()) dialog_y = LOGICAL_MAX_Y() - 100;
+					m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sX = dialog_x;
+					m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sY = dialog_y;
 
-					std::snprintf(m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cStr, hb::shared::limits::NpcNameLen, "%s", GetNpcConfigName(sType));
+					std::snprintf(m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cStr, hb::shared::limits::NpcNameLen, "%s", GetNpcConfigName(owner_type));
 					break;
 
 				default:
-					if (pCfg) bSendCommand(MsgId::CommandCommon, CommonType::GiveItemToChar, cItemID, 1, m_sMCX, m_sMCY, pCfg->m_cName);
+					if (pCfg) bSendCommand(MsgId::CommandCommon, CommonType::GiveItemToChar, item_id, 1, m_sMCX, m_sMCY, pCfg->m_cName);
 					break;
 				}
-				//m_bIsItemDisabled[cItemID] = true;
 			}
-			m_bIsItemDisabled[cItemID] = true;
+			m_bIsItemDisabled[item_id] = true;
 		}
 	}
 	else
 	{
-		CItem* pCfg2 = GetItemConfig(m_pItemList[cItemID]->m_sIDnum);
+		CItem* pCfg2 = GetItemConfig(m_pItemList[item_id]->m_sIDnum);
 		if (pCfg2 && ((pCfg2->GetItemType() == ItemType::Consume) || (pCfg2->GetItemType() == ItemType::Arrow))
-			&& (m_pItemList[cItemID]->m_dwCount > 1))
+			&& (m_pItemList[item_id]->m_dwCount > 1))
 		{
-			m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sX = msX - 140;
-			m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sY = msY - 70;
+			m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sX = mouse_x - 140;
+			m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sY = mouse_y - 70;
 			if (m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sY < 0)		m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sY = 0;
 			m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV1 = 0;
 			m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV2 = 0;
 			m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV3 = 0;
 			m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV4 = 0;
 			std::memset(m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).cStr, 0, sizeof(m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).cStr));
-			m_dialogBoxManager.EnableDialogBox(DialogBoxId::ItemDropExternal, cItemID, m_pItemList[cItemID]->m_dwCount, 0);
+			m_dialogBoxManager.EnableDialogBox(DialogBoxId::ItemDropExternal, item_id, m_pItemList[item_id]->m_dwCount, 0);
 		}
 		else
 		{
-			if (_ItemDropHistory(m_pItemList[cItemID]->m_sIDnum))
+			if (_ItemDropHistory(m_pItemList[item_id]->m_sIDnum))
 			{
-				m_dialogBoxManager.Info(DialogBoxId::ItemDropConfirm).sX = msX - 140;
-				m_dialogBoxManager.Info(DialogBoxId::ItemDropConfirm).sY = msY - 70;
+				m_dialogBoxManager.Info(DialogBoxId::ItemDropConfirm).sX = mouse_x - 140;
+				m_dialogBoxManager.Info(DialogBoxId::ItemDropConfirm).sY = mouse_y - 70;
 				if (m_dialogBoxManager.Info(DialogBoxId::ItemDropConfirm).sY < 0)	m_dialogBoxManager.Info(DialogBoxId::ItemDropConfirm).sY = 0;
 				m_dialogBoxManager.Info(DialogBoxId::ItemDropConfirm).sV1 = 0;
 				m_dialogBoxManager.Info(DialogBoxId::ItemDropConfirm).sV2 = 0;
 				m_dialogBoxManager.Info(DialogBoxId::ItemDropConfirm).sV3 = 1;
 				m_dialogBoxManager.Info(DialogBoxId::ItemDropConfirm).sV4 = 0;
-				m_dialogBoxManager.Info(DialogBoxId::ItemDropConfirm).sV5 = cItemID;
+				m_dialogBoxManager.Info(DialogBoxId::ItemDropConfirm).sV5 = item_id;
 				std::memset(m_dialogBoxManager.Info(DialogBoxId::ItemDropConfirm).cStr, 0, sizeof(m_dialogBoxManager.Info(DialogBoxId::ItemDropConfirm).cStr));
-				m_dialogBoxManager.EnableDialogBox(DialogBoxId::ItemDropConfirm, cItemID, m_pItemList[cItemID]->m_dwCount, 0);
+				m_dialogBoxManager.EnableDialogBox(DialogBoxId::ItemDropConfirm, item_id, m_pItemList[item_id]->m_dwCount, 0);
 			}
 			else
 			{
-				if (pCfg2) bSendCommand(MsgId::CommandCommon, CommonType::ItemDrop, 0, cItemID, 1, 0, pCfg2->m_cName);
+				if (pCfg2) bSendCommand(MsgId::CommandCommon, CommonType::ItemDrop, 0, item_id, 1, 0, pCfg2->m_cName);
 			}
 		}
-		m_bIsItemDisabled[cItemID] = true;
+		m_bIsItemDisabled[item_id] = true;
 	}
 }
 
@@ -2116,7 +2112,6 @@ void CGame::ClearGuildNameList()
 
 void CGame::InitGameSettings()
 {
-	int i;
 
 	m_pPlayer->m_bForceAttack = false;
 	m_pPlayer->m_Controller.SetCommandTime(0);
@@ -2170,16 +2165,16 @@ void CGame::InitGameSettings()
 
 	m_dwEnvEffectTime = GameClock::GetTimeMS();
 
-	for (i = 0; i < game_limits::max_guild_names; i++) {
+	for (int i = 0; i < game_limits::max_guild_names; i++) {
 		m_stGuildName[i].dwRefTime = 0;
 		m_stGuildName[i].iGuildRank = -1;
 	}
 	//Snoopy: 61
-	for (i = 0; i < 61; i++)
+	for (int i = 0; i < 61; i++)
 		m_dialogBoxManager.SetEnabled(i, false);
 
 	//Snoopy: 58 because 2 last ones alreaddy defined
-	for (i = 0; i < 58; i++)
+	for (int i = 0; i < 58; i++)
 		m_dialogBoxManager.SetOrderAt(i, 0);
 	m_dialogBoxManager.SetOrderAt(60, DialogBoxId::HudPanel);
 	m_dialogBoxManager.SetOrderAt(59, DialogBoxId::HudPanel);
@@ -2197,40 +2192,40 @@ void CGame::InitGameSettings()
 
 	m_pPlayer->m_iGuildRank = -1;
 
-	for (i = 0; i < 100; i++) {
+	for (int i = 0; i < 100; i++) {
 		m_stGuildOpList[i].cOpMode = 0;
 	}
 
 
 
-	for (i = 0; i < 41; i++) {
+	for (int i = 0; i < 41; i++) {
 		m_dialogBoxManager.Info(i).bFlag = false;
 		m_dialogBoxManager.Info(i).sView = 0;
 		m_dialogBoxManager.Info(i).bIsScrollSelected = false;
 	}
 
-	for (i = 0; i < hb::shared::limits::MaxItems; i++)
+	for (int i = 0; i < hb::shared::limits::MaxItems; i++)
 		if (m_pItemList[i] != 0) {
 			m_pItemList[i].reset();
 		}
 
-	for (i = 0; i < game_limits::max_sell_list; i++) {
+	for (int i = 0; i < game_limits::max_sell_list; i++) {
 		m_stSellItemList[i].iIndex = -1;
 		m_stSellItemList[i].iAmount = 0;
 	}
 
-	for (i = 0; i < hb::shared::limits::MaxBankItems; i++)
+	for (int i = 0; i < hb::shared::limits::MaxBankItems; i++)
 		if (m_pBankList[i] != 0) {
 			m_pBankList[i].reset();
 		}
 
-	for (i = 0; i < hb::shared::limits::MaxMagicType; i++)
+	for (int i = 0; i < hb::shared::limits::MaxMagicType; i++)
 		m_pPlayer->m_iMagicMastery[i] = 0;
 
-	for (i = 0; i < hb::shared::limits::MaxSkillType; i++)
+	for (int i = 0; i < hb::shared::limits::MaxSkillType; i++)
 		m_pPlayer->m_iSkillMastery[i] = 0;
 
-	for (i = 0; i < game_limits::max_text_dlg_lines; i++) {
+	for (int i = 0; i < game_limits::max_text_dlg_lines; i++) {
 		if (m_pMsgTextList[i] != 0)
 			m_pMsgTextList[i].reset();
 
@@ -2241,7 +2236,7 @@ void CGame::InitGameSettings()
 			m_pAgreeMsgTextList[i].reset();
 	}
 
-	for (i = 0; i < hb::shared::limits::MaxPartyMembers; i++) {
+	for (int i = 0; i < hb::shared::limits::MaxPartyMembers; i++) {
 		m_stPartyMember[i].cStatus = 0;
 	}
 
@@ -2276,7 +2271,7 @@ void CGame::InitGameSettings()
 	m_pPlayer->m_iSpecialAbilityTimeLeftSec = 0;
 	CursorTarget::ClearSelection();
 	m_bIsF1HelpWindowEnabled = false;
-	for (i = 0; i < hb::shared::limits::MaxCrusadeStructures; i++)
+	for (int i = 0; i < hb::shared::limits::MaxCrusadeStructures; i++)
 	{
 		m_stCrusadeStructureInfo[i].cType = 0;
 		m_stCrusadeStructureInfo[i].cSide = 0;
@@ -2494,121 +2489,119 @@ void CGame::RequestFullObjectData(uint16_t wObjectID)
 }
 
 
-void CGame::_ReadMapData(short sPivotX, short sPivotY, const char* pData)
+void CGame::_ReadMapData(short pivot_x, short pivot_y, const char* packet_data)
 {
-	int i;
-	const char* cp;
-	char ucHeader, cDir, cItemColor;
-	std::string cName;
-	short sTotal, sX, sY, sType, sDynamicObjectType;
-	short npcConfigId = -1;
-	hb::shared::entity::PlayerStatus iStatus;
-	hb::shared::entity::PlayerAppearance playerAppearance;
-	uint16_t wObjectID;
-	uint16_t wDynamicObjectID;
-	short sItemID;
-	uint32_t dwItemAttr;
+	char header_byte = 0, direction = 0, item_color = 0;
+	std::string name;
+	short total_entries = 0, map_x = 0, map_y = 0, owner_type = 0, dynamic_type = 0;
+	short npc_config_id = -1;
+	hb::shared::entity::PlayerStatus status;
+	hb::shared::entity::PlayerAppearance appearance;
+	uint16_t object_id = 0;
+	uint16_t dynamic_object_id = 0;
+	short item_id = 0;
+	uint32_t item_attr = 0;
 
-	cp = pData;
-	m_sVDL_X = sPivotX; // Valid Data Loc-X
-	m_sVDL_Y = sPivotY;
+	const char* cursor = packet_data;
+	m_sVDL_X = pivot_x; // Valid Data Loc-X
+	m_sVDL_Y = pivot_y;
 
-	const auto* mapHeader = hb::net::PacketCast<hb::net::PacketMapDataHeader>(cp, sizeof(hb::net::PacketMapDataHeader));
+	const auto* mapHeader = hb::net::PacketCast<hb::net::PacketMapDataHeader>(cursor, sizeof(hb::net::PacketMapDataHeader));
 	if (!mapHeader) return;
-	sTotal = mapHeader->total;
-	cp += sizeof(hb::net::PacketMapDataHeader);
-	for (i = 1; i <= sTotal; i++)
+	total_entries = mapHeader->total;
+	cursor += sizeof(hb::net::PacketMapDataHeader);
+	for (int i = 1; i <= total_entries; i++)
 	{
-		const auto* entry = hb::net::PacketCast<hb::net::PacketMapDataEntryHeader>(cp, sizeof(hb::net::PacketMapDataEntryHeader));
+		const auto* entry = hb::net::PacketCast<hb::net::PacketMapDataEntryHeader>(cursor, sizeof(hb::net::PacketMapDataEntryHeader));
 		if (!entry) return;
-		sX = entry->x;
-		sY = entry->y;
-		ucHeader = entry->flags;
-		cp += sizeof(hb::net::PacketMapDataEntryHeader);
-		if (ucHeader & 0x01) // object ID
+		map_x = entry->x;
+		map_y = entry->y;
+		header_byte = entry->flags;
+		cursor += sizeof(hb::net::PacketMapDataEntryHeader);
+		if (header_byte & 0x01) // object ID
 		{
-			const auto* objBase = hb::net::PacketCast<hb::net::PacketMapDataObjectBase>(cp, sizeof(hb::net::PacketMapDataObjectBase));
+			const auto* objBase = hb::net::PacketCast<hb::net::PacketMapDataObjectBase>(cursor, sizeof(hb::net::PacketMapDataObjectBase));
 			if (!objBase) return;
 			if (hb::shared::object_id::IsPlayerID(objBase->object_id))
 			{
-				const auto* obj = hb::net::PacketCast<hb::net::PacketMapDataObjectPlayer>(cp, sizeof(hb::net::PacketMapDataObjectPlayer));
+				const auto* obj = hb::net::PacketCast<hb::net::PacketMapDataObjectPlayer>(cursor, sizeof(hb::net::PacketMapDataObjectPlayer));
 				if (!obj) return;
-				wObjectID = obj->base.object_id;
-				sType = obj->type;
-				cDir = static_cast<char>(obj->dir);
-				playerAppearance = obj->appearance;
-				iStatus = obj->status;
-				cName.clear();
-				cName.assign(obj->name, strnlen(obj->name, sizeof(obj->name)));
-				cp += sizeof(hb::net::PacketMapDataObjectPlayer);
+				object_id = obj->base.object_id;
+				owner_type = obj->type;
+				direction = static_cast<char>(obj->dir);
+				appearance = obj->appearance;
+				status = obj->status;
+				name.clear();
+				name.assign(obj->name, strnlen(obj->name, sizeof(obj->name)));
+				cursor += sizeof(hb::net::PacketMapDataObjectPlayer);
 			}
 			else // NPC
 			{
-				const auto* obj = hb::net::PacketCast<hb::net::PacketMapDataObjectNpc>(cp, sizeof(hb::net::PacketMapDataObjectNpc));
+				const auto* obj = hb::net::PacketCast<hb::net::PacketMapDataObjectNpc>(cursor, sizeof(hb::net::PacketMapDataObjectNpc));
 				if (!obj) return;
-				wObjectID = obj->base.object_id;
-				npcConfigId = obj->config_id;
-				sType = ResolveNpcType(npcConfigId);
-				cDir = static_cast<char>(obj->dir);
-				playerAppearance.SetFromNpcAppearance(obj->appearance);
-				iStatus.SetFromEntityStatus(obj->status);
-				cName.clear();
-				cName.assign(obj->name, strnlen(obj->name, sizeof(obj->name)));
-				cp += sizeof(hb::net::PacketMapDataObjectNpc);
+				object_id = obj->base.object_id;
+				npc_config_id = obj->config_id;
+				owner_type = ResolveNpcType(npc_config_id);
+				direction = static_cast<char>(obj->dir);
+				appearance.SetFromNpcAppearance(obj->appearance);
+				status.SetFromEntityStatus(obj->status);
+				name.clear();
+				name.assign(obj->name, strnlen(obj->name, sizeof(obj->name)));
+				cursor += sizeof(hb::net::PacketMapDataObjectNpc);
 			}
-			{ m_pMapData->bSetOwner(wObjectID, sPivotX + sX, sPivotY + sY, sType, cDir, playerAppearance, iStatus, cName, Type::Stop, 0, 0, 0, 0, 0, npcConfigId); }
+			{ m_pMapData->bSetOwner(object_id, pivot_x + map_x, pivot_y + map_y, owner_type, direction, appearance, status, name, Type::Stop, 0, 0, 0, 0, 0, npc_config_id); }
 		}
-		if (ucHeader & 0x02) // object ID
+		if (header_byte & 0x02) // object ID
 		{
-			const auto* objBase = hb::net::PacketCast<hb::net::PacketMapDataObjectBase>(cp, sizeof(hb::net::PacketMapDataObjectBase));
+			const auto* objBase = hb::net::PacketCast<hb::net::PacketMapDataObjectBase>(cursor, sizeof(hb::net::PacketMapDataObjectBase));
 			if (!objBase) return;
 			if (hb::shared::object_id::IsPlayerID(objBase->object_id))
 			{
-				const auto* obj = hb::net::PacketCast<hb::net::PacketMapDataObjectPlayer>(cp, sizeof(hb::net::PacketMapDataObjectPlayer));
+				const auto* obj = hb::net::PacketCast<hb::net::PacketMapDataObjectPlayer>(cursor, sizeof(hb::net::PacketMapDataObjectPlayer));
 				if (!obj) return;
-				wObjectID = obj->base.object_id;
-				sType = obj->type;
-				cDir = static_cast<char>(obj->dir);
-				playerAppearance = obj->appearance;
-				iStatus = obj->status;
-				cName.clear();
-				cName.assign(obj->name, strnlen(obj->name, sizeof(obj->name)));
-				cp += sizeof(hb::net::PacketMapDataObjectPlayer);
+				object_id = obj->base.object_id;
+				owner_type = obj->type;
+				direction = static_cast<char>(obj->dir);
+				appearance = obj->appearance;
+				status = obj->status;
+				name.clear();
+				name.assign(obj->name, strnlen(obj->name, sizeof(obj->name)));
+				cursor += sizeof(hb::net::PacketMapDataObjectPlayer);
 			}
 			else // NPC
 			{
-				const auto* obj = hb::net::PacketCast<hb::net::PacketMapDataObjectNpc>(cp, sizeof(hb::net::PacketMapDataObjectNpc));
+				const auto* obj = hb::net::PacketCast<hb::net::PacketMapDataObjectNpc>(cursor, sizeof(hb::net::PacketMapDataObjectNpc));
 				if (!obj) return;
-				wObjectID = obj->base.object_id;
-				npcConfigId = obj->config_id;
-				sType = ResolveNpcType(npcConfigId);
-				cDir = static_cast<char>(obj->dir);
-				playerAppearance.SetFromNpcAppearance(obj->appearance);
-				iStatus.SetFromEntityStatus(obj->status);
-				cName.clear();
-				cName.assign(obj->name, strnlen(obj->name, sizeof(obj->name)));
-				cp += sizeof(hb::net::PacketMapDataObjectNpc);
+				object_id = obj->base.object_id;
+				npc_config_id = obj->config_id;
+				owner_type = ResolveNpcType(npc_config_id);
+				direction = static_cast<char>(obj->dir);
+				appearance.SetFromNpcAppearance(obj->appearance);
+				status.SetFromEntityStatus(obj->status);
+				name.clear();
+				name.assign(obj->name, strnlen(obj->name, sizeof(obj->name)));
+				cursor += sizeof(hb::net::PacketMapDataObjectNpc);
 			}
-			{ m_pMapData->bSetDeadOwner(wObjectID, sPivotX + sX, sPivotY + sY, sType, cDir, playerAppearance, iStatus, cName, npcConfigId); }
+			{ m_pMapData->bSetDeadOwner(object_id, pivot_x + map_x, pivot_y + map_y, owner_type, direction, appearance, status, name, npc_config_id); }
 		}
-		if (ucHeader & 0x04)
+		if (header_byte & 0x04)
 		{
-			const auto* item = hb::net::PacketCast<hb::net::PacketMapDataItem>(cp, sizeof(hb::net::PacketMapDataItem));
+			const auto* item = hb::net::PacketCast<hb::net::PacketMapDataItem>(cursor, sizeof(hb::net::PacketMapDataItem));
 			if (!item) return;
-			sItemID = item->item_id;
-			cItemColor = static_cast<char>(item->color);
-			dwItemAttr = item->attribute;
-			cp += sizeof(hb::net::PacketMapDataItem);
-			m_pMapData->bSetItem(sPivotX + sX, sPivotY + sY, sItemID, cItemColor, dwItemAttr, false);
+			item_id = item->item_id;
+			item_color = static_cast<char>(item->color);
+			item_attr = item->attribute;
+			cursor += sizeof(hb::net::PacketMapDataItem);
+			m_pMapData->bSetItem(pivot_x + map_x, pivot_y + map_y, item_id, item_color, item_attr, false);
 		}
-		if (ucHeader & 0x08) // Dynamic object
+		if (header_byte & 0x08) // Dynamic object
 		{
-			const auto* dyn = hb::net::PacketCast<hb::net::PacketMapDataDynamicObject>(cp, sizeof(hb::net::PacketMapDataDynamicObject));
+			const auto* dyn = hb::net::PacketCast<hb::net::PacketMapDataDynamicObject>(cursor, sizeof(hb::net::PacketMapDataDynamicObject));
 			if (!dyn) return;
-			wDynamicObjectID = dyn->object_id;
-			sDynamicObjectType = dyn->type;
-			cp += sizeof(hb::net::PacketMapDataDynamicObject);
-			m_pMapData->bSetDynamicObject(sPivotX + sX, sPivotY + sY, wDynamicObjectID, sDynamicObjectType, false);
+			dynamic_object_id = dyn->object_id;
+			dynamic_type = dyn->type;
+			cursor += sizeof(hb::net::PacketMapDataDynamicObject);
+			m_pMapData->bSetDynamicObject(pivot_x + map_x, pivot_y + map_y, dynamic_object_id, dynamic_type, false);
 		}
 	}
 }
@@ -2763,43 +2756,42 @@ void CGame::OnLogSocketEvent()
     }
 }
 
-void CGame::LogResponseHandler(char* pData)
+void CGame::LogResponseHandler(char* packet_data)
 {
-	WORD wResponse;
-	char cCharName[12];
-	int i;
+	WORD response = 0;
+	char char_name[12]{};
 
-	const auto* header = hb::net::PacketCast<hb::net::PacketHeader>(pData, sizeof(hb::net::PacketHeader));
+	const auto* header = hb::net::PacketCast<hb::net::PacketHeader>(packet_data, sizeof(hb::net::PacketHeader));
 	if (!header) {
 		printf("[ERROR] LogResponseHandler - invalid packet header\n");
 		return;
 	}
-	wResponse = header->msg_type;
+	response = header->msg_type;
 
 	// Route to the active screen first — if it handles the response, we're done.
 	IGameScreen* pScreen = GameModeManager::GetActiveScreen();
-	if (pScreen && pScreen->on_net_response(wResponse, pData)) {
-		printf("[LogResponseHandler] Response 0x%04X handled by screen on_net_response\n", wResponse);
+	if (pScreen && pScreen->on_net_response(response, packet_data)) {
+		printf("[LogResponseHandler] Response 0x%04X handled by screen on_net_response\n", response);
 		return;
 	}
-	printf("[LogResponseHandler] Response 0x%04X using legacy handler\n", wResponse);
+	printf("[LogResponseHandler] Response 0x%04X using legacy handler\n", response);
 
-	switch (wResponse) {
+	switch (response) {
 	case LogResMsg::CharacterDeleted:
 	{
 		const auto* list = hb::net::PacketCast<hb::net::PacketLogCharacterListHeader>(
-			pData, sizeof(hb::net::PacketLogCharacterListHeader));
+			packet_data, sizeof(hb::net::PacketLogCharacterListHeader));
 		if (!list) return;
 		m_iTotalChar = list->total_chars;
-		for (i = 0; i < 4; i++)
+		for (int i = 0; i < 4; i++)
 			if (m_pCharList[i] != 0)
 			{
 				m_pCharList[i].reset();
 			}
 
 		const auto* entries = reinterpret_cast<const hb::net::PacketLogCharacterEntry*>(
-			pData + sizeof(hb::net::PacketLogCharacterListHeader));
-		for (i = 0; i < m_iTotalChar; i++) {
+			packet_data + sizeof(hb::net::PacketLogCharacterListHeader));
+		for (int i = 0; i < m_iTotalChar; i++) {
 			const auto& entry = entries[i];
 			m_pCharList[i] = std::make_unique<CCharInfo>();
 			m_pCharList[i]->m_cName.assign(entry.name, strnlen(entry.name, sizeof(entry.name)));
@@ -2819,7 +2811,7 @@ void CGame::LogResponseHandler(char* pData)
 	case LogResMsg::Confirm:
 	{
 		const auto* list = hb::net::PacketCast<hb::net::PacketLogCharacterListHeader>(
-			pData, sizeof(hb::net::PacketLogCharacterListHeader));
+			packet_data, sizeof(hb::net::PacketLogCharacterListHeader));
 		if (!list) {
 			printf("[ERROR] LogResponseHandler - CONFIRM packet too small\n");
 			return;
@@ -2831,15 +2823,15 @@ void CGame::LogResponseHandler(char* pData)
 		m_iIpMonth = 0;
 		m_iIpDay = 0;
 		m_iTotalChar = list->total_chars;
-		for (i = 0; i < 4; i++)
+		for (int i = 0; i < 4; i++)
 			if (m_pCharList[i] != 0)
 			{
 				m_pCharList[i].reset();
 			}
 
 		const auto* entries = reinterpret_cast<const hb::net::PacketLogCharacterEntry*>(
-			pData + sizeof(hb::net::PacketLogCharacterListHeader));
-		for (i = 0; i < m_iTotalChar; i++)
+			packet_data + sizeof(hb::net::PacketLogCharacterListHeader));
+		for (int i = 0; i < m_iTotalChar; i++)
 		{
 			const auto& entry = entries[i];
 			m_pCharList[i] = std::make_unique<CCharInfo>();
@@ -2858,7 +2850,7 @@ void CGame::LogResponseHandler(char* pData)
 
 	case LogResMsg::Reject:
 	{
-		const auto* pkt = hb::net::PacketCast<hb::net::PacketLogResponseReject>(pData, sizeof(hb::net::PacketLogResponseReject));
+		const auto* pkt = hb::net::PacketCast<hb::net::PacketLogResponseReject>(packet_data, sizeof(hb::net::PacketLogResponseReject));
 		if (!pkt) return;
 		m_iBlockYear = pkt->block_year;
 		m_iBlockMonth = pkt->block_month;
@@ -2927,17 +2919,17 @@ void CGame::LogResponseHandler(char* pData)
 	case LogResMsg::NewCharacterCreated:
 	{
 		const auto* list = hb::net::PacketCast<hb::net::PacketLogNewCharacterCreatedHeader>(
-			pData, sizeof(hb::net::PacketLogNewCharacterCreatedHeader));
+			packet_data, sizeof(hb::net::PacketLogNewCharacterCreatedHeader));
 		if (!list) return;
-		memcpy(cCharName, list->character_name, sizeof(list->character_name));
+		memcpy(char_name, list->character_name, sizeof(list->character_name));
 
 		m_iTotalChar = list->total_chars;
-		for (i = 0; i < 4; i++)
+		for (int i = 0; i < 4; i++)
 			if (m_pCharList[i] != 0) m_pCharList[i].reset();
 
 		const auto* entries = reinterpret_cast<const hb::net::PacketLogCharacterEntry*>(
-			pData + sizeof(hb::net::PacketLogNewCharacterCreatedHeader));
-		for (i = 0; i < m_iTotalChar; i++) {
+			packet_data + sizeof(hb::net::PacketLogNewCharacterCreatedHeader));
+		for (int i = 0; i < m_iTotalChar; i++) {
 			const auto& entry = entries[i];
 			m_pCharList[i] = std::make_unique<CCharInfo>();
 			m_pCharList[i]->m_cName.assign(entry.name, strnlen(entry.name, sizeof(entry.name)));
@@ -2971,7 +2963,7 @@ void CGame::LogResponseHandler(char* pData)
 	case EnterGameRes::Confirm:
 	{
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketLogEnterGameConfirm>(
-			pData, sizeof(hb::net::PacketLogEnterGameConfirm));
+			packet_data, sizeof(hb::net::PacketLogEnterGameConfirm));
 		if (!pkt) return;
 		int iGameServerPort = pkt->game_server_port;
 		char cGameServerAddr[16]{};
@@ -2987,7 +2979,7 @@ void CGame::LogResponseHandler(char* pData)
 
 	case EnterGameRes::Reject:
 	{
-		const auto* pkt = hb::net::PacketCast<hb::net::PacketLogResponseCode>(pData, sizeof(hb::net::PacketLogResponseCode));
+		const auto* pkt = hb::net::PacketCast<hb::net::PacketLogResponseCode>(packet_data, sizeof(hb::net::PacketLogResponseCode));
 		if (!pkt) return;
 		std::memset(m_cMsg, 0, sizeof(m_cMsg));
 		switch (pkt->code) {
@@ -3015,7 +3007,7 @@ void CGame::LogResponseHandler(char* pData)
 
 	case LogResMsg::InputKeyCode:
 	{
-		const auto* pkt = hb::net::PacketCast<hb::net::PacketLogResponseCode>(pData, sizeof(hb::net::PacketLogResponseCode));
+		const auto* pkt = hb::net::PacketCast<hb::net::PacketLogResponseCode>(packet_data, sizeof(hb::net::PacketLogResponseCode));
 		if (!pkt) return;
 		std::memset(m_cMsg, 0, sizeof(m_cMsg));
 		switch (pkt->code) {
@@ -3194,108 +3186,106 @@ void CGame::ReleaseUnusedSprites()
 	AudioManager::Get().Update();
 }
 
-void CGame::ChatMsgHandler(char* pData)
+void CGame::ChatMsgHandler(char* packet_data)
 {
-	int iObjectID, iLoc;
-	short sX, sY;
-	std::string cTxt2;
+	int object_id = 0, location = 0;
+	short map_x = 0, map_y = 0;
+	std::string text2;
 
-	char cMsgType, cTemp[100], cMsg[100], cTxt1[100];
-	std::string cName;
-	uint32_t dwTime;
-	bool bFlag;
+	char msg_type = 0, temp[100]{}, message[100]{}, text1[100]{};
+	std::string name;
+	uint32_t current_time = m_dwCurTime;
+	bool is_done = false;
 
-	std::string cHeadMsg;
+	std::string head_msg;
 
-	dwTime = m_dwCurTime;
-
-	std::memset(cTxt1, 0, sizeof(cTxt1));
-	std::memset(cMsg, 0, sizeof(cMsg));
+	std::memset(text1, 0, sizeof(text1));
+	std::memset(message, 0, sizeof(message));
 
 	const auto* pkt = hb::net::PacketCast<hb::net::PacketCommandChatMsgHeader>(
-		pData, sizeof(hb::net::PacketCommandChatMsgHeader));
+		packet_data, sizeof(hb::net::PacketCommandChatMsgHeader));
 	if (!pkt) return;
-	iObjectID = static_cast<int>(pkt->header.msg_type);
-	sX = pkt->x;
-	sY = pkt->y;
-	cName.clear();
-	cName.assign(pkt->name, strnlen(pkt->name, sizeof(pkt->name)));
-	cMsgType = static_cast<char>(pkt->chat_type);
+	object_id = static_cast<int>(pkt->header.msg_type);
+	map_x = pkt->x;
+	map_y = pkt->y;
+	name.clear();
+	name.assign(pkt->name, strnlen(pkt->name, sizeof(pkt->name)));
+	msg_type = static_cast<char>(pkt->chat_type);
 
-	if (bCheckExID(cName.c_str()) == true) return;
+	if (bCheckExID(name.c_str()) == true) return;
 
-	std::snprintf(cTemp, sizeof(cTemp), "%s", pData + sizeof(hb::net::PacketCommandChatMsgHeader));
+	std::snprintf(temp, sizeof(temp), "%s", packet_data + sizeof(hb::net::PacketCommandChatMsgHeader));
 
-	if ((cMsgType == 0) || (cMsgType == 2) || (cMsgType == 3))
+	if ((msg_type == 0) || (msg_type == 2) || (msg_type == 3))
 	{
 	}
 	if (!ChatManager::Get().IsWhisperEnabled())
 	{
-		if (cMsgType == 20) return;
+		if (msg_type == 20) return;
 	}
 	if (!ChatManager::Get().IsShoutEnabled())
 	{
-		if (cMsgType == 2 || cMsgType == 3) return;
+		if (msg_type == 2 || msg_type == 3) return;
 	}
 
-	std::snprintf(cMsg, sizeof(cMsg), "%s: %s", cName.c_str(), cTemp);
+	std::snprintf(message, sizeof(message), "%s: %s", name.c_str(), temp);
 	m_Renderer->BeginTextBatch();
-	bFlag = false;
-	short sCheckByte = 0;
-	while (bFlag == false)
+	is_done = false;
+	short check_byte = 0;
+	while (is_done == false)
 	{
-		int msgLen = static_cast<int>(strlen(cMsg));
-		iLoc = m_Renderer->GetTextLength(cMsg, 305);
+		int msgLen = static_cast<int>(strlen(message));
+		location = m_Renderer->GetTextLength(message, 305);
 
 		// GetTextLength returns how many chars fit; if all fit, no wrapping needed
-		if (iLoc >= msgLen)
+		if (location >= msgLen)
 		{
-			ChatManager::Get().AddMessage(cMsg, cMsgType);
-			bFlag = true;
+			ChatManager::Get().AddMessage(message, msg_type);
+			is_done = true;
 		}
-		else if (iLoc > 0)
+		else if (location > 0)
 		{
 			// Count double-byte characters for proper splitting
-			for (int i = 0; i < iLoc; i++) if (cMsg[i] < 0) sCheckByte++;
+			for (int i = 0; i < location; i++) if (message[i] < 0) check_byte++;
 
-			if ((sCheckByte % 2) == 0)
+			if ((check_byte % 2) == 0)
 			{
-				std::memset(cTemp, 0, sizeof(cTemp));
-				memcpy(cTemp, cMsg, iLoc);
-				ChatManager::Get().AddMessage(cTemp, cMsgType);
-				std::snprintf(cTemp, sizeof(cTemp), "%s", cMsg + iLoc);
-				std::snprintf(cMsg, sizeof(cMsg), " %s", cTemp);
+				std::memset(temp, 0, sizeof(temp));
+				memcpy(temp, message, location);
+				ChatManager::Get().AddMessage(temp, msg_type);
+				std::snprintf(temp, sizeof(temp), "%s", message + location);
+				std::snprintf(message, sizeof(message), " %s", temp);
 			}
 			else
 			{
-				std::memset(cTemp, 0, sizeof(cTemp));
-				memcpy(cTemp, cMsg, iLoc + 1);
-				ChatManager::Get().AddMessage(cTemp, cMsgType);
-				std::snprintf(cTemp, sizeof(cTemp), "%s", cMsg + iLoc + 1);
-				std::snprintf(cMsg, sizeof(cMsg), " %s", cTemp);
+				std::memset(temp, 0, sizeof(temp));
+				memcpy(temp, message, location + 1);
+				ChatManager::Get().AddMessage(temp, msg_type);
+				std::snprintf(temp, sizeof(temp), "%s", message + location + 1);
+				std::snprintf(message, sizeof(message), " %s", temp);
 			}
 		}
 		else
 		{
 			// Edge case: even a single char doesn't fit, add anyway to avoid infinite loop
-			ChatManager::Get().AddMessage(cMsg, cMsgType);
-			bFlag = true;
+			ChatManager::Get().AddMessage(message, msg_type);
+			is_done = true;
 		}
 	}
 
 	m_Renderer->EndTextBatch();
 
-	m_floatingText.RemoveByObjectID(iObjectID);
+	m_floatingText.RemoveByObjectID(object_id);
 
-	const char* cp = pData + sizeof(hb::net::PacketCommandChatMsgHeader);
-	int iChatSlot = m_floatingText.AddChatText(cp, dwTime, iObjectID, m_pMapData.get(), sX, sY);
-	if (iChatSlot != 0 || cMsgType == 20) {
-			if ((cMsgType != 0) && (m_dialogBoxManager.IsEnabled(DialogBoxId::ChatHistory) != true)) {
-				cHeadMsg = std::format("{}:{}", cName, cp);
-				if (cMsgType == 10) {
-					EventListManager::Get().AddEventTop(cHeadMsg.c_str(), cMsgType);
+	const char* cp = packet_data + sizeof(hb::net::PacketCommandChatMsgHeader);
+	int iChatSlot = m_floatingText.AddChatText(cp, current_time, object_id, m_pMapData.get(), map_x, map_y);
+	if (iChatSlot != 0 || msg_type == 20) {
+			if ((msg_type != 0) && (m_dialogBoxManager.IsEnabled(DialogBoxId::ChatHistory) != true)) {
+				head_msg = std::format("{}:{}", name, cp);
+				if (msg_type == 10) {
+					EventListManager::Get().AddEventTop(head_msg.c_str(), msg_type);
 				} else {
-					AddEventList(cHeadMsg.c_str(), cMsgType);
+					AddEventList(head_msg.c_str(), msg_type);
 				}
 			}
 			return;
@@ -3343,39 +3333,39 @@ void CGame::DrawBackground(short sDivX, short sModX, short sDivY, short sModY)
 	}
 }
 
-void CGame::InitItemList(char* pData)
+void CGame::InitItemList(char* packet_data)
 {
-	int     i, iAngelValue;
-	uint16_t cTotalItems;
+	int angel_value = 0;
+	uint16_t total_items = 0;
 
-	for (i = 0; i < hb::shared::limits::MaxItems; i++)
+	for (int i = 0; i < hb::shared::limits::MaxItems; i++)
 		m_cItemOrder[i] = -1;
 
-	for (i = 0; i < DEF_MAXITEMEQUIPPOS; i++)
+	for (int i = 0; i < DEF_MAXITEMEQUIPPOS; i++)
 		m_sItemEquipmentStatus[i] = -1;
 
-	for (i = 0; i < hb::shared::limits::MaxItems; i++)
+	for (int i = 0; i < hb::shared::limits::MaxItems; i++)
 		m_bIsItemDisabled[i] = false;
 
 	const auto* header = hb::net::PacketCast<hb::net::PacketResponseItemListHeader>(
-		pData, sizeof(hb::net::PacketResponseItemListHeader));
+		packet_data, sizeof(hb::net::PacketResponseItemListHeader));
 	if (!header) return;
-	cTotalItems = header->item_count;
+	total_items = header->item_count;
 
-	for (i = 0; i < hb::shared::limits::MaxItems; i++)
+	for (int i = 0; i < hb::shared::limits::MaxItems; i++)
 		if (m_pItemList[i] != 0)
 		{
 			m_pItemList[i].reset();
 		}
 
-	for (i = 0; i < hb::shared::limits::MaxBankItems; i++)
+	for (int i = 0; i < hb::shared::limits::MaxBankItems; i++)
 		if (m_pBankList[i] != 0)
 		{
 			m_pBankList[i].reset();
 		}
 
 	const auto* itemEntries = reinterpret_cast<const hb::net::PacketResponseItemListEntry*>(header + 1);
-	for (i = 0; i < cTotalItems; i++)
+	for (int i = 0; i < total_items; i++)
 	{
 		const auto& entry = itemEntries[i];
 		m_pItemList[i] = std::make_unique<CItem>();
@@ -3400,29 +3390,29 @@ void CGame::InitItemList(char* pData)
 			&& (m_bIsItemEquipped[i] == true)
 			&& (pCfg->m_cEquipPos >= 11))
 		{
-			iAngelValue = (m_pItemList[i]->m_dwAttribute & 0xF0000000) >> 28;
+			angel_value = (m_pItemList[i]->m_dwAttribute & 0xF0000000) >> 28;
 			if (m_pItemList[i]->m_sIDnum == hb::shared::item::ItemId::AngelicPandentSTR)
-				m_pPlayer->m_iAngelicStr = 1 + iAngelValue;
+				m_pPlayer->m_iAngelicStr = 1 + angel_value;
 			else if (m_pItemList[i]->m_sIDnum == hb::shared::item::ItemId::AngelicPandentDEX)
-				m_pPlayer->m_iAngelicDex = 1 + iAngelValue;
+				m_pPlayer->m_iAngelicDex = 1 + angel_value;
 			else if (m_pItemList[i]->m_sIDnum == hb::shared::item::ItemId::AngelicPandentINT)
-				m_pPlayer->m_iAngelicInt = 1 + iAngelValue;
+				m_pPlayer->m_iAngelicInt = 1 + angel_value;
 			else if (m_pItemList[i]->m_sIDnum == hb::shared::item::ItemId::AngelicPandentMAG)
-				m_pPlayer->m_iAngelicMag = 1 + iAngelValue;
+				m_pPlayer->m_iAngelicMag = 1 + angel_value;
 		}
 	}
 
-	const auto* bank_header = reinterpret_cast<const hb::net::PacketResponseBankItemListHeader*>(itemEntries + cTotalItems);
-	cTotalItems = bank_header->bank_item_count;
+	const auto* bank_header = reinterpret_cast<const hb::net::PacketResponseBankItemListHeader*>(itemEntries + total_items);
+	total_items = bank_header->bank_item_count;
 
-	for (i = 0; i < hb::shared::limits::MaxBankItems; i++)
+	for (int i = 0; i < hb::shared::limits::MaxBankItems; i++)
 		if (m_pBankList[i] != 0)
 		{
 			m_pBankList[i].reset();
 		}
 
 	const auto* bankEntries = reinterpret_cast<const hb::net::PacketResponseBankItemEntry*>(bank_header + 1);
-	for (i = 0; i < cTotalItems; i++)
+	for (int i = 0; i < total_items; i++)
 	{
 		const auto& entry = bankEntries[i];
 		m_pBankList[i] = std::make_unique<CItem>();
@@ -3436,12 +3426,12 @@ void CGame::InitItemList(char* pData)
 		m_pBankList[i]->m_dwAttribute = entry.attribute;
 	}
 
-	const auto* mastery = reinterpret_cast<const hb::net::PacketResponseMasteryData*>(bankEntries + cTotalItems);
+	const auto* mastery = reinterpret_cast<const hb::net::PacketResponseMasteryData*>(bankEntries + total_items);
 
-	for (i = 0; i < hb::shared::limits::MaxMagicType; i++)
+	for (int i = 0; i < hb::shared::limits::MaxMagicType; i++)
 		m_pPlayer->m_iMagicMastery[i] = mastery->magic_mastery[i];
 
-	for (i = 0; i < hb::shared::limits::MaxSkillType; i++)
+	for (int i = 0; i < hb::shared::limits::MaxSkillType; i++)
 	{
 		m_pPlayer->m_iSkillMastery[i] = static_cast<unsigned char>(mastery->skill_mastery[i]);
 		if (m_pSkillCfgList[i] != 0)
@@ -3450,200 +3440,199 @@ void CGame::InitItemList(char* pData)
 
 	// Diagnostic: count what was loaded
 	int nItems = 0, nBank = 0, nMagic = 0, nSkills = 0;
-	for (i = 0; i < hb::shared::limits::MaxItems; i++) if (m_pItemList[i]) nItems++;
-	for (i = 0; i < hb::shared::limits::MaxBankItems; i++) if (m_pBankList[i]) nBank++;
-	for (i = 0; i < hb::shared::limits::MaxMagicType; i++) if (m_pPlayer->m_iMagicMastery[i] != 0) nMagic++;
-	for (i = 0; i < hb::shared::limits::MaxSkillType; i++) if (m_pPlayer->m_iSkillMastery[i] != 0) nSkills++;
+	for (int i = 0; i < hb::shared::limits::MaxItems; i++) if (m_pItemList[i]) nItems++;
+	for (int i = 0; i < hb::shared::limits::MaxBankItems; i++) if (m_pBankList[i]) nBank++;
+	for (int i = 0; i < hb::shared::limits::MaxMagicType; i++) if (m_pPlayer->m_iMagicMastery[i] != 0) nMagic++;
+	for (int i = 0; i < hb::shared::limits::MaxSkillType; i++) if (m_pPlayer->m_iSkillMastery[i] != 0) nSkills++;
 	DevConsole::Get().Printf("[INIT] InitItemList: %d items, %d bank, %d magic, %d skills",
 		nItems, nBank, nMagic, nSkills);
 }
 
-void CGame::DrawDialogBoxs(short msX, short msY, short msZ, char cLB)
+void CGame::DrawDialogBoxs(short mouse_x, short mouse_y, short mouse_z, char left_button)
 {
-	int i;
 	if (m_bIsObserverMode == true) return;
 	// Note: Dialogs that handle scroll should read hb::shared::input::GetMouseWheelDelta() and clear it after processing
 	//Snoopy: 41->61
-	bool bIconPanelDrawn = false;
-	for (i = 0; i < 61; i++)
+	bool icon_panel_drawn = false;
+	for (int i = 0; i < 61; i++)
 		if (m_dialogBoxManager.OrderAt(i) != 0)
 		{
 			switch (m_dialogBoxManager.OrderAt(i)) {
 			case DialogBoxId::CharacterInfo:
 				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::CharacterInfo))
-					pDlg->OnDraw(msX, msY, msZ, cLB);
+					pDlg->OnDraw(mouse_x, mouse_y, mouse_z, left_button);
 				break;
 			case DialogBoxId::Inventory:
 				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::Inventory))
-					pDlg->OnDraw(msX, msY, msZ, cLB);
+					pDlg->OnDraw(mouse_x, mouse_y, mouse_z, left_button);
 				break;
 			case DialogBoxId::Magic:
 				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::Magic))
-					pDlg->OnDraw(msX, msY, msZ, cLB);
+					pDlg->OnDraw(mouse_x, mouse_y, mouse_z, left_button);
 				break;
 			case DialogBoxId::ItemDropConfirm:
 				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::ItemDropConfirm))
-					pDlg->OnDraw(msX, msY, msZ, cLB);
+					pDlg->OnDraw(mouse_x, mouse_y, mouse_z, left_button);
 				break;
 			case DialogBoxId::WarningBattleArea:
 				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::WarningBattleArea))
-					pDlg->OnDraw(msX, msY, msZ, cLB);
+					pDlg->OnDraw(mouse_x, mouse_y, mouse_z, left_button);
 				break;
 			case DialogBoxId::GuildMenu:
 				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::GuildMenu))
-					pDlg->OnDraw(msX, msY, msZ, cLB);
+					pDlg->OnDraw(mouse_x, mouse_y, mouse_z, left_button);
 				break;
 			case DialogBoxId::GuildOperation:
 				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::GuildOperation))
-					pDlg->OnDraw(msX, msY, msZ, cLB);
+					pDlg->OnDraw(mouse_x, mouse_y, mouse_z, left_button);
 				break;
 			case DialogBoxId::GuideMap:
 				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::GuideMap))
-					pDlg->OnDraw(msX, msY, msZ, cLB);
+					pDlg->OnDraw(mouse_x, mouse_y, mouse_z, left_button);
 				break;
 			case DialogBoxId::ChatHistory:
 				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::ChatHistory))
-					pDlg->OnDraw(msX, msY, msZ, cLB);
+					pDlg->OnDraw(mouse_x, mouse_y, mouse_z, left_button);
 				break;
 			case DialogBoxId::SaleMenu:
 				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::SaleMenu))
-					pDlg->OnDraw(msX, msY, msZ, cLB);
+					pDlg->OnDraw(mouse_x, mouse_y, mouse_z, left_button);
 				break;
 			case DialogBoxId::LevelUpSetting:
 				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::LevelUpSetting))
-					pDlg->OnDraw(msX, msY, msZ, cLB);
+					pDlg->OnDraw(mouse_x, mouse_y, mouse_z, left_button);
 				break;
 			case DialogBoxId::CityHallMenu:
 				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::CityHallMenu))
-					pDlg->OnDraw(msX, msY, msZ, cLB);
+					pDlg->OnDraw(mouse_x, mouse_y, mouse_z, left_button);
 				break;
 			case DialogBoxId::Bank:
 				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::Bank))
-					pDlg->OnDraw(msX, msY, msZ, cLB);
+					pDlg->OnDraw(mouse_x, mouse_y, mouse_z, left_button);
 				break;
 			case DialogBoxId::Skill:
 				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::Skill))
-					pDlg->OnDraw(msX, msY, msZ, cLB);
+					pDlg->OnDraw(mouse_x, mouse_y, mouse_z, left_button);
 				break;
 			case DialogBoxId::MagicShop:
 				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::MagicShop))
-					pDlg->OnDraw(msX, msY, msZ, cLB);
+					pDlg->OnDraw(mouse_x, mouse_y, mouse_z, left_button);
 				break;
 			case DialogBoxId::ItemDropExternal:
 				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::ItemDropExternal))
-					pDlg->OnDraw(msX, msY, msZ, cLB);
+					pDlg->OnDraw(mouse_x, mouse_y, mouse_z, left_button);
 				break;
 			case DialogBoxId::Text:
 				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::Text))
-					pDlg->OnDraw(msX, msY, msZ, cLB);
+					pDlg->OnDraw(mouse_x, mouse_y, mouse_z, left_button);
 				break;
 			case DialogBoxId::SystemMenu:
 				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::SystemMenu))
-					pDlg->OnDraw(msX, msY, msZ, cLB);
+					pDlg->OnDraw(mouse_x, mouse_y, mouse_z, left_button);
 				break;
 			case DialogBoxId::NpcActionQuery:
 				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::NpcActionQuery))
-					pDlg->OnDraw(msX, msY, msZ, cLB);
+					pDlg->OnDraw(mouse_x, mouse_y, mouse_z, left_button);
 				break;
 			case DialogBoxId::NpcTalk:
 				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::NpcTalk))
-					pDlg->OnDraw(msX, msY, msZ, cLB);
+					pDlg->OnDraw(mouse_x, mouse_y, mouse_z, left_button);
 				break;
 			case DialogBoxId::Map:
 				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::Map))
-					pDlg->OnDraw(msX, msY, msZ, cLB);
+					pDlg->OnDraw(mouse_x, mouse_y, mouse_z, left_button);
 				break;
 			case DialogBoxId::SellOrRepair:
 				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::SellOrRepair))
-					pDlg->OnDraw(msX, msY, msZ, cLB);
+					pDlg->OnDraw(mouse_x, mouse_y, mouse_z, left_button);
 				break;
 			case DialogBoxId::Fishing:
 				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::Fishing))
-					pDlg->OnDraw(msX, msY, msZ, cLB);
+					pDlg->OnDraw(mouse_x, mouse_y, mouse_z, left_button);
 				break;
 			case DialogBoxId::Noticement:
 				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::Noticement))
-					pDlg->OnDraw(msX, msY, msZ, cLB);
+					pDlg->OnDraw(mouse_x, mouse_y, mouse_z, left_button);
 				break;
 			case DialogBoxId::Manufacture:
 				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::Manufacture))
-					pDlg->OnDraw(msX, msY, msZ, cLB);
+					pDlg->OnDraw(mouse_x, mouse_y, mouse_z, left_button);
 				break;
 			case DialogBoxId::Exchange:
 				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::Exchange))
-					pDlg->OnDraw(msX, msY, msZ, cLB);
+					pDlg->OnDraw(mouse_x, mouse_y, mouse_z, left_button);
 				break;
 			case DialogBoxId::Quest:
 				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::Quest))
-					pDlg->OnDraw(msX, msY, msZ, cLB);
+					pDlg->OnDraw(mouse_x, mouse_y, mouse_z, left_button);
 				break;
 			case DialogBoxId::HudPanel:
 				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::HudPanel))
-					pDlg->OnDraw(msX, msY, msZ, cLB);
-				bIconPanelDrawn = true;
+					pDlg->OnDraw(mouse_x, mouse_y, mouse_z, left_button);
+				icon_panel_drawn = true;
 				break;
 			case DialogBoxId::SellList:
 				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::SellList))
-					pDlg->OnDraw(msX, msY, msZ, cLB);
+					pDlg->OnDraw(mouse_x, mouse_y, mouse_z, left_button);
 				break;
 			case DialogBoxId::Party:
 				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::Party))
-					pDlg->OnDraw(msX, msY, msZ, cLB);
+					pDlg->OnDraw(mouse_x, mouse_y, mouse_z, left_button);
 				break;
 			case DialogBoxId::CrusadeJob:
 				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::CrusadeJob))
-					pDlg->OnDraw(msX, msY, msZ, cLB);
+					pDlg->OnDraw(mouse_x, mouse_y, mouse_z, left_button);
 				break;
 			case DialogBoxId::ItemUpgrade:
 				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::ItemUpgrade))
-					pDlg->OnDraw(msX, msY, msZ, cLB);
+					pDlg->OnDraw(mouse_x, mouse_y, mouse_z, left_button);
 				break;
 			case DialogBoxId::Help:
 				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::Help))
-					pDlg->OnDraw(msX, msY, msZ, cLB);
+					pDlg->OnDraw(mouse_x, mouse_y, mouse_z, left_button);
 				break;
 			case DialogBoxId::CrusadeCommander:
 				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::CrusadeCommander))
-					pDlg->OnDraw(msX, msY, msZ, cLB);
+					pDlg->OnDraw(mouse_x, mouse_y, mouse_z, left_button);
 				break;
 			case DialogBoxId::CrusadeConstructor:
 				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::CrusadeConstructor))
-					pDlg->OnDraw(msX, msY, msZ, cLB);
+					pDlg->OnDraw(mouse_x, mouse_y, mouse_z, left_button);
 				break;
 			case DialogBoxId::CrusadeSoldier:
 				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::CrusadeSoldier))
-					pDlg->OnDraw(msX, msY, msZ, cLB);
+					pDlg->OnDraw(mouse_x, mouse_y, mouse_z, left_button);
 				break;
 			case DialogBoxId::Slates:
 				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::Slates))
-					pDlg->OnDraw(msX, msY, msZ, cLB);
+					pDlg->OnDraw(mouse_x, mouse_y, mouse_z, left_button);
 				break;
 			case DialogBoxId::ConfirmExchange:	//Snoopy: Confirmation Exchange
 				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::ConfirmExchange))
-					pDlg->OnDraw(msX, msY, msZ, cLB);
+					pDlg->OnDraw(mouse_x, mouse_y, mouse_z, left_button);
 				break;
 			case DialogBoxId::ChangeStatsMajestic:
 				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::ChangeStatsMajestic))
-					pDlg->OnDraw(msX, msY, msZ, cLB);
+					pDlg->OnDraw(mouse_x, mouse_y, mouse_z, left_button);
 				break;
 			case DialogBoxId::Resurrect: // Snoopy: Resurection?
 				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::Resurrect))
-					pDlg->OnDraw(msX, msY, msZ, cLB);
+					pDlg->OnDraw(mouse_x, mouse_y, mouse_z, left_button);
 				break;
 			case DialogBoxId::GuildHallMenu: // Gail
 				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::GuildHallMenu))
-					pDlg->OnDraw(msX, msY, msZ, cLB);
+					pDlg->OnDraw(mouse_x, mouse_y, mouse_z, left_button);
 				break;
 			case DialogBoxId::RepairAll: //50Cent - Repair All
 				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::RepairAll))
-					pDlg->OnDraw(msX, msY, msZ, cLB);
+					pDlg->OnDraw(mouse_x, mouse_y, mouse_z, left_button);
 				break;
 			}
 		}
-	if (bIconPanelDrawn == false)
+	if (icon_panel_drawn == false)
 	{
 		if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::HudPanel))
-			pDlg->OnDraw(msX, msY, msZ, cLB);
+			pDlg->OnDraw(mouse_x, mouse_y, mouse_z, left_button);
 	}
 	if (m_pPlayer->m_iSuperAttackLeft > 0)
 	{
@@ -3949,17 +3938,16 @@ std::string CGame::FormatCommaNumber(uint32_t value)
 }
 
 
-void CGame::CrusadeContributionResult(int iWarContribution)
+void CGame::CrusadeContributionResult(int war_contribution)
 {
-	int i;
-	char cTemp[120];
+	char temp[120]{};
 	m_dialogBoxManager.DisableDialogBox(DialogBoxId::Text);
-	for (i = 0; i < game_limits::max_text_dlg_lines; i++)
+	for (int i = 0; i < game_limits::max_text_dlg_lines; i++)
 	{
 		if (m_pMsgTextList[i] != 0)
 			m_pMsgTextList[i].reset();
 	}
-	if (iWarContribution > 0)
+	if (war_contribution > 0)
 	{
 		PlayGameSound('E', 23, 0, 0);
 		PlayGameSound('C', 21, 0, 0);
@@ -3972,13 +3960,13 @@ void CGame::CrusadeContributionResult(int iWarContribution)
 		m_pMsgTextList[5] = std::make_unique<CMsg>(0, m_pGameMsgList[26]->m_pMsg, 0); // a prize
 		m_pMsgTextList[6] = std::make_unique<CMsg>(0, " ", 0);
 		m_pMsgTextList[7] = std::make_unique<CMsg>(0, m_pGameMsgList[27]->m_pMsg, 0); // Experience point of the battle contribution:
-		std::snprintf(cTemp, sizeof(cTemp), "+%dExp Points!", iWarContribution);
-		m_pMsgTextList[8] = std::make_unique<CMsg>(0, cTemp, 0);
-		for (i = 9; i < 18; i++)
+		std::snprintf(temp, sizeof(temp), "+%dExp Points!", war_contribution);
+		m_pMsgTextList[8] = std::make_unique<CMsg>(0, temp, 0);
+		for (int i = 9; i < 18; i++)
 			m_pMsgTextList[i] = std::make_unique<CMsg>(0, " ", 0);
 
 	}
-	else if (iWarContribution < 0)
+	else if (war_contribution < 0)
 	{
 		PlayGameSound('E', 24, 0, 0);
 		PlayGameSound('C', 12, 0, 0);
@@ -3992,10 +3980,10 @@ void CGame::CrusadeContributionResult(int iWarContribution)
 		m_pMsgTextList[6] = std::make_unique<CMsg>(0, " ", 0);
 		m_pMsgTextList[7] = std::make_unique<CMsg>(0, m_pGameMsgList[33]->m_pMsg, 0); // I hope you to win
 		m_pMsgTextList[8] = std::make_unique<CMsg>(0, m_pGameMsgList[34]->m_pMsg, 0); // in the next battle
-		for (i = 9; i < 18; i++)
+		for (int i = 9; i < 18; i++)
 			m_pMsgTextList[i] = std::make_unique<CMsg>(0, " ", 0);
 	}
-	else if (iWarContribution == 0)
+	else if (war_contribution == 0)
 	{
 		PlayGameSound('E', 25, 0, 0);
 		m_pMsgTextList[0] = std::make_unique<CMsg>(0, m_pGameMsgList[50]->m_pMsg, 0); // The battle that you have participated
@@ -4006,27 +3994,27 @@ void CGame::CrusadeContributionResult(int iWarContribution)
 		m_pMsgTextList[5] = std::make_unique<CMsg>(0, m_pGameMsgList[54]->m_pMsg, 0); // the previous and before starting
 		m_pMsgTextList[6] = std::make_unique<CMsg>(0, m_pGameMsgList[55]->m_pMsg, 0); // the next battle so you can receive
 		m_pMsgTextList[7] = std::make_unique<CMsg>(0, m_pGameMsgList[56]->m_pMsg, 0); // the prize
-		for (i = 8; i < 18; i++)
+		for (int i = 8; i < 18; i++)
 			m_pMsgTextList[i] = std::make_unique<CMsg>(0, " ", 0);
 	}
 	m_dialogBoxManager.EnableDialogBox(DialogBoxId::Text, 0, 0, 0);
 }
 
-void CGame::CrusadeWarResult(int iWinnerSide)
+void CGame::CrusadeWarResult(int winner_side)
 {
-	int i, iPlayerSide;
+	int player_side = 0;
 	m_dialogBoxManager.DisableDialogBox(DialogBoxId::Text);
-	for (i = 0; i < game_limits::max_text_dlg_lines; i++)
+	for (int i = 0; i < game_limits::max_text_dlg_lines; i++)
 	{
 		if (m_pMsgTextList[i] != 0)
 			m_pMsgTextList[i].reset();
 	}
-	if (m_pPlayer->m_bCitizen == false) iPlayerSide = 0;
-	else if (m_pPlayer->m_bAresden == true) iPlayerSide = 1;
-	else if (m_pPlayer->m_bAresden == false) iPlayerSide = 2;
-	if (iPlayerSide == 0)
+	if (m_pPlayer->m_bCitizen == false) player_side = 0;
+	else if (m_pPlayer->m_bAresden == true) player_side = 1;
+	else if (m_pPlayer->m_bAresden == false) player_side = 2;
+	if (player_side == 0)
 	{
-		switch (iWinnerSide) {
+		switch (winner_side) {
 		case 0:
 			PlayGameSound('E', 25, 0, 0);
 			m_pMsgTextList[0] = std::make_unique<CMsg>(0, m_pGameMsgList[35]->m_pMsg, 0); // All out war finished!
@@ -4049,29 +4037,29 @@ void CGame::CrusadeWarResult(int iWinnerSide)
 			m_pMsgTextList[3] = std::make_unique<CMsg>(0, " ", 0);
 			break;
 		}
-		for (i = 4; i < 18; i++)
+		for (int i = 4; i < 18; i++)
 			m_pMsgTextList[i] = std::make_unique<CMsg>(0, " ", 0);
 	}
 	else
 	{
-		if (iWinnerSide == 0)
+		if (winner_side == 0)
 		{
 			PlayGameSound('E', 25, 0, 0);
 			m_pMsgTextList[0] = std::make_unique<CMsg>(0, m_pGameMsgList[35]->m_pMsg, 0); // All out war finished!
 			m_pMsgTextList[1] = std::make_unique<CMsg>(0, m_pGameMsgList[36]->m_pMsg, 0); // There was a draw in the
 			m_pMsgTextList[2] = std::make_unique<CMsg>(0, m_pGameMsgList[37]->m_pMsg, 0); // battle
 			m_pMsgTextList[3] = std::make_unique<CMsg>(0, " ", 0);
-			for (i = 4; i < 18; i++)
+			for (int i = 4; i < 18; i++)
 				m_pMsgTextList[i] = std::make_unique<CMsg>(0, " ", 0);
 		}
 		else
 		{
-			if (iWinnerSide == iPlayerSide)
+			if (winner_side == player_side)
 			{
 				PlayGameSound('E', 23, 0, 0);
 				PlayGameSound('C', 21, 0, 0);
 				PlayGameSound('C', 22, 0, 0);
-				switch (iWinnerSide) {
+				switch (winner_side) {
 				case 1:
 					m_pMsgTextList[0] = std::make_unique<CMsg>(0, m_pGameMsgList[35]->m_pMsg, 0); // All out war finished!;
 					m_pMsgTextList[1] = std::make_unique<CMsg>(0, m_pGameMsgList[38]->m_pMsg, 0); // Aresden was victorious;
@@ -4093,15 +4081,15 @@ void CGame::CrusadeWarResult(int iWinnerSide)
 					m_pMsgTextList[7] = std::make_unique<CMsg>(0, m_pGameMsgList[45]->m_pMsg, 0); // a prize
 					break;
 				}
-				for (i = 8; i < 18; i++)
+				for (int i = 8; i < 18; i++)
 					m_pMsgTextList[i] = std::make_unique<CMsg>(0, " ", 0);
 			}
-			else if (iWinnerSide != iPlayerSide)
+			else if (winner_side != player_side)
 			{
 				PlayGameSound('E', 24, 0, 0);
 				PlayGameSound('C', 12, 0, 0);
 				PlayGameSound('C', 13, 0, 0);
-				switch (iWinnerSide) {
+				switch (winner_side) {
 				case 1:
 					m_pMsgTextList[0] = std::make_unique<CMsg>(0, m_pGameMsgList[35]->m_pMsg, 0); // All out war finished!
 					m_pMsgTextList[1] = std::make_unique<CMsg>(0, m_pGameMsgList[38]->m_pMsg, 0); // Aresden was victorious;
@@ -4123,7 +4111,7 @@ void CGame::CrusadeWarResult(int iWinnerSide)
 					m_pMsgTextList[7] = std::make_unique<CMsg>(0, m_pGameMsgList[49]->m_pMsg, 0); // will not be given.
 					break;
 				}
-				for (i = 8; i < 18; i++)
+				for (int i = 8; i < 18; i++)
 					m_pMsgTextList[i] = std::make_unique<CMsg>(0, " ", 0);
 			}
 		}
@@ -4268,7 +4256,6 @@ bool CGame::_bIsItemOnHand() // Snoopy: Fixed to remove ShieldCast
 				wWeaponType = m_pPlayer->m_playerAppearance.iWeaponType;
 				// Snoopy 34 for all wands.
 				if ((wWeaponType >= 34) && (wWeaponType < 40)) return false;
-				//else if( wWeaponType == 27 ) return false; // Farming's hoe !
 				else return true;
 			}
 		}
@@ -4892,18 +4879,18 @@ void CGame::RetrieveItemHandler(char* pData)
 	m_dialogBoxManager.Info(DialogBoxId::Bank).cMode = 0;
 }
 
-void CGame::DrawNpcName(short sX, short sY, short sOwnerType, const hb::shared::entity::PlayerStatus& status, short npcConfigId)
+void CGame::DrawNpcName(short screen_x, short screen_y, short owner_type, const hb::shared::entity::PlayerStatus& status, short npc_config_id)
 {
-	std::string cTxt, cTxt2;
+	std::string text, text2;
 
 	// Name lookup: prefer config_id (direct), fall back to type-based lookup
 	auto npcName = [&]() -> const char* {
-		if (npcConfigId >= 0) return GetNpcConfigNameById(npcConfigId);
-		return GetNpcConfigName(sOwnerType);
+		if (npc_config_id >= 0) return GetNpcConfigNameById(npc_config_id);
+		return GetNpcConfigName(owner_type);
 	};
 
 	// Crop subtypes override the base "Crop" name from config
-	if (sOwnerType == hb::shared::owner::Crops) {
+	if (owner_type == hb::shared::owner::Crops) {
 		static const char* cropNames[] = {
 			"Crop", "WaterMelon", "Pumpkin", "Garlic", "Barley", "Carrot",
 			"Radish", "Corn", "Chinese Bell Flower", "Melone", "Tomato",
@@ -4911,52 +4898,52 @@ void CGame::DrawNpcName(short sX, short sY, short sOwnerType, const hb::shared::
 		};
 		int sub = m_entityState.m_appearance.iSubType;
 		if (sub >= 1 && sub <= 14)
-			cTxt = cropNames[sub];
+			text = cropNames[sub];
 		else
-			cTxt = npcName();
+			text = npcName();
 	}
 	// Crusade structure kit suffix
-	else if ((sOwnerType == hb::shared::owner::ArrowGuardTower || sOwnerType == hb::shared::owner::CannonGuardTower ||
-			  sOwnerType == hb::shared::owner::ManaCollector || sOwnerType == hb::shared::owner::Detector) &&
+	else if ((owner_type == hb::shared::owner::ArrowGuardTower || owner_type == hb::shared::owner::CannonGuardTower ||
+			  owner_type == hb::shared::owner::ManaCollector || owner_type == hb::shared::owner::Detector) &&
 			 m_entityState.m_appearance.HasNpcSpecialState()) {
-		cTxt = std::format("{} Kit", npcName());
+		text = std::format("{} Kit", npcName());
 	}
 	else {
-		cTxt = npcName();
+		text = npcName();
 	}
-	if (status.bBerserk) cTxt += DRAW_OBJECT_NAME50;//" Berserk"
-	if (status.bFrozen) cTxt += DRAW_OBJECT_NAME51;//" Frozen"
-	hb::shared::text::DrawText(GameFont::Default, sX, sY, cTxt.c_str(), hb::shared::text::TextStyle::WithShadow(GameColors::UIWhite));
-	if (m_bIsObserverMode == true) hb::shared::text::DrawText(GameFont::Default, sX, sY + 14, cTxt.c_str(), hb::shared::text::TextStyle::WithShadow(GameColors::NeutralNamePlate));
+	if (status.bBerserk) text += DRAW_OBJECT_NAME50;//" Berserk"
+	if (status.bFrozen) text += DRAW_OBJECT_NAME51;//" Frozen"
+	hb::shared::text::DrawText(GameFont::Default, screen_x, screen_y, text.c_str(), hb::shared::text::TextStyle::WithShadow(GameColors::UIWhite));
+	if (m_bIsObserverMode == true) hb::shared::text::DrawText(GameFont::Default, screen_x, screen_y + 14, text.c_str(), hb::shared::text::TextStyle::WithShadow(GameColors::NeutralNamePlate));
 	else if (m_pPlayer->m_bIsConfusion || (m_iIlusionOwnerH != 0))
 	{
-		cTxt = DRAW_OBJECT_NAME87;//"(Unknown)"
-		hb::shared::text::DrawText(GameFont::Default, sX, sY + 14, cTxt.c_str(), hb::shared::text::TextStyle::WithShadow(GameColors::UIDisabled)); // v2.171
+		text = DRAW_OBJECT_NAME87;//"(Unknown)"
+		hb::shared::text::DrawText(GameFont::Default, screen_x, screen_y + 14, text.c_str(), hb::shared::text::TextStyle::WithShadow(GameColors::UIDisabled)); // v2.171
 	}
 	else
 	{
 		if (IsHostile(status.iRelationship))
-			hb::shared::text::DrawText(GameFont::Default, sX, sY + 14, DRAW_OBJECT_NAME90, hb::shared::text::TextStyle::WithShadow(GameColors::UIRed)); // "(Enemy)"
+			hb::shared::text::DrawText(GameFont::Default, screen_x, screen_y + 14, DRAW_OBJECT_NAME90, hb::shared::text::TextStyle::WithShadow(GameColors::UIRed)); // "(Enemy)"
 		else if (IsFriendly(status.iRelationship))
-			hb::shared::text::DrawText(GameFont::Default, sX, sY + 14, DRAW_OBJECT_NAME89, hb::shared::text::TextStyle::WithShadow(GameColors::FriendlyNamePlate)); // "(Friendly)"
+			hb::shared::text::DrawText(GameFont::Default, screen_x, screen_y + 14, DRAW_OBJECT_NAME89, hb::shared::text::TextStyle::WithShadow(GameColors::FriendlyNamePlate)); // "(Friendly)"
 		else
-			hb::shared::text::DrawText(GameFont::Default, sX, sY + 14, DRAW_OBJECT_NAME88, hb::shared::text::TextStyle::WithShadow(GameColors::NeutralNamePlate)); // "(Neutral)"
+			hb::shared::text::DrawText(GameFont::Default, screen_x, screen_y + 14, DRAW_OBJECT_NAME88, hb::shared::text::TextStyle::WithShadow(GameColors::NeutralNamePlate)); // "(Neutral)"
 	}
 	switch (status.iAngelPercent) {
 	case 0: break;
-	case 1: cTxt2 = DRAW_OBJECT_NAME52; break;//"Clairvoyant"
-	case 2: cTxt2 = DRAW_OBJECT_NAME53; break;//"Destruction of Magic Protection"
-	case 3: cTxt2 = DRAW_OBJECT_NAME54; break;//"Anti-Physical Damage"
-	case 4: cTxt2 = DRAW_OBJECT_NAME55; break;//"Anti-Magic Damage"
-	case 5: cTxt2 = DRAW_OBJECT_NAME56; break;//"Poisonous"
-	case 6: cTxt2 = DRAW_OBJECT_NAME57; break;//"Critical Poisonous"
-	case 7: cTxt2 = DRAW_OBJECT_NAME58; break;//"Explosive"
-	case 8: cTxt2 = DRAW_OBJECT_NAME59; break;//"Critical Explosive"
+	case 1: text2 = DRAW_OBJECT_NAME52; break;//"Clairvoyant"
+	case 2: text2 = DRAW_OBJECT_NAME53; break;//"Destruction of Magic Protection"
+	case 3: text2 = DRAW_OBJECT_NAME54; break;//"Anti-Physical Damage"
+	case 4: text2 = DRAW_OBJECT_NAME55; break;//"Anti-Magic Damage"
+	case 5: text2 = DRAW_OBJECT_NAME56; break;//"Poisonous"
+	case 6: text2 = DRAW_OBJECT_NAME57; break;//"Critical Poisonous"
+	case 7: text2 = DRAW_OBJECT_NAME58; break;//"Explosive"
+	case 8: text2 = DRAW_OBJECT_NAME59; break;//"Critical Explosive"
 	}
-	hb::shared::text::DrawText(GameFont::Default, sX, sY + 28, cTxt2.c_str(), hb::shared::text::TextStyle::WithShadow(GameColors::MonsterStatusEffect));
+	hb::shared::text::DrawText(GameFont::Default, screen_x, screen_y + 28, text2.c_str(), hb::shared::text::TextStyle::WithShadow(GameColors::MonsterStatusEffect));
 
 	// centu: no muestra la barra de hp de algunos npc
-	switch (sOwnerType) {
+	switch (owner_type) {
 	case hb::shared::owner::ShopKeeper:
 	case hb::shared::owner::Gandalf:
 	case hb::shared::owner::Howard:
@@ -4997,149 +4984,149 @@ void CGame::DrawNpcName(short sX, short sY, short sOwnerType, const hb::shared::
 	}
 }
 
-void CGame::DrawObjectName(short sX, short sY, const char* pName, const hb::shared::entity::PlayerStatus& status, uint16_t wObjectID)
+void CGame::DrawObjectName(short screen_x, short screen_y, const char* name, const hb::shared::entity::PlayerStatus& status, uint16_t object_id)
 {
-	std::string G_cTxt;
-	std::string cTxt, cTxt2;
-	uint8_t sR, sG, sB;
-	int i, iGuildIndex, iAddY = 0;
-	bool bPK, bCitizen, bAresden, bHunter;
+	std::string guild_text;
+	std::string text, text2;
+	uint8_t red = 0, green = 0, blue = 0;
+	int guild_index = 0, y_offset = 0;
+	bool is_pk = false, is_citizen = false, is_aresden = false, is_hunter = false;
 	auto relationship = status.iRelationship;
 	if (IsHostile(relationship))
 	{
-		sR = 255; sG = 0; sB = 0;
+		red = 255; green = 0; blue = 0;
 	}
 	else if (IsFriendly(relationship))
 	{
-		sR = 30; sG = 200; sB = 30;
+		red = 30; green = 200; blue = 30;
 	}
 	else
 	{
-		sR = 50; sG = 50; sB = 255;
+		red = 50; green = 50; blue = 255;
 	}
 
 	if (m_iIlusionOwnerH == 0)
 	{
-		if (m_bIsCrusadeMode == false) cTxt = pName;
+		if (m_bIsCrusadeMode == false) text = name;
 		else
 		{
-			if (!hb::shared::object_id::IsPlayerID(m_entityState.m_wObjectID)) cTxt = GetNpcConfigName(hb::shared::owner::Barbarian);
+			if (!hb::shared::object_id::IsPlayerID(m_entityState.m_wObjectID)) text = GetNpcConfigName(hb::shared::owner::Barbarian);
 			else
 			{
-				if (relationship == EntityRelationship::Enemy) cTxt = std::format("{}", m_entityState.m_wObjectID);
-				else cTxt = pName;
+				if (relationship == EntityRelationship::Enemy) text = std::format("{}", m_entityState.m_wObjectID);
+				else text = name;
 			}
 		}
 		if (m_iPartyStatus != 0)
 		{
-			for (i = 0; i < hb::shared::limits::MaxPartyMembers; i++)
+			for (int i = 0; i < hb::shared::limits::MaxPartyMembers; i++)
 			{
-				if (m_stPartyMemberNameList[i].cName == pName)
+				if (m_stPartyMemberNameList[i].cName == name)
 				{
-					cTxt += BGET_NPC_NAME23; // ", Party Member"
+					text += BGET_NPC_NAME23; // ", Party Member"
 					break;
 				}
 			}
 		}
 	}
-	else cTxt = "?????";
+	else text = "?????";
 
-	if (status.bBerserk) cTxt += DRAW_OBJECT_NAME50;//" Berserk"
-	if (status.bFrozen) cTxt += DRAW_OBJECT_NAME51;//" Frozen"
+	if (status.bBerserk) text += DRAW_OBJECT_NAME50;//" Berserk"
+	if (status.bFrozen) text += DRAW_OBJECT_NAME51;//" Frozen"
 
-	hb::shared::text::DrawText(GameFont::Default, sX, sY, cTxt.c_str(), hb::shared::text::TextStyle::WithShadow(GameColors::UIWhite));
+	hb::shared::text::DrawText(GameFont::Default, screen_x, screen_y, text.c_str(), hb::shared::text::TextStyle::WithShadow(GameColors::UIWhite));
 
-	if (wObjectID == m_pPlayer->m_sPlayerObjectID)
+	if (object_id == m_pPlayer->m_sPlayerObjectID)
 	{
 		if (m_pPlayer->m_iGuildRank == 0)
 		{
-			G_cTxt = std::format(DEF_MSG_GUILDMASTER, m_pPlayer->m_cGuildName);//" Guildmaster)"
-			hb::shared::text::DrawText(GameFont::Default, sX, sY + 14, G_cTxt.c_str(), hb::shared::text::TextStyle::WithShadow(GameColors::InfoGrayLight));
-			iAddY = 14;
+			guild_text = std::format(DEF_MSG_GUILDMASTER, m_pPlayer->m_cGuildName);//" Guildmaster)"
+			hb::shared::text::DrawText(GameFont::Default, screen_x, screen_y + 14, guild_text.c_str(), hb::shared::text::TextStyle::WithShadow(GameColors::InfoGrayLight));
+			y_offset = 14;
 		}
 		if (m_pPlayer->m_iGuildRank > 0)
 		{
-			G_cTxt = std::format(DEF_MSG_GUILDSMAN, m_pPlayer->m_cGuildName);//" Guildsman)"
-			hb::shared::text::DrawText(GameFont::Default, sX, sY + 14, G_cTxt.c_str(), hb::shared::text::TextStyle::WithShadow(GameColors::InfoGrayLight));
-			iAddY = 14;
+			guild_text = std::format(DEF_MSG_GUILDSMAN, m_pPlayer->m_cGuildName);//" Guildsman)"
+			hb::shared::text::DrawText(GameFont::Default, screen_x, screen_y + 14, guild_text.c_str(), hb::shared::text::TextStyle::WithShadow(GameColors::InfoGrayLight));
+			y_offset = 14;
 		}
 		if (m_pPlayer->m_iPKCount != 0)
 		{
-			bPK = true;
-			sR = 255; sG = 0; sB = 0;
+			is_pk = true;
+			red = 255; green = 0; blue = 0;
 		}
 		else
 		{
-			bPK = false;
-			sR = 30; sG = 200; sB = 30;
+			is_pk = false;
+			red = 30; green = 200; blue = 30;
 		}
-		bCitizen = m_pPlayer->m_bCitizen;
-		bAresden = m_pPlayer->m_bAresden;
-		bHunter = m_pPlayer->m_bHunter;
+		is_citizen = m_pPlayer->m_bCitizen;
+		is_aresden = m_pPlayer->m_bAresden;
+		is_hunter = m_pPlayer->m_bHunter;
 	}
 	else
 	{	// CLEROTH - CRASH BUG ( STATUS )
-		bPK = status.bPK;
-		bCitizen = status.bCitizen;
-		bAresden = status.bAresden;
-		bHunter = status.bHunter;
+		is_pk = status.bPK;
+		is_citizen = status.bCitizen;
+		is_aresden = status.bAresden;
+		is_hunter = status.bHunter;
 		if (m_bIsCrusadeMode == false || !IsHostile(relationship))
 		{
-			if (FindGuildName(pName, &iGuildIndex) == true)
+			if (FindGuildName(name, &guild_index) == true)
 			{
-				if (!m_stGuildName[iGuildIndex].cGuildName.empty())
+				if (!m_stGuildName[guild_index].cGuildName.empty())
 				{
-					if (m_stGuildName[iGuildIndex].cGuildName != "NONE")
+					if (m_stGuildName[guild_index].cGuildName != "NONE")
 					{
-						if (m_stGuildName[iGuildIndex].iGuildRank == 0)
+						if (m_stGuildName[guild_index].iGuildRank == 0)
 						{
-							G_cTxt = std::format(DEF_MSG_GUILDMASTER, m_stGuildName[iGuildIndex].cGuildName);//
-							hb::shared::text::DrawText(GameFont::Default, sX, sY + 14, G_cTxt.c_str(), hb::shared::text::TextStyle::WithShadow(GameColors::InfoGrayLight));
-							m_stGuildName[iGuildIndex].dwRefTime = m_dwCurTime;
-							iAddY = 14;
+							guild_text = std::format(DEF_MSG_GUILDMASTER, m_stGuildName[guild_index].cGuildName);//
+							hb::shared::text::DrawText(GameFont::Default, screen_x, screen_y + 14, guild_text.c_str(), hb::shared::text::TextStyle::WithShadow(GameColors::InfoGrayLight));
+							m_stGuildName[guild_index].dwRefTime = m_dwCurTime;
+							y_offset = 14;
 						}
-						else if (m_stGuildName[iGuildIndex].iGuildRank > 0)
+						else if (m_stGuildName[guild_index].iGuildRank > 0)
 						{
-							G_cTxt = std::format(DEF_MSG_GUILDSMAN, m_stGuildName[iGuildIndex].cGuildName);//"
-							hb::shared::text::DrawText(GameFont::Default, sX, sY + 14, G_cTxt.c_str(), hb::shared::text::TextStyle::WithShadow(GameColors::InfoGrayLight));
-							m_stGuildName[iGuildIndex].dwRefTime = m_dwCurTime;
-							iAddY = 14;
+							guild_text = std::format(DEF_MSG_GUILDSMAN, m_stGuildName[guild_index].cGuildName);//"
+							hb::shared::text::DrawText(GameFont::Default, screen_x, screen_y + 14, guild_text.c_str(), hb::shared::text::TextStyle::WithShadow(GameColors::InfoGrayLight));
+							m_stGuildName[guild_index].dwRefTime = m_dwCurTime;
+							y_offset = 14;
 						}
 					}
 					else
 					{
-						m_stGuildName[iGuildIndex].dwRefTime = 0;
+						m_stGuildName[guild_index].dwRefTime = 0;
 					}
 				}
 			}
-			else bSendCommand(MsgId::CommandCommon, CommonType::ReqGuildName, 0, m_entityState.m_wObjectID, iGuildIndex, 0, 0);
+			else bSendCommand(MsgId::CommandCommon, CommonType::ReqGuildName, 0, m_entityState.m_wObjectID, guild_index, 0, 0);
 		}
 	}
 
-	if (bCitizen == false)	cTxt = DRAW_OBJECT_NAME60;// "Traveller"
+	if (is_citizen == false)	text = DRAW_OBJECT_NAME60;// "Traveller"
 	else
 	{
-		if (bAresden)
+		if (is_aresden)
 		{
-			if (bHunter == true) cTxt = DEF_MSG_ARECIVIL; // "Aresden Civilian"
-			else cTxt = DEF_MSG_ARESOLDIER; // "Aresden Combatant"
+			if (is_hunter == true) text = DEF_MSG_ARECIVIL; // "Aresden Civilian"
+			else text = DEF_MSG_ARESOLDIER; // "Aresden Combatant"
 		}
 		else
 		{
-			if (bHunter == true) cTxt = DEF_MSG_ELVCIVIL;// "Elvine Civilian"
-			else cTxt = DEF_MSG_ELVSOLDIER;	// "Elvine Combatant"
+			if (is_hunter == true) text = DEF_MSG_ELVCIVIL;// "Elvine Civilian"
+			else text = DEF_MSG_ELVSOLDIER;	// "Elvine Combatant"
 		}
 	}
-	if (bPK == true)
+	if (is_pk == true)
 	{
-		if (bCitizen == false) cTxt = DEF_MSG_PK;	//"Criminal"
+		if (is_citizen == false) text = DEF_MSG_PK;	//"Criminal"
 		else
 		{
-			if (bAresden) cTxt = DEF_MSG_AREPK;// "Aresden Criminal"
-			else cTxt = DEF_MSG_ELVPK;  // "Elvine Criminal"
+			if (is_aresden) text = DEF_MSG_AREPK;// "Aresden Criminal"
+			else text = DEF_MSG_ELVPK;  // "Elvine Criminal"
 		}
 	}
-	hb::shared::text::DrawText(GameFont::Default, sX, sY + 14 + iAddY, cTxt.c_str(), hb::shared::text::TextStyle::WithShadow(hb::shared::render::Color(sR, sG, sB)));
+	hb::shared::text::DrawText(GameFont::Default, screen_x, screen_y + 14 + y_offset, text.c_str(), hb::shared::text::TextStyle::WithShadow(hb::shared::render::Color(red, green, blue)));
 }
 
 bool CGame::FindGuildName(const char* pName, int* ipIndex)
@@ -5571,161 +5558,162 @@ void CGame::ClearSkillUsingStatus()
 	m_bSkillUsingStatus = false;
 }
 
-void CGame::NpcTalkHandler(char* pData)
+void CGame::NpcTalkHandler(char* packet_data)
 {
-	std::string cTxt;
+	std::string text;
 
-	char cRewardName[hb::shared::limits::ItemNameLen], cTargetName[21], cTemp[21];
-	short sType, sResponse;
-	int iAmount, iIndex, iContribution, iX, iY, iRange;
-	int iTargetType, iTargetCount, iQuestionType;
+	char reward_name[hb::shared::limits::ItemNameLen]{};
+	char target_name[21]{};
+	char temp[21]{};
 
 	const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyNpcTalk>(
-		pData, sizeof(hb::net::PacketNotifyNpcTalk));
+		packet_data, sizeof(hb::net::PacketNotifyNpcTalk));
 	if (!pkt) return;
 
-	sType = pkt->type;
-	sResponse = pkt->response;
-	iAmount = pkt->amount;
-	iContribution = pkt->contribution;
-	iTargetType = pkt->target_type;
-	iTargetCount = pkt->target_count;
-	iX = pkt->x;
-	iY = pkt->y;
-	iRange = pkt->range;
+	short npc_type = pkt->type;
+	short response = pkt->response;
+	int amount = pkt->amount;
+	int contribution = pkt->contribution;
+	int target_type = pkt->target_type;
+	int target_count = pkt->target_count;
+	int target_x = pkt->x;
+	int target_y = pkt->y;
+	int target_range = pkt->range;
+	int question_type = 0;
+	int index = 0;
 
-	std::memset(cRewardName, 0, sizeof(cRewardName));
-	memcpy(cRewardName, pkt->reward_name, hb::shared::limits::ItemNameLen - 1);
-	memcpy(cTargetName, pkt->target_name, 20);
+	std::memset(reward_name, 0, sizeof(reward_name));
+	memcpy(reward_name, pkt->reward_name, hb::shared::limits::ItemNameLen - 1);
+	memcpy(target_name, pkt->target_name, 20);
 
-	m_dialogBoxManager.EnableDialogBox(DialogBoxId::NpcTalk, sResponse, sType, 0);
+	m_dialogBoxManager.EnableDialogBox(DialogBoxId::NpcTalk, response, npc_type, 0);
 
-	if ((sType >= 1) && (sType <= 100))
+	if ((npc_type >= 1) && (npc_type <= 100))
 	{
-		iIndex = m_dialogBoxManager.Info(DialogBoxId::NpcTalk).sV1;
-		m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, "  ", 0);
-		iIndex++;
-		iQuestionType = 0;
-		switch (sType) {
+		index = m_dialogBoxManager.Info(DialogBoxId::NpcTalk).sV1;
+		m_pMsgTextList2[index] = std::make_unique<CMsg>(0, "  ", 0);
+		index++;
+		question_type = 0;
+		switch (npc_type) {
 		case 1: //Monster Hunt
-			std::snprintf(cTemp, hb::shared::limits::NpcNameLen, "%s", GetNpcConfigName(iTargetType));
-			cTxt = std::format(NPC_TALK_HANDLER16, iTargetCount, cTemp);
-			m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, cTxt.c_str(), 0);
-			iIndex++;
+			std::snprintf(temp, hb::shared::limits::NpcNameLen, "%s", GetNpcConfigName(target_type));
+			text = std::format(NPC_TALK_HANDLER16, target_count, temp);
+			m_pMsgTextList2[index] = std::make_unique<CMsg>(0, text.c_str(), 0);
+			index++;
 
-			if (memcmp(cTargetName, "NONE", 4) == 0) {
-				cTxt = NPC_TALK_HANDLER17;//"
-				m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, cTxt.c_str(), 0);
-				iIndex++;
+			if (memcmp(target_name, "NONE", 4) == 0) {
+				text = NPC_TALK_HANDLER17;//"
+				m_pMsgTextList2[index] = std::make_unique<CMsg>(0, text.c_str(), 0);
+				index++;
 			}
 			else {
-				std::memset(cTemp, 0, sizeof(cTemp));
-				GetOfficialMapName(cTargetName, cTemp);
-				cTxt = std::format(NPC_TALK_HANDLER18, cTemp);//"Map : %s"
-				m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, cTxt.c_str(), 0);
-				iIndex++;
+				std::memset(temp, 0, sizeof(temp));
+				GetOfficialMapName(target_name, temp);
+				text = std::format(NPC_TALK_HANDLER18, temp);//"Map : %s"
+				m_pMsgTextList2[index] = std::make_unique<CMsg>(0, text.c_str(), 0);
+				index++;
 
-				if (iX != 0) {
-					cTxt = std::format(NPC_TALK_HANDLER19, iX, iY, iRange);//"Position: %d,%d within %d blocks"
-					m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, cTxt.c_str(), 0);
-					iIndex++;
+				if (target_x != 0) {
+					text = std::format(NPC_TALK_HANDLER19, target_x, target_y, target_range);//"Position: %d,%d within %d blocks"
+					m_pMsgTextList2[index] = std::make_unique<CMsg>(0, text.c_str(), 0);
+					index++;
 				}
 
-				cTxt = std::format(NPC_TALK_HANDLER20, iContribution);//"
-				m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, cTxt.c_str(), 0);
-				iIndex++;
+				text = std::format(NPC_TALK_HANDLER20, contribution);//"
+				m_pMsgTextList2[index] = std::make_unique<CMsg>(0, text.c_str(), 0);
+				index++;
 			}
-			iQuestionType = 1;
+			question_type = 1;
 			break;
 
 		case 7: //
-			m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, NPC_TALK_HANDLER21, 0);
-			iIndex++;
+			m_pMsgTextList2[index] = std::make_unique<CMsg>(0, NPC_TALK_HANDLER21, 0);
+			index++;
 
-			if (memcmp(cTargetName, "NONE", 4) == 0) {
-				cTxt = NPC_TALK_HANDLER22;
-				m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, cTxt.c_str(), 0);
-				iIndex++;
+			if (memcmp(target_name, "NONE", 4) == 0) {
+				text = NPC_TALK_HANDLER22;
+				m_pMsgTextList2[index] = std::make_unique<CMsg>(0, text.c_str(), 0);
+				index++;
 			}
 			else {
-				std::memset(cTemp, 0, sizeof(cTemp));
-				GetOfficialMapName(cTargetName, cTemp);
-				cTxt = std::format(NPC_TALK_HANDLER23, cTemp);
-				m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, cTxt.c_str(), 0);
-				iIndex++;
+				std::memset(temp, 0, sizeof(temp));
+				GetOfficialMapName(target_name, temp);
+				text = std::format(NPC_TALK_HANDLER23, temp);
+				m_pMsgTextList2[index] = std::make_unique<CMsg>(0, text.c_str(), 0);
+				index++;
 
-				if (iX != 0) {
-					cTxt = std::format(NPC_TALK_HANDLER24, iX, iY, iRange);
-					m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, cTxt.c_str(), 0);
-					iIndex++;
+				if (target_x != 0) {
+					text = std::format(NPC_TALK_HANDLER24, target_x, target_y, target_range);
+					m_pMsgTextList2[index] = std::make_unique<CMsg>(0, text.c_str(), 0);
+					index++;
 				}
 
-				cTxt = std::format(NPC_TALK_HANDLER25, iContribution);
-				m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, cTxt.c_str(), 0);
-				iIndex++;
+				text = std::format(NPC_TALK_HANDLER25, contribution);
+				m_pMsgTextList2[index] = std::make_unique<CMsg>(0, text.c_str(), 0);
+				index++;
 			}
-			iQuestionType = 1;
+			question_type = 1;
 			break;
 
 		case hb::shared::owner::Slime: // Crusade
-			m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, NPC_TALK_HANDLER26, 0);
-			iIndex++;
+			m_pMsgTextList2[index] = std::make_unique<CMsg>(0, NPC_TALK_HANDLER26, 0);
+			index++;
 
-			cTxt = NPC_TALK_HANDLER27;//"
-			m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, cTxt.c_str(), 0);
-			iIndex++;
+			text = NPC_TALK_HANDLER27;//"
+			m_pMsgTextList2[index] = std::make_unique<CMsg>(0, text.c_str(), 0);
+			index++;
 
-			cTxt = NPC_TALK_HANDLER28;//"
-			m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, cTxt.c_str(), 0);
-			iIndex++;
+			text = NPC_TALK_HANDLER28;//"
+			m_pMsgTextList2[index] = std::make_unique<CMsg>(0, text.c_str(), 0);
+			index++;
 
-			cTxt = NPC_TALK_HANDLER29;//"
-			m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, cTxt.c_str(), 0);
-			iIndex++;
+			text = NPC_TALK_HANDLER29;//"
+			m_pMsgTextList2[index] = std::make_unique<CMsg>(0, text.c_str(), 0);
+			index++;
 
-			cTxt = NPC_TALK_HANDLER30;//"
-			m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, cTxt.c_str(), 0);
-			iIndex++;
+			text = NPC_TALK_HANDLER30;//"
+			m_pMsgTextList2[index] = std::make_unique<CMsg>(0, text.c_str(), 0);
+			index++;
 
-			cTxt = " ";
-			m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, cTxt.c_str(), 0);
-			iIndex++;
+			text = " ";
+			m_pMsgTextList2[index] = std::make_unique<CMsg>(0, text.c_str(), 0);
+			index++;
 
-			if (memcmp(cTargetName, "NONE", 4) == 0) {
-				cTxt = NPC_TALK_HANDLER31;//"
-				m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, cTxt.c_str(), 0);
-				iIndex++;
+			if (memcmp(target_name, "NONE", 4) == 0) {
+				text = NPC_TALK_HANDLER31;//"
+				m_pMsgTextList2[index] = std::make_unique<CMsg>(0, text.c_str(), 0);
+				index++;
 			}
 			else {
-				std::memset(cTemp, 0, sizeof(cTemp));
-				GetOfficialMapName(cTargetName, cTemp);
-				cTxt = std::format(NPC_TALK_HANDLER32, cTemp);//"
-				m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, cTxt.c_str(), 0);
-				iIndex++;
+				std::memset(temp, 0, sizeof(temp));
+				GetOfficialMapName(target_name, temp);
+				text = std::format(NPC_TALK_HANDLER32, temp);//"
+				m_pMsgTextList2[index] = std::make_unique<CMsg>(0, text.c_str(), 0);
+				index++;
 			}
-			iQuestionType = 2;
+			question_type = 2;
 			break;
 		}
 
-		switch (iQuestionType) {
+		switch (question_type) {
 		case 1:
-			m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, "  ", 0);
-			iIndex++;
-			m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, NPC_TALK_HANDLER33, 0);//"
-			iIndex++;
-			m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, NPC_TALK_HANDLER34, 0);//"
-			iIndex++;
-			m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, "  ", 0);
-			iIndex++;
+			m_pMsgTextList2[index] = std::make_unique<CMsg>(0, "  ", 0);
+			index++;
+			m_pMsgTextList2[index] = std::make_unique<CMsg>(0, NPC_TALK_HANDLER33, 0);//"
+			index++;
+			m_pMsgTextList2[index] = std::make_unique<CMsg>(0, NPC_TALK_HANDLER34, 0);//"
+			index++;
+			m_pMsgTextList2[index] = std::make_unique<CMsg>(0, "  ", 0);
+			index++;
 			break;
 
 		case 2:
-			m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, "  ", 0);
-			iIndex++;
-			m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, NPC_TALK_HANDLER35, 0);//"
-			iIndex++;
-			m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, "  ", 0);
-			iIndex++;
+			m_pMsgTextList2[index] = std::make_unique<CMsg>(0, "  ", 0);
+			index++;
+			m_pMsgTextList2[index] = std::make_unique<CMsg>(0, NPC_TALK_HANDLER35, 0);//"
+			index++;
+			m_pMsgTextList2[index] = std::make_unique<CMsg>(0, "  ", 0);
+			index++;
 			break;
 
 		default: break;
@@ -5830,21 +5818,21 @@ void CGame::StartBGM()
 	AudioManager::Get().PlayMusic(trackName);
 }
 
-void CGame::MotionResponseHandler(char* pData)
+void CGame::MotionResponseHandler(char* packet_data)
 {
-	WORD wResponse;
-	short sX, sY;
-	char cDir;
-	int iPreHP;
+	WORD response = 0;
+	short map_x = 0, map_y = 0;
+	char direction = 0;
+	int previous_hp = 0;
 	//						          0 3        4 5						 6 7		8 9		   10	    11
 	// Confirm Code(4) | MsgSize(4) | MsgID(4) | Confirm::MoveConfirm(2) | Loc-X(2) | Loc-Y(2) | Dir(1) | MapData ...
 	// Confirm Code(4) | MsgSize(4) | MsgID(4) | Confirm::MoveReject(2)  | Loc-X(2) | Loc-Y(2)
 	const auto* header = hb::net::PacketCast<hb::net::PacketHeader>(
-		pData, sizeof(hb::net::PacketHeader));
+		packet_data, sizeof(hb::net::PacketHeader));
 	if (!header) return;
-	wResponse = header->msg_type;
+	response = header->msg_type;
 
-	switch (wResponse) {
+	switch (response) {
 	case Confirm::MotionConfirm:
 		m_pPlayer->m_Controller.DecrementCommandCount();
 		break;
@@ -5857,7 +5845,7 @@ void CGame::MotionResponseHandler(char* pData)
 		if (m_pPlayer->m_iHP <= 0) return;
 		{
 			const auto* pkt = hb::net::PacketCast<hb::net::PacketResponseMotionReject>(
-				pData, sizeof(hb::net::PacketResponseMotionReject));
+				packet_data, sizeof(hb::net::PacketResponseMotionReject));
 			if (!pkt) return;
 			m_pPlayer->m_sPlayerX = pkt->x;
 			m_pPlayer->m_sPlayerY = pkt->y;
@@ -5878,24 +5866,22 @@ void CGame::MotionResponseHandler(char* pData)
 	case Confirm::MoveConfirm:
 	{
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketResponseMotionMoveConfirm>(
-			pData, sizeof(hb::net::PacketResponseMotionMoveConfirm));
+			packet_data, sizeof(hb::net::PacketResponseMotionMoveConfirm));
 		if (!pkt) return;
-		sX = pkt->x;
-		sY = pkt->y;
-		cDir = static_cast<char>(pkt->dir);
+		map_x = pkt->x;
+		map_y = pkt->y;
+		direction = static_cast<char>(pkt->dir);
 		m_pPlayer->m_iSP = m_pPlayer->m_iSP - pkt->stamina_cost;
 		if (m_pPlayer->m_iSP < 0) m_pPlayer->m_iSP = 0;
-		// v1.3
-		//m_iOccupyStatus = (int)*cp;
-		iPreHP = m_pPlayer->m_iHP;
+		previous_hp = m_pPlayer->m_iHP;
 		m_pPlayer->m_iHP = pkt->hp;
 
-		if (m_pPlayer->m_iHP != iPreHP)
+		if (m_pPlayer->m_iHP != previous_hp)
 		{
 			std::string G_cTxt;
-			if (m_pPlayer->m_iHP < iPreHP)
+			if (m_pPlayer->m_iHP < previous_hp)
 			{
-				G_cTxt = std::format(NOTIFYMSG_HP_DOWN, iPreHP - m_pPlayer->m_iHP);
+				G_cTxt = std::format(NOTIFYMSG_HP_DOWN, previous_hp - m_pPlayer->m_iHP);
 				AddEventList(G_cTxt.c_str(), 10);
 				m_dwDamagedTime = GameClock::GetTimeMS();
 				if ((m_cLogOutCount > 0) && (m_bForceDisconn == false))
@@ -5906,13 +5892,13 @@ void CGame::MotionResponseHandler(char* pData)
 			}
 			else
 			{
-				G_cTxt = std::format(NOTIFYMSG_HP_UP, m_pPlayer->m_iHP - iPreHP);
+				G_cTxt = std::format(NOTIFYMSG_HP_UP, m_pPlayer->m_iHP - previous_hp);
 				AddEventList(G_cTxt.c_str(), 10);
 			}
 		}
-		m_pMapData->ShiftMapData(cDir);
-		const char* mapData = reinterpret_cast<const char*>(pData) + sizeof(hb::net::PacketResponseMotionMoveConfirm);
-		_ReadMapData(sX, sY, mapData);
+		m_pMapData->ShiftMapData(direction);
+		const char* mapData = reinterpret_cast<const char*>(packet_data) + sizeof(hb::net::PacketResponseMotionMoveConfirm);
+		_ReadMapData(map_x, map_y, mapData);
 		m_pPlayer->m_Controller.DecrementCommandCount();
 	}
 	break;
@@ -5921,7 +5907,7 @@ void CGame::MotionResponseHandler(char* pData)
 		if (m_pPlayer->m_iHP <= 0) return;
 		{
 			const auto* pkt = hb::net::PacketCast<hb::net::PacketResponseMotionMoveReject>(
-				pData, sizeof(hb::net::PacketResponseMotionMoveReject));
+				packet_data, sizeof(hb::net::PacketResponseMotionMoveReject));
 			if (!pkt) return;
 			if (m_pPlayer->m_sPlayerObjectID != pkt->object_id) return;
 			m_pPlayer->m_sPlayerX = pkt->x;
@@ -5955,37 +5941,36 @@ void CGame::MotionResponseHandler(char* pData)
 			PlayGameSound('C', 13, 0);
 			break;
 		}
-		//m_pPlayer->m_Controller.SetCommandAvailable(true);
 		break;
 	}
 }
 
-void CGame::CommandProcessor(short msX, short msY, short indexX, short indexY, char cLB, char cRB)
+void CGame::CommandProcessor(short mouse_x, short mouse_y, short tile_x, short tile_y, char left_button, char right_button)
 {
-	uint32_t dwTime = GameClock::GetTimeMS();
-	uint16_t wType = 0;
-	int iRet;
-	short sX, sY;
-	char cDir;
+	uint32_t current_time = GameClock::GetTimeMS();
+	uint16_t action_type = 0;
+	int result = 0;
+	short dialog_x = 0, dialog_y = 0;
+	char direction = 0;
 
 	// Fixed by Snoopy
 	if ((m_bIsObserverCommanded == false) && (m_bIsObserverMode == true))
 	{
-		if ((msX == 0) && (msY == 0) && (m_Camera.GetDestinationX() > 32 * VIEW_TILE_WIDTH()) && (m_Camera.GetDestinationY() > 32 * VIEW_TILE_HEIGHT()))
+		if ((mouse_x == 0) && (mouse_y == 0) && (m_Camera.GetDestinationX() > 32 * VIEW_TILE_WIDTH()) && (m_Camera.GetDestinationY() > 32 * VIEW_TILE_HEIGHT()))
 			bSendCommand(MsgId::RequestPanning, 0, 8, 0, 0, 0, 0);
-		else if ((msX == LOGICAL_MAX_X()) && (msY == 0) && (m_Camera.GetDestinationX() < 32 * m_pMapData->m_sMapSizeX - 32 * VIEW_TILE_WIDTH()) && (m_Camera.GetDestinationY() > 32 * VIEW_TILE_HEIGHT()))
+		else if ((mouse_x == LOGICAL_MAX_X()) && (mouse_y == 0) && (m_Camera.GetDestinationX() < 32 * m_pMapData->m_sMapSizeX - 32 * VIEW_TILE_WIDTH()) && (m_Camera.GetDestinationY() > 32 * VIEW_TILE_HEIGHT()))
 			bSendCommand(MsgId::RequestPanning, 0, 2, 0, 0, 0, 0);
-		else if ((msX == LOGICAL_MAX_X()) && (msY == LOGICAL_MAX_Y()) && (m_Camera.GetDestinationX() < 32 * m_pMapData->m_sMapSizeX - 32 * VIEW_TILE_WIDTH()) && (m_Camera.GetDestinationY() < 32 * m_pMapData->m_sMapSizeY - 32 * VIEW_TILE_HEIGHT()))
+		else if ((mouse_x == LOGICAL_MAX_X()) && (mouse_y == LOGICAL_MAX_Y()) && (m_Camera.GetDestinationX() < 32 * m_pMapData->m_sMapSizeX - 32 * VIEW_TILE_WIDTH()) && (m_Camera.GetDestinationY() < 32 * m_pMapData->m_sMapSizeY - 32 * VIEW_TILE_HEIGHT()))
 			bSendCommand(MsgId::RequestPanning, 0, 4, 0, 0, 0, 0);
-		else if ((msX == 0) && (msY == LOGICAL_MAX_Y()))
+		else if ((mouse_x == 0) && (mouse_y == LOGICAL_MAX_Y()))
 			bSendCommand(MsgId::RequestPanning, 0, 6, 0, 0, 0, 0);
-		else if ((msX == 0) && (m_Camera.GetDestinationX() > 32 * VIEW_TILE_WIDTH()))
+		else if ((mouse_x == 0) && (m_Camera.GetDestinationX() > 32 * VIEW_TILE_WIDTH()))
 			bSendCommand(MsgId::RequestPanning, 0, 7, 0, 0, 0, 0);
-		else if ((msX == LOGICAL_MAX_X()) && (m_Camera.GetDestinationX() < 32 * m_pMapData->m_sMapSizeX - 32 * VIEW_TILE_WIDTH()))
+		else if ((mouse_x == LOGICAL_MAX_X()) && (m_Camera.GetDestinationX() < 32 * m_pMapData->m_sMapSizeX - 32 * VIEW_TILE_WIDTH()))
 			bSendCommand(MsgId::RequestPanning, 0, 3, 0, 0, 0, 0);
-		else if ((msY == 0) && (m_Camera.GetDestinationY() > 32 * VIEW_TILE_HEIGHT()))
+		else if ((mouse_y == 0) && (m_Camera.GetDestinationY() > 32 * VIEW_TILE_HEIGHT()))
 			bSendCommand(MsgId::RequestPanning, 0, 1, 0, 0, 0, 0);
-		else if ((msY == LOGICAL_MAX_Y()) && (m_Camera.GetDestinationY() < 32 * m_pMapData->m_sMapSizeY - 32 * VIEW_TILE_HEIGHT()))
+		else if ((mouse_y == LOGICAL_MAX_Y()) && (m_Camera.GetDestinationY() < 32 * m_pMapData->m_sMapSizeY - 32 * VIEW_TILE_HEIGHT()))
 			bSendCommand(MsgId::RequestPanning, 0, 5, 0, 0, 0, 0);
 		else return;
 
@@ -6002,19 +5987,19 @@ void CGame::CommandProcessor(short msX, short msY, short indexX, short indexY, c
 
 	switch (CursorTarget::GetCursorStatus()) {
 	case CursorStatus::Null:
-		if (cLB != 0)
+		if (left_button != 0)
 		{
-			iRet = m_dialogBoxManager.HandleMouseDown(msX, msY);
-			if (iRet == 1)
+			result = m_dialogBoxManager.HandleMouseDown(mouse_x, mouse_y);
+			if (result == 1)
 			{
 				CursorTarget::SetCursorStatus(CursorStatus::Selected);
 				return;
 			}
-			else if (iRet == 0)
+			else if (result == 0)
 			{
 				CursorTarget::SetCursorStatus(CursorStatus::Pressed);
 				// Snoopy: Added Golden LevelUp
-				if ((msX > LEVELUP_TEXT_X()) && (msX < (LEVELUP_TEXT_X())+75) && (msY > LEVELUP_TEXT_Y()) && (msY < (LEVELUP_TEXT_Y())+21))
+				if ((mouse_x > LEVELUP_TEXT_X()) && (mouse_x < (LEVELUP_TEXT_X())+75) && (mouse_y > LEVELUP_TEXT_Y()) && (mouse_y < (LEVELUP_TEXT_Y())+21))
 				{
 					if (m_pPlayer->m_iHP > 0)
 					{
@@ -6040,54 +6025,54 @@ void CGame::CommandProcessor(short msX, short msY, short indexX, short indexY, c
 					return;
 				}
 			}
-			else if (iRet == -1)
+			else if (result == -1)
 			{
 				// Scroll/slider claimed - set status to prevent re-processing
 				CursorTarget::SetCursorStatus(CursorStatus::Selected);
 				return;
 			}
 		}
-		else if (cRB != 0)
+		else if (right_button != 0)
 		{
-			if (m_dialogBoxManager.HandleRightClick(msX, msY, dwTime)) return;
+			if (m_dialogBoxManager.HandleRightClick(mouse_x, mouse_y, current_time)) return;
 		}
 		break;
 	case CursorStatus::Pressed:
-		if (cLB == 0) // Normal Click
+		if (left_button == 0) // Normal Click
 		{
 			CursorTarget::SetCursorStatus(CursorStatus::Null);
 		}
 		break;
 		case CursorStatus::Selected:
-		if (cLB == 0)
+		if (left_button == 0)
 		{
 			CursorTarget::SetCursorStatus(CursorStatus::Null);
 			//ZeroEoyPnk - Bye delay...
 			if (((m_dialogBoxManager.IsEnabled(DialogBoxId::LevelUpSetting) != true) || (CursorTarget::GetSelectedID() != 12))
 				&& ((m_dialogBoxManager.IsEnabled(DialogBoxId::ChangeStatsMajestic) != true) || (CursorTarget::GetSelectedID() != 42)))
 			{
-				if (((dwTime - CursorTarget::GetSelectionClickTime()) < input_config::double_click_time_ms) 	// Double Click
-					&& (abs(msX - CursorTarget::GetSelectionClickX()) <= input_config::double_click_tolerance)
-					&& (abs(msY - CursorTarget::GetSelectionClickY()) <= input_config::double_click_tolerance))
+				if (((current_time - CursorTarget::GetSelectionClickTime()) < input_config::double_click_time_ms) 	// Double Click
+					&& (abs(mouse_x - CursorTarget::GetSelectionClickX()) <= input_config::double_click_tolerance)
+					&& (abs(mouse_y - CursorTarget::GetSelectionClickY()) <= input_config::double_click_tolerance))
 				{
 					CursorTarget::ResetSelectionClickTime(); // Reset to prevent triple-click
-					m_dialogBoxManager.HandleDoubleClick(msX, msY);
+					m_dialogBoxManager.HandleDoubleClick(mouse_x, mouse_y);
 				}
 				else // Click
 				{
-					m_dialogBoxManager.HandleClick(msX, msY);
+					m_dialogBoxManager.HandleClick(mouse_x, mouse_y);
 				}
 			}
 			else
 			{
-				m_dialogBoxManager.HandleClick(msX, msY);
+				m_dialogBoxManager.HandleClick(mouse_x, mouse_y);
 			}
-			CursorTarget::RecordSelectionClick(msX, msY, dwTime);
+			CursorTarget::RecordSelectionClick(mouse_x, mouse_y, current_time);
 			if (CursorTarget::GetSelectedType() == SelectedObjectType::Item)
 			{
-				if (!m_dialogBoxManager.HandleDraggingItemRelease(msX, msY))
+				if (!m_dialogBoxManager.HandleDraggingItemRelease(mouse_x, mouse_y))
 				{
-					bItemDrop_ExternalScreen(static_cast<char>(CursorTarget::GetSelectedID()), msX, msY);
+					bItemDrop_ExternalScreen(static_cast<char>(CursorTarget::GetSelectedID()), mouse_x, mouse_y);
 				}
 			}
 			// Always clear selection after click-release to prevent stale state
@@ -6098,10 +6083,10 @@ void CGame::CommandProcessor(short msX, short msY, short indexX, short indexY, c
 		{
 			if ((m_pMapData->bIsTeleportLoc(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY) == true) && (m_pPlayer->m_Controller.GetCommandCount() == 0)) break;
 
-			if ((CursorTarget::GetPrevX() != msX) || (CursorTarget::GetPrevY() != msY))
+			if ((CursorTarget::GetPrevX() != mouse_x) || (CursorTarget::GetPrevY() != mouse_y))
 			{
 				CursorTarget::SetCursorStatus(CursorStatus::Dragging);
-				CursorTarget::SetPrevPosition(msX, msY);
+				CursorTarget::SetPrevPosition(mouse_x, mouse_y);
 				if ((CursorTarget::GetSelectedType() == SelectedObjectType::DialogBox) &&
 					(CursorTarget::GetSelectedID() == 30))
 				{
@@ -6122,12 +6107,12 @@ void CGame::CommandProcessor(short msX, short msY, short indexX, short indexY, c
 				}
 				return;
 			}
-			if ((m_pPlayer->m_Controller.GetCommand() == Type::Move) || (m_pPlayer->m_Controller.GetCommand() == Type::Run)) { ProcessMotionCommands(wType); return; }
+			if ((m_pPlayer->m_Controller.GetCommand() == Type::Move) || (m_pPlayer->m_Controller.GetCommand() == Type::Run)) { ProcessMotionCommands(action_type); return; }
 			return;
 		}
 		break;
 	case CursorStatus::Dragging:
-		if (cLB != 0)
+		if (left_button != 0)
 		{
 			if ((m_pMapData->bIsTeleportLoc(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY) == true) && (m_pPlayer->m_Controller.GetCommandCount() == 0)) break;
 			if (CursorTarget::GetSelectedType() == SelectedObjectType::DialogBox)
@@ -6135,41 +6120,41 @@ void CGame::CommandProcessor(short msX, short msY, short indexX, short indexY, c
 				// HudPanel is fixed and cannot be moved
 				if (CursorTarget::GetSelectedID() != DialogBoxId::HudPanel)
 				{
-					m_dialogBoxManager.Info(CursorTarget::GetSelectedID()).sX = msX - CursorTarget::GetDragDistX();
-					m_dialogBoxManager.Info(CursorTarget::GetSelectedID()).sY = msY - CursorTarget::GetDragDistY();
+					m_dialogBoxManager.Info(CursorTarget::GetSelectedID()).sX = mouse_x - CursorTarget::GetDragDistX();
+					m_dialogBoxManager.Info(CursorTarget::GetSelectedID()).sY = mouse_y - CursorTarget::GetDragDistY();
 				}
 			}
-			CursorTarget::SetPrevPosition(msX, msY);
+			CursorTarget::SetPrevPosition(mouse_x, mouse_y);
 
-			if ((m_pPlayer->m_Controller.GetCommand() == Type::Move) || (m_pPlayer->m_Controller.GetCommand() == Type::Run)) { ProcessMotionCommands(wType); return; }
+			if ((m_pPlayer->m_Controller.GetCommand() == Type::Move) || (m_pPlayer->m_Controller.GetCommand() == Type::Run)) { ProcessMotionCommands(action_type); return; }
 			return;
 		}
-		if (cLB == 0) {
+		if (left_button == 0) {
 			CursorTarget::SetCursorStatus(CursorStatus::Null);
 			switch (CursorTarget::GetSelectedType()) {
 			case SelectedObjectType::DialogBox:
 				if ((CursorTarget::GetSelectedType() == SelectedObjectType::DialogBox) &&
 					(CursorTarget::GetSelectedID() == 7) && (m_dialogBoxManager.Info(DialogBoxId::GuildMenu).cMode == 20))
 				{
-					sX = m_dialogBoxManager.Info(DialogBoxId::GuildMenu).sX;
-					sY = m_dialogBoxManager.Info(DialogBoxId::GuildMenu).sY;
-					TextInputManager::Get().StartInput(sX + 75, sY + 140, 21, m_pPlayer->m_cGuildName);
+					dialog_x = m_dialogBoxManager.Info(DialogBoxId::GuildMenu).sX;
+					dialog_y = m_dialogBoxManager.Info(DialogBoxId::GuildMenu).sY;
+					TextInputManager::Get().StartInput(dialog_x + 75, dialog_y + 140, 21, m_pPlayer->m_cGuildName);
 					m_dialogBoxManager.Info(DialogBoxId::GuildMenu).cMode = 1;
 				}
 
 				if ((CursorTarget::GetSelectedType() == SelectedObjectType::DialogBox) &&
 					(CursorTarget::GetSelectedID() == 17) && (m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).cMode == 20))
 				{	// Query Drop Item Amount
-					sX = m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sX;
-					sY = m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sY;
-					TextInputManager::Get().StartInput(sX + 40, sY + 57, AmountStringMaxLen, m_cAmountString);
+					dialog_x = m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sX;
+					dialog_y = m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sY;
+					TextInputManager::Get().StartInput(dialog_x + 40, dialog_y + 57, AmountStringMaxLen, m_cAmountString);
 					m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).cMode = 1;
 				}
 
 				if (CursorTarget::GetSelectedID() == 9)
 				{
 					{
-						if (msX < 400) //LifeX Fix Map
+						if (mouse_x < 400) //LifeX Fix Map
 						{
 							m_dialogBoxManager.Info(DialogBoxId::GuideMap).sX = 0;
 						}
@@ -6178,7 +6163,7 @@ void CGame::CommandProcessor(short msX, short msY, short indexX, short indexY, c
 							m_dialogBoxManager.Info(DialogBoxId::GuideMap).sX = LOGICAL_MAX_X() - m_dialogBoxManager.Info(DialogBoxId::GuideMap).sSizeX;
 						}
 
-						if (msY < 273)
+						if (mouse_y < 273)
 						{
 							m_dialogBoxManager.Info(DialogBoxId::GuideMap).sY = 0;
 						}
@@ -6193,9 +6178,9 @@ void CGame::CommandProcessor(short msX, short msY, short indexX, short indexY, c
 				break;
 
 			case SelectedObjectType::Item:
-				if (!m_dialogBoxManager.HandleDraggingItemRelease(msX, msY))
+				if (!m_dialogBoxManager.HandleDraggingItemRelease(mouse_x, mouse_y))
 				{
-					bItemDrop_ExternalScreen(static_cast<char>(CursorTarget::GetSelectedID()), msX, msY);
+					bItemDrop_ExternalScreen(static_cast<char>(CursorTarget::GetSelectedID()), mouse_x, mouse_y);
 				}
 				CursorTarget::ClearSelection();
 				break;
@@ -6215,7 +6200,7 @@ void CGame::CommandProcessor(short msX, short msY, short indexX, short indexY, c
 		char cmd = m_pPlayer->m_Controller.GetCommand();
 		if (ConfigManager::Get().IsQuickActionsEnabled() && (cmd == Type::Move || cmd == Type::Run))
 		{
-			if (cLB != 0)
+			if (left_button != 0)
 			{
 				// Click on self while moving = pickup (interrupt movement)
 				if (m_cMCName == m_pPlayer->m_cPlayerName)
@@ -6228,9 +6213,9 @@ void CGame::CommandProcessor(short msX, short msY, short indexX, short indexY, c
 					}
 				}
 				// Left click while moving: update destination immediately
-				m_pPlayer->m_Controller.SetDestination(indexX, indexY);
+				m_pPlayer->m_Controller.SetDestination(tile_x, tile_y);
 			}
-			else if (cRB != 0)
+			else if (right_button != 0)
 			{
 				// Right click on self while moving = pickup (interrupt movement)
 				if (m_cMCName == m_pPlayer->m_cPlayerName)
@@ -6245,11 +6230,11 @@ void CGame::CommandProcessor(short msX, short msY, short indexX, short indexY, c
 				// Right click while moving: stop after current step and face click direction
 				m_pPlayer->m_Controller.SetDestination(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY);
 				// Save pending direction to apply when movement stops
-				char pendingDir = CMisc::cGetNextMoveDir(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, indexX, indexY);
+				char pendingDir = CMisc::cGetNextMoveDir(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, tile_x, tile_y);
 				if (pendingDir != 0) m_pPlayer->m_Controller.SetPendingStopDir(pendingDir);
 			}
 		}
-		else if (ConfigManager::Get().IsQuickActionsEnabled() && cRB != 0 && cmd == Type::Stop && !m_bIsGetPointingMode)
+		else if (ConfigManager::Get().IsQuickActionsEnabled() && right_button != 0 && cmd == Type::Stop && !m_bIsGetPointingMode)
 		{
 			// Right click while stopped (and not casting): process turn immediately
 			// But don't interrupt attack/magic animations — the controller command is STOP
@@ -6261,20 +6246,20 @@ void CGame::CommandProcessor(short msX, short msY, short indexX, short indexY, c
 				if (animAction == Type::Attack || animAction == Type::AttackMove || animAction == Type::Magic)
 					return;
 			}
-			cDir = CMisc::cGetNextMoveDir(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, indexX, indexY);
-			if (cDir != 0 && m_pPlayer->m_iPlayerDir != cDir)
+			direction = CMisc::cGetNextMoveDir(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, tile_x, tile_y);
+			if (direction != 0 && m_pPlayer->m_iPlayerDir != direction)
 			{
-				m_pPlayer->m_iPlayerDir = cDir;
-				bSendCommand(MsgId::CommandMotion, Type::Stop, cDir, 0, 0, 0, 0);
+				m_pPlayer->m_iPlayerDir = direction;
+				bSendCommand(MsgId::CommandMotion, Type::Stop, direction, 0, 0, 0, 0);
 				m_pMapData->bSetOwner(m_pPlayer->m_sPlayerObjectID, m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY,
-					m_pPlayer->m_sPlayerType, cDir, m_pPlayer->m_playerAppearance,
+					m_pPlayer->m_sPlayerType, direction, m_pPlayer->m_playerAppearance,
 					m_pPlayer->m_playerStatus, m_pPlayer->m_cPlayerName, Type::Stop, 0, 0, 0, 0, 10);
-				m_pPlayer->m_Controller.SetCommandTime(dwTime);
+				m_pPlayer->m_Controller.SetCommandTime(current_time);
 			}
 		}
 		return;
 	}
-	if ((dwTime - m_pPlayer->m_Controller.GetCommandTime()) < 300)
+	if ((current_time - m_pPlayer->m_Controller.GetCommandTime()) < 300)
 	{
 		m_pGSock.reset();
 		m_pGSock.reset();
@@ -6289,7 +6274,7 @@ void CGame::CommandProcessor(short msX, short msY, short indexX, short indexY, c
 	if (m_pPlayer->m_sDamageMove != 0)
 	{
 		m_pPlayer->m_Controller.SetCommand(Type::DamageMove);
-		ProcessMotionCommands(wType); return;
+		ProcessMotionCommands(action_type); return;
 	}
 
 	if ((m_pMapData->bIsTeleportLoc(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY) == true) && (m_pPlayer->m_Controller.GetCommandCount() == 0))
@@ -6297,50 +6282,44 @@ void CGame::CommandProcessor(short msX, short msY, short indexX, short indexY, c
 
 	// indexX, indexY
 
-	if (cLB != 0)
+	if (left_button != 0)
 	{
-		if (ProcessLeftClick(msX, msY, indexX, indexY, dwTime, wType)) return;
+		if (ProcessLeftClick(mouse_x, mouse_y, tile_x, tile_y, current_time, action_type)) return;
 	}
-	else if (cRB != 0)
+	else if (right_button != 0)
 	{
-		if (ProcessRightClick(msX, msY, indexX, indexY, dwTime, wType)) return;
+		if (ProcessRightClick(mouse_x, mouse_y, tile_x, tile_y, current_time, action_type)) return;
 	}
 
-	ProcessMotionCommands(wType);
+	ProcessMotionCommands(action_type);
 }
 
-bool CGame::ProcessLeftClick(short msX, short msY, short indexX, short indexY, uint32_t dwTime, uint16_t& wType)
+bool CGame::ProcessLeftClick(short mouse_x, short mouse_y, short tile_x, short tile_y, uint32_t current_time, uint16_t& action_type)
 {
-	std::string cName;
-	short sX, sY, sObjectType, tX, tY;
-	hb::shared::entity::PlayerStatus iObjectStatus;
-	char cDir, absX, absY;
-	std::string pDstName;
-	short sDstOwnerType;
-	hb::shared::entity::PlayerStatus iDstOwnerStatus;
-	bool bGORet;
+	std::string name;
+	short object_type = 0, dialog_x = 0, dialog_y = 0;
+	hb::shared::entity::PlayerStatus object_status;
+	char abs_x = 0, abs_y = 0;
 
 		if (m_bIsGetPointingMode == true)
 		{
 			if ((m_sMCX != 0) || (m_sMCY != 0))
 				PointCommandHandler(m_sMCX, m_sMCY);
-			else PointCommandHandler(indexX, indexY);
+			else PointCommandHandler(tile_x, tile_y);
 
 			m_pPlayer->m_Controller.SetCommandAvailable(false);
 			m_pPlayer->m_Controller.SetCommandTime(GameClock::GetTimeMS());
 			m_bIsGetPointingMode = false;
-			m_dwMagicCastTime = dwTime;  // Track when magic was cast
+			m_dwMagicCastTime = current_time;  // Track when magic was cast
 			return true;
 		}
 
 		// Delay after magic cast before allowing held-click actions
-		if (m_dwMagicCastTime > 0 && (dwTime - m_dwMagicCastTime) < 750) return true;
+		if (m_dwMagicCastTime > 0 && (current_time - m_dwMagicCastTime) < 750) return true;
 
-		m_pMapData->bGetOwner(m_sMCX, m_sMCY - 1, cName, &sObjectType, &iObjectStatus, &m_wCommObjectID); // v1.4
-		//m_pMapData->m_pData[dX][dY].m_sItemSprite
-		if (m_cMCName == m_pPlayer->m_cPlayerName && (sObjectType <= 6 || (m_pMapData->m_pData[m_pPlayer->m_sPlayerX - m_pMapData->m_sPivotX][m_pPlayer->m_sPlayerY - m_pMapData->m_sPivotY].m_sItemID != 0 && m_pItemConfigList[m_pMapData->m_pData[m_pPlayer->m_sPlayerX - m_pMapData->m_sPivotX][m_pPlayer->m_sPlayerY - m_pMapData->m_sPivotY].m_sItemID]->m_sSprite != 0)))
-		{//if (m_cMCName == m_pPlayer->m_cPlayerName && ( sObjectType <= 6 || m_pMapData->m_pData[15][15].m_sItemSprite != 0 )) {
-		 //if (memcmp(m_cMCName, m_pPlayer->m_cPlayerName, 10) == 0 && sObjectType <= 6){
+		m_pMapData->bGetOwner(m_sMCX, m_sMCY - 1, name, &object_type, &object_status, &m_wCommObjectID); // v1.4
+		if (m_cMCName == m_pPlayer->m_cPlayerName && (object_type <= 6 || (m_pMapData->m_pData[m_pPlayer->m_sPlayerX - m_pMapData->m_sPivotX][m_pPlayer->m_sPlayerY - m_pMapData->m_sPivotY].m_sItemID != 0 && m_pItemConfigList[m_pMapData->m_pData[m_pPlayer->m_sPlayerX - m_pMapData->m_sPivotX][m_pPlayer->m_sPlayerY - m_pMapData->m_sPivotY].m_sItemID]->m_sSprite != 0)))
+		{
 			if ((m_pPlayer->m_sPlayerType >= 1) && (m_pPlayer->m_sPlayerType <= 6)/* && (!m_pPlayer->m_playerAppearance.bIsWalking)*/)
 			{
 				m_pPlayer->m_Controller.SetCommand(Type::GetItem);
@@ -6354,21 +6333,21 @@ bool CGame::ProcessLeftClick(short msX, short msY, short indexX, short indexY, u
 			{
 				if (hb::shared::input::IsCtrlDown() == true)
 				{
-					m_pMapData->bGetOwner(m_sMCX, m_sMCY, cName, &sObjectType, &iObjectStatus, &m_wCommObjectID);
-					if (iObjectStatus.bInvisibility) return true;
-					if ((sObjectType == 15) || (sObjectType == 20) || (sObjectType == 24)) return true;
-					absX = abs(m_pPlayer->m_sPlayerX - m_sMCX);
-					absY = abs(m_pPlayer->m_sPlayerY - m_sMCY);
-					if ((absX <= 1) && (absY <= 1))
+					m_pMapData->bGetOwner(m_sMCX, m_sMCY, name, &object_type, &object_status, &m_wCommObjectID);
+					if (object_status.bInvisibility) return true;
+					if ((object_type == 15) || (object_type == 20) || (object_type == 24)) return true;
+					abs_x = abs(m_pPlayer->m_sPlayerX - m_sMCX);
+					abs_y = abs(m_pPlayer->m_sPlayerY - m_sMCY);
+					if ((abs_x <= 1) && (abs_y <= 1))
 					{
-						wType = CombatSystem::Get().GetAttackType();
+						action_type = CombatSystem::Get().GetAttackType();
 						m_pPlayer->m_Controller.SetCommand(Type::Attack);
 						m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 					}
-					else if ((absX <= 2) && (absY <= 2) // strike on Big mobs & gate from a range
-						&& ((sObjectType == 66) || (sObjectType == 73) || (sObjectType == 81) || (sObjectType == 91)))
+					else if ((abs_x <= 2) && (abs_y <= 2) // strike on Big mobs & gate from a range
+						&& ((object_type == 66) || (object_type == 73) || (object_type == 81) || (object_type == 91)))
 					{
-						wType = CombatSystem::Get().GetAttackType();
+						action_type = CombatSystem::Get().GetAttackType();
 						m_pPlayer->m_Controller.SetCommand(Type::Attack);
 						m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 					}
@@ -6378,19 +6357,19 @@ bool CGame::ProcessLeftClick(short msX, short msY, short indexX, short indexY, u
 						case 6: // Bow
 							m_pPlayer->m_Controller.SetCommand(Type::Attack);
 							m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
-							wType = CombatSystem::Get().GetAttackType();
+							action_type = CombatSystem::Get().GetAttackType();
 							break;
 
 						case 5: // OpenHand
 						case 7: // SS
-							if (((absX == 2) && (absY == 2)) || ((absX == 0) && (absY == 2)) || ((absX == 2) && (absY == 0)))
+							if (((abs_x == 2) && (abs_y == 2)) || ((abs_x == 0) && (abs_y == 2)) || ((abs_x == 2) && (abs_y == 0)))
 							{
 								if ((hb::shared::input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0))
 								{
 									if (m_pPlayer->m_iSkillMastery[CombatSystem::Get().GetWeaponSkillType()] == 100)
 									{
 										m_pPlayer->m_Controller.SetCommand(Type::AttackMove);
-										wType = CombatSystem::Get().GetAttackType();
+										action_type = CombatSystem::Get().GetAttackType();
 									}
 									else
 									{
@@ -6418,30 +6397,30 @@ bool CGame::ProcessLeftClick(short msX, short msY, short indexX, short indexY, u
 							break;
 
 						case 8: // LS
-							if ((absX <= 3) && (absY <= 3) && CombatSystem::Get().CanSuperAttack()
+							if ((abs_x <= 3) && (abs_y <= 3) && CombatSystem::Get().CanSuperAttack()
 								&& (CombatSystem::Get().GetAttackType() != 30)) // Crit without StormBlade
 							{
-								wType = CombatSystem::Get().GetAttackType();
+								action_type = CombatSystem::Get().GetAttackType();
 								m_pPlayer->m_Controller.SetCommand(Type::Attack);
 								m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 							}
-							else if ((absX <= 5) && (absY <= 5) && CombatSystem::Get().CanSuperAttack()
+							else if ((abs_x <= 5) && (abs_y <= 5) && CombatSystem::Get().CanSuperAttack()
 								&& (CombatSystem::Get().GetAttackType() == 30))  // Crit with StormBlade (by Snoopy)
 							{
-								wType = CombatSystem::Get().GetAttackType();
+								action_type = CombatSystem::Get().GetAttackType();
 								m_pPlayer->m_Controller.SetCommand(Type::Attack);
 								m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 							}
-							else if ((absX <= 3) && (absY <= 3)
+							else if ((abs_x <= 3) && (abs_y <= 3)
 								&& (CombatSystem::Get().GetAttackType() == 5))  // Normal hit with StormBlade (by Snoopy)
 							{
-								wType = CombatSystem::Get().GetAttackType();
+								action_type = CombatSystem::Get().GetAttackType();
 								m_pPlayer->m_Controller.SetCommand(Type::Attack);
 								m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 							}
 							else // Swing
 							{
-								if (((absX == 2) && (absY == 2)) || ((absX == 0) && (absY == 2)) || ((absX == 2) && (absY == 0))
+								if (((abs_x == 2) && (abs_y == 2)) || ((abs_x == 0) && (abs_y == 2)) || ((abs_x == 2) && (abs_y == 0))
 									&& (CombatSystem::Get().GetAttackType() != 5)) // no Dash possible with StormBlade
 								{
 									if ((hb::shared::input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0))
@@ -6449,7 +6428,7 @@ bool CGame::ProcessLeftClick(short msX, short msY, short indexX, short indexY, u
 										if (m_pPlayer->m_iSkillMastery[CombatSystem::Get().GetWeaponSkillType()] == 100)
 										{
 											m_pPlayer->m_Controller.SetCommand(Type::AttackMove);
-											wType = CombatSystem::Get().GetAttackType();
+											action_type = CombatSystem::Get().GetAttackType();
 										}
 										else
 										{
@@ -6478,18 +6457,18 @@ bool CGame::ProcessLeftClick(short msX, short msY, short indexX, short indexY, u
 							break;
 
 						case 9: // Fencing
-							if ((absX <= 4) && (absY <= 4) && CombatSystem::Get().CanSuperAttack())
+							if ((abs_x <= 4) && (abs_y <= 4) && CombatSystem::Get().CanSuperAttack())
 							{
 								m_pPlayer->m_Controller.SetCommand(Type::Attack);
 								m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
-								wType = CombatSystem::Get().GetAttackType();
+								action_type = CombatSystem::Get().GetAttackType();
 							}
 							else {
-								if (((absX == 2) && (absY == 2)) || ((absX == 0) && (absY == 2)) || ((absX == 2) && (absY == 0))) {
+								if (((abs_x == 2) && (abs_y == 2)) || ((abs_x == 0) && (abs_y == 2)) || ((abs_x == 2) && (abs_y == 0))) {
 									if ((hb::shared::input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0)) {
 										if (m_pPlayer->m_iSkillMastery[CombatSystem::Get().GetWeaponSkillType()] == 100) {
 											m_pPlayer->m_Controller.SetCommand(Type::AttackMove);
-											wType = CombatSystem::Get().GetAttackType();
+											action_type = CombatSystem::Get().GetAttackType();
 										}
 										else {
 											m_pPlayer->m_Controller.SetCommand(Type::Run);
@@ -6515,22 +6494,22 @@ bool CGame::ProcessLeftClick(short msX, short msY, short indexX, short indexY, u
 							break;
 
 						case hb::shared::owner::Slime: // Axe
-							if ((absX <= 2) && (absY <= 2) && CombatSystem::Get().CanSuperAttack())
+							if ((abs_x <= 2) && (abs_y <= 2) && CombatSystem::Get().CanSuperAttack())
 							{
 								m_pPlayer->m_Controller.SetCommand(Type::Attack);
 								m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
-								wType = CombatSystem::Get().GetAttackType();
+								action_type = CombatSystem::Get().GetAttackType();
 							}
 							else
 							{
-								if (((absX == 2) && (absY == 2)) || ((absX == 0) && (absY == 2)) || ((absX == 2) && (absY == 0)))
+								if (((abs_x == 2) && (abs_y == 2)) || ((abs_x == 0) && (abs_y == 2)) || ((abs_x == 2) && (abs_y == 0)))
 								{
 									if ((hb::shared::input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0))
 									{
 										if (m_pPlayer->m_iSkillMastery[CombatSystem::Get().GetWeaponSkillType()] == 100)
 										{
 											m_pPlayer->m_Controller.SetCommand(Type::AttackMove);
-											wType = CombatSystem::Get().GetAttackType();
+											action_type = CombatSystem::Get().GetAttackType();
 										}
 										else
 										{
@@ -6558,17 +6537,17 @@ bool CGame::ProcessLeftClick(short msX, short msY, short indexX, short indexY, u
 							}
 							break;
 						case hb::shared::owner::OrcMage: // Hammer
-							if ((absX <= 2) && (absY <= 2) && CombatSystem::Get().CanSuperAttack()) {
+							if ((abs_x <= 2) && (abs_y <= 2) && CombatSystem::Get().CanSuperAttack()) {
 								m_pPlayer->m_Controller.SetCommand(Type::Attack);
 								m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
-								wType = CombatSystem::Get().GetAttackType();
+								action_type = CombatSystem::Get().GetAttackType();
 							}
 							else {
-								if (((absX == 2) && (absY == 2)) || ((absX == 0) && (absY == 2)) || ((absX == 2) && (absY == 0))) {
+								if (((abs_x == 2) && (abs_y == 2)) || ((abs_x == 0) && (abs_y == 2)) || ((abs_x == 2) && (abs_y == 0))) {
 									if ((hb::shared::input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0)) {
 										if (m_pPlayer->m_iSkillMastery[CombatSystem::Get().GetWeaponSkillType()] == 100) {
 											m_pPlayer->m_Controller.SetCommand(Type::AttackMove);
-											wType = CombatSystem::Get().GetAttackType();
+											action_type = CombatSystem::Get().GetAttackType();
 										}
 										else {
 											m_pPlayer->m_Controller.SetCommand(Type::Run);
@@ -6593,17 +6572,17 @@ bool CGame::ProcessLeftClick(short msX, short msY, short indexX, short indexY, u
 							}
 							break;
 						case hb::shared::owner::Guard: // Wand
-							if ((absX <= 2) && (absY <= 2) && CombatSystem::Get().CanSuperAttack()) {
+							if ((abs_x <= 2) && (abs_y <= 2) && CombatSystem::Get().CanSuperAttack()) {
 								m_pPlayer->m_Controller.SetCommand(Type::Attack);
 								m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
-								wType = CombatSystem::Get().GetAttackType();
+								action_type = CombatSystem::Get().GetAttackType();
 							}
 							else {
-								if (((absX == 2) && (absY == 2)) || ((absX == 0) && (absY == 2)) || ((absX == 2) && (absY == 0))) {
+								if (((abs_x == 2) && (abs_y == 2)) || ((abs_x == 0) && (abs_y == 2)) || ((abs_x == 2) && (abs_y == 0))) {
 									if ((hb::shared::input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0)) {
 										if (m_pPlayer->m_iSkillMastery[CombatSystem::Get().GetWeaponSkillType()] == 100) {
 											m_pPlayer->m_Controller.SetCommand(Type::AttackMove);
-											wType = CombatSystem::Get().GetAttackType();
+											action_type = CombatSystem::Get().GetAttackType();
 										}
 										else {
 											m_pPlayer->m_Controller.SetCommand(Type::Run);
@@ -6632,46 +6611,46 @@ bool CGame::ProcessLeftClick(short msX, short msY, short indexX, short indexY, u
 				}
 				else // CTRL not pressed
 				{
-					m_pMapData->bGetOwner(m_sMCX, m_sMCY, cName, &sObjectType, &iObjectStatus, &m_wCommObjectID);
-					if (sObjectType >= 10 || ((sObjectType >= 1) && (sObjectType <= 6)))
+					m_pMapData->bGetOwner(m_sMCX, m_sMCY, name, &object_type, &object_status, &m_wCommObjectID);
+					if (object_type >= 10 || ((object_type >= 1) && (object_type <= 6)))
 					{
-						switch (sObjectType) { 	// CLEROTH - NPC TALK
+						switch (object_type) { 	// CLEROTH - NPC TALK
 						case hb::shared::owner::ShopKeeper: // ShopKeeper-W�
 							m_dialogBoxManager.EnableDialogBox(DialogBoxId::NpcActionQuery, 5, 11, 1);
-							tX = msX - 117;
-							tY = msY - 50;
-							if (tX < 0) tX = 0;
-							if ((tX + 235) > LOGICAL_MAX_X()) tX = LOGICAL_MAX_X() - 235;
-							if (tY < 0) tY = 0;
-							if ((tY + 100) > LOGICAL_MAX_Y()) tY = LOGICAL_MAX_Y() - 100;
-							m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sX = tX;
-							m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sY = tY;
+							dialog_x = mouse_x - 117;
+							dialog_y = mouse_y - 50;
+							if (dialog_x < 0) dialog_x = 0;
+							if ((dialog_x + 235) > LOGICAL_MAX_X()) dialog_x = LOGICAL_MAX_X() - 235;
+							if (dialog_y < 0) dialog_y = 0;
+							if ((dialog_y + 100) > LOGICAL_MAX_Y()) dialog_y = LOGICAL_MAX_Y() - 100;
+							m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sX = dialog_x;
+							m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sY = dialog_y;
 							m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV3 = 15;
 							break;
 
 						case hb::shared::owner::Gandalf: // Gandlf
 							m_dialogBoxManager.EnableDialogBox(DialogBoxId::NpcActionQuery, 0, 16, 0);
-							tX = msX - 117;
-							tY = msY - 50;
-							if (tX < 0) tX = 0;
-							if ((tX + 235) > LOGICAL_MAX_X()) tX = LOGICAL_MAX_X() - 235;
-							if (tY < 0) tY = 0;
-							if ((tY + 100) > LOGICAL_MAX_Y()) tY = LOGICAL_MAX_Y() - 100;
-							m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sX = tX;
-							m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sY = tY;
+							dialog_x = mouse_x - 117;
+							dialog_y = mouse_y - 50;
+							if (dialog_x < 0) dialog_x = 0;
+							if ((dialog_x + 235) > LOGICAL_MAX_X()) dialog_x = LOGICAL_MAX_X() - 235;
+							if (dialog_y < 0) dialog_y = 0;
+							if ((dialog_y + 100) > LOGICAL_MAX_Y()) dialog_y = LOGICAL_MAX_Y() - 100;
+							m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sX = dialog_x;
+							m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sY = dialog_y;
 							m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV3 = 19;
 							break;
 
 						case hb::shared::owner::Howard: // Howard
 							m_dialogBoxManager.EnableDialogBox(DialogBoxId::NpcActionQuery, 0, 14, 0);
-							tX = msX - 117;
-							tY = msY - 50;
-							if (tX < 0) tX = 0;
-							if ((tX + 235) > LOGICAL_MAX_X()) tX = LOGICAL_MAX_X() - 235;
-							if (tY < 0) tY = 0;
-							if ((tY + 100) > LOGICAL_MAX_Y()) tY = LOGICAL_MAX_Y() - 100;
-							m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sX = tX;
-							m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sY = tY;
+							dialog_x = mouse_x - 117;
+							dialog_y = mouse_y - 50;
+							if (dialog_x < 0) dialog_x = 0;
+							if ((dialog_x + 235) > LOGICAL_MAX_X()) dialog_x = LOGICAL_MAX_X() - 235;
+							if (dialog_y < 0) dialog_y = 0;
+							if ((dialog_y + 100) > LOGICAL_MAX_Y()) dialog_y = LOGICAL_MAX_Y() - 100;
+							m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sX = dialog_x;
+							m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sY = dialog_y;
 							m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV3 = 20;
 							m_dialogBoxManager.Info(DialogBoxId::GiveItem).sV3 = 20;
 							m_dialogBoxManager.Info(DialogBoxId::GiveItem).sV4 = m_wCommObjectID;
@@ -6681,14 +6660,14 @@ bool CGame::ProcessLeftClick(short msX, short msY, short indexX, short indexY, u
 
 						case hb::shared::owner::Tom: // Tom
 							m_dialogBoxManager.EnableDialogBox(DialogBoxId::NpcActionQuery, 5, 11, 2);
-							tX = msX - 117;
-							tY = msY - 50;
-							if (tX < 0) tX = 0;
-							if ((tX + 235) > LOGICAL_MAX_X()) tX = LOGICAL_MAX_X() - 235;
-							if (tY < 0) tY = 0;
-							if ((tY + 100) > LOGICAL_MAX_Y()) tY = LOGICAL_MAX_Y() - 100;
-							m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sX = tX;
-							m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sY = tY;
+							dialog_x = mouse_x - 117;
+							dialog_y = mouse_y - 50;
+							if (dialog_x < 0) dialog_x = 0;
+							if ((dialog_x + 235) > LOGICAL_MAX_X()) dialog_x = LOGICAL_MAX_X() - 235;
+							if (dialog_y < 0) dialog_y = 0;
+							if ((dialog_y + 100) > LOGICAL_MAX_Y()) dialog_y = LOGICAL_MAX_Y() - 100;
+							m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sX = dialog_x;
+							m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sY = dialog_y;
 							m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV3 = 24;
 							m_dialogBoxManager.Info(DialogBoxId::GiveItem).sV3 = 24;
 							m_dialogBoxManager.Info(DialogBoxId::GiveItem).sV4 = m_wCommObjectID;
@@ -6698,42 +6677,42 @@ bool CGame::ProcessLeftClick(short msX, short msY, short indexX, short indexY, u
 
 						case hb::shared::owner::William: // William
 							m_dialogBoxManager.EnableDialogBox(DialogBoxId::NpcActionQuery, 0, 13, 0);
-							tX = msX - 117;
-							tY = msY - 50;
-							if (tX < 0) tX = 0;
-							if ((tX + 235) > LOGICAL_MAX_X()) tX = LOGICAL_MAX_X() - 235;
-							if (tY < 0) tY = 0;
-							if ((tY + 100) > LOGICAL_MAX_Y()) tY = LOGICAL_MAX_Y() - 100;
-							m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sX = tX;
-							m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sY = tY;
+							dialog_x = mouse_x - 117;
+							dialog_y = mouse_y - 50;
+							if (dialog_x < 0) dialog_x = 0;
+							if ((dialog_x + 235) > LOGICAL_MAX_X()) dialog_x = LOGICAL_MAX_X() - 235;
+							if (dialog_y < 0) dialog_y = 0;
+							if ((dialog_y + 100) > LOGICAL_MAX_Y()) dialog_y = LOGICAL_MAX_Y() - 100;
+							m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sX = dialog_x;
+							m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sY = dialog_y;
 							m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV3 = 25;
 							break;
 
 						case hb::shared::owner::Kennedy: // Kennedy
 							m_dialogBoxManager.EnableDialogBox(DialogBoxId::NpcActionQuery, 0, 7, 0);
-							tX = msX - 117;
-							tY = msY - 50;
-							if (tX < 0) tX = 0;
-							if ((tX + 235) > LOGICAL_MAX_X()) tX = LOGICAL_MAX_X() - 235;
-							if (tY < 0) tY = 0;
-							if ((tY + 100) > LOGICAL_MAX_Y()) tY = LOGICAL_MAX_Y() - 100;
-							m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sX = tX;
-							m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sY = tY;
+							dialog_x = mouse_x - 117;
+							dialog_y = mouse_y - 50;
+							if (dialog_x < 0) dialog_x = 0;
+							if ((dialog_x + 235) > LOGICAL_MAX_X()) dialog_x = LOGICAL_MAX_X() - 235;
+							if (dialog_y < 0) dialog_y = 0;
+							if ((dialog_y + 100) > LOGICAL_MAX_Y()) dialog_y = LOGICAL_MAX_Y() - 100;
+							m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sX = dialog_x;
+							m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sY = dialog_y;
 							m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV3 = 26;
 							break;
 
 						case hb::shared::owner::Guard: // Guard
-							if (!IsHostile(iObjectStatus.iRelationship) && (!m_pPlayer->m_bIsCombatMode))
+							if (!IsHostile(object_status.iRelationship) && (!m_pPlayer->m_bIsCombatMode))
 							{
 								m_dialogBoxManager.EnableDialogBox(DialogBoxId::NpcActionQuery, 4, 0, 0);
-								tX = msX - 117;
-								tY = msY - 50;
-								if (tX < 0) tX = 0;
-								if ((tX + 235) > LOGICAL_MAX_X()) tX = LOGICAL_MAX_X() - 235;
-								if (tY < 0) tY = 0;
-								if ((tY + 100) > LOGICAL_MAX_Y()) tY = LOGICAL_MAX_Y() - 100;
-								m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sX = tX;
-								m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sY = tY;
+								dialog_x = mouse_x - 117;
+								dialog_y = mouse_y - 50;
+								if (dialog_x < 0) dialog_x = 0;
+								if ((dialog_x + 235) > LOGICAL_MAX_X()) dialog_x = LOGICAL_MAX_X() - 235;
+								if (dialog_y < 0) dialog_y = 0;
+								if ((dialog_y + 100) > LOGICAL_MAX_Y()) dialog_y = LOGICAL_MAX_Y() - 100;
+								m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sX = dialog_x;
+								m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sY = dialog_y;
 								m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV3 = 21;
 							}
 							break;
@@ -6743,15 +6722,15 @@ bool CGame::ProcessLeftClick(short msX, short msY, short indexX, short indexY, u
 							if (!m_pPlayer->m_bIsCombatMode)
 							{
 								m_dialogBoxManager.EnableDialogBox(DialogBoxId::NpcActionQuery, 4, 0, 0);
-								tX = msX - 117;
-								tY = msY - 50;
-								if (tX < 0) tX = 0;
-								if ((tX + 235) > LOGICAL_MAX_X()) tX = LOGICAL_MAX_X() - 235;
-								if (tY < 0) tY = 0;
-								if ((tY + 100) > LOGICAL_MAX_Y()) tY = LOGICAL_MAX_Y() - 100;
-								m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sX = tX;
-								m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sY = tY;
-								m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV3 = sObjectType;
+								dialog_x = mouse_x - 117;
+								dialog_y = mouse_y - 50;
+								if (dialog_x < 0) dialog_x = 0;
+								if ((dialog_x + 235) > LOGICAL_MAX_X()) dialog_x = LOGICAL_MAX_X() - 235;
+								if (dialog_y < 0) dialog_y = 0;
+								if ((dialog_y + 100) > LOGICAL_MAX_Y()) dialog_y = LOGICAL_MAX_Y() - 100;
+								m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sX = dialog_x;
+								m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sY = dialog_y;
+								m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV3 = object_type;
 							}
 							break;
 
@@ -6759,46 +6738,46 @@ bool CGame::ProcessLeftClick(short msX, short msY, short indexX, short indexY, u
 							if (!m_pPlayer->m_bIsCombatMode)
 							{
 								m_dialogBoxManager.EnableDialogBox(DialogBoxId::NpcActionQuery, 4, 0, 0);
-								tX = msX - 117;
-								tY = msY - 50;
-								if (tX < 0) tX = 0;
-								if ((tX + 235) > LOGICAL_MAX_X()) tX = LOGICAL_MAX_X() - 235;
-								if (tY < 0) tY = 0;
-								if ((tY + 100) > LOGICAL_MAX_Y()) tY = LOGICAL_MAX_Y() - 100;
-								m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sX = tX;
-								m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sY = tY;
+								dialog_x = mouse_x - 117;
+								dialog_y = mouse_y - 50;
+								if (dialog_x < 0) dialog_x = 0;
+								if ((dialog_x + 235) > LOGICAL_MAX_X()) dialog_x = LOGICAL_MAX_X() - 235;
+								if (dialog_y < 0) dialog_y = 0;
+								if ((dialog_y + 100) > LOGICAL_MAX_Y()) dialog_y = LOGICAL_MAX_Y() - 100;
+								m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sX = dialog_x;
+								m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sY = dialog_y;
 								m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV3 = 32;
 							}
 							break;
 
 						case hb::shared::owner::Gail: // Snoopy: Gail
 							m_dialogBoxManager.EnableDialogBox(DialogBoxId::NpcActionQuery, 6, 0, 0);
-							tX = msX - 117;
-							tY = msY - 50;
-							if (tX < 0) tX = 0;
-							if ((tX + 235) > LOGICAL_MAX_X()) tX = LOGICAL_MAX_X() - 235;
-							if (tY < 0) tY = 0;
-							if ((tY + 100) > LOGICAL_MAX_Y()) tY = LOGICAL_MAX_Y() - 100;
-							m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sX = tX;
-							m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sY = tY;
+							dialog_x = mouse_x - 117;
+							dialog_y = mouse_y - 50;
+							if (dialog_x < 0) dialog_x = 0;
+							if ((dialog_x + 235) > LOGICAL_MAX_X()) dialog_x = LOGICAL_MAX_X() - 235;
+							if (dialog_y < 0) dialog_y = 0;
+							if ((dialog_y + 100) > LOGICAL_MAX_Y()) dialog_y = LOGICAL_MAX_Y() - 100;
+							m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sX = dialog_x;
+							m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sY = dialog_y;
 							m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV3 = 90;
 							break;
 
 						default: // Other mobs
-							if (!IsHostile(iObjectStatus.iRelationship)) break;
-							if ((sObjectType >= 1) && (sObjectType <= 6) && (m_pPlayer->m_bForceAttack == false)) break;
-							absX = abs(m_pPlayer->m_sPlayerX - m_sMCX);
-							absY = abs(m_pPlayer->m_sPlayerY - m_sMCY);
-							if ((absX <= 1) && (absY <= 1))
+							if (!IsHostile(object_status.iRelationship)) break;
+							if ((object_type >= 1) && (object_type <= 6) && (m_pPlayer->m_bForceAttack == false)) break;
+							abs_x = abs(m_pPlayer->m_sPlayerX - m_sMCX);
+							abs_y = abs(m_pPlayer->m_sPlayerY - m_sMCY);
+							if ((abs_x <= 1) && (abs_y <= 1))
 							{
-								wType = CombatSystem::Get().GetAttackType();
+								action_type = CombatSystem::Get().GetAttackType();
 								m_pPlayer->m_Controller.SetCommand(Type::Attack);
 								m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 							}
-							else if ((absX <= 2) && (absY <= 2) // strike on Big mobs & gate from a range
-								&& ((sObjectType == 66) || (sObjectType == 73) || (sObjectType == 81) || (sObjectType == 91)))
+							else if ((abs_x <= 2) && (abs_y <= 2) // strike on Big mobs & gate from a range
+								&& ((object_type == 66) || (object_type == 73) || (object_type == 81) || (object_type == 91)))
 							{
-								wType = CombatSystem::Get().GetAttackType();
+								action_type = CombatSystem::Get().GetAttackType();
 								m_pPlayer->m_Controller.SetCommand(Type::Attack);
 								m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 							}
@@ -6808,7 +6787,7 @@ bool CGame::ProcessLeftClick(short msX, short msY, short indexX, short indexY, u
 								case 6: // Bow
 									m_pPlayer->m_Controller.SetCommand(Type::Attack);
 									m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
-									wType = CombatSystem::Get().GetAttackType();
+									action_type = CombatSystem::Get().GetAttackType();
 									break;
 
 								case 5: // Boxe
@@ -6822,30 +6801,30 @@ bool CGame::ProcessLeftClick(short msX, short msY, short indexX, short indexY, u
 									break;
 
 								case 8: // LS
-									if ((absX <= 3) && (absY <= 3) && CombatSystem::Get().CanSuperAttack()
+									if ((abs_x <= 3) && (abs_y <= 3) && CombatSystem::Get().CanSuperAttack()
 										&& (CombatSystem::Get().GetAttackType() != 30)) // Crit without StormBlade by Snoopy
 									{
-										if ((absX <= 1) && (absY <= 1) && (hb::shared::input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0))
+										if ((abs_x <= 1) && (abs_y <= 1) && (hb::shared::input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0))
 											m_pPlayer->m_Controller.SetCommand(Type::AttackMove);
 										else m_pPlayer->m_Controller.SetCommand(Type::Attack);
 										m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
-										wType = CombatSystem::Get().GetAttackType();
+										action_type = CombatSystem::Get().GetAttackType();
 									}
-									else if ((absX <= 5) && (absY <= 5) && CombatSystem::Get().CanSuperAttack()
+									else if ((abs_x <= 5) && (abs_y <= 5) && CombatSystem::Get().CanSuperAttack()
 										&& (CombatSystem::Get().GetAttackType() == 30)) // Crit with StormBlade by Snoopy
 									{
-										if ((absX <= 1) && (absY <= 1) && (hb::shared::input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0))
+										if ((abs_x <= 1) && (abs_y <= 1) && (hb::shared::input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0))
 											m_pPlayer->m_Controller.SetCommand(Type::AttackMove);
 										else m_pPlayer->m_Controller.SetCommand(Type::Attack);
 										m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
-										wType = CombatSystem::Get().GetAttackType();
+										action_type = CombatSystem::Get().GetAttackType();
 									}
-									else if ((absX <= 3) && (absY <= 3)
+									else if ((abs_x <= 3) && (abs_y <= 3)
 										&& (CombatSystem::Get().GetAttackType() == 5)) // Normal hit with StormBlade by Snoopy
 									{
 										m_pPlayer->m_Controller.SetCommand(Type::Attack);
 										m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
-										wType = CombatSystem::Get().GetAttackType();
+										action_type = CombatSystem::Get().GetAttackType();
 									}
 									else
 									{
@@ -6859,13 +6838,13 @@ bool CGame::ProcessLeftClick(short msX, short msY, short indexX, short indexY, u
 									break;
 
 								case 9: // Fencing
-									if ((absX <= 4) && (absY <= 4) && CombatSystem::Get().CanSuperAttack())
+									if ((abs_x <= 4) && (abs_y <= 4) && CombatSystem::Get().CanSuperAttack())
 									{
-										if ((absX <= 1) && (absY <= 1) && (hb::shared::input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0))
+										if ((abs_x <= 1) && (abs_y <= 1) && (hb::shared::input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0))
 											m_pPlayer->m_Controller.SetCommand(Type::AttackMove);
 										else m_pPlayer->m_Controller.SetCommand(Type::Attack);
 										m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
-										wType = CombatSystem::Get().GetAttackType();
+										action_type = CombatSystem::Get().GetAttackType();
 									}
 									else
 									{
@@ -6879,12 +6858,12 @@ bool CGame::ProcessLeftClick(short msX, short msY, short indexX, short indexY, u
 									break;
 
 								case hb::shared::owner::Slime: //
-									if ((absX <= 2) && (absY <= 2) && CombatSystem::Get().CanSuperAttack()) {
-										if ((absX <= 1) && (absY <= 1) && (hb::shared::input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0))
+									if ((abs_x <= 2) && (abs_y <= 2) && CombatSystem::Get().CanSuperAttack()) {
+										if ((abs_x <= 1) && (abs_y <= 1) && (hb::shared::input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0))
 											m_pPlayer->m_Controller.SetCommand(Type::AttackMove);
 										else m_pPlayer->m_Controller.SetCommand(Type::Attack);
 										m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
-										wType = CombatSystem::Get().GetAttackType();
+										action_type = CombatSystem::Get().GetAttackType();
 									}
 									else {
 										if ((hb::shared::input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0) &&
@@ -6896,12 +6875,12 @@ bool CGame::ProcessLeftClick(short msX, short msY, short indexX, short indexY, u
 									}
 									break;
 								case hb::shared::owner::OrcMage: //
-									if ((absX <= 2) && (absY <= 2) && CombatSystem::Get().CanSuperAttack()) {
-										if ((absX <= 1) && (absY <= 1) && (hb::shared::input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0))
+									if ((abs_x <= 2) && (abs_y <= 2) && CombatSystem::Get().CanSuperAttack()) {
+										if ((abs_x <= 1) && (abs_y <= 1) && (hb::shared::input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0))
 											m_pPlayer->m_Controller.SetCommand(Type::AttackMove);
 										else m_pPlayer->m_Controller.SetCommand(Type::Attack);
 										m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
-										wType = CombatSystem::Get().GetAttackType();
+										action_type = CombatSystem::Get().GetAttackType();
 									}
 									else {
 										if ((hb::shared::input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0) &&
@@ -6913,12 +6892,12 @@ bool CGame::ProcessLeftClick(short msX, short msY, short indexX, short indexY, u
 									}
 									break;
 								case hb::shared::owner::Guard: //
-									if ((absX <= 2) && (absY <= 2) && CombatSystem::Get().CanSuperAttack()) {
-										if ((absX <= 1) && (absY <= 1) && (hb::shared::input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0))
+									if ((abs_x <= 2) && (abs_y <= 2) && CombatSystem::Get().CanSuperAttack()) {
+										if ((abs_x <= 1) && (abs_y <= 1) && (hb::shared::input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0))
 											m_pPlayer->m_Controller.SetCommand(Type::AttackMove);
 										else m_pPlayer->m_Controller.SetCommand(Type::Attack);
 										m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
-										wType = CombatSystem::Get().GetAttackType();
+										action_type = CombatSystem::Get().GetAttackType();
 									}
 									else {
 										if ((hb::shared::input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0) &&
@@ -6950,23 +6929,19 @@ bool CGame::ProcessLeftClick(short msX, short msY, short indexX, short indexY, u
 					(m_pPlayer->m_sPlayerType >= 1) && (m_pPlayer->m_sPlayerType <= 6))
 					m_pPlayer->m_Controller.SetCommand(Type::Run);
 				else m_pPlayer->m_Controller.SetCommand(Type::Move);
-				m_pPlayer->m_Controller.SetDestination(indexX, indexY);
+				m_pPlayer->m_Controller.SetDestination(tile_x, tile_y);
 				m_pPlayer->m_Controller.CalculatePlayerTurn(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pMapData.get());
 			}
 		}
 	return false;
 }
 
-bool CGame::ProcessRightClick(short msX, short msY, short indexX, short indexY, uint32_t dwTime, uint16_t& wType)
+bool CGame::ProcessRightClick(short mouse_x, short mouse_y, short tile_x, short tile_y, uint32_t current_time, uint16_t& action_type)
 {
-	std::string cName;
-	short sX, sY, sObjectType, tX, tY;
-	hb::shared::entity::PlayerStatus iObjectStatus;
-	char cDir, absX, absY;
-	std::string pDstName;
-	short sDstOwnerType;
-	hb::shared::entity::PlayerStatus iDstOwnerStatus;
-	bool bGORet;
+	std::string name;
+	short object_type = 0;
+	hb::shared::entity::PlayerStatus object_status;
+	char direction = 0, abs_x = 0, abs_y = 0;
 
 		// Right click on self = pickup (Quick Actions feature)
 		if (ConfigManager::Get().IsQuickActionsEnabled() &&
@@ -6991,26 +6966,26 @@ bool CGame::ProcessRightClick(short msX, short msY, short indexX, short indexY, 
 
 			if ((m_sMCX != 0) && (m_sMCY != 0))
 			{
-				absX = abs(m_pPlayer->m_sPlayerX - m_sMCX);
-				absY = abs(m_pPlayer->m_sPlayerY - m_sMCY);
-				if (absX == 0 && absY == 0) return true;
+				abs_x = abs(m_pPlayer->m_sPlayerX - m_sMCX);
+				abs_y = abs(m_pPlayer->m_sPlayerY - m_sMCY);
+				if (abs_x == 0 && abs_y == 0) return true;
 
 			if (hb::shared::input::IsCtrlDown() == true)
 			{
-				m_pMapData->bGetOwner(m_sMCX, m_sMCY, cName, &sObjectType, &iObjectStatus, &m_wCommObjectID);
-				if (iObjectStatus.bInvisibility) return true;
-				if ((sObjectType == 15) || (sObjectType == 20) || (sObjectType == 24)) return true;
+				m_pMapData->bGetOwner(m_sMCX, m_sMCY, name, &object_type, &object_status, &m_wCommObjectID);
+				if (object_status.bInvisibility) return true;
+				if ((object_type == 15) || (object_type == 20) || (object_type == 24)) return true;
 
-				if ((absX <= 1) && (absY <= 1))
+				if ((abs_x <= 1) && (abs_y <= 1))
 				{
-					wType = CombatSystem::Get().GetAttackType();
+					action_type = CombatSystem::Get().GetAttackType();
 					m_pPlayer->m_Controller.SetCommand(Type::Attack);
 					m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 				}
-				else if ((absX <= 2) && (absY <= 2) // strike on Big mobs & gate from a range
-					&& ((sObjectType == 66) || (sObjectType == 73) || (sObjectType == 81) || (sObjectType == 91)))
+				else if ((abs_x <= 2) && (abs_y <= 2) // strike on Big mobs & gate from a range
+					&& ((object_type == 66) || (object_type == 73) || (object_type == 81) || (object_type == 91)))
 				{
-					wType = CombatSystem::Get().GetAttackType();
+					action_type = CombatSystem::Get().GetAttackType();
 					m_pPlayer->m_Controller.SetCommand(Type::Attack);
 					m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 				}
@@ -7020,7 +6995,7 @@ bool CGame::ProcessRightClick(short msX, short msY, short indexX, short indexY, 
 					case 6: // Bow
 						m_pPlayer->m_Controller.SetCommand(Type::Attack);
 						m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
-						wType = CombatSystem::Get().GetAttackType();
+						action_type = CombatSystem::Get().GetAttackType();
 						break;
 
 					case 5: // Boxe
@@ -7028,57 +7003,57 @@ bool CGame::ProcessRightClick(short msX, short msY, short indexX, short indexY, 
 						break;
 
 					case 8: // LS
-						if ((absX <= 3) && (absY <= 3) && CombatSystem::Get().CanSuperAttack()
+						if ((abs_x <= 3) && (abs_y <= 3) && CombatSystem::Get().CanSuperAttack()
 							&& (CombatSystem::Get().GetAttackType() != 30)) // without StormBlade by Snoopy
 						{
-							wType = CombatSystem::Get().GetAttackType();
+							action_type = CombatSystem::Get().GetAttackType();
 							m_pPlayer->m_Controller.SetCommand(Type::Attack);
 							m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 						}
-						else if ((absX <= 5) && (absY <= 5) && CombatSystem::Get().CanSuperAttack()
+						else if ((abs_x <= 5) && (abs_y <= 5) && CombatSystem::Get().CanSuperAttack()
 							&& (CombatSystem::Get().GetAttackType() == 30)) // with stormBlade crit by Snoopy
 						{
-							wType = CombatSystem::Get().GetAttackType();
+							action_type = CombatSystem::Get().GetAttackType();
 							m_pPlayer->m_Controller.SetCommand(Type::Attack);
 							m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 						}
-						else if ((absX <= 3) && (absY <= 3)
+						else if ((abs_x <= 3) && (abs_y <= 3)
 							&& (CombatSystem::Get().GetAttackType() == 5)) // with stormBlade no crit by Snoopy
 						{
-							wType = CombatSystem::Get().GetAttackType();
+							action_type = CombatSystem::Get().GetAttackType();
 							m_pPlayer->m_Controller.SetCommand(Type::Attack);
 							m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 						}
 						break;
 
 					case 9: // Fencing
-						if ((absX <= 4) && (absY <= 4) && CombatSystem::Get().CanSuperAttack()) {
+						if ((abs_x <= 4) && (abs_y <= 4) && CombatSystem::Get().CanSuperAttack()) {
 							m_pPlayer->m_Controller.SetCommand(Type::Attack);
 							m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
-							wType = CombatSystem::Get().GetAttackType();
+							action_type = CombatSystem::Get().GetAttackType();
 						}
 						break;
 
 					case hb::shared::owner::Slime: //
-						if ((absX <= 2) && (absY <= 2) && CombatSystem::Get().CanSuperAttack()) {
+						if ((abs_x <= 2) && (abs_y <= 2) && CombatSystem::Get().CanSuperAttack()) {
 							m_pPlayer->m_Controller.SetCommand(Type::Attack);
 							m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
-							wType = CombatSystem::Get().GetAttackType();
+							action_type = CombatSystem::Get().GetAttackType();
 						}
 						break;
 
 					case hb::shared::owner::OrcMage: //
-						if ((absX <= 2) && (absY <= 2) && CombatSystem::Get().CanSuperAttack()) {
+						if ((abs_x <= 2) && (abs_y <= 2) && CombatSystem::Get().CanSuperAttack()) {
 							m_pPlayer->m_Controller.SetCommand(Type::Attack);
 							m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
-							wType = CombatSystem::Get().GetAttackType();
+							action_type = CombatSystem::Get().GetAttackType();
 						}
 						break;
 					case hb::shared::owner::Guard: //
-						if ((absX <= 2) && (absY <= 2) && CombatSystem::Get().CanSuperAttack()) {
+						if ((abs_x <= 2) && (abs_y <= 2) && CombatSystem::Get().CanSuperAttack()) {
 							m_pPlayer->m_Controller.SetCommand(Type::Attack);
 							m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
-							wType = CombatSystem::Get().GetAttackType();
+							action_type = CombatSystem::Get().GetAttackType();
 						}
 						break;
 					}
@@ -7086,11 +7061,11 @@ bool CGame::ProcessRightClick(short msX, short msY, short indexX, short indexY, 
 			}
 			else // CTRL not pressed
 			{
-				absX = abs(m_pPlayer->m_sPlayerX - m_sMCX);
-				absY = abs(m_pPlayer->m_sPlayerY - m_sMCY);
-				m_pMapData->bGetOwner(m_sMCX, m_sMCY, cName, &sObjectType, &iObjectStatus, &m_wCommObjectID);
-				if (sObjectType >= 10 || ((sObjectType >= 1) && (sObjectType <= 6))) {
-					switch (sObjectType) {
+				abs_x = abs(m_pPlayer->m_sPlayerX - m_sMCX);
+				abs_y = abs(m_pPlayer->m_sPlayerY - m_sMCY);
+				m_pMapData->bGetOwner(m_sMCX, m_sMCY, name, &object_type, &object_status, &m_wCommObjectID);
+				if (object_type >= 10 || ((object_type >= 1) && (object_type <= 6))) {
+					switch (object_type) {
 					case hb::shared::owner::ShopKeeper:
 					case hb::shared::owner::Gandalf:
 					case hb::shared::owner::Howard:
@@ -7100,18 +7075,18 @@ bool CGame::ProcessRightClick(short msX, short msY, short indexX, short indexY, 
 						break;
 
 					default: // All "normal mobs"
-						if (!IsHostile(iObjectStatus.iRelationship)) break;
-						if ((sObjectType >= 1) && (sObjectType <= 6) && (m_pPlayer->m_bForceAttack == false)) break;
-						if ((absX <= 1) && (absY <= 1))
+						if (!IsHostile(object_status.iRelationship)) break;
+						if ((object_type >= 1) && (object_type <= 6) && (m_pPlayer->m_bForceAttack == false)) break;
+						if ((abs_x <= 1) && (abs_y <= 1))
 						{
-							wType = CombatSystem::Get().GetAttackType();
+							action_type = CombatSystem::Get().GetAttackType();
 							m_pPlayer->m_Controller.SetCommand(Type::Attack);
 							m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 						}
-						else if ((absX <= 2) && (absY <= 2) // strike on Big mobs & gate from a range
-							&& ((sObjectType == 66) || (sObjectType == 73) || (sObjectType == 81) || (sObjectType == 91)))
+						else if ((abs_x <= 2) && (abs_y <= 2) // strike on Big mobs & gate from a range
+							&& ((object_type == 66) || (object_type == 73) || (object_type == 81) || (object_type == 91)))
 						{
-							wType = CombatSystem::Get().GetAttackType();
+							action_type = CombatSystem::Get().GetAttackType();
 							m_pPlayer->m_Controller.SetCommand(Type::Attack);
 							m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 						}
@@ -7121,7 +7096,7 @@ bool CGame::ProcessRightClick(short msX, short msY, short indexX, short indexY, 
 							case 6: // Bow
 								m_pPlayer->m_Controller.SetCommand(Type::Attack);
 								m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
-								wType = CombatSystem::Get().GetAttackType();
+								action_type = CombatSystem::Get().GetAttackType();
 								break;
 
 							case 5: // Boxe
@@ -7129,56 +7104,56 @@ bool CGame::ProcessRightClick(short msX, short msY, short indexX, short indexY, 
 								break;
 
 							case 8: // LS
-								if ((absX <= 3) && (absY <= 3) && CombatSystem::Get().CanSuperAttack()
+								if ((abs_x <= 3) && (abs_y <= 3) && CombatSystem::Get().CanSuperAttack()
 									&& (CombatSystem::Get().GetAttackType() != 30)) // crit without StormBlade by Snoopy
 								{
-									wType = CombatSystem::Get().GetAttackType();
+									action_type = CombatSystem::Get().GetAttackType();
 									m_pPlayer->m_Controller.SetCommand(Type::Attack);
 									m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 								}
-								else if ((absX <= 5) && (absY <= 5) && CombatSystem::Get().CanSuperAttack()
+								else if ((abs_x <= 5) && (abs_y <= 5) && CombatSystem::Get().CanSuperAttack()
 									&& (CombatSystem::Get().GetAttackType() == 30)) // with stormBlade crit by Snoopy
 								{
-									wType = CombatSystem::Get().GetAttackType();
+									action_type = CombatSystem::Get().GetAttackType();
 									m_pPlayer->m_Controller.SetCommand(Type::Attack);
 									m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 								}
-								else if ((absX <= 3) && (absY <= 3)
+								else if ((abs_x <= 3) && (abs_y <= 3)
 									&& (CombatSystem::Get().GetAttackType() == 5)) // with stormBlade no crit by Snoopy
 								{
-									wType = CombatSystem::Get().GetAttackType();
+									action_type = CombatSystem::Get().GetAttackType();
 									m_pPlayer->m_Controller.SetCommand(Type::Attack);
 									m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 								}
 								break;
 
 							case 9: // fencing
-								if ((absX <= 4) && (absY <= 4) && CombatSystem::Get().CanSuperAttack()) {
+								if ((abs_x <= 4) && (abs_y <= 4) && CombatSystem::Get().CanSuperAttack()) {
 									m_pPlayer->m_Controller.SetCommand(Type::Attack);
 									m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
-									wType = CombatSystem::Get().GetAttackType();
+									action_type = CombatSystem::Get().GetAttackType();
 								}
 								break;
 
 							case hb::shared::owner::Slime: //
-								if ((absX <= 2) && (absY <= 2) && CombatSystem::Get().CanSuperAttack()) {
+								if ((abs_x <= 2) && (abs_y <= 2) && CombatSystem::Get().CanSuperAttack()) {
 									m_pPlayer->m_Controller.SetCommand(Type::Attack);
 									m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
-									wType = CombatSystem::Get().GetAttackType();
+									action_type = CombatSystem::Get().GetAttackType();
 								}
 								break;
 							case hb::shared::owner::OrcMage: // hammer
-								if ((absX <= 2) && (absY <= 2) && CombatSystem::Get().CanSuperAttack()) {
+								if ((abs_x <= 2) && (abs_y <= 2) && CombatSystem::Get().CanSuperAttack()) {
 									m_pPlayer->m_Controller.SetCommand(Type::Attack);
 									m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
-									wType = CombatSystem::Get().GetAttackType();
+									action_type = CombatSystem::Get().GetAttackType();
 								}
 								break;
 							case hb::shared::owner::Guard: // wand
-								if ((absX <= 2) && (absY <= 2) && CombatSystem::Get().CanSuperAttack()) {
+								if ((abs_x <= 2) && (abs_y <= 2) && CombatSystem::Get().CanSuperAttack()) {
 									m_pPlayer->m_Controller.SetCommand(Type::Attack);
 									m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
-									wType = CombatSystem::Get().GetAttackType();
+									action_type = CombatSystem::Get().GetAttackType();
 								}
 								break;
 							}
@@ -7190,12 +7165,12 @@ bool CGame::ProcessRightClick(short msX, short msY, short indexX, short indexY, 
 		}
 		else
 		{
-			cDir = CMisc::cGetNextMoveDir(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, indexX, indexY);
+			direction = CMisc::cGetNextMoveDir(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, tile_x, tile_y);
 			if (m_pPlayer->m_iHP <= 0) return true;
-			if (cDir == 0) return true;
-			if (m_pPlayer->m_iPlayerDir == cDir) return true;
+			if (direction == 0) return true;
+			if (m_pPlayer->m_iPlayerDir == direction) return true;
 			ClearSkillUsingStatus();
-			m_pPlayer->m_iPlayerDir = cDir;
+			m_pPlayer->m_iPlayerDir = direction;
 			bSendCommand(MsgId::CommandMotion, Type::Stop, m_pPlayer->m_iPlayerDir, 0, 0, 0, 0);
 
 			m_pMapData->bSetOwner(m_pPlayer->m_sPlayerObjectID, m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pPlayer->m_sPlayerType, m_pPlayer->m_iPlayerDir,
@@ -7211,14 +7186,14 @@ bool CGame::ProcessRightClick(short msX, short msY, short indexX, short indexY, 
 	return false;
 }
 
-void CGame::ProcessMotionCommands(uint16_t wType)
+void CGame::ProcessMotionCommands(uint16_t action_type)
 {
-	char cDir;
-	std::string pDstName;
-	short sDstOwnerType;
-	hb::shared::entity::PlayerStatus iDstOwnerStatus;
-	bool bGORet;
-	std::string cTxt;
+	char direction = 0;
+	std::string dest_name;
+	short dest_owner_type = 0;
+	hb::shared::entity::PlayerStatus dest_owner_status;
+	bool has_owner = false;
+	std::string text;
 
 
 	if (m_pPlayer->m_Controller.GetCommand() != Type::Stop)
@@ -7287,7 +7262,7 @@ void CGame::ProcessMotionCommands(uint16_t wType)
 		case Type::DamageMove: // v1.43
 
 			if (m_pPlayer->m_bParalyze) return;
-			bGORet = m_pMapData->bGetOwner(m_pPlayer->m_Controller.GetDestinationX(), m_pPlayer->m_Controller.GetDestinationY(), pDstName, &sDstOwnerType, &iDstOwnerStatus, &m_wCommObjectID); // v1.4
+			has_owner = m_pMapData->bGetOwner(m_pPlayer->m_Controller.GetDestinationX(), m_pPlayer->m_Controller.GetDestinationY(), dest_name, &dest_owner_type, &dest_owner_status, &m_wCommObjectID); // v1.4
 
 			if ((m_pPlayer->m_sPlayerX == m_pPlayer->m_Controller.GetDestinationX()) && (m_pPlayer->m_sPlayerY == m_pPlayer->m_Controller.GetDestinationY()))
 			{
@@ -7305,7 +7280,7 @@ void CGame::ProcessMotionCommands(uint16_t wType)
 				}
 			}
 			else if ((abs(m_pPlayer->m_sPlayerX - m_pPlayer->m_Controller.GetDestinationX()) <= 1) && (abs(m_pPlayer->m_sPlayerY - m_pPlayer->m_Controller.GetDestinationY()) <= 1) &&
-				(bGORet == true) && (sDstOwnerType != 0))
+				(has_owner == true) && (dest_owner_type != 0))
 				m_pPlayer->m_Controller.SetCommand(Type::Stop);
 			else if ((abs(m_pPlayer->m_sPlayerX - m_pPlayer->m_Controller.GetDestinationX()) <= 2) && (abs(m_pPlayer->m_sPlayerY - m_pPlayer->m_Controller.GetDestinationY()) <= 2) &&
 				(m_pMapData->m_tile[m_pPlayer->m_Controller.GetDestinationX()][m_pPlayer->m_Controller.GetDestinationY()].m_bIsMoveAllowed == false))
@@ -7322,13 +7297,13 @@ void CGame::ProcessMotionCommands(uint16_t wType)
 					if (m_pPlayer->m_iSP < 1) m_pPlayer->m_Controller.SetCommand(Type::Move);
 				}
 
-				cDir = m_pPlayer->m_Controller.GetNextMoveDir(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pPlayer->m_Controller.GetDestinationX(), m_pPlayer->m_Controller.GetDestinationY(), m_pMapData.get(), true);
+				direction = m_pPlayer->m_Controller.GetNextMoveDir(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pPlayer->m_Controller.GetDestinationX(), m_pPlayer->m_Controller.GetDestinationY(), m_pMapData.get(), true);
 				// Snoopy: Illusion Movement
 				if ((m_bIllusionMVT == true) && (m_pPlayer->m_Controller.GetCommand() != Type::DamageMove))
 				{
-					cDir = m_pPlayer->m_Controller.GetNextMoveDir(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pPlayer->m_Controller.GetDestinationX(), m_pPlayer->m_Controller.GetDestinationY(), m_pMapData.get(), true, true);
+					direction = m_pPlayer->m_Controller.GetNextMoveDir(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pPlayer->m_Controller.GetDestinationX(), m_pPlayer->m_Controller.GetDestinationY(), m_pMapData.get(), true, true);
 				}
-				if (cDir != 0)
+				if (direction != 0)
 				{
 					// Cancel logout countdown on movement
 					if ((m_cLogOutCount > 0) && (m_bForceDisconn == false))
@@ -7337,9 +7312,9 @@ void CGame::ProcessMotionCommands(uint16_t wType)
 						AddEventList(DLGBOX_CLICK_SYSMENU2, 10);
 					}
 
-					m_pPlayer->m_iPlayerDir = cDir;
-					bSendCommand(MsgId::CommandMotion, m_pPlayer->m_Controller.GetCommand(), cDir, 0, 0, 0, 0);
-					switch (cDir) {
+					m_pPlayer->m_iPlayerDir = direction;
+					bSendCommand(MsgId::CommandMotion, m_pPlayer->m_Controller.GetCommand(), direction, 0, 0, 0, 0);
+					switch (direction) {
 					case 1:	m_pPlayer->m_sPlayerY--; break;
 					case 2:	m_pPlayer->m_sPlayerY--; m_pPlayer->m_sPlayerX++;	break;
 					case 3:	m_pPlayer->m_sPlayerX++; break;
@@ -7369,14 +7344,14 @@ void CGame::ProcessMotionCommands(uint16_t wType)
 			break;
 
 		case Type::Attack:
-			cDir = CMisc::cGetNextMoveDir(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pPlayer->m_Controller.GetDestinationX(), m_pPlayer->m_Controller.GetDestinationY());
+			direction = CMisc::cGetNextMoveDir(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pPlayer->m_Controller.GetDestinationX(), m_pPlayer->m_Controller.GetDestinationY());
 			// Snoopy: Illusion movement
 			if (m_bIllusionMVT == true)
 			{
-				cDir += 4;
-				if (cDir > 8) cDir -= 8;
+				direction += 4;
+				if (direction > 8) direction -= 8;
 			}
-			if (cDir != 0)
+			if (direction != 0)
 			{
 				// Cancel logout countdown on attack
 				if ((m_cLogOutCount > 0) && (m_bForceDisconn == false))
@@ -7385,19 +7360,19 @@ void CGame::ProcessMotionCommands(uint16_t wType)
 					AddEventList(DLGBOX_CLICK_SYSMENU2, 10);
 				}
 
-				if ((wType == 2) || (wType == 25))
+				if ((action_type == 2) || (action_type == 25))
 				{
 					if (_bCheckItemByType(ItemType::Arrow) == false)
-						wType = 0;
+						action_type = 0;
 				}
-					m_pPlayer->m_iPlayerDir = cDir;
+					m_pPlayer->m_iPlayerDir = direction;
 				m_wLastAttackTargetID = m_wCommObjectID;
-				bSendCommand(MsgId::CommandMotion, Type::Attack, cDir, m_pPlayer->m_Controller.GetDestinationX(), m_pPlayer->m_Controller.GetDestinationY(), wType, 0, m_wCommObjectID);
+				bSendCommand(MsgId::CommandMotion, Type::Attack, direction, m_pPlayer->m_Controller.GetDestinationX(), m_pPlayer->m_Controller.GetDestinationY(), action_type, 0, m_wCommObjectID);
 				m_pMapData->bSetOwner(m_pPlayer->m_sPlayerObjectID, m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pPlayer->m_sPlayerType, m_pPlayer->m_iPlayerDir,
 					m_pPlayer->m_playerAppearance,
 					m_pPlayer->m_playerStatus, m_pPlayer->m_cPlayerName,
 					Type::Attack,
-					m_pPlayer->m_Controller.GetDestinationX() - m_pPlayer->m_sPlayerX, m_pPlayer->m_Controller.GetDestinationY() - m_pPlayer->m_sPlayerY, wType);
+					m_pPlayer->m_Controller.GetDestinationX() - m_pPlayer->m_sPlayerX, m_pPlayer->m_Controller.GetDestinationY() - m_pPlayer->m_sPlayerY, action_type);
 				m_pPlayer->m_Controller.SetCommandAvailable(false);
 				m_pPlayer->m_Controller.SetCommandTime(GameClock::GetTimeMS());
 				// Compute expected swing duration (must match server's bCheckClientAttackFrequency formula)
@@ -7417,21 +7392,21 @@ void CGame::ProcessMotionCommands(uint16_t wType)
 
 		case Type::AttackMove:
 			if (m_pPlayer->m_bParalyze) return;
-			bGORet = m_pMapData->bGetOwner(m_pPlayer->m_Controller.GetDestinationX(), m_pPlayer->m_Controller.GetDestinationY(), pDstName, &sDstOwnerType, &iDstOwnerStatus, &m_wCommObjectID);
+			has_owner = m_pMapData->bGetOwner(m_pPlayer->m_Controller.GetDestinationX(), m_pPlayer->m_Controller.GetDestinationY(), dest_name, &dest_owner_type, &dest_owner_status, &m_wCommObjectID);
 			if ((m_pPlayer->m_sPlayerX == m_pPlayer->m_Controller.GetDestinationX()) && (m_pPlayer->m_sPlayerY == m_pPlayer->m_Controller.GetDestinationY()))
 				m_pPlayer->m_Controller.SetCommand(Type::Stop);
 			else if ((abs(m_pPlayer->m_sPlayerX - m_pPlayer->m_Controller.GetDestinationX()) <= 1) && (abs(m_pPlayer->m_sPlayerY - m_pPlayer->m_Controller.GetDestinationY()) <= 1) &&
-				(bGORet == true) && (sDstOwnerType != 0))
+				(has_owner == true) && (dest_owner_type != 0))
 				m_pPlayer->m_Controller.SetCommand(Type::Stop);
 			else
 			{
-				cDir = m_pPlayer->m_Controller.GetNextMoveDir(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pPlayer->m_Controller.GetDestinationX(), m_pPlayer->m_Controller.GetDestinationY(), m_pMapData.get(), true);
+				direction = m_pPlayer->m_Controller.GetNextMoveDir(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pPlayer->m_Controller.GetDestinationX(), m_pPlayer->m_Controller.GetDestinationY(), m_pMapData.get(), true);
 				// Snoopy: Illusion mvt
 				if (m_bIllusionMVT == true)
 				{
-					cDir = m_pPlayer->m_Controller.GetNextMoveDir(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pPlayer->m_Controller.GetDestinationX(), m_pPlayer->m_Controller.GetDestinationY(), m_pMapData.get(), true, true);
+					direction = m_pPlayer->m_Controller.GetNextMoveDir(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pPlayer->m_Controller.GetDestinationX(), m_pPlayer->m_Controller.GetDestinationY(), m_pMapData.get(), true, true);
 				}
-				if (cDir != 0)
+				if (direction != 0)
 				{
 					// Cancel logout countdown on attack-move
 					if ((m_cLogOutCount > 0) && (m_bForceDisconn == false))
@@ -7440,10 +7415,10 @@ void CGame::ProcessMotionCommands(uint16_t wType)
 						AddEventList(DLGBOX_CLICK_SYSMENU2, 10);
 					}
 
-					m_pPlayer->m_iPlayerDir = cDir;
+					m_pPlayer->m_iPlayerDir = direction;
 					m_wLastAttackTargetID = m_wCommObjectID;
-					bSendCommand(MsgId::CommandMotion, Type::AttackMove, cDir, m_pPlayer->m_Controller.GetDestinationX(), m_pPlayer->m_Controller.GetDestinationY(), wType, 0, m_wCommObjectID);
-					switch (cDir) {
+					bSendCommand(MsgId::CommandMotion, Type::AttackMove, direction, m_pPlayer->m_Controller.GetDestinationX(), m_pPlayer->m_Controller.GetDestinationY(), action_type, 0, m_wCommObjectID);
+					switch (direction) {
 					case 1:	m_pPlayer->m_sPlayerY--; break;
 					case 2:	m_pPlayer->m_sPlayerY--; m_pPlayer->m_sPlayerX++;	break;
 					case 3:	m_pPlayer->m_sPlayerX++; break;
@@ -7457,7 +7432,7 @@ void CGame::ProcessMotionCommands(uint16_t wType)
 					m_pMapData->bSetOwner(m_pPlayer->m_sPlayerObjectID, m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pPlayer->m_sPlayerType, m_pPlayer->m_iPlayerDir,
 						m_pPlayer->m_playerAppearance,
 						m_pPlayer->m_playerStatus, m_pPlayer->m_cPlayerName,
-						m_pPlayer->m_Controller.GetCommand(), m_pPlayer->m_Controller.GetDestinationX() - m_pPlayer->m_sPlayerX, m_pPlayer->m_Controller.GetDestinationY() - m_pPlayer->m_sPlayerY, wType);
+						m_pPlayer->m_Controller.GetCommand(), m_pPlayer->m_Controller.GetDestinationX() - m_pPlayer->m_sPlayerX, m_pPlayer->m_Controller.GetDestinationY() - m_pPlayer->m_sPlayerY, action_type);
 					m_pPlayer->m_Controller.SetCommandAvailable(false);
 					m_pPlayer->m_Controller.SetCommandTime(GameClock::GetTimeMS());
 					// Compute expected swing duration (must match server's bCheckClientAttackFrequency formula)
@@ -7515,8 +7490,8 @@ void CGame::ProcessMotionCommands(uint16_t wType)
 			m_pPlayer->m_Controller.SetCommand(Type::Stop);
 			m_floatingText.RemoveByObjectID(m_pPlayer->m_sPlayerObjectID);
 			{
-				cTxt = std::format("{}!", m_pMagicCfgList[m_iCastingMagicType]->m_cName);
-				m_floatingText.AddNotifyText(NotifyTextType::MagicCastName, cTxt.c_str(), GameClock::GetTimeMS(),
+				text = std::format("{}!", m_pMagicCfgList[m_iCastingMagicType]->m_cName);
+				m_floatingText.AddNotifyText(NotifyTextType::MagicCastName, text.c_str(), GameClock::GetTimeMS(),
 					m_pPlayer->m_sPlayerObjectID, m_pMapData.get());
 			}
 			return;
@@ -7537,17 +7512,15 @@ void CGame::RequestTeleportAndWaitData()
 	ChangeGameMode(GameMode::WaitingInitData);
 }
 
-void CGame::InitDataResponseHandler(char* pData)
+void CGame::InitDataResponseHandler(char* packet_data)
 {
-	int i;
-	short sX, sY;
-	const char* cp;
-	std::string cTxt, cPreCurLocation;
+	short pivot_x = 0, pivot_y = 0;
+	std::string text, prev_location;
 
-	char cMapFileName[32];
-	bool  bIsObserverMode;
-	HANDLE hFile;
-	uint32_t dwFileSize;
+	char map_filename[32]{};
+	bool is_observer = false;
+	HANDLE file_handle = INVALID_HANDLE_VALUE;
+	uint32_t file_size = 0;
 
 	m_pPlayer->m_bParalyze = false;
 	m_pMapData->Init();
@@ -7567,7 +7540,6 @@ void CGame::InitDataResponseHandler(char* pData)
 	m_dialogBoxManager.DisableDialogBox(DialogBoxId::GuildHallMenu); // Gail's diag
 
 	m_pPlayer->m_Controller.SetCommand(Type::Stop);
-	//m_pPlayer->m_Controller.SetCommandAvailable(true);
 	m_pPlayer->m_Controller.ResetCommandCount();
 	m_bIsGetPointingMode = false;
 	m_iPointCommandType = -1;
@@ -7586,7 +7558,7 @@ void CGame::InitDataResponseHandler(char* pData)
 
 	WeatherManager::Get().ResetParticles();
 
-	for (i = 0; i < game_limits::max_guild_names; i++)
+	for (int i = 0; i < game_limits::max_guild_names; i++)
 	{
 		m_stGuildName[i].dwRefTime = 0;
 		m_stGuildName[i].iGuildRank = -1;
@@ -7595,11 +7567,11 @@ void CGame::InitDataResponseHandler(char* pData)
 	m_floatingText.ClearAll();
 
 	const auto* pkt = hb::net::PacketCast<hb::net::PacketResponseInitDataHeader>(
-		pData, sizeof(hb::net::PacketResponseInitDataHeader));
+		packet_data, sizeof(hb::net::PacketResponseInitDataHeader));
 	if (!pkt) return;
 	m_pPlayer->m_sPlayerObjectID = pkt->player_object_id;
-	sX = pkt->pivot_x;
-	sY = pkt->pivot_y;
+	pivot_x = pkt->pivot_x;
+	pivot_y = pkt->pivot_y;
 	m_pPlayer->m_sPlayerType = pkt->player_type;
 	m_pPlayer->m_playerAppearance = pkt->appearance;
 	m_pPlayer->m_playerStatus = pkt->status;
@@ -7631,7 +7603,7 @@ void CGame::InitDataResponseHandler(char* pData)
 		m_dialogBoxManager.Info(DialogBoxId::GuideMap).sSizeY = 128;
 	}
 
-	cPreCurLocation = m_cCurLocation;
+	prev_location = m_cCurLocation;
 	m_cCurLocation.assign(pkt->cur_location, strnlen(pkt->cur_location, sizeof(pkt->cur_location)));
 
 	WeatherManager::Get().SetAmbientLight(static_cast<char>(pkt->sprite_alpha));
@@ -7649,11 +7621,11 @@ void CGame::InitDataResponseHandler(char* pData)
 		break;
 	}
 	m_pPlayer->m_iContribution = pkt->contribution;
-	bIsObserverMode = pkt->observer_mode != 0;
+	is_observer = pkt->observer_mode != 0;
 	m_pPlayer->m_iHP = pkt->hp;
 	m_cDiscount = static_cast<char>(pkt->discount);
 
-	cp = reinterpret_cast<const char*>(pData) + sizeof(hb::net::PacketResponseInitDataHeader);
+	const char* cursor = reinterpret_cast<const char*>(packet_data) + sizeof(hb::net::PacketResponseInitDataHeader);
 
 	{
 		char ws = WeatherManager::Get().GetWeatherStatus();
@@ -7666,30 +7638,30 @@ void CGame::InitDataResponseHandler(char* pData)
 		else WeatherManager::Get().SetWeather(false, 0);
 	}
 
-	std::memset(cMapFileName, 0, sizeof(cMapFileName));
-	std::snprintf(cMapFileName + strlen(cMapFileName), sizeof(cMapFileName) - strlen(cMapFileName), "%s", "mapdata\\");
+	std::memset(map_filename, 0, sizeof(map_filename));
+	std::snprintf(map_filename + strlen(map_filename), sizeof(map_filename) - strlen(map_filename), "%s", "mapdata\\");
 	// CLEROTH - MW MAPS
 	if (m_cMapName.starts_with("defaultmw"))
 	{
-		std::snprintf(cMapFileName + strlen(cMapFileName), sizeof(cMapFileName) - strlen(cMapFileName), "%s", "mw\\defaultmw");
+		std::snprintf(map_filename + strlen(map_filename), sizeof(map_filename) - strlen(map_filename), "%s", "mw\\defaultmw");
 	}
 	else
 	{
-		std::snprintf(cMapFileName + strlen(cMapFileName), sizeof(cMapFileName) - strlen(cMapFileName), "%s", m_cMapName.c_str());
+		std::snprintf(map_filename + strlen(map_filename), sizeof(map_filename) - strlen(map_filename), "%s", m_cMapName.c_str());
 	}
 
-	std::snprintf(cMapFileName + strlen(cMapFileName), sizeof(cMapFileName) - strlen(cMapFileName), "%s", ".amd");
-	m_pMapData->OpenMapDataFile(cMapFileName);
+	std::snprintf(map_filename + strlen(map_filename), sizeof(map_filename) - strlen(map_filename), "%s", ".amd");
+	m_pMapData->OpenMapDataFile(map_filename);
 
-	m_pMapData->m_sPivotX = sX;
-	m_pMapData->m_sPivotY = sY;
+	m_pMapData->m_sPivotX = pivot_x;
+	m_pMapData->m_sPivotY = pivot_y;
 
-	m_pPlayer->m_sPlayerX = sX + hb::shared::view::PlayerPivotOffsetX;
-	m_pPlayer->m_sPlayerY = sY + hb::shared::view::PlayerPivotOffsetY;
+	m_pPlayer->m_sPlayerX = pivot_x + hb::shared::view::PlayerPivotOffsetX;
+	m_pPlayer->m_sPlayerY = pivot_y + hb::shared::view::PlayerPivotOffsetY;
 
 	m_pPlayer->m_iPlayerDir = 5;
 
-	if (bIsObserverMode == false)
+	if (is_observer == false)
 	{
 		m_pMapData->bSetOwner(m_pPlayer->m_sPlayerObjectID, m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pPlayer->m_sPlayerType, m_pPlayer->m_iPlayerDir,
 			m_pPlayer->m_playerAppearance, // v1.4
@@ -7697,13 +7669,11 @@ void CGame::InitDataResponseHandler(char* pData)
 			Type::Stop, 0, 0, 0);
 	}
 
-	//m_sViewDstX = m_sViewPointX = (sX + VIEW_CENTER_TILE_X()) * 32 - 16;
-	//m_sViewDstY = m_sViewPointY = (sY + VIEW_CENTER_TILE_Y()) * 32 - 16;
 	m_Camera.SnapTo((m_pPlayer->m_sPlayerX - VIEW_CENTER_TILE_X()) * 32 - 16, (m_pPlayer->m_sPlayerY - VIEW_CENTER_TILE_Y()) * 32 - 16);
-	_ReadMapData(sX + hb::shared::view::MapDataBufferX, sY + hb::shared::view::MapDataBufferY, cp);
+	_ReadMapData(pivot_x + hb::shared::view::MapDataBufferX, pivot_y + hb::shared::view::MapDataBufferY, cursor);
 	// ------------------------------------------------------------------------+
-	cTxt = std::format(INITDATA_RESPONSE_HANDLER1, m_cMapMessage);
-	AddEventList(cTxt.c_str(), 10);
+	text = std::format(INITDATA_RESPONSE_HANDLER1, m_cMapMessage);
+	AddEventList(text.c_str(), 10);
 
 	m_dialogBoxManager.Info(DialogBoxId::WarningBattleArea).sX = 150;
 	m_dialogBoxManager.Info(DialogBoxId::WarningBattleArea).sY = 130;
@@ -7732,92 +7702,84 @@ void CGame::InitDataResponseHandler(char* pData)
 	if (m_bIsFirstConn == true)
 	{
 		m_bIsFirstConn = false;
-		hFile = CreateFile("contents\\contents1000.txt", GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
-		if (hFile == INVALID_HANDLE_VALUE)
-			dwFileSize = 0;
+		file_handle = CreateFile("contents\\contents1000.txt", GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
+		if (file_handle == INVALID_HANDLE_VALUE)
+			file_size = 0;
 		else
 		{
-			dwFileSize = GetFileSize(hFile, 0);
-			CloseHandle(hFile);
+			file_size = GetFileSize(file_handle, 0);
+			CloseHandle(file_handle);
 		}
-		bSendCommand(MsgId::RequestNoticement, 0, 0, static_cast<int>(dwFileSize), 0, 0, 0);
+		bSendCommand(MsgId::RequestNoticement, 0, 0, static_cast<int>(file_size), 0, 0, 0);
 	}
-	//cp += 2;
 }
 
-void CGame::MotionEventHandler(char* pData)
+void CGame::MotionEventHandler(char* packet_data)
 {
-	WORD wEventType, wObjectID;
-	short sX, sY, sType, sV1, sV2, sV3;
-	short npcConfigId = -1;
-	hb::shared::entity::PlayerStatus iStatus;
-	char cDir;
-	std::string cName;
-	int iLoc;
-	hb::shared::entity::PlayerAppearance playerAppearance;
-	bool bPrevCombatMode = false;
-	std::string cTxt;
-	cName.clear();
-	sX = -1;
-	sY = -1;
-	sV1 = sV2 = sV3 = 0;
-	iStatus.Clear();
-	iLoc = 0;
-	cDir = 0;
+	WORD event_type = 0, object_id = 0;
+	short map_x = -1, map_y = -1, owner_type = 0, value1 = 0, value2 = 0, value3 = 0;
+	short npc_config_id = -1;
+	hb::shared::entity::PlayerStatus status;
+	char direction = 0;
+	std::string name;
+	int location = 0;
+	hb::shared::entity::PlayerAppearance appearance;
+	bool prev_combat_mode = false;
+	std::string text;
 
-	const auto* header = hb::net::PacketCast<hb::net::PacketHeader>(pData, sizeof(hb::net::PacketHeader));
+	const auto* header = hb::net::PacketCast<hb::net::PacketHeader>(packet_data, sizeof(hb::net::PacketHeader));
 	if (!header) return;
-	wEventType = header->msg_type;
+	event_type = header->msg_type;
 
-	const auto* baseId = hb::net::PacketCast<hb::net::PacketEventMotionBaseId>(pData, sizeof(hb::net::PacketEventMotionBaseId));
+	const auto* baseId = hb::net::PacketCast<hb::net::PacketEventMotionBaseId>(packet_data, sizeof(hb::net::PacketEventMotionBaseId));
 	if (!baseId) return;
-	wObjectID = baseId->object_id;
+	object_id = baseId->object_id;
 
-	if (hb::shared::object_id::IsNpcID(wObjectID)) {
+	if (hb::shared::object_id::IsNpcID(object_id)) {
 		m_dwLastNpcEventTime = GameClock::GetTimeMS();
 	}
 
-	if (!hb::shared::object_id::IsNearbyOffset(wObjectID))
+	if (!hb::shared::object_id::IsNearbyOffset(object_id))
 	{
-		if (hb::shared::object_id::IsPlayerID(wObjectID)) 	// Player
+		if (hb::shared::object_id::IsPlayerID(object_id)) 	// Player
 		{
-			const auto* pkt = hb::net::PacketCast<hb::net::PacketEventMotionPlayer>(pData, sizeof(hb::net::PacketEventMotionPlayer));
+			const auto* pkt = hb::net::PacketCast<hb::net::PacketEventMotionPlayer>(packet_data, sizeof(hb::net::PacketEventMotionPlayer));
 			if (!pkt) return;
-			sX = pkt->x;
-			sY = pkt->y;
-			sType = pkt->type;
-			cDir = static_cast<char>(pkt->dir);
-			cName.assign(pkt->name, strnlen(pkt->name, sizeof(pkt->name)));
-			playerAppearance = pkt->appearance;
-			iStatus = pkt->status;
-			iLoc = pkt->loc;
+			map_x = pkt->x;
+			map_y = pkt->y;
+			owner_type = pkt->type;
+			direction = static_cast<char>(pkt->dir);
+			name.assign(pkt->name, strnlen(pkt->name, sizeof(pkt->name)));
+			appearance = pkt->appearance;
+			status = pkt->status;
+			location = pkt->loc;
 		}
 		else 	// Npc or mob
 		{
-			const auto* pkt = hb::net::PacketCast<hb::net::PacketEventMotionNpc>(pData, sizeof(hb::net::PacketEventMotionNpc));
+			const auto* pkt = hb::net::PacketCast<hb::net::PacketEventMotionNpc>(packet_data, sizeof(hb::net::PacketEventMotionNpc));
 			if (!pkt) return;
-			sX = pkt->x;
-			sY = pkt->y;
-			npcConfigId = pkt->config_id;
-			sType = ResolveNpcType(npcConfigId);
-			cDir = static_cast<char>(pkt->dir);
-			cName.assign(pkt->name, strnlen(pkt->name, sizeof(pkt->name)));
-			playerAppearance.SetFromNpcAppearance(pkt->appearance);
-			iStatus.SetFromEntityStatus(pkt->status);
-			iLoc = pkt->loc;
+			map_x = pkt->x;
+			map_y = pkt->y;
+			npc_config_id = pkt->config_id;
+			owner_type = ResolveNpcType(npc_config_id);
+			direction = static_cast<char>(pkt->dir);
+			name.assign(pkt->name, strnlen(pkt->name, sizeof(pkt->name)));
+			appearance.SetFromNpcAppearance(pkt->appearance);
+			status.SetFromEntityStatus(pkt->status);
+			location = pkt->loc;
 		}
 	}
 	else
 	{
-		switch (wEventType) {
+		switch (event_type) {
 		case Type::Move:
 		case Type::Run:
 		{
-			const auto* pkt = hb::net::PacketCast<hb::net::PacketEventMotionDirOnly>(pData, sizeof(hb::net::PacketEventMotionDirOnly));
+			const auto* pkt = hb::net::PacketCast<hb::net::PacketEventMotionDirOnly>(packet_data, sizeof(hb::net::PacketEventMotionDirOnly));
 			if (!pkt) return;
-			cDir = static_cast<char>(pkt->dir);
-			sX = -1;
-			sY = -1;
+			direction = static_cast<char>(pkt->dir);
+			map_x = -1;
+			map_y = -1;
 		}
 		break;
 
@@ -7825,60 +7787,60 @@ void CGame::MotionEventHandler(char* pData)
 		case Type::Damage:
 		case Type::DamageMove:
 		{
-			const auto* pkt = hb::net::PacketCast<hb::net::PacketEventMotionShort>(pData, sizeof(hb::net::PacketEventMotionShort));
+			const auto* pkt = hb::net::PacketCast<hb::net::PacketEventMotionShort>(packet_data, sizeof(hb::net::PacketEventMotionShort));
 			if (!pkt) return;
-			cDir = static_cast<char>(pkt->dir);
-			sV1 = pkt->v1; // Damage or 0
-			sV2 = pkt->v2;
-			sX = -1;
-			sY = -1;
+			direction = static_cast<char>(pkt->dir);
+			value1 = pkt->v1; // Damage or 0
+			value2 = pkt->v2;
+			map_x = -1;
+			map_y = -1;
 		}
 		break;
 
 		case Type::Dying:
 		{
-			const auto* pkt = hb::net::PacketCast<hb::net::PacketEventMotionMove>(pData, sizeof(hb::net::PacketEventMotionMove));
+			const auto* pkt = hb::net::PacketCast<hb::net::PacketEventMotionMove>(packet_data, sizeof(hb::net::PacketEventMotionMove));
 			if (!pkt) return;
-			cDir = static_cast<char>(pkt->dir);
-			sV1 = pkt->v1;
-			sV2 = pkt->v2;
-			sX = pkt->x;
-			sY = pkt->y;
+			direction = static_cast<char>(pkt->dir);
+			value1 = pkt->v1;
+			value2 = pkt->v2;
+			map_x = pkt->x;
+			map_y = pkt->y;
 		}
 		break;
 
 		case Type::Attack:
 		case Type::AttackMove:
 		{
-			const auto* pkt = hb::net::PacketCast<hb::net::PacketEventMotionAttack>(pData, sizeof(hb::net::PacketEventMotionAttack));
+			const auto* pkt = hb::net::PacketCast<hb::net::PacketEventMotionAttack>(packet_data, sizeof(hb::net::PacketEventMotionAttack));
 			if (!pkt) return;
-			cDir = static_cast<char>(pkt->dir);
-			sV1 = pkt->v1;
-			sV2 = pkt->v2;
-			sV3 = pkt->v3;
+			direction = static_cast<char>(pkt->dir);
+			value1 = pkt->v1;
+			value2 = pkt->v2;
+			value3 = pkt->v3;
 		}
 		break;
 
 		default:
 		{
-			const auto* pkt = hb::net::PacketCast<hb::net::PacketEventMotionDirOnly>(pData, sizeof(hb::net::PacketEventMotionDirOnly));
+			const auto* pkt = hb::net::PacketCast<hb::net::PacketEventMotionDirOnly>(packet_data, sizeof(hb::net::PacketEventMotionDirOnly));
 			if (!pkt) return;
-			cDir = static_cast<char>(pkt->dir);
+			direction = static_cast<char>(pkt->dir);
 		}
 		break;
 		}
 	}
 
-	if ((wEventType == Type::NullAction) && (cName == m_pPlayer->m_cPlayerName))
+	if ((event_type == Type::NullAction) && (name == m_pPlayer->m_cPlayerName))
 	{
-		m_pPlayer->m_sPlayerType = sType;
-		bPrevCombatMode = m_pPlayer->m_playerAppearance.bIsWalking;
-		m_pPlayer->m_playerAppearance = playerAppearance;
-		m_pPlayer->m_playerStatus = iStatus;
+		m_pPlayer->m_sPlayerType = owner_type;
+		prev_combat_mode = m_pPlayer->m_playerAppearance.bIsWalking;
+		m_pPlayer->m_playerAppearance = appearance;
+		m_pPlayer->m_playerStatus = status;
 		m_pPlayer->m_bIsGMMode = m_pPlayer->m_playerStatus.bGMMode;
-		if (!bPrevCombatMode)
+		if (!prev_combat_mode)
 		{
-			if (playerAppearance.bIsWalking)
+			if (appearance.bIsWalking)
 			{
 				AddEventList(MOTION_EVENT_HANDLER1, 10);
 				m_pPlayer->m_bIsCombatMode = true;
@@ -7886,35 +7848,35 @@ void CGame::MotionEventHandler(char* pData)
 		}
 		else
 		{
-			if (!playerAppearance.bIsWalking)
+			if (!appearance.bIsWalking)
 			{
 				AddEventList(MOTION_EVENT_HANDLER2, 10);
 				m_pPlayer->m_bIsCombatMode = false;
 			}
 		}
-		if (m_pPlayer->m_Controller.GetCommand() != Type::Run && m_pPlayer->m_Controller.GetCommand() != Type::Move) { m_pMapData->bSetOwner(wObjectID, sX, sY, sType, cDir, playerAppearance, iStatus, cName, (char)wEventType, sV1, sV2, sV3, iLoc, 0, npcConfigId); }
+		if (m_pPlayer->m_Controller.GetCommand() != Type::Run && m_pPlayer->m_Controller.GetCommand() != Type::Move) { m_pMapData->bSetOwner(object_id, map_x, map_y, owner_type, direction, appearance, status, name, (char)event_type, value1, value2, value3, location, 0, npc_config_id); }
 	}
-	else { m_pMapData->bSetOwner(wObjectID, sX, sY, sType, cDir, playerAppearance, iStatus, cName, (char)wEventType, sV1, sV2, sV3, iLoc, 0, npcConfigId); }
+	else { m_pMapData->bSetOwner(object_id, map_x, map_y, owner_type, direction, appearance, status, name, (char)event_type, value1, value2, value3, location, 0, npc_config_id); }
 
-	switch (wEventType) {
+	switch (event_type) {
 	case Type::Magic: // Casting
-		m_floatingText.RemoveByObjectID(hb::shared::object_id::ToRealID(wObjectID));
+		m_floatingText.RemoveByObjectID(hb::shared::object_id::ToRealID(object_id));
 		{
-			cTxt = std::format("{}!", m_pMagicCfgList[sV1]->m_cName);
-			m_floatingText.AddNotifyText(NotifyTextType::MagicCastName, cTxt.c_str(), m_dwCurTime,
-				hb::shared::object_id::ToRealID(wObjectID), m_pMapData.get());
+			text = std::format("{}!", m_pMagicCfgList[value1]->m_cName);
+			m_floatingText.AddNotifyText(NotifyTextType::MagicCastName, text.c_str(), m_dwCurTime,
+				hb::shared::object_id::ToRealID(object_id), m_pMapData.get());
 		}
 		break;
 
 	case Type::Dying:
-		m_floatingText.RemoveByObjectID(hb::shared::object_id::ToRealID(wObjectID));
-		m_floatingText.AddDamageFromValue(sV1, true, m_dwCurTime,
-			hb::shared::object_id::ToRealID(wObjectID), m_pMapData.get());
+		m_floatingText.RemoveByObjectID(hb::shared::object_id::ToRealID(object_id));
+		m_floatingText.AddDamageFromValue(value1, true, m_dwCurTime,
+			hb::shared::object_id::ToRealID(object_id), m_pMapData.get());
 		break;
 
 	case Type::Damage:
 	case Type::DamageMove:
-		if (cName == m_pPlayer->m_cPlayerName)
+		if (name == m_pPlayer->m_cPlayerName)
 		{
 			// Cancel spell casting if in the animation phase (Type::Magic)
 			if (m_pPlayer->m_Controller.GetCommand() == Type::Magic)
@@ -7928,113 +7890,113 @@ void CGame::MotionEventHandler(char* pData)
 			m_pPlayer->m_Controller.SetCommandAvailable(false);
 			m_pPlayer->m_Controller.SetCommandTime(GameClock::GetTimeMS());
 		}
-		m_floatingText.RemoveByObjectID(hb::shared::object_id::ToRealID(wObjectID));
-		m_floatingText.AddDamageFromValue(sV1, false, m_dwCurTime,
-			hb::shared::object_id::ToRealID(wObjectID), m_pMapData.get());
+		m_floatingText.RemoveByObjectID(hb::shared::object_id::ToRealID(object_id));
+		m_floatingText.AddDamageFromValue(value1, false, m_dwCurTime,
+			hb::shared::object_id::ToRealID(object_id), m_pMapData.get());
 		break;
 
 	case Type::Attack:
 	case Type::AttackMove:
-		if (wObjectID == m_pPlayer->m_sPlayerObjectID + hb::shared::object_id::NearbyOffset)
+		if (object_id == m_pPlayer->m_sPlayerObjectID + hb::shared::object_id::NearbyOffset)
 		{
-			if (m_pMagicCfgList[sV3] != 0)
+			if (m_pMagicCfgList[value3] != 0)
 			{
-				cTxt = m_pMagicCfgList[sV3]->m_cName;
-				AddEventList(cTxt.c_str(), 10);
+				text = m_pMagicCfgList[value3]->m_cName;
+				AddEventList(text.c_str(), 10);
 			}
 		}
 		break;
 	}
 }
 
-void CGame::GrandMagicResult(const char* pMapName, int iV1, int iV2, int iV3, int iV4, int iHP1, int iHP2, int iHP3, int iHP4)
+void CGame::GrandMagicResult(const char* map_name, int ares_crusade_points, int elv_crusade_points, int ares_industry_points, int elv_industry_points, int ares_crusade_casualties, int ares_industry_casualties, int elv_crusade_casualties, int elv_industry_casualties)
 {
-	int i, iTxtIdx = 0;
-	char cTemp[120];
+	int text_index = 0;
+	char temp[120]{};
 
-	for (i = 0; i < game_limits::max_text_dlg_lines; i++)
+	for (int i = 0; i < game_limits::max_text_dlg_lines; i++)
 	{
 		if (m_pMsgTextList[i] != 0)
 			m_pMsgTextList[i].reset();
 	}
 
-	for (i = 0; i < 92; i++)
+	for (int i = 0; i < 92; i++)
 		if (m_pGameMsgList[i] == 0) return;
 
-	if (strcmp(pMapName, "aresden") == 0)
+	if (strcmp(map_name, "aresden") == 0)
 	{
-		m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[2]->m_pMsg, 0);
-		m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[3]->m_pMsg, 0);
-		m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, " ", 0);
+		m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[2]->m_pMsg, 0);
+		m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[3]->m_pMsg, 0);
+		m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, " ", 0);
 
-		std::snprintf(cTemp, sizeof(cTemp), "%s %d", m_pGameMsgList[4]->m_pMsg, iV1);
-		m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, cTemp, 0);
+		std::snprintf(temp, sizeof(temp), "%s %d", m_pGameMsgList[4]->m_pMsg, ares_crusade_points);
+		m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, temp, 0);
 
-		std::snprintf(cTemp, sizeof(cTemp), "%s %d", m_pGameMsgList[5]->m_pMsg, iV2);
-		m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, cTemp, 0);
+		std::snprintf(temp, sizeof(temp), "%s %d", m_pGameMsgList[5]->m_pMsg, elv_crusade_points);
+		m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, temp, 0);
 
-		std::snprintf(cTemp, sizeof(cTemp), "%s %d", m_pGameMsgList[6]->m_pMsg, iV3);
-		m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, cTemp, 0);
+		std::snprintf(temp, sizeof(temp), "%s %d", m_pGameMsgList[6]->m_pMsg, ares_industry_points);
+		m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, temp, 0);
 
-		std::snprintf(cTemp, sizeof(cTemp), "%s %d", m_pGameMsgList[58]->m_pMsg, iV4);
-		m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, cTemp, 0);
-		m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, " ", 0);
+		std::snprintf(temp, sizeof(temp), "%s %d", m_pGameMsgList[58]->m_pMsg, elv_industry_points);
+		m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, temp, 0);
+		m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, " ", 0);
 
-		std::snprintf(cTemp, sizeof(cTemp), "%s %d %d %d %d", NOTIFY_MSG_STRUCTURE_HP, iHP1, iHP2, iHP3, iHP4);
-		m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, cTemp, 0);
-		m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, " ", 0);
+		std::snprintf(temp, sizeof(temp), "%s %d %d %d %d", NOTIFY_MSG_STRUCTURE_HP, ares_crusade_casualties, ares_industry_casualties, elv_crusade_casualties, elv_industry_casualties);
+		m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, temp, 0);
+		m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, " ", 0);
 
-		if (iV2 == 0) {
+		if (elv_crusade_points == 0) {
 			if ((m_pPlayer->m_bCitizen == true) && (m_pPlayer->m_bAresden == false))
 			{
 				PlayGameSound('E', 25, 0, 0);
-				m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[59]->m_pMsg, 0);
-				m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[60]->m_pMsg, 0);
-				m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[61]->m_pMsg, 0);
-				m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[62]->m_pMsg, 0);
-				for (i = iTxtIdx; i < 18; i++) m_pMsgTextList[i] = std::make_unique<CMsg>(0, " ", 0);
+				m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[59]->m_pMsg, 0);
+				m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[60]->m_pMsg, 0);
+				m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[61]->m_pMsg, 0);
+				m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[62]->m_pMsg, 0);
+				for (int i = text_index; i < 18; i++) m_pMsgTextList[i] = std::make_unique<CMsg>(0, " ", 0);
 			}
 			else if ((m_pPlayer->m_bCitizen == true) && (m_pPlayer->m_bAresden == true))
 			{
 				PlayGameSound('E', 25, 0, 0);
-				m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[69]->m_pMsg, 0);
-				m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[70]->m_pMsg, 0);
-				m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[71]->m_pMsg, 0);
-				m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[72]->m_pMsg, 0);
-				m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[73]->m_pMsg, 0);
-				m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[74]->m_pMsg, 0);
-				for (i = iTxtIdx; i < 18; i++) m_pMsgTextList[i] = std::make_unique<CMsg>(0, " ", 0);
+				m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[69]->m_pMsg, 0);
+				m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[70]->m_pMsg, 0);
+				m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[71]->m_pMsg, 0);
+				m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[72]->m_pMsg, 0);
+				m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[73]->m_pMsg, 0);
+				m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[74]->m_pMsg, 0);
+				for (int i = text_index; i < 18; i++) m_pMsgTextList[i] = std::make_unique<CMsg>(0, " ", 0);
 			}
 			else PlayGameSound('E', 25, 0, 0);
 		}
 		else
 		{
-			if (iV1 != 0)
+			if (ares_crusade_points != 0)
 			{
 				if ((m_pPlayer->m_bCitizen == true) && (m_pPlayer->m_bAresden == false))
 				{
 					PlayGameSound('E', 23, 0, 0);
 					PlayGameSound('C', 21, 0, 0);
 					PlayGameSound('C', 22, 0, 0);
-					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[63]->m_pMsg, 0);
-					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[64]->m_pMsg, 0);
-					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[65]->m_pMsg, 0);
-					for (i = iTxtIdx; i < 18; i++) m_pMsgTextList[i] = std::make_unique<CMsg>(0, " ", 0);
+					m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[63]->m_pMsg, 0);
+					m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[64]->m_pMsg, 0);
+					m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[65]->m_pMsg, 0);
+					for (int i = text_index; i < 18; i++) m_pMsgTextList[i] = std::make_unique<CMsg>(0, " ", 0);
 				}
 				else if ((m_pPlayer->m_bCitizen == true) && (m_pPlayer->m_bAresden == true))
 				{
 					PlayGameSound('E', 24, 0, 0);
 					PlayGameSound('C', 12, 0, 0);
 					PlayGameSound('C', 13, 0, 0);
-					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[75]->m_pMsg, 0);
-					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[76]->m_pMsg, 0);
-					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[77]->m_pMsg, 0);
-					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[78]->m_pMsg, 0);
-					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[79]->m_pMsg, 0);
-					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[80]->m_pMsg, 0);
-					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[81]->m_pMsg, 0);
-					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[82]->m_pMsg, 0);
-					for (i = iTxtIdx; i < 18; i++) m_pMsgTextList[i] = std::make_unique<CMsg>(0, " ", 0);
+					m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[75]->m_pMsg, 0);
+					m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[76]->m_pMsg, 0);
+					m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[77]->m_pMsg, 0);
+					m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[78]->m_pMsg, 0);
+					m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[79]->m_pMsg, 0);
+					m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[80]->m_pMsg, 0);
+					m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[81]->m_pMsg, 0);
+					m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[82]->m_pMsg, 0);
+					for (int i = text_index; i < 18; i++) m_pMsgTextList[i] = std::make_unique<CMsg>(0, " ", 0);
 				}
 				else PlayGameSound('E', 25, 0, 0);
 			}
@@ -8043,101 +8005,101 @@ void CGame::GrandMagicResult(const char* pMapName, int iV1, int iV2, int iV3, in
 				if ((m_pPlayer->m_bCitizen == true) && (m_pPlayer->m_bAresden == false))
 				{
 					PlayGameSound('E', 23, 0, 0);
-					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[66]->m_pMsg, 0);
-					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[67]->m_pMsg, 0);
-					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[68]->m_pMsg, 0);
-					for (i = iTxtIdx; i < 18; i++) m_pMsgTextList[i] = std::make_unique<CMsg>(0, " ", 0);
+					m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[66]->m_pMsg, 0);
+					m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[67]->m_pMsg, 0);
+					m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[68]->m_pMsg, 0);
+					for (int i = text_index; i < 18; i++) m_pMsgTextList[i] = std::make_unique<CMsg>(0, " ", 0);
 				}
 				else if ((m_pPlayer->m_bCitizen == true) && (m_pPlayer->m_bAresden == true))
 				{
 					PlayGameSound('E', 24, 0, 0);
-					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[83]->m_pMsg, 0);
-					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[84]->m_pMsg, 0);
-					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[85]->m_pMsg, 0);
-					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[86]->m_pMsg, 0);
-					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[87]->m_pMsg, 0);
-					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[88]->m_pMsg, 0);
-					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[89]->m_pMsg, 0);
-					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[90]->m_pMsg, 0);
-					for (i = iTxtIdx; i < 18; i++) m_pMsgTextList[i] = std::make_unique<CMsg>(0, " ", 0);
+					m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[83]->m_pMsg, 0);
+					m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[84]->m_pMsg, 0);
+					m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[85]->m_pMsg, 0);
+					m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[86]->m_pMsg, 0);
+					m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[87]->m_pMsg, 0);
+					m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[88]->m_pMsg, 0);
+					m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[89]->m_pMsg, 0);
+					m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[90]->m_pMsg, 0);
+					for (int i = text_index; i < 18; i++) m_pMsgTextList[i] = std::make_unique<CMsg>(0, " ", 0);
 				}
 				else PlayGameSound('E', 25, 0, 0);
 			}
 		}
 	}
-	else if (strcmp(pMapName, "elvine") == 0)
+	else if (strcmp(map_name, "elvine") == 0)
 	{
-		m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[7]->m_pMsg, 0);
-		m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[8]->m_pMsg, 0);
-		m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, " ", 0);
+		m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[7]->m_pMsg, 0);
+		m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[8]->m_pMsg, 0);
+		m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, " ", 0);
 
-		std::snprintf(cTemp, sizeof(cTemp), "%s %d", m_pGameMsgList[4]->m_pMsg, iV1);
-		m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, cTemp, 0);
+		std::snprintf(temp, sizeof(temp), "%s %d", m_pGameMsgList[4]->m_pMsg, ares_crusade_points);
+		m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, temp, 0);
 
-		std::snprintf(cTemp, sizeof(cTemp), "%s %d", m_pGameMsgList[5]->m_pMsg, iV2);
-		m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, cTemp, 0);
+		std::snprintf(temp, sizeof(temp), "%s %d", m_pGameMsgList[5]->m_pMsg, elv_crusade_points);
+		m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, temp, 0);
 
-		std::snprintf(cTemp, sizeof(cTemp), "%s %d", m_pGameMsgList[6]->m_pMsg, iV3);
-		m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, cTemp, 0);
+		std::snprintf(temp, sizeof(temp), "%s %d", m_pGameMsgList[6]->m_pMsg, ares_industry_points);
+		m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, temp, 0);
 
-		std::snprintf(cTemp, sizeof(cTemp), "%s %d", m_pGameMsgList[58]->m_pMsg, iV4);
-		m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, cTemp, 0);
-		m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, " ", 0);
+		std::snprintf(temp, sizeof(temp), "%s %d", m_pGameMsgList[58]->m_pMsg, elv_industry_points);
+		m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, temp, 0);
+		m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, " ", 0);
 
-		std::snprintf(cTemp, sizeof(cTemp), "%s %d %d %d %d", NOTIFY_MSG_STRUCTURE_HP, iHP1, iHP2, iHP3, iHP4);
-		m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, cTemp, 0);
-		m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, " ", 0);
+		std::snprintf(temp, sizeof(temp), "%s %d %d %d %d", NOTIFY_MSG_STRUCTURE_HP, ares_crusade_casualties, ares_industry_casualties, elv_crusade_casualties, elv_industry_casualties);
+		m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, temp, 0);
+		m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, " ", 0);
 
-		if (iV2 == 0) {
+		if (elv_crusade_points == 0) {
 			if ((m_pPlayer->m_bCitizen == true) && (m_pPlayer->m_bAresden == true))
 			{
 				PlayGameSound('E', 25, 0, 0);
-				m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[59]->m_pMsg, 0);
-				m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[60]->m_pMsg, 0);
-				m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[61]->m_pMsg, 0);
-				m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[62]->m_pMsg, 0);
-				for (i = iTxtIdx; i < 18; i++) m_pMsgTextList[i] = std::make_unique<CMsg>(0, " ", 0);
+				m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[59]->m_pMsg, 0);
+				m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[60]->m_pMsg, 0);
+				m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[61]->m_pMsg, 0);
+				m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[62]->m_pMsg, 0);
+				for (int i = text_index; i < 18; i++) m_pMsgTextList[i] = std::make_unique<CMsg>(0, " ", 0);
 			}
 			else if ((m_pPlayer->m_bCitizen == true) && (m_pPlayer->m_bAresden == false))
 			{
 				PlayGameSound('E', 25, 0, 0);
-				m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[69]->m_pMsg, 0);
-				m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[70]->m_pMsg, 0);
-				m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[71]->m_pMsg, 0);
-				m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[72]->m_pMsg, 0);
-				m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[73]->m_pMsg, 0);
-				m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[74]->m_pMsg, 0);
-				for (i = iTxtIdx; i < 18; i++) m_pMsgTextList[i] = std::make_unique<CMsg>(0, " ", 0);
+				m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[69]->m_pMsg, 0);
+				m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[70]->m_pMsg, 0);
+				m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[71]->m_pMsg, 0);
+				m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[72]->m_pMsg, 0);
+				m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[73]->m_pMsg, 0);
+				m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[74]->m_pMsg, 0);
+				for (int i = text_index; i < 18; i++) m_pMsgTextList[i] = std::make_unique<CMsg>(0, " ", 0);
 			}
 			else PlayGameSound('E', 25, 0, 0);
 		}
 		else
 		{
-			if (iV1 != 0) {
+			if (ares_crusade_points != 0) {
 				if ((m_pPlayer->m_bCitizen == true) && (m_pPlayer->m_bAresden == true))
 				{
 					PlayGameSound('E', 23, 0, 0);
 					PlayGameSound('C', 21, 0, 0);
 					PlayGameSound('C', 22, 0, 0);
-					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[63]->m_pMsg, 0);
-					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[64]->m_pMsg, 0);
-					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[65]->m_pMsg, 0);
-					for (i = iTxtIdx; i < 18; i++) m_pMsgTextList[i] = std::make_unique<CMsg>(0, " ", 0);
+					m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[63]->m_pMsg, 0);
+					m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[64]->m_pMsg, 0);
+					m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[65]->m_pMsg, 0);
+					for (int i = text_index; i < 18; i++) m_pMsgTextList[i] = std::make_unique<CMsg>(0, " ", 0);
 				}
 				else if ((m_pPlayer->m_bCitizen == true) && (m_pPlayer->m_bAresden == false))
 				{
 					PlayGameSound('E', 24, 0, 0);
 					PlayGameSound('C', 12, 0, 0);
 					PlayGameSound('C', 13, 0, 0);
-					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[75]->m_pMsg, 0);
-					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[76]->m_pMsg, 0);
-					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[77]->m_pMsg, 0);
-					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[78]->m_pMsg, 0);
-					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[79]->m_pMsg, 0);
-					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[80]->m_pMsg, 0);
-					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[81]->m_pMsg, 0);
-					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[82]->m_pMsg, 0);
-					for (i = iTxtIdx; i < 18; i++) m_pMsgTextList[i] = std::make_unique<CMsg>(0, " ", 0);
+					m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[75]->m_pMsg, 0);
+					m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[76]->m_pMsg, 0);
+					m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[77]->m_pMsg, 0);
+					m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[78]->m_pMsg, 0);
+					m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[79]->m_pMsg, 0);
+					m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[80]->m_pMsg, 0);
+					m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[81]->m_pMsg, 0);
+					m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[82]->m_pMsg, 0);
+					for (int i = text_index; i < 18; i++) m_pMsgTextList[i] = std::make_unique<CMsg>(0, " ", 0);
 				}
 				else PlayGameSound('E', 25, 0, 0);
 			}
@@ -8146,23 +8108,23 @@ void CGame::GrandMagicResult(const char* pMapName, int iV1, int iV2, int iV3, in
 				if ((m_pPlayer->m_bCitizen == true) && (m_pPlayer->m_bAresden == true))
 				{
 					PlayGameSound('E', 23, 0, 0);
-					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[66]->m_pMsg, 0);
-					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[67]->m_pMsg, 0);
-					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[68]->m_pMsg, 0);
-					for (i = iTxtIdx; i < 18; i++) m_pMsgTextList[i] = std::make_unique<CMsg>(0, " ", 0);
+					m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[66]->m_pMsg, 0);
+					m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[67]->m_pMsg, 0);
+					m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[68]->m_pMsg, 0);
+					for (int i = text_index; i < 18; i++) m_pMsgTextList[i] = std::make_unique<CMsg>(0, " ", 0);
 				}
 				else if ((m_pPlayer->m_bCitizen == true) && (m_pPlayer->m_bAresden == false))
 				{
 					PlayGameSound('E', 24, 0, 0);
-					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[83]->m_pMsg, 0);
-					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[84]->m_pMsg, 0);
-					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[85]->m_pMsg, 0);
-					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[86]->m_pMsg, 0);
-					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[87]->m_pMsg, 0);
-					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[88]->m_pMsg, 0);
-					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[89]->m_pMsg, 0);
-					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[90]->m_pMsg, 0);
-					for (i = iTxtIdx; i < 18; i++) m_pMsgTextList[i] = std::make_unique<CMsg>(0, " ", 0);
+					m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[83]->m_pMsg, 0);
+					m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[84]->m_pMsg, 0);
+					m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[85]->m_pMsg, 0);
+					m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[86]->m_pMsg, 0);
+					m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[87]->m_pMsg, 0);
+					m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[88]->m_pMsg, 0);
+					m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[89]->m_pMsg, 0);
+					m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[90]->m_pMsg, 0);
+					for (int i = text_index; i < 18; i++) m_pMsgTextList[i] = std::make_unique<CMsg>(0, " ", 0);
 				}
 				else PlayGameSound('E', 25, 0, 0);
 			}
@@ -8246,47 +8208,38 @@ void CGame::CheckActiveAura(short sX, short sY, uint32_t dwTime, short sOwnerTyp
 {	// Used at the beginning of character drawing
 	// DefenseShield
 	if (m_entityState.m_status.bDefenseShield)
-		//m_pEffectSpr[80]->Draw(sX+75, sY+107, m_entityState.m_iEffectFrame%17, hb::shared::sprite::DrawParams::Alpha(0.5f));
 		m_pEffectSpr[80]->Draw(sX + 75, sY + 107, m_entityState.m_iEffectFrame % 17, hb::shared::sprite::DrawParams::Alpha(0.5f));
 
 	// Protection From Magic
 	if (m_entityState.m_status.bMagicProtection)
-		//m_pEffectSpr[79]->Draw(sX+101, sY+135, m_entityState.m_iEffectFrame%15, hb::shared::sprite::DrawParams::Alpha(0.5f));
 		m_pEffectSpr[79]->Draw(sX + 101, sY + 135, m_entityState.m_iEffectFrame % 15, hb::shared::sprite::DrawParams::Alpha(0.7f));
 
 	// Protection From Arrow
 	if (m_entityState.m_status.bProtectionFromArrow)
-		//m_pEffectSpr[72]->Draw(sX, sY+35, m_entityState.m_iEffectFrame%30, hb::shared::sprite::DrawParams::Alpha(0.5f));
 		m_pEffectSpr[72]->Draw(sX, sY + 35, m_entityState.m_iEffectFrame % 30, hb::shared::sprite::DrawParams::Alpha(0.7f));
 
 	// Illusion
 	if (m_entityState.m_status.bIllusion)
-		//m_pEffectSpr[73]->Draw(sX+125, sY+95, m_entityState.m_iEffectFrame%24, hb::shared::sprite::DrawParams::Alpha(0.5f));
 		m_pEffectSpr[73]->Draw(sX + 125, sY + 130 - entity_visual::attacker_height[sOwnerType], m_entityState.m_iEffectFrame % 24, hb::shared::sprite::DrawParams::Alpha(0.7f));
 
 	// Illusion movement
 	if ((m_entityState.m_status.bIllusionMovement) != 0)
-		//m_pEffectSpr[151]->Draw(sX+90, sY+55, m_entityState.m_iEffectFrame%24, hb::shared::sprite::DrawParams::Alpha(0.5f));
 		m_pEffectSpr[151]->Draw(sX + 90, sY + 90 - entity_visual::attacker_height[sOwnerType], m_entityState.m_iEffectFrame % 24, hb::shared::sprite::DrawParams::Alpha(0.7f));
 
-	// Slate red  (HP)  Flame au sol
+	// Slate red (HP)
 	if (m_entityState.m_status.bSlateInvincible)
-		//m_pEffectSpr[149]->Draw(sX+90, sY+120, m_entityState.m_iEffectFrame%15, hb::shared::sprite::DrawParams::Alpha(0.5f));
 		m_pEffectSpr[149]->Draw(sX + 90, sY + 120, m_entityState.m_iEffectFrame % 15, hb::shared::sprite::DrawParams::Alpha(0.7f));
 
-	// Slate Blue (Mana) Bleu au sol
+	// Slate Blue (Mana)
 	if (m_entityState.m_status.bSlateMana)
-		//m_pEffectSpr[150]->Draw(sX+1, sY+26, m_entityState.m_iEffectFrame%15, hb::shared::sprite::DrawParams::Alpha(0.5f));
 		m_pEffectSpr[150]->Draw(sX + 1, sY + 26, m_entityState.m_iEffectFrame % 15, hb::shared::sprite::DrawParams::Alpha(0.7f));
 
-	// Slate Green (XP) Mauve au sol
+	// Slate Green (XP)
 	if (m_entityState.m_status.bSlateExp)
-		//m_pEffectSpr[148]->Draw(sX, sY+32, m_entityState.m_iEffectFrame%23, hb::shared::sprite::DrawParams::Alpha(0.5f));
 		m_pEffectSpr[148]->Draw(sX, sY + 32, m_entityState.m_iEffectFrame % 23, hb::shared::sprite::DrawParams::Alpha(0.7f));
 
-	// Hero Flag (Heldenian)  Flameches d'entangle
+	// Hero Flag (Heldenian)
 	if (m_entityState.m_status.bHero)
-		//m_pEffectSpr[87]->Draw(sX+53, sY+54, m_entityState.m_iEffectFrame%29, hb::shared::sprite::DrawParams::Alpha(0.5f));
 		m_pEffectSpr[87]->Draw(sX + 53, sY + 54, m_entityState.m_iEffectFrame % 29, hb::shared::sprite::DrawParams::Alpha(0.7f));
 }
 
@@ -8298,9 +8251,7 @@ void CGame::CheckActiveAura(short sX, short sY, uint32_t dwTime, short sOwnerTyp
 void CGame::CheckActiveAura2(short sX, short sY, uint32_t dwTime, short sOwnerType)
 {	// Poison
 	if (m_entityState.m_status.bPoisoned)
-		//m_pEffectSpr[81]->Draw(sX+115, sY+85, m_entityState.m_iEffectFrame%21, hb::shared::sprite::DrawParams::Alpha(0.5f));
 		m_pEffectSpr[81]->Draw(sX + 115, sY + 120 - entity_visual::attacker_height[sOwnerType], m_entityState.m_iEffectFrame % 21, hb::shared::sprite::DrawParams::Alpha(0.7f));
-	//	entity_visual::attacker_height[]
 }
 
 void CGame::DrawAngel(int iSprite, short sX, short sY, char cFrame, uint32_t dwTime)
@@ -8373,19 +8324,19 @@ int CGame::bHasHeroSet(const hb::shared::entity::PlayerAppearance& appr, short O
 **  void ShowHeldenianVictory( short sSide)				( Snoopy )													**
 **  description			: Shows the Heldenian's End window															**
 **********************************************************************************************************************/
-void CGame::ShowHeldenianVictory(short sSide)
+void CGame::ShowHeldenianVictory(short side)
 {
-	int i, iPlayerSide;
+	int player_side = 0;
 	m_dialogBoxManager.DisableDialogBox(DialogBoxId::Text);
-	for (i = 0; i < game_limits::max_text_dlg_lines; i++)
+	for (int i = 0; i < game_limits::max_text_dlg_lines; i++)
 	{
 		if (m_pMsgTextList[i] != 0)
 			m_pMsgTextList[i].reset();
 	}
-	if (m_pPlayer->m_bCitizen == false) iPlayerSide = 0;
-	else if (m_pPlayer->m_bAresden == true) iPlayerSide = 1;
-	else if (m_pPlayer->m_bAresden == false) iPlayerSide = 2;
-	switch (sSide) {
+	if (m_pPlayer->m_bCitizen == false) player_side = 0;
+	else if (m_pPlayer->m_bAresden == true) player_side = 1;
+	else if (m_pPlayer->m_bAresden == false) player_side = 2;
+	switch (side) {
 	case 0:
 		PlayGameSound('E', 25, 0, 0);
 		m_pMsgTextList[0] = std::make_unique<CMsg>(0, "Heldenian holy war has been closed!", 0);
@@ -8410,8 +8361,8 @@ void CGame::ShowHeldenianVictory(short sSide)
 	}
 	m_pMsgTextList[4] = std::make_unique<CMsg>(0, " ", 0);
 
-	if (((iPlayerSide != 1) && (iPlayerSide != 2))   // Player not a normal citizen
-		|| (sSide == 0))								// or no winner
+	if (((player_side != 1) && (player_side != 2))   // Player not a normal citizen
+		|| (side == 0))								// or no winner
 	{
 		PlayGameSound('E', 25, 0, 0);
 		m_pMsgTextList[5] = std::make_unique<CMsg>(0, " ", 0);
@@ -8421,7 +8372,7 @@ void CGame::ShowHeldenianVictory(short sSide)
 	}
 	else
 	{
-		if (sSide == iPlayerSide)
+		if (side == player_side)
 		{
 			PlayGameSound('E', 23, 0, 0);
 			PlayGameSound('C', 21, 0, 0);
@@ -8442,7 +8393,7 @@ void CGame::ShowHeldenianVictory(short sSide)
 			m_pMsgTextList[8] = std::make_unique<CMsg>(0, "     ", 0);
 		}
 	}
-	for (i = 9; i < 18; i++)
+	for (int i = 9; i < 18; i++)
 		m_pMsgTextList[i] = std::make_unique<CMsg>(0, " ", 0);
 	m_dialogBoxManager.EnableDialogBox(DialogBoxId::Text, 0, 0, 0);
 	m_dialogBoxManager.DisableDialogBox(DialogBoxId::CrusadeCommander);

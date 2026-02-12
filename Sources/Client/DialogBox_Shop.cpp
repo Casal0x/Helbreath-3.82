@@ -141,7 +141,6 @@ void DialogBox_Shop::DrawItemDetails(short sX, short sY, short msX, short msY, s
 {
     uint32_t dwTime = m_pGame->m_dwCurTime;
     int iItemIndex = m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).cMode - 1;
-    char cTemp[255];
     bool bFlagStatLow = false;
     bool bFlagRedShown = false;
 

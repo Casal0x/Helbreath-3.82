@@ -15,7 +15,6 @@
 
 #define	UPDATE_SCREEN_ON_CONNECTION_LOST	"Connection Lost!"
 
-// #define MSG_WORLDNAME1	"ABADDON Server" // moved to globaldef.h
 #define MSG_WORLDNAME2	"APOCALYPSE Server"
 #define MSG_WORLDNAME3	"3rd Server"
 #define MSG_WORLDNAME4	"4th Server"
@@ -127,7 +126,6 @@
 
 #define	UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT1	"Enter your account ID."
 #define	UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT2	"( Only letters and numbers )"
-//#define	UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT3	"and numbers, no special keywords."
 
 #define	UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT4	"Enter your account password."
 
@@ -291,7 +289,6 @@
 #define	UPDATE_SCREEN_ON_SELECT_CHARACTER39	"It is not a registered account."
 #define	UPDATE_SCREEN_ON_SELECT_CHARACTER40	"IP validity Time: {}Hr {}Min"
 #define	UPDATE_SCREEN_ON_SELECT_CHARACTER41	"IP meter-rate term: {}D {}Hr {}Min"
-//#define	UPDATE_SCREEN_ON_SELECT_CHARACTER42	"It is not a registered IP."
 #define	UPDATE_SCREEN_ON_SELECT_CHARACTER42	" "
 #define	UPDATE_SCREEN_ON_SELECT_CHARACTER43	"Last Logout : {}/{}/{}  {} : {}"
 
@@ -462,10 +459,6 @@
 #define	UPDATE_SCREEN_ON_CHANGE_PASSWORD2	"Password"
 #define	UPDATE_SCREEN_ON_CHANGE_PASSWORD3	"New-Pass"
 #define	UPDATE_SCREEN_ON_CHANGE_PASSWORD4	"Pass-Confirm"
-
-//#define	UPDATE_SCREEN_ON_CHANGE_PASSWORD5	"Enter a account and password that you"
-//#define	UPDATE_SCREEN_ON_CHANGE_PASSWORD6	"want to change. Password should be at"
-//#define	UPDATE_SCREEN_ON_CHANGE_PASSWORD7	"least 8 letters."
 
 // 2002-10-18 #1
 #define	UPDATE_SCREEN_ON_CHANGE_PASSWORD5	"Enter your new password. Password should"
@@ -770,10 +763,6 @@
 #define	DRAW_DIALOGBOX_LEVELUP_SETTING11	"will be increased by this setting."
 #define	DRAW_DIALOGBOX_LEVELUP_SETTING12	"Press the OK button when you"
 #define	DRAW_DIALOGBOX_LEVELUP_SETTING13	"finish level up setting."
-//#define	DRAW_DIALOGBOX_LEVELUP_SETTING14	"Level up setting is not finished yet."
-//#define	DRAW_DIALOGBOX_LEVELUP_SETTING15	"Current level up setting is incorrect."
-//#define	DRAW_DIALOGBOX_LEVELUP_SETTING16	"Because when you level up, your specific"
-//#define	DRAW_DIALOGBOX_LEVELUP_SETTING17	"stat(s) will be over the limit"
 
 // MJ Stats Change - Diuuude
 #define DEF_NOTIFY_MSG_STATECHANGE_SUCCESS		"Stats has been changed"
@@ -791,7 +780,6 @@
 // 3.51 Cityhall Menu - Diuuude
 #define	DRAW_DIALOGBOX_CITYHALL_MENU8	"Take the HERO's items."
 
-//#define	DRAW_DIALOGBOX_CITYHALL_MENU8	"Take the HERO's Items."
 #define	DRAW_DIALOGBOX_CITYHALL_MENU11	"Cancel the Quest."
 #define	DRAW_DIALOGBOX_CITYHALL_MENU14	"Change the part of total war."
 #define	DRAW_DIALOGBOX_CITYHALL_MENU17	"Select an Item you want."
@@ -835,7 +823,6 @@
 #define	DRAW_DIALOGBOX_EXCHANGE1	"My Item"
 #define	DRAW_DIALOGBOX_EXCHANGE2	"Quantity: {}"
 #define	DRAW_DIALOGBOX_EXCHANGE3	"Endurance: {}/{}"
-//#define	DRAW_DIALOGBOX_EXCHANGE4	"Completion: %d%%"
 #define	DRAW_DIALOGBOX_EXCHANGE5	"{}'s item"
 
 #define	DRAW_DIALOGBOX_EXCHANGE9	"Please wait until other player decides"
@@ -1387,10 +1374,6 @@
 #define	NOTIFYMSG_ITEMTOBANK3	"Item {}: put in safekeeping."
 
 
-//#define	NOTIFYMSG_KILLED1	"you have died!"
-//#define	NOTIFYMSG_KILLED2	"You were killed by %s's attack!"
-//#define	NOTIFYMSG_KILLED3	" Click the restart button in the system menu to start again"
-//#define	NOTIFYMSG_KILLED4	" or click the Log Out button to exit"
 // Snoopy: reduced by one line (my server sends a msg with killed ID)
 #define	NOTIFYMSG_KILLED1	"You have died!  Click the restart button in system menu "
 #define	NOTIFYMSG_KILLED3	"to start again, or click the Log Out button to exit."
@@ -1435,7 +1418,6 @@
  #define	NOTIFYMSG_MAGICEFFECT_ON9	"Illusion magic casted, impossible to tell who is who!"
 
 #define	NOTIFYMSG_MAGICEFFECT_ON10	"You were poisoned!"
-//#define	NOTIFYMSG_MAGICEFFECT_ON11	"Berserk magic casted! You deal double physical damage for 40 seconds"
 #define	NOTIFYMSG_MAGICEFFECT_ON11	"Berserk Magic Casted!"
 #define	NOTIFYMSG_MAGICEFFECT_ON12	"Transformation magic effect, you have been transformed as a monster"
 #define	NOTIFYMSG_MAGICEFFECT_ON13	"You have been frozen! Your movement decreases to 50"

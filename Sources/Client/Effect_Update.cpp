@@ -263,11 +263,11 @@ void EffectManager::UpdateEffectsImpl()
 						m_pEffectList[i]->m_dX * 32, m_pEffectList[i]->m_dY * 32 - 40,
 						&m_pEffectList[i]->m_mX, &m_pEffectList[i]->m_mY,
 						&m_pEffectList[i]->m_iErr, 50);
-					AddEffectImpl(EffectType::BURST_SMALL, m_pEffectList[i]->m_mX + 10 - (rand() % 20), m_pEffectList[i]->m_mY + 10 - (rand() % 20), 0, 0, 0, 0);//-1*(rand() % 4));
-					AddEffectImpl(EffectType::BURST_SMALL, m_pEffectList[i]->m_mX + 10 - (rand() % 20), m_pEffectList[i]->m_mY + 10 - (rand() % 20), 0, 0, 0, 0);//-1*(rand() % 4));
-					AddEffectImpl(EffectType::BURST_SMALL, m_pEffectList[i]->m_mX + 10 - (rand() % 20), m_pEffectList[i]->m_mY + 10 - (rand() % 20), 0, 0, 0, 0);//-1*(rand() % 4));
-					AddEffectImpl(EffectType::BURST_SMALL, m_pEffectList[i]->m_mX + 10 - (rand() % 20), m_pEffectList[i]->m_mY + 10 - (rand() % 20), 0, 0, 0, 0);//-1*(rand() % 4));
-					AddEffectImpl(EffectType::BURST_SMALL, m_pEffectList[i]->m_mX + 10 - (rand() % 20), m_pEffectList[i]->m_mY + 10 - (rand() % 20), 0, 0, 0, 0);//-1*(rand() % 4));
+					AddEffectImpl(EffectType::BURST_SMALL, m_pEffectList[i]->m_mX + 10 - (rand() % 20), m_pEffectList[i]->m_mY + 10 - (rand() % 20), 0, 0, 0, 0);
+					AddEffectImpl(EffectType::BURST_SMALL, m_pEffectList[i]->m_mX + 10 - (rand() % 20), m_pEffectList[i]->m_mY + 10 - (rand() % 20), 0, 0, 0, 0);
+					AddEffectImpl(EffectType::BURST_SMALL, m_pEffectList[i]->m_mX + 10 - (rand() % 20), m_pEffectList[i]->m_mY + 10 - (rand() % 20), 0, 0, 0, 0);
+					AddEffectImpl(EffectType::BURST_SMALL, m_pEffectList[i]->m_mX + 10 - (rand() % 20), m_pEffectList[i]->m_mY + 10 - (rand() % 20), 0, 0, 0, 0);
+					AddEffectImpl(EffectType::BURST_SMALL, m_pEffectList[i]->m_mX + 10 - (rand() % 20), m_pEffectList[i]->m_mY + 10 - (rand() % 20), 0, 0, 0, 0);
 					if ((abs(m_pEffectList[i]->m_mX - m_pEffectList[i]->m_dX * 32) <= 2) &&
 						(abs(m_pEffectList[i]->m_mY - (m_pEffectList[i]->m_dY * 32 - 40)) <= 2))
 					{

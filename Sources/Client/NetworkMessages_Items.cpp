@@ -48,9 +48,6 @@ namespace NetworkMessageHandlers {
 		sSpriteFrame = static_cast<short>(pkt->sprite_frame);
 		cItemColor = static_cast<char>(pkt->item_color);
 		wCost = pkt->cost;
-		char cStr1[64], cStr2[64], cStr3[64];
-		cStr2[0] = 0;
-		cStr3[0] = 0;
 		cTxt = std::format(NOTIFYMSG_ITEMPURCHASED, cName, wCost);
 		pGame->AddEventList(cTxt.c_str(), 10);
 
@@ -139,10 +136,6 @@ namespace NetworkMessageHandlers {
 		cItemColor = static_cast<char>(pkt->item_color);
 		sSpecialEV2 = static_cast<short>(pkt->spec_value2);
 		dwAttribute = pkt->attribute;
-
-		char cStr1[64], cStr2[64], cStr3[64];
-		cStr2[0] = 0;
-		cStr3[0] = 0;
 
 		if (dwCount == 1) cTxt = std::format(NOTIFYMSG_ITEMOBTAINED2, cName);
 		else cTxt = std::format(NOTIFYMSG_ITEMOBTAINED1, dwCount, cName);
@@ -696,10 +689,7 @@ namespace NetworkMessageHandlers {
 		const auto wItemIndex = pkt->item_index;
 		const auto iAmount = static_cast<int>(pkt->amount);
 
-		char cStr1[64], cStr2[64], cStr3[64];
 		CItem* pCfg = pGame->GetItemConfig(pGame->m_pItemList[wItemIndex]->m_sIDnum);
-		cStr2[0] = 0;
-		cStr3[0] = 0;
 		cTxt = std::format(NOTIFYMSG_THROW_ITEM1, iAmount, pCfg ? pCfg->m_cName : "Unknown");
 
 		pGame->AddEventList(cTxt.c_str(), 10);
@@ -721,10 +711,7 @@ namespace NetworkMessageHandlers {
 
 		memcpy(cName, pkt->name, sizeof(pkt->name));
 
-		char cStr1[64], cStr2[64], cStr3[64];
 		CItem* pCfg = pGame->GetItemConfig(pGame->m_pItemList[wItemIndex]->m_sIDnum);
-		cStr2[0] = 0;
-		cStr3[0] = 0;
 		if (iAmount == 1) cTxt = std::format(NOTIFYMSG_GIVEITEMFIN_COUNTCHANGED1, pCfg ? pCfg->m_cName : "Unknown", cName);
 		cTxt = std::format(NOTIFYMSG_GIVEITEMFIN_COUNTCHANGED2, iAmount, pCfg ? pCfg->m_cName : "Unknown", cName);
 		pGame->AddEventList(cTxt.c_str(), 10);

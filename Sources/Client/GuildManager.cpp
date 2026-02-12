@@ -224,7 +224,6 @@ void GuildManager::HandleReqGuildNameAnswer(char* pData)
 {
 	short sV1, sV2;
 	char cTemp[256]{};
-	int i;
 	const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyReqGuildNameAnswer>(
 		pData, sizeof(hb::net::PacketNotifyReqGuildNameAnswer));
 	if (!pkt) return;
