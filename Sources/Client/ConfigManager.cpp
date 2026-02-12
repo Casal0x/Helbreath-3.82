@@ -68,8 +68,8 @@ void ConfigManager::SetDefaults()
 	m_bUIEnabled = true;
 
 	// hb::shared::render::Window defaults
-	m_windowWidth = 640;
-	m_windowHeight = 480;
+	m_windowWidth = 800;
+	m_windowHeight = 600;
 
 	// Display/Detail defaults
 	m_bShowFPS = false;

@@ -20,10 +20,10 @@ public:
 	}
 
 	std::string m_cName;
-	int  m_sValue1, m_sValue2, m_sValue3;
+	int  m_sValue1 = 0, m_sValue2 = 0, m_sValue3 = 0;
 	// CLEROTH
-	int m_sValue4;
-	bool m_bIsVisible;
+	int m_sValue4 = 0;
+	bool m_bIsVisible = false;
 	int m_sType = 0;          // DEF_MAGICTYPE_*
 	int m_sAoERadiusX = 0;    // AoE X radius in tiles (server m_sValue2)
 	int m_sAoERadiusY = 0;    // AoE Y radius in tiles (server m_sValue3)

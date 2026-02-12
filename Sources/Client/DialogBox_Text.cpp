@@ -65,7 +65,7 @@ void DialogBox_Text::OnDraw(short msX, short msY, short msZ, char cLB)
 	short sView = m_pGame->m_dialogBoxManager.Info(DialogBoxId::Text).sView;
 	for (int i = 0; i < 17; i++)
 	{
-		if (m_pGame->m_pMsgTextList[i + sView] != nullptr)
+		if ((i + sView) < game_limits::max_text_dlg_lines && m_pGame->m_pMsgTextList[i + sView] != nullptr)
 		{
 			char* pMsg = m_pGame->m_pMsgTextList[i + sView]->m_pMsg;
 			if (ConfigManager::Get().IsDialogTransparencyEnabled() == false)

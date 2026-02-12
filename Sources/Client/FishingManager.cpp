@@ -12,6 +12,7 @@
 
 void FishingManager::HandleFishChance(char* pData)
 {
+	if (!m_pGame) return;
 	int iFishChance;
 	const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyFishChance>(
 		pData, sizeof(hb::net::PacketNotifyFishChance));
@@ -22,6 +23,7 @@ void FishingManager::HandleFishChance(char* pData)
 
 void FishingManager::HandleEventFishMode(char* pData)
 {
+	if (!m_pGame) return;
 	short sSprite, sSpriteFrame;
 	char cName[hb::shared::limits::ItemNameLen]{};
 	WORD wPrice;
@@ -34,6 +36,7 @@ void FishingManager::HandleEventFishMode(char* pData)
 	sSprite = static_cast<short>(pkt->sprite);
 	sSpriteFrame = static_cast<short>(pkt->sprite_frame);
 
+	static_assert(sizeof(pkt->name) <= sizeof(cName), "Packet name field exceeds local buffer");
 	memcpy(cName, pkt->name, sizeof(pkt->name));
 
 	m_pGame->m_dialogBoxManager.EnableDialogBox(DialogBoxId::Fishing, 0, 0, wPrice, cName);
@@ -45,6 +48,7 @@ void FishingManager::HandleEventFishMode(char* pData)
 
 void FishingManager::HandleFishCanceled(char* pData)
 {
+	if (!m_pGame) return;
 	const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyFishCanceled>(
 		pData, sizeof(hb::net::PacketNotifyFishCanceled));
 	if (!pkt) return;
@@ -66,6 +70,7 @@ void FishingManager::HandleFishCanceled(char* pData)
 
 void FishingManager::HandleFishSuccess(char* pData)
 {
+	if (!m_pGame) return;
 	m_pGame->AddEventList(NOTIFY_MSG_HANDLER55, 10);
 	m_pGame->PlayGameSound('E', 23, 5);
 	m_pGame->PlayGameSound('E', 17, 5);
@@ -85,6 +90,7 @@ void FishingManager::HandleFishSuccess(char* pData)
 
 void FishingManager::HandleFishFail(char* pData)
 {
+	if (!m_pGame) return;
 	m_pGame->AddEventList(NOTIFY_MSG_HANDLER56, 10);
 	m_pGame->PlayGameSound('E', 24, 5);
 }

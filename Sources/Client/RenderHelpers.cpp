@@ -320,7 +320,7 @@ void DrawName(CGame& game, const CEntityRenderState& state, int sX, int sY)
 	if (state.m_cName[0] != '\0')
 	{
 		if (state.IsPlayer())
-			game.DrawObjectName(sX, sY, const_cast<char*>(state.m_cName.data()), state.m_status, state.m_wObjectID);
+			game.DrawObjectName(sX, sY, state.m_cName.data(), state.m_status, state.m_wObjectID);
 		else
 			game.DrawNpcName(sX, sY, state.m_sOwnerType, state.m_status, state.m_sNpcConfigId);
 	}
@@ -447,7 +447,8 @@ void DrawAfkEffect(CGame& game, const CEntityRenderState& state, int sX, int sY,
 	constexpr int AFK_SPRITE_INDEX = 85;
 	constexpr int AFK_MAX_FRAMES = 17;
 
-	// Random frame timing: 100-200ms per frame
+	// Note: static frame counter is shared across all AFK entities, so they animate in sync.
+	// Per-entity state would require storing frame/time in CEntityRenderState.
 	static int s_iAfkFrame = 0;
 	static uint32_t s_dwNextFrameTime = 0;
 

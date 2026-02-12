@@ -103,22 +103,9 @@ void Screen_Login::on_update()
             break;
         case 2:
         case 3:
-            if (m_cLoginName.empty() || m_cLoginPassword.empty()) break;
             m_pGame->PlayGameSound('E', 14, 5);
-            
-            // Set Player Account Credentials
-            m_pGame->m_pPlayer->m_cAccountName = m_cLoginName.c_str();
-            m_pGame->m_pPlayer->m_cAccountPassword = m_cLoginPassword.c_str();
-
-            // Connect
-            m_pGame->m_pLSock = std::make_unique<hb::shared::net::ASIOSocket>(m_pGame->m_pIOPool->GetContext(), game_limits::socket_block_limit);
-            m_pGame->m_pLSock->bConnect(m_pGame->m_cLogServerAddr.c_str(), m_pGame->m_iLogServerPort + (rand() % 1));
-            m_pGame->m_pLSock->bInitBufferSize(hb::shared::limits::MsgBufferSize);
-
-            m_pGame->ChangeGameMode(GameMode::Connecting);
-            m_pGame->m_dwConnectMode = MsgId::RequestLogin;
-            std::snprintf(m_pGame->m_cMsg, sizeof(m_pGame->m_cMsg), "%s", "11");
-            return;
+            if (AttemptLogin()) return;
+            break;
         case 4:
             m_pGame->ChangeGameMode(GameMode::MainMenu);
             return;
@@ -166,20 +153,7 @@ void Screen_Login::on_update()
         // Login button click
         else if (hb::shared::input::IsMouseInRect(140, 343, 84, 20)) {
             m_pGame->PlayGameSound('E', 14, 5);
-            if (!m_cLoginName.empty() && !m_cLoginPassword.empty()) {
-                TextInputManager::Get().EndInput();
-                m_pGame->m_pPlayer->m_cAccountName = m_cLoginName.c_str();
-            m_pGame->m_pPlayer->m_cAccountPassword = m_cLoginPassword.c_str();
-
-                m_pGame->m_pLSock = std::make_unique<hb::shared::net::ASIOSocket>(m_pGame->m_pIOPool->GetContext(), game_limits::socket_block_limit);
-                m_pGame->m_pLSock->bConnect(m_pGame->m_cLogServerAddr.c_str(), m_pGame->m_iLogServerPort + (rand() % 1));
-                m_pGame->m_pLSock->bInitBufferSize(hb::shared::limits::MsgBufferSize);
-
-                m_pGame->ChangeGameMode(GameMode::Connecting);
-                m_pGame->m_dwConnectMode = MsgId::RequestLogin;
-                std::snprintf(m_pGame->m_cMsg, sizeof(m_pGame->m_cMsg), "%s", "11");
-                return;
-            }
+            if (AttemptLogin()) return;
         }
         // Cancel button click
         else if (hb::shared::input::IsMouseInRect(316, 343, 76, 20)) {
@@ -191,6 +165,24 @@ void Screen_Login::on_update()
 
     if (hb::shared::input::IsMouseInRect(140, 343, 84, 20)) m_cCurFocus = 3;
     if (hb::shared::input::IsMouseInRect(316, 343, 76, 20)) m_cCurFocus = 4;
+}
+
+bool Screen_Login::AttemptLogin()
+{
+    if (m_cLoginName.empty() || m_cLoginPassword.empty()) return false;
+
+    TextInputManager::Get().EndInput();
+    m_pGame->m_pPlayer->m_cAccountName = m_cLoginName.c_str();
+    m_pGame->m_pPlayer->m_cAccountPassword = m_cLoginPassword.c_str();
+
+    m_pGame->m_pLSock = std::make_unique<hb::shared::net::ASIOSocket>(m_pGame->m_pIOPool->GetContext(), game_limits::socket_block_limit);
+    m_pGame->m_pLSock->bConnect(m_pGame->m_cLogServerAddr.c_str(), m_pGame->m_iLogServerPort);
+    m_pGame->m_pLSock->bInitBufferSize(hb::shared::limits::MsgBufferSize);
+
+    m_pGame->ChangeGameMode(GameMode::Connecting);
+    m_pGame->m_dwConnectMode = MsgId::RequestLogin;
+    std::snprintf(m_pGame->m_cMsg, sizeof(m_pGame->m_cMsg), "%s", "11");
+    return true;
 }
 
 void Screen_Login::on_render()

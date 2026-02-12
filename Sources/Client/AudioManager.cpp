@@ -446,10 +446,16 @@ void AudioManager::PlaySoundLoop(SoundType type, int index)
 
 void AudioManager::StopSound(SoundType type, int index)
 {
-	// With the buffer-ref system, we can't easily identify which active sound
-	// corresponds to a specific type/index. This would require additional tracking.
-	(void)type;
-	(void)index;
+	for (auto& active : m_activeSounds)
+	{
+		if (active.inUse && active.soundInitialized && active.type == type && active.index == index)
+		{
+			ma_sound_stop(&active.sound);
+			ma_sound_uninit(&active.sound);
+			active.soundInitialized = false;
+			active.inUse = false;
+		}
+	}
 }
 
 void AudioManager::StopAllSounds()

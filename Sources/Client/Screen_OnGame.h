@@ -43,4 +43,5 @@ private:
     short m_sPivotX = 0;
     short m_sPivotY = 0;
     uint32_t m_dwPrevChatTime = 0;
+    uint32_t m_dwLastBubbleTime = 0;
 };

@@ -60,7 +60,8 @@ void Screen_OnGame::on_initialize()
 
 void Screen_OnGame::on_uninitialize()
 {
-    // Nothing specific to clean up
+    TextInputManager::Get().EndInput();
+    AudioManager::Get().StopMusic();
 }
 
 void Screen_OnGame::on_update()
@@ -111,7 +112,9 @@ void Screen_OnGame::on_update()
             }
 
             if (m_pGame->m_cAmountString.empty()) return;
-            std::from_chars(m_pGame->m_cAmountString.data(), m_pGame->m_cAmountString.data() + m_pGame->m_cAmountString.size(), iAmount);
+            iAmount = 0;
+            auto [ptr, ec] = std::from_chars(m_pGame->m_cAmountString.data(), m_pGame->m_cAmountString.data() + m_pGame->m_cAmountString.size(), iAmount);
+            if (ec != std::errc{}) return;
 
             if (static_cast<int>(m_pGame->m_pItemList[m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sView]->m_dwCount) < iAmount) {
                 iAmount = m_pGame->m_pItemList[m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sView]->m_dwCount;
@@ -265,18 +268,17 @@ void Screen_OnGame::on_update()
     m_sModY = sVal % 32;
 
     // Logout countdown
-    if (m_pGame->m_cLogOutCount > 0) {
-        if ((m_dwTime - m_pGame->m_dwLogOutCountTime) > 1000) {
-            m_pGame->m_cLogOutCount--;
-            m_pGame->m_dwLogOutCountTime = m_dwTime;
-            G_cTxt = std::format(UPDATE_SCREEN_ONGAME13, m_pGame->m_cLogOutCount);
+    if (m_pGame->m_logout_count > 0) {
+        if ((m_dwTime - m_pGame->m_logout_count_time) > 1000) {
+            m_pGame->m_logout_count--;
+            m_pGame->m_logout_count_time = m_dwTime;
+            G_cTxt = std::format(UPDATE_SCREEN_ONGAME13, m_pGame->m_logout_count);
             m_pGame->AddEventList(G_cTxt.c_str(), 10);
         }
     }
-    if (m_pGame->m_cLogOutCount == 0) {
-        m_pGame->m_cLogOutCount = -1;
+    if (m_pGame->m_logout_count == 0) {
+        m_pGame->m_logout_count = -1;
         m_pGame->WriteSettings();
-        m_pGame->m_pGSock.reset();
         m_pGame->m_pGSock.reset();
         PlayGameSound('E', 14, 5);
         AudioManager::Get().StopSound(SoundType::Effect, 38);
@@ -394,6 +396,8 @@ void Screen_OnGame::on_update()
             m_pGame->m_pPlayer->m_Controller.SetCommandTime(0);
         }
     }
+    WeatherManager::Get().Update(m_pGame->m_dwCurTime);
+
     m_pGame->CommandProcessor(m_sMsX, m_sMsY,
         ((m_sDivX + m_sPivotX) * 32 + m_sModX + m_sMsX - 17) / 32 + 1,
         ((m_sDivY + m_sPivotY) * 32 + m_sModY + m_sMsY - 17) / 32 + 1,
@@ -495,8 +499,6 @@ void Screen_OnGame::on_render()
     m_pGame->m_floatingText.DrawAll(-100, 0, LOGICAL_WIDTH(), LOGICAL_HEIGHT(), m_pGame->m_dwCurTime, m_pGame->m_Renderer);
     FrameTiming::EndProfile(ProfileStage::DrawChat);
 
-    WeatherManager::Get().Update(m_pGame->m_dwCurTime);
-
     // Apocalypse map effects
     if (m_pGame->m_cMapIndex == 26) {
         m_pGame->m_pEffectSpr[89]->Draw(1296 - m_pGame->m_Camera.GetX(), 1283 - m_pGame->m_Camera.GetY(), m_pGame->m_entityState.m_iEffectFrame % 12, hb::shared::sprite::DrawParams::Alpha(0.5f));
@@ -543,16 +545,19 @@ void Screen_OnGame::on_render()
         RenderItemTooltip();
     }
 
-    // Druncncity bubbles
-    if (m_pGame->m_cMapIndex == 25)
+    // Druncncity bubbles (throttled to ~30/sec regardless of FPS)
+    if (m_pGame->m_cMapIndex == 25 && (m_pGame->m_dwCurTime - m_dwLastBubbleTime) >= 33)
+    {
+        m_dwLastBubbleTime = m_pGame->m_dwCurTime;
         m_pGame->m_pEffectManager->AddEffect(EffectType::BUBBLES_DRUNK, m_pGame->m_Camera.GetX() + rand() % LOGICAL_MAX_X(), m_pGame->m_Camera.GetY() + rand() % LOGICAL_MAX_Y(), 0, 0, -1 * (rand() % 80), 1);
+    }
 
     // Heldenian tower count
     if ((m_pGame->m_iHeldenianAresdenLeftTower != -1) && (m_pGame->m_cCurLocation.starts_with("BtField"))) {
         std::string G_cTxt;
         G_cTxt = std::format("Aresden Flags : {}", m_pGame->m_iHeldenianAresdenFlags);
         hb::shared::text::DrawText(GameFont::Default, 10, 140, G_cTxt.c_str(), hb::shared::text::TextStyle::Color(GameColors::UIWhite));
-        G_cTxt = std::format("Aresden Flags : {}", m_pGame->m_iHeldenianElvineFlags);
+        G_cTxt = std::format("Elvine Flags : {}", m_pGame->m_iHeldenianElvineFlags);
         hb::shared::text::DrawText(GameFont::Default, 10, 160, G_cTxt.c_str(), hb::shared::text::TextStyle::Color(GameColors::UIWhite));
         G_cTxt = std::format("Aresden's rest building number : {}", m_pGame->m_iHeldenianAresdenLeftTower);
         hb::shared::text::DrawText(GameFont::Default, 10, 180, G_cTxt.c_str(), hb::shared::text::TextStyle::Color(GameColors::UIWhite));
@@ -572,6 +577,7 @@ void Screen_OnGame::RenderItemTooltip()
 	std::string G_cTxt;
 	short target_id = CursorTarget::GetSelectedID();
     CItem* item = m_pGame->m_pItemList[target_id].get();
+    if (!item) return;
     CItem* pCfg = m_pGame->GetItemConfig(item->m_sIDnum);
     if (!pCfg) return;
 

@@ -13,6 +13,7 @@
 
 void CraftingManager::HandleCraftingSuccess(char* pData)
 {
+	if (!m_pGame) return;
 	m_pGame->m_pPlayer->m_iContribution -= m_pGame->m_iContributionPrice;
 	m_pGame->m_iContributionPrice = 0;
 	m_pGame->m_dialogBoxManager.DisableDialogBox(DialogBoxId::Noticement);
@@ -34,6 +35,7 @@ void CraftingManager::HandleCraftingSuccess(char* pData)
 
 void CraftingManager::HandleCraftingFail(char* pData)
 {
+	if (!m_pGame) return;
 	int iV1;
 	m_pGame->m_iContributionPrice = 0;
 	{
@@ -61,6 +63,7 @@ void CraftingManager::HandleCraftingFail(char* pData)
 
 void CraftingManager::HandleBuildItemSuccess(char* pData)
 {
+	if (!m_pGame) return;
 	short sV1, sV2;
 	m_pGame->m_dialogBoxManager.DisableDialogBox(DialogBoxId::Manufacture);
 	{
@@ -99,6 +102,7 @@ void CraftingManager::HandleBuildItemSuccess(char* pData)
 
 void CraftingManager::HandleBuildItemFail(char* pData)
 {
+	if (!m_pGame) return;
 	m_pGame->m_dialogBoxManager.DisableDialogBox(DialogBoxId::Manufacture);
 	m_pGame->m_dialogBoxManager.EnableDialogBox(DialogBoxId::Manufacture, 6, 0, 0);
 	m_pGame->AddEventList(NOTIFY_MSG_HANDLER43, 10);
@@ -107,20 +111,24 @@ void CraftingManager::HandleBuildItemFail(char* pData)
 
 void CraftingManager::HandlePortionSuccess(char* pData)
 {
+	if (!m_pGame) return;
 	m_pGame->AddEventList(NOTIFY_MSG_HANDLER46, 10);
 }
 
 void CraftingManager::HandlePortionFail(char* pData)
 {
+	if (!m_pGame) return;
 	m_pGame->AddEventList(NOTIFY_MSG_HANDLER47, 10);
 }
 
 void CraftingManager::HandleLowPortionSkill(char* pData)
 {
+	if (!m_pGame) return;
 	m_pGame->AddEventList(NOTIFY_MSG_HANDLER48, 10);
 }
 
 void CraftingManager::HandleNoMatchingPortion(char* pData)
 {
+	if (!m_pGame) return;
 	m_pGame->AddEventList(NOTIFY_MSG_HANDLER49, 10);
 }

@@ -69,6 +69,9 @@ void FrameTiming::EndFrame()
 	s_lastFrame = s_frameStart;
 	s_accumulator += s_deltaTime;
 
+	// Cap accumulator to prevent drift after long pauses (e.g., debugger, system sleep)
+	if (s_accumulator > 2.0) s_accumulator = 0.0;
+
 	// Update profile averages every second
 	if (s_accumulator >= 1.0)
 	{

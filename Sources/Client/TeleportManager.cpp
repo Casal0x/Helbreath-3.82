@@ -42,6 +42,8 @@ void TeleportManager::HandleTeleportList(char* pData)
 	const auto* entries = reinterpret_cast<const hb::net::PacketResponseTeleportListEntry*>(
 		pData + sizeof(hb::net::PacketResponseTeleportListHeader));
 	m_map_count = header->count;
+	if (m_map_count < 0) m_map_count = 0;
+	if (m_map_count > static_cast<int>(m_list.size())) m_map_count = static_cast<int>(m_list.size());
 	for (i = 0; i < m_map_count; i++)
 	{
 		m_list[i].iIndex = entries[i].index;
@@ -100,6 +102,8 @@ void TeleportManager::HandleHeldenianTeleportList(char* pData)
 	const auto* entries = reinterpret_cast<const hb::net::PacketResponseTeleportListEntry*>(
 		pData + sizeof(hb::net::PacketResponseTeleportListHeader));
 	m_map_count = header->count;
+	if (m_map_count < 0) m_map_count = 0;
+	if (m_map_count > static_cast<int>(m_list.size())) m_map_count = static_cast<int>(m_list.size());
 	for (i = 0; i < m_map_count; i++)
 	{
 		m_list[i].iIndex = entries[i].index;

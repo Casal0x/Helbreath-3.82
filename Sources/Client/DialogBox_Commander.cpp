@@ -125,7 +125,7 @@ void DialogBox_Commander::OnDraw(short msX, short msY, short msZ, char cLB)
 		DrawNewDialogBox(InterfaceNdCrusade, sX, sY, 21, false, ConfigManager::Get().IsDialogTransparencyEnabled());
 		break;
 
-	case 3: // Choose summon
+	case 3: { // Choose summon
 		if ((m_pGame->m_pPlayer->m_bCitizen == true) && (m_pGame->m_pPlayer->m_bAresden == true))
 		{
 			m_pGame->m_pSprite[InterfaceNdCrusade]->Draw(sX + 20, sY + 220, 6);
@@ -145,9 +145,8 @@ void DialogBox_Commander::OnDraw(short msX, short msY, short msZ, char cLB)
 
 		PutAlignedString(sX, sX + szX, sY + 40, DRAW_DIALOGBOX_COMMANDER14);
 
-		char pointsBuf[64];
-		snprintf(pointsBuf, sizeof(pointsBuf), "%s %d", DRAW_DIALOGBOX_COMMANDER15, m_pGame->m_pPlayer->m_iConstructionPoint);
-		PutAlignedString(sX, sX + 323, sY + 190, pointsBuf);
+		auto pointsBuf = std::format("{} {}", DRAW_DIALOGBOX_COMMANDER15, m_pGame->m_pPlayer->m_iConstructionPoint);
+		PutAlignedString(sX, sX + 323, sY + 190, pointsBuf.c_str());
 
 		if ((m_pGame->m_pPlayer->m_bCitizen == true) && (m_pGame->m_pPlayer->m_bAresden == true))
 		{
@@ -278,6 +277,7 @@ void DialogBox_Commander::OnDraw(short msX, short msY, short msZ, char cLB)
 			break;
 		}
 		break;
+	}
 
 	case 4: // Set Construction point
 		m_pGame->m_pSprite[InterfaceNdCrusade]->Draw(sX + 20 + 100 + 74, sY + 340, 20);
@@ -370,11 +370,7 @@ void DialogBox_Commander::OnDraw(short msX, short msY, short msZ, char cLB)
 				dV2 = static_cast<double>(TeleportManager::Get().GetLocY());
 				dV3 = (dV2 * static_cast<double>(szY)) / dV1;
 				tY = static_cast<int>(dV3);
-				if ((Info().cMode == 1) && (tY >= 30) && (tY <= 494))
-				{
-					DrawNewDialogBox(InterfaceNdCrusade, sX + tX + 15, sY + tY + 60, 42, false, true);
-				}
-				else DrawNewDialogBox(InterfaceNdCrusade, sX + tX + 15, sY + tY + 60, 42, false, true);
+				DrawNewDialogBox(InterfaceNdCrusade, sX + tX + 15, sY + tY + 60, 42, false, true);
 			}
 			if ((Info().cMode != 2) && (m_pGame->m_pPlayer->m_iConstructLocX != -1))
 			{
@@ -401,7 +397,7 @@ void DialogBox_Commander::OnDraw(short msX, short msY, short msZ, char cLB)
 				DrawNewDialogBox(InterfaceNdCrusade, sX + tX + 15, sY + tY + 60, 43);
 			}
 		}
-		if (Info().cMode != 3)
+		if (Info().cMode != 3 && szX > 0 && szY > 0)
 		{
 			if ((msX >= sX + 15) && (msX <= sX + 15 + 278) && (msY >= sY + 60) && (msY <= sY + 60 + 272))
 			{
@@ -410,7 +406,7 @@ void DialogBox_Commander::OnDraw(short msX, short msY, short msZ, char cLB)
 				dV3 = (dV2 * dV1) / szX;
 				tX = static_cast<int>(dV3);
 				dV1 = static_cast<double>(msY - (sY + 60));
-				dV2 = static_cast<double>(MapSzX);
+				dV2 = static_cast<double>(MapSzY);
 				dV3 = (dV2 * dV1) / szY;
 				tY = static_cast<int>(dV3);
 				if (tX < 30) tX = 30;
@@ -442,15 +438,15 @@ bool DialogBox_Commander::OnClick(short msX, short msY)
 			Info().cMode = 1;
 			PlaySoundEffect('E', 14, 5);
 		}
-		if ((msX >= sX + 20 + 50) && (msX <= sX + 20 + 46 + 50) && (msY >= sY + 340) && (msY <= sY + 340 + 52))
+		else if ((msX >= sX + 20 + 50) && (msX <= sX + 20 + 46 + 50) && (msY >= sY + 340) && (msY <= sY + 340 + 52))
 		{
 			if (TeleportManager::Get().GetLocX() == -1)
 			{
-				m_pGame->SetTopMsg(m_pGame->m_pGameMsgList[15]->m_pMsg, 5);
+				if (m_pGame->m_pGameMsgList[15]) m_pGame->SetTopMsg(m_pGame->m_pGameMsgList[15]->m_pMsg, 5);
 			}
 			else if (m_pGame->m_cMapName == TeleportManager::Get().GetMapName())
 			{
-				m_pGame->SetTopMsg(m_pGame->m_pGameMsgList[16]->m_pMsg, 5);
+				if (m_pGame->m_pGameMsgList[16]) m_pGame->SetTopMsg(m_pGame->m_pGameMsgList[16]->m_pMsg, 5);
 			}
 			else
 			{
@@ -458,18 +454,18 @@ bool DialogBox_Commander::OnClick(short msX, short msY)
 				PlaySoundEffect('E', 14, 5);
 			}
 		}
-		if ((msX >= sX + 20 + 100) && (msX <= sX + 20 + 46 + 100) && (msY >= sY + 340) && (msY <= sY + 340 + 52))
+		else if ((msX >= sX + 20 + 100) && (msX <= sX + 20 + 46 + 100) && (msY >= sY + 340) && (msY <= sY + 340 + 52))
 		{
 			Info().cMode = 3;
 			Info().sV1 = 0;
 			PlaySoundEffect('E', 14, 5);
 		}
-		if ((msX >= sX + 20 + 150) && (msX <= sX + 20 + 46 + 150) && (msY >= sY + 340) && (msY <= sY + 340 + 52))
+		else if ((msX >= sX + 20 + 150) && (msX <= sX + 20 + 46 + 150) && (msY >= sY + 340) && (msY <= sY + 340 + 52))
 		{
 			Info().cMode = 4;
 			PlaySoundEffect('E', 14, 5);
 		}
-		if ((msX >= sX + 20 + 150 + 74) && (msX <= sX + 20 + 46 + 150 + 74) && (msY >= sY + 340) && (msY <= sY + 340 + 52))
+		else if ((msX >= sX + 20 + 150 + 74) && (msX <= sX + 20 + 46 + 150 + 74) && (msY >= sY + 340) && (msY <= sY + 340 + 52))
 		{
 			DisableDialogBox(DialogBoxId::Text);
 			EnableDialogBox(DialogBoxId::Text, 808, 0, 0);

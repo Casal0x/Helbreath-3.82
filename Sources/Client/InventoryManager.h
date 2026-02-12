@@ -10,7 +10,7 @@ public:
 	void SetGame(CGame* pGame);
 
 	// Item ordering
-	void SetItemOrder(char cWhere, char cItemID);
+	void SetItemOrder(int cWhere, int cItemID);
 
 	// Weight/count queries
 	int CalcTotalWeight();
@@ -18,12 +18,12 @@ public:
 	int GetBankItemCount();
 
 	// Item operations
-	void EraseItem(char cItemID);
-	bool CheckItemOperationEnabled(char cItemID);
+	void EraseItem(int cItemID);
+	bool CheckItemOperationEnabled(int cItemID);
 
 	// Equipment
-	void UnequipSlot(char cEquipPos);
-	void EquipItem(char cItemID);
+	void UnequipSlot(int cEquipPos);
+	void EquipItem(int cItemID);
 
 private:
 	InventoryManager() = default;

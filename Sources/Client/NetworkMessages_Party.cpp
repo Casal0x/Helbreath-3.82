@@ -5,6 +5,7 @@
 #include "DialogBoxIDs.h"
 #include <cstring>
 #include <cstdio>
+#include <algorithm>
 #include <format>
 #include <string>
 
@@ -109,7 +110,7 @@ void HandleParty(CGame* pGame, char* pData)
 				pData, sizeof(hb::net::PacketNotifyPartyList));
 			if (!pkt) return;
 			const char* names = pkt->names;
-			pGame->m_iTotalPartyMember = pkt->count;
+			pGame->m_iTotalPartyMember = (std::min)(static_cast<int>(pkt->count), hb::shared::limits::MaxPartyMembers);
 			for (i = 1; i <= pkt->count; i++) {
 				pGame->m_stPartyMemberNameList[i - 1].cName.assign(names, strnlen(names, hb::shared::limits::CharNameLen));
 				names += hb::shared::limits::CharNameLen;

@@ -39,8 +39,6 @@ void Screen_TestPrimitives::on_update()
 
 void Screen_TestPrimitives::on_render()
 {
-	m_pGame->m_Renderer->BeginFrame();
-
 	auto& res = hb::shared::render::ResolutionConfig::Get();
 	int W = res.LogicalWidth();
 	int H = res.LogicalHeight();

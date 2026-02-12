@@ -18,9 +18,11 @@ void MagicCastingSystem::SetGame(CGame* pGame)
 
 int MagicCastingSystem::GetManaCost(int iMagicNo)
 {
+	if (!m_game) return 1;
 	int i, iManaSave, iManaCost;
 	iManaSave = 0;
 	if (iMagicNo < 0 || iMagicNo >= 100) return 1;
+	if (!m_game->m_pMagicCfgList[iMagicNo]) return 1;
 	for (i = 0; i < hb::shared::limits::MaxItems; i++)
 	{
 		if (m_game->m_pItemList[i] == 0) continue;
@@ -51,7 +53,7 @@ int MagicCastingSystem::GetManaCost(int iMagicNo)
 	// Mana save max = 80%
 	if (iManaSave > 80) iManaSave = 80;
 	iManaCost = m_game->m_pMagicCfgList[iMagicNo]->m_sValue1;
-	if (m_game->m_pPlayer->m_bIsSafeAttackMode) iManaCost += (iManaCost / 2) - (iManaCost / 10);
+	if (m_game->m_pPlayer->m_bIsSafeAttackMode) iManaCost = iManaCost * 140 / 100;
 	if (iManaSave > 0)
 	{
 		double dV1 = static_cast<double>(iManaSave);
@@ -67,6 +69,7 @@ int MagicCastingSystem::GetManaCost(int iMagicNo)
 
 void MagicCastingSystem::BeginCast(int iMagicNo)
 {
+	if (!m_game) return;
 	if (!m_game->EnsureMagicConfigsLoaded()) return;
 	if (iMagicNo < 0 || iMagicNo >= 100) return;
 	if ((m_game->m_pPlayer->m_iMagicMastery[iMagicNo] == 0) || (m_game->m_pMagicCfgList[iMagicNo] == 0)) return;

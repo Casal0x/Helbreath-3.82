@@ -70,6 +70,7 @@ private:
 	uint32_t m_last_update_time = 0;
 	bool m_is_xmas = false;
 	char m_ambient_light_level = 1;
+	int m_xmas_snow_count = 0;
 
 	// Dependencies (non-owning)
 	hb::shared::render::IRenderer* m_renderer = nullptr;

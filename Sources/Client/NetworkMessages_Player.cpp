@@ -60,7 +60,7 @@ namespace NetworkMessageHandlers {
 			pData, sizeof(hb::net::PacketNotifyPlayerProfile));
 		if (!pkt) return;
 		cTemp = pkt->text;
-		for (i = 0; i < 500; i++)
+		for (i = 0; i < static_cast<int>(cTemp.size()); i++)
 			if (cTemp[i] == '_') cTemp[i] = ' ';
 		pGame->AddEventList(cTemp.c_str(), 10);
 	}
@@ -145,7 +145,7 @@ namespace NetworkMessageHandlers {
 				cTxt = std::format(NOTIFYMSG_RATING_PLAYER2, cName);
 			else cTxt = std::format(NOTIFYMSG_RATING_PLAYER3, cName);
 		}
-		pGame->AddEventList(cTxt.c_str(), 10);
+		if (!cTxt.empty()) pGame->AddEventList(cTxt.c_str(), 10);
 	}
 
 	void HandleCannotRating(CGame* pGame, char* pData)

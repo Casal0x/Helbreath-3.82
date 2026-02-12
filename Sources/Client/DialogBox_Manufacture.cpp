@@ -893,7 +893,7 @@ PressResult DialogBox_Manufacture::OnPress(short msX, short msY)
 	return PressResult::Normal;
 }
 
-bool DialogBox_Manufacture::TryAddItemToSlot(char cItemID, bool updateBuildStatus)
+bool DialogBox_Manufacture::TryAddItemToSlot(int cItemID, bool updateBuildStatus)
 {
 	auto& info = Info();
 	int* slots[] = { &info.sV1, &info.sV2, &info.sV3, &info.sV4, &info.sV5, &info.sV6 };
@@ -923,7 +923,8 @@ bool DialogBox_Manufacture::OnItemDrop(short msX, short msY)
 {
 	if (m_pGame->m_pPlayer->m_Controller.GetCommand() < 0) return false;
 
-	char cItemID = static_cast<char>(CursorTarget::GetSelectedID());
+	int cItemID = CursorTarget::GetSelectedID();
+	if (cItemID < 0 || cItemID >= hb::shared::limits::MaxItems) return false;
 	if (m_pGame->m_pItemList[cItemID] == nullptr) return false;
 	if (m_pGame->m_bIsItemDisabled[cItemID]) return false;
 	CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[cItemID]->m_sIDnum);

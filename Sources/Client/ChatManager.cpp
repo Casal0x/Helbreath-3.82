@@ -55,7 +55,6 @@ void ChatManager::AddWhisperTarget(const char* name)
 	for (int i = game_limits::max_whisper_msgs - 2; i >= 0; i--)
 	{
 		m_whisper_targets[i + 1] = std::move(m_whisper_targets[i]);
-		m_whisper_targets[i].reset();
 	}
 	m_whisper_targets[0] = std::make_unique<CMsg>(0, name, 0);
 	m_whisper_index = 0;
@@ -92,7 +91,6 @@ void ChatManager::CycleWhisperUp()
 	}
 	m_whisper_index++;
 	if (m_whisper_index > max_index) m_whisper_index = 0;
-	if (m_whisper_index < 0) m_whisper_index = max_index;
 }
 
 void ChatManager::CycleWhisperDown()
@@ -108,5 +106,4 @@ void ChatManager::CycleWhisperDown()
 	}
 	m_whisper_index--;
 	if (m_whisper_index < 0) m_whisper_index = max_index;
-	if (m_whisper_index > max_index) m_whisper_index = 0;
 }

@@ -32,9 +32,9 @@ namespace NetworkMessageHandlers {
 	}
 	else
 	{
-		if ((pGame->m_cLogOutCount > 0) && (pGame->m_bForceDisconn == false))
+		if ((pGame->m_logout_count > 0) && (pGame->m_bForceDisconn == false))
 		{
-			pGame->m_cLogOutCount = -1;
+			pGame->m_logout_count = -1;
 			pGame->AddEventList(NOTIFYMSG_HP2, 10);
 		}
 		pGame->m_dwDamagedTime = GameClock::GetTimeMS();
@@ -100,7 +100,7 @@ namespace NetworkMessageHandlers {
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyExp>(
 			pData, sizeof(hb::net::PacketNotifyExp));
 		if (!pkt) return;
-		pGame->m_pPlayer->m_iExp = static_cast<int>(pkt->exp);
+		pGame->m_pPlayer->m_iExp = pkt->exp;
 
 		if (pGame->m_pPlayer->m_iExp > iPrevExp)
 		{

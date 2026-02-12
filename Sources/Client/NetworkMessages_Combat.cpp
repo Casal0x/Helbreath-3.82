@@ -47,10 +47,13 @@ namespace NetworkMessageHandlers {
 		iExp = pkt->exp;
 		cTxt = std::format(NOTIFYMSG_PK_CAPTURED1, iLevel, cName, iPKcount);
 		pGame->AddEventList(cTxt.c_str(), 10);
-		cTxt = std::format(EXP_INCREASED, iExp - pGame->m_pPlayer->m_iExp);
-		pGame->AddEventList(cTxt.c_str(), 10);
-		cTxt = std::format(NOTIFYMSG_PK_CAPTURED3, iExp - pGame->m_pPlayer->m_iExp);
-		pGame->AddEventList(cTxt.c_str(), 10);
+		if (iExp > static_cast<DWORD>(pGame->m_pPlayer->m_iExp))
+		{
+			cTxt = std::format(EXP_INCREASED, iExp - pGame->m_pPlayer->m_iExp);
+			pGame->AddEventList(cTxt.c_str(), 10);
+			cTxt = std::format(NOTIFYMSG_PK_CAPTURED3, iExp - pGame->m_pPlayer->m_iExp);
+			pGame->AddEventList(cTxt.c_str(), 10);
+		}
 	}
 
 	void HandlePKpenalty(CGame* pGame, char* pData)
@@ -113,7 +116,7 @@ namespace NetworkMessageHandlers {
 		sGuildRank = pkt->killer_rank;
 		iWarContribution = pkt->war_contribution;
 
-		if (iWarContribution > pGame->m_pPlayer->m_iWarContribution)
+		if (iWarContribution > pGame->m_pPlayer->m_iWarContribution && pGame->m_pGameMsgList[21])
 		{
 			std::string warBuf;
 			warBuf = std::format("{} +{}!", pGame->m_pGameMsgList[21]->m_pMsg, iWarContribution - pGame->m_pPlayer->m_iWarContribution);
@@ -149,8 +152,8 @@ namespace NetworkMessageHandlers {
 			}
 		}
 
-		if (iExp >= 0) pGame->m_pPlayer->m_iExp = iExp;
-		if (iEnemyKillCount >= 0) pGame->m_pPlayer->m_iEnemyKillCount = iEnemyKillCount;
+		pGame->m_pPlayer->m_iExp = iExp;
+		pGame->m_pPlayer->m_iEnemyKillCount = iEnemyKillCount;
 		pGame->PlayGameSound('E', 23, 0);
 
 		pGame->m_floatingText.RemoveByObjectID(pGame->m_pPlayer->m_sPlayerObjectID);

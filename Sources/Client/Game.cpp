@@ -166,7 +166,6 @@ CGame::CGame()
 	m_Renderer = nullptr;
 	m_dialogBoxManager.Initialize(this);
 	m_dialogBoxManager.InitializeDialogBoxes();
-	srand((unsigned)time(0));
 	ReadSettings();
 	RegisterHotkeys();
 
@@ -389,9 +388,12 @@ void CGame::DrawCursor()
 	int msX = hb::shared::input::GetMouseX();
 	int msY = hb::shared::input::GetMouseY();
 
-	// Skip if mouse position is invalid (not yet initialized)
-	if (msX == 0 && msY == 0)
-		return;
+	// Track mouse initialization — (0,0) is valid in windowed mode
+	if (!m_bMouseInitialized)
+	{
+		if (msX == 0 && msY == 0) return;
+		m_bMouseInitialized = true;
+	}
 
 	// Determine cursor frame based on game mode from manager (source of truth)
 	int iCursorFrame = 0;  // Default arrow cursor
@@ -560,12 +562,10 @@ void CGame::OnGameSocketEvent()
     case sock::Event::SocketClosed:
         ChangeGameMode(GameMode::ConnectionLost);
         m_pGSock.reset();
-        m_pGSock.reset();
         return;
     case sock::Event::SocketError:
         printf("[ERROR] Game socket error\n");
         ChangeGameMode(GameMode::ConnectionLost);
-        m_pGSock.reset();
         m_pGSock.reset();
         return;
 
@@ -594,7 +594,6 @@ void CGame::OnGameSocketEvent()
     if (iDrained < 0) {
         printf("[ERROR] Game socket DrainToQueue failed: %d\n", iDrained);
         ChangeGameMode(GameMode::ConnectionLost);
-        m_pGSock.reset();
         m_pGSock.reset();
         return;
     }
@@ -653,7 +652,7 @@ bool CGame::bSendCommand(uint32_t message_id, uint16_t command, char direction, 
 
 	if ((m_pGSock == 0) && (m_pLSock == 0)) return false;
 	uint32_t current_time = GameClock::GetTimeMS();
-	char key = static_cast<char>(rand() % 255) + 1;
+	uint8_t key = static_cast<uint8_t>(rand() % 255) + 1;
 
 	switch (message_id) {
 
@@ -1880,8 +1879,8 @@ void CGame::OnTimer()
 
 		if ((dwTime - m_dwCheckChatTime) > 2000)
 		{
-			m_dwCheckChatTime = m_dwTime;
-			m_floatingText.ReleaseExpired(m_dwCurTime);
+			m_dwCheckChatTime = dwTime;
+			m_floatingText.ReleaseExpired(dwTime);
 			if (m_pPlayer->m_Controller.GetCommandCount() >= 6)
 			{
 				m_iNetLagCount++;
@@ -2128,7 +2127,7 @@ void CGame::InitGameSettings()
 	m_dwMagicCastTime = 0;
 	m_iPointCommandType = -1; //v2.15 0 -> -1
 
-	for (int r = 0; r < 3; r++) m_eConfigRetry[r] = ConfigRetryLevel::None;
+	for (int r = 0; r < 4; r++) m_eConfigRetry[r] = ConfigRetryLevel::None;
 	m_dwConfigRequestTime = 0;
 	m_bInitDataReady = false;
 	m_bConfigsReady = false;
@@ -2178,7 +2177,6 @@ void CGame::InitGameSettings()
 		m_dialogBoxManager.SetOrderAt(i, 0);
 	m_dialogBoxManager.SetOrderAt(60, DialogBoxId::HudPanel);
 	m_dialogBoxManager.SetOrderAt(59, DialogBoxId::HudPanel);
-	m_dialogBoxManager.SetEnabled(DialogBoxId::HudPanel, true);
 	m_dialogBoxManager.SetEnabled(DialogBoxId::HudPanel, true);
 
 	if (m_pEffectManager) m_pEffectManager->ClearAllEffects();
@@ -2242,8 +2240,8 @@ void CGame::InitGameSettings()
 
 	m_pPlayer->m_iLU_Point = 0;
 	m_pPlayer->m_wLU_Str = m_pPlayer->m_wLU_Vit = m_pPlayer->m_wLU_Dex = m_pPlayer->m_wLU_Int = m_pPlayer->m_wLU_Mag = m_pPlayer->m_wLU_Char = 0;
-	m_cLogOutCount = -1;
-	m_dwLogOutCountTime = 0;
+	m_logout_count = -1;
+	m_logout_count_time = 0;
 	m_pPlayer->m_iSuperAttackLeft = 0;
 	m_pPlayer->m_bSuperAttackMode = false;
 	m_iFightzoneNumber = 0;
@@ -2680,12 +2678,10 @@ void CGame::OnLogSocketEvent()
     case sock::Event::SocketClosed:
         ChangeGameMode(GameMode::ConnectionLost);
         m_pLSock.reset();
-        m_pLSock.reset();
         return;
     case sock::Event::SocketError:
         printf("[ERROR] Login socket error\n");
         ChangeGameMode(GameMode::ConnectionLost);
-        m_pLSock.reset();
         m_pLSock.reset();
         return;
 
@@ -2714,7 +2710,6 @@ void CGame::OnLogSocketEvent()
     if (iDrained < 0) {
         printf("[ERROR] Login socket DrainToQueue failed: %d\n", iDrained);
         ChangeGameMode(GameMode::ConnectionLost);
-        m_pLSock.reset();
         m_pLSock.reset();
         return;
     }
@@ -2782,7 +2777,7 @@ void CGame::LogResponseHandler(char* packet_data)
 		const auto* list = hb::net::PacketCast<hb::net::PacketLogCharacterListHeader>(
 			packet_data, sizeof(hb::net::PacketLogCharacterListHeader));
 		if (!list) return;
-		m_iTotalChar = list->total_chars;
+		m_iTotalChar = std::min(static_cast<int>(list->total_chars), 4);
 		for (int i = 0; i < 4; i++)
 			if (m_pCharList[i] != 0)
 			{
@@ -2800,7 +2795,7 @@ void CGame::LogResponseHandler(char* packet_data)
 			m_pCharList[i]->m_sSkinCol = entry.skin;
 			m_pCharList[i]->m_sLevel = entry.level;
 			m_pCharList[i]->m_iExp = entry.exp;
-	
+
 			m_pCharList[i]->m_cMapName.assign(entry.map_name, strnlen(entry.map_name, sizeof(entry.map_name)));
 		}
 		std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "3A");
@@ -2822,7 +2817,7 @@ void CGame::LogResponseHandler(char* packet_data)
 		m_iIpYear = 0;
 		m_iIpMonth = 0;
 		m_iIpDay = 0;
-		m_iTotalChar = list->total_chars;
+		m_iTotalChar = std::min(static_cast<int>(list->total_chars), 4);
 		for (int i = 0; i < 4; i++)
 			if (m_pCharList[i] != 0)
 			{
@@ -2841,7 +2836,7 @@ void CGame::LogResponseHandler(char* packet_data)
 			m_pCharList[i]->m_sSkinCol = entry.skin;
 			m_pCharList[i]->m_sLevel = entry.level;
 			m_pCharList[i]->m_iExp = entry.exp;
-	
+
 			m_pCharList[i]->m_cMapName.assign(entry.map_name, strnlen(entry.map_name, sizeof(entry.map_name)));
 		}
 		ChangeGameMode(GameMode::SelectCharacter);
@@ -2923,7 +2918,7 @@ void CGame::LogResponseHandler(char* packet_data)
 		if (!list) return;
 		memcpy(char_name, list->character_name, sizeof(list->character_name));
 
-		m_iTotalChar = list->total_chars;
+		m_iTotalChar = std::min(static_cast<int>(list->total_chars), 4);
 		for (int i = 0; i < 4; i++)
 			if (m_pCharList[i] != 0) m_pCharList[i].reset();
 
@@ -3036,7 +3031,6 @@ void CGame::LogResponseHandler(char* packet_data)
 		ChangeGameMode(GameMode::LogResMsg);
 		break;
 	}
-	m_pLSock.reset();
 	m_pLSock.reset();
 }
 
@@ -4823,26 +4817,20 @@ void CGame::RetrieveItemHandler(char* pData)
 			AddEventList(cTxt.c_str(), 10);
 
 			CItem* pCfgBank = GetItemConfig(m_pBankList[cBankItemIndex]->m_sIDnum);
-			if (pCfgBank && ((pCfgBank->GetItemType() == ItemType::Consume) ||
-				(pCfgBank->GetItemType() == ItemType::Arrow)))
+			bool bStackable = pCfgBank && ((pCfgBank->GetItemType() == ItemType::Consume) ||
+				(pCfgBank->GetItemType() == ItemType::Arrow));
+
+			if (bStackable && m_pItemList[cItemIndex] != 0)
 			{
-				if (m_pItemList[cItemIndex] == 0) goto RIH_STEP2;
+				// Stackable item with occupied inventory slot: just remove from bank
 				m_pBankList[cBankItemIndex].reset();
-				for (j = 0; j <= hb::shared::limits::MaxBankItems - 2; j++)
-				{
-					if ((m_pBankList[j + 1] != 0) && (m_pBankList[j] == 0))
-					{
-						m_pBankList[j] = std::move(m_pBankList[j + 1]);
-					}
-				}
 			}
 			else
 			{
-			RIH_STEP2:;
+				// Non-stackable or empty inventory slot: place item into inventory
 				if (m_pItemList[cItemIndex] != 0) return;
-				short nX, nY;
-				nX = 40;
-				nY = 30;
+				short nX = 40;
+				short nY = 30;
 				for (j = 0; j < hb::shared::limits::MaxItems; j++)
 				{
 					if ((m_pItemList[j] != 0) && (m_pItemList[j]->m_sIDnum == m_pBankList[cBankItemIndex]->m_sIDnum))
@@ -4865,13 +4853,13 @@ void CGame::RetrieveItemHandler(char* pData)
 					}
 				m_bIsItemEquipped[cItemIndex] = false;
 				m_bIsItemDisabled[cItemIndex] = false;
-				// m_pBankList[cBankItemIndex] already moved above
-				for (j = 0; j <= hb::shared::limits::MaxBankItems - 2; j++)
+			}
+			// Compact bank list
+			for (j = 0; j <= hb::shared::limits::MaxBankItems - 2; j++)
+			{
+				if ((m_pBankList[j + 1] != 0) && (m_pBankList[j] == 0))
 				{
-					if ((m_pBankList[j + 1] != 0) && (m_pBankList[j] == 0))
-					{
-						m_pBankList[j] = std::move(m_pBankList[j + 1]);
-					}
+					m_pBankList[j] = std::move(m_pBankList[j + 1]);
 				}
 			}
 		}
@@ -5884,9 +5872,9 @@ void CGame::MotionResponseHandler(char* packet_data)
 				G_cTxt = std::format(NOTIFYMSG_HP_DOWN, previous_hp - m_pPlayer->m_iHP);
 				AddEventList(G_cTxt.c_str(), 10);
 				m_dwDamagedTime = GameClock::GetTimeMS();
-				if ((m_cLogOutCount > 0) && (m_bForceDisconn == false))
+				if ((m_logout_count > 0) && (m_bForceDisconn == false))
 				{
-					m_cLogOutCount = -1;
+					m_logout_count = -1;
 					AddEventList(MOTION_RESPONSE_HANDLER2, 10);
 				}
 			}
@@ -6261,7 +6249,6 @@ void CGame::CommandProcessor(short mouse_x, short mouse_y, short tile_x, short t
 	}
 	if ((current_time - m_pPlayer->m_Controller.GetCommandTime()) < 300)
 	{
-		m_pGSock.reset();
 		m_pGSock.reset();
 		PlayGameSound('E', 14, 5);
 		AudioManager::Get().StopSound(SoundType::Effect, 38);
@@ -7306,9 +7293,9 @@ void CGame::ProcessMotionCommands(uint16_t action_type)
 				if (direction != 0)
 				{
 					// Cancel logout countdown on movement
-					if ((m_cLogOutCount > 0) && (m_bForceDisconn == false))
+					if ((m_logout_count > 0) && (m_bForceDisconn == false))
 					{
-						m_cLogOutCount = -1;
+						m_logout_count = -1;
 						AddEventList(DLGBOX_CLICK_SYSMENU2, 10);
 					}
 
@@ -7354,9 +7341,9 @@ void CGame::ProcessMotionCommands(uint16_t action_type)
 			if (direction != 0)
 			{
 				// Cancel logout countdown on attack
-				if ((m_cLogOutCount > 0) && (m_bForceDisconn == false))
+				if ((m_logout_count > 0) && (m_bForceDisconn == false))
 				{
-					m_cLogOutCount = -1;
+					m_logout_count = -1;
 					AddEventList(DLGBOX_CLICK_SYSMENU2, 10);
 				}
 
@@ -7409,9 +7396,9 @@ void CGame::ProcessMotionCommands(uint16_t action_type)
 				if (direction != 0)
 				{
 					// Cancel logout countdown on attack-move
-					if ((m_cLogOutCount > 0) && (m_bForceDisconn == false))
+					if ((m_logout_count > 0) && (m_bForceDisconn == false))
 					{
-						m_cLogOutCount = -1;
+						m_logout_count = -1;
 						AddEventList(DLGBOX_CLICK_SYSMENU2, 10);
 					}
 
@@ -7454,9 +7441,9 @@ void CGame::ProcessMotionCommands(uint16_t action_type)
 
 		case Type::GetItem:
 			// Cancel logout countdown on get item
-			if ((m_cLogOutCount > 0) && (m_bForceDisconn == false))
+			if ((m_logout_count > 0) && (m_bForceDisconn == false))
 			{
-				m_cLogOutCount = -1;
+				m_logout_count = -1;
 				AddEventList(DLGBOX_CLICK_SYSMENU2, 10);
 			}
 
@@ -7471,9 +7458,9 @@ void CGame::ProcessMotionCommands(uint16_t action_type)
 
 		case Type::Magic:
 			// Cancel logout countdown on magic cast
-			if ((m_cLogOutCount > 0) && (m_bForceDisconn == false))
+			if ((m_logout_count > 0) && (m_bForceDisconn == false))
 			{
-				m_cLogOutCount = -1;
+				m_logout_count = -1;
 				AddEventList(DLGBOX_CLICK_SYSMENU2, 10);
 			}
 

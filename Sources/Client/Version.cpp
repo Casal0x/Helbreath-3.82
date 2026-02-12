@@ -1,5 +1,6 @@
 #include "Version.h"
 #include <cstdio>
+#include <format>
 
 namespace hb {
 	namespace version {
@@ -16,39 +17,29 @@ namespace hb {
 			return kVersion;
 		}
 
-		const char* GetSemVer()
+		std::string GetSemVer()
 		{
-			static char buffer[64];
 			const VersionInfo& ver = Get();
 
 			if (ver.prerelease[0] != '\0') {
-				std::snprintf(buffer, sizeof(buffer), "%d.%d.%d-%s",
-					ver.major, ver.minor, ver.patch, ver.prerelease);
+				return std::format("{}.{}.{}-{}", ver.major, ver.minor, ver.patch, ver.prerelease);
 			}
-			else {
-				std::snprintf(buffer, sizeof(buffer), "%d.%d.%d",
-					ver.major, ver.minor, ver.patch);
-			}
-
-			return buffer;
+			return std::format("{}.{}.{}", ver.major, ver.minor, ver.patch);
 		}
 
-		const char* GetDisplayString()
+		std::string GetDisplayString()
 		{
 			return GetSemVer();
 		}
 
-		const char* GetFullString()
+		std::string GetFullString()
 		{
-			static char buffer[96];
 			const VersionInfo& ver = Get();
-			const char* semver = GetSemVer();
+			std::string semver = GetSemVer();
 
 			if (ver.build[0] != '\0') {
-				std::snprintf(buffer, sizeof(buffer), "%s+%s", semver, ver.build);
-				return buffer;
+				return std::format("{}+{}", semver, ver.build);
 			}
-
 			return semver;
 		}
 

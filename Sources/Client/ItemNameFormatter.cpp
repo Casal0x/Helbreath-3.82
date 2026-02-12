@@ -133,10 +133,16 @@ ItemNameInfo ItemNameFormatter::Format(CItem* pItem)
 	dwValue3 = (pItem->m_dwAttribute & 0xF0000000) >> 28;
 	if (dwValue3 > 0)
 	{
-		if (result.name.size() >= 2 && result.name[result.name.size() - 2] == '+')
+		auto plusPos = result.name.rfind('+');
+		if (plusPos != std::string::npos && plusPos + 1 < result.name.size())
 		{
-			dwValue3 = std::stoi(result.name.substr(result.name.size() - 1)) + dwValue3;
-			result.name = std::format("{}+{}", result.name.substr(0, result.name.size() - 2), dwValue3);
+			try {
+				int existingPlus = std::stoi(result.name.substr(plusPos + 1));
+				dwValue3 += existingPlus;
+				result.name = std::format("{}+{}", result.name.substr(0, plusPos), dwValue3);
+			} catch (...) {
+				result.name += std::format("+{}", dwValue3);
+			}
 		}
 		else
 		{
@@ -254,10 +260,16 @@ ItemNameInfo ItemNameFormatter::Format(short sItemId, uint32_t dwAttribute)
 	dwValue3 = (dwAttribute & 0xF0000000) >> 28;
 	if (dwValue3 > 0)
 	{
-		if (result.name.size() >= 2 && result.name[result.name.size() - 2] == '+')
+		auto plusPos = result.name.rfind('+');
+		if (plusPos != std::string::npos && plusPos + 1 < result.name.size())
 		{
-			dwValue3 = std::stoi(result.name.substr(result.name.size() - 1)) + dwValue3;
-			result.name = std::format("{}+{}", result.name.substr(0, result.name.size() - 2), dwValue3);
+			try {
+				int existingPlus = std::stoi(result.name.substr(plusPos + 1));
+				dwValue3 += existingPlus;
+				result.name = std::format("{}+{}", result.name.substr(0, plusPos), dwValue3);
+			} catch (...) {
+				result.name += std::format("+{}", dwValue3);
+			}
 		}
 		else
 		{

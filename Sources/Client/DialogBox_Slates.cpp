@@ -112,7 +112,8 @@ bool DialogBox_Slates::OnItemDrop(short msX, short msY)
 {
 	if (m_pGame->m_pPlayer->m_Controller.GetCommand() < 0) return false;
 
-	char cItemID = static_cast<char>(CursorTarget::GetSelectedID());
+	int cItemID = CursorTarget::GetSelectedID();
+	if (cItemID < 0 || cItemID >= hb::shared::limits::MaxItems) return false;
 	if (m_pGame->m_pItemList[cItemID] == nullptr) return false;
 	if (m_pGame->m_bIsItemDisabled[cItemID]) return false;
 

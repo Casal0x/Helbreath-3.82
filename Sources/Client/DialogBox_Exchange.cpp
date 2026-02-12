@@ -229,7 +229,8 @@ bool DialogBox_Exchange::OnItemDrop(short msX, short msY)
 	if (m_pGame->m_pPlayer->m_Controller.GetCommand() < 0) return false;
 	if (m_pGame->m_stDialogBoxExchangeInfo[3].sV1 != -1) return false; // Already 4 items
 
-	char cItemID = static_cast<char>(CursorTarget::GetSelectedID());
+	int cItemID = CursorTarget::GetSelectedID();
+	if (cItemID < 0 || cItemID >= hb::shared::limits::MaxItems) return false;
 
 	// Find first empty exchange slot
 	int iSlot = -1;

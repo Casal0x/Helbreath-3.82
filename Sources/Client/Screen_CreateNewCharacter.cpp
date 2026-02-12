@@ -131,6 +131,23 @@ void Screen_CreateNewCharacter::on_update()
     }
     if (m_pGame->m_cMenuDir > 8) m_pGame->m_cMenuDir = 1;
 
+    // Handle button hover focus
+    if ((msX >= 384 + OX) && (msX <= 384 + 72 + OX) && (msY >= 445 + OY) && (msY <= 445 + 15 + OY)) {
+        m_cCurFocus = 2;
+    }
+    else if ((msX >= 500 + OX) && (msX <= 500 + 72 + OX) && (msY >= 445 + OY) && (msY <= 445 + 15 + OY)) {
+        m_cCurFocus = 3;
+    }
+    else if ((msX >= 60 + OX) && (msX <= 60 + 72 + OX) && (msY >= 445 + OY) && (msY <= 445 + 15 + OY)) {
+        m_cCurFocus = 4;
+    }
+    else if ((msX >= 145 + OX) && (msX <= 145 + 72 + OX) && (msY >= 445 + OY) && (msY <= 445 + 15 + OY)) {
+        m_cCurFocus = 5;
+    }
+    else if ((msX >= 230 + OX) && (msX <= 230 + 72 + OX) && (msY >= 445 + OY) && (msY <= 445 + 15 + OY)) {
+        m_cCurFocus = 6;
+    }
+
     // Handle mouse clicks
     if (hb::shared::input::IsMouseButtonPressed(MouseButton::Left))
     {
@@ -307,7 +324,7 @@ void Screen_CreateNewCharacter::on_update()
             if (CMisc::bCheckValidName(m_cNewCharName.data()) == false) break;
             m_pGame->m_pPlayer->m_cPlayerName = m_cNewCharName.c_str();
             m_pGame->m_pLSock = std::make_unique<hb::shared::net::ASIOSocket>(m_pGame->m_pIOPool->GetContext(), game_limits::socket_block_limit);
-            m_pGame->m_pLSock->bConnect(m_pGame->m_cLogServerAddr.c_str(), m_pGame->m_iLogServerPort + (rand() % 1));
+            m_pGame->m_pLSock->bConnect(m_pGame->m_cLogServerAddr.c_str(), m_pGame->m_iLogServerPort);
             m_pGame->m_pLSock->bInitBufferSize(hb::shared::limits::MsgBufferSize);
             m_pGame->ChangeGameMode(GameMode::Connecting);
             m_pGame->m_dwConnectMode = MsgId::RequestCreateNewCharacter;
@@ -379,23 +396,6 @@ void Screen_CreateNewCharacter::on_render()
     short msX = m_sNewCharMsX;
     short msY = m_sNewCharMsY;
     uint32_t dwTime = GameClock::GetTimeMS();
-
-    // Handle button hover focus FIRST (before drawing)
-    if ((msX >= 384 + OX) && (msX <= 384 + 72 + OX) && (msY >= 445 + OY) && (msY <= 445 + 15 + OY)) {
-        m_cCurFocus = 2;
-    }
-    else if ((msX >= 500 + OX) && (msX <= 500 + 72 + OX) && (msY >= 445 + OY) && (msY <= 445 + 15 + OY)) {
-        m_cCurFocus = 3;
-    }
-    if ((msX >= 60 + OX) && (msX <= 60 + 72 + OX) && (msY >= 445 + OY) && (msY <= 445 + 15 + OY)) {
-        m_cCurFocus = 4;
-    }
-    if ((msX >= 145 + OX) && (msX <= 145 + 72 + OX) && (msY >= 445 + OY) && (msY <= 445 + 15 + OY)) {
-        m_cCurFocus = 5;
-    }
-    if ((msX >= 230 + OX) && (msX <= 230 + 72 + OX) && (msY >= 445 + OY) && (msY <= 445 + 15 + OY)) {
-        m_cCurFocus = 6;
-    }
 
     // ======== Draw character creation UI (inlined from _bDraw_OnCreateNewCharacter) ========
     m_pGame->DrawNewDialogBox(InterfaceNdNewChar, 0, 0, 0, true);

@@ -240,39 +240,50 @@ void CFloatingTextManager::DrawMessage(const CFloatingText& msg, short sX, short
 	if (params.bUseSpriteFont)
 	{
 		// Sprite font path: split text into 20-char lines for multi-line display
+		// Note: Text encoding is EUC-KR (legacy Korean). GetCharKind detects multibyte boundaries.
 		const char* pText = msg.m_szText.c_str();
 		char cMsgA[22]{}, cMsgB[22]{}, cMsgC[22]{};
 		const char* cp = pText;
+		size_t cpLen;
 		int iLines = 0;
 
-		if (std::strlen(cp) != 0) {
-			std::memcpy(cMsgA, cp, std::min<size_t>(20, std::strlen(cp)));
-			int iRet = GetCharKind(cMsgA, 19);
-			if (iRet == CharKind_HAN1) {
-				cMsgA[20] = cp[20];
-				cp++;
+		cpLen = std::strlen(cp);
+		if (cpLen != 0) {
+			std::memcpy(cMsgA, cp, std::min<size_t>(20, cpLen));
+			if (cpLen > 20) {
+				int iRet = GetCharKind(cMsgA, 19);
+				if (iRet == CharKind_HAN1) {
+					cMsgA[20] = cp[20];
+					cp++;
+				}
 			}
 			cp += 20;
 			iLines = 1;
 		}
 
-		if (std::strlen(cp) != 0) {
-			std::memcpy(cMsgB, cp, std::min<size_t>(20, std::strlen(cp)));
-			int iRet = GetCharKind(cMsgB, 19);
-			if (iRet == CharKind_HAN1) {
-				cMsgB[20] = cp[20];
-				cp++;
+		cpLen = std::strlen(cp);
+		if (cpLen != 0) {
+			std::memcpy(cMsgB, cp, std::min<size_t>(20, cpLen));
+			if (cpLen > 20) {
+				int iRet = GetCharKind(cMsgB, 19);
+				if (iRet == CharKind_HAN1) {
+					cMsgB[20] = cp[20];
+					cp++;
+				}
 			}
 			cp += 20;
 			iLines = 2;
 		}
 
-		if (std::strlen(cp) != 0) {
-			std::memcpy(cMsgC, cp, std::min<size_t>(20, std::strlen(cp)));
-			int iRet = GetCharKind(cMsgC, 19);
-			if (iRet == CharKind_HAN1) {
-				cMsgC[20] = cp[20];
-				cp++;
+		cpLen = std::strlen(cp);
+		if (cpLen != 0) {
+			std::memcpy(cMsgC, cp, std::min<size_t>(20, cpLen));
+			if (cpLen > 20) {
+				int iRet = GetCharKind(cMsgC, 19);
+				if (iRet == CharKind_HAN1) {
+					cMsgC[20] = cp[20];
+					cp++;
+				}
 			}
 			cp += 20;
 			iLines = 3;

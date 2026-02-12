@@ -85,7 +85,7 @@ void DialogBox_GuideMap::DrawFullMap(short sX, short sY)
 		m_pGame->m_pSprite[m_iMinMapIndex]->Draw(sX, sY, m_iMinMapSquare, hb::shared::sprite::DrawParams::NoColorKey());
 
 	short shX = (m_pGame->m_pPlayer->m_sPlayerX * 128) / (m_pGame->m_pMapData->m_sMapSizeX);
-	short shY = (m_pGame->m_pPlayer->m_sPlayerY * 128) / (m_pGame->m_pMapData->m_sMapSizeX);
+	short shY = (m_pGame->m_pPlayer->m_sPlayerY * 128) / (m_pGame->m_pMapData->m_sMapSizeY);
 	m_pGame->m_pSprite[InterfaceNdCrusade]->Draw(sX + shX, sY + shY, 37);
 
 	if ((m_pGame->m_dwCurTime - m_pGame->m_dwMonsterEventTime) < 30000)
@@ -93,7 +93,7 @@ void DialogBox_GuideMap::DrawFullMap(short sX, short sY)
 		if ((m_pGame->m_dwCurTime % 500) < 370)
 		{
 			shX = (m_pGame->m_sEventX * 128) / (m_pGame->m_pMapData->m_sMapSizeX);
-			shY = (m_pGame->m_sEventY * 128) / (m_pGame->m_pMapData->m_sMapSizeX);
+			shY = (m_pGame->m_sEventY * 128) / (m_pGame->m_pMapData->m_sMapSizeY);
 			m_pGame->m_pSprite[InterfaceMonster]->Draw(sX + shX, sY + shY, m_pGame->m_sMonsterID);
 		}
 	}
@@ -119,7 +119,7 @@ void DialogBox_GuideMap::DrawLocationTooltip(short msX, short msY, short sX, sho
 	else
 	{
 		shX = (msX - sX) * m_pGame->m_pMapData->m_sMapSizeX / 128;
-		shY = (msY - sY) * m_pGame->m_pMapData->m_sMapSizeX / 128;
+		shY = (msY - sY) * m_pGame->m_pMapData->m_sMapSizeY / 128;
 	}
 
 	G_cTxt = std::format("{}, {}", shX, shY);
@@ -258,7 +258,7 @@ bool DialogBox_GuideMap::OnDoubleClick(short msX, short msY)
 	else
 	{
 		shX = (m_pGame->m_pMapData->m_sMapSizeX * (msX - sX)) / 128;
-		shY = (m_pGame->m_pMapData->m_sMapSizeX * (msY - sY)) / 128;
+		shY = (m_pGame->m_pMapData->m_sMapSizeY * (msY - sY)) / 128;
 	}
 
 	if (shX < 30 || shY < 30) return false;

@@ -185,21 +185,25 @@ bool DialogBox_GuildHallMenu::OnClick(short msX, short msY)
 			TeleportManager::Get().SetMapCount(-1);
 			bSendCommand(ClientMsgId::RequestHeldenianTpList, 0, 0, 0, 0, 0, 0);
 			PlaySoundEffect('E', 14, 5);
+			return true;
 		}
 		if ((msX > sX + 35) && (msX < sX + 220) && (msY > sY + 95) && (msY < sY + 120))
 		{
 			Info().cMode = 2;
 			PlaySoundEffect('E', 14, 5);
+			return true;
 		}
 		if ((msX > sX + 35) && (msX < sX + 220) && (msY > sY + 120) && (msY < sY + 145))
 		{
 			Info().cMode = 3;
 			PlaySoundEffect('E', 14, 5);
+			return true;
 		}
 		if ((msX > sX + 35) && (msX < sX + 220) && (msY > sY + 145) && (msY < sY + 170))
 		{
 			Info().cMode = 4;
 			PlaySoundEffect('E', 14, 5);
+			return true;
 		}
 		break;
 

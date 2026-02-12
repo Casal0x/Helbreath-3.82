@@ -19,7 +19,7 @@ public:
 		m_bIsTeleport = false;
 	}
 
-	inline virtual ~CTileSpr()
+	inline ~CTileSpr()
 	{
 	}
 

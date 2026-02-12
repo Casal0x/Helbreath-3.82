@@ -53,6 +53,7 @@ void LocalCacheManager::AccumulatePacket(ConfigCacheType type, const char* pData
 	auto& acc = m_accum[static_cast<int>(type)];
 	acc.active = true;
 
+	if (size > 65535) return;
 	uint16_t len = static_cast<uint16_t>(size);
 	const uint8_t* lenBytes = reinterpret_cast<const uint8_t*>(&len);
 	acc.data.push_back(lenBytes[0]);

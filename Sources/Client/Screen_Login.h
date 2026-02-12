@@ -23,6 +23,8 @@ public:
     void on_update() override;
     void on_render() override;
 
+    bool AttemptLogin();
+
 private:
     // Helper method for rendering (migrated from CGame::_Draw_OnLogin)
     void DrawLoginWindow(int msX, int msY);

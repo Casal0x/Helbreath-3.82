@@ -376,8 +376,6 @@ void DialogBox_Shop::DrawArmorStats(short sX, short sY, int iItemIndex, bool& bF
 
 void DialogBox_Shop::DrawLevelRequirement(short sX, short sY, int iItemIndex, bool& bFlagRedShown)
 {
-    char cTemp[255];
-
     if (ShopManager::Get().GetItemList()[iItemIndex]->m_sLevelLimit != 0) {
         if (m_pGame->m_pPlayer->m_iLevel >= ShopManager::Get().GetItemList()[iItemIndex]->m_sLevelLimit) {
             hb::shared::text::DrawText(GameFont::Default, sX + 90, sY + 190, DRAW_DIALOGBOX_SHOP24, hb::shared::text::TextStyle::Color(GameColors::UILabel));
@@ -386,8 +384,8 @@ void DialogBox_Shop::DrawLevelRequirement(short sX, short sY, int iItemIndex, bo
             hb::shared::text::DrawText(GameFont::Default, sX + 140, sY + 190, lvlReq.c_str(), hb::shared::text::TextStyle::Color(GameColors::UILabel));
         }
         else {
-            hb::shared::text::DrawText(GameFont::Default, sX + 90, sY + 190, cTemp, hb::shared::text::TextStyle::Color(GameColors::UILabel));
-            hb::shared::text::DrawText(GameFont::Default, sX + 91, sY + 190, cTemp, hb::shared::text::TextStyle::Color(GameColors::UILabel));
+            hb::shared::text::DrawText(GameFont::Default, sX + 90, sY + 190, DRAW_DIALOGBOX_SHOP24, hb::shared::text::TextStyle::Color(GameColors::UILabel));
+            hb::shared::text::DrawText(GameFont::Default, sX + 91, sY + 190, DRAW_DIALOGBOX_SHOP24, hb::shared::text::TextStyle::Color(GameColors::UILabel));
             auto lvlReq = std::format(DRAW_DIALOGBOX_SHOP25, ShopManager::Get().GetItemList()[iItemIndex]->m_sLevelLimit);
             hb::shared::text::DrawText(GameFont::Default, sX + 140, sY + 190, lvlReq.c_str(), hb::shared::text::TextStyle::Color(GameColors::UIWarningRed));
             if (bFlagRedShown == false) {

@@ -4,6 +4,9 @@
 
 #include "GameMonitor.h"
 #include "CommonTypes.h"
+#include <fstream>
+#include <string>
+#include <cstring>
 using namespace hb::client::config;
 
 //////////////////////////////////////////////////////////////////////
@@ -12,44 +15,40 @@ using namespace hb::client::config;
 
 CGameMonitor::CGameMonitor()
 {
-	int i;
-
-	for (i = 0; i < MaxBadWord; i++)
+	for (int i = 0; i < MaxBadWord; i++)
 		m_pWordList[i] = 0;
 }
 
 CGameMonitor::~CGameMonitor()
 {
-	int i;
-
-	for (i = 0; i < MaxBadWord; i++)
+	for (int i = 0; i < MaxBadWord; i++)
 		if (m_pWordList[i] != 0) delete m_pWordList[i];
 }
 
-int CGameMonitor::iReadBadWordFileList(char* pFn)
+int CGameMonitor::iReadBadWordFileList(const char* pFn)
 {
-	char* pContents, * token;
-	char seps[] = "/,\t\n";
-	char cReadMode = 0;
-	int  iIndex = 0;
-	HANDLE hFile;
-	FILE* pFile;
-	uint32_t dwFileSize;
-
-	hFile = CreateFile(pFn, GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
-	dwFileSize = GetFileSize(hFile, 0);
-	if (hFile != INVALID_HANDLE_VALUE) CloseHandle(hFile);
-
-	pFile = fopen(pFn, "rt");
-	if (pFile == 0) return 0;
-	else
+	// BUG-19: Clear existing entries before reload to prevent memory leak
+	for (int i = 0; i < MaxBadWord; i++)
 	{
-		pContents = new char[dwFileSize + 1];
-		std::memset(pContents, 0, dwFileSize + 1);
-		fread(pContents, dwFileSize, 1, pFile);
-		fclose(pFile);
+		if (m_pWordList[i] != 0)
+		{
+			delete m_pWordList[i];
+			m_pWordList[i] = 0;
+		}
 	}
-	token = strtok(pContents, seps);
+
+	// BUG-23/BUG-03: Use single std::ifstream instead of dual CreateFile/fopen
+	std::ifstream file(pFn);
+	if (!file.is_open()) return 0;
+
+	std::string contents((std::istreambuf_iterator<char>(file)),
+		std::istreambuf_iterator<char>());
+	file.close();
+
+	int iIndex = 0;
+	char* pContents = contents.data();
+	char seps[] = "/,\t\n";
+	char* token = strtok(pContents, seps);
 	while (token != 0)
 	{
 		m_pWordList[iIndex] = new class CMsg(0, token, 0);
@@ -57,19 +56,20 @@ int CGameMonitor::iReadBadWordFileList(char* pFn)
 		if (iIndex >= MaxBadWord) break;
 		token = strtok(NULL, seps);
 	}
-	delete[] pContents;
 	return iIndex;
 }
 
-bool CGameMonitor::bCheckBadWord(char* pWord)
+bool CGameMonitor::bCheckBadWord(const char* pWord)
 {
 #ifndef _DEBUG
-	int i;
+	// BUG-04: Use strncpy to prevent buffer overflow
 	char cBuffer[500];
 	std::memset(cBuffer, 0, sizeof(cBuffer));
-	strcpy(cBuffer, pWord);
-	i = 0;
-	while ((m_pWordList[i] != 0) && (strlen(m_pWordList[i]->m_pMsg) != 0))
+	strncpy(cBuffer, pWord, sizeof(cBuffer) - 1);
+
+	// BUG-10: Add i < MaxBadWord to prevent out-of-bounds access
+	int i = 0;
+	while ((i < MaxBadWord) && (m_pWordList[i] != 0) && (strlen(m_pWordList[i]->m_pMsg) != 0))
 	{
 		if (memcmp(cBuffer, m_pWordList[i]->m_pMsg, strlen(m_pWordList[i]->m_pMsg)) == 0)
 		{

@@ -62,6 +62,7 @@ void Screen_CreateAccount::on_initialize()
 
 void Screen_CreateAccount::on_uninitialize()
 {
+    TextInputManager::Get().EndInput();
 }
 
 void Screen_CreateAccount::on_update()
@@ -99,7 +100,6 @@ void Screen_CreateAccount::on_update()
         case 3: TextInputManager::Get().StartInput(427, 129, 11, m_cNewAcctConfirm, true); break;
         case 4: TextInputManager::Get().StartInput(311, 48 + 190 - 25 + 2, 49, m_cEmail); break;
         }
-        TextInputManager::Get().EndInput();
         m_cNewAcctPrevFocus = m_cCurFocus;
     }
 

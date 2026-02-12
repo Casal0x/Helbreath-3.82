@@ -38,11 +38,8 @@ void ShopManager::RequestShopMenu(char cType)
 void ShopManager::SendRequest(int16_t npcType)
 {
 	// Clear existing shop items
-	for (int i = 0; i < game_limits::max_sell_list; i++) {
-		if (m_item_list[i] != nullptr) {
-			m_item_list[i].reset();
-			m_item_list[i].reset();
-		}
+	for (int i = 0; i < game_limits::max_menu_items; i++) {
+		m_item_list[i].reset();
 	}
 
 	// Build and send shop request packet
@@ -72,10 +69,7 @@ void ShopManager::HandleResponse(char* pData)
 
 	// Clear existing shop items
 	for (int i = 0; i < game_limits::max_menu_items; i++) {
-		if (m_item_list[i] != nullptr) {
-			m_item_list[i].reset();
-			m_item_list[i].reset();
-		}
+		m_item_list[i].reset();
 	}
 
 	// Get item IDs from packet (they follow the header)

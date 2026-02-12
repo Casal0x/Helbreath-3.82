@@ -47,10 +47,19 @@ bool HotkeyManager::HandleKey(KeyCode vk, Trigger trigger)
 		if (entry.combo.ctrl && !ctrlDown) {
 			continue;
 		}
+		if (!entry.combo.ctrl && ctrlDown) {
+			continue;
+		}
 		if (entry.combo.shift && !shiftDown) {
 			continue;
 		}
+		if (!entry.combo.shift && shiftDown) {
+			continue;
+		}
 		if (entry.combo.alt && !altDown) {
+			continue;
+		}
+		if (!entry.combo.alt && altDown) {
 			continue;
 		}
 		if (entry.callback) {

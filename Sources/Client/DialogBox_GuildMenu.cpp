@@ -120,8 +120,7 @@ void DialogBox_GuildMenu::OnDraw(short msX, short msY, short msZ, char cLB)
 		PutAlignedString(sX, sX + szX, sY + 140, DRAW_DIALOGBOX_GUILDMENU74, GameColors::UILabel);
 		break;
 	case 19:
-		if (m_pGame->m_iFightzoneNumber > 0)
-			bSendCommand(MsgId::CommandCommon, CommonType::ReqGetOccupyFightZoneTicket, 0, 0, 0, 0, 0);
+		// bSendCommand was here but OnDraw is called every frame — move to one-shot transition
 		Info().cMode = 0;
 		break;
 	case 20:
@@ -406,8 +405,10 @@ bool DialogBox_GuildMenu::OnClickMode0(short sX, short sY, short msX, short msY)
 		if (m_pGame->m_pPlayer->m_iGuildRank != 0) return false;
 		if (m_pGame->m_iFightzoneNumber == 0)
 			Info().cMode = 13;
-		else
+		else {
 			Info().cMode = 19;
+			bSendCommand(MsgId::CommandCommon, CommonType::ReqGetOccupyFightZoneTicket, 0, 0, 0, 0, 0);
+		}
 		PlaySoundEffect('E', 14, 5);
 		return true;
 	}

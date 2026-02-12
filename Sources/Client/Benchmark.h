@@ -121,7 +121,7 @@ __declspec(selectany) SIZE_T DebugConsole::s_lastWorkingSet = 0;
 #ifdef _DEBUG
 
 // Internal helper class for scope-based benchmarks with 1-second averaging
-class _BenchmarkScope {
+class BenchmarkScope {
 private:
     using Clock = std::chrono::high_resolution_clock;
     using TimePoint = Clock::time_point;
@@ -157,13 +157,13 @@ private:
     }
 
 public:
-    _BenchmarkScope(const char* pName)
+    BenchmarkScope(const char* pName)
         : m_pName(pName)
         , m_start(Clock::now())
     {
     }
 
-    ~_BenchmarkScope()
+    ~BenchmarkScope()
     {
         auto end = Clock::now();
         int64_t elapsed_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(end - m_start).count();
@@ -196,12 +196,16 @@ public:
 };
 
 // Static members initialization
-__declspec(selectany) _BenchmarkScope::BenchmarkSlot _BenchmarkScope::s_slots[64];
-__declspec(selectany) int _BenchmarkScope::s_iSlotCount = 0;
+__declspec(selectany) BenchmarkScope::BenchmarkSlot BenchmarkScope::s_slots[64];
+__declspec(selectany) int BenchmarkScope::s_iSlotCount = 0;
+
+// Two-level indirection so __LINE__ expands before token-pasting
+#define BENCHMARK_CONCAT_IMPL_(a,b) a##b
+#define BENCHMARK_CONCAT_(a,b) BENCHMARK_CONCAT_IMPL_(a,b)
 
 // Scope-based benchmark (RAII - automatic timing)
 #define BENCHMARK_SCOPE(name) \
-    _BenchmarkScope __benchmark_##__LINE__(name)
+    BenchmarkScope BENCHMARK_CONCAT_(__benchmark_,__LINE__)(name)
 
 // Manual start/end benchmarks
 #define BENCHMARK_START(var) \

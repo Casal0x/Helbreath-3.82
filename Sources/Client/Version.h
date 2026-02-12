@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string>
+
 namespace hb {
 	namespace version {
 
@@ -32,9 +34,9 @@ namespace hb {
 		};
 
 		const VersionInfo& Get();
-		const char* GetSemVer();
-		const char* GetDisplayString();
-		const char* GetFullString();
+		std::string GetSemVer();
+		std::string GetDisplayString();
+		std::string GetFullString();
 
 	} // namespace version
 } //namespace hb

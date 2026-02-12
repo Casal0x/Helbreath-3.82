@@ -88,7 +88,6 @@ void EffectManager::DrawEffectsImpl()
 
 			case EffectType::BURST_MEDIUM: // Burst
 				cTempFrame = (rand() % 5);
-				if (cTempFrame < 0) break;
 				dX = (m_pEffectList[i]->m_mX) - m_pGame->m_Camera.GetX();
 				dY = (m_pEffectList[i]->m_mY) - m_pGame->m_Camera.GetY();
 				(*m_pEffectSpr)[11]->Draw(dX, dY, cTempFrame, hb::shared::sprite::DrawParams::AdditiveNoColorKey());
@@ -96,7 +95,6 @@ void EffectManager::DrawEffectsImpl()
 
 			case EffectType::BURST_SMALL_GRENADE: // pt grenat
 				cTempFrame = (rand() % 5) + 5;
-				if (cTempFrame < 0) break;
 				dX = (m_pEffectList[i]->m_mX) - m_pGame->m_Camera.GetX();
 				dY = (m_pEffectList[i]->m_mY) - m_pGame->m_Camera.GetY();
 				(*m_pEffectSpr)[11]->Draw(dX, dY, cTempFrame, hb::shared::sprite::DrawParams::Average());
@@ -104,7 +102,6 @@ void EffectManager::DrawEffectsImpl()
 
 			case EffectType::BURST_LARGE: // Burst
 				cTempFrame = (rand() % 6) + 10;
-				if (cTempFrame < 0) break;
 				iDvalue = (m_pEffectList[i]->m_cFrame - 4) * (-3);
 				dX = (m_pEffectList[i]->m_mX) - m_pGame->m_Camera.GetX();
 				dY = (m_pEffectList[i]->m_mY) - m_pGame->m_Camera.GetY();
@@ -155,7 +152,6 @@ void EffectManager::DrawEffectsImpl()
 				dX = (m_pEffectList[i]->m_mX) - m_pGame->m_Camera.GetX();
 				dY = (m_pEffectList[i]->m_mY) - m_pGame->m_Camera.GetY();
 				cTempFrame = 39 + (rand() % 3) * 3 + (rand() % 3);
-				if (cTempFrame < 0) break;
 				(*m_pEffectSpr)[11]->Draw(dX, dY, cTempFrame, hb::shared::sprite::DrawParams::AdditiveNoColorKey());
 				dX = (m_pEffectList[i]->m_mX2) - m_pGame->m_Camera.GetX();
 				dY = (m_pEffectList[i]->m_mY2) - m_pGame->m_Camera.GetY();
@@ -212,8 +208,7 @@ void EffectManager::DrawEffectsImpl()
 				dY = (m_pEffectList[i]->m_mY) - m_pGame->m_Camera.GetY();
 				cTempFrame = m_pEffectList[i]->m_cFrame;
 				if (cTempFrame < 0) break;
-				iDvalue = 0;
-				(*m_pEffectSpr)[19]->Draw(dX, dY, cTempFrame, hb::shared::sprite::DrawParams::AdditiveTinted(iDvalue, iDvalue, iDvalue)); // RGB2
+				(*m_pEffectSpr)[19]->Draw(dX, dY, cTempFrame, hb::shared::sprite::DrawParams::AdditiveNoColorKey());
 				break;
 
 			case EffectType::BLOODY_SHOCK_STRIKE: // absent (220 et 351)
@@ -318,7 +313,6 @@ void EffectManager::DrawEffectsImpl()
 			case EffectType::HOLD_TWIST: // Hold Twist
 				cTempFrame = m_pEffectList[i]->m_cFrame;
 				if (cTempFrame < 0) break;
-				if (cTempFrame < 0) cTempFrame = 0;
 				dX = (m_pEffectList[i]->m_mX) - m_pGame->m_Camera.GetX();
 				dY = (m_pEffectList[i]->m_mY) - m_pGame->m_Camera.GetY();
 				(*m_pEffectSpr)[25]->Draw(dX, dY, cTempFrame, hb::shared::sprite::DrawParams::AdditiveNoColorKey()); //25
@@ -427,10 +421,10 @@ void EffectManager::DrawEffectsImpl()
 				if (cTempFrame < 0) break;
 				dX = (m_pEffectList[i]->m_mX) - m_pGame->m_Camera.GetX();
 				dY = (m_pEffectList[i]->m_mY) - m_pGame->m_Camera.GetY();
-				switch (static_cast<EffectType>(rand() % 3)) {
-				case EffectType::INVALID:      (*m_pEffectSpr)[0]->Draw(dX, dY + 20, 1, hb::shared::sprite::DrawParams::AdditiveNoColorKey(0.25f)); break;
-				case EffectType::NORMAL_HIT:   (*m_pEffectSpr)[0]->Draw(dX, dY + 20, 1, hb::shared::sprite::DrawParams::AdditiveNoColorKey()); break;
-				case EffectType::ARROW_FLYING: (*m_pEffectSpr)[0]->Draw(dX, dY + 20, 1, hb::shared::sprite::DrawParams::AdditiveNoColorKey(0.7f)); break;
+				switch (rand() % 3) {
+				case 0: (*m_pEffectSpr)[0]->Draw(dX, dY + 20, 1, hb::shared::sprite::DrawParams::AdditiveNoColorKey(0.25f)); break;
+				case 1: (*m_pEffectSpr)[0]->Draw(dX, dY + 20, 1, hb::shared::sprite::DrawParams::AdditiveNoColorKey()); break;
+				case 2: (*m_pEffectSpr)[0]->Draw(dX, dY + 20, 1, hb::shared::sprite::DrawParams::AdditiveNoColorKey(0.7f)); break;
 				}
 				(*m_pEffectSpr)[35]->Draw(dX, dY, cTempFrame / 3, hb::shared::sprite::DrawParams::AdditiveNoColorKey(0.7f));
 				break;
@@ -449,13 +443,13 @@ void EffectManager::DrawEffectsImpl()
 				}
 				else
 				{
-					switch (static_cast<EffectType>(cTempFrame)) {
-					case EffectType::BURST_LARGE:
-					case EffectType::BUBBLES_DRUNK:
-					case EffectType::FOOTPRINT:           (*m_pEffectSpr)[40]->Draw(dX, dY, 11); break;
-					case EffectType::RED_CLOUD_PARTICLES: (*m_pEffectSpr)[40]->Draw(dX, dY, 11, hb::shared::sprite::DrawParams::AdditiveNoColorKey(0.7f)); break;
-					case EffectType::PROJECTILE_GENERIC:  (*m_pEffectSpr)[40]->Draw(dX, dY, 11, hb::shared::sprite::DrawParams::AdditiveNoColorKey(0.5f)); break;
-					case EffectType::ICE_STORM:           (*m_pEffectSpr)[40]->Draw(dX, dY, 11, hb::shared::sprite::DrawParams::AdditiveNoColorKey(0.25f)); break;
+					switch (cTempFrame) {
+					case 12:
+					case 13:
+					case 14: (*m_pEffectSpr)[40]->Draw(dX, dY, 11); break;
+					case 15: (*m_pEffectSpr)[40]->Draw(dX, dY, 11, hb::shared::sprite::DrawParams::AdditiveNoColorKey(0.7f)); break;
+					case 16: (*m_pEffectSpr)[40]->Draw(dX, dY, 11, hb::shared::sprite::DrawParams::AdditiveNoColorKey(0.5f)); break;
+					case 17: (*m_pEffectSpr)[40]->Draw(dX, dY, 11, hb::shared::sprite::DrawParams::AdditiveNoColorKey(0.25f)); break;
 					}
 				}
 				break;
@@ -522,7 +516,7 @@ void EffectManager::DrawEffectsImpl()
 
 			case EffectType::GATE_APOCALYPSE: // Gate (apocalypse)
 				cTempFrame = m_pEffectList[i]->m_cFrame;
-				(*m_pEffectSpr)[101]->Draw(320, 480, cTempFrame, hb::shared::sprite::DrawParams::AdditiveNoColorKey());
+				(*m_pEffectSpr)[101]->Draw(LOGICAL_WIDTH() / 2, LOGICAL_HEIGHT(), cTempFrame, hb::shared::sprite::DrawParams::AdditiveNoColorKey());
 				break;
 
 			case EffectType::MAGIC_MISSILE_FLYING: // Magic Missile
@@ -537,7 +531,6 @@ void EffectManager::DrawEffectsImpl()
 				if (cTempFrame < 0) break;
 				dX = (m_pEffectList[i]->m_dX * 32) - m_pGame->m_Camera.GetX();
 				dY = (m_pEffectList[i]->m_dY * 32) - m_pGame->m_Camera.GetY();
-				iDvalue = (cTempFrame - 5) * (-5);
 				(*m_pEffectSpr)[50]->Draw(dX, dY, m_pEffectList[i]->m_cFrame, hb::shared::sprite::DrawParams::AdditiveNoColorKey());
 				break;
 
@@ -576,7 +569,6 @@ void EffectManager::DrawEffectsImpl()
 				if (cTempFrame < 0) break;
 				dX = (m_pEffectList[i]->m_dX * 32) - m_pGame->m_Camera.GetX();
 				dY = (m_pEffectList[i]->m_dY * 32) - m_pGame->m_Camera.GetY();
-				iDvalue = (cTempFrame - 5) * (-5);
 				(*m_pEffectSpr)[49]->Draw(dX, dY, m_pEffectList[i]->m_cFrame, hb::shared::sprite::DrawParams::AdditiveNoColorKey());
 				break;
 
@@ -588,7 +580,6 @@ void EffectManager::DrawEffectsImpl()
 				if (cTempFrame < 0) break;
 				dX = (m_pEffectList[i]->m_dX * 32) - m_pGame->m_Camera.GetX();
 				dY = (m_pEffectList[i]->m_dY * 32) - m_pGame->m_Camera.GetY();
-				iDvalue = (cTempFrame - 5) * (-5);
 				(*m_pEffectSpr)[52]->Draw(dX, dY, m_pEffectList[i]->m_cFrame, hb::shared::sprite::DrawParams::AdditiveNoColorKey());
 				break;
 
@@ -623,7 +614,6 @@ void EffectManager::DrawEffectsImpl()
 				if (cTempFrame < 0) break;
 				dX = (m_pEffectList[i]->m_dX * 32) - m_pGame->m_Camera.GetX();
 				dY = (m_pEffectList[i]->m_dY * 32) - m_pGame->m_Camera.GetY();
-				iDvalue = (cTempFrame - 5) * (-5);
 				(*m_pEffectSpr)[56]->Draw(dX, dY, m_pEffectList[i]->m_cFrame, hb::shared::sprite::DrawParams::AdditiveNoColorKey());
 				break;
 

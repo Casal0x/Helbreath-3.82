@@ -537,7 +537,8 @@ void DialogBoxManager::EnableDialogBox(int iBoxID, int cType, int sV1, int sV2, 
 		break;
 
 	case DialogBoxId::NpcActionQuery: // Talk to npc or unicorn
-		m_game->m_bIsItemDisabled[Info(DialogBoxId::NpcActionQuery).sV1] = false;
+		{ int idx = Info(DialogBoxId::NpcActionQuery).sV1;
+		if (idx >= 0 && idx < hb::shared::limits::MaxItems) m_game->m_bIsItemDisabled[idx] = false; }
 		if (IsEnabled(DialogBoxId::NpcActionQuery) == false)
 		{
 			Info(DialogBoxId::SaleMenu).sV1 = Info(DialogBoxId::SaleMenu).sV2 = Info(DialogBoxId::SaleMenu).sV3 =
@@ -749,7 +750,7 @@ void DialogBoxManager::EnableDialogBox(int iBoxID, int cType, int sV1, int sV2, 
 			Info(DialogBoxId::ItemUpgrade).sV1 = -1;
 			Info(DialogBoxId::ItemUpgrade).dwV1 = 0;
 		}
-		else if (IsEnabled(DialogBoxId::ItemUpgrade) == false)
+		else
 		{
 			int iSoX, iSoM;
 			iSoX = iSoM = 0;
@@ -875,19 +876,16 @@ void DialogBoxManager::EnableDialogBox(int iBoxID, int cType, int sV1, int sV2, 
 	}
 	SetEnabled(iBoxID, true);
 	if (pString != 0) std::snprintf(Info(iBoxID).cStr, sizeof(Info(iBoxID).cStr), "%s", pString);
-	//Snoopy: 39->59
-	for (i = 0; i < 59; i++)
+	for (i = 0; i < 61; i++)
 		if (OrderAt(i) == iBoxID) SetOrderAt(i, 0);
-	//Snoopy: 39->59
-	for (i = 1; i < 59; i++)
+	for (i = 1; i < 61; i++)
 		if ((OrderAt(i - 1) == 0) && (OrderAt(i) != 0)) {
 			SetOrderAt(i - 1, OrderAt(i));
 			SetOrderAt(i, 0);
 		}
-	//Snoopy: 39->59
-	for (i = 0; i < 59; i++)
+	for (i = 0; i < 61; i++)
 		if (OrderAt(i) == 0) {
-			SetOrderAt(i, static_cast<char>(iBoxID));
+			SetOrderAt(i, static_cast<uint8_t>(iBoxID));
 			return;
 		}
 }
@@ -904,11 +902,13 @@ void DialogBoxManager::DisableDialogBox(int iBoxID)
 
 	switch (iBoxID) {
 	case DialogBoxId::ItemDropConfirm:
-		m_game->m_bIsItemDisabled[Info(DialogBoxId::ItemDropConfirm).sView] = false;
+		{ int idx = Info(DialogBoxId::ItemDropConfirm).sView;
+		if (idx >= 0 && idx < hb::shared::limits::MaxItems) m_game->m_bIsItemDisabled[idx] = false; }
 		break;
 
 	case DialogBoxId::WarningBattleArea:
-		m_game->m_bIsItemDisabled[Info(DialogBoxId::WarningBattleArea).sView] = false;
+		{ int idx = Info(DialogBoxId::WarningBattleArea).sView;
+		if (idx >= 0 && idx < hb::shared::limits::MaxItems) m_game->m_bIsItemDisabled[idx] = false; }
 		break;
 
 	case DialogBoxId::GuildMenu:
@@ -932,12 +932,14 @@ void DialogBoxManager::DisableDialogBox(int iBoxID)
 	case DialogBoxId::ItemDropExternal:
 		if (Info(DialogBoxId::ItemDropExternal).cMode == 1) {
 			TextInputManager::Get().EndInput();
-			m_game->m_bIsItemDisabled[Info(DialogBoxId::ItemDropExternal).sView] = false;
+			{ int idx = Info(DialogBoxId::ItemDropExternal).sView;
+			if (idx >= 0 && idx < hb::shared::limits::MaxItems) m_game->m_bIsItemDisabled[idx] = false; }
 		}
 		break;
 
 	case DialogBoxId::NpcActionQuery: // v1.4
-		m_game->m_bIsItemDisabled[Info(DialogBoxId::NpcActionQuery).sV1] = false;
+		{ int idx = Info(DialogBoxId::NpcActionQuery).sV1;
+		if (idx >= 0 && idx < hb::shared::limits::MaxItems) m_game->m_bIsItemDisabled[idx] = false; }
 		break;
 
 	case DialogBoxId::NpcTalk:
@@ -952,12 +954,10 @@ void DialogBoxManager::DisableDialogBox(int iBoxID)
 		break;
 
 	case DialogBoxId::Manufacture:
-		if (Info(DialogBoxId::Manufacture).sV1 != -1) m_game->m_bIsItemDisabled[Info(DialogBoxId::Manufacture).sV1] = false;
-		if (Info(DialogBoxId::Manufacture).sV2 != -1) m_game->m_bIsItemDisabled[Info(DialogBoxId::Manufacture).sV2] = false;
-		if (Info(DialogBoxId::Manufacture).sV3 != -1) m_game->m_bIsItemDisabled[Info(DialogBoxId::Manufacture).sV3] = false;
-		if (Info(DialogBoxId::Manufacture).sV4 != -1) m_game->m_bIsItemDisabled[Info(DialogBoxId::Manufacture).sV4] = false;
-		if (Info(DialogBoxId::Manufacture).sV5 != -1) m_game->m_bIsItemDisabled[Info(DialogBoxId::Manufacture).sV5] = false;
-		if (Info(DialogBoxId::Manufacture).sV6 != -1) m_game->m_bIsItemDisabled[Info(DialogBoxId::Manufacture).sV6] = false;
+		{ auto& mfg = Info(DialogBoxId::Manufacture);
+		auto clearItem = [&](int idx) { if (idx >= 0 && idx < hb::shared::limits::MaxItems) m_game->m_bIsItemDisabled[idx] = false; };
+		clearItem(mfg.sV1); clearItem(mfg.sV2); clearItem(mfg.sV3);
+		clearItem(mfg.sV4); clearItem(mfg.sV5); clearItem(mfg.sV6); }
 		m_game->m_bSkillUsingStatus = false;
 		break;
 
@@ -984,15 +984,16 @@ void DialogBoxManager::DisableDialogBox(int iBoxID)
 	case DialogBoxId::SellList:
 		for (i = 0; i < game_limits::max_sell_list; i++)
 		{
-			if (m_game->m_stSellItemList[i].iIndex != -1) m_game->m_bIsItemDisabled[m_game->m_stSellItemList[i].iIndex] = false;
+			{ int idx = m_game->m_stSellItemList[i].iIndex;
+			if (idx >= 0 && idx < hb::shared::limits::MaxItems) m_game->m_bIsItemDisabled[idx] = false; }
 			m_game->m_stSellItemList[i].iIndex = -1;
 			m_game->m_stSellItemList[i].iAmount = 0;
 		}
 		break;
 
 	case DialogBoxId::ItemUpgrade:
-		if (Info(DialogBoxId::ItemUpgrade).sV1 != -1)
-			m_game->m_bIsItemDisabled[Info(DialogBoxId::ItemUpgrade).sV1] = false;
+		{ int idx = Info(DialogBoxId::ItemUpgrade).sV1;
+		if (idx >= 0 && idx < hb::shared::limits::MaxItems) m_game->m_bIsItemDisabled[idx] = false; }
 		break;
 
 	case DialogBoxId::Slates:
@@ -1042,13 +1043,11 @@ void DialogBoxManager::DisableDialogBox(int iBoxID)
 		pDlg->OnDisable();
 
 	SetEnabled(iBoxID, false);
-	// Snoopy: 39->59
-	for (i = 0; i < 59; i++)
+	for (i = 0; i < 61; i++)
 		if (OrderAt(i) == iBoxID)
 			SetOrderAt(i, 0);
 
-	// Snoopy: 39->59
-	for (i = 1; i < 59; i++)
+	for (i = 1; i < 61; i++)
 		if ((OrderAt(i - 1) == 0) && (OrderAt(i) != 0))
 		{
 			SetOrderAt(i - 1, OrderAt(i));
@@ -1090,7 +1089,7 @@ bool DialogBoxManager::HandleClick(short msX, short msY)
 	// Iterate through dialogs in reverse z-order (topmost first)
 	for (int i = 0; i < 61; i++)
 	{
-		char cDlgID = m_order[60 - i];
+		int cDlgID = m_order[60 - i];
 		if (cDlgID == 0) continue;
 
 		auto& info = m_info[cDlgID];
@@ -1112,7 +1111,7 @@ bool DialogBoxManager::HandleDoubleClick(short msX, short msY)
 	// Iterate through dialogs in reverse z-order (topmost first)
 	for (int i = 0; i < 61; i++)
 	{
-		char cDlgID = m_order[60 - i];
+		int cDlgID = m_order[60 - i];
 		if (cDlgID == 0) continue;
 
 		auto& info = m_info[cDlgID];
@@ -1156,7 +1155,7 @@ bool DialogBoxManager::HandleDraggingItemRelease(short msX, short msY)
 	// Iterate through dialogs in reverse z-order (topmost first)
 	for (int i = 0; i < 61; i++)
 	{
-		char cDlgID = m_order[60 - i];
+		int cDlgID = m_order[60 - i];
 		if (cDlgID == 0) continue;
 
 		auto& info = m_info[cDlgID];
@@ -1202,6 +1201,7 @@ bool DialogBoxManager::IsEnabled(DialogBoxId::Type id) const
 
 bool DialogBoxManager::IsEnabled(int iBoxID) const
 {
+	if (iBoxID < 0 || iBoxID >= 61) return false;
 	return m_enabled[iBoxID];
 }
 
@@ -1212,6 +1212,7 @@ void DialogBoxManager::SetEnabled(DialogBoxId::Type id, bool enabled)
 
 void DialogBoxManager::SetEnabled(int iBoxID, bool enabled)
 {
+	if (iBoxID < 0 || iBoxID >= 61) return;
 	m_enabled[iBoxID] = enabled;
 }
 
@@ -1227,21 +1228,27 @@ const DialogBoxInfo& DialogBoxManager::Info(DialogBoxId::Type id) const
 
 DialogBoxInfo& DialogBoxManager::Info(int iBoxID)
 {
+	static DialogBoxInfo s_dummy{};
+	if (iBoxID < 0 || iBoxID >= 61) return s_dummy;
 	return m_info[iBoxID];
 }
 
 const DialogBoxInfo& DialogBoxManager::Info(int iBoxID) const
 {
+	static const DialogBoxInfo s_dummy{};
+	if (iBoxID < 0 || iBoxID >= 61) return s_dummy;
 	return m_info[iBoxID];
 }
 
-char DialogBoxManager::OrderAt(int index) const
+uint8_t DialogBoxManager::OrderAt(int index) const
 {
+	if (index < 0 || index >= 61) return 0;
 	return m_order[index];
 }
 
-void DialogBoxManager::SetOrderAt(int index, char value)
+void DialogBoxManager::SetOrderAt(int index, uint8_t value)
 {
+	if (index < 0 || index >= 61) return;
 	m_order[index] = value;
 }
 
@@ -1250,7 +1257,7 @@ int DialogBoxManager::HandleMouseDown(short msX, short msY)
 	// Find topmost dialog under mouse (iterate in reverse z-order)
 	for (int i = 0; i < 61; i++)
 	{
-		char cDlgID = m_order[60 - i];
+		int cDlgID = m_order[60 - i];
 		if (cDlgID == 0) continue;
 
 		auto& info = m_info[cDlgID];
@@ -1295,7 +1302,7 @@ bool DialogBoxManager::HandleRightClick(short msX, short msY, uint32_t dwTime)
 	// Find topmost dialog under mouse
 	for (int i = 0; i < 61; i++)
 	{
-		char cDlgID = m_order[60 - i];
+		int cDlgID = m_order[60 - i];
 		if (cDlgID == 0) continue;
 
 		auto& info = m_info[cDlgID];

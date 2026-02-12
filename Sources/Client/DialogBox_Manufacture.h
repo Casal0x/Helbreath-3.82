@@ -27,5 +27,5 @@ private:
 	bool CheckSlotItemClick(int slotIndex, int itemIdx, int drawX, int drawY, short msX, short msY);
 
 	// Item drop helper: Tries to add item to first empty slot, returns true if successful
-	bool TryAddItemToSlot(char cItemID, bool updateBuildStatus);
+	bool TryAddItemToSlot(int cItemID, bool updateBuildStatus);
 };

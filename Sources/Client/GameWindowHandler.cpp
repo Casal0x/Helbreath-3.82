@@ -38,11 +38,11 @@ void GameWindowHandler::OnClose()
     {
         // In main game, start logout countdown instead of closing immediately
 #ifdef _DEBUG
-        if (m_pGame->m_cLogOutCount == -1 || m_pGame->m_cLogOutCount > 2)
-            m_pGame->m_cLogOutCount = 1;
+        if (m_pGame->m_logout_count == -1 || m_pGame->m_logout_count > 2)
+            m_pGame->m_logout_count = 1;
 #else
-        if (m_pGame->m_cLogOutCount == -1 || m_pGame->m_cLogOutCount > 11)
-            m_pGame->m_cLogOutCount = 11;
+        if (m_pGame->m_logout_count == -1 || m_pGame->m_logout_count > 11)
+            m_pGame->m_logout_count = 11;
 #endif
     }
     else if (GameModeManager::GetMode() == GameMode::MainMenu)
@@ -90,13 +90,19 @@ void GameWindowHandler::OnActivate(bool active)
             m_pGame->m_Renderer->ChangeDisplayMode(hb::shared::render::Window::GetHandle());
 
         // Only check files after game is fully initialized (sprite factory exists)
-        // This prevents false failures during early window activation before bInit completes
+        // Rate-limited to at most once per 60 seconds to avoid I/O stall on every alt-tab
         if (hb::shared::sprite::Sprites::GetFactory() != nullptr)
         {
-            if (m_pGame->bCheckImportantFile() == false)
+            static uint32_t s_dwLastFileCheck = 0;
+            uint32_t dwNow = GameClock::GetTimeMS();
+            if (s_dwLastFileCheck == 0 || (dwNow - s_dwLastFileCheck) > 60000)
             {
-                hb::shared::render::Window::ShowError("ERROR1", "File checksum error! Get Update again please!");
-                hb::shared::render::Window::Close();
+                s_dwLastFileCheck = dwNow;
+                if (m_pGame->bCheckImportantFile() == false)
+                {
+                    hb::shared::render::Window::ShowError("ERROR1", "File checksum error! Get Update again please!");
+                    hb::shared::render::Window::Close();
+                }
             }
         }
     }
@@ -220,6 +226,7 @@ void GameWindowHandler::OnMouseWheel(int delta, int x, int y)
 
 bool GameWindowHandler::OnCustomMessage(uint32_t message, uintptr_t wParam, intptr_t lParam)
 {
+#ifdef _WIN32
     if (!m_pGame)
         return false;
 
@@ -249,7 +256,7 @@ bool GameWindowHandler::OnCustomMessage(uint32_t message, uintptr_t wParam, intp
         }
         return true;
     }
-
+#endif
     return false;
 }
 

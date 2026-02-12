@@ -60,7 +60,7 @@ void Overlay_QueryDeleteCharacter::on_update()
         {
             // Create login socket and initiate delete request
             m_pGame->m_pLSock = std::make_unique<hb::shared::net::ASIOSocket>(m_pGame->m_pIOPool->GetContext(), game_limits::socket_block_limit);
-            m_pGame->m_pLSock->bConnect(m_pGame->m_cLogServerAddr.c_str(), m_pGame->m_iLogServerPort + (rand() % 1));
+            m_pGame->m_pLSock->bConnect(m_pGame->m_cLogServerAddr.c_str(), m_pGame->m_iLogServerPort);
             m_pGame->m_pLSock->bInitBufferSize(hb::shared::limits::MsgBufferSize);
 
             m_pGame->m_dwConnectMode = MsgId::RequestDeleteCharacter;

@@ -106,7 +106,6 @@ void EquipmentIndices::CalcColors(const CEntityRenderState& state)
 		iHelmColor   = state.m_appearance.iHelmColor;
 	}
 
-	// Note: glare fields are swapped in the original code
-	iWeaponGlare = state.m_appearance.iShieldGlare;
-	iShieldGlare = state.m_appearance.iWeaponGlare;
+	iWeaponGlare = state.m_appearance.iWeaponGlare;
+	iShieldGlare = state.m_appearance.iShieldGlare;
 }

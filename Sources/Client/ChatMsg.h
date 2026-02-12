@@ -25,6 +25,9 @@ public:
 		m_iObjectID = -1;
 	}
 
+	CMsg(const CMsg&) = delete;
+	CMsg& operator=(const CMsg&) = delete;
+
 	inline virtual ~CMsg()
 	{
 		if (m_pMsg != 0) delete[] m_pMsg;

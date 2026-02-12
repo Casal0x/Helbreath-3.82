@@ -27,6 +27,8 @@ public:
     // to maintain the background visual context.
     static void DrawBackground(CGame* pGame, short sX, short sY, short msX, short msY, bool bIgnoreFocus);
 
+    bool EnterGame();
+
 private:
     // Screen-specific state (migrated from file-scope statics and member vars)
     uint32_t m_dwSelCharCTime;

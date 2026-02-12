@@ -290,6 +290,8 @@ namespace NetworkMessageHandlers {
 		if (!pkt) return;
 		sEquipPos = static_cast<short>(pkt->equip_pos);
 		sItemIndex = static_cast<short>(pkt->item_index);
+		if (sItemIndex < 0 || sItemIndex >= hb::shared::limits::MaxItems) return;
+		if (!pGame->m_pItemList[sItemIndex]) return;
 
 		auto itemInfo = ItemNameFormatter::Get().Format(pGame->m_pItemList[sItemIndex].get());
 		cTxt = std::format(NOTIFYMSG_ITEMLIFE_SPANEND1, itemInfo.name.c_str());
@@ -311,6 +313,8 @@ namespace NetworkMessageHandlers {
 		if (!pkt) return;
 		sEquipPos = static_cast<short>(pkt->equip_pos);
 		sItemIndex = static_cast<short>(pkt->item_index);
+		if (sItemIndex < 0 || sItemIndex >= hb::shared::limits::MaxItems) return;
+		if (!pGame->m_pItemList[sItemIndex]) return;
 
 		auto itemInfo2 = ItemNameFormatter::Get().Format(pGame->m_pItemList[sItemIndex].get());
 		cTxt = std::format(ITEM_EQUIPMENT_RELEASED, itemInfo2.name.c_str());
@@ -337,6 +341,7 @@ namespace NetworkMessageHandlers {
 			pData, sizeof(hb::net::PacketNotifySetItemCount));
 		if (!pkt) return;
 		sItemIndex = static_cast<short>(pkt->item_index);
+		if (sItemIndex < 0 || sItemIndex >= hb::shared::limits::MaxItems) return;
 		dwCount = pkt->count;
 		bIsItemUseResponse = (pkt->notify != 0);
 		if (pGame->m_pItemList[sItemIndex] != 0)
@@ -356,8 +361,9 @@ namespace NetworkMessageHandlers {
 			pData, sizeof(hb::net::PacketNotifyItemDepletedEraseItem));
 		if (!pkt) return;
 		sItemIndex = static_cast<short>(pkt->item_index);
+		if (sItemIndex < 0 || sItemIndex >= hb::shared::limits::MaxItems) return;
+		if (!pGame->m_pItemList[sItemIndex]) return;
 		bIsUseItemResult = (pkt->use_result != 0);
-
 
 		auto itemInfo3 = ItemNameFormatter::Get().Format(pGame->m_pItemList[sItemIndex].get());
 
@@ -402,7 +408,7 @@ namespace NetworkMessageHandlers {
 				}
 			}
 		}
-		pGame->AddEventList(cTxt.c_str(), 10);
+		if (!cTxt.empty()) pGame->AddEventList(cTxt.c_str(), 10);
 
 		if (bIsUseItemResult == true) pGame->m_bItemUsingStatus = false;
 		InventoryManager::Get().EraseItem(static_cast<char>(sItemIndex));
@@ -419,6 +425,8 @@ namespace NetworkMessageHandlers {
 			pData, sizeof(hb::net::PacketNotifyDropItemFinEraseItem));
 		if (!pkt) return;
 		sItemIndex = static_cast<short>(pkt->item_index);
+		if (sItemIndex < 0 || sItemIndex >= hb::shared::limits::MaxItems) return;
+		if (!pGame->m_pItemList[sItemIndex]) return;
 		iAmount = static_cast<int>(pkt->amount);
 
 		auto itemInfo4 = ItemNameFormatter::Get().Format(pGame->m_pItemList[sItemIndex].get());
@@ -460,33 +468,33 @@ namespace NetworkMessageHandlers {
 			pData, sizeof(hb::net::PacketNotifyGiveItemFinEraseItem));
 		if (!pkt) return;
 		sItemIndex = static_cast<short>(pkt->item_index);
+		if (sItemIndex < 0 || sItemIndex >= hb::shared::limits::MaxItems) return;
+		if (!pGame->m_pItemList[sItemIndex]) return;
 		iAmount = static_cast<int>(pkt->amount);
 
 		memcpy(cName, pkt->name, sizeof(pkt->name));
 
-		char cStr1[64], cStr2[64], cStr3[64];
 		CItem* pCfg = pGame->GetItemConfig(pGame->m_pItemList[sItemIndex]->m_sIDnum);
-		cStr2[0] = 0;
-		cStr3[0] = 0;
+		const char* cItemName = pCfg ? pCfg->m_cName : "Unknown";
 
 		if (pGame->m_bIsItemEquipped[sItemIndex] == true) {
-			cTxt = std::format(ITEM_EQUIPMENT_RELEASED, pCfg ? pCfg->m_cName : "Unknown");
+			cTxt = std::format(ITEM_EQUIPMENT_RELEASED, cItemName);
 			pGame->AddEventList(cTxt.c_str(), 10);
 
 			if (pCfg) pGame->m_sItemEquipmentStatus[pCfg->m_cEquipPos] = -1;
 			pGame->m_bIsItemEquipped[sItemIndex] = false;
 		}
-		if (cName[0] == 0) cTxt = std::format(NOTIFYMSG_GIVEITEMFIN_ERASEITEM2, iAmount, cStr1);
+		if (cName[0] == 0) cTxt = std::format(NOTIFYMSG_GIVEITEMFIN_ERASEITEM2, iAmount, cItemName);
 		else {
 			if (strcmp(cName, "Howard") == 0)
-				cTxt = std::format(NOTIFYMSG_GIVEITEMFIN_ERASEITEM3, iAmount, cStr1);
+				cTxt = std::format(NOTIFYMSG_GIVEITEMFIN_ERASEITEM3, iAmount, cItemName);
 			else if (strcmp(cName, "William") == 0)
-				cTxt = std::format(NOTIFYMSG_GIVEITEMFIN_ERASEITEM4, iAmount, cStr1);
+				cTxt = std::format(NOTIFYMSG_GIVEITEMFIN_ERASEITEM4, iAmount, cItemName);
 			else if (strcmp(cName, "Kennedy") == 0)
-				cTxt = std::format(NOTIFYMSG_GIVEITEMFIN_ERASEITEM5, iAmount, cStr1);
+				cTxt = std::format(NOTIFYMSG_GIVEITEMFIN_ERASEITEM5, iAmount, cItemName);
 			else if (strcmp(cName, "Tom") == 0)
-				cTxt = std::format(NOTIFYMSG_GIVEITEMFIN_ERASEITEM7, iAmount, cStr1);
-			else cTxt = std::format(NOTIFYMSG_GIVEITEMFIN_ERASEITEM8, iAmount, cStr1, cName);
+				cTxt = std::format(NOTIFYMSG_GIVEITEMFIN_ERASEITEM7, iAmount, cItemName);
+			else cTxt = std::format(NOTIFYMSG_GIVEITEMFIN_ERASEITEM8, iAmount, cItemName, cName);
 		}
 		pGame->AddEventList(cTxt.c_str(), 10);
 		InventoryManager::Get().EraseItem(static_cast<char>(sItemIndex));
@@ -502,6 +510,8 @@ namespace NetworkMessageHandlers {
 			pData, sizeof(hb::net::PacketNotifyItemRepaired));
 		if (!pkt) return;
 		dwItemID = pkt->item_id;
+		if (dwItemID >= static_cast<DWORD>(hb::shared::limits::MaxItems)) return;
+		if (!pGame->m_pItemList[dwItemID]) return;
 		dwLife = pkt->life;
 
 		pGame->m_pItemList[dwItemID]->m_wCurLifeSpan = static_cast<WORD>(dwLife);
@@ -539,7 +549,7 @@ namespace NetworkMessageHandlers {
 		if (!header) return;
 		const auto* entries = reinterpret_cast<const hb::net::PacketNotifyRepairAllPricesEntry*>(
 			pData + sizeof(hb::net::PacketNotifyRepairAllPricesHeader));
-		pGame->totalItemRepair = header->total;
+		pGame->totalItemRepair = (std::min)(static_cast<int>(header->total), hb::shared::limits::MaxItems);
 
 		for (i = 0; i < pGame->totalItemRepair; i++)
 		{
@@ -581,6 +591,8 @@ namespace NetworkMessageHandlers {
 		if (!pkt) return;
 		const auto wV1 = pkt->item_index;
 		const auto wV2 = pkt->reason;
+		if (wV1 < 0 || wV1 >= hb::shared::limits::MaxItems) return;
+		if (!pGame->m_pItemList[wV1]) { pGame->m_bIsItemDisabled[wV1] = false; return; }
 		auto itemInfo6 = ItemNameFormatter::Get().Format(pGame->m_pItemList[wV1].get());
 
 		switch (wV2) {
@@ -606,6 +618,8 @@ namespace NetworkMessageHandlers {
 		if (!pkt) return;
 		const auto wV1 = pkt->item_index;
 		const auto wV2 = pkt->reason;
+		if (wV1 < 0 || wV1 >= hb::shared::limits::MaxItems) return;
+		if (!pGame->m_pItemList[wV1]) { pGame->m_bIsItemDisabled[wV1] = false; return; }
 
 		auto itemInfo7 = ItemNameFormatter::Get().Format(pGame->m_pItemList[wV1].get());
 
@@ -644,6 +658,8 @@ namespace NetworkMessageHandlers {
 			pData, sizeof(hb::net::PacketNotifyCannotGiveItem));
 		if (!pkt) return;
 		const auto wItemIndex = pkt->item_index;
+		if (wItemIndex < 0 || wItemIndex >= hb::shared::limits::MaxItems) return;
+		if (!pGame->m_pItemList[wItemIndex]) return;
 		const auto iAmount = static_cast<int>(pkt->amount);
 		memcpy(cName, pkt->name, sizeof(pkt->name));
 
@@ -663,6 +679,7 @@ namespace NetworkMessageHandlers {
 			pData, sizeof(hb::net::PacketNotifyItemColorChange));
 		if (!pkt) return;
 		sItemIndex = static_cast<short>(pkt->item_index);
+		if (sItemIndex < 0 || sItemIndex >= hb::shared::limits::MaxItems) return;
 		sItemColor = static_cast<short>(pkt->item_color);
 
 		if (pGame->m_pItemList[sItemIndex] != 0) {
@@ -687,6 +704,8 @@ namespace NetworkMessageHandlers {
 			pData, sizeof(hb::net::PacketNotifyDropItemFinCountChanged));
 		if (!pkt) return;
 		const auto wItemIndex = pkt->item_index;
+		if (wItemIndex < 0 || wItemIndex >= hb::shared::limits::MaxItems) return;
+		if (!pGame->m_pItemList[wItemIndex]) return;
 		const auto iAmount = static_cast<int>(pkt->amount);
 
 		CItem* pCfg = pGame->GetItemConfig(pGame->m_pItemList[wItemIndex]->m_sIDnum);
@@ -707,13 +726,15 @@ namespace NetworkMessageHandlers {
 			pData, sizeof(hb::net::PacketNotifyGiveItemFinCountChanged));
 		if (!pkt) return;
 		wItemIndex = pkt->item_index;
+		if (wItemIndex >= hb::shared::limits::MaxItems) return;
+		if (!pGame->m_pItemList[wItemIndex]) return;
 		iAmount = static_cast<int>(pkt->amount);
 
 		memcpy(cName, pkt->name, sizeof(pkt->name));
 
 		CItem* pCfg = pGame->GetItemConfig(pGame->m_pItemList[wItemIndex]->m_sIDnum);
 		if (iAmount == 1) cTxt = std::format(NOTIFYMSG_GIVEITEMFIN_COUNTCHANGED1, pCfg ? pCfg->m_cName : "Unknown", cName);
-		cTxt = std::format(NOTIFYMSG_GIVEITEMFIN_COUNTCHANGED2, iAmount, pCfg ? pCfg->m_cName : "Unknown", cName);
+		else cTxt = std::format(NOTIFYMSG_GIVEITEMFIN_COUNTCHANGED2, iAmount, pCfg ? pCfg->m_cName : "Unknown", cName);
 		pGame->AddEventList(cTxt.c_str(), 10);
 	}
 
@@ -814,12 +835,7 @@ namespace NetworkMessageHandlers {
 		if (sDir >= 1000)  // Set the item I want to exchange
 		{
 			i = 0;
-			while (pGame->m_stDialogBoxExchangeInfo[i].sV1 != -1)
-			{
-				i++;
-				if (i >= 4) return; // Error situation
-			}
-			if ((sDir > 1000) && (i == 0))
+			if ((sDir > 1000) && (sDir - 1000 < hb::shared::limits::MaxItems))
 			{
 				pGame->m_bIsItemDisabled[sDir - 1000] = true;
 			}
@@ -827,11 +843,6 @@ namespace NetworkMessageHandlers {
 		else // Set the item he proposes me.
 		{
 			i = 4;
-			while (pGame->m_stDialogBoxExchangeInfo[i].sV1 != -1)
-			{
-				i++;
-				if (i >= 8) return; // Error situation
-			}
 		}
 		pGame->m_stDialogBoxExchangeInfo[i].sV1 = sSprite;
 		pGame->m_stDialogBoxExchangeInfo[i].sV2 = sSpriteFrame;
@@ -855,6 +866,7 @@ namespace NetworkMessageHandlers {
 			return;
 
 		int iItemIndex = pkt->item_index;
+		if (iItemIndex < 0 || iItemIndex >= hb::shared::limits::MaxItems) return;
 
 		if (pGame->m_pItemList[iItemIndex] == nullptr)
 			return;
@@ -869,7 +881,7 @@ namespace NetworkMessageHandlers {
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyNotEnoughGold>(
 			pData, sizeof(hb::net::PacketNotifyNotEnoughGold));
 		if (!pkt) return;
-		if (pkt->item_index >= 0) {
+		if (pkt->item_index >= 0 && pkt->item_index < hb::shared::limits::MaxItems) {
 			pGame->m_bIsItemDisabled[pkt->item_index] = false;
 		}
 	}
@@ -890,6 +902,8 @@ namespace NetworkMessageHandlers {
 			pData, sizeof(hb::net::PacketNotifyItemAttributeChange));
 		if (!pkt) return;
 		sV1 = static_cast<short>(pkt->item_index);
+		if (sV1 < 0 || sV1 >= hb::shared::limits::MaxItems) return;
+		if (!pGame->m_pItemList[sV1]) return;
 		dwTemp = pGame->m_pItemList[sV1]->m_dwAttribute;
 		pGame->m_pItemList[sV1]->m_dwAttribute = pkt->attribute;
 		if (pkt->spec_value1 != 0)
@@ -969,6 +983,8 @@ namespace NetworkMessageHandlers {
 			pData, sizeof(hb::net::PacketNotifyGizonItemChange));
 		if (!pkt) return;
 		sV1 = static_cast<short>(pkt->item_index);
+		if (sV1 < 0 || sV1 >= hb::shared::limits::MaxItems) return;
+		if (!pGame->m_pItemList[sV1]) return;
 		if (pkt->item_id > 0) pGame->m_pItemList[sV1]->m_sIDnum = pkt->item_id;
 		pGame->m_pItemList[sV1]->m_wCurLifeSpan = pkt->cur_lifespan;
 		pGame->m_pItemList[sV1]->m_cItemColor = pkt->item_color;

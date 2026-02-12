@@ -41,7 +41,7 @@ void DialogBox_SellList::OnDraw(short msX, short msY, short msZ, char cLB)
 void DialogBox_SellList::DrawItemList(short sX, short sY, short szX, short msX, short msY, int& iEmptyCount)
 {
 	std::string cTxt;
-
+	int iRow = 0;
 
 	for (int i = 0; i < game_limits::max_sell_list; i++)
 	{
@@ -50,7 +50,7 @@ void DialogBox_SellList::DrawItemList(short sX, short sY, short szX, short msX, 
 			int iItemIndex = m_pGame->m_stSellItemList[i].iIndex;
 			auto itemInfo = ItemNameFormatter::Get().Format(m_pGame->m_pItemList[iItemIndex].get());
 
-			bool bHover = (msX > sX + 25) && (msX < sX + 250) && (msY >= sY + 55 + i * 15) && (msY <= sY + 55 + 14 + i * 15);
+			bool bHover = (msX > sX + 25) && (msX < sX + 250) && (msY >= sY + 55 + iRow * 15) && (msY <= sY + 55 + 14 + iRow * 15);
 
 			if (m_pGame->m_stSellItemList[i].iAmount > 1)
 			{
@@ -58,11 +58,11 @@ void DialogBox_SellList::DrawItemList(short sX, short sY, short szX, short msX, 
 				cTxt = std::format(DRAW_DIALOGBOX_SELL_LIST1, m_pGame->m_stSellItemList[i].iAmount, itemInfo.name.c_str());
 
 				if (bHover)
-					PutAlignedString(sX, sX + szX, sY + 55 + i * 15, cTxt.c_str(), GameColors::UIWhite);
+					PutAlignedString(sX, sX + szX, sY + 55 + iRow * 15, cTxt.c_str(), GameColors::UIWhite);
 				else if (itemInfo.is_special)
-					PutAlignedString(sX, sX + szX, sY + 55 + i * 15, cTxt.c_str(), GameColors::UIItemName_Special);
+					PutAlignedString(sX, sX + szX, sY + 55 + iRow * 15, cTxt.c_str(), GameColors::UIItemName_Special);
 				else
-					PutAlignedString(sX, sX + szX, sY + 55 + i * 15, cTxt.c_str(), GameColors::UILabel);
+					PutAlignedString(sX, sX + szX, sY + 55 + iRow * 15, cTxt.c_str(), GameColors::UILabel);
 			}
 			else
 			{
@@ -71,7 +71,7 @@ void DialogBox_SellList::DrawItemList(short sX, short sY, short szX, short msX, 
 				{
 					if ((itemInfo.effect.size() == 0) && (itemInfo.extra.size() == 0))
 					{
-						PutAlignedString(sX, sX + szX, sY + 55 + i * 15, itemInfo.name.c_str(), GameColors::UIWhite);
+						PutAlignedString(sX, sX + szX, sY + 55 + iRow * 15, itemInfo.name.c_str(), GameColors::UIWhite);
 					}
 					else
 					{
@@ -81,7 +81,7 @@ void DialogBox_SellList::DrawItemList(short sX, short sY, short szX, short msX, 
 								cTxt = std::format("{}({}, {})", itemInfo.name.c_str(), itemInfo.effect.c_str(), itemInfo.extra.c_str());
 							else
 								cTxt = std::format("{}({}{})", itemInfo.name.c_str(), itemInfo.effect.c_str(), itemInfo.extra.c_str());
-							PutAlignedString(sX, sX + szX, sY + 55 + i * 15, cTxt.c_str(), GameColors::UIWhite);
+							PutAlignedString(sX, sX + szX, sY + 55 + iRow * 15, cTxt.c_str(), GameColors::UIWhite);
 						}
 						else
 						{
@@ -89,9 +89,9 @@ void DialogBox_SellList::DrawItemList(short sX, short sY, short szX, short msX, 
 								cTxt = std::format("({}, {})", itemInfo.effect.c_str(), itemInfo.extra.c_str());
 							else
 								cTxt = std::format("({}{})", itemInfo.effect.c_str(), itemInfo.extra.c_str());
-							PutAlignedString(sX, sX + szX, sY + 55 + i * 15, itemInfo.name.c_str(), GameColors::UIWhite);
-							PutAlignedString(sX, sX + szX, sY + 55 + i * 15 + 15, cTxt.c_str(), GameColors::UIDisabled);
-							i++;
+							PutAlignedString(sX, sX + szX, sY + 55 + iRow * 15, itemInfo.name.c_str(), GameColors::UIWhite);
+							PutAlignedString(sX, sX + szX, sY + 55 + iRow * 15 + 15, cTxt.c_str(), GameColors::UIDisabled);
+							iRow++;
 						}
 					}
 				}
@@ -100,9 +100,9 @@ void DialogBox_SellList::DrawItemList(short sX, short sY, short szX, short msX, 
 					if ((itemInfo.effect.size() == 0) && (itemInfo.extra.size() == 0))
 					{
 						if (itemInfo.is_special)
-							PutAlignedString(sX, sX + szX, sY + 55 + i * 15, itemInfo.name.c_str(), GameColors::UIItemName_Special);
+							PutAlignedString(sX, sX + szX, sY + 55 + iRow * 15, itemInfo.name.c_str(), GameColors::UIItemName_Special);
 						else
-							PutAlignedString(sX, sX + szX, sY + 55 + i * 15, itemInfo.name.c_str(), GameColors::UILabel);
+							PutAlignedString(sX, sX + szX, sY + 55 + iRow * 15, itemInfo.name.c_str(), GameColors::UILabel);
 					}
 					else
 					{
@@ -114,16 +114,16 @@ void DialogBox_SellList::DrawItemList(short sX, short sY, short szX, short msX, 
 								cTxt = std::format("{}({}{})", itemInfo.name.c_str(), itemInfo.effect.c_str(), itemInfo.extra.c_str());
 
 							if (itemInfo.is_special)
-								PutAlignedString(sX, sX + szX, sY + 55 + i * 15, cTxt.c_str(), GameColors::UIItemName_Special);
+								PutAlignedString(sX, sX + szX, sY + 55 + iRow * 15, cTxt.c_str(), GameColors::UIItemName_Special);
 							else
-								PutAlignedString(sX, sX + szX, sY + 55 + i * 15, cTxt.c_str(), GameColors::UILabel);
+								PutAlignedString(sX, sX + szX, sY + 55 + iRow * 15, cTxt.c_str(), GameColors::UILabel);
 						}
 						else
 						{
 							if (itemInfo.is_special)
-								PutAlignedString(sX, sX + szX, sY + 55 + i * 15, itemInfo.name.c_str(), GameColors::UIItemName_Special);
+								PutAlignedString(sX, sX + szX, sY + 55 + iRow * 15, itemInfo.name.c_str(), GameColors::UIItemName_Special);
 							else
-								PutAlignedString(sX, sX + szX, sY + 55 + i * 15, itemInfo.name.c_str(), GameColors::UILabel);
+								PutAlignedString(sX, sX + szX, sY + 55 + iRow * 15, itemInfo.name.c_str(), GameColors::UILabel);
 						}
 					}
 				}
@@ -133,6 +133,7 @@ void DialogBox_SellList::DrawItemList(short sX, short sY, short szX, short msX, 
 		{
 			iEmptyCount++;
 		}
+		iRow++;
 	}
 }
 
@@ -224,8 +225,8 @@ bool DialogBox_SellList::OnClick(short msX, short msY)
 
 bool DialogBox_SellList::OnItemDrop(short msX, short msY)
 {
-	char cItemID = static_cast<char>(CursorTarget::GetSelectedID());
-
+	int cItemID = CursorTarget::GetSelectedID();
+	if (cItemID < 0 || cItemID >= hb::shared::limits::MaxItems) return false;
 	if (m_pGame->m_pItemList[cItemID] == nullptr) return false;
 	if (m_pGame->m_bIsItemDisabled[cItemID]) return false;
 	if (m_pGame->m_pPlayer->m_Controller.GetCommand() < 0) return false;

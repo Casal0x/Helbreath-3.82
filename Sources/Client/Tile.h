@@ -82,7 +82,7 @@ public:
 		m_dwEffectTime = 0;
 	}
 
-	inline virtual ~CTile()
+	inline ~CTile()
 	{
 	}
 	DWORD m_dwEffectTime;

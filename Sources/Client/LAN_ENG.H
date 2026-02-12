@@ -800,7 +800,7 @@
 #define	DRAW_DIALOGBOX_CITYHALL_MENU30	"Failed on acquiring citizenship!"
 
 #define	DRAW_DIALOGBOX_CITYHALL_MENU31	"Low Level or Criminal Character"
-#define	DRAW_DIALOGBOX_CITYHALL_MENuint32_t	"can't be a citizen"
+#define	DRAW_DIALOGBOX_CITYHALL_MENU32	"can't be a citizen"
 
 #define	DRAW_DIALOGBOX_CITYHALL_MENU33	"The prize gold for your"
 #define	DRAW_DIALOGBOX_CITYHALL_MENU34	"activities is {} Gold. Do"

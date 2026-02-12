@@ -33,7 +33,7 @@ void DialogBox_Skill::OnDraw(short msX, short msY, short msZ, char cLB)
 	switch (Info().cMode) {
 	case 0:
 		for (i = 0; i < 17; i++)
-			if ((i < hb::shared::limits::MaxSkillType) && (m_pGame->m_pSkillCfgList[i + Info().sView] != 0))
+			if (((i + Info().sView) < hb::shared::limits::MaxSkillType) && (m_pGame->m_pSkillCfgList[i + Info().sView] != 0))
 			{
 				std::snprintf(cTemp, sizeof(cTemp), "%s", m_pGame->m_pSkillCfgList[i + Info().sView]->m_cName.c_str());
 				CMisc::ReplaceString(cTemp, '-', ' ');
@@ -129,7 +129,7 @@ bool DialogBox_Skill::OnClick(short msX, short msY)
 		break;
 	case 0:
 		for (i = 0; i < 17; i++)
-			if ((i < hb::shared::limits::MaxSkillType) && (m_pGame->m_pSkillCfgList[i + Info().sView] != 0))
+			if (((i + Info().sView) < hb::shared::limits::MaxSkillType) && (m_pGame->m_pSkillCfgList[i + Info().sView] != 0))
 			{
 				if ((msX >= sX + 44) && (msX <= sX + 135 + 44) && (msY >= sY + 45 + i * 15) && (msY <= sY + 59 + i * 15))
 				{

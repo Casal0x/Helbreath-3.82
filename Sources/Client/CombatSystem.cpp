@@ -15,6 +15,7 @@ void CombatSystem::SetPlayer(CPlayer& player)
 // Snoopy: added StormBlade
 int CombatSystem::GetAttackType() const
 {
+	if (!m_player) return 0;
 	uint16_t wWeaponType;
 	wWeaponType = m_player->m_playerAppearance.iWeaponType;
 	if (wWeaponType == 0)
@@ -80,6 +81,7 @@ int CombatSystem::GetAttackType() const
 
 int CombatSystem::GetWeaponSkillType() const
 {
+	if (!m_player) return 1;
 	uint16_t wWeaponType;
 	wWeaponType = m_player->m_playerAppearance.iWeaponType;
 	if (wWeaponType == 0)
@@ -96,12 +98,14 @@ int CombatSystem::GetWeaponSkillType() const
 			return 9; // Fencing
 		else return 8; // LS
 	}
-	else if ((wWeaponType >= 20) && (wWeaponType < 29))
+	else if ((wWeaponType >= 20) && (wWeaponType <= 29))
 	{
+		if (wWeaponType == 29) return 8; // LS (LightingBlade)
 		return 10; // Axe (20..28)
 	}
-	else if ((wWeaponType >= 30) && (wWeaponType < 33))
+	else if ((wWeaponType >= 30) && (wWeaponType <= 33))
 	{
+		if (wWeaponType == 33) return 8; // LS (BlackShadow)
 		return 14; // Hammer (30,31,32)
 	}
 	else if ((wWeaponType >= 34) && (wWeaponType < 40))
@@ -112,15 +116,12 @@ int CombatSystem::GetWeaponSkillType() const
 	{
 		return 6;  // Bow
 	}
-	else if ((wWeaponType == 29) || (wWeaponType == 33))
-	{
-		return 8;  // LS LightingBlade || BlackShadow
-	}
 	return 1; // Fishing !
 }
 
 bool CombatSystem::CanSuperAttack() const
 {
+	if (!m_player) return false;
 	return m_player->m_iSuperAttackLeft > 0
 		&& m_player->m_bSuperAttackMode
 		&& m_player->m_iSkillMastery[GetWeaponSkillType()] >= 100;

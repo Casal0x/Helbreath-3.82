@@ -191,7 +191,7 @@ void DialogBox_Soldier::OnDraw(short msX, short msY, short msZ, char cLB)
 				DrawNewDialogBox(InterfaceNdCrusade, sX + tX + 15, sY + tY + 60, 43);
 			}
 		}
-		if ((msX >= sX + 15) && (msX <= sX + 15 + 278)
+		if (szX > 0 && szY > 0 && (msX >= sX + 15) && (msX <= sX + 15 + 278)
 			&& (msY >= sY + 60) && (msY <= sY + 60 + 272))
 		{
 			dV1 = static_cast<double>(msX - (sX + 15));
@@ -199,7 +199,7 @@ void DialogBox_Soldier::OnDraw(short msX, short msY, short msZ, char cLB)
 			dV3 = (dV2 * dV1) / szX;
 			tX = static_cast<int>(dV3);
 			dV1 = static_cast<double>(msY - (sY + 60));
-			dV2 = static_cast<double>(MapSzX);
+			dV2 = static_cast<double>(MapSzY);
 			dV3 = (dV2 * dV1) / szY;
 			tY = static_cast<int>(dV3);
 			if (tX < 30) tX = 30;

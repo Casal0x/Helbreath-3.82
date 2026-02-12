@@ -124,7 +124,7 @@ void DialogBox_CityHallMenu::DrawMode0_MainMenu(short sX, short sY, short szX, s
 	// Change crusade role
 	if (m_pGame->m_bIsCrusadeMode && m_pGame->m_pPlayer->m_bCitizen)
 	{
-		if ((msX > sX + 35) && (msX < sX + 220) && (msY > sY + 220) && (msY < sY + 220))
+		if ((msX > sX + 35) && (msX < sX + 220) && (msY > sY + 220) && (msY < sY + 245))
 			hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 220, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU14, hb::shared::text::TextStyle::Color(GameColors::UIWhite), hb::shared::text::Align::TopCenter);
 		else
 			hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 220, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU14, hb::shared::text::TextStyle::Color(GameColors::UIMagicBlue), hb::shared::text::Align::TopCenter);
@@ -178,7 +178,7 @@ void DialogBox_CityHallMenu::DrawMode4_CitizenshipFailed(short sX, short sY, sho
 {
 	hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 80, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU30, hb::shared::text::TextStyle::Color(GameColors::UILabel), hb::shared::text::Align::TopCenter);
 	hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 100, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU31, hb::shared::text::TextStyle::Color(GameColors::UILabel), hb::shared::text::Align::TopCenter);
-	hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 115, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENuint32_t, hb::shared::text::TextStyle::Color(GameColors::UILabel), hb::shared::text::Align::TopCenter);
+	hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 115, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU32, hb::shared::text::TextStyle::Color(GameColors::UILabel), hb::shared::text::Align::TopCenter);
 
 	if ((msX >= sX + ui_layout::right_btn_x) && (msX <= sX + ui_layout::right_btn_x + ui_layout::btn_size_x) && (msY > sY + ui_layout::btn_y) && (msY < sY + ui_layout::btn_y + ui_layout::btn_size_y))
 		m_pGame->DrawNewDialogBox(InterfaceNdButton, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 1);
@@ -539,6 +539,9 @@ bool DialogBox_CityHallMenu::OnClickMode5(short sX, short sY, short msX, short m
 bool DialogBox_CityHallMenu::OnClickMode7(short sX, short sY, short msX, short msY)
 {
 	int iReqHeroItemID = 0;
+
+	if (m_pGame->m_cCurFocus < 1 || m_pGame->m_pCharList[m_pGame->m_cCurFocus - 1] == nullptr)
+		return false;
 
 	// Hero's Cape
 	if ((msX >= sX + 35) && (msX <= sX + 220) && (msY >= sY + 95) && (msY <= sY + 110))

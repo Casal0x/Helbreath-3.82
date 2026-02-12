@@ -9,9 +9,9 @@
 #include <windows.h>
 #include <cmath>
 #include <format>
+#include <string>
 
 namespace NetworkMessageHandlers {
-	std::string G_cTxt;
 	void HandleCrusade(CGame* pGame, char* pData)
 	{
 		int iV1, iV2, iV3, iV4;
@@ -40,7 +40,7 @@ namespace NetworkMessageHandlers {
 				else if (pGame->m_pPlayer->m_bAresden == false) pGame->m_dialogBoxManager.EnableDialogBox(DialogBoxId::Text, 802, 0, 0);
 				
 				if (pGame->m_pPlayer->m_bCitizen == false) pGame->SetTopMsg(NOTIFY_MSG_CRUSADESTART_NONE, 10);
-				else pGame->SetTopMsg(pGame->m_pGameMsgList[9]->m_pMsg, 10);
+				else if (pGame->m_pGameMsgList[9]) pGame->SetTopMsg(pGame->m_pGameMsgList[9]->m_pMsg, 10);
 				pGame->PlayGameSound('E', 25, 0, 0);
 			}
 			if (iV3 != 0) // Crusade finished, show XP result screen
@@ -59,7 +59,7 @@ namespace NetworkMessageHandlers {
 				pGame->m_bIsCrusadeMode = false;
 				pGame->m_pPlayer->m_iCrusadeDuty = 0;
 				pGame->CrusadeWarResult(iV4);
-				pGame->SetTopMsg(pGame->m_pGameMsgList[57]->m_pMsg, 8);
+				if (pGame->m_pGameMsgList[57]) pGame->SetTopMsg(pGame->m_pGameMsgList[57]->m_pMsg, 8);
 			}
 			else
 			{
@@ -113,7 +113,7 @@ namespace NetworkMessageHandlers {
 	void HandleMeteorStrikeHit(CGame* pGame, char* pData)
 	{
 		int i;
-		pGame->SetTopMsg(pGame->m_pGameMsgList[17]->m_pMsg, 5);
+		if (pGame->m_pGameMsgList[17]) pGame->SetTopMsg(pGame->m_pGameMsgList[17]->m_pMsg, 5);
 		for (i = 0; i < 36; i++)
 			pGame->m_pEffectManager->AddEffect(EffectType::METEOR_FLYING, pGame->m_Camera.GetX() + (rand() % LOGICAL_MAX_X()), pGame->m_Camera.GetY() + (rand() % LOGICAL_MAX_Y()), 0, 0, -(rand() % 80));
 	}
@@ -144,6 +144,7 @@ namespace NetworkMessageHandlers {
 	void HandleConstructionPoint(CGame* pGame, char* pData)
 	{
 		short sV1, sV2, sV3;
+		std::string cTxt;
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyConstructionPoint>(
 			pData, sizeof(hb::net::PacketNotifyConstructionPoint));
 		if (!pkt) return;
@@ -153,36 +154,46 @@ namespace NetworkMessageHandlers {
 
 		if (sV3 == 0) {
 			if ((sV1 > pGame->m_pPlayer->m_iConstructionPoint) && (sV2 > pGame->m_pPlayer->m_iWarContribution)) {
-				G_cTxt = std::format("{} +{}, {} +{}", pGame->m_pGameMsgList[13]->m_pMsg, (sV1 - pGame->m_pPlayer->m_iConstructionPoint), pGame->m_pGameMsgList[21]->m_pMsg, (sV2 - pGame->m_pPlayer->m_iWarContribution));
-				pGame->SetTopMsg(G_cTxt.c_str(), 5);
+				if (pGame->m_pGameMsgList[13] && pGame->m_pGameMsgList[21]) {
+					cTxt = std::format("{} +{}, {} +{}", pGame->m_pGameMsgList[13]->m_pMsg, (sV1 - pGame->m_pPlayer->m_iConstructionPoint), pGame->m_pGameMsgList[21]->m_pMsg, (sV2 - pGame->m_pPlayer->m_iWarContribution));
+					pGame->SetTopMsg(cTxt.c_str(), 5);
+				}
 				pGame->PlayGameSound('E', 23, 0, 0);
 			}
 
 			if ((sV1 > pGame->m_pPlayer->m_iConstructionPoint) && (sV2 == pGame->m_pPlayer->m_iWarContribution)) {
 				if (pGame->m_pPlayer->m_iCrusadeDuty == 3) {
-					G_cTxt = std::format("{} +{}", pGame->m_pGameMsgList[13]->m_pMsg, sV1 - pGame->m_pPlayer->m_iConstructionPoint);
-					pGame->SetTopMsg(G_cTxt.c_str(), 5);
+					if (pGame->m_pGameMsgList[13]) {
+						cTxt = std::format("{} +{}", pGame->m_pGameMsgList[13]->m_pMsg, sV1 - pGame->m_pPlayer->m_iConstructionPoint);
+						pGame->SetTopMsg(cTxt.c_str(), 5);
+					}
 					pGame->PlayGameSound('E', 23, 0, 0);
 				}
 			}
 
 			if ((sV1 == pGame->m_pPlayer->m_iConstructionPoint) && (sV2 > pGame->m_pPlayer->m_iWarContribution)) {
-				G_cTxt = std::format("{} +{}", pGame->m_pGameMsgList[21]->m_pMsg, sV2 - pGame->m_pPlayer->m_iWarContribution);
-				pGame->SetTopMsg(G_cTxt.c_str(), 5);
+				if (pGame->m_pGameMsgList[21]) {
+					cTxt = std::format("{} +{}", pGame->m_pGameMsgList[21]->m_pMsg, sV2 - pGame->m_pPlayer->m_iWarContribution);
+					pGame->SetTopMsg(cTxt.c_str(), 5);
+				}
 				pGame->PlayGameSound('E', 23, 0, 0);
 			}
 
 			if (sV1 < pGame->m_pPlayer->m_iConstructionPoint) {
 				if (pGame->m_pPlayer->m_iCrusadeDuty == 3) {
-					G_cTxt = std::format("{} -{}", pGame->m_pGameMsgList[13]->m_pMsg, pGame->m_pPlayer->m_iConstructionPoint - sV1);
-					pGame->SetTopMsg(G_cTxt.c_str(), 5);
+					if (pGame->m_pGameMsgList[13]) {
+						cTxt = std::format("{} -{}", pGame->m_pGameMsgList[13]->m_pMsg, pGame->m_pPlayer->m_iConstructionPoint - sV1);
+						pGame->SetTopMsg(cTxt.c_str(), 5);
+					}
 					pGame->PlayGameSound('E', 25, 0, 0);
 				}
 			}
 
 			if (sV2 < pGame->m_pPlayer->m_iWarContribution) {
-				G_cTxt = std::format("{} -{}", pGame->m_pGameMsgList[21]->m_pMsg, pGame->m_pPlayer->m_iWarContribution - sV2);
-				pGame->SetTopMsg(G_cTxt.c_str(), 5);
+				if (pGame->m_pGameMsgList[21]) {
+					cTxt = std::format("{} -{}", pGame->m_pGameMsgList[21]->m_pMsg, pGame->m_pPlayer->m_iWarContribution - sV2);
+					pGame->SetTopMsg(cTxt.c_str(), 5);
+				}
 				pGame->PlayGameSound('E', 24, 0, 0);
 			}
 		}
@@ -193,42 +204,43 @@ namespace NetworkMessageHandlers {
 
 	void HandleNoMoreCrusadeStructure(CGame* pGame, char* pData)
 	{
-		pGame->SetTopMsg(pGame->m_pGameMsgList[12]->m_pMsg, 5);
+		if (pGame->m_pGameMsgList[12]) pGame->SetTopMsg(pGame->m_pGameMsgList[12]->m_pMsg, 5);
 		pGame->PlayGameSound('E', 25, 0, 0);
 	}
 
 	void HandleEnergySphereGoalIn(CGame* pGame, char* pData)
 	{
 		int sV1, sV2, sV3;
-		char cTxt[120]{};
+		char cName[120]{};
+		std::string cTxt;
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyEnergySphereGoalIn>(
 			pData, sizeof(hb::net::PacketNotifyEnergySphereGoalIn));
 		if (!pkt) return;
 		sV1 = pkt->result;
 		sV2 = pkt->side;
 		sV3 = pkt->goal;
-		memcpy(cTxt, pkt->name, sizeof(pkt->name));
+		memcpy(cName, pkt->name, sizeof(pkt->name));
 
 		if (sV2 == sV3)
 		{
 			pGame->PlayGameSound('E', 24, 0);
-			if (strcmp(cTxt, pGame->m_pPlayer->m_cPlayerName.c_str()) == 0)
+			if (strcmp(cName, pGame->m_pPlayer->m_cPlayerName.c_str()) == 0)
 			{
-				pGame->AddEventList(NOTIFY_MSG_HANDLER33, 10); // "You pushed energy sphere to enemy's energy portal! Contribution point will be decreased by 10 points."
-				pGame->m_pPlayer->m_iContribution += sV1; // fixed, server must match...
+				pGame->AddEventList(NOTIFY_MSG_HANDLER33, 10);
+				pGame->m_pPlayer->m_iContribution += sV1;
 				pGame->m_iContributionPrice = 0;
 				if (pGame->m_pPlayer->m_iContribution < 0) pGame->m_pPlayer->m_iContribution = 0;
 			}
 			else {
-				if (pGame->m_pPlayer->m_bAresden == true) G_cTxt = std::format(NOTIFY_MSG_HANDLER34, cTxt); // "%s(Aresden) pushed energy sphere to enemy's portal!!..."
-				else if (pGame->m_pPlayer->m_bAresden == false) G_cTxt = std::format(NOTIFY_MSG_HANDLER34_ELV, cTxt); // "%s(Elvine) pushed energy sphere to enemy's portal!!..."
-				pGame->AddEventList(G_cTxt.c_str(), 10);
+				if (pGame->m_pPlayer->m_bAresden == true) cTxt = std::format(NOTIFY_MSG_HANDLER34, cName);
+				else if (pGame->m_pPlayer->m_bAresden == false) cTxt = std::format(NOTIFY_MSG_HANDLER34_ELV, cName);
+				if (!cTxt.empty()) pGame->AddEventList(cTxt.c_str(), 10);
 			}
 		}
 		else
 		{
 			pGame->PlayGameSound('E', 23, 0);
-			if (strcmp(cTxt, pGame->m_pPlayer->m_cPlayerName.c_str()) == 0)
+			if (strcmp(cName, pGame->m_pPlayer->m_cPlayerName.c_str()) == 0)
 			{
 				switch (pGame->m_pPlayer->m_sPlayerType) {
 				case 1:
@@ -242,7 +254,7 @@ namespace NetworkMessageHandlers {
 					pGame->PlayGameSound('C', 22, 0);
 					break;
 				}
-				pGame->AddEventList(NOTIFY_MSG_HANDLER35, 10); // "Congulaturations! You brought energy sphere to energy portal and earned experience and prize gold!"
+				pGame->AddEventList(NOTIFY_MSG_HANDLER35, 10);
 				pGame->m_pPlayer->m_iContribution += 5;
 				if (pGame->m_pPlayer->m_iContribution < 0) pGame->m_pPlayer->m_iContribution = 0;
 			}
@@ -250,13 +262,13 @@ namespace NetworkMessageHandlers {
 			{
 				if (sV3 == 1)
 				{
-					G_cTxt = std::format(NOTIFY_MSG_HANDLER36, cTxt); // "Elvine %s : Goal in!"
-					pGame->AddEventList(G_cTxt.c_str(), 10);
+					cTxt = std::format(NOTIFY_MSG_HANDLER36, cName);
+					pGame->AddEventList(cTxt.c_str(), 10);
 				}
 				else if (sV3 == 2)
 				{
-					G_cTxt = std::format(NOTIFY_MSG_HANDLER37, cTxt); // "Aresden %s : Goal in!"
-					pGame->AddEventList(G_cTxt.c_str(), 10);
+					cTxt = std::format(NOTIFY_MSG_HANDLER37, cName);
+					pGame->AddEventList(cTxt.c_str(), 10);
 				}
 			}
 		}
@@ -265,13 +277,14 @@ namespace NetworkMessageHandlers {
 	void HandleEnergySphereCreated(CGame* pGame, char* pData)
 	{
 		int sV1, sV2;
+		std::string cTxt;
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyEnergySphereCreated>(
 			pData, sizeof(hb::net::PacketNotifyEnergySphereCreated));
 		if (!pkt) return;
 		sV1 = pkt->x;
 		sV2 = pkt->y;
-		G_cTxt = std::format(NOTIFY_MSG_HANDLER38, sV1, sV2); // "Energy sphere was dropped in (%d, %d) of middleland!"
-		pGame->AddEventList(G_cTxt.c_str(), 10);
-		pGame->AddEventList(NOTIFY_MSG_HANDLER39, 10); // "A player who pushed energy sphere to the energy portal of his city will earn many Exp and Contribution."
+		cTxt = std::format(NOTIFY_MSG_HANDLER38, sV1, sV2);
+		pGame->AddEventList(cTxt.c_str(), 10);
+		pGame->AddEventList(NOTIFY_MSG_HANDLER39, 10);
 	}
 }

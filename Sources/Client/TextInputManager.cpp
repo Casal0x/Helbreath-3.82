@@ -22,6 +22,7 @@ void TextInputManager::StartInput(int x, int y, unsigned char maxLen, std::strin
 void TextInputManager::EndInput()
 {
 	m_is_active = false;
+	m_buffer = nullptr;
 }
 
 void TextInputManager::ClearInput()
@@ -78,7 +79,7 @@ bool TextInputManager::HandleChar(hb::shared::types::NativeWindowHandle hWnd, ui
 		}
 		else if ((wparam != 9) && (wparam != 13) && (wparam != 27))
 		{
-			if (m_buffer->size() >= static_cast<size_t>(m_max_len) - 1) return false;
+			if (m_max_len == 0 || m_buffer->size() + 1 >= m_max_len) return false;
 			*m_buffer += static_cast<char>(wparam & 0xff);
 		}
 		return true;

@@ -181,12 +181,12 @@ bool DialogBox_Inventory::OnClick(short msX, short msY)
 }
 
 // Helper: Find the clicked inventory item
-char DialogBox_Inventory::FindClickedItem(short msX, short msY, short sX, short sY)
+int DialogBox_Inventory::FindClickedItem(short msX, short msY, short sX, short sY)
 {
 	for (int i = 0; i < hb::shared::limits::MaxItems; i++)
 	{
 		if (m_pGame->m_cItemOrder[hb::shared::limits::MaxItems - 1 - i] == -1) continue;
-		char cItemID = m_pGame->m_cItemOrder[hb::shared::limits::MaxItems - 1 - i];
+		int cItemID = m_pGame->m_cItemOrder[hb::shared::limits::MaxItems - 1 - i];
 		if (m_pGame->m_pItemList[cItemID] == nullptr) continue;
 
 		CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[cItemID]->m_sIDnum);
@@ -219,7 +219,7 @@ bool DialogBox_Inventory::OnDoubleClick(short msX, short msY)
 	short sX = Info().sX;
 	short sY = Info().sY;
 
-	char cItemID = FindClickedItem(msX, msY, sX, sY);
+	int cItemID = FindClickedItem(msX, msY, sX, sY);
 	if (cItemID == -1) return false;
 
 	InventoryManager::Get().SetItemOrder(0, cItemID);
@@ -436,7 +436,7 @@ PressResult DialogBox_Inventory::OnPress(short msX, short msY)
 	// Check items in reverse order (topmost first)
 	for (int i = 0; i < hb::shared::limits::MaxItems; i++)
 	{
-		char cItemID = m_pGame->m_cItemOrder[hb::shared::limits::MaxItems - 1 - i];
+		int cItemID = m_pGame->m_cItemOrder[hb::shared::limits::MaxItems - 1 - i];
 		if (cItemID == -1) continue;
 
 		CItem* pItem = m_pGame->m_pItemList[cItemID].get();
@@ -502,7 +502,8 @@ bool DialogBox_Inventory::OnItemDrop(short msX, short msY)
 {
 	if (m_pGame->m_pPlayer->m_Controller.GetCommand() < 0) return false;
 
-	char cSelectedID = static_cast<char>(CursorTarget::GetSelectedID());
+	int cSelectedID = CursorTarget::GetSelectedID();
+	if (cSelectedID < 0 || cSelectedID >= hb::shared::limits::MaxItems) return false;
 	if (m_pGame->m_pItemList[cSelectedID] == nullptr) return false;
 
 	// Can't move equipped items while using a skill
@@ -535,7 +536,7 @@ bool DialogBox_Inventory::OnItemDrop(short msX, short msY)
 		{
 			if (m_pGame->m_cItemOrder[hb::shared::limits::MaxItems - 1 - i] != -1)
 			{
-				char cItemID = m_pGame->m_cItemOrder[hb::shared::limits::MaxItems - 1 - i];
+				int cItemID = m_pGame->m_cItemOrder[hb::shared::limits::MaxItems - 1 - i];
 				if (m_pGame->m_pItemList[cItemID] != nullptr &&
 					m_pGame->m_pItemList[cItemID]->m_sIDnum == m_pGame->m_pItemList[cSelectedID]->m_sIDnum)
 				{

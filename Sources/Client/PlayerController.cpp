@@ -42,6 +42,8 @@ char CPlayerController::GetNextMoveDir(short sX, short sY, short dstX, short dst
 	else
 		cDir = CMisc::cGetNextMoveDir(dstX, dstY, dX, dY);
 
+	if (cDir < 1 || cDir > 8) return 0;
+
 	if (m_cPlayerTurn == 0)
 	{
 		for (i = cDir; i <= cDir + 2; i++)
@@ -91,6 +93,8 @@ char CPlayerController::GetNextMoveDir(short sX, short sY, short dstX, short dst
 	return 0;
 }
 
+// Determines optimal turn direction (left/right bias) for pathfinding.
+// Tries both directions with a 30-step cap to prevent infinite loops on unreachable targets.
 void CPlayerController::CalculatePlayerTurn(short playerX, short playerY, CMapData* pMapData)
 {
 	char cDir;

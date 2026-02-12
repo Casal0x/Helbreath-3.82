@@ -133,7 +133,10 @@ void CursorTarget::TestObject(const hb::shared::sprite::BoundRect& bounds, const
     if (s_mouseX > bounds.left && s_mouseX < bounds.right &&
         s_mouseY > bounds.top && s_mouseY < bounds.bottom) {
 
-        // Last valid hit wins (tiles are processed back-to-front)
+        // Y-depth sorting: higher screenY = closer to camera = higher priority
+        if (screenY < s_bestHitY) return;
+        s_bestHitY = screenY;
+
         // Copy info to focused object
         s_focusedObject.valid = true;
         s_focusedObject.objectID = info.objectID;
@@ -178,8 +181,8 @@ void CursorTarget::TestDynamicObject(const hb::shared::sprite::BoundRect& bounds
     if (s_mouseY > maxScreenY) return;
 
     // Hit test
-    if (s_mouseX >= bounds.left && s_mouseX < bounds.right &&
-        s_mouseY >= bounds.top && s_mouseY < bounds.bottom) {
+    if (s_mouseX > bounds.left && s_mouseX < bounds.right &&
+        s_mouseY > bounds.top && s_mouseY < bounds.bottom) {
 
         // Dynamic objects (minerals) set focus without full object info
         s_focusedObject.valid = true;

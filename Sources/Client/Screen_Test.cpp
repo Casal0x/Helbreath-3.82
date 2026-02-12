@@ -110,8 +110,6 @@ void Screen_Test::on_update()
 
 void Screen_Test::on_render()
 {
-	m_pGame->m_Renderer->BeginFrame();
-
 	// Fill with dark blue background for better shadow visibility
 	m_pGame->m_Renderer->DrawRectFilled(0, 0, 640, 480, hb::shared::render::Color(32, 32, 48));
 

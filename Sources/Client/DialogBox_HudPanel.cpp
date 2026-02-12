@@ -50,6 +50,7 @@ void DialogBox_HudPanel::DrawGaugeBars()
 	// HP bar
 	iMaxPoint = hb::shared::calc::CalculateMaxHP(m_pGame->m_pPlayer->m_iVit, m_pGame->m_pPlayer->m_iLevel,
 	                           m_pGame->m_pPlayer->m_iStr, m_pGame->m_pPlayer->m_iAngelicStr);
+	if (iMaxPoint <= 0) iMaxPoint = 1;
 	if (m_pGame->m_pPlayer->m_iHP > iMaxPoint) m_pGame->m_pPlayer->m_iHP = iMaxPoint;
 	iBarWidth = HP_MP_BAR_WIDTH - (m_pGame->m_pPlayer->m_iHP * HP_MP_BAR_WIDTH) / iMaxPoint;
 	if (iBarWidth < 0) iBarWidth = 0;
@@ -75,6 +76,7 @@ void DialogBox_HudPanel::DrawGaugeBars()
 	// MP bar
 	iMaxPoint = hb::shared::calc::CalculateMaxMP(m_pGame->m_pPlayer->m_iMag, m_pGame->m_pPlayer->m_iAngelicMag,
 	                           m_pGame->m_pPlayer->m_iLevel, m_pGame->m_pPlayer->m_iInt, m_pGame->m_pPlayer->m_iAngelicInt);
+	if (iMaxPoint <= 0) iMaxPoint = 1;
 	if (m_pGame->m_pPlayer->m_iMP > iMaxPoint) m_pGame->m_pPlayer->m_iMP = iMaxPoint;
 	iBarWidth = HP_MP_BAR_WIDTH - (m_pGame->m_pPlayer->m_iMP * HP_MP_BAR_WIDTH) / iMaxPoint;
 	if (iBarWidth < 0) iBarWidth = 0;
@@ -88,6 +90,7 @@ void DialogBox_HudPanel::DrawGaugeBars()
 
 	// SP bar
 	iMaxPoint = hb::shared::calc::CalculateMaxSP(m_pGame->m_pPlayer->m_iStr, m_pGame->m_pPlayer->m_iAngelicStr, m_pGame->m_pPlayer->m_iLevel);
+	if (iMaxPoint <= 0) iMaxPoint = 1;
 	if (m_pGame->m_pPlayer->m_iSP > iMaxPoint) m_pGame->m_pPlayer->m_iSP = iMaxPoint;
 	iBarWidth = SP_BAR_WIDTH - (m_pGame->m_pPlayer->m_iSP * SP_BAR_WIDTH) / iMaxPoint;
 	if (iBarWidth < 0) iBarWidth = 0;
@@ -104,7 +107,8 @@ void DialogBox_HudPanel::DrawGaugeBars()
 	uint32_t iNextLevelExp = m_pGame->iGetLevelExp(m_pGame->m_pPlayer->m_iLevel + 1);
 	uint32_t iExpRange = iNextLevelExp - iCurLevelExp;
 	uint32_t iExpProgress = m_pGame->m_pPlayer->m_iExp - iCurLevelExp;
-	iBarWidth = (iExpProgress * ICON_PANEL_WIDTH()) / iExpRange;
+	if (iExpRange == 0) iBarWidth = ICON_PANEL_WIDTH();
+	else iBarWidth = (iExpProgress * ICON_PANEL_WIDTH()) / iExpRange;
 	if (iBarWidth < 0) iBarWidth = 0;
 	if (iBarWidth > ICON_PANEL_WIDTH()) iBarWidth = ICON_PANEL_WIDTH();
 	pSprite->DrawWidth(HudXOffset(), EXP_BAR_Y(), 18, iBarWidth);
@@ -170,7 +174,7 @@ void DialogBox_HudPanel::DrawStatusIcons(short msX, short msY)
 		}
 		else
 		{
-			infoBuf[0] = '\0';
+			infoBuf.clear();
 		}
 	}
 	else
@@ -269,7 +273,7 @@ bool DialogBox_HudPanel::OnItemDrop(short msX, short msY)
 	if ((453 + xOffset < msX) && (486 + xOffset > msX) && (440 + yOffset < msY) && (475 + yOffset > msY))
 	{
 		auto& invInfo = InfoOf(DialogBoxId::Inventory);
-		m_pGame->m_dialogBoxManager.GetDialogBox(DialogBoxId::Inventory)->OnItemDrop(invInfo.sX + (rand() % 148), invInfo.sY + (rand() % 55));
+		m_pGame->m_dialogBoxManager.GetDialogBox(DialogBoxId::Inventory)->OnItemDrop(invInfo.sX + 40, invInfo.sY + 30);
 		return true;
 	}
 

@@ -11,14 +11,7 @@
 class CCharInfo
 {
 public:
-	inline CCharInfo()
-	{
-		m_iYear   = 0;
-		m_iMonth  = 0;
-		m_iDay    = 0;
-		m_iHour   = 0;
-		m_iMinute = 0;
-	}
+	inline CCharInfo() = default;
 
 	inline virtual ~CCharInfo()
 	{
@@ -26,10 +19,10 @@ public:
 
 	std::string m_cName;
 	std::string m_cMapName;
-	short m_sSkinCol, m_sSex;
-	hb::shared::entity::PlayerAppearance m_appearance;
-	short	m_sStr, m_sVit, m_sDex, m_sInt, m_sMag, m_sChr;
-	int	m_sLevel;
-	DWORD   m_iExp;
-	int   m_iYear, m_iMonth, m_iDay, m_iHour, m_iMinute;
+	short m_sSkinCol = 0, m_sSex = 0;
+	hb::shared::entity::PlayerAppearance m_appearance{};
+	short	m_sStr = 0, m_sVit = 0, m_sDex = 0, m_sInt = 0, m_sMag = 0, m_sChr = 0;
+	int	m_sLevel = 0;
+	DWORD   m_iExp = 0;
+	int   m_iYear = 0, m_iMonth = 0, m_iDay = 0, m_iHour = 0, m_iMinute = 0;
 };

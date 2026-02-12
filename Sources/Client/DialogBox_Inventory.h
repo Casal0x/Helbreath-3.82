@@ -34,5 +34,5 @@ private:
 	void DrawInventoryItem(CItem* pItem, int itemIdx, int baseX, int baseY);
 
 	// Double-click helper: Find the clicked inventory item (returns item ID or -1)
-	char FindClickedItem(short msX, short msY, short sX, short sY);
+	int FindClickedItem(short msX, short msY, short sX, short sY);
 };

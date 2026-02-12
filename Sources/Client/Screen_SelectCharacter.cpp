@@ -4,6 +4,7 @@
 
 #include "Screen_SelectCharacter.h"
 #include "Game.h"
+#include "TextInputManager.h"
 #include "WeatherManager.h"
 #include "GameModeManager.h"
 #include "IInput.h"
@@ -53,6 +54,7 @@ void Screen_SelectCharacter::on_initialize()
 
 void Screen_SelectCharacter::on_uninitialize()
 {
+    TextInputManager::Get().EndInput();
 }
 
 void Screen_SelectCharacter::on_update()
@@ -87,25 +89,7 @@ void Screen_SelectCharacter::on_update()
 
         if (m_pGame->m_pCharList[m_cCurFocus - 1] != nullptr)
         {
-            if (m_pGame->m_pCharList[m_cCurFocus - 1]->m_sSex != 0)
-            {
-                m_pGame->m_pPlayer->m_cPlayerName = m_pGame->m_pCharList[m_cCurFocus - 1]->m_cName.c_str();
-                m_pGame->m_pPlayer->m_iLevel = static_cast<int>(m_pGame->m_pCharList[m_cCurFocus - 1]->m_sLevel);
-                if (CMisc::bCheckValidString(m_pGame->m_pPlayer->m_cPlayerName.c_str()) == true)
-                {
-                    m_pGame->m_pSprite[InterfaceNdLogin]->Unload();
-                    m_pGame->m_pSprite[InterfaceNdMainMenu]->Unload();
-                    m_pGame->m_pLSock = std::make_unique<hb::shared::net::ASIOSocket>(m_pGame->m_pIOPool->GetContext(), game_limits::socket_block_limit);
-                    m_pGame->m_pLSock->bConnect(m_pGame->m_cLogServerAddr.c_str(), m_pGame->m_iLogServerPort + (rand() % 1));
-                    m_pGame->m_pLSock->bInitBufferSize(hb::shared::limits::MsgBufferSize);
-                    m_pGame->ChangeGameMode(GameMode::Connecting);
-                    m_pGame->m_dwConnectMode = MsgId::RequestEnterGame;
-                    m_pGame->m_wEnterGameType = EnterGameMsg::New;
-                    std::snprintf(m_pGame->m_cMsg, sizeof(m_pGame->m_cMsg), "%s", "33");
-                    m_pGame->m_cMapName = m_pGame->m_pCharList[m_cCurFocus - 1]->m_cMapName;
-                    return;
-                }
-            }
+            if (EnterGame()) return;
         }
         else
         {
@@ -201,25 +185,7 @@ void Screen_SelectCharacter::on_update()
             {
                 if (m_pGame->m_pCharList[m_cCurFocus - 1] != nullptr)
                 {
-                    if (m_pGame->m_pCharList[m_cCurFocus - 1]->m_sSex != 0)
-                    {
-                        m_pGame->m_pPlayer->m_cPlayerName = m_pGame->m_pCharList[m_cCurFocus - 1]->m_cName.c_str();
-                        m_pGame->m_pPlayer->m_iLevel = static_cast<int>(m_pGame->m_pCharList[m_cCurFocus - 1]->m_sLevel);
-                        if (CMisc::bCheckValidString(m_pGame->m_pPlayer->m_cPlayerName.c_str()) == true)
-                        {
-                            m_pGame->m_pSprite[InterfaceNdLogin]->Unload();
-                            m_pGame->m_pSprite[InterfaceNdMainMenu]->Unload();
-                            m_pGame->m_pLSock = std::make_unique<hb::shared::net::ASIOSocket>(m_pGame->m_pIOPool->GetContext(), game_limits::socket_block_limit);
-                            m_pGame->m_pLSock->bConnect(m_pGame->m_cLogServerAddr.c_str(), m_pGame->m_iLogServerPort + (rand() % 1));
-                            m_pGame->m_pLSock->bInitBufferSize(hb::shared::limits::MsgBufferSize);
-                            m_pGame->ChangeGameMode(GameMode::Connecting);
-                            m_pGame->m_dwConnectMode = MsgId::RequestEnterGame;
-                            m_pGame->m_wEnterGameType = EnterGameMsg::New;
-                            std::snprintf(m_pGame->m_cMsg, sizeof(m_pGame->m_cMsg), "%s", "33");
-                            m_pGame->m_cMapName = m_pGame->m_pCharList[m_cCurFocus - 1]->m_cMapName;
-                            return;
-                        }
-                    }
+                    if (EnterGame()) return;
                 }
                 else
                 {
@@ -230,28 +196,7 @@ void Screen_SelectCharacter::on_update()
             break;
 
         case 5:
-            if (m_pGame->m_pCharList[m_cCurFocus - 1] != nullptr)
-            {
-                if (m_pGame->m_pCharList[m_cCurFocus - 1]->m_sSex != 0)
-                {
-                    m_pGame->m_pPlayer->m_cPlayerName = m_pGame->m_pCharList[m_cCurFocus - 1]->m_cName.c_str();
-                    m_pGame->m_pPlayer->m_iLevel = static_cast<int>(m_pGame->m_pCharList[m_cCurFocus - 1]->m_sLevel);
-
-                    if (CMisc::bCheckValidString(m_pGame->m_pPlayer->m_cPlayerName.c_str()) == true) {
-                        m_pGame->m_pSprite[InterfaceNdLogin]->Unload();
-                        m_pGame->m_pSprite[InterfaceNdMainMenu]->Unload();
-                        m_pGame->m_pLSock = std::make_unique<hb::shared::net::ASIOSocket>(m_pGame->m_pIOPool->GetContext(), game_limits::socket_block_limit);
-                        m_pGame->m_pLSock->bConnect(m_pGame->m_cLogServerAddr.c_str(), m_pGame->m_iLogServerPort + (rand() % 1));
-                        m_pGame->m_pLSock->bInitBufferSize(hb::shared::limits::MsgBufferSize);
-                        m_pGame->ChangeGameMode(GameMode::Connecting);
-                        m_pGame->m_dwConnectMode = MsgId::RequestEnterGame;
-                        m_pGame->m_wEnterGameType = EnterGameMsg::New;
-                        std::snprintf(m_pGame->m_cMsg, sizeof(m_pGame->m_cMsg), "%s", "33");
-                        m_pGame->m_cMapName = m_pGame->m_pCharList[m_cCurFocus - 1]->m_cMapName;
-                        return;
-                    }
-                }
-            }
+            if (EnterGame()) return;
             break;
 
         case 6:
@@ -280,6 +225,28 @@ void Screen_SelectCharacter::on_update()
             return;
         }
     }
+}
+
+bool Screen_SelectCharacter::EnterGame()
+{
+    if (!m_pGame->m_pCharList[m_cCurFocus - 1]) return false;
+    if (m_pGame->m_pCharList[m_cCurFocus - 1]->m_sSex == 0) return false;
+
+    m_pGame->m_pPlayer->m_cPlayerName = m_pGame->m_pCharList[m_cCurFocus - 1]->m_cName.c_str();
+    m_pGame->m_pPlayer->m_iLevel = static_cast<int>(m_pGame->m_pCharList[m_cCurFocus - 1]->m_sLevel);
+    if (!CMisc::bCheckValidString(m_pGame->m_pPlayer->m_cPlayerName.c_str())) return false;
+
+    m_pGame->m_pSprite[InterfaceNdLogin]->Unload();
+    m_pGame->m_pSprite[InterfaceNdMainMenu]->Unload();
+    m_pGame->m_pLSock = std::make_unique<hb::shared::net::ASIOSocket>(m_pGame->m_pIOPool->GetContext(), game_limits::socket_block_limit);
+    m_pGame->m_pLSock->bConnect(m_pGame->m_cLogServerAddr.c_str(), m_pGame->m_iLogServerPort);
+    m_pGame->m_pLSock->bInitBufferSize(hb::shared::limits::MsgBufferSize);
+    m_pGame->ChangeGameMode(GameMode::Connecting);
+    m_pGame->m_dwConnectMode = MsgId::RequestEnterGame;
+    m_pGame->m_wEnterGameType = EnterGameMsg::New;
+    std::snprintf(m_pGame->m_cMsg, sizeof(m_pGame->m_cMsg), "%s", "33");
+    m_pGame->m_cMapName = m_pGame->m_pCharList[m_cCurFocus - 1]->m_cMapName;
+    return true;
 }
 
 void Screen_SelectCharacter::on_render()

@@ -37,7 +37,7 @@ bool DialogBox_WarningMsg::OnClick(short msX, short msY)
 	short sY = Info().sY;
 
 	// OK button click
-	if ((msX >= sX + 120) && (msX <= sX + 120 + ui_layout::btn_size_x) && (msY >= sY + 127) && (msY <= sY + 127 + ui_layout::btn_size_y))
+	if ((msX >= sX + 122) && (msX <= sX + 125 + ui_layout::btn_size_x) && (msY >= sY + 127) && (msY <= sY + 127 + ui_layout::btn_size_y))
 	{
 		DisableThisDialog();
 		return true;

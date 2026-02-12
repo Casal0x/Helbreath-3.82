@@ -934,57 +934,59 @@ void CMapData::ShiftMapData(char cDir)
 	case 1: // North
 		for (ix = 0; ix < hb::shared::view::InitDataTilesX + 1; ix++)
 			for (iy = 0; iy < hb::shared::view::InitDataTilesY; iy++)
-				memcpy(&m_pTmpData[hb::shared::view::MapDataBufferX + ix][hb::shared::view::MapDataBufferY + 1 + iy], &m_pData[hb::shared::view::MapDataBufferX + ix][hb::shared::view::MapDataBufferY + iy], sizeof(class CTile));
+				m_pTmpData[hb::shared::view::MapDataBufferX + ix][hb::shared::view::MapDataBufferY + 1 + iy] = m_pData[hb::shared::view::MapDataBufferX + ix][hb::shared::view::MapDataBufferY + iy];
 		m_sPivotY--;
 		break;
 	case 2: // NE
 		for (ix = 0; ix < hb::shared::view::InitDataTilesX; ix++)
 			for (iy = 0; iy < hb::shared::view::InitDataTilesY; iy++)
-				memcpy(&m_pTmpData[hb::shared::view::MapDataBufferX + ix][hb::shared::view::MapDataBufferY + 1 + iy], &m_pData[hb::shared::view::MapDataBufferY + ix][hb::shared::view::MapDataBufferY + iy], sizeof(class CTile));
+				m_pTmpData[hb::shared::view::MapDataBufferX + ix][hb::shared::view::MapDataBufferY + 1 + iy] = m_pData[hb::shared::view::MapDataBufferY + ix][hb::shared::view::MapDataBufferY + iy];
 		m_sPivotX++;
 		m_sPivotY--;
 		break;
 	case 3: // East
 		for (ix = 0; ix < hb::shared::view::InitDataTilesX; ix++)
 			for (iy = 0; iy < hb::shared::view::InitDataTilesY + 1; iy++)
-				memcpy(&m_pTmpData[hb::shared::view::MapDataBufferX + ix][hb::shared::view::MapDataBufferY + iy], &m_pData[hb::shared::view::MapDataBufferY + ix][hb::shared::view::MapDataBufferY + iy], sizeof(class CTile));
+				m_pTmpData[hb::shared::view::MapDataBufferX + ix][hb::shared::view::MapDataBufferY + iy] = m_pData[hb::shared::view::MapDataBufferY + ix][hb::shared::view::MapDataBufferY + iy];
 		m_sPivotX++;
 		break;
 	case 4: // SE
 		for (ix = 0; ix < hb::shared::view::InitDataTilesX; ix++)
 			for (iy = 0; iy < hb::shared::view::InitDataTilesY; iy++)
-				memcpy(&m_pTmpData[hb::shared::view::MapDataBufferX + ix][hb::shared::view::MapDataBufferY + iy], &m_pData[hb::shared::view::MapDataBufferY + ix][hb::shared::view::MapDataBufferY + 1 + iy], sizeof(class CTile));
+				m_pTmpData[hb::shared::view::MapDataBufferX + ix][hb::shared::view::MapDataBufferY + iy] = m_pData[hb::shared::view::MapDataBufferY + ix][hb::shared::view::MapDataBufferY + 1 + iy];
 		m_sPivotX++;
 		m_sPivotY++;
 		break;
 	case 5: // South
 		for (ix = 0; ix < hb::shared::view::InitDataTilesX + 1; ix++)
 			for (iy = 0; iy < hb::shared::view::InitDataTilesY; iy++)
-				memcpy(&m_pTmpData[hb::shared::view::MapDataBufferX + ix][hb::shared::view::MapDataBufferY + iy], &m_pData[hb::shared::view::MapDataBufferX + ix][hb::shared::view::MapDataBufferY + 1 + iy], sizeof(class CTile));
+				m_pTmpData[hb::shared::view::MapDataBufferX + ix][hb::shared::view::MapDataBufferY + iy] = m_pData[hb::shared::view::MapDataBufferX + ix][hb::shared::view::MapDataBufferY + 1 + iy];
 		m_sPivotY++;
 		break;
 	case 6: // SW
 		for (ix = 0; ix < hb::shared::view::InitDataTilesX; ix++)
 			for (iy = 0; iy < hb::shared::view::InitDataTilesY; iy++)
-				memcpy(&m_pTmpData[hb::shared::view::MapDataBufferY + ix][hb::shared::view::MapDataBufferY + iy], &m_pData[hb::shared::view::MapDataBufferX + ix][hb::shared::view::MapDataBufferY + 1 + iy], sizeof(class CTile));
+				m_pTmpData[hb::shared::view::MapDataBufferY + ix][hb::shared::view::MapDataBufferY + iy] = m_pData[hb::shared::view::MapDataBufferX + ix][hb::shared::view::MapDataBufferY + 1 + iy];
 		m_sPivotX--;
 		m_sPivotY++;
 		break;
 	case 7: // West
 		for (ix = 0; ix < hb::shared::view::InitDataTilesX; ix++)
 			for (iy = 0; iy < hb::shared::view::InitDataTilesY + 1; iy++)
-				memcpy(&m_pTmpData[hb::shared::view::MapDataBufferY + ix][hb::shared::view::MapDataBufferY + iy], &m_pData[hb::shared::view::MapDataBufferX + ix][hb::shared::view::MapDataBufferY + iy], sizeof(class CTile));
+				m_pTmpData[hb::shared::view::MapDataBufferY + ix][hb::shared::view::MapDataBufferY + iy] = m_pData[hb::shared::view::MapDataBufferX + ix][hb::shared::view::MapDataBufferY + iy];
 		m_sPivotX--;
 		break;
 	case 8: // NW
 		for (ix = 0; ix < hb::shared::view::InitDataTilesX; ix++)
 			for (iy = 0; iy < hb::shared::view::InitDataTilesY; iy++)
-				memcpy(&m_pTmpData[hb::shared::view::MapDataBufferY + ix][hb::shared::view::MapDataBufferY + 1 + iy], &m_pData[hb::shared::view::MapDataBufferX + ix][hb::shared::view::MapDataBufferY + iy], sizeof(class CTile));
+				m_pTmpData[hb::shared::view::MapDataBufferY + ix][hb::shared::view::MapDataBufferY + 1 + iy] = m_pData[hb::shared::view::MapDataBufferX + ix][hb::shared::view::MapDataBufferY + iy];
 		m_sPivotX--;
 		m_sPivotY--;
 		break;
 	}
-	memcpy(&m_pData[0][0], &m_pTmpData[0][0], sizeof(m_pData));
+	for (ix = 0; ix < MapDataSizeX; ix++)
+		for (iy = 0; iy < MapDataSizeY; iy++)
+			m_pData[ix][iy] = m_pTmpData[ix][iy];
 }
 
 bool CMapData::bGetIsLocateable(short sX, short sY)

@@ -283,7 +283,7 @@ void DialogBox_SysMenu::DrawGeneralTab(short sX, short sY, short msX, short msY)
 	int buttonY = contentBottom - 30;
 
 	// Log-Out / Continue button (left side)
-	if (m_pGame->m_cLogOutCount == -1) {
+	if (m_pGame->m_logout_count == -1) {
 		bool bHover = (msX >= sX + ui_layout::left_btn_x && msX <= sX + ui_layout::left_btn_x + ui_layout::btn_size_x &&
 			msY >= buttonY && msY <= buttonY + ui_layout::btn_size_y);
 		DrawNewDialogBox(InterfaceNdButton, sX + ui_layout::left_btn_x, buttonY, bHover ? 9 : 8);
@@ -807,11 +807,11 @@ bool DialogBox_SysMenu::OnClickGeneral(short sX, short sY, short msX, short msY)
 	{
 		if (!m_pGame->m_bForceDisconn)
 		{
-			if (m_pGame->m_cLogOutCount == -1) {
-				m_pGame->m_cLogOutCount = 11;
+			if (m_pGame->m_logout_count == -1) {
+				m_pGame->m_logout_count = 11;
 			}
 			else {
-				m_pGame->m_cLogOutCount = -1;
+				m_pGame->m_logout_count = -1;
 				AddEventList(DLGBOX_CLICK_SYSMENU2, 10);
 				DisableThisDialog();
 			}

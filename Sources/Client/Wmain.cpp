@@ -96,7 +96,6 @@ int GameMain(hb::shared::types::NativeInstance nativeInstance, int iconResourceI
     game.reset();
 
     hb::shared::render::Window::Destroy();
-    hb::shared::render::Renderer::Destroy();
 
     DevConsole::Get().Shutdown();
 

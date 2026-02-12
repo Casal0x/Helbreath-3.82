@@ -26,7 +26,7 @@ bool BuildItemManager::LoadRecipes()
 			m_recipes[i].reset();
 	}
 
-	std::ifstream file("contents\\\\BItemcfg.txt");
+	std::ifstream file("contents\\BItemcfg.txt");
 	if (!file) return false;
 
 	std::string content((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
@@ -333,6 +333,7 @@ bool BuildItemManager::ParseRecipeFile(const std::string& buffer)
 			{
 				if (token.starts_with("BuildItem"))
 				{
+					if (iIndex >= hb::shared::limits::MaxBuildItems) break;
 					cReadModeA = 1;
 					cReadModeB = 1;
 					m_recipes[iIndex] = std::make_unique<CBuildItem>();
@@ -353,8 +354,9 @@ bool BuildItemManager::ValidateCurrentRecipe()
 	bool bItemFlag[7];
 
 	iIndex = m_game->m_dialogBoxManager.Info(DialogBoxId::Manufacture).cStr[0];
+	if (iIndex < 0 || iIndex >= hb::shared::limits::MaxBuildItems) return false;
 
-	if (m_recipes[iIndex] == 0) return false;
+	if (m_display_recipes[iIndex] == 0) return false;
 
 	iItemIndex[1] = m_game->m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV1;
 	iItemIndex[2] = m_game->m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV2;

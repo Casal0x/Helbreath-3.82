@@ -163,7 +163,7 @@ namespace CMisc
 		size_t i, iLen;
 		iLen = strlen(pStr);
 		for (i = 0; i < iLen; i++)
-		{	if ( pStr[i] < 0 )	return false;
+		{	if ( static_cast<unsigned char>(pStr[i]) >= 128 )	return false;
 			if ( (pStr[i] == ',')  || (pStr[i] == '=') || (pStr[i] == ' ')  || (pStr[i] == '\n') ||
 				 (pStr[i] == '\t') || (pStr[i] == '.') || (pStr[i] == '\\') || (pStr[i] == '/')  ||
 				 (pStr[i] == ':')  || (pStr[i] == '*') || (pStr[i] == '?')  || (pStr[i] == '<')  ||
@@ -179,21 +179,13 @@ namespace CMisc
 	{
 		size_t len = strlen( pStr );
 		if( len < 7 ) return false;
-		char cEmail[52];
-		std::memset(cEmail, 0, sizeof(cEmail));
-		memcpy( cEmail, pStr, len );
-		bool bFlag = false;
-		for( size_t i=0 ; i<len ; i++ )
+		bool hasAt = false;
+		bool hasDot = false;
+		for( size_t i = 0; i < len; i++ )
 		{
-			if( cEmail[i] == '@' ) bFlag = true;
+			if( pStr[i] == '@' ) hasAt = true;
+			if( pStr[i] == '.' ) hasDot = true;
 		}
-		if( bFlag == false ) return false;
-		bFlag = false;
-		for( int i=0 ; i<len ; i++ )
-		{
-			if( cEmail[i] == '.' ) bFlag = true;
-		}
-		if( bFlag == false ) return false;
-		return true;
+		return hasAt && hasDot;
 	}
 }

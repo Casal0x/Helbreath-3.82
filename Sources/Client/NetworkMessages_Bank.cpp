@@ -12,7 +12,7 @@
 namespace NetworkMessageHandlers {
 	void HandleItemToBank(CGame* pGame, char* pData)
 	{
-		char cIndex;
+		int cIndex;
 		DWORD dwCount, dwAttribute;
 		char  cName[hb::shared::limits::ItemNameLen]{}, cItemType, cEquipPos, cGenderLimit, cItemColor;
 		bool  bIsEquipped;
@@ -23,7 +23,8 @@ namespace NetworkMessageHandlers {
 			pData, sizeof(hb::net::PacketNotifyItemToBank));
 		if (!pkt) return;
 
-		cIndex = static_cast<char>(pkt->bank_index);
+		cIndex = static_cast<int>(pkt->bank_index);
+		if (cIndex < 0 || cIndex >= hb::shared::limits::MaxBankItems) return;
 		memcpy(cName, pkt->name, sizeof(pkt->name));
 		dwCount = pkt->count;
 		cItemType = static_cast<char>(pkt->item_type);

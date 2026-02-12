@@ -4,22 +4,18 @@
 
 #pragma once
 
-#include <windows.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <memory.h>
-#include <string.h>
+#include <cstring>
 #include "ChatMsg.h"
 
 namespace hb::client::config { constexpr int MaxBadWord = 500; }
 
-class CGameMonitor  
+class CGameMonitor
 {
 public:
-	bool bCheckBadWord(char * pWord);
-	int iReadBadWordFileList(char * pFn);
+	bool bCheckBadWord(const char * pWord);
+	int iReadBadWordFileList(const char * pFn);
 	CGameMonitor();
-	virtual ~CGameMonitor();
+	~CGameMonitor();
 
 	class CMsg * m_pWordList[hb::client::config::MaxBadWord];
 

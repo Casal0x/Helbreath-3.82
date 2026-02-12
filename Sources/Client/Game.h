@@ -343,7 +343,7 @@ public:
 	uint32_t m_dwCurTime;
 	uint32_t m_dwCheckConnTime, m_dwCheckSprTime, m_dwCheckChatTime;
 	uint32_t m_dwCheckConnectionTime;
-	int  m_dwLogOutCountTime;//was DWORD
+	uint32_t m_logout_count_time;
 	uint32_t m_dwRestartCountTime;
 	uint32_t m_dwObserverCamTime;
 	uint32_t m_dwDamagedTime;
@@ -373,6 +373,7 @@ std::array<bool, hb::shared::limits::MaxItems> m_bIsItemEquipped{};
 
 	bool m_bIsF1HelpWindowEnabled;
 	bool m_bHideLocalCursor;
+	bool m_bMouseInitialized = false;
 
 	bool m_bForceDisconn;
 
@@ -418,7 +419,7 @@ std::array<bool, hb::shared::limits::MaxItems> m_bIsItemEquipped{};
 	char m_cItemOrder[hb::shared::limits::MaxItems];
 	static constexpr int AmountStringMaxLen = 12;
 	std::string m_cAmountString;
-	char m_cLogOutCount;
+	int  m_logout_count;
 	char m_cRestartCount;
 
 	// Overlay system state

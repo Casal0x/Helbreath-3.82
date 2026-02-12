@@ -22,8 +22,9 @@ void InventoryManager::SetGame(CGame* pGame)
 	m_game = pGame;
 }
 
-void InventoryManager::SetItemOrder(char cWhere, char cItemID)
+void InventoryManager::SetItemOrder(int cWhere, int cItemID)
 {
+	if (cItemID < 0 || cItemID >= hb::shared::limits::MaxItems) return;
 	int i;
 
 	switch (cWhere) {
@@ -90,8 +91,9 @@ int InventoryManager::GetBankItemCount()
 	return iCnt;
 }
 
-void InventoryManager::EraseItem(char cItemID)
+void InventoryManager::EraseItem(int cItemID)
 {
+	if (cItemID < 0 || cItemID >= hb::shared::limits::MaxItems) return;
 	int i;
 	for (i = 0; i < 6; i++)
 	{
@@ -124,8 +126,9 @@ void InventoryManager::EraseItem(char cItemID)
 	m_game->m_bIsItemDisabled[cItemID] = false;
 }
 
-bool InventoryManager::CheckItemOperationEnabled(char cItemID)
+bool InventoryManager::CheckItemOperationEnabled(int cItemID)
 {
+	if (cItemID < 0 || cItemID >= hb::shared::limits::MaxItems) return false;
 	if (m_game->m_pItemList[cItemID] == 0) return false;
 	if (m_game->m_pPlayer->m_Controller.GetCommand() < 0) return false;
 	if (TeleportManager::Get().IsRequested()) return false;
@@ -187,8 +190,9 @@ bool InventoryManager::CheckItemOperationEnabled(char cItemID)
 	return true;
 }
 
-void InventoryManager::UnequipSlot(char cEquipPos)
+void InventoryManager::UnequipSlot(int cEquipPos)
 {
+	if (cEquipPos < 0 || cEquipPos >= hb::shared::item::DEF_MAXITEMEQUIPPOS) return;
 	std::string G_cTxt;
 	if (m_game->m_sItemEquipmentStatus[cEquipPos] < 0) return;
 	// Remove Angelic Stats
@@ -214,8 +218,9 @@ void InventoryManager::UnequipSlot(char cEquipPos)
 	m_game->m_sItemEquipmentStatus[cEquipPos] = -1;
 }
 
-void InventoryManager::EquipItem(char cItemID)
+void InventoryManager::EquipItem(int cItemID)
 {
+	if (cItemID < 0 || cItemID >= hb::shared::limits::MaxItems) return;
 	std::string G_cTxt;
 	if (CheckItemOperationEnabled(cItemID) == false) return;
 	if (m_game->m_bIsItemEquipped[cItemID] == true) return;

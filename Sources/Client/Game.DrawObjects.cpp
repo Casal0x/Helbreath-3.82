@@ -86,6 +86,8 @@ static void CalcHumanEquipment(const CEntityRenderState& state, bool isFemale, M
 
 hb::shared::sprite::BoundRect CGame::DrawObject_OnMove_ForMenu(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime)
 {
+	if (m_entityState.m_iDir < 1 || m_entityState.m_iDir > 8) return {};
+
 	// Extract equipment colors from packed appearance color
 	MenuCharEquipment eq = {};
 	eq.weaponColor = m_entityState.m_appearance.iWeaponColor;
@@ -107,6 +109,7 @@ hb::shared::sprite::BoundRect CGame::DrawObject_OnMove_ForMenu(int indexX, int i
 		CalcHumanEquipment(m_entityState, true, eq);
 		break;
 	default:  // Mob/NPC
+		if (m_entityState.m_sOwnerType < 10) return {};
 		eq.body = Mob + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (1 * 8);
 		eq.undies = eq.hair = eq.bodyArmor = eq.armArmor = -1;
 		eq.boots = eq.pants = eq.weapon = eq.shield = eq.helm = eq.mantle = -1;
@@ -308,7 +311,8 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 	bool bRet = false;
 	short sObjSpr, sObjSprFrame, sDynamicObject, sDynamicObjectFrame;
 	char cDynamicObjectData1, cDynamicObjectData2, cDynamicObjectData3, cDynamicObjectData4;
-	// Xmas
+	// Xmas tree bulb positions — static arrays shared across all trees (same bulb pattern each frame).
+	// 100 entries matches the loop count at line ~725; indexed by j in [0..99].
 	static int ix1[100];
 	static int iy2[100];
 	static int iXmasTreeBulbDelay = 76;
@@ -400,7 +404,7 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 					std::snprintf(m_entityState.m_cName.data(), m_entityState.m_cName.size(), "%s", m_pMapData->m_pData[dX][dY].m_cDeadOwnerName.c_str());
 					sItemID = m_pMapData->m_pData[dX][dY].m_sItemID;
 					dwItemAttr = m_pMapData->m_pData[dX][dY].m_dwItemAttr;
-					cItemColor = m_pMapData->m_pData[dX][dY].m_cItemColor;
+					cItemColor = m_pMapData->m_pData[dX][dY].m_cItemColor & 0x0F;
 					sDynamicObject = m_pMapData->m_pData[dX][dY].m_sDynamicObjectType;
 					sDynamicObjectFrame = static_cast<short>(m_pMapData->m_pData[dX][dY].m_cDynamicObjectFrame);
 					cDynamicObjectData1 = m_pMapData->m_pData[dX][dY].m_cDynamicObjectData1;
@@ -421,7 +425,7 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 						case 1: // Swds
 						case 2: // Bows
 						case 3: // Shields
-						case hb::shared::owner::ShopKeeper: // Axes hammers
+						case 15: // Axes/hammers ground sprite (not ShopKeeper NPC — coincidental value match)
 							m_pSprite[ItemGroundPivotPoint + m_pItemConfigList[sItemID]->m_sSprite]->Draw(ix, iy, m_pItemConfigList[sItemID]->m_sSpriteFrame, hb::shared::sprite::DrawParams::Tint(GameColors::Weapons[cItemColor].r, GameColors::Weapons[cItemColor].g, GameColors::Weapons[cItemColor].b));
 							break;
 						default:
@@ -692,6 +696,8 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 					}
 					else
 					{
+						// sObjSpr is [100..199] here; sObjSpr+50 is the tree shadow sprite [150..249].
+						// SpriteCollection returns NullSprite for missing entries, so no crash if shadow is absent.
 						if ((bIsPlayerDrawed == true) && (m_pTileSpr[sObjSpr]->GetBoundRect().top <= m_rcPlayerRect.Top()) && (m_pTileSpr[sObjSpr]->GetBoundRect().bottom >= m_rcPlayerRect.Bottom()) &&
 							(ConfigManager::Get().GetDetailLevel() >= 2) && (m_pTileSpr[sObjSpr]->GetBoundRect().left <= m_rcPlayerRect.Left()) && (m_pTileSpr[sObjSpr]->GetBoundRect().right >= m_rcPlayerRect.Right()))
 						{

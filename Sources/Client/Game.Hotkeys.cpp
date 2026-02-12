@@ -463,18 +463,18 @@ void CGame::Hotkey_Simple_Screenshot()
 
 void CGame::Hotkey_Simple_TabToggleCombat()
 {
-	if (hb::shared::input::IsShiftDown())
-	{
-		m_cCurFocus--;
-		if (m_cCurFocus < 1) m_cCurFocus = m_cMaxFocus;
-	}
-	else
-	{
-		m_cCurFocus++;
-		if (m_cCurFocus > m_cMaxFocus) m_cCurFocus = 1;
-	}
 	if (GameModeManager::GetMode() == GameMode::MainGame)
 	{
+		if (hb::shared::input::IsShiftDown())
+		{
+			m_cCurFocus--;
+			if (m_cCurFocus < 1) m_cCurFocus = m_cMaxFocus;
+		}
+		else
+		{
+			m_cCurFocus++;
+			if (m_cCurFocus > m_cMaxFocus) m_cCurFocus = 1;
+		}
 		bSendCommand(MsgId::CommandCommon, CommonType::ToggleCombatMode, 0, 0, 0, 0, 0);
 	}
 }
@@ -492,13 +492,13 @@ void CGame::Hotkey_Simple_Escape()
 	if (GameModeManager::GetMode() == GameMode::MainGame)
 	{
 		if ((m_bIsObserverMode == true) && (hb::shared::input::IsShiftDown())) {
-			if (m_cLogOutCount == -1) m_cLogOutCount = 1;
+			if (m_logout_count == -1) m_logout_count = 1;
 			m_dialogBoxManager.DisableDialogBox(DialogBoxId::SystemMenu);
 			PlayGameSound('E', 14, 5);
 		}
-		else if (m_cLogOutCount != -1) {
+		else if (m_logout_count != -1) {
 			if (m_bForceDisconn == false) {
-				m_cLogOutCount = -1;
+				m_logout_count = -1;
 				AddEventList(DLGBOX_CLICK_SYSMENU2, 10);
 			}
 		}

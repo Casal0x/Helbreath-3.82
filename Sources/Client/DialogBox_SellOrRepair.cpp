@@ -23,7 +23,8 @@ void DialogBox_SellOrRepair::OnDraw(short msX, short msY, short msZ, char cLB)
 	uint32_t dwTime = m_pGame->m_dwCurTime;
 	std::string cTxt;
 
-	char cItemID, cItemColor;
+	int cItemID;
+	char cItemColor;
 
 	sX = Info().sX;
 	sY = Info().sY;

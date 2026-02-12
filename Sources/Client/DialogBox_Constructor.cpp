@@ -83,12 +83,12 @@ void DialogBox_Constructor::OnDraw(short msX, short msY, short msZ, char cLB)
 			hb::shared::text::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_CONSTRUCTOR3, hb::shared::text::TextStyle::WithShadow(GameColors::UIWhite));
 		}
 		else if ((msX >= sX + 20 + 50) && (msX <= sX + 20 + 46 + 50)
-			&& (msY >= sY + 322) && (msY <= sY + 322 + 52))
+			&& (msY >= sY + 340) && (msY <= sY + 340 + 52))
 		{
 			hb::shared::text::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_CONSTRUCTOR4, hb::shared::text::TextStyle::WithShadow(GameColors::UIWhite));
 		}
 		else if ((msX >= sX + 20 + 150 + 74) && (msX <= sX + 20 + 46 + 150 + 74)
-			&& (msY >= sY + 322) && (msY <= sY + 322 + 52))
+			&& (msY >= sY + 340) && (msY <= sY + 340 + 52))
 		{
 			hb::shared::text::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_CONSTRUCTOR5, hb::shared::text::TextStyle::WithShadow(GameColors::UIWhite));
 		}
@@ -289,7 +289,7 @@ void DialogBox_Constructor::OnDraw(short msX, short msY, short msZ, char cLB)
 				DrawNewDialogBox(InterfaceNdCrusade, sX + tX + 15, sY + tY + 60, 43);
 			}
 		}
-		if ((msX >= sX + 15) && (msX <= sX + 15 + 278)
+		if (szX > 0 && szY > 0 && (msX >= sX + 15) && (msX <= sX + 15 + 278)
 			&& (msY >= sY + 60) && (msY <= sY + 60 + 272))
 		{
 			dV1 = static_cast<double>(msX - (sX + 15));
@@ -297,7 +297,7 @@ void DialogBox_Constructor::OnDraw(short msX, short msY, short msZ, char cLB)
 			dV3 = (dV2 * dV1) / szX;
 			tX = static_cast<int>(dV3);
 			dV1 = static_cast<double>(msY - (sY + 60));
-			dV2 = static_cast<double>(MapSzX);
+			dV2 = static_cast<double>(MapSzY);
 			dV3 = (dV2 * dV1) / szY;
 			tY = static_cast<int>(dV3);
 			if (tX < 30) tX = 30;
@@ -333,15 +333,15 @@ bool DialogBox_Constructor::OnClick(short msX, short msY)
 				PlaySoundEffect('E', 14, 5);
 			}
 		}
-		if ((msX >= sX + 20 + 50) && (msX <= sX + 20 + 46 + 50) && (msY >= sY + 340) && (msY <= sY + 340 + 52))
+		else if ((msX >= sX + 20 + 50) && (msX <= sX + 20 + 46 + 50) && (msY >= sY + 340) && (msY <= sY + 340 + 52))
 		{
 			if (TeleportManager::Get().GetLocX() == -1)
 			{
-				m_pGame->SetTopMsg(m_pGame->m_pGameMsgList[15]->m_pMsg, 5);
+				if (m_pGame->m_pGameMsgList[15]) m_pGame->SetTopMsg(m_pGame->m_pGameMsgList[15]->m_pMsg, 5);
 			}
 			else if (m_pGame->m_cMapName == TeleportManager::Get().GetMapName())
 			{
-				m_pGame->SetTopMsg(m_pGame->m_pGameMsgList[16]->m_pMsg, 5);
+				if (m_pGame->m_pGameMsgList[16]) m_pGame->SetTopMsg(m_pGame->m_pGameMsgList[16]->m_pMsg, 5);
 			}
 			else
 			{
@@ -349,7 +349,7 @@ bool DialogBox_Constructor::OnClick(short msX, short msY)
 				PlaySoundEffect('E', 14, 5);
 			}
 		}
-		if ((msX >= sX + 20 + 150 + 74) && (msX <= sX + 20 + 46 + 150 + 74) && (msY >= sY + 340) && (msY <= sY + 340 + 52))
+		else if ((msX >= sX + 20 + 150 + 74) && (msX <= sX + 20 + 46 + 150 + 74) && (msY >= sY + 340) && (msY <= sY + 340 + 52))
 		{
 			DisableDialogBox(DialogBoxId::Text);
 			EnableDialogBox(DialogBoxId::Text, 805, 0, 0);

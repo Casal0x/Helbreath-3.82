@@ -3,6 +3,7 @@
 #include "EquipmentIndices.h"
 #include "RenderHelpers.h"
 #include "CommonTypes.h"
+#include <algorithm>
 using namespace hb::client::sprite_id;
 
 hb::shared::sprite::BoundRect CNpcRenderer::DrawStop(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime)
@@ -991,15 +992,18 @@ hb::shared::sprite::BoundRect CNpcRenderer::DrawDead(int indexX, int indexY, int
 		}
 		else if (state.m_status.bBerserk)
 		{
-			// Berserk corpse fade
+			// Berserk corpse fade (clamped to prevent negative color values)
+			int r = (std::max)(0, 202 - 4 * state.m_iFrame);
+			int gb = (std::max)(0, 182 - 4 * state.m_iFrame);
 			m_game.m_pSprite[eq.iBodyIndex + (state.m_iDir - 1)]->Draw(sX, sY, iFrame,
-				hb::shared::sprite::DrawParams::TintedAlpha(202 - 4 * state.m_iFrame, 182 - 4 * state.m_iFrame, 182 - 4 * state.m_iFrame, 0.7f));
+				hb::shared::sprite::DrawParams::TintedAlpha(r, gb, gb, 0.7f));
 		}
 		else
 		{
-			// Normal corpse fade
+			// Normal corpse fade (clamped to prevent negative color values)
+			int fade = (std::max)(0, 192 - 4 * state.m_iFrame);
 			m_game.m_pSprite[eq.iBodyIndex + (state.m_iDir - 1)]->Draw(sX, sY, iFrame,
-				hb::shared::sprite::DrawParams::TintedAlpha(192 - 4 * state.m_iFrame, 192 - 4 * state.m_iFrame, 192 - 4 * state.m_iFrame, 0.7f));
+				hb::shared::sprite::DrawParams::TintedAlpha(fade, fade, fade, 0.7f));
 		}
 	}
 	else if (state.m_cName[0] != '\0')

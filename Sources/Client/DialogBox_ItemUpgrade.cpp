@@ -404,8 +404,7 @@ bool DialogBox_ItemUpgrade::OnClick(short msX, short msY)
         if ((iItemIndex != -1) && (msX >= sX + ui_layout::left_btn_x) && (msX <= sX + ui_layout::left_btn_x + ui_layout::btn_size_x)
             && (msY >= sY + ui_layout::btn_y) && (msY <= sY + ui_layout::btn_y + ui_layout::btn_size_y))
         {
-            int iValue = (m_pGame->m_pItemList[iItemIndex]->m_dwAttribute & 0xF0000000) >> 28;
-            iValue = iValue * (iValue + 6) / 8 + 2;
+            int iValue = CalculateUpgradeCost(iItemIndex);
             if (m_pGame->m_iGizonItemUpgradeLeft < iValue) break;
 
             m_pGame->PlayGameSound('E', 14, 5);
@@ -504,7 +503,8 @@ bool DialogBox_ItemUpgrade::OnClick(short msX, short msY)
 
 bool DialogBox_ItemUpgrade::OnItemDrop(short msX, short msY)
 {
-	char cItemID = static_cast<char>(CursorTarget::GetSelectedID());
+	int cItemID = CursorTarget::GetSelectedID();
+	if (cItemID < 0 || cItemID >= hb::shared::limits::MaxItems) return false;
 	if (m_pGame->m_bIsItemDisabled[cItemID]) return false;
 	if (m_pGame->m_pPlayer->m_Controller.GetCommand() < 0) return false;
 	CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[cItemID]->m_sIDnum);

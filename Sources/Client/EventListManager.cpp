@@ -64,6 +64,8 @@ void EventListManager::ShowEvents(uint32_t dwTime)
 	int i;
 	int baseY = EVENTLIST2_BASE_Y();
 	m_game->m_Renderer->BeginTextBatch();
+	// uint32_t subtraction wraps safely — expired events (dwTime far in the past) produce
+	// large differences that exceed 5000, so the comparison remains correct across wrap
 	for (i = 0; i < 6; i++)
 		if ((dwTime - m_events[i].dwTime) < 5000)
 		{

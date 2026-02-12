@@ -11,27 +11,20 @@
 class CEffect
 {
 public:
-	inline CEffect()
-	{
-		m_sType       = EffectType::INVALID;
-		m_cFrame      = -1;
-		m_cMaxFrame   = 0;
-		m_dwTime      = 0;
-		m_dwFrameTime = 0;
-	}
+	inline CEffect() = default;
 
 	inline virtual ~CEffect()
 	{
 
 	}
 
-	EffectType m_sType;
-	char  m_cFrame, m_cMaxFrame;
-	char  m_cDir;
-	uint32_t m_dwTime, m_dwFrameTime;
-	int   m_sX, m_sY, m_dX, m_dY;
-	int   m_mX, m_mY, m_mX2, m_mY2, m_mX3, m_mY3;
-	int   m_iErr;
-	int   m_rX, m_rY;
-	int   m_iV1;
+	EffectType m_sType = EffectType::INVALID;
+	char  m_cFrame = -1, m_cMaxFrame = 0;
+	char  m_cDir = 0;
+	uint32_t m_dwTime = 0, m_dwFrameTime = 0;
+	int   m_sX = 0, m_sY = 0, m_dX = 0, m_dY = 0;
+	int   m_mX = 0, m_mY = 0, m_mX2 = 0, m_mY2 = 0, m_mX3 = 0, m_mY3 = 0;
+	int   m_iErr = 0;
+	int   m_rX = 0, m_rY = 0;
+	int   m_iV1 = 0;
 };

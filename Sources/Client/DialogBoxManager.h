@@ -3,6 +3,7 @@
 #include "DialogBoxIDs.h"
 #include "DialogBoxInfo.h"
 #include "IDialogBox.h"
+#include <cstdint>
 #include <memory>
 
 class CGame;
@@ -54,13 +55,13 @@ public:
 	const DialogBoxInfo& Info(DialogBoxId::Type id) const;
 	DialogBoxInfo& Info(int iBoxID);
 	const DialogBoxInfo& Info(int iBoxID) const;
-	char OrderAt(int index) const;
-	void SetOrderAt(int index, char value);
+	uint8_t OrderAt(int index) const;
+	void SetOrderAt(int index, uint8_t value);
 
 private:
 	CGame* m_game;
 	DialogBoxInfo m_info[61]{};
-	char m_order[61]{};
+	uint8_t m_order[61]{};
 	bool m_enabled[61]{};
 	std::unique_ptr<IDialogBox> m_pDialogBoxes[61];
 	uint32_t m_dwDialogCloseTime = 0;

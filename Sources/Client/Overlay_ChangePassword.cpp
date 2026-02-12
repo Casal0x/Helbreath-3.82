@@ -144,7 +144,7 @@ void Overlay_ChangePassword::HandleSubmit()
 
     // Create connection
     m_pGame->m_pLSock = std::make_unique<hb::shared::net::ASIOSocket>(m_pGame->m_pIOPool->GetContext(), game_limits::socket_block_limit);
-    m_pGame->m_pLSock->bConnect(m_pGame->m_cLogServerAddr.c_str(), m_pGame->m_iLogServerPort + (rand() % 1));
+    m_pGame->m_pLSock->bConnect(m_pGame->m_cLogServerAddr.c_str(), m_pGame->m_iLogServerPort);
     m_pGame->m_pLSock->bInitBufferSize(hb::shared::limits::MsgBufferSize);
 
     m_pGame->m_dwConnectMode = MsgId::RequestChangePassword;
@@ -174,6 +174,22 @@ void Overlay_ChangePassword::on_update()
         }
         if (m_pGame->m_cMenuDir > 8) m_pGame->m_cMenuDir = 1;
         m_pGame->m_cMenuFrame = 0;
+    }
+
+    // Tab key navigation (consistent with Login and CreateAccount screens)
+    if (hb::shared::input::IsKeyPressed(KeyCode::Tab))
+    {
+        PlayGameSound('E', 14, 5);
+        if (hb::shared::input::IsShiftDown())
+        {
+            m_iCurFocus--;
+            if (m_iCurFocus <= 0) m_iCurFocus = m_iMaxFocus;
+        }
+        else
+        {
+            m_iCurFocus++;
+            if (m_iCurFocus > m_iMaxFocus) m_iCurFocus = 1;
+        }
     }
 
     // Arrow key navigation

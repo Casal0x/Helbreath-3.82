@@ -57,6 +57,7 @@ namespace NetworkMessageHandlers {
 			pData, sizeof(hb::net::PacketNotifyMagicStudySuccess));
 		if (!pkt) return;
 		cMagicNum = static_cast<char>(pkt->magic_id);
+		if (cMagicNum < 0 || cMagicNum >= hb::shared::limits::MaxMagicType) return;
 		pGame->m_pPlayer->m_iMagicMastery[cMagicNum] = 1;
 	  // Magic learned - affects magic list
 		memcpy(cName, pkt->magic_name, 30);
@@ -73,6 +74,8 @@ namespace NetworkMessageHandlers {
 			pData, sizeof(hb::net::PacketNotifySkillTrainSuccess));
 		if (!pkt) return;
 		cSkillNum = static_cast<char>(pkt->skill_num);
+		if (cSkillNum < 0 || cSkillNum >= hb::shared::limits::MaxSkillType) return;
+		if (!pGame->m_pSkillCfgList[cSkillNum]) return;
 		cSkillLevel = static_cast<char>(pkt->skill_level);
 		cTemp = std::format(NOTIFYMSG_SKILL_TRAIN_SUCCESS1, pGame->m_pSkillCfgList[cSkillNum]->m_cName, cSkillLevel);
 		pGame->AddEventList(cTemp.c_str(), 10);
@@ -90,6 +93,8 @@ namespace NetworkMessageHandlers {
 			pData, sizeof(hb::net::PacketNotifySkill));
 		if (!pkt) return;
 		sSkillIndex = static_cast<short>(pkt->skill_index);
+		if (sSkillIndex < 0 || sSkillIndex >= hb::shared::limits::MaxSkillType) return;
+		if (!pGame->m_pSkillCfgList[sSkillIndex]) return;
 		sValue = static_cast<short>(pkt->skill_value);
 		pGame->m_floatingText.RemoveByObjectID(pGame->m_pPlayer->m_sPlayerObjectID);
 		if (pGame->m_pSkillCfgList[sSkillIndex]->m_iLevel < sValue)

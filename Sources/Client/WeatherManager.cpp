@@ -70,7 +70,6 @@ void WeatherManager::Draw()
 	static int ix1[MaxSnowAccum];
 	static int iy2[MaxSnowAccum];
 	static int iFrame[MaxSnowAccum];
-	static int iNum = 0;
 	int i;
 	short dX, dY, sCnt;
 	char cTempFrame;
@@ -119,11 +118,11 @@ void WeatherManager::Draw()
 				dY = m_particles[i].sY - m_camera->GetY();
 
 				// Snoopy: Snow on lower bar
-				if (dY >= 460)
+				if (dY >= LOGICAL_HEIGHT() - 20)
 				{
 					cTempFrame = 39 + (m_particles[i].cStep / 20) * 3;
 					dX = m_particles[i].sBX;
-					dY = 426;
+					dY = LOGICAL_HEIGHT() - 54;
 				}
 				else cTempFrame = 39 + (m_particles[i].cStep / 20) * 3 + (rand() % 3);
 
@@ -131,20 +130,20 @@ void WeatherManager::Draw()
 
 				if (m_is_xmas == true)
 				{
-					if (dY == 478 - 53)
+					if (dY == LOGICAL_HEIGHT() - 55)
 					{
-						ix1[iNum] = dX;
-						iy2[iNum] = dY + (rand() % 5);
-						iFrame[iNum] = cTempFrame;
-						iNum++;
+						ix1[m_xmas_snow_count] = dX;
+						iy2[m_xmas_snow_count] = dY + (rand() % 5);
+						iFrame[m_xmas_snow_count] = cTempFrame;
+						m_xmas_snow_count++;
 					}
-					if (iNum >= MaxSnowAccum) iNum = 0;
+					if (m_xmas_snow_count >= MaxSnowAccum) m_xmas_snow_count = 0;
 				}
 			}
 		}
 		if (m_is_xmas == true)
 		{
-			for (i = 0; i <= MaxSnowAccum; i++)
+			for (i = 0; i < MaxSnowAccum; i++)
 			{
 				if (iy2[i] > 10) (*m_effect_sprites)[11]->Draw(ix1[i], iy2[i], iFrame[i], hb::shared::sprite::DrawParams::Alpha(0.5f));
 			}
@@ -220,9 +219,9 @@ void WeatherManager::Update(uint32_t current_time)
 				m_particles[i].sY = m_particles[i].sY + cAdd;
 
 				//Snoopy: Snow on lower bar
-				if (m_particles[i].sY > (426 + m_camera->GetY()))
+				if (m_particles[i].sY > (LOGICAL_HEIGHT() - 54 + m_camera->GetY()))
 				{
-					m_particles[i].sY = 470 + m_camera->GetY();
+					m_particles[i].sY = LOGICAL_HEIGHT() - 10 + m_camera->GetY();
 					if ((rand() % 10) != 2) m_particles[i].cStep--;
 					if (m_particles[i].sBX == 0) m_particles[i].sBX = m_particles[i].sX - m_camera->GetX();
 
@@ -285,6 +284,9 @@ void WeatherManager::SetWeather(bool start, char effect_type)
 		m_is_active = false;
 		m_effect_type = 0;
 	}
+
+	// Reset Xmas snow accumulation state so stale data doesn't persist across weather changes
+	m_xmas_snow_count = 0;
 }
 
 void WeatherManager::DrawThunderEffect(int sX, int sY, int dX, int dY, int rX, int rY, char cType)
