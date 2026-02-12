@@ -70,9 +70,9 @@ void IGameScreen::AddEventList(const char* pTxt, char cColor, bool bDupAllow)
 
 // ============== Input String Helpers ==============
 
-void IGameScreen::StartInputString(int sX, int sY, unsigned char iLen, char* pBuffer, bool bIsHide)
+void IGameScreen::StartInputString(int sX, int sY, unsigned char iLen, std::string& buffer, bool bIsHide)
 {
-    TextInputManager::Get().StartInput(sX, sY, iLen, pBuffer, bIsHide);
+    TextInputManager::Get().StartInput(sX, sY, iLen, buffer, bIsHide);
 }
 
 void IGameScreen::EndInputString()
@@ -85,9 +85,9 @@ void IGameScreen::ClearInputString()
     TextInputManager::Get().ClearInput();
 }
 
-void IGameScreen::ShowReceivedString(bool bIsHide)
+void IGameScreen::ShowReceivedString()
 {
-    TextInputManager::Get().ShowInput(bIsHide);
+    TextInputManager::Get().ShowInput();
 }
 
 // ============== Timing Helper ==============

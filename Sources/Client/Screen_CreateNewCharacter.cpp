@@ -34,7 +34,6 @@ Screen_CreateNewCharacter::Screen_CreateNewCharacter(CGame* pGame)
     , m_cCurFocus(1)
     , m_cMaxFocus(6)
 {
-    std::memset(m_cNewCharName, 0, sizeof(m_cNewCharName));
 }
 
 void Screen_CreateNewCharacter::on_initialize()
@@ -61,7 +60,7 @@ void Screen_CreateNewCharacter::on_initialize()
     m_cMaxFocus = 6;
     m_pGame->m_cArrowPressed = 0;
     m_dwNewCharMTime = GameClock::GetTimeMS();
-    std::memset(m_cNewCharName, 0, sizeof(m_cNewCharName));
+    m_cNewCharName.clear();
     TextInputManager::Get().StartInput(193 + 4 + OX, 65 + 45 + OY, 11, m_cNewCharName);
     TextInputManager::Get().ClearInput();
 }
@@ -110,9 +109,9 @@ void Screen_CreateNewCharacter::on_update()
 
     // Compute whether character creation is valid
     m_bNewCharFlag = true;
-    if (strlen(m_cNewCharName) <= 0) m_bNewCharFlag = false;
+    if (m_cNewCharName.empty()) m_bNewCharFlag = false;
     if (m_iNewCharPoint > 0) m_bNewCharFlag = false;
-    if (CMisc::bCheckValidName(m_cNewCharName) == false) m_bNewCharFlag = false;
+    if (CMisc::bCheckValidName(m_cNewCharName.data()) == false) m_bNewCharFlag = false;
 
     // Animation frame updates
     if ((dwTime - m_dwNewCharMTime) > 100)
@@ -305,15 +304,13 @@ void Screen_CreateNewCharacter::on_update()
                 return;
             }
             if (m_bNewCharFlag == false) return;
-            if (CMisc::bCheckValidName(m_cNewCharName) == false) break;
-            std::memset(m_pGame->m_pPlayer->m_cPlayerName, 0, sizeof(m_pGame->m_pPlayer->m_cPlayerName));
-            std::snprintf(m_pGame->m_pPlayer->m_cPlayerName, sizeof(m_pGame->m_pPlayer->m_cPlayerName), "%s", m_cNewCharName);
+            if (CMisc::bCheckValidName(m_cNewCharName.data()) == false) break;
+            m_pGame->m_pPlayer->m_cPlayerName = m_cNewCharName.c_str();
             m_pGame->m_pLSock = std::make_unique<hb::shared::net::ASIOSocket>(m_pGame->m_pIOPool->GetContext(), game_limits::socket_block_limit);
             m_pGame->m_pLSock->bConnect(m_pGame->m_cLogServerAddr.c_str(), m_pGame->m_iLogServerPort + (rand() % 1));
             m_pGame->m_pLSock->bInitBufferSize(hb::shared::limits::MsgBufferSize);
             m_pGame->ChangeGameMode(GameMode::Connecting);
             m_pGame->m_dwConnectMode = MsgId::RequestCreateNewCharacter;
-            std::memset(m_pGame->m_cMsg, 0, sizeof(m_pGame->m_cMsg));
             std::snprintf(m_pGame->m_cMsg, sizeof(m_pGame->m_cMsg), "%s", "22");
             return;
 
@@ -405,7 +402,7 @@ void Screen_CreateNewCharacter::on_render()
     m_pGame->DrawNewDialogBox(InterfaceNdButton, OX, OY, 69, true);
     hb::shared::text::DrawTextAligned(GameFont::Default, 64 + OX, 90 + OY, (282) - (64), 15, _BDRAW_ON_CREATE_NEW_CHARACTER1, hb::shared::text::TextStyle::Color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
     hb::shared::text::DrawTextAligned(GameFont::Default, 57 + OX, 110 + OY, (191) - (57), 15, DEF_MSG_CHARACTERNAME, hb::shared::text::TextStyle::Color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
-    if (m_cCurFocus != 1) hb::shared::text::DrawText(GameFont::Default, 197 + OX, 112 + OY, m_cNewCharName, hb::shared::text::TextStyle::Color(GameColors::UILabel));
+    if (m_cCurFocus != 1) hb::shared::text::DrawText(GameFont::Default, 197 + OX, 112 + OY, m_cNewCharName.c_str(), hb::shared::text::TextStyle::Color(GameColors::UILabel));
     hb::shared::text::DrawTextAligned(GameFont::Default, 64 + OX, 140 + OY, (282) - (64), 15, _BDRAW_ON_CREATE_NEW_CHARACTER2, hb::shared::text::TextStyle::Color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
     hb::shared::text::DrawText(GameFont::Default, 100 + OX, 160 + OY, DEF_MSG_GENDER, hb::shared::text::TextStyle::Color(GameColors::UIBlack));
     hb::shared::text::DrawText(GameFont::Default, 100 + OX, 175 + OY, DEF_MSG_SKINCOLOR, hb::shared::text::TextStyle::Color(GameColors::UIBlack));
@@ -469,8 +466,8 @@ void Screen_CreateNewCharacter::on_render()
     m_pGame->m_entityState.m_appearance.iUnderwearType = m_pGame->m_pPlayer->m_iUnderCol;
     m_pGame->m_entityState.m_appearance.iHairStyle = m_pGame->m_pPlayer->m_iHairStyle;
     m_pGame->m_entityState.m_appearance.iHairColor = m_pGame->m_pPlayer->m_iHairCol;
-    std::memset(m_pGame->m_entityState.m_cName.data(), 0, m_pGame->m_entityState.m_cName.size());
-    memcpy(m_pGame->m_entityState.m_cName.data(), m_pGame->m_pPlayer->m_cPlayerName, 10);
+    m_pGame->m_entityState.m_cName.fill('\0');
+    std::snprintf(m_pGame->m_entityState.m_cName.data(), m_pGame->m_entityState.m_cName.size(), "%s", m_pGame->m_pPlayer->m_cPlayerName.c_str());
     m_pGame->m_entityState.m_iAction = Type::Move;
     m_pGame->m_entityState.m_iFrame = m_pGame->m_cMenuFrame;
 
@@ -563,7 +560,7 @@ void Screen_CreateNewCharacter::on_render()
         hb::shared::text::DrawTextAligned(GameFont::Default, 370 + OX, 345 + OY + 16 * i++, (580) - (370), 15, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER32, hb::shared::text::TextStyle::Color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
     }
     else if ((msX >= 384 + OX) && (msX <= 384 + 72 + OX) && (msY >= 445 + OY) && (msY <= 445 + 15 + OY)) {
-        if (strlen(m_cNewCharName) <= 0) {
+        if (m_cNewCharName.empty()) {
             i = 0;
             hb::shared::text::DrawTextAligned(GameFont::Default, 370 + OX, 345 + OY + 16 * i++, (580) - (370), 15, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER35, hb::shared::text::TextStyle::Color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
         }
@@ -571,7 +568,7 @@ void Screen_CreateNewCharacter::on_render()
             i = 0;
             hb::shared::text::DrawTextAligned(GameFont::Default, 370 + OX, 345 + OY + 16 * i++, (580) - (370), 15, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER36, hb::shared::text::TextStyle::Color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
         }
-        else if (CMisc::bCheckValidName(m_cNewCharName) == false) {
+        else if (CMisc::bCheckValidName(m_cNewCharName.data()) == false) {
             i = 0;
             hb::shared::text::DrawTextAligned(GameFont::Default, 370 + OX, 345 + OY + 16 * i++, (580) - (370), 15, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER39, hb::shared::text::TextStyle::Color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
             hb::shared::text::DrawTextAligned(GameFont::Default, 370 + OX, 345 + OY + 16 * i++, (580) - (370), 15, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER40, hb::shared::text::TextStyle::Color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);

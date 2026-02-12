@@ -89,10 +89,9 @@ void Screen_SelectCharacter::on_update()
         {
             if (m_pGame->m_pCharList[m_cCurFocus - 1]->m_sSex != 0)
             {
-                std::memset(m_pGame->m_pPlayer->m_cPlayerName, 0, sizeof(m_pGame->m_pPlayer->m_cPlayerName));
-                std::snprintf(m_pGame->m_pPlayer->m_cPlayerName, sizeof(m_pGame->m_pPlayer->m_cPlayerName), "%s", m_pGame->m_pCharList[m_cCurFocus - 1]->m_cName.c_str());
-                m_pGame->m_pPlayer->m_iLevel = (int)m_pGame->m_pCharList[m_cCurFocus - 1]->m_sLevel;
-                if (CMisc::bCheckValidString(m_pGame->m_pPlayer->m_cPlayerName) == true)
+                m_pGame->m_pPlayer->m_cPlayerName = m_pGame->m_pCharList[m_cCurFocus - 1]->m_cName.c_str();
+                m_pGame->m_pPlayer->m_iLevel = static_cast<int>(m_pGame->m_pCharList[m_cCurFocus - 1]->m_sLevel);
+                if (CMisc::bCheckValidString(m_pGame->m_pPlayer->m_cPlayerName.c_str()) == true)
                 {
                     m_pGame->m_pSprite[InterfaceNdLogin]->Unload();
                     m_pGame->m_pSprite[InterfaceNdMainMenu]->Unload();
@@ -102,7 +101,6 @@ void Screen_SelectCharacter::on_update()
                     m_pGame->ChangeGameMode(GameMode::Connecting);
                     m_pGame->m_dwConnectMode = MsgId::RequestEnterGame;
                     m_pGame->m_wEnterGameType = EnterGameMsg::New;
-                    std::memset(m_pGame->m_cMsg, 0, sizeof(m_pGame->m_cMsg));
                     std::snprintf(m_pGame->m_cMsg, sizeof(m_pGame->m_cMsg), "%s", "33");
                     m_pGame->m_cMapName = m_pGame->m_pCharList[m_cCurFocus - 1]->m_cMapName;
                     return;
@@ -205,10 +203,9 @@ void Screen_SelectCharacter::on_update()
                 {
                     if (m_pGame->m_pCharList[m_cCurFocus - 1]->m_sSex != 0)
                     {
-                        std::memset(m_pGame->m_pPlayer->m_cPlayerName, 0, sizeof(m_pGame->m_pPlayer->m_cPlayerName));
-                        std::snprintf(m_pGame->m_pPlayer->m_cPlayerName, sizeof(m_pGame->m_pPlayer->m_cPlayerName), "%s", m_pGame->m_pCharList[m_cCurFocus - 1]->m_cName.c_str());
-                        m_pGame->m_pPlayer->m_iLevel = (int)m_pGame->m_pCharList[m_cCurFocus - 1]->m_sLevel;
-                        if (CMisc::bCheckValidString(m_pGame->m_pPlayer->m_cPlayerName) == true)
+                        m_pGame->m_pPlayer->m_cPlayerName = m_pGame->m_pCharList[m_cCurFocus - 1]->m_cName.c_str();
+                        m_pGame->m_pPlayer->m_iLevel = static_cast<int>(m_pGame->m_pCharList[m_cCurFocus - 1]->m_sLevel);
+                        if (CMisc::bCheckValidString(m_pGame->m_pPlayer->m_cPlayerName.c_str()) == true)
                         {
                             m_pGame->m_pSprite[InterfaceNdLogin]->Unload();
                             m_pGame->m_pSprite[InterfaceNdMainMenu]->Unload();
@@ -218,7 +215,6 @@ void Screen_SelectCharacter::on_update()
                             m_pGame->ChangeGameMode(GameMode::Connecting);
                             m_pGame->m_dwConnectMode = MsgId::RequestEnterGame;
                             m_pGame->m_wEnterGameType = EnterGameMsg::New;
-                            std::memset(m_pGame->m_cMsg, 0, sizeof(m_pGame->m_cMsg));
                             std::snprintf(m_pGame->m_cMsg, sizeof(m_pGame->m_cMsg), "%s", "33");
                             m_pGame->m_cMapName = m_pGame->m_pCharList[m_cCurFocus - 1]->m_cMapName;
                             return;
@@ -238,11 +234,10 @@ void Screen_SelectCharacter::on_update()
             {
                 if (m_pGame->m_pCharList[m_cCurFocus - 1]->m_sSex != 0)
                 {
-                    std::memset(m_pGame->m_pPlayer->m_cPlayerName, 0, sizeof(m_pGame->m_pPlayer->m_cPlayerName));
-                    std::snprintf(m_pGame->m_pPlayer->m_cPlayerName, sizeof(m_pGame->m_pPlayer->m_cPlayerName), "%s", m_pGame->m_pCharList[m_cCurFocus - 1]->m_cName.c_str());
-                    m_pGame->m_pPlayer->m_iLevel = (int)m_pGame->m_pCharList[m_cCurFocus - 1]->m_sLevel;
+                    m_pGame->m_pPlayer->m_cPlayerName = m_pGame->m_pCharList[m_cCurFocus - 1]->m_cName.c_str();
+                    m_pGame->m_pPlayer->m_iLevel = static_cast<int>(m_pGame->m_pCharList[m_cCurFocus - 1]->m_sLevel);
 
-                    if (CMisc::bCheckValidString(m_pGame->m_pPlayer->m_cPlayerName) == true) {
+                    if (CMisc::bCheckValidString(m_pGame->m_pPlayer->m_cPlayerName.c_str()) == true) {
                         m_pGame->m_pSprite[InterfaceNdLogin]->Unload();
                         m_pGame->m_pSprite[InterfaceNdMainMenu]->Unload();
                         m_pGame->m_pLSock = std::make_unique<hb::shared::net::ASIOSocket>(m_pGame->m_pIOPool->GetContext(), game_limits::socket_block_limit);
@@ -251,7 +246,6 @@ void Screen_SelectCharacter::on_update()
                         m_pGame->ChangeGameMode(GameMode::Connecting);
                         m_pGame->m_dwConnectMode = MsgId::RequestEnterGame;
                         m_pGame->m_wEnterGameType = EnterGameMsg::New;
-                        std::memset(m_pGame->m_cMsg, 0, sizeof(m_pGame->m_cMsg));
                         std::snprintf(m_pGame->m_cMsg, sizeof(m_pGame->m_cMsg), "%s", "33");
                         m_pGame->m_cMapName = m_pGame->m_pCharList[m_cCurFocus - 1]->m_cMapName;
                         return;
@@ -337,8 +331,8 @@ void Screen_SelectCharacter::DrawBackground(CGame* pGame, short sX, short sY, sh
             pGame->m_entityState.m_iDir = pGame->m_cMenuDir;
             pGame->m_entityState.m_appearance = pGame->m_pCharList[i]->m_appearance;
 
-            std::memset(pGame->m_entityState.m_cName.data(), 0, sizeof(pGame->m_entityState.m_cName.data()));
-            memcpy(pGame->m_entityState.m_cName.data(), pGame->m_pCharList[i]->m_cName.c_str(), 10);
+            pGame->m_entityState.m_cName.fill('\0');
+            std::snprintf(pGame->m_entityState.m_cName.data(), pGame->m_entityState.m_cName.size(), "%s", pGame->m_pCharList[i]->m_cName.c_str());
             
             pGame->m_entityState.m_iAction = Type::Move;
             pGame->m_entityState.m_iFrame = pGame->m_cMenuFrame;

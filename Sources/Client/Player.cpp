@@ -1,4 +1,4 @@
-#include "Player.h"
+﻿#include "Player.h"
 
 CPlayer::CPlayer()
 {
@@ -12,12 +12,12 @@ CPlayer::~CPlayer()
 void CPlayer::Reset()
 {
     // IDENTITY & ACCOUNT
-    std::memset(m_cPlayerName, 0, sizeof(m_cPlayerName));
+    m_cPlayerName.clear();
     m_sPlayerObjectID = 0;
     m_sPlayerType = 0;
-    std::memset(m_cAccountName, 0, sizeof(m_cAccountName));
-    std::memset(m_cAccountPassword, 0, sizeof(m_cAccountPassword));
-    std::memset(m_cGuildName, 0, sizeof(m_cGuildName));
+    m_cAccountName.clear();
+    m_cAccountPassword.clear();
+    m_cGuildName.clear();
     m_iGuildRank = 0;
 
     // POSITION & MOVEMENT

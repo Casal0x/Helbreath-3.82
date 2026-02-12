@@ -21,7 +21,7 @@ namespace NetworkMessageHandlers {
 	{
 		int i, j;
 		uint32_t dwCount;
-		char  cName[hb::shared::limits::ItemNameLen], cEquipPos, cGenderLimit;
+		char  cName[hb::shared::limits::ItemNameLen]{}, cEquipPos, cGenderLimit;
 		ItemType cItemType;
 		bool  bIsEquipped;
 		short sSprite, sSpriteFrame, sLevelLimit;
@@ -34,7 +34,6 @@ namespace NetworkMessageHandlers {
 			pData, sizeof(hb::net::PacketNotifyItemPurchased));
 		if (!pkt) return;
 
-		std::memset(cName, 0, sizeof(cName));
 		memcpy(cName, pkt->name, sizeof(pkt->name));
 		dwCount = pkt->count;
 		cItemType = static_cast<ItemType>(pkt->item_type);
@@ -50,10 +49,9 @@ namespace NetworkMessageHandlers {
 		cItemColor = static_cast<char>(pkt->item_color);
 		wCost = pkt->cost;
 		char cStr1[64], cStr2[64], cStr3[64];
-		std::snprintf(cStr1, sizeof(cStr1), "%s", cName);
 		cStr2[0] = 0;
 		cStr3[0] = 0;
-		cTxt = std::format(NOTIFYMSG_ITEMPURCHASED, cStr1, wCost);
+		cTxt = std::format(NOTIFYMSG_ITEMPURCHASED, cName, wCost);
 		pGame->AddEventList(cTxt.c_str(), 10);
 
 		short sItemID = pkt->item_id;
@@ -113,7 +111,7 @@ namespace NetworkMessageHandlers {
 	{
 		int i, j;
 		uint32_t dwCount, dwAttribute;
-		char  cName[hb::shared::limits::ItemNameLen], cEquipPos;
+		char  cName[hb::shared::limits::ItemNameLen]{}, cEquipPos;
 		ItemType cItemType;
 		bool  bIsEquipped;
 		short sSprite, sSpriteFrame, sLevelLimit, sSpecialEV2;
@@ -126,7 +124,6 @@ namespace NetworkMessageHandlers {
 			pData, sizeof(hb::net::PacketNotifyItemObtained));
 		if (!pkt) return;
 
-		std::memset(cName, 0, sizeof(cName));
 		memcpy(cName, pkt->name, sizeof(pkt->name));
 		dwCount = pkt->count;
 		cItemType = static_cast<ItemType>(pkt->item_type);
@@ -144,12 +141,11 @@ namespace NetworkMessageHandlers {
 		dwAttribute = pkt->attribute;
 
 		char cStr1[64], cStr2[64], cStr3[64];
-		std::snprintf(cStr1, sizeof(cStr1), "%s", cName);
 		cStr2[0] = 0;
 		cStr3[0] = 0;
 
-		if (dwCount == 1) cTxt = std::format(NOTIFYMSG_ITEMOBTAINED2, cStr1);
-		else cTxt = std::format(NOTIFYMSG_ITEMOBTAINED1, dwCount, cStr1);
+		if (dwCount == 1) cTxt = std::format(NOTIFYMSG_ITEMOBTAINED2, cName);
+		else cTxt = std::format(NOTIFYMSG_ITEMOBTAINED1, dwCount, cName);
 
 		pGame->AddEventList(cTxt.c_str(), 10);
 		pGame->PlayGameSound('E', 20, 0);
@@ -218,8 +214,7 @@ namespace NetworkMessageHandlers {
 			pData, sizeof(hb::net::PacketNotifyItemObtained));
 		if (!pkt) return;
 
-		char cName[hb::shared::limits::ItemNameLen];
-		std::memset(cName, 0, sizeof(cName));
+		char cName[hb::shared::limits::ItemNameLen]{};
 		memcpy(cName, pkt->name, sizeof(pkt->name));
 
 		int iTotalCount = pkt->count;
@@ -417,7 +412,7 @@ namespace NetworkMessageHandlers {
 		pGame->AddEventList(cTxt.c_str(), 10);
 
 		if (bIsUseItemResult == true) pGame->m_bItemUsingStatus = false;
-		InventoryManager::Get().EraseItem((char)sItemIndex);
+		InventoryManager::Get().EraseItem(static_cast<char>(sItemIndex));
 		BuildItemManager::Get().UpdateAvailableRecipes();
 	}
 
@@ -456,7 +451,7 @@ namespace NetworkMessageHandlers {
 			}
 		}
 		pGame->AddEventList(cTxt.c_str(), 10);
-		InventoryManager::Get().EraseItem((char)sItemIndex);
+		InventoryManager::Get().EraseItem(static_cast<char>(sItemIndex));
 		BuildItemManager::Get().UpdateAvailableRecipes();
 	}
 
@@ -466,7 +461,7 @@ namespace NetworkMessageHandlers {
 		short  sItemIndex;
 		std::string cTxt;
 
-		char cName[hb::shared::limits::ItemNameLen];
+		char cName[hb::shared::limits::ItemNameLen]{};
 
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyGiveItemFinEraseItem>(
 			pData, sizeof(hb::net::PacketNotifyGiveItemFinEraseItem));
@@ -474,17 +469,15 @@ namespace NetworkMessageHandlers {
 		sItemIndex = static_cast<short>(pkt->item_index);
 		iAmount = static_cast<int>(pkt->amount);
 
-		std::memset(cName, 0, sizeof(cName));
 		memcpy(cName, pkt->name, sizeof(pkt->name));
 
 		char cStr1[64], cStr2[64], cStr3[64];
 		CItem* pCfg = pGame->GetItemConfig(pGame->m_pItemList[sItemIndex]->m_sIDnum);
-		std::snprintf(cStr1, sizeof(cStr1), "%s", pCfg ? pCfg->m_cName : "Unknown");
 		cStr2[0] = 0;
 		cStr3[0] = 0;
 
 		if (pGame->m_bIsItemEquipped[sItemIndex] == true) {
-			cTxt = std::format(ITEM_EQUIPMENT_RELEASED, cStr1);
+			cTxt = std::format(ITEM_EQUIPMENT_RELEASED, pCfg ? pCfg->m_cName : "Unknown");
 			pGame->AddEventList(cTxt.c_str(), 10);
 
 			if (pCfg) pGame->m_sItemEquipmentStatus[pCfg->m_cEquipPos] = -1;
@@ -503,7 +496,7 @@ namespace NetworkMessageHandlers {
 			else cTxt = std::format(NOTIFYMSG_GIVEITEMFIN_ERASEITEM8, iAmount, cStr1, cName);
 		}
 		pGame->AddEventList(cTxt.c_str(), 10);
-		InventoryManager::Get().EraseItem((char)sItemIndex);
+		InventoryManager::Get().EraseItem(static_cast<char>(sItemIndex));
 		BuildItemManager::Get().UpdateAvailableRecipes();
 	}
 
@@ -518,7 +511,7 @@ namespace NetworkMessageHandlers {
 		dwItemID = pkt->item_id;
 		dwLife = pkt->life;
 
-		pGame->m_pItemList[dwItemID]->m_wCurLifeSpan = (WORD)dwLife;
+		pGame->m_pItemList[dwItemID]->m_wCurLifeSpan = static_cast<WORD>(dwLife);
 		pGame->m_bIsItemDisabled[dwItemID] = false;
 		auto itemInfo5 = ItemNameFormatter::Get().Format(pGame->m_pItemList[dwItemID].get());
 
@@ -529,7 +522,7 @@ namespace NetworkMessageHandlers {
 
 	void HandleRepairItemPrice(CGame* pGame, char* pData)
 	{
-		char cName[hb::shared::limits::ItemNameLen];
+		char cName[hb::shared::limits::ItemNameLen]{};
 		DWORD wV1, wV2, wV3, wV4;
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyRepairItemPrice>(
 			pData, sizeof(hb::net::PacketNotifyRepairItemPrice));
@@ -538,7 +531,6 @@ namespace NetworkMessageHandlers {
 		wV2 = pkt->v2;
 		wV3 = pkt->v3;
 		wV4 = pkt->v4;
-		std::memset(cName, 0, sizeof(cName));
 		memcpy(cName, pkt->item_name, sizeof(pkt->item_name));
 		pGame->m_dialogBoxManager.EnableDialogBox(DialogBoxId::SellOrRepair, 2, wV1, wV2);
 		pGame->m_dialogBoxManager.Info(DialogBoxId::SellOrRepair).sV3 = wV3;
@@ -571,7 +563,7 @@ namespace NetworkMessageHandlers {
 
 	void HandleSellItemPrice(CGame* pGame, char* pData)
 	{
-		char cName[hb::shared::limits::ItemNameLen];
+		char cName[hb::shared::limits::ItemNameLen]{};
 		DWORD wV1, wV2, wV3, wV4;
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifySellItemPrice>(
 			pData, sizeof(hb::net::PacketNotifySellItemPrice));
@@ -580,7 +572,6 @@ namespace NetworkMessageHandlers {
 		wV2 = pkt->v2;
 		wV3 = pkt->v3;
 		wV4 = pkt->v4;
-		std::memset(cName, 0, sizeof(cName));
 		memcpy(cName, pkt->item_name, sizeof(pkt->item_name));
 		pGame->m_dialogBoxManager.EnableDialogBox(DialogBoxId::SellOrRepair, 1, wV1, wV2);
 		pGame->m_dialogBoxManager.Info(DialogBoxId::SellOrRepair).sV3 = wV3;
@@ -654,14 +645,13 @@ namespace NetworkMessageHandlers {
 	{
 		std::string cTxt;
 
-		char cName[hb::shared::limits::ItemNameLen];
+		char cName[hb::shared::limits::ItemNameLen]{};
 
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyCannotGiveItem>(
 			pData, sizeof(hb::net::PacketNotifyCannotGiveItem));
 		if (!pkt) return;
 		const auto wItemIndex = pkt->item_index;
 		const auto iAmount = static_cast<int>(pkt->amount);
-		std::memset(cName, 0, sizeof(cName));
 		memcpy(cName, pkt->name, sizeof(pkt->name));
 
 		auto itemInfo8 = ItemNameFormatter::Get().Format(pGame->m_pItemList[wItemIndex].get());
@@ -685,7 +675,7 @@ namespace NetworkMessageHandlers {
 		if (pGame->m_pItemList[sItemIndex] != 0) {
 			auto itemInfo9 = ItemNameFormatter::Get().Format(pGame->m_pItemList[sItemIndex].get());
 			if (sItemColor != -1) {
-				pGame->m_pItemList[sItemIndex]->m_cItemColor = (char)sItemColor;
+				pGame->m_pItemList[sItemIndex]->m_cItemColor = static_cast<char>(sItemColor);
 				cTxt = std::format(NOTIFYMSG_ITEMCOLOR_CHANGE1, itemInfo9.name.c_str());
 				pGame->AddEventList(cTxt.c_str(), 10);
 			}
@@ -708,10 +698,9 @@ namespace NetworkMessageHandlers {
 
 		char cStr1[64], cStr2[64], cStr3[64];
 		CItem* pCfg = pGame->GetItemConfig(pGame->m_pItemList[wItemIndex]->m_sIDnum);
-		std::snprintf(cStr1, sizeof(cStr1), "%s", pCfg ? pCfg->m_cName : "Unknown");
 		cStr2[0] = 0;
 		cStr3[0] = 0;
-		cTxt = std::format(NOTIFYMSG_THROW_ITEM1, iAmount, cStr1);
+		cTxt = std::format(NOTIFYMSG_THROW_ITEM1, iAmount, pCfg ? pCfg->m_cName : "Unknown");
 
 		pGame->AddEventList(cTxt.c_str(), 10);
 	}
@@ -720,7 +709,7 @@ namespace NetworkMessageHandlers {
 	{
 		std::string cTxt;
 
-		char cName[hb::shared::limits::ItemNameLen];
+		char cName[hb::shared::limits::ItemNameLen]{};
 		WORD wItemIndex;
 		int iAmount;
 
@@ -730,16 +719,14 @@ namespace NetworkMessageHandlers {
 		wItemIndex = pkt->item_index;
 		iAmount = static_cast<int>(pkt->amount);
 
-		std::memset(cName, 0, sizeof(cName));
 		memcpy(cName, pkt->name, sizeof(pkt->name));
 
 		char cStr1[64], cStr2[64], cStr3[64];
 		CItem* pCfg = pGame->GetItemConfig(pGame->m_pItemList[wItemIndex]->m_sIDnum);
-		std::snprintf(cStr1, sizeof(cStr1), "%s", pCfg ? pCfg->m_cName : "Unknown");
 		cStr2[0] = 0;
 		cStr3[0] = 0;
-		if (iAmount == 1) cTxt = std::format(NOTIFYMSG_GIVEITEMFIN_COUNTCHANGED1, cStr1, cName);
-		cTxt = std::format(NOTIFYMSG_GIVEITEMFIN_COUNTCHANGED2, iAmount, cStr1, cName);
+		if (iAmount == 1) cTxt = std::format(NOTIFYMSG_GIVEITEMFIN_COUNTCHANGED1, pCfg ? pCfg->m_cName : "Unknown", cName);
+		cTxt = std::format(NOTIFYMSG_GIVEITEMFIN_COUNTCHANGED2, iAmount, pCfg ? pCfg->m_cName : "Unknown", cName);
 		pGame->AddEventList(cTxt.c_str(), 10);
 	}
 
@@ -763,7 +750,7 @@ namespace NetworkMessageHandlers {
 		sMaxLife = pkt->max_life;
 		sPerformance = pkt->performance;
 		memcpy(cItemName, pkt->item_name, sizeof(pkt->item_name));
-		memcpy(cCharName, pkt->char_name, 10);
+		memcpy(cCharName, pkt->char_name, sizeof(pkt->char_name));
 		dwAttribute = pkt->attribute;
 		sItemID = pkt->item_id;
 
@@ -789,11 +776,11 @@ namespace NetworkMessageHandlers {
 		pGame->m_stDialogBoxExchangeInfo[i].sV2 = sSpriteFrame;
 		pGame->m_stDialogBoxExchangeInfo[i].sV3 = iAmount;
 		pGame->m_stDialogBoxExchangeInfo[i].sV4 = cColor;
-		pGame->m_stDialogBoxExchangeInfo[i].sV5 = (int)sCurLife;
-		pGame->m_stDialogBoxExchangeInfo[i].sV6 = (int)sMaxLife;
-		pGame->m_stDialogBoxExchangeInfo[i].sV7 = (int)sPerformance;
-		pGame->m_stDialogBoxExchangeInfo[i].cStr1.assign(cItemName, strnlen(cItemName, hb::shared::limits::ItemNameLen - 1));
-		pGame->m_stDialogBoxExchangeInfo[i].cStr2.assign(cCharName, strnlen(cCharName, 10));
+		pGame->m_stDialogBoxExchangeInfo[i].sV5 = static_cast<int>(sCurLife);
+		pGame->m_stDialogBoxExchangeInfo[i].sV6 = static_cast<int>(sMaxLife);
+		pGame->m_stDialogBoxExchangeInfo[i].sV7 = static_cast<int>(sPerformance);
+		pGame->m_stDialogBoxExchangeInfo[i].cStr1.assign(cItemName, strnlen(cItemName, hb::shared::limits::ItemNameLen));
+		pGame->m_stDialogBoxExchangeInfo[i].cStr2.assign(cCharName, strnlen(cCharName, hb::shared::limits::CharNameLen));
 		pGame->m_stDialogBoxExchangeInfo[i].dwV1 = dwAttribute;
 		pGame->m_stDialogBoxExchangeInfo[i].sItemID = sItemID;
 	}
@@ -818,7 +805,7 @@ namespace NetworkMessageHandlers {
 		sMaxLife = pkt->max_life;
 		sPerformance = pkt->performance;
 		memcpy(cItemName, pkt->item_name, sizeof(pkt->item_name));
-		memcpy(cCharName, pkt->char_name, 10);
+		memcpy(cCharName, pkt->char_name, sizeof(pkt->char_name));
 		dwAttribute = pkt->attribute;
 		sItemID = pkt->item_id;
 
@@ -863,11 +850,11 @@ namespace NetworkMessageHandlers {
 		pGame->m_stDialogBoxExchangeInfo[i].sV2 = sSpriteFrame;
 		pGame->m_stDialogBoxExchangeInfo[i].sV3 = iAmount;
 		pGame->m_stDialogBoxExchangeInfo[i].sV4 = cColor;
-		pGame->m_stDialogBoxExchangeInfo[i].sV5 = (int)sCurLife;
-		pGame->m_stDialogBoxExchangeInfo[i].sV6 = (int)sMaxLife;
-		pGame->m_stDialogBoxExchangeInfo[i].sV7 = (int)sPerformance;
-		pGame->m_stDialogBoxExchangeInfo[i].cStr1.assign(cItemName, strnlen(cItemName, hb::shared::limits::ItemNameLen - 1));
-		pGame->m_stDialogBoxExchangeInfo[i].cStr2.assign(cCharName, strnlen(cCharName, 10));
+		pGame->m_stDialogBoxExchangeInfo[i].sV5 = static_cast<int>(sCurLife);
+		pGame->m_stDialogBoxExchangeInfo[i].sV6 = static_cast<int>(sMaxLife);
+		pGame->m_stDialogBoxExchangeInfo[i].sV7 = static_cast<int>(sPerformance);
+		pGame->m_stDialogBoxExchangeInfo[i].cStr1.assign(cItemName, strnlen(cItemName, hb::shared::limits::ItemNameLen));
+		pGame->m_stDialogBoxExchangeInfo[i].cStr2.assign(cCharName, strnlen(cCharName, hb::shared::limits::CharNameLen));
 		pGame->m_stDialogBoxExchangeInfo[i].dwV1 = dwAttribute;
 		pGame->m_stDialogBoxExchangeInfo[i].sItemID = sItemID;
 	}

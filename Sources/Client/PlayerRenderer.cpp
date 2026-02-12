@@ -65,7 +65,7 @@ hb::shared::sprite::BoundRect CPlayerRenderer::DrawStop(int indexX, int indexY, 
 		m_game.DrawAngel(40 + (state.m_iDir - 1), sX + 20, sY - 20, state.m_iFrame % 4, dwTime);
 		m_game.CheckActiveAura2(sX, sY, dwTime, state.m_sOwnerType);
 	}
-	else if (strlen(state.m_cName.data()) > 0)
+	else if (state.m_cName[0] != '\0')
 	{
 		// bTrans mode: only draw name
 		RenderHelpers::DrawName(m_game, state, sX, sY);
@@ -132,7 +132,7 @@ hb::shared::sprite::BoundRect CPlayerRenderer::DrawMove(int indexX, int indexY, 
 		m_game.DrawAngel(40 + (state.m_iDir - 1), fix_x + 20, fix_y - 20, state.m_iFrame % 4, dwTime);
 		m_game.CheckActiveAura2(fix_x, fix_y, dwTime, state.m_sOwnerType);
 	}
-	else if (strlen(state.m_cName.data()) > 0)
+	else if (state.m_cName[0] != '\0')
 	{
 		RenderHelpers::DrawName(m_game, state, fix_x, fix_y);
 	}
@@ -217,7 +217,7 @@ hb::shared::sprite::BoundRect CPlayerRenderer::DrawRun(int indexX, int indexY, i
 			}
 		}
 	}
-	else if (strlen(state.m_cName.data()) > 0)
+	else if (state.m_cName[0] != '\0')
 	{
 		RenderHelpers::DrawName(m_game, state, fix_x, fix_y);
 	}
@@ -291,7 +291,7 @@ hb::shared::sprite::BoundRect CPlayerRenderer::DrawAttack(int indexX, int indexY
 		m_game.DrawAngel(state.m_iDir - 1, sX + 20, sY - 20, state.m_iFrame % 8, dwTime);
 		m_game.CheckActiveAura2(sX, sY, dwTime, state.m_sOwnerType);
 	}
-	else if (strlen(state.m_cName.data()) > 0)
+	else if (state.m_cName[0] != '\0')
 	{
 		RenderHelpers::DrawName(m_game, state, sX, sY);
 	}
@@ -440,7 +440,7 @@ hb::shared::sprite::BoundRect CPlayerRenderer::DrawAttackMove(int indexX, int in
 					hb::shared::sprite::DrawParams::TintedAlpha(126, 192, 242, 0.7f));
 		}
 	}
-	else if (strlen(state.m_cName.data()) > 0)
+	else if (state.m_cName[0] != '\0')
 	{
 		RenderHelpers::DrawName(m_game, state, sX + dx, sY + dy);
 	}
@@ -517,7 +517,7 @@ hb::shared::sprite::BoundRect CPlayerRenderer::DrawMagic(int indexX, int indexY,
 		m_game.DrawAngel(32 + (state.m_iDir - 1), sX + 20, sY - 20, state.m_iFrame % 16, dwTime);
 		m_game.CheckActiveAura2(sX, sY, dwTime, state.m_sOwnerType);
 	}
-	else if (strlen(state.m_cName.data()) > 0)
+	else if (state.m_cName[0] != '\0')
 	{
 		RenderHelpers::DrawName(m_game, state, sX, sY);
 	}
@@ -567,7 +567,7 @@ hb::shared::sprite::BoundRect CPlayerRenderer::DrawGetItem(int indexX, int index
 		m_game.DrawAngel(40 + (state.m_iDir - 1), sX + 20, sY - 20, state.m_iFrame % 4, dwTime);
 		m_game.CheckActiveAura2(sX, sY, dwTime, state.m_sOwnerType);
 	}
-	else if (strlen(state.m_cName.data()) > 0)
+	else if (state.m_cName[0] != '\0')
 	{
 		RenderHelpers::DrawName(m_game, state, sX, sY);
 	}
@@ -636,7 +636,7 @@ hb::shared::sprite::BoundRect CPlayerRenderer::DrawDamage(int indexX, int indexY
 		m_game.DrawAngel(16 + (state.m_iDir - 1), sX + 20, sY - 20, cFrame % 4, dwTime);
 		m_game.CheckActiveAura2(sX, sY, dwTime, state.m_sOwnerType);
 	}
-	else if (strlen(state.m_cName.data()) > 0)
+	else if (state.m_cName[0] != '\0')
 	{
 		RenderHelpers::DrawName(m_game, state, sX, sY);
 	}
@@ -712,7 +712,7 @@ hb::shared::sprite::BoundRect CPlayerRenderer::DrawDamageMove(int indexX, int in
 		m_game.DrawAngel(16 + (state.m_iDir - 1), fix_x + 20, fix_y - 20, cFrame % 4, dwTime);
 		m_game.CheckActiveAura2(fix_x, fix_y, dwTime, state.m_sOwnerType);
 	}
-	else if (strlen(state.m_cName.data()) > 0)
+	else if (state.m_cName[0] != '\0')
 	{
 		RenderHelpers::DrawName(m_game, state, fix_x, fix_y);
 	}
@@ -779,7 +779,7 @@ hb::shared::sprite::BoundRect CPlayerRenderer::DrawDying(int indexX, int indexY,
 		m_game.DrawAngel(24 + (state.m_iDir - 1), sX + 20, sY - 20, originalFrame, dwTime);
 		m_game.CheckActiveAura2(sX, sY, dwTime, state.m_sOwnerType);
 	}
-	else if (strlen(state.m_cName.data()) > 0)
+	else if (state.m_cName[0] != '\0')
 	{
 		RenderHelpers::DrawName(m_game, state, sX, sY);
 	}
@@ -824,7 +824,7 @@ hb::shared::sprite::BoundRect CPlayerRenderer::DrawDead(int indexX, int indexY, 
 				hb::shared::sprite::DrawParams::TintedAlpha(192 - 4 * state.m_iFrame, 192 - 4 * state.m_iFrame, 192 - 4 * state.m_iFrame, 0.7f));
 		}
 	}
-	else if (strlen(state.m_cName.data()) > 0)
+	else if (state.m_cName[0] != '\0')
 	{
 		RenderHelpers::DrawName(m_game, state, sX, sY);
 	}

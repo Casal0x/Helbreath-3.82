@@ -1,7 +1,8 @@
-#pragma once
+﻿#pragma once
 
 #include "PacketCommon.h"
 #include "PacketHeaders.h"
+#include "NetConstants.h"
 
 #include <cstdint>
 
@@ -14,7 +15,7 @@ namespace net {
 	struct HB_PACKED PartyOpPayload {
 		std::uint16_t op_type;
 		std::uint16_t client_h;
-		char name[10];
+		char name[hb::shared::limits::CharNameLen];
 		std::uint16_t party_id;
 	};
 
@@ -23,7 +24,7 @@ namespace net {
 		std::uint32_t msg_id;
 		std::uint16_t op_type;
 		std::uint16_t client_h;
-		char name[10];
+		char name[hb::shared::limits::CharNameLen];
 		std::uint16_t party_id;
 	};
 
@@ -32,7 +33,7 @@ namespace net {
 	struct HB_PACKED PartyOpCreateRequest {
 		std::uint16_t op_type;
 		std::uint16_t client_h;
-		char name[10];
+		char name[hb::shared::limits::CharNameLen];
 	};
 
 	// Party result with status byte: op_type + result + client_h + name + party_id
@@ -41,7 +42,7 @@ namespace net {
 		std::uint16_t op_type;
 		std::uint8_t result;
 		std::uint16_t client_h;
-		char name[10];
+		char name[hb::shared::limits::CharNameLen];
 		std::uint16_t party_id;
 	};
 
@@ -56,7 +57,7 @@ namespace net {
 	struct HB_PACKED PartyOpResultInfoHeader {
 		std::uint16_t op_type;
 		std::uint16_t client_h;
-		char name[10];
+		char name[hb::shared::limits::CharNameLen];
 		std::uint16_t total;
 	};
 
@@ -65,7 +66,7 @@ namespace net {
 		PacketHeader header;
 		std::uint16_t op_type;
 		std::uint16_t client_h;
-		char name[10];
+		char name[hb::shared::limits::CharNameLen];
 		std::uint16_t party_id;
 	};
 
@@ -74,7 +75,7 @@ namespace net {
 		PacketHeader header;
 		std::uint16_t op_type;
 		std::uint16_t client_h;
-		char name[10];
+		char name[hb::shared::limits::CharNameLen];
 		std::uint16_t member_count;
 	};
 

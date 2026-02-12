@@ -33,8 +33,6 @@ DevConsole& DevConsole::Get()
 DevConsole::DevConsole()
 {
 	memset(m_lines, 0, sizeof(m_lines));
-	memset(m_szInput, 0, sizeof(m_szInput));
-	memset(m_szHistory, 0, sizeof(m_szHistory));
 	memset(m_commands, 0, sizeof(m_commands));
 }
 
@@ -297,7 +295,7 @@ void DevConsole::ExecuteCommand()
 	}
 
 	// Clear input
-	memset(m_szInput, 0, sizeof(m_szInput));
+	m_szInput[0] = '\0';
 	m_iInputLen = 0;
 	m_iScrollOffset = 0;
 }
@@ -330,7 +328,7 @@ void DevConsole::HistoryDown()
 	else
 	{
 		m_iHistoryIndex = -1;
-		memset(m_szInput, 0, sizeof(m_szInput));
+		m_szInput[0] = '\0';
 		m_iInputLen = 0;
 	}
 }

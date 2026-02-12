@@ -1,4 +1,4 @@
-// Misc.h: Header-only implementation for CMisc utility functions.
+﻿// Misc.h: Header-only implementation for CMisc utility functions.
 //
 //////////////////////////////////////////////////////////////////////
 
@@ -99,7 +99,7 @@ namespace CMisc
 		*pError = error;
 	}
 
-	static inline bool bCheckValidString(char * str)
+	static inline bool bCheckValidString(const char * str)
 	{
 		size_t len = strlen(str);
 		for (size_t i = 0; i < len; i++)
@@ -128,8 +128,8 @@ namespace CMisc
 		{	if (sX > dX) return 7;
 			else return 3;
 		}
-		dTmp1 = (double)(dX - sX);
-		dTmp2 = (double)(dY - sY);
+		dTmp1 = static_cast<double>(dX - sX);
+		dTmp2 = static_cast<double>(dY - sY);
 		dTmp3 = dTmp1 / dTmp2;
 		if (dTmp3 < -3)
 		{	if (sX > dX) return 7;
@@ -158,7 +158,7 @@ namespace CMisc
 		return 1;
 	}
 
-	static inline bool bCheckValidName(char *pStr)
+	static inline bool bCheckValidName(const char *pStr)
 	{
 		size_t i, iLen;
 		iLen = strlen(pStr);
@@ -175,12 +175,12 @@ namespace CMisc
 		return true;
 	}
 
-	static inline bool bIsValidEmail(char *pStr)
+	static inline bool bIsValidEmail(const char *pStr)
 	{
 		size_t len = strlen( pStr );
 		if( len < 7 ) return false;
 		char cEmail[52];
-		ZeroMemory( cEmail, sizeof(cEmail) );
+		std::memset(cEmail, 0, sizeof(cEmail));
 		memcpy( cEmail, pStr, len );
 		bool bFlag = false;
 		for( size_t i=0 ; i<len ; i++ )

@@ -64,7 +64,6 @@ void Overlay_QueryDeleteCharacter::on_update()
             m_pGame->m_pLSock->bInitBufferSize(hb::shared::limits::MsgBufferSize);
 
             m_pGame->m_dwConnectMode = MsgId::RequestDeleteCharacter;
-            std::memset(m_pGame->m_cMsg, 0, sizeof(m_pGame->m_cMsg));
             std::snprintf(m_pGame->m_cMsg, sizeof(m_pGame->m_cMsg), "%s", "33");
 
             // set_overlay will clear this overlay automatically

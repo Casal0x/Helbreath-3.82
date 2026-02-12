@@ -42,11 +42,10 @@ void HandleApocForceRecall(CGame* pGame, char* pData)
 void HandleAbaddonKilled(CGame* pGame, char* pData)
 {
 	std::string cTxt;
-	char cKiller[21];
+	char cKiller[21]{};
 	const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyAbaddonKilled>(
 		pData, sizeof(hb::net::PacketNotifyAbaddonKilled));
 	if (!pkt) return;
-	std::memset(cKiller, 0, sizeof(cKiller));
 	memcpy(cKiller, pkt->killer_name, sizeof(pkt->killer_name));
 	
 	cTxt = std::format("Abaddon is destroyed by {}", cKiller);

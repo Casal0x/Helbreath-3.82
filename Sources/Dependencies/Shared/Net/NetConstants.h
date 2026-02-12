@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 // NetConstants.h - Shared Network Constants
 //
@@ -14,6 +14,8 @@ namespace hb::shared::limits
 	constexpr int AccountNameLen       = 11;   // 10 chars + null (wire size is 10)
 	constexpr int AccountPassLen       = 11;   // 10 chars + null (wire size is 10)
 	constexpr int AccountEmailLen      = 51;   // 50 chars + null
+	constexpr int GuildNameLen         = 21;   // 20 chars + null
+	constexpr int MapNameLen           = 11;   // 10 chars + null
 	constexpr int MaxMagicType         = 100;
 	constexpr int MaxSkillType         = 60;
 	constexpr int MaxNpcConfigs        = 200;

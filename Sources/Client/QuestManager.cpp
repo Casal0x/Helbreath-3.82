@@ -42,7 +42,7 @@ void QuestManager::HandleQuestReward(char* pData)
 	short sWho, sFlag;
 	std::string cTxt;
 
-	char cRewardName[hb::shared::limits::ItemNameLen];
+	char cRewardName[hb::shared::limits::ItemNameLen]{};
 	int iAmount, iIndex, iPreCon;
 	const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyQuestReward>(
 		pData, sizeof(hb::net::PacketNotifyQuestReward));
@@ -50,7 +50,6 @@ void QuestManager::HandleQuestReward(char* pData)
 	sWho = pkt->who;
 	sFlag = pkt->flag;
 	iAmount = pkt->amount;
-	std::memset(cRewardName, 0, sizeof(cRewardName));
 	memcpy(cRewardName, pkt->reward_name, sizeof(pkt->reward_name));
 	iPreCon = m_pGame->m_pPlayer->m_iContribution;
 	m_pGame->m_pPlayer->m_iContribution = pkt->contribution;

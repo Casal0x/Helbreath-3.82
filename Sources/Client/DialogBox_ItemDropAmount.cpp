@@ -30,7 +30,7 @@ void DialogBox_ItemDropAmount::OnDraw(short msX, short msY, short msZ, char cLB)
 	{
 		auto itemInfo = ItemNameFormatter::Get().Format(m_pGame->m_pItemList[Info().sView].get());
 
-		if (strlen(Info().cStr) == 0)
+		if (Info().cStr[0] == '\0')
 			cTxt = std::format(DRAW_DIALOGBOX_QUERY_DROP_ITEM_AMOUNT1, itemInfo.name.c_str());
 		else
 			cTxt = std::format(DRAW_DIALOGBOX_QUERY_DROP_ITEM_AMOUNT2, itemInfo.name.c_str(), Info().cStr);
@@ -41,7 +41,7 @@ void DialogBox_ItemDropAmount::OnDraw(short msX, short msY, short msZ, char cLB)
 		PutString(sX + 30, sY + 35, DRAW_DIALOGBOX_QUERY_DROP_ITEM_AMOUNT3, GameColors::UILabel);
 
 		if (m_pGame->m_dialogBoxManager.iGetTopDialogBoxIndex() != DialogBoxId::ItemDropExternal)
-			hb::shared::text::DrawText(GameFont::Default, sX + 40, sY + 57, m_pGame->m_cAmountString, hb::shared::text::TextStyle::Color(GameColors::UIWhite));
+			hb::shared::text::DrawText(GameFont::Default, sX + 40, sY + 57, m_pGame->m_cAmountString.c_str(), hb::shared::text::TextStyle::Color(GameColors::UIWhite));
 
 		cTxt = std::format("__________ (0 ~ {})", m_pGame->m_pItemList[Info().sView]->m_dwCount);
 		PutString(sX + 38, sY + 62, cTxt.c_str(), GameColors::UILabel);
@@ -52,7 +52,7 @@ void DialogBox_ItemDropAmount::OnDraw(short msX, short msY, short msZ, char cLB)
 	{
 		auto itemInfo2 = ItemNameFormatter::Get().Format(m_pGame->m_pItemList[Info().sView].get());
 
-		if (strlen(Info().cStr) == 0)
+		if (Info().cStr[0] == '\0')
 			cTxt = std::format(DRAW_DIALOGBOX_QUERY_DROP_ITEM_AMOUNT1, itemInfo2.name.c_str());
 		else
 			cTxt = std::format(DRAW_DIALOGBOX_QUERY_DROP_ITEM_AMOUNT2, itemInfo2.name.c_str(), Info().cStr);
@@ -61,7 +61,7 @@ void DialogBox_ItemDropAmount::OnDraw(short msX, short msY, short msZ, char cLB)
 			PutString(sX + 30, sY + 20, cTxt.c_str(), GameColors::UILabel);
 
 		PutString(sX + 30, sY + 35, DRAW_DIALOGBOX_QUERY_DROP_ITEM_AMOUNT3, GameColors::UILabel);
-		hb::shared::text::DrawText(GameFont::Default, sX + 40, sY + 57, m_pGame->m_cAmountString, hb::shared::text::TextStyle::Color(GameColors::UIWhite));
+		hb::shared::text::DrawText(GameFont::Default, sX + 40, sY + 57, m_pGame->m_cAmountString.c_str(), hb::shared::text::TextStyle::Color(GameColors::UIWhite));
 
 		cTxt = std::format("__________ (0 ~ {})", m_pGame->m_pItemList[Info().sView]->m_dwCount);
 		PutString(sX + 38, sY + 62, cTxt.c_str(), GameColors::UILabel);

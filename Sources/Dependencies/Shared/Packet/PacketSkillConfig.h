@@ -1,7 +1,8 @@
-#pragma once
+﻿#pragma once
 
 #include "PacketCommon.h"
 #include "PacketHeaders.h"
+#include "NetConstants.h"
 #include <cstdint>
 
 namespace hb {
@@ -11,7 +12,7 @@ HB_PACK_BEGIN
 struct HB_PACKED PacketSkillConfigEntry
 {
 	int16_t  skillId;       // Skill ID (0-59)
-	char     name[42];      // Skill display name (null-padded)
+	char     name[hb::shared::limits::ItemNameLen];      // Skill display name (null-padded)
 	int8_t   isUseable;     // Whether skill can be actively used (1=yes, 0=no)
 	int8_t   useMethod;     // Use method (0=passive, 1=click, 2=target)
 };

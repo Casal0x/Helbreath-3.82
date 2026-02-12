@@ -230,7 +230,7 @@ void CGame::Hotkey_WhisperTarget()
 		tempid = std::format("/to {}", cBuff);
 		bSendCommand(MsgId::CommandChatMsg, 0, 0, 0, 0, 0, tempid.c_str());
 	}
-	else if (m_entityState.IsPlayer() && (strlen(m_entityState.m_cName.data()) > 0) && (m_iIlusionOwnerH == 0)
+	else if (m_entityState.IsPlayer() && (m_entityState.m_cName[0] != '\0') && (m_iIlusionOwnerH == 0)
 		&& ((m_bIsCrusadeMode == false) || !IsHostile(m_entityState.m_status.iRelationship)))
 	{
 		tempid = std::format("/to {}", m_entityState.m_cName.data());
@@ -239,8 +239,8 @@ void CGame::Hotkey_WhisperTarget()
 	else
 	{
 		TextInputManager::Get().EndInput();
-		std::snprintf(m_cChatMsg, sizeof(m_cChatMsg), "/to ");
-		TextInputManager::Get().StartInput(CHAT_INPUT_X(), CHAT_INPUT_Y(), sizeof(m_cChatMsg), m_cChatMsg);
+		m_cChatMsg = "/to ";
+		TextInputManager::Get().StartInput(CHAT_INPUT_X(), CHAT_INPUT_Y(), ChatMsgMaxLen, m_cChatMsg);
 	}
 }
 
@@ -345,9 +345,8 @@ void CGame::Hotkey_Simple_LoadBackupChat()
 	if ((!TextInputManager::Get().IsActive()) && (m_cBackupChatMsg[0] != '!') && (m_cBackupChatMsg[0] != '~') && (m_cBackupChatMsg[0] != '^') &&
 		(m_cBackupChatMsg[0] != '@'))
 	{
-		std::memset(m_cChatMsg, 0, sizeof(m_cChatMsg));
-		std::snprintf(m_cChatMsg, sizeof(m_cChatMsg), "%s", m_cBackupChatMsg.c_str());
-		TextInputManager::Get().StartInput(CHAT_INPUT_X(), CHAT_INPUT_Y(), sizeof(m_cChatMsg), m_cChatMsg);
+		m_cChatMsg = m_cBackupChatMsg;
+		TextInputManager::Get().StartInput(CHAT_INPUT_X(), CHAT_INPUT_Y(), ChatMsgMaxLen, m_cChatMsg);
 	}
 }
 
@@ -425,8 +424,8 @@ void CGame::Hotkey_Simple_WhisperCycleUp()
 		const char* name = ChatManager::Get().GetWhisperTargetName(idx);
 		if (name != nullptr) {
 			TextInputManager::Get().EndInput();
-			std::snprintf(m_cChatMsg, sizeof(m_cChatMsg), "/to %s", name);
-			TextInputManager::Get().StartInput(CHAT_INPUT_X(), CHAT_INPUT_Y(), sizeof(m_cChatMsg), m_cChatMsg);
+			m_cChatMsg = std::format("/to {}", name);
+			TextInputManager::Get().StartInput(CHAT_INPUT_X(), CHAT_INPUT_Y(), ChatMsgMaxLen, m_cChatMsg);
 		}
 	}
 }
@@ -441,8 +440,8 @@ void CGame::Hotkey_Simple_WhisperCycleDown()
 		const char* name = ChatManager::Get().GetWhisperTargetName(idx);
 		if (name != nullptr) {
 			TextInputManager::Get().EndInput();
-			std::snprintf(m_cChatMsg, sizeof(m_cChatMsg), "/to %s", name);
-			TextInputManager::Get().StartInput(CHAT_INPUT_X(), CHAT_INPUT_Y(), sizeof(m_cChatMsg), m_cChatMsg);
+			m_cChatMsg = std::format("/to {}", name);
+			TextInputManager::Get().StartInput(CHAT_INPUT_X(), CHAT_INPUT_Y(), ChatMsgMaxLen, m_cChatMsg);
 		}
 	}
 }

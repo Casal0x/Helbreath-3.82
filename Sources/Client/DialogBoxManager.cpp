@@ -499,11 +499,10 @@ void DialogBoxManager::EnableDialogBox(int iBoxID, int cType, int sV1, int sV2, 
 			Info(iBoxID).cMode = 1;
 			Info(DialogBoxId::ItemDropExternal).sView = cType;
 			TextInputManager::Get().EndInput();
-			std::memset(m_game->m_cAmountString, 0, sizeof(m_game->m_cAmountString));
-			std::snprintf(m_game->m_cAmountString, sizeof(m_game->m_cAmountString), "%d", sV1);
+			m_game->m_cAmountString = std::to_string(sV1);
 			sX = Info(DialogBoxId::ItemDropExternal).sX;
 			sY = Info(DialogBoxId::ItemDropExternal).sY;
-			TextInputManager::Get().StartInput(sX + 40, sY + 57, 11, m_game->m_cAmountString, false);
+			TextInputManager::Get().StartInput(sX + 40, sY + 57, CGame::AmountStringMaxLen, m_game->m_cAmountString);
 		}
 		else
 		{
@@ -512,7 +511,7 @@ void DialogBoxManager::EnableDialogBox(int iBoxID, int cType, int sV1, int sV2, 
 				sX = Info(DialogBoxId::ItemDropExternal).sX;
 				sY = Info(DialogBoxId::ItemDropExternal).sY;
 				TextInputManager::Get().EndInput();
-				TextInputManager::Get().StartInput(sX + 40, sY + 57, 11, m_game->m_cAmountString, false);
+				TextInputManager::Get().StartInput(sX + 40, sY + 57, CGame::AmountStringMaxLen, m_game->m_cAmountString);
 			}
 		}
 		break;

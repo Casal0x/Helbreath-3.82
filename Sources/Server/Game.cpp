@@ -1,4 +1,4 @@
-// Game.cpp: implementation of the CGame class.
+﻿// Game.cpp: implementation of the CGame class.
 
 #include "CommonTypes.h"
 #include "Game.h"
@@ -3907,8 +3907,8 @@ void CGame::ResponsePlayerDataHandler(char* pData, uint32_t dwSize)
 	if (!header) return;
 	cp = (char*)(pData + sizeof(hb::net::PacketHeader));
 
-	memcpy(cCharName, cp, hb::shared::limits::CharNameLen - 1);
-	cp += 10;
+	memcpy(cCharName, cp, hb::shared::limits::CharNameLen);
+	cp += hb::shared::limits::CharNameLen;
 
 	for(int i = 1; i < MaxClients; i++)
 		if (m_pClientList[i] != 0) {

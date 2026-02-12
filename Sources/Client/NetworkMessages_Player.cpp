@@ -1,4 +1,4 @@
-#include "Game.h"
+﻿#include "Game.h"
 #include "ChatManager.h"
 #include "NetworkMessageManager.h"
 #include "Packet/SharedPackets.h"
@@ -6,6 +6,7 @@
 #include <windows.h>
 #include <cstdio>
 #include <cstring>
+#include <string_view>
 #include <cmath>
 #include <format>
 #include <string>
@@ -66,16 +67,14 @@ namespace NetworkMessageHandlers {
 
 	void HandlePlayerStatus(CGame* pGame, bool bOnGame, char* pData)
 	{
-		char cName[12], cMapName[12];
+		char cName[12]{}, cMapName[12]{};
 		std::string cTxt;
 		uint16_t dx = 1, dy = 1;
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyPlayerStatus>(
 			pData, sizeof(hb::net::PacketNotifyPlayerStatus));
 		if (!pkt) return;
-		std::memset(cName, 0, sizeof(cName));
-		memcpy(cName, pkt->name, 10);
-		std::memset(cMapName, 0, sizeof(cMapName));
-		memcpy(cMapName, pkt->map_name, 10);
+		memcpy(cName, pkt->name, sizeof(pkt->name));
+		memcpy(cMapName, pkt->map_name, sizeof(pkt->map_name));
 		dx = pkt->x;
 		dy = pkt->y;
 		if (bOnGame == true) {
@@ -89,13 +88,12 @@ namespace NetworkMessageHandlers {
 
 	void HandleWhisperMode(CGame* pGame, bool bActive, char* pData)
 	{
-		char cName[12];
+		char cName[12]{};
 		std::string cTxt;
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyWhisperMode>(
 			pData, sizeof(hb::net::PacketNotifyWhisperMode));
 		if (!pkt) return;
-		std::memset(cName, 0, sizeof(cName));
-		memcpy(cName, pkt->name, 10);
+		memcpy(cName, pkt->name, sizeof(pkt->name));
 		if (bActive == true)
 		{
 			cTxt = std::format(NOTIFYMSG_WHISPERMODE1, cName);
@@ -108,16 +106,15 @@ namespace NetworkMessageHandlers {
 
 	void HandlePlayerShutUp(CGame* pGame, char* pData)
 	{
-		char cName[12];
+		char cName[12]{};
 		std::string cTxt;
 		WORD wTime;
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyPlayerShutUp>(
 			pData, sizeof(hb::net::PacketNotifyPlayerShutUp));
 		if (!pkt) return;
 		wTime = pkt->time;
-		std::memset(cName, 0, sizeof(cName));
-		memcpy(cName, pkt->name, 10);
-		if (memcmp(pGame->m_pPlayer->m_cPlayerName, cName, 10) == 0)
+		memcpy(cName, pkt->name, sizeof(pkt->name));
+		if (pGame->m_pPlayer->m_cPlayerName == std::string_view(cName, strnlen(cName, hb::shared::limits::CharNameLen)))
 			cTxt = std::format(NOTIFYMSG_PLAYER_SHUTUP1, wTime);
 		else cTxt = std::format(NOTIFYMSG_PLAYER_SHUTUP2, cName, wTime);
 
@@ -126,16 +123,15 @@ namespace NetworkMessageHandlers {
 
 	void HandleRatingPlayer(CGame* pGame, char* pData)
 	{
-		char cName[12];
+		char cName[12]{};
 		std::string cTxt;
 		uint16_t cValue;
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyRatingPlayer>(
 			pData, sizeof(hb::net::PacketNotifyRatingPlayer));
 		if (!pkt) return;
 		cValue = pkt->result;
-		std::memset(cName, 0, sizeof(cName));
-		memcpy(cName, pkt->name, 10);
-		if (memcmp(pGame->m_pPlayer->m_cPlayerName, cName, 10) == 0)
+		memcpy(cName, pkt->name, sizeof(pkt->name));
+		if (pGame->m_pPlayer->m_cPlayerName == std::string_view(cName, strnlen(cName, hb::shared::limits::CharNameLen)))
 		{
 			if (cValue == 1)
 			{

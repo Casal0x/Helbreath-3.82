@@ -1,4 +1,4 @@
-// Overlay_ChangePassword.h: Password change overlay
+﻿// Overlay_ChangePassword.h: Password change overlay
 //
 // Displays password change form with input fields for old/new passwords.
 // Shown over SelectCharacter screen.
@@ -9,6 +9,7 @@
 
 #include "IGameScreen.h"
 #include "NetConstants.h"
+#include <string>
 
 class Overlay_ChangePassword : public IGameScreen
 {
@@ -29,10 +30,10 @@ private:
     bool ValidateInputs();
 
     // Input buffers
-    char m_cAccountName[hb::shared::limits::AccountNameLen];
-    char m_cOldPassword[hb::shared::limits::AccountPassLen];
-    char m_cNewPassword[hb::shared::limits::AccountPassLen];
-    char m_cConfirmPassword[hb::shared::limits::AccountPassLen];
+    std::string m_cAccountName;
+    std::string m_cOldPassword;
+    std::string m_cNewPassword;
+    std::string m_cConfirmPassword;
 
     // UI state
     int m_iCurFocus;      // 1=name, 2=old pass, 3=new pass, 4=confirm, 5=OK, 6=Cancel

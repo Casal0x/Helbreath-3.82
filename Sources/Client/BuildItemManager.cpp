@@ -81,8 +81,7 @@ bool BuildItemManager::UpdateAvailableRecipes()
 					else iItemCount[j] = 0;
 
 				// Element1
-				std::memset(cTempName, 0, sizeof(cTempName));
-				memcpy(cTempName, m_recipes[i]->m_cElementName1.c_str(), hb::shared::limits::ItemNameLen - 1);
+				std::snprintf(cTempName, sizeof(cTempName), "%s", m_recipes[i]->m_cElementName1.c_str());
 				iCount = m_recipes[i]->m_iElementCount[1];
 				if (iCount == 0) iMatch++;
 				else
@@ -90,7 +89,7 @@ bool BuildItemManager::UpdateAvailableRecipes()
 					for (j = 0; j < hb::shared::limits::MaxItems; j++)
 						if (m_game->m_pItemList[j] != 0) {
 							CItem* pCfgJ = m_game->GetItemConfig(m_game->m_pItemList[j]->m_sIDnum);
-							if (pCfgJ && (memcmp(pCfgJ->m_cName, cTempName, hb::shared::limits::ItemNameLen - 1) == 0) && (m_game->m_pItemList[j]->m_dwCount >= (DWORD)(iCount)) &&
+							if (pCfgJ && (memcmp(pCfgJ->m_cName, cTempName, hb::shared::limits::ItemNameLen - 1) == 0) && (m_game->m_pItemList[j]->m_dwCount >= static_cast<DWORD>(iCount)) &&
 								(iItemCount[j] > 0))
 							{
 								iMatch++;
@@ -103,8 +102,7 @@ bool BuildItemManager::UpdateAvailableRecipes()
 
 			CBIS_STEP2:;
 				// Element2
-				std::memset(cTempName, 0, sizeof(cTempName));
-				memcpy(cTempName, m_recipes[i]->m_cElementName2.c_str(), hb::shared::limits::ItemNameLen - 1);
+				std::snprintf(cTempName, sizeof(cTempName), "%s", m_recipes[i]->m_cElementName2.c_str());
 				iCount = m_recipes[i]->m_iElementCount[2];
 				if (iCount == 0) iMatch++;
 				else
@@ -113,7 +111,7 @@ bool BuildItemManager::UpdateAvailableRecipes()
 						if (m_game->m_pItemList[j] != 0)
 						{
 							CItem* pCfgJ = m_game->GetItemConfig(m_game->m_pItemList[j]->m_sIDnum);
-							if (pCfgJ && (memcmp(pCfgJ->m_cName, cTempName, hb::shared::limits::ItemNameLen - 1) == 0) && (m_game->m_pItemList[j]->m_dwCount >= (DWORD)(iCount)) &&
+							if (pCfgJ && (memcmp(pCfgJ->m_cName, cTempName, hb::shared::limits::ItemNameLen - 1) == 0) && (m_game->m_pItemList[j]->m_dwCount >= static_cast<DWORD>(iCount)) &&
 								(iItemCount[j] > 0))
 							{
 								iMatch++;
@@ -126,8 +124,7 @@ bool BuildItemManager::UpdateAvailableRecipes()
 
 			CBIS_STEP3:;
 				// Element3
-				std::memset(cTempName, 0, sizeof(cTempName));
-				memcpy(cTempName, m_recipes[i]->m_cElementName3.c_str(), hb::shared::limits::ItemNameLen - 1);
+				std::snprintf(cTempName, sizeof(cTempName), "%s", m_recipes[i]->m_cElementName3.c_str());
 				iCount = m_recipes[i]->m_iElementCount[3];
 				if (iCount == 0) iMatch++;
 				else
@@ -136,7 +133,7 @@ bool BuildItemManager::UpdateAvailableRecipes()
 						if (m_game->m_pItemList[j] != 0)
 						{
 							CItem* pCfgJ = m_game->GetItemConfig(m_game->m_pItemList[j]->m_sIDnum);
-							if (pCfgJ && (memcmp(pCfgJ->m_cName, cTempName, hb::shared::limits::ItemNameLen - 1) == 0) && (m_game->m_pItemList[j]->m_dwCount >= (DWORD)(iCount)) &&
+							if (pCfgJ && (memcmp(pCfgJ->m_cName, cTempName, hb::shared::limits::ItemNameLen - 1) == 0) && (m_game->m_pItemList[j]->m_dwCount >= static_cast<DWORD>(iCount)) &&
 								(iItemCount[j] > 0))
 							{
 								iMatch++;
@@ -149,8 +146,7 @@ bool BuildItemManager::UpdateAvailableRecipes()
 
 			CBIS_STEP4:;
 				// Element4 �˻�
-				std::memset(cTempName, 0, sizeof(cTempName));
-				memcpy(cTempName, m_recipes[i]->m_cElementName4.c_str(), hb::shared::limits::ItemNameLen - 1);
+				std::snprintf(cTempName, sizeof(cTempName), "%s", m_recipes[i]->m_cElementName4.c_str());
 				iCount = m_recipes[i]->m_iElementCount[4];
 				if (iCount == 0) iMatch++;
 				else
@@ -159,7 +155,7 @@ bool BuildItemManager::UpdateAvailableRecipes()
 						if (m_game->m_pItemList[j] != 0)
 						{
 							CItem* pCfgJ = m_game->GetItemConfig(m_game->m_pItemList[j]->m_sIDnum);
-							if (pCfgJ && (memcmp(pCfgJ->m_cName, cTempName, hb::shared::limits::ItemNameLen - 1) == 0) && (m_game->m_pItemList[j]->m_dwCount >= (DWORD)(iCount)) &&
+							if (pCfgJ && (memcmp(pCfgJ->m_cName, cTempName, hb::shared::limits::ItemNameLen - 1) == 0) && (m_game->m_pItemList[j]->m_dwCount >= static_cast<DWORD>(iCount)) &&
 								(iItemCount[j] > 0))
 							{
 								iMatch++;
@@ -173,8 +169,7 @@ bool BuildItemManager::UpdateAvailableRecipes()
 			CBIS_STEP5:;
 
 				// Element5
-				std::memset(cTempName, 0, sizeof(cTempName));
-				memcpy(cTempName, m_recipes[i]->m_cElementName5.c_str(), hb::shared::limits::ItemNameLen - 1);
+				std::snprintf(cTempName, sizeof(cTempName), "%s", m_recipes[i]->m_cElementName5.c_str());
 				iCount = m_recipes[i]->m_iElementCount[5];
 				if (iCount == 0) iMatch++;
 				else
@@ -183,7 +178,7 @@ bool BuildItemManager::UpdateAvailableRecipes()
 						if (m_game->m_pItemList[j] != 0)
 						{
 							CItem* pCfgJ = m_game->GetItemConfig(m_game->m_pItemList[j]->m_sIDnum);
-							if (pCfgJ && (memcmp(pCfgJ->m_cName, cTempName, hb::shared::limits::ItemNameLen - 1) == 0) && (m_game->m_pItemList[j]->m_dwCount >= (DWORD)(iCount)) &&
+							if (pCfgJ && (memcmp(pCfgJ->m_cName, cTempName, hb::shared::limits::ItemNameLen - 1) == 0) && (m_game->m_pItemList[j]->m_dwCount >= static_cast<DWORD>(iCount)) &&
 								(iItemCount[j] > 0))
 							{
 								iMatch++;
@@ -197,8 +192,7 @@ bool BuildItemManager::UpdateAvailableRecipes()
 			CBIS_STEP6:;
 
 				// Element6
-				std::memset(cTempName, 0, sizeof(cTempName));
-				memcpy(cTempName, m_recipes[i]->m_cElementName6.c_str(), hb::shared::limits::ItemNameLen - 1);
+				std::snprintf(cTempName, sizeof(cTempName), "%s", m_recipes[i]->m_cElementName6.c_str());
 				iCount = m_recipes[i]->m_iElementCount[6];
 				if (iCount == 0) iMatch++;
 				else
@@ -207,7 +201,7 @@ bool BuildItemManager::UpdateAvailableRecipes()
 						if (m_game->m_pItemList[j] != 0)
 						{
 							CItem* pCfgJ = m_game->GetItemConfig(m_game->m_pItemList[j]->m_sIDnum);
-							if (pCfgJ && (memcmp(pCfgJ->m_cName, cTempName, hb::shared::limits::ItemNameLen - 1) == 0) && (m_game->m_pItemList[j]->m_dwCount >= (DWORD)(iCount)) &&
+							if (pCfgJ && (memcmp(pCfgJ->m_cName, cTempName, hb::shared::limits::ItemNameLen - 1) == 0) && (m_game->m_pItemList[j]->m_dwCount >= static_cast<DWORD>(iCount)) &&
 								(iItemCount[j] > 0))
 							{
 								iMatch++;
@@ -377,8 +371,7 @@ bool BuildItemManager::ValidateCurrentRecipe()
 	for (i = 1; i <= 6; i++) bItemFlag[i] = false;
 
 	// Element1
-	std::memset(cTempName, 0, sizeof(cTempName));
-	memcpy(cTempName, m_display_recipes[iIndex]->m_cElementName1.c_str(), hb::shared::limits::ItemNameLen - 1);
+	std::snprintf(cTempName, sizeof(cTempName), "%s", m_display_recipes[iIndex]->m_cElementName1.c_str());
 	iCount = m_display_recipes[iIndex]->m_iElementCount[1];
 	if (iCount == 0) iMatch++;
 	else
@@ -388,7 +381,7 @@ bool BuildItemManager::ValidateCurrentRecipe()
 			if (iItemIndex[i] == -1) continue;
 			CItem* pCfgBI = m_game->GetItemConfig(m_game->m_pItemList[iItemIndex[i]]->m_sIDnum);
 			if (pCfgBI && (memcmp(pCfgBI->m_cName, cTempName, hb::shared::limits::ItemNameLen - 1) == 0) &&
-				(m_game->m_pItemList[iItemIndex[i]]->m_dwCount >= (DWORD)(iCount)) &&
+				(m_game->m_pItemList[iItemIndex[i]]->m_dwCount >= static_cast<DWORD>(iCount)) &&
 				(iItemCount[i] > 0) && (bItemFlag[i] == false))
 			{
 				iMatch++;
@@ -402,8 +395,7 @@ bool BuildItemManager::ValidateCurrentRecipe()
 CCBIS_STEP2:;
 
 	// Element2
-	std::memset(cTempName, 0, sizeof(cTempName));
-	memcpy(cTempName, m_display_recipes[iIndex]->m_cElementName2.c_str(), hb::shared::limits::ItemNameLen - 1);
+	std::snprintf(cTempName, sizeof(cTempName), "%s", m_display_recipes[iIndex]->m_cElementName2.c_str());
 	iCount = m_display_recipes[iIndex]->m_iElementCount[2];
 	if (iCount == 0) iMatch++;
 	else
@@ -413,7 +405,7 @@ CCBIS_STEP2:;
 			if (iItemIndex[i] == -1) continue;
 			CItem* pCfgBI = m_game->GetItemConfig(m_game->m_pItemList[iItemIndex[i]]->m_sIDnum);
 			if (pCfgBI && (memcmp(pCfgBI->m_cName, cTempName, hb::shared::limits::ItemNameLen - 1) == 0) &&
-				(m_game->m_pItemList[iItemIndex[i]]->m_dwCount >= (DWORD)(iCount)) &&
+				(m_game->m_pItemList[iItemIndex[i]]->m_dwCount >= static_cast<DWORD>(iCount)) &&
 				(iItemCount[i] > 0) && (bItemFlag[i] == false))
 			{
 				iMatch++;
@@ -427,8 +419,7 @@ CCBIS_STEP2:;
 CCBIS_STEP3:;
 
 	// Element3
-	std::memset(cTempName, 0, sizeof(cTempName));
-	memcpy(cTempName, m_display_recipes[iIndex]->m_cElementName3.c_str(), hb::shared::limits::ItemNameLen - 1);
+	std::snprintf(cTempName, sizeof(cTempName), "%s", m_display_recipes[iIndex]->m_cElementName3.c_str());
 	iCount = m_display_recipes[iIndex]->m_iElementCount[3];
 	if (iCount == 0) iMatch++;
 	else
@@ -438,7 +429,7 @@ CCBIS_STEP3:;
 			if (iItemIndex[i] == -1) continue;
 			CItem* pCfgBI = m_game->GetItemConfig(m_game->m_pItemList[iItemIndex[i]]->m_sIDnum);
 			if (pCfgBI && (memcmp(pCfgBI->m_cName, cTempName, hb::shared::limits::ItemNameLen - 1) == 0) &&
-				(m_game->m_pItemList[iItemIndex[i]]->m_dwCount >= (DWORD)(iCount)) &&
+				(m_game->m_pItemList[iItemIndex[i]]->m_dwCount >= static_cast<DWORD>(iCount)) &&
 				(iItemCount[i] > 0) && (bItemFlag[i] == false))
 			{
 				iMatch++;
@@ -452,8 +443,7 @@ CCBIS_STEP3:;
 CCBIS_STEP4:;
 
 	// Element4
-	std::memset(cTempName, 0, sizeof(cTempName));
-	memcpy(cTempName, m_display_recipes[iIndex]->m_cElementName4.c_str(), hb::shared::limits::ItemNameLen - 1);
+	std::snprintf(cTempName, sizeof(cTempName), "%s", m_display_recipes[iIndex]->m_cElementName4.c_str());
 	iCount = m_display_recipes[iIndex]->m_iElementCount[4];
 	if (iCount == 0) iMatch++;
 	else
@@ -463,7 +453,7 @@ CCBIS_STEP4:;
 			if (iItemIndex[i] == -1) continue;
 			CItem* pCfgBI = m_game->GetItemConfig(m_game->m_pItemList[iItemIndex[i]]->m_sIDnum);
 			if (pCfgBI && (memcmp(pCfgBI->m_cName, cTempName, hb::shared::limits::ItemNameLen - 1) == 0) &&
-				(m_game->m_pItemList[iItemIndex[i]]->m_dwCount >= (DWORD)(iCount)) &&
+				(m_game->m_pItemList[iItemIndex[i]]->m_dwCount >= static_cast<DWORD>(iCount)) &&
 				(iItemCount[i] > 0) && (bItemFlag[i] == false))
 			{
 				iMatch++;
@@ -477,8 +467,7 @@ CCBIS_STEP4:;
 CCBIS_STEP5:;
 
 	// Element5
-	std::memset(cTempName, 0, sizeof(cTempName));
-	memcpy(cTempName, m_display_recipes[iIndex]->m_cElementName5.c_str(), hb::shared::limits::ItemNameLen - 1);
+	std::snprintf(cTempName, sizeof(cTempName), "%s", m_display_recipes[iIndex]->m_cElementName5.c_str());
 	iCount = m_display_recipes[iIndex]->m_iElementCount[5];
 	if (iCount == 0) iMatch++;
 	else
@@ -488,7 +477,7 @@ CCBIS_STEP5:;
 			if (iItemIndex[i] == -1) continue;
 			CItem* pCfgBI = m_game->GetItemConfig(m_game->m_pItemList[iItemIndex[i]]->m_sIDnum);
 			if (pCfgBI && (memcmp(pCfgBI->m_cName, cTempName, hb::shared::limits::ItemNameLen - 1) == 0) &&
-				(m_game->m_pItemList[iItemIndex[i]]->m_dwCount >= (DWORD)(iCount)) &&
+				(m_game->m_pItemList[iItemIndex[i]]->m_dwCount >= static_cast<DWORD>(iCount)) &&
 				(iItemCount[i] > 0) && (bItemFlag[i] == false))
 			{
 				iMatch++;
@@ -502,8 +491,7 @@ CCBIS_STEP5:;
 CCBIS_STEP6:;
 
 	// Element6
-	std::memset(cTempName, 0, sizeof(cTempName));
-	memcpy(cTempName, m_display_recipes[iIndex]->m_cElementName6.c_str(), hb::shared::limits::ItemNameLen - 1);
+	std::snprintf(cTempName, sizeof(cTempName), "%s", m_display_recipes[iIndex]->m_cElementName6.c_str());
 	iCount = m_display_recipes[iIndex]->m_iElementCount[6];
 	if (iCount == 0) iMatch++;
 	else
@@ -513,7 +501,7 @@ CCBIS_STEP6:;
 			if (iItemIndex[i] == -1) continue;
 			CItem* pCfgBI = m_game->GetItemConfig(m_game->m_pItemList[iItemIndex[i]]->m_sIDnum);
 			if (pCfgBI && (memcmp(pCfgBI->m_cName, cTempName, hb::shared::limits::ItemNameLen - 1) == 0) &&
-				(m_game->m_pItemList[iItemIndex[i]]->m_dwCount >= (DWORD)(iCount)) &&
+				(m_game->m_pItemList[iItemIndex[i]]->m_dwCount >= static_cast<DWORD>(iCount)) &&
 				(iItemCount[i] > 0) && (bItemFlag[i] == false))
 			{
 				iMatch++;

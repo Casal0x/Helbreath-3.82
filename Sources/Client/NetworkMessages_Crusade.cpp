@@ -79,7 +79,7 @@ namespace NetworkMessageHandlers {
 
 	void HandleGrandMagicResult(CGame* pGame, char* pData)
 	{
-		char cTxt[120];
+		char cTxt[120]{};
 		int sV1, sV2, sV3, sV4, sV5, sV6, sV7, sV8, sV9;
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyGrandMagicResult>(
 			pData, sizeof(hb::net::PacketNotifyGrandMagicResult));
@@ -87,7 +87,6 @@ namespace NetworkMessageHandlers {
 		sV1 = pkt->crashed_structures;
 		sV2 = pkt->structure_damage;
 		sV3 = pkt->casualities;
-		std::memset(cTxt, 0, sizeof(cTxt));
 		memcpy(cTxt, pkt->map_name, sizeof(pkt->map_name));
 		sV4 = pkt->active_structure;
 		sV5 = pkt->value_count;
@@ -201,20 +200,19 @@ namespace NetworkMessageHandlers {
 	void HandleEnergySphereGoalIn(CGame* pGame, char* pData)
 	{
 		int sV1, sV2, sV3;
-		char cTxt[120];
+		char cTxt[120]{};
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyEnergySphereGoalIn>(
 			pData, sizeof(hb::net::PacketNotifyEnergySphereGoalIn));
 		if (!pkt) return;
 		sV1 = pkt->result;
 		sV2 = pkt->side;
 		sV3 = pkt->goal;
-		std::memset(cTxt, 0, sizeof(cTxt));
 		memcpy(cTxt, pkt->name, sizeof(pkt->name));
 
 		if (sV2 == sV3)
 		{
 			pGame->PlayGameSound('E', 24, 0);
-			if (strcmp(cTxt, pGame->m_pPlayer->m_cPlayerName) == 0)
+			if (strcmp(cTxt, pGame->m_pPlayer->m_cPlayerName.c_str()) == 0)
 			{
 				pGame->AddEventList(NOTIFY_MSG_HANDLER33, 10); // "You pushed energy sphere to enemy's energy portal! Contribution point will be decreased by 10 points."
 				pGame->m_pPlayer->m_iContribution += sV1; // fixed, server must match...
@@ -230,7 +228,7 @@ namespace NetworkMessageHandlers {
 		else
 		{
 			pGame->PlayGameSound('E', 23, 0);
-			if (strcmp(cTxt, pGame->m_pPlayer->m_cPlayerName) == 0)
+			if (strcmp(cTxt, pGame->m_pPlayer->m_cPlayerName.c_str()) == 0)
 			{
 				switch (pGame->m_pPlayer->m_sPlayerType) {
 				case 1:

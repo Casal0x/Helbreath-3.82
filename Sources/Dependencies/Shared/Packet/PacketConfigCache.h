@@ -1,7 +1,8 @@
-#pragma once
+﻿#pragma once
 
 #include "PacketCommon.h"
 #include "PacketHeaders.h"
+#include "NetConstants.h"
 
 #include <cstdint>
 
@@ -12,9 +13,9 @@ namespace net {
 	HB_PACK_BEGIN
 	struct HB_PACKED PacketRequestInitDataEx {
 		PacketHeader header;
-		char player[10];
-		char account[10];
-		char password[10];
+		char player[hb::shared::limits::CharNameLen];
+		char account[hb::shared::limits::AccountNameLen];
+		char password[hb::shared::limits::AccountPassLen];
 		uint8_t is_observer;
 		char server[20];
 		uint8_t padding;

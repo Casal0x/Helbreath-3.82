@@ -1,4 +1,4 @@
-#include "Game.h"
+﻿#include "Game.h"
 #include "NetworkMessageManager.h"
 #include "Packet/SharedPackets.h"
 #include "lan_eng.h"
@@ -15,7 +15,7 @@ using namespace hb::shared::action;
 namespace NetworkMessageHandlers {
 	void HandleKilled(CGame* pGame, char* pData)
 	{
-		char cAttackerName[21];
+		char cAttackerName[21]{};
 		pGame->m_pPlayer->m_Controller.SetCommandAvailable(false);
 		pGame->m_pPlayer->m_Controller.SetCommand(Type::Stop);
 		pGame->m_pPlayer->m_iHP = 0;
@@ -23,11 +23,10 @@ namespace NetworkMessageHandlers {
 		// Restart
 		pGame->m_bItemUsingStatus = false;
 		pGame->ClearSkillUsingStatus();
-		std::memset(cAttackerName, 0, sizeof(cAttackerName));
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyKilled>(
 			pData, sizeof(hb::net::PacketNotifyKilled));
 		if (!pkt) return;
-		memcpy(cAttackerName, pkt->attacker_name, 20);
+		memcpy(cAttackerName, pkt->attacker_name, sizeof(pkt->attacker_name));
 		pGame->AddEventList(NOTIFYMSG_KILLED1, 10);
 		pGame->AddEventList(NOTIFYMSG_KILLED3, 10);
 	}
@@ -38,14 +37,12 @@ namespace NetworkMessageHandlers {
 		int     iPKcount, iLevel;
 		std::string cTxt;
 
-		char cName[12];
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyPKcaptured>(
 			pData, sizeof(hb::net::PacketNotifyPKcaptured));
 		if (!pkt) return;
 		iPKcount = pkt->pk_count;
 		iLevel = pkt->victim_pk_count;
-		std::memset(cName, 0, sizeof(cName));
-		memcpy(cName, pkt->victim_name, 10);
+		std::string cName(pkt->victim_name, strnlen(pkt->victim_name, sizeof(pkt->victim_name)));
 		iRewardGold = pkt->reward_gold;
 		iExp = pkt->exp;
 		cTxt = std::format(NOTIFYMSG_PK_CAPTURED1, iLevel, cName, iPKcount);
@@ -103,20 +100,16 @@ namespace NetworkMessageHandlers {
 		short sGuildRank;
 		std::string cTxt;
 
-		char cName[12], cGuildName[24];
 		int   iEnemyKillCount, iWarContribution;
 
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyEnemyKillReward>(
 			pData, sizeof(hb::net::PacketNotifyEnemyKillReward));
 		if (!pkt) return;
 
-		std::memset(cName, 0, sizeof(cName));
-		std::memset(cGuildName, 0, sizeof(cGuildName));
-
 		iExp = pkt->exp;
 		iEnemyKillCount = static_cast<int>(pkt->kill_count);
-		memcpy(cName, pkt->killer_name, 10);
-		memcpy(cGuildName, pkt->killer_guild, 20);
+		std::string cName(pkt->killer_name, strnlen(pkt->killer_name, sizeof(pkt->killer_name)));
+		std::string cGuildName(pkt->killer_guild, strnlen(pkt->killer_guild, sizeof(pkt->killer_guild)));
 		sGuildRank = pkt->killer_rank;
 		iWarContribution = pkt->war_contribution;
 
@@ -202,9 +195,7 @@ namespace NetworkMessageHandlers {
 			pGame->AddEventList(NOTIFY_MSG_HANDLER40); // "Observer Mode On. Press 'SHIFT + ESC' to Log Out..."
 			pGame->m_bIsObserverMode = true;
 			pGame->m_dwObserverCamTime = GameClock::GetTimeMS();
-			char cName[12];
-			std::memset(cName, 0, sizeof(cName));
-			memcpy(cName, pGame->m_pPlayer->m_cPlayerName, 10);
+			std::string cName = pGame->m_pPlayer->m_cPlayerName;
 			pGame->m_pMapData->bSetOwner(pGame->m_pPlayer->m_sPlayerObjectID, -1, -1, 0, 0, hb::shared::entity::PlayerAppearance{}, hb::shared::entity::PlayerStatus{}, cName, 0, 0, 0, 0);
 		}
 		else

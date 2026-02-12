@@ -238,14 +238,14 @@ void DialogBox_Constructor::OnDraw(short msX, short msY, short msZ, char cLB)
 			for (int i = 0; i < hb::shared::limits::MaxCrusadeStructures; i++)
 				if (m_pGame->m_stCrusadeStructureInfo[i].cType == 42)
 				{
-					dV1 = (double)MapSzX;
-					dV2 = (double)m_pGame->m_stCrusadeStructureInfo[i].sX;
-					dV3 = (dV2 * (double)szX) / dV1;
-					tX = (int)dV3;
-					dV1 = (double)MapSzY;
-					dV2 = (double)m_pGame->m_stCrusadeStructureInfo[i].sY;
-					dV3 = (dV2 * (double)szY) / dV1;
-					tY = (int)dV3;
+					dV1 = static_cast<double>(MapSzX);
+					dV2 = static_cast<double>(m_pGame->m_stCrusadeStructureInfo[i].sX);
+					dV3 = (dV2 * static_cast<double>(szX)) / dV1;
+					tX = static_cast<int>(dV3);
+					dV1 = static_cast<double>(MapSzY);
+					dV2 = static_cast<double>(m_pGame->m_stCrusadeStructureInfo[i].sY);
+					dV3 = (dV2 * static_cast<double>(szY)) / dV1;
+					tY = static_cast<int>(dV3);
 					switch (m_pGame->m_stCrusadeStructureInfo[i].cType) {
 					case 42:
 						DrawNewDialogBox(InterfaceNdCrusade, sX + tX + 15, sY + tY + 60, 40);
@@ -254,52 +254,52 @@ void DialogBox_Constructor::OnDraw(short msX, short msY, short msZ, char cLB)
 				}
 			if (TeleportManager::Get().GetLocX() != -1)
 			{
-				dV1 = (double)MapSzX;
-				dV2 = (double)TeleportManager::Get().GetLocX();
-				dV3 = (dV2 * (double)szX) / dV1;
-				tX = (int)dV3;
-				dV1 = (double)MapSzY;
-				dV2 = (double)TeleportManager::Get().GetLocY();
-				dV3 = (dV2 * (double)szY) / dV1;
-				tY = (int)dV3;
+				dV1 = static_cast<double>(MapSzX);
+				dV2 = static_cast<double>(TeleportManager::Get().GetLocX());
+				dV3 = (dV2 * static_cast<double>(szX)) / dV1;
+				tX = static_cast<int>(dV3);
+				dV1 = static_cast<double>(MapSzY);
+				dV2 = static_cast<double>(TeleportManager::Get().GetLocY());
+				dV3 = (dV2 * static_cast<double>(szY)) / dV1;
+				tY = static_cast<int>(dV3);
 				DrawNewDialogBox(InterfaceNdCrusade, sX + tX + 15, sY + tY + 60, 42, false, true);
 			}
 			if ((Info().cMode != 2) && (m_pGame->m_pPlayer->m_iConstructLocX != -1))
 			{
-				dV1 = (double)MapSzX;
-				dV2 = (double)m_pGame->m_pPlayer->m_iConstructLocX;
-				dV3 = (dV2 * (double)szX) / dV1;
-				tX = (int)dV3;
-				dV1 = (double)MapSzY;
-				dV2 = (double)m_pGame->m_pPlayer->m_iConstructLocY;
-				dV3 = (dV2 * (double)szY) / dV1;
-				tY = (int)dV3;
+				dV1 = static_cast<double>(MapSzX);
+				dV2 = static_cast<double>(m_pGame->m_pPlayer->m_iConstructLocX);
+				dV3 = (dV2 * static_cast<double>(szX)) / dV1;
+				tX = static_cast<int>(dV3);
+				dV1 = static_cast<double>(MapSzY);
+				dV2 = static_cast<double>(m_pGame->m_pPlayer->m_iConstructLocY);
+				dV3 = (dV2 * static_cast<double>(szY)) / dV1;
+				tY = static_cast<int>(dV3);
 				DrawNewDialogBox(InterfaceNdCrusade, sX + tX + 15, sY + tY + 60, 41, false, true);
 			}
 			if (m_pGame->m_cMapName == "middleland")
 			{
-				dV1 = (double)MapSzX;
-				dV2 = (double)m_pGame->m_pPlayer->m_sPlayerX;
-				dV3 = (dV2 * (double)szX) / dV1;
-				tX = (int)dV3;
-				dV1 = (double)MapSzY;
-				dV2 = (double)m_pGame->m_pPlayer->m_sPlayerY;
-				dV3 = (dV2 * (double)szY) / dV1;
-				tY = (int)dV3;
+				dV1 = static_cast<double>(MapSzX);
+				dV2 = static_cast<double>(m_pGame->m_pPlayer->m_sPlayerX);
+				dV3 = (dV2 * static_cast<double>(szX)) / dV1;
+				tX = static_cast<int>(dV3);
+				dV1 = static_cast<double>(MapSzY);
+				dV2 = static_cast<double>(m_pGame->m_pPlayer->m_sPlayerY);
+				dV3 = (dV2 * static_cast<double>(szY)) / dV1;
+				tY = static_cast<int>(dV3);
 				DrawNewDialogBox(InterfaceNdCrusade, sX + tX + 15, sY + tY + 60, 43);
 			}
 		}
 		if ((msX >= sX + 15) && (msX <= sX + 15 + 278)
 			&& (msY >= sY + 60) && (msY <= sY + 60 + 272))
 		{
-			dV1 = (double)(msX - (sX + 15));
-			dV2 = (double)MapSzX;
+			dV1 = static_cast<double>(msX - (sX + 15));
+			dV2 = static_cast<double>(MapSzX);
 			dV3 = (dV2 * dV1) / szX;
-			tX = (int)dV3;
-			dV1 = (double)(msY - (sY + 60));
-			dV2 = (double)MapSzX;
+			tX = static_cast<int>(dV3);
+			dV1 = static_cast<double>(msY - (sY + 60));
+			dV2 = static_cast<double>(MapSzX);
 			dV3 = (dV2 * dV1) / szY;
-			tY = (int)dV3;
+			tY = static_cast<int>(dV3);
 			if (tX < 30) tX = 30;
 			if (tY < 30) tY = 30;
 			if (tX > MapSzX - 30) tX = MapSzX - 30;

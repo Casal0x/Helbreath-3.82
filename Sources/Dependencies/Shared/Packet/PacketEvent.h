@@ -1,6 +1,7 @@
-#pragma once
+﻿#pragma once
 
 #include "PacketHeaders.h"
+#include "NetConstants.h"
 #include "Appearance.h"
 #include "PlayerStatusData.h"
 
@@ -39,7 +40,7 @@ namespace net {
 		PacketEventLogBase base;
 		std::int16_t type;
 		std::uint8_t dir;
-		char name[10];
+		char name[hb::shared::limits::CharNameLen];
 		hb::shared::entity::PlayerAppearance appearance;
 		hb::shared::entity::PlayerStatus status;
 	};
@@ -60,7 +61,7 @@ namespace net {
 		std::int16_t y;
 		std::int16_t type;
 		std::uint8_t dir;
-		char name[10];
+		char name[hb::shared::limits::CharNameLen];
 		hb::shared::entity::PlayerAppearance appearance;
 		hb::shared::entity::PlayerStatus status;
 		std::uint8_t loc;

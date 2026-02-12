@@ -93,10 +93,10 @@ void DialogBox_NpcTalk::DrawScrollBar(short sX, short sY, int iTotalLines)
 {
 	if (iTotalLines > 17)
 	{
-		double d1 = (double)m_pGame->m_dialogBoxManager.Info(DialogBoxId::NpcTalk).sView;
-		double d2 = (double)(iTotalLines - 17);
+		double d1 = static_cast<double>(m_pGame->m_dialogBoxManager.Info(DialogBoxId::NpcTalk).sView);
+		double d2 = static_cast<double>(iTotalLines - 17);
 		double d3 = (274.0 * d1) / d2;
-		int iPointerLoc = (int)d3;
+		int iPointerLoc = static_cast<int>(d3);
 		m_pGame->DrawNewDialogBox(InterfaceNdGame2, sX, sY, 3);
 	}
 }
@@ -110,10 +110,10 @@ void DialogBox_NpcTalk::HandleScrollBarDrag(short sX, short sY, short msX, short
 			if ((msX >= sX + 240) && (msX <= sX + 260) &&
 				(msY >= sY + 40) && (msY <= sY + 320))
 			{
-				double d1 = (double)(msY - (sY + 40));
-				double d2 = (double)(iTotalLines - 17);
+				double d1 = static_cast<double>(msY - (sY + 40));
+				double d2 = static_cast<double>(iTotalLines - 17);
 				double d3 = (d1 * d2) / 274.0;
-				int iPointerLoc = (int)d3;
+				int iPointerLoc = static_cast<int>(d3);
 
 				if (iPointerLoc > iTotalLines)
 					iPointerLoc = iTotalLines;

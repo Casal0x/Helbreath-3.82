@@ -35,10 +35,10 @@ Screen_CreateAccount::~Screen_CreateAccount()
 
 void Screen_CreateAccount::_clear_fields()
 {
-    std::memset(m_cNewAcctName, 0, sizeof(m_cNewAcctName));
-    std::memset(m_cNewAcctPassword, 0, sizeof(m_cNewAcctPassword));
-    std::memset(m_cNewAcctConfirm, 0, sizeof(m_cNewAcctConfirm));
-    std::memset(m_cEmail, 0, sizeof(m_cEmail));
+    m_cNewAcctName.clear();
+    m_cNewAcctPassword.clear();
+    m_cNewAcctConfirm.clear();
+    m_cEmail.clear();
 }
 
 void Screen_CreateAccount::on_initialize()
@@ -179,28 +179,26 @@ void Screen_CreateAccount::on_update()
 
 void Screen_CreateAccount::_submit_create_account()
 {
-    bool bReady = (!name().empty() && !password().empty() &&
-        !confirm().empty() && CMisc::bIsValidEmail(m_cEmail) &&
-        CMisc::bCheckValidName(m_cNewAcctName) && CMisc::bCheckValidName(m_cNewAcctPassword) &&
-        password() == confirm());
+    bool bReady = (!m_cNewAcctName.empty() && !m_cNewAcctPassword.empty() &&
+        !m_cNewAcctConfirm.empty() && CMisc::bIsValidEmail(m_cEmail.data()) &&
+        CMisc::bCheckValidName(m_cNewAcctName.data()) && CMisc::bCheckValidName(m_cNewAcctPassword.data()) &&
+        m_cNewAcctPassword == m_cNewAcctConfirm);
 
     if (bReady)
     {
         m_pGame->m_cArrowPressed = 0;
 
         // Copy account name/password to player session
-        std::memset(m_pGame->m_pPlayer->m_cAccountName, 0, sizeof(m_pGame->m_pPlayer->m_cAccountName));
-        std::snprintf(m_pGame->m_pPlayer->m_cAccountName, sizeof(m_pGame->m_pPlayer->m_cAccountName), "%s", m_cNewAcctName);
-        std::memset(m_pGame->m_pPlayer->m_cAccountPassword, 0, sizeof(m_pGame->m_pPlayer->m_cAccountPassword));
-        std::snprintf(m_pGame->m_pPlayer->m_cAccountPassword, sizeof(m_pGame->m_pPlayer->m_cAccountPassword), "%s", m_cNewAcctPassword);
+        m_pGame->m_pPlayer->m_cAccountName = m_cNewAcctName.c_str();
+        m_pGame->m_pPlayer->m_cAccountPassword = m_cNewAcctPassword.c_str();
 
         // Build CreateAccountRequest packet
         hb::net::CreateAccountRequest req{};
         req.header.msg_id = MsgId::RequestCreateNewAccount;
         req.header.msg_type = 0;
-        std::snprintf(req.account_name, sizeof(req.account_name), "%s", m_cNewAcctName);
-        std::snprintf(req.password, sizeof(req.password), "%s", m_cNewAcctPassword);
-        std::snprintf(req.email, sizeof(req.email), "%s", m_cEmail);
+        std::snprintf(req.account_name, sizeof(req.account_name), "%s", m_cNewAcctName.c_str());
+        std::snprintf(req.password, sizeof(req.password), "%s", m_cNewAcctPassword.c_str());
+        std::snprintf(req.email, sizeof(req.email), "%s", m_cEmail.c_str());
 
         // Store packet for sending after connection completes
         auto* p = reinterpret_cast<char*>(&req);
@@ -213,7 +211,6 @@ void Screen_CreateAccount::_submit_create_account()
 
         m_pGame->ChangeGameMode(GameMode::Connecting);
         m_pGame->m_dwConnectMode = MsgId::RequestCreateNewAccount;
-        std::memset(m_pGame->m_cMsg, 0, sizeof(m_pGame->m_cMsg));
         std::snprintf(m_pGame->m_cMsg, sizeof(m_pGame->m_cMsg), "%s", "01");
     }
 }
@@ -223,21 +220,18 @@ bool Screen_CreateAccount::on_net_response(uint16_t wResponseType, char* pData)
 	switch (wResponseType) {
 	case LogResMsg::NewAccountCreated:
 		m_pGame->m_pLSock.reset();
-		std::memset(m_pGame->m_cMsg, 0, sizeof(m_pGame->m_cMsg));
 		std::snprintf(m_pGame->m_cMsg, sizeof(m_pGame->m_cMsg), "%s", "54");
 		m_pGame->ChangeGameMode(GameMode::LogResMsg);
 		return true;
 
 	case LogResMsg::NewAccountFailed:
 		m_pGame->m_pLSock.reset();
-		std::memset(m_pGame->m_cMsg, 0, sizeof(m_pGame->m_cMsg));
 		std::snprintf(m_pGame->m_cMsg, sizeof(m_pGame->m_cMsg), "%s", "05");
 		m_pGame->ChangeGameMode(GameMode::LogResMsg);
 		return true;
 
 	case LogResMsg::AlreadyExistingAccount:
 		m_pGame->m_pLSock.reset();
-		std::memset(m_pGame->m_cMsg, 0, sizeof(m_pGame->m_cMsg));
 		std::snprintf(m_pGame->m_cMsg, sizeof(m_pGame->m_cMsg), "%s", "06");
 		m_pGame->ChangeGameMode(GameMode::LogResMsg);
 		return true;
@@ -250,13 +244,13 @@ void Screen_CreateAccount::on_render()
     int iFlag = 0;
 
     // Compute validation flags for display
-    if (password() != confirm())                                 iFlag = 9;
-    if (CMisc::bCheckValidName(m_cNewAcctPassword) == false)     iFlag = 7;
-    if (CMisc::bCheckValidName(m_cNewAcctName) == false)         iFlag = 6;
-    if (CMisc::bIsValidEmail(m_cEmail) == false)                 iFlag = 5;
-    if (confirm().empty())                                       iFlag = 3;
-    if (password().empty())                                      iFlag = 2;
-    if (name().empty())                                          iFlag = 1;
+    if (m_cNewAcctPassword != m_cNewAcctConfirm)                                 iFlag = 9;
+    if (CMisc::bCheckValidName(m_cNewAcctPassword.data()) == false)     iFlag = 7;
+    if (CMisc::bCheckValidName(m_cNewAcctName.data()) == false)         iFlag = 6;
+    if (CMisc::bIsValidEmail(m_cEmail.data()) == false)                 iFlag = 5;
+    if (m_cNewAcctConfirm.empty())                                       iFlag = 3;
+    if (m_cNewAcctPassword.empty())                                      iFlag = 2;
+    if (m_cNewAcctName.empty())                                          iFlag = 1;
 
     auto labelStyle = hb::shared::text::TextStyle::Color(GameColors::UIFormLabel);
     auto blackStyle = hb::shared::text::TextStyle::Color(GameColors::UIBlack);
@@ -272,7 +266,7 @@ void Screen_CreateAccount::on_render()
 
     // Show active input string
     if ((m_cCurFocus == 2) || (m_cCurFocus == 3))
-        TextInputManager::Get().ShowInput(true);
+        TextInputManager::Get().ShowInput();
     else if ((m_cCurFocus == 1) || (m_cCurFocus == 4))
         TextInputManager::Get().ShowInput();
 
@@ -281,22 +275,22 @@ void Screen_CreateAccount::on_render()
     auto invalidStyle = hb::shared::text::TextStyle::WithShadow(GameColors::InputInvalid);
 
     if (m_cCurFocus != 1) {
-        bool bValid = CMisc::bCheckValidName(m_cNewAcctName) != false;
-        hb::shared::text::DrawText(GameFont::Default, 427, 84, m_cNewAcctName, bValid ? validStyle : invalidStyle);
+        bool bValid = CMisc::bCheckValidName(m_cNewAcctName.data()) != false;
+        hb::shared::text::DrawText(GameFont::Default, 427, 84, m_cNewAcctName.c_str(), bValid ? validStyle : invalidStyle);
     }
     if (m_cCurFocus != 2) {
-        std::string masked2(password().size(), '*');
-        bool bValid = CMisc::bCheckValidName(m_cNewAcctPassword) != false;
+        std::string masked2(m_cNewAcctPassword.size(), '*');
+        bool bValid = CMisc::bCheckValidName(m_cNewAcctPassword.data()) != false;
         hb::shared::text::DrawText(GameFont::Default, 427, 106, masked2.c_str(), bValid ? validStyle : invalidStyle);
     }
     if (m_cCurFocus != 3) {
-        std::string masked3(confirm().size(), '*');
-        bool bValid = (password() == confirm());
+        std::string masked3(m_cNewAcctConfirm.size(), '*');
+        bool bValid = (m_cNewAcctPassword == m_cNewAcctConfirm);
         hb::shared::text::DrawText(GameFont::Default, 427, 129, masked3.c_str(), bValid ? validStyle : invalidStyle);
     }
     if (m_cCurFocus != 4) {
-        bool bValid = CMisc::bIsValidEmail(m_cEmail);
-        hb::shared::text::DrawText(GameFont::Default, 311, 48 + 190 - 25 + 2, m_cEmail, bValid ? validStyle : invalidStyle);
+        bool bValid = CMisc::bIsValidEmail(m_cEmail.data());
+        hb::shared::text::DrawText(GameFont::Default, 311, 48 + 190 - 25 + 2, m_cEmail.c_str(), bValid ? validStyle : invalidStyle);
     }
 
     // Draw help text based on focus

@@ -1,7 +1,8 @@
-#pragma once
+﻿#pragma once
 
 #include "PacketHeaders.h"
 #include "Appearance.h"
+#include "NetConstants.h"
 
 #include <cstdint>
 
@@ -14,18 +15,18 @@ namespace net {
 	};
 
 	struct HB_PACKED PacketLogCharacterEntry {
-		char name[10];
+		char name[hb::shared::limits::CharNameLen];
 		hb::shared::entity::PlayerAppearance appearance;
 		std::uint16_t sex;
 		std::uint16_t skin;
 		std::uint16_t level;
 		std::uint32_t exp;
-		char map_name[10];
+		char map_name[hb::shared::limits::MapNameLen];
 	};
 
 	struct HB_PACKED PacketLogNewCharacterCreatedHeader {
 		PacketHeader header;
-		char character_name[10];
+		char character_name[hb::shared::limits::CharNameLen];
 		std::int32_t total_chars;
 	};
 

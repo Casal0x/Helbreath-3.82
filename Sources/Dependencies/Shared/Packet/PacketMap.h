@@ -1,6 +1,7 @@
-#pragma once
+﻿#pragma once
 
 #include "PacketCommon.h"
+#include "NetConstants.h"
 #include "Appearance.h"
 #include "PlayerStatusData.h"
 
@@ -29,7 +30,7 @@ namespace net {
 		std::uint8_t dir;
 		hb::shared::entity::PlayerAppearance appearance;
 		hb::shared::entity::PlayerStatus status;
-		char name[10];
+		char name[hb::shared::limits::CharNameLen];
 	};
 
 	struct HB_PACKED PacketMapDataObjectNpc {

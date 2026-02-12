@@ -1,4 +1,4 @@
-#include "CommonTypes.h"
+﻿#include "CommonTypes.h"
 #include "LoginServer.h"
 #include <string>
 #include <vector>
@@ -100,9 +100,9 @@ void LoginServer::RequestLogin(int h, char* pData)
 	const auto* req = hb::net::PacketCast<hb::net::LoginRequest>(pData, sizeof(hb::net::LoginRequest));
 	if (!req) return;
 
-	std::memcpy(cName, req->account_name, hb::shared::limits::AccountNameLen - 1);
+	std::memcpy(cName, req->account_name, sizeof(req->account_name));
 	LowercaseInPlace(cName, sizeof(cName));
-	std::memcpy(cPassword, req->password, hb::shared::limits::AccountPassLen - 1);
+	std::memcpy(cPassword, req->password, sizeof(req->password));
 	std::memcpy(world_name, req->world_name, 30);
 
 	if (string(world_name) != WORLDNAMELS)
@@ -145,14 +145,16 @@ void LoginServer::GetCharList(string acc, char*& cp2, const std::vector<AccountD
 {
 	for (const auto& entry : chars)
 	{
-		Push(cp2, entry.characterName, 10);
-		std::memcpy(cp2, &entry.appearance, sizeof(hb::shared::entity::PlayerAppearance));
-		cp2 += sizeof(hb::shared::entity::PlayerAppearance);
-		Push(cp2, entry.sex);
-		Push(cp2, entry.skin);
-		Push(cp2, entry.level);
-		Push(cp2, entry.exp);
-		Push(cp2, entry.mapName, 10);
+		hb::net::PacketLogCharacterEntry pktEntry{};
+		std::memcpy(pktEntry.name, entry.characterName, sizeof(pktEntry.name));
+		pktEntry.appearance = entry.appearance;
+		pktEntry.sex = entry.sex;
+		pktEntry.skin = entry.skin;
+		pktEntry.level = entry.level;
+		pktEntry.exp = entry.exp;
+		std::memcpy(pktEntry.map_name, entry.mapName, sizeof(pktEntry.map_name));
+		std::memcpy(cp2, &pktEntry, sizeof(pktEntry));
+		cp2 += sizeof(pktEntry);
 	}
 }
 
@@ -217,10 +219,10 @@ void LoginServer::ResponseCharacter(int h, char* pData)
 	const auto* req = hb::net::PacketCast<hb::net::CreateCharacterRequest>(pData, sizeof(hb::net::CreateCharacterRequest));
 	if (!req) return;
 
-	std::memcpy(cName, req->character_name, hb::shared::limits::AccountNameLen - 1);
-	std::memcpy(cAcc, req->account_name, hb::shared::limits::AccountNameLen - 1);
+	std::memcpy(cName, req->character_name, sizeof(req->character_name));
+	std::memcpy(cAcc, req->account_name, sizeof(req->account_name));
 	LowercaseInPlace(cAcc, sizeof(cAcc));
-	std::memcpy(cPassword, req->password, hb::shared::limits::AccountPassLen - 1);
+	std::memcpy(cPassword, req->password, sizeof(req->password));
 	std::memcpy(world_name, req->world_name, 30);
 	gender = static_cast<char>(req->gender);
 	skin = static_cast<char>(req->skin);
@@ -499,7 +501,7 @@ void LoginServer::ResponseCharacter(int h, char* pData)
 
 	char cData[512] = {};
 	char* cp2 = cData;
-	Push(cp2, cName, 10);
+	Push(cp2, cName, hb::shared::limits::CharNameLen);
 	Push(cp2, (int)chars.size());
 	GetCharList(cAcc, cp2, chars);
 	SendLoginMsg(LogResMsg::NewCharacterCreated, LogResMsg::NewCharacterCreated, cData, cp2 - cData, h);
@@ -515,10 +517,10 @@ void LoginServer::DeleteCharacter(int h, char* pData)
 	const auto* req = hb::net::PacketCast<hb::net::DeleteCharacterRequest>(pData, sizeof(hb::net::DeleteCharacterRequest));
 	if (!req) return;
 
-	std::memcpy(cName, req->character_name, hb::shared::limits::AccountNameLen - 1);
-	std::memcpy(cAcc, req->account_name, hb::shared::limits::AccountNameLen - 1);
+	std::memcpy(cName, req->character_name, sizeof(req->character_name));
+	std::memcpy(cAcc, req->account_name, sizeof(req->account_name));
 	LowercaseInPlace(cAcc, sizeof(cAcc));
-	std::memcpy(cPassword, req->password, hb::shared::limits::AccountPassLen - 1);
+	std::memcpy(cPassword, req->password, sizeof(req->password));
 	std::memcpy(world_name, req->world_name, 30);
 
 	std::snprintf(G_cTxt, sizeof(G_cTxt), "(!) Request delete Character: %s", cName);
@@ -569,11 +571,11 @@ void LoginServer::ChangePassword(int h, char* pData)
 	const auto* req = hb::net::PacketCast<hb::net::ChangePasswordRequest>(pData, sizeof(hb::net::ChangePasswordRequest));
 	if (!req) return;
 
-	std::memcpy(cAcc, req->account_name, hb::shared::limits::AccountNameLen - 1);
+	std::memcpy(cAcc, req->account_name, sizeof(req->account_name));
 	LowercaseInPlace(cAcc, sizeof(cAcc));
-	std::memcpy(cPassword, req->password, hb::shared::limits::AccountPassLen - 1);
-	std::memcpy(cNewPw, req->new_password, hb::shared::limits::AccountPassLen - 1);
-	std::memcpy(cNewPwConf, req->new_password_confirm, hb::shared::limits::AccountPassLen - 1);
+	std::memcpy(cPassword, req->password, sizeof(req->password));
+	std::memcpy(cNewPw, req->new_password, sizeof(req->new_password));
+	std::memcpy(cNewPwConf, req->new_password_confirm, sizeof(req->new_password_confirm));
 
 	std::snprintf(G_cTxt, sizeof(G_cTxt), "(!) Request change password: %s", cAcc);
 	PutLogList(G_cTxt);
@@ -625,10 +627,10 @@ void LoginServer::CreateNewAccount(int h, char* pData)
 	const auto* req = hb::net::PacketCast<hb::net::CreateAccountRequest>(pData, sizeof(hb::net::CreateAccountRequest));
 	if (!req) return;
 
-	std::strncpy(cName, req->account_name, hb::shared::limits::AccountNameLen - 1);
+	std::strncpy(cName, req->account_name, sizeof(req->account_name) - 1);
 	LowercaseInPlace(cName, sizeof(cName));
-	std::strncpy(cPassword, req->password, hb::shared::limits::AccountPassLen - 1);
-	std::strncpy(cEmailAddr, req->email, hb::shared::limits::AccountEmailLen - 1);
+	std::strncpy(cPassword, req->password, sizeof(req->password) - 1);
+	std::strncpy(cEmailAddr, req->email, sizeof(req->email) - 1);
 
 	if ((strlen(cName) == 0) || (strlen(cPassword) == 0) ||
 		(strlen(cEmailAddr) == 0))
@@ -739,13 +741,13 @@ void LoginServer::RequestEnterGame(int h, char* pData)
 	const auto* req = hb::net::PacketCast<hb::net::EnterGameRequest>(pData, sizeof(hb::net::EnterGameRequest));
 	if (!req) return;
 
-	std::memcpy(cName, req->character_name, hb::shared::limits::CharNameLen - 1);
-	std::memcpy(cMapName, req->map_name, 10);
-	std::memcpy(cAcc, req->account_name, hb::shared::limits::AccountNameLen - 1);
+	std::memcpy(cName, req->character_name, sizeof(req->character_name));
+	std::memcpy(cMapName, req->map_name, sizeof(req->map_name));
+	std::memcpy(cAcc, req->account_name, sizeof(req->account_name));
 	LowercaseInPlace(cAcc, sizeof(cAcc));
-	std::memcpy(cPass, req->password, hb::shared::limits::AccountPassLen - 1);
+	std::memcpy(cPass, req->password, sizeof(req->password));
 	lvl = req->level;
-	std::memcpy(ws_name, req->world_name, 10);
+	std::memcpy(ws_name, req->world_name, sizeof(req->world_name));
 
 	char cData[112] = {};
 	if (string(ws_name) != WORLDNAMELS)

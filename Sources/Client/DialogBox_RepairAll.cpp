@@ -40,10 +40,10 @@ void DialogBox_RepairAll::OnDraw(short msX, short msY, short msZ, char cLB)
 	iTotalLines = m_pGame->totalItemRepair;
 	if (iTotalLines > 15)
 	{
-		d1 = (double)Info().sView;
-		d2 = (double)(iTotalLines - 15);
+		d1 = static_cast<double>(Info().sView);
+		d2 = static_cast<double>(iTotalLines - 15);
 		d3 = (274.0f * d1) / d2;
-		iPointerLoc = (int)d3;
+		iPointerLoc = static_cast<int>(d3);
 	}
 	else
 	{

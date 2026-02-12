@@ -46,8 +46,7 @@ void ShopManager::SendRequest(int16_t npcType)
 	}
 
 	// Build and send shop request packet
-	char cData[sizeof(hb::net::PacketShopRequest)];
-	std::memset(cData, 0, sizeof(cData));
+	char cData[sizeof(hb::net::PacketShopRequest)]{};
 
 	auto* req = reinterpret_cast<hb::net::PacketShopRequest*>(cData);
 	req->header.msg_id = MSGID_REQUEST_SHOP_CONTENTS;

@@ -377,7 +377,7 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 				m_entityState.m_appearance.Clear();
 				m_entityState.m_iDir = m_entityState.m_iFrame = 0;
 				m_entityState.m_iEffectType = m_entityState.m_iEffectFrame = m_entityState.m_iChatIndex = 0;
-				std::memset(m_entityState.m_cName.data(), 0, m_entityState.m_cName.size());
+				m_entityState.m_cName.fill('\0');
 				if ((indexX < mapMinX) || (indexX > mapMaxX) ||
 					(indexY < mapMinY) || (indexY > mapMaxY))
 				{
@@ -398,12 +398,12 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 					m_entityState.m_iFrame = m_pMapData->m_pData[dX][dY].m_cDeadOwnerFrame;
 					m_entityState.m_iChatIndex = m_pMapData->m_pData[dX][dY].m_iDeadChatMsg;
 					m_entityState.m_status = m_pMapData->m_pData[dX][dY].m_deadStatus;
-					std::snprintf(m_entityState.m_cName.data(), m_entityState.m_cName.size(), "%s", m_pMapData->m_pData[dX][dY].m_cDeadOwnerName);
+					std::snprintf(m_entityState.m_cName.data(), m_entityState.m_cName.size(), "%s", m_pMapData->m_pData[dX][dY].m_cDeadOwnerName.c_str());
 					sItemID = m_pMapData->m_pData[dX][dY].m_sItemID;
 					dwItemAttr = m_pMapData->m_pData[dX][dY].m_dwItemAttr;
 					cItemColor = m_pMapData->m_pData[dX][dY].m_cItemColor;
 					sDynamicObject = m_pMapData->m_pData[dX][dY].m_sDynamicObjectType;
-					sDynamicObjectFrame = (short)m_pMapData->m_pData[dX][dY].m_cDynamicObjectFrame;
+					sDynamicObjectFrame = static_cast<short>(m_pMapData->m_pData[dX][dY].m_cDynamicObjectFrame);
 					cDynamicObjectData1 = m_pMapData->m_pData[dX][dY].m_cDynamicObjectData1;
 					cDynamicObjectData2 = m_pMapData->m_pData[dX][dY].m_cDynamicObjectData2;
 					cDynamicObjectData3 = m_pMapData->m_pData[dX][dY].m_cDynamicObjectData3;
@@ -470,7 +470,7 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 				m_entityState.m_appearance.Clear();
 				m_entityState.m_iFrame = m_entityState.m_iDir = 0;
 				m_entityState.m_iEffectType = m_entityState.m_iEffectFrame = m_entityState.m_iChatIndex = 0;
-				std::memset(m_entityState.m_cName.data(), 0, m_entityState.m_cName.size());
+				m_entityState.m_cName.fill('\0');
 
 				if ((indexX < mapMinX) || (indexX > mapMaxX) ||
 					(indexY < mapMinY) || (indexY > mapMaxY))
@@ -494,12 +494,12 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 					m_entityState.m_iEffectType = m_pMapData->m_pData[dX][dY].m_iEffectType;
 					m_entityState.m_iEffectFrame = m_pMapData->m_pData[dX][dY].m_iEffectFrame;
 
-					std::snprintf(m_entityState.m_cName.data(), m_entityState.m_cName.size(), "%s", m_pMapData->m_pData[dX][dY].m_cOwnerName);
+					std::snprintf(m_entityState.m_cName.data(), m_entityState.m_cName.size(), "%s", m_pMapData->m_pData[dX][dY].m_cOwnerName.c_str());
 					bRet = true;
 
 					if (m_iIlusionOwnerH != 0)
 					{
-						if ((strcmp(m_entityState.m_cName.data(), m_pPlayer->m_cPlayerName) != 0) && (!hb::shared::owner::IsNPC(m_entityState.m_sOwnerType)))
+						if ((strcmp(m_entityState.m_cName.data(), m_pPlayer->m_cPlayerName.c_str()) != 0) && (!hb::shared::owner::IsNPC(m_entityState.m_sOwnerType)))
 						{
 							m_entityState.m_sOwnerType = m_cIlusionOwnerType;
 							m_entityState.m_status = m_pPlayer->m_illusionStatus;
@@ -508,7 +508,7 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 					}
 				}
 
-				if ((bRet == true) && (strlen(m_entityState.m_cName.data()) > 0))
+				if ((bRet == true) && (m_entityState.m_cName[0] != '\0'))
 				{
 					m_entityState.m_iMoveOffsetX = 0;
 					m_entityState.m_iMoveOffsetY = 0;
@@ -847,7 +847,7 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 			m_entityState.m_status = focusStatus;
 			m_entityState.m_iDataX = focusDataX;
 			m_entityState.m_iDataY = focusDataY;
-			std::memset(m_entityState.m_cName.data(), 0, m_entityState.m_cName.size());
+			m_entityState.m_cName.fill('\0');
 			std::snprintf(m_entityState.m_cName.data(), m_entityState.m_cName.size(), "%s", CursorTarget::GetFocusedName());
 
 			if ((focusAction != ObjectDead) && (focusFrame < 0)) {

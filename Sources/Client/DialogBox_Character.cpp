@@ -58,16 +58,15 @@ DialogBox_Character::DialogBox_Character(CGame* pGame)
 // Helper: Display stat with optional angelic bonus (blue if boosted)
 void DialogBox_Character::DrawStat(int x1, int x2, int y, int baseStat, int angelicBonus)
 {
-	char buf[16];
 	if (angelicBonus == 0)
 	{
-		snprintf(buf, sizeof(buf), "%d", baseStat);
-		PutAlignedString(x1, x2, y, buf, GameColors::UILabel);
+		auto buf = std::format("{}", baseStat);
+		PutAlignedString(x1, x2, y, buf.c_str(), GameColors::UILabel);
 	}
 	else
 	{
-		snprintf(buf, sizeof(buf), "%d", baseStat + angelicBonus);
-		PutAlignedString(x1, x2, y, buf, GameColors::UIModifiedStat);
+		auto buf = std::format("{}", baseStat + angelicBonus);
+		PutAlignedString(x1, x2, y, buf.c_str(), GameColors::UIModifiedStat);
 	}
 }
 
@@ -213,7 +212,7 @@ void DialogBox_Character::OnDraw(short msX, short msY, short msZ, char cLB)
 
 	// Player name and PK/contribution
 	std::string cTxt2;
-	std::string infoBuf = std::string(m_pGame->m_pPlayer->m_cPlayerName) + " : ";
+	std::string infoBuf = m_pGame->m_pPlayer->m_cPlayerName + " : ";
 
 	if (m_pGame->m_pPlayer->m_iPKCount > 0) {
 		cTxt2 = std::format(DRAW_DIALOGBOX_CHARACTER1, m_pGame->m_pPlayer->m_iPKCount);
@@ -561,6 +560,6 @@ PressResult DialogBox_Character::OnPress(short msX, short msY)
 
 bool DialogBox_Character::OnItemDrop(short msX, short msY)
 {
-	InventoryManager::Get().EquipItem((char)CursorTarget::GetSelectedID());
+	InventoryManager::Get().EquipItem(static_cast<char>(CursorTarget::GetSelectedID()));
 	return true;
 }

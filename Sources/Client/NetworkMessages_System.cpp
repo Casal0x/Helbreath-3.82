@@ -58,8 +58,7 @@ void HandleNoticeMsg(CGame* pGame, char* pData)
 	const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyNoticeMsg>(
 		pData, sizeof(hb::net::PacketNotifyNoticeMsg));
 	if (!pkt) return;
-	std::snprintf(cMsg, sizeof(cMsg), "%s", pkt->text);
-	pGame->AddEventList(cMsg, 10);
+	pGame->AddEventList(pkt->text, 10);
 }
 
 void HandleStatusText(CGame* pGame, char* pData)
@@ -112,7 +111,7 @@ void HandleServerChange(CGame* pGame, char* pData)
 {
 	if (pGame->m_bIsServerChanging) return;
 
-	char cWorldServerAddr[16];
+	char cWorldServerAddr[16]{};
 	int iWorldServerPort;
 
 	const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyServerChange>(
@@ -121,9 +120,8 @@ void HandleServerChange(CGame* pGame, char* pData)
 
 	pGame->m_bIsServerChanging = true;
 
-	std::memset(cWorldServerAddr, 0, sizeof(cWorldServerAddr));
 
-	pGame->m_cMapName.assign(pkt->map_name, strnlen(pkt->map_name, 10));
+	pGame->m_cMapName.assign(pkt->map_name, strnlen(pkt->map_name, sizeof(pkt->map_name)));
 	memcpy(cWorldServerAddr, pkt->log_server_addr, 15);
 	iWorldServerPort = pkt->log_server_port;
 	if (pGame->m_pGSock != 0)
@@ -144,7 +142,6 @@ void HandleServerChange(CGame* pGame, char* pData)
 	pGame->m_dwConnectMode = MsgId::RequestEnterGame;
 	//m_wEnterGameType = EnterGameMsg::New; //Gateway
 	pGame->m_wEnterGameType = EnterGameMsg::NewToWlsButMls;
-	std::memset(pGame->m_cMsg, 0, sizeof(pGame->m_cMsg));
 	std::snprintf(pGame->m_cMsg, sizeof(pGame->m_cMsg), "%s", "55");
 }
 
@@ -208,8 +205,8 @@ void HandleForceRecallTime(CGame* pGame, char* pData)
 		pData, sizeof(hb::net::PacketNotifyForceRecallTime));
 	if (!pkt) return;
 	sV1 = static_cast<short>(pkt->seconds_left);
-	if ((int)(sV1 / 20) > 0)
-		cTxt = std::format(NOTIFY_MSG_FORCERECALLTIME1, (int)(sV1 / 20));
+	if (static_cast<int>(sV1 / 20) > 0)
+		cTxt = std::format(NOTIFY_MSG_FORCERECALLTIME1, static_cast<int>(sV1 / 20));
 	else
 		cTxt = NOTIFY_MSG_FORCERECALLTIME2;
 	pGame->AddEventList(cTxt.c_str(), 10);

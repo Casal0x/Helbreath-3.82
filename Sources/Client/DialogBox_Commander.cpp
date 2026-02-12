@@ -8,6 +8,7 @@
 #include "NetMessages.h"
 #include "GameFonts.h"
 #include "TextLibExt.h"
+#include <format>
 
 using namespace hb::shared::net;
 using namespace hb::client::sprite_id;
@@ -333,14 +334,14 @@ void DialogBox_Commander::OnDraw(short msX, short msY, short msZ, char cLB)
 			for (i = 0; i < hb::shared::limits::MaxCrusadeStructures; i++)
 				if (m_pGame->m_stCrusadeStructureInfo[i].cType != 0)
 				{
-					dV1 = (double)MapSzX;
-					dV2 = (double)m_pGame->m_stCrusadeStructureInfo[i].sX;
-					dV3 = (dV2 * (double)szX) / dV1;
-					tX = (int)dV3;
-					dV1 = (double)MapSzY;
-					dV2 = (double)m_pGame->m_stCrusadeStructureInfo[i].sY;
-					dV3 = (dV2 * (double)szY) / dV1;
-					tY = (int)dV3;
+					dV1 = static_cast<double>(MapSzX);
+					dV2 = static_cast<double>(m_pGame->m_stCrusadeStructureInfo[i].sX);
+					dV3 = (dV2 * static_cast<double>(szX)) / dV1;
+					tX = static_cast<int>(dV3);
+					dV1 = static_cast<double>(MapSzY);
+					dV2 = static_cast<double>(m_pGame->m_stCrusadeStructureInfo[i].sY);
+					dV3 = (dV2 * static_cast<double>(szY)) / dV1;
+					tY = static_cast<int>(dV3);
 					switch (m_pGame->m_stCrusadeStructureInfo[i].cType) {
 					case 38:
 						if (m_pGame->m_stCrusadeStructureInfo[i].cSide == 1)
@@ -361,14 +362,14 @@ void DialogBox_Commander::OnDraw(short msX, short msY, short msZ, char cLB)
 				}
 			if (TeleportManager::Get().GetLocX() != -1)
 			{
-				dV1 = (double)MapSzX;
-				dV2 = (double)TeleportManager::Get().GetLocX();
-				dV3 = (dV2 * (double)szX) / dV1;
-				tX = (int)dV3;
-				dV1 = (double)MapSzY;
-				dV2 = (double)TeleportManager::Get().GetLocY();
-				dV3 = (dV2 * (double)szY) / dV1;
-				tY = (int)dV3;
+				dV1 = static_cast<double>(MapSzX);
+				dV2 = static_cast<double>(TeleportManager::Get().GetLocX());
+				dV3 = (dV2 * static_cast<double>(szX)) / dV1;
+				tX = static_cast<int>(dV3);
+				dV1 = static_cast<double>(MapSzY);
+				dV2 = static_cast<double>(TeleportManager::Get().GetLocY());
+				dV3 = (dV2 * static_cast<double>(szY)) / dV1;
+				tY = static_cast<int>(dV3);
 				if ((Info().cMode == 1) && (tY >= 30) && (tY <= 494))
 				{
 					DrawNewDialogBox(InterfaceNdCrusade, sX + tX + 15, sY + tY + 60, 42, false, true);
@@ -377,26 +378,26 @@ void DialogBox_Commander::OnDraw(short msX, short msY, short msZ, char cLB)
 			}
 			if ((Info().cMode != 2) && (m_pGame->m_pPlayer->m_iConstructLocX != -1))
 			{
-				dV1 = (double)MapSzX;
-				dV2 = (double)m_pGame->m_pPlayer->m_iConstructLocX;
-				dV3 = (dV2 * (double)szX) / dV1;
-				tX = (int)dV3;
-				dV1 = (double)MapSzY;
-				dV2 = (double)m_pGame->m_pPlayer->m_iConstructLocY;
-				dV3 = (dV2 * (double)szY) / dV1;
-				tY = (int)dV3;
+				dV1 = static_cast<double>(MapSzX);
+				dV2 = static_cast<double>(m_pGame->m_pPlayer->m_iConstructLocX);
+				dV3 = (dV2 * static_cast<double>(szX)) / dV1;
+				tX = static_cast<int>(dV3);
+				dV1 = static_cast<double>(MapSzY);
+				dV2 = static_cast<double>(m_pGame->m_pPlayer->m_iConstructLocY);
+				dV3 = (dV2 * static_cast<double>(szY)) / dV1;
+				tY = static_cast<int>(dV3);
 				DrawNewDialogBox(InterfaceNdCrusade, sX + tX + 15, sY + tY + 60, 41, false, true);
 			}
 			if (m_pGame->m_cMapName == "middleland")
 			{
-				dV1 = (double)MapSzX;
-				dV2 = (double)m_pGame->m_pPlayer->m_sPlayerX;
-				dV3 = (dV2 * (double)szX) / dV1;
-				tX = (int)dV3;
-				dV1 = (double)MapSzY;
-				dV2 = (double)m_pGame->m_pPlayer->m_sPlayerY;
-				dV3 = (dV2 * (double)szY) / dV1;
-				tY = (int)dV3;
+				dV1 = static_cast<double>(MapSzX);
+				dV2 = static_cast<double>(m_pGame->m_pPlayer->m_sPlayerX);
+				dV3 = (dV2 * static_cast<double>(szX)) / dV1;
+				tX = static_cast<int>(dV3);
+				dV1 = static_cast<double>(MapSzY);
+				dV2 = static_cast<double>(m_pGame->m_pPlayer->m_sPlayerY);
+				dV3 = (dV2 * static_cast<double>(szY)) / dV1;
+				tY = static_cast<int>(dV3);
 				DrawNewDialogBox(InterfaceNdCrusade, sX + tX + 15, sY + tY + 60, 43);
 			}
 		}
@@ -404,21 +405,20 @@ void DialogBox_Commander::OnDraw(short msX, short msY, short msZ, char cLB)
 		{
 			if ((msX >= sX + 15) && (msX <= sX + 15 + 278) && (msY >= sY + 60) && (msY <= sY + 60 + 272))
 			{
-				dV1 = (double)(msX - (sX + 15));
-				dV2 = (double)MapSzX;
+				dV1 = static_cast<double>(msX - (sX + 15));
+				dV2 = static_cast<double>(MapSzX);
 				dV3 = (dV2 * dV1) / szX;
-				tX = (int)dV3;
-				dV1 = (double)(msY - (sY + 60));
-				dV2 = (double)MapSzX;
+				tX = static_cast<int>(dV3);
+				dV1 = static_cast<double>(msY - (sY + 60));
+				dV2 = static_cast<double>(MapSzX);
 				dV3 = (dV2 * dV1) / szY;
-				tY = (int)dV3;
+				tY = static_cast<int>(dV3);
 				if (tX < 30) tX = 30;
 				if (tY < 30) tY = 30;
 				if (tX > MapSzX - 30) tX = MapSzX - 30;
 				if (tY > MapSzY - 30) tY = MapSzY - 30;
-				char coordBuf[32];
-				snprintf(coordBuf, sizeof(coordBuf), "%d,%d", tX, tY);
-				hb::shared::text::DrawText(GameFont::SprFont3_2, msX + 10, msY - 10, coordBuf, hb::shared::text::TextStyle::WithTwoPointShadow(GameColors::Yellow4x));
+				auto coordBuf = std::format("{},{}", tX, tY);
+				hb::shared::text::DrawText(GameFont::SprFont3_2, msX + 10, msY - 10, coordBuf.c_str(), hb::shared::text::TextStyle::WithTwoPointShadow(GameColors::Yellow4x));
 			}
 		}
 		break;
@@ -480,14 +480,14 @@ bool DialogBox_Commander::OnClick(short msX, short msY)
 	case 1: // Set TP
 		if ((msX >= sX + 15) && (msX <= sX + 15 + 278) && (msY >= sY + 60) && (msY <= sY + 60 + 272))
 		{
-			d1 = (double)(msX - (sX + 15));
-			d2 = (double)(524.0f);
+			d1 = static_cast<double>(msX - (sX + 15));
+			d2 = static_cast<double>(524.0f);
 			d3 = (d2 * d1) / 279.0f;
-			tX = (int)d3;
-			d1 = (double)(msY - (sY + 60));
-			d2 = (double)(524.0f);
+			tX = static_cast<int>(d3);
+			d1 = static_cast<double>(msY - (sY + 60));
+			d2 = static_cast<double>(524.0f);
 			d3 = (d2 * d1) / (280.0f);
-			tY = (int)d3;
+			tY = static_cast<int>(d3);
 			if (tX < 30) tX = 30;
 			if (tY < 30) tY = 30;
 			if (tX > 494) tX = 494;
@@ -635,14 +635,14 @@ bool DialogBox_Commander::OnClick(short msX, short msY)
 	case 4: // Set constr
 		if ((msX >= sX + 15) && (msX <= sX + 15 + 278) && (msY >= sY + 60) && (msY <= sY + 60 + 272))
 		{
-			d1 = (double)(msX - (sX + 15));
-			d2 = (double)(524.0);
+			d1 = static_cast<double>(msX - (sX + 15));
+			d2 = static_cast<double>(524.0);
 			d3 = (d2 * d1) / 279.0f;
-			tX = (int)d3;
-			d1 = (double)(msY - (sY + 60));
-			d2 = (double)(524.0);
+			tX = static_cast<int>(d3);
+			d1 = static_cast<double>(msY - (sY + 60));
+			d2 = static_cast<double>(524.0);
 			d3 = (d2 * d1) / (280.0);
-			tY = (int)d3;
+			tY = static_cast<int>(d3);
 			if (tX < 30) tX = 30;
 			if (tY < 30) tY = 30;
 			if (tX > 494) tX = 494;

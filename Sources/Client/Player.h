@@ -1,7 +1,8 @@
-#pragma once
+﻿#pragma once
 #include <windows.h>
 #include <cstdint>
 #include <cstring>
+#include <string>
 #include <array>
 #include "PlayerController.h"
 #include "NetConstants.h"
@@ -70,12 +71,12 @@ public:
     CPlayerController m_Controller;
 
     // IDENTITY & ACCOUNT
-    char m_cPlayerName[hb::client::config::PlayerNameLength];
+    std::string m_cPlayerName;
     short m_sPlayerObjectID;
     short m_sPlayerType;
-    char m_cAccountName[hb::shared::limits::AccountNameLen];
-    char m_cAccountPassword[hb::shared::limits::AccountPassLen];
-    char m_cGuildName[hb::client::config::GuildNameLength];
+    std::string m_cAccountName;
+    std::string m_cAccountPassword;
+    std::string m_cGuildName;
     int m_iGuildRank;
 
     // POSITION & MOVEMENT

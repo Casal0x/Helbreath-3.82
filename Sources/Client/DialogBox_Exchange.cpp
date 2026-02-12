@@ -29,7 +29,7 @@ void DialogBox_Exchange::OnDraw(short msX, short msY, short msZ, char cLB)
 
 	switch (Info().cMode) {
 	case 1: // Not yet confirmed exchange
-		PutAlignedString(sX + 80, sX + 180, sY + 38, m_pGame->m_pPlayer->m_cPlayerName, GameColors::UIDarkGreen);
+		PutAlignedString(sX + 80, sX + 180, sY + 38, m_pGame->m_pPlayer->m_cPlayerName.c_str(), GameColors::UIDarkGreen);
 		if (m_pGame->m_stDialogBoxExchangeInfo[4].sV1 != -1)
 			PutAlignedString(sX + 250, sX + 540, sY + 38, m_pGame->m_stDialogBoxExchangeInfo[4].cStr2.c_str(), GameColors::UIDarkGreen);
 
@@ -70,7 +70,7 @@ void DialogBox_Exchange::OnDraw(short msX, short msY, short msZ, char cLB)
 		break;
 
 	case 2: // You have confirmed the exchange
-		PutAlignedString(sX + 80, sX + 180, sY + 38, m_pGame->m_pPlayer->m_cPlayerName, GameColors::UIDarkGreen);
+		PutAlignedString(sX + 80, sX + 180, sY + 38, m_pGame->m_pPlayer->m_cPlayerName.c_str(), GameColors::UIDarkGreen);
 		if (m_pGame->m_stDialogBoxExchangeInfo[4].sV1 != -1)
 			PutAlignedString(sX + 250, sX + 540, sY + 38, m_pGame->m_stDialogBoxExchangeInfo[4].cStr2.c_str(), GameColors::UIDarkGreen);
 
@@ -229,7 +229,7 @@ bool DialogBox_Exchange::OnItemDrop(short msX, short msY)
 	if (m_pGame->m_pPlayer->m_Controller.GetCommand() < 0) return false;
 	if (m_pGame->m_stDialogBoxExchangeInfo[3].sV1 != -1) return false; // Already 4 items
 
-	char cItemID = (char)CursorTarget::GetSelectedID();
+	char cItemID = static_cast<char>(CursorTarget::GetSelectedID());
 
 	// Find first empty exchange slot
 	int iSlot = -1;

@@ -82,7 +82,7 @@ public:
 
             if (s_lastWorkingSet > 0)
             {
-                double dDeltaMB = (double)((LONGLONG)pmc.WorkingSetSize - (LONGLONG)s_lastWorkingSet) / (1024.0 * 1024.0);
+                double dDeltaMB = static_cast<double>((LONGLONG)pmc.WorkingSetSize - (LONGLONG)s_lastWorkingSet) / (1024.0 * 1024.0);
                 const char* pSign = (dDeltaMB >= 0) ? "+" : "";
                 printf("[MEMORY] %-20s Working: %6.2f MB | Private: %6.2f MB | Peak: %6.2f MB (%s%.2f MB)\n",
                     pLabel, dWorkingMB, dPrivateMB, dPeakMB, pSign, dDeltaMB);

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "PacketHeaders.h"
 #include "NetConstants.h"
@@ -35,7 +35,7 @@ namespace net {
 		PacketHeader header;
 		int32_t gate_x;
 		int32_t gate_y;
-		char map_name[10];
+		char map_name[hb::shared::limits::MapNameLen];
 	};
 
 	struct HB_PACKED PacketNotifyQuestCounter {
@@ -52,7 +52,7 @@ namespace net {
 
 	struct HB_PACKED PacketNotifyAbaddonKilled {
 		PacketHeader header;
-		char killer_name[10];
+		char killer_name[hb::shared::limits::CharNameLen];
 		uint8_t padding[10];
 	};
 
@@ -81,7 +81,7 @@ namespace net {
 
 	struct HB_PACKED PacketNotifyChangePlayMode {
 		PacketHeader header;
-		char location[10];
+		char location[hb::shared::limits::MapNameLen];
 		uint8_t padding[2];
 	};
 
@@ -101,7 +101,7 @@ namespace net {
 		PacketHeader header;
 		int16_t guild_rank;
 		int16_t index;
-		char guild_name[20];
+		char guild_name[hb::shared::limits::GuildNameLen];
 	};
 
 	struct HB_PACKED PacketNotifyItemUpgradeFail {
@@ -133,7 +133,7 @@ namespace net {
 		uint8_t item_color;
 		uint8_t spec_value2;
 		uint32_t attribute;
-		char item_name[hb::shared::limits::ItemNameLen - 1];
+		char item_name[hb::shared::limits::ItemNameLen];
 		int16_t item_id;
 	};
 
@@ -141,10 +141,10 @@ namespace net {
 		PacketHeader header;
 		int16_t dest_x;
 		int16_t dest_y;
-		char teleport_map[10];
+		char teleport_map[hb::shared::limits::MapNameLen];
 		int16_t construct_x;
 		int16_t construct_y;
-		char construct_map[10];
+		char construct_map[hb::shared::limits::MapNameLen];
 	};
 
 	struct HB_PACKED PacketNotifyConstructionPoint {
@@ -162,7 +162,7 @@ namespace net {
 	struct HB_PACKED PacketNotifyLockedMap {
 		PacketHeader header;
 		int16_t seconds_left;
-		char map_name[10];
+		char map_name[hb::shared::limits::MapNameLen];
 	};
 
 	struct HB_PACKED PacketNotifyCannotConstruct {
@@ -205,7 +205,7 @@ namespace net {
 		int16_t result;
 		int16_t side;
 		int16_t goal;
-		char name[20];
+		char name[hb::shared::limits::NpcNameLen];
 	};
 
 	struct HB_PACKED PacketNotifySuperAttackLeft {
@@ -302,7 +302,7 @@ namespace net {
 		int16_t type;
 		int16_t v2;
 		int16_t v3;
-		char name[10];
+		char name[hb::shared::limits::CharNameLen];
 	};
 
 	struct HB_PACKED PacketNotifyPartyList {
@@ -318,7 +318,7 @@ namespace net {
 		uint16_t crashed_structures;
 		uint16_t structure_damage;
 		uint16_t casualities;
-		char map_name[10];
+		char map_name[hb::shared::limits::MapNameLen];
 		uint16_t active_structure;
 		uint16_t value_count;
 		uint16_t values[1];
@@ -329,7 +329,7 @@ namespace net {
 		uint16_t crashed_structures;
 		uint16_t structure_damage;
 		uint16_t casualities;
-		char map_name[10];
+		char map_name[hb::shared::limits::MapNameLen];
 		uint16_t active_structure;
 		uint16_t value_count;
 	};
@@ -337,7 +337,7 @@ namespace net {
 	struct HB_PACKED PacketNotifyItemObtained {
 		PacketHeader header;
 		uint8_t is_new;
-		char name[hb::shared::limits::ItemNameLen - 1];
+		char name[hb::shared::limits::ItemNameLen];
 		uint32_t count;
 		uint8_t item_type;
 		uint8_t equip_pos;
@@ -358,7 +358,7 @@ namespace net {
 	struct HB_PACKED PacketNotifyItemPurchased {
 		PacketHeader header;
 		uint8_t is_new;
-		char name[hb::shared::limits::ItemNameLen - 1];
+		char name[hb::shared::limits::ItemNameLen];
 		uint32_t count;
 		uint8_t item_type;
 		uint8_t equip_pos;
@@ -379,7 +379,7 @@ namespace net {
 		PacketHeader header;
 		uint8_t bank_index;
 		uint8_t is_new;
-		char name[hb::shared::limits::ItemNameLen - 1];
+		char name[hb::shared::limits::ItemNameLen];
 		uint32_t count;
 		uint8_t item_type;
 		uint8_t equip_pos;
@@ -402,7 +402,7 @@ namespace net {
 	struct HB_PACKED PacketNotifyRatingPlayer {
 		PacketHeader header;
 		uint8_t result;
-		char name[10];
+		char name[hb::shared::limits::CharNameLen];
 		int32_t rating;
 		uint8_t padding;
 	};
@@ -410,40 +410,40 @@ namespace net {
 	struct HB_PACKED PacketNotifyPlayerShutUp {
 		PacketHeader header;
 		uint16_t time;
-		char name[10];
+		char name[hb::shared::limits::CharNameLen];
 		uint8_t padding;
 	};
 
 	struct HB_PACKED PacketNotifyPlayerNotOnGame {
 		PacketHeader header;
-		char name[10];
+		char name[hb::shared::limits::CharNameLen];
 		char filler[10];
 		uint8_t padding;
 	};
 
 	struct HB_PACKED PacketNotifyPlayerOnGame {
 		PacketHeader header;
-		char name[10];
+		char name[hb::shared::limits::CharNameLen];
 		char map_name[14];
 		uint8_t padding;
 	};
 
 	struct HB_PACKED PacketNotifyPlayerStatus {
 		PacketHeader header;
-		char name[10];
-		char map_name[10];
+		char name[hb::shared::limits::CharNameLen];
+		char map_name[hb::shared::limits::MapNameLen];
 		uint16_t x;
 		uint16_t y;
 	};
 
 	struct HB_PACKED PacketNotifyWhisperMode {
 		PacketHeader header;
-		char name[10];
+		char name[hb::shared::limits::CharNameLen];
 	};
 
 	struct HB_PACKED PacketNotifyServerChange {
 		PacketHeader header;
-		char map_name[10];
+		char map_name[hb::shared::limits::MapNameLen];
 		char log_server_addr[15];
 		int32_t log_server_port;
 	};
@@ -489,7 +489,7 @@ namespace net {
 		uint32_t v2;
 		uint32_t v3;
 		uint32_t v4;
-		char item_name[hb::shared::limits::ItemNameLen - 1];
+		char item_name[hb::shared::limits::ItemNameLen];
 		uint8_t padding[2];
 	};
 
@@ -499,7 +499,7 @@ namespace net {
 		uint32_t v2;
 		uint32_t v3;
 		uint32_t v4;
-		char item_name[hb::shared::limits::ItemNameLen - 1];
+		char item_name[hb::shared::limits::ItemNameLen];
 		uint8_t padding[2];
 	};
 
@@ -514,7 +514,7 @@ namespace net {
 		int16_t y;
 		int16_t range;
 		int16_t is_completed;
-		char target_name[20];
+		char target_name[hb::shared::limits::NpcNameLen];
 		uint8_t padding[2];
 	};
 
@@ -536,12 +536,12 @@ namespace net {
 
 	struct HB_PACKED PacketNotifyQueryDismissGuildPermission {
 		PacketHeader header;
-		char name[10];
+		char name[hb::shared::limits::CharNameLen];
 	};
 
 	struct HB_PACKED PacketNotifyQueryJoinGuildPermission {
 		PacketHeader header;
-		char name[10];
+		char name[hb::shared::limits::CharNameLen];
 	};
 
 	struct HB_PACKED PacketNotifyTimeChange {
@@ -660,7 +660,7 @@ namespace net {
 		int16_t who;
 		int16_t flag;
 		int32_t amount;
-		char reward_name[hb::shared::limits::ItemNameLen - 1];
+		char reward_name[hb::shared::limits::ItemNameLen];
 		int32_t contribution;
 	};
 
@@ -674,8 +674,8 @@ namespace net {
 		int16_t cur_life;
 		int16_t max_life;
 		int16_t performance;
-		char item_name[hb::shared::limits::ItemNameLen - 1];
-		char char_name[10];
+		char item_name[hb::shared::limits::ItemNameLen];
+		char char_name[hb::shared::limits::CharNameLen];
 		uint32_t attribute;
 		int16_t item_id;
 	};
@@ -694,8 +694,8 @@ namespace net {
 		PacketHeader header;
 		uint32_t exp;
 		uint32_t kill_count;
-		char killer_name[10];
-		char killer_guild[20];
+		char killer_name[hb::shared::limits::CharNameLen];
+		char killer_guild[hb::shared::limits::GuildNameLen];
 		int16_t killer_rank;
 		int16_t war_contribution;
 	};
@@ -704,7 +704,7 @@ namespace net {
 		PacketHeader header;
 		uint16_t pk_count;
 		uint16_t victim_pk_count;
-		char victim_name[10];
+		char victim_name[hb::shared::limits::CharNameLen];
 		uint32_t reward_gold;
 		uint32_t exp;
 	};
@@ -723,7 +723,7 @@ namespace net {
 
 	struct HB_PACKED PacketNotifyKilled {
 		PacketHeader header;
-		char attacker_name[20];
+		char attacker_name[hb::shared::limits::NpcNameLen];
 	};
 
 	struct HB_PACKED PacketNotifyForceDisconn {
@@ -756,13 +756,13 @@ namespace net {
 		int16_t x;
 		int16_t y;
 		int16_t range;
-		char reward_name[hb::shared::limits::ItemNameLen - 1];
-		char target_name[20];
+		char reward_name[hb::shared::limits::ItemNameLen];
+		char target_name[hb::shared::limits::NpcNameLen];
 	};
 
 	struct HB_PACKED PacketNotifyMapStatusHeader {
 		PacketHeader header;
-		char map_name[10];
+		char map_name[hb::shared::limits::MapNameLen];
 		int16_t index;
 		uint8_t total;
 	};
@@ -783,14 +783,14 @@ namespace net {
 		int16_t kill_count;
 		int16_t next_count;
 		int16_t level;
-		char npc_name[20];
+		char npc_name[hb::shared::limits::NpcNameLen];
 	};
 
 	struct HB_PACKED PacketNotifyCannotGiveItem {
 		PacketHeader header;
 		uint16_t item_index;
 		int32_t amount;
-		char name[hb::shared::limits::ItemNameLen - 1];
+		char name[hb::shared::limits::ItemNameLen];
 	};
 
 	struct HB_PACKED PacketNotifyGlobalAttackMode {
@@ -813,7 +813,7 @@ namespace net {
 		uint16_t price;
 		uint16_t sprite;
 		uint16_t sprite_frame;
-		char name[20];
+		char name[hb::shared::limits::NpcNameLen];
 	};
 
 	struct HB_PACKED PacketNotifyCannotRating {
@@ -825,14 +825,14 @@ namespace net {
 		PacketHeader header;
 		uint16_t item_index;
 		uint16_t reason;
-		char name[hb::shared::limits::ItemNameLen - 1];
+		char name[hb::shared::limits::ItemNameLen];
 	};
 
 	struct HB_PACKED PacketNotifyCannotSellItem {
 		PacketHeader header;
 		uint16_t item_index;
 		uint16_t reason;
-		char name[hb::shared::limits::ItemNameLen - 1];
+		char name[hb::shared::limits::ItemNameLen];
 	};
 
 	struct HB_PACKED PacketNotifyDownSkillIndexSet {
@@ -854,57 +854,57 @@ namespace net {
 
 	struct HB_PACKED PacketNotifyCannotJoinMoreGuildsMan {
 		PacketHeader header;
-		char name[10];
+		char name[hb::shared::limits::CharNameLen];
 	};
 
 	struct HB_PACKED PacketNotifyNewGuildsMan {
 		PacketHeader header;
-		char name[11];
+		char name[hb::shared::limits::CharNameLen];
 	};
 
 	struct HB_PACKED PacketNotifyDismissGuildsMan {
 		PacketHeader header;
-		char name[11];
+		char name[hb::shared::limits::CharNameLen];
 	};
 
 	struct HB_PACKED PacketNotifyJoinGuildApprove {
 		PacketHeader header;
-		char guild_name[20];
+		char guild_name[hb::shared::limits::GuildNameLen];
 		int16_t rank;
 	};
 
 	struct HB_PACKED PacketNotifyJoinGuildReject {
 		PacketHeader header;
-		char guild_name[20];
+		char guild_name[hb::shared::limits::GuildNameLen];
 		int16_t rank;
-		char location[10];
+		char location[hb::shared::limits::MapNameLen];
 	};
 
 	struct HB_PACKED PacketNotifyDismissGuildApprove {
 		PacketHeader header;
-		char guild_name[20];
+		char guild_name[hb::shared::limits::GuildNameLen];
 		int16_t rank;
-		char location[10];
+		char location[hb::shared::limits::MapNameLen];
 	};
 
 	struct HB_PACKED PacketNotifyDismissGuildReject {
 		PacketHeader header;
-		char guild_name[20];
+		char guild_name[hb::shared::limits::GuildNameLen];
 		int16_t rank;
-		char location[10];
+		char location[hb::shared::limits::MapNameLen];
 	};
 
 	struct HB_PACKED PacketNotifyGuildDisbanded {
 		PacketHeader header;
-		char guild_name[20];
-		char location[10];
+		char guild_name[hb::shared::limits::GuildNameLen];
+		char location[hb::shared::limits::MapNameLen];
 	};
 
 	struct HB_PACKED PacketNotifyBanGuildMan {
 		PacketHeader header;
-		char guild_name[20];
+		char guild_name[hb::shared::limits::GuildNameLen];
 		int16_t rank;
-		char location[10];
+		char location[hb::shared::limits::MapNameLen];
 	};
 
 	struct HB_PACKED PacketNotifyTotalUsers {
@@ -931,7 +931,7 @@ namespace net {
 		PacketHeader header;
 		uint16_t item_index;
 		int32_t amount;
-		char name[hb::shared::limits::ItemNameLen - 1];
+		char name[hb::shared::limits::ItemNameLen];
 		uint8_t padding[2];
 	};
 
@@ -939,7 +939,7 @@ namespace net {
 		PacketHeader header;
 		uint16_t item_index;
 		int32_t amount;
-		char name[hb::shared::limits::ItemNameLen - 1];
+		char name[hb::shared::limits::ItemNameLen];
 		uint8_t padding[2];
 	};
 	HB_PACK_END

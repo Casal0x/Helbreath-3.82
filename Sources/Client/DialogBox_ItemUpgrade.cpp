@@ -504,7 +504,7 @@ bool DialogBox_ItemUpgrade::OnClick(short msX, short msY)
 
 bool DialogBox_ItemUpgrade::OnItemDrop(short msX, short msY)
 {
-	char cItemID = (char)CursorTarget::GetSelectedID();
+	char cItemID = static_cast<char>(CursorTarget::GetSelectedID());
 	if (m_pGame->m_bIsItemDisabled[cItemID]) return false;
 	if (m_pGame->m_pPlayer->m_Controller.GetCommand() < 0) return false;
 	CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[cItemID]->m_sIDnum);

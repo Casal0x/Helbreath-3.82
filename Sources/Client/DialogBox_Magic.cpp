@@ -67,7 +67,7 @@ void DialogBox_Magic::OnDraw(short msX, short msY, short msZ, char cLB)
 	{
 		if ((m_pGame->m_pPlayer->m_iMagicMastery[iCPivot + i] != 0) && (m_pGame->m_pMagicCfgList[iCPivot + i] != 0))
 		{
-			std::snprintf(cTxt, sizeof(cTxt), "%s", m_pGame->m_pMagicCfgList[iCPivot + i]->m_cName);
+			std::snprintf(cTxt, sizeof(cTxt), "%s", m_pGame->m_pMagicCfgList[iCPivot + i]->m_cName.c_str());
 			CMisc::ReplaceString(cTxt, '-', ' ');
 
 			iManaCost = MagicCastingSystem::Get().GetManaCost(iCPivot + i);
@@ -131,12 +131,12 @@ void DialogBox_Magic::OnDraw(short msX, short msY, short msZ, char cLB)
 	if (m_pGame->m_pPlayer->m_iSkillMastery[4] == 0)
 		dV1 = 1.0f;
 	else
-		dV1 = (double)m_pGame->m_pPlayer->m_iSkillMastery[4];
+		dV1 = static_cast<double>(m_pGame->m_pPlayer->m_iSkillMastery[4]);
 
-	dV2 = (double)(dV1 / 100.0f);
-	dV3 = (double)_tmp_iMCProb[iMagicCircle];
+	dV2 = static_cast<double>(dV1 / 100.0f);
+	dV3 = static_cast<double>(_tmp_iMCProb[iMagicCircle]);
 	dV1 = dV2 * dV3;
-	iResult = (int)dV1;
+	iResult = static_cast<int>(dV1);
 
 	if ((m_pGame->m_pPlayer->m_iInt + m_pGame->m_pPlayer->m_iAngelicInt) > 50)
 		iResult += ((m_pGame->m_pPlayer->m_iInt + m_pGame->m_pPlayer->m_iAngelicInt) - 50) / 2;
@@ -146,11 +146,11 @@ void DialogBox_Magic::OnDraw(short msX, short msY, short msZ, char cLB)
 	{
 		if (iMagicCircle > sLevelMagic)
 		{
-			dV1 = (double)(m_pGame->m_pPlayer->m_iLevel - sLevelMagic * 10);
-			dV2 = (double)abs(iMagicCircle - sLevelMagic) * _tmp_iMLevelPenalty[iMagicCircle];
-			dV3 = (double)abs(iMagicCircle - sLevelMagic) * 10;
+			dV1 = static_cast<double>(m_pGame->m_pPlayer->m_iLevel - sLevelMagic * 10);
+			dV2 = static_cast<double>(abs(iMagicCircle - sLevelMagic)) * _tmp_iMLevelPenalty[iMagicCircle];
+			dV3 = static_cast<double>(abs(iMagicCircle - sLevelMagic)) * 10;
 			dV4 = (dV1 / dV3) * dV2;
-			iResult -= abs(abs(iMagicCircle - sLevelMagic) * _tmp_iMLevelPenalty[iMagicCircle] - (int)dV4);
+			iResult -= abs(abs(iMagicCircle - sLevelMagic) * _tmp_iMLevelPenalty[iMagicCircle] - static_cast<int>(dV4));
 		}
 		else
 		{
@@ -175,10 +175,10 @@ void DialogBox_Magic::OnDraw(short msX, short msY, short msZ, char cLB)
 		{
 			if (((m_pGame->m_pItemList[i]->m_dwAttribute & 0x00F00000) >> 20) == 10)
 			{
-				dV1 = (double)iResult;
-				dV2 = (double)(((m_pGame->m_pItemList[i]->m_dwAttribute & 0x000F0000) >> 16) * 3);
+				dV1 = static_cast<double>(iResult);
+				dV2 = static_cast<double>(((m_pGame->m_pItemList[i]->m_dwAttribute & 0x000F0000) >> 16) * 3);
 				dV3 = dV1 + dV2;
-				iResult = (int)dV3;
+				iResult = static_cast<int>(dV3);
 				break;
 			}
 		}
@@ -189,10 +189,9 @@ void DialogBox_Magic::OnDraw(short msX, short msY, short msZ, char cLB)
 	if (iResult < 1) iResult = 1;
 
 	// Display magic probability
-	std::memset(cTxt, 0, sizeof(cTxt));
-	std::snprintf(cTxt, sizeof(cTxt), DRAW_DIALOGBOX_MAGIC16, iResult);
-	PutAlignedString(sX, sX + 256, sY + 267, cTxt);
-	PutAlignedString(sX + 1, sX + 257, sY + 267, cTxt);
+	auto cTxt_str = std::format(DRAW_DIALOGBOX_MAGIC16, iResult);
+	PutAlignedString(sX, sX + 256, sY + 267, cTxt_str.c_str());
+	PutAlignedString(sX + 1, sX + 257, sY + 267, cTxt_str.c_str());
 
 	// Alchemy button
 	if ((msX >= sX + ui_layout::right_btn_x) && (msX <= sX + ui_layout::right_btn_x + ui_layout::btn_size_x) && (msY >= sY + 285) && (msY <= sY + 285 + ui_layout::btn_size_y))

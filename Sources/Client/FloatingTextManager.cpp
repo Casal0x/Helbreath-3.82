@@ -283,7 +283,7 @@ void CFloatingTextManager::DrawMessage(const CFloatingText& msg, short sX, short
 		for (int i = 0; i < 20; i++)
 			if (cMsgA[i] != 0)
 			{
-				if ((unsigned char)cMsgA[i] >= 128) { iSize += 5; i++; }
+				if (static_cast<unsigned char>(cMsgA[i]) >= 128) { iSize += 5; i++; }
 				else iSize += 4;
 			}
 
@@ -298,7 +298,7 @@ void CFloatingTextManager::DrawMessage(const CFloatingText& msg, short sX, short
 			for (size_t i = 0; i < msg.m_szText.size(); i++)
 				if (msg.m_szText[i] != 0)
 				{
-					if ((unsigned char)msg.m_szText[i] >= 128) { iSize2 += 5; i++; }
+					if (static_cast<unsigned char>(msg.m_szText[i]) >= 128) { iSize2 += 5; i++; }
 					else iSize2 += 4;
 				}
 			hb::shared::text::DrawText(iFontID, sX - iSize2, iBaseY, msg.m_szText.c_str(),

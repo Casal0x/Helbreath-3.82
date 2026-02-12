@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "PacketHeaders.h"
 #include "NetConstants.h"
@@ -21,7 +21,7 @@ namespace net {
 
 	struct HB_PACKED PacketResponseCivilRight {
 		PacketHeader header;
-		char location[10];
+		char location[hb::shared::limits::MapNameLen];
 	};
 
 	struct HB_PACKED PacketResponseRetrieveItem {
@@ -62,7 +62,7 @@ namespace net {
 
 	struct HB_PACKED PacketResponseTeleportListEntry {
 		int32_t index;
-		char map_name[10];
+		char map_name[hb::shared::limits::MapNameLen];
 		int32_t x;
 		int32_t y;
 		int32_t cost;
@@ -74,7 +74,7 @@ namespace net {
 	};
 
 	struct HB_PACKED PacketResponseItemListEntry {
-		char name[hb::shared::limits::ItemNameLen - 1];
+		char name[hb::shared::limits::ItemNameLen];
 		uint32_t count;
 		uint8_t item_type;
 		uint8_t equip_pos;
@@ -97,7 +97,7 @@ namespace net {
 	};
 
 	struct HB_PACKED PacketResponseBankItemEntry {
-		char name[hb::shared::limits::ItemNameLen - 1];
+		char name[hb::shared::limits::ItemNameLen];
 		uint32_t count;
 		uint8_t item_type;
 		uint8_t equip_pos;
@@ -148,8 +148,8 @@ namespace net {
 		int32_t enemy_kills;
 		int32_t pk_count;
 		uint32_t reward_gold;
-		char location[10];
-		char guild_name[20];
+		char location[hb::shared::limits::MapNameLen];
+		char guild_name[hb::shared::limits::GuildNameLen];
 		int32_t guild_rank;
 		uint8_t super_attack_left;
 		int32_t fightzone_number;
@@ -166,8 +166,8 @@ namespace net {
 		int16_t player_type;
 		hb::shared::entity::PlayerAppearance appearance;
 		hb::shared::entity::PlayerStatus status;
-		char map_name[10];
-		char cur_location[10];
+		char map_name[hb::shared::limits::MapNameLen];
+		char cur_location[hb::shared::limits::MapNameLen];
 		uint8_t sprite_alpha;
 		uint8_t weather_status;
 		int32_t contribution;

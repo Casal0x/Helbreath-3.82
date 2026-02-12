@@ -416,7 +416,8 @@ std::array<bool, hb::shared::limits::MaxItems> m_bIsItemEquipped{};
 	uint16_t m_wLastAttackTargetID;
 	uint16_t m_wEnterGameType;
 	char m_cItemOrder[hb::shared::limits::MaxItems];
-	char m_cAmountString[12];
+	static constexpr int AmountStringMaxLen = 12;
+	std::string m_cAmountString;
 	char m_cLogOutCount;
 	char m_cRestartCount;
 
@@ -436,7 +437,8 @@ std::array<bool, hb::shared::limits::MaxItems> m_bIsItemEquipped{};
 	char m_cCurFocus, m_cMaxFocus;
 	char m_cArrowPressed;
 	std::string m_cLogServerAddr;
-	char m_cChatMsg[64];
+	static constexpr int ChatMsgMaxLen = 64;
+	std::string m_cChatMsg;
 	std::string m_cBackupChatMsg;
 
 	std::string m_cWorldServerName;

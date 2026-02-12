@@ -25,6 +25,7 @@
 #include <string>
 #include <memory>
 #include <format>
+#include <charconv>
 
 
 using namespace hb::shared::net;
@@ -85,8 +86,8 @@ void Screen_OnGame::on_update()
     {
         if ((m_pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::GuildMenu) == true) && (m_pGame->m_dialogBoxManager.Info(DialogBoxId::GuildMenu).cMode == 1) && (m_pGame->m_dialogBoxManager.iGetTopDialogBoxIndex() == DialogBoxId::GuildMenu)) {
             TextInputManager::Get().EndInput();
-            if (strlen(m_pGame->m_pPlayer->m_cGuildName) == 0) return;
-            if (strcmp(m_pGame->m_pPlayer->m_cGuildName, "NONE") != 0) {
+            if (m_pGame->m_pPlayer->m_cGuildName.empty()) return;
+            if (m_pGame->m_pPlayer->m_cGuildName != "NONE") {
                 m_pGame->bSendCommand(MsgId::RequestCreateNewGuild, MsgType::Confirm, 0, 0, 0, 0, 0);
                 m_pGame->m_dialogBoxManager.Info(DialogBoxId::GuildMenu).cMode = 2;
             }
@@ -109,15 +110,15 @@ void Screen_OnGame::on_update()
                 return;
             }
 
-            if (strlen(m_pGame->m_cAmountString) == 0) return;
-            iAmount = atoi(m_pGame->m_cAmountString);
+            if (m_pGame->m_cAmountString.empty()) return;
+            std::from_chars(m_pGame->m_cAmountString.data(), m_pGame->m_cAmountString.data() + m_pGame->m_cAmountString.size(), iAmount);
 
-            if ((int)(m_pGame->m_pItemList[m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sView]->m_dwCount) < iAmount) {
+            if (static_cast<int>(m_pGame->m_pItemList[m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sView]->m_dwCount) < iAmount) {
                 iAmount = m_pGame->m_pItemList[m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sView]->m_dwCount;
             }
 
             if (iAmount != 0) {
-                if ((int)(m_pGame->m_pItemList[m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sView]->m_dwCount) >= iAmount) {
+                if (static_cast<int>(m_pGame->m_pItemList[m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sView]->m_dwCount) >= iAmount) {
                     if (m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV1 != 0) {
                         absX = abs(m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV1 - m_pGame->m_pPlayer->m_sPlayerX);
                         absY = abs(m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV2 - m_pGame->m_pPlayer->m_sPlayerY);
@@ -138,7 +139,6 @@ void Screen_OnGame::on_update()
                                 if (tY < 0) tY = 0;
                                 if ((tY + 100) > LOGICAL_MAX_Y()) tY = LOGICAL_MAX_Y() - 100;
                                 m_pGame->m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sX = tX; m_pGame->m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sY = tY;
-                                std::memset(m_pGame->m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cStr, 0, sizeof(m_pGame->m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cStr));
                                 std::snprintf(m_pGame->m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cStr, sizeof(m_pGame->m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cStr), "%s", m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).cStr);
                                 break;
                             case 20:
@@ -153,7 +153,6 @@ void Screen_OnGame::on_update()
                                 if (tY < 0) tY = 0;
                                 if ((tY + 100) > LOGICAL_MAX_Y()) tY = LOGICAL_MAX_Y() - 100;
                                 m_pGame->m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sX = tX; m_pGame->m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sY = tY;
-                                std::memset(m_pGame->m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cStr, 0, sizeof(m_pGame->m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cStr));
                                 std::snprintf(m_pGame->m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cStr, hb::shared::limits::NpcNameLen, "%s", m_pGame->GetNpcConfigName(m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV3));
                                 break;
                             case 15: case 24:
@@ -166,7 +165,6 @@ void Screen_OnGame::on_update()
                                 if (tY < 0) tY = 0;
                                 if ((tY + 100) > LOGICAL_MAX_Y()) tY = LOGICAL_MAX_Y() - 100;
                                 m_pGame->m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sX = tX; m_pGame->m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sY = tY;
-                                std::memset(m_pGame->m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cStr, 0, sizeof(m_pGame->m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cStr));
                                 std::snprintf(m_pGame->m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cStr, hb::shared::limits::NpcNameLen, "%s", m_pGame->GetNpcConfigName(m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV3));
                                 break;
                             case 1000:
@@ -197,7 +195,7 @@ void Screen_OnGame::on_update()
                             default:
                             {
                                 CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sView]->m_sIDnum);
-                                if (pCfg) m_pGame->bSendCommand(MsgId::CommandCommon, CommonType::GiveItemToChar, (char)(m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sView), iAmount, m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV1, m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV2, pCfg->m_cName);
+                                if (pCfg) m_pGame->bSendCommand(MsgId::CommandCommon, CommonType::GiveItemToChar, static_cast<char>(m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sView), iAmount, m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV1, m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV2, pCfg->m_cName);
                             }
                                 break;
                             }
@@ -223,12 +221,12 @@ void Screen_OnGame::on_update()
             if (!TextInputManager::Get().IsActive()) {
                 switch (m_pGame->m_cBackupChatMsg[0]) {
                 case '!': case '@': case '#': case '$': case '^':
-                    std::memset(m_pGame->m_cChatMsg, 0, sizeof(m_pGame->m_cChatMsg));
-                    m_pGame->m_cChatMsg[0] = m_pGame->m_cBackupChatMsg[0];
-                    TextInputManager::Get().StartInput(CHAT_INPUT_X(), CHAT_INPUT_Y(), sizeof(m_pGame->m_cChatMsg), m_pGame->m_cChatMsg);
+                    m_pGame->m_cChatMsg.clear();
+                    m_pGame->m_cChatMsg += m_pGame->m_cBackupChatMsg[0];
+                    TextInputManager::Get().StartInput(CHAT_INPUT_X(), CHAT_INPUT_Y(), CGame::ChatMsgMaxLen, m_pGame->m_cChatMsg);
                     break;
                 default:
-                    TextInputManager::Get().StartInput(CHAT_INPUT_X(), CHAT_INPUT_Y(), sizeof(m_pGame->m_cChatMsg), m_pGame->m_cChatMsg);
+                    TextInputManager::Get().StartInput(CHAT_INPUT_X(), CHAT_INPUT_Y(), CGame::ChatMsgMaxLen, m_pGame->m_cChatMsg);
                     TextInputManager::Get().ClearInput();
                     break;
                 }
@@ -239,7 +237,7 @@ void Screen_OnGame::on_update()
                 m_pGame->m_cBackupChatMsg = G_cTxt.c_str();
                 if ((m_pGame->m_dwCurTime - m_dwPrevChatTime) >= 700) {
                     m_dwPrevChatTime = m_pGame->m_dwCurTime;
-                    if (strlen(G_cTxt.c_str()) > 0) {
+                    if (!G_cTxt.empty()) {
                         if (!ChatManager::Get().IsShoutEnabled() && G_cTxt[0] == '!') {
                             m_pGame->AddEventList(BCHECK_LOCAL_CHAT_COMMAND9, 10);
                         }

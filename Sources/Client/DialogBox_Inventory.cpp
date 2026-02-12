@@ -416,7 +416,7 @@ bool DialogBox_Inventory::OnDoubleClick(short msX, short msY)
 	// Auto-equip equipment items
 	if (pCfg->GetItemType() == ItemType::Equip)
 	{
-		CursorTarget::SetSelection(SelectedObjectType::Item, (short)cItemID, 0, 0);
+		CursorTarget::SetSelection(SelectedObjectType::Item, static_cast<short>(cItemID), 0, 0);
 		m_pGame->m_dialogBoxManager.GetDialogBox(DialogBoxId::CharacterInfo)->OnItemDrop(msX, msY);
 		CursorTarget::ClearSelection();
 	}
@@ -502,7 +502,7 @@ bool DialogBox_Inventory::OnItemDrop(short msX, short msY)
 {
 	if (m_pGame->m_pPlayer->m_Controller.GetCommand() < 0) return false;
 
-	char cSelectedID = (char)CursorTarget::GetSelectedID();
+	char cSelectedID = static_cast<char>(CursorTarget::GetSelectedID());
 	if (m_pGame->m_pItemList[cSelectedID] == nullptr) return false;
 
 	// Can't move equipped items while using a skill

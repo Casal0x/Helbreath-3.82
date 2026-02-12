@@ -23,13 +23,12 @@ namespace NetworkMessageHandlers {
 	void HandleLockedMap(CGame* pGame, char* pData)
 	{
 		int sV1;
-		char cTemp[120], cTxt[120];
+		char cTemp[120], cTxt[120]{};
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyLockedMap>(
 			pData, sizeof(hb::net::PacketNotifyLockedMap));
 		if (!pkt) return;
 		sV1 = pkt->seconds_left;
 		std::memset(cTemp, 0, sizeof(cTemp));
-		std::memset(cTxt, 0, sizeof(cTxt));
 		memcpy(cTxt, pkt->map_name, sizeof(pkt->map_name));
 
 		pGame->GetOfficialMapName(cTxt, cTemp);

@@ -138,16 +138,16 @@ void DialogBox_Map::OnDraw(short msX, short msY, short msZ, char cLB)
 			break;
 		}
 
-		dV1 = (double)m_pGame->m_pMapData->m_sMapSizeX;
-		dV2 = (double)m_pGame->m_pPlayer->m_sPlayerX;
-		dV3 = (dV2 * (double)szX) / dV1;
-		tX = (int)dV3 + dX;
+		dV1 = static_cast<double>(m_pGame->m_pMapData->m_sMapSizeX);
+		dV2 = static_cast<double>(m_pGame->m_pPlayer->m_sPlayerX);
+		dV3 = (dV2 * static_cast<double>(szX)) / dV1;
+		tX = static_cast<int>(dV3) + dX;
 
-		dV1 = (double)m_pGame->m_pMapData->m_sMapSizeY;
+		dV1 = static_cast<double>(m_pGame->m_pMapData->m_sMapSizeY);
 		if (dV1 == 752) dV1 = 680;
-		dV2 = (double)m_pGame->m_pPlayer->m_sPlayerY;
-		dV3 = (dV2 * (double)szY) / dV1;
-		tY = (int)dV3 + dY;
+		dV2 = static_cast<double>(m_pGame->m_pPlayer->m_sPlayerY);
+		dV3 = (dV2 * static_cast<double>(szY)) / dV1;
+		tY = static_cast<int>(dV3) + dY;
 
 		DrawNewDialogBox(InterfaceNdGame4, sX + tX, sY + tY, 43);
 		std::string coordBuf;

@@ -23,7 +23,7 @@ namespace NetworkMessageHandlers {
 
 	void HandleMagicStudyFail(CGame* pGame, char* pData)
 	{
-		char cMagicNum, cName[31], cFailCode;
+		char cMagicNum, cName[31]{}, cFailCode;
 		std::string cTxt;
 		int iCost, iReqInt;
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyMagicStudyFail>(
@@ -31,7 +31,6 @@ namespace NetworkMessageHandlers {
 		if (!pkt) return;
 		cFailCode = static_cast<char>(pkt->result);
 		cMagicNum = static_cast<char>(pkt->magic_id);
-		std::memset(cName, 0, sizeof(cName));
 		memcpy(cName, pkt->magic_name, 30);
 		iCost = pkt->cost;
 		iReqInt = pkt->req_int;
@@ -52,7 +51,7 @@ namespace NetworkMessageHandlers {
 
 	void HandleMagicStudySuccess(CGame* pGame, char* pData)
 	{
-		char cMagicNum, cName[31];
+		char cMagicNum, cName[31]{};
 		std::string cTxt;
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyMagicStudySuccess>(
 			pData, sizeof(hb::net::PacketNotifyMagicStudySuccess));
@@ -60,7 +59,6 @@ namespace NetworkMessageHandlers {
 		cMagicNum = static_cast<char>(pkt->magic_id);
 		pGame->m_pPlayer->m_iMagicMastery[cMagicNum] = 1;
 	  // Magic learned - affects magic list
-		std::memset(cName, 0, sizeof(cName));
 		memcpy(cName, pkt->magic_name, 30);
 		cTxt = std::format(NOTIFYMSG_MAGICSTUDY_SUCCESS1, cName);
 		pGame->AddEventList(cTxt.c_str(), 10);
@@ -79,7 +77,7 @@ namespace NetworkMessageHandlers {
 		cTemp = std::format(NOTIFYMSG_SKILL_TRAIN_SUCCESS1, pGame->m_pSkillCfgList[cSkillNum]->m_cName, cSkillLevel);
 		pGame->AddEventList(cTemp.c_str(), 10);
 		pGame->m_pSkillCfgList[cSkillNum]->m_iLevel = cSkillLevel;
-		pGame->m_pPlayer->m_iSkillMastery[cSkillNum] = (unsigned char)cSkillLevel;
+		pGame->m_pPlayer->m_iSkillMastery[cSkillNum] = static_cast<unsigned char>(cSkillLevel);
 		pGame->PlayGameSound('E', 23, 0);
 	}
 
@@ -112,7 +110,7 @@ namespace NetworkMessageHandlers {
 				pGame->m_pPlayer->m_sPlayerObjectID, pGame->m_pMapData.get());
 		}
 		pGame->m_pSkillCfgList[sSkillIndex]->m_iLevel = sValue;
-		pGame->m_pPlayer->m_iSkillMastery[sSkillIndex] = (unsigned char)sValue;
+		pGame->m_pPlayer->m_iSkillMastery[sSkillIndex] = static_cast<unsigned char>(sValue);
 	}
 
 	void HandleSkillUsingEnd(CGame* pGame, char* pData)
@@ -429,7 +427,7 @@ namespace NetworkMessageHandlers {
 		}
 		else if (sV1 == 2) // Finished using
 		{
-			if (pGame->m_pPlayer->m_iSpecialAbilityType != (int)sV2)
+			if (pGame->m_pPlayer->m_iSpecialAbilityType != static_cast<int>(sV2))
 			{
 				pGame->PlayGameSound('E', 34, 0);
 				pGame->AddEventList(NOTIFY_MSG_HANDLER13, 10);
@@ -460,9 +458,9 @@ namespace NetworkMessageHandlers {
 					}
 				}
 			}
-			pGame->m_pPlayer->m_iSpecialAbilityType = (int)sV2;
+			pGame->m_pPlayer->m_iSpecialAbilityType = static_cast<int>(sV2);
 			pGame->m_dwSpecialAbilitySettingTime = pGame->m_dwCurTime;
-			pGame->m_pPlayer->m_iSpecialAbilityTimeLeftSec = (int)sV3;
+			pGame->m_pPlayer->m_iSpecialAbilityTimeLeftSec = static_cast<int>(sV3);
 		}
 		else if (sV1 == 3)  // End of using time
 		{
@@ -475,7 +473,7 @@ namespace NetworkMessageHandlers {
 			}
 			else
 			{
-				pGame->m_pPlayer->m_iSpecialAbilityTimeLeftSec = (int)sV3;
+				pGame->m_pPlayer->m_iSpecialAbilityTimeLeftSec = static_cast<int>(sV3);
 				if (sV3 > 90)
 					G_cTxt = std::format("Special ability has run out! Will be available in {} minutes.", sV3 / 60);
 				else G_cTxt = std::format("Special ability has run out! Will be available in {} seconds.", sV3);

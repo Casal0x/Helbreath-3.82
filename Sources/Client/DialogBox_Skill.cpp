@@ -35,8 +35,7 @@ void DialogBox_Skill::OnDraw(short msX, short msY, short msZ, char cLB)
 		for (i = 0; i < 17; i++)
 			if ((i < hb::shared::limits::MaxSkillType) && (m_pGame->m_pSkillCfgList[i + Info().sView] != 0))
 			{
-				std::memset(cTemp, 0, sizeof(cTemp));
-				std::snprintf(cTemp, sizeof(cTemp), "%s", m_pGame->m_pSkillCfgList[i + Info().sView]->m_cName);
+				std::snprintf(cTemp, sizeof(cTemp), "%s", m_pGame->m_pSkillCfgList[i + Info().sView]->m_cName.c_str());
 				CMisc::ReplaceString(cTemp, '-', ' ');
 				cTemp2 = std::format("{:3}%", m_pGame->m_pSkillCfgList[i + Info().sView]->m_iLevel);
 				if ((msX >= sX + 25) && (msX <= sX + 166) && (msY >= sY + 45 + i * 15) && (msY <= sY + 59 + i * 15))
@@ -79,10 +78,10 @@ void DialogBox_Skill::OnDraw(short msX, short msY, short msZ, char cLB)
 
 		if (iTotalLines > 17)
 		{
-			d1 = (double)Info().sView;
-			d2 = (double)(iTotalLines - 17);
+			d1 = static_cast<double>(Info().sView);
+			d2 = static_cast<double>(iTotalLines - 17);
 			d3 = (274.0f * d1) / d2;
-			iPointerLoc = (int)d3;
+			iPointerLoc = static_cast<int>(d3);
 		}
 		else iPointerLoc = 0;
 		if (iTotalLines > 17)
@@ -97,10 +96,10 @@ void DialogBox_Skill::OnDraw(short msX, short msY, short msZ, char cLB)
 			{
 				if ((msX >= sX + 240) && (msX <= sX + 260) && (msY >= sY + 30) && (msY <= sY + 320))
 				{
-					d1 = (double)(msY - (sY + 35));
-					d2 = (double)(iTotalLines - 17);
+					d1 = static_cast<double>(msY - (sY + 35));
+					d2 = static_cast<double>(iTotalLines - 17);
 					d3 = (d1 * d2) / 274.0f;
-					iPointerLoc = (int)(d3 + 0.5);
+					iPointerLoc = static_cast<int>(d3 + 0.5);
 					if (iPointerLoc > iTotalLines - 17) iPointerLoc = iTotalLines - 17;
 					Info().sView = iPointerLoc;
 				}

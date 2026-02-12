@@ -317,7 +317,7 @@ void ApplyDirectionOverride(CEntityRenderState& state)
 // -----------------------------------------------------------------------
 void DrawName(CGame& game, const CEntityRenderState& state, int sX, int sY)
 {
-	if (strlen(state.m_cName.data()) > 0)
+	if (state.m_cName[0] != '\0')
 	{
 		if (state.IsPlayer())
 			game.DrawObjectName(sX, sY, const_cast<char*>(state.m_cName.data()), state.m_status, state.m_wObjectID);

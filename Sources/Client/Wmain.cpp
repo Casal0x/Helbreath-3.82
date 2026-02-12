@@ -16,7 +16,7 @@
 // Platform-independent core
 int GameMain(hb::shared::types::NativeInstance nativeInstance, int iconResourceId, const char* cmdLine)
 {
-    srand((unsigned)time(0));
+    srand(static_cast<unsigned>(time(0)));
 
     DevConsole::Get().Initialize();
 

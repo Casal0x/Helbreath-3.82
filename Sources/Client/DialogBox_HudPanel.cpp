@@ -58,7 +58,7 @@ void DialogBox_HudPanel::DrawGaugeBars()
 
 	// HP number
 	std::string statBuf;
-	statBuf = std::format("{}", (short)m_pGame->m_pPlayer->m_iHP);
+	statBuf = std::format("{}", static_cast<short>(m_pGame->m_pPlayer->m_iHP));
 	if (m_pGame->m_pPlayer->m_bIsPoisoned)
 	{
 		hb::shared::text::DrawText(GameFont::Numbers, 85 + HudXOffset(), HP_NUM_Y(), statBuf.c_str(),
@@ -82,7 +82,7 @@ void DialogBox_HudPanel::DrawGaugeBars()
 	pSprite->DrawWidth(HP_BAR_X(), MP_BAR_Y(), 12, iBarWidth);
 
 	// MP number
-	statBuf = std::format("{}", (short)m_pGame->m_pPlayer->m_iMP);
+	statBuf = std::format("{}", static_cast<short>(m_pGame->m_pPlayer->m_iMP));
 	hb::shared::text::DrawText(GameFont::Numbers, HP_NUM_X() + 1, MP_NUM_Y() + 1, statBuf.c_str(), hb::shared::text::TextStyle::Color(GameColors::UIBlack));
 	hb::shared::text::DrawText(GameFont::Numbers, HP_NUM_X(), MP_NUM_Y(), statBuf.c_str(), hb::shared::text::TextStyle::Color(GameColors::UIWhite));
 
@@ -95,7 +95,7 @@ void DialogBox_HudPanel::DrawGaugeBars()
 	pSprite->DrawWidth(SP_BAR_X(), SP_BAR_Y(), 13, iBarWidth);
 
 	// SP number
-	statBuf = std::format("{}", (short)m_pGame->m_pPlayer->m_iSP);
+	statBuf = std::format("{}", static_cast<short>(m_pGame->m_pPlayer->m_iSP));
 	hb::shared::text::DrawText(GameFont::Numbers, SP_NUM_X() + 1, SP_NUM_Y() + 1, statBuf.c_str(), hb::shared::text::TextStyle::Color(GameColors::UIBlack));
 	hb::shared::text::DrawText(GameFont::Numbers, SP_NUM_X(), SP_NUM_Y(), statBuf.c_str(), hb::shared::text::TextStyle::Color(GameColors::UIWhite));
 

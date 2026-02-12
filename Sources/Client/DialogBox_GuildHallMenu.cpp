@@ -145,9 +145,8 @@ void DialogBox_GuildHallMenu::OnDraw(short msX, short msY, short msZ, char cLB)
 		PutAlignedString(sX, sX + szX, sY + 45, "5 magesty points will be deducted", GameColors::UIMagicBlue);
 		PutAlignedString(sX, sX + szX, sY + 80, "upon receiving the Pendant of Tutelary Angel.", GameColors::UIMagicBlue);
 		PutAlignedString(sX, sX + szX, sY + 105, "Would you like to receive the Tutelary Angel?", GameColors::UIMagicBlue);
-		char angelBuf[64];
-		snprintf(angelBuf, sizeof(angelBuf), DRAW_DIALOGBOX_ITEMUPGRADE11, m_pGame->m_iGizonItemUpgradeLeft);
-		PutAlignedString(sX, sX + szX, sY + 140, angelBuf, GameColors::UIBlack);
+		auto angelBuf = std::format(DRAW_DIALOGBOX_ITEMUPGRADE11, m_pGame->m_iGizonItemUpgradeLeft);
+		PutAlignedString(sX, sX + szX, sY + 140, angelBuf.c_str(), GameColors::UIBlack);
 
 		if ((msX > sX + 35) && (msX < sX + 220) && (msY > sY + 175) && (msY < sY + 200)
 			&& (m_pGame->m_iGizonItemUpgradeLeft > 4))

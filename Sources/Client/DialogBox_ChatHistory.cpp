@@ -50,9 +50,9 @@ void DialogBox_ChatHistory::HandleScrollInput(short sX, short sY, short msX, sho
 		// Drag scrollbar track
 		if ((msX >= sX + 336) && (msX <= sX + 361) && (msY >= sY + 28) && (msY <= sY + 140))
 		{
-			double d1 = (double)(msY - (sY + 28));
-			double d2 = ((game_limits::max_chat_scroll_msgs - DEF_CHAT_VISIBLE_LINES) * d1) / (double)DEF_CHAT_SCROLLBAR_HEIGHT;
-			info.sView = game_limits::max_chat_scroll_msgs - DEF_CHAT_VISIBLE_LINES - (int)d2;
+			double d1 = static_cast<double>(msY - (sY + 28));
+			double d2 = ((game_limits::max_chat_scroll_msgs - DEF_CHAT_VISIBLE_LINES) * d1) / static_cast<double>(DEF_CHAT_SCROLLBAR_HEIGHT);
+			info.sView = game_limits::max_chat_scroll_msgs - DEF_CHAT_VISIBLE_LINES - static_cast<int>(d2);
 		}
 
 		// Scroll to top button
@@ -77,10 +77,10 @@ void DialogBox_ChatHistory::HandleScrollInput(short sX, short sY, short msX, sho
 
 void DialogBox_ChatHistory::DrawScrollBar(short sX, short sY)
 {
-	double d1 = (double)m_pGame->m_dialogBoxManager.Info(DialogBoxId::ChatHistory).sView;
-	double d2 = (double)DEF_CHAT_SCROLLBAR_HEIGHT;
+	double d1 = static_cast<double>(m_pGame->m_dialogBoxManager.Info(DialogBoxId::ChatHistory).sView);
+	double d2 = static_cast<double>(DEF_CHAT_SCROLLBAR_HEIGHT);
 	double d3 = (d1 * d2) / (game_limits::max_chat_scroll_msgs - DEF_CHAT_VISIBLE_LINES);
-	int iPointerLoc = (int)d3;
+	int iPointerLoc = static_cast<int>(d3);
 	iPointerLoc = DEF_CHAT_SCROLLBAR_HEIGHT - iPointerLoc;
 	m_pGame->DrawNewDialogBox(InterfaceNdGame2, sX + 346, sY + 33 + iPointerLoc, 7);
 }

@@ -538,7 +538,7 @@ void DialogBox_Manufacture::DrawManufactureDone(short sX, short sY, short msX, s
 			PutString(sX + iAdjX + 33 + 11, sY + iAdjY + 215 - 45, resultBuf.c_str(), GameColors::UILabel);
 		}
 		else {
-			resultBuf = std::format(DRAW_DIALOGBOX_SKILLDLG33, (int)Info().cStr[3] + 100);
+			resultBuf = std::format(DRAW_DIALOGBOX_SKILLDLG33, static_cast<int>(Info().cStr[3]) + 100);
 			PutString(sX + iAdjX + 33, sY + iAdjY + 215 - 45, resultBuf.c_str(), GameColors::UILabel);
 		}
 	}
@@ -864,7 +864,7 @@ PressResult DialogBox_Manufacture::OnPress(short msX, short msY)
 			}
 			if (CheckSlotItemClick(i, sArray[i], itemDrawX, itemDrawY, msX, msY))
 			{
-				Info().cStr[4] = (char)BuildItemManager::Get().ValidateCurrentRecipe();
+				Info().cStr[4] = static_cast<char>(BuildItemManager::Get().ValidateCurrentRecipe());
 				return PressResult::ItemSelected;
 			}
 		}
@@ -904,7 +904,7 @@ bool DialogBox_Manufacture::TryAddItemToSlot(char cItemID, bool updateBuildStatu
 		{
 			*slots[i] = cItemID;
 			if (updateBuildStatus)
-				info.cStr[4] = (char)BuildItemManager::Get().ValidateCurrentRecipe();
+				info.cStr[4] = static_cast<char>(BuildItemManager::Get().ValidateCurrentRecipe());
 
 			// Only disable non-stackable items (stackable consumables can be added multiple times)
 			CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[cItemID]->m_sIDnum);
@@ -923,7 +923,7 @@ bool DialogBox_Manufacture::OnItemDrop(short msX, short msY)
 {
 	if (m_pGame->m_pPlayer->m_Controller.GetCommand() < 0) return false;
 
-	char cItemID = (char)CursorTarget::GetSelectedID();
+	char cItemID = static_cast<char>(CursorTarget::GetSelectedID());
 	if (m_pGame->m_pItemList[cItemID] == nullptr) return false;
 	if (m_pGame->m_bIsItemDisabled[cItemID]) return false;
 	CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[cItemID]->m_sIDnum);
@@ -963,7 +963,7 @@ bool DialogBox_Manufacture::OnItemDrop(short msX, short msY)
 			if (info.sV4 == cItemID) iConsumeNum++;
 			if (info.sV5 == cItemID) iConsumeNum++;
 			if (info.sV6 == cItemID) iConsumeNum++;
-			if (iConsumeNum >= (int)(m_pGame->m_pItemList[cItemID]->m_dwCount)) return false;
+			if (iConsumeNum >= static_cast<int>(m_pGame->m_pItemList[cItemID]->m_dwCount)) return false;
 		}
 
 		// Only allow EAT, CONSUME, or NONE item types for alchemy
@@ -991,7 +991,7 @@ bool DialogBox_Manufacture::OnItemDrop(short msX, short msY)
 			if (info.sV4 == cItemID) iConsumeNum++;
 			if (info.sV5 == cItemID) iConsumeNum++;
 			if (info.sV6 == cItemID) iConsumeNum++;
-			if (iConsumeNum >= (int)(m_pGame->m_pItemList[cItemID]->m_dwCount)) return false;
+			if (iConsumeNum >= static_cast<int>(m_pGame->m_pItemList[cItemID]->m_dwCount)) return false;
 		}
 
 		if (!TryAddItemToSlot(cItemID, true))

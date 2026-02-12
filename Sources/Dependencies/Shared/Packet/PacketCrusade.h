@@ -1,6 +1,7 @@
-#pragma once
+﻿#pragma once
 
 #include "PacketCommon.h"
+#include "NetConstants.h"
 
 #include <cstdint>
 
@@ -18,7 +19,7 @@ namespace net {
 
 	// Crusade map status header (precedes CrusadeStructureEntry array)
 	struct HB_PACKED CrusadeMapStatusHeader {
-		char map_name[10];
+		char map_name[hb::shared::limits::MapNameLen];
 		std::int16_t send_point;
 		std::uint8_t count;
 	};
@@ -33,7 +34,7 @@ namespace net {
 	struct HB_PACKED HeldenianTeleportResponse {
 		std::int32_t count;       // always 4
 		std::int32_t location;    // 1-4
-		char map_name[10];
+		char map_name[hb::shared::limits::MapNameLen];
 		std::int32_t x;
 		std::int32_t y;
 		std::int32_t why_return;

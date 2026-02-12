@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "PacketHeaders.h"
 #include "NetConstants.h"
@@ -14,19 +14,19 @@ namespace net {
 
 	struct HB_PACKED PacketRequestAngel {
 		PacketHeader header;
-		char name[20];
+		char name[hb::shared::limits::NpcNameLen];
 		int32_t angel_id;
 	};
 
 	struct HB_PACKED PacketRequestHeldenianScroll {
 		PacketHeader header;
-		char name[hb::shared::limits::ItemNameLen - 1];
+		char name[hb::shared::limits::ItemNameLen];
 		uint16_t item_id;
 	};
 
 	struct HB_PACKED PacketRequestName20 {
 		PacketHeader header;
-		char name[20];
+		char name[hb::shared::limits::NpcNameLen];
 	};
 
 	struct HB_PACKED PacketRequestTeleportId {
@@ -53,9 +53,9 @@ namespace net {
 
 	struct HB_PACKED PacketRequestInitPlayer {
 		PacketHeader header;
-		char player[10];
-		char account[10];
-		char password[10];
+		char player[hb::shared::limits::CharNameLen];
+		char account[hb::shared::limits::AccountNameLen];
+		char password[hb::shared::limits::AccountPassLen];
 		uint8_t is_observer;
 		char server[20];
 		uint8_t padding;
@@ -86,7 +86,7 @@ namespace net {
 		PacketHeader header;
 		int16_t x;
 		int16_t y;
-		char name[10];
+		char name[hb::shared::limits::CharNameLen];
 		uint8_t chat_type;
 	};
 
@@ -122,16 +122,16 @@ namespace net {
 
 	struct HB_PACKED PacketCommandCommonBuild {
 		PacketCommandCommonBase base;
-		char name[hb::shared::limits::ItemNameLen - 1];
+		char name[hb::shared::limits::ItemNameLen];
 		uint8_t item_ids[6];
 	};
 
 	struct HB_PACKED PacketRequestGuildAction {
 		PacketHeader header;
-		char player[10];
-		char account[10];
-		char password[10];
-		char guild[20];
+		char player[hb::shared::limits::CharNameLen];
+		char account[hb::shared::limits::AccountNameLen];
+		char password[hb::shared::limits::AccountPassLen];
+		char guild[hb::shared::limits::GuildNameLen];
 	};
 
 	struct HB_PACKED PacketRequestRetrieveItem {

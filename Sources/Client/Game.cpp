@@ -21,6 +21,8 @@
 #include <format>
 #include <chrono>
 #include <string>
+#include <algorithm>
+#include <cstring>
 #include <charconv>
 #ifdef _WIN32
 #include <windows.h>
@@ -174,7 +176,7 @@ CGame::CGame()
 	m_cLoading = 0;
 	m_bIsFirstConn = true;
 	m_iItemDropCnt = 0;
-	std::memset(m_sItemDropID, 0, sizeof(m_sItemDropID));
+	std::fill(std::begin(m_sItemDropID), std::end(m_sItemDropID), short{0});
 	m_bItemDrop = false;
 
 	// Initialize CPlayer first since it's used below
@@ -224,8 +226,7 @@ CGame::CGame()
 
 	// Initialize char arrays that were previously zero-initialized by HEAP_ZERO_MEMORY
 	std::memset(m_cMsg, 0, sizeof(m_cMsg));
-	std::memset(m_cChatMsg, 0, sizeof(m_cChatMsg));
-	std::memset(m_cAmountString, 0, sizeof(m_cAmountString));
+	// m_cChatMsg and m_cAmountString are std::string (auto-initialized)
 }
 
 CGame::~CGame()
@@ -297,9 +298,9 @@ bool CGame::bInit()
 
 	// Mouse position tracking removed - use hb::shared::input::GetMouseX/Y
 	m_pMapData = std::make_unique<CMapData>(this);
-	std::memset(m_pPlayer->m_cPlayerName, 0, sizeof(m_pPlayer->m_cPlayerName));
-	std::memset(m_pPlayer->m_cAccountName, 0, sizeof(m_pPlayer->m_cAccountName));
-	std::memset(m_pPlayer->m_cAccountPassword, 0, sizeof(m_pPlayer->m_cAccountPassword));
+	m_pPlayer->m_cPlayerName.clear();
+	m_pPlayer->m_cAccountName.clear();
+	m_pPlayer->m_cAccountPassword.clear();
 
 	m_pPlayer->m_sPlayerType = 2;
 	m_pPlayer->m_Controller.SetPlayerTurn(0);
@@ -655,7 +656,7 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 	if ((m_pGSock == 0) && (m_pLSock == 0)) return false;
 	dwTime = GameClock::GetTimeMS();
 	std::memset(cMsg, 0, sizeof(cMsg));
-	cKey = (char)(rand() % 255) + 1;
+	cKey = static_cast<char>(rand() % 255) + 1;
 
 	switch (dwMsgID) {
 
@@ -704,7 +705,7 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 		hb::net::PacketRequestName20 req{};
 		req.header.msg_id = dwMsgID;
 		req.header.msg_type = 0;
-		std::memcpy(req.name, "William", sizeof(req.name));
+		std::snprintf(req.name, sizeof(req.name), "%s", "William");
 		iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), cKey);
 	}
 	break;
@@ -714,7 +715,7 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 		hb::net::PacketRequestName20 req{};
 		req.header.msg_id = dwMsgID;
 		req.header.msg_type = 0;
-		std::memcpy(req.name, "Gail", sizeof(req.name));
+		std::snprintf(req.name, sizeof(req.name), "%s", "Gail");
 		iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), cKey);
 	}
 	break;
@@ -770,12 +771,9 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 		hb::net::LoginRequest req{};
 		req.header.msg_id = dwMsgID;
 		req.header.msg_type = 0;
-		std::memset(req.account_name, 0, sizeof(req.account_name));
-		std::memcpy(req.account_name, m_pPlayer->m_cAccountName, sizeof(req.account_name));
-		std::memset(req.password, 0, sizeof(req.password));
-		std::memcpy(req.password, m_pPlayer->m_cAccountPassword, sizeof(req.password));
-		std::memset(req.world_name, 0, sizeof(req.world_name));
-		std::memcpy(req.world_name, m_cWorldServerName.c_str(), sizeof(req.world_name));
+		std::snprintf(req.account_name, sizeof(req.account_name), "%s", m_pPlayer->m_cAccountName.c_str());
+		std::snprintf(req.password, sizeof(req.password), "%s", m_pPlayer->m_cAccountPassword.c_str());
+		std::snprintf(req.world_name, sizeof(req.world_name), "%s", m_cWorldServerName.c_str());
 		iRet = m_pLSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), cKey);
 	}
 
@@ -787,14 +785,10 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 		hb::net::CreateCharacterRequest req{};
 		req.header.msg_id = dwMsgID;
 		req.header.msg_type = 0;
-		std::memset(req.character_name, 0, sizeof(req.character_name));
-		std::memcpy(req.character_name, m_pPlayer->m_cPlayerName, sizeof(req.character_name));
-		std::memset(req.account_name, 0, sizeof(req.account_name));
-		std::memcpy(req.account_name, m_pPlayer->m_cAccountName, sizeof(req.account_name));
-		std::memset(req.password, 0, sizeof(req.password));
-		std::memcpy(req.password, m_pPlayer->m_cAccountPassword, sizeof(req.password));
-		std::memset(req.world_name, 0, sizeof(req.world_name));
-		std::memcpy(req.world_name, m_cWorldServerName.c_str(), sizeof(req.world_name));
+		std::snprintf(req.character_name, sizeof(req.character_name), "%s", m_pPlayer->m_cPlayerName.c_str());
+		std::snprintf(req.account_name, sizeof(req.account_name), "%s", m_pPlayer->m_cAccountName.c_str());
+		std::snprintf(req.password, sizeof(req.password), "%s", m_pPlayer->m_cAccountPassword.c_str());
+		std::snprintf(req.world_name, sizeof(req.world_name), "%s", m_cWorldServerName.c_str());
 		req.gender = static_cast<uint8_t>(m_pPlayer->m_iGender);
 		req.skin = static_cast<uint8_t>(m_pPlayer->m_iSkinCol);
 		req.hairstyle = static_cast<uint8_t>(m_pPlayer->m_iHairStyle);
@@ -816,17 +810,12 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 		hb::net::EnterGameRequestFull req{};
 		req.header.msg_id = dwMsgID;
 		req.header.msg_type = static_cast<uint16_t>(m_wEnterGameType);
-		std::memset(req.character_name, 0, sizeof(req.character_name));
-		std::memcpy(req.character_name, m_pPlayer->m_cPlayerName, sizeof(req.character_name));
-		std::memset(req.map_name, 0, sizeof(req.map_name));
-		std::memcpy(req.map_name, m_cMapName.c_str(), sizeof(req.map_name));
-		std::memset(req.account_name, 0, sizeof(req.account_name));
-		std::memcpy(req.account_name, m_pPlayer->m_cAccountName, sizeof(req.account_name));
-		std::memset(req.password, 0, sizeof(req.password));
-		std::memcpy(req.password, m_pPlayer->m_cAccountPassword, sizeof(req.password));
+		std::snprintf(req.character_name, sizeof(req.character_name), "%s", m_pPlayer->m_cPlayerName.c_str());
+		std::snprintf(req.map_name, sizeof(req.map_name), "%s", m_cMapName.c_str());
+		std::snprintf(req.account_name, sizeof(req.account_name), "%s", m_pPlayer->m_cAccountName.c_str());
+		std::snprintf(req.password, sizeof(req.password), "%s", m_pPlayer->m_cAccountPassword.c_str());
 		req.level = m_pPlayer->m_iLevel;
-		std::memset(req.world_name, 0, sizeof(req.world_name));
-		std::memcpy(req.world_name, m_cWorldServerName.c_str(), sizeof(req.world_name));
+		std::snprintf(req.world_name, sizeof(req.world_name), "%s", m_cWorldServerName.c_str());
 		iRet = m_pLSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), cKey);
 	}
 	break;
@@ -837,14 +826,10 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 		hb::net::DeleteCharacterRequest req{};
 		req.header.msg_id = dwMsgID;
 		req.header.msg_type = static_cast<uint16_t>(m_wEnterGameType);
-		std::memset(req.character_name, 0, sizeof(req.character_name));
-		std::memcpy(req.character_name, m_pCharList[m_wEnterGameType - 1]->m_cName.c_str(), sizeof(req.character_name));
-		std::memset(req.account_name, 0, sizeof(req.account_name));
-		std::memcpy(req.account_name, m_pPlayer->m_cAccountName, sizeof(req.account_name));
-		std::memset(req.password, 0, sizeof(req.password));
-		std::memcpy(req.password, m_pPlayer->m_cAccountPassword, sizeof(req.password));
-		std::memset(req.world_name, 0, sizeof(req.world_name));
-		std::memcpy(req.world_name, m_cWorldServerName.c_str(), sizeof(req.world_name));
+		std::snprintf(req.character_name, sizeof(req.character_name), "%s", m_pCharList[m_wEnterGameType - 1]->m_cName.c_str());
+		std::snprintf(req.account_name, sizeof(req.account_name), "%s", m_pPlayer->m_cAccountName.c_str());
+		std::snprintf(req.password, sizeof(req.password), "%s", m_pPlayer->m_cAccountPassword.c_str());
+		std::snprintf(req.world_name, sizeof(req.world_name), "%s", m_cWorldServerName.c_str());
 		iRet = m_pLSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), cKey);
 	}
 	break;
@@ -878,15 +863,11 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 		hb::net::PacketRequestInitDataEx req{};
 		req.header.msg_id = dwMsgID;
 		req.header.msg_type = 0;
-		std::memset(req.player, 0, sizeof(req.player));
-		std::memcpy(req.player, m_pPlayer->m_cPlayerName, sizeof(req.player));
-		std::memset(req.account, 0, sizeof(req.account));
-		std::memcpy(req.account, m_pPlayer->m_cAccountName, sizeof(req.account));
-		std::memset(req.password, 0, sizeof(req.password));
-		std::memcpy(req.password, m_pPlayer->m_cAccountPassword, sizeof(req.password));
+		std::snprintf(req.player, sizeof(req.player), "%s", m_pPlayer->m_cPlayerName.c_str());
+		std::snprintf(req.account, sizeof(req.account), "%s", m_pPlayer->m_cAccountName.c_str());
+		std::snprintf(req.password, sizeof(req.password), "%s", m_pPlayer->m_cAccountPassword.c_str());
 		req.is_observer = static_cast<uint8_t>(m_bIsObserverMode);
-		std::memset(req.server, 0, sizeof(req.server));
-		std::memcpy(req.server, m_cGameServerName.c_str(), sizeof(req.server));
+		std::snprintf(req.server, sizeof(req.server), "%s", m_cGameServerName.c_str());
 		req.padding = 0;
 		req.itemConfigHash = LocalCacheManager::Get().GetHash(ConfigCacheType::Items);
 		req.magicConfigHash = LocalCacheManager::Get().GetHash(ConfigCacheType::Magic);
@@ -901,15 +882,11 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 		hb::net::PacketRequestInitPlayer req{};
 		req.header.msg_id = dwMsgID;
 		req.header.msg_type = 0;
-		std::memset(req.player, 0, sizeof(req.player));
-		std::memcpy(req.player, m_pPlayer->m_cPlayerName, sizeof(req.player));
-		std::memset(req.account, 0, sizeof(req.account));
-		std::memcpy(req.account, m_pPlayer->m_cAccountName, sizeof(req.account));
-		std::memset(req.password, 0, sizeof(req.password));
-		std::memcpy(req.password, m_pPlayer->m_cAccountPassword, sizeof(req.password));
+		std::snprintf(req.player, sizeof(req.player), "%s", m_pPlayer->m_cPlayerName.c_str());
+		std::snprintf(req.account, sizeof(req.account), "%s", m_pPlayer->m_cAccountName.c_str());
+		std::snprintf(req.password, sizeof(req.password), "%s", m_pPlayer->m_cAccountPassword.c_str());
 		req.is_observer = static_cast<uint8_t>(m_bIsObserverMode);
-		std::memset(req.server, 0, sizeof(req.server));
-		std::memcpy(req.server, m_cGameServerName.c_str(), sizeof(req.server));
+		std::snprintf(req.server, sizeof(req.server), "%s", m_cGameServerName.c_str());
 		req.padding = 0;
 		iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), cKey);
 	}
@@ -940,7 +917,7 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 			req.header.msg_type = 0;
 			req.x = m_pPlayer->m_sPlayerX;
 			req.y = m_pPlayer->m_sPlayerY;
-			std::memcpy(req.name, m_pPlayer->m_cPlayerName, sizeof(req.name));
+			std::snprintf(req.name, sizeof(req.name), "%s", m_pPlayer->m_cPlayerName.c_str());
 			req.chat_type = static_cast<uint8_t>(iV1);
 			if (bCheckLocalChatCommand(pString) == true) return false;
 			std::size_t text_len = std::strlen(pString);
@@ -1098,18 +1075,11 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 		hb::net::PacketRequestGuildAction req{};
 		req.header.msg_id = dwMsgID;
 		req.header.msg_type = MsgType::Confirm;
-		std::memset(req.player, 0, sizeof(req.player));
-		std::memcpy(req.player, m_pPlayer->m_cPlayerName, sizeof(req.player));
-		std::memset(req.account, 0, sizeof(req.account));
-		std::memcpy(req.account, m_pPlayer->m_cAccountName, sizeof(req.account));
-		std::memset(req.password, 0, sizeof(req.password));
-		std::memcpy(req.password, m_pPlayer->m_cAccountPassword, sizeof(req.password));
-		std::memset(req.guild, 0, sizeof(req.guild));
-		char cTemp[21];
-		std::memset(cTemp, 0, sizeof(cTemp));
-		std::memcpy(cTemp, m_pPlayer->m_cGuildName, 20);
-		CMisc::ReplaceString(cTemp, ' ', '_');
-		std::memcpy(req.guild, cTemp, sizeof(req.guild));
+		std::snprintf(req.player, sizeof(req.player), "%s", m_pPlayer->m_cPlayerName.c_str());
+		std::snprintf(req.account, sizeof(req.account), "%s", m_pPlayer->m_cAccountName.c_str());
+		std::snprintf(req.password, sizeof(req.password), "%s", m_pPlayer->m_cAccountPassword.c_str());
+		std::snprintf(req.guild, sizeof(req.guild), "%s", m_pPlayer->m_cGuildName.c_str());
+		CMisc::ReplaceString(req.guild, ' ', '_');
 		iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), cKey);
 	}
 	break;
@@ -1278,7 +1248,6 @@ bool CGame::_bDecodeItemConfigFileContents(char* pData, uint32_t dwMsgSize)
 		CItem* pItem = m_pItemConfigList[itemId].get();
 
 		pItem->m_sIDnum = entry.itemId;
-		std::memset(pItem->m_cName, 0, sizeof(pItem->m_cName));
 		std::snprintf(pItem->m_cName, sizeof(pItem->m_cName), "%s", entry.name);
 		pItem->m_cItemType = entry.itemType;
 		pItem->m_cEquipPos = entry.equipPos;
@@ -1858,7 +1827,7 @@ void CGame::ConnectionEstablishHandler(char cWhere)
 
 		// Send any pending packet built directly by a screen/overlay
 		if (!m_pendingLoginPacket.empty()) {
-			char cKey = (char)(rand() % 255) + 1;
+			char cKey = static_cast<char>(rand() % 255) + 1;
 			m_pLSock->iSendMsg(m_pendingLoginPacket.data(), static_cast<uint32_t>(m_pendingLoginPacket.size()), cKey);
 			m_pendingLoginPacket.clear();
 		}
@@ -1878,7 +1847,6 @@ void CGame::InitPlayerResponseHandler(char* pData)
 		break;
 
 	case MsgType::Reject:
-		std::memset(m_cMsg, 0, sizeof(m_cMsg));
 		std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "3J");
 		ChangeGameMode(GameMode::LogResMsg);
 		break;
@@ -1934,7 +1902,7 @@ void CGame::OnTimer()
 
 void CGame::bItemDrop_ExternalScreen(char cItemID, short msX, short msY)
 {
-	char  cName[hb::shared::limits::ItemNameLen];
+	std::string cName;
 	short sType, tX, tY;
 	hb::shared::entity::PlayerStatus iStatus;
 
@@ -1942,9 +1910,9 @@ void CGame::bItemDrop_ExternalScreen(char cItemID, short msX, short msY)
 
 	if ((m_sMCX != 0) && (m_sMCY != 0) && (abs(m_pPlayer->m_sPlayerX - m_sMCX) <= 8) && (abs(m_pPlayer->m_sPlayerY - m_sMCY) <= 8))
 	{
-		std::memset(cName, 0, sizeof(cName));
+		cName.clear();
 		m_pMapData->bGetOwner(m_sMCX, m_sMCY, cName, &sType, &iStatus, &m_wCommObjectID);
-		if (memcmp(m_pPlayer->m_cPlayerName, cName, 10) == 0)
+		if (m_pPlayer->m_cPlayerName == cName)
 		{
 		}
 		else
@@ -1962,10 +1930,10 @@ void CGame::bItemDrop_ExternalScreen(char cItemID, short msX, short msY)
 				m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV4 = m_wCommObjectID;
 				std::memset(m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).cStr, 0, sizeof(m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).cStr));
 				if (sType < 10)
-					memcpy(m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).cStr, cName, 10);
+					std::snprintf(m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).cStr, sizeof(m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).cStr), "%s", cName.c_str());
 				else
 				{
-					std::snprintf(m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).cStr, hb::shared::limits::NpcNameLen, "%s", GetNpcConfigName(sType));
+					std::snprintf(m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).cStr, sizeof(m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).cStr), "%s", GetNpcConfigName(sType));
 				}
 				m_dialogBoxManager.EnableDialogBox(DialogBoxId::ItemDropExternal, cItemID, m_pItemList[cItemID]->m_dwCount, 0);
 			}
@@ -1993,8 +1961,7 @@ void CGame::bItemDrop_ExternalScreen(char cItemID, short msX, short msY)
 					m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sX = tX;
 					m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sY = tY;
 
-					std::memset(m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cStr, 0, sizeof(m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cStr));
-					std::snprintf(m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cStr, sizeof(m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cStr), "%s", cName);
+					std::snprintf(m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cStr, sizeof(m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cStr), "%s", cName.c_str());
 					//bSendCommand(MsgId::CommandCommon, CommonType::GiveItemToChar, cItemID, 1, m_sMCX, m_sMCY, m_pItemList[cItemID]->m_cName); //v1.4
 					break;
 
@@ -2014,7 +1981,6 @@ void CGame::bItemDrop_ExternalScreen(char cItemID, short msX, short msY)
 					m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sX = tX;
 					m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sY = tY;
 
-					std::memset(m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cStr, 0, sizeof(m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cStr));
 					std::snprintf(m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cStr, hb::shared::limits::NpcNameLen, "%s", GetNpcConfigName(sType));
 					//bSendCommand(MsgId::CommandCommon, CommonType::GiveItemToChar, cItemID, 1, m_sMCX, m_sMCY, m_pItemList[cItemID]->m_cName);
 					break;
@@ -2036,7 +2002,6 @@ void CGame::bItemDrop_ExternalScreen(char cItemID, short msX, short msY)
 					m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sX = tX;
 					m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sY = tY;
 
-					std::memset(m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cStr, 0, sizeof(m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cStr));
 					std::snprintf(m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cStr, hb::shared::limits::NpcNameLen, "%s", GetNpcConfigName(sType));
 					break;
 
@@ -2114,7 +2079,7 @@ void CGame::CommonEventHandler(char* pData)
 	if ((sV1 == 6) && (sV2 == 0)) {
 		m_pEffectManager->AddEffect(EffectType::GOLD_DROP, sX, sY, 0, 0, 0);
 	}
-	m_pMapData->bSetItem(sX, sY, sV1, (char)sV3, dwV4);
+	m_pMapData->bSetItem(sX, sY, sV1, static_cast<char>(sV3), dwV4);
 	break;
 
 	case CommonType::SetItem:
@@ -2123,7 +2088,7 @@ void CGame::CommonEventHandler(char* pData)
 		if (!pkt) return;
 		dwV4 = pkt->v4;
 	}
-	m_pMapData->bSetItem(sX, sY, sV1, (char)sV3, dwV4, false); // v1.4 color
+	m_pMapData->bSetItem(sX, sY, sV1, static_cast<char>(sV3), dwV4, false); // v1.4 color
 	break;
 
 	case CommonType::Magic:
@@ -2421,11 +2386,11 @@ void CGame::InitPlayerCharacteristics(char* pData)
 		m_pPlayer->m_bHunter = true;
 	}
 
-	memcpy(m_pPlayer->m_cGuildName, pkt->guild_name, sizeof(pkt->guild_name));
+	m_pPlayer->m_cGuildName.assign(pkt->guild_name, strnlen(pkt->guild_name, sizeof(pkt->guild_name)));
 
-	if (strcmp(m_pPlayer->m_cGuildName, "NONE") == 0)
+	if (m_pPlayer->m_cGuildName == "NONE")
 
-	CMisc::ReplaceString(m_pPlayer->m_cGuildName, '_', ' ');
+	std::replace(m_pPlayer->m_cGuildName.begin(), m_pPlayer->m_cGuildName.end(), '_', ' ');
 	m_pPlayer->m_iGuildRank = pkt->guild_rank;
 	m_pPlayer->m_iSuperAttackLeft = pkt->super_attack_left;
 	m_iFightzoneNumber = pkt->fightzone_number;
@@ -2533,7 +2498,8 @@ void CGame::_ReadMapData(short sPivotX, short sPivotY, const char* pData)
 {
 	int i;
 	const char* cp;
-	char ucHeader, cDir, cName[12], cItemColor;
+	char ucHeader, cDir, cItemColor;
+	std::string cName;
 	short sTotal, sX, sY, sType, sDynamicObjectType;
 	short npcConfigId = -1;
 	hb::shared::entity::PlayerStatus iStatus;
@@ -2572,8 +2538,8 @@ void CGame::_ReadMapData(short sPivotX, short sPivotY, const char* pData)
 				cDir = static_cast<char>(obj->dir);
 				playerAppearance = obj->appearance;
 				iStatus = obj->status;
-				std::memset(cName, 0, sizeof(cName));
-				memcpy(cName, obj->name, sizeof(obj->name));
+				cName.clear();
+				cName.assign(obj->name, strnlen(obj->name, sizeof(obj->name)));
 				cp += sizeof(hb::net::PacketMapDataObjectPlayer);
 			}
 			else // NPC
@@ -2586,8 +2552,8 @@ void CGame::_ReadMapData(short sPivotX, short sPivotY, const char* pData)
 				cDir = static_cast<char>(obj->dir);
 				playerAppearance.SetFromNpcAppearance(obj->appearance);
 				iStatus.SetFromEntityStatus(obj->status);
-				std::memset(cName, 0, sizeof(cName));
-				memcpy(cName, obj->name, sizeof(obj->name));
+				cName.clear();
+				cName.assign(obj->name, strnlen(obj->name, sizeof(obj->name)));
 				cp += sizeof(hb::net::PacketMapDataObjectNpc);
 			}
 			{ m_pMapData->bSetOwner(wObjectID, sPivotX + sX, sPivotY + sY, sType, cDir, playerAppearance, iStatus, cName, Type::Stop, 0, 0, 0, 0, 0, npcConfigId); }
@@ -2605,8 +2571,8 @@ void CGame::_ReadMapData(short sPivotX, short sPivotY, const char* pData)
 				cDir = static_cast<char>(obj->dir);
 				playerAppearance = obj->appearance;
 				iStatus = obj->status;
-				std::memset(cName, 0, sizeof(cName));
-				memcpy(cName, obj->name, sizeof(obj->name));
+				cName.clear();
+				cName.assign(obj->name, strnlen(obj->name, sizeof(obj->name)));
 				cp += sizeof(hb::net::PacketMapDataObjectPlayer);
 			}
 			else // NPC
@@ -2619,8 +2585,8 @@ void CGame::_ReadMapData(short sPivotX, short sPivotY, const char* pData)
 				cDir = static_cast<char>(obj->dir);
 				playerAppearance.SetFromNpcAppearance(obj->appearance);
 				iStatus.SetFromEntityStatus(obj->status);
-				std::memset(cName, 0, sizeof(cName));
-				memcpy(cName, obj->name, sizeof(obj->name));
+				cName.clear();
+				cName.assign(obj->name, strnlen(obj->name, sizeof(obj->name)));
 				cp += sizeof(hb::net::PacketMapDataObjectNpc);
 			}
 			{ m_pMapData->bSetDeadOwner(wObjectID, sPivotX + sX, sPivotY + sY, sType, cDir, playerAppearance, iStatus, cName, npcConfigId); }
@@ -2653,7 +2619,8 @@ void CGame::LogEventHandler(char* pData)
 	short sX, sY, sType;
 	short npcConfigId = -1;
 	hb::shared::entity::PlayerStatus iStatus;
-	char cDir, cName[12];
+	char cDir;
+	std::string cName;
 	hb::shared::entity::PlayerAppearance playerAppearance;
 
 	const auto* base = hb::net::PacketCast<hb::net::PacketEventLogBase>(pData, sizeof(hb::net::PacketEventLogBase));
@@ -2662,14 +2629,14 @@ void CGame::LogEventHandler(char* pData)
 	wObjectID = base->object_id;
 	sX = base->x;
 	sY = base->y;
-	std::memset(cName, 0, sizeof(cName));
+	cName.clear();
 	if (hb::shared::object_id::IsPlayerID(wObjectID))
 	{
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketEventLogPlayer>(pData, sizeof(hb::net::PacketEventLogPlayer));
 		if (!pkt) return;
 		sType = pkt->type;
 		cDir = static_cast<char>(pkt->dir);
-		memcpy(cName, pkt->name, sizeof(pkt->name));
+		cName.assign(pkt->name, strnlen(pkt->name, sizeof(pkt->name)));
 		playerAppearance = pkt->appearance;
 		iStatus = pkt->status;
 	}
@@ -2680,7 +2647,7 @@ void CGame::LogEventHandler(char* pData)
 		npcConfigId = pkt->config_id;
 		sType = ResolveNpcType(npcConfigId);
 		cDir = static_cast<char>(pkt->dir);
-		memcpy(cName, pkt->name, sizeof(pkt->name));
+		cName.assign(pkt->name, strnlen(pkt->name, sizeof(pkt->name)));
 		playerAppearance.SetFromNpcAppearance(pkt->appearance);
 		iStatus.SetFromEntityStatus(pkt->status);
 	}
@@ -2844,7 +2811,6 @@ void CGame::LogResponseHandler(char* pData)
 	
 			m_pCharList[i]->m_cMapName.assign(entry.map_name, strnlen(entry.map_name, sizeof(entry.map_name)));
 		}
-		std::memset(m_cMsg, 0, sizeof(m_cMsg));
 		std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "3A");
 		ChangeGameMode(GameMode::LogResMsg);
 	}
@@ -2898,74 +2864,62 @@ void CGame::LogResponseHandler(char* pData)
 		m_iBlockMonth = pkt->block_month;
 		m_iBlockDay = pkt->block_day;
 
-		std::memset(m_cMsg, 0, sizeof(m_cMsg));
 		std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "7H");
 		ChangeGameMode(GameMode::LogResMsg);
 	}
 	break;
 
 	case LogResMsg::NotEnoughPoint:
-		std::memset(m_cMsg, 0, sizeof(m_cMsg));
 		std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "7I");
 		ChangeGameMode(GameMode::LogResMsg);
 		break;
 
 	case LogResMsg::AccountLocked:
-		std::memset(m_cMsg, 0, sizeof(m_cMsg));
 		std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "7K");
 		ChangeGameMode(GameMode::LogResMsg);
 		break;
 
 	case LogResMsg::ServiceNotAvailable:
-		std::memset(m_cMsg, 0, sizeof(m_cMsg));
 		std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "7L");
 		ChangeGameMode(GameMode::LogResMsg);
 		break;
 
 	case LogResMsg::PasswordChangeSuccess:
-		std::memset(m_cMsg, 0, sizeof(m_cMsg));
 		std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "6B");
 		ChangeGameMode(GameMode::LogResMsg);
 		break;
 
 	case LogResMsg::PasswordChangeFail:
-		std::memset(m_cMsg, 0, sizeof(m_cMsg));
 		std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "6C");
 		ChangeGameMode(GameMode::LogResMsg);
 		break;
 
 	case LogResMsg::PasswordMismatch:
-		std::memset(m_cMsg, 0, sizeof(m_cMsg));
 		std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "11");
 		ChangeGameMode(GameMode::LogResMsg);
 		break;
 
 	case LogResMsg::NotExistingAccount:
-		std::memset(m_cMsg, 0, sizeof(m_cMsg));
 		std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "12");
 		ChangeGameMode(GameMode::LogResMsg);
 		break;
 
 	case LogResMsg::NewAccountCreated:
-		std::memset(m_cMsg, 0, sizeof(m_cMsg));
 		std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "54");
 		ChangeGameMode(GameMode::LogResMsg);
 		break;
 
 	case LogResMsg::NewAccountFailed:
-		std::memset(m_cMsg, 0, sizeof(m_cMsg));
 		std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "05");
 		ChangeGameMode(GameMode::LogResMsg);
 		break;
 
 	case LogResMsg::AlreadyExistingAccount:
-		std::memset(m_cMsg, 0, sizeof(m_cMsg));
 		std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "06");
 		ChangeGameMode(GameMode::LogResMsg);
 		break;
 
 	case LogResMsg::NotExistingCharacter:
-		std::memset(m_cMsg, 0, sizeof(m_cMsg));
 		std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "Not existing character!");
 		ChangeGameMode(GameMode::Msg);
 		break;
@@ -2995,20 +2949,17 @@ void CGame::LogResponseHandler(char* pData)
 	
 			m_pCharList[i]->m_cMapName.assign(entry.map_name, strnlen(entry.map_name, sizeof(entry.map_name)));
 		}
-		std::memset(m_cMsg, 0, sizeof(m_cMsg));
 		std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "47");
 		ChangeGameMode(GameMode::LogResMsg);
 	}
 	break;
 
 	case LogResMsg::NewCharacterFailed:
-		std::memset(m_cMsg, 0, sizeof(m_cMsg));
 		std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "28");
 		ChangeGameMode(GameMode::LogResMsg);
 		break;
 
 	case LogResMsg::AlreadyExistingCharacter:
-		std::memset(m_cMsg, 0, sizeof(m_cMsg));
 		std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "29");
 		ChangeGameMode(GameMode::LogResMsg);
 		break;
@@ -3023,8 +2974,7 @@ void CGame::LogResponseHandler(char* pData)
 			pData, sizeof(hb::net::PacketLogEnterGameConfirm));
 		if (!pkt) return;
 		int iGameServerPort = pkt->game_server_port;
-		char cGameServerAddr[16];
-		std::memset(cGameServerAddr, 0, sizeof(cGameServerAddr));
+		char cGameServerAddr[16]{};
 		memcpy(cGameServerAddr, pkt->game_server_addr, sizeof(pkt->game_server_addr));
 		m_cGameServerName.assign(pkt->game_server_name, strnlen(pkt->game_server_name, sizeof(pkt->game_server_name)));
 		(void)iGameServerPort;
@@ -3054,13 +3004,11 @@ void CGame::LogResponseHandler(char* pData)
 	break;
 
 	case EnterGameRes::ForceDisconn:
-		std::memset(m_cMsg, 0, sizeof(m_cMsg));
 		std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "3X");
 		ChangeGameMode(GameMode::LogResMsg);
 		break;
 
 	case LogResMsg::NotExistingWorldServer:
-		std::memset(m_cMsg, 0, sizeof(m_cMsg));
 		std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "1Y");
 		ChangeGameMode(GameMode::LogResMsg);
 		break;
@@ -3082,19 +3030,16 @@ void CGame::LogResponseHandler(char* pData)
 	break;
 
 	case LogResMsg::ForceChangePassword:
-		std::memset(m_cMsg, 0, sizeof(m_cMsg));
 		std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "6M");
 		ChangeGameMode(GameMode::LogResMsg);
 		break;
 
 	case LogResMsg::InvalidKoreanSsn:
-		std::memset(m_cMsg, 0, sizeof(m_cMsg));
 		std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "1a");
 		ChangeGameMode(GameMode::LogResMsg);
 		break;
 
 	case LogResMsg::LessThenFifteen:
-		std::memset(m_cMsg, 0, sizeof(m_cMsg));
 		std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "1b");
 		ChangeGameMode(GameMode::LogResMsg);
 		break;
@@ -3255,7 +3200,8 @@ void CGame::ChatMsgHandler(char* pData)
 	short sX, sY;
 	std::string cTxt2;
 
-	char cMsgType, cName[21], cTemp[100], cMsg[100], cTxt1[100];
+	char cMsgType, cTemp[100], cMsg[100], cTxt1[100];
+	std::string cName;
 	uint32_t dwTime;
 	bool bFlag;
 
@@ -3272,13 +3218,12 @@ void CGame::ChatMsgHandler(char* pData)
 	iObjectID = static_cast<int>(pkt->header.msg_type);
 	sX = pkt->x;
 	sY = pkt->y;
-	std::memset(cName, 0, sizeof(cName));
-	memcpy(cName, pkt->name, sizeof(pkt->name));
+	cName.clear();
+	cName.assign(pkt->name, strnlen(pkt->name, sizeof(pkt->name)));
 	cMsgType = static_cast<char>(pkt->chat_type);
 
-	if (bCheckExID(cName) == true) return;
+	if (bCheckExID(cName.c_str()) == true) return;
 
-	std::memset(cTemp, 0, sizeof(cTemp));
 	std::snprintf(cTemp, sizeof(cTemp), "%s", pData + sizeof(hb::net::PacketCommandChatMsgHeader));
 
 	if ((cMsgType == 0) || (cMsgType == 2) || (cMsgType == 3))
@@ -3293,8 +3238,7 @@ void CGame::ChatMsgHandler(char* pData)
 		if (cMsgType == 2 || cMsgType == 3) return;
 	}
 
-	std::memset(cMsg, 0, sizeof(cMsg));
-	std::snprintf(cMsg, sizeof(cMsg), "%s: %s", cName, cTemp);
+	std::snprintf(cMsg, sizeof(cMsg), "%s: %s", cName.c_str(), cTemp);
 	m_Renderer->BeginTextBatch();
 	bFlag = false;
 	short sCheckByte = 0;
@@ -3319,9 +3263,7 @@ void CGame::ChatMsgHandler(char* pData)
 				std::memset(cTemp, 0, sizeof(cTemp));
 				memcpy(cTemp, cMsg, iLoc);
 				ChatManager::Get().AddMessage(cTemp, cMsgType);
-				std::memset(cTemp, 0, sizeof(cTemp));
 				std::snprintf(cTemp, sizeof(cTemp), "%s", cMsg + iLoc);
-				std::memset(cMsg, 0, sizeof(cMsg));
 				std::snprintf(cMsg, sizeof(cMsg), " %s", cTemp);
 			}
 			else
@@ -3329,9 +3271,7 @@ void CGame::ChatMsgHandler(char* pData)
 				std::memset(cTemp, 0, sizeof(cTemp));
 				memcpy(cTemp, cMsg, iLoc + 1);
 				ChatManager::Get().AddMessage(cTemp, cMsgType);
-				std::memset(cTemp, 0, sizeof(cTemp));
 				std::snprintf(cTemp, sizeof(cTemp), "%s", cMsg + iLoc + 1);
-				std::memset(cMsg, 0, sizeof(cMsg));
 				std::snprintf(cMsg, sizeof(cMsg), " %s", cTemp);
 			}
 		}
@@ -4032,7 +3972,6 @@ void CGame::CrusadeContributionResult(int iWarContribution)
 		m_pMsgTextList[5] = std::make_unique<CMsg>(0, m_pGameMsgList[26]->m_pMsg, 0); // a prize
 		m_pMsgTextList[6] = std::make_unique<CMsg>(0, " ", 0);
 		m_pMsgTextList[7] = std::make_unique<CMsg>(0, m_pGameMsgList[27]->m_pMsg, 0); // Experience point of the battle contribution:
-		std::memset(cTemp, 0, sizeof(cTemp));											//
 		std::snprintf(cTemp, sizeof(cTemp), "+%dExp Points!", iWarContribution);
 		m_pMsgTextList[8] = std::make_unique<CMsg>(0, cTemp, 0);
 		for (i = 9; i < 18; i++)
@@ -4344,7 +4283,7 @@ uint32_t CGame::iGetLevelExp(int iLevel)
 bool CGame::bCheckExID(const char* pName)
 {
 	if (m_pExID == 0) return false;
-	if (memcmp(m_pPlayer->m_cPlayerName, pName, 10) == 0) return false;
+	if (m_pPlayer->m_cPlayerName == pName) return false;
 	std::string cTxt;
 	cTxt = m_pExID->m_pMsg;
 	if (memcmp(cTxt.c_str(), pName, 10) == 0) return true;
@@ -4566,7 +4505,7 @@ void CGame::_SetIlusionEffect(int iOwnerH)
 
 	m_iIlusionOwnerH = iOwnerH;
 
-	char nameBuf_IE[12]{};
+	std::string nameBuf_IE;
 	m_pMapData->GetOwnerStatusByObjectID(iOwnerH, &m_cIlusionOwnerType, &cDir, &m_pPlayer->m_illusionAppearance, &m_pPlayer->m_illusionStatus, nameBuf_IE);
 	m_cName_IE = nameBuf_IE;
 }
@@ -4828,7 +4767,7 @@ void CGame::OnKeyDown(KeyCode _key)
 		// Only Enter key activates chat input - not every key press
 		else if (_key == KeyCode::Enter && (TextInputManager::Get().IsActive() == false) && (!hb::shared::input::IsAltDown()))
 		{
-			TextInputManager::Get().StartInput(CHAT_INPUT_X(), CHAT_INPUT_Y(), sizeof(m_cChatMsg), m_cChatMsg);
+			TextInputManager::Get().StartInput(CHAT_INPUT_X(), CHAT_INPUT_Y(), ChatMsgMaxLen, m_cChatMsg);
 			TextInputManager::Get().ClearInput();
 		}
 	}
@@ -5430,32 +5369,32 @@ char CGame::GetOfficialMapName(const char* pMapName, char* pName)
 		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME38);	// Elvine Guildhall
 		return -1;
 	}
-	else if (memcmp(pMapName, "bsmith_1", 8) == 0)
+	else if (strcmp(pMapName, "bsmith_1") == 0)
 	{
 		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME33);	// Aresden Blacksmith
 		return -1;
 	}
-	else if (memcmp(pMapName, "bsmith_2", 8) == 0)
+	else if (strcmp(pMapName, "bsmith_2") == 0)
 	{
 		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME34);	// Elvine Blacksmith
 		return -1;
 	}
-	else if (memcmp(pMapName, "gshop_1", 7) == 0)
+	else if (strcmp(pMapName, "gshop_1") == 0)
 	{
 		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME39);	// Aresden Shop
 		return -1;
 	}
-	else if (memcmp(pMapName, "gshop_2", 7) == 0)
+	else if (strcmp(pMapName, "gshop_2") == 0)
 	{
 		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME40);	// Elvine Shop
 		return -1;
 	}
-	else if (memcmp(pMapName, "wrhus_1", 7) == 0)
+	else if (strcmp(pMapName, "wrhus_1") == 0)
 	{
 		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME43);	// Aresden Warehouse
 		return -1;
 	}
-	else if (memcmp(pMapName, "wrhus_2", 7) == 0)
+	else if (strcmp(pMapName, "wrhus_2") == 0)
 	{
 		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME44);	// Elvine Warehouse
 		return -1;
@@ -5669,7 +5608,6 @@ void CGame::NpcTalkHandler(char* pData)
 		iQuestionType = 0;
 		switch (sType) {
 		case 1: //Monster Hunt
-			std::memset(cTemp, 0, sizeof(cTemp));
 			std::snprintf(cTemp, hb::shared::limits::NpcNameLen, "%s", GetNpcConfigName(iTargetType));
 			cTxt = std::format(NPC_TALK_HANDLER16, iTargetCount, cTemp);
 			m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, cTxt.c_str(), 0);
@@ -5830,7 +5768,6 @@ void CGame::PointCommandHandler(int indexX, int indexY, char cItemID)
 		{
 			m_dialogBoxManager.Info(DialogBoxId::Party).cMode = 3;
 			PlayGameSound('E', 14, 5);
-			std::memset(m_dialogBoxManager.Info(DialogBoxId::Party).cStr, 0, sizeof(m_dialogBoxManager.Info(DialogBoxId::Party).cStr));
 			std::snprintf(m_dialogBoxManager.Info(DialogBoxId::Party).cStr, sizeof(m_dialogBoxManager.Info(DialogBoxId::Party).cStr), "%s", m_cMCName.c_str());
 			bSendCommand(MsgId::CommandCommon, CommonType::RequestJoinParty, 0, 1, 0, 0, m_cMCName.c_str());
 			return;
@@ -6150,7 +6087,7 @@ void CGame::CommandProcessor(short msX, short msY, short indexX, short indexY, c
 			{
 				if (!m_dialogBoxManager.HandleDraggingItemRelease(msX, msY))
 				{
-					bItemDrop_ExternalScreen((char)CursorTarget::GetSelectedID(), msX, msY);
+					bItemDrop_ExternalScreen(static_cast<char>(CursorTarget::GetSelectedID()), msX, msY);
 				}
 			}
 			// Always clear selection after click-release to prevent stale state
@@ -6225,7 +6162,7 @@ void CGame::CommandProcessor(short msX, short msY, short indexX, short indexY, c
 				{	// Query Drop Item Amount
 					sX = m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sX;
 					sY = m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sY;
-					TextInputManager::Get().StartInput(sX + 40, sY + 57, 11, m_cAmountString);
+					TextInputManager::Get().StartInput(sX + 40, sY + 57, AmountStringMaxLen, m_cAmountString);
 					m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).cMode = 1;
 				}
 
@@ -6258,7 +6195,7 @@ void CGame::CommandProcessor(short msX, short msY, short indexX, short indexY, c
 			case SelectedObjectType::Item:
 				if (!m_dialogBoxManager.HandleDraggingItemRelease(msX, msY))
 				{
-					bItemDrop_ExternalScreen((char)CursorTarget::GetSelectedID(), msX, msY);
+					bItemDrop_ExternalScreen(static_cast<char>(CursorTarget::GetSelectedID()), msX, msY);
 				}
 				CursorTarget::ClearSelection();
 				break;
@@ -6281,7 +6218,7 @@ void CGame::CommandProcessor(short msX, short msY, short indexX, short indexY, c
 			if (cLB != 0)
 			{
 				// Click on self while moving = pickup (interrupt movement)
-				if (memcmp(m_cMCName.c_str(), m_pPlayer->m_cPlayerName, 10) == 0)
+				if (m_cMCName == m_pPlayer->m_cPlayerName)
 				{
 					if ((m_pPlayer->m_sPlayerType >= 1) && (m_pPlayer->m_sPlayerType <= 6))
 					{
@@ -6296,7 +6233,7 @@ void CGame::CommandProcessor(short msX, short msY, short indexX, short indexY, c
 			else if (cRB != 0)
 			{
 				// Right click on self while moving = pickup (interrupt movement)
-				if (memcmp(m_cMCName.c_str(), m_pPlayer->m_cPlayerName, 10) == 0)
+				if (m_cMCName == m_pPlayer->m_cPlayerName)
 				{
 					if ((m_pPlayer->m_sPlayerType >= 1) && (m_pPlayer->m_sPlayerType <= 6))
 					{
@@ -6374,11 +6311,11 @@ void CGame::CommandProcessor(short msX, short msY, short indexX, short indexY, c
 
 bool CGame::ProcessLeftClick(short msX, short msY, short indexX, short indexY, uint32_t dwTime, uint16_t& wType)
 {
-	char cName[12];
+	std::string cName;
 	short sX, sY, sObjectType, tX, tY;
 	hb::shared::entity::PlayerStatus iObjectStatus;
 	char cDir, absX, absY;
-	char pDstName[21];
+	std::string pDstName;
 	short sDstOwnerType;
 	hb::shared::entity::PlayerStatus iDstOwnerStatus;
 	bool bGORet;
@@ -6401,8 +6338,8 @@ bool CGame::ProcessLeftClick(short msX, short msY, short indexX, short indexY, u
 
 		m_pMapData->bGetOwner(m_sMCX, m_sMCY - 1, cName, &sObjectType, &iObjectStatus, &m_wCommObjectID); // v1.4
 		//m_pMapData->m_pData[dX][dY].m_sItemSprite
-		if (memcmp(m_cMCName.c_str(), m_pPlayer->m_cPlayerName, 10) == 0 && (sObjectType <= 6 || (m_pMapData->m_pData[m_pPlayer->m_sPlayerX - m_pMapData->m_sPivotX][m_pPlayer->m_sPlayerY - m_pMapData->m_sPivotY].m_sItemID != 0 && m_pItemConfigList[m_pMapData->m_pData[m_pPlayer->m_sPlayerX - m_pMapData->m_sPivotX][m_pPlayer->m_sPlayerY - m_pMapData->m_sPivotY].m_sItemID]->m_sSprite != 0)))
-		{//if (memcmp(m_cMCName.c_str(), m_pPlayer->m_cPlayerName, 10) == 0 && ( sObjectType <= 6 || m_pMapData->m_pData[15][15].m_sItemSprite != 0 )) {
+		if (m_cMCName == m_pPlayer->m_cPlayerName && (sObjectType <= 6 || (m_pMapData->m_pData[m_pPlayer->m_sPlayerX - m_pMapData->m_sPivotX][m_pPlayer->m_sPlayerY - m_pMapData->m_sPivotY].m_sItemID != 0 && m_pItemConfigList[m_pMapData->m_pData[m_pPlayer->m_sPlayerX - m_pMapData->m_sPivotX][m_pPlayer->m_sPlayerY - m_pMapData->m_sPivotY].m_sItemID]->m_sSprite != 0)))
+		{//if (m_cMCName == m_pPlayer->m_cPlayerName && ( sObjectType <= 6 || m_pMapData->m_pData[15][15].m_sItemSprite != 0 )) {
 		 //if (memcmp(m_cMCName, m_pPlayer->m_cPlayerName, 10) == 0 && sObjectType <= 6){
 			if ((m_pPlayer->m_sPlayerType >= 1) && (m_pPlayer->m_sPlayerType <= 6)/* && (!m_pPlayer->m_playerAppearance.bIsWalking)*/)
 			{
@@ -6412,7 +6349,7 @@ bool CGame::ProcessLeftClick(short msX, short msY, short indexX, short indexY, u
 		}
 		else
 		{
-			if (memcmp(m_cMCName.c_str(), m_pPlayer->m_cPlayerName, 10) == 0) m_sMCY -= 1;
+			if (m_cMCName == m_pPlayer->m_cPlayerName) m_sMCY -= 1;
 			if ((m_sMCX != 0) && (m_sMCY != 0)) // m_sMCX, m_sMCY
 			{
 				if (hb::shared::input::IsCtrlDown() == true)
@@ -7022,18 +6959,18 @@ bool CGame::ProcessLeftClick(short msX, short msY, short indexX, short indexY, u
 
 bool CGame::ProcessRightClick(short msX, short msY, short indexX, short indexY, uint32_t dwTime, uint16_t& wType)
 {
-	char cName[12];
+	std::string cName;
 	short sX, sY, sObjectType, tX, tY;
 	hb::shared::entity::PlayerStatus iObjectStatus;
 	char cDir, absX, absY;
-	char pDstName[21];
+	std::string pDstName;
 	short sDstOwnerType;
 	hb::shared::entity::PlayerStatus iDstOwnerStatus;
 	bool bGORet;
 
 		// Right click on self = pickup (Quick Actions feature)
 		if (ConfigManager::Get().IsQuickActionsEnabled() &&
-			memcmp(m_cMCName.c_str(), m_pPlayer->m_cPlayerName, 10) == 0 &&
+			m_cMCName == m_pPlayer->m_cPlayerName &&
 			(m_pPlayer->m_sPlayerType >= 1) && (m_pPlayer->m_sPlayerType <= 6))
 		{
 			m_pPlayer->m_Controller.SetCommand(Type::GetItem);
@@ -7277,7 +7214,7 @@ bool CGame::ProcessRightClick(short msX, short msY, short indexX, short indexY, 
 void CGame::ProcessMotionCommands(uint16_t wType)
 {
 	char cDir;
-	char pDstName[21];
+	std::string pDstName;
 	short sDstOwnerType;
 	hb::shared::entity::PlayerStatus iDstOwnerStatus;
 	bool bGORet;
@@ -7803,7 +7740,7 @@ void CGame::InitDataResponseHandler(char* pData)
 			dwFileSize = GetFileSize(hFile, 0);
 			CloseHandle(hFile);
 		}
-		bSendCommand(MsgId::RequestNoticement, 0, 0, (int)dwFileSize, 0, 0, 0);
+		bSendCommand(MsgId::RequestNoticement, 0, 0, static_cast<int>(dwFileSize), 0, 0, 0);
 	}
 	//cp += 2;
 }
@@ -7814,12 +7751,13 @@ void CGame::MotionEventHandler(char* pData)
 	short sX, sY, sType, sV1, sV2, sV3;
 	short npcConfigId = -1;
 	hb::shared::entity::PlayerStatus iStatus;
-	char cDir, cName[12];
+	char cDir;
+	std::string cName;
 	int iLoc;
 	hb::shared::entity::PlayerAppearance playerAppearance;
 	bool bPrevCombatMode = false;
 	std::string cTxt;
-	std::memset(cName, 0, sizeof(cName));
+	cName.clear();
 	sX = -1;
 	sY = -1;
 	sV1 = sV2 = sV3 = 0;
@@ -7849,7 +7787,7 @@ void CGame::MotionEventHandler(char* pData)
 			sY = pkt->y;
 			sType = pkt->type;
 			cDir = static_cast<char>(pkt->dir);
-			memcpy(cName, pkt->name, sizeof(pkt->name));
+			cName.assign(pkt->name, strnlen(pkt->name, sizeof(pkt->name)));
 			playerAppearance = pkt->appearance;
 			iStatus = pkt->status;
 			iLoc = pkt->loc;
@@ -7863,7 +7801,7 @@ void CGame::MotionEventHandler(char* pData)
 			npcConfigId = pkt->config_id;
 			sType = ResolveNpcType(npcConfigId);
 			cDir = static_cast<char>(pkt->dir);
-			memcpy(cName, pkt->name, sizeof(pkt->name));
+			cName.assign(pkt->name, strnlen(pkt->name, sizeof(pkt->name)));
 			playerAppearance.SetFromNpcAppearance(pkt->appearance);
 			iStatus.SetFromEntityStatus(pkt->status);
 			iLoc = pkt->loc;
@@ -7931,7 +7869,7 @@ void CGame::MotionEventHandler(char* pData)
 		}
 	}
 
-	if ((wEventType == Type::NullAction) && (memcmp(cName, m_pPlayer->m_cPlayerName, 10) == 0))
+	if ((wEventType == Type::NullAction) && (cName == m_pPlayer->m_cPlayerName))
 	{
 		m_pPlayer->m_sPlayerType = sType;
 		bPrevCombatMode = m_pPlayer->m_playerAppearance.bIsWalking;
@@ -7976,7 +7914,7 @@ void CGame::MotionEventHandler(char* pData)
 
 	case Type::Damage:
 	case Type::DamageMove:
-		if (memcmp(cName, m_pPlayer->m_cPlayerName, 10) == 0)
+		if (cName == m_pPlayer->m_cPlayerName)
 		{
 			// Cancel spell casting if in the animation phase (Type::Magic)
 			if (m_pPlayer->m_Controller.GetCommand() == Type::Magic)
@@ -8029,24 +7967,19 @@ void CGame::GrandMagicResult(const char* pMapName, int iV1, int iV2, int iV3, in
 		m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[3]->m_pMsg, 0);
 		m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, " ", 0);
 
-		std::memset(cTemp, 0, sizeof(cTemp));
 		std::snprintf(cTemp, sizeof(cTemp), "%s %d", m_pGameMsgList[4]->m_pMsg, iV1);
 		m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, cTemp, 0);
 
-		std::memset(cTemp, 0, sizeof(cTemp));
 		std::snprintf(cTemp, sizeof(cTemp), "%s %d", m_pGameMsgList[5]->m_pMsg, iV2);
 		m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, cTemp, 0);
 
-		std::memset(cTemp, 0, sizeof(cTemp));
 		std::snprintf(cTemp, sizeof(cTemp), "%s %d", m_pGameMsgList[6]->m_pMsg, iV3);
 		m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, cTemp, 0);
 
-		std::memset(cTemp, 0, sizeof(cTemp));
 		std::snprintf(cTemp, sizeof(cTemp), "%s %d", m_pGameMsgList[58]->m_pMsg, iV4);
 		m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, cTemp, 0);
 		m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, " ", 0);
 
-		std::memset(cTemp, 0, sizeof(cTemp));
 		std::snprintf(cTemp, sizeof(cTemp), "%s %d %d %d %d", NOTIFY_MSG_STRUCTURE_HP, iHP1, iHP2, iHP3, iHP4);
 		m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, cTemp, 0);
 		m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, " ", 0);
@@ -8138,24 +8071,19 @@ void CGame::GrandMagicResult(const char* pMapName, int iV1, int iV2, int iV3, in
 		m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[8]->m_pMsg, 0);
 		m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, " ", 0);
 
-		std::memset(cTemp, 0, sizeof(cTemp));
 		std::snprintf(cTemp, sizeof(cTemp), "%s %d", m_pGameMsgList[4]->m_pMsg, iV1);
 		m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, cTemp, 0);
 
-		std::memset(cTemp, 0, sizeof(cTemp));
 		std::snprintf(cTemp, sizeof(cTemp), "%s %d", m_pGameMsgList[5]->m_pMsg, iV2);
 		m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, cTemp, 0);
 
-		std::memset(cTemp, 0, sizeof(cTemp));
 		std::snprintf(cTemp, sizeof(cTemp), "%s %d", m_pGameMsgList[6]->m_pMsg, iV3);
 		m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, cTemp, 0);
 
-		std::memset(cTemp, 0, sizeof(cTemp));
 		std::snprintf(cTemp, sizeof(cTemp), "%s %d", m_pGameMsgList[58]->m_pMsg, iV4);
 		m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, cTemp, 0);
 		m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, " ", 0);
 
-		std::memset(cTemp, 0, sizeof(cTemp));
 		std::snprintf(cTemp, sizeof(cTemp), "%s %d %d %d %d", NOTIFY_MSG_STRUCTURE_HP, iHP1, iHP2, iHP3, iHP4);
 		m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, cTemp, 0);
 		m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, " ", 0);
@@ -8303,7 +8231,7 @@ void CGame::UseShortCut(int num)
 		}
 		else if (m_sShortCut[num] < 100)
 		{
-			InventoryManager::Get().EquipItem((char)m_sShortCut[num]);
+			InventoryManager::Get().EquipItem(static_cast<char>(m_sShortCut[num]));
 		}
 		else if (m_sShortCut[num] >= 100) MagicCastingSystem::Get().BeginCast(m_sShortCut[num] - 100);
 	}

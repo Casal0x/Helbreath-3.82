@@ -24,7 +24,7 @@ void DialogBox_ItemDrop::OnDraw(short msX, short msY, short msZ, char cLB)
 
 	auto itemInfo = ItemNameFormatter::Get().Format(m_pGame->m_pItemList[Info().sView].get());
 
-	if (strlen(Info().cStr) == 0)
+	if (Info().cStr[0] == '\0')
 		cTxt = itemInfo.name.c_str();
 
 	// Item name (green if special, blue otherwise)

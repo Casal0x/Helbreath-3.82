@@ -52,7 +52,6 @@ void DialogBox_Quest::OnDraw(short msX, short msY, short msZ, char cLB)
 			cTxt = std::format(DRAW_DIALOGBOX_QUEST5, cTemp);
 			PutAlignedString(sX, sX + szX, sY + 50 + 45, cTxt.c_str(), GameColors::UILabel);
 
-			std::memset(cTemp, 0, sizeof(cTemp));
 			std::snprintf(cTemp, sizeof(cTemp), "%s", m_pGame->GetNpcConfigName(m_pGame->m_stQuest.sTargetType));
 			cTxt = std::format(NPC_TALK_HANDLER16, m_pGame->m_stQuest.sTargetCount, cTemp);
 			PutAlignedString(sX, sX + szX, sY + 50 + 60, cTxt.c_str(), GameColors::UILabel);

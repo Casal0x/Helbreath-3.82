@@ -1,4 +1,4 @@
-// Screen_CreateNewCharacter.h: Create New Character Screen Class
+﻿// Screen_CreateNewCharacter.h: Create New Character Screen Class
 //
 // Handles character creation UI including appearance customization and stat allocation.
 //
@@ -8,6 +8,7 @@
 
 #include "IGameScreen.h"
 #include <cstdint>
+#include <string>
 
 class Screen_CreateNewCharacter : public IGameScreen
 {
@@ -25,7 +26,7 @@ public:
 private:
     // Screen-specific state (migrated from file-scope statics)
     int m_iNewCharPoint;
-    char m_cNewCharName[12];
+    std::string m_cNewCharName;
     char m_cNewCharPrevFocus;
     uint32_t m_dwNewCharMTime;
     short m_sNewCharMsX;

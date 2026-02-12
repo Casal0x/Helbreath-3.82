@@ -76,7 +76,7 @@ void HandleParty(CGame* pGame, char* pData)
 			break;
 
 		case 1: //
-			if (strcmp(cTxt, pGame->m_pPlayer->m_cPlayerName) == 0) {
+			if (strcmp(cTxt, pGame->m_pPlayer->m_cPlayerName.c_str()) == 0) {
 				pGame->m_iPartyStatus = 2;
 				pGame->m_dialogBoxManager.EnableDialogBox(DialogBoxId::Party, 0, 0, 0);
 				pGame->m_dialogBoxManager.Info(DialogBoxId::Party).cMode = 8;
@@ -90,7 +90,7 @@ void HandleParty(CGame* pGame, char* pData)
 			pGame->m_iTotalPartyMember++;
 			for (i = 0; i < hb::shared::limits::MaxPartyMembers; i++)
 				if (pGame->m_stPartyMemberNameList[i].cName.size() == 0) {
-					pGame->m_stPartyMemberNameList[i].cName.assign(cTxt, strnlen(cTxt, 10));
+					pGame->m_stPartyMemberNameList[i].cName.assign(cTxt, strnlen(cTxt, hb::shared::limits::CharNameLen));
 					break; // Replaced goto with break
 				}
 			break;
@@ -111,8 +111,8 @@ void HandleParty(CGame* pGame, char* pData)
 			const char* names = pkt->names;
 			pGame->m_iTotalPartyMember = pkt->count;
 			for (i = 1; i <= pkt->count; i++) {
-				pGame->m_stPartyMemberNameList[i - 1].cName.assign(names, strnlen(names, 10));
-				names += 11;
+				pGame->m_stPartyMemberNameList[i - 1].cName.assign(names, strnlen(names, hb::shared::limits::CharNameLen));
+				names += hb::shared::limits::CharNameLen;
 			}
 		}
 		break;
@@ -132,7 +132,7 @@ void HandleParty(CGame* pGame, char* pData)
 			break;
 
 		case 1: //
-			if (strcmp(cTxt, pGame->m_pPlayer->m_cPlayerName) == 0) {
+			if (strcmp(cTxt, pGame->m_pPlayer->m_cPlayerName.c_str()) == 0) {
 				pGame->m_iPartyStatus = 0;
 				pGame->m_dialogBoxManager.EnableDialogBox(DialogBoxId::Party, 0, 0, 0);
 				pGame->m_dialogBoxManager.Info(DialogBoxId::Party).cMode = 6;

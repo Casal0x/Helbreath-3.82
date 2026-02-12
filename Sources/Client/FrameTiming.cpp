@@ -1,5 +1,6 @@
 #include "FrameTiming.h"
 #include <cstring>
+#include <algorithm>
 
 // Static member initialization
 FrameTiming::TimePoint FrameTiming::s_frameStart;
@@ -25,9 +26,9 @@ void FrameTiming::Initialize()
 	s_profileFrameCount = 0;
 
 	s_profilingEnabled = false;
-	std::memset(s_stageTimeMS, 0, sizeof(s_stageTimeMS));
-	std::memset(s_stageAccumMS, 0, sizeof(s_stageAccumMS));
-	std::memset(s_stageAvgMS, 0, sizeof(s_stageAvgMS));
+	std::fill(s_stageTimeMS, s_stageTimeMS + STAGE_COUNT, 0.0);
+	std::fill(s_stageAccumMS, s_stageAccumMS + STAGE_COUNT, 0.0);
+	std::fill(s_stageAvgMS, s_stageAvgMS + STAGE_COUNT, 0.0);
 }
 
 void FrameTiming::BeginFrame()
@@ -45,7 +46,7 @@ void FrameTiming::BeginFrame()
 	s_bFrameRendered = false;
 	if (s_profilingEnabled)
 	{
-		std::memset(s_stageTimeMS, 0, sizeof(s_stageTimeMS));
+		std::fill(s_stageTimeMS, s_stageTimeMS + STAGE_COUNT, 0.0);
 		BeginProfile(ProfileStage::FrameTotal);
 	}
 }
@@ -102,9 +103,9 @@ void FrameTiming::SetProfilingEnabled(bool enabled)
 	{
 		// Reset when enabling
 		s_profileFrameCount = 0;
-		std::memset(s_stageTimeMS, 0, sizeof(s_stageTimeMS));
-		std::memset(s_stageAccumMS, 0, sizeof(s_stageAccumMS));
-		std::memset(s_stageAvgMS, 0, sizeof(s_stageAvgMS));
+		std::fill(s_stageTimeMS, s_stageTimeMS + STAGE_COUNT, 0.0);
+		std::fill(s_stageAccumMS, s_stageAccumMS + STAGE_COUNT, 0.0);
+		std::fill(s_stageAvgMS, s_stageAvgMS + STAGE_COUNT, 0.0);
 	}
 	s_profilingEnabled = enabled;
 }

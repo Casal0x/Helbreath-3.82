@@ -1,4 +1,4 @@
-#include "Game.h"
+﻿#include "Game.h"
 #include "NetworkMessageManager.h"
 #include "Packet/SharedPackets.h"
 #include "lan_eng.h"
@@ -14,7 +14,7 @@ namespace NetworkMessageHandlers {
 	{
 		char cIndex;
 		DWORD dwCount, dwAttribute;
-		char  cName[hb::shared::limits::ItemNameLen], cItemType, cEquipPos, cGenderLimit, cItemColor;
+		char  cName[hb::shared::limits::ItemNameLen]{}, cItemType, cEquipPos, cGenderLimit, cItemColor;
 		bool  bIsEquipped;
 		short sSprite, sSpriteFrame, sLevelLimit, sItemEffectValue2, sItemSpecEffectValue2;
 		WORD wWeight, wCurLifeSpan;
@@ -24,8 +24,7 @@ namespace NetworkMessageHandlers {
 		if (!pkt) return;
 
 		cIndex = static_cast<char>(pkt->bank_index);
-		std::memset(cName, 0, sizeof(cName));
-		memcpy(cName, pkt->name, hb::shared::limits::ItemNameLen - 1);
+		memcpy(cName, pkt->name, sizeof(pkt->name));
 		dwCount = pkt->count;
 		cItemType = static_cast<char>(pkt->item_type);
 		cEquipPos = static_cast<char>(pkt->equip_pos);

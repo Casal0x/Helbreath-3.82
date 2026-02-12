@@ -54,12 +54,12 @@ int MagicCastingSystem::GetManaCost(int iMagicNo)
 	if (m_game->m_pPlayer->m_bIsSafeAttackMode) iManaCost += (iManaCost / 2) - (iManaCost / 10);
 	if (iManaSave > 0)
 	{
-		double dV1 = (double)iManaSave;
+		double dV1 = static_cast<double>(iManaSave);
 		double dV2 = (double)(dV1 / 100.0f);
-		double dV3 = (double)iManaCost;
+		double dV3 = static_cast<double>(iManaCost);
 		dV1 = dV2 * dV3;
 		dV2 = dV3 - dV1;
-		iManaCost = (int)dV2;
+		iManaCost = static_cast<int>(dV2);
 	}
 	if (iManaCost < 1) iManaCost = 1;
 	return iManaCost;

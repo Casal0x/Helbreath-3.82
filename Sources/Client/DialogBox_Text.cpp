@@ -53,10 +53,10 @@ void DialogBox_Text::OnDraw(short msX, short msY, short msZ, char cLB)
 	int iPointerLoc = 0;
 	if (iTotalLines > 17)
 	{
-		double d1 = (double)m_pGame->m_dialogBoxManager.Info(DialogBoxId::Text).sView;
-		double d2 = (double)(iTotalLines - 17);
+		double d1 = static_cast<double>(m_pGame->m_dialogBoxManager.Info(DialogBoxId::Text).sView);
+		double d2 = static_cast<double>(iTotalLines - 17);
 		double d3 = (274.0 * d1) / d2;
-		iPointerLoc = (int)(d3 + 0.5);
+		iPointerLoc = static_cast<int>(d3 + 0.5);
 		m_pGame->DrawNewDialogBox(InterfaceNdGame2, sX, sY, 1);
 		m_pGame->DrawNewDialogBox(InterfaceNdGame2, sX + 242, sY + 35 + iPointerLoc, 7);
 	}
@@ -97,10 +97,10 @@ void DialogBox_Text::OnDraw(short msX, short msY, short msZ, char cLB)
 		{
 			if ((msX >= sX + 240) && (msX <= sX + 260) && (msY >= sY + 40) && (msY <= sY + 320))
 			{
-				double d1 = (double)(msY - (sY + 35));
-				double d2 = (double)(iTotalLines - 17);
+				double d1 = static_cast<double>(msY - (sY + 35));
+				double d2 = static_cast<double>(iTotalLines - 17);
 				double d3 = (d1 * d2) / 274.0;
-				iPointerLoc = (int)d3;
+				iPointerLoc = static_cast<int>(d3);
 				if (iPointerLoc > iTotalLines - 17)
 					iPointerLoc = iTotalLines - 17;
 				m_pGame->m_dialogBoxManager.Info(DialogBoxId::Text).sView = iPointerLoc;

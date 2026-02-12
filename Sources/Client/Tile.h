@@ -8,6 +8,7 @@
 #include <mmsystem.h>
 #include "EntityMotion.h"
 #include "AnimationState.h"
+#include <string>
 #include "Appearance.h"
 #include "PlayerStatusData.h"
 
@@ -21,11 +22,11 @@ public:
 
 		m_sOwnerType = 0;
 		m_sNpcConfigId = -1;
-		ZeroMemory(m_cOwnerName, sizeof(m_cOwnerName));
+		m_cOwnerName.clear();
 
 		m_sDeadOwnerType = 0;
 		m_sDeadNpcConfigId = -1;
-		ZeroMemory(m_cDeadOwnerName, sizeof(m_cDeadOwnerName));
+		m_cDeadOwnerName.clear();
 
 		m_cDeadOwnerFrame = -1;
 		m_dwDeadOwnerTime = 0;
@@ -63,10 +64,8 @@ public:
 	{
 		m_sOwnerType = 0;
 		m_sNpcConfigId = -1;
-		ZeroMemory(m_cOwnerName, sizeof(m_cOwnerName));
 		m_sDeadOwnerType = 0;
 		m_sDeadNpcConfigId = -1;
-		ZeroMemory(m_cDeadOwnerName, sizeof(m_cDeadOwnerName));
 		m_cDeadOwnerFrame     = -1;
 
 		m_sDynamicObjectType  = 0;
@@ -120,8 +119,8 @@ public:
 
 	char  m_cDynamicObjectFrame;
 	char  m_cDynamicObjectData1, m_cDynamicObjectData2, m_cDynamicObjectData3, m_cDynamicObjectData4;
-	char  m_cOwnerName[12];
-	char  m_cDeadOwnerName[12];
+	std::string m_cOwnerName;
+	std::string m_cDeadOwnerName;
 
 	// Unpacked appearance data (extracted from m_sAppr1-4 at reception)
 	hb::shared::entity::PlayerAppearance m_appearance;

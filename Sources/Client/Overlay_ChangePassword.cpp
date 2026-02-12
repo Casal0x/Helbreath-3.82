@@ -26,10 +26,6 @@ Overlay_ChangePassword::Overlay_ChangePassword(CGame* pGame)
     , m_iPrevFocus(2)
     , m_iMaxFocus(6)
 {
-    std::memset(m_cAccountName, 0, sizeof(m_cAccountName));
-    std::memset(m_cOldPassword, 0, sizeof(m_cOldPassword));
-    std::memset(m_cNewPassword, 0, sizeof(m_cNewPassword));
-    std::memset(m_cConfirmPassword, 0, sizeof(m_cConfirmPassword));
 }
 
 void Overlay_ChangePassword::on_initialize()
@@ -47,18 +43,18 @@ void Overlay_ChangePassword::on_initialize()
     m_pGame->m_cArrowPressed = 0;
 
     // Clear input buffers
-    std::memset(m_cAccountName, 0, sizeof(m_cAccountName));
-    std::memset(m_cOldPassword, 0, sizeof(m_cOldPassword));
-    std::memset(m_cNewPassword, 0, sizeof(m_cNewPassword));
-    std::memset(m_cConfirmPassword, 0, sizeof(m_cConfirmPassword));
+    m_cAccountName.clear();
+    m_cOldPassword.clear();
+    m_cNewPassword.clear();
+    m_cConfirmPassword.clear();
 
     // Copy account name from player
-    std::snprintf(m_cAccountName, sizeof(m_cAccountName), "%s", m_pGame->m_pPlayer->m_cAccountName);
+    m_cAccountName = m_pGame->m_pPlayer->m_cAccountName;
 
     // Start input on old password field
     int dlgX, dlgY;
     GetCenteredDialogPos(InterfaceNdGame4, 0, dlgX, dlgY);
-    StartInputString(dlgX + 161, dlgY + 67, 11, m_cOldPassword);
+    StartInputString(dlgX + 161, dlgY + 67, 11, m_cOldPassword, true);
     ClearInputString();
 }
 
@@ -81,13 +77,13 @@ void Overlay_ChangePassword::UpdateFocusedInput()
             StartInputString(dlgX + 161, dlgY + 43, 11, m_cAccountName);
             break;
         case 2:
-            StartInputString(dlgX + 161, dlgY + 67, 11, m_cOldPassword);
+            StartInputString(dlgX + 161, dlgY + 67, 11, m_cOldPassword, true);
             break;
         case 3:
-            StartInputString(dlgX + 161, dlgY + 91, 11, m_cNewPassword);
+            StartInputString(dlgX + 161, dlgY + 91, 11, m_cNewPassword, true);
             break;
         case 4:
-            StartInputString(dlgX + 161, dlgY + 115, 11, m_cConfirmPassword);
+            StartInputString(dlgX + 161, dlgY + 115, 11, m_cConfirmPassword, true);
             break;
         }
         m_iPrevFocus = m_iCurFocus;
@@ -97,26 +93,26 @@ void Overlay_ChangePassword::UpdateFocusedInput()
 bool Overlay_ChangePassword::ValidateInputs()
 {
     // Check account name
-    if (!CMisc::bCheckValidString(m_cAccountName) || strlen(m_cAccountName) == 0)
+    if (!CMisc::bCheckValidString(m_cAccountName.data()) || m_cAccountName.empty())
         return false;
 
     // Check old password
-    if (!CMisc::bCheckValidString(m_cOldPassword) || strlen(m_cOldPassword) == 0)
+    if (!CMisc::bCheckValidString(m_cOldPassword.data()) || m_cOldPassword.empty())
         return false;
 
     // Check new password (must be valid name format)
-    if (!CMisc::bCheckValidName(m_cNewPassword) || strlen(m_cNewPassword) < 8)
+    if (!CMisc::bCheckValidName(m_cNewPassword.data()) || m_cNewPassword.size() < 8)
         return false;
 
     // Check confirm password matches
-    if (!CMisc::bCheckValidName(m_cConfirmPassword))
+    if (!CMisc::bCheckValidName(m_cConfirmPassword.data()))
         return false;
 
-    if (memcmp(m_cNewPassword, m_cConfirmPassword, hb::shared::limits::AccountPassLen - 1) != 0)
+    if (m_cNewPassword != m_cConfirmPassword)
         return false;
 
     // New password must be different from old
-    if (memcmp(m_cOldPassword, m_cNewPassword, hb::shared::limits::AccountPassLen - 1) == 0)
+    if (m_cOldPassword == m_cNewPassword)
         return false;
 
     return true;
@@ -130,19 +126,17 @@ void Overlay_ChangePassword::HandleSubmit()
     EndInputString();
 
     // Copy account name/password to player session
-    std::memset(m_pGame->m_pPlayer->m_cAccountName, 0, sizeof(m_pGame->m_pPlayer->m_cAccountName));
-    std::memset(m_pGame->m_pPlayer->m_cAccountPassword, 0, sizeof(m_pGame->m_pPlayer->m_cAccountPassword));
-    std::snprintf(m_pGame->m_pPlayer->m_cAccountName, sizeof(m_pGame->m_pPlayer->m_cAccountName), "%s", m_cAccountName);
-    std::snprintf(m_pGame->m_pPlayer->m_cAccountPassword, sizeof(m_pGame->m_pPlayer->m_cAccountPassword), "%s", m_cOldPassword);
+    m_pGame->m_pPlayer->m_cAccountName = m_cAccountName;
+    m_pGame->m_pPlayer->m_cAccountPassword = m_cOldPassword;
 
     // Build ChangePasswordRequest packet
     hb::net::ChangePasswordRequest req{};
     req.header.msg_id = MsgId::RequestChangePassword;
     req.header.msg_type = 0;
-    std::memcpy(req.account_name, m_cAccountName, sizeof(req.account_name));
-    std::memcpy(req.password, m_cOldPassword, sizeof(req.password));
-    std::memcpy(req.new_password, m_cNewPassword, sizeof(req.new_password));
-    std::memcpy(req.new_password_confirm, m_cConfirmPassword, sizeof(req.new_password_confirm));
+    std::snprintf(req.account_name, sizeof(req.account_name), "%s", m_cAccountName.c_str());
+    std::snprintf(req.password, sizeof(req.password), "%s", m_cOldPassword.c_str());
+    std::snprintf(req.new_password, sizeof(req.new_password), "%s", m_cNewPassword.c_str());
+    std::snprintf(req.new_password_confirm, sizeof(req.new_password_confirm), "%s", m_cConfirmPassword.c_str());
 
     // Store packet for sending after connection completes
     auto* p = reinterpret_cast<char*>(&req);
@@ -154,7 +148,6 @@ void Overlay_ChangePassword::HandleSubmit()
     m_pGame->m_pLSock->bInitBufferSize(hb::shared::limits::MsgBufferSize);
 
     m_pGame->m_dwConnectMode = MsgId::RequestChangePassword;
-    std::memset(m_pGame->m_cMsg, 0, sizeof(m_pGame->m_cMsg));
     std::snprintf(m_pGame->m_cMsg, sizeof(m_pGame->m_cMsg), "%s", "41");
 
     // set_overlay will clear this overlay automatically
@@ -304,28 +297,28 @@ void Overlay_ChangePassword::on_render()
 
     if (m_iCurFocus != 1)
     {
-        const hb::shared::render::Color& color = CMisc::bCheckValidString(m_cAccountName) ? GameColors::UILabel : kInvalidInput;
-        PutString(dlgX + 161, dlgY + 43, m_cAccountName, color);
+        const hb::shared::render::Color& color = CMisc::bCheckValidString(m_cAccountName.data()) ? GameColors::UILabel : kInvalidInput;
+        PutString(dlgX + 161, dlgY + 43, m_cAccountName.c_str(), color);
     }
 
     if (m_iCurFocus != 2)
     {
-        const hb::shared::render::Color& color = CMisc::bCheckValidString(m_cOldPassword) ? GameColors::UILabel : kInvalidInput;
-        std::string maskedOld(strlen(m_cOldPassword), '*');
+        const hb::shared::render::Color& color = CMisc::bCheckValidString(m_cOldPassword.data()) ? GameColors::UILabel : kInvalidInput;
+        std::string maskedOld(m_cOldPassword.size(), '*');
         hb::shared::text::DrawText(GameFont::Default, dlgX + 161, dlgY + 67, maskedOld.c_str(), hb::shared::text::TextStyle::Color(color));
     }
 
     if (m_iCurFocus != 3)
     {
-        const hb::shared::render::Color& color = CMisc::bCheckValidName(m_cNewPassword) ? GameColors::UILabel : kInvalidInput;
-        std::string maskedNew(strlen(m_cNewPassword), '*');
+        const hb::shared::render::Color& color = CMisc::bCheckValidName(m_cNewPassword.data()) ? GameColors::UILabel : kInvalidInput;
+        std::string maskedNew(m_cNewPassword.size(), '*');
         hb::shared::text::DrawText(GameFont::Default, dlgX + 161, dlgY + 91, maskedNew.c_str(), hb::shared::text::TextStyle::Color(color));
     }
 
     if (m_iCurFocus != 4)
     {
-        const hb::shared::render::Color& color = CMisc::bCheckValidName(m_cConfirmPassword) ? GameColors::UILabel : kInvalidInput;
-        std::string maskedConfirm(strlen(m_cConfirmPassword), '*');
+        const hb::shared::render::Color& color = CMisc::bCheckValidName(m_cConfirmPassword.data()) ? GameColors::UILabel : kInvalidInput;
+        std::string maskedConfirm(m_cConfirmPassword.size(), '*');
         hb::shared::text::DrawText(GameFont::Default, dlgX + 161, dlgY + 115, maskedConfirm.c_str(), hb::shared::text::TextStyle::Color(color));
     }
 
@@ -333,7 +326,7 @@ void Overlay_ChangePassword::on_render()
     if (m_iCurFocus == 1)
         ShowReceivedString();
     else if (m_iCurFocus >= 2 && m_iCurFocus <= 4)
-        ShowReceivedString(true);  // Hide (mask) password
+        ShowReceivedString();  // Hide (mask) password
 
     // Help text
     PutAlignedString(dlgX, dlgX + 334, dlgY + 146, UPDATE_SCREEN_ON_CHANGE_PASSWORD5);

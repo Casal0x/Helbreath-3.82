@@ -5,6 +5,7 @@
 #include "ItemNameFormatter.h"
 #include "IInput.h"
 #include "lan_eng.h"
+#include <format>
 
 using namespace hb::shared::net;
 using namespace hb::shared::item;
@@ -105,9 +106,8 @@ void DialogBox_Bank::DrawItemDetails(short sX, short sY, short szX, int iItemInd
 	if (pCfg->m_sLevelLimit != 0 &&
 		pItem->m_dwAttribute & 0x00000001) {
 		iLoc += 15;
-		char buf[128];
-		snprintf(buf, sizeof(buf), "%s: %d", DRAW_DIALOGBOX_SHOP24, pCfg->m_sLevelLimit);
-		PutAlignedString(sX + 70, sX + szX, sY + iLoc, buf, GameColors::UIDisabled);
+		auto buf = std::format("{}: {}", DRAW_DIALOGBOX_SHOP24, pCfg->m_sLevelLimit);
+		PutAlignedString(sX + 70, sX + szX, sY + iLoc, buf.c_str(), GameColors::UIDisabled);
 	}
 
 	// Weight for equipment
@@ -116,9 +116,8 @@ void DialogBox_Bank::DrawItemDetails(short sX, short sY, short szX, int iItemInd
 		iLoc += 15;
 		int _wWeight = 0;
 		if (pCfg->m_wWeight % 100) _wWeight = 1;
-		char buf[128];
-		snprintf(buf, sizeof(buf), DRAW_DIALOGBOX_SHOP15, pCfg->m_wWeight / 100 + _wWeight);
-		PutAlignedString(sX + 70, sX + szX, sY + iLoc, buf, GameColors::UIDisabled);
+		auto strReq = std::format(DRAW_DIALOGBOX_SHOP15, pCfg->m_wWeight / 100 + _wWeight);
+		PutAlignedString(sX + 70, sX + szX, sY + iLoc, strReq.c_str(), GameColors::UIDisabled);
 	}
 
 	// Draw item sprite
@@ -144,10 +143,10 @@ void DialogBox_Bank::DrawScrollbar(short sX, short sY, int iTotalLines, short ms
 	double d1, d2, d3;
 
 	if (iTotalLines > Info().sV1) {
-		d1 = (double)Info().sView;
-		d2 = (double)(iTotalLines - Info().sV1);
+		d1 = static_cast<double>(Info().sView);
+		d2 = static_cast<double>(iTotalLines - Info().sV1);
 		d3 = (274.0f * d1) / d2;
-		iPointerLoc = (int)d3;
+		iPointerLoc = static_cast<int>(d3);
 		m_pGame->DrawNewDialogBox(InterfaceNdGame2, sX, sY, 3);
 		m_pGame->DrawNewDialogBox(InterfaceNdGame2, sX + 242, sY + iPointerLoc + 35, 7);
 	}
@@ -157,10 +156,10 @@ void DialogBox_Bank::DrawScrollbar(short sX, short sY, int iTotalLines, short ms
 
 	if (cLB != 0 && (m_pGame->m_dialogBoxManager.iGetTopDialogBoxIndex() == DialogBoxId::Bank) && iTotalLines > Info().sV1) {
 		if ((msX >= sX + 230) && (msX <= sX + 260) && (msY >= sY + 40) && (msY <= sY + 320)) {
-			d1 = (double)(msY - (sY + 35));
-			d2 = (double)(iTotalLines - Info().sV1);
+			d1 = static_cast<double>(msY - (sY + 35));
+			d2 = static_cast<double>(iTotalLines - Info().sV1);
 			d3 = (d1 * d2) / 274.0f;
-			Info().sView = (int)(d3 + 0.5);
+			Info().sView = static_cast<int>(d3 + 0.5);
 		}
 		else if ((msX >= sX + 230) && (msX <= sX + 260) && (msY > sY + 10) && (msY < sY + 40)) {
 			Info().sView = 0;

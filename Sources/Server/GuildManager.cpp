@@ -1,4 +1,4 @@
-// GuildManager.cpp: Handles server-side guild operations.
+﻿// GuildManager.cpp: Handles server-side guild operations.
 // Extracted from Game.cpp (Phase B4).
 
 #include "GuildManager.h"
@@ -350,7 +350,7 @@ void GuildManager::SendGuildMsg(int iClientH, uint16_t wNotifyMsgType, short sV1
 				hb::net::PacketNotifyNewGuildsMan pkt{};
 				pkt.header.msg_id = MsgId::Notify;
 				pkt.header.msg_type = wNotifyMsgType;
-				memcpy(pkt.name, m_pGame->m_pClientList[iClientH]->m_cCharName, hb::shared::limits::CharNameLen - 1);
+				memcpy(pkt.name, m_pGame->m_pClientList[iClientH]->m_cCharName, sizeof(pkt.name));
 				iRet = m_pGame->m_pClientList[i]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 			}
 			break;
@@ -360,7 +360,7 @@ void GuildManager::SendGuildMsg(int iClientH, uint16_t wNotifyMsgType, short sV1
 				hb::net::PacketNotifyDismissGuildsMan pkt{};
 				pkt.header.msg_id = MsgId::Notify;
 				pkt.header.msg_type = wNotifyMsgType;
-				memcpy(pkt.name, m_pGame->m_pClientList[iClientH]->m_cCharName, hb::shared::limits::CharNameLen - 1);
+				memcpy(pkt.name, m_pGame->m_pClientList[iClientH]->m_cCharName, sizeof(pkt.name));
 				iRet = m_pGame->m_pClientList[i]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 			}
 			break;
@@ -389,11 +389,11 @@ void GuildManager::GuildNotifyHandler(char* pData, size_t dwMsgSize)
 	if (!header) return;
 	cp = (char*)(pData + sizeof(hb::net::PacketHeader));
 
-	memcpy(cCharName, cp, hb::shared::limits::CharNameLen - 1);
-	cp += 10;
+	memcpy(cCharName, cp, hb::shared::limits::CharNameLen);
+	cp += hb::shared::limits::CharNameLen;
 
-	memcpy(cGuildName, cp, 20);
-	cp += 20;
+	memcpy(cGuildName, cp, hb::shared::limits::GuildNameLen);
+	cp += hb::shared::limits::GuildNameLen;
 
 }
 
@@ -478,9 +478,9 @@ void GuildManager::RequestCreateNewGuild(int iClientH, char* pData)
 	std::memset(cGuildLocation, 0, sizeof(cGuildLocation));
 
 	const auto& guildData = *reinterpret_cast<const hb::net::GuildCreatePayload*>(pData);
-	std::memcpy(cGuildMasterName, guildData.char_name, 10);
-	std::memcpy(cGuildName, guildData.guild_name, 20);
-	std::memcpy(cGuildLocation, guildData.location, 10);
+	std::memcpy(cGuildMasterName, guildData.char_name, sizeof(guildData.char_name));
+	std::memcpy(cGuildName, guildData.guild_name, sizeof(guildData.guild_name));
+	std::memcpy(cGuildLocation, guildData.location, sizeof(guildData.location));
 	dwGuildGUID = guildData.guild_guid;
 
 	strcat(cFileName, "Guilds");
@@ -554,7 +554,6 @@ void GuildManager::RequestCreateNewGuild(int iClientH, char* pData)
 void GuildManager::RequestDisbandGuild(int iClientH, char* pData)
 {
 	char cTemp[500];
-	char* cp;
 	char cFileName[255], cTxt[100], cDir[100];
 	char cGuildMasterName[hb::shared::limits::CharNameLen], cGuildName[21];
 	FILE* pFile;
@@ -567,12 +566,9 @@ void GuildManager::RequestDisbandGuild(int iClientH, char* pData)
 	std::memset(cGuildMasterName, 0, sizeof(cGuildMasterName));
 	std::memset(cGuildName, 0, sizeof(cGuildName));
 
-	cp = (char*)(pData);
-	memcpy(cGuildMasterName, cp, 10);
-	cp += 10;
-
-	memcpy(cGuildName, cp, 20);
-	cp += 20;
+	const auto& disbandData = *reinterpret_cast<const hb::net::GuildDisbandPayload*>(pData);
+	std::memcpy(cGuildMasterName, disbandData.char_name, sizeof(disbandData.char_name));
+	std::memcpy(cGuildName, disbandData.guild_name, sizeof(disbandData.guild_name));
 
 	strcat(cFileName, "Guilds");
 	strcat(cFileName, "\\");

@@ -1,4 +1,4 @@
-// IGameScreen.h: Interface for game screens with lifecycle management
+﻿// IGameScreen.h: Interface for game screens with lifecycle management
 //
 // Provides an object-oriented approach to screen management with:
 // - Lifecycle methods: on_initialize, on_uninitialize, on_update, on_render
@@ -11,6 +11,7 @@
 
 #include "CommonTypes.h"
 #include <cstdint>
+#include <string>
 
 class CGame;
 class GameModeManager;
@@ -84,10 +85,10 @@ protected:
     void AddEventList(const char* pTxt, char cColor = 0, bool bDupAllow = true);
 
     // Input string helpers (for text entry screens)
-    void StartInputString(int sX, int sY, unsigned char iLen, char* pBuffer, bool bIsHide = false);
+    void StartInputString(int sX, int sY, unsigned char iLen, std::string& buffer, bool bIsHide = false);
     void EndInputString();
     void ClearInputString();
-    void ShowReceivedString(bool bIsHide = false);
+    void ShowReceivedString();
 
     // Screen transition helper - request transition to a new screen
     // This delegates to GameModeManager::set_screen<T>()

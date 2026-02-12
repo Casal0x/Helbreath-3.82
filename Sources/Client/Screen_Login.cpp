@@ -22,8 +22,6 @@ namespace MouseButton = hb::shared::input::MouseButton;
 Screen_Login::Screen_Login(CGame* pGame)
     : IGameScreen(pGame), m_cPrevFocus(0)
 {
-    std::memset(m_cLoginName, 0, sizeof(m_cLoginName));
-    std::memset(m_cLoginPassword, 0, sizeof(m_cLoginPassword));
 }
 
 void Screen_Login::on_initialize()
@@ -37,8 +35,8 @@ void Screen_Login::on_initialize()
     m_cMaxFocus = 4;
     m_pGame->m_cArrowPressed = 0;
     
-    std::memset(m_cLoginName, 0, sizeof(m_cLoginName));
-    std::memset(m_cLoginPassword, 0, sizeof(m_cLoginPassword));
+    m_cLoginName.clear();
+    m_cLoginPassword.clear();
     
     TextInputManager::Get().StartInput(234, 222, 11, m_cLoginName);
     TextInputManager::Get().ClearInput();
@@ -105,14 +103,12 @@ void Screen_Login::on_update()
             break;
         case 2:
         case 3:
-            if ((strlen(m_cLoginName) == 0) || (strlen(m_cLoginPassword) == 0)) break;
+            if (m_cLoginName.empty() || m_cLoginPassword.empty()) break;
             m_pGame->PlayGameSound('E', 14, 5);
             
             // Set Player Account Credentials
-            std::memset(m_pGame->m_pPlayer->m_cAccountName, 0, sizeof(m_pGame->m_pPlayer->m_cAccountName));
-            std::memset(m_pGame->m_pPlayer->m_cAccountPassword, 0, sizeof(m_pGame->m_pPlayer->m_cAccountPassword));
-            std::snprintf(m_pGame->m_pPlayer->m_cAccountName, sizeof(m_pGame->m_pPlayer->m_cAccountName), "%s", m_cLoginName);
-            std::snprintf(m_pGame->m_pPlayer->m_cAccountPassword, sizeof(m_pGame->m_pPlayer->m_cAccountPassword), "%s", m_cLoginPassword);
+            m_pGame->m_pPlayer->m_cAccountName = m_cLoginName.c_str();
+            m_pGame->m_pPlayer->m_cAccountPassword = m_cLoginPassword.c_str();
 
             // Connect
             m_pGame->m_pLSock = std::make_unique<hb::shared::net::ASIOSocket>(m_pGame->m_pIOPool->GetContext(), game_limits::socket_block_limit);
@@ -121,7 +117,6 @@ void Screen_Login::on_update()
 
             m_pGame->ChangeGameMode(GameMode::Connecting);
             m_pGame->m_dwConnectMode = MsgId::RequestLogin;
-            std::memset(m_pGame->m_cMsg, 0, sizeof(m_pGame->m_cMsg));
             std::snprintf(m_pGame->m_cMsg, sizeof(m_pGame->m_cMsg), "%s", "11");
             return;
         case 4:
@@ -171,12 +166,10 @@ void Screen_Login::on_update()
         // Login button click
         else if (hb::shared::input::IsMouseInRect(140, 343, 84, 20)) {
             m_pGame->PlayGameSound('E', 14, 5);
-            if ((strlen(m_cLoginName) != 0) && (strlen(m_cLoginPassword) != 0)) {
+            if (!m_cLoginName.empty() && !m_cLoginPassword.empty()) {
                 TextInputManager::Get().EndInput();
-                std::memset(m_pGame->m_pPlayer->m_cAccountName, 0, sizeof(m_pGame->m_pPlayer->m_cAccountName));
-                std::memset(m_pGame->m_pPlayer->m_cAccountPassword, 0, sizeof(m_pGame->m_pPlayer->m_cAccountPassword));
-                std::snprintf(m_pGame->m_pPlayer->m_cAccountName, sizeof(m_pGame->m_pPlayer->m_cAccountName), "%s", m_cLoginName);
-                std::snprintf(m_pGame->m_pPlayer->m_cAccountPassword, sizeof(m_pGame->m_pPlayer->m_cAccountPassword), "%s", m_cLoginPassword);
+                m_pGame->m_pPlayer->m_cAccountName = m_cLoginName.c_str();
+            m_pGame->m_pPlayer->m_cAccountPassword = m_cLoginPassword.c_str();
 
                 m_pGame->m_pLSock = std::make_unique<hb::shared::net::ASIOSocket>(m_pGame->m_pIOPool->GetContext(), game_limits::socket_block_limit);
                 m_pGame->m_pLSock->bConnect(m_pGame->m_cLogServerAddr.c_str(), m_pGame->m_iLogServerPort + (rand() % 1));
@@ -184,7 +177,6 @@ void Screen_Login::on_update()
 
                 m_pGame->ChangeGameMode(GameMode::Connecting);
                 m_pGame->m_dwConnectMode = MsgId::RequestLogin;
-                std::memset(m_pGame->m_cMsg, 0, sizeof(m_pGame->m_cMsg));
                 std::snprintf(m_pGame->m_cMsg, sizeof(m_pGame->m_cMsg), "%s", "11");
                 return;
             }
@@ -203,11 +195,11 @@ void Screen_Login::on_update()
 
 void Screen_Login::on_render()
 {
-    DrawLoginWindow(m_cLoginName, m_cLoginPassword, hb::shared::input::GetMouseX(), hb::shared::input::GetMouseY());
+    DrawLoginWindow(hb::shared::input::GetMouseX(), hb::shared::input::GetMouseY());
 }
 
 // Logic migrated from CGame::_Draw_OnLogin
-void Screen_Login::DrawLoginWindow(char* pAccount, char* pPassword, int msX, int msY)
+void Screen_Login::DrawLoginWindow(int msX, int msY)
 {
     bool bFlag = true;
     m_pGame->DrawNewDialogBox(InterfaceNdLogin, 0, 0, 0, true);
@@ -225,29 +217,29 @@ void Screen_Login::DrawLoginWindow(char* pAccount, char* pPassword, int msX, int
     }
 
     if (m_cCurFocus != 1) {
-        if (CMisc::bCheckValidName(pAccount) != false)
-            hb::shared::text::DrawText(GameFont::Default, 234, 222, pAccount, hb::shared::text::TextStyle::WithShadow(GameColors::InputValid));
-        else hb::shared::text::DrawText(GameFont::Default, 234, 222, pAccount, hb::shared::text::TextStyle::WithShadow(GameColors::InputInvalid));
+        if (CMisc::bCheckValidName(m_cLoginName.data()) != false)
+            hb::shared::text::DrawText(GameFont::Default, 234, 222, m_cLoginName.c_str(), hb::shared::text::TextStyle::WithShadow(GameColors::InputValid));
+        else hb::shared::text::DrawText(GameFont::Default, 234, 222, m_cLoginName.c_str(), hb::shared::text::TextStyle::WithShadow(GameColors::InputInvalid));
     }
-    if ((CMisc::bCheckValidName(pAccount) == false) || (strlen(pAccount) == 0)) bFlag = false;
+    if ((CMisc::bCheckValidName(m_cLoginName.data()) == false) || m_cLoginName.empty()) bFlag = false;
 
     if (m_cCurFocus != 2) {
         // Mask password with asterisks
-        std::string masked(strlen(pPassword), '*');
-        if ((CMisc::bCheckValidString(pPassword) != false))
+        std::string masked(m_cLoginPassword.size(), '*');
+        if ((CMisc::bCheckValidString(m_cLoginPassword.data()) != false))
             hb::shared::text::DrawText(GameFont::Default, 234, 245, masked.c_str(),
                               hb::shared::text::TextStyle::WithShadow(GameColors::InputValid));
         else
             hb::shared::text::DrawText(GameFont::Default, 234, 245, masked.c_str(),
                               hb::shared::text::TextStyle::WithShadow(GameColors::InputInvalid));
     }
-    if ((CMisc::bCheckValidString(pPassword) == false) || (strlen(pPassword) == 0)) bFlag = false;
+    if ((CMisc::bCheckValidString(m_cLoginPassword.data()) == false) || m_cLoginPassword.empty()) bFlag = false;
 
     if (m_cCurFocus == 1)
         TextInputManager::Get().ShowInput();
     else
         if (m_cCurFocus == 2)
-            TextInputManager::Get().ShowInput(true);
+            TextInputManager::Get().ShowInput();
 
     if (bFlag == true)
     {

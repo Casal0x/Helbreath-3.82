@@ -35,7 +35,7 @@ void DialogBox_GuildMenu::OnDraw(short msX, short msY, short msZ, char cLB)
 		break;
 	case 3:
 		PutAlignedString(sX, sX + szX, sY + 125, DRAW_DIALOGBOX_GUILDMENU20, GameColors::UILabel);
-		PutAlignedString(sX, sX + szX, sY + 140, m_pGame->m_pPlayer->m_cGuildName, GameColors::UILabel);
+		PutAlignedString(sX, sX + szX, sY + 140, m_pGame->m_pPlayer->m_cGuildName.c_str(), GameColors::UILabel);
 		PutAlignedString(sX, sX + szX, sY + 144, "____________________", GameColors::UILabel);
 		PutAlignedString(sX, sX + szX, sY + 160, DRAW_DIALOGBOX_GUILDMENU21, GameColors::UILabel);
 		if ((msX >= sX + ui_layout::right_btn_x) && (msX <= sX + ui_layout::right_btn_x + ui_layout::btn_size_x) && (msY > sY + ui_layout::btn_y) && (msY < sY + ui_layout::btn_y + ui_layout::btn_size_y))
@@ -199,12 +199,12 @@ void DialogBox_GuildMenu::DrawMode1_CreateGuild(short sX, short sY, short szX, s
 	PutString(sX + 75, sY + 144, "____________________", GameColors::UILabel);
 
 	if (m_pGame->m_dialogBoxManager.iGetTopDialogBoxIndex() != DialogBoxId::GuildMenu) {
-		std::string masked(strlen(m_pGame->m_pPlayer->m_cGuildName), '*');
+		std::string masked(m_pGame->m_pPlayer->m_cGuildName.size(), '*');
 		hb::shared::text::DrawText(GameFont::Default, sX + 75, sY + 140, masked.c_str(), hb::shared::text::TextStyle::Color(GameColors::UIWhite));
 	}
 
 	if ((msX >= sX + ui_layout::left_btn_x) && (msX <= sX + ui_layout::left_btn_x + ui_layout::btn_size_x) && (msY >= sY + ui_layout::btn_y) && (msY <= sY + ui_layout::btn_y + ui_layout::btn_size_y)) {
-		if ((strcmp(m_pGame->m_pPlayer->m_cGuildName, "NONE") == 0) || (strlen(m_pGame->m_pPlayer->m_cGuildName) == 0)) {
+		if ((m_pGame->m_pPlayer->m_cGuildName == "NONE") || m_pGame->m_pPlayer->m_cGuildName.empty()) {
 			m_pGame->DrawNewDialogBox(InterfaceNdButton, sX + ui_layout::left_btn_x, sY + ui_layout::btn_y, 24);
 		}
 		else m_pGame->DrawNewDialogBox(InterfaceNdButton, sX + ui_layout::left_btn_x, sY + ui_layout::btn_y, 25);
@@ -219,7 +219,7 @@ void DialogBox_GuildMenu::DrawMode1_CreateGuild(short sX, short sY, short szX, s
 void DialogBox_GuildMenu::DrawMode5_DisbandConfirm(short sX, short sY, short szX, short msX, short msY)
 {
 	PutAlignedString(sX, sX + szX, sY + 90, DRAW_DIALOGBOX_GUILDMENU24);
-	PutAlignedString(sX, sX + szX, sY + 105, m_pGame->m_pPlayer->m_cGuildName, GameColors::UILabel);
+	PutAlignedString(sX, sX + szX, sY + 105, m_pGame->m_pPlayer->m_cGuildName.c_str(), GameColors::UILabel);
 	PutAlignedString(sX, sX + szX, sY + 109, "____________________", GameColors::UIBlack);
 	PutAlignedString(sX, sX + szX, sY + 130, DRAW_DIALOGBOX_GUILDMENU25);
 	PutAlignedString(sX, sX + szX, sY + 145, DRAW_DIALOGBOX_GUILDMENU26);
@@ -317,7 +317,7 @@ void DialogBox_GuildMenu::DrawMode20_ConfirmCancel(short sX, short sY, short szX
 {
 	PutAlignedString(sX, sX + szX, sY + 125, DRAW_DIALOGBOX_GUILDMENU75, GameColors::UILabel);
 	PutString(sX + 75, sY + 144, "____________________", GameColors::UILabel);
-	hb::shared::text::DrawText(GameFont::Default, sX + 75, sY + 140, m_pGame->m_pPlayer->m_cGuildName, hb::shared::text::TextStyle::Color(GameColors::UIWhite));
+	hb::shared::text::DrawText(GameFont::Default, sX + 75, sY + 140, m_pGame->m_pPlayer->m_cGuildName.c_str(), hb::shared::text::TextStyle::Color(GameColors::UIWhite));
 	if ((msX >= sX + ui_layout::left_btn_x) && (msX <= sX + ui_layout::left_btn_x + ui_layout::btn_size_x) && (msY >= sY + ui_layout::btn_y) && (msY <= sY + ui_layout::btn_y + ui_layout::btn_size_y))
 		m_pGame->DrawNewDialogBox(InterfaceNdButton, sX + ui_layout::left_btn_x, sY + ui_layout::btn_y, 25);
 	else m_pGame->DrawNewDialogBox(InterfaceNdButton, sX + ui_layout::left_btn_x, sY + ui_layout::btn_y, 24);
@@ -419,8 +419,8 @@ bool DialogBox_GuildMenu::OnClickMode1(short sX, short sY, short msX, short msY)
 {
 	// Submit button
 	if ((msX >= sX + 30) && (msX <= sX + 30 + ui_layout::btn_size_x) && (msY >= sY + ui_layout::btn_y) && (msY <= sY + ui_layout::btn_y + ui_layout::btn_size_y)) {
-		if (strcmp(m_pGame->m_pPlayer->m_cGuildName, "NONE") == 0) return false;
-		if (strlen(m_pGame->m_pPlayer->m_cGuildName) == 0) return false;
+		if (m_pGame->m_pPlayer->m_cGuildName == "NONE") return false;
+		if (m_pGame->m_pPlayer->m_cGuildName.empty()) return false;
 		bSendCommand(MsgId::RequestCreateNewGuild, MsgType::Confirm, 0, 0, 0, 0, 0);
 		Info().cMode = 2;
 		TextInputManager::Get().EndInput();

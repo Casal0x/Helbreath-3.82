@@ -1,7 +1,8 @@
-#pragma once
+﻿#pragma once
 
 #include "PacketCommon.h"
 #include "PacketHeaders.h"
+#include "NetConstants.h"
 
 #include <cstdint>
 
@@ -14,7 +15,7 @@ namespace net {
 		PacketHeader header;
 		std::int16_t reserved1;
 		std::int16_t reserved2;
-		char name[10];
+		char name[hb::shared::limits::CharNameLen];
 		std::uint8_t chat_type;
 	};
 
