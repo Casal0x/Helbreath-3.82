@@ -335,6 +335,8 @@ DocProject/Help/html
 PLANS/
 *.md
 !**/README.md
+!/CLAUDE*.md
+!/CHANGELOG.md
 
 # Game logs and runtime data
 **/GameLogs/
@@ -342,4 +344,4 @@ PLANS/
 # Temporary files
 tmpclaude*cwd
 nul
-/Scripts
+!/Scripts
