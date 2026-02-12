@@ -5,6 +5,8 @@
 #include "GameFonts.h"
 #include "TextLibExt.h"
 #include "lan_eng.h"
+#include <format>
+#include <string>
 
 using namespace hb::shared::net;
 using namespace hb::shared::item;
@@ -29,7 +31,7 @@ void DialogBox_Exchange::OnDraw(short msX, short msY, short msZ, char cLB)
 	case 1: // Not yet confirmed exchange
 		PutAlignedString(sX + 80, sX + 180, sY + 38, m_pGame->m_pPlayer->m_cPlayerName, GameColors::UIDarkGreen);
 		if (m_pGame->m_stDialogBoxExchangeInfo[4].sV1 != -1)
-			PutAlignedString(sX + 250, sX + 540, sY + 38, m_pGame->m_stDialogBoxExchangeInfo[4].cStr2, GameColors::UIDarkGreen);
+			PutAlignedString(sX + 250, sX + 540, sY + 38, m_pGame->m_stDialogBoxExchangeInfo[4].cStr2.c_str(), GameColors::UIDarkGreen);
 
 		DrawItems(sX, sY, msX, msY, 0, 8);
 
@@ -70,13 +72,13 @@ void DialogBox_Exchange::OnDraw(short msX, short msY, short msZ, char cLB)
 	case 2: // You have confirmed the exchange
 		PutAlignedString(sX + 80, sX + 180, sY + 38, m_pGame->m_pPlayer->m_cPlayerName, GameColors::UIDarkGreen);
 		if (m_pGame->m_stDialogBoxExchangeInfo[4].sV1 != -1)
-			PutAlignedString(sX + 250, sX + 540, sY + 38, m_pGame->m_stDialogBoxExchangeInfo[4].cStr2, GameColors::UIDarkGreen);
+			PutAlignedString(sX + 250, sX + 540, sY + 38, m_pGame->m_stDialogBoxExchangeInfo[4].cStr2.c_str(), GameColors::UIDarkGreen);
 
 		DrawItems(sX, sY, msX, msY, 0, 8);
 
-		char exchangeBuf[128];
-		snprintf(exchangeBuf, sizeof(exchangeBuf), DRAW_DIALOGBOX_EXCHANGE33, m_pGame->m_stDialogBoxExchangeInfo[4].cStr2);
-		PutAlignedString(sX, sX + szX, sY + 215, exchangeBuf, GameColors::UILabel);
+		std::string exchangeBuf;
+		exchangeBuf = std::format(DRAW_DIALOGBOX_EXCHANGE33, m_pGame->m_stDialogBoxExchangeInfo[4].cStr2);
+		PutAlignedString(sX, sX + szX, sY + 215, exchangeBuf.c_str(), GameColors::UILabel);
 		PutAlignedString(sX, sX + szX, sY + 230, DRAW_DIALOGBOX_EXCHANGE34, GameColors::UILabel);
 		PutAlignedString(sX, sX + szX, sY + 245, DRAW_DIALOGBOX_EXCHANGE35, GameColors::UILabel);
 		PutAlignedString(sX, sX + szX, sY + 260, DRAW_DIALOGBOX_EXCHANGE36, GameColors::UILabel);
@@ -124,42 +126,40 @@ void DialogBox_Exchange::DrawItems(short sX, short sY, short msX, short msY, int
 
 void DialogBox_Exchange::DrawItemInfo(short sX, short sY, short szX, short msX, short msY, int iItemIndex, short sXadd)
 {
-	char cNameStr[120], cSubStr1[120], cSubStr2[120];
-	char cTxt[120], cTxt2[128];
+	std::string cTxt, cTxt2;
 	int iLoc;
 
-	ItemNameFormatter::Get().Format(m_pGame->m_stDialogBoxExchangeInfo[iItemIndex].sItemID,
-		m_pGame->m_stDialogBoxExchangeInfo[iItemIndex].dwV1, cNameStr, cSubStr1, cSubStr2);
+	auto itemInfo = ItemNameFormatter::Get().Format(m_pGame->m_stDialogBoxExchangeInfo[iItemIndex].sItemID,  m_pGame->m_stDialogBoxExchangeInfo[iItemIndex].dwV1);
 
 	if ((msX >= sX + sXadd - 6) && (msX <= sX + sXadd + 42) && (msY >= sY + 61) && (msY <= sY + 200)) {
-		std::snprintf(cTxt, sizeof(cTxt), "%s", cNameStr);
-		if (ItemNameFormatter::Get().IsSpecial()) {
-			PutAlignedString(sX + 15, sX + 155, sY + 215, cTxt, GameColors::UIItemName_Special);
-			PutAlignedString(sX + 16, sX + 156, sY + 215, cTxt, GameColors::UIItemName_Special);
+		cTxt = itemInfo.name.c_str();
+		if (itemInfo.is_special) {
+			PutAlignedString(sX + 15, sX + 155, sY + 215, cTxt.c_str(), GameColors::UIItemName_Special);
+			PutAlignedString(sX + 16, sX + 156, sY + 215, cTxt.c_str(), GameColors::UIItemName_Special);
 		}
 		else {
-			PutAlignedString(sX + 15, sX + 155, sY + 215, cTxt, GameColors::UILabel);
-			PutAlignedString(sX + 16, sX + 156, sY + 215, cTxt, GameColors::UILabel);
+			PutAlignedString(sX + 15, sX + 155, sY + 215, cTxt.c_str(), GameColors::UILabel);
+			PutAlignedString(sX + 16, sX + 156, sY + 215, cTxt.c_str(), GameColors::UILabel);
 		}
 
 		iLoc = 0;
-		if (strlen(cSubStr1) != 0) {
-			PutAlignedString(sX + 16, sX + 155, sY + 235 + iLoc, cSubStr1, GameColors::UIBlack);
+		if (itemInfo.effect.size() != 0) {
+			PutAlignedString(sX + 16, sX + 155, sY + 235 + iLoc, itemInfo.effect.c_str(), GameColors::UIBlack);
 			iLoc += 15;
 		}
-		if (strlen(cSubStr2) != 0) {
-			PutAlignedString(sX + 16, sX + 155, sY + 235 + iLoc, cSubStr2, GameColors::UIBlack);
+		if (itemInfo.extra.size() != 0) {
+			PutAlignedString(sX + 16, sX + 155, sY + 235 + iLoc, itemInfo.extra.c_str(), GameColors::UIBlack);
 			iLoc += 15;
 		}
 
 		if (m_pGame->m_stDialogBoxExchangeInfo[iItemIndex].sV3 != 1) {
 			if (m_pGame->m_stDialogBoxExchangeInfo[iItemIndex].sV3 > 1) {
-				m_pGame->FormatCommaNumber(m_pGame->m_stDialogBoxExchangeInfo[iItemIndex].sV3, cTxt2, sizeof(cTxt2));
+				cTxt2 = m_pGame->FormatCommaNumber(m_pGame->m_stDialogBoxExchangeInfo[iItemIndex].sV3);
 			}
 			else {
-				snprintf(cTxt2, sizeof(cTxt2), DRAW_DIALOGBOX_EXCHANGE2, m_pGame->m_stDialogBoxExchangeInfo[iItemIndex].sV3);
+				cTxt2 = std::format(DRAW_DIALOGBOX_EXCHANGE2, m_pGame->m_stDialogBoxExchangeInfo[iItemIndex].sV3);
 			}
-			PutAlignedString(sX + 16, sX + 155, sY + 235 + iLoc, cTxt2, GameColors::UILabel);
+			PutAlignedString(sX + 16, sX + 155, sY + 235 + iLoc, cTxt2.c_str(), GameColors::UILabel);
 			iLoc += 15;
 		}
 
@@ -168,23 +168,22 @@ void DialogBox_Exchange::DrawItemInfo(short sX, short sY, short szX, short msX, 
 			if (m_pGame->m_stDialogBoxExchangeInfo[iItemIndex].sV1 == 22) {
 				if ((m_pGame->m_stDialogBoxExchangeInfo[iItemIndex].sV2 > 5) &&
 					(m_pGame->m_stDialogBoxExchangeInfo[iItemIndex].sV2 < 10)) {
-					std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME2, (m_pGame->m_stDialogBoxExchangeInfo[iItemIndex].sV7 - 100));
+					cTxt = std::format(GET_ITEM_NAME2, (m_pGame->m_stDialogBoxExchangeInfo[iItemIndex].sV7 - 100));
 				}
 			}
 			else if (m_pGame->m_stDialogBoxExchangeInfo[iItemIndex].sV1 == 6) {
-				std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME1, (m_pGame->m_stDialogBoxExchangeInfo[iItemIndex].sV7 - 100));
+				cTxt = std::format(GET_ITEM_NAME1, (m_pGame->m_stDialogBoxExchangeInfo[iItemIndex].sV7 - 100));
 			}
 			else {
-				std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME2, m_pGame->m_stDialogBoxExchangeInfo[iItemIndex].sV7);
+				cTxt = std::format(GET_ITEM_NAME2, m_pGame->m_stDialogBoxExchangeInfo[iItemIndex].sV7);
 			}
-			PutAlignedString(sX + 16, sX + 155, sY + 235 + iLoc, cTxt, GameColors::UILabel);
+			PutAlignedString(sX + 16, sX + 155, sY + 235 + iLoc, cTxt.c_str(), GameColors::UILabel);
 			iLoc += 15;
 		}
 
 		if (iLoc < 45) {
-			std::snprintf(cTxt, sizeof(cTxt), DRAW_DIALOGBOX_EXCHANGE3, m_pGame->m_stDialogBoxExchangeInfo[iItemIndex].sV5,
-				m_pGame->m_stDialogBoxExchangeInfo[iItemIndex].sV6);
-			PutAlignedString(sX + 16, sX + 155, sY + 235 + iLoc, cTxt, GameColors::UILabel);
+			cTxt = std::format(DRAW_DIALOGBOX_EXCHANGE3, m_pGame->m_stDialogBoxExchangeInfo[iItemIndex].sV5, m_pGame->m_stDialogBoxExchangeInfo[iItemIndex].sV6);
+			PutAlignedString(sX + 16, sX + 155, sY + 235 + iLoc, cTxt.c_str(), GameColors::UILabel);
 		}
 	}
 }

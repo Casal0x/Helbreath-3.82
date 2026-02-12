@@ -1,4 +1,4 @@
-// IRenderer.h: Abstract interface for renderer backends
+﻿// IRenderer.h: Abstract interface for renderer backends
 //
 // Part of DDrawEngine static library
 // This interface allows swapping renderer implementations (DirectDraw, OpenGL, etc.)
@@ -94,9 +94,9 @@ public:
     virtual int GetHeightMid() const = 0;
     virtual void ResizeBackBuffer(int width, int height) = 0;  // Resize back buffer for resolution change
 
-    // ============== Sprite Alpha Degree ==============
-    virtual char GetSpriteAlphaDegree() const = 0;
-    virtual void SetSpriteAlphaDegree(char degree) = 0;
+    // ============== Ambient Light ==============
+    virtual char GetAmbientLightLevel() const = 0;
+    virtual void SetAmbientLightLevel(char level) = 0;
 
     // ============== Color Utilities ==============
     virtual void ColorTransferRGB(uint32_t rgb, int* outR, int* outG, int* outB) = 0;

@@ -6,6 +6,8 @@
 #include "ItemNameFormatter.h"
 #include "lan_eng.h"
 #include "SharedCalculations.h"
+#include <format>
+#include <string>
 
 using namespace hb::shared::net;
 using namespace hb::shared::item;
@@ -210,14 +212,14 @@ void DialogBox_Character::OnDraw(short msX, short msY, short msZ, char cLB)
 	DrawNewDialogBox(InterfaceNdText, sX, sY, 0, false, dialogTrans);
 
 	// Player name and PK/contribution
-	char cTxt2[64];
+	std::string cTxt2;
 	std::string infoBuf = std::string(m_pGame->m_pPlayer->m_cPlayerName) + " : ";
 
 	if (m_pGame->m_pPlayer->m_iPKCount > 0) {
-		snprintf(cTxt2, sizeof(cTxt2), DRAW_DIALOGBOX_CHARACTER1, m_pGame->m_pPlayer->m_iPKCount);
+		cTxt2 = std::format(DRAW_DIALOGBOX_CHARACTER1, m_pGame->m_pPlayer->m_iPKCount);
 		infoBuf += cTxt2;
 	}
-	snprintf(cTxt2, sizeof(cTxt2), DRAW_DIALOGBOX_CHARACTER2, m_pGame->m_pPlayer->m_iContribution);
+	cTxt2 = std::format(DRAW_DIALOGBOX_CHARACTER2, m_pGame->m_pPlayer->m_iContribution);
 	infoBuf += cTxt2;
 	PutAlignedString(sX + 24, sX + 252, sY + 52, infoBuf.c_str(), GameColors::UIDarkRed);
 
@@ -243,15 +245,15 @@ void DialogBox_Character::OnDraw(short msX, short msY, short msZ, char cLB)
 	PutAlignedString(sX, sX + 275, sY + 69, statusBuf.c_str(), GameColors::UILabel);
 
 	// Level, Exp, Next Exp
-	char statBuf[32];
-	snprintf(statBuf, sizeof(statBuf), "%d", m_pGame->m_pPlayer->m_iLevel);
-	PutAlignedString(sX + 180, sX + 250, sY + 106, statBuf, GameColors::UILabel);
+	std::string statBuf;
+	statBuf = std::format("{}", m_pGame->m_pPlayer->m_iLevel);
+	PutAlignedString(sX + 180, sX + 250, sY + 106, statBuf.c_str(), GameColors::UILabel);
 
-	m_pGame->FormatCommaNumber(m_pGame->m_pPlayer->m_iExp, statBuf, sizeof(statBuf));
-	PutAlignedString(sX + 180, sX + 250, sY + 125, statBuf, GameColors::UILabel);
+	statBuf = m_pGame->FormatCommaNumber(m_pGame->m_pPlayer->m_iExp);
+	PutAlignedString(sX + 180, sX + 250, sY + 125, statBuf.c_str(), GameColors::UILabel);
 
-	m_pGame->FormatCommaNumber(m_pGame->iGetLevelExp(m_pGame->m_pPlayer->m_iLevel + 1), statBuf, sizeof(statBuf));
-	PutAlignedString(sX + 180, sX + 250, sY + 142, statBuf, GameColors::UILabel);
+	statBuf = m_pGame->FormatCommaNumber(m_pGame->iGetLevelExp(m_pGame->m_pPlayer->m_iLevel + 1));
+	PutAlignedString(sX + 180, sX + 250, sY + 142, statBuf.c_str(), GameColors::UILabel);
 
 	// Calculate max stats
 	int iMaxHP = hb::shared::calc::CalculateMaxHP(m_pGame->m_pPlayer->m_iVit, m_pGame->m_pPlayer->m_iLevel, m_pGame->m_pPlayer->m_iStr, m_pGame->m_pPlayer->m_iAngelicStr);
@@ -260,24 +262,24 @@ void DialogBox_Character::OnDraw(short msX, short msY, short msZ, char cLB)
 	int iMaxLoad = hb::shared::calc::CalculateMaxLoad(m_pGame->m_pPlayer->m_iStr, m_pGame->m_pPlayer->m_iAngelicStr, m_pGame->m_pPlayer->m_iLevel);
 
 	// HP, MP, SP
-	char valueBuf[32];
-	snprintf(valueBuf, sizeof(valueBuf), "%d/%d", m_pGame->m_pPlayer->m_iHP, iMaxHP);
-	PutAlignedString(sX + 180, sX + 250, sY + 173, valueBuf, GameColors::UILabel);
+	std::string valueBuf;
+	valueBuf = std::format("{}/{}", m_pGame->m_pPlayer->m_iHP, iMaxHP);
+	PutAlignedString(sX + 180, sX + 250, sY + 173, valueBuf.c_str(), GameColors::UILabel);
 
-	snprintf(valueBuf, sizeof(valueBuf), "%d/%d", m_pGame->m_pPlayer->m_iMP, iMaxMP);
-	PutAlignedString(sX + 180, sX + 250, sY + 191, valueBuf, GameColors::UILabel);
+	valueBuf = std::format("{}/{}", m_pGame->m_pPlayer->m_iMP, iMaxMP);
+	PutAlignedString(sX + 180, sX + 250, sY + 191, valueBuf.c_str(), GameColors::UILabel);
 
-	snprintf(valueBuf, sizeof(valueBuf), "%d/%d", m_pGame->m_pPlayer->m_iSP, iMaxSP);
-	PutAlignedString(sX + 180, sX + 250, sY + 208, valueBuf, GameColors::UILabel);
+	valueBuf = std::format("{}/{}", m_pGame->m_pPlayer->m_iSP, iMaxSP);
+	PutAlignedString(sX + 180, sX + 250, sY + 208, valueBuf.c_str(), GameColors::UILabel);
 
 	// Max Load
 	int iTotalWeight = InventoryManager::Get().CalcTotalWeight();
-	snprintf(valueBuf, sizeof(valueBuf), "%d/%d", (iTotalWeight / 100), iMaxLoad);
-	PutAlignedString(sX + 180, sX + 250, sY + 240, valueBuf, GameColors::UILabel);
+	valueBuf = std::format("{}/{}", (iTotalWeight / 100), iMaxLoad);
+	PutAlignedString(sX + 180, sX + 250, sY + 240, valueBuf.c_str(), GameColors::UILabel);
 
 	// Enemy Kills
-	snprintf(valueBuf, sizeof(valueBuf), "%d", m_pGame->m_pPlayer->m_iEnemyKillCount);
-	PutAlignedString(sX + 180, sX + 250, sY + 257, valueBuf, GameColors::UILabel);
+	valueBuf = std::format("{}", m_pGame->m_pPlayer->m_iEnemyKillCount);
+	PutAlignedString(sX + 180, sX + 250, sY + 257, valueBuf.c_str(), GameColors::UILabel);
 
 	// Stats with angelic bonuses
 	DrawStat(sX + 48, sX + 82, sY + 285, m_pGame->m_pPlayer->m_iStr, m_pGame->m_pPlayer->m_iAngelicStr);   // Str
@@ -286,11 +288,11 @@ void DialogBox_Character::OnDraw(short msX, short msY, short msZ, char cLB)
 	DrawStat(sX + 135, sX + 167, sY + 302, m_pGame->m_pPlayer->m_iMag, m_pGame->m_pPlayer->m_iAngelicMag); // Mag
 
 	// Vit and Chr (no angelic bonus)
-	char vitChrBuf[16];
-	snprintf(vitChrBuf, sizeof(vitChrBuf), "%d", m_pGame->m_pPlayer->m_iVit);
-	PutAlignedString(sX + 218, sX + 251, sY + 285, vitChrBuf, GameColors::UILabel);
-	snprintf(vitChrBuf, sizeof(vitChrBuf), "%d", m_pGame->m_pPlayer->m_iCharisma);
-	PutAlignedString(sX + 218, sX + 251, sY + 302, vitChrBuf, GameColors::UILabel);
+	std::string vitChrBuf;
+	vitChrBuf = std::format("{}", m_pGame->m_pPlayer->m_iVit);
+	PutAlignedString(sX + 218, sX + 251, sY + 285, vitChrBuf.c_str(), GameColors::UILabel);
+	vitChrBuf = std::format("{}", m_pGame->m_pPlayer->m_iCharisma);
+	PutAlignedString(sX + 218, sX + 251, sY + 302, vitChrBuf.c_str(), GameColors::UILabel);
 
 	// Build equipment status array
 	char cEquipPoiStatus[DEF_MAXITEMEQUIPPOS];
@@ -498,11 +500,10 @@ bool DialogBox_Character::OnDoubleClick(short msX, short msY)
 		// Release (unequip) the item
 		if (m_pGame->m_bIsItemEquipped[cItemID])
 		{
-			char cStr1[64], cStr2[64], cStr3[64];
-			ItemNameFormatter::Get().Format(pItem, cStr1, cStr2, cStr3);
-			std::memset(m_pGame->G_cTxt, 0, sizeof(m_pGame->G_cTxt));
-			std::snprintf(m_pGame->G_cTxt, sizeof(m_pGame->G_cTxt), ITEM_EQUIPMENT_RELEASED, cStr1);
-			AddEventList(m_pGame->G_cTxt, 10);
+			std::string G_cTxt;
+			auto itemInfo = ItemNameFormatter::Get().Format(pItem);
+			G_cTxt = std::format(ITEM_EQUIPMENT_RELEASED, itemInfo.name.c_str());
+			AddEventList(G_cTxt.c_str(), 10);
 
 			{
 				short sID = pItem->m_sIDnum;

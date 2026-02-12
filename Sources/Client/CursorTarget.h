@@ -1,4 +1,4 @@
-// CursorTarget.h: Cursor targeting and object focus system
+﻿// CursorTarget.h: Cursor targeting and object focus system
 //
 // Provides static global access to targeting state with frame-based semantics.
 // Handles mouse hit testing, cursor appearance, and focused object tracking.
@@ -7,6 +7,7 @@
 #pragma once
 
 #include <cstdint>
+#include <string>
 #include "SpriteTypes.h"
 #include "Appearance.h"
 #include "PlayerStatusData.h"
@@ -58,7 +59,7 @@ struct FocusedObject {
     char frame = 0;
 
     // Display info
-    char name[12] = {0};
+    std::string name;
     hb::shared::entity::PlayerAppearance appearance;
     hb::shared::entity::PlayerStatus status;
 

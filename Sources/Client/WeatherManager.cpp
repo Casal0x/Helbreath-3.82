@@ -1,4 +1,4 @@
-// MapData.h must come before WeatherManager.h — it pulls in GlobalDef.h which
+﻿// MapData.h must come before WeatherManager.h — it pulls in GlobalDef.h which
 // sets GLOBALDEF_H_RESOLUTION_FUNCTIONS, preventing RenderConstants.h from
 // redefining LOGICAL_WIDTH/HEIGHT when IRenderer.h is included below.
 #include "MapData.h"
@@ -25,6 +25,7 @@ void WeatherManager::Initialize()
 	m_weather_status = 0;
 	m_last_update_time = 0;
 	m_is_xmas = false;
+	m_ambient_light_level = 1;
 	ResetParticles();
 }
 
@@ -248,6 +249,13 @@ void WeatherManager::Update(uint32_t current_time)
 		}
 		break;
 	}
+}
+
+void WeatherManager::SetAmbientLight(char level)
+{
+	m_ambient_light_level = level;
+	if (m_renderer)
+		m_renderer->SetAmbientLightLevel(level);
 }
 
 void WeatherManager::SetWeather(bool start, char effect_type)

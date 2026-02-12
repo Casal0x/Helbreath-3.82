@@ -4,6 +4,8 @@
 #include "GlobalDef.h"
 #include "GameFonts.h"
 #include "TextLibExt.h"
+#include <format>
+#include <string>
 using namespace hb::client::sprite_id;
 
 DialogBox_Map::DialogBox_Map(CGame* pGame)
@@ -148,9 +150,9 @@ void DialogBox_Map::OnDraw(short msX, short msY, short msZ, char cLB)
 		tY = (int)dV3 + dY;
 
 		DrawNewDialogBox(InterfaceNdGame4, sX + tX, sY + tY, 43);
-		char coordBuf[32];
-		snprintf(coordBuf, sizeof(coordBuf), "%d,%d", m_pGame->m_pPlayer->m_sPlayerX, m_pGame->m_pPlayer->m_sPlayerY);
-		hb::shared::text::DrawText(GameFont::SprFont3_2, sX + 10 + tX - 5, sY + 10 + tY - 6, coordBuf, hb::shared::text::TextStyle::WithTwoPointShadow(GameColors::Yellow4x));
+		std::string coordBuf;
+		coordBuf = std::format("{},{}", m_pGame->m_pPlayer->m_sPlayerX, m_pGame->m_pPlayer->m_sPlayerY);
+		hb::shared::text::DrawText(GameFont::SprFont3_2, sX + 10 + tX - 5, sY + 10 + tY - 6, coordBuf.c_str(), hb::shared::text::TextStyle::WithTwoPointShadow(GameColors::Yellow4x));
 		break;
 	}
 }

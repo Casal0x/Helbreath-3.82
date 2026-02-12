@@ -1,8 +1,9 @@
-// CharInfo.h: interface for the CCharInfo class.
+﻿// CharInfo.h: interface for the CCharInfo class.
 //
 //////////////////////////////////////////////////////////////////////
 
 #pragma once
+#include <string>
 
 #include <windows.h>
 #include "Appearance.h"
@@ -12,8 +13,6 @@ class CCharInfo
 public:
 	inline CCharInfo()
 	{
-		ZeroMemory(m_cName, sizeof(m_cName));
-		ZeroMemory(m_cMapName, sizeof(m_cMapName));
 		m_iYear   = 0;
 		m_iMonth  = 0;
 		m_iDay    = 0;
@@ -25,7 +24,8 @@ public:
 	{
 	}
 
-	char m_cName[12], m_cMapName[12];
+	std::string m_cName;
+	std::string m_cMapName;
 	short m_sSkinCol, m_sSex;
 	hb::shared::entity::PlayerAppearance m_appearance;
 	short	m_sStr, m_sVit, m_sDex, m_sInt, m_sMag, m_sChr;

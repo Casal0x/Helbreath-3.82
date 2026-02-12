@@ -1,8 +1,9 @@
-// Skill.h: interface for the CSkill class.
+﻿// Skill.h: interface for the CSkill class.
 //
 //////////////////////////////////////////////////////////////////////
 
 #pragma once
+#include <string>
 
 #include <cstring>
 
@@ -11,7 +12,6 @@ class CSkill
 public:
 	inline CSkill()
 	{
-		std::memset(m_cName, 0, sizeof(m_cName));
 
 		m_iLevel = 0;
 		m_bIsUseable = false;
@@ -22,7 +22,7 @@ public:
 	{
 	}
 
-	char m_cName[42];
+	std::string m_cName;
 
 	int  m_iLevel;
 	bool m_bIsUseable;

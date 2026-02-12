@@ -9,6 +9,8 @@
 #include "RendererFactory.h"
 #include "ITextRenderer.h"
 #include <cstring>
+#include <format>
+#include <string>
 using namespace hb::client::sprite_id;
 
 // Content area constants
@@ -266,18 +268,16 @@ void DialogBox_SysMenu::DrawGeneralTab(short sX, short sY, short msX, short msY)
 	// Current time centered below server name (MM/DD/YYYY HH:MM AM/PM)
 	SYSTEMTIME SysTime;
 	GetLocalTime(&SysTime);
-	char timeBuf[32];
+	std::string timeBuf;
 	int hour12 = SysTime.wHour % 12;
 	if (hour12 == 0) hour12 = 12;
 	const char* ampm = (SysTime.wHour < 12) ? "AM" : "PM";
-	snprintf(timeBuf, sizeof(timeBuf), "%02d/%02d/%04d %d:%02d %s",
-		SysTime.wMonth, SysTime.wDay, SysTime.wYear,
-		hour12, SysTime.wMinute, ampm);
+	timeBuf = std::format("{:02}/{:02}/{:04} {}:{:02} {}", SysTime.wMonth, SysTime.wDay, SysTime.wYear, hour12, SysTime.wMinute, ampm);
 
-	int textWidth = hb::shared::text::GetTextRenderer()->MeasureText(timeBuf).width;
+	int textWidth = hb::shared::text::GetTextRenderer()->MeasureText(timeBuf.c_str()).width;
 	int timeX = centerX - (textWidth / 2);
-	PutString(timeX, contentY + 25, timeBuf, GameColors::UILabel);
-	PutString(timeX + 1, contentY + 25, timeBuf, GameColors::UILabel);
+	PutString(timeX, contentY + 25, timeBuf.c_str(), GameColors::UILabel);
+	PutString(timeX + 1, contentY + 25, timeBuf.c_str(), GameColors::UILabel);
 
 	// Buttons at bottom of content area
 	int buttonY = contentBottom - 30;
@@ -519,8 +519,8 @@ void DialogBox_SysMenu::DrawGraphicsTab(short sX, short sY, short msX, short msY
 		resHeight = s_Resolutions[resIndex].height;
 	}
 
-	char resBuf[32];
-	snprintf(resBuf, sizeof(resBuf), "%dx%d", resWidth, resHeight);
+	std::string resBuf;
+	resBuf = std::format("{}x{}", resWidth, resHeight);
 
 	const int resBoxY = lineY - 2;
 	DrawNewDialogBox(InterfaceNdButton, wideBoxX, resBoxY, 78);
@@ -528,10 +528,10 @@ void DialogBox_SysMenu::DrawGraphicsTab(short sX, short sY, short msX, short msY
 	bool resHover = !isFullscreen && (msX >= wideBoxX && msX <= wideBoxX + wideBoxWidth && msY >= resBoxY && msY <= resBoxY + wideBoxHeight);
 	const hb::shared::render::Color& resColor = isFullscreen ? GameColors::UIDisabled : (resHover ? GameColors::UIWhite : GameColors::UIDisabled);
 
-	hb::shared::text::TextMetrics resMetrics = hb::shared::text::GetTextRenderer()->MeasureText(resBuf);
+	hb::shared::text::TextMetrics resMetrics = hb::shared::text::GetTextRenderer()->MeasureText(resBuf.c_str());
 	int resTextX = wideBoxX + (wideBoxWidth - resMetrics.width) / 2;
 	int resTextY = resBoxY + (wideBoxHeight - resMetrics.height) / 2;
-	PutString(resTextX, resTextY, resBuf, resColor);
+	PutString(resTextX, resTextY, resBuf.c_str(), resColor);
 }
 
 // =============================================================================
@@ -829,9 +829,9 @@ bool DialogBox_SysMenu::OnClickGeneral(short sX, short sY, short msX, short msY)
 			m_pGame->m_cRestartCount = 5;
 			m_pGame->m_dwRestartCountTime = GameClock::GetTimeMS();
 			DisableThisDialog();
-			char restartBuf[64];
-			snprintf(restartBuf, sizeof(restartBuf), DLGBOX_CLICK_SYSMENU1, m_pGame->m_cRestartCount);
-			AddEventList(restartBuf, 10);
+			std::string restartBuf;
+			restartBuf = std::format(DLGBOX_CLICK_SYSMENU1, m_pGame->m_cRestartCount);
+			AddEventList(restartBuf.c_str(), 10);
 			PlaySoundEffect('E', 14, 5);
 			return true;
 		}

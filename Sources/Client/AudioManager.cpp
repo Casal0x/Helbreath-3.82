@@ -2,6 +2,7 @@
 #include "ResolutionConfig.h"
 #include <cstdlib>
 #include <format>
+#include <string>
 
 AudioManager& AudioManager::Get()
 {

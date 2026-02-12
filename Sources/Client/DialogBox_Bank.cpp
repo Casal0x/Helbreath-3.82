@@ -41,29 +41,25 @@ void DialogBox_Bank::OnDraw(short msX, short msY, short msZ, char cLB)
 
 void DialogBox_Bank::DrawItemList(short sX, short sY, short szX, short msX, short msY, short msZ, char cLB)
 {
-	char cStr1[64], cStr2[64], cStr3[64];
 	bool bFlag = false;
 	int iLoc = 45;
 
-	std::memset(cStr1, 0, sizeof(cStr1));
-	std::memset(cStr2, 0, sizeof(cStr2));
-	std::memset(cStr3, 0, sizeof(cStr3));
 
 	for (int i = 0; i < Info().sV1; i++) {
 		int itemIndex = i + Info().sView;
 		if ((itemIndex < hb::shared::limits::MaxBankItems) && (m_pGame->m_pBankList[itemIndex] != 0)) {
-			ItemNameFormatter::Get().Format(m_pGame->m_pBankList[itemIndex].get(), cStr1, cStr2, cStr3);
+			auto itemInfo = ItemNameFormatter::Get().Format(m_pGame->m_pBankList[itemIndex].get());
 
 			if ((msX > sX + 30) && (msX < sX + 210) && (msY >= sY + 110 + i * 15) && (msY <= sY + 124 + i * 15)) {
 				bFlag = true;
-				PutAlignedString(sX, sX + szX, sY + 110 + i * 15, cStr1, GameColors::UIWhite);
+				PutAlignedString(sX, sX + szX, sY + 110 + i * 15, itemInfo.name.c_str(), GameColors::UIWhite);
 				DrawItemDetails(sX, sY, szX, itemIndex, iLoc);
 			}
 			else {
-				if (ItemNameFormatter::Get().IsSpecial())
-					PutAlignedString(sX, sX + szX, sY + 110 + i * 15, cStr1, GameColors::UIItemName_Special);
+				if (itemInfo.is_special)
+					PutAlignedString(sX, sX + szX, sY + 110 + i * 15, itemInfo.name.c_str(), GameColors::UIItemName_Special);
 				else
-					PutAlignedString(sX, sX + szX, sY + 110 + i * 15, cStr1, GameColors::UIBlack);
+					PutAlignedString(sX, sX + szX, sY + 110 + i * 15, itemInfo.name.c_str(), GameColors::UIBlack);
 			}
 		}
 	}
@@ -84,29 +80,25 @@ void DialogBox_Bank::DrawItemList(short sX, short sY, short szX, short msX, shor
 
 void DialogBox_Bank::DrawItemDetails(short sX, short sY, short szX, int iItemIndex, int iLoc)
 {
-	char cStr1[64], cStr2[64], cStr3[64];
-	std::memset(cStr1, 0, sizeof(cStr1));
-	std::memset(cStr2, 0, sizeof(cStr2));
-	std::memset(cStr3, 0, sizeof(cStr3));
 
 	CItem* pItem = m_pGame->m_pBankList[iItemIndex].get();
 	CItem* pCfg = m_pGame->GetItemConfig(pItem->m_sIDnum);
 	if (pCfg == nullptr) return;
 
-	ItemNameFormatter::Get().Format(pItem, cStr1, cStr2, cStr3);
+	auto itemInfo2 = ItemNameFormatter::Get().Format(pItem);
 
-	if (ItemNameFormatter::Get().IsSpecial())
-		PutAlignedString(sX + 70, sX + szX, sY + iLoc, cStr1, GameColors::UIItemName_Special);
+	if (itemInfo2.is_special)
+		PutAlignedString(sX + 70, sX + szX, sY + iLoc, itemInfo2.name.c_str(), GameColors::UIItemName_Special);
 	else
-		PutAlignedString(sX + 70, sX + szX, sY + iLoc, cStr1, GameColors::UIWhite);
+		PutAlignedString(sX + 70, sX + szX, sY + iLoc, itemInfo2.name.c_str(), GameColors::UIWhite);
 
-	if (strlen(cStr2) > 0) {
+	if (itemInfo2.effect.size() > 0) {
 		iLoc += 15;
-		PutAlignedString(sX + 70, sX + szX, sY + iLoc, cStr2, GameColors::UIDisabled);
+		PutAlignedString(sX + 70, sX + szX, sY + iLoc, itemInfo2.effect.c_str(), GameColors::UIDisabled);
 	}
-	if (strlen(cStr3) > 0) {
+	if (itemInfo2.extra.size() > 0) {
 		iLoc += 15;
-		PutAlignedString(sX + 70, sX + szX, sY + iLoc, cStr3, GameColors::UIDisabled);
+		PutAlignedString(sX + 70, sX + szX, sY + iLoc, itemInfo2.extra.c_str(), GameColors::UIDisabled);
 	}
 
 	// Level limit

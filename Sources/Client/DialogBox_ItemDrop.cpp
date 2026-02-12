@@ -2,6 +2,7 @@
 #include "Game.h"
 #include "ItemNameFormatter.h"
 #include "lan_eng.h"
+#include <string>
 
 using namespace hb::shared::net;
 using namespace hb::client::sprite_id;
@@ -16,25 +17,26 @@ void DialogBox_ItemDrop::OnDraw(short msX, short msY, short msZ, char cLB)
 	if (!m_pGame->EnsureItemConfigsLoaded()) return;
 	short sX = Info().sX;
 	short sY = Info().sY;
-	char cTxt[120], cStr1[64], cStr2[64], cStr3[64];
+	std::string cTxt;
+
 
 	DrawNewDialogBox(InterfaceNdGame1, sX, sY, 2);
 
-	ItemNameFormatter::Get().Format(m_pGame->m_pItemList[Info().sView].get(), cStr1, cStr2, cStr3);
+	auto itemInfo = ItemNameFormatter::Get().Format(m_pGame->m_pItemList[Info().sView].get());
 
 	if (strlen(Info().cStr) == 0)
-		std::snprintf(cTxt, sizeof(cTxt), "%s", cStr1);
+		cTxt = itemInfo.name.c_str();
 
 	// Item name (green if special, blue otherwise)
-	if (ItemNameFormatter::Get().IsSpecial())
+	if (itemInfo.is_special)
 	{
-		PutString(sX + 35, sY + 20, cTxt, GameColors::UIItemName_Special);
-		PutString(sX + 36, sY + 20, cTxt, GameColors::UIItemName_Special);
+		PutString(sX + 35, sY + 20, cTxt.c_str(), GameColors::UIItemName_Special);
+		PutString(sX + 36, sY + 20, cTxt.c_str(), GameColors::UIItemName_Special);
 	}
 	else
 	{
-		PutString(sX + 35, sY + 20, cTxt, GameColors::UIMagicBlue);
-		PutString(sX + 36, sY + 20, cTxt, GameColors::UIMagicBlue);
+		PutString(sX + 35, sY + 20, cTxt.c_str(), GameColors::UIMagicBlue);
+		PutString(sX + 36, sY + 20, cTxt.c_str(), GameColors::UIMagicBlue);
 	}
 
 	// "Do you want to drop?" text

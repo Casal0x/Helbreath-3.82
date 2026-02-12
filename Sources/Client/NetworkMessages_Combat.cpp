@@ -6,6 +6,8 @@
 #include <cstdio>
 #include <cstring>
 #include <cmath>
+#include <format>
+#include <string>
 
 
 using namespace hb::shared::action;
@@ -34,7 +36,9 @@ namespace NetworkMessageHandlers {
 	{
 		DWORD iExp, iRewardGold;
 		int     iPKcount, iLevel;
-		char cTxt[120], cName[12];
+		std::string cTxt;
+
+		char cName[12];
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyPKcaptured>(
 			pData, sizeof(hb::net::PacketNotifyPKcaptured));
 		if (!pkt) return;
@@ -44,19 +48,19 @@ namespace NetworkMessageHandlers {
 		memcpy(cName, pkt->victim_name, 10);
 		iRewardGold = pkt->reward_gold;
 		iExp = pkt->exp;
-		std::snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_PK_CAPTURED1, iLevel, cName, iPKcount);
-		pGame->AddEventList(cTxt, 10);
-		std::snprintf(cTxt, sizeof(cTxt), EXP_INCREASED, iExp - pGame->m_pPlayer->m_iExp);
-		pGame->AddEventList(cTxt, 10);
-		std::snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_PK_CAPTURED3, iExp - pGame->m_pPlayer->m_iExp);
-		pGame->AddEventList(cTxt, 10);
+		cTxt = std::format(NOTIFYMSG_PK_CAPTURED1, iLevel, cName, iPKcount);
+		pGame->AddEventList(cTxt.c_str(), 10);
+		cTxt = std::format(EXP_INCREASED, iExp - pGame->m_pPlayer->m_iExp);
+		pGame->AddEventList(cTxt.c_str(), 10);
+		cTxt = std::format(NOTIFYMSG_PK_CAPTURED3, iExp - pGame->m_pPlayer->m_iExp);
+		pGame->AddEventList(cTxt.c_str(), 10);
 	}
 
 	void HandlePKpenalty(CGame* pGame, char* pData)
 	{
 		DWORD iExp;
 		int     iPKcount, iStr, iVit, iDex, iInt, iMag, iChr;
-		char cTxt[128];
+		std::string cTxt;
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyPKpenalty>(
 			pData, sizeof(hb::net::PacketNotifyPKpenalty));
 		if (!pkt) return;
@@ -68,12 +72,12 @@ namespace NetworkMessageHandlers {
 		iMag = pkt->mag;
 		iChr = pkt->chr;
 		iPKcount = pkt->pk_count;
-		snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_PK_PENALTY1, iPKcount);
-		pGame->AddEventList(cTxt, 10);
+		cTxt = std::format(NOTIFYMSG_PK_PENALTY1, iPKcount);
+		pGame->AddEventList(cTxt.c_str(), 10);
 		if (pGame->m_pPlayer->m_iExp > iExp)
 		{
-			snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_PK_PENALTY2, pGame->m_pPlayer->m_iExp - iExp);
-			pGame->AddEventList(cTxt, 10);
+			cTxt = std::format(NOTIFYMSG_PK_PENALTY2, pGame->m_pPlayer->m_iExp - iExp);
+			pGame->AddEventList(cTxt.c_str(), 10);
 		}
 		pGame->m_pPlayer->m_iExp = iExp;
 		pGame->m_pPlayer->m_iStr = iStr;
@@ -97,7 +101,9 @@ namespace NetworkMessageHandlers {
 	{
 		DWORD iExp;
 		short sGuildRank;
-		char cName[12], cGuildName[24], cTxt[120];
+		std::string cTxt;
+
+		char cName[12], cGuildName[24];
 		int   iEnemyKillCount, iWarContribution;
 
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyEnemyKillReward>(
@@ -116,9 +122,9 @@ namespace NetworkMessageHandlers {
 
 		if (iWarContribution > pGame->m_pPlayer->m_iWarContribution)
 		{
-			char warBuf[128];
-			snprintf(warBuf, sizeof(warBuf), "%s +%d!", pGame->m_pGameMsgList[21]->m_pMsg, iWarContribution - pGame->m_pPlayer->m_iWarContribution);
-			pGame->SetTopMsg(warBuf, 5);
+			std::string warBuf;
+			warBuf = std::format("{} +{}!", pGame->m_pGameMsgList[21]->m_pMsg, iWarContribution - pGame->m_pPlayer->m_iWarContribution);
+			pGame->SetTopMsg(warBuf.c_str(), 5);
 		}
 		else if (iWarContribution < pGame->m_pPlayer->m_iWarContribution)
 		{
@@ -127,26 +133,26 @@ namespace NetworkMessageHandlers {
 
 		if (sGuildRank == -1)
 		{
-			std::snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_ENEMYKILL_REWARD1, cName);
-			pGame->AddEventList(cTxt, 10);
+			cTxt = std::format(NOTIFYMSG_ENEMYKILL_REWARD1, cName);
+			pGame->AddEventList(cTxt.c_str(), 10);
 		}
 		else
 		{
-			std::snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_ENEMYKILL_REWARD2, cName, cGuildName);
-			pGame->AddEventList(cTxt, 10);
+			cTxt = std::format(NOTIFYMSG_ENEMYKILL_REWARD2, cName, cGuildName);
+			pGame->AddEventList(cTxt.c_str(), 10);
 		}
 
 		if (pGame->m_pPlayer->m_iEnemyKillCount != iEnemyKillCount)
 		{
 			if (pGame->m_pPlayer->m_iEnemyKillCount > iEnemyKillCount)
 			{
-				std::snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_ENEMYKILL_REWARD5, pGame->m_pPlayer->m_iEnemyKillCount - iEnemyKillCount);
-				pGame->AddEventList(cTxt, 10);
+				cTxt = std::format(NOTIFYMSG_ENEMYKILL_REWARD5, pGame->m_pPlayer->m_iEnemyKillCount - iEnemyKillCount);
+				pGame->AddEventList(cTxt.c_str(), 10);
 			}
 			else
 			{
-				std::snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_ENEMYKILL_REWARD6, iEnemyKillCount - pGame->m_pPlayer->m_iEnemyKillCount);
-				pGame->AddEventList(cTxt, 10);
+				cTxt = std::format(NOTIFYMSG_ENEMYKILL_REWARD6, iEnemyKillCount - pGame->m_pPlayer->m_iEnemyKillCount);
+				pGame->AddEventList(cTxt.c_str(), 10);
 			}
 		}
 

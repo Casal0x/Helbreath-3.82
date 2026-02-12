@@ -4,6 +4,7 @@
 #include "lan_eng.h"
 #include "GameFonts.h"
 #include "TextLibExt.h"
+#include <string>
 
 using namespace hb::shared::net;
 using namespace hb::client::sprite_id;
@@ -460,13 +461,12 @@ bool DialogBox_GuildMenu::OnClickMode5(short sX, short sY, short msX, short msY)
 
 bool DialogBox_GuildMenu::OnClickMode9(short sX, short sY, short msX, short msY)
 {
-	char cTemp[21];
+	std::string cTemp;
 
 	// Purchase admission ticket
 	if ((msX >= sX + 30) && (msX <= sX + 30 + ui_layout::btn_size_x) && (msY >= sY + ui_layout::btn_y) && (msY <= sY + ui_layout::btn_y + ui_layout::btn_size_y)) {
-		std::memset(cTemp, 0, sizeof(cTemp));
-		std::snprintf(cTemp, sizeof(cTemp), "%s", "GuildAdmissionTicket");
-		bSendCommand(MsgId::CommandCommon, CommonType::ReqPurchaseItem, 0, 1, hb::shared::item::ItemId::GuildAdmissionTicket, 0, cTemp);
+		cTemp = "GuildAdmissionTicket";
+		bSendCommand(MsgId::CommandCommon, CommonType::ReqPurchaseItem, 0, 1, hb::shared::item::ItemId::GuildAdmissionTicket, 0, cTemp.c_str());
 		Info().cMode = 0;
 		PlaySoundEffect('E', 14, 5);
 		return true;
@@ -484,13 +484,12 @@ bool DialogBox_GuildMenu::OnClickMode9(short sX, short sY, short msX, short msY)
 
 bool DialogBox_GuildMenu::OnClickMode11(short sX, short sY, short msX, short msY)
 {
-	char cTemp[21];
+	std::string cTemp;
 
 	// Purchase secession ticket
 	if ((msX >= sX + 30) && (msX <= sX + 30 + ui_layout::btn_size_x) && (msY >= sY + ui_layout::btn_y) && (msY <= sY + ui_layout::btn_y + ui_layout::btn_size_y)) {
-		std::memset(cTemp, 0, sizeof(cTemp));
-		std::snprintf(cTemp, sizeof(cTemp), "%s", "GuildSecessionTicket");
-		bSendCommand(MsgId::CommandCommon, CommonType::ReqPurchaseItem, 0, 1, hb::shared::item::ItemId::GuildSecessionTicket, 0, cTemp);
+		cTemp = "GuildSecessionTicket";
+		bSendCommand(MsgId::CommandCommon, CommonType::ReqPurchaseItem, 0, 1, hb::shared::item::ItemId::GuildSecessionTicket, 0, cTemp.c_str());
 		Info().cMode = 0;
 		PlaySoundEffect('E', 14, 5);
 		return true;

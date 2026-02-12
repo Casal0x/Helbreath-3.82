@@ -13,6 +13,8 @@
 #include "IInput.h"
 #include "CommonTypes.h"
 #include "GlobalDef.h"
+#include <format>
+#include <string>
 
 // Console layout constants (top half of screen)
 static constexpr int CONSOLE_LEFT = 0;
@@ -107,16 +109,16 @@ void Overlay_DevConsole::on_render()
 	}
 
 	// Draw input line with prompt
-	char inputLine[272];
+	std::string inputLine;
 	uint32_t dwTime = GameClock::GetTimeMS();
 	bool bCursorBlink = ((dwTime / 500) % 2) == 0;
 
 	if (bCursorBlink)
-		sprintf_s(inputLine, "> %s_", console.GetInputBuffer());
+		inputLine = std::format("> {}_", console.GetInputBuffer());
 	else
-		sprintf_s(inputLine, "> %s", console.GetInputBuffer());
+		inputLine = std::format("> {}", console.GetInputBuffer());
 
-	pRenderer->DrawText(TEXT_MARGIN, INPUT_Y, inputLine, COLOR_INPUT);
+	pRenderer->DrawText(TEXT_MARGIN, INPUT_Y, inputLine.c_str(), COLOR_INPUT);
 
 	pRenderer->EndTextBatch();
 }

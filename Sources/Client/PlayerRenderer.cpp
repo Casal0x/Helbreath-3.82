@@ -1,4 +1,4 @@
-#include "PlayerRenderer.h"
+﻿#include "PlayerRenderer.h"
 #include "Game.h"
 #include "EquipmentIndices.h"
 #include "RenderHelpers.h"
@@ -46,7 +46,7 @@ hb::shared::sprite::BoundRect CPlayerRenderer::DrawStop(int indexX, int indexY, 
 		m_game.CheckActiveAura(sX, sY, dwTime, state.m_sOwnerType);
 
 		// Draw all equipment layers in correct z-order
-		RenderHelpers::DrawPlayerLayers(m_game, eq, state, sX, sY, bInv, _cMantleDrawingOrder, 8, bAdminInvis);
+		RenderHelpers::DrawPlayerLayers(m_game, eq, state, sX, sY, bInv, mantle_draw_order, 8, bAdminInvis);
 
 		// Crop effects
 		if (state.m_sOwnerType == hb::shared::owner::Crops)
@@ -123,7 +123,7 @@ hb::shared::sprite::BoundRect CPlayerRenderer::DrawMove(int indexX, int indexY, 
 		m_game.CheckActiveAura(fix_x, fix_y, dwTime, state.m_sOwnerType);
 
 		// Draw all equipment layers in correct z-order
-		RenderHelpers::DrawPlayerLayers(m_game, eq, state, fix_x, fix_y, bInv, _cMantleDrawingOrder, 8, bAdminInvis);
+		RenderHelpers::DrawPlayerLayers(m_game, eq, state, fix_x, fix_y, bInv, mantle_draw_order, 8, bAdminInvis);
 
 		// Berserk glow
 		RenderHelpers::DrawBerserkGlow(m_game, eq, state, fix_x, fix_y);
@@ -186,7 +186,7 @@ hb::shared::sprite::BoundRect CPlayerRenderer::DrawRun(int indexX, int indexY, i
 		m_game.CheckActiveAura(fix_x, fix_y, dwTime, state.m_sOwnerType);
 
 		// Draw all equipment layers — uses OnRun mantle order
-		RenderHelpers::DrawPlayerLayers(m_game, eq, state, fix_x, fix_y, bInv, _cMantleDrawingOrderOnRun, 8, bAdminInvis);
+		RenderHelpers::DrawPlayerLayers(m_game, eq, state, fix_x, fix_y, bInv, mantle_draw_order_running, 8, bAdminInvis);
 
 		// Berserk glow
 		RenderHelpers::DrawBerserkGlow(m_game, eq, state, fix_x, fix_y);
@@ -277,7 +277,7 @@ hb::shared::sprite::BoundRect CPlayerRenderer::DrawAttack(int indexX, int indexY
 		m_game.CheckActiveAura(sX, sY, dwTime, state.m_sOwnerType);
 
 		// Draw all equipment layers
-		RenderHelpers::DrawPlayerLayers(m_game, eq, state, sX, sY, bInv, _cMantleDrawingOrder, 8, bAdminInvis);
+		RenderHelpers::DrawPlayerLayers(m_game, eq, state, sX, sY, bInv, mantle_draw_order, 8, bAdminInvis);
 
 		// Attack-specific: weapon swing trail at frame 3
 		if (eq.iWeaponIndex != -1 && state.m_iFrame == 3)
@@ -413,7 +413,7 @@ hb::shared::sprite::BoundRect CPlayerRenderer::DrawAttackMove(int indexX, int in
 		m_game.CheckActiveAura(sX + dx, sY + dy, dwTime, state.m_sOwnerType);
 
 		// Draw all equipment layers
-		RenderHelpers::DrawPlayerLayers(m_game, eq, state, sX + dx, sY + dy, bInv, _cMantleDrawingOrder, 8, bAdminInvis);
+		RenderHelpers::DrawPlayerLayers(m_game, eq, state, sX + dx, sY + dy, bInv, mantle_draw_order, 8, bAdminInvis);
 
 		// Attack-specific: weapon swing trail at frame 3
 		if (eq.iWeaponIndex != -1 && state.m_iFrame == 3)
@@ -508,7 +508,7 @@ hb::shared::sprite::BoundRect CPlayerRenderer::DrawMagic(int indexX, int indexY,
 		m_game.CheckActiveAura(sX, sY, dwTime, state.m_sOwnerType);
 
 		// Draw all equipment layers — equipFrameMul=16 for magic
-		RenderHelpers::DrawPlayerLayers(m_game, eq, state, sX, sY, bInv, _cMantleDrawingOrder, 16, bAdminInvis);
+		RenderHelpers::DrawPlayerLayers(m_game, eq, state, sX, sY, bInv, mantle_draw_order, 16, bAdminInvis);
 
 		// Berserk glow
 		RenderHelpers::DrawBerserkGlow(m_game, eq, state, sX, sY);
@@ -558,7 +558,7 @@ hb::shared::sprite::BoundRect CPlayerRenderer::DrawGetItem(int indexX, int index
 		m_game.CheckActiveAura(sX, sY, dwTime, state.m_sOwnerType);
 
 		// Draw all equipment layers — equipFrameMul=4 for get item
-		RenderHelpers::DrawPlayerLayers(m_game, eq, state, sX, sY, bInv, _cMantleDrawingOrder, 4, bAdminInvis);
+		RenderHelpers::DrawPlayerLayers(m_game, eq, state, sX, sY, bInv, mantle_draw_order, 4, bAdminInvis);
 
 		// Berserk glow
 		RenderHelpers::DrawBerserkGlow(m_game, eq, state, sX, sY);
@@ -627,7 +627,7 @@ hb::shared::sprite::BoundRect CPlayerRenderer::DrawDamage(int indexX, int indexY
 		m_game.CheckActiveAura(sX, sY, dwTime, state.m_sOwnerType);
 
 		// Draw all equipment layers
-		RenderHelpers::DrawPlayerLayers(m_game, eq, state, sX, sY, bInv, _cMantleDrawingOrder, equipFrameMul);
+		RenderHelpers::DrawPlayerLayers(m_game, eq, state, sX, sY, bInv, mantle_draw_order, equipFrameMul);
 
 		// Berserk glow
 		RenderHelpers::DrawBerserkGlow(m_game, eq, state, sX, sY);
@@ -703,7 +703,7 @@ hb::shared::sprite::BoundRect CPlayerRenderer::DrawDamageMove(int indexX, int in
 		m_game.CheckActiveAura(fix_x, fix_y, dwTime, state.m_sOwnerType);
 
 		// Draw all equipment layers — equipFrameMul=4 for damage move
-		RenderHelpers::DrawPlayerLayers(m_game, eq, state, fix_x, fix_y, bInv, _cMantleDrawingOrder, 4, bAdminInvis);
+		RenderHelpers::DrawPlayerLayers(m_game, eq, state, fix_x, fix_y, bInv, mantle_draw_order, 4, bAdminInvis);
 
 		// Berserk glow
 		RenderHelpers::DrawBerserkGlow(m_game, eq, state, fix_x, fix_y);
@@ -770,7 +770,7 @@ hb::shared::sprite::BoundRect CPlayerRenderer::DrawDying(int indexX, int indexY,
 	if (!bTrans)
 	{
 		// Draw all equipment layers — equipFrameMul=8
-		RenderHelpers::DrawPlayerLayers(m_game, eq, state, sX, sY, false, _cMantleDrawingOrder);
+		RenderHelpers::DrawPlayerLayers(m_game, eq, state, sX, sY, false, mantle_draw_order);
 
 		// Berserk glow
 		RenderHelpers::DrawBerserkGlow(m_game, eq, state, sX, sY);
@@ -809,7 +809,7 @@ hb::shared::sprite::BoundRect CPlayerRenderer::DrawDead(int indexX, int indexY, 
 		{
 			// Full corpse with equipment — just-died state
 			state.m_iFrame = 7;
-			RenderHelpers::DrawPlayerLayers(m_game, eq, state, sX, sY, false, _cMantleDrawingOrder);
+			RenderHelpers::DrawPlayerLayers(m_game, eq, state, sX, sY, false, mantle_draw_order);
 		}
 		else if (state.m_status.bBerserk)
 		{

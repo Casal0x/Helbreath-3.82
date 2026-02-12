@@ -8,6 +8,8 @@
 #include "NetMessages.h"
 #include "GameFonts.h"
 #include "TextLibExt.h"
+#include <format>
+#include <string>
 
 using namespace hb::shared::net;
 using namespace hb::client::sprite_id;
@@ -45,11 +47,11 @@ void DialogBox_Soldier::OnDraw(short msX, short msY, short msZ, char cLB)
 	case 0: // Main dlg, Map
 		if (TeleportManager::Get().GetLocX() != -1)
 		{
-			char locationBuf[128];
+			std::string locationBuf;
 			std::memset(cMapName, 0, sizeof(cMapName));
 			m_pGame->GetOfficialMapName(TeleportManager::Get().GetMapName(), cMapName);
-			snprintf(locationBuf, sizeof(locationBuf), DRAW_DIALOGBOX_SOLDIER1, cMapName, TeleportManager::Get().GetLocX(), TeleportManager::Get().GetLocY());
-			PutAlignedString(sX, sX + szX, sY + 40, locationBuf);
+			locationBuf = std::format(DRAW_DIALOGBOX_SOLDIER1, cMapName, TeleportManager::Get().GetLocX(), TeleportManager::Get().GetLocY());
+			PutAlignedString(sX, sX + szX, sY + 40, locationBuf.c_str());
 		}
 		else PutAlignedString(sX, sX + szX, sY + 40, DRAW_DIALOGBOX_SOLDIER2);
 
@@ -128,17 +130,17 @@ void DialogBox_Soldier::OnDraw(short msX, short msY, short msZ, char cLB)
 		szY = 0;
 		MapSzX = 0;
 		MapSzY = 0;
-		if (strcmp(m_pGame->m_cStatusMapName, "aresden") == 0)
+		if (m_pGame->m_cStatusMapName == "aresden")
 		{
 			szX = 250;
 			szY = 250;
 		}
-		else if (strcmp(m_pGame->m_cStatusMapName, "elvine") == 0)
+		else if (m_pGame->m_cStatusMapName == "elvine")
 		{
 			szX = 250;
 			szY = 250;
 		}
-		else if (strcmp(m_pGame->m_cStatusMapName, "middleland") == 0)
+		else if (m_pGame->m_cStatusMapName == "middleland")
 		{
 			szX = 279;
 			szY = 280;
@@ -176,7 +178,7 @@ void DialogBox_Soldier::OnDraw(short msX, short msY, short msZ, char cLB)
 				tY = (int)dV3;
 				DrawNewDialogBox(InterfaceNdCrusade, sX + tX + 15, sY + tY + 60, 42, false, true);
 			}
-			if (strcmp(m_pGame->m_cMapName, "middleland") == 0)
+			if (m_pGame->m_cMapName == "middleland")
 			{
 				dV1 = (double)MapSzX;
 				dV2 = (double)m_pGame->m_pPlayer->m_sPlayerX;
@@ -204,9 +206,9 @@ void DialogBox_Soldier::OnDraw(short msX, short msY, short msZ, char cLB)
 			if (tY < 30) tY = 30;
 			if (tX > MapSzX - 30) tX = MapSzX - 30;
 			if (tY > MapSzY - 30) tY = MapSzY - 30;
-			char coordBuf[32];
-			snprintf(coordBuf, sizeof(coordBuf), "%d,%d", tX, tY);
-			hb::shared::text::DrawText(GameFont::SprFont3_2, msX + 10, msY - 10, coordBuf, hb::shared::text::TextStyle::WithTwoPointShadow(GameColors::Yellow4x));
+			std::string coordBuf;
+			coordBuf = std::format("{},{}", tX, tY);
+			hb::shared::text::DrawText(GameFont::SprFont3_2, msX + 10, msY - 10, coordBuf.c_str(), hb::shared::text::TextStyle::WithTwoPointShadow(GameColors::Yellow4x));
 		}
 		break;
 	}
@@ -227,7 +229,7 @@ bool DialogBox_Soldier::OnClick(short msX, short msY)
 			{
 				m_pGame->SetTopMsg(m_pGame->m_pGameMsgList[15]->m_pMsg, 5);
 			}
-			else if (strcmp(m_pGame->m_cMapName, TeleportManager::Get().GetMapName()) == 0)
+			else if (m_pGame->m_cMapName == TeleportManager::Get().GetMapName())
 			{
 				m_pGame->SetTopMsg(m_pGame->m_pGameMsgList[16]->m_pMsg, 5);
 			}

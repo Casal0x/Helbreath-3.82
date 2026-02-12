@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "EquipmentIndices.h"
 
@@ -6,12 +6,12 @@ class CGame;
 class CEntityRenderState;
 
 // Drawing order arrays — indexed by direction (1-8), element [0] unused.
-// _cDrawingOrder: 1 = draw weapon BEFORE body, 0 = draw weapon AFTER body
-// _cMantleDrawingOrder: 0 = behind body, 1 = in front, 2 = over armor
-// _cMantleDrawingOrderOnRun: same semantics but for running animation
-extern char _cDrawingOrder[9];
-extern char _cMantleDrawingOrder[9];
-extern char _cMantleDrawingOrderOnRun[9];
+// weapon_draw_order: 1 = draw weapon BEFORE body, 0 = draw weapon AFTER body
+// mantle_draw_order: 0 = behind body, 1 = in front, 2 = over armor
+// mantle_draw_order_running: same semantics but for running animation
+inline constexpr char weapon_draw_order[]          = { 0, 1, 0, 0, 0, 0, 0, 1, 1 };
+inline constexpr char mantle_draw_order[]           = { 0, 1, 1, 1, 0, 0, 0, 2, 2 };
+inline constexpr char mantle_draw_order_running[]   = { 0, 1, 1, 1, 1, 1, 1, 1, 1 };
 
 namespace RenderHelpers
 {

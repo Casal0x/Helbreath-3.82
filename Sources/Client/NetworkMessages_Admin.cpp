@@ -5,6 +5,7 @@
 #include <cstdio>
 #include <cstring>
 #include <windows.h>
+#include <string>
 
 namespace NetworkMessageHandlers {
 
@@ -17,13 +18,12 @@ void HandleCrashHandler(CGame* pGame, char* pData)
 
 void HandleIpAccountInfo(CGame* pGame, char* pData)
 {
-	char cTemp[256];
-	std::memset(cTemp, 0, sizeof(cTemp));
+	std::string cTemp;
 	const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyIpAccountInfo>(
 		pData, sizeof(hb::net::PacketNotifyIpAccountInfo));
 	if (!pkt) return;
-	std::snprintf(cTemp, sizeof(cTemp), "%s", pkt->text);
-	pGame->AddEventList(cTemp);
+	cTemp = pkt->text;
+	pGame->AddEventList(cTemp.c_str());
 }
 
 void HandleRewardGold(CGame* pGame, char* pData)

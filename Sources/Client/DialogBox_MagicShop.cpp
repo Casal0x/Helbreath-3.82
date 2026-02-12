@@ -1,10 +1,12 @@
-#include "DialogBox_MagicShop.h"
+﻿#include "DialogBox_MagicShop.h"
 #include "Game.h"
 #include "IInput.h"
 #include "Misc.h"
 #include "lan_eng.h"
 #include "GameFonts.h"
 #include "TextLibExt.h"
+#include <format>
+#include <string>
 
 using namespace hb::shared::net;
 using namespace hb::client::sprite_id;
@@ -57,42 +59,44 @@ void DialogBox_MagicShop::DrawSpellList(short sX, short sY, short msX, short msY
 {
 	int iCPivot = m_pGame->m_dialogBoxManager.Info(DialogBoxId::MagicShop).sView * 10;
 	int iYloc = 0;
-	char cTxt[120], cMana[10];
+	std::string cMana;
+
+	char cTxt[120];
 
 	for (int i = 0; i < 9; i++)
 	{
 		if ((m_pGame->m_pMagicCfgList[iCPivot + i] != nullptr) &&
 			(m_pGame->m_pMagicCfgList[iCPivot + i]->m_bIsVisible))
 		{
-			std::snprintf(cTxt, sizeof(cTxt), "%s", m_pGame->m_pMagicCfgList[iCPivot + i]->m_cName);
+			std::snprintf(cTxt, sizeof(cTxt), "%s", m_pGame->m_pMagicCfgList[iCPivot + i]->m_cName.c_str());
 			CMisc::ReplaceString(cTxt, '-', ' ');
 
 			if (m_pGame->m_pPlayer->m_iMagicMastery[iCPivot + i] != 0)
 			{
 				// Already mastered - purple color
 				hb::shared::text::DrawText(GameFont::Bitmap1, sX + 24, sY + 70 + iYloc, cTxt, hb::shared::text::TextStyle::WithHighlight(GameColors::UIMagicPurple));
-				std::snprintf(cMana, sizeof(cMana), "%3d", m_pGame->m_pMagicCfgList[iCPivot + i]->m_sValue2);
-				hb::shared::text::DrawText(GameFont::Bitmap1, sX + 200, sY + 70 + iYloc, cMana, hb::shared::text::TextStyle::WithHighlight(GameColors::UIMagicPurple));
-				std::snprintf(cMana, sizeof(cMana), "%3d", m_pGame->m_pMagicCfgList[iCPivot + i]->m_sValue3);
-				hb::shared::text::DrawText(GameFont::Bitmap1, sX + 241, sY + 70 + iYloc, cMana, hb::shared::text::TextStyle::WithHighlight(GameColors::UIMagicPurple));
+				cMana = std::format("{:3}", m_pGame->m_pMagicCfgList[iCPivot + i]->m_sValue2);
+				hb::shared::text::DrawText(GameFont::Bitmap1, sX + 200, sY + 70 + iYloc, cMana.c_str(), hb::shared::text::TextStyle::WithHighlight(GameColors::UIMagicPurple));
+				cMana = std::format("{:3}", m_pGame->m_pMagicCfgList[iCPivot + i]->m_sValue3);
+				hb::shared::text::DrawText(GameFont::Bitmap1, sX + 241, sY + 70 + iYloc, cMana.c_str(), hb::shared::text::TextStyle::WithHighlight(GameColors::UIMagicPurple));
 			}
 			else if ((msX >= sX + 24) && (msX <= sX + 24 + 135) &&
 				(msY >= sY + 70 + iYloc) && (msY <= sY + 70 + 14 + iYloc))
 			{
 				// Hovering - white color
 				hb::shared::text::DrawText(GameFont::Bitmap1, sX - 20 + 44, sY + 70 + iYloc, cTxt, hb::shared::text::TextStyle::WithHighlight(GameColors::UINearWhite));
-				std::snprintf(cMana, sizeof(cMana), "%3d", m_pGame->m_pMagicCfgList[iCPivot + i]->m_sValue2);
-				hb::shared::text::DrawText(GameFont::Bitmap1, sX - 20 + 220, sY + 70 + iYloc, cMana, hb::shared::text::TextStyle::WithHighlight(GameColors::UINearWhite));
-				std::snprintf(cMana, sizeof(cMana), "%3d", m_pGame->m_pMagicCfgList[iCPivot + i]->m_sValue3);
-				hb::shared::text::DrawText(GameFont::Bitmap1, sX - 20 + 261, sY + 70 + iYloc, cMana, hb::shared::text::TextStyle::WithHighlight(GameColors::UINearWhite));
+				cMana = std::format("{:3}", m_pGame->m_pMagicCfgList[iCPivot + i]->m_sValue2);
+				hb::shared::text::DrawText(GameFont::Bitmap1, sX - 20 + 220, sY + 70 + iYloc, cMana.c_str(), hb::shared::text::TextStyle::WithHighlight(GameColors::UINearWhite));
+				cMana = std::format("{:3}", m_pGame->m_pMagicCfgList[iCPivot + i]->m_sValue3);
+				hb::shared::text::DrawText(GameFont::Bitmap1, sX - 20 + 261, sY + 70 + iYloc, cMana.c_str(), hb::shared::text::TextStyle::WithHighlight(GameColors::UINearWhite));
 			}
 			else
 			{
 				hb::shared::text::DrawText(GameFont::Bitmap1, sX - 20 + 44, sY + 70 + iYloc, cTxt, hb::shared::text::TextStyle::WithHighlight(GameColors::UIMagicBlue));
-				std::snprintf(cMana, sizeof(cMana), "%3d", m_pGame->m_pMagicCfgList[iCPivot + i]->m_sValue2);
-				hb::shared::text::DrawText(GameFont::Bitmap1, sX - 20 + 220, sY + 70 + iYloc, cMana, hb::shared::text::TextStyle::WithHighlight(GameColors::UIMagicBlue));
-				std::snprintf(cMana, sizeof(cMana), "%3d", m_pGame->m_pMagicCfgList[iCPivot + i]->m_sValue3);
-				hb::shared::text::DrawText(GameFont::Bitmap1, sX - 20 + 261, sY + 70 + iYloc, cMana, hb::shared::text::TextStyle::WithHighlight(GameColors::UIMagicBlue));
+				cMana = std::format("{:3}", m_pGame->m_pMagicCfgList[iCPivot + i]->m_sValue2);
+				hb::shared::text::DrawText(GameFont::Bitmap1, sX - 20 + 220, sY + 70 + iYloc, cMana.c_str(), hb::shared::text::TextStyle::WithHighlight(GameColors::UIMagicBlue));
+				cMana = std::format("{:3}", m_pGame->m_pMagicCfgList[iCPivot + i]->m_sValue3);
+				hb::shared::text::DrawText(GameFont::Bitmap1, sX - 20 + 261, sY + 70 + iYloc, cMana.c_str(), hb::shared::text::TextStyle::WithHighlight(GameColors::UIMagicBlue));
 			}
 			iYloc += 18;
 		}
@@ -153,7 +157,7 @@ bool DialogBox_MagicShop::HandleSpellClick(short sX, short sY, short msX, short 
 				if (m_pGame->m_pPlayer->m_iMagicMastery[iCPivot + i] == 0)
 				{
 					m_pGame->bSendCommand(MsgId::CommandCommon, CommonType::ReqStudyMagic, 0, 0, 0, 0,
-						m_pGame->m_pMagicCfgList[iCPivot + i]->m_cName);
+						m_pGame->m_pMagicCfgList[iCPivot + i]->m_cName.c_str());
 					m_pGame->PlayGameSound('E', 14, 5);
 				}
 				return true;

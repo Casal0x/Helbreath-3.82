@@ -1,4 +1,4 @@
-// QuestManager.cpp: Handles client-side quest network messages.
+﻿// QuestManager.cpp: Handles client-side quest network messages.
 // Extracted from NetworkMessages_Quest.cpp (Phase B3).
 
 #include "QuestManager.h"
@@ -9,6 +9,8 @@
 #include <windows.h>
 #include <cstdio>
 #include <cstring>
+#include <format>
+#include <string>
 
 void QuestManager::HandleQuestCounter(char* pData)
 {
@@ -32,14 +34,15 @@ void QuestManager::HandleQuestContents(char* pData)
 	m_pGame->m_stQuest.sY = pkt->y;
 	m_pGame->m_stQuest.sRange = pkt->range;
 	m_pGame->m_stQuest.bIsQuestCompleted = (pkt->is_completed != 0);
-	std::memset(m_pGame->m_stQuest.cTargetName, 0, sizeof(m_pGame->m_stQuest.cTargetName));
-	memcpy(m_pGame->m_stQuest.cTargetName, pkt->target_name, 20);
+	m_pGame->m_stQuest.cTargetName.assign(pkt->target_name, strnlen(pkt->target_name, 20));
 }
 
 void QuestManager::HandleQuestReward(char* pData)
 {
 	short sWho, sFlag;
-	char cRewardName[hb::shared::limits::ItemNameLen], cTxt[120];
+	std::string cTxt;
+
+	char cRewardName[hb::shared::limits::ItemNameLen];
 	int iAmount, iIndex, iPreCon;
 	const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyQuestReward>(
 		pData, sizeof(hb::net::PacketNotifyQuestReward));
@@ -64,28 +67,25 @@ void QuestManager::HandleQuestReward(char* pData)
 		m_pGame->m_stQuest.sRange = 0;
 		m_pGame->m_stQuest.sCurrentCount = 0;
 		m_pGame->m_stQuest.bIsQuestCompleted = false;
-		std::memset(m_pGame->m_stQuest.cTargetName, 0, sizeof(m_pGame->m_stQuest.cTargetName));
 		m_pGame->m_dialogBoxManager.EnableDialogBox(DialogBoxId::NpcTalk, 0, sWho + 110, 0);
 		iIndex = m_pGame->m_dialogBoxManager.Info(DialogBoxId::NpcTalk).sV1;
 		m_pGame->m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, "  ", 0);
 		iIndex++;
-		std::memset(cTxt, 0, sizeof(cTxt));
 		if (memcmp(cRewardName, "ġ", 6) == 0)
 		{
-			if (iAmount > 0) std::snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_QUEST_REWARD1, iAmount);
+			if (iAmount > 0) cTxt = std::format(NOTIFYMSG_QUEST_REWARD1, iAmount);
 		}
 		else
 		{
-			std::snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_QUEST_REWARD2, iAmount, cRewardName);
+			cTxt = std::format(NOTIFYMSG_QUEST_REWARD2, iAmount, cRewardName);
 		}
-		m_pGame->m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, cTxt, 0);
+		m_pGame->m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, cTxt.c_str(), 0);
 		iIndex++;
 		m_pGame->m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, "  ", 0);
 		iIndex++;
-		std::memset(cTxt, 0, sizeof(cTxt));
 		if (iPreCon < m_pGame->m_pPlayer->m_iContribution)
-			std::snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_QUEST_REWARD3, m_pGame->m_pPlayer->m_iContribution - iPreCon);
-		else std::snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_QUEST_REWARD4, iPreCon - m_pGame->m_pPlayer->m_iContribution);
+			cTxt = std::format(NOTIFYMSG_QUEST_REWARD3, m_pGame->m_pPlayer->m_iContribution - iPreCon);
+		else cTxt = std::format(NOTIFYMSG_QUEST_REWARD4, iPreCon - m_pGame->m_pPlayer->m_iContribution);
 
 		m_pGame->m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, "  ", 0);
 		iIndex++;

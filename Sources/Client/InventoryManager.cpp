@@ -4,6 +4,7 @@
 #include "ItemNameFormatter.h"
 #include "lan_eng.h"
 #include "NetMessages.h"
+#include <format>
 
 using namespace hb::shared::net;
 using hb::shared::item::ItemType;
@@ -92,18 +93,15 @@ int InventoryManager::GetBankItemCount()
 void InventoryManager::EraseItem(char cItemID)
 {
 	int i;
-	char cStr1[64], cStr2[64], cStr3[64];
-	std::memset(cStr1, 0, sizeof(cStr1));
-	std::memset(cStr2, 0, sizeof(cStr2));
-	std::memset(cStr3, 0, sizeof(cStr3));
 	for (i = 0; i < 6; i++)
 	{
 		if (m_game->m_sShortCut[i] == cItemID)
 		{
-			ItemNameFormatter::Get().Format(m_game->m_pItemList[cItemID].get(), cStr1, cStr2, cStr3);
-			if (i < 3) std::snprintf(m_game->G_cTxt, sizeof(m_game->G_cTxt), ERASE_ITEM, cStr1, cStr2, cStr3, i + 1);
-			else std::snprintf(m_game->G_cTxt, sizeof(m_game->G_cTxt), ERASE_ITEM, cStr1, cStr2, cStr3, i + 7);
-			m_game->AddEventList(m_game->G_cTxt, 10);
+			std::string G_cTxt;
+			auto itemInfo = ItemNameFormatter::Get().Format(m_game->m_pItemList[cItemID].get());
+			if (i < 3) G_cTxt = std::format(ERASE_ITEM, itemInfo.name.c_str(), itemInfo.effect.c_str(), itemInfo.extra.c_str(), i + 1);
+			else G_cTxt = std::format(ERASE_ITEM, itemInfo.name.c_str(), itemInfo.effect.c_str(), itemInfo.extra.c_str(), i + 7);
+			m_game->AddEventList(G_cTxt.c_str(), 10);
 			m_game->m_sShortCut[i] = -1;
 		}
 	}
@@ -191,7 +189,7 @@ bool InventoryManager::CheckItemOperationEnabled(char cItemID)
 
 void InventoryManager::UnequipSlot(char cEquipPos)
 {
-	char cStr1[64], cStr2[64], cStr3[64];
+	std::string G_cTxt;
 	if (m_game->m_sItemEquipmentStatus[cEquipPos] < 0) return;
 	// Remove Angelic Stats
 	CItem* pCfgEq = m_game->GetItemConfig(m_game->m_pItemList[m_game->m_sItemEquipmentStatus[cEquipPos]]->m_sIDnum);
@@ -209,15 +207,16 @@ void InventoryManager::UnequipSlot(char cEquipPos)
 			m_game->m_pPlayer->m_iAngelicMag = 0;
 	}
 
-	ItemNameFormatter::Get().Format(m_game->m_pItemList[m_game->m_sItemEquipmentStatus[cEquipPos]].get(), cStr1, cStr2, cStr3);
-	std::snprintf(m_game->G_cTxt, sizeof(m_game->G_cTxt), ITEM_EQUIPMENT_RELEASED, cStr1);
-	m_game->AddEventList(m_game->G_cTxt, 10);
+	auto itemInfo2 = ItemNameFormatter::Get().Format(m_game->m_pItemList[m_game->m_sItemEquipmentStatus[cEquipPos]].get());
+	G_cTxt = std::format(ITEM_EQUIPMENT_RELEASED, itemInfo2.name.c_str());
+	m_game->AddEventList(G_cTxt.c_str(), 10);
 	m_game->m_bIsItemEquipped[m_game->m_sItemEquipmentStatus[cEquipPos]] = false;
 	m_game->m_sItemEquipmentStatus[cEquipPos] = -1;
 }
 
 void InventoryManager::EquipItem(char cItemID)
 {
+	std::string G_cTxt;
 	if (CheckItemOperationEnabled(cItemID) == false) return;
 	if (m_game->m_bIsItemEquipped[cItemID] == true) return;
 	CItem* pCfg = m_game->GetItemConfig(m_game->m_pItemList[cItemID]->m_sIDnum);
@@ -319,9 +318,8 @@ void InventoryManager::EquipItem(char cItemID)
 			m_game->m_pPlayer->m_iAngelicMag = 1 + iAngelValue;
 	}
 
-	char cStr1[64], cStr2[64], cStr3[64];
-	ItemNameFormatter::Get().Format(m_game->m_pItemList[cItemID].get(), cStr1, cStr2, cStr3);
-	std::snprintf(m_game->G_cTxt, sizeof(m_game->G_cTxt), BITEMDROP_CHARACTER9, cStr1);
-	m_game->AddEventList(m_game->G_cTxt, 10);
+	auto itemInfo3 = ItemNameFormatter::Get().Format(m_game->m_pItemList[cItemID].get());
+	G_cTxt = std::format(BITEMDROP_CHARACTER9, itemInfo3.name.c_str());
+	m_game->AddEventList(G_cTxt.c_str(), 10);
 	m_game->PlayGameSound('E', 28, 0);
 }

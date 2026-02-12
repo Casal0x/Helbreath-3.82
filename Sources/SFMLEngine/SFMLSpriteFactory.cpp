@@ -1,4 +1,4 @@
-// SFMLSpriteFactory.cpp: SFML implementation of ISpriteFactory interface
+﻿// SFMLSpriteFactory.cpp: SFML implementation of ISpriteFactory interface
 //
 // Part of SFMLEngine static library
 //////////////////////////////////////////////////////////////////////
@@ -10,7 +10,7 @@
 SFMLSpriteFactory::SFMLSpriteFactory(SFMLRenderer* pRenderer)
     : m_pRenderer(pRenderer)
     , m_spritePath("sprites")
-    , m_globalAlphaDegree(1)
+    , m_ambient_light_level(1)
 {
 }
 
@@ -27,9 +27,9 @@ hb::shared::sprite::ISprite* SFMLSpriteFactory::CreateSprite(const std::string& 
     SFMLSprite* sprite = new SFMLSprite(m_pRenderer, fullPath, spriteIndex, alphaEffect);
 
     // Apply global alpha degree
-    if (alphaEffect && m_globalAlphaDegree != 1)
+    if (alphaEffect && m_ambient_light_level != 1)
     {
-        sprite->SetAlphaDegree(static_cast<char>(m_globalAlphaDegree));
+        sprite->SetAmbientLightLevel(static_cast<char>(m_ambient_light_level));
     }
 
     return sprite;
@@ -40,9 +40,9 @@ hb::shared::sprite::ISprite* SFMLSpriteFactory::CreateSpriteFromData(const PAKLi
     SFMLSprite* sprite = new SFMLSprite(m_pRenderer, spriteData, alphaEffect);
 
     // Apply global alpha degree
-    if (alphaEffect && m_globalAlphaDegree != 1)
+    if (alphaEffect && m_ambient_light_level != 1)
     {
-        sprite->SetAlphaDegree(static_cast<char>(m_globalAlphaDegree));
+        sprite->SetAmbientLightLevel(static_cast<char>(m_ambient_light_level));
     }
 
     return sprite;
@@ -53,20 +53,20 @@ void SFMLSpriteFactory::DestroySprite(hb::shared::sprite::ISprite* sprite)
     delete sprite;
 }
 
-void SFMLSpriteFactory::SetGlobalAlphaDegree(int degree)
+void SFMLSpriteFactory::SetAmbientLightLevel(int level)
 {
-    m_globalAlphaDegree = degree;
+    m_ambient_light_level = level;
 
     // Update renderer's sprite alpha degree
     if (m_pRenderer)
     {
-        m_pRenderer->SetSpriteAlphaDegree(static_cast<char>(degree));
+        m_pRenderer->SetAmbientLightLevel(static_cast<char>(level));
     }
 }
 
-int SFMLSpriteFactory::GetGlobalAlphaDegree() const
+int SFMLSpriteFactory::GetAmbientLightLevel() const
 {
-    return m_globalAlphaDegree;
+    return m_ambient_light_level;
 }
 
 int SFMLSpriteFactory::GetSpriteCount(const std::string& pakName) const

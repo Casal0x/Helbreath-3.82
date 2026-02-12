@@ -28,7 +28,6 @@ void TeleportManager::Reset()
 	m_list = {};
 	m_loc_x = -1;
 	m_loc_y = -1;
-	std::memset(m_map_name, 0, sizeof(m_map_name));
 }
 
 void TeleportManager::HandleTeleportList(char* pData)
@@ -46,8 +45,7 @@ void TeleportManager::HandleTeleportList(char* pData)
 	for (i = 0; i < m_map_count; i++)
 	{
 		m_list[i].iIndex = entries[i].index;
-		std::memset(m_list[i].mapname, 0, sizeof(m_list[i].mapname));
-		memcpy(m_list[i].mapname, entries[i].map_name, 10);
+		m_list[i].mapname.assign(entries[i].map_name, strnlen(entries[i].map_name, 10));
 		m_list[i].iX = entries[i].x;
 		m_list[i].iY = entries[i].y;
 		m_list[i].iCost = entries[i].cost;
@@ -105,8 +103,7 @@ void TeleportManager::HandleHeldenianTeleportList(char* pData)
 	for (i = 0; i < m_map_count; i++)
 	{
 		m_list[i].iIndex = entries[i].index;
-		std::memset(m_list[i].mapname, 0, sizeof(m_list[i].mapname));
-		memcpy(m_list[i].mapname, entries[i].map_name, 10);
+		m_list[i].mapname.assign(entries[i].map_name, strnlen(entries[i].map_name, 10));
 		m_list[i].iX = entries[i].x;
 		m_list[i].iY = entries[i].y;
 		m_list[i].iCost = entries[i].cost;

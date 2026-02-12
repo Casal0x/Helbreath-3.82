@@ -1,4 +1,4 @@
-// CursorTarget.cpp: Cursor targeting and object focus implementation
+﻿// CursorTarget.cpp: Cursor targeting and object focus implementation
 //
 //////////////////////////////////////////////////////////////////////
 
@@ -152,9 +152,8 @@ void CursorTarget::TestObject(const hb::shared::sprite::BoundRect& bounds, const
         s_focusedObject.status = info.status;
 
         // Copy name
-        std::memset(s_focusedObject.name, 0, sizeof(s_focusedObject.name));
         if (info.name) {
-            std::snprintf(s_focusedObject.name, sizeof(s_focusedObject.name), "%s", info.name);
+            s_focusedObject.name = info.name;
         }
     }
 }
@@ -188,7 +187,6 @@ void CursorTarget::TestDynamicObject(const hb::shared::sprite::BoundRect& bounds
         s_focusedObject.mapY = mapY;
         s_focusedObject.type = FocusedObjectType::DynamicObject;
         s_focusedObject.status.Clear();
-        std::memset(s_focusedObject.name, 0, sizeof(s_focusedObject.name));
     }
 }
 
@@ -228,7 +226,7 @@ short CursorTarget::GetFocusedMapY()
 
 const char* CursorTarget::GetFocusedName()
 {
-    return s_focusedObject.name;
+    return s_focusedObject.name.c_str();
 }
 
 bool CursorTarget::IsOverGroundItem()

@@ -1,4 +1,4 @@
-// SFMLRenderer.cpp: SFML renderer implementation
+﻿// SFMLRenderer.cpp: SFML renderer implementation
 //
 // Part of SFMLEngine static library
 //////////////////////////////////////////////////////////////////////
@@ -39,7 +39,7 @@ SFMLRenderer::SFMLRenderer()
     , m_deltaTime(0.0)
     , m_fpsAccumulator(0.0)
     , m_lastPresentedFrameTime(std::chrono::steady_clock::now())
-    , m_spriteAlphaDegree(1)
+    , m_ambient_light_level(1)
 {
     m_clipArea = hb::shared::geometry::GameRectangle(0, 0, m_width, m_height);
 }
@@ -769,14 +769,14 @@ void SFMLRenderer::ResizeBackBuffer(int width, int height)
     // This is intentionally a no-op for SFML
 }
 
-char SFMLRenderer::GetSpriteAlphaDegree() const
+char SFMLRenderer::GetAmbientLightLevel() const
 {
-    return m_spriteAlphaDegree;
+    return m_ambient_light_level;
 }
 
-void SFMLRenderer::SetSpriteAlphaDegree(char degree)
+void SFMLRenderer::SetAmbientLightLevel(char level)
 {
-    m_spriteAlphaDegree = degree;
+    m_ambient_light_level = level;
 }
 
 void SFMLRenderer::ColorTransferRGB(uint32_t rgb, int* outR, int* outG, int* outB)

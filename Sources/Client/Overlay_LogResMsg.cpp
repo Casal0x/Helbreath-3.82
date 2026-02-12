@@ -11,6 +11,8 @@
 #include "AudioManager.h"
 #include "TextLibExt.h"
 #include "GameFonts.h"
+#include <format>
+#include <string>
 using namespace hb::client::sprite_id;
 
 
@@ -136,7 +138,7 @@ void Overlay_LogResMsg::on_update()
 
 void Overlay_LogResMsg::RenderMessage(int dlgX, int dlgY)
 {
-    char cTxt[128];
+    std::string cTxt;
 
     switch (m_cMsgCode)
     {
@@ -243,9 +245,8 @@ void Overlay_LogResMsg::RenderMessage(int dlgX, int dlgY)
         else
         {
             PutAlignedString(dlgX + 36, dlgX + 291, dlgY + 70, UPDATE_SCREEN_ON_LOG_MSG34);
-            std::snprintf(cTxt, sizeof(cTxt), UPDATE_SCREEN_ON_LOG_MSG35,
-                     m_pGame->m_iBlockYear, m_pGame->m_iBlockMonth, m_pGame->m_iBlockDay);
-            PutAlignedString(dlgX + 36, dlgX + 291, dlgY + 85, cTxt);
+            cTxt = std::format(UPDATE_SCREEN_ON_LOG_MSG35, m_pGame->m_iBlockYear, m_pGame->m_iBlockMonth, m_pGame->m_iBlockDay);
+            PutAlignedString(dlgX + 36, dlgX + 291, dlgY + 85, cTxt.c_str());
         }
         break;
 

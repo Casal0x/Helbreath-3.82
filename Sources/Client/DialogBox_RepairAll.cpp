@@ -1,6 +1,8 @@
 #include "DialogBox_RepairAll.h"
 #include "Game.h"
 #include "IInput.h"
+#include <format>
+#include <string>
 
 using namespace hb::shared::net;
 using namespace hb::client::sprite_id;
@@ -16,7 +18,7 @@ void DialogBox_RepairAll::OnDraw(short msX, short msY, short msZ, char cLB)
 	short sX = Info().sX;
 	short sY = Info().sY;
 	short szX = Info().sSizeX;
-	char cTxt[120];
+	std::string cTxt;
 	int iTotalLines, iPointerLoc;
 	double d1, d2, d3;
 
@@ -27,13 +29,10 @@ void DialogBox_RepairAll::OnDraw(short msX, short msY, short msZ, char cLB)
 	{
 		if ((i + Info().sView) < m_pGame->totalItemRepair)
 		{
-			std::memset(cTxt, 0, sizeof(cTxt));
 			CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[m_pGame->m_stRepairAll[i + Info().sView].index]->m_sIDnum);
-			std::snprintf(cTxt, sizeof(cTxt), "%s - Cost: %d",
-				pCfg ? pCfg->m_cName : "Unknown",
-				m_pGame->m_stRepairAll[i + Info().sView].price);
+			cTxt = std::format("{} - Cost: {}", pCfg ? pCfg->m_cName : "Unknown", m_pGame->m_stRepairAll[i + Info().sView].price);
 
-			PutString(sX + 30, sY + 45 + i * 15, cTxt, GameColors::UIBlack);
+			PutString(sX + 30, sY + 45 + i * 15, cTxt.c_str(), GameColors::UIBlack);
 			m_pGame->m_bIsItemDisabled[m_pGame->m_stRepairAll[i + Info().sView].index] = true;
 		}
 	}
@@ -88,9 +87,8 @@ void DialogBox_RepairAll::OnDraw(short msX, short msY, short msZ, char cLB)
 			DrawNewDialogBox(InterfaceNdButton, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 16);
 
 		// Total cost
-		std::memset(cTxt, 0, sizeof(cTxt));
-		std::snprintf(cTxt, sizeof(cTxt), "Total cost : %d", m_pGame->totalPrice);
-		PutString(sX + 30, sY + 270, cTxt, GameColors::UIBlack);
+		cTxt = std::format("Total cost : {}", m_pGame->totalPrice);
+		PutString(sX + 30, sY + 270, cTxt.c_str(), GameColors::UIBlack);
 	}
 	else
 	{

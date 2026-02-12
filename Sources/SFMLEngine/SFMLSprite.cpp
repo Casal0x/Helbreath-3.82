@@ -1,4 +1,4 @@
-// SFMLSprite.cpp: SFML implementation of ISprite interface
+﻿// SFMLSprite.cpp: SFML implementation of ISprite interface
 //
 // Part of SFMLEngine static library
 //////////////////////////////////////////////////////////////////////
@@ -8,7 +8,6 @@
 #include <SFML/Graphics/Sprite.hpp>
 #include <SFML/Graphics/RenderTexture.hpp>
 
-extern char G_cSpriteAlphaDegree;
 
 SFMLSprite::SFMLSprite(SFMLRenderer* pRenderer, const std::string& pakFilePath, int spriteIndex, bool alphaEffect)
     : m_pRenderer(pRenderer)
@@ -18,7 +17,7 @@ SFMLSprite::SFMLSprite(SFMLRenderer* pRenderer, const std::string& pakFilePath, 
     , m_bitmapHeight(0)
     , m_textureLoaded(false)
     , m_alphaEffect(alphaEffect)
-    , m_alphaDegree(1)
+    , m_ambient_light_level(1)
     , m_inUse(false)
     , m_lastAccessTime(0)
 {
@@ -34,7 +33,7 @@ SFMLSprite::SFMLSprite(SFMLRenderer* pRenderer, const PAKLib::sprite& spriteData
     , m_bitmapHeight(0)
     , m_textureLoaded(false)
     , m_alphaEffect(alphaEffect)
-    , m_alphaDegree(1)
+    , m_ambient_light_level(1)
     , m_inUse(false)
     , m_lastAccessTime(0)
 {
@@ -105,9 +104,9 @@ void SFMLSprite::Draw(int x, int y, int frame, const hb::shared::sprite::DrawPar
         return;
 
     // Sync alpha degree with global (day/night mode)
-    if (m_alphaEffect && m_alphaDegree != G_cSpriteAlphaDegree)
+    if (m_alphaEffect && m_ambient_light_level != m_pRenderer->GetAmbientLightLevel())
     {
-        m_alphaDegree = G_cSpriteAlphaDegree;
+        m_ambient_light_level = m_pRenderer->GetAmbientLightLevel();
     }
 
     m_inUse = true;
@@ -128,9 +127,9 @@ void SFMLSprite::DrawToSurface(void* destSurface, int x, int y, int frame, const
         return;
 
     // Sync alpha degree with global (day/night mode)
-    if (m_alphaEffect && m_alphaDegree != G_cSpriteAlphaDegree)
+    if (m_alphaEffect && m_ambient_light_level != m_pRenderer->GetAmbientLightLevel())
     {
-        m_alphaDegree = G_cSpriteAlphaDegree;
+        m_ambient_light_level = m_pRenderer->GetAmbientLightLevel();
     }
 
     m_inUse = true;
@@ -170,8 +169,8 @@ void SFMLSprite::DrawInternal(sf::RenderTexture* target, int x, int y, int frame
         sf::Sprite sprite(m_texture, srcRect);
 
         // Semi-transparent black for shadow
-        // At night (G_cSpriteAlphaDegree == 2), reduce shadow opacity by 50%
-        uint8_t shadowAlpha = (G_cSpriteAlphaDegree == 2) ? 70 : 140;
+        // At night (m_pRenderer->GetAmbientLightLevel() == 2), reduce shadow opacity by 50%
+        uint8_t shadowAlpha = (m_pRenderer->GetAmbientLightLevel() == 2) ? 70 : 140;
         sprite.setColor(sf::Color(0, 0, 0, shadowAlpha));
 
         // Set origin to bottom-left of sprite so transforms anchor there (at feet)
@@ -284,7 +283,7 @@ void SFMLSprite::DrawInternal(sf::RenderTexture* target, int x, int y, int frame
     bool needsColorChange = (params.alpha < 1.0f) ||
                             (params.tintR != 0 || params.tintG != 0 || params.tintB != 0) ||
                             params.isShadow || params.isFade ||
-                            (m_alphaDegree == 2 && m_alphaEffect);
+                            (m_ambient_light_level == 2 && m_alphaEffect);
 
     if (needsColorChange)
     {
@@ -322,18 +321,18 @@ void SFMLSprite::DrawInternal(sf::RenderTexture* target, int x, int y, int frame
         }
 
         // Apply fade effect - darkens destination like DDraw's DrawFadeInternal
-        // At night (G_cSpriteAlphaDegree == 2), reduce fade intensity by 50%
+        // At night (m_pRenderer->GetAmbientLightLevel() == 2), reduce fade intensity by 50%
         // Day: 75% alpha -> 25% brightness | Night: 50% alpha -> 50% brightness
         if (params.isFade)
         {
             color.r = 0;
             color.g = 0;
             color.b = 0;
-            color.a = (G_cSpriteAlphaDegree == 2) ? 127 : 191;  // Less darkening at night
+            color.a = (m_pRenderer->GetAmbientLightLevel() == 2) ? 127 : 191;  // Less darkening at night
         }
 
         // Apply alpha degree darkening (night mode)
-        if (m_alphaDegree == 2 && m_alphaEffect)
+        if (m_ambient_light_level == 2 && m_alphaEffect)
         {
             color.r = static_cast<uint8_t>(color.r * 0.7f);
             color.g = static_cast<uint8_t>(color.g * 0.7f);
@@ -384,9 +383,9 @@ void SFMLSprite::DrawWidth(int x, int y, int frame, int width, bool vertical)
         return;
 
     // Sync alpha degree with global (day/night mode)
-    if (m_alphaEffect && m_alphaDegree != G_cSpriteAlphaDegree)
+    if (m_alphaEffect && m_ambient_light_level != m_pRenderer->GetAmbientLightLevel())
     {
-        m_alphaDegree = G_cSpriteAlphaDegree;
+        m_ambient_light_level = m_pRenderer->GetAmbientLightLevel();
     }
 
     m_inUse = true;
@@ -448,9 +447,9 @@ void SFMLSprite::DrawShifted(int x, int y, int shiftX, int shiftY, int frame, co
         return;
 
     // Sync alpha degree with global (day/night mode)
-    if (m_alphaEffect && m_alphaDegree != G_cSpriteAlphaDegree)
+    if (m_alphaEffect && m_ambient_light_level != m_pRenderer->GetAmbientLightLevel())
     {
-        m_alphaDegree = G_cSpriteAlphaDegree;
+        m_ambient_light_level = m_pRenderer->GetAmbientLightLevel();
     }
 
     sf::RenderTexture* target = m_pRenderer->GetBackBuffer();
@@ -677,16 +676,16 @@ uint32_t SFMLSprite::GetLastAccessTime() const
     return m_lastAccessTime;
 }
 
-void SFMLSprite::SetAlphaDegree(char degree)
+void SFMLSprite::SetAmbientLightLevel(char level)
 {
-    if (m_alphaDegree != degree && m_alphaEffect)
+    if (m_ambient_light_level != level && m_alphaEffect)
     {
-        m_alphaDegree = degree;
-        ApplyAlphaDegree();
+        m_ambient_light_level = level;
+        ApplyAmbientLightLevel();
     }
 }
 
-void SFMLSprite::ApplyAlphaDegree()
+void SFMLSprite::ApplyAmbientLightLevel()
 {
     // Alpha degree is now applied at draw time via sprite color
     // No need to modify the texture

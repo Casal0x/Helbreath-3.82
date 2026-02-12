@@ -2,13 +2,14 @@
 
 #include <array>
 #include <cstring>
+#include <string>
 
 class CGame;
 
 struct TeleportEntry
 {
 	int iIndex = 0;
-	char mapname[12]{};
+	std::string mapname;
 	int iX = 0;
 	int iY = 0;
 	int iCost = 0;
@@ -36,9 +37,9 @@ public:
 	int GetLocX() const { return m_loc_x; }
 	int GetLocY() const { return m_loc_y; }
 	void SetLocation(int x, int y) { m_loc_x = x; m_loc_y = y; }
-	char* GetMapName() { return m_map_name; }
-	const char* GetMapName() const { return m_map_name; }
-	void SetMapName(const char* src, size_t len) { std::memset(m_map_name, 0, sizeof(m_map_name)); std::memcpy(m_map_name, src, len); }
+	const char* GetMapName() { return m_map_name.c_str(); }
+	const char* GetMapName() const { return m_map_name.c_str(); }
+	void SetMapName(const char* src, size_t len) { m_map_name.assign(src, len); }
 
 	// Request state
 	bool IsRequested() const { return m_is_requested; }
@@ -54,5 +55,5 @@ private:
 	bool m_is_requested = false;
 	int m_loc_x = -1;
 	int m_loc_y = -1;
-	char m_map_name[12]{};
+	std::string m_map_name;
 };

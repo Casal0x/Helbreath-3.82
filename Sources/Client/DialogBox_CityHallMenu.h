@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "IDialogBox.h"
 
 class DialogBox_CityHallMenu : public IDialogBox
@@ -32,4 +32,5 @@ private:
 	bool OnClickMode9(short sX, short sY, short msX, short msY);
 	bool OnClickMode10(short sX, short sY, short msX, short msY);
 	bool OnClickMode11(short sX, short sY, short msX, short msY);
+	std::string m_cTakeHeroItemName;
 };

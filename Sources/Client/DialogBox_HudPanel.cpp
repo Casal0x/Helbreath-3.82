@@ -1,4 +1,4 @@
-#include "DialogBox_HudPanel.h"
+﻿#include "DialogBox_HudPanel.h"
 #include "Game.h"
 #include "GlobalDef.h"
 #include "SharedCalculations.h"
@@ -6,6 +6,8 @@
 #include "GameFonts.h"
 #include "TextLibExt.h"
 #include <cstdlib>
+#include <format>
+#include <string>
 
 using namespace hb::shared::net;
 using namespace hb::client::sprite_id;
@@ -55,19 +57,19 @@ void DialogBox_HudPanel::DrawGaugeBars()
 	pSprite->DrawWidth(HP_BAR_X(), HP_BAR_Y(), 12, iBarWidth);
 
 	// HP number
-	char statBuf[16];
-	snprintf(statBuf, sizeof(statBuf), "%d", (short)m_pGame->m_pPlayer->m_iHP);
+	std::string statBuf;
+	statBuf = std::format("{}", (short)m_pGame->m_pPlayer->m_iHP);
 	if (m_pGame->m_pPlayer->m_bIsPoisoned)
 	{
-		hb::shared::text::DrawText(GameFont::Numbers, 85 + HudXOffset(), HP_NUM_Y(), statBuf,
+		hb::shared::text::DrawText(GameFont::Numbers, 85 + HudXOffset(), HP_NUM_Y(), statBuf.c_str(),
 			hb::shared::text::TextStyle::Color(GameColors::PoisonText));
 		hb::shared::text::DrawText(GameFont::SprFont3_2, 35 + HudXOffset(), HP_BAR_Y() + 2, "Poisoned",
 			hb::shared::text::TextStyle::Color(GameColors::PoisonLabel).WithAlpha(0.7f));
 	}
 	else
 	{
-		hb::shared::text::DrawText(GameFont::Numbers, HP_NUM_X() + 1, HP_NUM_Y() + 1, statBuf, hb::shared::text::TextStyle::Color(GameColors::UIBlack));
-		hb::shared::text::DrawText(GameFont::Numbers, HP_NUM_X(), HP_NUM_Y(), statBuf, hb::shared::text::TextStyle::Color(GameColors::UIWhite));
+		hb::shared::text::DrawText(GameFont::Numbers, HP_NUM_X() + 1, HP_NUM_Y() + 1, statBuf.c_str(), hb::shared::text::TextStyle::Color(GameColors::UIBlack));
+		hb::shared::text::DrawText(GameFont::Numbers, HP_NUM_X(), HP_NUM_Y(), statBuf.c_str(), hb::shared::text::TextStyle::Color(GameColors::UIWhite));
 	}
 
 	// MP bar
@@ -80,9 +82,9 @@ void DialogBox_HudPanel::DrawGaugeBars()
 	pSprite->DrawWidth(HP_BAR_X(), MP_BAR_Y(), 12, iBarWidth);
 
 	// MP number
-	snprintf(statBuf, sizeof(statBuf), "%d", (short)m_pGame->m_pPlayer->m_iMP);
-	hb::shared::text::DrawText(GameFont::Numbers, HP_NUM_X() + 1, MP_NUM_Y() + 1, statBuf, hb::shared::text::TextStyle::Color(GameColors::UIBlack));
-	hb::shared::text::DrawText(GameFont::Numbers, HP_NUM_X(), MP_NUM_Y(), statBuf, hb::shared::text::TextStyle::Color(GameColors::UIWhite));
+	statBuf = std::format("{}", (short)m_pGame->m_pPlayer->m_iMP);
+	hb::shared::text::DrawText(GameFont::Numbers, HP_NUM_X() + 1, MP_NUM_Y() + 1, statBuf.c_str(), hb::shared::text::TextStyle::Color(GameColors::UIBlack));
+	hb::shared::text::DrawText(GameFont::Numbers, HP_NUM_X(), MP_NUM_Y(), statBuf.c_str(), hb::shared::text::TextStyle::Color(GameColors::UIWhite));
 
 	// SP bar
 	iMaxPoint = hb::shared::calc::CalculateMaxSP(m_pGame->m_pPlayer->m_iStr, m_pGame->m_pPlayer->m_iAngelicStr, m_pGame->m_pPlayer->m_iLevel);
@@ -93,9 +95,9 @@ void DialogBox_HudPanel::DrawGaugeBars()
 	pSprite->DrawWidth(SP_BAR_X(), SP_BAR_Y(), 13, iBarWidth);
 
 	// SP number
-	snprintf(statBuf, sizeof(statBuf), "%d", (short)m_pGame->m_pPlayer->m_iSP);
-	hb::shared::text::DrawText(GameFont::Numbers, SP_NUM_X() + 1, SP_NUM_Y() + 1, statBuf, hb::shared::text::TextStyle::Color(GameColors::UIBlack));
-	hb::shared::text::DrawText(GameFont::Numbers, SP_NUM_X(), SP_NUM_Y(), statBuf, hb::shared::text::TextStyle::Color(GameColors::UIWhite));
+	statBuf = std::format("{}", (short)m_pGame->m_pPlayer->m_iSP);
+	hb::shared::text::DrawText(GameFont::Numbers, SP_NUM_X() + 1, SP_NUM_Y() + 1, statBuf.c_str(), hb::shared::text::TextStyle::Color(GameColors::UIBlack));
+	hb::shared::text::DrawText(GameFont::Numbers, SP_NUM_X(), SP_NUM_Y(), statBuf.c_str(), hb::shared::text::TextStyle::Color(GameColors::UIWhite));
 
 	// Experience bar
 	uint32_t iCurLevelExp = m_pGame->iGetLevelExp(m_pGame->m_pPlayer->m_iLevel);
@@ -155,7 +157,7 @@ void DialogBox_HudPanel::DrawStatusIcons(short msX, short msY)
 	}
 
 	// Map message / coordinates (or remaining EXP when Ctrl pressed)
-	char infoBuf[128];
+	std::string infoBuf;
 	if (hb::shared::input::IsCtrlDown())
 	{
 		uint32_t iCurExp = m_pGame->iGetLevelExp(m_pGame->m_pPlayer->m_iLevel);
@@ -164,7 +166,7 @@ void DialogBox_HudPanel::DrawStatusIcons(short msX, short msY)
 		{
 			uint32_t iExpRange = iNextExp - iCurExp;
 			uint32_t iExpProgress = (m_pGame->m_pPlayer->m_iExp > iCurExp) ? (m_pGame->m_pPlayer->m_iExp - iCurExp) : 0;
-			snprintf(infoBuf, sizeof(infoBuf), "Rest Exp: %d", iExpRange - iExpProgress);
+			infoBuf = std::format("Rest Exp: {}", iExpRange - iExpProgress);
 		}
 		else
 		{
@@ -173,10 +175,10 @@ void DialogBox_HudPanel::DrawStatusIcons(short msX, short msY)
 	}
 	else
 	{
-		snprintf(infoBuf, sizeof(infoBuf), "%s (%d,%d)", m_pGame->m_cMapMessage, m_pGame->m_pPlayer->m_sPlayerX, m_pGame->m_pPlayer->m_sPlayerY);
+		infoBuf = std::format("{} ({},{})", m_pGame->m_cMapMessage, m_pGame->m_pPlayer->m_sPlayerX, m_pGame->m_pPlayer->m_sPlayerY);
 	}
-	PutAlignedString(MAP_MSG_X1() + 1, MAP_MSG_X2() + 1, MAP_MSG_Y() + 1, infoBuf, GameColors::UIBlack);
-	PutAlignedString(MAP_MSG_X1(), MAP_MSG_X2(), MAP_MSG_Y(), infoBuf, GameColors::UIPaleYellow);
+	PutAlignedString(MAP_MSG_X1() + 1, MAP_MSG_X2() + 1, MAP_MSG_Y() + 1, infoBuf.c_str(), GameColors::UIBlack);
+	PutAlignedString(MAP_MSG_X1(), MAP_MSG_X2(), MAP_MSG_Y(), infoBuf.c_str(), GameColors::UIPaleYellow);
 }
 
 void DialogBox_HudPanel::DrawIconButtons(short msX, short msY)

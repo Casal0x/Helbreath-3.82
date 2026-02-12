@@ -4,6 +4,7 @@
 #endif
 
 #include "Game.h"
+#include "GameConstants.h"
 #include "ObjectIDRange.h"
 #include "CommonTypes.h"
 #include "RenderHelpers.h"
@@ -95,7 +96,6 @@ using namespace hb::shared::item;
 using namespace hb::client::config;
 using namespace hb::client::sprite_id;
 
-extern char G_cSpriteAlphaDegree;
 
 // Drawing order arrays moved to RenderHelpers.cpp (declared extern in RenderHelpers.h)
 
@@ -176,8 +176,6 @@ CGame::CGame()
 	m_iItemDropCnt = 0;
 	std::memset(m_sItemDropID, 0, sizeof(m_sItemDropID));
 	m_bItemDrop = false;
-	std::memset(m_cMapName, 0, sizeof(m_cMapName));
-	std::memset(G_cTxt, 0, sizeof(G_cTxt));
 
 	// Initialize CPlayer first since it's used below
 	m_pPlayer = std::make_unique<CPlayer>();
@@ -216,7 +214,6 @@ CGame::CGame()
 	// Previous cursor status tracking removed
 	CursorTarget::ResetSelectionClickTime();
 
-	std::memset(m_cLogServerAddr, 0, sizeof(m_cLogServerAddr));
 	// m_pItemForSaleList defaults to nullptr (std::array<std::unique_ptr<T>, N>)
 
 	// Dialog boxes now self-initialize via SetDefaultRect() in their constructors
@@ -228,13 +225,7 @@ CGame::CGame()
 	// Initialize char arrays that were previously zero-initialized by HEAP_ZERO_MEMORY
 	std::memset(m_cMsg, 0, sizeof(m_cMsg));
 	std::memset(m_cChatMsg, 0, sizeof(m_cChatMsg));
-	std::memset(m_cBackupChatMsg, 0, sizeof(m_cBackupChatMsg));
 	std::memset(m_cAmountString, 0, sizeof(m_cAmountString));
-	std::memset(m_cCurLocation, 0, sizeof(m_cCurLocation));
-	std::memset(m_cMapMessage, 0, sizeof(m_cMapMessage));
-	std::memset(m_cGameServerName, 0, sizeof(m_cGameServerName));
-	std::memset(m_cName_IE, 0, sizeof(m_cName_IE));
-	std::memset(m_cTakeHeroItemName, 0, sizeof(m_cTakeHeroItemName));
 }
 
 CGame::~CGame()
@@ -300,8 +291,7 @@ bool CGame::bInit()
 		return false;
 	}
 
-	std::memset(m_cLogServerAddr, 0, sizeof(m_cLogServerAddr));
-	std::snprintf(m_cLogServerAddr, sizeof(m_cLogServerAddr), "%s", DEF_SERVER_IP);
+	m_cLogServerAddr = DEF_SERVER_IP;
 	m_iLogServerPort = DEF_SERVER_PORT;
 	m_iGameServerPort = DEF_GSERVER_PORT;
 
@@ -322,8 +312,7 @@ bool CGame::bInit()
 	m_cMenuFrame = 0;
 
 	_LoadGameMsgTextContents();
-	std::memset(m_cWorldServerName, 0, sizeof(m_cWorldServerName));
-	std::snprintf(m_cWorldServerName, sizeof(m_cWorldServerName), "%s", NAME_WORLDNAME1);
+	m_cWorldServerName = NAME_WORLDNAME1;
 
 	// AudioManager initialized in bInit() with HWND
 	WeatherManager::Get().Initialize();
@@ -501,13 +490,14 @@ void CGame::RenderFrame()
 
 	// HUD metrics — drawn on all screens, on top of fade overlay
 	{
+		std::string G_cTxt;
 		int iDisplayY = 100;
 
 		// FPS (engine-tracked, counted at actual present)
 		if (ConfigManager::Get().IsShowFpsEnabled())
 		{
-			std::snprintf(G_cTxt, sizeof(G_cTxt), "fps : %u", m_Renderer->GetFPS());
-			hb::shared::text::DrawText(GameFont::Default, 10, iDisplayY, G_cTxt, hb::shared::text::TextStyle::Color(GameColors::UIWhite));
+			G_cTxt = std::format("fps : {}", m_Renderer->GetFPS());
+			hb::shared::text::DrawText(GameFont::Default, 10, iDisplayY, G_cTxt.c_str(), hb::shared::text::TextStyle::Color(GameColors::UIWhite));
 			iDisplayY += 14;
 		}
 
@@ -515,10 +505,10 @@ void CGame::RenderFrame()
 		if (ConfigManager::Get().IsShowLatencyEnabled())
 		{
 			if (m_iLatencyMs >= 0)
-				std::snprintf(G_cTxt, sizeof(G_cTxt), "latency : %d ms", m_iLatencyMs);
+				G_cTxt = std::format("latency : {} ms", m_iLatencyMs);
 			else
-				std::snprintf(G_cTxt, sizeof(G_cTxt), "latency : -- ms");
-			hb::shared::text::DrawText(GameFont::Default, 10, iDisplayY, G_cTxt, hb::shared::text::TextStyle::Color(GameColors::UIWhite));
+				G_cTxt = "latency : -- ms";
+			hb::shared::text::DrawText(GameFont::Default, 10, iDisplayY, G_cTxt.c_str(), hb::shared::text::TextStyle::Color(GameColors::UIWhite));
 			iDisplayY += 14;
 		}
 
@@ -535,8 +525,8 @@ void CGame::RenderFrame()
 				double avgMs = FrameTiming::GetProfileAvgTimeMS(stage);
 				int wholePart = static_cast<int>(avgMs);
 				int fracPart = static_cast<int>((avgMs - wholePart) * 100);
-				std::snprintf(G_cTxt, sizeof(G_cTxt), "%-12s: %3d.%02d", FrameTiming::GetStageName(stage), wholePart, fracPart);
-				hb::shared::text::DrawText(GameFont::Default, 10, iDisplayY, G_cTxt, hb::shared::text::TextStyle::Color(GameColors::UINearWhite));
+				G_cTxt = std::format("{:<12}: {:3}.{:02}", FrameTiming::GetStageName(stage), wholePart, fracPart);
+				hb::shared::text::DrawText(GameFont::Default, 10, iDisplayY, G_cTxt.c_str(), hb::shared::text::TextStyle::Color(GameColors::UINearWhite));
 				iDisplayY += 12;
 			}
 		}
@@ -674,7 +664,6 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 		hb::net::PacketRequestAngel req{};
 		req.header.msg_id = dwMsgID;
 		req.header.msg_type = 0;
-		std::memset(req.name, 0, sizeof(req.name));
 		if (pString != nullptr) {
 			std::size_t name_len = std::strlen(pString);
 			if (name_len >= sizeof(req.name)) name_len = sizeof(req.name) - 1;
@@ -700,7 +689,6 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 		hb::net::PacketRequestHeldenianScroll req{};
 		req.header.msg_id = dwMsgID;
 		req.header.msg_type = 0;
-		std::memset(req.name, 0, sizeof(req.name));
 		if (pString != nullptr) {
 			std::size_t name_len = std::strlen(pString);
 			if (name_len >= sizeof(req.name)) name_len = sizeof(req.name) - 1;
@@ -716,7 +704,6 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 		hb::net::PacketRequestName20 req{};
 		req.header.msg_id = dwMsgID;
 		req.header.msg_type = 0;
-		std::memset(req.name, 0, sizeof(req.name));
 		std::memcpy(req.name, "William", sizeof(req.name));
 		iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), cKey);
 	}
@@ -727,7 +714,6 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 		hb::net::PacketRequestName20 req{};
 		req.header.msg_id = dwMsgID;
 		req.header.msg_type = 0;
-		std::memset(req.name, 0, sizeof(req.name));
 		std::memcpy(req.name, "Gail", sizeof(req.name));
 		iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), cKey);
 	}
@@ -789,7 +775,7 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 		std::memset(req.password, 0, sizeof(req.password));
 		std::memcpy(req.password, m_pPlayer->m_cAccountPassword, sizeof(req.password));
 		std::memset(req.world_name, 0, sizeof(req.world_name));
-		std::memcpy(req.world_name, m_cWorldServerName, sizeof(req.world_name));
+		std::memcpy(req.world_name, m_cWorldServerName.c_str(), sizeof(req.world_name));
 		iRet = m_pLSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), cKey);
 	}
 
@@ -808,7 +794,7 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 		std::memset(req.password, 0, sizeof(req.password));
 		std::memcpy(req.password, m_pPlayer->m_cAccountPassword, sizeof(req.password));
 		std::memset(req.world_name, 0, sizeof(req.world_name));
-		std::memcpy(req.world_name, m_cWorldServerName, sizeof(req.world_name));
+		std::memcpy(req.world_name, m_cWorldServerName.c_str(), sizeof(req.world_name));
 		req.gender = static_cast<uint8_t>(m_pPlayer->m_iGender);
 		req.skin = static_cast<uint8_t>(m_pPlayer->m_iSkinCol);
 		req.hairstyle = static_cast<uint8_t>(m_pPlayer->m_iHairStyle);
@@ -833,14 +819,14 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 		std::memset(req.character_name, 0, sizeof(req.character_name));
 		std::memcpy(req.character_name, m_pPlayer->m_cPlayerName, sizeof(req.character_name));
 		std::memset(req.map_name, 0, sizeof(req.map_name));
-		std::memcpy(req.map_name, m_cMapName, sizeof(req.map_name));
+		std::memcpy(req.map_name, m_cMapName.c_str(), sizeof(req.map_name));
 		std::memset(req.account_name, 0, sizeof(req.account_name));
 		std::memcpy(req.account_name, m_pPlayer->m_cAccountName, sizeof(req.account_name));
 		std::memset(req.password, 0, sizeof(req.password));
 		std::memcpy(req.password, m_pPlayer->m_cAccountPassword, sizeof(req.password));
 		req.level = m_pPlayer->m_iLevel;
 		std::memset(req.world_name, 0, sizeof(req.world_name));
-		std::memcpy(req.world_name, m_cWorldServerName, sizeof(req.world_name));
+		std::memcpy(req.world_name, m_cWorldServerName.c_str(), sizeof(req.world_name));
 		iRet = m_pLSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), cKey);
 	}
 	break;
@@ -852,13 +838,13 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 		req.header.msg_id = dwMsgID;
 		req.header.msg_type = static_cast<uint16_t>(m_wEnterGameType);
 		std::memset(req.character_name, 0, sizeof(req.character_name));
-		std::memcpy(req.character_name, m_pCharList[m_wEnterGameType - 1]->m_cName, sizeof(req.character_name));
+		std::memcpy(req.character_name, m_pCharList[m_wEnterGameType - 1]->m_cName.c_str(), sizeof(req.character_name));
 		std::memset(req.account_name, 0, sizeof(req.account_name));
 		std::memcpy(req.account_name, m_pPlayer->m_cAccountName, sizeof(req.account_name));
 		std::memset(req.password, 0, sizeof(req.password));
 		std::memcpy(req.password, m_pPlayer->m_cAccountPassword, sizeof(req.password));
 		std::memset(req.world_name, 0, sizeof(req.world_name));
-		std::memcpy(req.world_name, m_cWorldServerName, sizeof(req.world_name));
+		std::memcpy(req.world_name, m_cWorldServerName.c_str(), sizeof(req.world_name));
 		iRet = m_pLSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), cKey);
 	}
 	break;
@@ -900,7 +886,7 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 		std::memcpy(req.password, m_pPlayer->m_cAccountPassword, sizeof(req.password));
 		req.is_observer = static_cast<uint8_t>(m_bIsObserverMode);
 		std::memset(req.server, 0, sizeof(req.server));
-		std::memcpy(req.server, m_cGameServerName, sizeof(req.server));
+		std::memcpy(req.server, m_cGameServerName.c_str(), sizeof(req.server));
 		req.padding = 0;
 		req.itemConfigHash = LocalCacheManager::Get().GetHash(ConfigCacheType::Items);
 		req.magicConfigHash = LocalCacheManager::Get().GetHash(ConfigCacheType::Magic);
@@ -923,7 +909,7 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 		std::memcpy(req.password, m_pPlayer->m_cAccountPassword, sizeof(req.password));
 		req.is_observer = static_cast<uint8_t>(m_bIsObserverMode);
 		std::memset(req.server, 0, sizeof(req.server));
-		std::memcpy(req.server, m_cGameServerName, sizeof(req.server));
+		std::memcpy(req.server, m_cGameServerName.c_str(), sizeof(req.server));
 		req.padding = 0;
 		iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), cKey);
 	}
@@ -954,7 +940,6 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 			req.header.msg_type = 0;
 			req.x = m_pPlayer->m_sPlayerX;
 			req.y = m_pPlayer->m_sPlayerY;
-			std::memset(req.name, 0, sizeof(req.name));
 			std::memcpy(req.name, m_pPlayer->m_cPlayerName, sizeof(req.name));
 			req.chat_type = static_cast<uint8_t>(iV1);
 			if (bCheckLocalChatCommand(pString) == true) return false;
@@ -977,7 +962,6 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 			req.base.x = m_pPlayer->m_sPlayerX;
 			req.base.y = m_pPlayer->m_sPlayerY;
 			req.base.dir = static_cast<uint8_t>(cDir);
-			std::memset(req.name, 0, sizeof(req.name));
 			if (pString != 0) {
 				std::size_t name_len = std::strlen(pString);
 				if (name_len > sizeof(req.name)) name_len = sizeof(req.name);
@@ -1240,9 +1224,9 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 
 	case sock::Event::CriticalError:
 	{
-		char cDbg[160];
-		std::snprintf(cDbg, sizeof(cDbg), "[NETWARN] bSendCommand: CRITICAL ret=%d msgid=0x%X cmd=0x%X\n", iRet, dwMsgID, wCommand);
-		printf("%s", cDbg);
+		std::string cDbg;
+		cDbg = std::format("[NETWARN] bSendCommand: CRITICAL ret={} msgid=0x{:X} cmd=0x{:X}\n", iRet, dwMsgID, wCommand);
+		printf("%s", cDbg.c_str());
 	}
 	m_pGSock.reset();
 	hb::shared::render::Window::Close();
@@ -1377,9 +1361,7 @@ bool CGame::_bDecodeMagicConfigFileContents(char* pData, uint32_t dwMsgSize)
 
 		m_pMagicCfgList[magicId] = std::make_unique<CMagic>();
 		CMagic* pMagic = m_pMagicCfgList[magicId].get();
-
-		std::memset(pMagic->m_cName, 0, sizeof(pMagic->m_cName));
-		std::snprintf(pMagic->m_cName, sizeof(pMagic->m_cName), "%s", entry.name);
+		pMagic->m_cName = entry.name;
 		pMagic->m_sValue1 = entry.manaCost;
 		pMagic->m_sValue2 = entry.intLimit;
 		pMagic->m_sValue3 = (entry.goldCost >= 0) ? entry.goldCost : -entry.goldCost;
@@ -1445,9 +1427,7 @@ bool CGame::_bDecodeSkillConfigFileContents(char* pData, uint32_t dwMsgSize)
 
 		m_pSkillCfgList[skillId] = std::make_unique<CSkill>();
 		CSkill* pSkill = m_pSkillCfgList[skillId].get();
-
-		std::memset(pSkill->m_cName, 0, sizeof(pSkill->m_cName));
-		std::snprintf(pSkill->m_cName, sizeof(pSkill->m_cName), "%s", entry.name);
+		pSkill->m_cName = entry.name;
 		pSkill->m_bIsUseable = (entry.isUseable != 0);
 		pSkill->m_cUseMethod = entry.useMethod;
 		// Apply mastery level if already received from InitItemList
@@ -1502,15 +1482,13 @@ bool CGame::_bDecodeNpcConfigFileContents(char* pData, uint32_t dwMsgSize)
 		// Store by npc_id (primary key)
 		if (npcId >= 0 && npcId < hb::shared::limits::MaxNpcConfigs) {
 			m_npcConfigList[npcId].npcType = static_cast<short>(npcType);
-			std::memset(m_npcConfigList[npcId].name, 0, sizeof(m_npcConfigList[npcId].name));
-			std::snprintf(m_npcConfigList[npcId].name, sizeof(m_npcConfigList[npcId].name), "%s", entry.name);
+			m_npcConfigList[npcId].name = entry.name;
 			m_npcConfigList[npcId].valid = true;
 		}
 
 		// Update type->name reverse map (last config per type wins)
 		if (npcType >= 0 && npcType < 120) {
-			std::memset(m_cNpcNameByType[npcType], 0, hb::shared::limits::NpcNameLen);
-			std::snprintf(m_cNpcNameByType[npcType], hb::shared::limits::NpcNameLen, "%s", entry.name);
+			m_cNpcNameByType[npcType] = entry.name;
 		}
 	}
 
@@ -1531,8 +1509,8 @@ bool CGame::_bDecodeNpcConfigFileContents(char* pData, uint32_t dwMsgSize)
 
 const char* CGame::GetNpcConfigName(short sType) const
 {
-	if (sType >= 0 && sType < 120 && m_cNpcNameByType[sType][0] != '\0') {
-		return m_cNpcNameByType[sType];
+	if (sType >= 0 && sType < 120 && !m_cNpcNameByType[sType].empty()) {
+		return m_cNpcNameByType[sType].c_str();
 	}
 	return "Unknown";
 }
@@ -1540,7 +1518,7 @@ const char* CGame::GetNpcConfigName(short sType) const
 const char* CGame::GetNpcConfigNameById(short npcConfigId) const
 {
 	if (npcConfigId >= 0 && npcConfigId < hb::shared::limits::MaxNpcConfigs && m_npcConfigList[npcConfigId].valid) {
-		return m_npcConfigList[npcConfigId].name;
+		return m_npcConfigList[npcConfigId].name.c_str();
 	}
 	return "Unknown";
 }
@@ -1575,7 +1553,6 @@ void CGame::GameRecvMsgHandler(uint32_t dwMsgSize, char* pData)
 		for (auto& item : m_pItemConfigList) item.reset();
 		for (auto& magic : m_pMagicCfgList) magic.reset();
 		for (auto& skill : m_pSkillCfgList) skill.reset();
-		for (auto& npc : m_npcConfigList) { npc.valid = false; std::memset(npc.name, 0, sizeof(npc.name)); }
 
 		if (cachePkt->itemCacheValid) {
 			bool bReplayOk = LocalCacheManager::Get().ReplayFromCache(ConfigCacheType::Items,
@@ -1711,7 +1688,6 @@ void CGame::GameRecvMsgHandler(uint32_t dwMsgSize, char* pData)
 		if (reloadPkt->reloadNpcs) {
 			LocalCacheManager::Get().ResetAccumulator(ConfigCacheType::Npcs);
 			m_npcConfigList.fill({});
-			std::memset(m_cNpcNameByType, 0, sizeof(m_cNpcNameByType));
 			m_iNpcConfigsReceived = 0;
 		}
 
@@ -1861,7 +1837,7 @@ void CGame::ConnectionEstablishHandler(char cWhere)
 	case static_cast<int>(ServerType::Log):
 		switch (m_dwConnectMode) {
 		case MsgId::RequestLogin:
-			if (strlen(m_cWorldServerName) == 0) {
+			if (m_cWorldServerName.size() == 0) {
 				printf("[ERROR] Login failed - m_cWorldServerName is empty\n");
 			}
 			bSendCommand(MsgId::RequestLogin, 0, 0, 0, 0, 0, 0);
@@ -2170,8 +2146,6 @@ void CGame::ClearGuildNameList()
 	for (int i = 0; i < game_limits::max_guild_names; i++) {
 		m_stGuildName[i].dwRefTime = 0;
 		m_stGuildName[i].iGuildRank = -1;
-		std::memset(m_stGuildName[i].cCharName, 0, sizeof(m_stGuildName[i].cCharName));
-		std::memset(m_stGuildName[i].cGuildName, 0, sizeof(m_stGuildName[i].cGuildName));
 	}
 }
 
@@ -2234,8 +2208,6 @@ void CGame::InitGameSettings()
 	for (i = 0; i < game_limits::max_guild_names; i++) {
 		m_stGuildName[i].dwRefTime = 0;
 		m_stGuildName[i].iGuildRank = -1;
-		std::memset(m_stGuildName[i].cCharName, 0, sizeof(m_stGuildName[i].cCharName));
-		std::memset(m_stGuildName[i].cGuildName, 0, sizeof(m_stGuildName[i].cGuildName));
 	}
 	//Snoopy: 61
 	for (i = 0; i < 61; i++)
@@ -2257,14 +2229,11 @@ void CGame::InitGameSettings()
 
 	ChatManager::Get().ClearWhispers();
 
-	std::memset(m_cLocation, 0, sizeof(m_cLocation));
 
-	std::memset(m_pPlayer->m_cGuildName, 0, sizeof(m_pPlayer->m_cGuildName));
 	m_pPlayer->m_iGuildRank = -1;
 
 	for (i = 0; i < 100; i++) {
 		m_stGuildOpList[i].cOpMode = 0;
-		std::memset(m_stGuildOpList[i].cName, 0, sizeof(m_stGuildOpList[i].cName));
 	}
 
 
@@ -2309,7 +2278,6 @@ void CGame::InitGameSettings()
 
 	for (i = 0; i < hb::shared::limits::MaxPartyMembers; i++) {
 		m_stPartyMember[i].cStatus = 0;
-		std::memset(m_stPartyMember[i].cName, 0, sizeof(m_stPartyMember[i].cName));
 	}
 
 	m_pPlayer->m_iLU_Point = 0;
@@ -2319,7 +2287,6 @@ void CGame::InitGameSettings()
 	m_pPlayer->m_iSuperAttackLeft = 0;
 	m_pPlayer->m_bSuperAttackMode = false;
 	m_iFightzoneNumber = 0;
-	std::memset(m_cBGMmapName, 0, sizeof(m_cBGMmapName));
 	m_stQuest.sWho = 0;
 	m_stQuest.sQuestType = 0;
 	m_stQuest.sContribution = 0;
@@ -2330,7 +2297,6 @@ void CGame::InitGameSettings()
 	m_stQuest.sY = 0;
 	m_stQuest.sRange = 0;
 	m_stQuest.bIsQuestCompleted = false;
-	std::memset(m_stQuest.cTargetName, 0, sizeof(m_stQuest.cTargetName));
 	m_bIsObserverMode = false;
 	m_bIsObserverCommanded = false;
 	m_pPlayer->m_bIsPoisoned = false;
@@ -2352,19 +2318,15 @@ void CGame::InitGameSettings()
 		m_stCrusadeStructureInfo[i].sX = 0;
 		m_stCrusadeStructureInfo[i].sY = 0;
 	}
-	std::memset(m_cStatusMapName, 0, sizeof(m_cStatusMapName));
 	m_dwCommanderCommandRequestedTime = 0;
-	std::memset(m_cTopMsg, 0, sizeof(m_cTopMsg));
 	m_iTopMsgLastSec = 0;
 	m_dwTopMsgTime = 0;
 	m_pPlayer->m_iConstructionPoint = 0;
 	m_pPlayer->m_iWarContribution = 0;
 	TeleportManager::Get().Reset();
-	std::memset(m_cConstructMapName, 0, sizeof(m_cConstructMapName));
 	m_pPlayer->m_iConstructLocX = m_pPlayer->m_iConstructLocY = -1;
 
 	//Snoopy: Apocalypse Gate
-	std::memset(m_cGateMapName, 0, sizeof(m_cGateMapName));
 	m_iGatePositX = m_iGatePositY = -1;
 	m_iHeldenianAresdenLeftTower = -1;
 	m_iHeldenianElvineLeftTower = -1;
@@ -2373,7 +2335,6 @@ void CGame::InitGameSettings()
 	m_bIsXmas = false;
 	m_iTotalPartyMember = 0;
 	m_iPartyStatus = 0;
-	for (i = 0; i < hb::shared::limits::MaxPartyMembers; i++) std::memset(m_stPartyMemberNameList[i].cName, 0, sizeof(m_stPartyMemberNameList[i].cName));
 	m_iGizonItemUpgradeLeft = 0;
 	m_dialogBoxManager.EnableDialogBox(DialogBoxId::GuideMap, 0, 0, 0);
 }
@@ -2428,26 +2389,26 @@ void CGame::InitPlayerCharacteristics(char* pData)
 	m_pPlayer->m_iPKCount = pkt->pk_count;
 	m_pPlayer->m_iRewardGold = pkt->reward_gold;
 
-	memcpy(m_cLocation, pkt->location, sizeof(pkt->location));
-	if (memcmp(m_cLocation, "aresden", 7) == 0)
+	m_cLocation.assign(pkt->location, strnlen(pkt->location, sizeof(pkt->location)));
+	if (m_cLocation.starts_with("aresden"))
 	{
 		m_pPlayer->m_bAresden = true;
 		m_pPlayer->m_bCitizen = true;
 		m_pPlayer->m_bHunter = false;
 	}
-	else if (memcmp(m_cLocation, "arehunter", 9) == 0)
+	else if (m_cLocation.starts_with("arehunter"))
 	{
 		m_pPlayer->m_bAresden = true;
 		m_pPlayer->m_bCitizen = true;
 		m_pPlayer->m_bHunter = true;
 	}
-	else if (memcmp(m_cLocation, "elvine", 6) == 0)
+	else if (m_cLocation.starts_with("elvine"))
 	{
 		m_pPlayer->m_bAresden = false;
 		m_pPlayer->m_bCitizen = true;
 		m_pPlayer->m_bHunter = false;
 	}
-	else if (memcmp(m_cLocation, "elvhunter", 9) == 0)
+	else if (m_cLocation.starts_with("elvhunter"))
 	{
 		m_pPlayer->m_bAresden = false;
 		m_pPlayer->m_bCitizen = true;
@@ -2463,7 +2424,6 @@ void CGame::InitPlayerCharacteristics(char* pData)
 	memcpy(m_pPlayer->m_cGuildName, pkt->guild_name, sizeof(pkt->guild_name));
 
 	if (strcmp(m_pPlayer->m_cGuildName, "NONE") == 0)
-		std::memset(m_pPlayer->m_cGuildName, 0, sizeof(m_pPlayer->m_cGuildName));
 
 	CMisc::ReplaceString(m_pPlayer->m_cGuildName, '_', ' ');
 	m_pPlayer->m_iGuildRank = pkt->guild_rank;
@@ -2481,7 +2441,6 @@ void CGame::DisbandGuildResponseHandler(char* pData)
 	if (!header) return;
 	switch (header->msg_type) {
 	case MsgType::Confirm:
-		std::memset(m_pPlayer->m_cGuildName, 0, sizeof(m_pPlayer->m_cGuildName));
 		m_pPlayer->m_iGuildRank = -1;
 		m_dialogBoxManager.Info(DialogBoxId::GuildMenu).cMode = 7;
 		break;
@@ -2498,8 +2457,7 @@ void CGame::_PutGuildOperationList(char* pName, char cOpMode)
 		if (m_stGuildOpList[i].cOpMode == 0)
 		{
 			m_stGuildOpList[i].cOpMode = cOpMode;
-			std::memset(m_stGuildOpList[i].cName, 0, sizeof(m_stGuildOpList[i].cName));
-			memcpy(m_stGuildOpList[i].cName, pName, 20);
+			m_stGuildOpList[i].cName.assign(pName, strnlen(pName, 20));
 			return;
 		}
 }
@@ -2507,16 +2465,13 @@ void CGame::_PutGuildOperationList(char* pName, char cOpMode)
 void CGame::_ShiftGuildOperationList()
 {
 	int i;
-	std::memset(m_stGuildOpList[0].cName, 0, sizeof(m_stGuildOpList[0].cName));
 	m_stGuildOpList[0].cOpMode = 0;
 
 	for (i = 1; i < 100; i++)
 		if ((m_stGuildOpList[i - 1].cOpMode == 0) && (m_stGuildOpList[i].cOpMode != 0)) {
 			m_stGuildOpList[i - 1].cOpMode = m_stGuildOpList[i].cOpMode;
-			std::memset(m_stGuildOpList[i - 1].cName, 0, sizeof(m_stGuildOpList[i - 1].cName));
-			memcpy(m_stGuildOpList[i - 1].cName, m_stGuildOpList[i].cName, 20);
+			m_stGuildOpList[i - 1].cName = m_stGuildOpList[i].cName;
 
-			std::memset(m_stGuildOpList[i].cName, 0, sizeof(m_stGuildOpList[i].cName));
 			m_stGuildOpList[i].cOpMode = 0;
 		}
 }
@@ -2535,91 +2490,6 @@ void CGame::AddEventList(const char* pTxt, char cColor, bool bDupAllow)
 {
 	EventListManager::Get().AddEvent(pTxt, cColor, bDupAllow);
 }
-
-int _iAttackerHeight[] = { 0, 35, 35,35,35,35,35, 0,0,0,
-5,  // Slime
-35, // Skeleton
-40, // Stone-Golem
-45, // Cyclops
-35,// OrcMage
-35,// ShopKeeper
-5, // GiantAnt
-8, // Scorpion
-35,// Zombie
-35,// Gandalf
-35,// Howard
-35,// Guard
-10,// Amphis
-38,// Clay-Golem
-35,// Tom
-35,// William
-35,// Kennedy
-35,// Hellhound
-50,// Troll
-45,// Orge
-55,// Liche
-65,// Demon
-46,// Unicorn
-49,// WereWolf
-55,// Dummy
-35,// Energysphere
-75,// Arrow Guard Tower
-75,// Cannon Guard Tower
-50,// Mana Collector
-50,// Detector
-50,// Energy Shield Generator
-50,// Grand Magic Generator
-50,// ManaStone 42
-40,// Light War Beetle
-35,// GHK
-40,// GHKABS
-35,// TK
-60,// BG
-40,// Stalker
-70,// HellClaw
-85,// Tigerworm
-50,// Catapult
-85,// Gargoyle
-70,// Beholder
-40,// Dark-Elf
-20,// Bunny
-20,// Cat
-40,// Giant-Frog
-80,// Mountain-Giant
-85,// Ettin
-50,// Cannibal-Plant
-50, // Rudolph 61 //Snoopy....
-80, // Direboar 62
-90, // Frost 63
-40, // Crops 64
-80, // IceGolem 65
-190, // Wyvern 66
-35, // npc 67
-35, // npc 68
-35, // npc 69
-100, // Dragon 70
-90, // Centaur 71
-75, // ClawTurtle 72
-200, // FireWyvern 73
-80, // GiantCrayfish 74
-120, // Gi Lizard 75
-100, // Gi Tree 76
-100, // Master Orc 77
-80, // Minaus 78
-100, // Nizie 79
-25,  // Tentocle 80
-200, // Abaddon	 81
-60, // Sorceress 82
-60, // ATK 83
-70, // MasterElf 84
-60, // DSK 85
-50, // HBT 86
-60, // CT 87
-60, // Barbarian 88
-60, // AGC 89
-35, // ncp 90 Gail
-35  // Gate 91
-};
 
 bool CGame::bCheckImportantFile()
 {
@@ -2965,15 +2835,14 @@ void CGame::LogResponseHandler(char* pData)
 		for (i = 0; i < m_iTotalChar; i++) {
 			const auto& entry = entries[i];
 			m_pCharList[i] = std::make_unique<CCharInfo>();
-			memcpy(m_pCharList[i]->m_cName, entry.name, sizeof(entry.name));
+			m_pCharList[i]->m_cName.assign(entry.name, strnlen(entry.name, sizeof(entry.name)));
 			m_pCharList[i]->m_appearance = entry.appearance;
 			m_pCharList[i]->m_sSex = entry.sex;
 			m_pCharList[i]->m_sSkinCol = entry.skin;
 			m_pCharList[i]->m_sLevel = entry.level;
 			m_pCharList[i]->m_iExp = entry.exp;
 	
-			std::memset(m_pCharList[i]->m_cMapName, 0, sizeof(m_pCharList[i]->m_cMapName));
-			memcpy(m_pCharList[i]->m_cMapName, entry.map_name, sizeof(entry.map_name));
+			m_pCharList[i]->m_cMapName.assign(entry.map_name, strnlen(entry.map_name, sizeof(entry.map_name)));
 		}
 		std::memset(m_cMsg, 0, sizeof(m_cMsg));
 		std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "3A");
@@ -3008,15 +2877,14 @@ void CGame::LogResponseHandler(char* pData)
 		{
 			const auto& entry = entries[i];
 			m_pCharList[i] = std::make_unique<CCharInfo>();
-			memcpy(m_pCharList[i]->m_cName, entry.name, sizeof(entry.name));
+			m_pCharList[i]->m_cName.assign(entry.name, strnlen(entry.name, sizeof(entry.name)));
 			m_pCharList[i]->m_appearance = entry.appearance;
 			m_pCharList[i]->m_sSex = entry.sex;
 			m_pCharList[i]->m_sSkinCol = entry.skin;
 			m_pCharList[i]->m_sLevel = entry.level;
 			m_pCharList[i]->m_iExp = entry.exp;
 	
-			std::memset(m_pCharList[i]->m_cMapName, 0, sizeof(m_pCharList[i]->m_cMapName));
-			memcpy(m_pCharList[i]->m_cMapName, entry.map_name, sizeof(entry.map_name));
+			m_pCharList[i]->m_cMapName.assign(entry.map_name, strnlen(entry.map_name, sizeof(entry.map_name)));
 		}
 		ChangeGameMode(GameMode::SelectCharacter);
 	}
@@ -3107,7 +2975,6 @@ void CGame::LogResponseHandler(char* pData)
 		const auto* list = hb::net::PacketCast<hb::net::PacketLogNewCharacterCreatedHeader>(
 			pData, sizeof(hb::net::PacketLogNewCharacterCreatedHeader));
 		if (!list) return;
-		std::memset(cCharName, 0, sizeof(cCharName));
 		memcpy(cCharName, list->character_name, sizeof(list->character_name));
 
 		m_iTotalChar = list->total_chars;
@@ -3119,15 +2986,14 @@ void CGame::LogResponseHandler(char* pData)
 		for (i = 0; i < m_iTotalChar; i++) {
 			const auto& entry = entries[i];
 			m_pCharList[i] = std::make_unique<CCharInfo>();
-			memcpy(m_pCharList[i]->m_cName, entry.name, sizeof(entry.name));
+			m_pCharList[i]->m_cName.assign(entry.name, strnlen(entry.name, sizeof(entry.name)));
 			m_pCharList[i]->m_appearance = entry.appearance;
 			m_pCharList[i]->m_sSex = entry.sex;
 			m_pCharList[i]->m_sSkinCol = entry.skin;
 			m_pCharList[i]->m_sLevel = entry.level;
 			m_pCharList[i]->m_iExp = entry.exp;
 	
-			std::memset(m_pCharList[i]->m_cMapName, 0, sizeof(m_pCharList[i]->m_cMapName));
-			memcpy(m_pCharList[i]->m_cMapName, entry.map_name, sizeof(entry.map_name));
+			m_pCharList[i]->m_cMapName.assign(entry.map_name, strnlen(entry.map_name, sizeof(entry.map_name)));
 		}
 		std::memset(m_cMsg, 0, sizeof(m_cMsg));
 		std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "47");
@@ -3160,12 +3026,11 @@ void CGame::LogResponseHandler(char* pData)
 		char cGameServerAddr[16];
 		std::memset(cGameServerAddr, 0, sizeof(cGameServerAddr));
 		memcpy(cGameServerAddr, pkt->game_server_addr, sizeof(pkt->game_server_addr));
-		std::memset(m_cGameServerName, 0, sizeof(m_cGameServerName));
-		memcpy(m_cGameServerName, pkt->game_server_name, sizeof(pkt->game_server_name));
+		m_cGameServerName.assign(pkt->game_server_name, strnlen(pkt->game_server_name, sizeof(pkt->game_server_name)));
 		(void)iGameServerPort;
 
 		m_pGSock = std::make_unique<hb::shared::net::ASIOSocket>(m_pIOPool->GetContext(), game_limits::socket_block_limit);
-		m_pGSock->bConnect(m_cLogServerAddr, m_iGameServerPort);
+		m_pGSock->bConnect(m_cLogServerAddr.c_str(), m_iGameServerPort);
 		m_pGSock->bInitBufferSize(hb::shared::limits::MsgBufferSize);
 	}
 	break;
@@ -3388,16 +3253,17 @@ void CGame::ChatMsgHandler(char* pData)
 {
 	int iObjectID, iLoc;
 	short sX, sY;
-	char cMsgType, cName[21], cTemp[100], cMsg[100], cTxt1[100], cTxt2[100];
+	std::string cTxt2;
+
+	char cMsgType, cName[21], cTemp[100], cMsg[100], cTxt1[100];
 	uint32_t dwTime;
 	bool bFlag;
 
-	char cHeadMsg[200];
+	std::string cHeadMsg;
 
 	dwTime = m_dwCurTime;
 
 	std::memset(cTxt1, 0, sizeof(cTxt1));
-	std::memset(cTxt2, 0, sizeof(cTxt2));
 	std::memset(cMsg, 0, sizeof(cMsg));
 
 	const auto* pkt = hb::net::PacketCast<hb::net::PacketCommandChatMsgHeader>(
@@ -3485,12 +3351,11 @@ void CGame::ChatMsgHandler(char* pData)
 	int iChatSlot = m_floatingText.AddChatText(cp, dwTime, iObjectID, m_pMapData.get(), sX, sY);
 	if (iChatSlot != 0 || cMsgType == 20) {
 			if ((cMsgType != 0) && (m_dialogBoxManager.IsEnabled(DialogBoxId::ChatHistory) != true)) {
-				std::memset(cHeadMsg, 0, sizeof(cHeadMsg));
-				std::snprintf(cHeadMsg, sizeof(cHeadMsg), "%s:%s", cName, cp);
+				cHeadMsg = std::format("{}:{}", cName, cp);
 				if (cMsgType == 10) {
-					EventListManager::Get().AddEventTop(cHeadMsg, cMsgType);
+					EventListManager::Get().AddEventTop(cHeadMsg.c_str(), cMsgType);
 				} else {
-					AddEventList(cHeadMsg, cMsgType);
+					AddEventList(cHeadMsg.c_str(), cMsgType);
 				}
 			}
 			return;
@@ -3842,6 +3707,7 @@ void CGame::DrawDialogBoxs(short msX, short msY, short msZ, char cLB)
 	}
 	if (m_pPlayer->m_iSuperAttackLeft > 0)
 	{
+		std::string G_cTxt;
 		int resx = (LOGICAL_WIDTH() - 640) / 2;
 		int resy = LOGICAL_HEIGHT() - 480;
 		// Combat icon position (same as HudPanel's COMBAT_ICON_X/Y)
@@ -3860,11 +3726,11 @@ void CGame::DrawDialogBoxs(short msX, short msY, short msZ, char cLB)
 			m_pSprite[InterfaceNdIconPanel]->Draw(iconX, iconY, 3, hb::shared::sprite::DrawParams::Additive(0.7f));
 
 		// Draw super attack count text at bottom-right of combat button area
-		std::snprintf(G_cTxt, sizeof(G_cTxt), "%d", m_pPlayer->m_iSuperAttackLeft);
+		G_cTxt = std::format("{}", m_pPlayer->m_iSuperAttackLeft);
 		if (bMastered)
-			hb::shared::text::DrawTextAligned(GameFont::Bitmap1, btnX, btnY, btnW, btnH, G_cTxt, hb::shared::text::TextStyle::WithIntegratedShadow(hb::shared::render::Color(255, 255, 255)), hb::shared::text::Align::BottomRight);
+			hb::shared::text::DrawTextAligned(GameFont::Bitmap1, btnX, btnY, btnW, btnH, G_cTxt.c_str(), hb::shared::text::TextStyle::WithIntegratedShadow(hb::shared::render::Color(255, 255, 255)), hb::shared::text::Align::BottomRight);
 		else
-			hb::shared::text::DrawTextAligned(GameFont::Bitmap1, btnX, btnY, btnW, btnH, G_cTxt, hb::shared::text::TextStyle::WithHighlight(GameColors::BmpBtnActive), hb::shared::text::Align::BottomRight);
+			hb::shared::text::DrawTextAligned(GameFont::Bitmap1, btnX, btnY, btnW, btnH, G_cTxt.c_str(), hb::shared::text::TextStyle::WithHighlight(GameColors::BmpBtnActive), hb::shared::text::Align::BottomRight);
 	}
 }
 
@@ -3999,12 +3865,11 @@ void CGame::AddMapStatusInfo(const char* pData, bool bIsLastData)
 	short sIndex;
 	int i;
 
-	std::memset(m_cStatusMapName, 0, sizeof(m_cStatusMapName));
 
 	const auto* header = hb::net::PacketCast<hb::net::PacketNotifyMapStatusHeader>(
 		pData, sizeof(hb::net::PacketNotifyMapStatusHeader));
 	if (!header) return;
-	memcpy(m_cStatusMapName, header->map_name, sizeof(header->map_name));
+	m_cStatusMapName.assign(header->map_name, strnlen(header->map_name, sizeof(header->map_name)));
 	sIndex = header->index;
 	cTotal = header->total;
 
@@ -4084,8 +3949,7 @@ void CGame::DrawObjectFOE(int ix, int iy, int iFrame)
 
 void CGame::SetTopMsg(const char* pString, unsigned char iLastSec)
 {
-	std::memset(m_cTopMsg, 0, sizeof(m_cTopMsg));
-	std::snprintf(m_cTopMsg, sizeof(m_cTopMsg), "%s", pString);
+	m_cTopMsg = pString;
 
 	m_iTopMsgLastSec = iLastSec;
 	m_dwTopMsgTime = GameClock::GetTimeMS();
@@ -4093,27 +3957,27 @@ void CGame::SetTopMsg(const char* pString, unsigned char iLastSec)
 
 void CGame::DrawTopMsg()
 {
-	if (strlen(m_cTopMsg) == 0) return;
+	if (m_cTopMsg.size() == 0) return;
 	m_Renderer->DrawRectFilled(0, 0, LOGICAL_MAX_X(), 30, hb::shared::render::Color::Black(128));
 
 	if ((((GameClock::GetTimeMS() - m_dwTopMsgTime) / 250) % 2) == 0)
-		hb::shared::text::DrawTextAligned(GameFont::Default, 0, 10, LOGICAL_MAX_X(), 15, m_cTopMsg, hb::shared::text::TextStyle::Color(GameColors::UITopMsgYellow), hb::shared::text::Align::TopCenter);
+		hb::shared::text::DrawTextAligned(GameFont::Default, 0, 10, LOGICAL_MAX_X(), 15, m_cTopMsg.c_str(), hb::shared::text::TextStyle::Color(GameColors::UITopMsgYellow), hb::shared::text::Align::TopCenter);
 
 	if (GameClock::GetTimeMS() > (m_iTopMsgLastSec * 1000 + m_dwTopMsgTime)) {
-		std::memset(m_cTopMsg, 0, sizeof(m_cTopMsg));
 	}
 }
 
 void CGame::CannotConstruct(int iCode)
 {
+	std::string G_cTxt;
 	switch (iCode) {
 	case 1: //
 		SetTopMsg(m_pGameMsgList[18]->m_pMsg, 5);
 		break;
 
 	case 2: //
-		std::snprintf(G_cTxt, sizeof(G_cTxt), "%s XY(%d, %d)", m_pGameMsgList[19]->m_pMsg, m_pPlayer->m_iConstructLocX, m_pPlayer->m_iConstructLocY);
-		SetTopMsg(G_cTxt, 5);
+		G_cTxt = std::format("{} XY({}, {})", m_pGameMsgList[19]->m_pMsg, m_pPlayer->m_iConstructLocX, m_pPlayer->m_iConstructLocY);
+		SetTopMsg(G_cTxt.c_str(), 5);
 		break;
 
 	case 3: //
@@ -4126,36 +3990,21 @@ void CGame::CannotConstruct(int iCode)
 	}
 }
 
-void CGame::FormatCommaNumber(uint32_t value, char* buffer, size_t bufSize)
+std::string CGame::FormatCommaNumber(uint32_t value)
 {
-	if (buffer == nullptr || bufSize == 0) return;
-
-	char numStr[20];
-	std::snprintf(numStr, sizeof(numStr), "%lu", static_cast<unsigned long>(value));
-
+	auto numStr = std::format("{}", value);
 #ifdef DEF_COMMA_GOLD
-	int srcLen = static_cast<int>(strlen(numStr));
-	int destIdx = 0;
-	int digitCount = 0;
-
-	// Build result backwards with commas every 3 digits
-	for (int i = srcLen - 1; i >= 0 && destIdx < static_cast<int>(bufSize) - 1; i--) {
-		if (digitCount > 0 && digitCount % 3 == 0 && destIdx < static_cast<int>(bufSize) - 1) {
-			buffer[destIdx++] = ',';
-		}
-		buffer[destIdx++] = numStr[i];
-		digitCount++;
+	std::string result;
+	int len = static_cast<int>(numStr.length());
+	for (int i = 0; i < len; i++)
+	{
+		if (i > 0 && (len - i) % 3 == 0)
+			result += ',';
+		result += numStr[i];
 	}
-	buffer[destIdx] = '\0';
-
-	// Reverse the string
-	for (int i = 0, j = destIdx - 1; i < j; i++, j--) {
-		char tmp = buffer[i];
-		buffer[i] = buffer[j];
-		buffer[j] = tmp;
-	}
+	return result;
 #else
-	std::snprintf(buffer, bufSize, "%s", numStr);
+	return numStr;
 #endif
 }
 
@@ -4367,27 +4216,26 @@ void CGame::CivilRightAdmissionHandler(char* pData)
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketResponseCivilRight>(
 			pData, sizeof(hb::net::PacketResponseCivilRight));
 		if (!pkt) return;
-		std::memset(m_cLocation, 0, sizeof(m_cLocation));
-		memcpy(m_cLocation, pkt->location, 10);
-		if (memcmp(m_cLocation, "aresden", 7) == 0)
+		m_cLocation.assign(pkt->location, strnlen(pkt->location, 10));
+		if (m_cLocation.starts_with("aresden"))
 		{
 			m_pPlayer->m_bAresden = true;
 			m_pPlayer->m_bCitizen = true;
 			m_pPlayer->m_bHunter = false;
 		}
-		else if (memcmp(m_cLocation, "arehunter", 9) == 0)
+		else if (m_cLocation.starts_with("arehunter"))
 		{
 			m_pPlayer->m_bAresden = true;
 			m_pPlayer->m_bCitizen = true;
 			m_pPlayer->m_bHunter = true;
 		}
-		else if (memcmp(m_cLocation, "elvine", 6) == 0)
+		else if (m_cLocation.starts_with("elvine"))
 		{
 			m_pPlayer->m_bAresden = false;
 			m_pPlayer->m_bCitizen = true;
 			m_pPlayer->m_bHunter = false;
 		}
-		else if (memcmp(m_cLocation, "elvhunter", 9) == 0)
+		else if (m_cLocation.starts_with("elvhunter"))
 		{
 			m_pPlayer->m_bAresden = false;
 			m_pPlayer->m_bCitizen = true;
@@ -4493,14 +4341,13 @@ uint32_t CGame::iGetLevelExp(int iLevel)
 	return hb::shared::calc::CalculateLevelExp(iLevel);
 }
 
-bool CGame::bCheckExID(char* pName)
+bool CGame::bCheckExID(const char* pName)
 {
 	if (m_pExID == 0) return false;
 	if (memcmp(m_pPlayer->m_cPlayerName, pName, 10) == 0) return false;
-	char cTxt[12];
-	std::memset(cTxt, 0, sizeof(cTxt));
-	memcpy(cTxt, m_pExID->m_pMsg, strlen(m_pExID->m_pMsg));
-	if (memcmp(cTxt, pName, 10) == 0) return true;
+	std::string cTxt;
+	cTxt = m_pExID->m_pMsg;
+	if (memcmp(cTxt.c_str(), pName, 10) == 0) return true;
 	else return false;
 }
 
@@ -4719,8 +4566,9 @@ void CGame::_SetIlusionEffect(int iOwnerH)
 
 	m_iIlusionOwnerH = iOwnerH;
 
-	std::memset(m_cName_IE, 0, sizeof(m_cName_IE));
-	m_pMapData->GetOwnerStatusByObjectID(iOwnerH, &m_cIlusionOwnerType, &cDir, &m_pPlayer->m_illusionAppearance, &m_pPlayer->m_illusionStatus, m_cName_IE);
+	char nameBuf_IE[12]{};
+	m_pMapData->GetOwnerStatusByObjectID(iOwnerH, &m_cIlusionOwnerType, &cDir, &m_pPlayer->m_illusionAppearance, &m_pPlayer->m_illusionStatus, nameBuf_IE);
+	m_cName_IE = nameBuf_IE;
 }
 
 void CGame::ResponsePanningHandler(char* pData)
@@ -4759,7 +4607,7 @@ void CGame::ResponsePanningHandler(char* pData)
 void CGame::CreateScreenShot()
 {
 	char longMapName[128] = {};
-	GetOfficialMapName(m_cMapName, longMapName);
+	GetOfficialMapName(m_cMapName.c_str(), longMapName);
 
 	auto now = std::chrono::system_clock::now();
 	auto time = std::chrono::system_clock::to_time_t(now);
@@ -5026,7 +4874,9 @@ void CGame::ReserveFightzoneResponseHandler(char* pData)
 
 void CGame::RetrieveItemHandler(char* pData)
 {
-	char cBankItemIndex, cItemIndex, cTxt[120];
+	std::string cTxt;
+
+	char cBankItemIndex, cItemIndex;
 	int j;
 	const auto* header = hb::net::PacketCast<hb::net::PacketHeader>(
 		pData, sizeof(hb::net::PacketHeader));
@@ -5041,12 +4891,10 @@ void CGame::RetrieveItemHandler(char* pData)
 
 		if (m_pBankList[cBankItemIndex] != 0) {
 			// v1.42
-			char cStr1[64], cStr2[64], cStr3[64];
-			ItemNameFormatter::Get().Format(m_pBankList[cBankItemIndex].get(), cStr1, cStr2, cStr3);
+			auto itemInfo = ItemNameFormatter::Get().Format(m_pBankList[cBankItemIndex].get());
 
-			std::memset(cTxt, 0, sizeof(cTxt));
-			std::snprintf(cTxt, sizeof(cTxt), RETIEVE_ITEM_HANDLER4, cStr1);//""You took out %s."
-			AddEventList(cTxt, 10);
+			cTxt = std::format(RETIEVE_ITEM_HANDLER4, itemInfo.name.c_str());//""You took out %s."
+			AddEventList(cTxt.c_str(), 10);
 
 			CItem* pCfgBank = GetItemConfig(m_pBankList[cBankItemIndex]->m_sIDnum);
 			if (pCfgBank && ((pCfgBank->GetItemType() == ItemType::Consume) ||
@@ -5107,9 +4955,7 @@ void CGame::RetrieveItemHandler(char* pData)
 
 void CGame::DrawNpcName(short sX, short sY, short sOwnerType, const hb::shared::entity::PlayerStatus& status, short npcConfigId)
 {
-	char cTxt[32], cTxt2[64];
-	std::memset(cTxt, 0, sizeof(cTxt));
-	std::memset(cTxt2, 0, sizeof(cTxt2));
+	std::string cTxt, cTxt2;
 
 	// Name lookup: prefer config_id (direct), fall back to type-based lookup
 	auto npcName = [&]() -> const char* {
@@ -5126,28 +4972,27 @@ void CGame::DrawNpcName(short sX, short sY, short sOwnerType, const hb::shared::
 		};
 		int sub = m_entityState.m_appearance.iSubType;
 		if (sub >= 1 && sub <= 14)
-			std::snprintf(cTxt, sizeof(cTxt), "%s", cropNames[sub]);
+			cTxt = cropNames[sub];
 		else
-			std::snprintf(cTxt, sizeof(cTxt), "%s", npcName());
+			cTxt = npcName();
 	}
 	// Crusade structure kit suffix
 	else if ((sOwnerType == hb::shared::owner::ArrowGuardTower || sOwnerType == hb::shared::owner::CannonGuardTower ||
 			  sOwnerType == hb::shared::owner::ManaCollector || sOwnerType == hb::shared::owner::Detector) &&
 			 m_entityState.m_appearance.HasNpcSpecialState()) {
-		std::snprintf(cTxt, sizeof(cTxt), "%s Kit", npcName());
+		cTxt = std::format("{} Kit", npcName());
 	}
 	else {
-		std::snprintf(cTxt, sizeof(cTxt), "%s", npcName());
+		cTxt = npcName();
 	}
-	if (status.bBerserk) std::snprintf(cTxt + strlen(cTxt), sizeof(cTxt) - strlen(cTxt), "%s", DRAW_OBJECT_NAME50);//" Berserk"
-	if (status.bFrozen) std::snprintf(cTxt + strlen(cTxt), sizeof(cTxt) - strlen(cTxt), "%s", DRAW_OBJECT_NAME51);//" Frozen"
-	hb::shared::text::DrawText(GameFont::Default, sX, sY, cTxt, hb::shared::text::TextStyle::WithShadow(GameColors::UIWhite));
-	if (m_bIsObserverMode == true) hb::shared::text::DrawText(GameFont::Default, sX, sY + 14, cTxt, hb::shared::text::TextStyle::WithShadow(GameColors::NeutralNamePlate));
+	if (status.bBerserk) cTxt += DRAW_OBJECT_NAME50;//" Berserk"
+	if (status.bFrozen) cTxt += DRAW_OBJECT_NAME51;//" Frozen"
+	hb::shared::text::DrawText(GameFont::Default, sX, sY, cTxt.c_str(), hb::shared::text::TextStyle::WithShadow(GameColors::UIWhite));
+	if (m_bIsObserverMode == true) hb::shared::text::DrawText(GameFont::Default, sX, sY + 14, cTxt.c_str(), hb::shared::text::TextStyle::WithShadow(GameColors::NeutralNamePlate));
 	else if (m_pPlayer->m_bIsConfusion || (m_iIlusionOwnerH != 0))
 	{
-		std::memset(cTxt, 0, sizeof(cTxt));
-		std::snprintf(cTxt, sizeof(cTxt), "%s", DRAW_OBJECT_NAME87);//"(Unknown)"
-		hb::shared::text::DrawText(GameFont::Default, sX, sY + 14, cTxt, hb::shared::text::TextStyle::WithShadow(GameColors::UIDisabled)); // v2.171
+		cTxt = DRAW_OBJECT_NAME87;//"(Unknown)"
+		hb::shared::text::DrawText(GameFont::Default, sX, sY + 14, cTxt.c_str(), hb::shared::text::TextStyle::WithShadow(GameColors::UIDisabled)); // v2.171
 	}
 	else
 	{
@@ -5160,16 +5005,16 @@ void CGame::DrawNpcName(short sX, short sY, short sOwnerType, const hb::shared::
 	}
 	switch (status.iAngelPercent) {
 	case 0: break;
-	case 1: std::snprintf(cTxt2, sizeof(cTxt2), "%s", DRAW_OBJECT_NAME52); break;//"Clairvoyant"
-	case 2: std::snprintf(cTxt2, sizeof(cTxt2), "%s", DRAW_OBJECT_NAME53); break;//"Destruction of Magic Protection"
-	case 3: std::snprintf(cTxt2, sizeof(cTxt2), "%s", DRAW_OBJECT_NAME54); break;//"Anti-Physical Damage"
-	case 4: std::snprintf(cTxt2, sizeof(cTxt2), "%s", DRAW_OBJECT_NAME55); break;//"Anti-Magic Damage"
-	case 5: std::snprintf(cTxt2, sizeof(cTxt2), "%s", DRAW_OBJECT_NAME56); break;//"Poisonous"
-	case 6: std::snprintf(cTxt2, sizeof(cTxt2), "%s", DRAW_OBJECT_NAME57); break;//"Critical Poisonous"
-	case 7: std::snprintf(cTxt2, sizeof(cTxt2), "%s", DRAW_OBJECT_NAME58); break;//"Explosive"
-	case 8: std::snprintf(cTxt2, sizeof(cTxt2), "%s", DRAW_OBJECT_NAME59); break;//"Critical Explosive"
+	case 1: cTxt2 = DRAW_OBJECT_NAME52; break;//"Clairvoyant"
+	case 2: cTxt2 = DRAW_OBJECT_NAME53; break;//"Destruction of Magic Protection"
+	case 3: cTxt2 = DRAW_OBJECT_NAME54; break;//"Anti-Physical Damage"
+	case 4: cTxt2 = DRAW_OBJECT_NAME55; break;//"Anti-Magic Damage"
+	case 5: cTxt2 = DRAW_OBJECT_NAME56; break;//"Poisonous"
+	case 6: cTxt2 = DRAW_OBJECT_NAME57; break;//"Critical Poisonous"
+	case 7: cTxt2 = DRAW_OBJECT_NAME58; break;//"Explosive"
+	case 8: cTxt2 = DRAW_OBJECT_NAME59; break;//"Critical Explosive"
 	}
-	hb::shared::text::DrawText(GameFont::Default, sX, sY + 28, cTxt2, hb::shared::text::TextStyle::WithShadow(GameColors::MonsterStatusEffect));
+	hb::shared::text::DrawText(GameFont::Default, sX, sY + 28, cTxt2.c_str(), hb::shared::text::TextStyle::WithShadow(GameColors::MonsterStatusEffect));
 
 	// centu: no muestra la barra de hp de algunos npc
 	switch (sOwnerType) {
@@ -5213,9 +5058,10 @@ void CGame::DrawNpcName(short sX, short sY, short sOwnerType, const hb::shared::
 	}
 }
 
-void CGame::DrawObjectName(short sX, short sY, char* pName, const hb::shared::entity::PlayerStatus& status, uint16_t wObjectID)
+void CGame::DrawObjectName(short sX, short sY, const char* pName, const hb::shared::entity::PlayerStatus& status, uint16_t wObjectID)
 {
-	char cTxt[64], cTxt2[64];
+	std::string G_cTxt;
+	std::string cTxt, cTxt2;
 	uint8_t sR, sG, sB;
 	int i, iGuildIndex, iAddY = 0;
 	bool bPK, bCitizen, bAresden, bHunter;
@@ -5232,53 +5078,50 @@ void CGame::DrawObjectName(short sX, short sY, char* pName, const hb::shared::en
 	{
 		sR = 50; sG = 50; sB = 255;
 	}
-	std::memset(cTxt, 0, sizeof(cTxt));
-	std::memset(cTxt2, 0, sizeof(cTxt2));
 
 	if (m_iIlusionOwnerH == 0)
 	{
-		if (m_bIsCrusadeMode == false) std::snprintf(cTxt, sizeof(cTxt), "%s", pName);
+		if (m_bIsCrusadeMode == false) cTxt = pName;
 		else
 		{
-			if (!hb::shared::object_id::IsPlayerID(m_entityState.m_wObjectID)) std::snprintf(cTxt, sizeof(cTxt), "%s", GetNpcConfigName(hb::shared::owner::Barbarian));
+			if (!hb::shared::object_id::IsPlayerID(m_entityState.m_wObjectID)) cTxt = GetNpcConfigName(hb::shared::owner::Barbarian);
 			else
 			{
-				if (relationship == EntityRelationship::Enemy) std::snprintf(cTxt, sizeof(cTxt), "%d", m_entityState.m_wObjectID);
-				else std::snprintf(cTxt, sizeof(cTxt), "%s", pName);
+				if (relationship == EntityRelationship::Enemy) cTxt = std::format("{}", m_entityState.m_wObjectID);
+				else cTxt = pName;
 			}
 		}
 		if (m_iPartyStatus != 0)
 		{
 			for (i = 0; i < hb::shared::limits::MaxPartyMembers; i++)
 			{
-				if (strcmp(m_stPartyMemberNameList[i].cName, pName) == 0)
+				if (m_stPartyMemberNameList[i].cName == pName)
 				{
-					std::snprintf(cTxt + strlen(cTxt), sizeof(cTxt) - strlen(cTxt), "%s", BGET_NPC_NAME23); // ", Party Member"
+					cTxt += BGET_NPC_NAME23; // ", Party Member"
 					break;
 				}
 			}
 		}
 	}
-	else std::snprintf(cTxt, sizeof(cTxt), "%s", "?????");
+	else cTxt = "?????";
 
-	if (status.bBerserk) std::snprintf(cTxt + strlen(cTxt), sizeof(cTxt) - strlen(cTxt), "%s", DRAW_OBJECT_NAME50);//" Berserk"
-	if (status.bFrozen) std::snprintf(cTxt + strlen(cTxt), sizeof(cTxt) - strlen(cTxt), "%s", DRAW_OBJECT_NAME51);//" Frozen"
+	if (status.bBerserk) cTxt += DRAW_OBJECT_NAME50;//" Berserk"
+	if (status.bFrozen) cTxt += DRAW_OBJECT_NAME51;//" Frozen"
 
-	hb::shared::text::DrawText(GameFont::Default, sX, sY, cTxt, hb::shared::text::TextStyle::WithShadow(GameColors::UIWhite));
-	std::memset(cTxt, 0, sizeof(cTxt));
+	hb::shared::text::DrawText(GameFont::Default, sX, sY, cTxt.c_str(), hb::shared::text::TextStyle::WithShadow(GameColors::UIWhite));
 
 	if (wObjectID == m_pPlayer->m_sPlayerObjectID)
 	{
 		if (m_pPlayer->m_iGuildRank == 0)
 		{
-			std::snprintf(G_cTxt, sizeof(G_cTxt), DEF_MSG_GUILDMASTER, m_pPlayer->m_cGuildName);//" Guildmaster)"
-			hb::shared::text::DrawText(GameFont::Default, sX, sY + 14, G_cTxt, hb::shared::text::TextStyle::WithShadow(GameColors::InfoGrayLight));
+			G_cTxt = std::format(DEF_MSG_GUILDMASTER, m_pPlayer->m_cGuildName);//" Guildmaster)"
+			hb::shared::text::DrawText(GameFont::Default, sX, sY + 14, G_cTxt.c_str(), hb::shared::text::TextStyle::WithShadow(GameColors::InfoGrayLight));
 			iAddY = 14;
 		}
 		if (m_pPlayer->m_iGuildRank > 0)
 		{
-			std::snprintf(G_cTxt, sizeof(G_cTxt), DEF_MSG_GUILDSMAN, m_pPlayer->m_cGuildName);//" Guildsman)"
-			hb::shared::text::DrawText(GameFont::Default, sX, sY + 14, G_cTxt, hb::shared::text::TextStyle::WithShadow(GameColors::InfoGrayLight));
+			G_cTxt = std::format(DEF_MSG_GUILDSMAN, m_pPlayer->m_cGuildName);//" Guildsman)"
+			hb::shared::text::DrawText(GameFont::Default, sX, sY + 14, G_cTxt.c_str(), hb::shared::text::TextStyle::WithShadow(GameColors::InfoGrayLight));
 			iAddY = 14;
 		}
 		if (m_pPlayer->m_iPKCount != 0)
@@ -5305,21 +5148,21 @@ void CGame::DrawObjectName(short sX, short sY, char* pName, const hb::shared::en
 		{
 			if (FindGuildName(pName, &iGuildIndex) == true)
 			{
-				if (m_stGuildName[iGuildIndex].cGuildName[0] != 0)
+				if (!m_stGuildName[iGuildIndex].cGuildName.empty())
 				{
-					if (strcmp(m_stGuildName[iGuildIndex].cGuildName, "NONE") != 0)
+					if (m_stGuildName[iGuildIndex].cGuildName != "NONE")
 					{
 						if (m_stGuildName[iGuildIndex].iGuildRank == 0)
 						{
-							std::snprintf(G_cTxt, sizeof(G_cTxt), DEF_MSG_GUILDMASTER, m_stGuildName[iGuildIndex].cGuildName);//
-							hb::shared::text::DrawText(GameFont::Default, sX, sY + 14, G_cTxt, hb::shared::text::TextStyle::WithShadow(GameColors::InfoGrayLight));
+							G_cTxt = std::format(DEF_MSG_GUILDMASTER, m_stGuildName[iGuildIndex].cGuildName);//
+							hb::shared::text::DrawText(GameFont::Default, sX, sY + 14, G_cTxt.c_str(), hb::shared::text::TextStyle::WithShadow(GameColors::InfoGrayLight));
 							m_stGuildName[iGuildIndex].dwRefTime = m_dwCurTime;
 							iAddY = 14;
 						}
 						else if (m_stGuildName[iGuildIndex].iGuildRank > 0)
 						{
-							std::snprintf(G_cTxt, sizeof(G_cTxt), DEF_MSG_GUILDSMAN, m_stGuildName[iGuildIndex].cGuildName);//"
-							hb::shared::text::DrawText(GameFont::Default, sX, sY + 14, G_cTxt, hb::shared::text::TextStyle::WithShadow(GameColors::InfoGrayLight));
+							G_cTxt = std::format(DEF_MSG_GUILDSMAN, m_stGuildName[iGuildIndex].cGuildName);//"
+							hb::shared::text::DrawText(GameFont::Default, sX, sY + 14, G_cTxt.c_str(), hb::shared::text::TextStyle::WithShadow(GameColors::InfoGrayLight));
 							m_stGuildName[iGuildIndex].dwRefTime = m_dwCurTime;
 							iAddY = 14;
 						}
@@ -5334,39 +5177,39 @@ void CGame::DrawObjectName(short sX, short sY, char* pName, const hb::shared::en
 		}
 	}
 
-	if (bCitizen == false)	std::snprintf(cTxt, sizeof(cTxt), "%s", DRAW_OBJECT_NAME60);// "Traveller"
+	if (bCitizen == false)	cTxt = DRAW_OBJECT_NAME60;// "Traveller"
 	else
 	{
 		if (bAresden)
 		{
-			if (bHunter == true) std::snprintf(cTxt, sizeof(cTxt), "%s", DEF_MSG_ARECIVIL); // "Aresden Civilian"
-			else std::snprintf(cTxt, sizeof(cTxt), "%s", DEF_MSG_ARESOLDIER); // "Aresden Combatant"
+			if (bHunter == true) cTxt = DEF_MSG_ARECIVIL; // "Aresden Civilian"
+			else cTxt = DEF_MSG_ARESOLDIER; // "Aresden Combatant"
 		}
 		else
 		{
-			if (bHunter == true) std::snprintf(cTxt, sizeof(cTxt), "%s", DEF_MSG_ELVCIVIL);// "Elvine Civilian"
-			else std::snprintf(cTxt, sizeof(cTxt), "%s", DEF_MSG_ELVSOLDIER);	// "Elvine Combatant"
+			if (bHunter == true) cTxt = DEF_MSG_ELVCIVIL;// "Elvine Civilian"
+			else cTxt = DEF_MSG_ELVSOLDIER;	// "Elvine Combatant"
 		}
 	}
 	if (bPK == true)
 	{
-		if (bCitizen == false) std::snprintf(cTxt, sizeof(cTxt), "%s", DEF_MSG_PK);	//"Criminal"
+		if (bCitizen == false) cTxt = DEF_MSG_PK;	//"Criminal"
 		else
 		{
-			if (bAresden) std::snprintf(cTxt, sizeof(cTxt), "%s", DEF_MSG_AREPK);// "Aresden Criminal"
-			else std::snprintf(cTxt, sizeof(cTxt), "%s", DEF_MSG_ELVPK);  // "Elvine Criminal"
+			if (bAresden) cTxt = DEF_MSG_AREPK;// "Aresden Criminal"
+			else cTxt = DEF_MSG_ELVPK;  // "Elvine Criminal"
 		}
 	}
-	hb::shared::text::DrawText(GameFont::Default, sX, sY + 14 + iAddY, cTxt, hb::shared::text::TextStyle::WithShadow(hb::shared::render::Color(sR, sG, sB)));
+	hb::shared::text::DrawText(GameFont::Default, sX, sY + 14 + iAddY, cTxt.c_str(), hb::shared::text::TextStyle::WithShadow(hb::shared::render::Color(sR, sG, sB)));
 }
 
-bool CGame::FindGuildName(char* pName, int* ipIndex)
+bool CGame::FindGuildName(const char* pName, int* ipIndex)
 {
 	int i, iRet = 0;
 	uint32_t dwTmpTime;
 	for (i = 0; i < game_limits::max_guild_names; i++)
 	{
-		if (memcmp(m_stGuildName[i].cCharName, pName, 10) == 0)
+		if (memcmp(m_stGuildName[i].cCharName.c_str(), pName, 10) == 0)
 		{
 			m_stGuildName[i].dwRefTime = m_dwCurTime;
 			*ipIndex = i;
@@ -5382,8 +5225,7 @@ bool CGame::FindGuildName(char* pName, int* ipIndex)
 			dwTmpTime = m_stGuildName[i].dwRefTime;
 		}
 	}
-	std::memset(m_stGuildName[iRet].cGuildName, 0, sizeof(m_stGuildName[iRet].cGuildName));
-	memcpy(m_stGuildName[iRet].cCharName, pName, 10);
+	m_stGuildName[iRet].cCharName.assign(pName, strnlen(pName, 10));
 	m_stGuildName[iRet].dwRefTime = m_dwCurTime;
 	m_stGuildName[iRet].iGuildRank = -1;
 	*ipIndex = iRet;
@@ -5392,11 +5234,12 @@ bool CGame::FindGuildName(char* pName, int* ipIndex)
 
 void CGame::DrawVersion()
 {
-	std::snprintf(G_cTxt, sizeof(G_cTxt), "Ver: %s", hb::version::GetDisplayString());
-	hb::shared::text::DrawText(GameFont::Default, 12 , (LOGICAL_HEIGHT() - 12 - 14) , G_cTxt, hb::shared::text::TextStyle::WithShadow(GameColors::UIDisabled));
+	std::string G_cTxt;
+	G_cTxt = std::format("Ver: {}", hb::version::GetDisplayString());
+	hb::shared::text::DrawText(GameFont::Default, 12 , (LOGICAL_HEIGHT() - 12 - 14) , G_cTxt.c_str(), hb::shared::text::TextStyle::WithShadow(GameColors::UIDisabled));
 }
 
-char CGame::GetOfficialMapName(char* pMapName, char* pName)
+char CGame::GetOfficialMapName(const char* pMapName, char* pName)
 {	// MapIndex
 	if (strcmp(pMapName, "middleland") == 0)
 	{
@@ -5791,7 +5634,9 @@ void CGame::ClearSkillUsingStatus()
 
 void CGame::NpcTalkHandler(char* pData)
 {
-	char cRewardName[hb::shared::limits::ItemNameLen], cTargetName[21], cTemp[21], cTxt[250];
+	std::string cTxt;
+
+	char cRewardName[hb::shared::limits::ItemNameLen], cTargetName[21], cTemp[21];
 	short sType, sResponse;
 	int iAmount, iIndex, iContribution, iX, iY, iRange;
 	int iTargetType, iTargetCount, iQuestionType;
@@ -5812,7 +5657,6 @@ void CGame::NpcTalkHandler(char* pData)
 
 	std::memset(cRewardName, 0, sizeof(cRewardName));
 	memcpy(cRewardName, pkt->reward_name, hb::shared::limits::ItemNameLen - 1);
-	std::memset(cTargetName, 0, sizeof(cTargetName));
 	memcpy(cTargetName, pkt->target_name, 20);
 
 	m_dialogBoxManager.EnableDialogBox(DialogBoxId::NpcTalk, sResponse, sType, 0);
@@ -5827,113 +5671,98 @@ void CGame::NpcTalkHandler(char* pData)
 		case 1: //Monster Hunt
 			std::memset(cTemp, 0, sizeof(cTemp));
 			std::snprintf(cTemp, hb::shared::limits::NpcNameLen, "%s", GetNpcConfigName(iTargetType));
-			std::memset(cTxt, 0, sizeof(cTxt));
-			std::snprintf(cTxt, sizeof(cTxt), NPC_TALK_HANDLER16, iTargetCount, cTemp);
-			m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, cTxt, 0);
+			cTxt = std::format(NPC_TALK_HANDLER16, iTargetCount, cTemp);
+			m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, cTxt.c_str(), 0);
 			iIndex++;
 
-			std::memset(cTxt, 0, sizeof(cTxt));
 			if (memcmp(cTargetName, "NONE", 4) == 0) {
-				std::snprintf(cTxt, sizeof(cTxt), "%s", NPC_TALK_HANDLER17);//"
-				m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, cTxt, 0);
+				cTxt = NPC_TALK_HANDLER17;//"
+				m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, cTxt.c_str(), 0);
 				iIndex++;
 			}
 			else {
 				std::memset(cTemp, 0, sizeof(cTemp));
 				GetOfficialMapName(cTargetName, cTemp);
-				std::snprintf(cTxt, sizeof(cTxt), NPC_TALK_HANDLER18, cTemp);//"Map : %s"
-				m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, cTxt, 0);
+				cTxt = std::format(NPC_TALK_HANDLER18, cTemp);//"Map : %s"
+				m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, cTxt.c_str(), 0);
 				iIndex++;
 
 				if (iX != 0) {
-					std::memset(cTxt, 0, sizeof(cTxt));
-					std::snprintf(cTxt, sizeof(cTxt), NPC_TALK_HANDLER19, iX, iY, iRange);//"Position: %d,%d within %d blocks"
-					m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, cTxt, 0);
+					cTxt = std::format(NPC_TALK_HANDLER19, iX, iY, iRange);//"Position: %d,%d within %d blocks"
+					m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, cTxt.c_str(), 0);
 					iIndex++;
 				}
 
-				std::memset(cTxt, 0, sizeof(cTxt));
-				std::snprintf(cTxt, sizeof(cTxt), NPC_TALK_HANDLER20, iContribution);//"
-				m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, cTxt, 0);
+				cTxt = std::format(NPC_TALK_HANDLER20, iContribution);//"
+				m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, cTxt.c_str(), 0);
 				iIndex++;
 			}
 			iQuestionType = 1;
 			break;
 
 		case 7: //
-			std::memset(cTxt, 0, sizeof(cTxt));
 			m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, NPC_TALK_HANDLER21, 0);
 			iIndex++;
 
-			std::memset(cTxt, 0, sizeof(cTxt));
 			if (memcmp(cTargetName, "NONE", 4) == 0) {
-				std::snprintf(cTxt, sizeof(cTxt), "%s", NPC_TALK_HANDLER22);
-				m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, cTxt, 0);
+				cTxt = NPC_TALK_HANDLER22;
+				m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, cTxt.c_str(), 0);
 				iIndex++;
 			}
 			else {
 				std::memset(cTemp, 0, sizeof(cTemp));
 				GetOfficialMapName(cTargetName, cTemp);
-				std::snprintf(cTxt, sizeof(cTxt), NPC_TALK_HANDLER23, cTemp);
-				m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, cTxt, 0);
+				cTxt = std::format(NPC_TALK_HANDLER23, cTemp);
+				m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, cTxt.c_str(), 0);
 				iIndex++;
 
 				if (iX != 0) {
-					std::memset(cTxt, 0, sizeof(cTxt));
-					std::snprintf(cTxt, sizeof(cTxt), NPC_TALK_HANDLER24, iX, iY, iRange);
-					m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, cTxt, 0);
+					cTxt = std::format(NPC_TALK_HANDLER24, iX, iY, iRange);
+					m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, cTxt.c_str(), 0);
 					iIndex++;
 				}
 
-				std::memset(cTxt, 0, sizeof(cTxt));
-				std::snprintf(cTxt, sizeof(cTxt), NPC_TALK_HANDLER25, iContribution);
-				m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, cTxt, 0);
+				cTxt = std::format(NPC_TALK_HANDLER25, iContribution);
+				m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, cTxt.c_str(), 0);
 				iIndex++;
 			}
 			iQuestionType = 1;
 			break;
 
 		case hb::shared::owner::Slime: // Crusade
-			std::memset(cTxt, 0, sizeof(cTxt));
 			m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, NPC_TALK_HANDLER26, 0);
 			iIndex++;
 
-			std::memset(cTxt, 0, sizeof(cTxt));
-			std::snprintf(cTxt, sizeof(cTxt), "%s", NPC_TALK_HANDLER27);//"
-			m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, cTxt, 0);
+			cTxt = NPC_TALK_HANDLER27;//"
+			m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, cTxt.c_str(), 0);
 			iIndex++;
 
-			std::memset(cTxt, 0, sizeof(cTxt));
-			std::snprintf(cTxt, sizeof(cTxt), "%s", NPC_TALK_HANDLER28);//"
-			m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, cTxt, 0);
+			cTxt = NPC_TALK_HANDLER28;//"
+			m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, cTxt.c_str(), 0);
 			iIndex++;
 
-			std::memset(cTxt, 0, sizeof(cTxt));
-			std::snprintf(cTxt, sizeof(cTxt), "%s", NPC_TALK_HANDLER29);//"
-			m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, cTxt, 0);
+			cTxt = NPC_TALK_HANDLER29;//"
+			m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, cTxt.c_str(), 0);
 			iIndex++;
 
-			std::memset(cTxt, 0, sizeof(cTxt));
-			std::snprintf(cTxt, sizeof(cTxt), "%s", NPC_TALK_HANDLER30);//"
-			m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, cTxt, 0);
+			cTxt = NPC_TALK_HANDLER30;//"
+			m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, cTxt.c_str(), 0);
 			iIndex++;
 
-			std::memset(cTxt, 0, sizeof(cTxt));
-			std::snprintf(cTxt, sizeof(cTxt), "%s", " ");
-			m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, cTxt, 0);
+			cTxt = " ";
+			m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, cTxt.c_str(), 0);
 			iIndex++;
 
-			std::memset(cTxt, 0, sizeof(cTxt));
 			if (memcmp(cTargetName, "NONE", 4) == 0) {
-				std::snprintf(cTxt, sizeof(cTxt), "%s", NPC_TALK_HANDLER31);//"
-				m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, cTxt, 0);
+				cTxt = NPC_TALK_HANDLER31;//"
+				m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, cTxt.c_str(), 0);
 				iIndex++;
 			}
 			else {
 				std::memset(cTemp, 0, sizeof(cTemp));
 				GetOfficialMapName(cTargetName, cTemp);
-				std::snprintf(cTxt, sizeof(cTxt), NPC_TALK_HANDLER32, cTemp);//"
-				m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, cTxt, 0);
+				cTxt = std::format(NPC_TALK_HANDLER32, cTemp);//"
+				m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, cTxt.c_str(), 0);
 				iIndex++;
 			}
 			iQuestionType = 2;
@@ -5991,7 +5820,7 @@ void CGame::PointCommandHandler(int indexX, int indexY, char cItemID)
 	}
 	else if (m_iPointCommandType == 200) // Normal Hand
 	{
-		if ((strlen(m_cMCName) == 0) || (strcmp(m_cMCName, m_pPlayer->m_cPlayerName) == 0) || (m_cMCName[0] == '_'))
+		if ((m_cMCName.size() == 0) || (m_cMCName == m_pPlayer->m_cPlayerName) || (m_cMCName[0] == '_'))
 		{
 			m_dialogBoxManager.Info(DialogBoxId::Party).cMode = 0;
 			PlayGameSound('E', 14, 5);
@@ -6002,8 +5831,8 @@ void CGame::PointCommandHandler(int indexX, int indexY, char cItemID)
 			m_dialogBoxManager.Info(DialogBoxId::Party).cMode = 3;
 			PlayGameSound('E', 14, 5);
 			std::memset(m_dialogBoxManager.Info(DialogBoxId::Party).cStr, 0, sizeof(m_dialogBoxManager.Info(DialogBoxId::Party).cStr));
-			std::snprintf(m_dialogBoxManager.Info(DialogBoxId::Party).cStr, sizeof(m_dialogBoxManager.Info(DialogBoxId::Party).cStr), "%s", m_cMCName);
-			bSendCommand(MsgId::CommandCommon, CommonType::RequestJoinParty, 0, 1, 0, 0, m_cMCName);
+			std::snprintf(m_dialogBoxManager.Info(DialogBoxId::Party).cStr, sizeof(m_dialogBoxManager.Info(DialogBoxId::Party).cStr), "%s", m_cMCName.c_str());
+			bSendCommand(MsgId::CommandCommon, CommonType::RequestJoinParty, 0, 1, 0, 0, m_cMCName.c_str());
 			return;
 		}
 	}
@@ -6019,43 +5848,43 @@ void CGame::StartBGM()
 	{
 		trackName = "Carol";
 	}
-	else if (memcmp(m_cCurLocation, "aresden", 7) == 0)
+	else if (m_cCurLocation.starts_with("aresden"))
 	{
 		trackName = "aresden";
 	}
-	else if (memcmp(m_cCurLocation, "elvine", 6) == 0)
+	else if (m_cCurLocation.starts_with("elvine"))
 	{
 		trackName = "elvine";
 	}
-	else if (memcmp(m_cCurLocation, "dglv", 4) == 0)
+	else if (m_cCurLocation.starts_with("dglv"))
 	{
 		trackName = "dungeon";
 	}
-	else if (memcmp(m_cCurLocation, "middled1", 8) == 0)
+	else if (m_cCurLocation.starts_with("middled1"))
 	{
 		trackName = "dungeon";
 	}
-	else if (memcmp(m_cCurLocation, "middleland", 10) == 0)
+	else if (m_cCurLocation.starts_with("middleland"))
 	{
 		trackName = "middleland";
 	}
-	else if (memcmp(m_cCurLocation, "druncncity", 10) == 0)
+	else if (m_cCurLocation.starts_with("druncncity"))
 	{
 		trackName = "druncncity";
 	}
-	else if (memcmp(m_cCurLocation, "inferniaA", 9) == 0)
+	else if (m_cCurLocation.starts_with("inferniaA"))
 	{
 		trackName = "middleland";
 	}
-	else if (memcmp(m_cCurLocation, "inferniaB", 9) == 0)
+	else if (m_cCurLocation.starts_with("inferniaB"))
 	{
 		trackName = "middleland";
 	}
-	else if (memcmp(m_cCurLocation, "maze", 4) == 0)
+	else if (m_cCurLocation.starts_with("maze"))
 	{
 		trackName = "dungeon";
 	}
-	else if (memcmp(m_cCurLocation, "abaddon", 7) == 0)
+	else if (m_cCurLocation.starts_with("abaddon"))
 	{
 		trackName = "abaddon";
 	}
@@ -6126,10 +5955,11 @@ void CGame::MotionResponseHandler(char* pData)
 
 		if (m_pPlayer->m_iHP != iPreHP)
 		{
+			std::string G_cTxt;
 			if (m_pPlayer->m_iHP < iPreHP)
 			{
-				std::snprintf(G_cTxt, sizeof(G_cTxt), NOTIFYMSG_HP_DOWN, iPreHP - m_pPlayer->m_iHP);
-				AddEventList(G_cTxt, 10);
+				G_cTxt = std::format(NOTIFYMSG_HP_DOWN, iPreHP - m_pPlayer->m_iHP);
+				AddEventList(G_cTxt.c_str(), 10);
 				m_dwDamagedTime = GameClock::GetTimeMS();
 				if ((m_cLogOutCount > 0) && (m_bForceDisconn == false))
 				{
@@ -6139,8 +5969,8 @@ void CGame::MotionResponseHandler(char* pData)
 			}
 			else
 			{
-				std::snprintf(G_cTxt, sizeof(G_cTxt), NOTIFYMSG_HP_UP, m_pPlayer->m_iHP - iPreHP);
-				AddEventList(G_cTxt, 10);
+				G_cTxt = std::format(NOTIFYMSG_HP_UP, m_pPlayer->m_iHP - iPreHP);
+				AddEventList(G_cTxt.c_str(), 10);
 			}
 		}
 		m_pMapData->ShiftMapData(cDir);
@@ -6261,10 +6091,11 @@ void CGame::CommandProcessor(short msX, short msY, short indexX, short indexY, c
 					{
 						if (m_cRestartCount == -1)
 						{
+							std::string G_cTxt;
 							m_cRestartCount = 5;
 							m_dwRestartCountTime = GameClock::GetTimeMS();
-							std::snprintf(G_cTxt, sizeof(G_cTxt), DLGBOX_CLICK_SYSMENU1, m_cRestartCount); // "Restarting game....%d"
-							AddEventList(G_cTxt, 10);
+							G_cTxt = std::format(DLGBOX_CLICK_SYSMENU1, m_cRestartCount); // "Restarting game....%d"
+							AddEventList(G_cTxt.c_str(), 10);
 							PlayGameSound('E', 14, 5);
 
 						}
@@ -6450,7 +6281,7 @@ void CGame::CommandProcessor(short msX, short msY, short indexX, short indexY, c
 			if (cLB != 0)
 			{
 				// Click on self while moving = pickup (interrupt movement)
-				if (memcmp(m_cMCName, m_pPlayer->m_cPlayerName, 10) == 0)
+				if (memcmp(m_cMCName.c_str(), m_pPlayer->m_cPlayerName, 10) == 0)
 				{
 					if ((m_pPlayer->m_sPlayerType >= 1) && (m_pPlayer->m_sPlayerType <= 6))
 					{
@@ -6465,7 +6296,7 @@ void CGame::CommandProcessor(short msX, short msY, short indexX, short indexY, c
 			else if (cRB != 0)
 			{
 				// Right click on self while moving = pickup (interrupt movement)
-				if (memcmp(m_cMCName, m_pPlayer->m_cPlayerName, 10) == 0)
+				if (memcmp(m_cMCName.c_str(), m_pPlayer->m_cPlayerName, 10) == 0)
 				{
 					if ((m_pPlayer->m_sPlayerType >= 1) && (m_pPlayer->m_sPlayerType <= 6))
 					{
@@ -6570,8 +6401,8 @@ bool CGame::ProcessLeftClick(short msX, short msY, short indexX, short indexY, u
 
 		m_pMapData->bGetOwner(m_sMCX, m_sMCY - 1, cName, &sObjectType, &iObjectStatus, &m_wCommObjectID); // v1.4
 		//m_pMapData->m_pData[dX][dY].m_sItemSprite
-		if (memcmp(m_cMCName, m_pPlayer->m_cPlayerName, 10) == 0 && (sObjectType <= 6 || (m_pMapData->m_pData[m_pPlayer->m_sPlayerX - m_pMapData->m_sPivotX][m_pPlayer->m_sPlayerY - m_pMapData->m_sPivotY].m_sItemID != 0 && m_pItemConfigList[m_pMapData->m_pData[m_pPlayer->m_sPlayerX - m_pMapData->m_sPivotX][m_pPlayer->m_sPlayerY - m_pMapData->m_sPivotY].m_sItemID]->m_sSprite != 0)))
-		{//if (memcmp(m_cMCName, m_pPlayer->m_cPlayerName, 10) == 0 && ( sObjectType <= 6 || m_pMapData->m_pData[15][15].m_sItemSprite != 0 )) {
+		if (memcmp(m_cMCName.c_str(), m_pPlayer->m_cPlayerName, 10) == 0 && (sObjectType <= 6 || (m_pMapData->m_pData[m_pPlayer->m_sPlayerX - m_pMapData->m_sPivotX][m_pPlayer->m_sPlayerY - m_pMapData->m_sPivotY].m_sItemID != 0 && m_pItemConfigList[m_pMapData->m_pData[m_pPlayer->m_sPlayerX - m_pMapData->m_sPivotX][m_pPlayer->m_sPlayerY - m_pMapData->m_sPivotY].m_sItemID]->m_sSprite != 0)))
+		{//if (memcmp(m_cMCName.c_str(), m_pPlayer->m_cPlayerName, 10) == 0 && ( sObjectType <= 6 || m_pMapData->m_pData[15][15].m_sItemSprite != 0 )) {
 		 //if (memcmp(m_cMCName, m_pPlayer->m_cPlayerName, 10) == 0 && sObjectType <= 6){
 			if ((m_pPlayer->m_sPlayerType >= 1) && (m_pPlayer->m_sPlayerType <= 6)/* && (!m_pPlayer->m_playerAppearance.bIsWalking)*/)
 			{
@@ -6581,7 +6412,7 @@ bool CGame::ProcessLeftClick(short msX, short msY, short indexX, short indexY, u
 		}
 		else
 		{
-			if (memcmp(m_cMCName, m_pPlayer->m_cPlayerName, 10) == 0) m_sMCY -= 1;
+			if (memcmp(m_cMCName.c_str(), m_pPlayer->m_cPlayerName, 10) == 0) m_sMCY -= 1;
 			if ((m_sMCX != 0) && (m_sMCY != 0)) // m_sMCX, m_sMCY
 			{
 				if (hb::shared::input::IsCtrlDown() == true)
@@ -7202,7 +7033,7 @@ bool CGame::ProcessRightClick(short msX, short msY, short indexX, short indexY, 
 
 		// Right click on self = pickup (Quick Actions feature)
 		if (ConfigManager::Get().IsQuickActionsEnabled() &&
-			memcmp(m_cMCName, m_pPlayer->m_cPlayerName, 10) == 0 &&
+			memcmp(m_cMCName.c_str(), m_pPlayer->m_cPlayerName, 10) == 0 &&
 			(m_pPlayer->m_sPlayerType >= 1) && (m_pPlayer->m_sPlayerType <= 6))
 		{
 			m_pPlayer->m_Controller.SetCommand(Type::GetItem);
@@ -7450,7 +7281,7 @@ void CGame::ProcessMotionCommands(uint16_t wType)
 	short sDstOwnerType;
 	hb::shared::entity::PlayerStatus iDstOwnerStatus;
 	bool bGORet;
-	char cTxt[120];
+	std::string cTxt;
 
 
 	if (m_pPlayer->m_Controller.GetCommand() != Type::Stop)
@@ -7747,9 +7578,8 @@ void CGame::ProcessMotionCommands(uint16_t wType)
 			m_pPlayer->m_Controller.SetCommand(Type::Stop);
 			m_floatingText.RemoveByObjectID(m_pPlayer->m_sPlayerObjectID);
 			{
-				std::memset(cTxt, 0, sizeof(cTxt));
-				std::snprintf(cTxt, sizeof(cTxt), "%s!", m_pMagicCfgList[m_iCastingMagicType]->m_cName);
-				m_floatingText.AddNotifyText(NotifyTextType::MagicCastName, cTxt, GameClock::GetTimeMS(),
+				cTxt = std::format("{}!", m_pMagicCfgList[m_iCastingMagicType]->m_cName);
+				m_floatingText.AddNotifyText(NotifyTextType::MagicCastName, cTxt.c_str(), GameClock::GetTimeMS(),
 					m_pPlayer->m_sPlayerObjectID, m_pMapData.get());
 			}
 			return;
@@ -7775,12 +7605,13 @@ void CGame::InitDataResponseHandler(char* pData)
 	int i;
 	short sX, sY;
 	const char* cp;
-	char cMapFileName[32], cTxt[120], cPreCurLocation[12];
+	std::string cTxt, cPreCurLocation;
+
+	char cMapFileName[32];
 	bool  bIsObserverMode;
 	HANDLE hFile;
 	uint32_t dwFileSize;
 
-	std::memset(cPreCurLocation, 0, sizeof(cPreCurLocation));
 	m_pPlayer->m_bParalyze = false;
 	m_pMapData->Init();
 
@@ -7822,8 +7653,6 @@ void CGame::InitDataResponseHandler(char* pData)
 	{
 		m_stGuildName[i].dwRefTime = 0;
 		m_stGuildName[i].iGuildRank = -1;
-		std::memset(m_stGuildName[i].cCharName, 0, sizeof(m_stGuildName[i].cCharName));
-		std::memset(m_stGuildName[i].cGuildName, 0, sizeof(m_stGuildName[i].cGuildName));
 	}
 
 	m_floatingText.ClearAll();
@@ -7850,10 +7679,10 @@ void CGame::InitDataResponseHandler(char* pData)
 
 	// GM mode detection
 	m_pPlayer->m_bIsGMMode = m_pPlayer->m_playerStatus.bGMMode;
-	std::memset(m_cMapName, 0, sizeof(m_cMapName));
-	std::memset(m_cMapMessage, 0, sizeof(m_cMapMessage));
-	memcpy(m_cMapName, pkt->map_name, sizeof(pkt->map_name));
-	m_cMapIndex = GetOfficialMapName(m_cMapName, m_cMapMessage);
+	m_cMapName.assign(pkt->map_name, strnlen(pkt->map_name, sizeof(pkt->map_name)));
+	char mapMsgBuf[32]{};
+	m_cMapIndex = GetOfficialMapName(m_cMapName.c_str(), mapMsgBuf);
+	m_cMapMessage = mapMsgBuf;
 	if (m_cMapIndex < 0)
 	{
 		m_dialogBoxManager.Info(DialogBoxId::GuideMap).sSizeX = -1;
@@ -7865,14 +7694,13 @@ void CGame::InitDataResponseHandler(char* pData)
 		m_dialogBoxManager.Info(DialogBoxId::GuideMap).sSizeY = 128;
 	}
 
-	std::snprintf(cPreCurLocation, sizeof(cPreCurLocation), "%s", m_cCurLocation);
-	std::memset(m_cCurLocation, 0, sizeof(m_cCurLocation));
-	memcpy(m_cCurLocation, pkt->cur_location, sizeof(pkt->cur_location));
+	cPreCurLocation = m_cCurLocation;
+	m_cCurLocation.assign(pkt->cur_location, strnlen(pkt->cur_location, sizeof(pkt->cur_location)));
 
-	G_cSpriteAlphaDegree = static_cast<char>(pkt->sprite_alpha);
+	WeatherManager::Get().SetAmbientLight(static_cast<char>(pkt->sprite_alpha));
 
 	WeatherManager::Get().SetWeatherStatus(static_cast<char>(pkt->weather_status));
-	switch (G_cSpriteAlphaDegree) { //Snoopy:  Xmas bulbs
+	switch (WeatherManager::Get().GetAmbientLight()) { // Xmas bulbs
 		// Will be sent by server if DayTime is 3 (and a snowy weather)
 	case 1:	m_bIsXmas = false; break;
 	case 2: m_bIsXmas = false; break;
@@ -7880,13 +7708,11 @@ void CGame::InitDataResponseHandler(char* pData)
 		if (WeatherManager::Get().GetWeatherStatus() > 3) m_bIsXmas = true;
 		else m_bIsXmas = false;
 		WeatherManager::Get().SetXmas(m_bIsXmas);
-		G_cSpriteAlphaDegree = 2;
+		WeatherManager::Get().SetAmbientLight(2);
 		break;
 	}
 	m_pPlayer->m_iContribution = pkt->contribution;
-	//	m_iContributionPrice = 0;
 	bIsObserverMode = pkt->observer_mode != 0;
-	//	m_iRating = pkt->rating;
 	m_pPlayer->m_iHP = pkt->hp;
 	m_cDiscount = static_cast<char>(pkt->discount);
 
@@ -7906,13 +7732,13 @@ void CGame::InitDataResponseHandler(char* pData)
 	std::memset(cMapFileName, 0, sizeof(cMapFileName));
 	std::snprintf(cMapFileName + strlen(cMapFileName), sizeof(cMapFileName) - strlen(cMapFileName), "%s", "mapdata\\");
 	// CLEROTH - MW MAPS
-	if (memcmp(m_cMapName, "defaultmw", 9) == 0)
+	if (m_cMapName.starts_with("defaultmw"))
 	{
 		std::snprintf(cMapFileName + strlen(cMapFileName), sizeof(cMapFileName) - strlen(cMapFileName), "%s", "mw\\defaultmw");
 	}
 	else
 	{
-		std::snprintf(cMapFileName + strlen(cMapFileName), sizeof(cMapFileName) - strlen(cMapFileName), "%s", m_cMapName);
+		std::snprintf(cMapFileName + strlen(cMapFileName), sizeof(cMapFileName) - strlen(cMapFileName), "%s", m_cMapName.c_str());
 	}
 
 	std::snprintf(cMapFileName + strlen(cMapFileName), sizeof(cMapFileName) - strlen(cMapFileName), "%s", ".amd");
@@ -7939,15 +7765,15 @@ void CGame::InitDataResponseHandler(char* pData)
 	m_Camera.SnapTo((m_pPlayer->m_sPlayerX - VIEW_CENTER_TILE_X()) * 32 - 16, (m_pPlayer->m_sPlayerY - VIEW_CENTER_TILE_Y()) * 32 - 16);
 	_ReadMapData(sX + hb::shared::view::MapDataBufferX, sY + hb::shared::view::MapDataBufferY, cp);
 	// ------------------------------------------------------------------------+
-	std::snprintf(cTxt, sizeof(cTxt), INITDATA_RESPONSE_HANDLER1, m_cMapMessage);
-	AddEventList(cTxt, 10);
+	cTxt = std::format(INITDATA_RESPONSE_HANDLER1, m_cMapMessage);
+	AddEventList(cTxt.c_str(), 10);
 
 	m_dialogBoxManager.Info(DialogBoxId::WarningBattleArea).sX = 150;
 	m_dialogBoxManager.Info(DialogBoxId::WarningBattleArea).sY = 130;
 
-	if ((memcmp(m_cCurLocation, "middleland", 10) == 0)
-		|| (memcmp(m_cCurLocation, "dglv2", 5) == 0)
-		|| (memcmp(m_cCurLocation, "middled1n", 9) == 0))
+	if ((m_cCurLocation.starts_with("middleland"))
+		|| (m_cCurLocation.starts_with("dglv2"))
+		|| (m_cCurLocation.starts_with("middled1n")))
 		m_dialogBoxManager.EnableDialogBox(DialogBoxId::WarningBattleArea, 0, 0, 0);
 
 	m_bIsServerChanging = false;
@@ -7992,7 +7818,7 @@ void CGame::MotionEventHandler(char* pData)
 	int iLoc;
 	hb::shared::entity::PlayerAppearance playerAppearance;
 	bool bPrevCombatMode = false;
-	char    cTxt[120];
+	std::string cTxt;
 	std::memset(cName, 0, sizeof(cName));
 	sX = -1;
 	sY = -1;
@@ -8136,9 +7962,8 @@ void CGame::MotionEventHandler(char* pData)
 	case Type::Magic: // Casting
 		m_floatingText.RemoveByObjectID(hb::shared::object_id::ToRealID(wObjectID));
 		{
-			std::memset(cTxt, 0, sizeof(cTxt));
-			std::snprintf(cTxt, sizeof(cTxt), "%s!", m_pMagicCfgList[sV1]->m_cName);
-			m_floatingText.AddNotifyText(NotifyTextType::MagicCastName, cTxt, m_dwCurTime,
+			cTxt = std::format("{}!", m_pMagicCfgList[sV1]->m_cName);
+			m_floatingText.AddNotifyText(NotifyTextType::MagicCastName, cTxt.c_str(), m_dwCurTime,
 				hb::shared::object_id::ToRealID(wObjectID), m_pMapData.get());
 		}
 		break;
@@ -8176,9 +8001,8 @@ void CGame::MotionEventHandler(char* pData)
 		{
 			if (m_pMagicCfgList[sV3] != 0)
 			{
-				std::memset(cTxt, 0, sizeof(cTxt));
-				std::snprintf(cTxt, sizeof(cTxt), "%s", m_pMagicCfgList[sV3]->m_cName);
-				AddEventList(cTxt, 10);
+				cTxt = m_pMagicCfgList[sV3]->m_cName;
+				AddEventList(cTxt.c_str(), 10);
 			}
 		}
 		break;
@@ -8423,6 +8247,7 @@ void CGame::GrandMagicResult(const char* pMapName, int iV1, int iV2, int iV3, in
 // num : 1 - F2, 2 - F3
 void CGame::UseShortCut(int num)
 {
+	std::string G_cTxt;
 	int index;
 	if (num < 4) index = num;
 	else index = num + 7;
@@ -8432,10 +8257,10 @@ void CGame::UseShortCut(int num)
 		if (m_sRecentShortCut == -1)
 		{
 			AddEventList(MSG_SHORTCUT1, 10);
-			std::snprintf(G_cTxt, sizeof(G_cTxt), MSG_SHORTCUT2, index);// [F%d]
-			AddEventList(G_cTxt, 10);
-			std::snprintf(G_cTxt, sizeof(G_cTxt), MSG_SHORTCUT3, index);// [Control]-[F%d]
-			AddEventList(G_cTxt, 10);
+			G_cTxt = std::format(MSG_SHORTCUT2, index);// [F%d]
+			AddEventList(G_cTxt.c_str(), 10);
+			G_cTxt = std::format(MSG_SHORTCUT3, index);// [Control]-[F%d]
+			AddEventList(G_cTxt.c_str(), 10);
 		}
 		else
 		{
@@ -8448,14 +8273,10 @@ void CGame::UseShortCut(int num)
 					m_sRecentShortCut = -1;
 					return;
 				}
-				char cStr1[64], cStr2[64], cStr3[64];
-				std::memset(cStr1, 0, sizeof(cStr1));
-				std::memset(cStr2, 0, sizeof(cStr2));
-				std::memset(cStr3, 0, sizeof(cStr3));
 
-				ItemNameFormatter::Get().Format(m_pItemList[m_sShortCut[num]].get(), cStr1, cStr2, cStr3);
-				std::snprintf(G_cTxt, sizeof(G_cTxt), MSG_SHORTCUT4, cStr1, cStr2, cStr3, index);// (%s %s %s) [F%d]
-				AddEventList(G_cTxt, 10);
+				auto itemInfo2 = ItemNameFormatter::Get().Format(m_pItemList[m_sShortCut[num]].get());
+				G_cTxt = std::format(MSG_SHORTCUT4, itemInfo2.name.c_str(), itemInfo2.effect.c_str(), itemInfo2.extra.c_str(), index);// (%s %s %s) [F%d]
+				AddEventList(G_cTxt.c_str(), 10);
 			}
 			else if (m_sShortCut[num] >= 100)
 			{
@@ -8465,8 +8286,8 @@ void CGame::UseShortCut(int num)
 					m_sRecentShortCut = -1;
 					return;
 				}
-				std::snprintf(G_cTxt, sizeof(G_cTxt), MSG_SHORTCUT5, m_pMagicCfgList[m_sShortCut[num] - 100]->m_cName, index);// %s) [F%d])
-				AddEventList(G_cTxt, 10);
+				G_cTxt = std::format(MSG_SHORTCUT5, m_pMagicCfgList[m_sShortCut[num] - 100]->m_cName, index);// %s) [F%d])
+				AddEventList(G_cTxt.c_str(), 10);
 			}
 		}
 	}
@@ -8475,10 +8296,10 @@ void CGame::UseShortCut(int num)
 		if (m_sShortCut[num] == -1)
 		{
 			AddEventList(MSG_SHORTCUT1, 10);
-			std::snprintf(G_cTxt, sizeof(G_cTxt), MSG_SHORTCUT2, index);// [F%d]
-			AddEventList(G_cTxt, 10);
-			std::snprintf(G_cTxt, sizeof(G_cTxt), MSG_SHORTCUT3, index);// [Control]-[F%d]
-			AddEventList(G_cTxt, 10);
+			G_cTxt = std::format(MSG_SHORTCUT2, index);// [F%d]
+			AddEventList(G_cTxt.c_str(), 10);
+			G_cTxt = std::format(MSG_SHORTCUT3, index);// [Control]-[F%d]
+			AddEventList(G_cTxt.c_str(), 10);
 		}
 		else if (m_sShortCut[num] < 100)
 		{
@@ -8513,12 +8334,12 @@ void CGame::CheckActiveAura(short sX, short sY, uint32_t dwTime, short sOwnerTyp
 	// Illusion
 	if (m_entityState.m_status.bIllusion)
 		//m_pEffectSpr[73]->Draw(sX+125, sY+95, m_entityState.m_iEffectFrame%24, hb::shared::sprite::DrawParams::Alpha(0.5f));
-		m_pEffectSpr[73]->Draw(sX + 125, sY + 130 - _iAttackerHeight[sOwnerType], m_entityState.m_iEffectFrame % 24, hb::shared::sprite::DrawParams::Alpha(0.7f));
+		m_pEffectSpr[73]->Draw(sX + 125, sY + 130 - entity_visual::attacker_height[sOwnerType], m_entityState.m_iEffectFrame % 24, hb::shared::sprite::DrawParams::Alpha(0.7f));
 
 	// Illusion movement
 	if ((m_entityState.m_status.bIllusionMovement) != 0)
 		//m_pEffectSpr[151]->Draw(sX+90, sY+55, m_entityState.m_iEffectFrame%24, hb::shared::sprite::DrawParams::Alpha(0.5f));
-		m_pEffectSpr[151]->Draw(sX + 90, sY + 90 - _iAttackerHeight[sOwnerType], m_entityState.m_iEffectFrame % 24, hb::shared::sprite::DrawParams::Alpha(0.7f));
+		m_pEffectSpr[151]->Draw(sX + 90, sY + 90 - entity_visual::attacker_height[sOwnerType], m_entityState.m_iEffectFrame % 24, hb::shared::sprite::DrawParams::Alpha(0.7f));
 
 	// Slate red  (HP)  Flame au sol
 	if (m_entityState.m_status.bSlateInvincible)
@@ -8550,8 +8371,8 @@ void CGame::CheckActiveAura2(short sX, short sY, uint32_t dwTime, short sOwnerTy
 {	// Poison
 	if (m_entityState.m_status.bPoisoned)
 		//m_pEffectSpr[81]->Draw(sX+115, sY+85, m_entityState.m_iEffectFrame%21, hb::shared::sprite::DrawParams::Alpha(0.5f));
-		m_pEffectSpr[81]->Draw(sX + 115, sY + 120 - _iAttackerHeight[sOwnerType], m_entityState.m_iEffectFrame % 21, hb::shared::sprite::DrawParams::Alpha(0.7f));
-	//	_iAttackerHeight[]
+		m_pEffectSpr[81]->Draw(sX + 115, sY + 120 - entity_visual::attacker_height[sOwnerType], m_entityState.m_iEffectFrame % 21, hb::shared::sprite::DrawParams::Alpha(0.7f));
+	//	entity_visual::attacker_height[]
 }
 
 void CGame::DrawAngel(int iSprite, short sX, short sY, char cFrame, uint32_t dwTime)

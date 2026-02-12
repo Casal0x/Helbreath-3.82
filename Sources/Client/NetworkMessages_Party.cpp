@@ -1,10 +1,12 @@
-#include "Game.h"
+﻿#include "Game.h"
 #include "NetworkMessageManager.h"
 #include "Packet/SharedPackets.h"
 #include "lan_eng.h"
 #include "DialogBoxIDs.h"
 #include <cstring>
 #include <cstdio>
+#include <format>
+#include <string>
 
 using namespace hb::shared::net;
 namespace NetworkMessageHandlers {
@@ -47,8 +49,7 @@ void HandleParty(CGame* pGame, char* pData)
 			pGame->m_iTotalPartyMember = 0;
 			pGame->m_dialogBoxManager.EnableDialogBox(DialogBoxId::Party, 0, 0, 0);
 			pGame->m_dialogBoxManager.Info(DialogBoxId::Party).cMode = 8;
-			for (i = 0; i < hb::shared::limits::MaxPartyMembers; i++) std::memset(pGame->m_stPartyMemberNameList[i].cName, 0, sizeof(pGame->m_stPartyMemberNameList[i].cName));
-			pGame->bSendCommand(MsgId::CommandCommon, CommonType::RequestJoinParty, 0, 2, 0, 0, pGame->m_cMCName);
+			pGame->bSendCommand(MsgId::CommandCommon, CommonType::RequestJoinParty, 0, 2, 0, 0, pGame->m_cMCName.c_str());
 			break;
 		}
 		break;
@@ -58,7 +59,6 @@ void HandleParty(CGame* pGame, char* pData)
 		pGame->m_iTotalPartyMember = 0;
 		pGame->m_dialogBoxManager.EnableDialogBox(DialogBoxId::Party, 0, 0, 0);
 		pGame->m_dialogBoxManager.Info(DialogBoxId::Party).cMode = 10;
-		for (i = 0; i < hb::shared::limits::MaxPartyMembers; i++) std::memset(pGame->m_stPartyMemberNameList[i].cName, 0, sizeof(pGame->m_stPartyMemberNameList[i].cName));
 		break;
 
 	case 4:
@@ -82,16 +82,15 @@ void HandleParty(CGame* pGame, char* pData)
 				pGame->m_dialogBoxManager.Info(DialogBoxId::Party).cMode = 8;
 			}
 			else {
-				char partyMsgBuf[128];
-				snprintf(partyMsgBuf, sizeof(partyMsgBuf), NOTIFY_MSG_HANDLER1, cTxt);
-				pGame->AddEventList(partyMsgBuf, 10);
+				std::string partyMsgBuf;
+				partyMsgBuf = std::format(NOTIFY_MSG_HANDLER1, cTxt);
+				pGame->AddEventList(partyMsgBuf.c_str(), 10);
 			}
 
 			pGame->m_iTotalPartyMember++;
 			for (i = 0; i < hb::shared::limits::MaxPartyMembers; i++)
-				if (strlen(pGame->m_stPartyMemberNameList[i].cName) == 0) {
-					std::memset(pGame->m_stPartyMemberNameList[i].cName, 0, sizeof(pGame->m_stPartyMemberNameList[i].cName));
-					memcpy(pGame->m_stPartyMemberNameList[i].cName, cTxt, 10);
+				if (pGame->m_stPartyMemberNameList[i].cName.size() == 0) {
+					pGame->m_stPartyMemberNameList[i].cName.assign(cTxt, strnlen(cTxt, 10));
 					break; // Replaced goto with break
 				}
 			break;
@@ -104,7 +103,6 @@ void HandleParty(CGame* pGame, char* pData)
 
 	case 5: //
 		pGame->m_iTotalPartyMember = 0;
-		for (i = 0; i < hb::shared::limits::MaxPartyMembers; i++) std::memset(pGame->m_stPartyMemberNameList[i].cName, 0, sizeof(pGame->m_stPartyMemberNameList[i].cName));
 
 		{
 			const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyPartyList>(
@@ -113,8 +111,7 @@ void HandleParty(CGame* pGame, char* pData)
 			const char* names = pkt->names;
 			pGame->m_iTotalPartyMember = pkt->count;
 			for (i = 1; i <= pkt->count; i++) {
-				std::memset(pGame->m_stPartyMemberNameList[i - 1].cName, 0, sizeof(pGame->m_stPartyMemberNameList[i - 1].cName));
-				memcpy(pGame->m_stPartyMemberNameList[i - 1].cName, names, 10);
+				pGame->m_stPartyMemberNameList[i - 1].cName.assign(names, strnlen(names, 10));
 				names += 11;
 			}
 		}
@@ -141,13 +138,12 @@ void HandleParty(CGame* pGame, char* pData)
 				pGame->m_dialogBoxManager.Info(DialogBoxId::Party).cMode = 6;
 			}
 			else {
-				char partyMsgBuf[128];
-				snprintf(partyMsgBuf, sizeof(partyMsgBuf), NOTIFY_MSG_HANDLER2, cTxt);
-				pGame->AddEventList(partyMsgBuf, 10);
+				std::string partyMsgBuf;
+				partyMsgBuf = std::format(NOTIFY_MSG_HANDLER2, cTxt);
+				pGame->AddEventList(partyMsgBuf.c_str(), 10);
 			}
 			for (i = 0; i < hb::shared::limits::MaxPartyMembers; i++)
-				if (strcmp(pGame->m_stPartyMemberNameList[i].cName, cTxt) == 0) {
-					std::memset(pGame->m_stPartyMemberNameList[i].cName, 0, sizeof(pGame->m_stPartyMemberNameList[i].cName));
+				if (pGame->m_stPartyMemberNameList[i].cName == cTxt) {
 					pGame->m_iTotalPartyMember--;
 					break; // Replaced goto with break
 				}
@@ -164,7 +160,6 @@ void HandleParty(CGame* pGame, char* pData)
 	case 8: //
 		pGame->m_iPartyStatus = 0;
 		pGame->m_iTotalPartyMember = 0;
-		for (i = 0; i < hb::shared::limits::MaxPartyMembers; i++) std::memset(pGame->m_stPartyMemberNameList[i].cName, 0, sizeof(pGame->m_stPartyMemberNameList[i].cName));
 		break;
 	}
 }

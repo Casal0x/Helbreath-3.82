@@ -8,8 +8,10 @@
 #include <cstring>
 #include <windows.h>
 #include <cmath>
+#include <format>
 
 namespace NetworkMessageHandlers {
+	std::string G_cTxt;
 	void HandleCrusade(CGame* pGame, char* pData)
 	{
 		int iV1, iV2, iV3, iV4;
@@ -137,8 +139,7 @@ namespace NetworkMessageHandlers {
 		TeleportManager::Get().SetMapName(pkt->teleport_map, sizeof(pkt->teleport_map));
 		pGame->m_pPlayer->m_iConstructLocX = pkt->construct_x;
 		pGame->m_pPlayer->m_iConstructLocY = pkt->construct_y;
-		std::memset(pGame->m_cConstructMapName, 0, sizeof(pGame->m_cConstructMapName));
-		memcpy(pGame->m_cConstructMapName, pkt->construct_map, sizeof(pkt->construct_map));
+		pGame->m_cConstructMapName.assign(pkt->construct_map, strnlen(pkt->construct_map, sizeof(pkt->construct_map)));
 	}
 
 	void HandleConstructionPoint(CGame* pGame, char* pData)
@@ -153,36 +154,36 @@ namespace NetworkMessageHandlers {
 
 		if (sV3 == 0) {
 			if ((sV1 > pGame->m_pPlayer->m_iConstructionPoint) && (sV2 > pGame->m_pPlayer->m_iWarContribution)) {
-				std::snprintf(pGame->G_cTxt, sizeof(pGame->G_cTxt), "%s +%d, %s +%d", pGame->m_pGameMsgList[13]->m_pMsg, (sV1 - pGame->m_pPlayer->m_iConstructionPoint), pGame->m_pGameMsgList[21]->m_pMsg, (sV2 - pGame->m_pPlayer->m_iWarContribution));
-				pGame->SetTopMsg(pGame->G_cTxt, 5);
+				G_cTxt = std::format("{} +{}, {} +{}", pGame->m_pGameMsgList[13]->m_pMsg, (sV1 - pGame->m_pPlayer->m_iConstructionPoint), pGame->m_pGameMsgList[21]->m_pMsg, (sV2 - pGame->m_pPlayer->m_iWarContribution));
+				pGame->SetTopMsg(G_cTxt.c_str(), 5);
 				pGame->PlayGameSound('E', 23, 0, 0);
 			}
 
 			if ((sV1 > pGame->m_pPlayer->m_iConstructionPoint) && (sV2 == pGame->m_pPlayer->m_iWarContribution)) {
 				if (pGame->m_pPlayer->m_iCrusadeDuty == 3) {
-					std::snprintf(pGame->G_cTxt, sizeof(pGame->G_cTxt), "%s +%d", pGame->m_pGameMsgList[13]->m_pMsg, sV1 - pGame->m_pPlayer->m_iConstructionPoint);
-					pGame->SetTopMsg(pGame->G_cTxt, 5);
+					G_cTxt = std::format("{} +{}", pGame->m_pGameMsgList[13]->m_pMsg, sV1 - pGame->m_pPlayer->m_iConstructionPoint);
+					pGame->SetTopMsg(G_cTxt.c_str(), 5);
 					pGame->PlayGameSound('E', 23, 0, 0);
 				}
 			}
 
 			if ((sV1 == pGame->m_pPlayer->m_iConstructionPoint) && (sV2 > pGame->m_pPlayer->m_iWarContribution)) {
-				std::snprintf(pGame->G_cTxt, sizeof(pGame->G_cTxt), "%s +%d", pGame->m_pGameMsgList[21]->m_pMsg, sV2 - pGame->m_pPlayer->m_iWarContribution);
-				pGame->SetTopMsg(pGame->G_cTxt, 5);
+				G_cTxt = std::format("{} +{}", pGame->m_pGameMsgList[21]->m_pMsg, sV2 - pGame->m_pPlayer->m_iWarContribution);
+				pGame->SetTopMsg(G_cTxt.c_str(), 5);
 				pGame->PlayGameSound('E', 23, 0, 0);
 			}
 
 			if (sV1 < pGame->m_pPlayer->m_iConstructionPoint) {
 				if (pGame->m_pPlayer->m_iCrusadeDuty == 3) {
-					std::snprintf(pGame->G_cTxt, sizeof(pGame->G_cTxt), "%s -%d", pGame->m_pGameMsgList[13]->m_pMsg, pGame->m_pPlayer->m_iConstructionPoint - sV1);
-					pGame->SetTopMsg(pGame->G_cTxt, 5);
+					G_cTxt = std::format("{} -{}", pGame->m_pGameMsgList[13]->m_pMsg, pGame->m_pPlayer->m_iConstructionPoint - sV1);
+					pGame->SetTopMsg(G_cTxt.c_str(), 5);
 					pGame->PlayGameSound('E', 25, 0, 0);
 				}
 			}
 
 			if (sV2 < pGame->m_pPlayer->m_iWarContribution) {
-				std::snprintf(pGame->G_cTxt, sizeof(pGame->G_cTxt), "%s -%d", pGame->m_pGameMsgList[21]->m_pMsg, pGame->m_pPlayer->m_iWarContribution - sV2);
-				pGame->SetTopMsg(pGame->G_cTxt, 5);
+				G_cTxt = std::format("{} -{}", pGame->m_pGameMsgList[21]->m_pMsg, pGame->m_pPlayer->m_iWarContribution - sV2);
+				pGame->SetTopMsg(G_cTxt.c_str(), 5);
 				pGame->PlayGameSound('E', 24, 0, 0);
 			}
 		}
@@ -221,10 +222,9 @@ namespace NetworkMessageHandlers {
 				if (pGame->m_pPlayer->m_iContribution < 0) pGame->m_pPlayer->m_iContribution = 0;
 			}
 			else {
-				std::memset(pGame->G_cTxt, 0, sizeof(pGame->G_cTxt));
-				if (pGame->m_pPlayer->m_bAresden == true) std::snprintf(pGame->G_cTxt, sizeof(pGame->G_cTxt), NOTIFY_MSG_HANDLER34, cTxt); // "%s(Aresden) pushed energy sphere to enemy's portal!!..."
-				else if (pGame->m_pPlayer->m_bAresden == false) std::snprintf(pGame->G_cTxt, sizeof(pGame->G_cTxt), NOTIFY_MSG_HANDLER34_ELV, cTxt); // "%s(Elvine) pushed energy sphere to enemy's portal!!..."
-				pGame->AddEventList(pGame->G_cTxt, 10);
+				if (pGame->m_pPlayer->m_bAresden == true) G_cTxt = std::format(NOTIFY_MSG_HANDLER34, cTxt); // "%s(Aresden) pushed energy sphere to enemy's portal!!..."
+				else if (pGame->m_pPlayer->m_bAresden == false) G_cTxt = std::format(NOTIFY_MSG_HANDLER34_ELV, cTxt); // "%s(Elvine) pushed energy sphere to enemy's portal!!..."
+				pGame->AddEventList(G_cTxt.c_str(), 10);
 			}
 		}
 		else
@@ -250,16 +250,15 @@ namespace NetworkMessageHandlers {
 			}
 			else
 			{
-				std::memset(pGame->G_cTxt, 0, sizeof(pGame->G_cTxt));
 				if (sV3 == 1)
 				{
-					std::snprintf(pGame->G_cTxt, sizeof(pGame->G_cTxt), NOTIFY_MSG_HANDLER36, cTxt); // "Elvine %s : Goal in!"
-					pGame->AddEventList(pGame->G_cTxt, 10);
+					G_cTxt = std::format(NOTIFY_MSG_HANDLER36, cTxt); // "Elvine %s : Goal in!"
+					pGame->AddEventList(G_cTxt.c_str(), 10);
 				}
 				else if (sV3 == 2)
 				{
-					std::snprintf(pGame->G_cTxt, sizeof(pGame->G_cTxt), NOTIFY_MSG_HANDLER37, cTxt); // "Aresden %s : Goal in!"
-					pGame->AddEventList(pGame->G_cTxt, 10);
+					G_cTxt = std::format(NOTIFY_MSG_HANDLER37, cTxt); // "Aresden %s : Goal in!"
+					pGame->AddEventList(G_cTxt.c_str(), 10);
 				}
 			}
 		}
@@ -273,9 +272,8 @@ namespace NetworkMessageHandlers {
 		if (!pkt) return;
 		sV1 = pkt->x;
 		sV2 = pkt->y;
-		std::memset(pGame->G_cTxt, 0, sizeof(pGame->G_cTxt));
-		std::snprintf(pGame->G_cTxt, sizeof(pGame->G_cTxt), NOTIFY_MSG_HANDLER38, sV1, sV2); // "Energy sphere was dropped in (%d, %d) of middleland!"
-		pGame->AddEventList(pGame->G_cTxt, 10);
+		G_cTxt = std::format(NOTIFY_MSG_HANDLER38, sV1, sV2); // "Energy sphere was dropped in (%d, %d) of middleland!"
+		pGame->AddEventList(G_cTxt.c_str(), 10);
 		pGame->AddEventList(NOTIFY_MSG_HANDLER39, 10); // "A player who pushed energy sphere to the energy portal of his city will earn many Exp and Contribution."
 	}
 }

@@ -1,4 +1,4 @@
-// SFMLSprite.h: SFML implementation of ISprite interface
+﻿// SFMLSprite.h: SFML implementation of ISprite interface
 //
 // Part of SFMLEngine static library
 // Handles sprite rendering using SFML textures with support for
@@ -67,8 +67,8 @@ public:
     const sf::Texture& GetTexture() const { return m_texture; }
 
     // Alpha degree management
-    void SetAlphaDegree(char degree);
-    char GetAlphaDegree() const { return m_alphaDegree; }
+    void SetAmbientLightLevel(char level);
+    char GetAmbientLightLevel() const { return m_ambient_light_level; }
     bool HasAlphaEffect() const { return m_alphaEffect; }
 
 private:
@@ -86,7 +86,7 @@ private:
     void DrawInternal(sf::RenderTexture* target, int x, int y, int frame, const hb::shared::sprite::DrawParams& params);
 
     // Apply alpha degree effect
-    void ApplyAlphaDegree();
+    void ApplyAmbientLightLevel();
 
     //------------------------------------------------------------------
     // Member Variables
@@ -114,7 +114,7 @@ private:
 
     // Alpha effect
     bool m_alphaEffect;
-    char m_alphaDegree;
+    char m_ambient_light_level;
 
     // State
     bool m_inUse;

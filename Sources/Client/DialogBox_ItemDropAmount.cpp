@@ -5,6 +5,8 @@
 #include "lan_eng.h"
 #include "GameFonts.h"
 #include "TextLibExt.h"
+#include <format>
+#include <string>
 using namespace hb::client::sprite_id;
 
 DialogBox_ItemDropAmount::DialogBox_ItemDropAmount(CGame* pGame)
@@ -17,49 +19,54 @@ void DialogBox_ItemDropAmount::OnDraw(short msX, short msY, short msZ, char cLB)
 {
 	short sX = Info().sX;
 	short sY = Info().sY;
-	char cTxt[120], cStr1[64], cStr2[64], cStr3[64];
+	std::string cTxt;
+
 
 	DrawNewDialogBox(InterfaceNdGame2, sX, sY, 5);
 
 	switch (Info().cMode)
 	{
 	case 1:
-		ItemNameFormatter::Get().Format(m_pGame->m_pItemList[Info().sView].get(), cStr1, cStr2, cStr3);
+	{
+		auto itemInfo = ItemNameFormatter::Get().Format(m_pGame->m_pItemList[Info().sView].get());
 
 		if (strlen(Info().cStr) == 0)
-			std::snprintf(cTxt, sizeof(cTxt), DRAW_DIALOGBOX_QUERY_DROP_ITEM_AMOUNT1, cStr1);
+			cTxt = std::format(DRAW_DIALOGBOX_QUERY_DROP_ITEM_AMOUNT1, itemInfo.name.c_str());
 		else
-			std::snprintf(cTxt, sizeof(cTxt), DRAW_DIALOGBOX_QUERY_DROP_ITEM_AMOUNT2, cStr1, Info().cStr);
+			cTxt = std::format(DRAW_DIALOGBOX_QUERY_DROP_ITEM_AMOUNT2, itemInfo.name.c_str(), Info().cStr);
 
 		if (Info().sV3 < 1000)
-			PutString(sX + 30, sY + 20, cTxt, GameColors::UILabel);
+			PutString(sX + 30, sY + 20, cTxt.c_str(), GameColors::UILabel);
 
 		PutString(sX + 30, sY + 35, DRAW_DIALOGBOX_QUERY_DROP_ITEM_AMOUNT3, GameColors::UILabel);
 
 		if (m_pGame->m_dialogBoxManager.iGetTopDialogBoxIndex() != DialogBoxId::ItemDropExternal)
 			hb::shared::text::DrawText(GameFont::Default, sX + 40, sY + 57, m_pGame->m_cAmountString, hb::shared::text::TextStyle::Color(GameColors::UIWhite));
 
-		std::snprintf(cTxt, sizeof(cTxt), "__________ (0 ~ %d)", m_pGame->m_pItemList[Info().sView]->m_dwCount);
-		PutString(sX + 38, sY + 62, cTxt, GameColors::UILabel);
+		cTxt = std::format("__________ (0 ~ {})", m_pGame->m_pItemList[Info().sView]->m_dwCount);
+		PutString(sX + 38, sY + 62, cTxt.c_str(), GameColors::UILabel);
 		break;
+	}
 
 	case 20:
-		ItemNameFormatter::Get().Format(m_pGame->m_pItemList[Info().sView].get(), cStr1, cStr2, cStr3);
+	{
+		auto itemInfo2 = ItemNameFormatter::Get().Format(m_pGame->m_pItemList[Info().sView].get());
 
 		if (strlen(Info().cStr) == 0)
-			std::snprintf(cTxt, sizeof(cTxt), DRAW_DIALOGBOX_QUERY_DROP_ITEM_AMOUNT1, cStr1);
+			cTxt = std::format(DRAW_DIALOGBOX_QUERY_DROP_ITEM_AMOUNT1, itemInfo2.name.c_str());
 		else
-			std::snprintf(cTxt, sizeof(cTxt), DRAW_DIALOGBOX_QUERY_DROP_ITEM_AMOUNT2, cStr1, Info().cStr);
+			cTxt = std::format(DRAW_DIALOGBOX_QUERY_DROP_ITEM_AMOUNT2, itemInfo2.name.c_str(), Info().cStr);
 
 		if (Info().sV3 < 1000)
-			PutString(sX + 30, sY + 20, cTxt, GameColors::UILabel);
+			PutString(sX + 30, sY + 20, cTxt.c_str(), GameColors::UILabel);
 
 		PutString(sX + 30, sY + 35, DRAW_DIALOGBOX_QUERY_DROP_ITEM_AMOUNT3, GameColors::UILabel);
 		hb::shared::text::DrawText(GameFont::Default, sX + 40, sY + 57, m_pGame->m_cAmountString, hb::shared::text::TextStyle::Color(GameColors::UIWhite));
 
-		std::snprintf(cTxt, sizeof(cTxt), "__________ (0 ~ %d)", m_pGame->m_pItemList[Info().sView]->m_dwCount);
-		PutString(sX + 38, sY + 62, cTxt, GameColors::UILabel);
+		cTxt = std::format("__________ (0 ~ {})", m_pGame->m_pItemList[Info().sView]->m_dwCount);
+		PutString(sX + 38, sY + 62, cTxt.c_str(), GameColors::UILabel);
 		break;
+	}
 	}
 }
 

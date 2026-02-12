@@ -3,6 +3,7 @@
 //////////////////////////////////////////////////////////////////////
 
 #include "Game.h"
+#include "WeatherManager.h"
 #include "ItemNameFormatter.h"
 #include "RenderHelpers.h"
 #include "EntityRenderState.h"
@@ -21,7 +22,6 @@ using namespace hb::shared::item;
 using namespace hb::client::config;
 using namespace hb::client::sprite_id;
 
-extern char G_cSpriteAlphaDegree;
 
 // Equipment sprite indices for character rendering (menu only)
 struct MenuCharEquipment {
@@ -134,7 +134,7 @@ hb::shared::sprite::BoundRect CGame::DrawObject_OnMove_ForMenu(int indexX, int i
 	};
 
 	auto drawMantle = [&](int order) {
-		if (eq.mantle != -1 && _cMantleDrawingOrder[m_entityState.m_iDir] == order)
+		if (eq.mantle != -1 && mantle_draw_order[m_entityState.m_iDir] == order)
 			drawEquipment(eq.mantle, eq.mantleColor);
 	};
 
@@ -153,7 +153,7 @@ hb::shared::sprite::BoundRect CGame::DrawObject_OnMove_ForMenu(int indexX, int i
 		m_pSprite[eq.body + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, hb::shared::sprite::DrawParams::Shadow());
 
 	// Draw weapon first if drawing order is 1
-	if (_cDrawingOrder[m_entityState.m_iDir] == 1)
+	if (weapon_draw_order[m_entityState.m_iDir] == 1)
 		drawWeapon();
 
 	// Draw body
@@ -191,7 +191,7 @@ hb::shared::sprite::BoundRect CGame::DrawObject_OnMove_ForMenu(int indexX, int i
 	drawMantle(1);  // Mantle in front
 
 	// Draw weapon last if drawing order is not 1
-	if (_cDrawingOrder[m_entityState.m_iDir] != 1)
+	if (weapon_draw_order[m_entityState.m_iDir] != 1)
 		drawWeapon();
 
 	// Chat message
@@ -637,7 +637,7 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 					case 223:
 						if (sObjSprFrame == 4)
 						{
-							if (G_cSpriteAlphaDegree == 2) //nuit
+							if (WeatherManager::Get().IsNight()) //nuit
 							{
 								// Lamp fixture lights (the actual light sources on the lamp)
 								m_pEffectSpr[0]->Draw(ix + 2, iy - 147, 1, hb::shared::sprite::DrawParams::AdditiveColored(255, 230, 180, 0.8f));
@@ -648,29 +648,29 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 						break;
 
 					case 370: // nuit
-						if (((dwTime - m_dwEnvEffectTime) > 400) && (sObjSprFrame == 9) && (G_cSpriteAlphaDegree == 2)) m_pEffectManager->AddEffect(EffectType::MS_CRUSADE_CASTING, m_Camera.GetX() + ix - 16 + 30, m_Camera.GetY() + iy - 16 - 334, 0, 0, 0, 0);
-						if (((dwTime - m_dwEnvEffectTime) > 400) && (sObjSprFrame == 11) && (G_cSpriteAlphaDegree == 2)) m_pEffectManager->AddEffect(EffectType::MS_CRUSADE_CASTING, m_Camera.GetX() + ix - 16 + 17, m_Camera.GetY() + iy - 16 - 300, 0, 0, 0, 0);
+						if (((dwTime - m_dwEnvEffectTime) > 400) && (sObjSprFrame == 9) && (WeatherManager::Get().IsNight())) m_pEffectManager->AddEffect(EffectType::MS_CRUSADE_CASTING, m_Camera.GetX() + ix - 16 + 30, m_Camera.GetY() + iy - 16 - 334, 0, 0, 0, 0);
+						if (((dwTime - m_dwEnvEffectTime) > 400) && (sObjSprFrame == 11) && (WeatherManager::Get().IsNight())) m_pEffectManager->AddEffect(EffectType::MS_CRUSADE_CASTING, m_Camera.GetX() + ix - 16 + 17, m_Camera.GetY() + iy - 16 - 300, 0, 0, 0, 0);
 						break;
 
 					case 374: // nuit
-						if (((dwTime - m_dwEnvEffectTime) > 400) && (sObjSprFrame == 2) && (G_cSpriteAlphaDegree == 2)) m_pEffectManager->AddEffect(EffectType::MS_CRUSADE_CASTING, m_Camera.GetX() + ix - 7, m_Camera.GetY() + iy - 122, 0, 0, 0, 0);
-						if (((dwTime - m_dwEnvEffectTime) > 400) && (sObjSprFrame == 6) && (G_cSpriteAlphaDegree == 2)) m_pEffectManager->AddEffect(EffectType::MS_CRUSADE_CASTING, m_Camera.GetX() + ix - 14, m_Camera.GetY() + iy - 321, 0, 0, 0, 0);
-						if (((dwTime - m_dwEnvEffectTime) > 400) && (sObjSprFrame == 7) && (G_cSpriteAlphaDegree == 2)) m_pEffectManager->AddEffect(EffectType::MS_CRUSADE_CASTING, m_Camera.GetX() + ix + 7, m_Camera.GetY() + iy - 356, 0, 0, 0, 0);
+						if (((dwTime - m_dwEnvEffectTime) > 400) && (sObjSprFrame == 2) && (WeatherManager::Get().IsNight())) m_pEffectManager->AddEffect(EffectType::MS_CRUSADE_CASTING, m_Camera.GetX() + ix - 7, m_Camera.GetY() + iy - 122, 0, 0, 0, 0);
+						if (((dwTime - m_dwEnvEffectTime) > 400) && (sObjSprFrame == 6) && (WeatherManager::Get().IsNight())) m_pEffectManager->AddEffect(EffectType::MS_CRUSADE_CASTING, m_Camera.GetX() + ix - 14, m_Camera.GetY() + iy - 321, 0, 0, 0, 0);
+						if (((dwTime - m_dwEnvEffectTime) > 400) && (sObjSprFrame == 7) && (WeatherManager::Get().IsNight())) m_pEffectManager->AddEffect(EffectType::MS_CRUSADE_CASTING, m_Camera.GetX() + ix + 7, m_Camera.GetY() + iy - 356, 0, 0, 0, 0);
 						break;
 
 					case 376: // nuit
-						if (((dwTime - m_dwEnvEffectTime) > 400) && (sObjSprFrame == 12) && (G_cSpriteAlphaDegree == 2)) {
+						if (((dwTime - m_dwEnvEffectTime) > 400) && (sObjSprFrame == 12) && (WeatherManager::Get().IsNight())) {
 							m_pEffectManager->AddEffect(EffectType::MS_CRUSADE_CASTING, m_Camera.GetX() + ix - 16, m_Camera.GetY() + iy - 346, 0, 0, 0, 0);
 							m_pEffectManager->AddEffect(EffectType::MS_CRUSADE_CASTING, m_Camera.GetX() + ix + 11, m_Camera.GetY() + iy - 308, 0, 0, 0, 0);
 						}
 						break;
 
 					case 378: // nuit
-						if (((dwTime - m_dwEnvEffectTime) > 400) && (sObjSprFrame == 11) && (G_cSpriteAlphaDegree == 2)) m_pEffectManager->AddEffect(EffectType::MS_CRUSADE_CASTING, m_Camera.GetX() + ix, m_Camera.GetY() + iy - 91, 0, 0, 0, 0);
+						if (((dwTime - m_dwEnvEffectTime) > 400) && (sObjSprFrame == 11) && (WeatherManager::Get().IsNight())) m_pEffectManager->AddEffect(EffectType::MS_CRUSADE_CASTING, m_Camera.GetX() + ix, m_Camera.GetY() + iy - 91, 0, 0, 0, 0);
 						break;
 
 					case 382: // nuit
-						if (((dwTime - m_dwEnvEffectTime) > 400) && (sObjSprFrame == 9) && (G_cSpriteAlphaDegree == 2)) {
+						if (((dwTime - m_dwEnvEffectTime) > 400) && (sObjSprFrame == 9) && (WeatherManager::Get().IsNight())) {
 							m_pEffectManager->AddEffect(EffectType::MS_CRUSADE_CASTING, m_Camera.GetX() + ix + 73, m_Camera.GetY() + iy - 264, 0, 0, 0, 0);
 							m_pEffectManager->AddEffect(EffectType::MS_CRUSADE_CASTING, m_Camera.GetX() + ix + 23, m_Camera.GetY() + iy - 228, 0, 0, 0, 0);
 						}
@@ -707,7 +707,7 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 						}
 						if (m_bIsXmas == true)
 						{
-							if (G_cSpriteAlphaDegree == 2) // nuit
+							if (WeatherManager::Get().IsNight()) // nuit
 							{
 								if (iXmasTreeBulbDelay < 0 || iXmasTreeBulbDelay > idelay + 1) iXmasTreeBulbDelay = 0;
 								if (iXmasTreeBulbDelay > idelay)
@@ -820,8 +820,7 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 	// Update legacy compatibility variables from Picking system
 	m_sMCX = CursorTarget::GetFocusedMapX();
 	m_sMCY = CursorTarget::GetFocusedMapY();
-	std::memset(m_cMCName, 0, sizeof(m_cMCName));
-	std::snprintf(m_cMCName, sizeof(m_cMCName), "%s", CursorTarget::GetFocusedName());
+	m_cMCName = CursorTarget::GetFocusedName();
 
 	// Draw focused object with highlight (transparency)
 	if (CursorTarget::HasFocusedObject())
@@ -964,27 +963,26 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 	}
 
 	if (sItemSelectedID != -1) {
-		char cStr1[64], cStr2[64], cStr3[64];
 		int  iLoc;
-		ItemNameFormatter::Get().Format(m_pItemConfigList[sItemSelectedID].get(), cStr1, cStr2, cStr3);
+		auto itemInfo = ItemNameFormatter::Get().Format(m_pItemConfigList[sItemSelectedID].get());
 
 		iLoc = 0;
-		if (strlen(cStr1) != 0)
+		if (itemInfo.name.size() != 0)
 		{
-			if (ItemNameFormatter::Get().IsSpecial())
-				hb::shared::text::DrawText(GameFont::Default, msX, msY + 25, cStr1, hb::shared::text::TextStyle::WithShadow(GameColors::UIItemName_Special));
+			if (itemInfo.is_special)
+				hb::shared::text::DrawText(GameFont::Default, msX, msY + 25, itemInfo.name.c_str(), hb::shared::text::TextStyle::WithShadow(GameColors::UIItemName_Special));
 			else
-				hb::shared::text::DrawText(GameFont::Default, msX, msY + 25, cStr1, hb::shared::text::TextStyle::WithShadow(GameColors::UIWhite));
+				hb::shared::text::DrawText(GameFont::Default, msX, msY + 25, itemInfo.name.c_str(), hb::shared::text::TextStyle::WithShadow(GameColors::UIWhite));
 			iLoc += 15;
 		}
-		if (strlen(cStr2) != 0)
+		if (itemInfo.effect.size() != 0)
 		{
-			hb::shared::text::DrawText(GameFont::Default, msX, msY + 25 + iLoc, cStr2, hb::shared::text::TextStyle::WithShadow(GameColors::UIDisabled));
+			hb::shared::text::DrawText(GameFont::Default, msX, msY + 25 + iLoc, itemInfo.effect.c_str(), hb::shared::text::TextStyle::WithShadow(GameColors::UIDisabled));
 			iLoc += 15;
 		}
-		if (strlen(cStr3) != 0)
+		if (itemInfo.extra.size() != 0)
 		{
-			hb::shared::text::DrawText(GameFont::Default, msX, msY + 25 + iLoc, cStr3, hb::shared::text::TextStyle::WithShadow(GameColors::UIDisabled));
+			hb::shared::text::DrawText(GameFont::Default, msX, msY + 25 + iLoc, itemInfo.extra.c_str(), hb::shared::text::TextStyle::WithShadow(GameColors::UIDisabled));
 			iLoc += 15;
 		}
 	}

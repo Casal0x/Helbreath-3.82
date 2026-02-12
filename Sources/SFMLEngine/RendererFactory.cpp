@@ -1,4 +1,4 @@
-// RendererFactory.cpp: SFML implementation of renderer factory functions
+﻿// RendererFactory.cpp: SFML implementation of renderer factory functions
 //
 // Part of SFMLEngine static library
 // Provides SFML-specific implementations of the factory functions
@@ -14,8 +14,6 @@
 #include "SFMLInput.h"
 #include "IInput.h"
 
-// Global sprite alpha degree - needed by client code
-char G_cSpriteAlphaDegree = 1;
 
 namespace hb::shared::render {
 

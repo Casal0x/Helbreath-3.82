@@ -1,4 +1,4 @@
-// ISpriteFactory.cpp: Static member implementations for Sprites class
+﻿// ISpriteFactory.cpp: Static member implementations for Sprites class
 //
 //////////////////////////////////////////////////////////////////////
 
@@ -32,15 +32,15 @@ void Sprites::Destroy(ISprite* sprite) {
     }
 }
 
-void Sprites::SetAlphaDegree(int degree) {
+void Sprites::SetAmbientLightLevel(int level) {
     if (s_pFactory) {
-        s_pFactory->SetGlobalAlphaDegree(degree);
+        s_pFactory->SetAmbientLightLevel(level);
     }
 }
 
-int Sprites::GetAlphaDegree() {
+int Sprites::GetAmbientLightLevel() {
     if (s_pFactory) {
-        return s_pFactory->GetGlobalAlphaDegree();
+        return s_pFactory->GetAmbientLightLevel();
     }
     return 1;
 }

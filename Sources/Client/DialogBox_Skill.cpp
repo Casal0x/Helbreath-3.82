@@ -3,6 +3,8 @@
 #include "IInput.h"
 #include "Misc.h"
 #include "lan_eng.h"
+#include <format>
+#include <string>
 
 using namespace hb::shared::net;
 using namespace hb::client::sprite_id;
@@ -17,7 +19,9 @@ void DialogBox_Skill::OnDraw(short msX, short msY, short msZ, char cLB)
 	if (!m_pGame->EnsureSkillConfigsLoaded()) return;
 	short sX, sY;
 	int i, iTotalLines, iPointerLoc;
-	char cTemp[255], cTemp2[255];
+	std::string cTemp2;
+
+	char cTemp[255];
 	double d1, d2, d3;
 
 	sX = Info().sX;
@@ -34,20 +38,19 @@ void DialogBox_Skill::OnDraw(short msX, short msY, short msZ, char cLB)
 				std::memset(cTemp, 0, sizeof(cTemp));
 				std::snprintf(cTemp, sizeof(cTemp), "%s", m_pGame->m_pSkillCfgList[i + Info().sView]->m_cName);
 				CMisc::ReplaceString(cTemp, '-', ' ');
-				std::memset(cTemp2, 0, sizeof(cTemp2));
-				std::snprintf(cTemp2, sizeof(cTemp2), "%3d%%", m_pGame->m_pSkillCfgList[i + Info().sView]->m_iLevel);
+				cTemp2 = std::format("{:3}%", m_pGame->m_pSkillCfgList[i + Info().sView]->m_iLevel);
 				if ((msX >= sX + 25) && (msX <= sX + 166) && (msY >= sY + 45 + i * 15) && (msY <= sY + 59 + i * 15))
 				{
 					if ((m_pGame->m_pSkillCfgList[i + Info().sView]->m_bIsUseable == true)
 						&& (m_pGame->m_pSkillCfgList[i + Info().sView]->m_iLevel != 0))
 					{
 						PutString(sX + 30, sY + 45 + i * 15, cTemp, GameColors::UIWhite);
-						PutString(sX + 183, sY + 45 + i * 15, cTemp2, GameColors::UIWhite);
+						PutString(sX + 183, sY + 45 + i * 15, cTemp2.c_str(), GameColors::UIWhite);
 					}
 					else
 					{
 						PutString(sX + 30, sY + 45 + i * 15, cTemp, GameColors::UIBlack);
-						PutString(sX + 183, sY + 45 + i * 15, cTemp2, GameColors::UIBlack);
+						PutString(sX + 183, sY + 45 + i * 15, cTemp2.c_str(), GameColors::UIBlack);
 					}
 				}
 				else
@@ -56,12 +59,12 @@ void DialogBox_Skill::OnDraw(short msX, short msY, short msZ, char cLB)
 						&& (m_pGame->m_pSkillCfgList[i + Info().sView]->m_iLevel != 0))
 					{
 						PutString(sX + 30, sY + 45 + i * 15, cTemp, GameColors::UIMagicBlue);
-						PutString(sX + 183, sY + 45 + i * 15, cTemp2, GameColors::UIMagicBlue);
+						PutString(sX + 183, sY + 45 + i * 15, cTemp2.c_str(), GameColors::UIMagicBlue);
 					}
 					else
 					{
 						PutString(sX + 30, sY + 45 + i * 15, cTemp, GameColors::UIBlack);
-						PutString(sX + 183, sY + 45 + i * 15, cTemp2, GameColors::UIBlack);
+						PutString(sX + 183, sY + 45 + i * 15, cTemp2.c_str(), GameColors::UIBlack);
 					}
 				}
 

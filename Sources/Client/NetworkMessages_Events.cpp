@@ -5,6 +5,8 @@
 #include <cstdio>
 #include <cstring>
 #include "DialogBoxIDs.h"
+#include <format>
+#include <string>
 
 namespace NetworkMessageHandlers {
 	void HandleSpawnEvent(CGame* pGame, char* pData)
@@ -20,14 +22,14 @@ namespace NetworkMessageHandlers {
 
 	void HandleMonsterCount(CGame* pGame, char* pData)
 	{
-		char cTxt[120];
+		std::string cTxt;
 		int iCount;
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyMonsterCount>(
 			pData, sizeof(hb::net::PacketNotifyMonsterCount));
 		if (!pkt) return;
 		iCount = pkt->count;
-		std::snprintf(cTxt, sizeof(cTxt), "Rest Monster :%d", iCount);
-		pGame->AddEventList(cTxt, 10);
+		cTxt = std::format("Rest Monster :{}", iCount);
+		pGame->AddEventList(cTxt.c_str(), 10);
 	}
 
 	void HandleResurrectPlayer(CGame* pGame, char* pData)

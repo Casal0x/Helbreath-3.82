@@ -1,4 +1,4 @@
-// ASIOSocket.h: Unified socket class using standalone ASIO
+﻿// ASIOSocket.h: Unified socket class using standalone ASIO
 //
 // Replaces the legacy XSocket (Winsock2/WSAEventSelect) with ASIO.
 // Shared between Client and Server.
@@ -136,7 +136,7 @@ public:
 	bool bInitBufferSize(size_t dwBufferSize);
 
 	// Connection management
-	bool bConnect(char* pAddr, int iPort);
+	bool bConnect(const char* pAddr, int iPort);
 	bool bBlockConnect(char* pAddr, int iPort);
 	bool bListen(char* pAddr, int iPort);
 	bool bAccept(ASIOSocket* pSock);

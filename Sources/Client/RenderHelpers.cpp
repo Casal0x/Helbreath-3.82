@@ -1,4 +1,4 @@
-#include "RenderHelpers.h"
+﻿#include "RenderHelpers.h"
 #include "Game.h"
 #include "CommonTypes.h"
 #include "ConfigManager.h"
@@ -7,9 +7,6 @@
 // Drawing order arrays (moved from Game.cpp file scope)
 // Indexed by direction (1-8). Element [0] is unused.
 // -----------------------------------------------------------------------
-char _cDrawingOrder[]           = { 0, 1, 0, 0, 0, 0, 0, 1, 1 };
-char _cMantleDrawingOrder[]     = { 0, 1, 1, 1, 0, 0, 0, 2, 2 };
-char _cMantleDrawingOrderOnRun[] = { 0, 1, 1, 1, 1, 1, 1, 1, 1 };
 
 namespace RenderHelpers
 {
@@ -230,7 +227,7 @@ void DrawPlayerLayers(CGame& game, const EquipmentIndices& eq,
 	int frame = state.m_iFrame;
 	int bodyDirIndex = eq.iBodyIndex + (dir - 1);
 
-	if (_cDrawingOrder[dir] == 1)
+	if (weapon_draw_order[dir] == 1)
 	{
 		// Weapon before body
 		DrawWeapon(game, eq, sX, sY, frame, bInv);

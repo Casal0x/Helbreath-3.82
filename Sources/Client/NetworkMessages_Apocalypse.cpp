@@ -1,9 +1,11 @@
-#include "Game.h"
+﻿#include "Game.h"
 #include "NetworkMessageManager.h"
 #include "Packet/SharedPackets.h"
 #include "lan_eng.h"
 #include <cstdio>
 #include <cstring>
+#include <format>
+#include <string>
 
 namespace NetworkMessageHandlers {
 
@@ -24,14 +26,12 @@ void HandleApocGateOpen(CGame* pGame, char* pData)
 	if (!pkt) return;
 	pGame->m_iGatePositX = pkt->gate_x;
 	pGame->m_iGatePositY = pkt->gate_y;
-	std::memset(pGame->m_cGateMapName, 0, sizeof(pGame->m_cGateMapName));
-	memcpy(pGame->m_cGateMapName, pkt->map_name, sizeof(pkt->map_name));
+	pGame->m_cGateMapName.assign(pkt->map_name, strnlen(pkt->map_name, sizeof(pkt->map_name)));
 }
 
 void HandleApocGateClose(CGame* pGame, char* pData)
 {
 	pGame->m_iGatePositX = pGame->m_iGatePositY = -1;
-	std::memset(pGame->m_cGateMapName, 0, sizeof(pGame->m_cGateMapName));
 }
 
 void HandleApocForceRecall(CGame* pGame, char* pData)
@@ -41,7 +41,7 @@ void HandleApocForceRecall(CGame* pGame, char* pData)
 
 void HandleAbaddonKilled(CGame* pGame, char* pData)
 {
-	char cTxt[128];
+	std::string cTxt;
 	char cKiller[21];
 	const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyAbaddonKilled>(
 		pData, sizeof(hb::net::PacketNotifyAbaddonKilled));
@@ -49,8 +49,8 @@ void HandleAbaddonKilled(CGame* pGame, char* pData)
 	std::memset(cKiller, 0, sizeof(cKiller));
 	memcpy(cKiller, pkt->killer_name, sizeof(pkt->killer_name));
 	
-	std::snprintf(cTxt, sizeof(cTxt), "Abaddon is destroyed by %s", cKiller);
-	pGame->AddEventList(cTxt, 10);
+	cTxt = std::format("Abaddon is destroyed by {}", cKiller);
+	pGame->AddEventList(cTxt.c_str(), 10);
 }
 
 } // namespace NetworkMessageHandlers

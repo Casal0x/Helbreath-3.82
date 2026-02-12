@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <cstdint>
 #include <array>
@@ -49,6 +49,11 @@ public:
 	bool IsRaining() const { return m_effect_type >= 1 && m_effect_type <= 3; }
 	bool IsSnowing() const { return m_effect_type >= 4; }
 
+	// Ambient light (day/night)
+	void SetAmbientLight(char level);
+	char GetAmbientLight() const { return m_ambient_light_level; }
+	bool IsNight() const { return m_ambient_light_level == 2; }
+
 private:
 	WeatherManager() = default;
 	~WeatherManager() = default;
@@ -64,6 +69,7 @@ private:
 	char m_weather_status = 0;
 	uint32_t m_last_update_time = 0;
 	bool m_is_xmas = false;
+	char m_ambient_light_level = 1;
 
 	// Dependencies (non-owning)
 	hb::shared::render::IRenderer* m_renderer = nullptr;

@@ -4,6 +4,8 @@
 #include "ItemNameFormatter.h"
 #include "GlobalDef.h"
 #include "lan_eng.h"
+#include <format>
+#include <string>
 
 using namespace hb::shared::net;
 using namespace hb::shared::item;
@@ -64,18 +66,16 @@ void DialogBox_NpcActionQuery::DrawMode0_NpcMenu(short sX, short sY, short msX, 
 
 void DialogBox_NpcActionQuery::DrawMode1_GiveToPlayer(short sX, short sY, short msX, short msY)
 {
-	char cTxt[120], cTxt2[120], cStr1[64], cStr2[64], cStr3[64];
-	std::memset(cStr1, 0, sizeof(cStr1));
-	std::memset(cStr2, 0, sizeof(cStr2));
-	std::memset(cStr3, 0, sizeof(cStr3));
+	std::string cTxt, cTxt2;
+
 
 	DrawNewDialogBox(InterfaceNdGame2, sX, sY, 6);
-	ItemNameFormatter::Get().Format(m_pGame->m_pItemList[Info().sV1].get(), cStr1, cStr2, cStr3);
-	std::snprintf(cTxt, sizeof(cTxt), DRAW_DIALOGBOX_NPCACTION_QUERY29, Info().sV3, cStr1);
-	std::snprintf(cTxt2, sizeof(cTxt2), DRAW_DIALOGBOX_NPCACTION_QUERY29_1, Info().cStr);
+	auto itemInfo = ItemNameFormatter::Get().Format(m_pGame->m_pItemList[Info().sV1].get());
+	cTxt = std::format(DRAW_DIALOGBOX_NPCACTION_QUERY29, Info().sV3, itemInfo.name.c_str());
+	cTxt2 = std::format(DRAW_DIALOGBOX_NPCACTION_QUERY29_1, Info().cStr);
 
-	PutString(sX + 24, sY + 25, cTxt, GameColors::UILabel);
-	PutString(sX + 24, sY + 40, cTxt2, GameColors::UILabel);
+	PutString(sX + 24, sY + 25, cTxt.c_str(), GameColors::UILabel);
+	PutString(sX + 24, sY + 40, cTxt2.c_str(), GameColors::UILabel);
 
 	DrawHighlightedText(sX + 28, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY30, msX, msY, sX + 25, sX + 100, sY + 55, sY + 70);
 	DrawHighlightedText(sX + 155, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY34, msX, msY, sX + 155, sX + 210, sY + 55, sY + 70);
@@ -83,19 +83,17 @@ void DialogBox_NpcActionQuery::DrawMode1_GiveToPlayer(short sX, short sY, short 
 
 void DialogBox_NpcActionQuery::DrawMode2_SellToShop(short sX, short sY, short msX, short msY)
 {
-	char cTxt[120], cTxt2[120], cStr1[64], cStr2[64], cStr3[64];
-	std::memset(cStr1, 0, sizeof(cStr1));
-	std::memset(cStr2, 0, sizeof(cStr2));
-	std::memset(cStr3, 0, sizeof(cStr3));
+	std::string cTxt, cTxt2;
+
 
 	DrawNewDialogBox(InterfaceNdGame2, sX, sY, 5);
-	ItemNameFormatter::Get().Format(m_pGame->m_pItemList[Info().sV1].get(), cStr1, cStr2, cStr3);
+	auto itemInfo2 = ItemNameFormatter::Get().Format(m_pGame->m_pItemList[Info().sV1].get());
 
-	std::snprintf(cTxt, sizeof(cTxt), DRAW_DIALOGBOX_NPCACTION_QUERY29, Info().sV3, cStr1);
-	std::snprintf(cTxt2, sizeof(cTxt2), DRAW_DIALOGBOX_NPCACTION_QUERY29_1, Info().cStr);
+	cTxt = std::format(DRAW_DIALOGBOX_NPCACTION_QUERY29, Info().sV3, itemInfo2.name.c_str());
+	cTxt2 = std::format(DRAW_DIALOGBOX_NPCACTION_QUERY29_1, Info().cStr);
 
-	PutString(sX + 24, sY + 20, cTxt, GameColors::UILabel);
-	PutString(sX + 24, sY + 35, cTxt2, GameColors::UILabel);
+	PutString(sX + 24, sY + 20, cTxt.c_str(), GameColors::UILabel);
+	PutString(sX + 24, sY + 35, cTxt2.c_str(), GameColors::UILabel);
 
 	DrawHighlightedText(sX + 28, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY39, msX, msY, sX + 25, sX + 100, sY + 55, sY + 70);
 
@@ -109,19 +107,17 @@ void DialogBox_NpcActionQuery::DrawMode2_SellToShop(short sX, short sY, short ms
 
 void DialogBox_NpcActionQuery::DrawMode3_DepositToWarehouse(short sX, short sY, short msX, short msY)
 {
-	char cTxt[120], cTxt2[120], cStr1[64], cStr2[64], cStr3[64];
-	std::memset(cStr1, 0, sizeof(cStr1));
-	std::memset(cStr2, 0, sizeof(cStr2));
-	std::memset(cStr3, 0, sizeof(cStr3));
+	std::string cTxt, cTxt2;
+
 
 	DrawNewDialogBox(InterfaceNdGame2, sX, sY, 6);
-	ItemNameFormatter::Get().Format(m_pGame->m_pItemList[Info().sV1].get(), cStr1, cStr2, cStr3);
+	auto itemInfo3 = ItemNameFormatter::Get().Format(m_pGame->m_pItemList[Info().sV1].get());
 
-	std::snprintf(cTxt, sizeof(cTxt), DRAW_DIALOGBOX_NPCACTION_QUERY29, Info().sV3, cStr1);
-	std::snprintf(cTxt2, sizeof(cTxt2), DRAW_DIALOGBOX_NPCACTION_QUERY29_1, Info().cStr);
+	cTxt = std::format(DRAW_DIALOGBOX_NPCACTION_QUERY29, Info().sV3, itemInfo3.name.c_str());
+	cTxt2 = std::format(DRAW_DIALOGBOX_NPCACTION_QUERY29_1, Info().cStr);
 
-	PutAlignedString(sX, sX + 240, sY + 20, cTxt, GameColors::UILabel);
-	PutAlignedString(sX, sX + 240, sY + 35, cTxt2, GameColors::UILabel);
+	PutAlignedString(sX, sX + 240, sY + 20, cTxt.c_str(), GameColors::UILabel);
+	PutAlignedString(sX, sX + 240, sY + 35, cTxt2.c_str(), GameColors::UILabel);
 
 	DrawHighlightedText(sX + 28, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY48, msX, msY, sX + 25, sX + 100, sY + 55, sY + 70);
 }

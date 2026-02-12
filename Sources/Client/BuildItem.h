@@ -1,8 +1,9 @@
-// BuildItem.h: interface for the CBuildItem class.
+﻿// BuildItem.h: interface for the CBuildItem class.
 //
 //////////////////////////////////////////////////////////////////////
 
 #pragma once
+#include <string>
 
 #include <windows.h>
 #include "CommonTypes.h"
@@ -15,21 +16,12 @@ public:
 	{
 		int i;
 
-		std::memset(m_cName, 0, sizeof(m_cName));
-
 		m_bBuildEnabled = false;
 		m_iSkillLimit   = 0;
 		m_iMaxSkill     = 0;
 
 		m_iSprH     = 0;
 		m_iSprFrame = 0;
-
-		std::memset(m_cElementName1, 0, sizeof(m_cElementName1));
-		std::memset(m_cElementName2, 0, sizeof(m_cElementName2));
-		std::memset(m_cElementName3, 0, sizeof(m_cElementName3));
-		std::memset(m_cElementName4, 0, sizeof(m_cElementName4));
-		std::memset(m_cElementName5, 0, sizeof(m_cElementName5));
-		std::memset(m_cElementName6, 0, sizeof(m_cElementName6));
 
 		for (i = 0; i < 7; i++) {
 			m_iElementCount[i] = 0;
@@ -43,12 +35,16 @@ public:
 	}
 
 	bool m_bBuildEnabled;
-	char m_cName[hb::shared::limits::ItemNameLen];
+	std::string m_cName;
 	int	 m_iSkillLimit;
 	int  m_iMaxSkill;
 	int  m_iSprH, m_iSprFrame;
-	char m_cElementName1[hb::shared::limits::ItemNameLen], m_cElementName2[hb::shared::limits::ItemNameLen], m_cElementName3[hb::shared::limits::ItemNameLen];
-	char m_cElementName4[hb::shared::limits::ItemNameLen], m_cElementName5[hb::shared::limits::ItemNameLen], m_cElementName6[hb::shared::limits::ItemNameLen];
+	std::string m_cElementName1;
+	std::string m_cElementName2;
+	std::string m_cElementName3;
+	std::string m_cElementName4;
+	std::string m_cElementName5;
+	std::string m_cElementName6;
 	uint32_t m_iElementCount[7];
 	bool  m_bElementFlag[7];
 

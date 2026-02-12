@@ -1,4 +1,4 @@
-// Overlay_ChangePassword.cpp: Password change overlay
+﻿// Overlay_ChangePassword.cpp: Password change overlay
 //
 //////////////////////////////////////////////////////////////////////
 
@@ -13,6 +13,7 @@
 #include "GameFonts.h"
 #include "TextLibExt.h"
 #include "Packet/SharedPackets.h"
+#include <string>
 
 
 using namespace hb::shared::net;
@@ -149,7 +150,7 @@ void Overlay_ChangePassword::HandleSubmit()
 
     // Create connection
     m_pGame->m_pLSock = std::make_unique<hb::shared::net::ASIOSocket>(m_pGame->m_pIOPool->GetContext(), game_limits::socket_block_limit);
-    m_pGame->m_pLSock->bConnect(m_pGame->m_cLogServerAddr, m_pGame->m_iLogServerPort + (rand() % 1));
+    m_pGame->m_pLSock->bConnect(m_pGame->m_cLogServerAddr.c_str(), m_pGame->m_iLogServerPort + (rand() % 1));
     m_pGame->m_pLSock->bInitBufferSize(hb::shared::limits::MsgBufferSize);
 
     m_pGame->m_dwConnectMode = MsgId::RequestChangePassword;

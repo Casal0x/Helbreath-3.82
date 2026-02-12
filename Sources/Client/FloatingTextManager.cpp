@@ -9,6 +9,8 @@
 #include "GameGeometry.h"
 #include <cstdio>
 #include <cstring>
+#include <format>
+#include <string>
 
 
 using namespace hb::shared::action;
@@ -89,37 +91,37 @@ int CFloatingTextManager::AddNotifyText(NotifyTextType eType, const char* pMsg, 
 int CFloatingTextManager::AddDamageFromValue(short sDamage, bool bLastHit, uint32_t dwTime,
                                              int iObjectID, CMapData* pMapData)
 {
-	char cTxt[64]{};
+	std::string cTxt;
 
 	if (sDamage == Sentinel::DamageImmune)
 	{
-		std::snprintf(cTxt, sizeof(cTxt), "%s", "* Immune *");
+		cTxt = "* Immune *";
 		AudioManager::Get().PlayGameSound(SoundType::Character, 17, 0, 0);
-		return AddDamageText(DamageTextType::Medium, cTxt, dwTime, iObjectID, pMapData);
+		return AddDamageText(DamageTextType::Medium, cTxt.c_str(), dwTime, iObjectID, pMapData);
 	}
 	if (sDamage == Sentinel::MagicFailed)
 	{
-		std::snprintf(cTxt, sizeof(cTxt), "%s", "* Failed! *");
+		cTxt = "* Failed! *";
 		AudioManager::Get().PlayGameSound(SoundType::Character, 17, 0, 0);
-		return AddDamageText(DamageTextType::Medium, cTxt, dwTime, iObjectID, pMapData);
+		return AddDamageText(DamageTextType::Medium, cTxt.c_str(), dwTime, iObjectID, pMapData);
 	}
 	if (sDamage > 128)
 	{
-		std::snprintf(cTxt, sizeof(cTxt), "%s", "Critical!");
-		return AddDamageText(DamageTextType::Large, cTxt, dwTime, iObjectID, pMapData);
+		cTxt = "Critical!";
+		return AddDamageText(DamageTextType::Large, cTxt.c_str(), dwTime, iObjectID, pMapData);
 	}
 	if (sDamage > 0)
 	{
 		if (bLastHit && sDamage >= 12)
-			std::snprintf(cTxt, sizeof(cTxt), "-%dPts!", sDamage);
+			cTxt = std::format("-{}Pts!", sDamage);
 		else
-			std::snprintf(cTxt, sizeof(cTxt), "-%dPts", sDamage);
+			cTxt = std::format("-{}Pts", sDamage);
 
 		DamageTextType eType;
 		if (sDamage < 12)       eType = DamageTextType::Small;
 		else if (sDamage < 40)  eType = DamageTextType::Medium;
 		else                    eType = DamageTextType::Large;
-		return AddDamageText(eType, cTxt, dwTime, iObjectID, pMapData);
+		return AddDamageText(eType, cTxt.c_str(), dwTime, iObjectID, pMapData);
 	}
 	return 0;
 }

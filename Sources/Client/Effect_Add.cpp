@@ -1,8 +1,9 @@
-// Effect_Add.cpp: AddEffect implementation
+﻿// Effect_Add.cpp: AddEffect implementation
 //
 //////////////////////////////////////////////////////////////////////
 
 #include "EffectManager.h"
+#include "GameConstants.h"
 #include "Game.h"
 #include "ISprite.h"
 #include "Effect.h"
@@ -10,7 +11,6 @@
 #include "Misc.h"
 #include "ConfigManager.h"
 
-extern int _iAttackerHeight[];
 
 void EffectManager::AddEffectImpl(EffectType sType, int sX, int sY, int dX, int dY, char cStartFrame, int iV1)
 {
@@ -57,7 +57,7 @@ void EffectManager::AddEffectImpl(EffectType sType, int sX, int sY, int dX, int 
 			switch (sType) {
 			case EffectType::NORMAL_HIT: // coup normal
 				m_pEffectList[i]->m_mX = sX * 32;
-				m_pEffectList[i]->m_mY = sY * 32 - _iAttackerHeight[iV1];
+				m_pEffectList[i]->m_mY = sY * 32 - entity_visual::attacker_height[iV1];
 				m_pEffectList[i]->m_iErr = 0;
 				m_pEffectList[i]->m_cMaxFrame = 2;
 				m_pEffectList[i]->m_dwFrameTime = 10;
@@ -65,7 +65,7 @@ void EffectManager::AddEffectImpl(EffectType sType, int sX, int sY, int dX, int 
 
 			case EffectType::ARROW_FLYING:	// Arrow Flying
 				m_pEffectList[i]->m_mX = sX * 32;
-				m_pEffectList[i]->m_mY = sY * 32 - _iAttackerHeight[iV1];
+				m_pEffectList[i]->m_mY = sY * 32 - entity_visual::attacker_height[iV1];
 				m_pEffectList[i]->m_iErr = 0;
 				m_pEffectList[i]->m_cMaxFrame = 0;
 				m_pEffectList[i]->m_dwFrameTime = 10;
@@ -178,7 +178,7 @@ void EffectManager::AddEffectImpl(EffectType sType, int sX, int sY, int dX, int 
 				m_pEffectList[i]->m_mX = sX;
 			if (m_pEffectList[i]->m_iV1 > 0) // Case if hit by an arrow
 			{
-				m_pEffectList[i]->m_mY = sY - (_iAttackerHeight[m_pEffectList[i]->m_iV1] / 4 + rand() % (_iAttackerHeight[m_pEffectList[i]->m_iV1] / 2));
+				m_pEffectList[i]->m_mY = sY - (entity_visual::attacker_height[m_pEffectList[i]->m_iV1] / 4 + rand() % (entity_visual::attacker_height[m_pEffectList[i]->m_iV1] / 2));
 				m_pEffectList[i]->m_mX = sX + (rand() % 5) - 2;
 			}
 			else m_pEffectList[i]->m_mY = sY;

@@ -1,4 +1,4 @@
-#include "Game.h"
+﻿#include "Game.h"
 #include "NetworkMessageManager.h"
 #include "Packet/SharedPackets.h"
 #include "lan_eng.h"
@@ -6,6 +6,8 @@
 #include <cstdio>
 #include <cstring>
 #include <cmath>
+#include <format>
+#include <string>
 
 namespace NetworkMessageHandlers {
 	void HandleDownSkillIndexSet(CGame* pGame, char* pData)
@@ -22,7 +24,7 @@ namespace NetworkMessageHandlers {
 	void HandleMagicStudyFail(CGame* pGame, char* pData)
 	{
 		char cMagicNum, cName[31], cFailCode;
-		char cTxt[120];
+		std::string cTxt;
 		int iCost, iReqInt;
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyMagicStudyFail>(
 			pData, sizeof(hb::net::PacketNotifyMagicStudyFail));
@@ -36,22 +38,22 @@ namespace NetworkMessageHandlers {
 
 		if (iCost > 0)
 		{
-			std::snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_MAGICSTUDY_FAIL1, cName);
-			pGame->AddEventList(cTxt, 10);
+			cTxt = std::format(NOTIFYMSG_MAGICSTUDY_FAIL1, cName);
+			pGame->AddEventList(cTxt.c_str(), 10);
 		}
 		else
 		{
-			std::snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_MAGICSTUDY_FAIL2, cName);
-			pGame->AddEventList(cTxt, 10);
-			std::snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_MAGICSTUDY_FAIL3, iReqInt);
-			pGame->AddEventList(cTxt, 10);
+			cTxt = std::format(NOTIFYMSG_MAGICSTUDY_FAIL2, cName);
+			pGame->AddEventList(cTxt.c_str(), 10);
+			cTxt = std::format(NOTIFYMSG_MAGICSTUDY_FAIL3, iReqInt);
+			pGame->AddEventList(cTxt.c_str(), 10);
 		}
 	}
 
 	void HandleMagicStudySuccess(CGame* pGame, char* pData)
 	{
 		char cMagicNum, cName[31];
-		char cTxt[120];
+		std::string cTxt;
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyMagicStudySuccess>(
 			pData, sizeof(hb::net::PacketNotifyMagicStudySuccess));
 		if (!pkt) return;
@@ -60,23 +62,22 @@ namespace NetworkMessageHandlers {
 	  // Magic learned - affects magic list
 		std::memset(cName, 0, sizeof(cName));
 		memcpy(cName, pkt->magic_name, 30);
-		std::snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_MAGICSTUDY_SUCCESS1, cName);
-		pGame->AddEventList(cTxt, 10);
+		cTxt = std::format(NOTIFYMSG_MAGICSTUDY_SUCCESS1, cName);
+		pGame->AddEventList(cTxt.c_str(), 10);
 		pGame->PlayGameSound('E', 23, 0);
 	}
 
 	void HandleSkillTrainSuccess(CGame* pGame, char* pData)
 	{
 		char cSkillNum, cSkillLevel;
-		char cTemp[120];
+		std::string cTemp;
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifySkillTrainSuccess>(
 			pData, sizeof(hb::net::PacketNotifySkillTrainSuccess));
 		if (!pkt) return;
 		cSkillNum = static_cast<char>(pkt->skill_num);
 		cSkillLevel = static_cast<char>(pkt->skill_level);
-		std::memset(cTemp, 0, sizeof(cTemp));
-		std::snprintf(cTemp, sizeof(cTemp), NOTIFYMSG_SKILL_TRAIN_SUCCESS1, pGame->m_pSkillCfgList[cSkillNum]->m_cName, cSkillLevel);
-		pGame->AddEventList(cTemp, 10);
+		cTemp = std::format(NOTIFYMSG_SKILL_TRAIN_SUCCESS1, pGame->m_pSkillCfgList[cSkillNum]->m_cName, cSkillLevel);
+		pGame->AddEventList(cTemp.c_str(), 10);
 		pGame->m_pSkillCfgList[cSkillNum]->m_iLevel = cSkillLevel;
 		pGame->m_pPlayer->m_iSkillMastery[cSkillNum] = (unsigned char)cSkillLevel;
 		pGame->PlayGameSound('E', 23, 0);
@@ -85,7 +86,7 @@ namespace NetworkMessageHandlers {
 	void HandleSkill(CGame* pGame, char* pData)
 	{
 		short sSkillIndex, sValue;
-		char cTxt[120];
+		std::string cTxt;
 
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifySkill>(
 			pData, sizeof(hb::net::PacketNotifySkill));
@@ -95,19 +96,19 @@ namespace NetworkMessageHandlers {
 		pGame->m_floatingText.RemoveByObjectID(pGame->m_pPlayer->m_sPlayerObjectID);
 		if (pGame->m_pSkillCfgList[sSkillIndex]->m_iLevel < sValue)
 		{
-			std::snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_SKILL1, pGame->m_pSkillCfgList[sSkillIndex]->m_cName, sValue - pGame->m_pSkillCfgList[sSkillIndex]->m_iLevel);
-			pGame->AddEventList(cTxt, 10);
+			cTxt = std::format(NOTIFYMSG_SKILL1, pGame->m_pSkillCfgList[sSkillIndex]->m_cName, sValue - pGame->m_pSkillCfgList[sSkillIndex]->m_iLevel);
+			pGame->AddEventList(cTxt.c_str(), 10);
 			pGame->PlayGameSound('E', 23, 0);
-			std::snprintf(cTxt, sizeof(cTxt), "%s +%d%%", pGame->m_pSkillCfgList[sSkillIndex]->m_cName, sValue - pGame->m_pSkillCfgList[sSkillIndex]->m_iLevel);
-			pGame->m_floatingText.AddNotifyText(NotifyTextType::SkillChange, cTxt, pGame->m_dwCurTime,
+			cTxt = std::format("{} +{}%", pGame->m_pSkillCfgList[sSkillIndex]->m_cName, sValue - pGame->m_pSkillCfgList[sSkillIndex]->m_iLevel);
+			pGame->m_floatingText.AddNotifyText(NotifyTextType::SkillChange, cTxt.c_str(), pGame->m_dwCurTime,
 				pGame->m_pPlayer->m_sPlayerObjectID, pGame->m_pMapData.get());
 		}
 		else if (pGame->m_pSkillCfgList[sSkillIndex]->m_iLevel > sValue) {
-			std::snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_SKILL2, pGame->m_pSkillCfgList[sSkillIndex]->m_cName, pGame->m_pSkillCfgList[sSkillIndex]->m_iLevel - sValue);
-			pGame->AddEventList(cTxt, 10);
+			cTxt = std::format(NOTIFYMSG_SKILL2, pGame->m_pSkillCfgList[sSkillIndex]->m_cName, pGame->m_pSkillCfgList[sSkillIndex]->m_iLevel - sValue);
+			pGame->AddEventList(cTxt.c_str(), 10);
 			pGame->PlayGameSound('E', 24, 0);
-			std::snprintf(cTxt, sizeof(cTxt), "%s -%d%%", pGame->m_pSkillCfgList[sSkillIndex]->m_cName, sValue - pGame->m_pSkillCfgList[sSkillIndex]->m_iLevel);
-			pGame->m_floatingText.AddNotifyText(NotifyTextType::SkillChange, cTxt, pGame->m_dwCurTime,
+			cTxt = std::format("{} -{}%", pGame->m_pSkillCfgList[sSkillIndex]->m_cName, sValue - pGame->m_pSkillCfgList[sSkillIndex]->m_iLevel);
+			pGame->m_floatingText.AddNotifyText(NotifyTextType::SkillChange, cTxt.c_str(), pGame->m_dwCurTime,
 				pGame->m_pPlayer->m_sPlayerObjectID, pGame->m_pMapData.get());
 		}
 		pGame->m_pSkillCfgList[sSkillIndex]->m_iLevel = sValue;
@@ -395,6 +396,7 @@ namespace NetworkMessageHandlers {
 
 	void HandleSpecialAbilityStatus(CGame* pGame, char* pData)
 	{
+		std::string G_cTxt;
 		short sV1, sV2, sV3;
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifySpecialAbilityStatus>(
 			pData, sizeof(hb::net::PacketNotifySpecialAbilityStatus));
@@ -408,22 +410,22 @@ namespace NetworkMessageHandlers {
 			pGame->PlayGameSound('E', 35, 0);
 			pGame->AddEventList(NOTIFY_MSG_HANDLER4, 10); 
 			switch (sV2) {
-			case 1: std::snprintf(pGame->G_cTxt, sizeof(pGame->G_cTxt), NOTIFY_MSG_HANDLER5, sV3); break;
-			case 2: std::snprintf(pGame->G_cTxt, sizeof(pGame->G_cTxt), NOTIFY_MSG_HANDLER6, sV3); break;
-			case 3: std::snprintf(pGame->G_cTxt, sizeof(pGame->G_cTxt), NOTIFY_MSG_HANDLER7, sV3); break;
-			case 4: std::snprintf(pGame->G_cTxt, sizeof(pGame->G_cTxt), NOTIFY_MSG_HANDLER8, sV3); break;
-			case 5: std::snprintf(pGame->G_cTxt, sizeof(pGame->G_cTxt), NOTIFY_MSG_HANDLER9, sV3); break;
-			case 50:std::snprintf(pGame->G_cTxt, sizeof(pGame->G_cTxt), NOTIFY_MSG_HANDLER10, sV3); break;
-			case 51:std::snprintf(pGame->G_cTxt, sizeof(pGame->G_cTxt), NOTIFY_MSG_HANDLER11, sV3); break;
-			case 52:std::snprintf(pGame->G_cTxt, sizeof(pGame->G_cTxt), NOTIFY_MSG_HANDLER12, sV3); break;
+			case 1: G_cTxt = std::format(NOTIFY_MSG_HANDLER5, sV3); break;
+			case 2: G_cTxt = std::format(NOTIFY_MSG_HANDLER6, sV3); break;
+			case 3: G_cTxt = std::format(NOTIFY_MSG_HANDLER7, sV3); break;
+			case 4: G_cTxt = std::format(NOTIFY_MSG_HANDLER8, sV3); break;
+			case 5: G_cTxt = std::format(NOTIFY_MSG_HANDLER9, sV3); break;
+			case 50:G_cTxt = std::format(NOTIFY_MSG_HANDLER10, sV3); break;
+			case 51:G_cTxt = std::format(NOTIFY_MSG_HANDLER11, sV3); break;
+			case 52:G_cTxt = std::format(NOTIFY_MSG_HANDLER12, sV3); break;
 			case 55: 
 				if (sV3 > 90)
-					std::snprintf(pGame->G_cTxt, sizeof(pGame->G_cTxt), "You cast a powerfull incantation, you can't use it again before %d minutes.", sV3 / 60);
+					G_cTxt = std::format("You cast a powerfull incantation, you can't use it again before {} minutes.", sV3 / 60);
 				else
-					std::snprintf(pGame->G_cTxt, sizeof(pGame->G_cTxt), "You cast a powerfull incantation, you can't use it again before %d seconds.", sV3);
+					G_cTxt = std::format("You cast a powerfull incantation, you can't use it again before {} seconds.", sV3);
 				break;
 			}
-			pGame->AddEventList(pGame->G_cTxt, 10);
+			pGame->AddEventList(G_cTxt.c_str(), 10);
 		}
 		else if (sV1 == 2) // Finished using
 		{
@@ -434,27 +436,27 @@ namespace NetworkMessageHandlers {
 				if (sV3 >= 60)
 				{
 					switch (sV2) {
-					case 1: std::snprintf(pGame->G_cTxt, sizeof(pGame->G_cTxt), NOTIFY_MSG_HANDLER14, sV3 / 60); pGame->AddEventList(pGame->G_cTxt, 10); break;
-					case 2: std::snprintf(pGame->G_cTxt, sizeof(pGame->G_cTxt), NOTIFY_MSG_HANDLER15, sV3 / 60); pGame->AddEventList(pGame->G_cTxt, 10); break;
-					case 3: std::snprintf(pGame->G_cTxt, sizeof(pGame->G_cTxt), NOTIFY_MSG_HANDLER16, sV3 / 60); pGame->AddEventList(pGame->G_cTxt, 10); break;
-					case 4: std::snprintf(pGame->G_cTxt, sizeof(pGame->G_cTxt), NOTIFY_MSG_HANDLER17, sV3 / 60); pGame->AddEventList(pGame->G_cTxt, 10); break;
-					case 5: std::snprintf(pGame->G_cTxt, sizeof(pGame->G_cTxt), NOTIFY_MSG_HANDLER18, sV3 / 60); pGame->AddEventList(pGame->G_cTxt, 10); break;
-					case 50:std::snprintf(pGame->G_cTxt, sizeof(pGame->G_cTxt), NOTIFY_MSG_HANDLER19, sV3 / 60); pGame->AddEventList(pGame->G_cTxt, 10); break;
-					case 51:std::snprintf(pGame->G_cTxt, sizeof(pGame->G_cTxt), NOTIFY_MSG_HANDLER20, sV3 / 60); pGame->AddEventList(pGame->G_cTxt, 10); break;
-					case 52:std::snprintf(pGame->G_cTxt, sizeof(pGame->G_cTxt), NOTIFY_MSG_HANDLER21, sV3 / 60); pGame->AddEventList(pGame->G_cTxt, 10); break;
+					case 1: G_cTxt = std::format(NOTIFY_MSG_HANDLER14, sV3 / 60); pGame->AddEventList(G_cTxt.c_str(), 10); break;
+					case 2: G_cTxt = std::format(NOTIFY_MSG_HANDLER15, sV3 / 60); pGame->AddEventList(G_cTxt.c_str(), 10); break;
+					case 3: G_cTxt = std::format(NOTIFY_MSG_HANDLER16, sV3 / 60); pGame->AddEventList(G_cTxt.c_str(), 10); break;
+					case 4: G_cTxt = std::format(NOTIFY_MSG_HANDLER17, sV3 / 60); pGame->AddEventList(G_cTxt.c_str(), 10); break;
+					case 5: G_cTxt = std::format(NOTIFY_MSG_HANDLER18, sV3 / 60); pGame->AddEventList(G_cTxt.c_str(), 10); break;
+					case 50:G_cTxt = std::format(NOTIFY_MSG_HANDLER19, sV3 / 60); pGame->AddEventList(G_cTxt.c_str(), 10); break;
+					case 51:G_cTxt = std::format(NOTIFY_MSG_HANDLER20, sV3 / 60); pGame->AddEventList(G_cTxt.c_str(), 10); break;
+					case 52:G_cTxt = std::format(NOTIFY_MSG_HANDLER21, sV3 / 60); pGame->AddEventList(G_cTxt.c_str(), 10); break;
 					}
 				}
 				else
 				{
 					switch (sV2) {
-					case 1: std::snprintf(pGame->G_cTxt, sizeof(pGame->G_cTxt), NOTIFY_MSG_HANDLER22, sV3); pGame->AddEventList(pGame->G_cTxt, 10); break;
-					case 2: std::snprintf(pGame->G_cTxt, sizeof(pGame->G_cTxt), NOTIFY_MSG_HANDLER23, sV3); pGame->AddEventList(pGame->G_cTxt, 10); break;
-					case 3: std::snprintf(pGame->G_cTxt, sizeof(pGame->G_cTxt), NOTIFY_MSG_HANDLER24, sV3); pGame->AddEventList(pGame->G_cTxt, 10); break;
-					case 4: std::snprintf(pGame->G_cTxt, sizeof(pGame->G_cTxt), NOTIFY_MSG_HANDLER25, sV3); pGame->AddEventList(pGame->G_cTxt, 10); break;
-					case 5: std::snprintf(pGame->G_cTxt, sizeof(pGame->G_cTxt), NOTIFY_MSG_HANDLER26, sV3); pGame->AddEventList(pGame->G_cTxt, 10); break;
-					case 50:std::snprintf(pGame->G_cTxt, sizeof(pGame->G_cTxt), NOTIFY_MSG_HANDLER27, sV3); pGame->AddEventList(pGame->G_cTxt, 10); break;
-					case 51:std::snprintf(pGame->G_cTxt, sizeof(pGame->G_cTxt), NOTIFY_MSG_HANDLER28, sV3); pGame->AddEventList(pGame->G_cTxt, 10); break;
-					case 52:std::snprintf(pGame->G_cTxt, sizeof(pGame->G_cTxt), NOTIFY_MSG_HANDLER29, sV3); pGame->AddEventList(pGame->G_cTxt, 10); break;
+					case 1: G_cTxt = std::format(NOTIFY_MSG_HANDLER22, sV3); pGame->AddEventList(G_cTxt.c_str(), 10); break;
+					case 2: G_cTxt = std::format(NOTIFY_MSG_HANDLER23, sV3); pGame->AddEventList(G_cTxt.c_str(), 10); break;
+					case 3: G_cTxt = std::format(NOTIFY_MSG_HANDLER24, sV3); pGame->AddEventList(G_cTxt.c_str(), 10); break;
+					case 4: G_cTxt = std::format(NOTIFY_MSG_HANDLER25, sV3); pGame->AddEventList(G_cTxt.c_str(), 10); break;
+					case 5: G_cTxt = std::format(NOTIFY_MSG_HANDLER26, sV3); pGame->AddEventList(G_cTxt.c_str(), 10); break;
+					case 50:G_cTxt = std::format(NOTIFY_MSG_HANDLER27, sV3); pGame->AddEventList(G_cTxt.c_str(), 10); break;
+					case 51:G_cTxt = std::format(NOTIFY_MSG_HANDLER28, sV3); pGame->AddEventList(G_cTxt.c_str(), 10); break;
+					case 52:G_cTxt = std::format(NOTIFY_MSG_HANDLER29, sV3); pGame->AddEventList(G_cTxt.c_str(), 10); break;
 					}
 				}
 			}
@@ -475,9 +477,9 @@ namespace NetworkMessageHandlers {
 			{
 				pGame->m_pPlayer->m_iSpecialAbilityTimeLeftSec = (int)sV3;
 				if (sV3 > 90)
-					std::snprintf(pGame->G_cTxt, sizeof(pGame->G_cTxt), "Special ability has run out! Will be available in %d minutes.", sV3 / 60);
-				else std::snprintf(pGame->G_cTxt, sizeof(pGame->G_cTxt), "Special ability has run out! Will be available in %d seconds.", sV3);
-				pGame->AddEventList(pGame->G_cTxt, 10);
+					G_cTxt = std::format("Special ability has run out! Will be available in {} minutes.", sV3 / 60);
+				else G_cTxt = std::format("Special ability has run out! Will be available in {} seconds.", sV3);
+				pGame->AddEventList(G_cTxt.c_str(), 10);
 			}
 		}
 		else if (sV1 == 4) // Unequiped the SA item

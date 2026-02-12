@@ -700,8 +700,6 @@ void DialogBoxManager::EnableDialogBox(int iBoxID, int cType, int sV1, int sV2, 
 			Info(DialogBoxId::Exchange).cMode = cType;
 			for (i = 0; i < 8; i++)
 			{
-				std::memset(m_game->m_stDialogBoxExchangeInfo[i].cStr1, 0, sizeof(m_game->m_stDialogBoxExchangeInfo[i].cStr1));
-				std::memset(m_game->m_stDialogBoxExchangeInfo[i].cStr2, 0, sizeof(m_game->m_stDialogBoxExchangeInfo[i].cStr2));
 				m_game->m_stDialogBoxExchangeInfo[i].sV1 = -1;
 				m_game->m_stDialogBoxExchangeInfo[i].sV2 = -1;
 				m_game->m_stDialogBoxExchangeInfo[i].sV3 = -1;
@@ -975,8 +973,6 @@ void DialogBoxManager::DisableDialogBox(int iBoxID)
 			if (sItemID >= 0 && sItemID < hb::shared::limits::MaxItems && m_game->m_bIsItemDisabled[sItemID])
 				m_game->m_bIsItemDisabled[sItemID] = false;
 
-			std::memset(m_game->m_stDialogBoxExchangeInfo[i].cStr1, 0, sizeof(m_game->m_stDialogBoxExchangeInfo[i].cStr1));
-			std::memset(m_game->m_stDialogBoxExchangeInfo[i].cStr2, 0, sizeof(m_game->m_stDialogBoxExchangeInfo[i].cStr2));
 			m_game->m_stDialogBoxExchangeInfo[i].sV1 = -1;
 			m_game->m_stDialogBoxExchangeInfo[i].sV2 = -1;
 			m_game->m_stDialogBoxExchangeInfo[i].sV3 = -1;
@@ -1016,7 +1012,6 @@ void DialogBoxManager::DisableDialogBox(int iBoxID)
 	}
 
 		std::memset(Info(DialogBoxId::Slates).cStr, 0, sizeof(Info(DialogBoxId::Slates).cStr));
-		std::memset(Info(DialogBoxId::Slates).cStr2, 0, sizeof(Info(DialogBoxId::Slates).cStr2));
 		std::memset(Info(DialogBoxId::Slates).cStr3, 0, sizeof(Info(DialogBoxId::Slates).cStr3));
 		std::memset(Info(DialogBoxId::Slates).cStr4, 0, sizeof(Info(DialogBoxId::Slates).cStr4));
 		Info(DialogBoxId::Slates).sV1 = -1;

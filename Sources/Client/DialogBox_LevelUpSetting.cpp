@@ -1,6 +1,8 @@
 #include "DialogBox_LevelUpSetting.h"
 #include "Game.h"
 #include "lan_eng.h"
+#include <format>
+#include <string>
 
 using namespace hb::shared::net;
 using namespace hb::client::sprite_id;
@@ -14,23 +16,23 @@ void DialogBox_LevelUpSetting::DrawStatRow(short sX, short sY, int iYOffset, con
                                             int iCurrentStat, int iPendingChange, short msX, short msY,
                                             int iArrowYOffset, bool bCanIncrease, bool bCanDecrease)
 {
-	char cTxt[120];
+	std::string cTxt;
 	uint32_t dwTime = m_pGame->m_dwCurTime;
 
 	// Stat label
 	PutString(sX + 24, sY + iYOffset, (char*)pLabel, GameColors::UIBlack);
 
 	// Current value
-	std::snprintf(cTxt, sizeof(cTxt), "%d", iCurrentStat);
-	PutString(sX + 109, sY + iYOffset, cTxt, GameColors::UILabel);
+	cTxt = std::format("{}", iCurrentStat);
+	PutString(sX + 109, sY + iYOffset, cTxt.c_str(), GameColors::UILabel);
 
 	// New value (with pending changes)
 	int iNewStat = iCurrentStat + iPendingChange;
-	std::snprintf(cTxt, sizeof(cTxt), "%d", iNewStat);
+	cTxt = std::format("{}", iNewStat);
 	if (iNewStat != iCurrentStat)
-		PutString(sX + 162, sY + iYOffset, cTxt, GameColors::UIRed);
+		PutString(sX + 162, sY + iYOffset, cTxt.c_str(), GameColors::UIRed);
 	else
-		PutString(sX + 162, sY + iYOffset, cTxt, GameColors::UILabel);
+		PutString(sX + 162, sY + iYOffset, cTxt.c_str(), GameColors::UILabel);
 
 	// + arrow highlight
 	if ((msX >= sX + 195) && (msX <= sX + 205) && (msY >= sY + iArrowYOffset) && (msY <= sY + iArrowYOffset + 6) && bCanIncrease)
@@ -47,7 +49,7 @@ void DialogBox_LevelUpSetting::OnDraw(short msX, short msY, short msZ, char cLB)
 	short sY = Info().sY;
 	short szX = Info().sSizeX;
 	uint32_t dwTime = m_pGame->m_dwCurTime;
-	char cTxt[120];
+	std::string cTxt;
 
 	DrawNewDialogBox(InterfaceNdGame2, sX, sY, 0);
 	DrawNewDialogBox(InterfaceNdText, sX, sY, 2);
@@ -59,11 +61,11 @@ void DialogBox_LevelUpSetting::OnDraw(short msX, short msY, short msZ, char cLB)
 
 	// Points Left
 	PutString(sX + 20, sY + 85, DRAW_DIALOGBOX_LEVELUP_SETTING3, GameColors::UIBlack);
-	std::snprintf(cTxt, sizeof(cTxt), "%d", m_pGame->m_pPlayer->m_iLU_Point);
+	cTxt = std::format("{}", m_pGame->m_pPlayer->m_iLU_Point);
 	if (m_pGame->m_pPlayer->m_iLU_Point > 0)
-		PutString(sX + 73, sY + 102, cTxt, GameColors::UIGreen);
+		PutString(sX + 73, sY + 102, cTxt.c_str(), GameColors::UIGreen);
 	else
-		PutString(sX + 73, sY + 102, cTxt, GameColors::UIBlack);
+		PutString(sX + 73, sY + 102, cTxt.c_str(), GameColors::UIBlack);
 
 	// Draw stat rows
 	DrawStatRow(sX, sY, 125, DRAW_DIALOGBOX_LEVELUP_SETTING4, m_pGame->m_pPlayer->m_iStr, m_pGame->m_pPlayer->m_wLU_Str,

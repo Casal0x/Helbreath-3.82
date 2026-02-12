@@ -4,6 +4,8 @@
 #include "ItemNameFormatter.h"
 #include "GlobalDef.h"
 #include "lan_eng.h"
+#include <format>
+#include <string>
 
 using namespace hb::shared::net;
 using namespace hb::shared::item;
@@ -38,95 +40,90 @@ void DialogBox_SellList::OnDraw(short msX, short msY, short msZ, char cLB)
 
 void DialogBox_SellList::DrawItemList(short sX, short sY, short szX, short msX, short msY, int& iEmptyCount)
 {
-	char cTxt[256], cStr1[64], cStr2[64], cStr3[64];
+	std::string cTxt;
+
 
 	for (int i = 0; i < game_limits::max_sell_list; i++)
 	{
 		if (m_pGame->m_stSellItemList[i].iIndex != -1)
 		{
 			int iItemIndex = m_pGame->m_stSellItemList[i].iIndex;
-			std::memset(cStr1, 0, sizeof(cStr1));
-			std::memset(cStr2, 0, sizeof(cStr2));
-			std::memset(cStr3, 0, sizeof(cStr3));
-			ItemNameFormatter::Get().Format(m_pGame->m_pItemList[iItemIndex].get(), cStr1, cStr2, cStr3);
+			auto itemInfo = ItemNameFormatter::Get().Format(m_pGame->m_pItemList[iItemIndex].get());
 
 			bool bHover = (msX > sX + 25) && (msX < sX + 250) && (msY >= sY + 55 + i * 15) && (msY <= sY + 55 + 14 + i * 15);
 
 			if (m_pGame->m_stSellItemList[i].iAmount > 1)
 			{
 				// Multiple items
-				std::memset(cTxt, 0, sizeof(cTxt));
-				std::snprintf(cTxt, sizeof(cTxt), DRAW_DIALOGBOX_SELL_LIST1, m_pGame->m_stSellItemList[i].iAmount, cStr1);
+				cTxt = std::format(DRAW_DIALOGBOX_SELL_LIST1, m_pGame->m_stSellItemList[i].iAmount, itemInfo.name.c_str());
 
 				if (bHover)
-					PutAlignedString(sX, sX + szX, sY + 55 + i * 15, cTxt, GameColors::UIWhite);
-				else if (ItemNameFormatter::Get().IsSpecial())
-					PutAlignedString(sX, sX + szX, sY + 55 + i * 15, cTxt, GameColors::UIItemName_Special);
+					PutAlignedString(sX, sX + szX, sY + 55 + i * 15, cTxt.c_str(), GameColors::UIWhite);
+				else if (itemInfo.is_special)
+					PutAlignedString(sX, sX + szX, sY + 55 + i * 15, cTxt.c_str(), GameColors::UIItemName_Special);
 				else
-					PutAlignedString(sX, sX + szX, sY + 55 + i * 15, cTxt, GameColors::UILabel);
+					PutAlignedString(sX, sX + szX, sY + 55 + i * 15, cTxt.c_str(), GameColors::UILabel);
 			}
 			else
 			{
 				// Single item
 				if (bHover)
 				{
-					if ((strlen(cStr2) == 0) && (strlen(cStr3) == 0))
+					if ((itemInfo.effect.size() == 0) && (itemInfo.extra.size() == 0))
 					{
-						PutAlignedString(sX, sX + szX, sY + 55 + i * 15, cStr1, GameColors::UIWhite);
+						PutAlignedString(sX, sX + szX, sY + 55 + i * 15, itemInfo.name.c_str(), GameColors::UIWhite);
 					}
 					else
 					{
-						std::memset(cTxt, 0, sizeof(cTxt));
-						if ((strlen(cStr1) + strlen(cStr2) + strlen(cStr3)) < 36)
+						if ((itemInfo.name.size() + itemInfo.effect.size() + itemInfo.extra.size()) < 36)
 						{
-							if ((strlen(cStr2) > 0) && (strlen(cStr3) > 0))
-								std::snprintf(cTxt, sizeof(cTxt), "%s(%s, %s)", cStr1, cStr2, cStr3);
+							if ((itemInfo.effect.size() > 0) && (itemInfo.extra.size() > 0))
+								cTxt = std::format("{}({}, {})", itemInfo.name.c_str(), itemInfo.effect.c_str(), itemInfo.extra.c_str());
 							else
-								std::snprintf(cTxt, sizeof(cTxt), "%s(%s%s)", cStr1, cStr2, cStr3);
-							PutAlignedString(sX, sX + szX, sY + 55 + i * 15, cTxt, GameColors::UIWhite);
+								cTxt = std::format("{}({}{})", itemInfo.name.c_str(), itemInfo.effect.c_str(), itemInfo.extra.c_str());
+							PutAlignedString(sX, sX + szX, sY + 55 + i * 15, cTxt.c_str(), GameColors::UIWhite);
 						}
 						else
 						{
-							if ((strlen(cStr2) > 0) && (strlen(cStr3) > 0))
-								std::snprintf(cTxt, sizeof(cTxt), "(%s, %s)", cStr2, cStr3);
+							if ((itemInfo.effect.size() > 0) && (itemInfo.extra.size() > 0))
+								cTxt = std::format("({}, {})", itemInfo.effect.c_str(), itemInfo.extra.c_str());
 							else
-								std::snprintf(cTxt, sizeof(cTxt), "(%s%s)", cStr2, cStr3);
-							PutAlignedString(sX, sX + szX, sY + 55 + i * 15, cStr1, GameColors::UIWhite);
-							PutAlignedString(sX, sX + szX, sY + 55 + i * 15 + 15, cTxt, GameColors::UIDisabled);
+								cTxt = std::format("({}{})", itemInfo.effect.c_str(), itemInfo.extra.c_str());
+							PutAlignedString(sX, sX + szX, sY + 55 + i * 15, itemInfo.name.c_str(), GameColors::UIWhite);
+							PutAlignedString(sX, sX + szX, sY + 55 + i * 15 + 15, cTxt.c_str(), GameColors::UIDisabled);
 							i++;
 						}
 					}
 				}
 				else
 				{
-					if ((strlen(cStr2) == 0) && (strlen(cStr3) == 0))
+					if ((itemInfo.effect.size() == 0) && (itemInfo.extra.size() == 0))
 					{
-						if (ItemNameFormatter::Get().IsSpecial())
-							PutAlignedString(sX, sX + szX, sY + 55 + i * 15, cStr1, GameColors::UIItemName_Special);
+						if (itemInfo.is_special)
+							PutAlignedString(sX, sX + szX, sY + 55 + i * 15, itemInfo.name.c_str(), GameColors::UIItemName_Special);
 						else
-							PutAlignedString(sX, sX + szX, sY + 55 + i * 15, cStr1, GameColors::UILabel);
+							PutAlignedString(sX, sX + szX, sY + 55 + i * 15, itemInfo.name.c_str(), GameColors::UILabel);
 					}
 					else
 					{
-						std::memset(cTxt, 0, sizeof(cTxt));
-						if ((strlen(cStr1) + strlen(cStr2) + strlen(cStr3)) < 36)
+						if ((itemInfo.name.size() + itemInfo.effect.size() + itemInfo.extra.size()) < 36)
 						{
-							if ((strlen(cStr2) > 0) && (strlen(cStr3) > 0))
-								std::snprintf(cTxt, sizeof(cTxt), "%s(%s, %s)", cStr1, cStr2, cStr3);
+							if ((itemInfo.effect.size() > 0) && (itemInfo.extra.size() > 0))
+								cTxt = std::format("{}({}, {})", itemInfo.name.c_str(), itemInfo.effect.c_str(), itemInfo.extra.c_str());
 							else
-								std::snprintf(cTxt, sizeof(cTxt), "%s(%s%s)", cStr1, cStr2, cStr3);
+								cTxt = std::format("{}({}{})", itemInfo.name.c_str(), itemInfo.effect.c_str(), itemInfo.extra.c_str());
 
-							if (ItemNameFormatter::Get().IsSpecial())
-								PutAlignedString(sX, sX + szX, sY + 55 + i * 15, cTxt, GameColors::UIItemName_Special);
+							if (itemInfo.is_special)
+								PutAlignedString(sX, sX + szX, sY + 55 + i * 15, cTxt.c_str(), GameColors::UIItemName_Special);
 							else
-								PutAlignedString(sX, sX + szX, sY + 55 + i * 15, cTxt, GameColors::UILabel);
+								PutAlignedString(sX, sX + szX, sY + 55 + i * 15, cTxt.c_str(), GameColors::UILabel);
 						}
 						else
 						{
-							if (ItemNameFormatter::Get().IsSpecial())
-								PutAlignedString(sX, sX + szX, sY + 55 + i * 15, cStr1, GameColors::UIItemName_Special);
+							if (itemInfo.is_special)
+								PutAlignedString(sX, sX + szX, sY + 55 + i * 15, itemInfo.name.c_str(), GameColors::UIItemName_Special);
 							else
-								PutAlignedString(sX, sX + szX, sY + 55 + i * 15, cStr1, GameColors::UILabel);
+								PutAlignedString(sX, sX + szX, sY + 55 + i * 15, itemInfo.name.c_str(), GameColors::UILabel);
 						}
 					}
 				}
@@ -253,11 +250,10 @@ bool DialogBox_SellList::OnItemDrop(short msX, short msY)
 	// Can't sell broken items
 	if (m_pGame->m_pItemList[cItemID]->m_wCurLifeSpan == 0)
 	{
-		std::memset(m_pGame->G_cTxt, 0, sizeof(m_pGame->G_cTxt));
-		char cStr1[64], cStr2[64], cStr3[64];
-		ItemNameFormatter::Get().Format(m_pGame->m_pItemList[cItemID].get(), cStr1, cStr2, cStr3);
-		std::snprintf(m_pGame->G_cTxt, sizeof(m_pGame->G_cTxt), NOTIFYMSG_CANNOT_SELL_ITEM2, cStr1);
-		AddEventList(m_pGame->G_cTxt, 10);
+		std::string G_cTxt;
+		auto itemInfo2 = ItemNameFormatter::Get().Format(m_pGame->m_pItemList[cItemID].get());
+		G_cTxt = std::format(NOTIFYMSG_CANNOT_SELL_ITEM2, itemInfo2.name.c_str());
+		AddEventList(G_cTxt.c_str(), 10);
 		return false;
 	}
 

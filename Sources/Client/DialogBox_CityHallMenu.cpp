@@ -4,6 +4,8 @@
 #include "lan_eng.h"
 #include "GameFonts.h"
 #include "TextLibExt.h"
+#include <format>
+#include <string>
 
 using namespace hb::shared::net;
 using namespace hb::client::net;
@@ -186,11 +188,11 @@ void DialogBox_CityHallMenu::DrawMode4_CitizenshipFailed(short sX, short sY, sho
 
 void DialogBox_CityHallMenu::DrawMode5_RewardGold(short sX, short sY, short szX, short msX, short msY)
 {
-	char cTxt[120];
+	std::string cTxt;
 
 	hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 125, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU33, hb::shared::text::TextStyle::Color(GameColors::UILabel), hb::shared::text::Align::TopCenter);
-	std::snprintf(cTxt, sizeof(cTxt), DRAW_DIALOGBOX_CITYHALL_MENU34, m_pGame->m_pPlayer->m_iRewardGold);
-	hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 140, (sX + szX) - (sX), 15, cTxt, hb::shared::text::TextStyle::Color(GameColors::UILabel), hb::shared::text::Align::TopCenter);
+	cTxt = std::format(DRAW_DIALOGBOX_CITYHALL_MENU34, m_pGame->m_pPlayer->m_iRewardGold);
+	hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 140, (sX + szX) - (sX), 15, cTxt.c_str(), hb::shared::text::TextStyle::Color(GameColors::UILabel), hb::shared::text::Align::TopCenter);
 	hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 155, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU35, hb::shared::text::TextStyle::Color(GameColors::UILabel), hb::shared::text::Align::TopCenter);
 
 	if ((msX >= sX + ui_layout::left_btn_x) && (msX <= sX + ui_layout::left_btn_x + ui_layout::btn_size_x) && (msY >= sY + ui_layout::btn_y) && (msY <= sY + ui_layout::btn_y + ui_layout::btn_size_y))
@@ -334,7 +336,7 @@ void DialogBox_CityHallMenu::DrawMode9_ChangePlayMode(short sX, short sY, short 
 void DialogBox_CityHallMenu::DrawMode10_TeleportMenu(short sX, short sY, short szX, short msX, short msY)
 {
 	char mapNameBuf[120];
-	char teleportBuf[128];
+	std::string teleportBuf;
 
 	if (TeleportManager::Get().GetMapCount() > 0)
 	{
@@ -347,13 +349,13 @@ void DialogBox_CityHallMenu::DrawMode10_TeleportMenu(short sX, short sY, short s
 		for (int i = 0; i < TeleportManager::Get().GetMapCount(); i++)
 		{
 			std::memset(mapNameBuf, 0, sizeof(mapNameBuf));
-			m_pGame->GetOfficialMapName(TeleportManager::Get().GetList()[i].mapname, mapNameBuf);
-			snprintf(teleportBuf, sizeof(teleportBuf), DRAW_DIALOGBOX_CITYHALL_MENU77, mapNameBuf, TeleportManager::Get().GetList()[i].iCost);
+			m_pGame->GetOfficialMapName(TeleportManager::Get().GetList()[i].mapname.c_str(), mapNameBuf);
+			teleportBuf = std::format(DRAW_DIALOGBOX_CITYHALL_MENU77, mapNameBuf, TeleportManager::Get().GetList()[i].iCost);
 
 			if ((msX >= sX + ui_layout::left_btn_x) && (msX <= sX + ui_layout::right_btn_x + ui_layout::btn_size_x) && (msY >= sY + 130 + i * 15) && (msY <= sY + 144 + i * 15))
-				hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 130 + i * 15, (sX + szX) - (sX), 15, teleportBuf, hb::shared::text::TextStyle::Color(GameColors::UIWhite), hb::shared::text::Align::TopCenter);
+				hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 130 + i * 15, (sX + szX) - (sX), 15, teleportBuf.c_str(), hb::shared::text::TextStyle::Color(GameColors::UIWhite), hb::shared::text::Align::TopCenter);
 			else
-				hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 130 + i * 15, (sX + szX) - (sX), 15, teleportBuf, hb::shared::text::TextStyle::Color(GameColors::UIMenuHighlight), hb::shared::text::Align::TopCenter);
+				hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 130 + i * 15, (sX + szX) - (sX), 15, teleportBuf.c_str(), hb::shared::text::TextStyle::Color(GameColors::UIMenuHighlight), hb::shared::text::Align::TopCenter);
 		}
 	}
 	else if (TeleportManager::Get().GetMapCount() == -1)
@@ -370,8 +372,8 @@ void DialogBox_CityHallMenu::DrawMode10_TeleportMenu(short sX, short sY, short s
 
 void DialogBox_CityHallMenu::DrawMode11_HeroItemConfirm(short sX, short sY, short szX, short msX, short msY)
 {
-	hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 125, (sX + szX - 1) - (sX), 15, m_pGame->m_cTakeHeroItemName, hb::shared::text::TextStyle::Color(GameColors::UILabel), hb::shared::text::Align::TopCenter);
-	hb::shared::text::DrawTextAligned(GameFont::Default, sX + 1, sY + 125, (sX + szX) - (sX + 1), 15, m_pGame->m_cTakeHeroItemName, hb::shared::text::TextStyle::Color(GameColors::UILabel), hb::shared::text::Align::TopCenter);
+	hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 125, (sX + szX - 1) - (sX), 15, m_cTakeHeroItemName.c_str(), hb::shared::text::TextStyle::Color(GameColors::UILabel), hb::shared::text::Align::TopCenter);
+	hb::shared::text::DrawTextAligned(GameFont::Default, sX + 1, sY + 125, (sX + szX) - (sX + 1), 15, m_cTakeHeroItemName.c_str(), hb::shared::text::TextStyle::Color(GameColors::UILabel), hb::shared::text::Align::TopCenter);
 	hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 260, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU46A, hb::shared::text::TextStyle::Color(GameColors::UILabel), hb::shared::text::Align::TopCenter);
 
 	if ((msX >= sX + ui_layout::left_btn_x) && (msX <= sX + ui_layout::left_btn_x + ui_layout::btn_size_x) && (msY >= sY + ui_layout::btn_y) && (msY <= sY + ui_layout::btn_y + ui_layout::btn_size_y))
@@ -543,8 +545,7 @@ bool DialogBox_CityHallMenu::OnClickMode7(short sX, short sY, short msX, short m
 	{
 		if (m_pGame->m_pPlayer->m_bAresden == true) iReqHeroItemID = 400;
 		else iReqHeroItemID = 401;
-		std::memset(m_pGame->m_cTakeHeroItemName, 0, sizeof(m_pGame->m_cTakeHeroItemName));
-		memcpy(m_pGame->m_cTakeHeroItemName, DRAW_DIALOGBOX_CITYHALL_MENU47, strlen(DRAW_DIALOGBOX_CITYHALL_MENU47));
+		m_cTakeHeroItemName = DRAW_DIALOGBOX_CITYHALL_MENU47;
 		m_pGame->m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).cMode = 11;
 		m_pGame->m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).sV1 = iReqHeroItemID;
 		m_pGame->PlayGameSound('E', 14, 5);
@@ -558,8 +559,7 @@ bool DialogBox_CityHallMenu::OnClickMode7(short sX, short sY, short msX, short m
 		if ((m_pGame->m_pPlayer->m_bAresden == true) && (m_pGame->m_pCharList[m_pGame->m_cCurFocus - 1]->m_sSex == 2)) iReqHeroItemID = 404;
 		if ((m_pGame->m_pPlayer->m_bAresden == false) && (m_pGame->m_pCharList[m_pGame->m_cCurFocus - 1]->m_sSex == 1)) iReqHeroItemID = 405;
 		if ((m_pGame->m_pPlayer->m_bAresden == false) && (m_pGame->m_pCharList[m_pGame->m_cCurFocus - 1]->m_sSex == 2)) iReqHeroItemID = 406;
-		std::memset(m_pGame->m_cTakeHeroItemName, 0, sizeof(m_pGame->m_cTakeHeroItemName));
-		memcpy(m_pGame->m_cTakeHeroItemName, DRAW_DIALOGBOX_CITYHALL_MENU48, strlen(DRAW_DIALOGBOX_CITYHALL_MENU48));
+		m_cTakeHeroItemName = DRAW_DIALOGBOX_CITYHALL_MENU48;
 		m_pGame->m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).cMode = 11;
 		m_pGame->m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).sV1 = iReqHeroItemID;
 		m_pGame->PlayGameSound('E', 14, 5);
@@ -573,8 +573,7 @@ bool DialogBox_CityHallMenu::OnClickMode7(short sX, short sY, short msX, short m
 		if ((m_pGame->m_pPlayer->m_bAresden == true) && (m_pGame->m_pCharList[m_pGame->m_cCurFocus - 1]->m_sSex == 2)) iReqHeroItemID = 408;
 		if ((m_pGame->m_pPlayer->m_bAresden == false) && (m_pGame->m_pCharList[m_pGame->m_cCurFocus - 1]->m_sSex == 1)) iReqHeroItemID = 409;
 		if ((m_pGame->m_pPlayer->m_bAresden == false) && (m_pGame->m_pCharList[m_pGame->m_cCurFocus - 1]->m_sSex == 2)) iReqHeroItemID = 410;
-		std::memset(m_pGame->m_cTakeHeroItemName, 0, sizeof(m_pGame->m_cTakeHeroItemName));
-		memcpy(m_pGame->m_cTakeHeroItemName, DRAW_DIALOGBOX_CITYHALL_MENU49, strlen(DRAW_DIALOGBOX_CITYHALL_MENU49));
+		m_cTakeHeroItemName = DRAW_DIALOGBOX_CITYHALL_MENU49;
 		m_pGame->m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).cMode = 11;
 		m_pGame->m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).sV1 = iReqHeroItemID;
 		m_pGame->PlayGameSound('E', 14, 5);
@@ -588,8 +587,7 @@ bool DialogBox_CityHallMenu::OnClickMode7(short sX, short sY, short msX, short m
 		if ((m_pGame->m_pPlayer->m_bAresden == true) && (m_pGame->m_pCharList[m_pGame->m_cCurFocus - 1]->m_sSex == 2)) iReqHeroItemID = 412;
 		if ((m_pGame->m_pPlayer->m_bAresden == false) && (m_pGame->m_pCharList[m_pGame->m_cCurFocus - 1]->m_sSex == 1)) iReqHeroItemID = 413;
 		if ((m_pGame->m_pPlayer->m_bAresden == false) && (m_pGame->m_pCharList[m_pGame->m_cCurFocus - 1]->m_sSex == 2)) iReqHeroItemID = 414;
-		std::memset(m_pGame->m_cTakeHeroItemName, 0, sizeof(m_pGame->m_cTakeHeroItemName));
-		memcpy(m_pGame->m_cTakeHeroItemName, DRAW_DIALOGBOX_CITYHALL_MENU50, strlen(DRAW_DIALOGBOX_CITYHALL_MENU50));
+		m_cTakeHeroItemName = DRAW_DIALOGBOX_CITYHALL_MENU50;
 		m_pGame->m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).cMode = 11;
 		m_pGame->m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).sV1 = iReqHeroItemID;
 		m_pGame->PlayGameSound('E', 14, 5);
@@ -603,8 +601,7 @@ bool DialogBox_CityHallMenu::OnClickMode7(short sX, short sY, short msX, short m
 		if ((m_pGame->m_pPlayer->m_bAresden == true) && (m_pGame->m_pCharList[m_pGame->m_cCurFocus - 1]->m_sSex == 2)) iReqHeroItemID = 416;
 		if ((m_pGame->m_pPlayer->m_bAresden == false) && (m_pGame->m_pCharList[m_pGame->m_cCurFocus - 1]->m_sSex == 1)) iReqHeroItemID = 417;
 		if ((m_pGame->m_pPlayer->m_bAresden == false) && (m_pGame->m_pCharList[m_pGame->m_cCurFocus - 1]->m_sSex == 2)) iReqHeroItemID = 418;
-		std::memset(m_pGame->m_cTakeHeroItemName, 0, sizeof(m_pGame->m_cTakeHeroItemName));
-		memcpy(m_pGame->m_cTakeHeroItemName, DRAW_DIALOGBOX_CITYHALL_MENU51, strlen(DRAW_DIALOGBOX_CITYHALL_MENU51));
+		m_cTakeHeroItemName = DRAW_DIALOGBOX_CITYHALL_MENU51;
 		m_pGame->m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).cMode = 11;
 		m_pGame->m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).sV1 = iReqHeroItemID;
 		m_pGame->PlayGameSound('E', 14, 5);
@@ -618,8 +615,7 @@ bool DialogBox_CityHallMenu::OnClickMode7(short sX, short sY, short msX, short m
 		if ((m_pGame->m_pPlayer->m_bAresden == true) && (m_pGame->m_pCharList[m_pGame->m_cCurFocus - 1]->m_sSex == 2)) iReqHeroItemID = 420;
 		if ((m_pGame->m_pPlayer->m_bAresden == false) && (m_pGame->m_pCharList[m_pGame->m_cCurFocus - 1]->m_sSex == 1)) iReqHeroItemID = 421;
 		if ((m_pGame->m_pPlayer->m_bAresden == false) && (m_pGame->m_pCharList[m_pGame->m_cCurFocus - 1]->m_sSex == 2)) iReqHeroItemID = 422;
-		std::memset(m_pGame->m_cTakeHeroItemName, 0, sizeof(m_pGame->m_cTakeHeroItemName));
-		memcpy(m_pGame->m_cTakeHeroItemName, DRAW_DIALOGBOX_CITYHALL_MENU52, strlen(DRAW_DIALOGBOX_CITYHALL_MENU52));
+		m_cTakeHeroItemName = DRAW_DIALOGBOX_CITYHALL_MENU52;
 		m_pGame->m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).cMode = 11;
 		m_pGame->m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).sV1 = iReqHeroItemID;
 		m_pGame->PlayGameSound('E', 14, 5);
@@ -633,8 +629,7 @@ bool DialogBox_CityHallMenu::OnClickMode7(short sX, short sY, short msX, short m
 		if ((m_pGame->m_pPlayer->m_bAresden == true) && (m_pGame->m_pCharList[m_pGame->m_cCurFocus - 1]->m_sSex == 2)) iReqHeroItemID = 424;
 		if ((m_pGame->m_pPlayer->m_bAresden == false) && (m_pGame->m_pCharList[m_pGame->m_cCurFocus - 1]->m_sSex == 1)) iReqHeroItemID = 425;
 		if ((m_pGame->m_pPlayer->m_bAresden == false) && (m_pGame->m_pCharList[m_pGame->m_cCurFocus - 1]->m_sSex == 2)) iReqHeroItemID = 426;
-		std::memset(m_pGame->m_cTakeHeroItemName, 0, sizeof(m_pGame->m_cTakeHeroItemName));
-		memcpy(m_pGame->m_cTakeHeroItemName, DRAW_DIALOGBOX_CITYHALL_MENU53, strlen(DRAW_DIALOGBOX_CITYHALL_MENU53));
+		m_cTakeHeroItemName = DRAW_DIALOGBOX_CITYHALL_MENU53;
 		m_pGame->m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).cMode = 11;
 		m_pGame->m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).sV1 = iReqHeroItemID;
 		m_pGame->PlayGameSound('E', 14, 5);

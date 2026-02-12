@@ -227,16 +227,18 @@ Client connects to login socket → validates credentials → returns character 
 6. **Fixed-Size Arrays** - Entity lists as `T*[N]` with linear slot search. Consider containers with proper lifecycle.
 
 ## Coding Standards (Active)
-Full reference: `PLANS/CODING_STANDARDS.md`. Key rules:
+Full reference: `PLANS/CODING_STANDARDS.md`. **Convention: `snake_case` throughout** (like the C++ standard library). Key rules:
 - **Tabs** for indentation, **Allman** braces.
-- **Classes**: PascalCase, no `C` prefix. Interfaces keep `I` prefix.
-- **Methods**: PascalCase, no Hungarian return-type prefixes (`GetIndex()` not `iGetIndex()`).
-- **Members**: `m_snake_case` (`m_position_x`, not `m_iPositionX`).
-- **Params/Locals**: snake_case (`target_id`, not `sTargetID`).
-- **Constants**: `constexpr` PascalCase. No new `#define` constants.
-- **Enums**: Namespace-wrapped unscoped enum with explicit type for auto-conversion. `enum class` only when implicit conversion is undesirable.
+- **Everything is `snake_case`**: classes, structs, methods, functions, members, params, locals, constants, enum values.
+- **Classes/Structs**: `snake_case`, no prefix (`weather_manager`, not `WeatherManager` or `CWeatherManager`).
+- **Interfaces**: `snake_case`, no prefix (`renderer`, not `IRenderer`). Suffix `_base` if ambiguous.
+- **Methods**: `snake_case` (`get_map_index()`, not `GetMapIndex()` or `iGetMapIndex()`).
+- **Members**: `m_snake_case` (`m_position_x`, not `m_iPositionX`). Struct data members omit `m_`.
+- **Params/Locals**: `snake_case` (`target_id`, not `sTargetID`).
+- **Constants**: `constexpr snake_case` (`constexpr int max_slots = 50;`). No new `#define` constants.
+- **Enums**: Namespace-wrapped unscoped enum with `snake_case` values (`attack_type::normal`). `enum class` only when implicit conversion is undesirable.
 - **Namespaces**: `hb::<shared|client|server>::snake_case` (e.g., `hb::client::combat`).
-- **Lifecycle hooks**: snake_case (`on_initialize()`, `on_update()`).
+- **Files**: `snake_case` (`weather_manager.cpp`, `screen_login.cpp`). Legacy PascalCase filenames kept until refactored.
 - **Ownership**: `std::unique_ptr` only. Raw pointers are non-owning. Prefer `&` references over pointers for access.
 - **Error handling**: Exceptions for critical/unrecoverable failures. `bool` returns for recoverable errors. No `goto` ever.
 - **Null**: `nullptr` only. Never `NULL` or `0`.

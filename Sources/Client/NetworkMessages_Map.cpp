@@ -6,6 +6,8 @@
 #include <cstdio>
 #include <cstring>
 #include <windows.h>
+#include <format>
+#include <string>
 
 namespace NetworkMessageHandlers {
 	void HandleMapStatusNext(CGame* pGame, char* pData)
@@ -31,9 +33,9 @@ namespace NetworkMessageHandlers {
 		memcpy(cTxt, pkt->map_name, sizeof(pkt->map_name));
 
 		pGame->GetOfficialMapName(cTxt, cTemp);
-		char msgBuf[128];
-		snprintf(msgBuf, sizeof(msgBuf), NOTIFY_MSG_HANDLER3, sV1, cTemp);
-		pGame->SetTopMsg(msgBuf, 10);
+		std::string msgBuf;
+		msgBuf = std::format(NOTIFY_MSG_HANDLER3, sV1, cTemp);
+		pGame->SetTopMsg(msgBuf.c_str(), 10);
 		pGame->PlayGameSound('E', 25, 0, 0);
 	}
 

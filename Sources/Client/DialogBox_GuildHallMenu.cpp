@@ -7,6 +7,8 @@
 #include "NetMessages.h"
 #include "GameFonts.h"
 #include "TextLibExt.h"
+#include <format>
+#include <string>
 
 using namespace hb::shared::net;
 using namespace hb::client::net;
@@ -48,16 +50,16 @@ void DialogBox_GuildHallMenu::OnDraw(short msX, short msY, short msZ, char cLB)
 	case 1: // TP diag
 		if (TeleportManager::Get().GetMapCount() > 0)
 		{
-			char teleportBuf[128];
+			std::string teleportBuf;
 			hb::shared::text::DrawText(GameFont::Default, sX + 35, sY + 250, DRAW_DIALOGBOX_CITYHALL_MENU72_1, hb::shared::text::TextStyle::WithShadow(GameColors::UILabel));
 			for (int i = 0; i < TeleportManager::Get().GetMapCount(); i++)
 			{
 				std::memset(cTxt, 0, sizeof(cTxt));
-				m_pGame->GetOfficialMapName(TeleportManager::Get().GetList()[i].mapname, cTxt);
-				snprintf(teleportBuf, sizeof(teleportBuf), DRAW_DIALOGBOX_CITYHALL_MENU77, cTxt, TeleportManager::Get().GetList()[i].iCost);
+				m_pGame->GetOfficialMapName(TeleportManager::Get().GetList()[i].mapname.c_str(), cTxt);
+				teleportBuf = std::format(DRAW_DIALOGBOX_CITYHALL_MENU77, cTxt, TeleportManager::Get().GetList()[i].iCost);
 				if ((msX >= sX + ui_layout::left_btn_x) && (msX <= sX + ui_layout::right_btn_x + ui_layout::btn_size_x) && (msY >= sY + 130 + i * 15) && (msY <= sY + 144 + i * 15))
-					PutAlignedString(sX, sX + szX, sY + 130 + i * 15, teleportBuf, GameColors::UIWhite);
-				else PutAlignedString(sX, sX + szX, sY + 130 + i * 15, teleportBuf, GameColors::UIMenuHighlight);
+					PutAlignedString(sX, sX + szX, sY + 130 + i * 15, teleportBuf.c_str(), GameColors::UIWhite);
+				else PutAlignedString(sX, sX + szX, sY + 130 + i * 15, teleportBuf.c_str(), GameColors::UIMenuHighlight);
 			}
 		}
 		else if (TeleportManager::Get().GetMapCount() == -1)

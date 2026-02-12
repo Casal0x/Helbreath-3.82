@@ -1,8 +1,9 @@
-// Magic.h: interface for the CMagic class.
+﻿// Magic.h: interface for the CMagic class.
 //
 //////////////////////////////////////////////////////////////////////
 
 #pragma once
+#include <string>
 
 #include <cstring>
 #include "MagicTypes.h"
@@ -12,14 +13,13 @@ class CMagic
 public:
 	inline CMagic()
 	{
-		std::memset(m_cName, 0, sizeof(m_cName));
 	}
 
 	inline virtual ~CMagic()
 	{
 	}
 
-	char m_cName[31];
+	std::string m_cName;
 	int  m_sValue1, m_sValue2, m_sValue3;
 	// CLEROTH
 	int m_sValue4;

@@ -1,6 +1,8 @@
-#include "DialogBox_Party.h"
+﻿#include "DialogBox_Party.h"
 #include "Game.h"
 #include "lan_eng.h"
+#include <format>
+#include <string>
 
 using namespace hb::shared::net;
 using namespace hb::client::sprite_id;
@@ -72,9 +74,9 @@ void DialogBox_Party::OnDraw(short msX, short msY, short msZ, char cLB)
 		break;
 
 	case 1: {
-		char partyBuf[128];
-		snprintf(partyBuf, sizeof(partyBuf), DRAW_DIALOGBOX_PARTY16, Info().cStr);
-		PutAlignedString(sX, sX + szX, sY + 95, partyBuf);
+		std::string partyBuf;
+		partyBuf = std::format(DRAW_DIALOGBOX_PARTY16, Info().cStr);
+		PutAlignedString(sX, sX + szX, sY + 95, partyBuf.c_str());
 		PutAlignedString(sX, sX + szX, sY + 110, DRAW_DIALOGBOX_PARTY17);
 		PutAlignedString(sX, sX + szX, sY + 125, DRAW_DIALOGBOX_PARTY18);
 		PutAlignedString(sX, sX + szX, sY + 140, DRAW_DIALOGBOX_PARTY19);
@@ -106,9 +108,9 @@ void DialogBox_Party::OnDraw(short msX, short msY, short msZ, char cLB)
 		break;
 
 	case 3: {
-		char partyBuf[128];
-		snprintf(partyBuf, sizeof(partyBuf), DRAW_DIALOGBOX_PARTY26, Info().cStr);
-		PutAlignedString(sX, sX + szX, sY + 95, partyBuf);
+		std::string partyBuf;
+		partyBuf = std::format(DRAW_DIALOGBOX_PARTY26, Info().cStr);
+		PutAlignedString(sX, sX + szX, sY + 95, partyBuf.c_str());
 		PutAlignedString(sX, sX + szX, sY + 110, DRAW_DIALOGBOX_PARTY27);
 		PutAlignedString(sX, sX + szX, sY + 125, DRAW_DIALOGBOX_PARTY28);
 		PutAlignedString(sX, sX + szX, sY + 140, DRAW_DIALOGBOX_PARTY29);
@@ -127,8 +129,8 @@ void DialogBox_Party::OnDraw(short msX, short msY, short msZ, char cLB)
 
 		int iNth = 0;
 		for (int i = 0; i <= hb::shared::limits::MaxPartyMembers; i++) {
-			if (strlen(m_pGame->m_stPartyMemberNameList[i].cName) != 0) {
-				PutAlignedString(sX + 17, sX + 270, sY + 140 + 15 * iNth, m_pGame->m_stPartyMemberNameList[i].cName);
+			if (m_pGame->m_stPartyMemberNameList[i].cName.size() != 0) {
+				PutAlignedString(sX + 17, sX + 270, sY + 140 + 15 * iNth, m_pGame->m_stPartyMemberNameList[i].cName.c_str());
 				iNth++;
 			}
 		}
@@ -244,7 +246,7 @@ bool DialogBox_Party::OnClick(short msX, short msY)
 
 		if (m_pGame->m_iPartyStatus != 0) {
 			if ((msX > sX + 80) && (msX < sX + 195) && (msY > sY + 120) && (msY < sY + 140)) {
-				bSendCommand(MsgId::CommandCommon, CommonType::RequestJoinParty, 0, 2, 0, 0, m_pGame->m_cMCName);
+				bSendCommand(MsgId::CommandCommon, CommonType::RequestJoinParty, 0, 2, 0, 0, m_pGame->m_cMCName.c_str());
 				Info().cMode = 4;
 				PlaySoundEffect('E', 14, 5);
 				return true;
@@ -306,7 +308,7 @@ bool DialogBox_Party::OnClick(short msX, short msY)
 
 	case 11:
 		if ((msX >= sX + ui_layout::left_btn_x) && (msX <= sX + ui_layout::left_btn_x + ui_layout::btn_size_x) && (msY >= sY + ui_layout::btn_y) && (msY <= sY + ui_layout::btn_y + ui_layout::btn_size_y)) {
-			bSendCommand(MsgId::CommandCommon, CommonType::RequestJoinParty, 0, 0, 0, 0, m_pGame->m_cMCName);
+			bSendCommand(MsgId::CommandCommon, CommonType::RequestJoinParty, 0, 0, 0, 0, m_pGame->m_cMCName.c_str());
 			Info().cMode = 5;
 			PlaySoundEffect('E', 14, 5);
 			return true;

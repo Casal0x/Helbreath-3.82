@@ -311,17 +311,17 @@ void DialogBox_Commander::OnDraw(short msX, short msY, short msZ, char cLB)
 		szY = 0;
 		MapSzX = 0;
 		MapSzY = 0;
-		if (strcmp(m_pGame->m_cStatusMapName, "aresden") == 0)
+		if (m_pGame->m_cStatusMapName == "aresden")
 		{
 			szX = 250;
 			szY = 250;
 		}
-		else if (strcmp(m_pGame->m_cStatusMapName, "elvine") == 0)
+		else if (m_pGame->m_cStatusMapName == "elvine")
 		{
 			szX = 250;
 			szY = 250;
 		}
-		else if (strcmp(m_pGame->m_cStatusMapName, "middleland") == 0)
+		else if (m_pGame->m_cStatusMapName == "middleland")
 		{
 			szX = 279;
 			szY = 280;
@@ -387,7 +387,7 @@ void DialogBox_Commander::OnDraw(short msX, short msY, short msZ, char cLB)
 				tY = (int)dV3;
 				DrawNewDialogBox(InterfaceNdCrusade, sX + tX + 15, sY + tY + 60, 41, false, true);
 			}
-			if (strcmp(m_pGame->m_cMapName, "middleland") == 0)
+			if (m_pGame->m_cMapName == "middleland")
 			{
 				dV1 = (double)MapSzX;
 				dV2 = (double)m_pGame->m_pPlayer->m_sPlayerX;
@@ -448,7 +448,7 @@ bool DialogBox_Commander::OnClick(short msX, short msY)
 			{
 				m_pGame->SetTopMsg(m_pGame->m_pGameMsgList[15]->m_pMsg, 5);
 			}
-			else if (strcmp(m_pGame->m_cMapName, TeleportManager::Get().GetMapName()) == 0)
+			else if (m_pGame->m_cMapName == TeleportManager::Get().GetMapName())
 			{
 				m_pGame->SetTopMsg(m_pGame->m_pGameMsgList[16]->m_pMsg, 5);
 			}

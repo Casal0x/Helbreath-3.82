@@ -1,6 +1,8 @@
-#include "DialogBox_Quest.h"
+﻿#include "DialogBox_Quest.h"
 #include "Game.h"
 #include "lan_eng.h"
+#include <format>
+#include <string>
 using namespace hb::client::sprite_id;
 
 DialogBox_Quest::DialogBox_Quest(CGame* pGame)
@@ -14,7 +16,9 @@ void DialogBox_Quest::OnDraw(short msX, short msY, short msZ, char cLB)
 	short sX = Info().sX;
 	short sY = Info().sY;
 	short szX = Info().sSizeX;
-	char cTxt[120], cTemp[21];
+	std::string cTxt;
+
+	char cTemp[21];
 
 	m_pGame->DrawNewDialogBox(InterfaceNdGame2, sX, sY, 2);
 	m_pGame->DrawNewDialogBox(InterfaceNdText, sX, sY, 4);
@@ -32,9 +36,8 @@ void DialogBox_Quest::OnDraw(short msX, short msY, short msZ, char cLB)
 			else
 				PutAlignedString(sX, sX + szX, sY + 50, DRAW_DIALOGBOX_QUEST3, GameColors::UILabel);
 
-			std::memset(cTxt, 0, sizeof(cTxt));
-			std::snprintf(cTxt, sizeof(cTxt), "Rest Monster : %d", m_pGame->m_stQuest.sCurrentCount);
-			PutAlignedString(sX, sX + szX, sY + 50 + 20, cTxt, GameColors::UILabel);
+			cTxt = std::format("Rest Monster : {}", m_pGame->m_stQuest.sCurrentCount);
+			PutAlignedString(sX, sX + szX, sY + 50 + 20, cTxt.c_str(), GameColors::UILabel);
 
 			std::memset(cTemp, 0, sizeof(cTemp));
 			switch (m_pGame->m_stQuest.sWho) {
@@ -46,37 +49,32 @@ void DialogBox_Quest::OnDraw(short msX, short msY, short msZ, char cLB)
 			case 6:
 			case 7: break;
 			}
-			std::memset(cTxt, 0, sizeof(cTxt));
-			std::snprintf(cTxt, sizeof(cTxt), DRAW_DIALOGBOX_QUEST5, cTemp);
-			PutAlignedString(sX, sX + szX, sY + 50 + 45, cTxt, GameColors::UILabel);
+			cTxt = std::format(DRAW_DIALOGBOX_QUEST5, cTemp);
+			PutAlignedString(sX, sX + szX, sY + 50 + 45, cTxt.c_str(), GameColors::UILabel);
 
 			std::memset(cTemp, 0, sizeof(cTemp));
 			std::snprintf(cTemp, sizeof(cTemp), "%s", m_pGame->GetNpcConfigName(m_pGame->m_stQuest.sTargetType));
-			std::memset(cTxt, 0, sizeof(cTxt));
-			std::snprintf(cTxt, sizeof(cTxt), NPC_TALK_HANDLER16, m_pGame->m_stQuest.sTargetCount, cTemp);
-			PutAlignedString(sX, sX + szX, sY + 50 + 60, cTxt, GameColors::UILabel);
+			cTxt = std::format(NPC_TALK_HANDLER16, m_pGame->m_stQuest.sTargetCount, cTemp);
+			PutAlignedString(sX, sX + szX, sY + 50 + 60, cTxt.c_str(), GameColors::UILabel);
 
-			std::memset(cTxt, 0, sizeof(cTxt));
-			if (memcmp(m_pGame->m_stQuest.cTargetName, "NONE", 4) == 0) {
-				std::snprintf(cTxt, sizeof(cTxt), "%s", DRAW_DIALOGBOX_QUEST31);
-				PutAlignedString(sX, sX + szX, sY + 50 + 75, cTxt, GameColors::UILabel);
+			if (m_pGame->m_stQuest.cTargetName.starts_with("NONE")) {
+				cTxt = DRAW_DIALOGBOX_QUEST31;
+				PutAlignedString(sX, sX + szX, sY + 50 + 75, cTxt.c_str(), GameColors::UILabel);
 			}
 			else {
 				std::memset(cTemp, 0, sizeof(cTemp));
-				m_pGame->GetOfficialMapName(m_pGame->m_stQuest.cTargetName, cTemp);
-				std::snprintf(cTxt, sizeof(cTxt), DRAW_DIALOGBOX_QUEST32, cTemp);
-				PutAlignedString(sX, sX + szX, sY + 50 + 75, cTxt, GameColors::UILabel);
+				m_pGame->GetOfficialMapName(m_pGame->m_stQuest.cTargetName.c_str(), cTemp);
+				cTxt = std::format(DRAW_DIALOGBOX_QUEST32, cTemp);
+				PutAlignedString(sX, sX + szX, sY + 50 + 75, cTxt.c_str(), GameColors::UILabel);
 
 				if (m_pGame->m_stQuest.sX != 0) {
-					std::memset(cTxt, 0, sizeof(cTxt));
-					std::snprintf(cTxt, sizeof(cTxt), DRAW_DIALOGBOX_QUEST33, m_pGame->m_stQuest.sX, m_pGame->m_stQuest.sY, m_pGame->m_stQuest.sRange);
-					PutAlignedString(sX, sX + szX, sY + 50 + 90, cTxt, GameColors::UILabel);
+					cTxt = std::format(DRAW_DIALOGBOX_QUEST33, m_pGame->m_stQuest.sX, m_pGame->m_stQuest.sY, m_pGame->m_stQuest.sRange);
+					PutAlignedString(sX, sX + szX, sY + 50 + 90, cTxt.c_str(), GameColors::UILabel);
 				}
 			}
 
-			std::memset(cTxt, 0, sizeof(cTxt));
-			std::snprintf(cTxt, sizeof(cTxt), DRAW_DIALOGBOX_QUEST34, m_pGame->m_stQuest.sContribution);
-			PutAlignedString(sX, sX + szX, sY + 50 + 105, cTxt, GameColors::UILabel);
+			cTxt = std::format(DRAW_DIALOGBOX_QUEST34, m_pGame->m_stQuest.sContribution);
+			PutAlignedString(sX, sX + szX, sY + 50 + 105, cTxt.c_str(), GameColors::UILabel);
 			break;
 
 		case 7:
@@ -95,33 +93,29 @@ void DialogBox_Quest::OnDraw(short msX, short msY, short msZ, char cLB)
 			case 6:
 			case 7: break;
 			}
-			std::memset(cTxt, 0, sizeof(cTxt));
-			std::snprintf(cTxt, sizeof(cTxt), DRAW_DIALOGBOX_QUEST29, cTemp);
-			PutAlignedString(sX, sX + szX, sY + 50 + 45, cTxt, GameColors::UILabel);
+			cTxt = std::format(DRAW_DIALOGBOX_QUEST29, cTemp);
+			PutAlignedString(sX, sX + szX, sY + 50 + 45, cTxt.c_str(), GameColors::UILabel);
 
 			PutAlignedString(sX, sX + szX, sY + 50 + 60, DRAW_DIALOGBOX_QUEST30, GameColors::UILabel);
 
-			std::memset(cTxt, 0, sizeof(cTxt));
-			if (memcmp(m_pGame->m_stQuest.cTargetName, "NONE", 4) == 0) {
-				std::snprintf(cTxt, sizeof(cTxt), "%s", DRAW_DIALOGBOX_QUEST31);
-				PutAlignedString(sX, sX + szX, sY + 50 + 75, cTxt, GameColors::UILabel);
+			if (m_pGame->m_stQuest.cTargetName.starts_with("NONE")) {
+				cTxt = DRAW_DIALOGBOX_QUEST31;
+				PutAlignedString(sX, sX + szX, sY + 50 + 75, cTxt.c_str(), GameColors::UILabel);
 			}
 			else {
 				std::memset(cTemp, 0, sizeof(cTemp));
-				m_pGame->GetOfficialMapName(m_pGame->m_stQuest.cTargetName, cTemp);
-				std::snprintf(cTxt, sizeof(cTxt), DRAW_DIALOGBOX_QUEST32, cTemp);
-				PutAlignedString(sX, sX + szX, sY + 50 + 75, cTxt, GameColors::UILabel);
+				m_pGame->GetOfficialMapName(m_pGame->m_stQuest.cTargetName.c_str(), cTemp);
+				cTxt = std::format(DRAW_DIALOGBOX_QUEST32, cTemp);
+				PutAlignedString(sX, sX + szX, sY + 50 + 75, cTxt.c_str(), GameColors::UILabel);
 
 				if (m_pGame->m_stQuest.sX != 0) {
-					std::memset(cTxt, 0, sizeof(cTxt));
-					std::snprintf(cTxt, sizeof(cTxt), DRAW_DIALOGBOX_QUEST33, m_pGame->m_stQuest.sX, m_pGame->m_stQuest.sY, m_pGame->m_stQuest.sRange);
-					PutAlignedString(sX, sX + szX, sY + 50 + 90, cTxt, GameColors::UILabel);
+					cTxt = std::format(DRAW_DIALOGBOX_QUEST33, m_pGame->m_stQuest.sX, m_pGame->m_stQuest.sY, m_pGame->m_stQuest.sRange);
+					PutAlignedString(sX, sX + szX, sY + 50 + 90, cTxt.c_str(), GameColors::UILabel);
 				}
 			}
 
-			std::memset(cTxt, 0, sizeof(cTxt));
-			std::snprintf(cTxt, sizeof(cTxt), DRAW_DIALOGBOX_QUEST34, m_pGame->m_stQuest.sContribution);
-			PutAlignedString(sX, sX + szX, sY + 50 + 105, cTxt, GameColors::UILabel);
+			cTxt = std::format(DRAW_DIALOGBOX_QUEST34, m_pGame->m_stQuest.sContribution);
+			PutAlignedString(sX, sX + szX, sY + 50 + 105, cTxt.c_str(), GameColors::UILabel);
 			break;
 		}
 		break;

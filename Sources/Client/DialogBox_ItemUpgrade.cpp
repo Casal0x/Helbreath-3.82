@@ -5,6 +5,8 @@
 #include "lan_eng.h"
 #include "GameFonts.h"
 #include "TextLibExt.h"
+#include <format>
+#include <string>
 
 using namespace hb::shared::net;
 using namespace hb::shared::item;
@@ -94,7 +96,6 @@ int DialogBox_ItemUpgrade::CalculateUpgradeCost(int iItemIndex)
 void DialogBox_ItemUpgrade::DrawItemPreview(int sX, int sY, int iItemIndex)
 {
     uint32_t dwTime = m_pGame->m_dwCurTime;
-    char cStr1[120], cStr2[120], cStr3[120];
 
     char cItemColor = m_pGame->m_pItemList[iItemIndex]->m_cItemColor;
     CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[iItemIndex]->m_sIDnum);
@@ -109,20 +110,17 @@ void DialogBox_ItemUpgrade::DrawItemPreview(int sX, int sY, int iItemIndex)
         m_pGame->m_pSprite[ItemPackPivotPoint + pCfg->m_sSprite]->Draw(sX + 134, sY + 182, pCfg->m_sSpriteFrame, hb::shared::sprite::DrawParams::Tint(GameColors::Items[cItemColor].r, GameColors::Items[cItemColor].g, GameColors::Items[cItemColor].b));
     }
 
-    std::memset(cStr1, 0, sizeof(cStr1));
-    std::memset(cStr2, 0, sizeof(cStr2));
-    std::memset(cStr3, 0, sizeof(cStr3));
-    ItemNameFormatter::Get().Format(m_pGame->m_pItemList[iItemIndex].get(), cStr1, cStr2, cStr3);
-    hb::shared::text::DrawTextAligned(GameFont::Default, sX + 24, sY + 230 + 20, (sX + 248) - (sX + 24), 15, cStr1, hb::shared::text::TextStyle::Color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
-    hb::shared::text::DrawTextAligned(GameFont::Default, sX + 24, sY + 245 + 20, (sX + 248) - (sX + 24), 15, cStr2, hb::shared::text::TextStyle::Color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
-    hb::shared::text::DrawTextAligned(GameFont::Default, sX + 24, sY + 260 + 20, (sX + 248) - (sX + 24), 15, cStr3, hb::shared::text::TextStyle::Color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
+    auto itemInfo = ItemNameFormatter::Get().Format(m_pGame->m_pItemList[iItemIndex].get());
+    hb::shared::text::DrawTextAligned(GameFont::Default, sX + 24, sY + 230 + 20, (sX + 248) - (sX + 24), 15, itemInfo.name.c_str(), hb::shared::text::TextStyle::Color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
+    hb::shared::text::DrawTextAligned(GameFont::Default, sX + 24, sY + 245 + 20, (sX + 248) - (sX + 24), 15, itemInfo.effect.c_str(), hb::shared::text::TextStyle::Color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
+    hb::shared::text::DrawTextAligned(GameFont::Default, sX + 24, sY + 260 + 20, (sX + 248) - (sX + 24), 15, itemInfo.extra.c_str(), hb::shared::text::TextStyle::Color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
 }
 
 void DialogBox_ItemUpgrade::DrawMode1_GizonUpgrade(int sX, int sY, int msX, int msY)
 {
     uint32_t dwTime = m_pGame->m_dwCurTime;
     int iItemIndex = m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV1;
-    char cTxt[256];
+    std::string cTxt;
 
     m_pGame->DrawNewDialogBox(InterfaceNdGame3, sX, sY, 3);
     hb::shared::text::DrawTextAligned(GameFont::Default, sX + 24, sY + 20 + 30, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE1, hb::shared::text::TextStyle::Color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
@@ -130,19 +128,19 @@ void DialogBox_ItemUpgrade::DrawMode1_GizonUpgrade(int sX, int sY, int msX, int 
     hb::shared::text::DrawTextAligned(GameFont::Default, sX + 24, sY + 20 + 60, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE3, hb::shared::text::TextStyle::Color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
     m_pGame->DrawNewDialogBox(InterfaceNdButton, sX + ui_layout::left_btn_x, sY + ui_layout::btn_y, 46);
 
-    std::snprintf(cTxt, sizeof(cTxt), DRAW_DIALOGBOX_ITEMUPGRADE11, m_pGame->m_iGizonItemUpgradeLeft);
-    hb::shared::text::DrawTextAligned(GameFont::Default, sX + 24, sY + 100, (sX + 248) - (sX + 24), 15, cTxt, hb::shared::text::TextStyle::Color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
+    cTxt = std::format(DRAW_DIALOGBOX_ITEMUPGRADE11, m_pGame->m_iGizonItemUpgradeLeft);
+    hb::shared::text::DrawTextAligned(GameFont::Default, sX + 24, sY + 100, (sX + 248) - (sX + 24), 15, cTxt.c_str(), hb::shared::text::TextStyle::Color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
 
     if (iItemIndex != -1)
     {
         m_pGame->DrawNewDialogBox(InterfaceNdGame3, sX, sY, 3);
         int iValue = CalculateUpgradeCost(iItemIndex);
 
-        std::snprintf(cTxt, sizeof(cTxt), DRAW_DIALOGBOX_ITEMUPGRADE12, iValue);
+        cTxt = std::format(DRAW_DIALOGBOX_ITEMUPGRADE12, iValue);
         if (m_pGame->m_iGizonItemUpgradeLeft < iValue)
-            hb::shared::text::DrawTextAligned(GameFont::Default, sX + 24, sY + 115, (sX + 248) - (sX + 24), 15, cTxt, hb::shared::text::TextStyle::Color(GameColors::UIWarningRed), hb::shared::text::Align::TopCenter);
+            hb::shared::text::DrawTextAligned(GameFont::Default, sX + 24, sY + 115, (sX + 248) - (sX + 24), 15, cTxt.c_str(), hb::shared::text::TextStyle::Color(GameColors::UIWarningRed), hb::shared::text::Align::TopCenter);
         else
-            hb::shared::text::DrawTextAligned(GameFont::Default, sX + 24, sY + 115, (sX + 248) - (sX + 24), 15, cTxt, hb::shared::text::TextStyle::Color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
+            hb::shared::text::DrawTextAligned(GameFont::Default, sX + 24, sY + 115, (sX + 248) - (sX + 24), 15, cTxt.c_str(), hb::shared::text::TextStyle::Color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
 
         DrawItemPreview(sX, sY, iItemIndex);
 
@@ -195,14 +193,10 @@ void DialogBox_ItemUpgrade::DrawMode2_InProgress(int sX, int sY)
         if (pCfg && (rand() % 5) == 0)
             m_pGame->m_pSprite[ItemPackPivotPoint + pCfg->m_sSprite]->Draw(sX + 134, sY + 182, pCfg->m_sSpriteFrame, hb::shared::sprite::DrawParams::Alpha(0.25f));
 
-        char cStr1[120], cStr2[120], cStr3[120];
-        std::memset(cStr1, 0, sizeof(cStr1));
-        std::memset(cStr2, 0, sizeof(cStr2));
-        std::memset(cStr3, 0, sizeof(cStr3));
-        ItemNameFormatter::Get().Format(m_pGame->m_pItemList[iItemIndex].get(), cStr1, cStr2, cStr3);
-        hb::shared::text::DrawTextAligned(GameFont::Default, sX + 24, sY + 230 + 20, (sX + 248) - (sX + 24), 15, cStr1, hb::shared::text::TextStyle::Color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
-        hb::shared::text::DrawTextAligned(GameFont::Default, sX + 24, sY + 245 + 20, (sX + 248) - (sX + 24), 15, cStr2, hb::shared::text::TextStyle::Color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
-        hb::shared::text::DrawTextAligned(GameFont::Default, sX + 24, sY + 260 + 20, (sX + 248) - (sX + 24), 15, cStr3, hb::shared::text::TextStyle::Color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
+        auto itemInfo2 = ItemNameFormatter::Get().Format(m_pGame->m_pItemList[iItemIndex].get());
+        hb::shared::text::DrawTextAligned(GameFont::Default, sX + 24, sY + 230 + 20, (sX + 248) - (sX + 24), 15, itemInfo2.name.c_str(), hb::shared::text::TextStyle::Color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
+        hb::shared::text::DrawTextAligned(GameFont::Default, sX + 24, sY + 245 + 20, (sX + 248) - (sX + 24), 15, itemInfo2.effect.c_str(), hb::shared::text::TextStyle::Color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
+        hb::shared::text::DrawTextAligned(GameFont::Default, sX + 24, sY + 260 + 20, (sX + 248) - (sX + 24), 15, itemInfo2.extra.c_str(), hb::shared::text::TextStyle::Color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
     }
 
     // Send upgrade command after 4 seconds
@@ -307,7 +301,7 @@ void DialogBox_ItemUpgrade::DrawMode6_StoneUpgrade(int sX, int sY, int msX, int 
     int iItemIndex = m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV1;
     int iSoX = m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV2;
     int iSoM = m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV3;
-    char cTxt[256];
+    std::string cTxt;
 
     m_pGame->DrawNewDialogBox(InterfaceNdGame3, sX, sY, 3);
     hb::shared::text::DrawTextAligned(GameFont::Default, sX + 24, sY + 20 + 30, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE31, hb::shared::text::TextStyle::Color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
@@ -320,8 +314,8 @@ void DialogBox_ItemUpgrade::DrawMode6_StoneUpgrade(int sX, int sY, int msX, int 
     }
     else
     {
-        std::snprintf(cTxt, sizeof(cTxt), DRAW_DIALOGBOX_ITEMUPGRADE34, iSoX);
-        hb::shared::text::DrawTextAligned(GameFont::Default, sX + 24, sY + 20 + 80, (sX + 248) - (sX + 24), 15, cTxt, hb::shared::text::TextStyle::Color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
+        cTxt = std::format(DRAW_DIALOGBOX_ITEMUPGRADE34, iSoX);
+        hb::shared::text::DrawTextAligned(GameFont::Default, sX + 24, sY + 20 + 80, (sX + 248) - (sX + 24), 15, cTxt.c_str(), hb::shared::text::TextStyle::Color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
     }
 
     if (iSoM == 0)
@@ -330,8 +324,8 @@ void DialogBox_ItemUpgrade::DrawMode6_StoneUpgrade(int sX, int sY, int msX, int 
     }
     else
     {
-        std::snprintf(cTxt, sizeof(cTxt), DRAW_DIALOGBOX_ITEMUPGRADE35, iSoM);
-        hb::shared::text::DrawTextAligned(GameFont::Default, sX + 24, sY + 20 + 95, (sX + 248) - (sX + 24), 15, cTxt, hb::shared::text::TextStyle::Color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
+        cTxt = std::format(DRAW_DIALOGBOX_ITEMUPGRADE35, iSoM);
+        hb::shared::text::DrawTextAligned(GameFont::Default, sX + 24, sY + 20 + 95, (sX + 248) - (sX + 24), 15, cTxt.c_str(), hb::shared::text::TextStyle::Color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
     }
 
     m_pGame->DrawNewDialogBox(InterfaceNdButton, sX + ui_layout::left_btn_x, sY + ui_layout::btn_y, 46);

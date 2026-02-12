@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include <cstdint>
+#include <string>
 #include <cstring>
 #include <cstdio>
 
@@ -12,7 +13,7 @@ struct EventEntry
 {
 	uint32_t dwTime = 0;
 	char cColor = 0;
-	char cTxt[96]{};
+	std::string cTxt;
 };
 
 class EventListManager

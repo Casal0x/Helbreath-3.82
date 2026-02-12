@@ -7,6 +7,8 @@
 #include "lan_eng.h"
 #include "GameFonts.h"
 #include "TextLibExt.h"
+#include <format>
+#include <string>
 
 using namespace hb::shared::net;
 using namespace hb::shared::item;
@@ -65,9 +67,9 @@ void DialogBox_Inventory::DrawInventoryItem(CItem* pItem, int itemIdx, int baseX
 	// Show item count for consumables and arrows
 	if ((pCfg->GetItemType() == ItemType::Consume) || (pCfg->GetItemType() == ItemType::Arrow))
 	{
-		char countBuf[32];
-		m_pGame->FormatCommaNumber(static_cast<uint32_t>(pItem->m_dwCount), countBuf, sizeof(countBuf));
-		hb::shared::text::DrawText(GameFont::Default, baseX + COUNT_OFFSET_X + pItem->m_sX, baseY + COUNT_OFFSET_Y + pItem->m_sY, countBuf, hb::shared::text::TextStyle::WithShadow(GameColors::UIDescription));
+		std::string countBuf;
+		countBuf = m_pGame->FormatCommaNumber(static_cast<uint32_t>(pItem->m_dwCount));
+		hb::shared::text::DrawText(GameFont::Default, baseX + COUNT_OFFSET_X + pItem->m_sX, baseY + COUNT_OFFSET_Y + pItem->m_sY, countBuf.c_str(), hb::shared::text::TextStyle::WithShadow(GameColors::UIDescription));
 	}
 }
 
@@ -225,8 +227,7 @@ bool DialogBox_Inventory::OnDoubleClick(short msX, short msY)
 	CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[cItemID]->m_sIDnum);
 	if (pCfg == nullptr) return false;
 
-	char cStr1[64], cStr2[64], cStr3[64];
-	ItemNameFormatter::Get().Format(m_pGame->m_pItemList[cItemID].get(), cStr1, cStr2, cStr3);
+	auto itemInfo = ItemNameFormatter::Get().Format(m_pGame->m_pItemList[cItemID].get());
 
 	// Check if at repair shop
 	if (m_pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::SaleMenu) &&
@@ -277,8 +278,9 @@ bool DialogBox_Inventory::OnDoubleClick(short msX, short msY)
 				(pCfg->m_sSpriteFrame == 9 ||
 				 pCfg->m_sSpriteFrame == 89))
 			{
-				std::snprintf(m_pGame->G_cTxt, sizeof(m_pGame->G_cTxt), BDLBBOX_DOUBLE_CLICK_INVENTORY3, cStr1);
-				AddEventList(m_pGame->G_cTxt, 10);
+				std::string G_cTxt;
+				G_cTxt = std::format(BDLBBOX_DOUBLE_CLICK_INVENTORY3, itemInfo.name.c_str());
+				AddEventList(G_cTxt.c_str(), 10);
 				return true;
 			}
 		}
@@ -314,9 +316,9 @@ bool DialogBox_Inventory::OnDoubleClick(short msX, short msY)
 		{
 			m_pGame->m_bIsGetPointingMode = true;
 			m_pGame->m_iPointCommandType = cItemID;
-			char cTxt[120];
-			std::snprintf(cTxt, sizeof(cTxt), BDLBBOX_DOUBLE_CLICK_INVENTORY7, cStr1);
-			AddEventList(cTxt, 10);
+			std::string cTxt;
+			cTxt = std::format(BDLBBOX_DOUBLE_CLICK_INVENTORY7, itemInfo.name.c_str());
+			AddEventList(cTxt.c_str(), 10);
 		}
 	}
 
@@ -341,9 +343,9 @@ bool DialogBox_Inventory::OnDoubleClick(short msX, short msY)
 		{
 			m_pGame->m_bIsGetPointingMode = true;
 			m_pGame->m_iPointCommandType = cItemID;
-			char cTxt[120];
-			std::snprintf(cTxt, sizeof(cTxt), BDLBBOX_DOUBLE_CLICK_INVENTORY8, cStr1);
-			AddEventList(cTxt, 10);
+			std::string cTxt;
+			cTxt = std::format(BDLBBOX_DOUBLE_CLICK_INVENTORY8, itemInfo.name.c_str());
+			AddEventList(cTxt.c_str(), 10);
 		}
 	}
 
@@ -555,11 +557,10 @@ bool DialogBox_Inventory::OnItemDrop(short msX, short msY)
 		CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[cSelectedID]->m_sIDnum);
 		if (pCfg == nullptr) return false;
 
-		char cStr1[64], cStr2[64], cStr3[64];
-		char cTxt[120];
-		ItemNameFormatter::Get().Format(m_pGame->m_pItemList[cSelectedID].get(), cStr1, cStr2, cStr3);
-		std::snprintf(cTxt, sizeof(cTxt), ITEM_EQUIPMENT_RELEASED, cStr1);
-		AddEventList(cTxt, 10);
+		std::string cTxt;
+		auto itemInfo2 = ItemNameFormatter::Get().Format(m_pGame->m_pItemList[cSelectedID].get());
+		cTxt = std::format(ITEM_EQUIPMENT_RELEASED, itemInfo2.name.c_str());
+		AddEventList(cTxt.c_str(), 10);
 
 		{
 			short sID = m_pGame->m_pItemList[cSelectedID]->m_sIDnum;

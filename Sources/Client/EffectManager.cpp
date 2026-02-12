@@ -1,8 +1,9 @@
-// EffectManager.cpp: Visual effects system implementation (Orchestrator)
+﻿// EffectManager.cpp: Visual effects system implementation (Orchestrator)
 //
 //////////////////////////////////////////////////////////////////////
 
 #include "EffectManager.h"
+#include "GameConstants.h"
 #include "Game.h"
 #include "ISprite.h"
 #include "Effect.h"
@@ -11,7 +12,6 @@
 #include "ConfigManager.h"
 
 // External global from Game.cpp
-extern int _iAttackerHeight[];
 
 EffectManager::EffectManager(CGame* pGame)
 	: m_pGame(pGame)

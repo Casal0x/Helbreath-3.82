@@ -1,4 +1,4 @@
-// SFMLRenderer.h: SFML renderer implementing hb::shared::render::IRenderer interface
+﻿// SFMLRenderer.h: SFML renderer implementing hb::shared::render::IRenderer interface
 //
 // Part of SFMLEngine static library
 // Uses sf::RenderTexture as back buffer and renders to sf::RenderWindow
@@ -82,9 +82,9 @@ public:
     int GetHeightMid() const override;
     void ResizeBackBuffer(int width, int height) override;
 
-    // Sprite Alpha
-    char GetSpriteAlphaDegree() const override;
-    void SetSpriteAlphaDegree(char degree) override;
+    // Ambient Light
+    char GetAmbientLightLevel() const override;
+    void SetAmbientLightLevel(char level) override;
 
     // hb::shared::render::Color Utilities
     void ColorTransferRGB(uint32_t rgb, int* outR, int* outG, int* outB) override;
@@ -142,7 +142,7 @@ private:
     double m_fpsAccumulator;
     std::chrono::steady_clock::time_point m_lastPresentedFrameTime;
 
-    // Sprite alpha degree
-    char m_spriteAlphaDegree;
+    // Ambient light level
+    char m_ambient_light_level;
 
 };

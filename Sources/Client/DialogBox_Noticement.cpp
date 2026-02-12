@@ -1,6 +1,8 @@
 #include "DialogBox_Noticement.h"
 #include "Game.h"
 #include "lan_eng.h"
+#include <format>
+#include <string>
 using namespace hb::client::sprite_id;
 
 DialogBox_Noticement::DialogBox_Noticement(CGame* pGame)
@@ -21,12 +23,12 @@ void DialogBox_Noticement::OnDraw(short msX, short msY, short msZ, char cLB)
 	{
 	case 1: // Server shutting down in X minutes
 		{
-			char msgBuf[128];
+			std::string msgBuf;
 			if (Info().sV1 != 0)
-				snprintf(msgBuf, sizeof(msgBuf), DRAW_DIALOGBOX_NOTICEMSG1, Info().sV1);
+				msgBuf = std::format(DRAW_DIALOGBOX_NOTICEMSG1, Info().sV1);
 			else
-				std::snprintf(msgBuf, sizeof(msgBuf), "%s", DRAW_DIALOGBOX_NOTICEMSG2);
-			PutAlignedString(sX, sX + szX, sY + 31, msgBuf, GameColors::UINoticeRed);
+				msgBuf = DRAW_DIALOGBOX_NOTICEMSG2;
+			PutAlignedString(sX, sX + szX, sY + 31, msgBuf.c_str(), GameColors::UINoticeRed);
 		}
 		PutAlignedString(sX, sX + szX, sY + 48, DRAW_DIALOGBOX_NOTICEMSG3);
 		PutAlignedString(sX, sX + szX, sY + 65, DRAW_DIALOGBOX_NOTICEMSG4);

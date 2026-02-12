@@ -10,6 +10,8 @@
 #include "lan_eng.h"
 #include "NetMessages.h"
 #include "IInput.h"
+#include <format>
+#include <string>
 
 using namespace hb::shared::net;
 using namespace hb::shared::item;
@@ -226,8 +228,7 @@ void DialogBox_Manufacture::DrawManufactureList(short sX, short sY, short msX, s
 	int iAdjY = 8;
 	uint32_t dwTime = m_pGame->m_dwCurTime;
 	short szX = Info().sSizeX;
-	char cTemp[120], cTemp2[120];
-	char cStr1[64], cStr2[64], cStr3[64];
+	std::string cTemp, cTemp2;
 	int iLoc;
 
 	DrawNewDialogBox(InterfaceNdGame3, sX, sY, 0);
@@ -239,28 +240,26 @@ void DialogBox_Manufacture::DrawManufactureList(short sX, short sY, short msX, s
 	for (int i = 0; i < 13; i++)
 		if (BuildItemManager::Get().GetDisplayList()[i + Info().sView] != 0) {
 
-			std::memset(cTemp, 0, sizeof(cTemp));
-			ItemNameFormatter::Get().Format(m_pGame->FindItemIdByName(BuildItemManager::Get().GetDisplayList()[i + Info().sView]->m_cName), 0, cStr1, cStr2, cStr3);
-			std::snprintf(cTemp, sizeof(cTemp), "%s", cStr1);
-			std::memset(cTemp2, 0, sizeof(cTemp2));
-			std::snprintf(cTemp2, sizeof(cTemp2), "%d%%", BuildItemManager::Get().GetDisplayList()[i + Info().sView]->m_iMaxSkill);
+			auto itemInfo = ItemNameFormatter::Get().Format(m_pGame->FindItemIdByName(BuildItemManager::Get().GetDisplayList()[i + Info().sView]->m_cName.c_str()),  0);
+			cTemp = itemInfo.name.c_str();
+			cTemp2 = std::format("{}%", BuildItemManager::Get().GetDisplayList()[i + Info().sView]->m_iMaxSkill);
 
 			if ((msX >= sX + 30) && (msX <= sX + 180) && (msY >= sY + iAdjY + 55 + iLoc * 15) && (msY <= sY + iAdjY + 69 + iLoc * 15))
 			{
-				PutString(sX + 30, sY + iAdjY + 55 + iLoc * 15, cTemp, GameColors::UIWhite);
-				PutString(sX + 190, sY + iAdjY + 55 + iLoc * 15, cTemp2, GameColors::UIWhite);
+				PutString(sX + 30, sY + iAdjY + 55 + iLoc * 15, cTemp.c_str(), GameColors::UIWhite);
+				PutString(sX + 190, sY + iAdjY + 55 + iLoc * 15, cTemp2.c_str(), GameColors::UIWhite);
 			}
 			else
 			{
 				if (BuildItemManager::Get().GetDisplayList()[i + Info().sView]->m_bBuildEnabled == true)
 				{
-					PutString(sX + 30, sY + iAdjY + 55 + iLoc * 15, cTemp, GameColors::UIMagicBlue);
-					PutString(sX + 190, sY + iAdjY + 55 + iLoc * 15, cTemp2, GameColors::UIMagicBlue);
+					PutString(sX + 30, sY + iAdjY + 55 + iLoc * 15, cTemp.c_str(), GameColors::UIMagicBlue);
+					PutString(sX + 190, sY + iAdjY + 55 + iLoc * 15, cTemp2.c_str(), GameColors::UIMagicBlue);
 				}
 				else
 				{
-					PutString(sX + 30, sY + iAdjY + 55 + iLoc * 15, cTemp, GameColors::UILabel);
-					PutString(sX + 190, sY + iAdjY + 55 + iLoc * 15, cTemp2, GameColors::UILabel);
+					PutString(sX + 30, sY + iAdjY + 55 + iLoc * 15, cTemp.c_str(), GameColors::UILabel);
+					PutString(sX + 190, sY + iAdjY + 55 + iLoc * 15, cTemp2.c_str(), GameColors::UILabel);
 				}
 			}
 			iLoc++;
@@ -312,23 +311,19 @@ void DialogBox_Manufacture::DrawManufactureWaiting(short sX, short sY, short msX
 	int iAdjY = -7;
 	uint32_t dwTime = m_pGame->m_dwCurTime;
 	short szX = Info().sSizeX;
-	char cTemp[120];
-	char cStr1[64], cStr2[64], cStr3[64];
+	std::string cTemp;
 	int iLoc;
 
 	DrawNewDialogBox(InterfaceNdGame3, sX, sY, 0);
 	DrawNewDialogBox(InterfaceNdText, sX, sY, 8);
 	m_pGame->m_pSprite[ItemPackPivotPoint + BuildItemManager::Get().GetDisplayList()[Info().cStr[0]]->m_iSprH]->Draw(sX + iAdjX + 62 + 5, sY + iAdjY + 84 + 17, BuildItemManager::Get().GetDisplayList()[Info().cStr[0]]->m_iSprFrame);
 
-	std::memset(cTemp, 0, sizeof(cTemp));
-	ItemNameFormatter::Get().Format(m_pGame->FindItemIdByName(BuildItemManager::Get().GetDisplayList()[Info().cStr[0]]->m_cName), 0, cStr1, cStr2, cStr3);
-	std::snprintf(cTemp, sizeof(cTemp), "%s", cStr1);
-	PutString(sX + iAdjX + 44 + 10 + 60, sY + iAdjY + 55, cTemp, GameColors::UIWhite);
+	auto itemInfo2 = ItemNameFormatter::Get().Format(m_pGame->FindItemIdByName(BuildItemManager::Get().GetDisplayList()[Info().cStr[0]]->m_cName.c_str()),  0);
+	cTemp = itemInfo2.name.c_str();
+	PutString(sX + iAdjX + 44 + 10 + 60, sY + iAdjY + 55, cTemp.c_str(), GameColors::UIWhite);
 
-	std::snprintf(cTemp, sizeof(cTemp), DRAW_DIALOGBOX_SKILLDLG7
-		, BuildItemManager::Get().GetDisplayList()[Info().cStr[0]]->m_iSkillLimit
-		, BuildItemManager::Get().GetDisplayList()[Info().cStr[0]]->m_iMaxSkill);
-	PutString(sX + iAdjX + 44 + 10 + 60, sY + iAdjY + 55 + 2 * 15, cTemp, GameColors::UILabel);
+	cTemp = std::format(DRAW_DIALOGBOX_SKILLDLG7, BuildItemManager::Get().GetDisplayList()[Info().cStr[0]]->m_iSkillLimit, BuildItemManager::Get().GetDisplayList()[Info().cStr[0]]->m_iMaxSkill);
+	PutString(sX + iAdjX + 44 + 10 + 60, sY + iAdjY + 55 + 2 * 15, cTemp.c_str(), GameColors::UILabel);
 	PutString(sX + iAdjX + 44 + 10 + 60, sY + iAdjY + 55 + 3 * 15 + 5, DRAW_DIALOGBOX_SKILLDLG8, GameColors::UILabel);
 
 	iLoc = 4;
@@ -336,22 +331,22 @@ void DialogBox_Manufacture::DrawManufactureWaiting(short sX, short sY, short msX
 	{
 		if (BuildItemManager::Get().GetDisplayList()[Info().cStr[0]]->m_iElementCount[elem] != 0)
 		{
-			char* elemName = nullptr;
+			const char* elemName = nullptr;
 			bool elemFlag = false;
 			switch (elem) {
-			case 1: elemName = BuildItemManager::Get().GetDisplayList()[Info().cStr[0]]->m_cElementName1; elemFlag = BuildItemManager::Get().GetDisplayList()[Info().cStr[0]]->m_bElementFlag[1]; break;
-			case 2: elemName = BuildItemManager::Get().GetDisplayList()[Info().cStr[0]]->m_cElementName2; elemFlag = BuildItemManager::Get().GetDisplayList()[Info().cStr[0]]->m_bElementFlag[2]; break;
-			case 3: elemName = BuildItemManager::Get().GetDisplayList()[Info().cStr[0]]->m_cElementName3; elemFlag = BuildItemManager::Get().GetDisplayList()[Info().cStr[0]]->m_bElementFlag[3]; break;
-			case 4: elemName = BuildItemManager::Get().GetDisplayList()[Info().cStr[0]]->m_cElementName4; elemFlag = BuildItemManager::Get().GetDisplayList()[Info().cStr[0]]->m_bElementFlag[4]; break;
-			case 5: elemName = BuildItemManager::Get().GetDisplayList()[Info().cStr[0]]->m_cElementName5; elemFlag = BuildItemManager::Get().GetDisplayList()[Info().cStr[0]]->m_bElementFlag[5]; break;
-			case 6: elemName = BuildItemManager::Get().GetDisplayList()[Info().cStr[0]]->m_cElementName6; elemFlag = BuildItemManager::Get().GetDisplayList()[Info().cStr[0]]->m_bElementFlag[6]; break;
+			case 1: elemName = BuildItemManager::Get().GetDisplayList()[Info().cStr[0]]->m_cElementName1.c_str(); elemFlag = BuildItemManager::Get().GetDisplayList()[Info().cStr[0]]->m_bElementFlag[1]; break;
+			case 2: elemName = BuildItemManager::Get().GetDisplayList()[Info().cStr[0]]->m_cElementName2.c_str(); elemFlag = BuildItemManager::Get().GetDisplayList()[Info().cStr[0]]->m_bElementFlag[2]; break;
+			case 3: elemName = BuildItemManager::Get().GetDisplayList()[Info().cStr[0]]->m_cElementName3.c_str(); elemFlag = BuildItemManager::Get().GetDisplayList()[Info().cStr[0]]->m_bElementFlag[3]; break;
+			case 4: elemName = BuildItemManager::Get().GetDisplayList()[Info().cStr[0]]->m_cElementName4.c_str(); elemFlag = BuildItemManager::Get().GetDisplayList()[Info().cStr[0]]->m_bElementFlag[4]; break;
+			case 5: elemName = BuildItemManager::Get().GetDisplayList()[Info().cStr[0]]->m_cElementName5.c_str(); elemFlag = BuildItemManager::Get().GetDisplayList()[Info().cStr[0]]->m_bElementFlag[5]; break;
+			case 6: elemName = BuildItemManager::Get().GetDisplayList()[Info().cStr[0]]->m_cElementName6.c_str(); elemFlag = BuildItemManager::Get().GetDisplayList()[Info().cStr[0]]->m_bElementFlag[6]; break;
 			}
-			ItemNameFormatter::Get().Format(m_pGame->FindItemIdByName(elemName), 0, cStr1, cStr2, cStr3);
-			std::snprintf(cTemp, sizeof(cTemp), "%s", cStr1);
+			auto itemInfo3 = ItemNameFormatter::Get().Format(m_pGame->FindItemIdByName(elemName),  0);
+			cTemp = itemInfo3.name.c_str();
 			if (elemFlag)
-				PutString(sX + iAdjX + 44 + 20 + 60, sY + iAdjY + 55 + iLoc * 15 + 5, cTemp, GameColors::UILabel);
+				PutString(sX + iAdjX + 44 + 20 + 60, sY + iAdjY + 55 + iLoc * 15 + 5, cTemp.c_str(), GameColors::UILabel);
 			else
-				PutString(sX + iAdjX + 44 + 20 + 60, sY + iAdjY + 55 + iLoc * 15 + 5, cTemp, GameColors::UIDisabled);
+				PutString(sX + iAdjX + 44 + 20 + 60, sY + iAdjY + 55 + iLoc * 15 + 5, cTemp.c_str(), GameColors::UIDisabled);
 			iLoc++;
 		}
 	}
@@ -427,21 +422,19 @@ void DialogBox_Manufacture::DrawManufactureInProgress(short sX, short sY)
 	int iAdjY = -7;
 	uint32_t dwTime = m_pGame->m_dwCurTime;
 	short szX = Info().sSizeX;
-	char cTemp[120];
-	char cStr1[64], cStr2[64], cStr3[64];
+	std::string cTemp;
 	int iLoc;
 
 	DrawNewDialogBox(InterfaceNdGame3, sX, sY, 0);
 	DrawNewDialogBox(InterfaceNdText, sX, sY, 8);
 	m_pGame->m_pSprite[ItemPackPivotPoint + BuildItemManager::Get().GetDisplayList()[Info().cStr[0]]->m_iSprH]->Draw(sX + iAdjX + 62 + 5, sY + iAdjY + 84 + 17, BuildItemManager::Get().GetDisplayList()[Info().cStr[0]]->m_iSprFrame);
 
-	std::memset(cTemp, 0, sizeof(cTemp));
-	ItemNameFormatter::Get().Format(m_pGame->FindItemIdByName(BuildItemManager::Get().GetDisplayList()[Info().cStr[0]]->m_cName), 0, cStr1, cStr2, cStr3);
-	std::snprintf(cTemp, sizeof(cTemp), "%s", cStr1);
-	PutString(sX + iAdjX + 44 + 10 + 60, sY + iAdjY + 55, cTemp, GameColors::UIWhite);
+	auto itemInfo4 = ItemNameFormatter::Get().Format(m_pGame->FindItemIdByName(BuildItemManager::Get().GetDisplayList()[Info().cStr[0]]->m_cName.c_str()),  0);
+	cTemp = itemInfo4.name.c_str();
+	PutString(sX + iAdjX + 44 + 10 + 60, sY + iAdjY + 55, cTemp.c_str(), GameColors::UIWhite);
 
-	std::snprintf(cTemp, sizeof(cTemp), DRAW_DIALOGBOX_SKILLDLG7, BuildItemManager::Get().GetDisplayList()[Info().cStr[0]]->m_iSkillLimit, BuildItemManager::Get().GetDisplayList()[Info().cStr[0]]->m_iMaxSkill);
-	PutString(sX + iAdjX + 44 + 10 + 60, sY + iAdjY + 55 + 2 * 15, cTemp, GameColors::UILabel);
+	cTemp = std::format(DRAW_DIALOGBOX_SKILLDLG7, BuildItemManager::Get().GetDisplayList()[Info().cStr[0]]->m_iSkillLimit, BuildItemManager::Get().GetDisplayList()[Info().cStr[0]]->m_iMaxSkill);
+	PutString(sX + iAdjX + 44 + 10 + 60, sY + iAdjY + 55 + 2 * 15, cTemp.c_str(), GameColors::UILabel);
 	PutString(sX + iAdjX + 44 + 10 + 60, sY + iAdjY + 55 + 3 * 15 + 5, DRAW_DIALOGBOX_SKILLDLG8, GameColors::UILabel);
 
 	iLoc = 4;
@@ -449,22 +442,22 @@ void DialogBox_Manufacture::DrawManufactureInProgress(short sX, short sY)
 	{
 		if (BuildItemManager::Get().GetDisplayList()[Info().cStr[0]]->m_iElementCount[elem] != 0)
 		{
-			char* elemName = nullptr;
+			const char* elemName = nullptr;
 			bool elemFlag = false;
 			switch (elem) {
-			case 1: elemName = BuildItemManager::Get().GetDisplayList()[Info().cStr[0]]->m_cElementName1; elemFlag = BuildItemManager::Get().GetDisplayList()[Info().cStr[0]]->m_bElementFlag[1]; break;
-			case 2: elemName = BuildItemManager::Get().GetDisplayList()[Info().cStr[0]]->m_cElementName2; elemFlag = BuildItemManager::Get().GetDisplayList()[Info().cStr[0]]->m_bElementFlag[2]; break;
-			case 3: elemName = BuildItemManager::Get().GetDisplayList()[Info().cStr[0]]->m_cElementName3; elemFlag = BuildItemManager::Get().GetDisplayList()[Info().cStr[0]]->m_bElementFlag[3]; break;
-			case 4: elemName = BuildItemManager::Get().GetDisplayList()[Info().cStr[0]]->m_cElementName4; elemFlag = BuildItemManager::Get().GetDisplayList()[Info().cStr[0]]->m_bElementFlag[4]; break;
-			case 5: elemName = BuildItemManager::Get().GetDisplayList()[Info().cStr[0]]->m_cElementName5; elemFlag = BuildItemManager::Get().GetDisplayList()[Info().cStr[0]]->m_bElementFlag[5]; break;
-			case 6: elemName = BuildItemManager::Get().GetDisplayList()[Info().cStr[0]]->m_cElementName6; elemFlag = BuildItemManager::Get().GetDisplayList()[Info().cStr[0]]->m_bElementFlag[6]; break;
+			case 1: elemName = BuildItemManager::Get().GetDisplayList()[Info().cStr[0]]->m_cElementName1.c_str(); elemFlag = BuildItemManager::Get().GetDisplayList()[Info().cStr[0]]->m_bElementFlag[1]; break;
+			case 2: elemName = BuildItemManager::Get().GetDisplayList()[Info().cStr[0]]->m_cElementName2.c_str(); elemFlag = BuildItemManager::Get().GetDisplayList()[Info().cStr[0]]->m_bElementFlag[2]; break;
+			case 3: elemName = BuildItemManager::Get().GetDisplayList()[Info().cStr[0]]->m_cElementName3.c_str(); elemFlag = BuildItemManager::Get().GetDisplayList()[Info().cStr[0]]->m_bElementFlag[3]; break;
+			case 4: elemName = BuildItemManager::Get().GetDisplayList()[Info().cStr[0]]->m_cElementName4.c_str(); elemFlag = BuildItemManager::Get().GetDisplayList()[Info().cStr[0]]->m_bElementFlag[4]; break;
+			case 5: elemName = BuildItemManager::Get().GetDisplayList()[Info().cStr[0]]->m_cElementName5.c_str(); elemFlag = BuildItemManager::Get().GetDisplayList()[Info().cStr[0]]->m_bElementFlag[5]; break;
+			case 6: elemName = BuildItemManager::Get().GetDisplayList()[Info().cStr[0]]->m_cElementName6.c_str(); elemFlag = BuildItemManager::Get().GetDisplayList()[Info().cStr[0]]->m_bElementFlag[6]; break;
 			}
-			ItemNameFormatter::Get().Format(m_pGame->FindItemIdByName(elemName), 0, cStr1, cStr2, cStr3);
-			std::snprintf(cTemp, sizeof(cTemp), "%s", cStr1);
+			auto itemInfo5 = ItemNameFormatter::Get().Format(m_pGame->FindItemIdByName(elemName),  0);
+			cTemp = itemInfo5.name.c_str();
 			if (elemFlag)
-				PutString(sX + iAdjX + 44 + 20 + 60, sY + iAdjY + 55 + iLoc * 15 + 5, cTemp, GameColors::UILabel);
+				PutString(sX + iAdjX + 44 + 20 + 60, sY + iAdjY + 55 + iLoc * 15 + 5, cTemp.c_str(), GameColors::UILabel);
 			else
-				PutString(sX + iAdjX + 44 + 20 + 60, sY + iAdjY + 55 + iLoc * 15 + 5, cTemp, GameColors::UIDisabledMed);
+				PutString(sX + iAdjX + 44 + 20 + 60, sY + iAdjY + 55 + iLoc * 15 + 5, cTemp.c_str(), GameColors::UIDisabledMed);
 			iLoc++;
 		}
 	}
@@ -515,7 +508,7 @@ void DialogBox_Manufacture::DrawManufactureInProgress(short sX, short sY)
 
 	if (Info().cStr[1] == 4)
 	{
-		m_pGame->bSendCommand(MsgId::CommandCommon, CommonType::BuildItem, 0, 0, 0, 0, BuildItemManager::Get().GetDisplayList()[Info().cStr[0]]->m_cName);
+		m_pGame->bSendCommand(MsgId::CommandCommon, CommonType::BuildItem, 0, 0, 0, 0, BuildItemManager::Get().GetDisplayList()[Info().cStr[0]]->m_cName.c_str());
 		Info().cStr[1]++;
 	}
 }
@@ -525,30 +518,28 @@ void DialogBox_Manufacture::DrawManufactureDone(short sX, short sY, short msX, s
 	int iAdjX = -1;
 	int iAdjY = -7;
 	uint32_t dwTime = m_pGame->m_dwCurTime;
-	char cTemp[120];
-	char cStr1[64], cStr2[64], cStr3[64];
+	std::string cTemp;
 
 	DrawNewDialogBox(InterfaceNdGame3, sX, sY, 0);
 	DrawNewDialogBox(InterfaceNdText, sX, sY, 8);
 	m_pGame->m_pSprite[ItemPackPivotPoint + BuildItemManager::Get().GetDisplayList()[Info().cStr[0]]->m_iSprH]->Draw(sX + iAdjX + 62 + 5, sY + iAdjY + 84 + 17, BuildItemManager::Get().GetDisplayList()[Info().cStr[0]]->m_iSprFrame);
 
-	std::memset(cTemp, 0, sizeof(cTemp));
-	ItemNameFormatter::Get().Format(m_pGame->FindItemIdByName(BuildItemManager::Get().GetDisplayList()[Info().cStr[0]]->m_cName), 0, cStr1, cStr2, cStr3);
+	auto itemInfo6 = ItemNameFormatter::Get().Format(m_pGame->FindItemIdByName(BuildItemManager::Get().GetDisplayList()[Info().cStr[0]]->m_cName.c_str()),  0);
 
-	std::snprintf(cTemp, sizeof(cTemp), "%s", cStr1);
-	PutString(sX + iAdjX + 44 + 10 + 60, sY + iAdjY + 55, cTemp, GameColors::UIWhite);
+	cTemp = itemInfo6.name.c_str();
+	PutString(sX + iAdjX + 44 + 10 + 60, sY + iAdjY + 55, cTemp.c_str(), GameColors::UIWhite);
 
 	if (Info().cStr[2] == 1) {
 		PutString(sX + iAdjX + 33 + 11, sY + iAdjY + 200 - 45, DRAW_DIALOGBOX_SKILLDLG31, GameColors::UILabel);
 
-		char resultBuf[64];
+		std::string resultBuf;
 		if (static_cast<ItemType>(Info().sV1) == ItemType::Material) {
-			snprintf(resultBuf, sizeof(resultBuf), DRAW_DIALOGBOX_SKILLDLG32, Info().cStr[3]);
-			PutString(sX + iAdjX + 33 + 11, sY + iAdjY + 215 - 45, resultBuf, GameColors::UILabel);
+			resultBuf = std::format(DRAW_DIALOGBOX_SKILLDLG32, Info().cStr[3]);
+			PutString(sX + iAdjX + 33 + 11, sY + iAdjY + 215 - 45, resultBuf.c_str(), GameColors::UILabel);
 		}
 		else {
-			snprintf(resultBuf, sizeof(resultBuf), DRAW_DIALOGBOX_SKILLDLG33, (int)Info().cStr[3] + 100);
-			PutString(sX + iAdjX + 33, sY + iAdjY + 215 - 45, resultBuf, GameColors::UILabel);
+			resultBuf = std::format(DRAW_DIALOGBOX_SKILLDLG33, (int)Info().cStr[3] + 100);
+			PutString(sX + iAdjX + 33, sY + iAdjY + 215 - 45, resultBuf.c_str(), GameColors::UILabel);
 		}
 	}
 	else {

@@ -5,6 +5,8 @@
 #include "SpriteID.h"
 #include "lan_eng.h"
 #include "NetMessages.h"
+#include <format>
+#include <string>
 
 using namespace hb::shared::net;
 using namespace hb::client::sprite_id;
@@ -19,13 +21,16 @@ void DialogBox_SellOrRepair::OnDraw(short msX, short msY, short msZ, char cLB)
 	if (!m_pGame->EnsureItemConfigsLoaded()) return;
 	short sX, sY;
 	uint32_t dwTime = m_pGame->m_dwCurTime;
-	char cItemID, cItemColor, cTxt[120], cTemp[120], cStr2[120], cStr3[120];
+	std::string cTxt;
+
+	char cItemID, cItemColor;
 
 	sX = Info().sX;
 	sY = Info().sY;
 
 	switch (Info().cMode) {
 	case 1:
+	{
 		DrawNewDialogBox(InterfaceNdGame2, sX, sY, 2);
 		DrawNewDialogBox(InterfaceNdText, sX, sY, 11);
 
@@ -47,29 +52,26 @@ void DialogBox_SellOrRepair::OnDraw(short msX, short msY, short msZ, char cLB)
 				break;
 			}
 		}
-		std::memset(cTemp, 0, sizeof(cTemp));
-		std::memset(cStr2, 0, sizeof(cStr2));
-		std::memset(cStr3, 0, sizeof(cStr3));
 
-		ItemNameFormatter::Get().Format(m_pGame->m_pItemList[cItemID].get(), cTemp, cStr2, cStr3);
-		if (Info().sV4 == 1) std::snprintf(cTxt, sizeof(cTxt), "%s", cTemp);
-		else std::snprintf(cTxt, sizeof(cTxt), DRAW_DIALOGBOX_SELLOR_REPAIR_ITEM1, Info().sV4, cTemp);
+		auto itemInfo = ItemNameFormatter::Get().Format(m_pGame->m_pItemList[cItemID].get());
+		if (Info().sV4 == 1) cTxt = itemInfo.name.c_str();
+		else cTxt = std::format(DRAW_DIALOGBOX_SELLOR_REPAIR_ITEM1, Info().sV4, itemInfo.name.c_str());
 
-		if (ItemNameFormatter::Get().IsSpecial())
+		if (itemInfo.is_special)
 		{
-			PutAlignedString(sX + 25, sX + 240, sY + 60, cTxt, GameColors::UIItemName_Special);
-			PutAlignedString(sX + 25 + 1, sX + 240 + 1, sY + 60, cTxt, GameColors::UIItemName_Special);
+			PutAlignedString(sX + 25, sX + 240, sY + 60, cTxt.c_str(), GameColors::UIItemName_Special);
+			PutAlignedString(sX + 25 + 1, sX + 240 + 1, sY + 60, cTxt.c_str(), GameColors::UIItemName_Special);
 		}
 		else
 		{
-			PutAlignedString(sX + 25, sX + 240, sY + 60, cTxt, GameColors::UILabel);
-			PutAlignedString(sX + 25 + 1, sX + 240 + 1, sY + 60, cTxt, GameColors::UILabel);
+			PutAlignedString(sX + 25, sX + 240, sY + 60, cTxt.c_str(), GameColors::UILabel);
+			PutAlignedString(sX + 25 + 1, sX + 240 + 1, sY + 60, cTxt.c_str(), GameColors::UILabel);
 		}
 
-		std::snprintf(cTxt, sizeof(cTxt), DRAW_DIALOGBOX_SELLOR_REPAIR_ITEM2, Info().sV2);
-		PutString(sX + 95 + 15, sY + 53 + 60, cTxt, GameColors::UILabel);
-		std::snprintf(cTxt, sizeof(cTxt), DRAW_DIALOGBOX_SELLOR_REPAIR_ITEM3, Info().sV3);
-		PutString(sX + 95 + 15, sY + 53 + 75, cTxt, GameColors::UILabel);
+		cTxt = std::format(DRAW_DIALOGBOX_SELLOR_REPAIR_ITEM2, Info().sV2);
+		PutString(sX + 95 + 15, sY + 53 + 60, cTxt.c_str(), GameColors::UILabel);
+		cTxt = std::format(DRAW_DIALOGBOX_SELLOR_REPAIR_ITEM3, Info().sV3);
+		PutString(sX + 95 + 15, sY + 53 + 75, cTxt.c_str(), GameColors::UILabel);
 		PutString(sX + 55, sY + 190, DRAW_DIALOGBOX_SELLOR_REPAIR_ITEM4, GameColors::UILabel);
 
 		if ((msX >= sX + ui_layout::left_btn_x) && (msX <= sX + ui_layout::left_btn_x + ui_layout::btn_size_x) && (msY >= sY + ui_layout::btn_y) && (msY <= sY + ui_layout::btn_y + ui_layout::btn_size_y))
@@ -80,8 +82,10 @@ void DialogBox_SellOrRepair::OnDraw(short msX, short msY, short msZ, char cLB)
 			DrawNewDialogBox(InterfaceNdButton, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 17);
 		else DrawNewDialogBox(InterfaceNdButton, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 16);
 		break;
+	}
 
 	case 2:
+	{
 		DrawNewDialogBox(InterfaceNdGame2, sX, sY, 2);
 		DrawNewDialogBox(InterfaceNdText, sX, sY, 10);
 		cItemID = Info().sV1;
@@ -102,25 +106,22 @@ void DialogBox_SellOrRepair::OnDraw(short msX, short msY, short msZ, char cLB)
 				break;
 			}
 		}
-		std::memset(cTemp, 0, sizeof(cTemp));
-		std::memset(cStr2, 0, sizeof(cStr2));
-		std::memset(cStr3, 0, sizeof(cStr3));
-		ItemNameFormatter::Get().Format(m_pGame->m_pItemList[cItemID].get(), cTemp, cStr2, cStr3);
-		std::snprintf(cTxt, sizeof(cTxt), "%s", cTemp);
-		if (ItemNameFormatter::Get().IsSpecial())
+		auto itemInfo2 = ItemNameFormatter::Get().Format(m_pGame->m_pItemList[cItemID].get());
+		cTxt = itemInfo2.name.c_str();
+		if (itemInfo2.is_special)
 		{
-			PutAlignedString(sX + 25, sX + 240, sY + 60, cTxt, GameColors::UIItemName_Special);
-			PutAlignedString(sX + 25 + 1, sX + 240 + 1, sY + 60, cTxt, GameColors::UIItemName_Special);
+			PutAlignedString(sX + 25, sX + 240, sY + 60, cTxt.c_str(), GameColors::UIItemName_Special);
+			PutAlignedString(sX + 25 + 1, sX + 240 + 1, sY + 60, cTxt.c_str(), GameColors::UIItemName_Special);
 		}
 		else
 		{
-			PutAlignedString(sX + 25, sX + 240, sY + 60, cTxt, GameColors::UILabel);
-			PutAlignedString(sX + 25 + 1, sX + 240 + 1, sY + 60, cTxt, GameColors::UILabel);
+			PutAlignedString(sX + 25, sX + 240, sY + 60, cTxt.c_str(), GameColors::UILabel);
+			PutAlignedString(sX + 25 + 1, sX + 240 + 1, sY + 60, cTxt.c_str(), GameColors::UILabel);
 		}
-		std::snprintf(cTxt, sizeof(cTxt), DRAW_DIALOGBOX_SELLOR_REPAIR_ITEM2, Info().sV2);
-		PutString(sX + 95 + 15, sY + 53 + 60, cTxt, GameColors::UILabel);
-		std::snprintf(cTxt, sizeof(cTxt), DRAW_DIALOGBOX_SELLOR_REPAIR_ITEM6, Info().sV3);
-		PutString(sX + 95 + 15, sY + 53 + 75, cTxt, GameColors::UILabel);
+		cTxt = std::format(DRAW_DIALOGBOX_SELLOR_REPAIR_ITEM2, Info().sV2);
+		PutString(sX + 95 + 15, sY + 53 + 60, cTxt.c_str(), GameColors::UILabel);
+		cTxt = std::format(DRAW_DIALOGBOX_SELLOR_REPAIR_ITEM6, Info().sV3);
+		PutString(sX + 95 + 15, sY + 53 + 75, cTxt.c_str(), GameColors::UILabel);
 		PutString(sX + 55, sY + 190, DRAW_DIALOGBOX_SELLOR_REPAIR_ITEM7, GameColors::UILabel);
 
 		if ((msX >= sX + ui_layout::left_btn_x) && (msX <= sX + ui_layout::left_btn_x + ui_layout::btn_size_x) && (msY >= sY + ui_layout::btn_y) && (msY <= sY + ui_layout::btn_y + ui_layout::btn_size_y))
@@ -131,6 +132,7 @@ void DialogBox_SellOrRepair::OnDraw(short msX, short msY, short msZ, char cLB)
 			DrawNewDialogBox(InterfaceNdButton, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 17);
 		else DrawNewDialogBox(InterfaceNdButton, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 16);
 		break;
+	}
 
 	case 3:
 		DrawNewDialogBox(InterfaceNdGame2, sX, sY, 2);

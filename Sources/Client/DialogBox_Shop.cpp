@@ -41,7 +41,7 @@ void DialogBox_Shop::DrawItemList(short sX, short sY, short msX, short msY, shor
     int iTotalLines = 0;
     int iPointerLoc;
     double d1, d2, d3;
-    char cTemp[255], cStr2[255], cStr3[255];
+    char cTemp[255];
     int iCost, iDiscountCost, iDiscountRatio;
     double dTmp1, dTmp2, dTmp3;
 
@@ -89,12 +89,11 @@ void DialogBox_Shop::DrawItemList(short sX, short sY, short msX, short msY, shor
     for (int i = 0; i < 13; i++)
         if (((i + m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sView) < game_limits::max_menu_items) &&
             (ShopManager::Get().GetItemList()[i + m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sView] != 0)) {
-            std::memset(cTemp, 0, sizeof(cTemp));
-            ItemNameFormatter::Get().Format(ShopManager::Get().GetItemList()[i + m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sView].get(), cTemp, cStr2, cStr3);
+            auto itemInfo = ItemNameFormatter::Get().Format(ShopManager::Get().GetItemList()[i + m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sView].get());
             if ((msX >= sX + 20) && (msX <= sX + 220) && (msY >= sY + i * 18 + 65) && (msY <= sY + i * 18 + 79)) {
-                hb::shared::text::DrawTextAligned(GameFont::Default, sX + 10, sY + i * 18 + 65, (sX + 190) - (sX + 10), 15, cTemp, hb::shared::text::TextStyle::Color(GameColors::UIWhite), hb::shared::text::Align::TopCenter);
+                hb::shared::text::DrawTextAligned(GameFont::Default, sX + 10, sY + i * 18 + 65, (sX + 190) - (sX + 10), 15, itemInfo.name.c_str(), hb::shared::text::TextStyle::Color(GameColors::UIWhite), hb::shared::text::Align::TopCenter);
             }
-            else hb::shared::text::DrawTextAligned(GameFont::Default, sX + 10, sY + i * 18 + 65, (sX + 190) - (sX + 10), 15, cTemp, hb::shared::text::TextStyle::Color(GameColors::UIMagicBlue), hb::shared::text::Align::TopCenter);
+            else hb::shared::text::DrawTextAligned(GameFont::Default, sX + 10, sY + i * 18 + 65, (sX + 190) - (sX + 10), 15, itemInfo.name.c_str(), hb::shared::text::TextStyle::Color(GameColors::UIMagicBlue), hb::shared::text::Align::TopCenter);
         }
 
     // Draw prices
@@ -142,17 +141,16 @@ void DialogBox_Shop::DrawItemDetails(short sX, short sY, short msX, short msY, s
 {
     uint32_t dwTime = m_pGame->m_dwCurTime;
     int iItemIndex = m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).cMode - 1;
-    char cTemp[255], cStr2[255], cStr3[255];
+    char cTemp[255];
     bool bFlagStatLow = false;
     bool bFlagRedShown = false;
 
     m_pGame->m_pSprite[ItemPackPivotPoint + ShopManager::Get().GetItemList()[iItemIndex]->m_sSprite]->Draw(sX + 62 + 30 - 35, sY + 84 + 30 - 10, ShopManager::Get().GetItemList()[iItemIndex]->m_sSpriteFrame);
 
-    std::memset(cTemp, 0, sizeof(cTemp));
-    ItemNameFormatter::Get().Format(ShopManager::Get().GetItemList()[iItemIndex].get(), cTemp, cStr2, cStr3);
+    auto itemInfo2 = ItemNameFormatter::Get().Format(ShopManager::Get().GetItemList()[iItemIndex].get());
 
-    hb::shared::text::DrawTextAligned(GameFont::Default, sX + 25, sY + 50, (sX + 240) - (sX + 25), 15, cTemp, hb::shared::text::TextStyle::Color(GameColors::UIWhite), hb::shared::text::Align::TopCenter);
-    hb::shared::text::DrawTextAligned(GameFont::Default, sX + 26, sY + 50, (sX + 241) - (sX + 26), 15, cTemp, hb::shared::text::TextStyle::Color(GameColors::UIWhite), hb::shared::text::Align::TopCenter);
+    hb::shared::text::DrawTextAligned(GameFont::Default, sX + 25, sY + 50, (sX + 240) - (sX + 25), 15, itemInfo2.name.c_str(), hb::shared::text::TextStyle::Color(GameColors::UIWhite), hb::shared::text::Align::TopCenter);
+    hb::shared::text::DrawTextAligned(GameFont::Default, sX + 26, sY + 50, (sX + 241) - (sX + 26), 15, itemInfo2.name.c_str(), hb::shared::text::TextStyle::Color(GameColors::UIWhite), hb::shared::text::Align::TopCenter);
 
     std::snprintf(cTemp, sizeof(cTemp), "%s", DRAW_DIALOGBOX_SHOP3); //"PRICE"
     hb::shared::text::DrawText(GameFont::Default, sX + 90, sY + 78 + 30 - 10, cTemp, hb::shared::text::TextStyle::Color(GameColors::UILabel));

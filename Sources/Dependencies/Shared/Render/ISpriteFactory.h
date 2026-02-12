@@ -1,4 +1,4 @@
-// ISpriteFactory.h: Abstract sprite factory interface for renderer abstraction
+﻿// ISpriteFactory.h: Abstract sprite factory interface for renderer abstraction
 //
 // Part of the shared interface layer between client and renderers
 //////////////////////////////////////////////////////////////////////
@@ -39,8 +39,8 @@ public:
 
     // Set global alpha degree affecting all sprites with alphaEffect enabled
     // Degree 1 = normal, Degree 2 = night/dark mode
-    virtual void SetGlobalAlphaDegree(int degree) = 0;
-    virtual int GetGlobalAlphaDegree() const = 0;
+    virtual void SetAmbientLightLevel(int level) = 0;
+    virtual int GetAmbientLightLevel() const = 0;
 
     //------------------------------------------------------------------
     // PAK File Information
@@ -75,8 +75,8 @@ public:
     static void Destroy(ISprite* sprite);
 
     // Global alpha degree
-    static void SetAlphaDegree(int degree);
-    static int GetAlphaDegree();
+    static void SetAmbientLightLevel(int level);
+    static int GetAmbientLightLevel();
 
     // PAK file information
     static int GetSpriteCount(const std::string& pakName);

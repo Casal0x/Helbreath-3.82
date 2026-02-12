@@ -1,6 +1,7 @@
-#include "DialogBox_GuildOperation.h"
+﻿#include "DialogBox_GuildOperation.h"
 #include "Game.h"
 #include "lan_eng.h"
+#include <string>
 
 using namespace hb::shared::net;
 using namespace hb::client::sprite_id;
@@ -38,7 +39,7 @@ void DialogBox_GuildOperation::OnDraw(short msX, short msY, short msZ, char cLB)
 void DialogBox_GuildOperation::DrawJoinRequest(short sX, short sY, short msX, short msY)
 {
 	PutAlignedString(sX + 24, sX + 248, sY + 50, DRAW_DIALOGBOX_GUILD_OPERATION1);
-	PutAlignedString(sX + 24, sX + 248, sY + 65, m_pGame->m_stGuildOpList[0].cName, GameColors::UILabel);
+	PutAlignedString(sX + 24, sX + 248, sY + 65, m_pGame->m_stGuildOpList[0].cName.c_str(), GameColors::UILabel);
 	PutAlignedString(sX + 24, sX + 248, sY + 69, "____________________", GameColors::UIBlack);
 	PutAlignedString(sX + 24, sX + 248, sY + 90, DRAW_DIALOGBOX_GUILD_OPERATION2);
 	PutAlignedString(sX + 24, sX + 248, sY + 105, DRAW_DIALOGBOX_GUILD_OPERATION3);
@@ -57,7 +58,7 @@ void DialogBox_GuildOperation::DrawJoinRequest(short sX, short sY, short msX, sh
 void DialogBox_GuildOperation::DrawDismissRequest(short sX, short sY, short msX, short msY)
 {
 	PutAlignedString(sX + 24, sX + 248, sY + 50, DRAW_DIALOGBOX_GUILD_OPERATION6);
-	PutAlignedString(sX + 24, sX + 248, sY + 65, m_pGame->m_stGuildOpList[0].cName, GameColors::UILabel);
+	PutAlignedString(sX + 24, sX + 248, sY + 65, m_pGame->m_stGuildOpList[0].cName.c_str(), GameColors::UILabel);
 	PutAlignedString(sX + 24, sX + 248, sY + 69, "____________________", GameColors::UIBlack);
 	PutAlignedString(sX + 24, sX + 248, sY + 90, DRAW_DIALOGBOX_GUILD_OPERATION7);
 	PutAlignedString(sX + 24, sX + 248, sY + 105, DRAW_DIALOGBOX_GUILD_OPERATION8);
@@ -78,21 +79,21 @@ void DialogBox_GuildOperation::DrawInfoMessage(short sX, short sY, short msX, sh
 	switch (mode) {
 	case 3:
 		PutAlignedString(sX + 24, sX + 248, sY + 50, DRAW_DIALOGBOX_GUILD_OPERATION11);
-		PutAlignedString(sX + 24, sX + 248, sY + 65, m_pGame->m_stGuildOpList[0].cName, GameColors::UILabel);
+		PutAlignedString(sX + 24, sX + 248, sY + 65, m_pGame->m_stGuildOpList[0].cName.c_str(), GameColors::UILabel);
 		PutAlignedString(sX + 24, sX + 248, sY + 69, "____________________", GameColors::UIBlack);
 		PutAlignedString(sX + 24, sX + 248, sY + 90, DRAW_DIALOGBOX_GUILD_OPERATION12);
 		PutAlignedString(sX + 24, sX + 248, sY + 105, DRAW_DIALOGBOX_GUILD_OPERATION13);
 		break;
 	case 4:
 		PutAlignedString(sX + 24, sX + 248, sY + 50, DRAW_DIALOGBOX_GUILD_OPERATION14);
-		PutAlignedString(sX + 24, sX + 248, sY + 65, m_pGame->m_stGuildOpList[0].cName, GameColors::UILabel);
+		PutAlignedString(sX + 24, sX + 248, sY + 65, m_pGame->m_stGuildOpList[0].cName.c_str(), GameColors::UILabel);
 		PutAlignedString(sX + 24, sX + 248, sY + 69, "____________________", GameColors::UIBlack);
 		PutAlignedString(sX + 24, sX + 248, sY + 90, DRAW_DIALOGBOX_GUILD_OPERATION15);
 		PutAlignedString(sX + 24, sX + 248, sY + 105, DRAW_DIALOGBOX_GUILD_OPERATION16);
 		break;
 	case 5:
 		PutAlignedString(sX + 24, sX + 248, sY + 50, DRAW_DIALOGBOX_GUILD_OPERATION17);
-		PutAlignedString(sX + 24, sX + 248, sY + 65, m_pGame->m_stGuildOpList[0].cName, GameColors::UILabel);
+		PutAlignedString(sX + 24, sX + 248, sY + 65, m_pGame->m_stGuildOpList[0].cName.c_str(), GameColors::UILabel);
 		PutAlignedString(sX + 24, sX + 248, sY + 69, "____________________", GameColors::UIBlack);
 		PutAlignedString(sX + 24, sX + 248, sY + 90, DRAW_DIALOGBOX_GUILD_OPERATION18);
 		PutAlignedString(sX + 24, sX + 248, sY + 105, DRAW_DIALOGBOX_GUILD_OPERATION19);
@@ -100,7 +101,7 @@ void DialogBox_GuildOperation::DrawInfoMessage(short sX, short sY, short msX, sh
 		break;
 	case 6:
 		PutAlignedString(sX + 24, sX + 248, sY + 50, DRAW_DIALOGBOX_GUILD_OPERATION21);
-		PutAlignedString(sX + 24, sX + 248, sY + 65, m_pGame->m_stGuildOpList[0].cName, GameColors::UILabel);
+		PutAlignedString(sX + 24, sX + 248, sY + 65, m_pGame->m_stGuildOpList[0].cName.c_str(), GameColors::UILabel);
 		PutAlignedString(sX + 24, sX + 248, sY + 69, "____________________", GameColors::UIBlack);
 		PutAlignedString(sX + 24, sX + 248, sY + 90, DRAW_DIALOGBOX_GUILD_OPERATION22);
 		PutAlignedString(sX + 24, sX + 248, sY + 105, DRAW_DIALOGBOX_GUILD_OPERATION23);
@@ -122,9 +123,8 @@ bool DialogBox_GuildOperation::OnClick(short msX, short msY)
 {
 	short sX = Info().sX;
 	short sY = Info().sY;
-	char cName20[24];
+	std::string cName20;
 
-	std::memset(cName20, 0, sizeof(cName20));
 
 	switch (m_pGame->m_stGuildOpList[0].cOpMode) {
 	case 3:
@@ -147,12 +147,12 @@ bool DialogBox_GuildOperation::OnClick(short msX, short msY)
 
 		switch (m_pGame->m_stGuildOpList[0].cOpMode) {
 		case 1:
-			std::snprintf(cName20, sizeof(cName20), "%s", m_pGame->m_stGuildOpList[0].cName);
-			bSendCommand(MsgId::CommandCommon, CommonType::JoinGuildApprove, 0, 0, 0, 0, cName20);
+			cName20 = m_pGame->m_stGuildOpList[0].cName;
+			bSendCommand(MsgId::CommandCommon, CommonType::JoinGuildApprove, 0, 0, 0, 0, cName20.c_str());
 			break;
 		case 2:
-			std::snprintf(cName20, sizeof(cName20), "%s", m_pGame->m_stGuildOpList[0].cName);
-			bSendCommand(MsgId::CommandCommon, CommonType::DismissGuildApprove, 0, 0, 0, 0, cName20);
+			cName20 = m_pGame->m_stGuildOpList[0].cName;
+			bSendCommand(MsgId::CommandCommon, CommonType::DismissGuildApprove, 0, 0, 0, 0, cName20.c_str());
 			break;
 		}
 		m_pGame->_ShiftGuildOperationList();
@@ -167,12 +167,12 @@ bool DialogBox_GuildOperation::OnClick(short msX, short msY)
 
 		switch (m_pGame->m_stGuildOpList[0].cOpMode) {
 		case 1:
-			std::snprintf(cName20, sizeof(cName20), "%s", m_pGame->m_stGuildOpList[0].cName);
-			bSendCommand(MsgId::CommandCommon, CommonType::JoinGuildReject, 0, 0, 0, 0, cName20);
+			cName20 = m_pGame->m_stGuildOpList[0].cName;
+			bSendCommand(MsgId::CommandCommon, CommonType::JoinGuildReject, 0, 0, 0, 0, cName20.c_str());
 			break;
 		case 2:
-			std::snprintf(cName20, sizeof(cName20), "%s", m_pGame->m_stGuildOpList[0].cName);
-			bSendCommand(MsgId::CommandCommon, CommonType::DismissGuildReject, 0, 0, 0, 0, cName20);
+			cName20 = m_pGame->m_stGuildOpList[0].cName;
+			bSendCommand(MsgId::CommandCommon, CommonType::DismissGuildReject, 0, 0, 0, 0, cName20.c_str());
 			break;
 		}
 		m_pGame->_ShiftGuildOperationList();

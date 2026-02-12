@@ -10,6 +10,8 @@
 #include "IInput.h"
 #include "TextLibExt.h"
 #include "GameFonts.h"
+#include <format>
+#include <string>
 using namespace hb::client::sprite_id;
 
 Overlay_Connecting::Overlay_Connecting(CGame* pGame)
@@ -87,9 +89,9 @@ void Overlay_Connecting::on_render()
     DrawNewDialogBox(InterfaceNdGame4, dlgX, dlgY, 2);
 
     // Draw countdown text
-    char cTxt[64];
-    std::snprintf(cTxt, sizeof(cTxt), "Connecting to Server... %3dSec", dwElapsed / 1000);
-    hb::shared::text::DrawText(GameFont::Bitmap1, dlgX + 45, dlgY + 65, cTxt, hb::shared::text::TextStyle::WithHighlight(GameColors::UIDarkRed));
+    std::string cTxt;
+    cTxt = std::format("Connecting to Server... {:3}Sec", dwElapsed / 1000);
+    hb::shared::text::DrawText(GameFont::Bitmap1, dlgX + 45, dlgY + 65, cTxt.c_str(), hb::shared::text::TextStyle::WithHighlight(GameColors::UIDarkRed));
 
     // Show appropriate message based on elapsed time
     if (dwElapsed > 7000)

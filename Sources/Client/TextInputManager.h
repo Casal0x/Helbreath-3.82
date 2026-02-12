@@ -2,6 +2,7 @@
 
 #include "NativeTypes.h"
 #include <cstring>
+#include <string>
 #include <cstdint>
 
 class TextInputManager
@@ -14,6 +15,7 @@ public:
 	void ClearInput();
 	void ShowInput(bool isHidden = false);
 	void ReceiveString(char* dest);
+	std::string GetInputString() const { return m_buffer ? std::string(m_buffer) : std::string(); }
 	bool HandleChar(hb::shared::types::NativeWindowHandle hWnd, uint32_t msg, uintptr_t wparam, intptr_t lparam);
 
 	bool IsActive() const { return m_is_active; }

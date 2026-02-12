@@ -4,6 +4,8 @@
 #include "GlobalDef.h"
 #include "SpriteID.h"
 #include "NetMessages.h"
+#include <format>
+#include <string>
 
 using namespace hb::shared::net;
 using namespace hb::client::sprite_id;
@@ -28,19 +30,19 @@ void DialogBox_ChangeStatsMajestic::DrawStatRow(short sX, short sY, int iYOffset
 	const char* pLabel, int iCurrentStat, int16_t iPendingChange,
 	short msX, short msY, int iArrowYOffset, bool bCanUndo, bool bCanReduce)
 {
-	char cTxt[120];
+	std::string cTxt;
 
 	PutString(sX + 24, sY + iYOffset, (char*)pLabel, GameColors::UIBlack);
 
-	std::snprintf(cTxt, sizeof(cTxt), "%d", iCurrentStat);
-	PutString(sX + 109, sY + iYOffset, cTxt, GameColors::UILabel);
+	cTxt = std::format("{}", iCurrentStat);
+	PutString(sX + 109, sY + iYOffset, cTxt.c_str(), GameColors::UILabel);
 
 	int iNewStat = iCurrentStat + iPendingChange;
-	std::snprintf(cTxt, sizeof(cTxt), "%d", iNewStat);
+	cTxt = std::format("{}", iNewStat);
 	if (iNewStat != iCurrentStat)
-		PutString(sX + 162, sY + iYOffset, cTxt, GameColors::UIRed);
+		PutString(sX + 162, sY + iYOffset, cTxt.c_str(), GameColors::UIRed);
 	else
-		PutString(sX + 162, sY + iYOffset, cTxt, GameColors::UILabel);
+		PutString(sX + 162, sY + iYOffset, cTxt.c_str(), GameColors::UILabel);
 
 	// UP arrow highlight (undo reduction)
 	if ((msX >= sX + 195) && (msX <= sX + 205) && (msY >= sY + iArrowYOffset) && (msY <= sY + iArrowYOffset + 6) && bCanUndo)
@@ -56,7 +58,7 @@ void DialogBox_ChangeStatsMajestic::OnDraw(short msX, short msY, short msZ, char
 	short sX = Info().sX;
 	short sY = Info().sY;
 	short szX = Info().sSizeX;
-	char cTxt[120];
+	std::string cTxt;
 
 	DrawNewDialogBox(InterfaceNdGame2, sX, sY, 0);
 	DrawNewDialogBox(InterfaceNdText, sX, sY, 2);
@@ -70,11 +72,11 @@ void DialogBox_ChangeStatsMajestic::OnDraw(short msX, short msY, short msZ, char
 	int iRemaining = m_pGame->m_iGizonItemUpgradeLeft - iPendingCost;
 
 	PutString(sX + 20, sY + 85, DRAW_DIALOGBOX_LEVELUP_SETTING16, GameColors::UIBlack);
-	std::snprintf(cTxt, sizeof(cTxt), "%d", iRemaining);
+	cTxt = std::format("{}", iRemaining);
 	if (iRemaining > 0)
-		PutString(sX + 73, sY + 102, cTxt, GameColors::UIGreen);
+		PutString(sX + 73, sY + 102, cTxt.c_str(), GameColors::UIGreen);
 	else
-		PutString(sX + 73, sY + 102, cTxt, GameColors::UIBlack);
+		PutString(sX + 73, sY + 102, cTxt.c_str(), GameColors::UIBlack);
 
 	bool bCanAfford = (iRemaining > 0);
 

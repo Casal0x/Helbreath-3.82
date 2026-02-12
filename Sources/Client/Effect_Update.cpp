@@ -1,15 +1,15 @@
-// Effect_Update.cpp: UpdateEffects implementation
+﻿// Effect_Update.cpp: UpdateEffects implementation
 //
 //////////////////////////////////////////////////////////////////////
 
 #include "EffectManager.h"
+#include "GameConstants.h"
 #include "Game.h"
 #include "ISprite.h"
 #include "Effect.h"
 #include "GlobalDef.h"
 #include "Misc.h"
 
-extern int _iAttackerHeight[];
 
 void EffectManager::UpdateEffectsImpl()
 {

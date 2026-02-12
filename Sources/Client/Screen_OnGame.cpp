@@ -24,7 +24,7 @@
 #include "Magic.h"
 #include <string>
 #include <memory>
-
+#include <format>
 
 
 using namespace hb::shared::net;
@@ -35,8 +35,6 @@ using namespace hb::shared::action;
 using namespace hb::shared::item;
 using namespace hb::client::config;
 using namespace hb::client::sprite_id;
-
-extern char G_cSpriteAlphaDegree;
 
 Screen_OnGame::Screen_OnGame(CGame* pGame)
     : IGameScreen(pGame)
@@ -66,6 +64,7 @@ void Screen_OnGame::on_uninitialize()
 
 void Screen_OnGame::on_update()
 {
+    std::string G_cTxt;
     short sVal, absX, absY, tX, tY;
     int i, iAmount;
 
@@ -80,7 +79,6 @@ void Screen_OnGame::on_update()
 
     // Sync manager singletons with game state
     AudioManager::Get().SetListenerPosition(m_pGame->m_pPlayer->m_sPlayerX, m_pGame->m_pPlayer->m_sPlayerY);
-
 
     // Enter key handling
     if (hb::shared::input::IsKeyPressed(KeyCode::Enter) == true)
@@ -237,18 +235,16 @@ void Screen_OnGame::on_update()
             }
             else {
                 TextInputManager::Get().EndInput();
-                std::memset(m_pGame->G_cTxt, 0, sizeof(m_pGame->G_cTxt));
-                TextInputManager::Get().ReceiveString((char*)m_pGame->G_cTxt);
-                std::memset(m_pGame->m_cBackupChatMsg, 0, sizeof(m_pGame->m_cBackupChatMsg));
-                std::snprintf(m_pGame->m_cBackupChatMsg, sizeof(m_pGame->m_cBackupChatMsg), "%s", m_pGame->G_cTxt);
+                G_cTxt = TextInputManager::Get().GetInputString();
+                m_pGame->m_cBackupChatMsg = G_cTxt.c_str();
                 if ((m_pGame->m_dwCurTime - m_dwPrevChatTime) >= 700) {
                     m_dwPrevChatTime = m_pGame->m_dwCurTime;
-                    if (strlen(m_pGame->G_cTxt) > 0) {
-                        if (!ChatManager::Get().IsShoutEnabled() && m_pGame->G_cTxt[0] == '!') {
+                    if (strlen(G_cTxt.c_str()) > 0) {
+                        if (!ChatManager::Get().IsShoutEnabled() && G_cTxt[0] == '!') {
                             m_pGame->AddEventList(BCHECK_LOCAL_CHAT_COMMAND9, 10);
                         }
                         else {
-                            m_pGame->bSendCommand(MsgId::CommandChatMsg, 0, 0, 0, 0, 0, m_pGame->G_cTxt);
+                            m_pGame->bSendCommand(MsgId::CommandChatMsg, 0, 0, 0, 0, 0, G_cTxt.c_str());
                         }
                     }
                 }
@@ -275,8 +271,8 @@ void Screen_OnGame::on_update()
         if ((m_dwTime - m_pGame->m_dwLogOutCountTime) > 1000) {
             m_pGame->m_cLogOutCount--;
             m_pGame->m_dwLogOutCountTime = m_dwTime;
-            std::snprintf(m_pGame->G_cTxt, sizeof(m_pGame->G_cTxt), UPDATE_SCREEN_ONGAME13, m_pGame->m_cLogOutCount);
-            m_pGame->AddEventList(m_pGame->G_cTxt, 10);
+            G_cTxt = std::format(UPDATE_SCREEN_ONGAME13, m_pGame->m_cLogOutCount);
+            m_pGame->AddEventList(G_cTxt.c_str(), 10);
         }
     }
     if (m_pGame->m_cLogOutCount == 0) {
@@ -296,8 +292,8 @@ void Screen_OnGame::on_update()
         if ((m_dwTime - m_pGame->m_dwRestartCountTime) > 1000) {
             m_pGame->m_cRestartCount--;
             m_pGame->m_dwRestartCountTime = m_dwTime;
-            std::snprintf(m_pGame->G_cTxt, sizeof(m_pGame->G_cTxt), UPDATE_SCREEN_ONGAME14, m_pGame->m_cRestartCount);
-            m_pGame->AddEventList(m_pGame->G_cTxt, 10);
+            G_cTxt = std::format(UPDATE_SCREEN_ONGAME14, m_pGame->m_cRestartCount);
+            m_pGame->AddEventList(G_cTxt.c_str(), 10);
         }
     }
     if (m_pGame->m_cRestartCount == 0) {
@@ -554,15 +550,16 @@ void Screen_OnGame::on_render()
         m_pGame->m_pEffectManager->AddEffect(EffectType::BUBBLES_DRUNK, m_pGame->m_Camera.GetX() + rand() % LOGICAL_MAX_X(), m_pGame->m_Camera.GetY() + rand() % LOGICAL_MAX_Y(), 0, 0, -1 * (rand() % 80), 1);
 
     // Heldenian tower count
-    if ((m_pGame->m_iHeldenianAresdenLeftTower != -1) && (memcmp(m_pGame->m_cCurLocation, "BtField", 7) == 0)) {
-        std::snprintf(m_pGame->G_cTxt, sizeof(m_pGame->G_cTxt), "Aresden Flags : %d", m_pGame->m_iHeldenianAresdenFlags);
-        hb::shared::text::DrawText(GameFont::Default, 10, 140, m_pGame->G_cTxt, hb::shared::text::TextStyle::Color(GameColors::UIWhite));
-        std::snprintf(m_pGame->G_cTxt, sizeof(m_pGame->G_cTxt), "Aresden Flags : %d", m_pGame->m_iHeldenianElvineFlags);
-        hb::shared::text::DrawText(GameFont::Default, 10, 160, m_pGame->G_cTxt, hb::shared::text::TextStyle::Color(GameColors::UIWhite));
-        std::snprintf(m_pGame->G_cTxt, sizeof(m_pGame->G_cTxt), "Aresden's rest building number : %d", m_pGame->m_iHeldenianAresdenLeftTower);
-        hb::shared::text::DrawText(GameFont::Default, 10, 180, m_pGame->G_cTxt, hb::shared::text::TextStyle::Color(GameColors::UIWhite));
-        std::snprintf(m_pGame->G_cTxt, sizeof(m_pGame->G_cTxt), "Elvine's rest building number : %d", m_pGame->m_iHeldenianElvineLeftTower);
-        hb::shared::text::DrawText(GameFont::Default, 10, 200, m_pGame->G_cTxt, hb::shared::text::TextStyle::Color(GameColors::UIWhite));
+    if ((m_pGame->m_iHeldenianAresdenLeftTower != -1) && (m_pGame->m_cCurLocation.starts_with("BtField"))) {
+        std::string G_cTxt;
+        G_cTxt = std::format("Aresden Flags : {}", m_pGame->m_iHeldenianAresdenFlags);
+        hb::shared::text::DrawText(GameFont::Default, 10, 140, G_cTxt.c_str(), hb::shared::text::TextStyle::Color(GameColors::UIWhite));
+        G_cTxt = std::format("Aresden Flags : {}", m_pGame->m_iHeldenianElvineFlags);
+        hb::shared::text::DrawText(GameFont::Default, 10, 160, G_cTxt.c_str(), hb::shared::text::TextStyle::Color(GameColors::UIWhite));
+        G_cTxt = std::format("Aresden's rest building number : {}", m_pGame->m_iHeldenianAresdenLeftTower);
+        hb::shared::text::DrawText(GameFont::Default, 10, 180, G_cTxt.c_str(), hb::shared::text::TextStyle::Color(GameColors::UIWhite));
+        G_cTxt = std::format("Elvine's rest building number : {}", m_pGame->m_iHeldenianElvineLeftTower);
+        hb::shared::text::DrawText(GameFont::Default, 10, 200, G_cTxt.c_str(), hb::shared::text::TextStyle::Color(GameColors::UIWhite));
     }
 
     m_pGame->DrawTopMsg();
@@ -574,6 +571,7 @@ void Screen_OnGame::on_render()
 
 void Screen_OnGame::RenderItemTooltip()
 {
+	std::string G_cTxt;
 	short target_id = CursorTarget::GetSelectedID();
     CItem* item = m_pGame->m_pItemList[target_id].get();
     CItem* pCfg = m_pGame->GetItemConfig(item->m_sIDnum);
@@ -595,20 +593,19 @@ void Screen_OnGame::RenderItemTooltip()
     }
     else sprite->Draw(m_sMsX - CursorTarget::GetDragDistX(), m_sMsY - CursorTarget::GetDragDistY(), pCfg->m_sSpriteFrame);
 
-    char cStr1[64], cStr2[64], cStr3[64];
     int iLoc;
-    ItemNameFormatter::Get().Format(item, cStr1, cStr2, cStr3);
+    auto itemInfo = ItemNameFormatter::Get().Format(item);
     iLoc = 0;
-    if (strlen(cStr1) != 0) {
-        if (ItemNameFormatter::Get().IsSpecial()) hb::shared::text::DrawText(GameFont::Default, m_sMsX, m_sMsY + 25, cStr1, hb::shared::text::TextStyle::WithShadow(GameColors::UIItemName_Special));
-        else hb::shared::text::DrawText(GameFont::Default, m_sMsX, m_sMsY + 25, cStr1, hb::shared::text::TextStyle::WithShadow(GameColors::UIWhite));
+    if (itemInfo.name.size() != 0) {
+        if (itemInfo.is_special) hb::shared::text::DrawText(GameFont::Default, m_sMsX, m_sMsY + 25, itemInfo.name.c_str(), hb::shared::text::TextStyle::WithShadow(GameColors::UIItemName_Special));
+        else hb::shared::text::DrawText(GameFont::Default, m_sMsX, m_sMsY + 25, itemInfo.name.c_str(), hb::shared::text::TextStyle::WithShadow(GameColors::UIWhite));
         iLoc += 15;
     }
-    if (strlen(cStr2) != 0) { hb::shared::text::DrawText(GameFont::Default, m_sMsX, m_sMsY + 25 + iLoc, cStr2, hb::shared::text::TextStyle::WithShadow(GameColors::UIDescription)); iLoc += 15; }
-    if (strlen(cStr3) != 0) { hb::shared::text::DrawText(GameFont::Default, m_sMsX, m_sMsY + 25 + iLoc, cStr3, hb::shared::text::TextStyle::WithShadow(GameColors::UIDescription)); iLoc += 15; }
+    if (itemInfo.effect.size() != 0) { hb::shared::text::DrawText(GameFont::Default, m_sMsX, m_sMsY + 25 + iLoc, itemInfo.effect.c_str(), hb::shared::text::TextStyle::WithShadow(GameColors::UIDescription)); iLoc += 15; }
+    if (itemInfo.extra.size() != 0) { hb::shared::text::DrawText(GameFont::Default, m_sMsX, m_sMsY + 25 + iLoc, itemInfo.extra.c_str(), hb::shared::text::TextStyle::WithShadow(GameColors::UIDescription)); iLoc += 15; }
     if ((pCfg->m_sLevelLimit != 0) && item->IsCustomMade()) {
-        std::snprintf(m_pGame->G_cTxt, sizeof(m_pGame->G_cTxt), "%s: %d", DRAW_DIALOGBOX_SHOP24, pCfg->m_sLevelLimit);
-        hb::shared::text::DrawText(GameFont::Default, m_sMsX, m_sMsY + 25 + iLoc, m_pGame->G_cTxt, hb::shared::text::TextStyle::WithShadow(GameColors::UIDescription)); iLoc += 15;
+        G_cTxt = std::format("{}: {}", DRAW_DIALOGBOX_SHOP24, pCfg->m_sLevelLimit);
+        hb::shared::text::DrawText(GameFont::Default, m_sMsX, m_sMsY + 25 + iLoc, G_cTxt.c_str(), hb::shared::text::TextStyle::WithShadow(GameColors::UIDescription)); iLoc += 15;
     }
     if (is_equippable) {
         // Weight below 1100 is not displayed as a strength requirement
@@ -616,13 +613,13 @@ void Screen_OnGame::RenderItemTooltip()
         {
             // Display weight, whatever the weight calculation is, divide by 100, and round up
             int _wWeight = static_cast<int>(std::ceil(pCfg->m_wWeight / 100.0f));
-            std::snprintf(m_pGame->G_cTxt, sizeof(m_pGame->G_cTxt), DRAW_DIALOGBOX_SHOP15, _wWeight);
-            hb::shared::text::DrawText(GameFont::Default, m_sMsX, m_sMsY + 25 + iLoc, m_pGame->G_cTxt, hb::shared::text::TextStyle::WithShadow(GameColors::UIDescription)); iLoc += 15;
+            G_cTxt = std::format(DRAW_DIALOGBOX_SHOP15, _wWeight);
+            hb::shared::text::DrawText(GameFont::Default, m_sMsX, m_sMsY + 25 + iLoc, G_cTxt.c_str(), hb::shared::text::TextStyle::WithShadow(GameColors::UIDescription)); iLoc += 15;
         }
 
         // Display durability
-        std::snprintf(m_pGame->G_cTxt, sizeof(m_pGame->G_cTxt), UPDATE_SCREEN_ONGAME10, item->m_wCurLifeSpan, pCfg->m_wMaxLifeSpan);
-        hb::shared::text::DrawText(GameFont::Default, m_sMsX, m_sMsY + 25 + iLoc, m_pGame->G_cTxt, hb::shared::text::TextStyle::WithShadow(GameColors::UIDescription)); iLoc += 15;
+        G_cTxt = std::format(UPDATE_SCREEN_ONGAME10, item->m_wCurLifeSpan, pCfg->m_wMaxLifeSpan);
+        hb::shared::text::DrawText(GameFont::Default, m_sMsX, m_sMsY + 25 + iLoc, G_cTxt.c_str(), hb::shared::text::TextStyle::WithShadow(GameColors::UIDescription)); iLoc += 15;
     }
 
     if (pCfg->IsStackable()) {
@@ -632,8 +629,8 @@ void Screen_OnGame::RenderItemTooltip()
             });
 
         if (count > 1) {
-            std::snprintf(m_pGame->G_cTxt, sizeof(m_pGame->G_cTxt), DEF_MSG_TOTAL_NUMBER, static_cast<int>(count));
-            hb::shared::text::DrawText(GameFont::Default, m_sMsX, m_sMsY + 40, m_pGame->G_cTxt, hb::shared::text::TextStyle::WithShadow(GameColors::UIDescription));
+            G_cTxt = std::format(DEF_MSG_TOTAL_NUMBER, static_cast<int>(count));
+            hb::shared::text::DrawText(GameFont::Default, m_sMsX, m_sMsY + 40, G_cTxt.c_str(), hb::shared::text::TextStyle::WithShadow(GameColors::UIDescription));
         }
     }
 }

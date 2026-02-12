@@ -1,4 +1,4 @@
-// EntityRenderState.h: Temporary state for the entity currently being rendered
+﻿// EntityRenderState.h: Temporary state for the entity currently being rendered
 //
 // This class encapsulates the _tmp_* global variables that were used to hold
 // the current entity's data during the render loop. It provides a clean

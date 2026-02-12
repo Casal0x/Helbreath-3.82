@@ -13,6 +13,7 @@
 #include "lan_eng.h"
 #include "GameFonts.h"
 #include "TextLibExt.h"
+#include <format>
 
 
 
@@ -308,7 +309,7 @@ void Screen_CreateNewCharacter::on_update()
             std::memset(m_pGame->m_pPlayer->m_cPlayerName, 0, sizeof(m_pGame->m_pPlayer->m_cPlayerName));
             std::snprintf(m_pGame->m_pPlayer->m_cPlayerName, sizeof(m_pGame->m_pPlayer->m_cPlayerName), "%s", m_cNewCharName);
             m_pGame->m_pLSock = std::make_unique<hb::shared::net::ASIOSocket>(m_pGame->m_pIOPool->GetContext(), game_limits::socket_block_limit);
-            m_pGame->m_pLSock->bConnect(m_pGame->m_cLogServerAddr, m_pGame->m_iLogServerPort + (rand() % 1));
+            m_pGame->m_pLSock->bConnect(m_pGame->m_cLogServerAddr.c_str(), m_pGame->m_iLogServerPort + (rand() % 1));
             m_pGame->m_pLSock->bInitBufferSize(hb::shared::limits::MsgBufferSize);
             m_pGame->ChangeGameMode(GameMode::Connecting);
             m_pGame->m_dwConnectMode = MsgId::RequestCreateNewCharacter;
@@ -376,6 +377,7 @@ void Screen_CreateNewCharacter::on_update()
 
 void Screen_CreateNewCharacter::on_render()
 {
+    std::string G_cTxt;
     int i = 0;
     short msX = m_sNewCharMsX;
     short msY = m_sNewCharMsY;
@@ -419,18 +421,18 @@ void Screen_CreateNewCharacter::on_render()
 
     // Stat values
     i = 0;
-    std::snprintf(m_pGame->G_cTxt, sizeof(m_pGame->G_cTxt), "%d", m_pGame->m_pPlayer->m_iStatModStr);
-    hb::shared::text::DrawText(GameFont::Default, 204 + OX, 277 + OY + 16 * i++, m_pGame->G_cTxt, hb::shared::text::TextStyle::Color(GameColors::UILabel));
-    std::snprintf(m_pGame->G_cTxt, sizeof(m_pGame->G_cTxt), "%d", m_pGame->m_pPlayer->m_iStatModVit);
-    hb::shared::text::DrawText(GameFont::Default, 204 + OX, 277 + OY + 16 * i++, m_pGame->G_cTxt, hb::shared::text::TextStyle::Color(GameColors::UILabel));
-    std::snprintf(m_pGame->G_cTxt, sizeof(m_pGame->G_cTxt), "%d", m_pGame->m_pPlayer->m_iStatModDex);
-    hb::shared::text::DrawText(GameFont::Default, 204 + OX, 277 + OY + 16 * i++, m_pGame->G_cTxt, hb::shared::text::TextStyle::Color(GameColors::UILabel));
-    std::snprintf(m_pGame->G_cTxt, sizeof(m_pGame->G_cTxt), "%d", m_pGame->m_pPlayer->m_iStatModInt);
-    hb::shared::text::DrawText(GameFont::Default, 204 + OX, 277 + OY + 16 * i++, m_pGame->G_cTxt, hb::shared::text::TextStyle::Color(GameColors::UILabel));
-    std::snprintf(m_pGame->G_cTxt, sizeof(m_pGame->G_cTxt), "%d", m_pGame->m_pPlayer->m_iStatModMag);
-    hb::shared::text::DrawText(GameFont::Default, 204 + OX, 277 + OY + 16 * i++, m_pGame->G_cTxt, hb::shared::text::TextStyle::Color(GameColors::UILabel));
-    std::snprintf(m_pGame->G_cTxt, sizeof(m_pGame->G_cTxt), "%d", m_pGame->m_pPlayer->m_iStatModChr);
-    hb::shared::text::DrawText(GameFont::Default, 204 + OX, 277 + OY + 16 * i++, m_pGame->G_cTxt, hb::shared::text::TextStyle::Color(GameColors::UILabel));
+    G_cTxt = std::format("{}", m_pGame->m_pPlayer->m_iStatModStr);
+    hb::shared::text::DrawText(GameFont::Default, 204 + OX, 277 + OY + 16 * i++, G_cTxt.c_str(), hb::shared::text::TextStyle::Color(GameColors::UILabel));
+    G_cTxt = std::format("{}", m_pGame->m_pPlayer->m_iStatModVit);
+    hb::shared::text::DrawText(GameFont::Default, 204 + OX, 277 + OY + 16 * i++, G_cTxt.c_str(), hb::shared::text::TextStyle::Color(GameColors::UILabel));
+    G_cTxt = std::format("{}", m_pGame->m_pPlayer->m_iStatModDex);
+    hb::shared::text::DrawText(GameFont::Default, 204 + OX, 277 + OY + 16 * i++, G_cTxt.c_str(), hb::shared::text::TextStyle::Color(GameColors::UILabel));
+    G_cTxt = std::format("{}", m_pGame->m_pPlayer->m_iStatModInt);
+    hb::shared::text::DrawText(GameFont::Default, 204 + OX, 277 + OY + 16 * i++, G_cTxt.c_str(), hb::shared::text::TextStyle::Color(GameColors::UILabel));
+    G_cTxt = std::format("{}", m_pGame->m_pPlayer->m_iStatModMag);
+    hb::shared::text::DrawText(GameFont::Default, 204 + OX, 277 + OY + 16 * i++, G_cTxt.c_str(), hb::shared::text::TextStyle::Color(GameColors::UILabel));
+    G_cTxt = std::format("{}", m_pGame->m_pPlayer->m_iStatModChr);
+    hb::shared::text::DrawText(GameFont::Default, 204 + OX, 277 + OY + 16 * i++, G_cTxt.c_str(), hb::shared::text::TextStyle::Color(GameColors::UILabel));
 
     // Button states
     if ((m_bNewCharFlag == true) && (m_cCurFocus == 2))
@@ -478,14 +480,14 @@ void Screen_CreateNewCharacter::on_render()
     // Derived stats
     i = 0;
     hb::shared::text::DrawText(GameFont::Default, 445 + OX, 192 + OY, DEF_MSG_HITPOINT, hb::shared::text::TextStyle::Color(GameColors::UIBlack));
-    std::snprintf(m_pGame->G_cTxt, sizeof(m_pGame->G_cTxt), "%d", m_pGame->m_pPlayer->m_iStatModVit * 3 + 2 + m_pGame->m_pPlayer->m_iStatModStr / 2);
-    hb::shared::text::DrawText(GameFont::Default, 550 + OX, 192 + OY + 16 * i++, m_pGame->G_cTxt, hb::shared::text::TextStyle::Color(GameColors::UILabel));
+    G_cTxt = std::format("{}", m_pGame->m_pPlayer->m_iStatModVit * 3 + 2 + m_pGame->m_pPlayer->m_iStatModStr / 2);
+    hb::shared::text::DrawText(GameFont::Default, 550 + OX, 192 + OY + 16 * i++, G_cTxt.c_str(), hb::shared::text::TextStyle::Color(GameColors::UILabel));
     hb::shared::text::DrawText(GameFont::Default, 445 + OX, 208 + OY, DEF_MSG_MANAPOINT, hb::shared::text::TextStyle::Color(GameColors::UIBlack));
-    std::snprintf(m_pGame->G_cTxt, sizeof(m_pGame->G_cTxt), "%d", m_pGame->m_pPlayer->m_iStatModMag * 2 + 2 + m_pGame->m_pPlayer->m_iStatModInt / 2);
-    hb::shared::text::DrawText(GameFont::Default, 550 + OX, 192 + OY + 16 * i++, m_pGame->G_cTxt, hb::shared::text::TextStyle::Color(GameColors::UILabel));
+    G_cTxt = std::format("{}", m_pGame->m_pPlayer->m_iStatModMag * 2 + 2 + m_pGame->m_pPlayer->m_iStatModInt / 2);
+    hb::shared::text::DrawText(GameFont::Default, 550 + OX, 192 + OY + 16 * i++, G_cTxt.c_str(), hb::shared::text::TextStyle::Color(GameColors::UILabel));
     hb::shared::text::DrawText(GameFont::Default, 445 + OX, 224 + OY, DEF_MSG_STAMINARPOINT, hb::shared::text::TextStyle::Color(GameColors::UIBlack));
-    std::snprintf(m_pGame->G_cTxt, sizeof(m_pGame->G_cTxt), "%d", m_pGame->m_pPlayer->m_iStatModStr * 2 + 2);
-    hb::shared::text::DrawText(GameFont::Default, 550 + OX, 192 + OY + 16 * i++, m_pGame->G_cTxt, hb::shared::text::TextStyle::Color(GameColors::UILabel));
+    G_cTxt = std::format("{}", m_pGame->m_pPlayer->m_iStatModStr * 2 + 2);
+    hb::shared::text::DrawText(GameFont::Default, 550 + OX, 192 + OY + 16 * i++, G_cTxt.c_str(), hb::shared::text::TextStyle::Color(GameColors::UILabel));
 
     // ======== End inlined drawing ========
 

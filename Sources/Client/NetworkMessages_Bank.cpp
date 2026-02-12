@@ -5,6 +5,8 @@
 #include "DialogBoxIDs.h"
 #include <cstring>
 #include <cstdio>
+#include <format>
+#include <string>
 
 
 namespace NetworkMessageHandlers {
@@ -16,7 +18,7 @@ namespace NetworkMessageHandlers {
 		bool  bIsEquipped;
 		short sSprite, sSpriteFrame, sLevelLimit, sItemEffectValue2, sItemSpecEffectValue2;
 		WORD wWeight, wCurLifeSpan;
-		char  cTxt[120];
+		std::string cTxt;
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyItemToBank>(
 			pData, sizeof(hb::net::PacketNotifyItemToBank));
 		if (!pkt) return;
@@ -39,8 +41,11 @@ namespace NetworkMessageHandlers {
 		dwAttribute = pkt->attribute;
 		sItemSpecEffectValue2 = static_cast<short>(pkt->spec_effect_value2);
 
-		char cStr1[64], cStr2[64], cStr3[64];
-		std::snprintf(cStr1, sizeof(cStr1), "%s", cName);
+		std::string cStr1;
+
+
+		char cStr2[64], cStr3[64];
+		cStr1 = cName;
 		cStr2[0] = 0;
 		cStr3[0] = 0;
 
@@ -53,13 +58,12 @@ namespace NetworkMessageHandlers {
 			pGame->m_pBankList[cIndex]->m_dwAttribute = dwAttribute;
 			pGame->m_pBankList[cIndex]->m_sItemSpecEffectValue2 = sItemSpecEffectValue2;
 
-			std::memset(cTxt, 0, sizeof(cTxt));
-			if (dwCount == 1) std::snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_ITEMTOBANK3, cStr1);
-			else std::snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_ITEMTOBANK2, dwCount, cStr1);
+			if (dwCount == 1) cTxt = std::format(NOTIFYMSG_ITEMTOBANK3, cStr1.c_str());
+			else cTxt = std::format(NOTIFYMSG_ITEMTOBANK2, dwCount, cStr1.c_str());
 
 			if (pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::Bank) == true)
 				pGame->m_dialogBoxManager.Info(DialogBoxId::Bank).sView = hb::shared::limits::MaxBankItems - 12;
-			pGame->AddEventList(cTxt, 10);
+			pGame->AddEventList(cTxt.c_str(), 10);
 		}
 	}
 

@@ -1,4 +1,4 @@
-// MapData.cpp: implementation of the CMapData class.
+﻿// MapData.cpp: implementation of the CMapData class.
 //
 //////////////////////////////////////////////////////////////////////
 #define _WINSOCKAPI_
@@ -14,6 +14,7 @@
 #include <cstdio>
 #include <string_view>
 #include "WeatherManager.h"
+#include <string>
 
 
 
@@ -3942,18 +3943,17 @@ bool CMapData::bSetItem(short sX, short sY, short sIDnum, char cItemColor, uint3
 bool __fastcall CMapData::bSetDeadOwner(uint16_t wObjectID, short sX, short sY, short sType, char cDir, const hb::shared::entity::PlayerAppearance& appearance, const hb::shared::entity::PlayerStatus& status, char* pName, short npcConfigId)
 {
 	int  dX, dY;
-	char pTmpName[12];
+	std::string pTmpName;
 	bool bEraseFlag = false;
 
-	std::memset(pTmpName, 0, sizeof(pTmpName));
-	if (pName != nullptr) std::snprintf(pTmpName, sizeof(pTmpName), "%s", pName);
+	if (pName != nullptr) pTmpName = pName;
 	if ((sX < m_sPivotX) || (sX >= m_sPivotX + MapDataSizeX) ||
 		(sY < m_sPivotY) || (sY >= m_sPivotY + MapDataSizeY))
 	{
 		for (dX = 0; dX < MapDataSizeX; dX++)
 			for (dY = 0; dY < MapDataSizeY; dY++)
 			{
-				if (memcmp(m_pData[dX][dY].m_cDeadOwnerName, pTmpName, 10) == 0)
+				if (memcmp(m_pData[dX][dY].m_cDeadOwnerName, pTmpName.c_str(), 10) == 0)
 				{
 					m_pData[dX][dY].m_sDeadOwnerType = 0;
 					m_pData[dX][dY].m_sDeadNpcConfigId = -1;
@@ -3973,7 +3973,7 @@ bool __fastcall CMapData::bSetDeadOwner(uint16_t wObjectID, short sX, short sY, 
 			else
 				if (dY > m_sPivotY + MapDataSizeY) break;
 
-			if (memcmp(m_pData[dX - m_sPivotX][dY - m_sPivotY].m_cDeadOwnerName, pTmpName, 10) == 0)
+			if (memcmp(m_pData[dX - m_sPivotX][dY - m_sPivotY].m_cDeadOwnerName, pTmpName.c_str(), 10) == 0)
 			{
 				m_pData[dX - m_sPivotX][dY - m_sPivotY].m_sDeadOwnerType = 0;
 				m_pData[dX - m_sPivotX][dY - m_sPivotY].m_sDeadNpcConfigId = -1;
@@ -3986,7 +3986,7 @@ bool __fastcall CMapData::bSetDeadOwner(uint16_t wObjectID, short sX, short sY, 
 		for (dX = 0; dX < MapDataSizeX; dX++)
 			for (dY = 0; dY < MapDataSizeY; dY++) {
 
-				if (memcmp(m_pData[dX][dY].m_cDeadOwnerName, pTmpName, 10) == 0) {
+				if (memcmp(m_pData[dX][dY].m_cDeadOwnerName, pTmpName.c_str(), 10) == 0) {
 					m_pData[dX][dY].m_sDeadOwnerType = 0;
 					m_pData[dX][dY].m_sDeadNpcConfigId = -1;
 					std::memset(m_pData[dX][dY].m_cDeadOwnerName, 0, sizeof(m_pData[dX][dY].m_cDeadOwnerName));
@@ -4005,7 +4005,7 @@ bool __fastcall CMapData::bSetDeadOwner(uint16_t wObjectID, short sX, short sY, 
 	m_pData[dX][dY].m_deadAppearance = appearance;
 	m_pData[dX][dY].m_deadStatus = status;
 	m_pData[dX][dY].m_cDeadOwnerFrame = -1;
-	std::snprintf(m_pData[dX][dY].m_cDeadOwnerName, sizeof(m_pData[dX][dY].m_cDeadOwnerName), "%s", pTmpName);
+	std::snprintf(m_pData[dX][dY].m_cDeadOwnerName, sizeof(m_pData[dX][dY].m_cDeadOwnerName), "%s", pTmpName.c_str());
 
 	m_iObjectIDcacheLocX[wObjectID] = -1 * sX; //dX;
 	m_iObjectIDcacheLocY[wObjectID] = -1 * sY; //dY;

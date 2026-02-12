@@ -17,6 +17,7 @@
 #include <vector>
 #include <sstream>
 #include <array>
+#include <format>
 
 #include "GlobalDef.h"
 #include "GameGeometry.h"
@@ -90,7 +91,7 @@ public:
 	void ReadSettings();
 	void WriteSettings();
 
-	bool FindGuildName(char* pName, int* ipIndex);
+	bool FindGuildName(const char* pName, int* ipIndex);
 	void bItemDrop_ExternalScreen(char cItemID, short msX, short msY);
 	void CreateScreenShot();
 	void CrusadeWarResult(int iWinnerSide);
@@ -106,7 +107,7 @@ public:
 	void AddMapStatusInfo(const char* pData, bool bIsLastData);
 	void _RequestMapStatus(const char* pMapName, int iMode);
 	void DrawDialogBoxs(short msX, short msY, short msZ, char cLB);
-	void FormatCommaNumber(uint32_t value, char* buffer, size_t bufSize);
+	std::string FormatCommaNumber(uint32_t value);
 
 	void ResponsePanningHandler(char * pData);
 	void _SetIlusionEffect(int iOwnerH);
@@ -126,17 +127,16 @@ public:
 	void NpcTalkHandler(char * pData);
 	void SetCameraShakingEffect(short sDist, int iMul = 0);
 	void ClearSkillUsingStatus();
-	bool bCheckExID(char * pName);
+	bool bCheckExID(const char* pName);
 	bool bCheckLocalChatCommand(const char* pMsg);
-	char GetOfficialMapName(char * pMapName, char * pName);
+	char GetOfficialMapName(const char* pMapName, char* pName);
 	uint32_t iGetLevelExp(int iLevel);
-	int _iCalcTotalWeight();
 	void DrawVersion();
 	bool _bIsItemOnHand();
 	void DynamicObjectHandler(char * pData);
 	bool _bCheckItemByType(hb::shared::item::ItemType type);
 	void DrawNpcName(   short sX, short sY, short sOwnerType, const hb::shared::entity::PlayerStatus& status, short npcConfigId = -1);
-	void DrawObjectName(short sX, short sY, char * pName, const hb::shared::entity::PlayerStatus& status, uint16_t wObjectID);
+	void DrawObjectName(short sX, short sY, const char* pName, const hb::shared::entity::PlayerStatus& status, uint16_t wObjectID);
 	void PlayGameSound(char cType, int iNum, int iDist, long lPan = 0);  // Forwards to AudioManager
 	void _LoadTextDlgContents(int cType);
 	int  _iLoadTextDlgContents2(int iType);
@@ -238,7 +238,6 @@ public:
 	void ReserveFightzoneResponseHandler(char * pData);
 	void StartBGM();  // Forwards to AudioManager based on current location
 
-	//Snoopy: added function:
 	int bHasHeroSet(const hb::shared::entity::PlayerAppearance& appr, short OwnerType);
 	void ShowHeldenianVictory(short sSide);
 	void DKGlare(int iWeaponColor, int iWeaponIndex, int *iWeaponGlare);
@@ -264,36 +263,32 @@ public:
 	CraftingManager m_craftingManager;
 	QuestManager m_questManager;
 	GuildManager m_guildManager;
-//Snoopy=>>>>>>>>>>>>>>>>>>>>>
 	struct {
 		int   sV1, sV2, sV3, sV4, sV5, sV6, sV7, sItemID;
 		uint32_t dwV1;
-		char  cStr1[hb::shared::limits::ItemNameLen], cStr2[32];
+		std::string cStr1;
+		std::string cStr2;
 	} m_stDialogBoxExchangeInfo[8];
-//Snoopy end<<<<<<<<<<<<<<<<<<
 	struct {
 		int iIndex;
 		int iAmount;
 	} m_stSellItemList[game_limits::max_sell_list];
 
 	struct {
-		char cName[22];
+		std::string cName;
 		char cOpMode;
 	} m_stGuildOpList[100];
-
-
-
 
 	struct {
 		bool bIsQuestCompleted;
 		short sWho, sQuestType, sContribution, sTargetType, sTargetCount, sX, sY, sRange;
-		short sCurrentCount; // by Snoopy
-		char cTargetName[22];
+		short sCurrentCount;
+		std::string cTargetName;
 	} m_stQuest;
 
 	struct {
 		char cStatus;
-		char cName[12];
+		std::string cName;
 	} m_stPartyMember[hb::shared::limits::MaxPartyMembers];
 
 	struct {
@@ -303,15 +298,15 @@ public:
 	} m_stCrusadeStructureInfo[hb::shared::limits::MaxCrusadeStructures];
 
 	struct {
-		char cName[12];
+		std::string cName;
 	} m_stPartyMemberNameList[hb::shared::limits::MaxPartyMembers+1];
 
 	// v2.171 2002-6-14
 	struct {
 		uint32_t dwRefTime;
 		int iGuildRank;
-		char cCharName[12];
-		char cGuildName[24];
+		std::string cCharName;
+		std::string cGuildName;
 	} m_stGuildName[game_limits::max_guild_names];
 
 
@@ -372,7 +367,7 @@ std::array<bool, hb::shared::limits::MaxItems> m_bIsItemEquipped{};
 	bool m_bSkillUsingStatus;
 	bool m_bItemUsingStatus;
 	bool m_bIsObserverMode, m_bIsObserverCommanded;
-		bool m_bIsFirstConn;
+	bool m_bIsFirstConn;
 	bool m_bIsServerChanging = false;
 	bool m_bIsCrusadeMode;
 
@@ -392,31 +387,26 @@ std::array<bool, hb::shared::limits::MaxItems> m_bIsItemEquipped{};
 	int m_iFightzoneNumber;
 	int m_iFightzoneNumberTemp;
 
-								int m_iPointCommandType;
+	int m_iPointCommandType;
 	int m_iTotalChar;
-//	int m_iAccountStatus;
 	short m_sMagicShortCut;
-		int m_iAccntYear, m_iAccntMonth, m_iAccntDay;
+	int m_iAccntYear, m_iAccntMonth, m_iAccntDay;
 	int m_iIpYear, m_iIpMonth, m_iIpDay;
 	int m_iDownSkillIndex;
 
 	int m_iIlusionOwnerH;
 	short m_sRecentShortCut;
 	std::array<short, 6> m_sShortCut{}; // Snoopy: 6 shortcuts
-		int m_iDrawFlag;
+	int m_iDrawFlag;
 
-		int m_iTimeLeftSecAccount, m_iTimeLeftSecIP;
-		int m_iLogServerPort, m_iGameServerPort;
-	int m_iRating; //Rating
-
+	int m_iTimeLeftSecAccount, m_iTimeLeftSecIP;
+	int m_iLogServerPort, m_iGameServerPort;
 	int m_iBlockYear, m_iBlockMonth, m_iBlockDay;
 	unsigned char m_iTopMsgLastSec;
-				int m_iNetLagCount;
+	int m_iNetLagCount;
 	int m_iTotalPartyMember;
 	int m_iPartyStatus;
 	int m_iGizonItemUpgradeLeft;
-	//int m_iFeedBackCardIndex; // removed by Snoopy
-
 	std::array<short, hb::shared::item::DEF_MAXITEMEQUIPPOS> m_sItemEquipmentStatus{};
 	short m_sMCX, m_sMCY;
 	int   m_iCastingMagicType;
@@ -425,8 +415,6 @@ std::array<bool, hb::shared::limits::MaxItems> m_bIsItemEquipped{};
 	uint16_t m_wCommObjectID;
 	uint16_t m_wLastAttackTargetID;
 	uint16_t m_wEnterGameType;
-	char G_cTxt[128];
-	char m_cBGMmapName[12];
 	char m_cItemOrder[hb::shared::limits::MaxItems];
 	char m_cAmountString[12];
 	char m_cLogOutCount;
@@ -438,30 +426,30 @@ std::array<bool, hb::shared::limits::MaxItems> m_bIsItemEquipped{};
 	char m_cOverlayMessage;      // Message code (replaces m_cMsg[1] for overlay)
 	uint32_t m_dwOverlayStartTime;  // When overlay was shown
 
-			char m_cMsg[200];
-	char m_cLocation[12];
-	char m_cCurLocation[12];
-		char m_cMCName[12];
-	char m_cMapName[12];
-	char m_cMapMessage[32];
+	char m_cMsg[200];
+	std::string m_cLocation;
+	std::string m_cCurLocation;
+	std::string m_cMCName;
+	std::string m_cMapName;
+	std::string m_cMapMessage;
 	char m_cMapIndex;
 	char m_cCurFocus, m_cMaxFocus;
 	char m_cArrowPressed;
-	char m_cLogServerAddr[16];
+	std::string m_cLogServerAddr;
 	char m_cChatMsg[64];
-	char m_cBackupChatMsg[64];
+	std::string m_cBackupChatMsg;
 
-			char m_cWorldServerName[32];
+	std::string m_cWorldServerName;
 	char m_cMenuDir, m_cMenuDirCnt, m_cMenuFrame;
 	char m_cIlusionOwnerType;
-	char m_cName_IE[12];
+	std::string m_cName_IE;
 	char m_cLoading;
 	char m_cDiscount;
 
-	char m_cStatusMapName[12];
-	char m_cTopMsg[64];
-	char m_cConstructMapName[12];
-	char m_cGameServerName[22]; //  Gateway
+	std::string m_cStatusMapName;
+	std::string m_cTopMsg;
+	std::string m_cConstructMapName;
+	std::string m_cGameServerName; //  Gateway
 
 	std::array<std::unique_ptr<class CItem>, 5000> m_pItemConfigList;
 	bool _bDecodeItemConfigFileContents(char* pData, uint32_t dwMsgSize);
@@ -469,9 +457,9 @@ std::array<bool, hb::shared::limits::MaxItems> m_bIsItemEquipped{};
 	bool _bDecodeSkillConfigFileContents(char* pData, uint32_t dwMsgSize);
 	bool _bDecodeNpcConfigFileContents(char* pData, uint32_t dwMsgSize);
 
-	struct NpcConfig { short npcType = 0; char name[hb::shared::limits::NpcNameLen]{}; bool valid = false; };
+	struct NpcConfig { short npcType = 0; std::string name; bool valid = false; };
 	std::array<NpcConfig, hb::shared::limits::MaxNpcConfigs> m_npcConfigList{};   // indexed by npc_id
-	char m_cNpcNameByType[120][hb::shared::limits::NpcNameLen]{};                    // type->name reverse map (last config wins)
+	std::array<std::string, 120> m_cNpcNameByType;                    // type->name reverse map (last config wins)
 	int m_iNpcConfigsReceived = 0;
 
 	enum class ConfigRetryLevel : uint8_t { None = 0, CacheTried = 1, ServerRequested = 2, Failed = 3 };
@@ -500,8 +488,7 @@ std::array<bool, hb::shared::limits::MaxItems> m_bIsItemEquipped{};
 	bool m_bItemDrop;
 	int  m_iItemDropCnt;
 
-	// Snoopy: Apocalypse Gate
-	char m_cGateMapName[12];
+	std::string m_cGateMapName;
 	int  m_iGatePositX, m_iGatePositY;
 	int m_iHeldenianAresdenLeftTower;
 	int m_iHeldenianElvineLeftTower;
@@ -519,15 +506,8 @@ std::array<bool, hb::shared::limits::MaxItems> m_bIsItemEquipped{};
 	CNpcRenderer m_npcRenderer;
 
 
-	//Snoopy: Crafting
-	//bool _bDecodeCraftItemContents();
-	//bool __bDecodeCraftItemContents(char *pBuffer);
-	//bool _bCheckCraftItemStatus();
-	//bool _bCheckCurrentCraftItemStatus();
-
 	int   m_iContributionPrice;
 
-	char m_cTakeHeroItemName[100]; //Drajwer - hero item str
 
 	short iMaxStats;
 	int iMaxLevel;

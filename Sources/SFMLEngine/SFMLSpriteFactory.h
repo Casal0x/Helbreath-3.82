@@ -1,4 +1,4 @@
-// SFMLSpriteFactory.h: SFML implementation of ISpriteFactory interface
+﻿// SFMLSpriteFactory.h: SFML implementation of ISpriteFactory interface
 //
 // Part of SFMLEngine static library
 // Creates SFMLSprite instances from PAK files
@@ -30,8 +30,8 @@ public:
     void DestroySprite(hb::shared::sprite::ISprite* sprite) override;
 
     // Global alpha degree
-    void SetGlobalAlphaDegree(int degree) override;
-    int GetGlobalAlphaDegree() const override;
+    void SetAmbientLightLevel(int level) override;
+    int GetAmbientLightLevel() const override;
 
     // PAK file information
     int GetSpriteCount(const std::string& pakName) const override;
@@ -50,5 +50,5 @@ private:
 
     SFMLRenderer* m_pRenderer;
     std::string m_spritePath;
-    int m_globalAlphaDegree;
+    int m_ambient_light_level;
 };

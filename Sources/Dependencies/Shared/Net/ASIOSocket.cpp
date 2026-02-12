@@ -1,4 +1,4 @@
-// ASIOSocket.cpp: Unified socket implementation using standalone ASIO
+﻿// ASIOSocket.cpp: Unified socket implementation using standalone ASIO
 //
 // Replaces the legacy XSocket (Winsock2/WSAEventSelect) with ASIO.
 // Shared between Client and Server.
@@ -144,7 +144,7 @@ int ASIOSocket::Poll()
 // Connect - async non-blocking connect
 //////////////////////////////////////////////////////////////////////
 
-bool ASIOSocket::bConnect(char* pAddr, int iPort)
+bool ASIOSocket::bConnect(const char* pAddr, int iPort)
 {
 	if (m_cType == sock::Type::Listen) return false;
 

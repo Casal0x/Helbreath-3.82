@@ -6,6 +6,8 @@
 #include "SpriteID.h"
 #include "TextLibExt.h"
 #include "NetMessages.h"
+#include <format>
+#include <string>
 
 using namespace hb::shared::net;
 using namespace hb::shared::item;
@@ -142,38 +144,38 @@ bool DialogBox_Slates::OnItemDrop(short msX, short msY)
 			(pCfg->m_sSpriteFrame >= 151) &&
 			(pCfg->m_sSpriteFrame <= 154))
 		{
-			char cItemIDText[20];
+			std::string cItemIDText;
 			switch (pCfg->m_sSpriteFrame) {
 			case 151:
 				if (Info().sV1 == -1) {
 					m_pGame->m_bIsItemDisabled[cItemID] = true;
 					Info().sV1 = cItemID;
-					std::snprintf(cItemIDText, sizeof(cItemIDText), "Item ID : %d", cItemID);
-					AddEventList(cItemIDText, 10);
+					cItemIDText = std::format("Item ID : {}", cItemID);
+					AddEventList(cItemIDText.c_str(), 10);
 				}
 				break;
 			case 152:
 				if (Info().sV2 == -1) {
 					m_pGame->m_bIsItemDisabled[cItemID] = true;
 					Info().sV2 = cItemID;
-					std::snprintf(cItemIDText, sizeof(cItemIDText), "Item ID : %d", cItemID);
-					AddEventList(cItemIDText, 10);
+					cItemIDText = std::format("Item ID : {}", cItemID);
+					AddEventList(cItemIDText.c_str(), 10);
 				}
 				break;
 			case 153:
 				if (Info().sV3 == -1) {
 					m_pGame->m_bIsItemDisabled[cItemID] = true;
 					Info().sV3 = cItemID;
-					std::snprintf(cItemIDText, sizeof(cItemIDText), "Item ID : %d", cItemID);
-					AddEventList(cItemIDText, 10);
+					cItemIDText = std::format("Item ID : {}", cItemID);
+					AddEventList(cItemIDText.c_str(), 10);
 				}
 				break;
 			case 154:
 				if (Info().sV4 == -1) {
 					m_pGame->m_bIsItemDisabled[cItemID] = true;
 					Info().sV4 = cItemID;
-					std::snprintf(cItemIDText, sizeof(cItemIDText), "Item ID : %d", cItemID);
-					AddEventList(cItemIDText, 10);
+					cItemIDText = std::format("Item ID : {}", cItemID);
+					AddEventList(cItemIDText.c_str(), 10);
 				}
 				break;
 			}

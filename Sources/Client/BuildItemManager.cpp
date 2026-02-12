@@ -2,6 +2,7 @@
 #include "BuildItemManager.h"
 #include "Game.h"
 #include <fstream>
+#include <string>
 
 BuildItemManager::BuildItemManager() = default;
 BuildItemManager::~BuildItemManager() = default;
@@ -52,14 +53,14 @@ bool BuildItemManager::UpdateAvailableRecipes()
 			{
 				iMatch = 0;
 				m_display_recipes[iIndex] = std::make_unique<CBuildItem>();
-				memcpy(m_display_recipes[iIndex]->m_cName, m_recipes[i]->m_cName, hb::shared::limits::ItemNameLen - 1);
+				m_display_recipes[iIndex]->m_cName = m_recipes[i]->m_cName;
 
-				memcpy(m_display_recipes[iIndex]->m_cElementName1, m_recipes[i]->m_cElementName1, hb::shared::limits::ItemNameLen - 1);
-				memcpy(m_display_recipes[iIndex]->m_cElementName2, m_recipes[i]->m_cElementName2, hb::shared::limits::ItemNameLen - 1);
-				memcpy(m_display_recipes[iIndex]->m_cElementName3, m_recipes[i]->m_cElementName3, hb::shared::limits::ItemNameLen - 1);
-				memcpy(m_display_recipes[iIndex]->m_cElementName4, m_recipes[i]->m_cElementName4, hb::shared::limits::ItemNameLen - 1);
-				memcpy(m_display_recipes[iIndex]->m_cElementName5, m_recipes[i]->m_cElementName5, hb::shared::limits::ItemNameLen - 1);
-				memcpy(m_display_recipes[iIndex]->m_cElementName6, m_recipes[i]->m_cElementName6, hb::shared::limits::ItemNameLen - 1);
+				m_display_recipes[iIndex]->m_cElementName1 = m_recipes[i]->m_cElementName1;
+				m_display_recipes[iIndex]->m_cElementName2 = m_recipes[i]->m_cElementName2;
+				m_display_recipes[iIndex]->m_cElementName3 = m_recipes[i]->m_cElementName3;
+				m_display_recipes[iIndex]->m_cElementName4 = m_recipes[i]->m_cElementName4;
+				m_display_recipes[iIndex]->m_cElementName5 = m_recipes[i]->m_cElementName5;
+				m_display_recipes[iIndex]->m_cElementName6 = m_recipes[i]->m_cElementName6;
 
 				m_display_recipes[iIndex]->m_iElementCount[1] = m_recipes[i]->m_iElementCount[1];
 				m_display_recipes[iIndex]->m_iElementCount[2] = m_recipes[i]->m_iElementCount[2];
@@ -81,7 +82,7 @@ bool BuildItemManager::UpdateAvailableRecipes()
 
 				// Element1
 				std::memset(cTempName, 0, sizeof(cTempName));
-				memcpy(cTempName, m_recipes[i]->m_cElementName1, hb::shared::limits::ItemNameLen - 1);
+				memcpy(cTempName, m_recipes[i]->m_cElementName1.c_str(), hb::shared::limits::ItemNameLen - 1);
 				iCount = m_recipes[i]->m_iElementCount[1];
 				if (iCount == 0) iMatch++;
 				else
@@ -103,7 +104,7 @@ bool BuildItemManager::UpdateAvailableRecipes()
 			CBIS_STEP2:;
 				// Element2
 				std::memset(cTempName, 0, sizeof(cTempName));
-				memcpy(cTempName, m_recipes[i]->m_cElementName2, hb::shared::limits::ItemNameLen - 1);
+				memcpy(cTempName, m_recipes[i]->m_cElementName2.c_str(), hb::shared::limits::ItemNameLen - 1);
 				iCount = m_recipes[i]->m_iElementCount[2];
 				if (iCount == 0) iMatch++;
 				else
@@ -126,7 +127,7 @@ bool BuildItemManager::UpdateAvailableRecipes()
 			CBIS_STEP3:;
 				// Element3
 				std::memset(cTempName, 0, sizeof(cTempName));
-				memcpy(cTempName, m_recipes[i]->m_cElementName3, hb::shared::limits::ItemNameLen - 1);
+				memcpy(cTempName, m_recipes[i]->m_cElementName3.c_str(), hb::shared::limits::ItemNameLen - 1);
 				iCount = m_recipes[i]->m_iElementCount[3];
 				if (iCount == 0) iMatch++;
 				else
@@ -149,7 +150,7 @@ bool BuildItemManager::UpdateAvailableRecipes()
 			CBIS_STEP4:;
 				// Element4 �˻�
 				std::memset(cTempName, 0, sizeof(cTempName));
-				memcpy(cTempName, m_recipes[i]->m_cElementName4, hb::shared::limits::ItemNameLen - 1);
+				memcpy(cTempName, m_recipes[i]->m_cElementName4.c_str(), hb::shared::limits::ItemNameLen - 1);
 				iCount = m_recipes[i]->m_iElementCount[4];
 				if (iCount == 0) iMatch++;
 				else
@@ -173,7 +174,7 @@ bool BuildItemManager::UpdateAvailableRecipes()
 
 				// Element5
 				std::memset(cTempName, 0, sizeof(cTempName));
-				memcpy(cTempName, m_recipes[i]->m_cElementName5, hb::shared::limits::ItemNameLen - 1);
+				memcpy(cTempName, m_recipes[i]->m_cElementName5.c_str(), hb::shared::limits::ItemNameLen - 1);
 				iCount = m_recipes[i]->m_iElementCount[5];
 				if (iCount == 0) iMatch++;
 				else
@@ -197,7 +198,7 @@ bool BuildItemManager::UpdateAvailableRecipes()
 
 				// Element6
 				std::memset(cTempName, 0, sizeof(cTempName));
-				memcpy(cTempName, m_recipes[i]->m_cElementName6, hb::shared::limits::ItemNameLen - 1);
+				memcpy(cTempName, m_recipes[i]->m_cElementName6.c_str(), hb::shared::limits::ItemNameLen - 1);
 				iCount = m_recipes[i]->m_iElementCount[6];
 				if (iCount == 0) iMatch++;
 				else
@@ -255,7 +256,7 @@ bool BuildItemManager::ParseRecipeFile(const std::string& buffer)
 				case 1:
 					switch (cReadModeB) {
 					case 1:
-						copyToCharArray(m_recipes[iIndex]->m_cName, sizeof(m_recipes[iIndex]->m_cName), token);
+						m_recipes[iIndex]->m_cName = token;
 						cReadModeB = 2;
 						break;
 					case 2:
@@ -263,7 +264,7 @@ bool BuildItemManager::ParseRecipeFile(const std::string& buffer)
 						cReadModeB = 3;
 						break;
 					case 3:
-						copyToCharArray(m_recipes[iIndex]->m_cElementName1, sizeof(m_recipes[iIndex]->m_cElementName1), token);
+						m_recipes[iIndex]->m_cElementName1 = token;
 						cReadModeB = 4;
 						break;
 					case 4:
@@ -271,7 +272,7 @@ bool BuildItemManager::ParseRecipeFile(const std::string& buffer)
 						cReadModeB = 5;
 						break;
 					case 5:
-						copyToCharArray(m_recipes[iIndex]->m_cElementName2, sizeof(m_recipes[iIndex]->m_cElementName2), token);
+						m_recipes[iIndex]->m_cElementName2 = token;
 						cReadModeB = 6;
 						break;
 					case 6:
@@ -279,7 +280,7 @@ bool BuildItemManager::ParseRecipeFile(const std::string& buffer)
 						cReadModeB = 7;
 						break;
 					case 7:
-						copyToCharArray(m_recipes[iIndex]->m_cElementName3, sizeof(m_recipes[iIndex]->m_cElementName3), token);
+						m_recipes[iIndex]->m_cElementName3 = token;
 						cReadModeB = 8;
 						break;
 					case 8:
@@ -287,7 +288,7 @@ bool BuildItemManager::ParseRecipeFile(const std::string& buffer)
 						cReadModeB = 9;
 						break;
 					case 9:
-						copyToCharArray(m_recipes[iIndex]->m_cElementName4, sizeof(m_recipes[iIndex]->m_cElementName4), token);
+						m_recipes[iIndex]->m_cElementName4 = token;
 						cReadModeB = 10;
 						break;
 					case 10:
@@ -295,7 +296,7 @@ bool BuildItemManager::ParseRecipeFile(const std::string& buffer)
 						cReadModeB = 11;
 						break;
 					case 11:
-						copyToCharArray(m_recipes[iIndex]->m_cElementName5, sizeof(m_recipes[iIndex]->m_cElementName5), token);
+						m_recipes[iIndex]->m_cElementName5 = token;
 						cReadModeB = 12;
 						break;
 					case 12:
@@ -306,7 +307,7 @@ bool BuildItemManager::ParseRecipeFile(const std::string& buffer)
 						cReadModeB = 13;
 						break;
 					case 13:
-						copyToCharArray(m_recipes[iIndex]->m_cElementName6, sizeof(m_recipes[iIndex]->m_cElementName6), token);
+						m_recipes[iIndex]->m_cElementName6 = token;
 						cReadModeB = 14;
 						break;
 					case 14:
@@ -377,7 +378,7 @@ bool BuildItemManager::ValidateCurrentRecipe()
 
 	// Element1
 	std::memset(cTempName, 0, sizeof(cTempName));
-	memcpy(cTempName, m_display_recipes[iIndex]->m_cElementName1, hb::shared::limits::ItemNameLen - 1);
+	memcpy(cTempName, m_display_recipes[iIndex]->m_cElementName1.c_str(), hb::shared::limits::ItemNameLen - 1);
 	iCount = m_display_recipes[iIndex]->m_iElementCount[1];
 	if (iCount == 0) iMatch++;
 	else
@@ -402,7 +403,7 @@ CCBIS_STEP2:;
 
 	// Element2
 	std::memset(cTempName, 0, sizeof(cTempName));
-	memcpy(cTempName, m_display_recipes[iIndex]->m_cElementName2, hb::shared::limits::ItemNameLen - 1);
+	memcpy(cTempName, m_display_recipes[iIndex]->m_cElementName2.c_str(), hb::shared::limits::ItemNameLen - 1);
 	iCount = m_display_recipes[iIndex]->m_iElementCount[2];
 	if (iCount == 0) iMatch++;
 	else
@@ -427,7 +428,7 @@ CCBIS_STEP3:;
 
 	// Element3
 	std::memset(cTempName, 0, sizeof(cTempName));
-	memcpy(cTempName, m_display_recipes[iIndex]->m_cElementName3, hb::shared::limits::ItemNameLen - 1);
+	memcpy(cTempName, m_display_recipes[iIndex]->m_cElementName3.c_str(), hb::shared::limits::ItemNameLen - 1);
 	iCount = m_display_recipes[iIndex]->m_iElementCount[3];
 	if (iCount == 0) iMatch++;
 	else
@@ -452,7 +453,7 @@ CCBIS_STEP4:;
 
 	// Element4
 	std::memset(cTempName, 0, sizeof(cTempName));
-	memcpy(cTempName, m_display_recipes[iIndex]->m_cElementName4, hb::shared::limits::ItemNameLen - 1);
+	memcpy(cTempName, m_display_recipes[iIndex]->m_cElementName4.c_str(), hb::shared::limits::ItemNameLen - 1);
 	iCount = m_display_recipes[iIndex]->m_iElementCount[4];
 	if (iCount == 0) iMatch++;
 	else
@@ -477,7 +478,7 @@ CCBIS_STEP5:;
 
 	// Element5
 	std::memset(cTempName, 0, sizeof(cTempName));
-	memcpy(cTempName, m_display_recipes[iIndex]->m_cElementName5, hb::shared::limits::ItemNameLen - 1);
+	memcpy(cTempName, m_display_recipes[iIndex]->m_cElementName5.c_str(), hb::shared::limits::ItemNameLen - 1);
 	iCount = m_display_recipes[iIndex]->m_iElementCount[5];
 	if (iCount == 0) iMatch++;
 	else
@@ -502,7 +503,7 @@ CCBIS_STEP6:;
 
 	// Element6
 	std::memset(cTempName, 0, sizeof(cTempName));
-	memcpy(cTempName, m_display_recipes[iIndex]->m_cElementName6, hb::shared::limits::ItemNameLen - 1);
+	memcpy(cTempName, m_display_recipes[iIndex]->m_cElementName6.c_str(), hb::shared::limits::ItemNameLen - 1);
 	iCount = m_display_recipes[iIndex]->m_iElementCount[6];
 	if (iCount == 0) iMatch++;
 	else

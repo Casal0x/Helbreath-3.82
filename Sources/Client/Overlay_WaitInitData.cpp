@@ -1,4 +1,4 @@
-// Overlay_WaitInitData.cpp: Waiting for server init data overlay
+﻿// Overlay_WaitInitData.cpp: Waiting for server init data overlay
 //
 //////////////////////////////////////////////////////////////////////
 
@@ -10,6 +10,7 @@
 #include "IInput.h"
 #include "TextLibExt.h"
 #include "GameFonts.h"
+#include <format>
 using namespace hb::client::sprite_id;
 
 Overlay_WaitInitData::Overlay_WaitInitData(CGame* pGame)
@@ -59,6 +60,7 @@ void Overlay_WaitInitData::on_update()
 
 void Overlay_WaitInitData::on_render()
 {
+    std::string G_cTxt;
     uint32_t dwTime = GameClock::GetTimeMS();
     uint32_t dwElapsed = dwTime - m_dwStartTime;
 
@@ -67,8 +69,8 @@ void Overlay_WaitInitData::on_render()
 
     DrawNewDialogBox(InterfaceNdGame4, dlgX, dlgY, 2);
 
-    std::snprintf(m_pGame->G_cTxt, sizeof(m_pGame->G_cTxt), "Waiting for response... %dsec", dwElapsed / 1000);
-    hb::shared::text::DrawText(GameFont::Bitmap1, dlgX + 54, dlgY + 65, m_pGame->G_cTxt, hb::shared::text::TextStyle::WithHighlight(GameColors::UIDarkRed));
+    G_cTxt = std::format("Waiting for response... {}sec", dwElapsed / 1000);
+    hb::shared::text::DrawText(GameFont::Bitmap1, dlgX + 54, dlgY + 65, G_cTxt.c_str(), hb::shared::text::TextStyle::WithHighlight(GameColors::UIDarkRed));
 
     if (dwElapsed > 7000)
     {

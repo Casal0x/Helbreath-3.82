@@ -8,6 +8,8 @@
 #include "DevConsole.h"
 #include "Overlay_DevConsole.h"
 #include "LAN_ENG.H"
+#include <format>
+#include <string>
 
 
 using namespace hb::shared::net;
@@ -198,11 +200,12 @@ void CGame::Hotkey_WhisperTarget()
 	if (!hb::shared::input::IsCtrlDown() || GameModeManager::GetMode() != GameMode::MainGame || TextInputManager::Get().IsActive()) {
 		return;
 	}
-	char tempid[100], cLB, cRB;
+	std::string tempid;
+
+	char cLB, cRB;
 	short sX, sY, msX, msY, msZ;
 	sX = m_dialogBoxManager.Info(DialogBoxId::ChatHistory).sX;
 	sY = m_dialogBoxManager.Info(DialogBoxId::ChatHistory).sY;
-	std::memset(tempid, 0, sizeof(tempid));
 	msX = static_cast<short>(hb::shared::input::GetMouseX());
 
 	msY = static_cast<short>(hb::shared::input::GetMouseY());
@@ -224,14 +227,14 @@ void CGame::Hotkey_WhisperTarget()
 		std::snprintf(cBuff, sizeof(cBuff), "%s", pChatMsg->m_pMsg);
 		char* sep = std::strchr(cBuff, ':');
 		if (sep) *sep = '\0';
-		std::snprintf(tempid, sizeof(tempid), "/to %s", cBuff);
-		bSendCommand(MsgId::CommandChatMsg, 0, 0, 0, 0, 0, tempid);
+		tempid = std::format("/to {}", cBuff);
+		bSendCommand(MsgId::CommandChatMsg, 0, 0, 0, 0, 0, tempid.c_str());
 	}
 	else if (m_entityState.IsPlayer() && (strlen(m_entityState.m_cName.data()) > 0) && (m_iIlusionOwnerH == 0)
 		&& ((m_bIsCrusadeMode == false) || !IsHostile(m_entityState.m_status.iRelationship)))
 	{
-		std::snprintf(tempid, sizeof(tempid), "/to %s", m_entityState.m_cName.data());
-		bSendCommand(MsgId::CommandChatMsg, 0, 0, 0, 0, 0, tempid);
+		tempid = std::format("/to {}", m_entityState.m_cName.data());
+		bSendCommand(MsgId::CommandChatMsg, 0, 0, 0, 0, 0, tempid.c_str());
 	}
 	else
 	{
@@ -343,7 +346,7 @@ void CGame::Hotkey_Simple_LoadBackupChat()
 		(m_cBackupChatMsg[0] != '@'))
 	{
 		std::memset(m_cChatMsg, 0, sizeof(m_cChatMsg));
-		std::snprintf(m_cChatMsg, sizeof(m_cChatMsg), "%s", m_cBackupChatMsg);
+		std::snprintf(m_cChatMsg, sizeof(m_cChatMsg), "%s", m_cBackupChatMsg.c_str());
 		TextInputManager::Get().StartInput(CHAT_INPUT_X(), CHAT_INPUT_Y(), sizeof(m_cChatMsg), m_cChatMsg);
 	}
 }
@@ -525,6 +528,7 @@ void CGame::Hotkey_Simple_SpecialAbility()
 	else {
 		if (m_pPlayer->m_iSpecialAbilityType == 0) AddEventList(ON_KEY_UP26, 10);
 		else {
+			std::string G_cTxt;
 			if (m_pPlayer->m_playerAppearance.iEffectType != 0) {
 				AddEventList(ON_KEY_UP28, 10);
 				return;
@@ -534,32 +538,31 @@ void CGame::Hotkey_Simple_SpecialAbility()
 			i = m_pPlayer->m_iSpecialAbilityTimeLeftSec - i;
 			if (i < 0) i = 0;
 
-			std::memset(G_cTxt, 0, sizeof(G_cTxt));
 			if (i < 60) {
 				switch (m_pPlayer->m_iSpecialAbilityType) {
-				case 1: std::snprintf(G_cTxt, sizeof(G_cTxt), ON_KEY_UP29, i); break;//"
-				case 2: std::snprintf(G_cTxt, sizeof(G_cTxt), ON_KEY_UP30, i); break;//"
-				case 3: std::snprintf(G_cTxt, sizeof(G_cTxt), ON_KEY_UP31, i); break;//"
-				case 4: std::snprintf(G_cTxt, sizeof(G_cTxt), ON_KEY_UP32, i); break;//"
-				case 5: std::snprintf(G_cTxt, sizeof(G_cTxt), ON_KEY_UP33, i); break;//"
-				case 50:std::snprintf(G_cTxt, sizeof(G_cTxt), ON_KEY_UP34, i); break;//"
-				case 51:std::snprintf(G_cTxt, sizeof(G_cTxt), ON_KEY_UP35, i); break;//"
-				case 52:std::snprintf(G_cTxt, sizeof(G_cTxt), ON_KEY_UP36, i); break;//"
+				case 1: G_cTxt = std::format(ON_KEY_UP29, i); break;//"
+				case 2: G_cTxt = std::format(ON_KEY_UP30, i); break;//"
+				case 3: G_cTxt = std::format(ON_KEY_UP31, i); break;//"
+				case 4: G_cTxt = std::format(ON_KEY_UP32, i); break;//"
+				case 5: G_cTxt = std::format(ON_KEY_UP33, i); break;//"
+				case 50:G_cTxt = std::format(ON_KEY_UP34, i); break;//"
+				case 51:G_cTxt = std::format(ON_KEY_UP35, i); break;//"
+				case 52:G_cTxt = std::format(ON_KEY_UP36, i); break;//"
 				}
 			}
 			else {
 				switch (m_pPlayer->m_iSpecialAbilityType) {
-				case 1: std::snprintf(G_cTxt, sizeof(G_cTxt), ON_KEY_UP37, i / 60); break;//"
-				case 2: std::snprintf(G_cTxt, sizeof(G_cTxt), ON_KEY_UP38, i / 60); break;//"
-				case 3: std::snprintf(G_cTxt, sizeof(G_cTxt), ON_KEY_UP39, i / 60); break;//"
-				case 4: std::snprintf(G_cTxt, sizeof(G_cTxt), ON_KEY_UP40, i / 60); break;//"
-				case 5: std::snprintf(G_cTxt, sizeof(G_cTxt), ON_KEY_UP41, i / 60); break;//"
-				case 50:std::snprintf(G_cTxt, sizeof(G_cTxt), ON_KEY_UP42, i / 60); break;//"
-				case 51:std::snprintf(G_cTxt, sizeof(G_cTxt), ON_KEY_UP43, i / 60); break;//"
-				case 52:std::snprintf(G_cTxt, sizeof(G_cTxt), ON_KEY_UP44, i / 60); break;//"
+				case 1: G_cTxt = std::format(ON_KEY_UP37, i / 60); break;//"
+				case 2: G_cTxt = std::format(ON_KEY_UP38, i / 60); break;//"
+				case 3: G_cTxt = std::format(ON_KEY_UP39, i / 60); break;//"
+				case 4: G_cTxt = std::format(ON_KEY_UP40, i / 60); break;//"
+				case 5: G_cTxt = std::format(ON_KEY_UP41, i / 60); break;//"
+				case 50:G_cTxt = std::format(ON_KEY_UP42, i / 60); break;//"
+				case 51:G_cTxt = std::format(ON_KEY_UP43, i / 60); break;//"
+				case 52:G_cTxt = std::format(ON_KEY_UP44, i / 60); break;//"
 				}
 			}
-			AddEventList(G_cTxt, 10);
+			AddEventList(G_cTxt.c_str(), 10);
 		}
 	}
 }

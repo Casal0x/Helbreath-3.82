@@ -1,9 +1,10 @@
-// Screen_SelectCharacter.cpp: Select Character Screen Implementation
+﻿// Screen_SelectCharacter.cpp: Select Character Screen Implementation
 //
 //////////////////////////////////////////////////////////////////////
 
 #include "Screen_SelectCharacter.h"
 #include "Game.h"
+#include "WeatherManager.h"
 #include "GameModeManager.h"
 #include "IInput.h"
 #include "GlobalDef.h"
@@ -12,6 +13,8 @@
 #include "lan_eng.h"
 #include "GameFonts.h"
 #include "TextLibExt.h"
+#include <format>
+#include <string>
 
 
 
@@ -21,7 +24,6 @@ namespace MouseButton = hb::shared::input::MouseButton;
 using namespace hb::shared::action;
 using namespace hb::client::sprite_id;
 
-extern char G_cSpriteAlphaDegree;
 
 Screen_SelectCharacter::Screen_SelectCharacter(CGame* pGame)
     : IGameScreen(pGame)
@@ -39,7 +41,7 @@ void Screen_SelectCharacter::on_initialize()
     GameModeManager::SetCurrentMode(GameMode::SelectCharacter);
 
     // Initialize logic (migrated from CGame::UpdateScreen_SelectCharacter m_cGameModeCount == 0 block)
-    G_cSpriteAlphaDegree = 1;
+    WeatherManager::Get().SetAmbientLight(1);
     m_pGame->InitGameSettings();
     
     m_cCurFocus = 1;
@@ -88,22 +90,21 @@ void Screen_SelectCharacter::on_update()
             if (m_pGame->m_pCharList[m_cCurFocus - 1]->m_sSex != 0)
             {
                 std::memset(m_pGame->m_pPlayer->m_cPlayerName, 0, sizeof(m_pGame->m_pPlayer->m_cPlayerName));
-                std::snprintf(m_pGame->m_pPlayer->m_cPlayerName, sizeof(m_pGame->m_pPlayer->m_cPlayerName), "%s", m_pGame->m_pCharList[m_cCurFocus - 1]->m_cName);
+                std::snprintf(m_pGame->m_pPlayer->m_cPlayerName, sizeof(m_pGame->m_pPlayer->m_cPlayerName), "%s", m_pGame->m_pCharList[m_cCurFocus - 1]->m_cName.c_str());
                 m_pGame->m_pPlayer->m_iLevel = (int)m_pGame->m_pCharList[m_cCurFocus - 1]->m_sLevel;
                 if (CMisc::bCheckValidString(m_pGame->m_pPlayer->m_cPlayerName) == true)
                 {
                     m_pGame->m_pSprite[InterfaceNdLogin]->Unload();
                     m_pGame->m_pSprite[InterfaceNdMainMenu]->Unload();
                     m_pGame->m_pLSock = std::make_unique<hb::shared::net::ASIOSocket>(m_pGame->m_pIOPool->GetContext(), game_limits::socket_block_limit);
-                    m_pGame->m_pLSock->bConnect(m_pGame->m_cLogServerAddr, m_pGame->m_iLogServerPort + (rand() % 1));
+                    m_pGame->m_pLSock->bConnect(m_pGame->m_cLogServerAddr.c_str(), m_pGame->m_iLogServerPort + (rand() % 1));
                     m_pGame->m_pLSock->bInitBufferSize(hb::shared::limits::MsgBufferSize);
                     m_pGame->ChangeGameMode(GameMode::Connecting);
                     m_pGame->m_dwConnectMode = MsgId::RequestEnterGame;
                     m_pGame->m_wEnterGameType = EnterGameMsg::New;
                     std::memset(m_pGame->m_cMsg, 0, sizeof(m_pGame->m_cMsg));
                     std::snprintf(m_pGame->m_cMsg, sizeof(m_pGame->m_cMsg), "%s", "33");
-                    std::memset(m_pGame->m_cMapName, 0, sizeof(m_pGame->m_cMapName));
-                    memcpy(m_pGame->m_cMapName, m_pGame->m_pCharList[m_cCurFocus - 1]->m_cMapName, 10);
+                    m_pGame->m_cMapName = m_pGame->m_pCharList[m_cCurFocus - 1]->m_cMapName;
                     return;
                 }
             }
@@ -205,22 +206,21 @@ void Screen_SelectCharacter::on_update()
                     if (m_pGame->m_pCharList[m_cCurFocus - 1]->m_sSex != 0)
                     {
                         std::memset(m_pGame->m_pPlayer->m_cPlayerName, 0, sizeof(m_pGame->m_pPlayer->m_cPlayerName));
-                        std::snprintf(m_pGame->m_pPlayer->m_cPlayerName, sizeof(m_pGame->m_pPlayer->m_cPlayerName), "%s", m_pGame->m_pCharList[m_cCurFocus - 1]->m_cName);
+                        std::snprintf(m_pGame->m_pPlayer->m_cPlayerName, sizeof(m_pGame->m_pPlayer->m_cPlayerName), "%s", m_pGame->m_pCharList[m_cCurFocus - 1]->m_cName.c_str());
                         m_pGame->m_pPlayer->m_iLevel = (int)m_pGame->m_pCharList[m_cCurFocus - 1]->m_sLevel;
                         if (CMisc::bCheckValidString(m_pGame->m_pPlayer->m_cPlayerName) == true)
                         {
                             m_pGame->m_pSprite[InterfaceNdLogin]->Unload();
                             m_pGame->m_pSprite[InterfaceNdMainMenu]->Unload();
                             m_pGame->m_pLSock = std::make_unique<hb::shared::net::ASIOSocket>(m_pGame->m_pIOPool->GetContext(), game_limits::socket_block_limit);
-                            m_pGame->m_pLSock->bConnect(m_pGame->m_cLogServerAddr, m_pGame->m_iLogServerPort + (rand() % 1));
+                            m_pGame->m_pLSock->bConnect(m_pGame->m_cLogServerAddr.c_str(), m_pGame->m_iLogServerPort + (rand() % 1));
                             m_pGame->m_pLSock->bInitBufferSize(hb::shared::limits::MsgBufferSize);
                             m_pGame->ChangeGameMode(GameMode::Connecting);
                             m_pGame->m_dwConnectMode = MsgId::RequestEnterGame;
                             m_pGame->m_wEnterGameType = EnterGameMsg::New;
                             std::memset(m_pGame->m_cMsg, 0, sizeof(m_pGame->m_cMsg));
                             std::snprintf(m_pGame->m_cMsg, sizeof(m_pGame->m_cMsg), "%s", "33");
-                            std::memset(m_pGame->m_cMapName, 0, sizeof(m_pGame->m_cMapName));
-                            memcpy(m_pGame->m_cMapName, m_pGame->m_pCharList[m_cCurFocus - 1]->m_cMapName, 10);
+                            m_pGame->m_cMapName = m_pGame->m_pCharList[m_cCurFocus - 1]->m_cMapName;
                             return;
                         }
                     }
@@ -239,22 +239,21 @@ void Screen_SelectCharacter::on_update()
                 if (m_pGame->m_pCharList[m_cCurFocus - 1]->m_sSex != 0)
                 {
                     std::memset(m_pGame->m_pPlayer->m_cPlayerName, 0, sizeof(m_pGame->m_pPlayer->m_cPlayerName));
-                    std::snprintf(m_pGame->m_pPlayer->m_cPlayerName, sizeof(m_pGame->m_pPlayer->m_cPlayerName), "%s", m_pGame->m_pCharList[m_cCurFocus - 1]->m_cName);
+                    std::snprintf(m_pGame->m_pPlayer->m_cPlayerName, sizeof(m_pGame->m_pPlayer->m_cPlayerName), "%s", m_pGame->m_pCharList[m_cCurFocus - 1]->m_cName.c_str());
                     m_pGame->m_pPlayer->m_iLevel = (int)m_pGame->m_pCharList[m_cCurFocus - 1]->m_sLevel;
 
                     if (CMisc::bCheckValidString(m_pGame->m_pPlayer->m_cPlayerName) == true) {
                         m_pGame->m_pSprite[InterfaceNdLogin]->Unload();
                         m_pGame->m_pSprite[InterfaceNdMainMenu]->Unload();
                         m_pGame->m_pLSock = std::make_unique<hb::shared::net::ASIOSocket>(m_pGame->m_pIOPool->GetContext(), game_limits::socket_block_limit);
-                        m_pGame->m_pLSock->bConnect(m_pGame->m_cLogServerAddr, m_pGame->m_iLogServerPort + (rand() % 1));
+                        m_pGame->m_pLSock->bConnect(m_pGame->m_cLogServerAddr.c_str(), m_pGame->m_iLogServerPort + (rand() % 1));
                         m_pGame->m_pLSock->bInitBufferSize(hb::shared::limits::MsgBufferSize);
                         m_pGame->ChangeGameMode(GameMode::Connecting);
                         m_pGame->m_dwConnectMode = MsgId::RequestEnterGame;
                         m_pGame->m_wEnterGameType = EnterGameMsg::New;
                         std::memset(m_pGame->m_cMsg, 0, sizeof(m_pGame->m_cMsg));
                         std::snprintf(m_pGame->m_cMsg, sizeof(m_pGame->m_cMsg), "%s", "33");
-                        std::memset(m_pGame->m_cMapName, 0, sizeof(m_pGame->m_cMapName));
-                        memcpy(m_pGame->m_cMapName, m_pGame->m_pCharList[m_cCurFocus - 1]->m_cMapName, 10);
+                        m_pGame->m_cMapName = m_pGame->m_pCharList[m_cCurFocus - 1]->m_cMapName;
                         return;
                     }
                 }
@@ -339,25 +338,25 @@ void Screen_SelectCharacter::DrawBackground(CGame* pGame, short sX, short sY, sh
             pGame->m_entityState.m_appearance = pGame->m_pCharList[i]->m_appearance;
 
             std::memset(pGame->m_entityState.m_cName.data(), 0, sizeof(pGame->m_entityState.m_cName.data()));
-            memcpy(pGame->m_entityState.m_cName.data(), pGame->m_pCharList[i]->m_cName, 10);
+            memcpy(pGame->m_entityState.m_cName.data(), pGame->m_pCharList[i]->m_cName.c_str(), 10);
             
             pGame->m_entityState.m_iAction = Type::Move;
             pGame->m_entityState.m_iFrame = pGame->m_cMenuFrame;
 
             if (pGame->m_pCharList[i]->m_sSex != 0)
             {
-                if (CMisc::bCheckValidString(pGame->m_pCharList[i]->m_cName) == true)
+                if (CMisc::bCheckValidString(pGame->m_pCharList[i]->m_cName.data()) == true)
                 {
                     pGame->m_pEffectSpr[0]->Draw(sX + 157 + i * 109, sY + 138, 1, hb::shared::sprite::DrawParams::AdditiveNoColorKey(0.25f));
                     pGame->DrawObject_OnMove_ForMenu(0, 0, sX + 157 + i * 109, sY + 138, false, dwTime);
-                    hb::shared::text::DrawText(GameFont::Default, sX + 112 + i * 109, sY + 179 - 9, pGame->m_pCharList[i]->m_cName, hb::shared::text::TextStyle::Color(GameColors::UISelectPurple));
+                    hb::shared::text::DrawText(GameFont::Default, sX + 112 + i * 109, sY + 179 - 9, pGame->m_pCharList[i]->m_cName.c_str(), hb::shared::text::TextStyle::Color(GameColors::UISelectPurple));
                     int	_sLevel = pGame->m_pCharList[i]->m_sLevel;
-                    char charInfoBuf[32];
-                    snprintf(charInfoBuf, sizeof(charInfoBuf), "%d", _sLevel);
-                    hb::shared::text::DrawText(GameFont::Default, sX + 138 + i * 109, sY + 196 - 10, charInfoBuf, hb::shared::text::TextStyle::Color(GameColors::UISelectPurple));
+                    std::string charInfoBuf;
+                    charInfoBuf = std::format("{}", _sLevel);
+                    hb::shared::text::DrawText(GameFont::Default, sX + 138 + i * 109, sY + 196 - 10, charInfoBuf.c_str(), hb::shared::text::TextStyle::Color(GameColors::UISelectPurple));
 
-                    pGame->FormatCommaNumber(pGame->m_pCharList[i]->m_iExp, charInfoBuf, sizeof(charInfoBuf));
-                    hb::shared::text::DrawText(GameFont::Default, sX + 138 + i * 109, sY + 211 - 10, charInfoBuf, hb::shared::text::TextStyle::Color(GameColors::UISelectPurple));
+                    charInfoBuf = pGame->FormatCommaNumber(pGame->m_pCharList[i]->m_iExp);
+                    hb::shared::text::DrawText(GameFont::Default, sX + 138 + i * 109, sY + 211 - 10, charInfoBuf.c_str(), hb::shared::text::TextStyle::Color(GameColors::UISelectPurple));
                 }
                 iTemp2 = (int64_t)pGame->m_pCharList[i]->m_iYear * 1000000 + (int64_t)pGame->m_pCharList[i]->m_iMonth * 60000 + (int64_t)pGame->m_pCharList[i]->m_iDay * 1700 + (int64_t)pGame->m_pCharList[i]->m_iHour * 70 + (int64_t)pGame->m_pCharList[i]->m_iMinute;
                 if (iTemp1 < iTemp2)
@@ -429,13 +428,13 @@ void Screen_SelectCharacter::DrawBackground(CGame* pGame, short sX, short sY, sh
     }
     
     int iTempMon, iTempDay, iTempHour, iTempMin;
-    char infoBuf[128];
+    std::string infoBuf;
     iTempMon = iTempDay = iTempHour = iTempMin = 0;
 
     if (pGame->m_iAccntYear != 0)
     {
         iTempMin = (pGame->m_iTimeLeftSecAccount / 60);
-        snprintf(infoBuf, sizeof(infoBuf), UPDATE_SCREEN_ON_SELECT_CHARACTER37, pGame->m_iAccntYear, pGame->m_iAccntMonth, pGame->m_iAccntDay);
+        infoBuf = std::format(UPDATE_SCREEN_ON_SELECT_CHARACTER37, pGame->m_iAccntYear, pGame->m_iAccntMonth, pGame->m_iAccntDay);
     }
     else
     {
@@ -444,17 +443,17 @@ void Screen_SelectCharacter::DrawBackground(CGame* pGame, short sX, short sY, sh
             iTempDay = (pGame->m_iTimeLeftSecAccount / (60 * 60 * 24));
             iTempHour = (pGame->m_iTimeLeftSecAccount / (60 * 60)) % 24;
             iTempMin = (pGame->m_iTimeLeftSecAccount / 60) % 60;
-            snprintf(infoBuf, sizeof(infoBuf), UPDATE_SCREEN_ON_SELECT_CHARACTER38, iTempDay, iTempHour, iTempMin);
+            infoBuf = std::format(UPDATE_SCREEN_ON_SELECT_CHARACTER38, iTempDay, iTempHour, iTempMin);
         }
-        else snprintf(infoBuf, sizeof(infoBuf), "%s", UPDATE_SCREEN_ON_SELECT_CHARACTER39);
+        else infoBuf = UPDATE_SCREEN_ON_SELECT_CHARACTER39;
     }
-    hb::shared::text::DrawTextAligned(GameFont::Default, 98 + OX, 385 + 10 + OY, (357) - (98), 15, infoBuf, hb::shared::text::TextStyle::Color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
+    hb::shared::text::DrawTextAligned(GameFont::Default, 98 + OX, 385 + 10 + OY, (357) - (98), 15, infoBuf.c_str(), hb::shared::text::TextStyle::Color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
 
     if (pGame->m_iIpYear != 0)
     {
         iTempHour = (pGame->m_iTimeLeftSecIP / (60 * 60));
         iTempMin = (pGame->m_iTimeLeftSecIP / 60) % 60;
-        snprintf(infoBuf, sizeof(infoBuf), UPDATE_SCREEN_ON_SELECT_CHARACTER40, iTempHour, iTempMin);
+        infoBuf = std::format(UPDATE_SCREEN_ON_SELECT_CHARACTER40, iTempHour, iTempMin);
     }
     else
     {
@@ -463,15 +462,15 @@ void Screen_SelectCharacter::DrawBackground(CGame* pGame, short sX, short sY, sh
             iTempDay = (pGame->m_iTimeLeftSecIP / (60 * 60 * 24));
             iTempHour = (pGame->m_iTimeLeftSecIP / (60 * 60)) % 24;
             iTempMin = (pGame->m_iTimeLeftSecIP / 60) % 60;
-            snprintf(infoBuf, sizeof(infoBuf), UPDATE_SCREEN_ON_SELECT_CHARACTER41, iTempDay, iTempHour, iTempMin);
+            infoBuf = std::format(UPDATE_SCREEN_ON_SELECT_CHARACTER41, iTempDay, iTempHour, iTempMin);
         }
-        else snprintf(infoBuf, sizeof(infoBuf), "%s", UPDATE_SCREEN_ON_SELECT_CHARACTER42);
+        else infoBuf = UPDATE_SCREEN_ON_SELECT_CHARACTER42;
     }
-    hb::shared::text::DrawTextAligned(GameFont::Default, 98 + OX, 400 + 10 + OY, (357) - (98), 15, infoBuf, hb::shared::text::TextStyle::Color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
+    hb::shared::text::DrawTextAligned(GameFont::Default, 98 + OX, 400 + 10 + OY, (357) - (98), 15, infoBuf.c_str(), hb::shared::text::TextStyle::Color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
     if (iYear != 0)
     {
-        snprintf(infoBuf, sizeof(infoBuf), UPDATE_SCREEN_ON_SELECT_CHARACTER43, iYear, iMonth, iDay, iHour, iMinute);
-        hb::shared::text::DrawTextAligned(GameFont::Default, 98 + OX, 415 + 10 + OY, (357) - (98), 15, infoBuf, hb::shared::text::TextStyle::Color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
+        infoBuf = std::format(UPDATE_SCREEN_ON_SELECT_CHARACTER43, iYear, iMonth, iDay, iHour, iMinute);
+        hb::shared::text::DrawTextAligned(GameFont::Default, 98 + OX, 415 + 10 + OY, (357) - (98), 15, infoBuf.c_str(), hb::shared::text::TextStyle::Color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
     }
 
     hb::shared::text::DrawTextAligned(GameFont::Default, 122 + OX, 456 + OY, (315) - (122), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER36, hb::shared::text::TextStyle::Color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);

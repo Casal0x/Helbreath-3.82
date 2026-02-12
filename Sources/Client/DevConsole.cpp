@@ -18,6 +18,8 @@
 #ifdef _WIN32
 #include <windows.h>
 #include <psapi.h>
+#include <format>
+#include <string>
 #endif
 
 // ============== Singleton ==============
@@ -255,9 +257,9 @@ void DevConsole::ExecuteCommand()
 	m_iHistoryIndex = -1;
 
 	// Echo command in yellow
-	char echo[MAX_INPUT + 4];
-	sprintf_s(echo, "> %s", m_szInput);
-	Print(echo, hb::shared::render::Color{255, 255, 0});
+	std::string echo;
+	echo = std::format("> {}", m_szInput);
+	Print(echo.c_str(), hb::shared::render::Color{255, 255, 0});
 
 	// Parse command name and args
 	char cmdName[32] = {};
@@ -289,9 +291,9 @@ void DevConsole::ExecuteCommand()
 
 	if (!found)
 	{
-		char err[MAX_INPUT + 32];
-		sprintf_s(err, "Unknown command: %s", cmdName);
-		Print(err, hb::shared::render::Color{255, 68, 68});
+		std::string err;
+		err = std::format("Unknown command: {}", cmdName);
+		Print(err.c_str(), hb::shared::render::Color{255, 68, 68});
 	}
 
 	// Clear input

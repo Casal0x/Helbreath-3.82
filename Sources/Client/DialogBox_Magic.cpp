@@ -8,6 +8,8 @@
 #include "TextLibExt.h"
 #include "lan_eng.h"
 #include "WeatherManager.h"
+#include <format>
+#include <string>
 
 using namespace hb::shared::item;
 using namespace hb::client::sprite_id;
@@ -25,7 +27,9 @@ void DialogBox_Magic::OnDraw(short msX, short msY, short msZ, char cLB)
 	short sX, sY;
 	int iCPivot, i, iYloc, iMagicCircle, iManaCost;
 	const bool dialogTrans = ConfigManager::Get().IsDialogTransparencyEnabled();
-	char cTxt[120], cMana[10];
+	std::string cMana;
+
+	char cTxt[120];
 	double dV1, dV2, dV3, dV4;
 	int iResult;
 	short sLevelMagic;
@@ -71,20 +75,20 @@ void DialogBox_Magic::OnDraw(short msX, short msY, short msZ, char cLB)
 			if (iManaCost > m_pGame->m_pPlayer->m_iMP)
 			{
 				hb::shared::text::DrawText(GameFont::Bitmap1, sX + 30, sY + 70 + iYloc, cTxt, hb::shared::text::TextStyle::WithHighlight(GameColors::UIMagicPurple));
-				std::snprintf(cMana, sizeof(cMana), "%3d", iManaCost);
-				hb::shared::text::DrawText(GameFont::Bitmap1, sX + 206, sY + 70 + iYloc, cMana, hb::shared::text::TextStyle::WithHighlight(GameColors::UIMagicPurple));
+				cMana = std::format("{:3}", iManaCost);
+				hb::shared::text::DrawText(GameFont::Bitmap1, sX + 206, sY + 70 + iYloc, cMana.c_str(), hb::shared::text::TextStyle::WithHighlight(GameColors::UIMagicPurple));
 			}
 			else if ((msX >= sX + 30) && (msX <= sX + 240) && (msY >= sY + 70 + iYloc) && (msY <= sY + 70 + 14 + iYloc))
 			{
 				hb::shared::text::DrawText(GameFont::Bitmap1, sX + 30, sY + 70 + iYloc, cTxt, hb::shared::text::TextStyle::WithHighlight(GameColors::UINearWhite));
-				std::snprintf(cMana, sizeof(cMana), "%3d", iManaCost);
-				hb::shared::text::DrawText(GameFont::Bitmap1, sX + 206, sY + 70 + iYloc, cMana, hb::shared::text::TextStyle::WithHighlight(GameColors::UINearWhite));
+				cMana = std::format("{:3}", iManaCost);
+				hb::shared::text::DrawText(GameFont::Bitmap1, sX + 206, sY + 70 + iYloc, cMana.c_str(), hb::shared::text::TextStyle::WithHighlight(GameColors::UINearWhite));
 			}
 			else
 			{
 				hb::shared::text::DrawText(GameFont::Bitmap1, sX + 30, sY + 70 + iYloc, cTxt, hb::shared::text::TextStyle::WithHighlight(GameColors::UIMagicBlue));
-				std::snprintf(cMana, sizeof(cMana), "%3d", iManaCost);
-				hb::shared::text::DrawText(GameFont::Bitmap1, sX + 206, sY + 70 + iYloc, cMana, hb::shared::text::TextStyle::WithHighlight(GameColors::UIMagicBlue));
+				cMana = std::format("{:3}", iManaCost);
+				hb::shared::text::DrawText(GameFont::Bitmap1, sX + 206, sY + 70 + iYloc, cMana.c_str(), hb::shared::text::TextStyle::WithHighlight(GameColors::UIMagicBlue));
 			}
 
 			iYloc += 18;

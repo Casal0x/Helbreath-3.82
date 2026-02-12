@@ -1,4 +1,4 @@
-// Overlay_QueryDeleteCharacter.cpp: "Delete Character" confirmation overlay
+﻿// Overlay_QueryDeleteCharacter.cpp: "Delete Character" confirmation overlay
 //
 //////////////////////////////////////////////////////////////////////
 
@@ -60,7 +60,7 @@ void Overlay_QueryDeleteCharacter::on_update()
         {
             // Create login socket and initiate delete request
             m_pGame->m_pLSock = std::make_unique<hb::shared::net::ASIOSocket>(m_pGame->m_pIOPool->GetContext(), game_limits::socket_block_limit);
-            m_pGame->m_pLSock->bConnect(m_pGame->m_cLogServerAddr, m_pGame->m_iLogServerPort + (rand() % 1));
+            m_pGame->m_pLSock->bConnect(m_pGame->m_cLogServerAddr.c_str(), m_pGame->m_iLogServerPort + (rand() % 1));
             m_pGame->m_pLSock->bInitBufferSize(hb::shared::limits::MsgBufferSize);
 
             m_pGame->m_dwConnectMode = MsgId::RequestDeleteCharacter;
@@ -127,7 +127,7 @@ void Overlay_QueryDeleteCharacter::on_render()
     // Get character name from the selected character slot
     if (m_pGame->m_wEnterGameType > 0 && m_pGame->m_pCharList[m_pGame->m_wEnterGameType - 1] != nullptr)
     {
-        PutString(dlgX + 173, dlgY + 70, m_pGame->m_pCharList[m_pGame->m_wEnterGameType - 1]->m_cName, GameColors::UILabel);
+        PutString(dlgX + 173, dlgY + 70, m_pGame->m_pCharList[m_pGame->m_wEnterGameType - 1]->m_cName.c_str(), GameColors::UILabel);
     }
 
     // Confirmation text

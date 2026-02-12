@@ -1,4 +1,4 @@
-#include "DialogBox_ConfirmExchange.h"
+﻿#include "DialogBox_ConfirmExchange.h"
 #include "Game.h"
 
 using namespace hb::shared::net;
