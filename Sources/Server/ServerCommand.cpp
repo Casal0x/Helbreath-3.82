@@ -1,4 +1,3 @@
-#include <windows.h>
 #include "ServerCommand.h"
 #include "CmdHelp.h"
 #include "CmdShowChat.h"
@@ -8,9 +7,10 @@
 #include "CmdSetAdmin.h"
 #include "CmdSetCmdLevel.h"
 #include "Game.h"
-#include "winmain.h"
 #include <cstring>
 #include <cstdio>
+#include "Log.h"
+#include "StringCompat.h"
 
 ServerCommandManager& ServerCommandManager::Get()
 {
@@ -61,16 +61,14 @@ bool ServerCommandManager::ProcessCommand(const char* pInput)
 	for (const auto& cmd : m_commands)
 	{
 		const char* cmdName = cmd->GetName();
-		if (std::strlen(cmdName) == cmdLen && _strnicmp(cmdStart, cmdName, cmdLen) == 0)
+		if (std::strlen(cmdName) == cmdLen && hb_strnicmp(cmdStart, cmdName, cmdLen) == 0)
 		{
 			cmd->Execute(m_pGame, pArgs);
 			return true;
 		}
 	}
 
-	char logBuf[256];
-	std::snprintf(logBuf, sizeof(logBuf), "Unknown command: '%s'. Type 'help' for a list of commands.", cmdStart);
-	PutLogList(logBuf);
+	hb::logger::log("Unknown command: '{}'. Type 'help' for a list of commands.", cmdStart);
 	return false;
 }
 

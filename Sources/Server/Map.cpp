@@ -2,10 +2,9 @@
 
 #include "CommonTypes.h"
 #include "Map.h"
+#include "StringCompat.h"
 using namespace hb::server::map;
 using namespace hb::server::config;
-
-extern void PutLogFileList(char* cStr);
 
 // Construction/Destruction
 
@@ -228,7 +227,6 @@ void CMap::SetDeadOwner(short sOwner, char cOwnerClass, short sX, short sY)
 	pTile->m_cDeadOwnerClass = cOwnerClass;
 }
 
-
 /*********************************************************************************************************************
 **  void CMap::GetOwner(short * pOwner, char * pOwnerClass, short sX, short sY)										**
 **  description			:: check if the tile contains a player														**
@@ -279,7 +277,6 @@ void CMap::GetDeadOwner(short* pOwner, char* pOwnerClass, short sX, short sY)
 	*pOwner = pTile->m_sDeadOwner;
 	*pOwnerClass = pTile->m_cDeadOwnerClass;
 }
-
 
 bool CMap::bGetMoveable(short dX, short dY, short* pDOtype, short* pTopItem)
 {
@@ -388,7 +385,6 @@ bool CMap::bSetItem(short sX, short sY, CItem* pItem)
 	return true;
 }
 
-
 CItem* CMap::pGetItem(short sX, short sY, short* pRemainItemID, char* pRemainItemColor, uint32_t* pRemainItemAttr) //v1.4 color
 {
 	class CTile* pTile;
@@ -421,7 +417,6 @@ CItem* CMap::pGetItem(short sX, short sY, short* pRemainItemID, char* pRemainIte
 	return pItem;
 }
 
-
 int CMap::iCheckItem(short sX, short sY)
 {
 	class CTile* pTile;
@@ -435,7 +430,6 @@ int CMap::iCheckItem(short sX, short sY)
 
 	return pItem->m_sIDnum;
 }
-
 
 bool CMap::bIsValidLoc(short sX, short sY)
 {
@@ -462,25 +456,23 @@ bool CMap::bInit(char* pName)
 
 bool CMap::_bDecodeMapDataFileContents()
 {
-	HANDLE hFile;
+	FILE* pMapFile;
 	char  cMapFileName[256], cHeader[260], cTemp[100];
-	DWORD dwFileSize, nRead;
+	size_t nRead;
 	char* token, * context, cReadMode;
 	char seps[] = "= \t\r\n";
 	class CTile* pTile;
 
 	std::memset(cMapFileName, 0, sizeof(cMapFileName));
-	strcat(cMapFileName, "mapdata\\");
+	strcat(cMapFileName, "mapdata/");
 	strcat(cMapFileName, m_cName);
 	strcat(cMapFileName, ".amd");
 
-	hFile = CreateFile(cMapFileName, GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
-	if (hFile == INVALID_HANDLE_VALUE) return false;
-	dwFileSize = GetFileSize(hFile, 0);
+	pMapFile = fopen(cMapFileName, "rb");
+	if (!pMapFile) return false;
 
 	std::memset(cHeader, 0, sizeof(cHeader));
-	ReadFile(hFile, (char*)cHeader, 256, &nRead, 0);
-
+	nRead = fread(cHeader, 1, 256, pMapFile);
 
 	for(int i = 0; i < 256; i++)
 		if (cHeader[i] == 0) cHeader[i] = ' ';
@@ -519,7 +511,7 @@ bool CMap::_bDecodeMapDataFileContents()
 
 	for(int iy = 0; iy < m_sSizeY; iy++)
 		for(int ix = 0; ix < m_sSizeX; ix++) {
-			ReadFile(hFile, (char*)cTemp, m_sTileDataSize, &nRead, 0);
+			nRead = fread(cTemp, 1, m_sTileDataSize, pMapFile);
 			pTile = (class CTile*)(m_pTile + ix + iy * m_sSizeX);
 			if ((cTemp[8] & 0x80) != 0) {
 				pTile->m_bIsMoveAllowed = false;
@@ -543,14 +535,12 @@ bool CMap::_bDecodeMapDataFileContents()
 			}
 			else pTile->m_bIsWater = false;
 
-
 		}
 
-	CloseHandle(hFile);
+	fclose(pMapFile);
 
 	return true;
 }
-
 
 bool CMap::bSearchTeleportDest(int sX, int sY, char* pMapName, int* pDx, int* pDy, char* pDir)
 {
@@ -579,7 +569,6 @@ void CMap::SetDynamicObject(uint16_t wID, short sType, short sX, short sY, uint3
 {
 	class CTile* pTile;
 
-
 	if ((sX < 0) || (sX >= m_sSizeX) || (sY < 0) || (sY >= m_sSizeY)) return;
 
 	pTile = (class CTile*)(m_pTile + sX + sY * m_sSizeX);
@@ -592,7 +581,6 @@ void CMap::SetDynamicObject(uint16_t wID, short sType, short sX, short sY, uint3
 bool CMap::bGetDynamicObject(short sX, short sY, short* pType, uint32_t* pRegisterTime, int* pIndex)
 {
 	class CTile* pTile;
-
 
 	if ((sX < 0) || (sX >= m_sSizeX) || (sY < 0) || (sY >= m_sSizeY)) return false;
 
@@ -677,12 +665,10 @@ bool CMap::bGetIsFarm(short tX, short tY)
 int CMap::iAnalyze(char cType, int* pX, int* pY, int* pV1, int* pV2, int* pV3)
 {
 
-
 	switch (cType) {
 	case 1:
 
 		break;
-
 
 	}
 
@@ -714,8 +700,6 @@ int CMap::iRegisterOccupyFlag(int dX, int dY, int iSide, int iEKNum, int iDOI)
 
 	return -1;
 }
-
-
 
 void CMap::ClearSectorInfo()
 {
@@ -857,8 +841,6 @@ RCSI_REARRANGE:;
 	return true;
 }
 
-
-
 void CMap::RestoreStrikePoints()
 {
 	
@@ -867,4 +849,3 @@ void CMap::RestoreStrikePoints()
 		m_stStrikePoint[i].iInitHP = m_stStrikePoint[i].iHP;
 	}
 }
-

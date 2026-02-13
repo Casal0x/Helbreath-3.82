@@ -1,4 +1,4 @@
-﻿#ifdef _WIN32
+#ifdef _WIN32
 #define NOMINMAX
 #define WIN32_LEAN_AND_MEAN
 #endif
@@ -15,6 +15,8 @@
 #include "lan_eng.h"
 #include "Packet/SharedPackets.h"
 #include "SharedCalculations.h"
+#include "Log.h"
+#include "ClientLogChannels.h"
 #include <cstdio>
 #include <filesystem>
 #include <fstream>
@@ -26,6 +28,7 @@
 #include <charconv>
 #ifdef _WIN32
 #include <windows.h>
+#include <windowsx.h>
 #endif
 
 // hb::shared::render::Renderer
@@ -48,9 +51,7 @@
 #include "EventListManager.h"
 #include "ChatCommandManager.h"
 #include "HotkeyManager.h"
-#include "DevConsole.h"
 #include "LocalCacheManager.h"
-#include "Overlay_DevConsole.h"
 
 // DialogBox system
 #include "IDialogBox.h"
@@ -158,8 +159,10 @@ void CGame::WriteSettings()
 	ConfigManager::Get().Save();
 }
 
-CGame::CGame()
-	: m_playerRenderer(*this)
+CGame::CGame(hb::shared::types::NativeInstance native_instance, int icon_resource_id)
+	: m_native_instance(native_instance)
+	, m_icon_resource_id(icon_resource_id)
+	, m_playerRenderer(*this)
 	, m_npcRenderer(*this)
 {
 	m_pIOPool = std::make_unique<hb::shared::net::IOServicePool>(0);  // 0 threads = manual poll mode
@@ -234,35 +237,87 @@ CGame::~CGame()
 	m_Renderer = nullptr;
 }
 
-bool CGame::bInit()
+// on_initialize: Pre-realize initialization (config, window params, data loading)
+// Called by application::initialize() BEFORE the OS window exists.
+bool CGame::on_initialize()
 {
+	// Load config (was in Wmain.cpp before)
+	ConfigManager::Get().Initialize();
+	ConfigManager::Get().Load();
+
+	hb::logger::initialize("logs");
+
+	hb::shared::render::ResolutionConfig::Initialize(
+		ConfigManager::Get().GetWindowWidth(),
+		ConfigManager::Get().GetWindowHeight()
+	);
+
+	// Configure window params via staged setters (no OS window yet)
+	auto* window = get_window();
+	window->set_title("Helbreath");
+	window->set_size(ConfigManager::Get().GetWindowWidth(),
+	                 ConfigManager::Get().GetWindowHeight());
+	window->set_borderless(ConfigManager::Get().IsBorderlessEnabled());
+	window->set_mouse_capture_enabled(ConfigManager::Get().IsMouseCaptureEnabled());
+	window->set_native_instance(m_native_instance);
+	window->set_icon_resource_id(m_icon_resource_id);
+
+	// Initialize game systems that don't need the OS window
 	m_pPlayer->m_Controller.SetCommandAvailable(true);
 	m_dwTime = GameClock::GetTimeMS();
 
-	// Initialize AudioManager (sounds loaded later during loading screen)
 	AudioManager::Get().Initialize();
-
-	// Initialize ChatCommandManager
 	ChatCommandManager::Get().Initialize(this);
-
-	// Initialize GameModeManager
 	GameModeManager::Initialize(this);
-
 	GameModeManager::set_screen<Screen_Splash>();
-
 	m_bHideLocalCursor = false;
+
+	m_cLogServerAddr = DEF_SERVER_IP;
+	m_iLogServerPort = DEF_SERVER_PORT;
+	m_iGameServerPort = DEF_GSERVER_PORT;
+
+	m_pMapData = std::make_unique<CMapData>(this);
+	m_pPlayer->m_cPlayerName.clear();
+	m_pPlayer->m_cAccountName.clear();
+	m_pPlayer->m_cAccountPassword.clear();
+
+	m_pPlayer->m_sPlayerType = 2;
+	m_pPlayer->m_Controller.SetPlayerTurn(0);
+	m_dialogBoxManager.SetOrderAt(60, DialogBoxId::HudPanel);
+	m_dialogBoxManager.SetOrderAt(59, DialogBoxId::HudPanel);
+
+	m_cMenuDir = 4;
+	m_cMenuDirCnt = 0;
+	m_cMenuFrame = 0;
+
+	_LoadGameMsgTextContents();
+	m_cWorldServerName = NAME_WORLDNAME1;
+
+	WeatherManager::Get().Initialize();
+	ChatManager::Get().Initialize();
+	ItemNameFormatter::Get().SetItemConfigs(m_pItemConfigList);
+	LocalCacheManager::Get().Initialize();
+
+	return true;
+}
+
+// on_start: Post-realize initialization (renderer, resources, display settings)
+// Called by application::run() AFTER the OS window is created.
+bool CGame::on_start()
+{
+	FrameTiming::Initialize();
 
 	// Create and initialize the renderer
 	if (!hb::shared::render::Renderer::Set(hb::shared::render::RendererType::SFML))
 	{
-		hb::shared::render::Window::ShowError("ERROR", "Failed to create renderer!");
+		hb::shared::render::Window::show_error("ERROR", "Failed to create renderer!");
 		return false;
 	}
 
 	m_Renderer = hb::shared::render::Renderer::Get();
-	if (m_Renderer->Init(hb::shared::render::Window::GetHandle()) == false)
+	if (m_Renderer->Init(hb::shared::render::Window::get_handle()) == false)
 	{
-		hb::shared::render::Window::ShowError("ERROR", "Failed to init renderer!");
+		hb::shared::render::Window::show_error("ERROR", "Failed to init renderer!");
 		return false;
 	}
 
@@ -279,46 +334,12 @@ bool CGame::bInit()
 	m_pSpriteFactory.reset(hb::shared::render::CreateSpriteFactory(m_Renderer));
 	hb::shared::sprite::Sprites::SetFactory(m_pSpriteFactory.get());
 
-	if (bCheckImportantFile() == false)
-	{
-		hb::shared::render::Window::ShowError("ERROR1", "File checksum error! Get Update again please!");
-		return false;
-	}
-
-	if (BuildItemManager::Get().LoadRecipes() == false)
-	{
-		hb::shared::render::Window::ShowError("ERROR2", "File checksum error! Get Update again please!");
-		return false;
-	}
-
-	m_cLogServerAddr = DEF_SERVER_IP;
-	m_iLogServerPort = DEF_SERVER_PORT;
-	m_iGameServerPort = DEF_GSERVER_PORT;
-
-	// Mouse position tracking removed - use hb::shared::input::GetMouseX/Y
-	m_pMapData = std::make_unique<CMapData>(this);
-	m_pPlayer->m_cPlayerName.clear();
-	m_pPlayer->m_cAccountName.clear();
-	m_pPlayer->m_cAccountPassword.clear();
-
-	m_pPlayer->m_sPlayerType = 2;
-	m_pPlayer->m_Controller.SetPlayerTurn(0);
-	// Snoopy: fixed here
-	m_dialogBoxManager.SetOrderAt(60, DialogBoxId::HudPanel);
-	m_dialogBoxManager.SetOrderAt(59, DialogBoxId::HudPanel); // 29�� GaugePannel
-
-	m_cMenuDir = 4;
-	m_cMenuDirCnt = 0;
-	m_cMenuFrame = 0;
-
-	_LoadGameMsgTextContents();
-	m_cWorldServerName = NAME_WORLDNAME1;
-
-	// AudioManager initialized in bInit() with HWND
-	WeatherManager::Get().Initialize();
-	ChatManager::Get().Initialize();
-	ItemNameFormatter::Get().SetItemConfigs(m_pItemConfigList);
-	LocalCacheManager::Get().Initialize();
+	// Push display settings from ConfigManager to engine
+	hb::shared::render::Window::get()->set_vsync_enabled(ConfigManager::Get().IsVSyncEnabled());
+	hb::shared::render::Window::get()->set_framerate_limit(ConfigManager::Get().GetFpsLimit());
+	hb::shared::render::Window::get()->set_fullscreen_stretch(ConfigManager::Get().IsFullscreenStretchEnabled());
+	if (hb::shared::render::Renderer::Get())
+		hb::shared::render::Renderer::Get()->SetFullscreenStretch(ConfigManager::Get().IsFullscreenStretchEnabled());
 
 #ifdef _DEBUG
 	FrameTiming::SetProfilingEnabled(true);
@@ -327,7 +348,18 @@ bool CGame::bInit()
 	return true;
 }
 
-void CGame::Quit()
+// on_run: Called every main loop iteration by application::run()
+// Runs logic update unconditionally, then frame-limited render.
+void CGame::on_run()
+{
+	on_update();
+
+	FrameTiming::BeginFrame();
+	on_render();
+	FrameTiming::EndFrame();
+}
+
+void CGame::on_uninitialize()
 {
 	WriteSettings();
 	ChangeGameMode(GameMode::Null);
@@ -374,6 +406,117 @@ void CGame::Quit()
 	m_pNetworkMessageManager.reset();
 }
 
+// on_event: Discrete event handler — window lifecycle events routed by application base class
+void CGame::on_event(const hb::shared::render::event& e)
+{
+	switch (e.id)
+	{
+	case hb::shared::render::event_id::closed:
+		// Window close requested (user clicked X or Alt+F4)
+		if ((GameModeManager::GetMode() == GameMode::MainGame) && (m_bForceDisconn == false))
+		{
+			// In main game, start logout countdown instead of closing immediately
+#ifdef _DEBUG
+			if (m_logout_count == -1 || m_logout_count > 2)
+				m_logout_count = 1;
+#else
+			if (m_logout_count == -1 || m_logout_count > 11)
+				m_logout_count = 11;
+#endif
+		}
+		else if (GameModeManager::GetMode() == GameMode::MainMenu)
+		{
+			ChangeGameMode(GameMode::Quit);
+		}
+		else
+		{
+			request_quit();
+		}
+		break;
+
+	case hb::shared::render::event_id::focus_gained:
+		if (hb::shared::input::get())
+			hb::shared::input::get()->set_window_active(true);
+		// Note: ChangeDisplayMode removed — SFML handles OpenGL context
+		// reactivation automatically on FocusGained (see SFMLWindow::process_messages).
+		// The old DirectDraw renderer needed surface restoration here, but SFML does not.
+		break;
+
+	case hb::shared::render::event_id::focus_lost:
+		if (hb::shared::input::get())
+			hb::shared::input::get()->set_window_active(false);
+		break;
+
+	default:
+		break;
+	}
+}
+
+// on_key_event: Game-specific key handling hook (called by application alongside IInput routing)
+// Filters out modifier keys and routes to OnKeyDown/OnKeyUp
+void CGame::on_key_event(KeyCode key, bool pressed)
+{
+	// Skip modifier keys — handled purely through IInput polling
+	if (key == KeyCode::Shift || key == KeyCode::Control || key == KeyCode::Alt ||
+	    key == KeyCode::LShift || key == KeyCode::RShift ||
+	    key == KeyCode::LControl || key == KeyCode::RControl ||
+	    key == KeyCode::LAlt || key == KeyCode::RAlt)
+		return;
+
+	if (pressed)
+	{
+		// Enter and Escape are handled in OnKeyUp, not OnKeyDown
+		if (key != KeyCode::Enter && key != KeyCode::Escape)
+			OnKeyDown(key);
+	}
+	else
+	{
+		// Enter is handled purely through IInput, not OnKeyUp
+		if (key != KeyCode::Enter)
+			OnKeyUp(key);
+	}
+}
+
+// on_native_message: Platform-specific message handling (absorbs GameWindowHandler::on_custom_message)
+bool CGame::on_native_message(uint32_t message, uintptr_t wparam, intptr_t lparam)
+{
+#ifdef _WIN32
+	switch (message)
+	{
+	case WM_SETCURSOR:
+		if (hb::shared::render::Window::get())
+			hb::shared::render::Window::get()->set_mouse_cursor_visible(false);
+		return true;
+
+	case WM_SETFOCUS:
+		if (hb::shared::input::get())
+			hb::shared::input::get()->set_window_active(true);
+		return true;
+
+	case WM_KILLFOCUS:
+		if (hb::shared::input::get())
+			hb::shared::input::get()->set_window_active(false);
+		return true;
+
+	case WM_LBUTTONDBLCLK:
+		if (hb::shared::input::get())
+		{
+			hb::shared::input::get()->on_mouse_move(GET_X_LPARAM(static_cast<LPARAM>(lparam)), GET_Y_LPARAM(static_cast<LPARAM>(lparam)));
+			hb::shared::input::get()->on_mouse_down(hb::shared::input::MouseButton::Left);
+		}
+		return true;
+	}
+#endif
+	return false;
+}
+
+// on_text_input: Text/IME input handling (absorbs GameWindowHandler::on_text_input)
+bool CGame::on_text_input(hb::shared::types::NativeWindowHandle hwnd,
+                           uint32_t message, uintptr_t wparam, intptr_t lparam)
+{
+	return TextInputManager::Get().HandleChar(hwnd, message, wparam, lparam) != 0;
+}
+
 // UpdateScreen and DrawScreen removed - all modes now handled by Screen/Overlay system via GameModeManager
 
 // DrawCursor: Centralized cursor drawing at end of frame
@@ -385,8 +528,8 @@ void CGame::DrawCursor()
 		return;
 
 	// Get mouse position
-	int msX = hb::shared::input::GetMouseX();
-	int msY = hb::shared::input::GetMouseY();
+	int msX = hb::shared::input::get_mouse_x();
+	int msY = hb::shared::input::get_mouse_y();
 
 	// Track mouse initialization — (0,0) is valid in windowed mode
 	if (!m_bMouseInitialized)
@@ -433,9 +576,9 @@ void CGame::DrawCursor()
 
 
 
-// UpdateFrame: Logic update — runs every iteration, decoupled from frame rate
+// on_update: Logic update — runs every iteration, decoupled from frame rate
 // Handles: audio, timers, network, game state transitions
-void CGame::UpdateFrame()
+void CGame::on_update()
 {
 	AudioManager::Get().Update();
 
@@ -454,16 +597,11 @@ void CGame::UpdateFrame()
 	GameModeManager::UpdateScreens();
 	FrameTiming::EndProfile(ProfileStage::Update);
 
-	// Re-activate DevConsole overlay if needed (e.g. after screen transition)
-	if (DevConsole::Get().IsVisible() && !GameModeManager::has_overlay())
-	{
-		GameModeManager::set_overlay<Overlay_DevConsole>();
-	}
 }
 
-// RenderFrame: Render only — gated by engine frame limiting
+// on_render: Render only — gated by engine frame limiting
 // Handles: clear backbuffer -> draw -> fade overlay -> cursor -> flip
-void CGame::RenderFrame()
+void CGame::on_render()
 {
 	// ============== Render Phase ==============
 	FrameTiming::BeginProfile(ProfileStage::ClearBuffer);
@@ -546,7 +684,7 @@ void CGame::RenderFrame()
 
 	// Reset scroll delta now that dialogs have consumed it this frame
 	// (scroll accumulates across skip frames until a rendered frame processes it)
-	hb::shared::input::ResetMouseWheelDelta();
+	hb::shared::input::reset_mouse_wheel_delta();
 }
 
 
@@ -1196,7 +1334,7 @@ bool CGame::bSendCommand(uint32_t message_id, uint16_t command, char direction, 
 		printf("%s", cDbg.c_str());
 	}
 	m_pGSock.reset();
-	hb::shared::render::Window::Close();
+	hb::shared::render::Window::close();
 	break;
 	}
 	return true;
@@ -1212,7 +1350,6 @@ bool CGame::_bDecodeItemConfigFileContents(char* pData, uint32_t dwMsgSize)
 	constexpr size_t entrySize = sizeof(hb::net::PacketItemConfigEntry);
 
 	if (dwMsgSize < headerSize) {
-		DevConsole::Get().Printf("[ITEMCFG] Decode FAIL: size %u < header %u", dwMsgSize, (uint32_t)headerSize);
 		return false;
 	}
 
@@ -1221,8 +1358,6 @@ bool CGame::_bDecodeItemConfigFileContents(char* pData, uint32_t dwMsgSize)
 	uint16_t totalItems = pktHeader->totalItems;
 
 	if (dwMsgSize < headerSize + (itemCount * entrySize)) {
-		DevConsole::Get().Printf("[ITEMCFG] Decode FAIL: size %u < needed %u (count=%u entry=%u)",
-			dwMsgSize, (uint32_t)(headerSize + itemCount * entrySize), itemCount, (uint32_t)entrySize);
 		return false;
 	}
 
@@ -1280,9 +1415,7 @@ bool CGame::_bDecodeItemConfigFileContents(char* pData, uint32_t dwMsgSize)
 	}
 	if (totalLoaded >= totalItems && !LocalCacheManager::Get().IsReplaying()) {
 		if (LocalCacheManager::Get().FinalizeAndSave(ConfigCacheType::Items)) {
-			DevConsole::Get().Printf("[ITEMCFG] Downloaded %d item configs, cached", totalLoaded);
 		} else {
-			DevConsole::Get().Printf("[ITEMCFG] Downloaded %d item configs", totalLoaded);
 		}
 	}
 
@@ -1297,7 +1430,6 @@ bool CGame::_bDecodeMagicConfigFileContents(char* pData, uint32_t dwMsgSize)
 	constexpr size_t entrySize = sizeof(hb::net::PacketMagicConfigEntry);
 
 	if (dwMsgSize < headerSize) {
-		DevConsole::Get().Printf("[MAGICCFG] Decode FAIL: size %u < header %u", dwMsgSize, (uint32_t)headerSize);
 		return false;
 	}
 
@@ -1306,8 +1438,6 @@ bool CGame::_bDecodeMagicConfigFileContents(char* pData, uint32_t dwMsgSize)
 	uint16_t totalMagics = pktHeader->totalMagics;
 
 	if (dwMsgSize < headerSize + (magicCount * entrySize)) {
-		DevConsole::Get().Printf("[MAGICCFG] Decode FAIL: size %u < needed %u (count=%u entry=%u)",
-			dwMsgSize, (uint32_t)(headerSize + magicCount * entrySize), magicCount, (uint32_t)entrySize);
 		return false;
 	}
 
@@ -1346,9 +1476,7 @@ bool CGame::_bDecodeMagicConfigFileContents(char* pData, uint32_t dwMsgSize)
 	}
 	if (totalLoaded >= totalMagics && !LocalCacheManager::Get().IsReplaying()) {
 		if (LocalCacheManager::Get().FinalizeAndSave(ConfigCacheType::Magic)) {
-			DevConsole::Get().Printf("[MAGICCFG] Downloaded %d magic configs, cached", totalLoaded);
 		} else {
-			DevConsole::Get().Printf("[MAGICCFG] Downloaded %d magic configs", totalLoaded);
 		}
 	}
 
@@ -1363,7 +1491,6 @@ bool CGame::_bDecodeSkillConfigFileContents(char* pData, uint32_t dwMsgSize)
 	constexpr size_t entrySize = sizeof(hb::net::PacketSkillConfigEntry);
 
 	if (dwMsgSize < headerSize) {
-		DevConsole::Get().Printf("[SKILLCFG] Decode FAIL: size %u < header %u", dwMsgSize, (uint32_t)headerSize);
 		return false;
 	}
 
@@ -1372,8 +1499,6 @@ bool CGame::_bDecodeSkillConfigFileContents(char* pData, uint32_t dwMsgSize)
 	uint16_t totalSkills = pktHeader->totalSkills;
 
 	if (dwMsgSize < headerSize + (skillCount * entrySize)) {
-		DevConsole::Get().Printf("[SKILLCFG] Decode FAIL: size %u < needed %u (count=%u entry=%u)",
-			dwMsgSize, (uint32_t)(headerSize + skillCount * entrySize), skillCount, (uint32_t)entrySize);
 		return false;
 	}
 
@@ -1407,9 +1532,7 @@ bool CGame::_bDecodeSkillConfigFileContents(char* pData, uint32_t dwMsgSize)
 	}
 	if (totalLoaded >= totalSkills && !LocalCacheManager::Get().IsReplaying()) {
 		if (LocalCacheManager::Get().FinalizeAndSave(ConfigCacheType::Skills)) {
-			DevConsole::Get().Printf("[SKILLCFG] Downloaded %d skill configs, cached", totalLoaded);
 		} else {
-			DevConsole::Get().Printf("[SKILLCFG] Downloaded %d skill configs", totalLoaded);
 		}
 	}
 
@@ -1424,7 +1547,6 @@ bool CGame::_bDecodeNpcConfigFileContents(char* pData, uint32_t dwMsgSize)
 	constexpr size_t entrySize = sizeof(hb::net::PacketNpcConfigEntry);
 
 	if (dwMsgSize < headerSize) {
-		DevConsole::Get().Printf("[NPCCFG] Decode FAIL: size %u < header %u", dwMsgSize, (uint32_t)headerSize);
 		return false;
 	}
 
@@ -1433,8 +1555,6 @@ bool CGame::_bDecodeNpcConfigFileContents(char* pData, uint32_t dwMsgSize)
 	uint16_t totalNpcs = pktHeader->totalNpcs;
 
 	if (dwMsgSize < headerSize + (npcCount * entrySize)) {
-		DevConsole::Get().Printf("[NPCCFG] Decode FAIL: size %u < needed %u (count=%u entry=%u)",
-			dwMsgSize, (uint32_t)(headerSize + npcCount * entrySize), npcCount, (uint32_t)entrySize);
 		return false;
 	}
 
@@ -1464,9 +1584,7 @@ bool CGame::_bDecodeNpcConfigFileContents(char* pData, uint32_t dwMsgSize)
 
 	if (m_iNpcConfigsReceived >= totalNpcs && !LocalCacheManager::Get().IsReplaying()) {
 		if (LocalCacheManager::Get().FinalizeAndSave(ConfigCacheType::Npcs)) {
-			DevConsole::Get().Printf("[NPCCFG] Downloaded %d NPC configs, cached", m_iNpcConfigsReceived);
 		} else {
-			DevConsole::Get().Printf("[NPCCFG] Downloaded %d NPC configs", m_iNpcConfigsReceived);
 		}
 	}
 
@@ -1532,16 +1650,12 @@ void CGame::GameRecvMsgHandler(uint32_t dwMsgSize, char* pData)
 			}
 			if (bReplayOk && bHasItems) {
 				m_eConfigRetry[0] = ConfigRetryLevel::None;
-				DevConsole::Get().Printf("[ITEMCFG] Loaded from cache");
 			} else {
-				DevConsole::Get().Printf("[ITEMCFG] Cache replay %s, requesting from server",
-					bReplayOk ? "decoded 0 items" : "failed");
 				LocalCacheManager::Get().ResetAccumulator(ConfigCacheType::Items);
 				m_eConfigRetry[0] = ConfigRetryLevel::ServerRequested;
 				bNeedItems = true;
 			}
 		} else {
-			DevConsole::Get().Printf("[ITEMCFG] Cache outdated, requesting from server");
 			LocalCacheManager::Get().ResetAccumulator(ConfigCacheType::Items);
 			m_eConfigRetry[0] = ConfigRetryLevel::ServerRequested;
 			bNeedItems = true;
@@ -1558,16 +1672,12 @@ void CGame::GameRecvMsgHandler(uint32_t dwMsgSize, char* pData)
 			}
 			if (bReplayOk && bHasMagic) {
 				m_eConfigRetry[1] = ConfigRetryLevel::None;
-				DevConsole::Get().Printf("[MAGICCFG] Loaded from cache");
 			} else {
-				DevConsole::Get().Printf("[MAGICCFG] Cache replay %s, requesting from server",
-					bReplayOk ? "decoded 0 entries" : "failed");
 				LocalCacheManager::Get().ResetAccumulator(ConfigCacheType::Magic);
 				m_eConfigRetry[1] = ConfigRetryLevel::ServerRequested;
 				bNeedMagic = true;
 			}
 		} else {
-			DevConsole::Get().Printf("[MAGICCFG] Cache outdated, requesting from server");
 			LocalCacheManager::Get().ResetAccumulator(ConfigCacheType::Magic);
 			m_eConfigRetry[1] = ConfigRetryLevel::ServerRequested;
 			bNeedMagic = true;
@@ -1584,16 +1694,12 @@ void CGame::GameRecvMsgHandler(uint32_t dwMsgSize, char* pData)
 			}
 			if (bReplayOk && bHasSkills) {
 				m_eConfigRetry[2] = ConfigRetryLevel::None;
-				DevConsole::Get().Printf("[SKILLCFG] Loaded from cache");
 			} else {
-				DevConsole::Get().Printf("[SKILLCFG] Cache replay %s, requesting from server",
-					bReplayOk ? "decoded 0 entries" : "failed");
 				LocalCacheManager::Get().ResetAccumulator(ConfigCacheType::Skills);
 				m_eConfigRetry[2] = ConfigRetryLevel::ServerRequested;
 				bNeedSkills = true;
 			}
 		} else {
-			DevConsole::Get().Printf("[SKILLCFG] Cache outdated, requesting from server");
 			LocalCacheManager::Get().ResetAccumulator(ConfigCacheType::Skills);
 			m_eConfigRetry[2] = ConfigRetryLevel::ServerRequested;
 			bNeedSkills = true;
@@ -1610,16 +1716,12 @@ void CGame::GameRecvMsgHandler(uint32_t dwMsgSize, char* pData)
 			}
 			if (bReplayOk && bHasNpcs) {
 				m_eConfigRetry[3] = ConfigRetryLevel::None;
-				DevConsole::Get().Printf("[NPCCFG] Loaded from cache");
 			} else {
-				DevConsole::Get().Printf("[NPCCFG] Cache replay %s, requesting from server",
-					bReplayOk ? "decoded 0 entries" : "failed");
 				LocalCacheManager::Get().ResetAccumulator(ConfigCacheType::Npcs);
 				m_eConfigRetry[3] = ConfigRetryLevel::ServerRequested;
 				bNeedNpcs = true;
 			}
 		} else {
-			DevConsole::Get().Printf("[NPCCFG] Cache outdated, requesting from server");
 			LocalCacheManager::Get().ResetAccumulator(ConfigCacheType::Npcs);
 			m_eConfigRetry[3] = ConfigRetryLevel::ServerRequested;
 			bNeedNpcs = true;
@@ -1631,7 +1733,6 @@ void CGame::GameRecvMsgHandler(uint32_t dwMsgSize, char* pData)
 		} else {
 			m_bConfigsReady = true;
 			if (m_bInitDataReady) {
-				DevConsole::Get().Printf("[INIT] Entering game (configs triggered)");
 				GameModeManager::set_screen<Screen_OnGame>();
 				m_bInitDataReady = false;
 			}
@@ -1706,7 +1807,6 @@ void CGame::GameRecvMsgHandler(uint32_t dwMsgSize, char* pData)
 		break;
 
 	case MsgId::ResponseInitData:
-		DevConsole::Get().Printf("[INIT] INITDATA received");
 		InitDataResponseHandler(pData);
 		break;
 
@@ -1731,7 +1831,6 @@ void CGame::GameRecvMsgHandler(uint32_t dwMsgSize, char* pData)
 		break;
 
 	case MsgId::PlayerItemListContents:
-		DevConsole::Get().Printf("[INIT] PLAYERITEMLISTCONTENTS received (size=%u)", dwMsgSize);
 		InitItemList(pData);
 		break;
 
@@ -1751,7 +1850,6 @@ void CGame::GameRecvMsgHandler(uint32_t dwMsgSize, char* pData)
 		break;
 
 	case MsgId::PlayerCharacterContents:
-		DevConsole::Get().Printf("[INIT] PLAYERCHARACTERCONTENTS received");
 		InitPlayerCharacteristics(pData);
 		break;
 
@@ -2449,19 +2547,6 @@ void CGame::AddEventList(const char* pTxt, char cColor, bool bDupAllow)
 	EventListManager::Get().AddEvent(pTxt, cColor, bDupAllow);
 }
 
-bool CGame::bCheckImportantFile()
-{
-	HANDLE hFile;
-
-	// Use the sprite factory's configured path
-	std::string spritePath = hb::shared::sprite::Sprites::GetSpritePath() + "\\TREES1.PAK";
-	hFile = CreateFile(spritePath.c_str(), GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
-	if (hFile == INVALID_HANDLE_VALUE) return false;
-
-	CloseHandle(hFile);
-	return true;
-}
-
 void CGame::RequestFullObjectData(uint16_t wObjectID)
 {
 	int     iRet;
@@ -2481,7 +2566,7 @@ void CGame::RequestFullObjectData(uint16_t wObjectID)
 
 	case sock::Event::CriticalError:
 		m_pGSock.reset();
-		hb::shared::render::Window::Close();
+		hb::shared::render::Window::close();
 		break;
 	}
 }
@@ -3139,8 +3224,9 @@ void CGame::ChangeGameMode(GameMode mode)
 		break;
 
 	case GameMode::Null:
-		// Null mode signals application exit - just set mode, no screen needed
+		// Null mode signals application exit
 		GameModeManager::SetCurrentMode(GameMode::Null);
+		request_quit();
 		break;
 
 	default:
@@ -3438,14 +3524,12 @@ void CGame::InitItemList(char* packet_data)
 	for (int i = 0; i < hb::shared::limits::MaxBankItems; i++) if (m_pBankList[i]) nBank++;
 	for (int i = 0; i < hb::shared::limits::MaxMagicType; i++) if (m_pPlayer->m_iMagicMastery[i] != 0) nMagic++;
 	for (int i = 0; i < hb::shared::limits::MaxSkillType; i++) if (m_pPlayer->m_iSkillMastery[i] != 0) nSkills++;
-	DevConsole::Get().Printf("[INIT] InitItemList: %d items, %d bank, %d magic, %d skills",
-		nItems, nBank, nMagic, nSkills);
 }
 
 void CGame::DrawDialogBoxs(short mouse_x, short mouse_y, short mouse_z, char left_button)
 {
 	if (m_bIsObserverMode == true) return;
-	// Note: Dialogs that handle scroll should read hb::shared::input::GetMouseWheelDelta() and clear it after processing
+	// Note: Dialogs that handle scroll should read hb::shared::input::get_mouse_wheel_delta() and clear it after processing
 	//Snoopy: 41->61
 	bool icon_panel_drawn = false;
 	for (int i = 0; i < 61; i++)
@@ -3645,7 +3729,7 @@ void CGame::DrawDialogBoxs(short mouse_x, short mouse_y, short mouse_z, char lef
 		bool bMastered = (m_pPlayer->m_iSkillMastery[CombatSystem::Get().GetWeaponSkillType()] == 100);
 
 		// Draw additive overlay sprite at combat icon position only when ALT is held
-		if (hb::shared::input::IsAltDown() && bMastered)
+		if (hb::shared::input::is_alt_down() && bMastered)
 			m_pSprite[InterfaceNdIconPanel]->Draw(iconX, iconY, 3, hb::shared::sprite::DrawParams::Additive(0.7f));
 
 		// Draw super attack count text at bottom-right of combat button area
@@ -4349,15 +4433,12 @@ bool CGame::_EnsureConfigLoaded(int type)
 	switch (m_eConfigRetry[type]) {
 	case ConfigRetryLevel::None:
 		if (_TryReplayCacheForConfig(type)) {
-			DevConsole::Get().Printf("[%s] Retry: loaded from cache", configNames[type]);
 			return true;
 		}
-		DevConsole::Get().Printf("[%s] Retry: cache failed, will request from server", configNames[type]);
 		m_eConfigRetry[type] = ConfigRetryLevel::CacheTried;
 		return false;
 
 	case ConfigRetryLevel::CacheTried:
-		DevConsole::Get().Printf("[%s] Retry: requesting from server", configNames[type]);
 		_RequestConfigsFromServer(type == 0, type == 1, type == 2, type == 3);
 		m_eConfigRetry[type] = ConfigRetryLevel::ServerRequested;
 		m_dwConfigRequestTime = GameClock::GetTimeMS();
@@ -4365,7 +4446,6 @@ bool CGame::_EnsureConfigLoaded(int type)
 
 	case ConfigRetryLevel::ServerRequested:
 		if (GameClock::GetTimeMS() - m_dwConfigRequestTime > CONFIG_REQUEST_TIMEOUT_MS) {
-			DevConsole::Get().Printf("[%s] Retry: server request timed out", configNames[type]);
 			m_eConfigRetry[type] = ConfigRetryLevel::Failed;
 			ChangeGameMode(GameMode::ConnectionLost);
 		}
@@ -4434,7 +4514,6 @@ void CGame::_CheckConfigsReadyAndEnterGame()
 	for (int i = 0; i < hb::shared::limits::MaxNpcConfigs; i++) { if (m_npcConfigList[i].valid) { bHasNpcs = true; break; } }
 
 	if (bHasItems && bHasMagic && bHasSkills && bHasNpcs) {
-		DevConsole::Get().Printf("[CONFIG] All configs loaded from server, entering game");
 		m_bConfigsReady = true;
 		if (m_bInitDataReady) {
 			GameModeManager::set_screen<Screen_OnGame>();
@@ -4728,7 +4807,7 @@ void CGame::OnKeyDown(KeyCode _key)
 
 	if (GameModeManager::GetMode() == GameMode::MainGame)
 	{
-		if (hb::shared::input::IsCtrlDown())
+		if (hb::shared::input::is_ctrl_down())
 		{
 			// Ctrl+0-9 for magic views
 			switch (_key) {
@@ -4746,7 +4825,7 @@ void CGame::OnKeyDown(KeyCode _key)
 			}
 		}
 		// Only Enter key activates chat input - not every key press
-		else if (_key == KeyCode::Enter && (TextInputManager::Get().IsActive() == false) && (!hb::shared::input::IsAltDown()))
+		else if (_key == KeyCode::Enter && (TextInputManager::Get().IsActive() == false) && (!hb::shared::input::is_alt_down()))
 		{
 			TextInputManager::Get().StartInput(CHAT_INPUT_X(), CHAT_INPUT_Y(), ChatMsgMaxLen, m_cChatMsg);
 			TextInputManager::Get().ClearInput();
@@ -5969,7 +6048,7 @@ void CGame::CommandProcessor(short mouse_x, short mouse_y, short tile_x, short t
 
 	if (m_bIsObserverMode == true) return;
 
-	if (hb::shared::input::IsAltDown()) // [ALT]
+	if (hb::shared::input::is_alt_down()) // [ALT]
 		m_pPlayer->m_bSuperAttackMode = true;
 	else m_pPlayer->m_bSuperAttackMode = false;
 
@@ -6035,6 +6114,7 @@ void CGame::CommandProcessor(short mouse_x, short mouse_y, short tile_x, short t
 		if (left_button == 0)
 		{
 			CursorTarget::SetCursorStatus(CursorStatus::Null);
+			bool bDoubleClickConsumed = false;
 			//ZeroEoyPnk - Bye delay...
 			if (((m_dialogBoxManager.IsEnabled(DialogBoxId::LevelUpSetting) != true) || (CursorTarget::GetSelectedID() != 12))
 				&& ((m_dialogBoxManager.IsEnabled(DialogBoxId::ChangeStatsMajestic) != true) || (CursorTarget::GetSelectedID() != 42)))
@@ -6044,7 +6124,7 @@ void CGame::CommandProcessor(short mouse_x, short mouse_y, short tile_x, short t
 					&& (abs(mouse_y - CursorTarget::GetSelectionClickY()) <= input_config::double_click_tolerance))
 				{
 					CursorTarget::ResetSelectionClickTime(); // Reset to prevent triple-click
-					m_dialogBoxManager.HandleDoubleClick(mouse_x, mouse_y);
+					bDoubleClickConsumed = m_dialogBoxManager.HandleDoubleClick(mouse_x, mouse_y);
 				}
 				else // Click
 				{
@@ -6056,7 +6136,7 @@ void CGame::CommandProcessor(short mouse_x, short mouse_y, short tile_x, short t
 				m_dialogBoxManager.HandleClick(mouse_x, mouse_y);
 			}
 			CursorTarget::RecordSelectionClick(mouse_x, mouse_y, current_time);
-			if (CursorTarget::GetSelectedType() == SelectedObjectType::Item)
+			if (!bDoubleClickConsumed && CursorTarget::GetSelectedType() == SelectedObjectType::Item)
 			{
 				if (!m_dialogBoxManager.HandleDraggingItemRelease(mouse_x, mouse_y))
 				{
@@ -6318,7 +6398,7 @@ bool CGame::ProcessLeftClick(short mouse_x, short mouse_y, short tile_x, short t
 			if (m_cMCName == m_pPlayer->m_cPlayerName) m_sMCY -= 1;
 			if ((m_sMCX != 0) && (m_sMCY != 0)) // m_sMCX, m_sMCY
 			{
-				if (hb::shared::input::IsCtrlDown() == true)
+				if (hb::shared::input::is_ctrl_down() == true)
 				{
 					m_pMapData->bGetOwner(m_sMCX, m_sMCY, name, &object_type, &object_status, &m_wCommObjectID);
 					if (object_status.bInvisibility) return true;
@@ -6351,7 +6431,7 @@ bool CGame::ProcessLeftClick(short mouse_x, short mouse_y, short tile_x, short t
 						case 7: // SS
 							if (((abs_x == 2) && (abs_y == 2)) || ((abs_x == 0) && (abs_y == 2)) || ((abs_x == 2) && (abs_y == 0)))
 							{
-								if ((hb::shared::input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0))
+								if ((hb::shared::input::is_shift_down() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0))
 								{
 									if (m_pPlayer->m_iSkillMastery[CombatSystem::Get().GetWeaponSkillType()] == 100)
 									{
@@ -6374,7 +6454,7 @@ bool CGame::ProcessLeftClick(short mouse_x, short mouse_y, short tile_x, short t
 							}
 							else
 							{
-								if ((hb::shared::input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0)
+								if ((hb::shared::input::is_shift_down() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0)
 									&& (m_pPlayer->m_sPlayerType >= 1) && (m_pPlayer->m_sPlayerType <= 6))
 									m_pPlayer->m_Controller.SetCommand(Type::Run);	// Staminar
 								else m_pPlayer->m_Controller.SetCommand(Type::Move);
@@ -6410,7 +6490,7 @@ bool CGame::ProcessLeftClick(short mouse_x, short mouse_y, short tile_x, short t
 								if (((abs_x == 2) && (abs_y == 2)) || ((abs_x == 0) && (abs_y == 2)) || ((abs_x == 2) && (abs_y == 0))
 									&& (CombatSystem::Get().GetAttackType() != 5)) // no Dash possible with StormBlade
 								{
-									if ((hb::shared::input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0))
+									if ((hb::shared::input::is_shift_down() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0))
 									{
 										if (m_pPlayer->m_iSkillMastery[CombatSystem::Get().GetWeaponSkillType()] == 100)
 										{
@@ -6433,7 +6513,7 @@ bool CGame::ProcessLeftClick(short mouse_x, short mouse_y, short tile_x, short t
 								}
 								else
 								{
-									if ((hb::shared::input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0)
+									if ((hb::shared::input::is_shift_down() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0)
 										&& (m_pPlayer->m_sPlayerType >= 1) && (m_pPlayer->m_sPlayerType <= 6))
 										m_pPlayer->m_Controller.SetCommand(Type::Run);
 									else m_pPlayer->m_Controller.SetCommand(Type::Move);
@@ -6452,7 +6532,7 @@ bool CGame::ProcessLeftClick(short mouse_x, short mouse_y, short tile_x, short t
 							}
 							else {
 								if (((abs_x == 2) && (abs_y == 2)) || ((abs_x == 0) && (abs_y == 2)) || ((abs_x == 2) && (abs_y == 0))) {
-									if ((hb::shared::input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0)) {
+									if ((hb::shared::input::is_shift_down() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0)) {
 										if (m_pPlayer->m_iSkillMastery[CombatSystem::Get().GetWeaponSkillType()] == 100) {
 											m_pPlayer->m_Controller.SetCommand(Type::AttackMove);
 											action_type = CombatSystem::Get().GetAttackType();
@@ -6470,7 +6550,7 @@ bool CGame::ProcessLeftClick(short mouse_x, short mouse_y, short tile_x, short t
 									}
 								}
 								else {
-									if ((hb::shared::input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0) &&
+									if ((hb::shared::input::is_shift_down() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0) &&
 										(m_pPlayer->m_sPlayerType >= 1) && (m_pPlayer->m_sPlayerType <= 6))
 										m_pPlayer->m_Controller.SetCommand(Type::Run);
 									else m_pPlayer->m_Controller.SetCommand(Type::Move);
@@ -6491,7 +6571,7 @@ bool CGame::ProcessLeftClick(short mouse_x, short mouse_y, short tile_x, short t
 							{
 								if (((abs_x == 2) && (abs_y == 2)) || ((abs_x == 0) && (abs_y == 2)) || ((abs_x == 2) && (abs_y == 0)))
 								{
-									if ((hb::shared::input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0))
+									if ((hb::shared::input::is_shift_down() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0))
 									{
 										if (m_pPlayer->m_iSkillMastery[CombatSystem::Get().GetWeaponSkillType()] == 100)
 										{
@@ -6514,7 +6594,7 @@ bool CGame::ProcessLeftClick(short mouse_x, short mouse_y, short tile_x, short t
 								}
 								else
 								{
-									if ((hb::shared::input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0) &&
+									if ((hb::shared::input::is_shift_down() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0) &&
 										(m_pPlayer->m_sPlayerType >= 1) && (m_pPlayer->m_sPlayerType <= 6))
 										m_pPlayer->m_Controller.SetCommand(Type::Run);
 									else m_pPlayer->m_Controller.SetCommand(Type::Move);
@@ -6531,7 +6611,7 @@ bool CGame::ProcessLeftClick(short mouse_x, short mouse_y, short tile_x, short t
 							}
 							else {
 								if (((abs_x == 2) && (abs_y == 2)) || ((abs_x == 0) && (abs_y == 2)) || ((abs_x == 2) && (abs_y == 0))) {
-									if ((hb::shared::input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0)) {
+									if ((hb::shared::input::is_shift_down() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0)) {
 										if (m_pPlayer->m_iSkillMastery[CombatSystem::Get().GetWeaponSkillType()] == 100) {
 											m_pPlayer->m_Controller.SetCommand(Type::AttackMove);
 											action_type = CombatSystem::Get().GetAttackType();
@@ -6549,7 +6629,7 @@ bool CGame::ProcessLeftClick(short mouse_x, short mouse_y, short tile_x, short t
 									}
 								}
 								else {
-									if ((hb::shared::input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0) &&
+									if ((hb::shared::input::is_shift_down() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0) &&
 										(m_pPlayer->m_sPlayerType >= 1) && (m_pPlayer->m_sPlayerType <= 6))
 										m_pPlayer->m_Controller.SetCommand(Type::Run);
 									else m_pPlayer->m_Controller.SetCommand(Type::Move);
@@ -6566,7 +6646,7 @@ bool CGame::ProcessLeftClick(short mouse_x, short mouse_y, short tile_x, short t
 							}
 							else {
 								if (((abs_x == 2) && (abs_y == 2)) || ((abs_x == 0) && (abs_y == 2)) || ((abs_x == 2) && (abs_y == 0))) {
-									if ((hb::shared::input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0)) {
+									if ((hb::shared::input::is_shift_down() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0)) {
 										if (m_pPlayer->m_iSkillMastery[CombatSystem::Get().GetWeaponSkillType()] == 100) {
 											m_pPlayer->m_Controller.SetCommand(Type::AttackMove);
 											action_type = CombatSystem::Get().GetAttackType();
@@ -6584,7 +6664,7 @@ bool CGame::ProcessLeftClick(short mouse_x, short mouse_y, short tile_x, short t
 									}
 								}
 								else {
-									if ((hb::shared::input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0) &&
+									if ((hb::shared::input::is_shift_down() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0) &&
 										(m_pPlayer->m_sPlayerType >= 1) && (m_pPlayer->m_sPlayerType <= 6))
 										m_pPlayer->m_Controller.SetCommand(Type::Run);
 									else m_pPlayer->m_Controller.SetCommand(Type::Move);
@@ -6779,7 +6859,7 @@ bool CGame::ProcessLeftClick(short mouse_x, short mouse_y, short tile_x, short t
 
 								case 5: // Boxe
 								case 7: // SS
-									if ((hb::shared::input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0)
+									if ((hb::shared::input::is_shift_down() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0)
 										&& (m_pPlayer->m_sPlayerType >= 1) && (m_pPlayer->m_sPlayerType <= 6))
 										m_pPlayer->m_Controller.SetCommand(Type::Run);
 									else m_pPlayer->m_Controller.SetCommand(Type::Move);
@@ -6791,7 +6871,7 @@ bool CGame::ProcessLeftClick(short mouse_x, short mouse_y, short tile_x, short t
 									if ((abs_x <= 3) && (abs_y <= 3) && CombatSystem::Get().CanSuperAttack()
 										&& (CombatSystem::Get().GetAttackType() != 30)) // Crit without StormBlade by Snoopy
 									{
-										if ((abs_x <= 1) && (abs_y <= 1) && (hb::shared::input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0))
+										if ((abs_x <= 1) && (abs_y <= 1) && (hb::shared::input::is_shift_down() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0))
 											m_pPlayer->m_Controller.SetCommand(Type::AttackMove);
 										else m_pPlayer->m_Controller.SetCommand(Type::Attack);
 										m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
@@ -6800,7 +6880,7 @@ bool CGame::ProcessLeftClick(short mouse_x, short mouse_y, short tile_x, short t
 									else if ((abs_x <= 5) && (abs_y <= 5) && CombatSystem::Get().CanSuperAttack()
 										&& (CombatSystem::Get().GetAttackType() == 30)) // Crit with StormBlade by Snoopy
 									{
-										if ((abs_x <= 1) && (abs_y <= 1) && (hb::shared::input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0))
+										if ((abs_x <= 1) && (abs_y <= 1) && (hb::shared::input::is_shift_down() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0))
 											m_pPlayer->m_Controller.SetCommand(Type::AttackMove);
 										else m_pPlayer->m_Controller.SetCommand(Type::Attack);
 										m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
@@ -6815,7 +6895,7 @@ bool CGame::ProcessLeftClick(short mouse_x, short mouse_y, short tile_x, short t
 									}
 									else
 									{
-										if ((hb::shared::input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0) &&
+										if ((hb::shared::input::is_shift_down() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0) &&
 											(m_pPlayer->m_sPlayerType >= 1) && (m_pPlayer->m_sPlayerType <= 6))
 											m_pPlayer->m_Controller.SetCommand(Type::Run);
 										else m_pPlayer->m_Controller.SetCommand(Type::Move);
@@ -6827,7 +6907,7 @@ bool CGame::ProcessLeftClick(short mouse_x, short mouse_y, short tile_x, short t
 								case 9: // Fencing
 									if ((abs_x <= 4) && (abs_y <= 4) && CombatSystem::Get().CanSuperAttack())
 									{
-										if ((abs_x <= 1) && (abs_y <= 1) && (hb::shared::input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0))
+										if ((abs_x <= 1) && (abs_y <= 1) && (hb::shared::input::is_shift_down() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0))
 											m_pPlayer->m_Controller.SetCommand(Type::AttackMove);
 										else m_pPlayer->m_Controller.SetCommand(Type::Attack);
 										m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
@@ -6835,7 +6915,7 @@ bool CGame::ProcessLeftClick(short mouse_x, short mouse_y, short tile_x, short t
 									}
 									else
 									{
-										if ((hb::shared::input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0) &&
+										if ((hb::shared::input::is_shift_down() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0) &&
 											(m_pPlayer->m_sPlayerType >= 1) && (m_pPlayer->m_sPlayerType <= 6))
 											m_pPlayer->m_Controller.SetCommand(Type::Run);
 										else m_pPlayer->m_Controller.SetCommand(Type::Move);
@@ -6846,14 +6926,14 @@ bool CGame::ProcessLeftClick(short mouse_x, short mouse_y, short tile_x, short t
 
 								case hb::shared::owner::Slime: //
 									if ((abs_x <= 2) && (abs_y <= 2) && CombatSystem::Get().CanSuperAttack()) {
-										if ((abs_x <= 1) && (abs_y <= 1) && (hb::shared::input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0))
+										if ((abs_x <= 1) && (abs_y <= 1) && (hb::shared::input::is_shift_down() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0))
 											m_pPlayer->m_Controller.SetCommand(Type::AttackMove);
 										else m_pPlayer->m_Controller.SetCommand(Type::Attack);
 										m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 										action_type = CombatSystem::Get().GetAttackType();
 									}
 									else {
-										if ((hb::shared::input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0) &&
+										if ((hb::shared::input::is_shift_down() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0) &&
 											(m_pPlayer->m_sPlayerType >= 1) && (m_pPlayer->m_sPlayerType <= 6))
 											m_pPlayer->m_Controller.SetCommand(Type::Run);
 										else m_pPlayer->m_Controller.SetCommand(Type::Move);
@@ -6863,14 +6943,14 @@ bool CGame::ProcessLeftClick(short mouse_x, short mouse_y, short tile_x, short t
 									break;
 								case hb::shared::owner::OrcMage: //
 									if ((abs_x <= 2) && (abs_y <= 2) && CombatSystem::Get().CanSuperAttack()) {
-										if ((abs_x <= 1) && (abs_y <= 1) && (hb::shared::input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0))
+										if ((abs_x <= 1) && (abs_y <= 1) && (hb::shared::input::is_shift_down() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0))
 											m_pPlayer->m_Controller.SetCommand(Type::AttackMove);
 										else m_pPlayer->m_Controller.SetCommand(Type::Attack);
 										m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 										action_type = CombatSystem::Get().GetAttackType();
 									}
 									else {
-										if ((hb::shared::input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0) &&
+										if ((hb::shared::input::is_shift_down() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0) &&
 											(m_pPlayer->m_sPlayerType >= 1) && (m_pPlayer->m_sPlayerType <= 6))
 											m_pPlayer->m_Controller.SetCommand(Type::Run);
 										else m_pPlayer->m_Controller.SetCommand(Type::Move);
@@ -6880,14 +6960,14 @@ bool CGame::ProcessLeftClick(short mouse_x, short mouse_y, short tile_x, short t
 									break;
 								case hb::shared::owner::Guard: //
 									if ((abs_x <= 2) && (abs_y <= 2) && CombatSystem::Get().CanSuperAttack()) {
-										if ((abs_x <= 1) && (abs_y <= 1) && (hb::shared::input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0))
+										if ((abs_x <= 1) && (abs_y <= 1) && (hb::shared::input::is_shift_down() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0))
 											m_pPlayer->m_Controller.SetCommand(Type::AttackMove);
 										else m_pPlayer->m_Controller.SetCommand(Type::Attack);
 										m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 										action_type = CombatSystem::Get().GetAttackType();
 									}
 									else {
-										if ((hb::shared::input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0) &&
+										if ((hb::shared::input::is_shift_down() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0) &&
 											(m_pPlayer->m_sPlayerType >= 1) && (m_pPlayer->m_sPlayerType <= 6))
 											m_pPlayer->m_Controller.SetCommand(Type::Run);
 										else m_pPlayer->m_Controller.SetCommand(Type::Move);
@@ -6901,7 +6981,7 @@ bool CGame::ProcessLeftClick(short mouse_x, short mouse_y, short tile_x, short t
 						}
 					}
 					else {
-						if ((hb::shared::input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0) &&
+						if ((hb::shared::input::is_shift_down() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0) &&
 							(m_pPlayer->m_sPlayerType >= 1) && (m_pPlayer->m_sPlayerType <= 6))
 							m_pPlayer->m_Controller.SetCommand(Type::Run);
 						else m_pPlayer->m_Controller.SetCommand(Type::Move);
@@ -6912,7 +6992,7 @@ bool CGame::ProcessLeftClick(short mouse_x, short mouse_y, short tile_x, short t
 			}
 			else
 			{
-				if ((hb::shared::input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0) &&
+				if ((hb::shared::input::is_shift_down() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0) &&
 					(m_pPlayer->m_sPlayerType >= 1) && (m_pPlayer->m_sPlayerType <= 6))
 					m_pPlayer->m_Controller.SetCommand(Type::Run);
 				else m_pPlayer->m_Controller.SetCommand(Type::Move);
@@ -6957,7 +7037,7 @@ bool CGame::ProcessRightClick(short mouse_x, short mouse_y, short tile_x, short 
 				abs_y = abs(m_pPlayer->m_sPlayerY - m_sMCY);
 				if (abs_x == 0 && abs_y == 0) return true;
 
-			if (hb::shared::input::IsCtrlDown() == true)
+			if (hb::shared::input::is_ctrl_down() == true)
 			{
 				m_pMapData->bGetOwner(m_sMCX, m_sMCY, name, &object_type, &object_status, &m_wCommObjectID);
 				if (object_status.bInvisibility) return true;
@@ -7276,11 +7356,11 @@ void CGame::ProcessMotionCommands(uint16_t action_type)
 			{
 				if (m_pPlayer->m_Controller.GetCommand() == Type::Move)
 				{
-					if (ConfigManager::Get().IsRunningModeEnabled() || hb::shared::input::IsShiftDown()) m_pPlayer->m_Controller.SetCommand(Type::Run);
+					if (ConfigManager::Get().IsRunningModeEnabled() || hb::shared::input::is_shift_down()) m_pPlayer->m_Controller.SetCommand(Type::Run);
 				}
 				if (m_pPlayer->m_Controller.GetCommand() == Type::Run)
 				{
-					if ((ConfigManager::Get().IsRunningModeEnabled() == false) && (hb::shared::input::IsShiftDown() == false)) m_pPlayer->m_Controller.SetCommand(Type::Move);
+					if ((ConfigManager::Get().IsRunningModeEnabled() == false) && (hb::shared::input::is_shift_down() == false)) m_pPlayer->m_Controller.SetCommand(Type::Move);
 					if (m_pPlayer->m_iSP < 1) m_pPlayer->m_Controller.SetCommand(Type::Move);
 				}
 
@@ -7675,7 +7755,6 @@ void CGame::InitDataResponseHandler(char* packet_data)
 	// Wait for configs before entering the game world
 	m_bInitDataReady = true;
 	if (m_bConfigsReady) {
-		DevConsole::Get().Printf("[INIT] Entering game (initdata triggered)");
 		GameModeManager::set_screen<Screen_OnGame>();
 		m_bInitDataReady = false;
 	}
@@ -8129,7 +8208,7 @@ void CGame::UseShortCut(int num)
 	if (num < 4) index = num;
 	else index = num + 7;
 	if (GameModeManager::GetMode() != GameMode::MainGame) return;
-	if (hb::shared::input::IsCtrlDown() == true)
+	if (hb::shared::input::is_ctrl_down() == true)
 	{
 		if (m_sRecentShortCut == -1)
 		{

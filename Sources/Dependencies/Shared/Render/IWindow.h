@@ -17,18 +17,18 @@ namespace hb::shared::render {
 // Forward declaration
 class IWindowEventHandler;
 
-// Window creation parameters
-struct WindowParams
+// Window creation parameters (staged before realize, applied on realize)
+struct window_params
 {
-    const char* title;
-    int width;
-    int height;
-    bool fullscreen;
-    bool borderless;
-    bool centered;
-    bool mouseCaptureEnabled;
-    hb::shared::types::NativeInstance nativeInstance;
-    int iconResourceId;  // 0 for default
+    const char* title = "Application";
+    int width = 800;
+    int height = 600;
+    bool fullscreen = false;
+    bool borderless = false;
+    bool centered = true;
+    bool mouse_capture_enabled = false;
+    hb::shared::types::NativeInstance native_instance = {};
+    int icon_resource_id = 0;
 };
 
 // Abstract window interface
@@ -38,54 +38,58 @@ public:
     virtual ~IWindow() = default;
 
     // ============== Lifecycle ==============
-    virtual bool Create(const WindowParams& params) = 0;
-    virtual void Destroy() = 0;
-    virtual bool IsOpen() const = 0;
-    virtual void Close() = 0;  // Request window close (triggers close event)
+    virtual bool realize() = 0;   // Creates the OS window from staged params
+    virtual void destroy() = 0;
+    virtual bool is_open() const = 0;
+    virtual void close() = 0;  // Request window close (triggers close event)
 
     // ============== Properties ==============
-    virtual hb::shared::types::NativeWindowHandle GetHandle() const = 0;
-    virtual int GetWidth() const = 0;
-    virtual int GetHeight() const = 0;
-    virtual bool IsFullscreen() const = 0;
-    virtual bool IsActive() const = 0;
+    virtual hb::shared::types::NativeWindowHandle get_handle() const = 0;
+    virtual int get_width() const = 0;
+    virtual int get_height() const = 0;
+    virtual bool is_fullscreen() const = 0;
+    virtual bool is_active() const = 0;
 
     // ============== Display ==============
-    virtual void SetFullscreen(bool fullscreen) = 0;
-    virtual void SetBorderless(bool borderless) = 0;
-    virtual bool IsBorderless() const = 0;
-    virtual void SetSize(int width, int height, bool center = true) = 0;  // Resize window
-    virtual void Show() = 0;
-    virtual void Hide() = 0;
-    virtual void SetTitle(const char* title) = 0;
+    virtual void set_fullscreen(bool fullscreen) = 0;
+    virtual void set_borderless(bool borderless) = 0;
+    virtual bool is_borderless() const = 0;
+    virtual void set_size(int width, int height, bool center = true) = 0;  // Resize window
+    virtual void show() = 0;
+    virtual void hide() = 0;
+    virtual void set_title(const char* title) = 0;
 
     // ============== Frame Rate ==============
-    virtual void SetFramerateLimit(int limit) = 0;  // 0 = unlimited
-    virtual int GetFramerateLimit() const = 0;
-    virtual void SetVSyncEnabled(bool enabled) = 0;
-    virtual bool IsVSyncEnabled() const = 0;
+    virtual void set_framerate_limit(int limit) = 0;  // 0 = unlimited
+    virtual int get_framerate_limit() const = 0;
+    virtual void set_vsync_enabled(bool enabled) = 0;
+    virtual bool is_vsync_enabled() const = 0;
 
     // ============== Scaling ==============
-    virtual void SetFullscreenStretch(bool stretch) = 0;
-    virtual bool IsFullscreenStretch() const = 0;
+    virtual void set_fullscreen_stretch(bool stretch) = 0;
+    virtual bool is_fullscreen_stretch() const = 0;
+
+    // ============== Platform (stageable — set before realize) ==============
+    virtual void set_native_instance(hb::shared::types::NativeInstance instance) = 0;
+    virtual void set_icon_resource_id(int id) = 0;
 
     // ============== Cursor ==============
-    virtual void SetMouseCursorVisible(bool visible) = 0;
-    virtual void SetMouseCaptureEnabled(bool enabled) = 0;
+    virtual void set_mouse_cursor_visible(bool visible) = 0;
+    virtual void set_mouse_capture_enabled(bool enabled) = 0;
 
     // ============== Dialogs ==============
-    virtual void ShowMessageBox(const char* title, const char* message) = 0;
+    virtual void show_message_box(const char* title, const char* message) = 0;
 
     // ============== Message Processing ==============
     // Process pending messages, returns false if WM_QUIT received
-    virtual bool ProcessMessages() = 0;
+    virtual bool process_messages() = 0;
 
     // Wait for a message (used when inactive)
-    virtual void WaitForMessage() = 0;
+    virtual void wait_for_message() = 0;
 
     // ============== Event Handler ==============
-    virtual void SetEventHandler(IWindowEventHandler* handler) = 0;
-    virtual IWindowEventHandler* GetEventHandler() const = 0;
+    virtual void set_event_handler(IWindowEventHandler* handler) = 0;
+    virtual IWindowEventHandler* get_event_handler() const = 0;
 };
 
 // Window event callback interface
@@ -96,28 +100,28 @@ public:
     virtual ~IWindowEventHandler() = default;
 
     // ============== Window Events ==============
-    virtual void OnClose() = 0;
-    virtual void OnDestroy() = 0;
-    virtual void OnActivate(bool active) = 0;
-    virtual void OnResize(int width, int height) = 0;
+    virtual void on_close() = 0;
+    virtual void on_destroy() = 0;
+    virtual void on_activate(bool active) = 0;
+    virtual void on_resize(int width, int height) = 0;
 
     // ============== Input Events ==============
-    virtual void OnKeyDown(KeyCode keyCode) = 0;
-    virtual void OnKeyUp(KeyCode keyCode) = 0;
-    virtual void OnChar(char character) = 0;
-    virtual void OnMouseMove(int x, int y) = 0;
-    virtual void OnMouseButtonDown(int button, int x, int y) = 0;
-    virtual void OnMouseButtonUp(int button, int x, int y) = 0;
-    virtual void OnMouseWheel(int delta, int x, int y) = 0;
+    virtual void on_key_down(KeyCode key) = 0;
+    virtual void on_key_up(KeyCode key) = 0;
+    virtual void on_char(char character) = 0;
+    virtual void on_mouse_move(int x, int y) = 0;
+    virtual void on_mouse_button_down(int button, int x, int y) = 0;
+    virtual void on_mouse_button_up(int button, int x, int y) = 0;
+    virtual void on_mouse_wheel(int delta, int x, int y) = 0;
 
     // ============== Custom Messages ==============
     // For game-specific messages (sockets, timers, etc.)
     // Return true if handled, false to pass to DefWindowProc
-    virtual bool OnCustomMessage(uint32_t message, uintptr_t wParam, intptr_t lParam) = 0;
+    virtual bool on_custom_message(uint32_t message, uintptr_t wparam, intptr_t lparam) = 0;
 
     // ============== Text Input ==============
     // For IME and text composition
-    virtual bool OnTextInput(hb::shared::types::NativeWindowHandle hWnd, uint32_t message, uintptr_t wParam, intptr_t lParam) = 0;
+    virtual bool on_text_input(hb::shared::types::NativeWindowHandle hwnd, uint32_t message, uintptr_t wparam, intptr_t lparam) = 0;
 };
 
 // Mouse button constants: see hb::shared::input::MouseButton in IInput.h

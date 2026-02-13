@@ -1,4 +1,4 @@
-﻿#include "DialogBox_Inventory.h"
+#include "DialogBox_Inventory.h"
 #include "CursorTarget.h"
 #include "Game.h"
 #include "InventoryManager.h"
@@ -180,34 +180,6 @@ bool DialogBox_Inventory::OnClick(short msX, short msY)
 	return false;
 }
 
-// Helper: Find the clicked inventory item
-int DialogBox_Inventory::FindClickedItem(short msX, short msY, short sX, short sY)
-{
-	for (int i = 0; i < hb::shared::limits::MaxItems; i++)
-	{
-		if (m_pGame->m_cItemOrder[hb::shared::limits::MaxItems - 1 - i] == -1) continue;
-		int cItemID = m_pGame->m_cItemOrder[hb::shared::limits::MaxItems - 1 - i];
-		if (m_pGame->m_pItemList[cItemID] == nullptr) continue;
-
-		CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[cItemID]->m_sIDnum);
-		if (pCfg == nullptr) continue;
-
-		int spriteIdx = ItemPackPivotPoint + pCfg->m_sSprite;
-		int drawX = sX + ITEM_OFFSET_X + m_pGame->m_pItemList[cItemID]->m_sX;
-		int drawY = sY + ITEM_OFFSET_Y + m_pGame->m_pItemList[cItemID]->m_sY;
-
-		m_pGame->m_pSprite[spriteIdx]->CalculateBounds(drawX, drawY, pCfg->m_sSpriteFrame);
-		auto bounds = m_pGame->m_pSprite[spriteIdx]->GetBoundRect();
-
-		if (!m_pGame->m_bIsItemDisabled[cItemID] && !m_pGame->m_bIsItemEquipped[cItemID] &&
-			msX > bounds.left && msX < bounds.right && msY > bounds.top && msY < bounds.bottom)
-		{
-			return cItemID;
-		}
-	}
-	return -1;
-}
-
 bool DialogBox_Inventory::OnDoubleClick(short msX, short msY)
 {
 	if (m_pGame->m_bItemUsingStatus)
@@ -216,11 +188,10 @@ bool DialogBox_Inventory::OnDoubleClick(short msX, short msY)
 		return true;
 	}
 
-	short sX = Info().sX;
-	short sY = Info().sY;
-
-	int cItemID = FindClickedItem(msX, msY, sX, sY);
-	if (cItemID == -1) return false;
+	if (CursorTarget::GetSelectedType() != SelectedObjectType::Item) return false;
+	int cItemID = CursorTarget::GetSelectedID();
+	if (cItemID < 0 || cItemID >= hb::shared::limits::MaxItems) return false;
+	if (m_pGame->m_pItemList[cItemID] == nullptr) return false;
 
 	InventoryManager::Get().SetItemOrder(0, cItemID);
 
@@ -530,7 +501,7 @@ bool DialogBox_Inventory::OnItemDrop(short msX, short msY)
 	m_pGame->m_pItemList[cSelectedID]->m_sY = dY;
 
 	// Shift+drop: move all items with the same name to this position
-	if (hb::shared::input::IsShiftDown())
+	if (hb::shared::input::is_shift_down())
 	{
 		for (int i = 0; i < hb::shared::limits::MaxItems; i++)
 		{

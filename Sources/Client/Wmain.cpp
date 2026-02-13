@@ -1,105 +1,43 @@
 #include "NativeTypes.h"
 #include "Game.h"
-#include "GameWindowHandler.h"
+#include "Application.h"
 #include "RendererFactory.h"
-#include "FrameTiming.h"
-#include "ConfigManager.h"
-#include "ResolutionConfig.h"
-#include "DevConsole.h"
-#include "IInput.h"
 #include "resource.h"
 #include <memory>
 #include <cstdlib>
 #include <ctime>
+#include "Benchmark.h"
 
 // --------------------------------------------------------------
 // Platform-independent core
-int GameMain(hb::shared::types::NativeInstance nativeInstance, int iconResourceId, const char* cmdLine)
+int GameMain(hb::shared::types::NativeInstance native_instance, int icon_resource_id, const char* cmdLine)
 {
+#ifdef _DEBUG
+	DebugConsole::Allocate();
+#endif
+	using namespace hb::shared::render;
     srand(static_cast<unsigned>(time(0)));
 
-    DevConsole::Get().Initialize();
+    // Create game application
+    auto game = application::create<CGame>(native_instance, icon_resource_id);
 
-    ConfigManager::Get().Initialize();
-    ConfigManager::Get().Load();
-
-    hb::shared::render::ResolutionConfig::Initialize(
-        ConfigManager::Get().GetWindowWidth(),
-        ConfigManager::Get().GetWindowHeight()
-    );
-
-    auto game = std::make_unique<CGame>();
-
-    hb::shared::render::WindowParams params = {};
-    params.title = "Helbreath";
-    params.width = ConfigManager::Get().GetWindowWidth();
-    params.height = ConfigManager::Get().GetWindowHeight();
-    params.fullscreen = false;
-    params.borderless = ConfigManager::Get().IsBorderlessEnabled();
-    params.centered = true;
-    params.mouseCaptureEnabled = ConfigManager::Get().IsMouseCaptureEnabled();
-    params.nativeInstance = nativeInstance;
-    params.iconResourceId = iconResourceId;
-
-    if (!hb::shared::render::Window::Create(params))
+    // Create and attach window (not yet realized — just allocated)
+    auto* window = Window::create();
+    if (!window)
     {
-        hb::shared::render::Window::ShowError("ERROR", "Failed to create window!");
-        game.reset();
+        Window::show_error("ERROR", "Failed to allocate window!");
+        return 1;
+    }
+    game->attach_window(window);
+
+    // Initialize (pre-realize: loads config, stages window params, loads game data)
+    if (!game->initialize())
+    {
         return 1;
     }
 
-    auto windowHandler = std::make_unique<GameWindowHandler>(game.get());
-    hb::shared::render::Window::Get()->SetEventHandler(windowHandler.get());
-    hb::shared::render::Window::Get()->Show();
-
-    FrameTiming::Initialize();
-
-    if (game->bInit() == false)
-    {
-        hb::shared::render::Window::Get()->SetEventHandler(nullptr);
-        windowHandler.reset();
-        game.reset();
-        hb::shared::render::Window::Close();
-        return 1;
-    }
-
-    // Push display settings from ConfigManager to engine
-    // Must happen after bInit() which creates the renderer via hb::shared::render::Renderer::Set()
-    hb::shared::render::Window::Get()->SetVSyncEnabled(ConfigManager::Get().IsVSyncEnabled());
-    hb::shared::render::Window::Get()->SetFramerateLimit(ConfigManager::Get().GetFpsLimit());
-    hb::shared::render::Window::Get()->SetFullscreenStretch(ConfigManager::Get().IsFullscreenStretchEnabled());
-    if (hb::shared::render::Renderer::Get())
-        hb::shared::render::Renderer::Get()->SetFullscreenStretch(ConfigManager::Get().IsFullscreenStretchEnabled());
-
-    // Event loop — UpdateFrame runs every iteration (decoupled from frame rate),
-    // RenderFrame is gated by the engine's frame limiter (VSync or FPS cap)
-    hb::shared::render::IWindow* window = hb::shared::render::Window::Get();
-    while (true)
-    {
-        hb::shared::input::BeginFrame();
-
-        if (!window->ProcessMessages())
-            break;
-
-        // Update always runs — logic, network, audio are never frame-limited
-        game->UpdateFrame();
-
-        // Render is gated by engine-owned frame limiting (BeginFrame sleeps when not time)
-        FrameTiming::BeginFrame();
-        game->RenderFrame();
-        FrameTiming::EndFrame();
-    }
-
-    // Shutdown
-    hb::shared::render::Window::Get()->SetEventHandler(nullptr);
-    windowHandler.reset();
-    game.reset();
-
-    hb::shared::render::Window::Destroy();
-
-    DevConsole::Get().Shutdown();
-
-    return 0;
+    // Run the main loop (realizes window, creates renderer, loops, shuts down)
+    return game->run();
 }
 
 // --------------------------------------------------------------

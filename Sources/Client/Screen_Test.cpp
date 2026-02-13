@@ -92,18 +92,18 @@ void Screen_Test::on_uninitialize()
 void Screen_Test::on_update()
 {
 	// ESC to quit
-	if (hb::shared::input::Get() && hb::shared::input::Get()->IsKeyPressed(KeyCode::Escape))
+	if (hb::shared::input::get() && hb::shared::input::get()->is_key_pressed(KeyCode::Escape))
 	{
-		hb::shared::render::Window::Close();
+		hb::shared::render::Window::close();
 		return;
 	}
 
 	// Scroll with arrow keys
-	if (hb::shared::input::Get())
+	if (hb::shared::input::get())
 	{
-		if (hb::shared::input::Get()->IsKeyPressed(KeyCode::Up))
+		if (hb::shared::input::get()->is_key_pressed(KeyCode::Up))
 			m_scrollOffset = (m_scrollOffset > 0) ? m_scrollOffset - 1 : 0;
-		if (hb::shared::input::Get()->IsKeyPressed(KeyCode::Down))
+		if (hb::shared::input::get()->is_key_pressed(KeyCode::Down))
 			m_scrollOffset++;
 	}
 }

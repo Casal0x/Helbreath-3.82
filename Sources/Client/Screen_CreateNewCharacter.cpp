@@ -1,4 +1,4 @@
-﻿// Screen_CreateNewCharacter.cpp: Create New Character Screen Implementation
+// Screen_CreateNewCharacter.cpp: Create New Character Screen Implementation
 //
 //////////////////////////////////////////////////////////////////////
 
@@ -75,11 +75,11 @@ void Screen_CreateNewCharacter::on_update()
     uint32_t dwTime = GameClock::GetTimeMS();
 
     // Handle arrow key navigation
-    if (hb::shared::input::IsKeyPressed(KeyCode::Up)) {
+    if (hb::shared::input::is_key_pressed(KeyCode::Up)) {
         m_cCurFocus--;
         if (m_cCurFocus <= 0) m_cCurFocus = m_cMaxFocus;
     }
-    else if (hb::shared::input::IsKeyPressed(KeyCode::Down)) {
+    else if (hb::shared::input::is_key_pressed(KeyCode::Down)) {
         m_cCurFocus++;
         if (m_cCurFocus > m_cMaxFocus) m_cCurFocus = 1;
     }
@@ -96,14 +96,14 @@ void Screen_CreateNewCharacter::on_update()
     }
 
     // ESC returns to character select
-    if (hb::shared::input::IsKeyPressed(KeyCode::Escape)) {
+    if (hb::shared::input::is_key_pressed(KeyCode::Escape)) {
         m_pGame->ChangeGameMode(GameMode::SelectCharacter);
         return;
     }
 
     // Capture mouse position
-    short msX = static_cast<short>(hb::shared::input::GetMouseX());
-    short msY = static_cast<short>(hb::shared::input::GetMouseY());
+    short msX = static_cast<short>(hb::shared::input::get_mouse_x());
+    short msY = static_cast<short>(hb::shared::input::get_mouse_y());
     m_sNewCharMsX = msX;
     m_sNewCharMsY = msY;
 
@@ -149,40 +149,40 @@ void Screen_CreateNewCharacter::on_update()
     }
 
     // Handle mouse clicks
-    if (hb::shared::input::IsMouseButtonPressed(MouseButton::Left))
+    if (hb::shared::input::is_mouse_button_pressed(MouseButton::Left))
     {
         m_pGame->PlayGameSound('E', 14, 5);
 
         // Determine which button was clicked
         int iMIbuttonNum = 0;
-        if (hb::shared::input::IsMouseInRect(69 + OX, 110 + OY, 210, 17)) iMIbuttonNum = 1;  // Name
-        else if (hb::shared::input::IsMouseInRect(236 + OX, 156 + OY, 21, 13)) iMIbuttonNum = 2;  // Gender -
-        else if (hb::shared::input::IsMouseInRect(259 + OX, 156 + OY, 21, 13)) iMIbuttonNum = 3;  // Gender +
-        else if (hb::shared::input::IsMouseInRect(236 + OX, 171 + OY, 21, 13)) iMIbuttonNum = 4;  // Skin -
-        else if (hb::shared::input::IsMouseInRect(259 + OX, 171 + OY, 21, 13)) iMIbuttonNum = 5;  // Skin +
-        else if (hb::shared::input::IsMouseInRect(236 + OX, 186 + OY, 21, 13)) iMIbuttonNum = 6;  // Hair style -
-        else if (hb::shared::input::IsMouseInRect(259 + OX, 186 + OY, 21, 13)) iMIbuttonNum = 7;  // Hair style +
-        else if (hb::shared::input::IsMouseInRect(236 + OX, 201 + OY, 21, 13)) iMIbuttonNum = 8;  // Hair color -
-        else if (hb::shared::input::IsMouseInRect(259 + OX, 201 + OY, 21, 13)) iMIbuttonNum = 9;  // Hair color +
-        else if (hb::shared::input::IsMouseInRect(236 + OX, 216 + OY, 21, 13)) iMIbuttonNum = 10; // Underwear -
-        else if (hb::shared::input::IsMouseInRect(259 + OX, 216 + OY, 21, 13)) iMIbuttonNum = 11; // Underwear +
-        else if (hb::shared::input::IsMouseInRect(236 + OX, 276 + OY, 21, 13)) iMIbuttonNum = 12; // Str +
-        else if (hb::shared::input::IsMouseInRect(259 + OX, 276 + OY, 21, 13)) iMIbuttonNum = 13; // Str -
-        else if (hb::shared::input::IsMouseInRect(236 + OX, 291 + OY, 21, 13)) iMIbuttonNum = 14; // Vit +
-        else if (hb::shared::input::IsMouseInRect(259 + OX, 291 + OY, 21, 13)) iMIbuttonNum = 15; // Vit -
-        else if (hb::shared::input::IsMouseInRect(236 + OX, 306 + OY, 21, 13)) iMIbuttonNum = 16; // Dex +
-        else if (hb::shared::input::IsMouseInRect(259 + OX, 306 + OY, 21, 13)) iMIbuttonNum = 17; // Dex -
-        else if (hb::shared::input::IsMouseInRect(236 + OX, 321 + OY, 21, 13)) iMIbuttonNum = 18; // Int +
-        else if (hb::shared::input::IsMouseInRect(259 + OX, 321 + OY, 21, 13)) iMIbuttonNum = 19; // Int -
-        else if (hb::shared::input::IsMouseInRect(236 + OX, 336 + OY, 21, 13)) iMIbuttonNum = 20; // Mag +
-        else if (hb::shared::input::IsMouseInRect(259 + OX, 336 + OY, 21, 13)) iMIbuttonNum = 21; // Mag -
-        else if (hb::shared::input::IsMouseInRect(236 + OX, 351 + OY, 21, 13)) iMIbuttonNum = 22; // Chr +
-        else if (hb::shared::input::IsMouseInRect(259 + OX, 351 + OY, 21, 13)) iMIbuttonNum = 23; // Chr -
-        else if (hb::shared::input::IsMouseInRect(384 + OX, 445 + OY, 72, 15)) iMIbuttonNum = 24; // Create
-        else if (hb::shared::input::IsMouseInRect(500 + OX, 445 + OY, 72, 15)) iMIbuttonNum = 25; // Cancel
-        else if (hb::shared::input::IsMouseInRect(60 + OX, 445 + OY, 72, 15)) iMIbuttonNum = 26;  // Aresden
-        else if (hb::shared::input::IsMouseInRect(145 + OX, 445 + OY, 72, 15)) iMIbuttonNum = 27; // Elvine
-        else if (hb::shared::input::IsMouseInRect(230 + OX, 445 + OY, 72, 15)) iMIbuttonNum = 28; // Traveler
+        if (hb::shared::input::is_mouse_in_rect(69 + OX, 110 + OY, 210, 17)) iMIbuttonNum = 1;  // Name
+        else if (hb::shared::input::is_mouse_in_rect(236 + OX, 156 + OY, 21, 13)) iMIbuttonNum = 2;  // Gender -
+        else if (hb::shared::input::is_mouse_in_rect(259 + OX, 156 + OY, 21, 13)) iMIbuttonNum = 3;  // Gender +
+        else if (hb::shared::input::is_mouse_in_rect(236 + OX, 171 + OY, 21, 13)) iMIbuttonNum = 4;  // Skin -
+        else if (hb::shared::input::is_mouse_in_rect(259 + OX, 171 + OY, 21, 13)) iMIbuttonNum = 5;  // Skin +
+        else if (hb::shared::input::is_mouse_in_rect(236 + OX, 186 + OY, 21, 13)) iMIbuttonNum = 6;  // Hair style -
+        else if (hb::shared::input::is_mouse_in_rect(259 + OX, 186 + OY, 21, 13)) iMIbuttonNum = 7;  // Hair style +
+        else if (hb::shared::input::is_mouse_in_rect(236 + OX, 201 + OY, 21, 13)) iMIbuttonNum = 8;  // Hair color -
+        else if (hb::shared::input::is_mouse_in_rect(259 + OX, 201 + OY, 21, 13)) iMIbuttonNum = 9;  // Hair color +
+        else if (hb::shared::input::is_mouse_in_rect(236 + OX, 216 + OY, 21, 13)) iMIbuttonNum = 10; // Underwear -
+        else if (hb::shared::input::is_mouse_in_rect(259 + OX, 216 + OY, 21, 13)) iMIbuttonNum = 11; // Underwear +
+        else if (hb::shared::input::is_mouse_in_rect(236 + OX, 276 + OY, 21, 13)) iMIbuttonNum = 12; // Str +
+        else if (hb::shared::input::is_mouse_in_rect(259 + OX, 276 + OY, 21, 13)) iMIbuttonNum = 13; // Str -
+        else if (hb::shared::input::is_mouse_in_rect(236 + OX, 291 + OY, 21, 13)) iMIbuttonNum = 14; // Vit +
+        else if (hb::shared::input::is_mouse_in_rect(259 + OX, 291 + OY, 21, 13)) iMIbuttonNum = 15; // Vit -
+        else if (hb::shared::input::is_mouse_in_rect(236 + OX, 306 + OY, 21, 13)) iMIbuttonNum = 16; // Dex +
+        else if (hb::shared::input::is_mouse_in_rect(259 + OX, 306 + OY, 21, 13)) iMIbuttonNum = 17; // Dex -
+        else if (hb::shared::input::is_mouse_in_rect(236 + OX, 321 + OY, 21, 13)) iMIbuttonNum = 18; // Int +
+        else if (hb::shared::input::is_mouse_in_rect(259 + OX, 321 + OY, 21, 13)) iMIbuttonNum = 19; // Int -
+        else if (hb::shared::input::is_mouse_in_rect(236 + OX, 336 + OY, 21, 13)) iMIbuttonNum = 20; // Mag +
+        else if (hb::shared::input::is_mouse_in_rect(259 + OX, 336 + OY, 21, 13)) iMIbuttonNum = 21; // Mag -
+        else if (hb::shared::input::is_mouse_in_rect(236 + OX, 351 + OY, 21, 13)) iMIbuttonNum = 22; // Chr +
+        else if (hb::shared::input::is_mouse_in_rect(259 + OX, 351 + OY, 21, 13)) iMIbuttonNum = 23; // Chr -
+        else if (hb::shared::input::is_mouse_in_rect(384 + OX, 445 + OY, 72, 15)) iMIbuttonNum = 24; // Create
+        else if (hb::shared::input::is_mouse_in_rect(500 + OX, 445 + OY, 72, 15)) iMIbuttonNum = 25; // Cancel
+        else if (hb::shared::input::is_mouse_in_rect(60 + OX, 445 + OY, 72, 15)) iMIbuttonNum = 26;  // Aresden
+        else if (hb::shared::input::is_mouse_in_rect(145 + OX, 445 + OY, 72, 15)) iMIbuttonNum = 27; // Elvine
+        else if (hb::shared::input::is_mouse_in_rect(230 + OX, 445 + OY, 72, 15)) iMIbuttonNum = 28; // Traveler
 
         switch (iMIbuttonNum) {
         case 1:

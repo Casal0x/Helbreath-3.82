@@ -1,4 +1,4 @@
-﻿// Overlay_WaitInitData.cpp: Waiting for server init data overlay
+// Overlay_WaitInitData.cpp: Waiting for server init data overlay
 //
 //////////////////////////////////////////////////////////////////////
 
@@ -38,7 +38,7 @@ void Overlay_WaitInitData::on_update()
     if (m_iFrameCount > 100) m_iFrameCount = 100;
 
     // ESC key returns to MainMenu (only after 7 seconds)
-    if (hb::shared::input::IsKeyPressed(KeyCode::Escape))
+    if (hb::shared::input::is_key_pressed(KeyCode::Escape))
     {
         if (dwElapsed > 7000)
         {

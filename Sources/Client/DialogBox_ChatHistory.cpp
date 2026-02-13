@@ -37,7 +37,7 @@ void DialogBox_ChatHistory::HandleScrollInput(short sX, short sY, short msX, sho
 	// Mouse wheel scrolling
 	if (m_pGame->m_dialogBoxManager.iGetTopDialogBoxIndex() == DialogBoxId::ChatHistory)
 	{
-		short sWheelDelta = hb::shared::input::GetMouseWheelDelta();
+		short sWheelDelta = hb::shared::input::get_mouse_wheel_delta();
 		if (sWheelDelta != 0)
 		{
 			info.sView += sWheelDelta / 30;

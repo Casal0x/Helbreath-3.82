@@ -3,7 +3,6 @@
 #include "CommonTypes.h"
 #include "Client.h"
 #ifdef _WIN32
-#include <direct.h>
 #endif
 
 using namespace hb::shared::item;

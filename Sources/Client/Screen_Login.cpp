@@ -1,4 +1,4 @@
-﻿// Screen_Login.cpp: Login Screen Implementation
+// Screen_Login.cpp: Login Screen Implementation
 //
 //////////////////////////////////////////////////////////////////////
 
@@ -54,9 +54,9 @@ void Screen_Login::on_update()
     m_pGame->m_dwCurTime = dwTime;
 
     // Explicit TAB handling since legacy OnKeyDown ignores it
-    if (hb::shared::input::IsKeyPressed(KeyCode::Tab))
+    if (hb::shared::input::is_key_pressed(KeyCode::Tab))
     {
-        if (hb::shared::input::IsShiftDown())
+        if (hb::shared::input::is_shift_down())
         {
             m_pGame->PlayGameSound('E', 14, 5);
              m_cCurFocus--;
@@ -93,7 +93,7 @@ void Screen_Login::on_update()
          m_pGame->m_cArrowPressed = 0;
     }
 
-    if (hb::shared::input::IsKeyPressed(KeyCode::Enter) == true)
+    if (hb::shared::input::is_key_pressed(KeyCode::Enter) == true)
     {
         switch (m_cCurFocus) {
         case 1:
@@ -112,7 +112,7 @@ void Screen_Login::on_update()
         }
     }
 
-    if (hb::shared::input::IsKeyPressed(KeyCode::Escape) == true)
+    if (hb::shared::input::is_key_pressed(KeyCode::Escape) == true)
     {
         m_pGame->PlayGameSound('E', 14, 5);
         TextInputManager::Get().EndInput();
@@ -138,33 +138,33 @@ void Screen_Login::on_update()
     }
 
     // Mouse click detection
-    if (hb::shared::input::IsMouseButtonPressed(MouseButton::Left))
+    if (hb::shared::input::is_mouse_button_pressed(MouseButton::Left))
     {
         // Name field click
-        if (hb::shared::input::IsMouseInRect(234, 221, 147, 17)) {
+        if (hb::shared::input::is_mouse_in_rect(234, 221, 147, 17)) {
             m_pGame->PlayGameSound('E', 14, 5);
             m_cCurFocus = 1;
         }
         // Password field click
-        else if (hb::shared::input::IsMouseInRect(234, 244, 147, 17)) {
+        else if (hb::shared::input::is_mouse_in_rect(234, 244, 147, 17)) {
             m_pGame->PlayGameSound('E', 14, 5);
             m_cCurFocus = 2;
         }
         // Login button click
-        else if (hb::shared::input::IsMouseInRect(140, 343, 84, 20)) {
+        else if (hb::shared::input::is_mouse_in_rect(140, 343, 84, 20)) {
             m_pGame->PlayGameSound('E', 14, 5);
             if (AttemptLogin()) return;
         }
         // Cancel button click
-        else if (hb::shared::input::IsMouseInRect(316, 343, 76, 20)) {
+        else if (hb::shared::input::is_mouse_in_rect(316, 343, 76, 20)) {
             m_pGame->PlayGameSound('E', 14, 5);
             m_pGame->ChangeGameMode(GameMode::MainMenu);
             return;
         }
     }
 
-    if (hb::shared::input::IsMouseInRect(140, 343, 84, 20)) m_cCurFocus = 3;
-    if (hb::shared::input::IsMouseInRect(316, 343, 76, 20)) m_cCurFocus = 4;
+    if (hb::shared::input::is_mouse_in_rect(140, 343, 84, 20)) m_cCurFocus = 3;
+    if (hb::shared::input::is_mouse_in_rect(316, 343, 76, 20)) m_cCurFocus = 4;
 }
 
 bool Screen_Login::AttemptLogin()
@@ -187,7 +187,7 @@ bool Screen_Login::AttemptLogin()
 
 void Screen_Login::on_render()
 {
-    DrawLoginWindow(hb::shared::input::GetMouseX(), hb::shared::input::GetMouseY());
+    DrawLoginWindow(hb::shared::input::get_mouse_x(), hb::shared::input::get_mouse_y());
 }
 
 // Logic migrated from CGame::_Draw_OnLogin

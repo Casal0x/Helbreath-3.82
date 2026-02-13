@@ -40,18 +40,18 @@ void Overlay_VersionNotMatch::on_update()
     if (m_iFrameCount > 120) m_iFrameCount = 120;
 
     // Any key press closes the application
-    if (hb::shared::input::IsKeyPressed(KeyCode::Escape) || hb::shared::input::IsKeyPressed(KeyCode::Enter))
+    if (hb::shared::input::is_key_pressed(KeyCode::Escape) || hb::shared::input::is_key_pressed(KeyCode::Enter))
     {
         m_pGame->ChangeGameMode(GameMode::Null);
-        hb::shared::render::Window::Close();
+        hb::shared::render::Window::close();
         return;
     }
 
     // Mouse click also closes
-    if (hb::shared::input::IsMouseButtonPressed(MouseButton::Left))
+    if (hb::shared::input::is_mouse_button_pressed(MouseButton::Left))
     {
         m_pGame->ChangeGameMode(GameMode::Null);
-        hb::shared::render::Window::Close();
+        hb::shared::render::Window::close();
         return;
     }
 }

@@ -11,8 +11,12 @@
 #include "DelayEventManager.h"
 #include "DynamicObjectManager.h"
 #include "Packet/SharedPackets.h"
+#include "Log.h"
+#include "ServerLogChannels.h"
 
 using namespace hb::shared::net;
+
+using hb::log_channel;
 using namespace hb::shared::action;
 using namespace hb::server::net;
 using namespace hb::server::config;
@@ -24,10 +28,6 @@ namespace sdelay = hb::server::delay_event;
 using namespace hb::server::npc;
 
 extern char G_cTxt[512];
-extern void PutLogList(char* cStr);
-extern void PutLogFileList(char* cStr);
-extern void PutPvPLogFileList(char* cStr);
-extern void PutHackLogFileList(char* cStr);
 
 // Direction lookup tables (duplicated from Game.cpp)
 static char _tmp_cTmpDirX[9] = { 0,0,1,1,1,0,-1,-1,-1 };
@@ -81,7 +81,6 @@ void CombatManager::RemoveFromTarget(short sTargetH, char cTargetType, int iCode
 		}
 }
 
-
 int CombatManager::iGetDangerValue(int iNpcH, short dX, short dY)
 {
 	int iDangerValue;
@@ -121,14 +120,12 @@ int CombatManager::iGetDangerValue(int iNpcH, short dX, short dY)
 	return iDangerValue;
 }
 
-
 void CombatManager::ClientKilledHandler(int iClientH, int iAttackerH, char cAttackerType, short sDamage)
 {
 	char cAttackerName[hb::shared::limits::NpcNameLen];
 	short sAttackerWeapon;
 	int iExH;
 	bool  bIsSAattacked = false;
-
 
 	if (m_pGame->m_pClientList[iClientH] == 0) return;
 	if (m_pGame->m_pClientList[iClientH]->m_bIsInitComplete == false) return;
@@ -137,8 +134,7 @@ void CombatManager::ClientKilledHandler(int iClientH, int iAttackerH, char cAtta
 	// 2002-7-4
 	if (memcmp(m_pGame->m_pMapList[m_pGame->m_pClientList[iClientH]->m_cMapIndex]->m_cName, "fight", 5) == 0) {
 		m_pGame->m_pClientList[iClientH]->m_dwFightzoneDeadTime = GameClock::GetTimeMS();
-		std::snprintf(G_cTxt, sizeof(G_cTxt), "Fightzone Dead Time: %d", m_pGame->m_pClientList[iClientH]->m_dwFightzoneDeadTime);
-		PutLogList(G_cTxt);
+		hb::logger::log("Fight zone dead time: {}", m_pGame->m_pClientList[iClientH]->m_dwFightzoneDeadTime);
 	}
 
 	m_pGame->m_pClientList[iClientH]->m_bIsKilled = true;
@@ -234,7 +230,6 @@ void CombatManager::ClientKilledHandler(int iClientH, int iAttackerH, char cAtta
 		if (iAttackerH == iClientH) return;
 		if (memcmp(m_pGame->m_pClientList[iClientH]->m_cLocation, "NONE", 4) == 0) {
 			if (m_pGame->m_pClientList[iClientH]->m_iPKCount == 0) {
-
 
 				m_pGame->m_pLootManager->ApplyPKpenalty(iAttackerH, iClientH);
 			}
@@ -332,8 +327,7 @@ void CombatManager::ClientKilledHandler(int iClientH, int iAttackerH, char cAtta
 			}
 		}
 		std::memset(cTxt, 0, sizeof(cTxt));
-		std::snprintf(cTxt, sizeof(cTxt), "%s(%s) killed %s(%s) in %s(%d,%d)", m_pGame->m_pClientList[iAttackerH]->m_cCharName, m_pGame->m_pClientList[iAttackerH]->m_cIPaddress, m_pGame->m_pClientList[iClientH]->m_cCharName, m_pGame->m_pClientList[iClientH]->m_cIPaddress, m_pGame->m_pClientList[iClientH]->m_cMapName, m_pGame->m_pClientList[iClientH]->m_sX, m_pGame->m_pClientList[iClientH]->m_sY);
-		PutPvPLogFileList(cTxt); // Centu : log pvp
+		hb::logger::log<log_channel::pvp>("{}({}) killed {}({}) in {}({},{})", m_pGame->m_pClientList[iAttackerH]->m_cCharName, m_pGame->m_pClientList[iAttackerH]->m_cIPaddress, m_pGame->m_pClientList[iClientH]->m_cCharName, m_pGame->m_pClientList[iClientH]->m_cIPaddress, m_pGame->m_pClientList[iClientH]->m_cMapName, m_pGame->m_pClientList[iClientH]->m_sX, m_pGame->m_pClientList[iClientH]->m_sY);
 	}
 	else if (cAttackerType == hb::shared::owner_class::Npc) {
 
@@ -367,8 +361,7 @@ void CombatManager::ClientKilledHandler(int iClientH, int iAttackerH, char cAtta
 							m_pGame->m_pClientList[i]->m_iConstructionPoint = m_pGame->m_iMaxConstructionPoints;
 
 						//testcode
-						std::snprintf(G_cTxt, sizeof(G_cTxt), "Enemy Player Killed by Npc! Construction +%d", (m_pGame->m_pClientList[iClientH]->m_iLevel / 2));
-						PutLogList(G_cTxt);
+						hb::logger::log("Enemy player killed by NPC, construction +{}", (m_pGame->m_pClientList[iClientH]->m_iLevel / 2));
 						m_pGame->SendNotifyMsg(0, i, Notify::ConstructionPoint, m_pGame->m_pClientList[i]->m_iConstructionPoint, m_pGame->m_pClientList[i]->m_iWarContribution, 0, 0);
 						return;
 					}
@@ -391,7 +384,6 @@ void CombatManager::ClientKilledHandler(int iClientH, int iAttackerH, char cAtta
 		// m_pGame->SendNotifyMsg(0, iClientH, Notify::Exp, 0, 0, 0, 0);
 	}
 }
-
 
 void CombatManager::Effect_Damage_Spot(short sAttackerH, char cAttackerType, short sTargetH, char cTargetType, short sV1, short sV2, short sV3, bool bExp, int iAttr)
 {
@@ -908,7 +900,6 @@ void CombatManager::Effect_Damage_Spot(short sAttackerH, char cAttackerType, sho
 	}
 }
 
-
 void CombatManager::Effect_Damage_Spot_DamageMove(short sAttackerH, char cAttackerType, short sTargetH, char cTargetType, short sAtkX, short sAtkY, short sV1, short sV2, short sV3, bool bExp, int iAttr)
 {
 	int iDamage, iSideCondition, iIndex, iRemainLife, iTemp, iMaxSuperAttack;
@@ -1301,7 +1292,6 @@ void CombatManager::Effect_Damage_Spot_DamageMove(short sAttackerH, char cAttack
 				m_pGame->m_pNpcList[sTargetH]->m_iTargetIndex = sAttackerH;
 				m_pGame->m_pNpcList[sTargetH]->m_cTargetType = cAttackerType;
 
-
 				// Damage    .
 				m_pGame->m_pNpcList[sTargetH]->m_dwTime = dwTime;
 
@@ -1367,7 +1357,6 @@ void CombatManager::Effect_Damage_Spot_DamageMove(short sAttackerH, char cAttack
 							}
 						}
 
-
 						if (bExp)
 							m_pGame->GetExp(sAttackerH, iExp); //m_pGame->m_pClientList[sAttackerH]->m_iExpStock += iExp;     //m_pGame->m_pNpcList[sTargetH]->m_iNoDieRemainExp;
 						else m_pGame->GetExp(sAttackerH, (iExp / 2)); //m_pGame->m_pClientList[sAttackerH]->m_iExpStock += (iExp/2); //(m_pGame->m_pNpcList[sTargetH]->m_iNoDieRemainExp/2);
@@ -1379,7 +1368,6 @@ void CombatManager::Effect_Damage_Spot_DamageMove(short sAttackerH, char cAttack
 		break;
 	}
 }
-
 
 void CombatManager::Effect_HpUp_Spot(short sAttackerH, char cAttackerType, short sTargetH, char cTargetType, short sV1, short sV2, short sV3)
 {
@@ -1420,7 +1408,6 @@ void CombatManager::Effect_HpUp_Spot(short sAttackerH, char cAttackerType, short
 	}
 }
 
-
 void CombatManager::Effect_SpDown_Spot(short sAttackerH, char cAttackerType, short sTargetH, char cTargetType, short sV1, short sV2, short sV3)
 {
 	int iSP, iMaxSP;
@@ -1458,7 +1445,6 @@ void CombatManager::Effect_SpDown_Spot(short sAttackerH, char cAttackerType, sho
 	}
 }
 
-
 void CombatManager::Effect_SpUp_Spot(short sAttackerH, char cAttackerType, short sTargetH, char cTargetType, short sV1, short sV2, short sV3)
 {
 	int iSP, iMaxSP;
@@ -1490,7 +1476,6 @@ void CombatManager::Effect_SpUp_Spot(short sAttackerH, char cAttackerType, short
 		break;
 	}
 }
-
 
 /*********************************************************************************************************************
 **  int bool CombatManager::bCheckResistingMagicSuccess(char cAttackerDir, short sTargetH, char cTargetType, int iHitRatio) **
@@ -1558,7 +1543,6 @@ bool CombatManager::bCheckResistingMagicSuccess(char cAttackerDir, short sTarget
 	return true;
 }
 
-
 bool CombatManager::bCheckResistingIceSuccess(char cAttackerDir, short sTargetH, char cTargetType, int iHitRatio)
 {
 	int    iTargetIceResistRatio, iResult;
@@ -1586,7 +1570,6 @@ bool CombatManager::bCheckResistingIceSuccess(char cAttackerDir, short sTargetH,
 
 	return false;
 }
-
 
 bool CombatManager::bAnalyzeCriminalAction(int iClientH, short dX, short dY, bool bIsCheck)
 {
@@ -1640,7 +1623,6 @@ bool CombatManager::bAnalyzeCriminalAction(int iClientH, short dX, short dY, boo
 	return false;
 }
 
-
 bool CombatManager::_bGetIsPlayerHostile(int iClientH, int sOwnerH)
 {
 	if (m_pGame->m_pClientList[iClientH] == 0) return false;
@@ -1672,7 +1654,6 @@ bool CombatManager::_bGetIsPlayerHostile(int iClientH, int sOwnerH)
 	return false;
 }
 
-
 void CombatManager::PoisonEffect(int iClientH, int iV1)
 {
 	int iPoisonLevel, iDamage, iPrevHP, iProb;
@@ -1691,7 +1672,6 @@ void CombatManager::PoisonEffect(int iClientH, int iV1)
 
 	if (iPrevHP != m_pGame->m_pClientList[iClientH]->m_iHP)
 		m_pGame->SendNotifyMsg(0, iClientH, Notify::Hp, 0, 0, 0, 0);
-
 
 	iProb = m_pGame->m_pClientList[iClientH]->m_cSkillMastery[23] - 10 + m_pGame->m_pClientList[iClientH]->m_iAddPR;
 	if (iProb <= 10) iProb = 10;
@@ -1727,7 +1707,6 @@ bool CombatManager::bCheckResistingPoisonSuccess(short sOwnerH, char cOwnerType)
 
 	return true;
 }
-
 
 int CombatManager::iGetPlayerRelationship(int iClientH, int iOpponentH)
 {
@@ -1785,7 +1764,6 @@ int CombatManager::iGetPlayerRelationship(int iClientH, int iOpponentH)
 	return iRet;
 }
 
-
 EntityRelationship CombatManager::GetPlayerRelationship(int iOwnerH, int iViewerH)
 {
 	if (m_pGame->m_pClientList[iOwnerH] == 0 || m_pGame->m_pClientList[iViewerH] == 0)
@@ -1817,7 +1795,6 @@ EntityRelationship CombatManager::GetPlayerRelationship(int iOwnerH, int iViewer
 
 	return EntityRelationship::Neutral;
 }
-
 
 void CombatManager::_CheckAttackType(int iClientH, short* spType)
 {
@@ -1877,7 +1854,6 @@ void CombatManager::_CheckAttackType(int iClientH, short* spType)
 	}
 }
 
-
 void CombatManager::CheckFireBluring(char cMapIndex, int sX, int sY)
 {
 	int iItemNum;
@@ -1902,7 +1878,6 @@ void CombatManager::CheckFireBluring(char cMapIndex, int sX, int sY)
 			}
 		}
 }
-
 
 int CombatManager::_iGetWeaponSkillType(int iClientH)
 {
@@ -1939,7 +1914,6 @@ int CombatManager::_iGetWeaponSkillType(int iClientH)
 	return 1;
 }
 
-
 int CombatManager::iGetComboAttackBonus(int iSkill, int iComboCount)
 {
 	if (iComboCount <= 1) return 0;
@@ -1973,7 +1947,6 @@ int CombatManager::iGetComboAttackBonus(int iSkill, int iComboCount)
 
 	return 0;
 }
-
 
 void CombatManager::ArmorLifeDecrement(int iAttackerH, int iTargetH, char cOwnerType, int iValue)
 {
@@ -2061,7 +2034,6 @@ void CombatManager::ArmorLifeDecrement(int iAttackerH, int iTargetH, char cOwner
 	}
 }
 
-
 bool CombatManager::_bPKLog(int iAction, int iAttackerH, int iVictumH, char* pNPC)
 {
 	char  cTxt[1024], cTemp1[120], cTemp2[120];
@@ -2100,16 +2072,13 @@ bool CombatManager::_bPKLog(int iAction, int iAttackerH, int iVictumH, char* pNP
 			m_pGame->m_pClientList[iVictumH]->m_cMapName, m_pGame->m_pClientList[iVictumH]->m_sX, m_pGame->m_pClientList[iVictumH]->m_sY, pNPC);
 		break;
 	case PkLog::ByOther:
-		std::snprintf(cTxt, sizeof(cTxt), "(%s) PC(%s)\tKilled by Other\t \t%s(%d %d)\tUnknown", m_pGame->m_pClientList[iVictumH]->m_cIPaddress, m_pGame->m_pClientList[iVictumH]->m_cCharName,
-			m_pGame->m_pClientList[iVictumH]->m_cMapName, m_pGame->m_pClientList[iVictumH]->m_sX, m_pGame->m_pClientList[iVictumH]->m_sY);
 		break;
 	default:
 		return false;
 	}
-	PutPvPLogFileList(cTxt);
+	hb::logger::log<log_channel::pvp>("({}) PC({})\tKilled by Other\t \t{}({} {})\tUnknown", m_pGame->m_pClientList[iVictumH]->m_cIPaddress, m_pGame->m_pClientList[iVictumH]->m_cCharName, m_pGame->m_pClientList[iVictumH]->m_cMapName, m_pGame->m_pClientList[iVictumH]->m_sX, m_pGame->m_pClientList[iVictumH]->m_sY);
 	return true;
 }
-
 
 bool CombatManager::bCheckClientAttackFrequency(int iClientH, uint32_t dwClientTime)
 {
@@ -2144,10 +2113,7 @@ bool CombatManager::bCheckClientAttackFrequency(int iClientH, uint32_t dwClientT
 		if (dwTimeGap < static_cast<uint32_t>(threshold)) {
 			try
 			{
-				std::snprintf(G_cTxt, sizeof(G_cTxt), "Swing Hack: (%s) Player: (%s) - attacking at irregular rates. Gap: %ums, Min: %dms",
-					m_pGame->m_pClientList[iClientH]->m_cIPaddress, m_pGame->m_pClientList[iClientH]->m_cCharName,
-					dwTimeGap, expectedSwingTime);
-				PutHackLogFileList(G_cTxt);
+				hb::logger::warn<log_channel::security>("Swing hack: IP={} player={}, irregular attack rate (gap={}ms min={}ms)", m_pGame->m_pClientList[iClientH]->m_cIPaddress, m_pGame->m_pClientList[iClientH]->m_cCharName, dwTimeGap, expectedSwingTime);
 				m_pGame->DeleteClient(iClientH, true, true);
 			}
 			catch (...)
@@ -2159,7 +2125,6 @@ bool CombatManager::bCheckClientAttackFrequency(int iClientH, uint32_t dwClientT
 
 	return false;
 }
-
 
 bool CombatManager::bCalculateEnduranceDecrement(short sTargetH, short sAttackerH, char cTargetType, int iArmorType)
 {
@@ -2262,7 +2227,6 @@ bool CombatManager::bCalculateEnduranceDecrement(short sTargetH, short sAttacker
 	return true;
 }
 
-
 uint32_t CombatManager::iCalculateAttackEffect(short sTargetH, char cTargetType, short sAttackerH, char cAttackerType, int tdX, int tdY, int iAttackMode, bool bNearAttack, bool bIsDash, bool bArrowUse)
 {
 	int    iAP_SM, iAP_L, iAttackerHitRatio, iTargetDefenseRatio, iDestHitRatio, iResult, iAP_Abs_Armor, iAP_Abs_Shield;
@@ -2318,8 +2282,7 @@ uint32_t CombatManager::iCalculateAttackEffect(short sTargetH, char cTargetType,
 		if ((bIsDash) && (m_pGame->m_pClientList[sAttackerH]->m_cSkillMastery[sSkillUsed] != 100) && (wWeaponType != 25) && (wWeaponType != 27)) {
 			try
 			{
-				std::snprintf(G_cTxt, sizeof(G_cTxt), "TSearch Fullswing Hack: (%s) Player: (%s) - dashing with only (%d) weapon skill.", m_pGame->m_pClientList[sAttackerH]->m_cIPaddress, m_pGame->m_pClientList[sAttackerH]->m_cCharName, m_pGame->m_pClientList[sAttackerH]->m_cSkillMastery[sSkillUsed]);
-				PutHackLogFileList(G_cTxt);
+				hb::logger::warn<log_channel::security>("Fullswing hack: IP={} player={}, dashing with weapon skill {}", m_pGame->m_pClientList[sAttackerH]->m_cIPaddress, m_pGame->m_pClientList[sAttackerH]->m_cCharName, m_pGame->m_pClientList[sAttackerH]->m_cSkillMastery[sSkillUsed]);
 				m_pGame->DeleteClient(sAttackerH, true, true);
 			}
 			catch (...)
@@ -2602,7 +2565,6 @@ uint32_t CombatManager::iCalculateAttackEffect(short sTargetH, char cTargetType,
 
 		if ((m_pGame->m_pClientList[sTargetH]->m_sX != tdX) || (m_pGame->m_pClientList[sTargetH]->m_sY != tdY)) return 0;
 
-
 		if ((cAttackerType == hb::shared::owner_class::Player) && (m_pGame->m_pClientList[sAttackerH]->m_bIsNeutral)
 			&& (m_pGame->m_pClientList[sTargetH]->m_iPKCount == 0)) return 0;
 
@@ -2630,7 +2592,6 @@ uint32_t CombatManager::iCalculateAttackEffect(short sTargetH, char cTargetType,
 		}
 
 		iTargetDefenseRatio += m_pGame->m_pClientList[sTargetH]->m_iAddDR;
-
 
 		sTgtX = m_pGame->m_pClientList[sTargetH]->m_sX;
 		sTgtY = m_pGame->m_pClientList[sTargetH]->m_sY;
@@ -2676,8 +2637,7 @@ uint32_t CombatManager::iCalculateAttackEffect(short sTargetH, char cTargetType,
 						m_pGame->m_pClientList[sAttackerH]->m_iWarContribution += iWarContribution;
 						if (m_pGame->m_pClientList[sAttackerH]->m_iWarContribution > m_pGame->m_iMaxWarContribution)
 							m_pGame->m_pClientList[sAttackerH]->m_iWarContribution = m_pGame->m_iMaxWarContribution;
-						std::snprintf(G_cTxt, sizeof(G_cTxt), "Construction Complete! WarContribution: +%d", iWarContribution);
-						PutLogList(G_cTxt);
+						hb::logger::log("Construction complete, war contribution +{}", iWarContribution);
 						m_pGame->SendNotifyMsg(0, sAttackerH, Notify::ConstructionPoint, m_pGame->m_pClientList[sAttackerH]->m_iConstructionPoint, m_pGame->m_pClientList[sAttackerH]->m_iWarContribution, 0, 0);
 						break;
 					case 5:
@@ -3301,8 +3261,7 @@ uint32_t CombatManager::iCalculateAttackEffect(short sTargetH, char cTargetType,
 								m_pGame->m_pNpcList[sTargetH]->m_iV1 = 0;
 								m_pGame->m_pNpcList[sTargetH]->m_iManaStock--;
 								if (m_pGame->m_pNpcList[sTargetH]->m_iManaStock <= 0) m_pGame->m_pNpcList[sTargetH]->m_iManaStock = 0;
-								std::snprintf(G_cTxt, sizeof(G_cTxt), "ManaStock down: %d", m_pGame->m_pNpcList[sTargetH]->m_iManaStock);
-								PutLogList(G_cTxt);
+								hb::logger::log("Mana stock reduced: {}", m_pGame->m_pNpcList[sTargetH]->m_iManaStock);
 							}
 						}
 						break;
@@ -3329,7 +3288,6 @@ uint32_t CombatManager::iCalculateAttackEffect(short sTargetH, char cTargetType,
 				else if ((m_pGame->m_pNpcList[sTargetH]->m_sType == 31) && (cAttackerType == 1) && (m_pGame->m_pClientList[sAttackerH] != 0) && (m_pGame->m_pClientList[sAttackerH]->m_iSpecialAbilityType == 7))
 					iDamage += m_pGame->iDice(3, 2);
 			}
-
 
 			if ((cAttackerSA == 2) && (m_pGame->m_pNpcList[sTargetH]->m_cMagicEffectStatus[hb::shared::magic::Protect] != 0)) {
 				switch (m_pGame->m_pNpcList[sTargetH]->m_cMagicEffectStatus[hb::shared::magic::Protect]) {
@@ -3622,4 +3580,3 @@ uint32_t CombatManager::iCalculateAttackEffect(short sTargetH, char cTargetType,
 
 	return iExp;
 }
-

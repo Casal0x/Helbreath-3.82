@@ -3,9 +3,9 @@
 #include "CommonTypes.h"
 #include "Game.h"
 #include "AdminLevel.h"
-#ifdef _WIN32
-#include <direct.h>
-#endif
+#include "StringCompat.h"
+#include "TimeUtils.h"
+#include <filesystem>
 #include "LoginServer.h"
 #include "EntityManager.h"
 #include "FishingManager.h"
@@ -18,8 +18,6 @@
 #include "CRC32.h"
 #include "SharedCalculations.h"
 #include "Item/ItemAttributes.h"
-#include "ChatLog.h"
-#include "ItemLog.h"
 #include "ObjectIDRange.h"
 #include "DirectionHelpers.h"
 #include "GameChatCommand.h"
@@ -35,10 +33,12 @@
 #include "SkillManager.h"
 #include "WarManager.h"
 #include "StatusEffectManager.h"
-
-
+#include "Log.h"
+#include "ServerLogChannels.h"
 
 using namespace hb::shared::net;
+
+using hb::log_channel;
 using namespace hb::server::net;
 using namespace hb::server::config;
 using namespace hb::server::npc;
@@ -56,20 +56,11 @@ using namespace hb::shared::item;
 
 class CDebugWindow* DbgWnd;
 
-extern void PutLogList(char* cMsg);
-extern void PutLogListLevel(int level, const char* cMsg);
 extern char G_cTxt[512];
 extern char	G_cData50000[50000];
 
-extern void PutLogFileList(char* cStr);
-extern void PutLogEventFileList(char* cStr);
-extern void PutHackLogFileList(char* cStr);
-extern void PutPvPLogFileList(char* cStr);
-
 // extern void PutDebugMsg(char * cStr);	// 2002-09-09 #2
 
-extern FILE* pLogFile;
-extern HWND	G_hWnd;
 
 // Move location tables  auto-calculated from hb::shared::view::InitDataTilesX/Y.
 // Each direction lists the (X,Y) tile offsets revealed when the player
@@ -147,23 +138,18 @@ static void BuildMoveLocTables()
 	sentinel(8, n);
 }
 
-
 char _tmp_cTmpDirX[9] = { 0,0,1,1,1,0,-1,-1,-1 };
 char _tmp_cTmpDirY[9] = { 0,-1,-1,0,1,1,1,0,-1 };
 
 // Construction/Destruction
 
-extern bool	G_bIsThread;
-extern void ThreadProc(void* ch);
-
-CGame::CGame(HWND hWnd)
+CGame::CGame()
 {
 	int x;
 
 	BuildMoveLocTables();
 
 	m_bIsGameStarted = false;
-	m_hWnd = hWnd;
 	_lsock = 0;
 	g_login = new LoginServer;
 
@@ -261,14 +247,8 @@ CGame::CGame(HWND hWnd)
 	for(int i = 0; i < hb::shared::limits::MaxSkillType; i++)
 		m_pSkillConfigList[i] = 0;
 
-
-
-
 	for(int i = 0; i < MaxNotifyMsgs; i++)
 		m_pNoticeMsgList[i] = 0;
-
-
-
 
 	//	/for(int i = 0; i < DEF_MAXTELEPORTTYPE; i++)
 	//		m_pTeleportConfigList[i] = 0;
@@ -290,8 +270,8 @@ CGame::CGame(HWND hWnd)
 	m_iTotalGameServerClients = 0;
 	m_iTotalGameServerMaxClients = 0;
 
-	m_MaxUserSysTime.wHour = 0;
-	m_MaxUserSysTime.wMinute = 0;
+	m_MaxUserSysTime.hour = 0;
+	m_MaxUserSysTime.minute = 0;
 
 	m_bIsServerShutdowned = false;
 	m_cShutDownCode = 0;
@@ -414,7 +394,7 @@ bool CGame::bAcceptLogin(hb::shared::net::ASIOSocket* sock)
 {
 	if (m_bIsGameStarted == false)
 	{
-		PutLogList("Closed Connection, not initialized");
+		hb::logger::log("Connection closed (not initialized)");
 		goto CLOSE_ANYWAY;
 	}
 
@@ -486,10 +466,9 @@ bool CGame::bAccept(class hb::shared::net::ASIOSocket* pXSock)
 				std::memset(cIPtoBan, 0, sizeof(cIPtoBan));
 				strcpy(cIPtoBan, m_pClientList[i]->m_cIPaddress);
 				//opens cfg file
-				pFile = fopen("GameConfigs\\BannedList.cfg", "a");
+				pFile = fopen("GameConfigs/BannedList.cfg", "a");
 				//shows log
-				std::snprintf(G_cTxt, sizeof(G_cTxt), "<%d> IP Banned: (%s)", i, cIPtoBan);
-				PutLogList(G_cTxt);
+				hb::logger::log("Client {}: IP banned ({})", i, cIPtoBan);
 				//modifys cfg file
 				fprintf(pFile, "banned-ip = %s", cIPtoBan);
 				fprintf(pFile, "\n");
@@ -503,14 +482,13 @@ bool CGame::bAccept(class hb::shared::net::ASIOSocket* pXSock)
 				goto CLOSE_CONN;
 			}
 
-			std::snprintf(G_cTxt, sizeof(G_cTxt), "<%d> Client Connected: (%s)", i, m_pClientList[i]->m_cIPaddress);
-			PutLogList(G_cTxt);
+			hb::logger::log("Client {}: connected from {}", i, m_pClientList[i]->m_cIPaddress);
 
 			m_iTotalClients++;
 
 			if (m_iTotalClients > m_iMaxClients) {
 				m_iMaxClients = m_iTotalClients;
-				//GetLocalTime(&m_MaxUserSysTime);
+				//m_MaxUserSysTime = hb::time::local_time::now();
 				//std::snprintf(cTxt, sizeof(cTxt), "Maximum Players: %d", m_iMaxClients);
 				//PutLogFileList(cTxt);
 			}
@@ -596,9 +574,8 @@ bool CGame::bAcceptFromAsync(asio::ip::tcp::socket&& peer)
 			if (iTotalip > 9) {
 				std::memset(cIPtoBan, 0, sizeof(cIPtoBan));
 				strcpy(cIPtoBan, m_pClientList[i]->m_cIPaddress);
-				pFile = fopen("GameConfigs\\BannedList.cfg", "a");
-				std::snprintf(G_cTxt, sizeof(G_cTxt), "<%d> IP Banned: (%s)", i, cIPtoBan);
-				PutLogList(G_cTxt);
+				pFile = fopen("GameConfigs/BannedList.cfg", "a");
+				hb::logger::log("Client {}: IP banned ({})", i, cIPtoBan);
 				fprintf(pFile, "banned-ip = %s", cIPtoBan);
 				fprintf(pFile, "\n");
 				fclose(pFile);
@@ -610,8 +587,7 @@ bool CGame::bAcceptFromAsync(asio::ip::tcp::socket&& peer)
 				goto CLOSE_CONN_ASYNC;
 			}
 
-			std::snprintf(G_cTxt, sizeof(G_cTxt), "<%d> Client Connected: (%s)", i, m_pClientList[i]->m_cIPaddress);
-			PutLogList(G_cTxt);
+			hb::logger::log("Client {}: connected from {}", i, m_pClientList[i]->m_cIPaddress);
 
 			m_iTotalClients++;
 
@@ -679,49 +655,30 @@ void CGame::OnClientSocketEvent(int iClientH)
 		break;
 
 	case sock::Event::Block:
-		std::snprintf(G_cTxt, sizeof(G_cTxt), "[WARN] Client %d Socket BLOCKED (send buffer full)", iClientH);
-		PutLogList(G_cTxt);
+		hb::logger::log("Client {}: socket blocked (send buffer full)", iClientH);
 		break;
 
 	case sock::Event::ConfirmCodeNotMatch:
-		std::snprintf(G_cTxt, sizeof(G_cTxt), "<%d> Confirmcode notmatch!", iClientH);
-		PutLogList(G_cTxt);
+		hb::logger::log("Client {}: confirm code mismatch", iClientH);
 		DeleteClient(iClientH, false, true);
 		break;
 
 	case sock::Event::MsgSizeTooLarge:
-		std::snprintf(G_cTxt, sizeof(G_cTxt), "<%d> Client Disconnected! MSGSIZETOOLARGE (%s)", iClientH, m_pClientList[iClientH]->m_cIPaddress);
-		PutLogList(G_cTxt);
+		hb::logger::log("Client {}: disconnected, message too large ({})", iClientH, m_pClientList[iClientH]->m_cIPaddress);
 		DeleteClient(iClientH, true, true);
 		break;
 
 	case sock::Event::SocketError:
-		std::snprintf(G_cTxt, sizeof(G_cTxt),
-			"<%d> Client Disconnected! SOCKETERROR (%s) WSA=%d LastMsg=0x%08X LastMsgAge=%dms LastMsgSize=%zu CharName=%s",
-			iClientH, m_pClientList[iClientH]->m_cIPaddress, m_pClientList[iClientH]->m_pXSock->m_WSAErr,
-			m_pClientList[iClientH]->m_dwLastMsgId,
-			dwTime - m_pClientList[iClientH]->m_dwLastMsgTime,
-			m_pClientList[iClientH]->m_dwLastMsgSize,
-			m_pClientList[iClientH]->m_cCharName);
-		PutLogList(G_cTxt);
+		hb::logger::log("Client {}: disconnected, socket error ({}) WSA={} last_msg=0x{:08X} age={}ms size={} char={}", iClientH, m_pClientList[iClientH]->m_cIPaddress, m_pClientList[iClientH]->m_pXSock->m_WSAErr, m_pClientList[iClientH]->m_dwLastMsgId, dwTime - m_pClientList[iClientH]->m_dwLastMsgTime, m_pClientList[iClientH]->m_dwLastMsgSize, m_pClientList[iClientH]->m_cCharName);
 		DeleteClient(iClientH, true, true);
 		break;
 
 	case sock::Event::SocketClosed:
-		std::snprintf(G_cTxt, sizeof(G_cTxt),
-			"<%d> Client Disconnected! SOCKETCLOSED (%s) WSA=%d TimeSinceLastPacket=%dms LastMsg=0x%08X LastMsgAge=%dms LastMsgSize=%zu CharName=%s",
-			iClientH, m_pClientList[iClientH]->m_cIPaddress, m_pClientList[iClientH]->m_pXSock->m_WSAErr,
-			dwTime - m_pClientList[iClientH]->m_dwTime,
-			m_pClientList[iClientH]->m_dwLastMsgId,
-			dwTime - m_pClientList[iClientH]->m_dwLastMsgTime,
-			m_pClientList[iClientH]->m_dwLastMsgSize,
-			m_pClientList[iClientH]->m_cCharName);
-		PutLogList(G_cTxt);
+		hb::logger::log("Client {}: disconnected, socket closed ({}) WSA={} idle={}ms last_msg=0x{:08X} age={}ms size={} char={}", iClientH, m_pClientList[iClientH]->m_cIPaddress, m_pClientList[iClientH]->m_pXSock->m_WSAErr, dwTime - m_pClientList[iClientH]->m_dwTime, m_pClientList[iClientH]->m_dwLastMsgId, dwTime - m_pClientList[iClientH]->m_dwLastMsgTime, m_pClientList[iClientH]->m_dwLastMsgSize, m_pClientList[iClientH]->m_cCharName);
 		if ((dwTime - m_pClientList[iClientH]->m_dwLogoutHackCheck) < 1000) {
 			try
 			{
-				std::snprintf(G_cTxt, sizeof(G_cTxt), "Logout Hack: (%s) Player: (%s) - disconnected within 10 seconds of most recent damage. Hack? Lag?", m_pClientList[iClientH]->m_cIPaddress, m_pClientList[iClientH]->m_cCharName);
-				PutHackLogFileList(G_cTxt);
+				hb::logger::warn<log_channel::security>("Logout hack: IP={} player={}, disconnected within 10s of last damage", m_pClientList[iClientH]->m_cIPaddress, m_pClientList[iClientH]->m_cCharName);
 			}
 			catch (...)
 			{
@@ -732,14 +689,7 @@ void CGame::OnClientSocketEvent(int iClientH)
 		break;
 
 	case sock::Event::CriticalError:
-		std::snprintf(G_cTxt, sizeof(G_cTxt),
-			"<%d> Client Disconnected! CRITICALERROR (%s) WSA=%d LastMsg=0x%08X LastMsgAge=%dms LastMsgSize=%zu CharName=%s",
-			iClientH, m_pClientList[iClientH]->m_cIPaddress, m_pClientList[iClientH]->m_pXSock->m_WSAErr,
-			m_pClientList[iClientH]->m_dwLastMsgId,
-			dwTime - m_pClientList[iClientH]->m_dwLastMsgTime,
-			m_pClientList[iClientH]->m_dwLastMsgSize,
-			m_pClientList[iClientH]->m_cCharName);
-		PutLogList(G_cTxt);
+		hb::logger::log("Client {}: disconnected, critical error ({}) WSA={} last_msg=0x{:08X} age={}ms size={} char={}", iClientH, m_pClientList[iClientH]->m_cIPaddress, m_pClientList[iClientH]->m_pXSock->m_WSAErr, m_pClientList[iClientH]->m_dwLastMsgId, dwTime - m_pClientList[iClientH]->m_dwLastMsgTime, m_pClientList[iClientH]->m_dwLastMsgSize, m_pClientList[iClientH]->m_cCharName);
 		DeleteClient(iClientH, true, true);
 		break;
 	}
@@ -747,12 +697,12 @@ void CGame::OnClientSocketEvent(int iClientH)
 
 bool CGame::bInit()
 {
-	SYSTEMTIME SysTime;
+	hb::time::local_time SysTime{};
 	uint32_t dwTime = GameClock::GetTimeMS();
 
 	//CMisc::Temp();
 
-	PutLogListLevel(LOG_LEVEL_NOTICE, "Initializing game server...");
+	hb::logger::log("Initializing game server");
 
 	for(int i = 0; i < MaxClients + 1; i++)
 		m_iClientShortCut[i] = 0;
@@ -781,14 +731,8 @@ bool CGame::bInit()
 	for(int i = 0; i < hb::shared::limits::MaxSkillType; i++)
 		if (m_pSkillConfigList[i] != 0) delete m_pSkillConfigList[i];
 
-
-
-
 	for(int i = 0; i < MaxNotifyMsgs; i++)
 		if (m_pNoticeMsgList[i] != 0) delete m_pNoticeMsgList[i];
-
-
-
 
 	//	for(int i = 0; i < DEF_MAXTELEPORTTYPE; i++)
 	//	if (m_pTeleportConfigList[i] != 0) delete m_pTeleportConfigList[i];
@@ -798,7 +742,6 @@ bool CGame::bInit()
 
 	for(int i = 0; i < MaxNpcTypes; i++)
 		m_iNpcConstructionPoint[i] = 0;
-
 
 	for(int i = 0; i < MaxSchedule; i++) {
 		m_stCrusadeWarSchedule[i].iDay = -1;
@@ -865,14 +808,8 @@ bool CGame::bInit()
 	for(int i = 0; i < hb::shared::limits::MaxSkillType; i++)
 		m_pSkillConfigList[i] = 0;
 
-
-
-
 	for(int i = 0; i < MaxNotifyMsgs; i++)
 		m_pNoticeMsgList[i] = 0;
-
-
-
 
 	//	for(int i = 0; i < DEF_MAXTELEPORTTYPE; i++)
 	//		m_pTeleportConfigList[i] = 0;
@@ -911,8 +848,8 @@ bool CGame::bInit()
 	m_iTotalGameServerClients = 0;
 	m_iTotalGameServerMaxClients = 0;
 
-	m_MaxUserSysTime.wHour = 0;
-	m_MaxUserSysTime.wMinute = 0;
+	m_MaxUserSysTime.hour = 0;
+	m_MaxUserSysTime.minute = 0;
 
 	m_bIsServerShutdowned = false;
 	m_cShutDownCode = 0;
@@ -952,8 +889,8 @@ bool CGame::bInit()
 
 	m_bIsSpecialEventTime = false;
 
-	GetLocalTime(&SysTime);
-	m_dwCanFightzoneReserveTime = dwTime - ((SysTime.wHour % 2) * 60 * 60 + SysTime.wMinute * 60) * 1000;
+	SysTime = hb::time::local_time::now();
+	m_dwCanFightzoneReserveTime = dwTime - ((SysTime.hour % 2) * 60 * 60 + SysTime.minute * 60) * 1000;
 
 	for(int i = 0; i < MaxFightZone; i++)
 		m_iFightZoneReserve[i] = 0;
@@ -972,31 +909,27 @@ bool CGame::bInit()
 	sqlite3* configDb = nullptr;
 	std::string configDbPath;
 	bool configDbCreated = false;
-	PutLogListLevel(LOG_LEVEL_NOTICE, "Validating GameConfigs.db...");
+	hb::logger::log("Validating GameConfigs.db");
 	bool configDbReady = EnsureGameConfigDatabase(&configDb, configDbPath, &configDbCreated);
 	if (!configDbReady) {
-		PutLogList(" ");
-		PutLogList("(!!!) CRITICAL ERROR! Cannot execute server! GameConfigs.db unavailable.");
+		hb::logger::error("Cannot start server: GameConfigs.db unavailable");
 		return false;
 	}
 	if (configDbCreated) {
-		PutLogList(" ");
-		PutLogList("(!!!) CRITICAL ERROR! Cannot execute server! GameConfigs.db missing configuration data.");
+		hb::logger::error("Cannot start server: GameConfigs.db missing configuration data");
 		CloseGameConfigDatabase(configDb);
 		return false;
 	}
 
 	if (!HasGameConfigRows(configDb, "realmlist") || !HasGameConfigRows(configDb, "active_maps") ||
 		!LoadRealmConfig(configDb, this)) {
-		PutLogList(" ");
-		PutLogList("(!!!) CRITICAL ERROR! Cannot execute server! Program configs missing in GameConfigs.db.");
+		hb::logger::error("Cannot start server: program configs missing in GameConfigs.db");
 		CloseGameConfigDatabase(configDb);
 		return false;
 	}
 
 	if (!HasGameConfigRows(configDb, "settings") || !LoadSettingsConfig(configDb, this)) {
-		PutLogList(" ");
-		PutLogList("(!!!) CRITICAL ERROR! Cannot execute server! Settings configs missing in GameConfigs.db.");
+		hb::logger::error("Cannot start server: settings configs missing in GameConfigs.db");
 		CloseGameConfigDatabase(configDb);
 		return false;
 	}
@@ -1004,30 +937,26 @@ bool CGame::bInit()
 	// Calculate m_iMaxStatValue after settings are loaded
 	// Formula: base + creation + (levelup * max_level) + angelic_max(16)
 	m_iMaxStatValue = m_iBaseStatValue + m_iCreationStatBonus + (m_iLevelupStatGain * m_iMaxLevel) + 16;
-	std::snprintf(G_cTxt, sizeof(G_cTxt), "(!) Max stat value calculated: %d", m_iMaxStatValue);
-	PutLogList(G_cTxt);
+	hb::logger::log("Max stat value calculated: {}", m_iMaxStatValue);
 
 	if (!LoadBannedListConfig(configDb, this)) {
-		PutLogList(" ");
-		PutLogList("(!!!) CRITICAL ERROR! Cannot execute server! Banned list unavailable in GameConfigs.db.");
+		hb::logger::error("Cannot start server: banned list unavailable in GameConfigs.db");
 		CloseGameConfigDatabase(configDb);
 		return false;
 	}
 
 	if (!LoadAdminConfig(configDb, this)) {
-		PutLogList("(!) Warning: Could not load admin config from GameConfigs.db. Admin list empty.");
+		hb::logger::log("Could not load admin config from GameConfigs.db, admin list empty");
 	}
 	else {
-		std::snprintf(G_cTxt, sizeof(G_cTxt), "(!) Loaded %d admin(s) from GameConfigs.db.", m_iAdminCount);
-		PutLogList(G_cTxt);
+		hb::logger::log("Loaded {} admin(s) from GameConfigs.db.", m_iAdminCount);
 	}
 
 	if (!LoadCommandPermissions(configDb, this)) {
-		PutLogList("(!) Warning: Could not load command permissions from GameConfigs.db.");
+		hb::logger::log("Could not load command permissions from GameConfigs.db");
 	}
 	else if (!m_commandPermissions.empty()) {
-		std::snprintf(G_cTxt, sizeof(G_cTxt), "(!) Loaded %d command permission override(s) from GameConfigs.db.", (int)m_commandPermissions.size());
-		PutLogList(G_cTxt);
+		hb::logger::log("Loaded {} command permission override(s) from GameConfigs.db.", (int)m_commandPermissions.size());
 	}
 
 	srand((unsigned)time(0));
@@ -1036,20 +965,18 @@ bool CGame::bInit()
 	_lsock->bConnect(m_cLoginListenIP, m_iLoginListenPort);
 	_lsock->bInitBufferSize(hb::shared::limits::MsgBufferSize);
 
-	m_bF1pressed = m_bF4pressed = m_bF12pressed = m_bF5pressed = false;
-
 	m_bOnExitProcess = false;
 
 	for(int i = 0; i <= 100; i++) {
 		m_iSkillSSNpoint[i] = m_pSkillManager->_iCalcSkillSSNpoint(i);
 	}
 
-	GetLocalTime(&SysTime);
-	if (SysTime.wMinute >= m_iNighttimeDuration)
+	SysTime = hb::time::local_time::now();
+	if (SysTime.minute >= m_iNighttimeDuration)
 		m_cDayOrNight = 2;
 	else m_cDayOrNight = 1;
 
-	bReadNotifyMsgListFile("GameConfigs\\notice.txt");
+	bReadNotifyMsgListFile("GameConfigs/notice.txt");
 	m_dwNoticeTime = dwTime;
 
 	m_pNoticementData = 0;
@@ -1089,8 +1016,7 @@ bool CGame::bInit()
 		m_bIsItemAvailable = LoadItemConfigs(configDb, m_pItemConfigList, MaxItemTypes);
 	}
 	if (!m_bIsItemAvailable) {
-		PutLogList(" ");
-		PutLogList("(!!!) CRITICAL ERROR! Cannot execute server! Item configs missing in GameConfigs.db.");
+		hb::logger::error("Cannot start server: item configs missing in GameConfigs.db");
 		CloseGameConfigDatabase(configDb);
 		return false;
 	}
@@ -1100,8 +1026,7 @@ bool CGame::bInit()
 		m_bIsBuildItemAvailable = LoadBuildItemConfigs(configDb, this);
 	}
 	if (!m_bIsBuildItemAvailable) {
-		PutLogList(" ");
-		PutLogList("(!!!) CRITICAL ERROR! Cannot execute server! BuildItem configs missing in GameConfigs.db.");
+		hb::logger::error("Cannot start server: build item configs missing in GameConfigs.db");
 		CloseGameConfigDatabase(configDb);
 		return false;
 	}
@@ -1111,8 +1036,7 @@ bool CGame::bInit()
 		m_bIsNpcAvailable = LoadNpcConfigs(configDb, this);
 	}
 	if (!m_bIsNpcAvailable) {
-		PutLogList(" ");
-		PutLogList("(!!!) CRITICAL ERROR! Cannot execute server! NPC configs missing in GameConfigs.db.");
+		hb::logger::error("Cannot start server: NPC configs missing in GameConfigs.db");
 		CloseGameConfigDatabase(configDb);
 		return false;
 	}
@@ -1122,8 +1046,7 @@ bool CGame::bInit()
 		m_bIsDropTableAvailable = LoadDropTables(configDb, this);
 	}
 	if (!m_bIsDropTableAvailable) {
-		PutLogList(" ");
-		PutLogList("(!!!) CRITICAL ERROR! Cannot execute server! Drop tables missing in GameConfigs.db.");
+		hb::logger::error("Cannot start server: drop tables missing in GameConfigs.db");
 		CloseGameConfigDatabase(configDb);
 		return false;
 	}
@@ -1137,22 +1060,12 @@ bool CGame::bInit()
 			}
 			if (npc->m_iDropTableId == 0 &&
 				(npc->m_iExpDiceMax > 0 || npc->m_iGoldDiceMax > 0)) {
-				char logMsg[256] = {};
-				std::snprintf(logMsg, sizeof(logMsg),
-					"NPC missing drop table: %s (exp %u-%u, gold %u-%u)",
-					npc->m_cNpcName,
-					static_cast<unsigned int>(npc->m_iExpDiceMin),
-					static_cast<unsigned int>(npc->m_iExpDiceMax),
-					static_cast<unsigned int>(npc->m_iGoldDiceMin),
-					static_cast<unsigned int>(npc->m_iGoldDiceMax));
-				PutLogListLevel(LOG_LEVEL_WARNING, logMsg);
+				hb::logger::warn("NPC missing drop table: {} (exp {}-{}, gold {}-{})", npc->m_cNpcName, static_cast<unsigned int>(npc->m_iExpDiceMin), static_cast<unsigned int>(npc->m_iExpDiceMax), static_cast<unsigned int>(npc->m_iGoldDiceMin), static_cast<unsigned int>(npc->m_iGoldDiceMax));
 				missingDrops++;
 			}
 		}
 		if (missingDrops > 0) {
-			char logMsg[128] = {};
-			std::snprintf(logMsg, sizeof(logMsg), "NPCs missing drop tables: %d", missingDrops);
-			PutLogListLevel(LOG_LEVEL_WARNING, logMsg);
+			hb::logger::warn("NPCs missing drop tables: {}", missingDrops);
 		}
 	}
 
@@ -1162,7 +1075,7 @@ bool CGame::bInit()
 		LoadShopConfigs(configDb, this);
 	}
 	if (!m_bIsShopDataAvailable) {
-		PutLogList("(!) Shop data not configured - NPCs will not have shop inventories.");
+		hb::logger::log("Shop data not configured, NPCs will not have shop inventories");
 	}
 
 	m_bIsMagicAvailable = false;
@@ -1170,8 +1083,7 @@ bool CGame::bInit()
 		m_bIsMagicAvailable = LoadMagicConfigs(configDb, this);
 	}
 	if (!m_bIsMagicAvailable) {
-		PutLogList(" ");
-		PutLogList("(!!!) CRITICAL ERROR! Cannot execute server! Magic configs missing in GameConfigs.db.");
+		hb::logger::error("Cannot start server: magic configs missing in GameConfigs.db");
 		CloseGameConfigDatabase(configDb);
 		return false;
 	}
@@ -1181,8 +1093,7 @@ bool CGame::bInit()
 		m_bIsSkillAvailable = LoadSkillConfigs(configDb, this);
 	}
 	if (!m_bIsSkillAvailable) {
-		PutLogList(" ");
-		PutLogList("(!!!) CRITICAL ERROR! Cannot execute server! Skill configs missing in GameConfigs.db.");
+		hb::logger::error("Cannot start server: skill configs missing in GameConfigs.db");
 		CloseGameConfigDatabase(configDb);
 		return false;
 	}
@@ -1194,8 +1105,7 @@ bool CGame::bInit()
 		m_bIsQuestAvailable = LoadQuestConfigs(configDb, this);
 	}
 	if (!m_bIsQuestAvailable) {
-		PutLogList(" ");
-		PutLogList("(!!!) CRITICAL ERROR! Cannot execute server! Quest configs missing in GameConfigs.db.");
+		hb::logger::error("Cannot start server: quest configs missing in GameConfigs.db");
 		CloseGameConfigDatabase(configDb);
 		return false;
 	}
@@ -1205,8 +1115,7 @@ bool CGame::bInit()
 		m_bIsPortionAvailable = LoadPortionConfigs(configDb, this);
 	}
 	if (!m_bIsPortionAvailable) {
-		PutLogList(" ");
-		PutLogList("(!!!) CRITICAL ERROR! Cannot execute server! Potion/Crafting configs missing in GameConfigs.db.");
+		hb::logger::error("Cannot start server: potion/crafting configs missing in GameConfigs.db");
 		CloseGameConfigDatabase(configDb);
 		return false;
 	}
@@ -1241,10 +1150,9 @@ void CGame::OnClientRead(int iClientH)
 	}
 
 	if (bPutMsgQuene(Source::Client, pData, dwMsgSize, iClientH, cKey) == false) {
-		PutLogList("@@@@@@ CRITICAL ERROR in MsgQuene!!! @@@@@@");
+		hb::logger::error("Critical error in message queue");
 	}
 }
-
 
 void CGame::ClientMotionHandler(int iClientH, char* pData)
 {
@@ -1381,8 +1289,8 @@ int CGame::iClientMotion_Move_Handler(int iClientH, short sX, short sY, char cDi
 {
 	char moveMapData[3000];
 	class CTile* pTile;
-	DWORD dwTime;
-	WORD  wObjectID;
+	uint32_t dwTime;
+	uint16_t wObjectID;
 	short dX, dY, sDOtype, pTopItem;
 	int   iRet, iSize, iDamage;
 	bool  bRet, bIsBlocked = false;
@@ -1396,7 +1304,7 @@ int CGame::iClientMotion_Move_Handler(int iClientH, short sX, short sY, char cDi
 	if ((sX != m_pClientList[iClientH]->m_sX) || (sY != m_pClientList[iClientH]->m_sY)) return 2;
 
 	//locobans
-	dwTime = timeGetTime();
+	dwTime = GameClock::GetTimeMS();
 	/*m_pClientList[iClientH]->m_dwLastActionTime = dwTime;
 	if (cMoveType == 2) {
 		if (m_pClientList[iClientH]->m_iRecentWalkTime > dwTime) {
@@ -1416,7 +1324,7 @@ int CGame::iClientMotion_Move_Handler(int iClientH, short sX, short sY, char cDi
 		if (m_pClientList[iClientH]->m_iMoveMsgRecvCount >= 3) {
 			if (m_pClientList[iClientH]->m_dwMoveLAT != 0) {
 				if ((dwTime - m_pClientList[iClientH]->m_dwMoveLAT) < (590)) {
-					//wsprintf(G_cTxt, "3.51 Walk Speeder: (%s) Player: (%s) walk difference: %d. Speed Hack?", m_pClientList[iClientH]->m_cIPaddress, m_pClientList[iClientH]->m_cCharName, dwTime - m_pClientList[iClientH]->m_dwMoveLAT);
+					//sprintf(G_cTxt, "3.51 Walk Speeder: (%s) Player: (%s) walk difference: %d. Speed Hack?", m_pClientList[iClientH]->m_cIPaddress, m_pClientList[iClientH]->m_cCharName, dwTime - m_pClientList[iClientH]->m_dwMoveLAT);
 					//PutHackLogFileList(G_cTxt);
 					bIsBlocked = true;
 				}
@@ -1443,7 +1351,7 @@ int CGame::iClientMotion_Move_Handler(int iClientH, short sX, short sY, char cDi
 		if (m_pClientList[iClientH]->m_iRunMsgRecvCount >= 3) {
 			if (m_pClientList[iClientH]->m_dwRunLAT != 0) {
 				if ((dwTime - m_pClientList[iClientH]->m_dwRunLAT) < (290)) {
-					//wsprintf(G_cTxt, "3.51 Run Speeder: (%s) Player: (%s) run difference: %d. Speed Hack?", m_pClientList[iClientH]->m_cIPaddress, m_pClientList[iClientH]->m_cCharName, dwTime - m_pClientList[iClientH]->m_dwRunLAT);
+					//sprintf(G_cTxt, "3.51 Run Speeder: (%s) Player: (%s) run difference: %d. Speed Hack?", m_pClientList[iClientH]->m_cIPaddress, m_pClientList[iClientH]->m_cCharName, dwTime - m_pClientList[iClientH]->m_dwRunLAT);
 					//PutHackLogFileList(G_cTxt);
 					bIsBlocked = true;
 				}
@@ -1543,7 +1451,7 @@ int CGame::iClientMotion_Move_Handler(int iClientH, short sX, short sY, char cDi
 
 		m_pClientList[iClientH]->m_dwAttackLAT = 0;
 
-		wObjectID = (WORD)iClientH;
+		wObjectID = (uint16_t)iClientH;
 		writer.Reset();
 		auto* pkt = writer.Append<hb::net::PacketResponseMotionMoveReject>();
 		pkt->header.msg_id = MsgId::ResponseMotion;
@@ -1593,14 +1501,13 @@ void CGame::RequestInitPlayerHandler(int iClientH, char* pData, char cKey)
 	if (m_pClientList[iClientH] == 0) return;
 	if (m_pClientList[iClientH]->m_bIsInitComplete) return;
 
+	std::memset(cCharName, 0, sizeof(cCharName));
+	std::memset(cAccountName, 0, sizeof(cAccountName));
+	std::memset(cAccountPassword, 0, sizeof(cAccountPassword));
 
-	ZeroMemory(cCharName, sizeof(cCharName));
-	ZeroMemory(cAccountName, sizeof(cAccountName));
-	ZeroMemory(cAccountPassword, sizeof(cAccountPassword));
-
-	ZeroMemory(m_pClientList[iClientH]->m_cCharName, sizeof(m_pClientList[iClientH]->m_cCharName));
-	ZeroMemory(m_pClientList[iClientH]->m_cAccountName, sizeof(m_pClientList[iClientH]->m_cAccountName));
-	ZeroMemory(m_pClientList[iClientH]->m_cAccountPassword, sizeof(m_pClientList[iClientH]->m_cAccountPassword));
+	std::memset(m_pClientList[iClientH]->m_cCharName, 0, sizeof(m_pClientList[iClientH]->m_cCharName));
+	std::memset(m_pClientList[iClientH]->m_cAccountName, 0, sizeof(m_pClientList[iClientH]->m_cAccountName));
+	std::memset(m_pClientList[iClientH]->m_cAccountPassword, 0, sizeof(m_pClientList[iClientH]->m_cAccountPassword));
 
 	const auto* req = hb::net::PacketCast<hb::net::PacketRequestInitPlayer>(
 		pData, sizeof(hb::net::PacketRequestInitPlayer));
@@ -1608,19 +1515,19 @@ void CGame::RequestInitPlayerHandler(int iClientH, char* pData, char cKey)
 
 	memcpy(cCharName, req->player, hb::shared::limits::CharNameLen - 1);
 
-	ZeroMemory(cTxt, sizeof(cTxt)); // v1.4
+	std::memset(cTxt, 0, sizeof(cTxt)); // v1.4
 	memcpy(cTxt, cCharName, hb::shared::limits::CharNameLen - 1);
-	ZeroMemory(cCharName, sizeof(cCharName));
+	std::memset(cCharName, 0, sizeof(cCharName));
 	memcpy(cCharName, cTxt, hb::shared::limits::CharNameLen - 1);
 
 	//testcode
-	if (strlen(cTxt) == 0) PutLogList("RIPH - cTxt: Char 0!");
+	if (strlen(cTxt) == 0) hb::logger::warn("RequestInitPlayerHandler: empty character name after copy");
 
 	memcpy(cAccountName, req->account, hb::shared::limits::AccountNameLen - 1);
 
-	ZeroMemory(cTxt, sizeof(cTxt)); // v1.4
+	std::memset(cTxt, 0, sizeof(cTxt)); // v1.4
 	memcpy(cTxt, cAccountName, hb::shared::limits::AccountNameLen - 1);
-	ZeroMemory(cAccountName, sizeof(cAccountName));
+	std::memset(cAccountName, 0, sizeof(cAccountName));
 	memcpy(cAccountName, cTxt, hb::shared::limits::AccountNameLen - 1);
 
 	// Lowercase account name to match how it was stored during account creation
@@ -1629,18 +1536,18 @@ void CGame::RequestInitPlayerHandler(int iClientH, char* pData, char cKey)
 
 	memcpy(cAccountPassword, req->password, hb::shared::limits::AccountPassLen - 1);
 
-	ZeroMemory(cTxt, sizeof(cTxt)); // v1.4
+	std::memset(cTxt, 0, sizeof(cTxt)); // v1.4
 	memcpy(cTxt, cAccountPassword, hb::shared::limits::AccountPassLen - 1);
-	ZeroMemory(cAccountPassword, sizeof(cAccountPassword));
+	std::memset(cAccountPassword, 0, sizeof(cAccountPassword));
 	memcpy(cAccountPassword, cTxt, hb::shared::limits::AccountPassLen - 1);
 
 	bIsObserverMode = (req->is_observer != 0);
 
 	for(int i = 1; i < MaxClients; i++)
-		if ((m_pClientList[i] != 0) && (iClientH != i) && (_strnicmp(m_pClientList[i]->m_cAccountName, cAccountName, hb::shared::limits::AccountNameLen - 1) == 0)) {
+		if ((m_pClientList[i] != 0) && (iClientH != i) && (hb_strnicmp(m_pClientList[i]->m_cAccountName, cAccountName, hb::shared::limits::AccountNameLen - 1) == 0)) {
 			if (memcmp(m_pClientList[i]->m_cAccountPassword, cAccountPassword, 10) == 0) {
-				wsprintf(G_cTxt, "<%d> Duplicate account player! Deleted with data save : CharName(%s) AccntName(%s) IP(%s)", i, m_pClientList[i]->m_cCharName, m_pClientList[i]->m_cAccountName, m_pClientList[i]->m_cIPaddress);
-				PutLogList(G_cTxt);
+				sprintf(G_cTxt, "<%d> Duplicate account player! Deleted with data save : CharName(%s) AccntName(%s) IP(%s)", i, m_pClientList[i]->m_cCharName, m_pClientList[i]->m_cAccountName, m_pClientList[i]->m_cIPaddress);
+				hb::logger::log("{}", G_cTxt);
 				//PutLogFileList(G_cTxt);
 				DeleteClient(i, true, true, false);
 			}
@@ -1655,10 +1562,10 @@ void CGame::RequestInitPlayerHandler(int iClientH, char* pData, char cKey)
 		}
 
 	for(int i = 1; i < MaxClients; i++)
-		if ((m_pClientList[i] != 0) && (iClientH != i) && (_strnicmp(m_pClientList[i]->m_cCharName, cCharName, hb::shared::limits::CharNameLen - 1) == 0)) {
+		if ((m_pClientList[i] != 0) && (iClientH != i) && (hb_strnicmp(m_pClientList[i]->m_cCharName, cCharName, hb::shared::limits::CharNameLen - 1) == 0)) {
 			if (memcmp(m_pClientList[i]->m_cAccountPassword, cAccountPassword, 10) == 0) {
-				wsprintf(G_cTxt, "<%d> Duplicate player! Deleted with data save : CharName(%s) IP(%s)", i, m_pClientList[i]->m_cCharName, m_pClientList[i]->m_cIPaddress);
-				PutLogList(G_cTxt);
+				sprintf(G_cTxt, "<%d> Duplicate player! Deleted with data save : CharName(%s) IP(%s)", i, m_pClientList[i]->m_cCharName, m_pClientList[i]->m_cIPaddress);
+				hb::logger::log("{}", G_cTxt);
 				//PutLogFileList(G_cTxt);
 				DeleteClient(i, true, true, false);
 			}
@@ -1683,14 +1590,13 @@ void CGame::RequestInitPlayerHandler(int iClientH, char* pData, char cKey)
 	m_pClientList[iClientH]->m_iAdminLevel = 0;
 	m_pClientList[iClientH]->m_bIsGMMode = false;
 	int iAdminIdx = FindAdminByAccount(cAccountName);
-	if (iAdminIdx != -1 && _stricmp(m_stAdminList[iAdminIdx].m_cCharName, cCharName) == 0)
+	if (iAdminIdx != -1 && hb_stricmp(m_stAdminList[iAdminIdx].m_cCharName, cCharName) == 0)
 	{
 		if (strcmp(m_stAdminList[iAdminIdx].m_cApprovedIP, "0.0.0.0") == 0)
 		{
 			strncpy(m_stAdminList[iAdminIdx].m_cApprovedIP, m_pClientList[iClientH]->m_cIPaddress, 20);
 			m_stAdminList[iAdminIdx].m_cApprovedIP[20] = '\0';
-			std::snprintf(G_cTxt, sizeof(G_cTxt), "(!) Admin IP auto-set for account %s to %s", cAccountName, m_pClientList[iClientH]->m_cIPaddress);
-			PutLogList(G_cTxt);
+			hb::logger::log("Admin IP auto-set: account={} ip={}", cAccountName, m_pClientList[iClientH]->m_cIPaddress);
 
 			sqlite3* configDb = nullptr;
 			std::string dbPath;
@@ -1710,9 +1616,7 @@ void CGame::RequestInitPlayerHandler(int iClientH, char* pData, char cKey)
 		}
 		else
 		{
-			std::snprintf(G_cTxt, sizeof(G_cTxt), "(!!!) SECURITY: Admin IP mismatch for account %s (expected %s, got %s)",
-				cAccountName, m_stAdminList[iAdminIdx].m_cApprovedIP, m_pClientList[iClientH]->m_cIPaddress);
-			PutLogList(G_cTxt);
+			hb::logger::error("Admin IP mismatch for account {} (expected {}, got {})", cAccountName, m_stAdminList[iAdminIdx].m_cApprovedIP, m_pClientList[iClientH]->m_cIPaddress);
 			DeleteClient(iClientH, false, false, false);
 			return;
 		}
@@ -1727,7 +1631,7 @@ void CGame::RequestInitDataHandler(int iClientH, char* pData, char cKey, size_t 
 	char cPlayerName[hb::shared::limits::CharNameLen], cTxt[120];
 	int sSummonPoints;
 	int iTotalItemA, iTotalItemB, iSize, iRet, iStats;
-	SYSTEMTIME SysTime;
+	hb::time::local_time SysTime{};
 	hb::net::PacketWriter writer;
 	char initMapData[hb::shared::limits::MsgBufferSize + 1];
 
@@ -1739,15 +1643,15 @@ void CGame::RequestInitDataHandler(int iClientH, char* pData, char cKey, size_t 
 		return;
 	}
 
-	ZeroMemory(cPlayerName, sizeof(cPlayerName));
+	std::memset(cPlayerName, 0, sizeof(cPlayerName));
 	memcpy(cPlayerName, req->player, hb::shared::limits::CharNameLen - 1);
 
-	ZeroMemory(cTxt, sizeof(cTxt)); // v1.4
+	std::memset(cTxt, 0, sizeof(cTxt)); // v1.4
 	memcpy(cTxt, cPlayerName, hb::shared::limits::CharNameLen - 1);
-	ZeroMemory(cPlayerName, sizeof(cPlayerName));
+	std::memset(cPlayerName, 0, sizeof(cPlayerName));
 	memcpy(cPlayerName, cTxt, hb::shared::limits::CharNameLen - 1);
 
-	if (_strnicmp(m_pClientList[iClientH]->m_cCharName, cPlayerName, hb::shared::limits::CharNameLen - 1) != 0) {
+	if (hb_strnicmp(m_pClientList[iClientH]->m_cCharName, cPlayerName, hb::shared::limits::CharNameLen - 1) != 0) {
 		DeleteClient(iClientH, false, true);
 		return;
 	}
@@ -1857,8 +1761,8 @@ void CGame::RequestInitDataHandler(int iClientH, char* pData, char cKey, size_t 
 	for(int i = 0; i < iTotalItemA; i++) {
 		// ### ERROR POINT!!!
 		if (m_pClientList[iClientH]->m_pItemList[i] == 0) {
-			wsprintf(G_cTxt, "RequestInitDataHandler error: Client(%s) Item(%d)", m_pClientList[iClientH]->m_cCharName, i);
-			PutLogFileList(G_cTxt);
+			sprintf(G_cTxt, "RequestInitDataHandler error: Client(%s) Item(%d)", m_pClientList[iClientH]->m_cCharName, i);
+			hb::logger::log<log_channel::events>("{}", G_cTxt);
 
 			DeleteClient(iClientH, false, true);
 			return;
@@ -1892,8 +1796,8 @@ void CGame::RequestInitDataHandler(int iClientH, char* pData, char cKey, size_t 
 
 	for(int i = 0; i < iTotalItemB; i++) {
 		if (m_pClientList[iClientH]->m_pItemInBankList[i] == 0) {
-			wsprintf(G_cTxt, "RequestInitDataHandler error: Client(%s) Bank-Item(%d)", m_pClientList[iClientH]->m_cCharName, i);
-			PutLogFileList(G_cTxt);
+			sprintf(G_cTxt, "RequestInitDataHandler error: Client(%s) Bank-Item(%d)", m_pClientList[iClientH]->m_cCharName, i);
+			hb::logger::log<log_channel::events>("{}", G_cTxt);
 
 			DeleteClient(iClientH, false, true);
 			return;
@@ -1994,7 +1898,7 @@ void CGame::RequestInitDataHandler(int iClientH, char* pData, char cKey, size_t 
 		(memcmp(m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_cLocationName, "elvine", 6) == 0)
 		) {
 
-		m_pClientList[iClientH]->m_dwWarBeginTime = timeGetTime();
+		m_pClientList[iClientH]->m_dwWarBeginTime = GameClock::GetTimeMS();
 		m_pClientList[iClientH]->m_bIsWarLocation = true;
 		// v2.17 2002-7-15
 		SetForceRecallTime(iClientH);
@@ -2004,7 +1908,7 @@ void CGame::RequestInitDataHandler(int iClientH, char* pData, char cKey, size_t 
 		(memcmp(m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_cLocationName, "aresden", 7) == 0)
 		) {
 
-		m_pClientList[iClientH]->m_dwWarBeginTime = timeGetTime();
+		m_pClientList[iClientH]->m_dwWarBeginTime = GameClock::GetTimeMS();
 		m_pClientList[iClientH]->m_bIsWarLocation = true;
 
 		// v2.17 2002-7-15
@@ -2014,7 +1918,7 @@ void CGame::RequestInitDataHandler(int iClientH, char* pData, char cKey, size_t 
 		(memcmp(m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_cLocationName, "elvjail", 7) == 0))
 		) {
 		m_pClientList[iClientH]->m_bIsWarLocation = true;
-		m_pClientList[iClientH]->m_dwWarBeginTime = timeGetTime();
+		m_pClientList[iClientH]->m_dwWarBeginTime = GameClock::GetTimeMS();
 
 		// v2.17 2002-7-15 
 		if (m_pClientList[iClientH]->m_iTimeLeft_ForceRecall == 0) {
@@ -2028,11 +1932,11 @@ void CGame::RequestInitDataHandler(int iClientH, char* pData, char cKey, size_t 
 	else if ((m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_bIsFightZone) &&
 		(m_iFightzoneNoForceRecall == 0) ) {
 
-		m_pClientList[iClientH]->m_dwWarBeginTime = timeGetTime();
+		m_pClientList[iClientH]->m_dwWarBeginTime = GameClock::GetTimeMS();
 		m_pClientList[iClientH]->m_bIsWarLocation = true;
 
-		GetLocalTime(&SysTime);
-		m_pClientList[iClientH]->m_iTimeLeft_ForceRecall = 2 * 60 * 20 - ((SysTime.wHour % 2) * 20 * 60 + SysTime.wMinute * 20) - 2 * 20;
+		SysTime = hb::time::local_time::now();
+		m_pClientList[iClientH]->m_iTimeLeft_ForceRecall = 2 * 60 * 20 - ((SysTime.hour % 2) * 20 * 60 + SysTime.minute * 20) - 2 * 20;
 	}
 	else
 	{
@@ -2047,7 +1951,7 @@ void CGame::RequestInitDataHandler(int iClientH, char* pData, char cKey, size_t 
 	//hbest...
 	if ((m_pClientList[iClientH]->m_iTimeLeft_ForceRecall > 0) && (m_pClientList[iClientH]->m_bIsWarLocation) && IsEnemyZone(iClientH)) {
 		SendNotifyMsg(0, iClientH, Notify::ForceRecallTime, m_pClientList[iClientH]->m_iTimeLeft_ForceRecall, 0, 0, 0);
-		//wsprintf(G_cTxt,"(!) Game Server Force Recall Time  %d (%d)min", m_pClientList[iClientH]->m_iTimeLeft_ForceRecall, m_pClientList[iClientH]->m_iTimeLeft_ForceRecall/20) ;
+		//sprintf(G_cTxt,"(!) Game Server Force Recall Time  %d (%d)min", m_pClientList[iClientH]->m_iTimeLeft_ForceRecall, m_pClientList[iClientH]->m_iTimeLeft_ForceRecall/20) ;
 		//PutLogList(G_cTxt) ;
 	}
 
@@ -2065,7 +1969,7 @@ void CGame::RequestInitDataHandler(int iClientH, char* pData, char cKey, size_t 
 	if ((m_pClientList[iClientH]->m_cSide != iMapside2) && (iMapside != 0)) {
 		if ((iMapside <= 2)) {
 			if (m_pClientList[iClientH]->m_cSide != 0) {
-				m_pClientList[iClientH]->m_dwWarBeginTime = timeGetTime();
+				m_pClientList[iClientH]->m_dwWarBeginTime = GameClock::GetTimeMS();
 				m_pClientList[iClientH]->m_bIsWarLocation = true;
 				m_pClientList[iClientH]->m_iTimeLeft_ForceRecall = 1;
 				m_pClientList[iClientH]->m_bIsInsideOwnTown = true;
@@ -2075,16 +1979,16 @@ void CGame::RequestInitDataHandler(int iClientH, char* pData, char cKey, size_t 
 	else {
 		if (m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_bIsFightZone &&
 			m_iFightzoneNoForceRecall == false) {
-			m_pClientList[iClientH]->m_dwWarBeginTime = timeGetTime();
+			m_pClientList[iClientH]->m_dwWarBeginTime = GameClock::GetTimeMS();
 			m_pClientList[iClientH]->m_bIsWarLocation = true;
-			GetLocalTime(&SysTime);
-			m_pClientList[iClientH]->m_iTimeLeft_ForceRecall = 2 * 60 * 20 - ((SysTime.wHour % 2) * 20 * 60 + SysTime.wMinute * 20) - 2 * 20;
+			SysTime = hb::time::local_time::now();
+			m_pClientList[iClientH]->m_iTimeLeft_ForceRecall = 2 * 60 * 20 - ((SysTime.hour % 2) * 20 * 60 + SysTime.minute * 20) - 2 * 20;
 		}
 		else {
 			if (memcmp(m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_cLocationName, "arejail", 7) == 0 ||
 				memcmp(m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_cLocationName, "elvjail", 7) == 0) {
 				m_pClientList[iClientH]->m_bIsWarLocation = true;
-				m_pClientList[iClientH]->m_dwWarBeginTime = timeGetTime();
+				m_pClientList[iClientH]->m_dwWarBeginTime = GameClock::GetTimeMS();
 				if (m_pClientList[iClientH]->m_iTimeLeft_ForceRecall == 0)
 					m_pClientList[iClientH]->m_iTimeLeft_ForceRecall = 100;
 				else if (m_pClientList[iClientH]->m_iTimeLeft_ForceRecall > 100)
@@ -2121,10 +2025,10 @@ void CGame::RequestInitDataHandler(int iClientH, char* pData, char cKey, size_t 
 			m_pClientList[iClientH]->m_iConstructionPoint = 0;
 			m_pClientList[iClientH]->m_iWarContribution = 0;
 			m_pClientList[iClientH]->m_dwCrusadeGUID = m_dwCrusadeGUID;
-			SendNotifyMsg(0, iClientH, Notify::Crusade, (DWORD)m_bIsCrusadeMode, 0, 0, 0, -1);
+			SendNotifyMsg(0, iClientH, Notify::Crusade, (uint32_t)m_bIsCrusadeMode, 0, 0, 0, -1);
 		}
 		m_pClientList[iClientH]->m_cVar = 1;
-		SendNotifyMsg(0, iClientH, Notify::Crusade, (DWORD)m_bIsCrusadeMode, m_pClientList[iClientH]->m_iCrusadeDuty, 0, 0);
+		SendNotifyMsg(0, iClientH, Notify::Crusade, (uint32_t)m_bIsCrusadeMode, m_pClientList[iClientH]->m_iCrusadeDuty, 0, 0);
 	}
 	else if (m_bIsHeldenianMode) {
 		sSummonPoints = m_pClientList[iClientH]->m_iCharisma * 300;
@@ -2155,11 +2059,11 @@ void CGame::RequestInitDataHandler(int iClientH, char* pData, char cKey, size_t 
 	else {
 		if (m_pClientList[iClientH]->m_dwCrusadeGUID == m_dwCrusadeGUID) {
 			if (m_pClientList[iClientH]->m_cVar == 1) {
-				SendNotifyMsg(0, iClientH, Notify::Crusade, (DWORD)m_bIsCrusadeMode, 0, 0, 0, -1);
+				SendNotifyMsg(0, iClientH, Notify::Crusade, (uint32_t)m_bIsCrusadeMode, 0, 0, 0, -1);
 			}
 		}
 		else {
-			SendNotifyMsg(0, iClientH, Notify::Crusade, (DWORD)m_bIsCrusadeMode, 0, 0, 0, -1);
+			SendNotifyMsg(0, iClientH, Notify::Crusade, (uint32_t)m_bIsCrusadeMode, 0, 0, 0, -1);
 			m_pClientList[iClientH]->m_dwCrusadeGUID = 0;
 			m_pClientList[iClientH]->m_iWarContribution = 0;
 			m_pClientList[iClientH]->m_dwCrusadeGUID = 0;
@@ -2168,8 +2072,8 @@ void CGame::RequestInitDataHandler(int iClientH, char* pData, char cKey, size_t 
 
 	// v1.42
 	if (memcmp(m_pClientList[iClientH]->m_cMapName, "fightzone", 9) == 0) {
-		wsprintf(G_cTxt, "Char(%s)-Enter(%s) Observer(%d)", m_pClientList[iClientH]->m_cCharName, m_pClientList[iClientH]->m_cMapName, m_pClientList[iClientH]->m_bIsObserverMode);
-		PutLogEventFileList(G_cTxt);
+		sprintf(G_cTxt, "Char(%s)-Enter(%s) Observer(%d)", m_pClientList[iClientH]->m_cCharName, m_pClientList[iClientH]->m_cMapName, m_pClientList[iClientH]->m_bIsObserverMode);
+		hb::logger::log<log_channel::log_events>("{}", G_cTxt);
 	}
 
 	if (m_bIsHeldenianMode) SendNotifyMsg(0, iClientH, Notify::HeldenianTeleport, 0, 0, 0, 0, 0);
@@ -2195,9 +2099,6 @@ void CGame::RequestInitDataHandler(int iClientH, char* pData, char cKey, size_t 
 
 	RequestNoticementHandler(iClientH); // send noticement when log in
 }
-
-
-
 
 bool CGame::bSendClientNpcConfigs(int iClientH)
 {
@@ -2266,10 +2167,7 @@ bool CGame::bSendClientNpcConfigs(int iClientH)
 		case sock::Event::SocketError:
 		case sock::Event::CriticalError:
 		case sock::Event::SocketClosed:
-			std::snprintf(G_cTxt, sizeof(G_cTxt),
-				"Failed to send NPC configs: Client(%d) Packet(%d)",
-				iClientH, packetIndex);
-			PutLogList(G_cTxt);
+			hb::logger::log("Failed to send NPC configs: Client({}) Packet({})", iClientH, packetIndex);
 			DeleteClient(iClientH, true, true);
 			delete m_pClientList[iClientH];
 			m_pClientList[iClientH] = 0;
@@ -2533,11 +2431,8 @@ void CGame::ComputeConfigHashes()
 		m_dwConfigHash[3] = allData.empty() ? 0 : hb::shared::util::hb_crc32(allData.data(), allData.size());
 	}
 
-	std::snprintf(G_cTxt, sizeof(G_cTxt), "Config hashes computed - Items: 0x%08X, Magic: 0x%08X, Skills: 0x%08X, Npcs: 0x%08X",
-		m_dwConfigHash[0], m_dwConfigHash[1], m_dwConfigHash[2], m_dwConfigHash[3]);
-	PutLogList(G_cTxt);
+	hb::logger::log("Config hashes computed - Items: 0x{:08X}, Magic: 0x{:08X}, Skills: 0x{:08X}, Npcs: 0x{:08X}", m_dwConfigHash[0], m_dwConfigHash[1], m_dwConfigHash[2], m_dwConfigHash[3]);
 }
-
 
 void CGame::FillPlayerMapObject(hb::net::PacketMapDataObjectPlayer& obj, short sOwnerH, int iViewerH)
 {
@@ -2731,8 +2626,7 @@ void CGame::DeleteClient(int iClientH, bool bSave, bool bNotify, bool bCountLogo
 	if (m_pClientList[iClientH] == 0) return;
 	if (m_pClientList[iClientH]->m_bIsInitComplete) {
 		if (memcmp(m_pClientList[iClientH]->m_cMapName, "fight", 5) == 0) {
-			std::snprintf(G_cTxt, sizeof(G_cTxt), "Char(%s)-Exit(%s)", m_pClientList[iClientH]->m_cCharName, m_pClientList[iClientH]->m_cMapName);
-			PutLogEventFileList(G_cTxt);
+			hb::logger::log<log_channel::log_events>("Player '{}' exited map '{}'", m_pClientList[iClientH]->m_cCharName, m_pClientList[iClientH]->m_cMapName);
 		}
 
 		if (m_pClientList[iClientH]->m_bIsExchangeMode) {
@@ -2763,7 +2657,6 @@ void CGame::DeleteClient(int iClientH, bool bSave, bool bNotify, bool bCountLogo
 				m_pClientList[i]->m_iWhisperPlayerIndex = -1;
 				SendNotifyMsg(0, i, Notify::WhisperModeOff, 0, 0, 0, m_pClientList[iClientH]->m_cCharName);
 			}
-
 
 		m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->ClearOwner(2, iClientH, hb::shared::owner_class::Player,
 			m_pClientList[iClientH]->m_sX,
@@ -2924,8 +2817,7 @@ void CGame::DeleteClient(int iClientH, bool bSave, bool bNotify, bool bCountLogo
 				m_pClientList[iClientH]->m_iPartyID = 0;
 				m_pClientList[iClientH]->m_iPartyStatus = PartyStatus::Null;
 				m_pClientList[iClientH]->m_iReqJoinPartyClientH = 0;
-				std::snprintf(G_cTxt, sizeof(G_cTxt), "PartyID:%d member:%d Out(Delete) Total:%d", m_pClientList[iClientH]->m_iPartyID, iClientH, m_stPartyInfo[m_pClientList[iClientH]->m_iPartyID].iTotalMembers);
-				PutLogList(G_cTxt);
+				hb::logger::log("Party {}: member {} removed (deleted), total={}", m_pClientList[iClientH]->m_iPartyID, iClientH, m_stPartyInfo[m_pClientList[iClientH]->m_iPartyID].iTotalMembers);
 				goto DC_LOOPBREAK1;
 			}
 	DC_LOOPBREAK1:
@@ -2935,7 +2827,6 @@ void CGame::DeleteClient(int iClientH, bool bSave, bool bNotify, bool bCountLogo
 				m_stPartyInfo[m_pClientList[iClientH]->m_iPartyID].iIndex[i + 1] = 0;
 			}
 	}
-
 
 	m_iTotalClients--;
 
@@ -2948,7 +2839,6 @@ void CGame::DeleteClient(int iClientH, bool bSave, bool bNotify, bool bCountLogo
 
 	RemoveClientShortCut(iClientH);
 }
-
 
 void CGame::SendEventToNearClient_TypeA(short sOwnerH, char cOwnerType, uint32_t dwMsgID, uint16_t wMsgType, short sV1, short sV2, short sV3)
 {
@@ -3177,9 +3067,7 @@ void CGame::SendEventToNearClient_TypeA(short sOwnerH, char cOwnerType, uint32_t
 							static uint32_t s_dwLastNetWarn = 0;
 							uint32_t dwNow = GameClock::GetTimeMS();
 							if (dwNow - s_dwLastNetWarn > 5000) {
-								std::snprintf(G_cTxt, sizeof(G_cTxt), "[NETWARN] SendEventToNearClient_TypeA: client=%d ret=%d ownerType=%d msgType=0x%X",
-									i, iRet, cOwnerType, wMsgType);
-								PutLogList(G_cTxt);
+								hb::logger::log("SendEventToNearClient_TypeA: client={} ret={} ownerType={} msgType=0x{:X}", i, iRet, cOwnerType, wMsgType);
 								s_dwLastNetWarn = dwNow;
 							}
 						}
@@ -3317,9 +3205,7 @@ void CGame::SendEventToNearClient_TypeA(short sOwnerH, char cOwnerType, uint32_t
 							static uint32_t s_dwLastNetWarnNpc = 0;
 							uint32_t dwNow = GameClock::GetTimeMS();
 							if (dwNow - s_dwLastNetWarnNpc > 5000) {
-								std::snprintf(G_cTxt, sizeof(G_cTxt), "[NETWARN] SendEventToNearClient_TypeA(NPC): client=%d ret=%d ownerType=%d msgType=0x%X",
-									i, iRet, cOwnerType, wMsgType);
-								PutLogList(G_cTxt);
+								hb::logger::log("SendEventToNearClient_TypeA(NPC): client={} ret={} ownerType={} msgType=0x{:X}", i, iRet, cOwnerType, wMsgType);
 								s_dwLastNetWarnNpc = dwNow;
 							}
 						}
@@ -3357,9 +3243,7 @@ void CGame::SendEventToNearClient_TypeA(short sOwnerH, char cOwnerType, uint32_t
 							static uint32_t s_dwLastNetWarnNpcFar = 0;
 							uint32_t dwNow = GameClock::GetTimeMS();
 							if (dwNow - s_dwLastNetWarnNpcFar > 5000) {
-								std::snprintf(G_cTxt, sizeof(G_cTxt), "[NETWARN] SendEventToNearClient_TypeA(NPC-far): client=%d ret=%d ownerType=%d msgType=0x%X",
-									i, iRet, cOwnerType, wMsgType);
-								PutLogList(G_cTxt);
+								hb::logger::log("SendEventToNearClient_TypeA(NPC-far): client={} ret={} ownerType={} msgType=0x{:X}", i, iRet, cOwnerType, wMsgType);
 								s_dwLastNetWarnNpcFar = dwNow;
 							}
 						}
@@ -3368,7 +3252,6 @@ void CGame::SendEventToNearClient_TypeA(short sOwnerH, char cOwnerType, uint32_t
 		}
 	} // else - NPC
 }
-
 
 int CGame::iComposeMoveMapData(short sX, short sY, int iClientH, char cDir, char* pData)
 {
@@ -3544,12 +3427,10 @@ void CGame::CheckClientResponseTime()
 	short sItemIndex;
 	static uint32_t s_dwLastIdleLog = 0;
 	//locobans
-	//int iMapside, iMapside2;
-	//SYSTEMTIME SysTime;
 
 	   /*
-	   GetLocalTime(&SysTime);
-	   switch (SysTime.wDayOfWeek) {
+	   SysTime = hb::time::local_time::now();
+	   switch (SysTime.day_of_week) {
 	   case 1:	iWarPeriod = 30; break;
 	   case 2:	iWarPeriod = 30; break;
 	   case 3:	iWarPeriod = 60; break;
@@ -3568,8 +3449,7 @@ void CGame::CheckClientResponseTime()
 			if ((dwTime - m_pClientList[i]->m_dwTime) > (uint32_t)m_iClientTimeout) {
 				if (m_pClientList[i]->m_bIsInitComplete) {
 					//Testcode
-					std::snprintf(G_cTxt, sizeof(G_cTxt), "Client Timeout: %s", m_pClientList[i]->m_cIPaddress);
-					PutLogList(G_cTxt);
+					hb::logger::log("Client timeout: {}", m_pClientList[i]->m_cIPaddress);
 
 					DeleteClient(i, true, true);
 				}
@@ -3581,14 +3461,7 @@ void CGame::CheckClientResponseTime()
 				uint32_t dwIdle = dwTime - m_pClientList[i]->m_dwTime;
 				if (dwIdle > 5000 && (dwTime - m_pClientList[i]->m_dwLastMsgTime) > 5000 &&
 					(dwTime - s_dwLastIdleLog) > 5000) {
-					std::snprintf(G_cTxt, sizeof(G_cTxt),
-						"[NET] IDLE slot=%d idle=%ums lastmsg=0x%08X lastage=%ums size=%zu char=%s ip=%s",
-						i, dwIdle, m_pClientList[i]->m_dwLastMsgId,
-						dwTime - m_pClientList[i]->m_dwLastMsgTime,
-						m_pClientList[i]->m_dwLastMsgSize,
-						m_pClientList[i]->m_cCharName,
-						m_pClientList[i]->m_cIPaddress);
-					PutLogList(G_cTxt);
+					hb::logger::log("[NET] IDLE slot={} idle={}ms lastmsg=0x{:08X} lastage={}ms size={} char={} ip={}", i, dwIdle, m_pClientList[i]->m_dwLastMsgId, dwTime - m_pClientList[i]->m_dwLastMsgTime, m_pClientList[i]->m_dwLastMsgSize, m_pClientList[i]->m_cCharName, m_pClientList[i]->m_cIPaddress);
 					s_dwLastIdleLog = dwTime;
 				}
 
@@ -3780,8 +3653,7 @@ void CGame::CheckClientResponseTime()
 					(strcmp(m_pClientList[i]->m_cLocation, "arehunter") != 0) &&
 					(strcmp(m_pClientList[i]->m_cLocation, "aresden") != 0) &&
 					(m_pClientList[i]->m_iLevel >= 20)) {
-					std::snprintf(G_cTxt, sizeof(G_cTxt), "Traveller Hack: (%s) Player: (%s) is a traveller and is greater than level 19.", m_pClientList[i]->m_cIPaddress, m_pClientList[i]->m_cCharName);
-					PutHackLogFileList(G_cTxt);
+					hb::logger::warn<log_channel::security>("Traveller hack: IP={} player={}, traveller exceeds level 19", m_pClientList[i]->m_cIPaddress, m_pClientList[i]->m_cCharName);
 					DeleteClient(i, true, true);
 				}
 
@@ -3897,10 +3769,9 @@ void CGame::CheckClientResponseTime()
 	}
 }
 
-
 void CGame::ResponsePlayerDataHandler(char* pData, uint32_t dwSize)
 {
-	char* cp, cCharName[hb::shared::limits::CharNameLen], cTxt[120];
+	char* cp, cCharName[hb::shared::limits::CharNameLen];
 
 	std::memset(cCharName, 0, sizeof(cCharName));
 	const auto* header = hb::net::PacketCast<hb::net::PacketHeader>(pData, sizeof(hb::net::PacketHeader));
@@ -3912,15 +3783,14 @@ void CGame::ResponsePlayerDataHandler(char* pData, uint32_t dwSize)
 
 	for(int i = 1; i < MaxClients; i++)
 		if (m_pClientList[i] != 0) {
-			if (_strnicmp(m_pClientList[i]->m_cCharName, cCharName, hb::shared::limits::CharNameLen - 1) == 0) {
+			if (hb_strnicmp(m_pClientList[i]->m_cCharName, cCharName, hb::shared::limits::CharNameLen - 1) == 0) {
 				switch (header->msg_type) {
 				case LogResMsg::Confirm:
 					InitPlayerData(i, pData, dwSize);
 					break;
 
 				case LogResMsg::Reject:
-					std::snprintf(G_cTxt, sizeof(G_cTxt), "(HACK?) Not existing character(%s) data request! Rejected!", m_pClientList[i]->m_cCharName);
-					PutLogList(G_cTxt);
+					hb::logger::log("Non-existent character '{}' data request, rejected", m_pClientList[i]->m_cCharName);
 					//PutLogFileList(G_cTxt); // v1.4
 
 					DeleteClient(i, false, false);
@@ -3934,8 +3804,7 @@ void CGame::ResponsePlayerDataHandler(char* pData, uint32_t dwSize)
 			}
 		}
 
-	std::snprintf(cTxt, sizeof(cTxt), "(!)Non-existing player data received from Log server: CharName(%s)", cCharName);
-	PutLogList(cTxt);
+	hb::logger::log("Non-existent player data from login server: {}", cCharName);
 }
 
 bool CGame::LoadPlayerDataFromDb(int iClientH)
@@ -3975,8 +3844,7 @@ bool CGame::LoadPlayerDataFromDb(int iClientH)
 		}
 	}
 	if (m_pClientList[iClientH]->m_cMapIndex == -1) {
-		std::snprintf(G_cTxt, sizeof(G_cTxt), "(!) Player(%s) tries to enter unknown map : %s", m_pClientList[iClientH]->m_cCharName, m_pClientList[iClientH]->m_cMapName);
-		PutLogList(G_cTxt);
+		hb::logger::log("Player '{}' tried to enter unknown map: {}", m_pClientList[iClientH]->m_cCharName, m_pClientList[iClientH]->m_cMapName);
 		CloseAccountDatabase(db);
 		return false;
 	}
@@ -4288,7 +4156,7 @@ bool CGame::LoadPlayerDataFromDb(int iClientH)
 
 void CGame::InitPlayerData(int iClientH, char* pData, uint32_t dwSize)
 {
-	char cTxt[256], cQuestRemain;
+	char cQuestRemain;
 	int     iRet, iTotalPoints;
 	bool    bRet, bGuildStatus;
 
@@ -4350,8 +4218,7 @@ void CGame::InitPlayerData(int iClientH, char* pData, uint32_t dwSize)
 	if ((iTotalPoints - 21 > MaxSkillPoints) ) {
 		try
 		{
-			std::snprintf(G_cTxt, sizeof(G_cTxt), "Packet Editing: (%s) Player: (%s) - has more than allowed skill points (%d).", m_pClientList[iClientH]->m_cIPaddress, m_pClientList[iClientH]->m_cCharName, iTotalPoints);
-			PutHackLogFileList(G_cTxt);
+			hb::logger::warn<log_channel::security>("Packet editing: IP={} player={}, exceeds allowed skill points ({})", m_pClientList[iClientH]->m_cIPaddress, m_pClientList[iClientH]->m_cCharName, iTotalPoints);
 			DeleteClient(iClientH, true, true);
 		}
 		catch (...)
@@ -4368,12 +4235,8 @@ void CGame::InitPlayerData(int iClientH, char* pData, uint32_t dwSize)
 	if (strcmp(m_pClientList[iClientH]->m_cGuildName, "NONE") != 0) {
 		char cFn[112] = {};
 		std::memset(cFn, 0, sizeof(cFn));
-		std::snprintf(cFn, sizeof(cFn), "Guilds\\AscII%d\\%s.txt", m_pClientList[iClientH]->m_cGuildName[0], m_pClientList[iClientH]->m_cGuildName);
-		HANDLE  hFile = CreateFile(cFn, GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
-		auto dwFileSize = GetFileSize(hFile, 0);
-
-		bGuildStatus = !(hFile == INVALID_HANDLE_VALUE);
-		CloseHandle(hFile);
+		std::snprintf(cFn, sizeof(cFn), "Guilds/AscII%d/%s.txt", m_pClientList[iClientH]->m_cGuildName[0], m_pClientList[iClientH]->m_cGuildName);
+		bGuildStatus = std::filesystem::exists(cFn);
 		// GuildName
 		if ((!bGuildStatus) && (memcmp(m_pClientList[iClientH]->m_cGuildName, "NONE", 4) != 0)) {
 			std::memset(m_pClientList[iClientH]->m_cGuildName, 0, sizeof(m_pClientList[iClientH]->m_cGuildName));
@@ -4402,10 +4265,8 @@ void CGame::InitPlayerData(int iClientH, char* pData, uint32_t dwSize)
 		}
 	}
 
-
 	if (m_pClientList[iClientH] == 0) {
-		std::snprintf(cTxt, sizeof(cTxt), "<%d> InitPlayerData error - Socket error! Disconnected.", iClientH);
-		PutLogList(cTxt);
+		hb::logger::log("Client {}: init player data failed (socket error), disconnected", iClientH);
 		return;
 	}
 
@@ -4420,13 +4281,11 @@ void CGame::InitPlayerData(int iClientH, char* pData, uint32_t dwSize)
 	case sock::Event::CriticalError:
 	case sock::Event::SocketClosed:
 		// ## BUG POINT!!!
-		std::snprintf(cTxt, sizeof(cTxt), "<%d> InitPlayerData - Socket error! Disconnected.", iClientH);
-		PutLogList(cTxt);
+		hb::logger::log("Client {}: init player data socket error, disconnected", iClientH);
 
 		DeleteClient(iClientH, false, true);
 		return;
 	}
-
 
 	m_pClientList[iClientH]->m_bIsInitComplete = true;
 }
@@ -4441,9 +4300,6 @@ void CGame::GameProcess()
 	m_pDelayEventManager->DelayEventProcess();
 }
 
-
-
-
 // Helper function to normalize item name for comparison (removes spaces and underscores)
 static void NormalizeItemName(const char* src, char* dst, size_t dstSize)
 {
@@ -4456,8 +4312,6 @@ static void NormalizeItemName(const char* src, char* dst, size_t dstSize)
 	dst[j] = '\0';
 }
 
-
-
 bool CGame::_bGetIsStringIsNumber(char* pStr)
 {
 	
@@ -4466,9 +4320,6 @@ bool CGame::_bGetIsStringIsNumber(char* pStr)
 
 	return true;
 }
-
-
-
 
 int CGame::bCreateNewNpc(int iNpcConfigId, char* pName, char* pMapName, short sClass, char cSA, char cMoveType, int* poX, int* poY, char* pWaypointList, hb::shared::geometry::GameRectangle* pArea, int iSpotMobIndex, char cChangeSide, bool bHideGenMode, bool bIsSummoned, bool bFirmBerserk, bool bIsMaster, int iGuildGUID, bool bBypassMobLimit)
 {
@@ -4508,8 +4359,7 @@ int CGame::SpawnMapNpcsFromDatabase(sqlite3* db, int iMapIndex)
 		// Get NPC config ID directly
 		int iNpcConfigId = sqlite3_column_int(stmt, 0);
 		if (iNpcConfigId < 0 || iNpcConfigId >= MaxNpcTypes || m_pNpcConfigList[iNpcConfigId] == nullptr) {
-			std::snprintf(G_cTxt, sizeof(G_cTxt), "(!) Invalid npc_config_id %d in map_npcs for map %s", iNpcConfigId, m_pMapList[iMapIndex]->m_cName);
-			PutLogList(G_cTxt);
+			hb::logger::log("Invalid npc_config_id {} in map_npcs for map {}", iNpcConfigId, m_pMapList[iMapIndex]->m_cName);
 			continue;
 		}
 
@@ -4560,9 +4410,7 @@ int CGame::SpawnMapNpcsFromDatabase(sqlite3* db, int iMapIndex)
 	sqlite3_finalize(stmt);
 
 	if (npcCount > 0) {
-		char cTxt[128];
-		std::snprintf(cTxt, sizeof(cTxt), "  - Spawned %d static NPCs for map: %s", npcCount, m_pMapList[iMapIndex]->m_cName);
-		PutLogList(cTxt);
+		hb::logger::log("- Spawned {} static NPCs for map: {}", npcCount, m_pMapList[iMapIndex]->m_cName);
 	}
 
 	return npcCount;
@@ -4573,7 +4421,6 @@ void CGame::NpcProcess()
 	if (m_pEntityManager != 0)
 		m_pEntityManager->ProcessEntities();
 }
-
 
 void CGame::BroadcastServerMessage(const char* pMessage)
 {
@@ -4608,7 +4455,7 @@ void CGame::BroadcastServerMessage(const char* pMessage)
 			m_pClientList[i]->m_pXSock->iSendMsg(pkt, dwSize);
 	}
 
-	ChatLog::Get().Write(10, "Server", "", pMessage);
+	hb::logger::log<log_channel::chat>("[Broadcast] {}: {}", "Server", pMessage);
 }
 
 bool CGame::IsBlockedBy(int iSenderH, int iReceiverH) const
@@ -4628,7 +4475,10 @@ void CGame::ChatMsgHandler(int iClientH, char* pData, size_t dwMsgSize)
 
 	if (m_pClientList[iClientH] == 0) return;
 	if (m_pClientList[iClientH]->m_bIsInitComplete == false) return;
-	if (dwMsgSize > 83 + 30) return;
+	if (dwMsgSize > 83 + 30) {
+		hb::logger::log<log_channel::chat>("[ChatMsg] Rejected from client {} — size {} exceeds max", iClientH, dwMsgSize);
+		return;
+	}
 
 	auto* header = hb::net::PacketCast<hb::net::PacketHeader>(pData, sizeof(hb::net::PacketHeader));
 	if (!header) return;
@@ -4636,7 +4486,13 @@ void CGame::ChatMsgHandler(int iClientH, char* pData, size_t dwMsgSize)
 	if (!pkt) return;
 	char* message = pData + sizeof(hb::net::PacketCommandChatMsgHeader);
 
-	if (_strnicmp(pkt->name, m_pClientList[iClientH]->m_cCharName, strlen(m_pClientList[iClientH]->m_cCharName)) != 0) return;
+	hb::logger::log<log_channel::chat>("[ChatMsg] client={} pkt->name='{}' expected='{}' msgSize={}",
+		iClientH, pkt->name, m_pClientList[iClientH]->m_cCharName, dwMsgSize);
+
+	if (hb_strnicmp(pkt->name, m_pClientList[iClientH]->m_cCharName, strlen(m_pClientList[iClientH]->m_cCharName)) != 0) {
+		hb::logger::log<log_channel::chat>("[ChatMsg] Name mismatch — possible struct packing issue. PacketCommandChatMsgHeader size={}", sizeof(hb::net::PacketCommandChatMsgHeader));
+		return;
+	}
 
 	if (m_pClientList[iClientH]->m_bIsObserverMode) return;
 
@@ -4777,9 +4633,7 @@ void CGame::ChatMsgHandler(int iClientH, char* pData, size_t dwMsgSize)
 		m_pClientList[iClientH]->m_dwAfkActivityTime = GameClock::GetTimeMS();
 	}
 
-	ChatLog::Get().Write(cSendMode, m_pClientList[iClientH]->m_cCharName,
-		m_pClientList[iClientH]->m_cMapName, message,
-		(cSendMode == 20) ? m_pClientList[iClientH]->m_cWhisperPlayerName : nullptr);
+	hb::logger::log<log_channel::chat>("[type:{}] {} -> {}: {}", cSendMode, m_pClientList[iClientH]->m_cCharName, (cSendMode == 20) ? m_pClientList[iClientH]->m_cWhisperPlayerName : nullptr, message);
 
 	header->msg_type = (uint16_t)iClientH;
 	// Write chat send mode into the packet's chat_type field before relaying to clients
@@ -4869,7 +4723,7 @@ void CGame::ChatMsgHandler(int iClientH, char* pData, size_t dwMsgSize)
 		{
 			int whisperTarget = m_pClientList[iClientH]->m_iWhisperPlayerIndex;
 			if (m_pClientList[whisperTarget] != 0 &&
-				_stricmp(m_pClientList[iClientH]->m_cWhisperPlayerName, m_pClientList[whisperTarget]->m_cCharName) == 0) {
+				hb_stricmp(m_pClientList[iClientH]->m_cWhisperPlayerName, m_pClientList[whisperTarget]->m_cCharName) == 0) {
 				if (!IsBlockedBy(iClientH, whisperTarget)) {
 					iRet = m_pClientList[whisperTarget]->m_pXSock->iSendMsg(pData, dwMsgSize);
 				}
@@ -4886,7 +4740,6 @@ void CGame::ChatMsgHandler(int iClientH, char* pData, size_t dwMsgSize)
 		}
 	}
 }
-
 
 void CGame::ChatMsgHandlerGSM(int iMsgType, int iV1, char* pName, char* pData, size_t dwMsgSize)
 {
@@ -4981,10 +4834,7 @@ int CGame::iClientMotion_Attack_Handler(int iClientH, short sX, short sY, short 
 
 			uint32_t dwClientGap = dwClientTime - m_pClientList[iClientH]->m_dwAttackLAT;
 			if (dwClientGap < static_cast<uint32_t>(batchThreshold)) {
-				std::snprintf(G_cTxt, sizeof(G_cTxt), "Batch Swing Hack: (%s) Player: (%s) - 7 attacks in %ums, Min: %dms",
-					m_pClientList[iClientH]->m_cIPaddress, m_pClientList[iClientH]->m_cCharName,
-					dwClientGap, batchThreshold);
-				PutHackLogFileList(G_cTxt);
+				hb::logger::warn<log_channel::security>("Batch swing hack: IP={} player={}, 7 attacks in {}ms (min={}ms)", m_pClientList[iClientH]->m_cIPaddress, m_pClientList[iClientH]->m_cCharName, dwClientGap, batchThreshold);
 				DeleteClient(iClientH, true, true, true);
 				return 0;
 			}
@@ -5236,7 +5086,6 @@ char CGame::cGetNextMoveDir(short sX, short sY, short dstX, short dstY, char cMa
 	return 0;
 }
 
-
 char _tmp_cEmptyPosX[] = { 0, 1, 1, 0, -1, -1, -1, 0 ,1, 2, 2, 2, 2, 1, 0, -1, -2, -2, -2, -2, -2, -1, 0, 1, 2 };
 char _tmp_cEmptyPosY[] = { 0, 0, 1, 1, 1, 0, -1, -1, -1, -1, 0, 1, 2, 2, 2, 2, 2, 1, 0, -1, -2, -2, -2, -2, -2 };
 
@@ -5255,7 +5104,6 @@ bool CGame::bGetEmptyPosition(short* pX, short* pY, char cMapIndex)
 			return true;
 		}
 
-
 	GetMapInitialPoint(cMapIndex, &sX, &sY);
 	*pX = sX;
 	*pY = sY;
@@ -5263,35 +5111,12 @@ bool CGame::bGetEmptyPosition(short* pX, short* pY, char cMapIndex)
 	return false;
 }
 
-
-
-
 void CGame::MsgProcess()
 {
 	char* pData, cFrom, cKey;
 	size_t    dwMsgSize;
 	int      iClientH;
 	uint32_t dwTime = GameClock::GetTimeMS();
-
-	if ((m_bF5pressed) && (m_bF1pressed)) {
-		PutLogList("(XXX) RELOADING CONFIGS MANUALY...");
-		for(int i = 1; i < MaxClients; i++)
-			if ((m_pClientList[i] != 0) && (m_pClientList[i]->m_bIsInitComplete)) {
-				g_login->LocalSavePlayerData(i); //bSendMsgToLS(ServerMsgId::RequestSavePlayerData, i);
-			}
-		bInit();
-	}
-
-	if ((m_bF1pressed) && (m_bF4pressed) && (m_bOnExitProcess == false)) {
-		m_cShutDownCode = 2;
-		m_bOnExitProcess = true;
-		m_dwExitProcessTime = GameClock::GetTimeMS();
-		PutLogList("(!) GAME SERVER SHUTDOWN PROCESS BEGIN(by Local command)!!!");
-		//bSendMsgToLS(ServerMsgId::GameServerShutdowned, 0);
-
-
-		return;
-	}
 
 	std::memset(m_pMsgBuffer, 0, hb::shared::limits::MsgBufferSize + 1);
 	pData = (char*)m_pMsgBuffer;
@@ -5381,8 +5206,7 @@ void CGame::MsgProcess()
 			case MsgId::RequestInitData:
 				if (m_pClientList[iClientH] == nullptr) break;
 				if (m_pClientList[iClientH]->m_bIsClientConnected) {
-					std::snprintf(G_cTxt, sizeof(G_cTxt), "(!!!) Client (%s) connection closed!. Sniffer suspect!.", m_pClientList[iClientH]->m_cCharName);
-					PutLogList(G_cTxt);					m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->ClearOwner(2, iClientH, hb::shared::owner_class::Player, m_pClientList[iClientH]->m_sX, m_pClientList[iClientH]->m_sY);
+					hb::logger::error("Client '{}' connection closed, sniffer suspected", m_pClientList[iClientH]->m_cCharName);
 					m_pDelayEventManager->bRemoveFromDelayEventList(iClientH, hb::shared::owner_class::Player, 0);
 					g_login->LocalSavePlayerData(iClientH); //bSendMsgToLS(ServerMsgId::RequestSavePlayerDataLogout, iClientH, false);
 					if ((dwTime - m_dwGameTime2) > 3000) { // 3 segs
@@ -5439,7 +5263,6 @@ void CGame::MsgProcess()
 				m_pWarManager->RequestHeldenianTeleport(iClientH, pData, dwMsgSize);
 				break;
 
-
 			case ServerMsgId::RequestCityHallTeleport:
 				if (memcmp(m_pClientList[iClientH]->m_cLocation, "aresden", 7) == 0) {
 					RequestTeleportHandler(iClientH, "2   ", "dglv2", 263, 258);
@@ -5478,11 +5301,9 @@ void CGame::MsgProcess()
 				}
 				else
 				{
-					std::snprintf(G_cTxt, sizeof(G_cTxt), "Unknown message received: (0x%.8X) PC(unknown).", header->msg_id);
 				}
-				PutLogList(G_cTxt);
-				PutHackLogFileList(G_cTxt);
-				PutHackLogFileList(m_pMsgBuffer);
+				hb::logger::warn<log_channel::security>("Unknown message: 0x{:X} (no player)", header->msg_id);
+				hb::logger::warn<log_channel::security>("{}", m_pMsgBuffer);
 				break;
 			}
 			break;
@@ -5513,8 +5334,7 @@ void CGame::MsgProcess()
 				g_login->RequestEnterGame(iClientH, pData);
 				break;
 			default:
-				std::snprintf(G_cTxt, sizeof(G_cTxt), "Unknown login message received! (0x%.8X) Delete Client", header->msg_id);
-				PutLogList(G_cTxt);
+				hb::logger::log("Unknown login message: 0x{:X}, disconnecting client", header->msg_id);
 				break;
 			}
 			DeleteLoginClient(iClientH);
@@ -5530,12 +5350,10 @@ bool CGame::bPutMsgQuene(char cFrom, char* pData, size_t dwMsgSize, int iIndex, 
 	return m_msgQueue.Push(cFrom, pData, dwMsgSize, iIndex, cKey);
 }
 
-
 bool CGame::bGetMsgQuene(char* pFrom, char* pData, size_t* pMsgSize, int* pIndex, char* pKey)
 {
 	return m_msgQueue.Pop(pFrom, pData, pMsgSize, pIndex, pKey);
 }
-
 
 void CGame::ClientCommonHandler(int iClientH, char* pData)
 {
@@ -5840,8 +5658,7 @@ void CGame::ClientCommonHandler(int iClientH, char* pData)
 		break;
 
 	default:
-		std::snprintf(G_cTxt, sizeof(G_cTxt), "Unknown message received! (0x%.8X)", wCommand);
-		PutLogList(G_cTxt);
+		hb::logger::log("Unknown message: 0x{:X}", wCommand);
 		break;
 	}
 }
@@ -5852,9 +5669,6 @@ void CGame::ClientCommonHandler(int iClientH, char* pData)
 //  description			:: check if player is dropping item or picking up item
 //  last updated		:: October 29, 2004; 7:12 PM; Hypnotoad
 //	return value		:: int
-
-
-
 
 void CGame::SendEventToNearClient_TypeB(uint32_t dwMsgID, uint16_t wMsgType, char cMapIndex, short sX, short sY, short sV1, short sV2, short sV3, short sV4)
 {
@@ -6016,11 +5830,9 @@ int CGame::iClientMotion_Stop_Handler(int iClientH, short sX, short sY, char cDi
 	return 1;
 }
 
-
 // 05/29/2004 - Hypnotoad - Purchase Dicount updated to take charisma into consideration
 
-
-void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1, uint32_t sV2, uint32_t sV3, char* pString, uint32_t sV4, uint32_t sV5, uint32_t sV6, uint32_t sV7, uint32_t sV8, uint32_t sV9, char* pString2)
+void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1, uint32_t sV2, uint32_t sV3, const char* pString, uint32_t sV4, uint32_t sV5, uint32_t sV6, uint32_t sV7, uint32_t sV8, uint32_t sV9, const char* pString2)
 {
 	int iRet = 0;
 
@@ -6966,7 +6778,6 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 	}
 	break;
 
-
 	case Notify::TimeChange:
 	{
 		hb::net::PacketNotifyTimeChange pkt{};
@@ -7647,12 +7458,6 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 	}
 }
 
-
-
-
-
-
-
 int CGame::GetNpcConfigIdByName(const char* pNpcName) const
 {
 	if (pNpcName == nullptr || pNpcName[0] == 0) return -1;
@@ -7840,7 +7645,6 @@ uint32_t CGame::iDice(uint32_t iThrow, uint32_t iRange)
 	return iRet;
 }
 
-
 void CGame::TimeManaPointsUp(int iClientH)
 {
 	int iMaxMP, iTotal;
@@ -7912,7 +7716,6 @@ void CGame::TimeStaminarPointsUp(int iClientH)
 	}
 }
 
-
 void CGame::ToggleCombatModeHandler(int iClientH)
 {
 	if (m_pClientList[iClientH] == 0) return;
@@ -7933,7 +7736,6 @@ void CGame::ToggleCombatModeHandler(int iClientH)
 
 }
 
-
 //  int CGame::iClientMotion_Magic_Handler(int iClientH, short sX, short sY, char cDir)
 //  description			:: checks if player is casting magic
 //  last updated		:: October 29, 2004; 6:51 PM; Hypnotoad
@@ -7949,15 +7751,14 @@ void CGame::ToggleCombatModeHandler(int iClientH)
 **							-	fixed bug causing spell to be cast when mana is below required amount				**
 **********************************************************************************************************************/
 
-
-void CGame::RequestTeleportHandler(int iClientH, char* pData, char* cMapName, int dX, int dY)
+void CGame::RequestTeleportHandler(int iClientH, const char* pData, const char* cMapName, int dX, int dY)
 {
 	char cTempMapName[21];
 	char cDestMapName[11], cDir, cMapIndex, cQuestRemain;
 	short sX, sY, sSummonPoints;
 	int iRet, iSize, iDestX, iDestY, iExH, iMapSide;
 	bool    bRet, bIsLockedMapNotify;
-	SYSTEMTIME SysTime;
+	hb::time::local_time SysTime{};
 
 	if (m_pClientList[iClientH] == 0) return;
 	if (m_pClientList[iClientH]->m_bIsInitComplete == false) return;
@@ -8008,7 +7809,6 @@ void CGame::RequestTeleportHandler(int iClientH, char* pData, char* cMapName, in
 		m_pClientList[iClientH]->m_sY);
 
 	SendEventToNearClient_TypeA(iClientH, hb::shared::owner_class::Player, MsgId::EventLog, MsgType::Reject, 0, 0, 0);
-
 
 	sX = m_pClientList[iClientH]->m_sX;
 	sY = m_pClientList[iClientH]->m_sY;
@@ -8305,8 +8105,8 @@ RTH_NEXTSTEP:
 		m_pClientList[iClientH]->m_bIsWarLocation = true;
 		SetForceRecallTime(iClientH);
 
-		GetLocalTime(&SysTime);
-		m_pClientList[iClientH]->m_iTimeLeft_ForceRecall = 2 * 20 * 60 - ((SysTime.wHour % 2) * 20 * 60 + SysTime.wMinute * 20) - 2 * 20;
+		SysTime = hb::time::local_time::now();
+		m_pClientList[iClientH]->m_iTimeLeft_ForceRecall = 2 * 20 * 60 - ((SysTime.hour % 2) * 20 * 60 + SysTime.minute * 20) - 2 * 20;
 
 	}
 	else {
@@ -8337,8 +8137,8 @@ RTH_NEXTSTEP:
 			m_iFightzoneNoForceRecall == false) {
 			m_pClientList[iClientH]->m_dwWarBeginTime = GameClock::GetTimeMS();
 			m_pClientList[iClientH]->m_bIsWarLocation = true;
-			GetLocalTime(&SysTime);
-			m_pClientList[iClientH]->m_iTimeLeft_ForceRecall = 2 * 60 * 20 - ((SysTime.wHour % 2) * 20 * 60 + SysTime.wMinute * 20) - 2 * 20;
+			SysTime = hb::time::local_time::now();
+			m_pClientList[iClientH]->m_iTimeLeft_ForceRecall = 2 * 60 * 20 - ((SysTime.hour % 2) * 20 * 60 + SysTime.minute * 20) - 2 * 20;
 		}
 		else {
 			if (memcmp(m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_cLocationName, "arejail", 7) == 0 ||
@@ -8426,8 +8226,7 @@ RTH_NEXTSTEP:
 	// v1.42
 	// 2002-7-4
 	if (memcmp(m_pClientList[iClientH]->m_cMapName, "fight", 5) == 0) {
-		std::snprintf(G_cTxt, sizeof(G_cTxt), "Char(%s)-Enter(%s) Observer(%d)", m_pClientList[iClientH]->m_cCharName, m_pClientList[iClientH]->m_cMapName, m_pClientList[iClientH]->m_bIsObserverMode);
-		PutLogEventFileList(G_cTxt);
+		hb::logger::log<log_channel::log_events>("Player '{}' entered map '{}' (observer={})", m_pClientList[iClientH]->m_cCharName, m_pClientList[iClientH]->m_cMapName, m_pClientList[iClientH]->m_bIsObserverMode);
 	}
 
 	// Crusade
@@ -8471,16 +8270,11 @@ void CGame::ReleaseFollowMode(short sOwnerH, char cOwnerType)
 		}
 }
 
-
-
-
-
 void CGame::Quit()
 {
 	
 
-	G_bIsThread = false;
-	Sleep(300);
+
 
 	if (_lsock != 0) delete _lsock;
 
@@ -8505,14 +8299,8 @@ void CGame::Quit()
 	for(int i = 0; i < hb::shared::limits::MaxSkillType; i++)
 		if (m_pSkillConfigList[i] != 0) delete m_pSkillConfigList[i];
 
-
-
-
 	for(int i = 0; i < MaxNotifyMsgs; i++)
 		if (m_pNoticeMsgList[i] != 0) delete m_pNoticeMsgList[i];
-
-
-
 
 	//	for(int i = 0; i < DEF_MAXTELEPORTTYPE; i++)
 	//	if (m_pTeleportConfigList[i] != 0) delete m_pTeleportConfigList[i];
@@ -8528,7 +8316,6 @@ uint32_t CGame::iGetLevelExp(int iLevel)
 {
 	return hb::shared::calc::CalculateLevelExp(iLevel);
 }
-
 
 /*****************************************************************
 **---------------------------FUNCTION---------------------------**
@@ -8551,7 +8338,6 @@ bool CGame::bCheckLevelUp(int iClientH)
 
 	if (m_pClientList[iClientH] == 0) return false;
 
-
 	while (m_pClientList[iClientH]->m_iExp >= m_pClientList[iClientH]->m_iNextLevelExp)
 	{
 		if (m_pClientList[iClientH]->m_iLevel < m_iMaxLevel)
@@ -8560,7 +8346,6 @@ bool CGame::bCheckLevelUp(int iClientH)
 			m_pClientList[iClientH]->m_iLU_Pool += 3;
 //			if ( (m_pClientList[iClientH]->m_cLU_Str + m_pClientList[iClientH]->m_cLU_Vit + m_pClientList[iClientH]->m_cLU_Dex + 
 //	  		      m_pClientList[iClientH]->m_cLU_Int + m_pClientList[iClientH]->m_cLU_Mag + m_pClientList[iClientH]->m_cLU_Char) <= TotalLevelUpPoint) {
-
 
 			if (m_pClientList[iClientH]->m_iStr > CharPointLimit)      m_pClientList[iClientH]->m_iStr = CharPointLimit;
 			if (m_pClientList[iClientH]->m_iDex > CharPointLimit)      m_pClientList[iClientH]->m_iDex = CharPointLimit;
@@ -8573,7 +8358,6 @@ bool CGame::bCheckLevelUp(int iClientH)
 			if (m_pClientList[iClientH]->m_iLevel > 100)
 				if (m_pClientList[iClientH]->m_bIsPlayerCivil)
 					ForceChangePlayMode(iClientH, true);
-
 
 			SendNotifyMsg(0, iClientH, Notify::SuperAttackLeft, 0, 0, 0, 0);
 			SendNotifyMsg(0, iClientH, Notify::LevelUp, 0, 0, 0, 0);
@@ -8668,9 +8452,7 @@ void CGame::StateChangeHandler(int iClientH, char* pData, size_t dwMsgSize)
 		}
 	}
 
-	std::snprintf(G_cTxt, sizeof(G_cTxt), "(*) Majestic: Char(%s) cost(%d) Str(%d) Vit(%d) Dex(%d) Int(%d) Mag(%d) Chr(%d)",
-		m_pClientList[iClientH]->m_cCharName, iMajesticCost, cStr, cVit, cDex, cInt, cMag, cChar);
-	PutLogList(G_cTxt);
+	hb::logger::log("Majestic stat upgrade: player={} cost={} STR={} VIT={} DEX={} INT={} MAG={} CHR={}", m_pClientList[iClientH]->m_cCharName, iMajesticCost, cStr, cVit, cDex, cInt, cMag, cChar);
 
 	// Apply reductions
 	m_pClientList[iClientH]->m_iGizonItemUpgradeLeft -= iMajesticCost;
@@ -8796,9 +8578,6 @@ void CGame::LevelUpSettingsHandler(int iClientH, char* pData, size_t dwMsgSize)
 
 }
 
-
-
-
 bool CGame::bCheckLimitedUser(int iClientH)
 {
 	if (m_pClientList[iClientH] == 0) return false;
@@ -8811,7 +8590,6 @@ bool CGame::bCheckLimitedUser(int iClientH)
 		SendNotifyMsg(0, iClientH, Notify::TravelerLimitedLevel, 0, 0, 0, 0);
 		return true;
 	}
-
 
 	return false;
 }
@@ -8859,8 +8637,6 @@ void CGame::RequestCivilRightHandler(int iClientH, char* pData)
 	SendEventToNearClient_TypeA(iClientH, hb::shared::owner_class::Player, MsgId::EventMotion, Type::NullAction, 0, 0, 0);
 }
 
-
-
 // 05/21/2004 - Hypnotoad - send player to jail
 
 // 05/17/2004 - Hypnotoad - register pk log
@@ -8873,9 +8649,6 @@ int CGame::_iCalcMaxLoad(int iClientH)
 
 	return ((m_pClientList[iClientH]->m_iStr + m_pClientList[iClientH]->m_iAngelicStr) * 500 + m_pClientList[iClientH]->m_iLevel * 500);
 }
-
-
-
 
 void CGame::RequestFullObjectData(int iClientH, char* pData)
 {
@@ -8960,150 +8733,6 @@ void CGame::RequestFullObjectData(int iClientH, char* pData)
 	}
 }
 
-
-
-
-
-
-
-
-
-
-
-void CGame::OnKeyDown(WPARAM wParam, LPARAM lParam)
-{
-	switch (wParam) {
-	case VK_F1:
-		m_bF1pressed = true;
-		break;
-	case VK_F4:
-		m_bF4pressed = true;
-		break;
-	case VK_F5:
-		m_bF5pressed = true;
-		break;
-	case VK_F12:
-		m_bF12pressed = true;
-		break;
-	}
-}
-
-void CGame::OnKeyUp(WPARAM wParam, LPARAM lParam)
-{
-	
-
-	switch (wParam) {
-	case VK_F2:
-		break;
-
-	case VK_F1:
-		m_bF1pressed = false;
-		break;
-	case VK_F4:
-		m_bF4pressed = false;
-		break;
-	case VK_F5:
-		m_bF5pressed = false;
-		break;
-	case VK_F12:
-		m_bF12pressed = false;
-		break;
-
-	case VK_F6:
-		if (m_bF1pressed) {
-			PutLogList("(!) Send server shutdown announcement1...");
-			for(int i = 1; i < MaxClients; i++)
-				if ((m_pClientList[i] != 0) && (m_pClientList[i]->m_bIsInitComplete)) {
-					SendNotifyMsg(0, i, Notify::ServerShutdown, 1, 0, 0, 0);
-				}
-		}
-		break;
-
-	case VK_F7:
-		if (m_bF1pressed) {
-			PutLogList("(!) Send server shutdown announcement2...");
-			for(int i = 1; i < MaxClients; i++)
-				if ((m_pClientList[i] != 0) && (m_pClientList[i]->m_bIsInitComplete)) {
-					SendNotifyMsg(0, i, Notify::ServerShutdown, 2, 0, 0, 0);
-				}
-		}
-		break;
-
-	case VK_F9:
-		if ((m_bF1pressed)) {
-			PutLogList("(!!!) Resume Crusade Mode...");
-			m_pWarManager->LocalStartCrusadeMode(0);
-		}
-		break;
-
-	case VK_F11:
-		if ((m_bF1pressed)) {
-			PutLogList("(!!!) ManualEndCrusadeMode: side 0");
-			m_pWarManager->ManualEndCrusadeMode(0);
-		}
-		break;
-
-#define VK_1 0x31
-	case VK_1:
-		if ((m_bF1pressed)) {
-			GlobalUpdateConfigs(1);
-		}
-		break;
-
-#define VK_2 0x32
-	case VK_2:
-		if ((m_bF1pressed)) {
-			GlobalUpdateConfigs(2);
-		}
-		break;
-
-#define VK_3 0x33
-	case VK_3:
-		if ((m_bF1pressed)) {
-			GlobalUpdateConfigs(3);
-		}
-		break;
-
-#define VK_4 0x34
-	case VK_4:
-		if ((m_bF1pressed)) {
-			GlobalUpdateConfigs(1);
-		}
-		break;
-
-		/*#define VK_A 0x41 // a key
-		case VK_A:
-			if ((m_bF1pressed )) {
-				GlobalStartApocalypseMode();
-			}
-			break;*/
-
-			/*#define VK_H 0x49 // H key
-			case VK_H:
-				if ((m_bF1pressed )) {
-					m_pWarManager->GlobalStartHeldenianMode();
-				}
-				break;*/
-
-				//Crusade Testcode
-	case VK_HOME:
-		if ((m_bF1pressed)) {
-			m_pWarManager->GlobalStartCrusadeMode();
-		}
-		break;
-
-	case VK_INSERT:
-		m_pWarManager->_GrandMagicLaunchMsgSend(1, 1);
-		m_pWarManager->MeteorStrikeMsgHandler(1);
-		break;
-
-	case VK_DELETE:
-		m_pWarManager->_GrandMagicLaunchMsgSend(1, 2);
-		m_pWarManager->MeteorStrikeMsgHandler(2);
-		break;
-	}
-}
-
 int CGame::iGetFollowerNumber(short sOwnerH, char cOwnerType)
 {
 	int iTotal;
@@ -9144,16 +8773,6 @@ void CGame::SendObjectMotionRejectMsg(int iClientH)
 	}
 	return;
 }
-
-
-
-
-
-
-
-
-
-
 
 int CGame::iCalcTotalWeight(int iClientH)
 {
@@ -9213,7 +8832,7 @@ void CGame::CheckAndNotifyPlayerConnection(int iClientH, char* pMsg, uint32_t dw
 
 	// cName     .
 	for(int i = 1; i < MaxClients; i++)
-		if ((m_pClientList[i] != 0) && (_strnicmp(cName, m_pClientList[i]->m_cCharName, hb::shared::limits::CharNameLen - 1) == 0)) {
+		if ((m_pClientList[i] != 0) && (hb_strnicmp(cName, m_pClientList[i]->m_cCharName, hb::shared::limits::CharNameLen - 1) == 0)) {
 			SendNotifyMsg(0, iClientH, Notify::PlayerOnGame, 0, 0, 0, m_pClientList[i]->m_cCharName, 0, 0, 0, 0, 0, 0, cPlayerLocation);
 
 			return;
@@ -9221,12 +8840,10 @@ void CGame::CheckAndNotifyPlayerConnection(int iClientH, char* pMsg, uint32_t dw
 
 }
 
-
 void CGame::SetPlayerProfile(int iClientH, char* pMsg, size_t dwMsgSize)
 {
 	char cTemp[256];
 	
-
 
 	if (m_pClientList[iClientH] == 0) return;
 	if ((dwMsgSize - 7) <= 0) return;
@@ -9266,7 +8883,7 @@ void CGame::GetPlayerProfile(int iClientH, char* pMsg, size_t dwMsgSize)
 		else memcpy(cName, token, strlen(token));
 
 		for(int i = 1; i < MaxClients; i++)
-			if ((m_pClientList[i] != 0) && (_strnicmp(m_pClientList[i]->m_cCharName, cName, hb::shared::limits::CharNameLen - 1) == 0)) {
+			if ((m_pClientList[i] != 0) && (hb_strnicmp(m_pClientList[i]->m_cCharName, cName, hb::shared::limits::CharNameLen - 1) == 0)) {
 
 				std::memset(cBuff2, 0, sizeof(cBuff2));
 				std::snprintf(cBuff2, sizeof(cBuff2), "%s Profile: %s", cName, m_pClientList[i]->m_cProfile);
@@ -9286,7 +8903,6 @@ void CGame::___RestorePlayerCharacteristics(int iClientH)
 	int iOriginalPoint, iCurPoint, iVerifyPoint, iToBeRestoredPoint;
 	int iMax, iA, iB;
 	bool bFlag;
-	char cTxt[120];
 	return;
 	if (m_pClientList[iClientH] == 0) return;
 
@@ -9296,7 +8912,6 @@ void CGame::___RestorePlayerCharacteristics(int iClientH)
 	iVit = m_pClientList[iClientH]->m_iVit;
 	iMag = m_pClientList[iClientH]->m_iMag;
 	iCharisma = m_pClientList[iClientH]->m_iCharisma;
-
 
 	iCurPoint = m_pClientList[iClientH]->m_iStr + m_pClientList[iClientH]->m_iInt +
 		m_pClientList[iClientH]->m_iVit + m_pClientList[iClientH]->m_iDex +
@@ -9374,7 +8989,6 @@ void CGame::___RestorePlayerCharacteristics(int iClientH)
 		if (iA > iMax) iMax = iA;
 		iA = m_pClientList[iClientH]->m_cSkillMastery[6];
 		if (iA > iMax) iMax = iA;
-
 
 		if (m_pClientList[iClientH]->m_iDex < (iMax / 2)) {
 
@@ -9471,8 +9085,7 @@ void CGame::___RestorePlayerCharacteristics(int iClientH)
 			m_pClientList[iClientH]->m_iMag + m_pClientList[iClientH]->m_iCharisma;
 
 		if (iVerifyPoint != iOriginalPoint) {
-			std::snprintf(cTxt, sizeof(cTxt), "(T_T) RestorePlayerCharacteristics(Minor) FAIL! Player(%s)-(%d/%d)", m_pClientList[iClientH]->m_cCharName, iVerifyPoint, iOriginalPoint);
-			PutLogList(cTxt);
+			hb::logger::log("Stat restoration (minor) failed: player={} ({}/{})", m_pClientList[iClientH]->m_cCharName, iVerifyPoint, iOriginalPoint);
 
 			m_pClientList[iClientH]->m_iStr = iStr;
 			m_pClientList[iClientH]->m_iDex = iDex;
@@ -9482,8 +9095,7 @@ void CGame::___RestorePlayerCharacteristics(int iClientH)
 			m_pClientList[iClientH]->m_iCharisma = iCharisma;
 		}
 		else {
-			std::snprintf(cTxt, sizeof(cTxt), "(^o^) RestorePlayerCharacteristics(Minor) SUCCESS! Player(%s)-(%d/%d)", m_pClientList[iClientH]->m_cCharName, iVerifyPoint, iOriginalPoint);
-			PutLogList(cTxt);
+			hb::logger::log("Stat restoration (minor) succeeded: player={} ({}/{})", m_pClientList[iClientH]->m_cCharName, iVerifyPoint, iOriginalPoint);
 		}
 	}
 	else {
@@ -9621,17 +9233,14 @@ void CGame::___RestorePlayerCharacteristics(int iClientH)
 			m_pClientList[iClientH]->m_iMag + m_pClientList[iClientH]->m_iCharisma;
 
 		if (iVerifyPoint != iOriginalPoint) {
-			std::snprintf(cTxt, sizeof(cTxt), "(T_T) RestorePlayerCharacteristics(Over) FAIL! Player(%s)-(%d/%d)", m_pClientList[iClientH]->m_cCharName, iVerifyPoint, iOriginalPoint);
-			PutLogList(cTxt);
+			hb::logger::log("Stat restoration (overflow) failed: player={} ({}/{})", m_pClientList[iClientH]->m_cCharName, iVerifyPoint, iOriginalPoint);
 
 		}
 		else {
-			std::snprintf(cTxt, sizeof(cTxt), "(^o^) RestorePlayerCharacteristics(Over) SUCCESS! Player(%s)-(%d/%d)", m_pClientList[iClientH]->m_cCharName, iVerifyPoint, iOriginalPoint);
-			PutLogList(cTxt);
+			hb::logger::log("Stat restoration (overflow) succeeded: player={} ({}/{})", m_pClientList[iClientH]->m_cCharName, iVerifyPoint, iOriginalPoint);
 		}
 	}
 }
-
 
 int CGame::_iGetPlayerNumberOnSpot(short dX, short dY, char cMapIndex, char cRange)
 {
@@ -9649,11 +9258,9 @@ int CGame::_iGetPlayerNumberOnSpot(short dX, short dY, char cMapIndex, char cRan
 	return iSum;
 }
 
-
-
 void CGame::CheckDayOrNightMode()
 {
-	SYSTEMTIME SysTime;
+	hb::time::local_time SysTime{};
 	char cPrevMode;
 
 	// DEBUG: Force night mode for testing light effects
@@ -9662,8 +9269,8 @@ void CGame::CheckDayOrNightMode()
 
 	cPrevMode = m_cDayOrNight;
 
-	GetLocalTime(&SysTime);
-	if (SysTime.wMinute >= m_iNighttimeDuration)
+	SysTime = hb::time::local_time::now();
+	if (SysTime.minute >= m_iNighttimeDuration)
 		m_cDayOrNight = 2;
 	else m_cDayOrNight = 1;
 
@@ -9677,7 +9284,6 @@ void CGame::CheckDayOrNightMode()
 			}
 	}
 }
-
 
 void CGame::SetPlayerReputation(int iClientH, char* pMsg, char cValue, size_t dwMsgSize)
 {
@@ -9712,7 +9318,7 @@ void CGame::SetPlayerReputation(int iClientH, char* pMsg, char cValue, size_t dw
 		else memcpy(cName, token, strlen(token));
 
 		for(int i = 1; i < MaxClients; i++)
-			if ((m_pClientList[i] != 0) && (_strnicmp(m_pClientList[i]->m_cCharName, cName, hb::shared::limits::CharNameLen - 1) == 0)) {
+			if ((m_pClientList[i] != 0) && (hb_strnicmp(m_pClientList[i]->m_cCharName, cName, hb::shared::limits::CharNameLen - 1) == 0)) {
 
 				if (i != iClientH) {
 					if (cValue == 0)
@@ -9736,10 +9342,9 @@ void CGame::SetPlayerReputation(int iClientH, char* pMsg, char cValue, size_t dw
 	return;
 }
 
-bool CGame::bReadNotifyMsgListFile(char* cFn)
+bool CGame::bReadNotifyMsgListFile(const char* cFn)
 {
 	FILE* pFile;
-	HANDLE hFile;
 	uint32_t  dwFileSize;
 	char* cp, * token, cReadMode;
 	char seps[] = "=\t\n;";
@@ -9747,17 +9352,17 @@ bool CGame::bReadNotifyMsgListFile(char* cFn)
 	cReadMode = 0;
 	m_iTotalNoticeMsg = 0;
 
-	hFile = CreateFile(cFn, GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
-	dwFileSize = GetFileSize(hFile, 0);
-	if (hFile != INVALID_HANDLE_VALUE) CloseHandle(hFile);
+	std::error_code ec;
+	auto fsize = std::filesystem::file_size(cFn, ec);
+	dwFileSize = ec ? 0 : static_cast<uint32_t>(fsize);
 
 	pFile = fopen(cFn, "rt");
 	if (pFile == 0) {
-		PutLogList("(!) Notify Message list file not found!...");
+		hb::logger::log("Notify message list file not found");
 		return false;
 	}
 	else {
-		PutLogList("(!) Reading Notify Message list file...");
+		hb::logger::log("Reading notify message list file");
 		cp = new char[dwFileSize + 2];
 		std::memset(cp, 0, dwFileSize + 2);
 		fread(cp, dwFileSize, 1, pFile);
@@ -9822,11 +9427,9 @@ void CGame::NoticeHandler()
 	}
 }
 
-
 void CGame::ResponseSavePlayerDataReplyHandler(char* pData, size_t dwMsgSize)
 {
 	char* cp, cCharName[hb::shared::limits::CharNameLen];
-
 
 	std::memset(cCharName, 0, sizeof(cCharName));
 
@@ -9837,7 +9440,7 @@ void CGame::ResponseSavePlayerDataReplyHandler(char* pData, size_t dwMsgSize)
 
 	for(int i = 0; i < MaxClients; i++)
 		if (m_pClientList[i] != 0) {
-			if (_strnicmp(m_pClientList[i]->m_cCharName, cCharName, hb::shared::limits::CharNameLen - 1) == 0) {
+			if (hb_strnicmp(m_pClientList[i]->m_cCharName, cCharName, hb::shared::limits::CharNameLen - 1) == 0) {
 				SendNotifyMsg(0, i, Notify::ServerChange, 0, 0, 0, 0);
 			}
 		}
@@ -9908,8 +9511,6 @@ int CGame::iGetExpLevel(uint32_t iExp)
 	return 0;
 }
 
-
-
 int CGame::_iCalcPlayerNum(char cMapIndex, short dX, short dY, char cRadius)
 {
 	int iRet;
@@ -9933,7 +9534,6 @@ int CGame::_iCalcPlayerNum(char cMapIndex, short dX, short dY, char cRadius)
 
 	return iRet;
 }
-
 
 void CGame::WhetherProcessor()
 {
@@ -9974,15 +9574,12 @@ void CGame::WhetherProcessor()
 	} //for Loop
 }
 
-
-
 /*********************************************************************************************************************
 **  int CGame::iGetWhetherMagicBonusEffect(short sType, char cWheatherStatus)										**
 **  description			:: checks for a weather bonus when magic is cast											**
 **  last updated		:: November 20, 2004; 10:34 PM; Hypnotoad													**
 **	return value		:: int																						**
 *********************************************************************************************************************/
-
 
 int CGame::iGetMapIndex(char* pMapName)
 {
@@ -10001,7 +9598,6 @@ int CGame::iGetMapIndex(char* pMapName)
 
 	return iMapIndex;
 }
-
 
 int CGame::_iForcePlayerDisconect(int iNum)
 {
@@ -10049,15 +9645,13 @@ void CGame::ToggleSafeAttackModeHandler(int iClientH) //v1.1
 	SendNotifyMsg(0, iClientH, Notify::SafeAttackMode, 0, 0, 0, 0);
 }
 
-
 void CGame::ForceDisconnectAccount(char* pAccountName, uint16_t wCount)
 {
 	
 
 	for(int i = 1; i < MaxClients; i++)
-		if ((m_pClientList[i] != 0) && (_strnicmp(m_pClientList[i]->m_cAccountName, pAccountName, hb::shared::limits::AccountNameLen - 1) == 0)) {
-			std::snprintf(G_cTxt, sizeof(G_cTxt), "<%d> Force disconnect account: CharName(%s) AccntName(%s) Count(%d)", i, m_pClientList[i]->m_cCharName, m_pClientList[i]->m_cAccountName, wCount);
-			PutLogList(G_cTxt);
+		if ((m_pClientList[i] != 0) && (hb_strnicmp(m_pClientList[i]->m_cAccountName, pAccountName, hb::shared::limits::AccountNameLen - 1) == 0)) {
+			hb::logger::log("Client {}: force disconnect char={} account={} count={}", i, m_pClientList[i]->m_cCharName, m_pClientList[i]->m_cAccountName, wCount);
 
 			//DeleteClient(i, true, true);
 
@@ -10084,34 +9678,9 @@ bool CGame::bOnClose()
 
 // 05/24/2004 - Hypnotoad - Hammer and Wand train to 100% fixed
 
-
-
-
-
-
-
-
-
-
-
-
-
 //Hero Code by Zabuza
 
-
-
-
-
-
-
-
-
-
-
 // New 14/05/2004
-
-
-
 
 int CGame::iGetMaxHP(int iClientH)
 {
@@ -10175,7 +9744,6 @@ void CGame::GetMapInitialPoint(int iMapIndex, short* pX, short* pY, char* pPlaye
 	*pY = static_cast<short>(pList[iIndex].y);
 }
 
-
 // MODERNIZED: New function that polls login client socket instead of handling window messages
 void CGame::OnLoginClientSocketEvent(int iLoginClientH)
 {
@@ -10202,8 +9770,7 @@ void CGame::OnLoginClientSocketEvent(int iLoginClientH)
 		break;
 
 	case sock::Event::ConfirmCodeNotMatch:
-		std::snprintf(G_cTxt, sizeof(G_cTxt), "<%d> Confirmcode Login notmatch!", iLoginClientH);
-		PutLogList(G_cTxt);
+		hb::logger::log("Client {}: login confirm code mismatch", iLoginClientH);
 		DeleteLoginClient(iLoginClientH);
 		break;
 	case sock::Event::MsgSizeTooLarge:
@@ -10214,43 +9781,6 @@ void CGame::OnLoginClientSocketEvent(int iLoginClientH)
 	}
 }
 
-void CGame::OnSubLogSocketEvent(UINT message, WPARAM wParam, LPARAM lParam)
-{
-	UINT iTmp;
-	int iLogSockH, iRet;
-
-	iTmp = WM_USER_BOT_ACCEPT;
-	iLogSockH = message - iTmp - 1;
-
-	auto p = _lclients[iLogSockH];
-	if (p == 0) return;
-
-	iRet = p->_sock->Poll();
-
-	switch (iRet) {
-	case sock::Event::UnsentDataSendComplete:
-		break;
-	case sock::Event::ConnectionEstablish:
-		break;
-
-	case sock::Event::ReadComplete:
-		OnClientLoginRead(iLogSockH);
-		break;
-
-	case sock::Event::Block:
-		break;
-
-	case sock::Event::ConfirmCodeNotMatch:
-		std::snprintf(G_cTxt, sizeof(G_cTxt), "<%d> Confirmcode Login notmatch!", iLogSockH);
-		PutLogList(G_cTxt);
-		DeleteLoginClient(iLogSockH);
-		break;
-	case sock::Event::MsgSizeTooLarge:
-	case sock::Event::SocketError:
-	case sock::Event::SocketClosed:
-		break;
-	}
-}
 
 LoginClient::~LoginClient()
 {
@@ -10268,7 +9798,7 @@ void CGame::OnClientLoginRead(int h)
 	pData = _lclients[h]->_sock->pGetRcvDataPointer(&dwMsgSize, &cKey);
 
 	if (bPutMsgQuene(Source::LogServer, pData, dwMsgSize, h, cKey) == false) {
-		PutLogList("@@@@@@ CRITICAL ERROR in MsgQuene!!! @@@@@@");
+		hb::logger::error("Critical error in message queue");
 	}
 }
 
@@ -10282,8 +9812,6 @@ void CGame::DeleteLoginClient(int h)
 	//delete _lclients[h];
 	_lclients[h] = nullptr;
 }
-
-
 
 // 3.51 - 05/17/2004 - Hypnotoad/[KLKS] - Monster Special Abilities
 char CGame::_cGetSpecialAbility(int iKindSA)
@@ -10406,8 +9934,7 @@ void CGame::CheckSpecialEvent(int iClientH)
 				if (m_pClientList[iClientH]->m_iCurWeightLoad < 0) m_pClientList[iClientH]->m_iCurWeightLoad = 0;
 
 				// testcode  .
-				std::snprintf(G_cTxt, sizeof(G_cTxt), "(*) Get MemorialRing  : Char(%s)", m_pClientList[iClientH]->m_cCharName);
-				PutLogFileList(G_cTxt);
+				hb::logger::log<log_channel::events>("Get MemorialRing : Char({})", m_pClientList[iClientH]->m_cCharName);
 
 				pItem->SetTouchEffectType(TouchEffectType::UniqueOwner);
 				pItem->m_sTouchEffectValue1 = m_pClientList[iClientH]->m_sCharIDnum1;
@@ -10420,10 +9947,6 @@ void CGame::CheckSpecialEvent(int iClientH)
 		}
 	}
 }
-
-
-
-
 
 void CGame::RequestNoticementHandler(int iClientH, char* pData)
 {
@@ -10463,22 +9986,18 @@ void CGame::RequestNoticementHandler(int iClientH, char* pData)
 
 void CGame::RequestNoticementHandler(int iClientH)
 {
-	DWORD lpNumberOfBytesRead;
-
 	if (m_pClientList[iClientH] == 0) return;
 
-	HANDLE hFile = CreateFile("GameConfigs\\Noticement.txt", GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
-	uint32_t dwFileSize = GetFileSize(hFile, 0);
-	if (dwFileSize == -1) {
-		return;
-	}
+	FILE* pNotiFile = fopen("GameConfigs/Noticement.txt", "rb");
+	if (!pNotiFile) return;
+	fseek(pNotiFile, 0, SEEK_END);
+	uint32_t dwFileSize = static_cast<uint32_t>(ftell(pNotiFile));
+	fseek(pNotiFile, 0, SEEK_SET);
 
 	std::memset(G_cData50000, 0, sizeof(G_cData50000));
 
-	SetFilePointer(hFile, 0, 0, FILE_BEGIN);
-
-	ReadFile(hFile, G_cData50000 + sizeof(hb::net::PacketHeader), dwFileSize, &lpNumberOfBytesRead, 0);
-	CloseHandle(hFile);
+	fread(G_cData50000 + sizeof(hb::net::PacketHeader), 1, dwFileSize, pNotiFile);
+	fclose(pNotiFile);
 
 	{
 		auto* header = reinterpret_cast<hb::net::PacketResponseNoticementHeader*>(G_cData50000);
@@ -10496,7 +10015,6 @@ void CGame::RequestNoticementHandler(int iClientH)
 		return;
 	}
 }
-
 
 void CGame::RequestCheckAccountPasswordHandler(char* pData, size_t dwMsgSize)
 {
@@ -10516,17 +10034,14 @@ void CGame::RequestCheckAccountPasswordHandler(char* pData, size_t dwMsgSize)
 	iLevel = payload.level;
 
 	for(int i = 0; i < MaxClients; i++)
-		if ((m_pClientList[i] != 0) && (_stricmp(m_pClientList[i]->m_cAccountName, cAccountName) == 0)) {
+		if ((m_pClientList[i] != 0) && (hb_stricmp(m_pClientList[i]->m_cAccountName, cAccountName) == 0)) {
 			if ((strcmp(m_pClientList[i]->m_cAccountPassword, cAccountPassword) != 0) || (m_pClientList[i]->m_iLevel != iLevel)) {
-				std::snprintf(G_cTxt, sizeof(G_cTxt), "(TestLog) Error! Account(%s)-Level(%d) password(or level) mismatch! Disconnect.", cAccountName, iLevel);
-				PutLogList(G_cTxt);
+				hb::logger::log("Account '{}' level {}: password or level mismatch, disconnecting", cAccountName, iLevel);
 				DeleteClient(i, false, true);
 				return;
 			}
 		}
 }
-
-
 
 int CGame::iRequestPanningMapDataRequest(int iClientH, char* pData)
 {
@@ -10655,7 +10170,6 @@ void CGame::RequestRestartHandler(int iClientH)
 	}
 }
 
-
 void CGame::RequestShopContentsHandler(int iClientH, char* pData)
 {
 	if (m_pClientList[iClientH] == 0) return;
@@ -10673,9 +10187,7 @@ void CGame::RequestShopContentsHandler(int iClientH, char* pData)
 	auto mappingIt = m_NpcShopMappings.find(static_cast<int>(npcType));
 	if (mappingIt == m_NpcShopMappings.end()) {
 		// No shop configured for this NPC type
-		char logMsg[128];
-		std::snprintf(logMsg, sizeof(logMsg), "(!) Shop request for NPC type %d - no shop mapping found", npcType);
-		PutLogList(logMsg);
+		hb::logger::log("Shop request for NPC type {} - no shop mapping found", npcType);
 		return;
 	}
 
@@ -10685,9 +10197,7 @@ void CGame::RequestShopContentsHandler(int iClientH, char* pData)
 	auto shopIt = m_ShopData.find(shopId);
 	if (shopIt == m_ShopData.end() || shopIt->second.itemIds.empty()) {
 		// Shop exists in mapping but has no items
-		char logMsg[128];
-		std::snprintf(logMsg, sizeof(logMsg), "(!) Shop request for NPC type %d, shop %d - no items found", npcType, shopId);
-		PutLogList(logMsg);
+		hb::logger::log("Shop request for NPC type {}, shop {} - no items found", npcType, shopId);
 		return;
 	}
 
@@ -10719,9 +10229,7 @@ void CGame::RequestShopContentsHandler(int iClientH, char* pData)
 	// Send to client
 	m_pClientList[iClientH]->m_pXSock->iSendMsg(cData, static_cast<uint32_t>(packetSize));
 
-	char logMsg[128];
-	std::snprintf(logMsg, sizeof(logMsg), "(!) Sent shop contents: NPC type %d, shop %d, %d items", npcType, shopId, itemCount);
-	PutLogList(logMsg);
+	hb::logger::log("Sent shop contents: NPC type {}, shop {}, {} items", npcType, shopId, itemCount);
 
 	delete[] cData;
 }
@@ -10739,10 +10247,7 @@ void CGame::JoinPartyHandler(int iClientH, int iV1, const char* pMemberName)
 
 	case 1:
 		//testcode
-		std::snprintf(G_cTxt, sizeof(G_cTxt), "Join Party Req: %s(%d) ID(%d) Stat(%d) ReqJoinH(%d) ReqJoinName(%s)", m_pClientList[iClientH]->m_cCharName, iClientH,
-			m_pClientList[iClientH]->m_iPartyID, m_pClientList[iClientH]->m_iPartyStatus, m_pClientList[iClientH]->m_iReqJoinPartyClientH,
-			m_pClientList[iClientH]->m_cReqJoinPartyName);
-		PutLogList(G_cTxt);
+		hb::logger::log("Party join request: player={}({}) party={} status={} target={} name={}", m_pClientList[iClientH]->m_cCharName, iClientH, m_pClientList[iClientH]->m_iPartyID, m_pClientList[iClientH]->m_iPartyStatus, m_pClientList[iClientH]->m_iReqJoinPartyClientH, m_pClientList[iClientH]->m_cReqJoinPartyName);
 
 		if ((m_pClientList[iClientH]->m_iPartyID != 0) || (m_pClientList[iClientH]->m_iPartyStatus != PartyStatus::Null)) {
 			SendNotifyMsg(0, iClientH, Notify::Party, 7, 0, 0, 0);
@@ -10750,29 +10255,28 @@ void CGame::JoinPartyHandler(int iClientH, int iV1, const char* pMemberName)
 			std::memset(m_pClientList[iClientH]->m_cReqJoinPartyName, 0, sizeof(m_pClientList[iClientH]->m_cReqJoinPartyName));
 			m_pClientList[iClientH]->m_iPartyStatus = PartyStatus::Null;
 			//testcode
-			PutLogList("Join Party Reject (1)");
+			hb::logger::log("Party join rejected (reason 1)");
 			return;
 		}
 
 		for(int i = 1; i < MaxClients; i++)
-			if ((m_pClientList[i] != 0) && (_stricmp(m_pClientList[i]->m_cCharName, pMemberName) == 0)) {
+			if ((m_pClientList[i] != 0) && (hb_stricmp(m_pClientList[i]->m_cCharName, pMemberName) == 0)) {
 				if (m_pClientList[i]->m_appearance.bIsWalking) {
 					SendNotifyMsg(0, iClientH, Notify::Party, 7, 0, 0, 0);
 					//testcode
-					PutLogList("Join Party Reject (2)");
+					hb::logger::log("Party join rejected (reason 2)");
 				}
 				else if (m_pClientList[i]->m_cSide != m_pClientList[iClientH]->m_cSide) {
 					SendNotifyMsg(0, iClientH, Notify::Party, 7, 0, 0, 0);
 					//testcode
-					PutLogList("Join Party Reject (3)");
+					hb::logger::log("Party join rejected (reason 3)");
 				}
 				else if (m_pClientList[i]->m_iPartyStatus == PartyStatus::Processing) {
 					SendNotifyMsg(0, iClientH, Notify::Party, 7, 0, 0, 0);
 					//testcode
-					PutLogList("Join Party Reject (4)");
+					hb::logger::log("Party join rejected (reason 4)");
 					//testcode
-					std::snprintf(G_cTxt, sizeof(G_cTxt), "Party join reject(2) ClientH:%d ID:%d JoinName:%s", i, m_pClientList[i]->m_iPartyID, m_pClientList[i]->m_cReqJoinPartyName);
-					PutLogList(G_cTxt);
+					hb::logger::log("Party join rejected: client={} party={} name={}", i, m_pClientList[i]->m_iPartyID, m_pClientList[i]->m_cReqJoinPartyName);
 
 					m_pClientList[iClientH]->m_iReqJoinPartyClientH = 0;
 					std::memset(m_pClientList[iClientH]->m_cReqJoinPartyName, 0, sizeof(m_pClientList[iClientH]->m_cReqJoinPartyName));
@@ -10809,10 +10313,6 @@ void CGame::JoinPartyHandler(int iClientH, int iV1, const char* pMemberName)
 	}
 }
 
-
-
-
-
 void CGame::ActivateSpecialAbilityHandler(int iClientH)
 {
 	uint32_t dwTime = GameClock::GetTimeMS();
@@ -10847,7 +10347,6 @@ void CGame::ActivateSpecialAbilityHandler(int iClientH)
 	SendNotifyMsg(0, iClientH, Notify::SpecialAbilityStatus, 1, m_pClientList[iClientH]->m_iSpecialAbilityType, m_pClientList[iClientH]->m_iSpecialAbilityLastSec, 0);
 	SendEventToNearClient_TypeA(iClientH, hb::shared::owner_class::Player, MsgId::EventMotion, Type::NullAction, 0, 0, 0);
 }
-
 
 void CGame::UpdateMapSectorInfo()
 {
@@ -10907,7 +10406,6 @@ void CGame::UpdateMapSectorInfo()
 		}
 }
 
-
 void CGame::AgingMapSectorInfo()
 {
 	for(int i = 0; i < MaxMaps; i++)
@@ -10928,13 +10426,6 @@ void CGame::AgingMapSectorInfo()
 				}
 		}
 }
-
-
-
-
-
-
-
 
 // New 14/05/2004 Changed
 
@@ -10973,11 +10464,6 @@ void CGame::CheckConnectionHandler(int iClientH, char* pData, bool bAlreadyRespo
 	}
 }
 
-
-
-
-
-
 void CGame::RequestHelpHandler(int iClientH)
 {
 	
@@ -10996,13 +10482,9 @@ void CGame::RequestHelpHandler(int iClientH)
 	SendNotifyMsg(0, iClientH, Notify::HelpFailed, 0, 0, 0, 0);
 }
 
-
-
-
 bool CGame::bAddClientShortCut(int iClientH)
 {
 	
-
 
 	for(int i = 0; i < MaxClients; i++)
 		if (m_iClientShortCut[i] == iClientH) return false;
@@ -11037,10 +10519,6 @@ RCSC_LOOPBREAK:
 		}
 }
 
-
-
-
-
 int CGame::iGetMapLocationSide(char* pMapName)
 {
 
@@ -11072,8 +10550,6 @@ int CGame::iGetMapLocationSide(char* pMapName)
 
 	return 0;
 }
-
-
 
 //ArchAngel Function
 
@@ -11125,7 +10601,6 @@ void CGame::RequestChangePlayMode(int iClientH)
 **	return value		:: void																						**
 *********************************************************************************************************************/
 
-
 /*********************************************************************************************************************
 **  void void CGame::SetIceFlag(short sOwnerH, char cOwnerType, bool bStatus)										**
 **  description			:: changes the status of the player to show frozen aura										**
@@ -11157,7 +10632,7 @@ int CGame::FindAdminByAccount(const char* accountName)
 {
 	if (accountName == nullptr) return -1;
 	for (int i = 0; i < m_iAdminCount; i++) {
-		if (_stricmp(m_stAdminList[i].m_cAccountName, accountName) == 0)
+		if (hb_stricmp(m_stAdminList[i].m_cAccountName, accountName) == 0)
 			return i;
 	}
 	return -1;
@@ -11167,7 +10642,7 @@ int CGame::FindAdminByCharName(const char* charName)
 {
 	if (charName == nullptr) return -1;
 	for (int i = 0; i < m_iAdminCount; i++) {
-		if (_stricmp(m_stAdminList[i].m_cCharName, charName) == 0)
+		if (hb_stricmp(m_stAdminList[i].m_cCharName, charName) == 0)
 			return i;
 	}
 	return -1;
@@ -11196,7 +10671,7 @@ int CGame::FindClientByName(const char* pName) const
 	{
 		if (m_pClientList[i] != nullptr && m_pClientList[i]->m_bIsInitComplete)
 		{
-			if (_strnicmp(m_pClientList[i]->m_cCharName, pName, hb::shared::limits::CharNameLen - 1) == 0)
+			if (hb_strnicmp(m_pClientList[i]->m_cCharName, pName, hb::shared::limits::CharNameLen - 1) == 0)
 				return i;
 		}
 	}
@@ -11297,7 +10772,6 @@ bool CGame::GMTeleportTo(int iClientH, const char* cDestMap, short sDestX, short
 	return true;
 }
 
-
 /*********************************************************************************************************************
 **  void void CGame::SetDefenseShieldFlag(short sOwnerH, char cOwnerType, bool bStatus)								**
 **  description			:: changes the status of the player to show defense aura									**
@@ -11328,8 +10802,6 @@ bool CGame::GMTeleportTo(int iClientH, const char* cDestMap, short sDestX, short
 
 // New 07/05/2004
 // Item Logging
-
-
 
 void CGame::GetExp(int iClientH, uint32_t iExp, bool bIsAttackerOwn)
 {
@@ -11378,8 +10850,7 @@ void CGame::GetExp(int iClientH, uint32_t iExp, bool bIsAttackerOwn)
 
 			//Check for party bug
 			if (iTotalPartyMembers > hb::shared::limits::MaxPartyMembers) {
-				std::snprintf(G_cTxt, sizeof(G_cTxt), "(X) Party Bug !! partyMember %d XXXXXXXXXX", iTotalPartyMembers);
-				PutLogFileList(G_cTxt);
+				hb::logger::error<log_channel::events>("Party bug: member count {} exceeds limit", iTotalPartyMembers);
 				iTotalPartyMembers = hb::shared::limits::MaxPartyMembers;
 			}
 
@@ -11414,14 +10885,9 @@ void CGame::GetExp(int iClientH, uint32_t iExp, bool bIsAttackerOwn)
 	}
 }
 
-
-
 // New 12/05/2004
 
-
-
 // New 16/05/2004
-
 
 // New 18/05/2004
 void CGame::SetPlayingStatus(int iClientH)
@@ -11531,7 +10997,7 @@ void CGame::RequestResurrectPlayer(int iClientH, bool bResurrect)
 		try
 		{
 			std::snprintf(buff, sizeof(buff), "(!!!) Player(%s) Tried To Use Resurrection Hack", m_pClientList[iClientH]->m_cCharName);
-			PutHackLogFileList(G_cTxt);
+			hb::logger::warn<log_channel::security>("{}", G_cTxt);
 			DeleteClient(iClientH, true, true, true, true);
 		}
 		catch (...)
@@ -11540,9 +11006,7 @@ void CGame::RequestResurrectPlayer(int iClientH, bool bResurrect)
 		return;
 	}
 
-	std::snprintf(buff, sizeof(buff), "(*) Resurrect Player! %s", m_pClientList[iClientH]->m_cCharName);
-	PutLogList(buff);
-
+	hb::logger::log("Resurrect Player! {}", m_pClientList[iClientH]->m_cCharName);
 
 	m_pClientList[iClientH]->m_bIsKilled = false;
 	// Player's HP becomes half of the Max HP. 
@@ -11560,13 +11024,11 @@ void CGame::RequestResurrectPlayer(int iClientH, bool bResurrect)
 	RequestTeleportHandler(iClientH, "2   ", m_pClientList[iClientH]->m_cMapName, m_pClientList[iClientH]->m_sX, m_pClientList[iClientH]->m_sY);
 }
 
-
 bool CGame::bCheckClientMoveFrequency(int iClientH, uint32_t dwClientTime)
 {
 	uint32_t dwTimeGap;
 
 	if (m_pClientList[iClientH] == 0) return false;
-
 
 	if (m_pClientList[iClientH]->m_dwMoveFreqTime == 0)
 		m_pClientList[iClientH]->m_dwMoveFreqTime = dwClientTime;
@@ -11589,8 +11051,7 @@ bool CGame::bCheckClientMoveFrequency(int iClientH, uint32_t dwClientTime)
 		if ((dwTimeGap < 200) && (dwTimeGap >= 0)) {
 			try
 			{
-				std::snprintf(G_cTxt, sizeof(G_cTxt), "Speed Hack: (%s) Player: (%s) - running too fast.", m_pClientList[iClientH]->m_cIPaddress, m_pClientList[iClientH]->m_cCharName);
-				PutHackLogFileList(G_cTxt);
+				hb::logger::warn<log_channel::security>("Speed hack: IP={} player={}, running too fast", m_pClientList[iClientH]->m_cIPaddress, m_pClientList[iClientH]->m_cCharName);
 				DeleteClient(iClientH, true, true);
 			}
 			catch (...)
@@ -11607,7 +11068,6 @@ bool CGame::bCheckClientMoveFrequency(int iClientH, uint32_t dwClientTime)
 	return false;
 }
 
-
 void CGame::OnTimer(char cType)
 {
 	uint32_t dwTime;
@@ -11618,18 +11078,16 @@ void CGame::OnTimer(char cType)
 	// OnTimer now only handles periodic events (CheckClientResponseTime, weather, etc.)
 	// GameProcess() is called directly in EventLoop every 300ms
 
-
 	if ((dwTime - m_dwGameTime2) > 1000) {
 		CheckClientResponseTime();
 		CheckDayOrNightMode();
-		InvalidateRect(G_hWnd, 0, true);
 		m_dwGameTime2 = dwTime;
 		// v1.41 
 
 		// v1.41
 		if (m_bIsGameStarted == false) {
-			PutLogList("Sending start message...");
-			SendMessage(m_hWnd, WM_USER_STARTGAMESIGNAL, 0, 0);
+			hb::logger::log("Sending start message");
+			OnStartGameSignal();
 			m_bIsGameStarted = true;
 
 			// Initialize EntityManager now that maps are loaded
@@ -11669,7 +11127,7 @@ void CGame::OnTimer(char cType)
 	m_pSkillManager->SetGame(this);
 	m_pWarManager->SetGame(this);
 	m_pStatusEffectManager->SetGame(this);
-				PutLogList("EntityManager initialized");
+				hb::logger::log("EntityManager initialized");
 			}
 
 			// Initialize Gathering Managers
@@ -11718,11 +11176,9 @@ void CGame::OnTimer(char cType)
 		// v2.05
 		if (m_iFinalShutdownCount != 0) {
 			m_iFinalShutdownCount--;
-			std::snprintf(G_cTxt, sizeof(G_cTxt), "Final Shutdown...%d", m_iFinalShutdownCount);
-			PutLogList(G_cTxt);
+			hb::logger::log("Final shutdown countdown: {}", m_iFinalShutdownCount);
 			if (m_iFinalShutdownCount <= 1) {
-				// 2.14
-				SendMessage(m_hWnd, WM_CLOSE, 0, 0);
+				G_bRunning = false;
 				return;
 
 			}
@@ -11746,7 +11202,6 @@ void CGame::OnTimer(char cType)
 
 		m_dwGameTime4 = dwTime;
 	}
-
 
 	if ((dwTime - m_dwGameTime5) > 1000 * 60 * 3) {
 
@@ -11780,11 +11235,11 @@ void CGame::OnTimer(char cType)
 
 	if ((m_bIsServerShutdowned == false) && (m_bOnExitProcess) && ((dwTime - m_dwExitProcessTime) > 1000 * 2)) {
 		if (_iForcePlayerDisconect(15) == 0) {
-			PutLogList("(!) GAME SERVER SHUTDOWN PROCESS COMPLETED! All players are disconnected.");
+			hb::logger::log("Server shutdown complete, all players disconnected");
 			m_bIsServerShutdowned = true;
 
 			if ((m_cShutDownCode == 3) || (m_cShutDownCode == 4)) {
-				PutLogFileList("(!!!) AUTO-SERVER-REBOOTING!");
+				hb::logger::error<log_channel::events>("Auto-rebooting server");
 				bInit();
 				m_iAutoRebootingCount++;
 			}
@@ -11809,7 +11264,6 @@ void CGame::OnTimer(char cType)
 	}
 }
 
-
 void CGame::OnStartGameSignal()
 {
 	// Load map configurations from MapInfo.db
@@ -11818,10 +11272,10 @@ void CGame::OnStartGameSignal()
 	bool mapInfoDbCreated = false;
 
 	if (!EnsureMapInfoDatabase(&mapInfoDb, mapInfoDbPath, &mapInfoDbCreated)) {
-		PutLogListLevel(LOG_LEVEL_NOTICE, "(!!!) CRITICAL ERROR: MapInfo.db not available!");
+		hb::logger::error("MapInfo.db not available");
 	}
 	else {
-		PutLogListLevel(LOG_LEVEL_NOTICE, "Loading map configurations from MapInfo.db...");
+		hb::logger::log("Loading map configurations from MapInfo.db");
 		int mapsLoaded = 0;
 		for(int i = 0; i < MaxMaps; i++)
 		{
@@ -11837,15 +11291,11 @@ void CGame::OnStartGameSignal()
 					SpawnMapNpcsFromDatabase(mapInfoDb, i);
 				}
 				else {
-					char cTxt[256];
-					std::snprintf(cTxt, sizeof(cTxt), "(!) WARNING: Failed to load map config for: %s", m_pMapList[i]->m_cName);
-					PutLogList(cTxt);
+					hb::logger::log("WARNING: Failed to load map config for: {}", m_pMapList[i]->m_cName);
 				}
 			}
 		}
-		char cTxt[128];
-		std::snprintf(cTxt, sizeof(cTxt), "Loaded %d map configurations from database.", mapsLoaded);
-		PutLogListLevel(LOG_LEVEL_NOTICE, cTxt);
+		hb::logger::log("Loaded {} map configurations from database.", mapsLoaded);
 		CloseMapInfoDatabase(mapInfoDb);
 	}
 
@@ -11865,7 +11315,7 @@ void CGame::OnStartGameSignal()
 	}
 
 	if (!loadedSchedules) {
-		PutLogList("(!!!) WARNING! Crusade/Schedule configs missing in GameConfigs.db.");
+		hb::logger::error("Crusade/schedule configs missing in GameConfigs.db");
 	}
 
 	m_pWarManager->_LinkStrikePointMapIndex();
@@ -11874,20 +11324,15 @@ void CGame::OnStartGameSignal()
 		CloseGameConfigDatabase(configDb);
 	}
 
-	m_pWarManager->bReadCrusadeGUIDFile("GameData\\CrusadeGUID.txt");
-	m_pWarManager->bReadApocalypseGUIDFile("GameData\\ApocalypseGUID.txt");
-	m_pWarManager->bReadHeldenianGUIDFile("GameData\\HeldenianGUID.txt");
+	m_pWarManager->bReadCrusadeGUIDFile("GameData/CrusadeGUID.txt");
+	m_pWarManager->bReadApocalypseGUIDFile("GameData/ApocalypseGUID.txt");
+	m_pWarManager->bReadHeldenianGUIDFile("GameData/HeldenianGUID.txt");
 
-	PutLogList("(!) Game Server Activated.");
+	hb::logger::log("Game server activated");
 
 }
 
-
-
-
 // New 12/05/2004 Changed
-
-
 
 //HBest force recall start code
 
@@ -11896,20 +11341,19 @@ void CGame::OnStartGameSignal()
 void CGame::SetForceRecallTime(int iClientH)
 {
 	int iTL_ = 0;
-	SYSTEMTIME SysTime;
+	hb::time::local_time SysTime{};
 
 	if (m_pClientList[iClientH] == 0) return;
 
 	if (m_pClientList[iClientH]->m_iTimeLeft_ForceRecall == 0) {
 		// iWarPeriod .
 
-
 		if (m_sForceRecallTime > 0) {
 			m_pClientList[iClientH]->m_iTimeLeft_ForceRecall = 20 * m_sForceRecallTime;
 		}
 		else {
-			GetLocalTime(&SysTime);
-			switch (SysTime.wDayOfWeek) {
+			SysTime = hb::time::local_time::now();
+			switch (SysTime.day_of_week) {
 			case 1:	m_pClientList[iClientH]->m_iTimeLeft_ForceRecall = 20 * m_sRaidTimeMonday; break;  // 3 2002-09-10 #1
 			case 2:	m_pClientList[iClientH]->m_iTimeLeft_ForceRecall = 20 * m_sRaidTimeTuesday; break;
 			case 3:	m_pClientList[iClientH]->m_iTimeLeft_ForceRecall = 20 * m_sRaidTimeWednesday; break;
@@ -11926,8 +11370,8 @@ void CGame::SetForceRecallTime(int iClientH)
 		}
 		else {
 
-			GetLocalTime(&SysTime);
-			switch (SysTime.wDayOfWeek) {
+			SysTime = hb::time::local_time::now();
+			switch (SysTime.day_of_week) {
 			case 1:	iTL_ = 20 * m_sRaidTimeMonday; break;  // 3 2002-09-10 #1
 			case 2:	iTL_ = 20 * m_sRaidTimeTuesday; break;
 			case 3:	iTL_ = 20 * m_sRaidTimeWednesday; break;
@@ -11949,11 +11393,10 @@ void CGame::SetForceRecallTime(int iClientH)
 
 void CGame::CheckForceRecallTime(int iClientH)
 {
-	SYSTEMTIME SysTime;
+	hb::time::local_time SysTime{};
 	int iTL_;
 
 	if (m_pClientList[iClientH] == 0) return;
-
 
 	if (m_pClientList[iClientH]->m_iTimeLeft_ForceRecall == 0) {
 		// has admin set a recall time ??
@@ -11962,8 +11405,8 @@ void CGame::CheckForceRecallTime(int iClientH)
 		}
 		// use standard recall time calculations
 		else {
-			GetLocalTime(&SysTime);
-			switch (SysTime.wDayOfWeek) {
+			SysTime = hb::time::local_time::now();
+			switch (SysTime.day_of_week) {
 			case 1:	m_pClientList[iClientH]->m_iTimeLeft_ForceRecall = 20 * m_sRaidTimeMonday; break;  // 3 2002-09-10 #1
 			case 2:	m_pClientList[iClientH]->m_iTimeLeft_ForceRecall = 20 * m_sRaidTimeTuesday; break;
 			case 3:	m_pClientList[iClientH]->m_iTimeLeft_ForceRecall = 20 * m_sRaidTimeWednesday; break;
@@ -11981,8 +11424,8 @@ void CGame::CheckForceRecallTime(int iClientH)
 		}
 		// use standard recall time calculations
 		else {
-			GetLocalTime(&SysTime);
-			switch (SysTime.wDayOfWeek) {
+			SysTime = hb::time::local_time::now();
+			switch (SysTime.day_of_week) {
 			case 1:	iTL_ = 20 * m_sRaidTimeMonday; break;  // 3 2002-09-10 #1
 			case 2:	iTL_ = 20 * m_sRaidTimeTuesday; break;
 			case 3:	iTL_ = 20 * m_sRaidTimeWednesday; break;
@@ -12030,23 +11473,18 @@ int ITEMSPREAD_FIEXD_COORD[25][2] =
 	{ 2, -2},
 };
 
-
-
-
 //New Changed 11/05/2004
-
 
 bool CGame::_bRegisterMap(char* pName)
 {
 	
-	char cTmpName[11], cTxt[120];
+	char cTmpName[11];
 
 	std::memset(cTmpName, 0, sizeof(cTmpName));
 	strcpy(cTmpName, pName);
 	for(int i = 0; i < MaxMaps; i++)
 		if ((m_pMapList[i] != 0) && (memcmp(m_pMapList[i]->m_cName, cTmpName, 10) == 0)) {
-			std::snprintf(cTxt, sizeof(cTxt), "Map already installed: %s", cTmpName);
-			PutLogListLevel(LOG_LEVEL_ERROR, cTxt);
+			hb::logger::error("Map already installed: {}", cTmpName);
 			return false;
 		}
 
@@ -12054,8 +11492,7 @@ bool CGame::_bRegisterMap(char* pName)
 		if (m_pMapList[i] == 0) {
 			m_pMapList[i] = new class CMap(this);
 			if (m_pMapList[i]->bInit(pName) == false) {
-				std::snprintf(cTxt, sizeof(cTxt), "Map data load failed: %s", pName);
-				PutLogListLevel(LOG_LEVEL_ERROR, cTxt);
+				hb::logger::error("Map data load failed: {}", pName);
 				return false;
 			};
 
@@ -12078,13 +11515,11 @@ bool CGame::_bRegisterMap(char* pName)
 			return true;
 		}
 
-	std::snprintf(cTxt, sizeof(cTxt), "Map cannot be added (no space): %s", pName);
-	PutLogListLevel(LOG_LEVEL_ERROR, cTxt);
+	hb::logger::error("Map cannot be added (no space): {}", pName);
 	return false;
 }
 
 //New Changed 11/05/2004
-
 
 void CGame::ShowClientMsg(int iClientH, char* pMsg)
 {
@@ -12144,12 +11579,13 @@ void CGame::Command_YellowBall(int iClientH, char* pData, size_t dwMsgSize)
 
 		for(int i = 1; i < MaxClients; i++) {
 			if (m_pClientList[i] != 0) {
-				if (_strnicmp(cPlayerName, m_pClientList[i]->m_cCharName, hb::shared::limits::CharNameLen - 1) == 0) {
-					if ((m_pClientList[iClientH]->m_cLocation) != (m_pClientList[i]->m_cLocation)) return;
+				if (hb_strnicmp(cPlayerName, m_pClientList[i]->m_cCharName, hb::shared::limits::CharNameLen - 1) == 0) {
+					if (strcmp(m_pClientList[iClientH]->m_cLocation, m_pClientList[i]->m_cLocation) != 0)
+						return;
+
 					std::memset(cMapName, 0, sizeof(cMapName));
 					strcpy(cMapName, m_pClientList[i]->m_cMapName);
-					ItemLog::Get().LogMisc("YellowBall", m_pClientList[i]->m_cCharName, m_pClientList[i]->m_cIPaddress,
-						m_pClientList[i]->m_cMapName, m_pClientList[i]->m_sX, m_pClientList[i]->m_sY, nullptr);
+					hb::logger::log<log_channel::items_misc>("{} IP({}) {} (null) at {}({},{})", m_pClientList[i]->m_cCharName, m_pClientList[i]->m_cIPaddress, "YellowBall", m_pClientList[i]->m_cMapName, m_pClientList[i]->m_sX, m_pClientList[i]->m_sY);
 					m_pItemManager->ItemDepleteHandler(iClientH, iSoxH, true);
 					RequestTeleportHandler(iClientH, "2   ", cMapName, m_pClientList[i]->m_sX, m_pClientList[i]->m_sY);
 					return;
@@ -12208,8 +11644,7 @@ void CGame::Command_RedBall(int iClientH, char* pData, size_t dwMsgSize)
 				m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->SetNamingValueEmpty(iNamingValue);
 			}
 			else {
-				ItemLog::Get().LogMisc("RedBall", m_pClientList[iClientH]->m_cCharName, m_pClientList[iClientH]->m_cIPaddress,
-					m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_cName, tX, tY, nullptr);
+				hb::logger::log<log_channel::items_misc>("{} IP({}) {} (null) at {}({},{})", m_pClientList[iClientH]->m_cCharName, m_pClientList[iClientH]->m_cIPaddress, "RedBall", m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_cName, tX, tY);
 			}
 		}
 
@@ -12236,7 +11671,6 @@ void CGame::Command_BlueBall(int iClientH, char* pData, size_t dwMsgSize)
 		(memcmp(m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_cName, "huntzone2", 9) != 0) &&
 		(memcmp(m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_cName, "huntzone3", 9) != 0) &&
 		(memcmp(m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_cName, "huntzone4", 9) != 0)) return;
-
 
 	iSoX = 0;
 	for(int i = 0; i < hb::shared::limits::MaxItems; i++)
@@ -12299,8 +11733,7 @@ void CGame::Command_BlueBall(int iClientH, char* pData, size_t dwMsgSize)
 			pX = m_pClientList[iClientH]->m_sX;
 			pY = m_pClientList[iClientH]->m_sY;
 
-			std::snprintf(G_cTxt, sizeof(G_cTxt), "(!) BlueBallEvent: SummonMob (%s)-(%d)", cNpcName, iNum);
-			PutLogList(G_cTxt);
+			hb::logger::log("BlueBall event: summoning '{}' x{}", cNpcName, iNum);
 
 			int iNpcConfigId = GetNpcConfigIdByName(cNpcName);
 			iNamingValue = m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->iGetEmptyNamingValue();
@@ -12325,7 +11758,6 @@ void CGame::Command_BlueBall(int iClientH, char* pData, size_t dwMsgSize)
 					cName_Slave[0] = '_';
 					cName_Slave[1] = m_pClientList[iClientH]->m_cMapIndex + 65;
 
-
 					if (bCreateNewNpc(iNpcConfigId, cName_Slave, m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_cName, (rand() % 3), cSA, MoveType::Random, &pX, &pY, cWaypoint, 0, 0, -1, false, false, false) == false) {
 
 						m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->SetNamingValueEmpty(iNamingValue);
@@ -12347,7 +11779,6 @@ void CGame::Command_BlueBall(int iClientH, char* pData, size_t dwMsgSize)
 	m_pItemManager->ItemDepleteHandler(iClientH, iSoxH, true);
 }
 
-
 /*
 at the end of client connection have a true switch
 at the start of client move handler check if the switch is true
@@ -12368,7 +11799,6 @@ delete client and log him, if the true switch
 	SendNotifyMsg(0, iClientH, Notify::ApocGateOpen, 95, 31, 0, m_pClientList[iClientH]->m_cMapName);
 }*/
 
-
 void CGame::GlobalUpdateConfigs(char cConfigType)
 {
 	LocalUpdateConfigs(cConfigType);
@@ -12380,24 +11810,23 @@ void CGame::LocalUpdateConfigs(char cConfigType)
 	std::string configDbPath;
 	bool configDbCreated = false;
 	if (!EnsureGameConfigDatabase(&configDb, configDbPath, &configDbCreated) || configDbCreated) {
-		PutLogList("(!!!) GameConfigs.db unavailable; cannot reload configs.");
+		hb::logger::error("GameConfigs.db unavailable, cannot reload configs");
 		return;
 	}
 
 	bool ok = false;
 	if (cConfigType == 1) {
 		ok = HasGameConfigRows(configDb, "settings") && LoadSettingsConfig(configDb, this);
-		PutLogList(ok ? "(!!!) Settings updated successfully!" : "(!!!) Settings reload failed!");
+		if (ok) hb::logger::log("Settings updated successfully!");
+		else hb::logger::error("Settings reload failed!");
 	}
 	if (cConfigType == 3) {
 		ok = LoadBannedListConfig(configDb, this);
-		PutLogList(ok ? "(!!!) BannedList updated successfully!" : "(!!!) BannedList reload failed!");
+		if (ok) hb::logger::log("BannedList updated successfully!");
+		else hb::logger::error("BannedList reload failed!");
 	}
 	CloseGameConfigDatabase(configDb);
 }
-
-
-
 
 void CGame::ReloadNpcConfigs()
 {
@@ -12406,7 +11835,7 @@ void CGame::ReloadNpcConfigs()
 	bool configDbCreated = false;
 	if (!EnsureGameConfigDatabase(&configDb, configDbPath, &configDbCreated) || configDbCreated)
 	{
-		PutLogList((char*)"(!) NPC config reload FAILED - GameConfigs.db unavailable");
+		hb::logger::log("NPC config reload failed: GameConfigs.db unavailable");
 		return;
 	}
 
@@ -12421,14 +11850,14 @@ void CGame::ReloadNpcConfigs()
 
 	if (!LoadNpcConfigs(configDb, this))
 	{
-		PutLogList((char*)"(!) NPC config reload FAILED");
+		hb::logger::log("NPC config reload failed");
 		CloseGameConfigDatabase(configDb);
 		return;
 	}
 
 	CloseGameConfigDatabase(configDb);
 	ComputeConfigHashes();
-	PutLogList((char*)"(*) NPC configs reloaded successfully (new spawns will use updated data)");
+	hb::logger::log("NPC configs reloaded successfully");
 }
 
 void CGame::SendConfigReloadNotification(bool bItems, bool bMagic, bool bSkills, bool bNpcs)
@@ -12463,36 +11892,28 @@ void CGame::PushConfigReloadToClients(bool bItems, bool bMagic, bool bSkills, bo
 		}
 	}
 
-	char buf[128];
-	std::snprintf(buf, sizeof(buf), "(*) Config reload pushed to %d client(s)", iCount);
-	PutLogList(buf);
+	hb::logger::log("Config reload pushed to {} client(s)", iCount);
 }
-
-
-
-
-
 
 /*void CGame::ApocalypseStarter()
 {
- SYSTEMTIME SysTime;
+ hb::time::local_time SysTime{};
  
 
 	if (m_bIsApocalypseMode ) return;
 	if (m_bIsApocalypseStarter == false) return;
 
-	GetLocalTime(&SysTime);
+	SysTime = hb::time::local_time::now();
 
 	for(int i = 0; i < MaxApocalypse; i++)
-	if	((m_stApocalypseScheduleStart[i].iDay == SysTime.wDayOfWeek) &&
-		(m_stApocalypseScheduleStart[i].iHour == SysTime.wHour) &&
-		(m_stApocalypseScheduleStart[i].iMinute == SysTime.wMinute)) {
+	if	((m_stApocalypseScheduleStart[i].iDay == SysTime.day_of_week) &&
+		(m_stApocalypseScheduleStart[i].iHour == SysTime.hour) &&
+		(m_stApocalypseScheduleStart[i].iMinute == SysTime.minute)) {
 			PutLogList("(!) Automated apocalypse is initiated!");
 			GlobalStartApocalypseMode();
 			return;
 	}
 }*/
-
 
 // New 06/05/2004
 // Party Code
@@ -12517,8 +11938,7 @@ void CGame::RequestCreatePartyHandler(int iClientH)
 
 	PartyOperation(cData);
 
-	std::snprintf(G_cTxt, sizeof(G_cTxt), "Request Create Party: %d", iClientH);
-	PutLogList(G_cTxt);
+	hb::logger::log("Party create request: client={}", iClientH);
 }
 
 // Last Updated October 28, 2004 - 3.51 translation
@@ -12539,8 +11959,7 @@ void CGame::PartyOperationResultHandler(char* pData)
 
 		PartyOperationResult_Create(iClientH, cName, res.result, iPartyID);
 
-		std::snprintf(G_cTxt, sizeof(G_cTxt), "party Operation Result: Create(ClientH:%d PartyID:%d)", iClientH, iPartyID);
-		PutLogList(G_cTxt);
+		hb::logger::log("Party created: client={} party={}", iClientH, iPartyID);
 		break;
 	}
 
@@ -12550,8 +11969,7 @@ void CGame::PartyOperationResultHandler(char* pData)
 
 		PartyOperationResult_Delete(iPartyID);
 
-		std::snprintf(G_cTxt, sizeof(G_cTxt), "party Operation Result: Delete(PartyID:%d)", iPartyID);
-		PutLogList(G_cTxt);
+		hb::logger::log("Party deleted: party={}", iPartyID);
 		break;
 	}
 
@@ -12563,15 +11981,14 @@ void CGame::PartyOperationResultHandler(char* pData)
 
 		if ((iClientH < 0) && (iClientH > MaxClients)) return;
 		if (m_pClientList[iClientH] == 0) return;
-		if (_stricmp(m_pClientList[iClientH]->m_cCharName, cName) != 0) return;
+		if (hb_stricmp(m_pClientList[iClientH]->m_cCharName, cName) != 0) return;
 
 		for (int i = 0; i < hb::shared::limits::MaxPartyMembers; i++)
 			if (m_stPartyInfo[m_pClientList[iClientH]->m_iPartyID].iIndex[i] == iClientH) {
 				m_stPartyInfo[m_pClientList[iClientH]->m_iPartyID].iIndex[i] = 0;
 				m_stPartyInfo[m_pClientList[iClientH]->m_iPartyID].iTotalMembers--;
 
-				std::snprintf(G_cTxt, sizeof(G_cTxt), "PartyID:%d member:%d Out(Clear) Total:%d", m_pClientList[iClientH]->m_iPartyID, iClientH, m_stPartyInfo[m_pClientList[iClientH]->m_iPartyID].iTotalMembers);
-				PutLogList(G_cTxt);
+				hb::logger::log("Party {}: member {} left, total={}", m_pClientList[iClientH]->m_iPartyID, iClientH, m_stPartyInfo[m_pClientList[iClientH]->m_iPartyID].iTotalMembers);
 				goto PORH_LOOPBREAK1;
 			}
 	PORH_LOOPBREAK1:
@@ -12585,8 +12002,7 @@ void CGame::PartyOperationResultHandler(char* pData)
 		m_pClientList[iClientH]->m_iPartyID = 0;
 		m_pClientList[iClientH]->m_iPartyStatus = PartyStatus::Null;
 
-		std::snprintf(G_cTxt, sizeof(G_cTxt), "Party Status 0: %s", m_pClientList[iClientH]->m_cCharName);
-		PutLogList(G_cTxt);
+		hb::logger::log("Party status 0: {}", m_pClientList[iClientH]->m_cCharName);
 
 		SendNotifyMsg(0, iClientH, Notify::Party, 8, 0, 0, 0);
 		break;
@@ -12601,8 +12017,7 @@ void CGame::PartyOperationResultHandler(char* pData)
 
 		PartyOperationResult_Join(iClientH, cName, res.result, iPartyID);
 
-		std::snprintf(G_cTxt, sizeof(G_cTxt), "party Operation Result: Join(ClientH:%d PartyID:%d)", iClientH, iPartyID);
-		PutLogList(G_cTxt);
+		hb::logger::log("Party joined: client={} party={}", iClientH, iPartyID);
 		break;
 	}
 
@@ -12616,8 +12031,7 @@ void CGame::PartyOperationResultHandler(char* pData)
 		char* memberList = pData + sizeof(hb::net::PartyOpResultInfoHeader);
 		PartyOperationResult_Info(iClientH, cName, iTotal, memberList);
 
-		std::snprintf(G_cTxt, sizeof(G_cTxt), "party Operation Result: Info(ClientH:%d Total:%d)", iClientH, iTotal);
-		PutLogList(G_cTxt);
+		hb::logger::log("Party info: client={} total={}", iClientH, iTotal);
 		break;
 	}
 
@@ -12630,13 +12044,11 @@ void CGame::PartyOperationResultHandler(char* pData)
 
 		PartyOperationResult_Dismiss(iClientH, cName, res.result, iPartyID);
 
-		std::snprintf(G_cTxt, sizeof(G_cTxt), "party Operation Result: Dismiss(ClientH:%d PartyID:%d)", iClientH, iPartyID);
-		PutLogList(G_cTxt);
+		hb::logger::log("Party dismissed: client={} party={}", iClientH, iPartyID);
 		break;
 	}
 	}
 }
-
 
 void CGame::PartyOperationResult_Create(int iClientH, char* pName, int iResult, int iPartyID)
 {
@@ -12644,12 +12056,12 @@ void CGame::PartyOperationResult_Create(int iClientH, char* pName, int iResult, 
 	
 
 	if (m_pClientList[iClientH] == 0) return;
-	if (_stricmp(m_pClientList[iClientH]->m_cCharName, pName) != 0) return;
+	if (hb_stricmp(m_pClientList[iClientH]->m_cCharName, pName) != 0) return;
 
 	switch (iResult) {
 	case 0:
 		if (m_pClientList[iClientH]->m_iPartyStatus != PartyStatus::Processing) return;
-		if (_stricmp(m_pClientList[iClientH]->m_cCharName, pName) != 0) return;
+		if (hb_stricmp(m_pClientList[iClientH]->m_cCharName, pName) != 0) return;
 
 		m_pClientList[iClientH]->m_iPartyID = 0;
 		m_pClientList[iClientH]->m_iPartyStatus = PartyStatus::Null;
@@ -12659,7 +12071,7 @@ void CGame::PartyOperationResult_Create(int iClientH, char* pName, int iResult, 
 
 	case 1:
 		if (m_pClientList[iClientH]->m_iPartyStatus != PartyStatus::Processing) return;
-		if (_stricmp(m_pClientList[iClientH]->m_cCharName, pName) != 0) return;
+		if (hb_stricmp(m_pClientList[iClientH]->m_cCharName, pName) != 0) return;
 
 		m_pClientList[iClientH]->m_iPartyID = iPartyID;
 		m_pClientList[iClientH]->m_iPartyStatus = PartyStatus::Confirm;
@@ -12670,8 +12082,7 @@ void CGame::PartyOperationResult_Create(int iClientH, char* pName, int iResult, 
 				m_stPartyInfo[m_pClientList[iClientH]->m_iPartyID].iIndex[i] = iClientH;
 				m_stPartyInfo[m_pClientList[iClientH]->m_iPartyID].iTotalMembers++;
 				//testcode
-				std::snprintf(G_cTxt, sizeof(G_cTxt), "PartyID:%d member:%d New Total:%d", m_pClientList[iClientH]->m_iPartyID, iClientH, m_stPartyInfo[m_pClientList[iClientH]->m_iPartyID].iTotalMembers);
-				PutLogList(G_cTxt);
+				hb::logger::log("Party {}: member {} added, total={}", m_pClientList[iClientH]->m_iPartyID, iClientH, m_stPartyInfo[m_pClientList[iClientH]->m_iPartyID].iTotalMembers);
 				goto PORC_LOOPBREAK1;
 			}
 	PORC_LOOPBREAK1:
@@ -12702,7 +12113,7 @@ void CGame::PartyOperationResult_Join(int iClientH, char* pName, int iResult, in
 	switch (iResult) {
 	case 0:
 		if (m_pClientList[iClientH]->m_iPartyStatus != PartyStatus::Processing) return;
-		if (_stricmp(m_pClientList[iClientH]->m_cCharName, pName) != 0) return;
+		if (hb_stricmp(m_pClientList[iClientH]->m_cCharName, pName) != 0) return;
 
 		m_pClientList[iClientH]->m_iPartyID = 0;
 		m_pClientList[iClientH]->m_iPartyStatus = PartyStatus::Null;
@@ -12714,7 +12125,7 @@ void CGame::PartyOperationResult_Join(int iClientH, char* pName, int iResult, in
 
 	case 1:
 		if (m_pClientList[iClientH]->m_iPartyStatus != PartyStatus::Processing) return;
-		if (_stricmp(m_pClientList[iClientH]->m_cCharName, pName) != 0) return;
+		if (hb_stricmp(m_pClientList[iClientH]->m_cCharName, pName) != 0) return;
 
 		m_pClientList[iClientH]->m_iPartyID = iPartyID;
 		m_pClientList[iClientH]->m_iPartyStatus = PartyStatus::Confirm;
@@ -12728,8 +12139,7 @@ void CGame::PartyOperationResult_Join(int iClientH, char* pName, int iResult, in
 				m_stPartyInfo[m_pClientList[iClientH]->m_iPartyID].iIndex[i] = iClientH;
 				m_stPartyInfo[m_pClientList[iClientH]->m_iPartyID].iTotalMembers++;
 
-				std::snprintf(G_cTxt, sizeof(G_cTxt), "PartyID:%d member:%d In(Join) Total:%d", m_pClientList[iClientH]->m_iPartyID, iClientH, m_stPartyInfo[m_pClientList[iClientH]->m_iPartyID].iTotalMembers);
-				PutLogList(G_cTxt);
+				hb::logger::log("PartyID:{} member:{} In(Join) Total:{}", m_pClientList[iClientH]->m_iPartyID, iClientH, m_stPartyInfo[m_pClientList[iClientH]->m_iPartyID].iTotalMembers);
 				goto PORC_LOOPBREAK1;
 			}
 	PORC_LOOPBREAK1:
@@ -12755,7 +12165,7 @@ void CGame::PartyOperationResult_Dismiss(int iClientH, char* pName, int iResult,
 		if (iClientH == 0) {
 			// iClientH  NULL        .
 			for(int i = 1; i < MaxClients; i++)
-				if ((m_pClientList[i] != 0) && (_stricmp(m_pClientList[i]->m_cCharName, pName) == 0)) {
+				if ((m_pClientList[i] != 0) && (hb_stricmp(m_pClientList[i]->m_cCharName, pName) == 0)) {
 					iClientH = i;
 					goto PORD_LOOPBREAK;
 				}
@@ -12766,8 +12176,7 @@ void CGame::PartyOperationResult_Dismiss(int iClientH, char* pName, int iResult,
 					m_stPartyInfo[iPartyID].iIndex[i] = 0;
 					m_stPartyInfo[iPartyID].iTotalMembers--;
 					//testcode
-					std::snprintf(G_cTxt, sizeof(G_cTxt), "PartyID:%d member:%d Out Total:%d", iPartyID, iClientH, m_stPartyInfo[iPartyID].iTotalMembers);
-					PutLogList(G_cTxt);
+					hb::logger::log("PartyID:{} member:{} Out Total:{}", iPartyID, iClientH, m_stPartyInfo[iPartyID].iTotalMembers);
 					goto PORC_LOOPBREAK1;
 				}
 		PORC_LOOPBREAK1:
@@ -12791,7 +12200,7 @@ void CGame::PartyOperationResult_Dismiss(int iClientH, char* pName, int iResult,
 		}
 
 		if ((m_pClientList[iClientH] != 0) && (m_pClientList[iClientH]->m_iPartyStatus != PartyStatus::Processing)) return;
-		if ((m_pClientList[iClientH] != 0) && (_stricmp(m_pClientList[iClientH]->m_cCharName, pName) != 0)) return;
+		if ((m_pClientList[iClientH] != 0) && (hb_stricmp(m_pClientList[iClientH]->m_cCharName, pName) != 0)) return;
 
 		for(int i = 1; i < MaxClients; i++)
 			if ((m_pClientList[i] != 0) && (m_pClientList[i]->m_iPartyID != 0) && (m_pClientList[i]->m_iPartyID == iPartyID)) {
@@ -12803,8 +12212,7 @@ void CGame::PartyOperationResult_Dismiss(int iClientH, char* pName, int iResult,
 				m_stPartyInfo[iPartyID].iIndex[i] = 0;
 				m_stPartyInfo[iPartyID].iTotalMembers--;
 				//testcode
-				std::snprintf(G_cTxt, sizeof(G_cTxt), "PartyID:%d member:%d Out Total:%d", iPartyID, iClientH, m_stPartyInfo[iPartyID].iTotalMembers);
-				PutLogList(G_cTxt);
+				hb::logger::log("PartyID:{} member:{} Out Total:{}", iPartyID, iClientH, m_stPartyInfo[iPartyID].iTotalMembers);
 				goto PORC_LOOPBREAK2;
 			}
 	PORC_LOOPBREAK2:
@@ -12840,11 +12248,9 @@ void CGame::PartyOperationResult_Delete(int iPartyID)
 			m_pClientList[i]->m_iPartyStatus = PartyStatus::Null;
 			m_pClientList[i]->m_iReqJoinPartyClientH = 0;
 			//testcode
-			std::snprintf(G_cTxt, sizeof(G_cTxt), "Notify delete party: %d", i);
-			PutLogList(G_cTxt);
+			hb::logger::log("Notify delete party: {}", i);
 		}
 }
-
 
 void CGame::RequestJoinPartyHandler(int iClientH, char* pData, size_t dwMsgSize)
 {
@@ -12868,7 +12274,7 @@ void CGame::RequestJoinPartyHandler(int iClientH, char* pData, size_t dwMsgSize)
 	else return;
 
 	for (int i = 1; i < MaxClients; i++)
-		if ((m_pClientList[i] != 0) && (_stricmp(m_pClientList[i]->m_cCharName, cName) == 0)) {
+		if ((m_pClientList[i] != 0) && (hb_stricmp(m_pClientList[i]->m_cCharName, cName) == 0)) {
 			if ((m_pClientList[i]->m_iPartyID == 0) || (m_pClientList[i]->m_iPartyStatus != PartyStatus::Confirm)) {
 				return;
 			}
@@ -12886,7 +12292,6 @@ void CGame::RequestJoinPartyHandler(int iClientH, char* pData, size_t dwMsgSize)
 
 	SendNotifyMsg(0, iClientH, Notify::PlayerNotOnGame, 0, 0, 0, cName);
 }
-
 
 void CGame::RequestDismissPartyHandler(int iClientH)
 {
@@ -12906,7 +12311,6 @@ void CGame::RequestDismissPartyHandler(int iClientH)
 	m_pClientList[iClientH]->m_iPartyStatus = PartyStatus::Processing;
 }
 
-
 void CGame::GetPartyInfoHandler(int iClientH)
 {
 	char cData[120]{};
@@ -12923,11 +12327,10 @@ void CGame::GetPartyInfoHandler(int iClientH)
 	PartyOperation(cData);
 }
 
-
 void CGame::PartyOperationResult_Info(int iClientH, char* pName, int iTotal, char* pNameList)
 {
 	if (m_pClientList[iClientH] == 0) return;
-	if (_stricmp(m_pClientList[iClientH]->m_cCharName, pName) != 0) return;
+	if (hb_stricmp(m_pClientList[iClientH]->m_cCharName, pName) != 0) return;
 	if (m_pClientList[iClientH]->m_iPartyStatus != PartyStatus::Confirm) return;
 
 	SendNotifyMsg(0, iClientH, Notify::Party, 5, 1, iTotal, pNameList);
@@ -12963,20 +12366,19 @@ void CGame::RequestAcceptJoinPartyHandler(int iClientH, int iResult)
 		if (m_pClientList[iH] == 0) {
 			return;
 		}
-		if (_stricmp(m_pClientList[iH]->m_cCharName, m_pClientList[iClientH]->m_cReqJoinPartyName) != 0) {
+		if (hb_stricmp(m_pClientList[iH]->m_cCharName, m_pClientList[iClientH]->m_cReqJoinPartyName) != 0) {
 			return;
 		}
 		if (m_pClientList[iH]->m_iPartyStatus != PartyStatus::Processing) {
 			return;
 		}
-		if ((m_pClientList[iH]->m_iReqJoinPartyClientH != iClientH) || (_stricmp(m_pClientList[iH]->m_cReqJoinPartyName, m_pClientList[iClientH]->m_cCharName) != 0)) {
+		if ((m_pClientList[iH]->m_iReqJoinPartyClientH != iClientH) || (hb_stricmp(m_pClientList[iH]->m_cReqJoinPartyName, m_pClientList[iClientH]->m_cCharName) != 0)) {
 			return;
 		}
 
 		SendNotifyMsg(0, iH, Notify::Party, 7, 0, 0, 0);
 		//testcode
-		std::snprintf(G_cTxt, sizeof(G_cTxt), "Party join reject(3) ClientH:%d ID:%d", iH, m_pClientList[iH]->m_iPartyID);
-		PutLogList(G_cTxt);
+		hb::logger::log("Party join reject(3) ClientH:{} ID:{}", iH, m_pClientList[iH]->m_iPartyID);
 
 		m_pClientList[iH]->m_iPartyID = 0;
 		m_pClientList[iH]->m_iPartyStatus = PartyStatus::Null;
@@ -12993,13 +12395,13 @@ void CGame::RequestAcceptJoinPartyHandler(int iClientH, int iResult)
 			if (m_pClientList[iH] == 0) {
 				return;
 			}
-			if (_stricmp(m_pClientList[iH]->m_cCharName, m_pClientList[iClientH]->m_cReqJoinPartyName) != 0) {
+			if (hb_stricmp(m_pClientList[iH]->m_cCharName, m_pClientList[iClientH]->m_cReqJoinPartyName) != 0) {
 				return;
 			}
 			if (m_pClientList[iH]->m_iPartyStatus != PartyStatus::Processing) {
 				return;
 			}
-			if ((m_pClientList[iH]->m_iReqJoinPartyClientH != iClientH) || (_stricmp(m_pClientList[iH]->m_cReqJoinPartyName, m_pClientList[iClientH]->m_cCharName) != 0)) {
+			if ((m_pClientList[iH]->m_iReqJoinPartyClientH != iClientH) || (hb_stricmp(m_pClientList[iH]->m_cReqJoinPartyName, m_pClientList[iClientH]->m_cCharName) != 0)) {
 				return;
 			}
 
@@ -13017,13 +12419,13 @@ void CGame::RequestAcceptJoinPartyHandler(int iClientH, int iResult)
 			if (m_pClientList[iH] == 0) {
 				return;
 			}
-			if (_stricmp(m_pClientList[iH]->m_cCharName, m_pClientList[iClientH]->m_cReqJoinPartyName) != 0) {
+			if (hb_stricmp(m_pClientList[iH]->m_cCharName, m_pClientList[iClientH]->m_cReqJoinPartyName) != 0) {
 				return;
 			}
 			if (m_pClientList[iH]->m_iPartyStatus != PartyStatus::Processing) {
 				return;
 			}
-			if ((m_pClientList[iH]->m_iReqJoinPartyClientH != iClientH) || (_stricmp(m_pClientList[iH]->m_cReqJoinPartyName, m_pClientList[iClientH]->m_cCharName) != 0)) {
+			if ((m_pClientList[iH]->m_iReqJoinPartyClientH != iClientH) || (hb_stricmp(m_pClientList[iH]->m_cReqJoinPartyName, m_pClientList[iClientH]->m_cCharName) != 0)) {
 				return;
 			}
 
@@ -13044,7 +12446,7 @@ void CGame::RequestAcceptJoinPartyHandler(int iClientH, int iResult)
 
 			// NULL  .
 			if ((m_pClientList[iH] != 0) && (m_pClientList[iH]->m_iReqJoinPartyClientH == iClientH) &&
-				(_stricmp(m_pClientList[iH]->m_cReqJoinPartyName, m_pClientList[iClientH]->m_cCharName) == 0)) {
+				(hb_stricmp(m_pClientList[iH]->m_cReqJoinPartyName, m_pClientList[iClientH]->m_cCharName) == 0)) {
 				m_pClientList[iH]->m_iReqJoinPartyClientH = 0;
 				std::memset(m_pClientList[iH]->m_cReqJoinPartyName, 0, sizeof(m_pClientList[iH]->m_cReqJoinPartyName));
 			}
@@ -13070,8 +12472,7 @@ void CGame::PartyOperation(char* pData)
 	std::memcpy(cName, req.name, sizeof(req.name));
 	int iPartyID = static_cast<int>(req.party_id);
 
-	std::snprintf(G_cTxt, sizeof(G_cTxt), "Party Operation Type: %d Name: %s PartyID:%d", wRequestType, cName, iPartyID);
-	PutLogList(G_cTxt);
+	hb::logger::log("Party Operation Type: {} Name: {} PartyID:{}", wRequestType, cName, iPartyID);
 
 	switch (wRequestType) {
 	case 1: {
@@ -13136,7 +12537,6 @@ void CGame::PartyOperation(char* pData)
 	}
 }
 
-
 void CGame::TimeHitPointsUp(int iClientH)
 {
 	int iMaxHP, iTemp, iTotal;
@@ -13182,9 +12582,6 @@ void CGame::TimeHitPointsUp(int iClientH)
 	}
 	m_pClientList[iClientH]->m_iHPstock = 0;
 }
-
-
-
 
 /*void CGame::CalculateEnduranceDecrement(short sTargetH, short sAttackerH, char cTargetType, int iArmorType)
 {
@@ -13307,17 +12704,13 @@ void CGame::TimeHitPointsUp(int iClientH)
 
 // October 19, 2004 - 3.51 translated
 
-
 // October 19, 2004 - 3.51 translated
 
 // October 19, 2004 - 3.51 translated
 
-
 // October 19, 2004 - 3.51 translated
-
 
 // October 19,2004 - 3.51 translated
-
 
 /*
 void CGame::StormBringer(int iClientH, short dX, short dY)
@@ -13419,8 +12812,7 @@ bool CGame::_bCheckCharacterData(int iClientH)
 		(m_pClientList[iClientH]->m_iMag > CharPointLimit) || (m_pClientList[iClientH]->m_iInt > CharPointLimit) || (m_pClientList[iClientH]->m_iCharisma > CharPointLimit)) {
 		try
 		{
-			std::snprintf(G_cTxt, sizeof(G_cTxt), "Packet Editing: (%s) Player: (%s) stat points are greater then server accepts.", m_pClientList[iClientH]->m_cIPaddress, m_pClientList[iClientH]->m_cCharName);
-			PutHackLogFileList(G_cTxt);
+			hb::logger::warn<log_channel::security>("Packet Editing: ({}) Player: ({}) stat points are greater then server accepts.", m_pClientList[iClientH]->m_cIPaddress, m_pClientList[iClientH]->m_cCharName);
 			return false;
 		}
 		catch (...)
@@ -13432,8 +12824,7 @@ bool CGame::_bCheckCharacterData(int iClientH)
 	if ((m_pClientList[iClientH]->m_iLevel > m_iMaxLevel) ) {
 		try
 		{
-			std::snprintf(G_cTxt, sizeof(G_cTxt), "Packet Editing: (%s) Player: (%s) level above max server level.", m_pClientList[iClientH]->m_cIPaddress, m_pClientList[iClientH]->m_cCharName);
-			PutHackLogFileList(G_cTxt);
+			hb::logger::warn<log_channel::security>("Packet Editing: ({}) Player: ({}) level above max server level.", m_pClientList[iClientH]->m_cIPaddress, m_pClientList[iClientH]->m_cCharName);
 			return false;
 		}
 		catch (...)
@@ -13445,8 +12836,7 @@ bool CGame::_bCheckCharacterData(int iClientH)
 	if (m_pClientList[iClientH]->m_iExp < 0) {
 		try
 		{
-			std::snprintf(G_cTxt, sizeof(G_cTxt), "Packet Editing: (%s) Player: (%s) experience is below 0 - (Exp:%d).", m_pClientList[iClientH]->m_cIPaddress, m_pClientList[iClientH]->m_cCharName, m_pClientList[iClientH]->m_iExp);
-			PutHackLogFileList(G_cTxt);
+			hb::logger::warn<log_channel::security>("Packet Editing: ({}) Player: ({}) experience is below 0 - (Exp:{}).", m_pClientList[iClientH]->m_cIPaddress, m_pClientList[iClientH]->m_cCharName, m_pClientList[iClientH]->m_iExp);
 			return false;
 		}
 		catch (...)
@@ -13473,8 +12863,7 @@ bool CGame::_bCheckCharacterData(int iClientH)
 				}
 			}
 			else {
-				std::snprintf(G_cTxt, sizeof(G_cTxt), "Packet Editing: (%s) Player: (%s) HP: current/maximum (%d/%d).", m_pClientList[iClientH]->m_cIPaddress, m_pClientList[iClientH]->m_cCharName, m_pClientList[iClientH]->m_iHP, iGetMaxHP(iClientH));
-				PutHackLogFileList(G_cTxt);
+				hb::logger::warn<log_channel::security>("Packet Editing: ({}) Player: ({}) HP: current/maximum ({}/{}).", m_pClientList[iClientH]->m_cIPaddress, m_pClientList[iClientH]->m_cCharName, m_pClientList[iClientH]->m_iHP, iGetMaxHP(iClientH));
 				return false;
 			}
 		}
@@ -13487,8 +12876,7 @@ bool CGame::_bCheckCharacterData(int iClientH)
 	if ((m_pClientList[iClientH]->m_iMP > iGetMaxMP(iClientH)) ) {
 		try
 		{
-			std::snprintf(G_cTxt, sizeof(G_cTxt), "Packet Editing: (%s) Player: (%s) MP: current/maximum (%d/%d).", m_pClientList[iClientH]->m_cIPaddress, m_pClientList[iClientH]->m_cCharName, m_pClientList[iClientH]->m_iMP, iGetMaxMP(iClientH));
-			PutHackLogFileList(G_cTxt);
+			hb::logger::warn<log_channel::security>("Packet Editing: ({}) Player: ({}) MP: current/maximum ({}/{}).", m_pClientList[iClientH]->m_cIPaddress, m_pClientList[iClientH]->m_cCharName, m_pClientList[iClientH]->m_iMP, iGetMaxMP(iClientH));
 			return false;
 		}
 		catch (...)
@@ -13500,8 +12888,7 @@ bool CGame::_bCheckCharacterData(int iClientH)
 	if ((m_pClientList[iClientH]->m_iSP > iGetMaxSP(iClientH)) ) {
 		try
 		{
-			std::snprintf(G_cTxt, sizeof(G_cTxt), "Packet Editing: (%s) Player: (%s) SP: current/maximum (%d/%d).", m_pClientList[iClientH]->m_cIPaddress, m_pClientList[iClientH]->m_cCharName, m_pClientList[iClientH]->m_iSP, iGetMaxSP(iClientH));
-			PutHackLogFileList(G_cTxt);
+			hb::logger::warn<log_channel::security>("Packet Editing: ({}) Player: ({}) SP: current/maximum ({}/{}).", m_pClientList[iClientH]->m_cIPaddress, m_pClientList[iClientH]->m_cCharName, m_pClientList[iClientH]->m_iSP, iGetMaxSP(iClientH));
 			return false;
 		}
 		catch (...)
@@ -13516,8 +12903,7 @@ bool CGame::_bCheckCharacterData(int iClientH)
 			if (strlen(m_stBannedList[i].m_cBannedIPaddress) == 0) break; //No more GM's on list
 			if ((strlen(m_stBannedList[i].m_cBannedIPaddress)) == (strlen(m_pClientList[iClientH]->m_cIPaddress))) {
 				if (memcmp(m_stBannedList[i].m_cBannedIPaddress, m_pClientList[iClientH]->m_cIPaddress, strlen(m_pClientList[iClientH]->m_cIPaddress)) == 0) {
-					std::snprintf(G_cTxt, sizeof(G_cTxt), "Client Rejected: Banned: (%s)", m_pClientList[iClientH]->m_cIPaddress);
-					PutLogList(G_cTxt);
+					hb::logger::log("Client Rejected: Banned: ({})", m_pClientList[iClientH]->m_cIPaddress);
 					return false;
 				}
 				else {
@@ -13533,25 +12919,6 @@ bool CGame::_bCheckCharacterData(int iClientH)
 
 	return true;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 void CGame::ForceRecallProcess() {
 	
@@ -13668,9 +13035,7 @@ void CGame::LoteryHandler(int iClientH)
 			pItem->m_sIDnum, 0, pItem->m_cItemColor, pItem->m_dwAttribute);
 	}
 
-
 }
-
 
 //Angel Code By SlammeR(I dont know if it works)
 /*void CGame::GetAngelMantleHandler(int iClientH,int iItemID,char * pString)
@@ -13702,7 +13067,6 @@ void CGame::LoteryHandler(int iClientH)
 		if(m_pClientList[iClientH]->m_iGizonItemUpgradeLeft<5) return;
 		m_pClientList[iClientH]->m_iGizonItemUpgradeLeft -= 5;
 		break;
-
 
   default:
 	 return;
@@ -13757,7 +13121,6 @@ void CGame::LoteryHandler(int iClientH)
 		   iCalcTotalWeight(iClientH);
 
 	   iRet = m_pItemManager->SendItemNotifyMsg(iClientH, Notify::CannotCarryMoreItem, 0, 0);
-
 
 		   switch (iRet) {
 		   case sock::Event::QueueFull:
@@ -13841,18 +13204,11 @@ void CGame::GetAngelHandler(int iClientH, char* pData, size_t dwMsgSize)
 	case 3: iItemID = hb::shared::item::ItemId::AngelicPandentINT; break;
 	case 4: iItemID = hb::shared::item::ItemId::AngelicPandentMAG; break;
 	default:
-		PutLogList("Gail asked to create a wrong item!");
+		hb::logger::log("NPC craft request for invalid item");
 		return;
 	}
 
-	std::snprintf(G_cTxt, sizeof(G_cTxt), "PC(%s) requesting Angel (%d, ItemID:%d).   %s(%d %d)"
-		, m_pClientList[iClientH]->m_cCharName
-		, iAngel
-		, iItemID
-		, m_pClientList[iClientH]->m_cMapName
-		, m_pClientList[iClientH]->m_sX
-		, m_pClientList[iClientH]->m_sY);
-	PutLogList(G_cTxt);
+	hb::logger::log("PC({}) requesting Angel ({}, ItemID:{}). {}({} {})", m_pClientList[iClientH]->m_cCharName, iAngel, iItemID, m_pClientList[iClientH]->m_cMapName, m_pClientList[iClientH]->m_sX, m_pClientList[iClientH]->m_sY);
 
 	pItem = new CItem;
 	if ((m_pItemManager->_bInitItemAttr(pItem, iItemID)))
@@ -13867,8 +13223,7 @@ void CGame::GetAngelHandler(int iClientH, char* pData, size_t dwMsgSize)
 		{
 			if (m_pClientList[iClientH]->m_iCurWeightLoad < 0) m_pClientList[iClientH]->m_iCurWeightLoad = 0;
 
-			std::snprintf(G_cTxt, sizeof(G_cTxt), "(*) Get Angel : Char(%s) Player-Majestic-Points(%d) Angel Obtained(ID:%d)", m_pClientList[iClientH]->m_cCharName, m_pClientList[iClientH]->m_iGizonItemUpgradeLeft, iItemID);
-			PutLogFileList(G_cTxt);
+			hb::logger::log<log_channel::events>("Get Angel : Char({}) Player-Majestic-Points({}) Angel Obtained(ID:{})", m_pClientList[iClientH]->m_cCharName, m_pClientList[iClientH]->m_iGizonItemUpgradeLeft, iItemID);
 
 			iRet = m_pItemManager->SendItemNotifyMsg(iClientH, Notify::ItemObtained, pItem, 0);
 
@@ -13905,12 +13260,10 @@ void CGame::GetAngelHandler(int iClientH, char* pData, size_t dwMsgSize)
 	}
 	else
 	{
-		std::snprintf(G_cTxt, sizeof(G_cTxt), "(!) GetAngelHandler: _bInitItemAttr failed for ItemID %d. Item not found in config.", iItemID);
-		PutLogList(G_cTxt);
+		hb::logger::log("GetAngelHandler: _bInitItemAttr failed for ItemID {}. Item not found in config.", iItemID);
 		delete pItem;
 	}
 }
 
 //50Cent - Repair All
-
 

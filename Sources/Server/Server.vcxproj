@@ -70,14 +70,14 @@
     <OutDir>$(SolutionDir)$(Configuration)\</OutDir>
     <IntDir>$(Configuration)\</IntDir>
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(SolutionDir)Dependencies\Shared;$(SolutionDir)Dependencies\Shared\Entity;$(SolutionDir)Dependencies\Shared\Game;$(SolutionDir)Dependencies\Shared\Net;$(SolutionDir)Dependencies\Shared\Render;$(SolutionDir)Dependencies\Shared\Util;$(SolutionDir)Dependencies\Server\Includes;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+    <IncludePath>$(SolutionDir)Dependencies\Shared;$(SolutionDir)Dependencies\Shared\Entity;$(SolutionDir)Dependencies\Shared\Game;$(SolutionDir)Dependencies\Shared\Net;$(SolutionDir)Dependencies\Shared\Render;$(SolutionDir)Dependencies\Shared\Util;$(SolutionDir)Dependencies\Shared\Log;$(SolutionDir)Dependencies\Server\Includes;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
     <LibraryPath>$(SolutionDir)Dependencies\Server\Libs;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <OutDir>$(SolutionDir)$(Configuration)\</OutDir>
     <IntDir>$(Configuration)\</IntDir>
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(SolutionDir)Dependencies\Shared;$(SolutionDir)Dependencies\Shared\Entity;$(SolutionDir)Dependencies\Shared\Game;$(SolutionDir)Dependencies\Shared\Net;$(SolutionDir)Dependencies\Shared\Render;$(SolutionDir)Dependencies\Shared\Util;$(SolutionDir)Dependencies\Server\Includes;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+    <IncludePath>$(SolutionDir)Dependencies\Shared;$(SolutionDir)Dependencies\Shared\Entity;$(SolutionDir)Dependencies\Shared\Game;$(SolutionDir)Dependencies\Shared\Net;$(SolutionDir)Dependencies\Shared\Render;$(SolutionDir)Dependencies\Shared\Util;$(SolutionDir)Dependencies\Shared\Log;$(SolutionDir)Dependencies\Server\Includes;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
     <LibraryPath>$(SolutionDir)Dependencies\Server\Libs;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86)</LibraryPath>
   </PropertyGroup>
   
@@ -85,14 +85,14 @@
     <OutDir>$(SolutionDir)$(Configuration)\</OutDir>
     <IntDir>$(Configuration)_x64\</IntDir>
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(SolutionDir)Dependencies\Shared;$(SolutionDir)Dependencies\Shared\Entity;$(SolutionDir)Dependencies\Shared\Game;$(SolutionDir)Dependencies\Shared\Net;$(SolutionDir)Dependencies\Shared\Render;$(SolutionDir)Dependencies\Shared\Util;$(SolutionDir)Dependencies\Server\Includes;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+    <IncludePath>$(SolutionDir)Dependencies\Shared;$(SolutionDir)Dependencies\Shared\Entity;$(SolutionDir)Dependencies\Shared\Game;$(SolutionDir)Dependencies\Shared\Net;$(SolutionDir)Dependencies\Shared\Render;$(SolutionDir)Dependencies\Shared\Util;$(SolutionDir)Dependencies\Shared\Log;$(SolutionDir)Dependencies\Server\Includes;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
     <LibraryPath>$(SolutionDir)Dependencies\Server\Libs;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>$(SolutionDir)$(Configuration)\</OutDir>
     <IntDir>$(Configuration)_x64\</IntDir>
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(SolutionDir)Dependencies\Shared;$(SolutionDir)Dependencies\Shared\Entity;$(SolutionDir)Dependencies\Shared\Game;$(SolutionDir)Dependencies\Shared\Net;$(SolutionDir)Dependencies\Shared\Render;$(SolutionDir)Dependencies\Shared\Util;$(SolutionDir)Dependencies\Server\Includes;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+    <IncludePath>$(SolutionDir)Dependencies\Shared;$(SolutionDir)Dependencies\Shared\Entity;$(SolutionDir)Dependencies\Shared\Game;$(SolutionDir)Dependencies\Shared\Net;$(SolutionDir)Dependencies\Shared\Render;$(SolutionDir)Dependencies\Shared\Util;$(SolutionDir)Dependencies\Shared\Log;$(SolutionDir)Dependencies\Server\Includes;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
     <LibraryPath>$(SolutionDir)Dependencies\Server\Libs;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
   </PropertyGroup>
   
@@ -117,7 +117,7 @@
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <AssemblerOutput>NoListing</AssemblerOutput>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard>stdcpp20</LanguageStandard>
       <SDLCheck>true</SDLCheck>
     </ClCompile>
     <Link>
@@ -126,7 +126,7 @@
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <ProgramDatabaseFile>$(OutDir)$(TargetName).pdb</ProgramDatabaseFile>
-      <SubSystem>Windows</SubSystem>
+      <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -161,7 +161,7 @@
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard>stdcpp20</LanguageStandard>
       <SDLCheck>true</SDLCheck>
     </ClCompile>
     <Link>
@@ -172,7 +172,7 @@
       <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
       <ProgramDatabaseFile>$(OutDir)$(TargetName).pdb</ProgramDatabaseFile>
       <GenerateMapFile>false</GenerateMapFile>
-      <SubSystem>Windows</SubSystem>
+      <SubSystem>Console</SubSystem>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
     <Midl>
@@ -209,7 +209,7 @@
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <AssemblerOutput>NoListing</AssemblerOutput>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard>stdcpp20</LanguageStandard>
       <SDLCheck>true</SDLCheck>
     </ClCompile>
     <Link>
@@ -218,7 +218,7 @@
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <ProgramDatabaseFile>$(OutDir)$(TargetName).pdb</ProgramDatabaseFile>
-      <SubSystem>Windows</SubSystem>
+      <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -253,7 +253,7 @@
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard>stdcpp20</LanguageStandard>
       <SDLCheck>true</SDLCheck>
     </ClCompile>
     <Link>
@@ -264,7 +264,7 @@
       <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
       <ProgramDatabaseFile>$(OutDir)$(TargetName).pdb</ProgramDatabaseFile>
       <GenerateMapFile>false</GenerateMapFile>
-      <SubSystem>Windows</SubSystem>
+      <SubSystem>Console</SubSystem>
     </Link>
     <Midl>
       <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -325,14 +325,10 @@
     <ClInclude Include="StrategicPoint.h" />
     <ClInclude Include="TeleportLoc.h" />
     <ClInclude Include="Tile.h" />
-    <ClInclude Include="UserMessages.h" />
     <ClInclude Include="version.h" />
-    <ClInclude Include="winmain.h" />
     <ClInclude Include="ServerConsole.h" />
     <ClInclude Include="ServerCommand.h" />
     <ClInclude Include="CmdHelp.h" />
-    <ClInclude Include="ChatLog.h" />
-    <ClInclude Include="ItemLog.h" />
     <ClInclude Include="CmdBroadcast.h" />
     <ClInclude Include="CmdShowChat.h" />
     <ClInclude Include="CmdGiveItem.h" />
@@ -352,7 +348,9 @@
     <ClInclude Include="CmdSetAdmin.h" />
     <ClInclude Include="CmdSetCmdLevel.h" />
     <ClInclude Include="PasswordHash.h" />
-  <ClInclude Include="..\Dependencies\Shared\Net\ASIOSocket.h" /><ClInclude Include="..\Dependencies\Shared\Entity\ActionID.h" /><ClInclude Include="..\Dependencies\Shared\Game\AdminLevel.h" /><ClInclude Include="..\Dependencies\Shared\Entity\Appearance.h" /><ClInclude Include="..\Dependencies\Shared\Render\BitmapFontFactory.h" /><ClInclude Include="..\Dependencies\Shared\Util\CRC32.h" /><ClInclude Include="..\Dependencies\Shared\Render\ColorUtils.h" /><ClInclude Include="..\Dependencies\Shared\Net\ConcurrentMsgQueue.h" /><ClInclude Include="..\Dependencies\Shared\Entity\DynamicObjectID.h" /><ClInclude Include="..\Dependencies\Shared\Entity\EntityRelationship.h" /><ClInclude Include="..\Dependencies\Shared\Render\GameGeometry.h" /><ClInclude Include="..\Dependencies\Shared\Render\IBitmapFont.h" /><ClInclude Include="..\Dependencies\Shared\Render\IInput.h" /><ClInclude Include="..\Dependencies\Shared\Net\IOServicePool.h" /><ClInclude Include="..\Dependencies\Shared\Render\IRenderer.h" /><ClInclude Include="..\Dependencies\Shared\Render\ISprite.h" /><ClInclude Include="..\Dependencies\Shared\Render\ISpriteFactory.h" /><ClInclude Include="..\Dependencies\Shared\Render\ITextRenderer.h" /><ClInclude Include="..\Dependencies\Shared\Render\ITexture.h" /><ClInclude Include="..\Dependencies\Shared\Render\IWindow.h" /><ClInclude Include="..\Dependencies\Shared\Item\Item.h" /><ClInclude Include="..\Dependencies\Shared\Item\ItemAttributes.h" /><ClInclude Include="..\Dependencies\Shared\Item\ItemEnums.h" /><ClInclude Include="..\Dependencies\Shared\Item\SharedItem.h" /><ClInclude Include="..\Dependencies\Shared\Render\NativeTypes.h" /><ClInclude Include="..\Dependencies\Shared\Game\MagicTypes.h" /><ClInclude Include="..\Dependencies\Shared\Net\NetConstants.h" /><ClInclude Include="..\Dependencies\Shared\Net\NetMessages.h" /><ClInclude Include="..\Dependencies\Shared\Render\NullSprite.h" /><ClInclude Include="..\Dependencies\Shared\Packet\PacketCalcSocket.h" /><ClInclude Include="..\Dependencies\Shared\Packet\PacketCommon.h" /><ClInclude Include="..\Dependencies\Shared\Packet\PacketConfigCache.h" /><ClInclude Include="..\Dependencies\Shared\Packet\PacketEvent.h" /><ClInclude Include="..\Dependencies\Shared\Packet\PacketHeaders.h" /><ClInclude Include="..\Dependencies\Shared\Packet\PacketHelpers.h" /><ClInclude Include="..\Dependencies\Shared\Packet\PacketItemConfig.h" /><ClInclude Include="..\Dependencies\Shared\Packet\PacketLogin.h" /><ClInclude Include="..\Dependencies\Shared\Packet\PacketLoginResponse.h" /><ClInclude Include="..\Dependencies\Shared\Packet\PacketMagicConfig.h" /><ClInclude Include="..\Dependencies\Shared\Packet\PacketMap.h" /><ClInclude Include="..\Dependencies\Shared\Packet\PacketMotion.h" /><ClInclude Include="..\Dependencies\Shared\Packet\PacketNotify.h" /><ClInclude Include="..\Dependencies\Shared\Packet\PacketRequest.h" /><ClInclude Include="..\Dependencies\Shared\Packet\PacketResponse.h" /><ClInclude Include="..\Dependencies\Shared\Packet\PacketShop.h" /><ClInclude Include="..\Dependencies\Shared\Packet\PacketSkillConfig.h" /><ClInclude Include="..\Dependencies\Shared\Packet\SharedPackets.h" /><ClInclude Include="..\Dependencies\Shared\Entity\PlayerStatusData.h" /><ClInclude Include="..\Dependencies\Shared\Render\PrimitiveTypes.h" /><ClInclude Include="..\Dependencies\Shared\Render\RenderConstants.h" /><ClInclude Include="..\Dependencies\Shared\Render\RendererFactory.h" /><ClInclude Include="..\Dependencies\Shared\Render\ResolutionConfig.h" /><ClInclude Include="..\Dependencies\Shared\Game\SharedCalculations.h" /><ClInclude Include="..\Dependencies\Shared\Render\SpriteCollection.h" /><ClInclude Include="..\Dependencies\Shared\Render\SpriteLoader.h" /><ClInclude Include="..\Dependencies\Shared\Render\SpriteTypes.h" /><ClInclude Include="..\Dependencies\Shared\Render\TextLib.h" /></ItemGroup>
+    <ClInclude Include="StringCompat.h" />
+    <ClInclude Include="TimeUtils.h" />
+  <ClInclude Include="..\Dependencies\Shared\Net\ASIOSocket.h" /><ClInclude Include="..\Dependencies\Shared\Entity\ActionID.h" /><ClInclude Include="..\Dependencies\Shared\Game\AdminLevel.h" /><ClInclude Include="..\Dependencies\Shared\Entity\Appearance.h" /><ClInclude Include="..\Dependencies\Shared\Render\BitmapFontFactory.h" /><ClInclude Include="..\Dependencies\Shared\Util\CRC32.h" /><ClInclude Include="..\Dependencies\Shared\Render\ColorUtils.h" /><ClInclude Include="..\Dependencies\Shared\Net\ConcurrentMsgQueue.h" /><ClInclude Include="..\Dependencies\Shared\Entity\DynamicObjectID.h" /><ClInclude Include="..\Dependencies\Shared\Entity\EntityRelationship.h" /><ClInclude Include="..\Dependencies\Shared\Render\GameGeometry.h" /><ClInclude Include="..\Dependencies\Shared\Render\IBitmapFont.h" /><ClInclude Include="..\Dependencies\Shared\Render\IInput.h" /><ClInclude Include="..\Dependencies\Shared\Net\IOServicePool.h" /><ClInclude Include="..\Dependencies\Shared\Render\IRenderer.h" /><ClInclude Include="..\Dependencies\Shared\Render\ISprite.h" /><ClInclude Include="..\Dependencies\Shared\Render\ISpriteFactory.h" /><ClInclude Include="..\Dependencies\Shared\Render\ITextRenderer.h" /><ClInclude Include="..\Dependencies\Shared\Render\ITexture.h" /><ClInclude Include="..\Dependencies\Shared\Render\IWindow.h" /><ClInclude Include="..\Dependencies\Shared\Item\Item.h" /><ClInclude Include="..\Dependencies\Shared\Item\ItemAttributes.h" /><ClInclude Include="..\Dependencies\Shared\Item\ItemEnums.h" /><ClInclude Include="..\Dependencies\Shared\Item\SharedItem.h" /><ClInclude Include="..\Dependencies\Shared\Render\NativeTypes.h" /><ClInclude Include="..\Dependencies\Shared\Game\MagicTypes.h" /><ClInclude Include="..\Dependencies\Shared\Net\NetConstants.h" /><ClInclude Include="..\Dependencies\Shared\Net\NetMessages.h" /><ClInclude Include="..\Dependencies\Shared\Render\NullSprite.h" /><ClInclude Include="..\Dependencies\Shared\Packet\PacketCalcSocket.h" /><ClInclude Include="..\Dependencies\Shared\Packet\PacketCommon.h" /><ClInclude Include="..\Dependencies\Shared\Packet\PacketConfigCache.h" /><ClInclude Include="..\Dependencies\Shared\Packet\PacketEvent.h" /><ClInclude Include="..\Dependencies\Shared\Packet\PacketHeaders.h" /><ClInclude Include="..\Dependencies\Shared\Packet\PacketHelpers.h" /><ClInclude Include="..\Dependencies\Shared\Packet\PacketItemConfig.h" /><ClInclude Include="..\Dependencies\Shared\Packet\PacketLogin.h" /><ClInclude Include="..\Dependencies\Shared\Packet\PacketLoginResponse.h" /><ClInclude Include="..\Dependencies\Shared\Packet\PacketMagicConfig.h" /><ClInclude Include="..\Dependencies\Shared\Packet\PacketMap.h" /><ClInclude Include="..\Dependencies\Shared\Packet\PacketMotion.h" /><ClInclude Include="..\Dependencies\Shared\Packet\PacketNotify.h" /><ClInclude Include="..\Dependencies\Shared\Packet\PacketRequest.h" /><ClInclude Include="..\Dependencies\Shared\Packet\PacketResponse.h" /><ClInclude Include="..\Dependencies\Shared\Packet\PacketShop.h" /><ClInclude Include="..\Dependencies\Shared\Packet\PacketSkillConfig.h" /><ClInclude Include="..\Dependencies\Shared\Packet\SharedPackets.h" /><ClInclude Include="..\Dependencies\Shared\Entity\PlayerStatusData.h" /><ClInclude Include="..\Dependencies\Shared\Render\PrimitiveTypes.h" /><ClInclude Include="..\Dependencies\Shared\Render\RenderConstants.h" /><ClInclude Include="..\Dependencies\Shared\Render\RendererFactory.h" /><ClInclude Include="..\Dependencies\Shared\Render\ResolutionConfig.h" /><ClInclude Include="..\Dependencies\Shared\Game\SharedCalculations.h" /><ClInclude Include="..\Dependencies\Shared\Render\SpriteCollection.h" /><ClInclude Include="..\Dependencies\Shared\Render\SpriteLoader.h" /><ClInclude Include="..\Dependencies\Shared\Render\SpriteTypes.h" /><ClInclude Include="..\Dependencies\Shared\Render\TextLib.h" /><ClInclude Include="..\Dependencies\Shared\Log\Log.h" /><ClInclude Include="..\Dependencies\Shared\Log\LogLevel.h" /><ClInclude Include="..\Dependencies\Shared\Log\LogBackend.h" /><ClInclude Include="ServerLogChannels.h" /></ItemGroup>
   <ItemGroup>
     <ClCompile Include="AccountSqliteStore.cpp" />
     <ClCompile Include="Client.cpp" />
@@ -386,8 +384,6 @@
     <ClCompile Include="ServerConsole.cpp" />
     <ClCompile Include="ServerCommand.cpp" />
     <ClCompile Include="CmdHelp.cpp" />
-    <ClCompile Include="ChatLog.cpp" />
-    <ClCompile Include="ItemLog.cpp" />
     <ClCompile Include="CmdBroadcast.cpp" />
     <ClCompile Include="CmdShowChat.cpp" />
     <ClCompile Include="CmdGiveItem.cpp" />
@@ -406,7 +402,7 @@
     <ClCompile Include="GameCmdInvis.cpp" />
     <ClCompile Include="CmdSetAdmin.cpp" />
     <ClCompile Include="CmdSetCmdLevel.cpp" />
-  <ClCompile Include="..\Dependencies\Shared\Net\ASIOSocket.cpp" /><ClCompile Include="..\Dependencies\Shared\Net\IOServicePool.cpp" /></ItemGroup>
+  <ClCompile Include="..\Dependencies\Shared\Net\ASIOSocket.cpp" /><ClCompile Include="..\Dependencies\Shared\Net\IOServicePool.cpp" /><ClCompile Include="..\Dependencies\Shared\Log\LogBackend.cpp" /><ClCompile Include="ServerLog.cpp" /></ItemGroup>
   <ItemGroup>
     <Image Include="logo.bmp" />
   </ItemGroup>

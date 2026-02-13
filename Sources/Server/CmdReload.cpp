@@ -1,18 +1,18 @@
-#include <windows.h>
 #include "CmdReload.h"
 #include "Game.h"
 #include "SkillManager.h"
 #include "MagicManager.h"
 #include "ItemManager.h"
-#include "winmain.h"
 #include <cstdio>
 #include <cstring>
+#include "Log.h"
+#include "StringCompat.h"
 
 void CmdReload::Execute(CGame* pGame, const char* pArgs)
 {
 	if (pArgs == nullptr || pArgs[0] == '\0')
 	{
-		PutLogList((char*)"Usage: reload <items|magic|skills|npcs|all>");
+		hb::logger::log("Usage: reload <items|magic|skills|npcs|all>");
 		return;
 	}
 
@@ -21,15 +21,15 @@ void CmdReload::Execute(CGame* pGame, const char* pArgs)
 	bool bSkills = false;
 	bool bNpcs = false;
 
-	if (_stricmp(pArgs, "items") == 0)
+	if (hb_stricmp(pArgs, "items") == 0)
 		bItems = true;
-	else if (_stricmp(pArgs, "magic") == 0)
+	else if (hb_stricmp(pArgs, "magic") == 0)
 		bMagic = true;
-	else if (_stricmp(pArgs, "skills") == 0)
+	else if (hb_stricmp(pArgs, "skills") == 0)
 		bSkills = true;
-	else if (_stricmp(pArgs, "npcs") == 0)
+	else if (hb_stricmp(pArgs, "npcs") == 0)
 		bNpcs = true;
-	else if (_stricmp(pArgs, "all") == 0)
+	else if (hb_stricmp(pArgs, "all") == 0)
 	{
 		bItems = true;
 		bMagic = true;
@@ -38,9 +38,7 @@ void CmdReload::Execute(CGame* pGame, const char* pArgs)
 	}
 	else
 	{
-		char buf[256];
-		std::snprintf(buf, sizeof(buf), "(!) Unknown reload target: '%s'. Use items, magic, skills, npcs, or all.", pArgs);
-		PutLogList(buf);
+		hb::logger::log("Unknown reload target: '{}'. Use items, magic, skills, npcs, or all.", pArgs);
 		return;
 	}
 

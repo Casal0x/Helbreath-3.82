@@ -1,4 +1,4 @@
-﻿// Overlay_ChangePassword.cpp: Password change overlay
+// Overlay_ChangePassword.cpp: Password change overlay
 //
 //////////////////////////////////////////////////////////////////////
 
@@ -100,12 +100,12 @@ bool Overlay_ChangePassword::ValidateInputs()
     if (!CMisc::bCheckValidString(m_cOldPassword.data()) || m_cOldPassword.empty())
         return false;
 
-    // Check new password (must be valid name format)
-    if (!CMisc::bCheckValidName(m_cNewPassword.data()) || m_cNewPassword.size() < 8)
+    // Check new password
+    if (!CMisc::bCheckValidString(m_cNewPassword.data()) || m_cNewPassword.size() < 8)
         return false;
 
     // Check confirm password matches
-    if (!CMisc::bCheckValidName(m_cConfirmPassword.data()))
+    if (!CMisc::bCheckValidString(m_cConfirmPassword.data()))
         return false;
 
     if (m_cNewPassword != m_cConfirmPassword)
@@ -177,10 +177,10 @@ void Overlay_ChangePassword::on_update()
     }
 
     // Tab key navigation (consistent with Login and CreateAccount screens)
-    if (hb::shared::input::IsKeyPressed(KeyCode::Tab))
+    if (hb::shared::input::is_key_pressed(KeyCode::Tab))
     {
         PlayGameSound('E', 14, 5);
-        if (hb::shared::input::IsShiftDown())
+        if (hb::shared::input::is_shift_down())
         {
             m_iCurFocus--;
             if (m_iCurFocus <= 0) m_iCurFocus = m_iMaxFocus;
@@ -218,7 +218,7 @@ void Overlay_ChangePassword::on_update()
     }
 
     // Enter key
-    if (hb::shared::input::IsKeyPressed(KeyCode::Enter))
+    if (hb::shared::input::is_key_pressed(KeyCode::Enter))
     {
         PlayGameSound('E', 14, 5);
         switch (m_iCurFocus)
@@ -241,7 +241,7 @@ void Overlay_ChangePassword::on_update()
     }
 
     // ESC key - return to main menu (set_screen will clear overlay automatically)
-    if (hb::shared::input::IsKeyPressed(KeyCode::Escape))
+    if (hb::shared::input::is_key_pressed(KeyCode::Escape))
     {
         m_pGame->ChangeGameMode(GameMode::MainMenu);
         return;
@@ -251,17 +251,17 @@ void Overlay_ChangePassword::on_update()
     int dlgX, dlgY;
     GetCenteredDialogPos(InterfaceNdGame4, 0, dlgX, dlgY);
 
-    if (hb::shared::input::IsMouseButtonPressed(MouseButton::Left))
+    if (hb::shared::input::is_mouse_button_pressed(MouseButton::Left))
     {
         PlayGameSound('E', 14, 5);
 
         int iClickedField = 0;
-        if (hb::shared::input::IsMouseInRect(dlgX + 147, dlgY + 36, 125, 22)) iClickedField = 1;
-        else if (hb::shared::input::IsMouseInRect(dlgX + 147, dlgY + 60, 125, 22)) iClickedField = 2;
-        else if (hb::shared::input::IsMouseInRect(dlgX + 147, dlgY + 84, 125, 22)) iClickedField = 3;
-        else if (hb::shared::input::IsMouseInRect(dlgX + 147, dlgY + 108, 125, 22)) iClickedField = 4;
-        else if (hb::shared::input::IsMouseInRect(dlgX + 44, dlgY + 208, ui_layout::btn_size_x, ui_layout::btn_size_y)) iClickedField = 5;
-        else if (hb::shared::input::IsMouseInRect(dlgX + 217, dlgY + 208, ui_layout::btn_size_x, ui_layout::btn_size_y)) iClickedField = 6;
+        if (hb::shared::input::is_mouse_in_rect(dlgX + 147, dlgY + 36, 125, 22)) iClickedField = 1;
+        else if (hb::shared::input::is_mouse_in_rect(dlgX + 147, dlgY + 60, 125, 22)) iClickedField = 2;
+        else if (hb::shared::input::is_mouse_in_rect(dlgX + 147, dlgY + 84, 125, 22)) iClickedField = 3;
+        else if (hb::shared::input::is_mouse_in_rect(dlgX + 147, dlgY + 108, 125, 22)) iClickedField = 4;
+        else if (hb::shared::input::is_mouse_in_rect(dlgX + 44, dlgY + 208, ui_layout::btn_size_x, ui_layout::btn_size_y)) iClickedField = 5;
+        else if (hb::shared::input::is_mouse_in_rect(dlgX + 217, dlgY + 208, ui_layout::btn_size_x, ui_layout::btn_size_y)) iClickedField = 6;
 
         switch (iClickedField)
         {
@@ -281,9 +281,9 @@ void Overlay_ChangePassword::on_update()
     }
 
     // Mouse hover for buttons
-    if (hb::shared::input::IsMouseInRect(dlgX + 44, dlgY + 208, ui_layout::btn_size_x, ui_layout::btn_size_y))
+    if (hb::shared::input::is_mouse_in_rect(dlgX + 44, dlgY + 208, ui_layout::btn_size_x, ui_layout::btn_size_y))
         m_iCurFocus = 5;
-    if (hb::shared::input::IsMouseInRect(dlgX + 217, dlgY + 208, ui_layout::btn_size_x, ui_layout::btn_size_y))
+    if (hb::shared::input::is_mouse_in_rect(dlgX + 217, dlgY + 208, ui_layout::btn_size_x, ui_layout::btn_size_y))
         m_iCurFocus = 6;
 
     // Update input field focus

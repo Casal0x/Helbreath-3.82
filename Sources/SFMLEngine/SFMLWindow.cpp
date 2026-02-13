@@ -1,6 +1,7 @@
 // SFMLWindow.cpp: Pure SFML window implementing hb::shared::render::IWindow interface
 //
 // Part of SFMLEngine static library
+// Supports two-phase init: allocate → configure via setters → realize()
 //////////////////////////////////////////////////////////////////////
 
 #include "SFMLWindow.h"
@@ -20,52 +21,51 @@ namespace MouseButton = hb::shared::input::MouseButton;
 SFMLWindow::SFMLWindow()
     : m_hWnd(nullptr)
     , m_pEventHandler(nullptr)
-    , m_width(0)
-    , m_height(0)
+    , m_realized(false)
+    , m_open(false)
+    , m_active(true)
+    , m_title("Application")
+    , m_width(800)
+    , m_height(600)
     , m_fullscreen(false)
     , m_bFullscreenStretch(false)
     , m_borderless(true)
-    , m_bMouseCaptureEnabled(true)
+    , m_bMouseCaptureEnabled(false)
     , m_bVSync(false)
     , m_iFpsLimit(0)
     , m_windowedWidth(0)
     , m_windowedHeight(0)
-    , m_active(true)
-    , m_open(false)
+    , m_nativeInstance{}
+    , m_iconResourceId(0)
 {
 }
 
 SFMLWindow::~SFMLWindow()
 {
-    Destroy();
+    destroy();
 }
 
-bool SFMLWindow::Create(const hb::shared::render::WindowParams& params)
+bool SFMLWindow::realize()
 {
-    if (m_open)
+    if (m_realized)
         return false;
 
-    m_width = params.width;
-    m_height = params.height;
-    m_windowedWidth = params.width;
-    m_windowedHeight = params.height;
-    m_fullscreen = params.fullscreen;
-    m_borderless = params.borderless;
-    m_bMouseCaptureEnabled = params.mouseCaptureEnabled;
+    m_windowedWidth = m_width;
+    m_windowedHeight = m_height;
 
-    // Create SFML window
+    // Create SFML window from staged params
     sf::VideoMode videoMode({static_cast<unsigned int>(m_width), static_cast<unsigned int>(m_height)});
 
-    sf::State state = params.fullscreen ? sf::State::Fullscreen : sf::State::Windowed;
+    sf::State state = m_fullscreen ? sf::State::Fullscreen : sf::State::Windowed;
 
     // Pick style: fullscreen/borderless use None, bordered uses Titlebar
     auto sfStyle = sf::Style::None;
-    if (!params.fullscreen && !m_borderless)
+    if (!m_fullscreen && !m_borderless)
     {
         sfStyle = sf::Style::Titlebar;
     }
 
-    m_renderWindow.create(videoMode, params.title ? params.title : "hb::shared::render::Window", sfStyle, state);
+    m_renderWindow.create(videoMode, m_title.c_str(), sfStyle, state);
 
     if (!m_renderWindow.isOpen())
         return false;
@@ -75,7 +75,7 @@ bool SFMLWindow::Create(const hb::shared::render::WindowParams& params)
     m_hWnd = static_cast<HWND>(m_renderWindow.getNativeHandle());
 
     // For bordered mode, add minimize button (sf::Style::Titlebar doesn't include it)
-    if (!params.fullscreen && !m_borderless && m_hWnd)
+    if (!m_fullscreen && !m_borderless && m_hWnd)
     {
         LONG style = GetWindowLong(m_hWnd, GWL_STYLE);
         style |= WS_MINIMIZEBOX;
@@ -84,8 +84,6 @@ bool SFMLWindow::Create(const hb::shared::render::WindowParams& params)
             SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
     }
 #endif
-
-
 
     // Hide the system mouse cursor (game draws its own cursor)
     m_renderWindow.setMouseCursorVisible(false);
@@ -96,13 +94,14 @@ bool SFMLWindow::Create(const hb::shared::render::WindowParams& params)
     timeBeginPeriod(1);
 #endif
 
+    m_realized = true;
     m_open = true;
     m_active = true;
 
     return true;
 }
 
-void SFMLWindow::Destroy()
+void SFMLWindow::destroy()
 {
     m_pEventHandler = nullptr;
 
@@ -117,55 +116,61 @@ void SFMLWindow::Destroy()
 #endif
 
     m_hWnd = nullptr;
+    m_realized = false;
     m_open = false;
     m_active = false;
 }
 
-bool SFMLWindow::IsOpen() const
+bool SFMLWindow::is_open() const
 {
     return m_open && m_renderWindow.isOpen();
 }
 
-void SFMLWindow::Close()
+void SFMLWindow::close()
 {
-    // Don't call m_pEventHandler->OnClose() here — that creates infinite recursion
-    // since OnClose() may call hb::shared::render::Window::Close(). OnClose() is only called from the
+    // Don't call m_pEventHandler->on_close() here — that creates infinite recursion
+    // since on_close() may call Window::close(). on_close() is only called from the
     // SFML event loop when the user clicks the close button.
     m_open = false;
     m_renderWindow.close();
 }
 
-hb::shared::types::NativeWindowHandle SFMLWindow::GetHandle() const
+hb::shared::types::NativeWindowHandle SFMLWindow::get_handle() const
 {
     return m_hWnd;
 }
 
-int SFMLWindow::GetWidth() const
+int SFMLWindow::get_width() const
 {
     return m_width;
 }
 
-int SFMLWindow::GetHeight() const
+int SFMLWindow::get_height() const
 {
     return m_height;
 }
 
-bool SFMLWindow::IsFullscreen() const
+bool SFMLWindow::is_fullscreen() const
 {
     return m_fullscreen;
 }
 
-bool SFMLWindow::IsActive() const
+bool SFMLWindow::is_active() const
 {
     return m_active;
 }
 
-void SFMLWindow::SetFullscreen(bool fullscreen)
+void SFMLWindow::set_fullscreen(bool fullscreen)
 {
-    if (m_fullscreen == fullscreen)
+    // Skip window recreation if mode hasn't actually changed
+    // (SFML doesn't need surface restoration like DirectDraw did)
+    if (m_realized && m_fullscreen == fullscreen)
         return;
 
     m_fullscreen = fullscreen;
+
+    if (!m_realized)
+        return;
 
     // Get display dimensions based on mode
     int windowWidth, windowHeight;
@@ -195,7 +200,7 @@ void SFMLWindow::SetFullscreen(bool fullscreen)
         sfStyle = sf::Style::Titlebar;
     }
 
-    m_renderWindow.create(videoMode, "Helbreath", sfStyle, state);
+    m_renderWindow.create(videoMode, m_title.c_str(), sfStyle, state);
 
     // Update stored dimensions
     m_width = windowWidth;
@@ -215,8 +220,6 @@ void SFMLWindow::SetFullscreen(bool fullscreen)
     }
 #endif
 
-
-
     // Reapply cursor settings
     m_renderWindow.setMouseCursorVisible(false);
     m_renderWindow.setMouseCursorGrabbed(m_bMouseCaptureEnabled);
@@ -232,19 +235,19 @@ void SFMLWindow::SetFullscreen(bool fullscreen)
     }
 }
 
-void SFMLWindow::SetBorderless(bool borderless)
+void SFMLWindow::set_borderless(bool borderless)
 {
-    if (m_borderless == borderless || m_fullscreen)
-        return;
-
     m_borderless = borderless;
 
-    // Recreate window with new style (same pattern as SetFullscreen)
+    if (!m_realized || m_fullscreen)
+        return;
+
+    // Recreate window with new style (same pattern as set_fullscreen)
     sf::VideoMode videoMode({static_cast<unsigned int>(m_width), static_cast<unsigned int>(m_height)});
 
     auto sfStyle = borderless ? sf::Style::None : sf::Style::Titlebar;
 
-    m_renderWindow.create(videoMode, "Helbreath", sfStyle, sf::State::Windowed);
+    m_renderWindow.create(videoMode, m_title.c_str(), sfStyle, sf::State::Windowed);
 
 #ifdef _WIN32
     m_hWnd = static_cast<HWND>(m_renderWindow.getNativeHandle());
@@ -272,9 +275,9 @@ void SFMLWindow::SetBorderless(bool borderless)
     SetWindowPos(m_hWnd, HWND_TOP, posX, posY, m_width, m_height, SWP_SHOWWINDOW);
 
     // Update input system with new window handle
-    if (hb::shared::input::Get())
+    if (hb::shared::input::get())
     {
-        SFMLInput* pInput = static_cast<SFMLInput*>(hb::shared::input::Get());
+        SFMLInput* pInput = static_cast<SFMLInput*>(hb::shared::input::get());
         pInput->Initialize(m_hWnd);
         pInput->SetRenderWindow(&m_renderWindow);
     }
@@ -287,18 +290,21 @@ void SFMLWindow::SetBorderless(bool borderless)
     }
 }
 
-bool SFMLWindow::IsBorderless() const
+bool SFMLWindow::is_borderless() const
 {
     return m_borderless;
 }
 
-void SFMLWindow::SetSize(int width, int height, bool center)
+void SFMLWindow::set_size(int width, int height, bool center)
 {
     if (width <= 0 || height <= 0)
         return;
 
     m_width = width;
     m_height = height;
+
+    if (!m_realized)
+        return;
 
     // Update the SFML window size
     m_renderWindow.setSize({static_cast<unsigned int>(width), static_cast<unsigned int>(height)});
@@ -327,7 +333,7 @@ void SFMLWindow::SetSize(int width, int height, bool center)
     m_renderWindow.setMouseCursorGrabbed(m_bMouseCaptureEnabled);
 }
 
-void SFMLWindow::Show()
+void SFMLWindow::show()
 {
     m_renderWindow.setVisible(true);
     m_renderWindow.requestFocus();
@@ -339,25 +345,29 @@ void SFMLWindow::Show()
     }
 }
 
-void SFMLWindow::Hide()
+void SFMLWindow::hide()
 {
     m_renderWindow.setVisible(false);
 }
 
-void SFMLWindow::SetTitle(const char* title)
+void SFMLWindow::set_title(const char* title)
 {
     if (title)
     {
-        m_renderWindow.setTitle(title);
+        m_title = title;
+        if (m_realized)
+            m_renderWindow.setTitle(title);
     }
 }
 
-void SFMLWindow::SetFramerateLimit(int limit)
+void SFMLWindow::set_framerate_limit(int limit)
 {
     m_iFpsLimit = limit;
+    if (!m_realized)
+        return;
     // When VSync is active, the monitor refresh rate controls timing —
     // don't let an FPS limit override it. The saved m_iFpsLimit will be
-    // applied when VSync is turned off (see SetVSyncEnabled).
+    // applied when VSync is turned off (see set_vsync_enabled).
     if (m_bVSync) return;
     // Forward to renderer for engine-owned frame limiting
     hb::shared::render::IRenderer* pRenderer = hb::shared::render::Renderer::Get();
@@ -365,14 +375,16 @@ void SFMLWindow::SetFramerateLimit(int limit)
         static_cast<SFMLRenderer*>(pRenderer)->SetFramerateLimit(limit);
 }
 
-int SFMLWindow::GetFramerateLimit() const
+int SFMLWindow::get_framerate_limit() const
 {
     return m_iFpsLimit;
 }
 
-void SFMLWindow::SetVSyncEnabled(bool enabled)
+void SFMLWindow::set_vsync_enabled(bool enabled)
 {
     m_bVSync = enabled;
+    if (!m_realized)
+        return;
     hb::shared::render::IRenderer* pRenderer = hb::shared::render::Renderer::Get();
     if (!pRenderer) return;
 
@@ -403,33 +415,45 @@ void SFMLWindow::SetVSyncEnabled(bool enabled)
     }
 }
 
-bool SFMLWindow::IsVSyncEnabled() const
+bool SFMLWindow::is_vsync_enabled() const
 {
     return m_bVSync;
 }
 
-void SFMLWindow::SetFullscreenStretch(bool stretch)
+void SFMLWindow::set_fullscreen_stretch(bool stretch)
 {
     m_bFullscreenStretch = stretch;
 }
 
-bool SFMLWindow::IsFullscreenStretch() const
+bool SFMLWindow::is_fullscreen_stretch() const
 {
     return m_bFullscreenStretch;
 }
 
-void SFMLWindow::SetMouseCursorVisible(bool visible)
+void SFMLWindow::set_native_instance(hb::shared::types::NativeInstance instance)
 {
-    m_renderWindow.setMouseCursorVisible(visible);
+    m_nativeInstance = instance;
 }
 
-void SFMLWindow::SetMouseCaptureEnabled(bool enabled)
+void SFMLWindow::set_icon_resource_id(int id)
+{
+    m_iconResourceId = id;
+}
+
+void SFMLWindow::set_mouse_cursor_visible(bool visible)
+{
+    if (m_realized)
+        m_renderWindow.setMouseCursorVisible(visible);
+}
+
+void SFMLWindow::set_mouse_capture_enabled(bool enabled)
 {
     m_bMouseCaptureEnabled = enabled;
-    m_renderWindow.setMouseCursorGrabbed(enabled);
+    if (m_realized)
+        m_renderWindow.setMouseCursorGrabbed(enabled);
 }
 
-void SFMLWindow::ShowMessageBox(const char* title, const char* message)
+void SFMLWindow::show_message_box(const char* title, const char* message)
 {
 #ifdef _WIN32
     MessageBox(m_hWnd, message, title, MB_ICONEXCLAMATION | MB_OK);
@@ -438,9 +462,9 @@ void SFMLWindow::ShowMessageBox(const char* title, const char* message)
 #endif
 }
 
-bool SFMLWindow::ProcessMessages()
+bool SFMLWindow::process_messages()
 {
-    // Check if window was closed programmatically (via Close() method)
+    // Check if window was closed programmatically (via close() method)
     if (!m_open || !m_renderWindow.isOpen())
         return false;
 
@@ -448,10 +472,14 @@ bool SFMLWindow::ProcessMessages()
     {
         if (event->is<sf::Event::Closed>())
         {
+            // Notify the event handler — it decides whether to close or not
             if (m_pEventHandler)
-                m_pEventHandler->OnClose();
-            m_open = false;
-            return false;
+                m_pEventHandler->on_close();
+            // If the handler called close() or request_quit(), m_open is now false
+            if (!m_open)
+                return false;
+            // Otherwise, the application chose to keep the window open (e.g., logout countdown)
+            continue;
         }
 
         if (const auto* resized = event->getIf<sf::Event::Resized>())
@@ -459,7 +487,7 @@ bool SFMLWindow::ProcessMessages()
             m_width = static_cast<int>(resized->size.x);
             m_height = static_cast<int>(resized->size.y);
             if (m_pEventHandler)
-                m_pEventHandler->OnResize(m_width, m_height);
+                m_pEventHandler->on_resize(m_width, m_height);
         }
 
         if (const auto* focusGained = event->getIf<sf::Event::FocusGained>())
@@ -470,35 +498,35 @@ bool SFMLWindow::ProcessMessages()
             // Re-grab mouse cursor if capture is enabled
             m_renderWindow.setMouseCursorGrabbed(m_bMouseCaptureEnabled);
             if (m_pEventHandler)
-                m_pEventHandler->OnActivate(true);
+                m_pEventHandler->on_activate(true);
         }
 
         if (const auto* focusLost = event->getIf<sf::Event::FocusLost>())
         {
             m_active = false;
             if (m_pEventHandler)
-                m_pEventHandler->OnActivate(false);
+                m_pEventHandler->on_activate(false);
         }
 
         if (const auto* keyPressed = event->getIf<sf::Event::KeyPressed>())
         {
             if (m_pEventHandler)
-                m_pEventHandler->OnKeyDown(SfmlKeyToKeyCode(keyPressed->code));
+                m_pEventHandler->on_key_down(SfmlKeyToKeyCode(keyPressed->code));
         }
 
         if (const auto* keyReleased = event->getIf<sf::Event::KeyReleased>())
         {
             if (m_pEventHandler)
-                m_pEventHandler->OnKeyUp(SfmlKeyToKeyCode(keyReleased->code));
+                m_pEventHandler->on_key_up(SfmlKeyToKeyCode(keyReleased->code));
         }
 
         if (const auto* textEntered = event->getIf<sf::Event::TextEntered>())
         {
             if (m_pEventHandler)
             {
-                // Call OnTextInput with WM_CHAR-style parameters
+                // Call on_text_input with WM_CHAR-style parameters
                 // The game's GetText() function expects Win32 message format
-                m_pEventHandler->OnTextInput(m_hWnd, 0x0102 /*WM_CHAR*/,
+                m_pEventHandler->on_text_input(m_hWnd, 0x0102 /*WM_CHAR*/,
                     static_cast<uintptr_t>(textEntered->unicode), 0);
             }
         }
@@ -509,7 +537,7 @@ bool SFMLWindow::ProcessMessages()
             {
                 int logicalX, logicalY;
                 TransformMouseCoords(mouseMoved->position.x, mouseMoved->position.y, logicalX, logicalY);
-                m_pEventHandler->OnMouseMove(logicalX, logicalY);
+                m_pEventHandler->on_mouse_move(logicalX, logicalY);
             }
         }
 
@@ -525,7 +553,7 @@ bool SFMLWindow::ProcessMessages()
             {
                 int logicalX, logicalY;
                 TransformMouseCoords(mousePressed->position.x, mousePressed->position.y, logicalX, logicalY);
-                m_pEventHandler->OnMouseButtonDown(button, logicalX, logicalY);
+                m_pEventHandler->on_mouse_button_down(button, logicalX, logicalY);
             }
         }
 
@@ -541,7 +569,7 @@ bool SFMLWindow::ProcessMessages()
             {
                 int logicalX, logicalY;
                 TransformMouseCoords(mouseReleased->position.x, mouseReleased->position.y, logicalX, logicalY);
-                m_pEventHandler->OnMouseButtonUp(button, logicalX, logicalY);
+                m_pEventHandler->on_mouse_button_up(button, logicalX, logicalY);
             }
         }
 
@@ -552,7 +580,7 @@ bool SFMLWindow::ProcessMessages()
                 int logicalX, logicalY;
                 TransformMouseCoords(mouseWheel->position.x, mouseWheel->position.y, logicalX, logicalY);
                 int delta = static_cast<int>(mouseWheel->delta * 120);  // Convert to Windows-style delta
-                m_pEventHandler->OnMouseWheel(delta, logicalX, logicalY);
+                m_pEventHandler->on_mouse_wheel(delta, logicalX, logicalY);
             }
         }
     }
@@ -560,19 +588,19 @@ bool SFMLWindow::ProcessMessages()
     return true;
 }
 
-void SFMLWindow::WaitForMessage()
+void SFMLWindow::wait_for_message()
 {
     // Wait for an event and process it (don't discard it)
     // This is critical for handling FocusGained when the window is inactive
     if (const std::optional<sf::Event> event = m_renderWindow.waitEvent())
     {
-        // Process the event we received (same logic as ProcessMessages)
+        // Process the event we received (same logic as process_messages)
         if (event->is<sf::Event::Closed>())
         {
             if (m_pEventHandler)
-                m_pEventHandler->OnClose();
-            m_open = false;
-            return;
+                m_pEventHandler->on_close();
+            if (!m_open)
+                return;
         }
 
         if (const auto* focusGained = event->getIf<sf::Event::FocusGained>())
@@ -581,27 +609,27 @@ void SFMLWindow::WaitForMessage()
             (void)m_renderWindow.setActive(true);
             m_renderWindow.setMouseCursorGrabbed(m_bMouseCaptureEnabled);
             if (m_pEventHandler)
-                m_pEventHandler->OnActivate(true);
+                m_pEventHandler->on_activate(true);
         }
 
         if (const auto* focusLost = event->getIf<sf::Event::FocusLost>())
         {
             m_active = false;
             if (m_pEventHandler)
-                m_pEventHandler->OnActivate(false);
+                m_pEventHandler->on_activate(false);
         }
 
-        // Other events will be handled in the next ProcessMessages() call
+        // Other events will be handled in the next process_messages() call
         // but focus events are critical to handle here for proper resume
     }
 }
 
-void SFMLWindow::SetEventHandler(hb::shared::render::IWindowEventHandler* handler)
+void SFMLWindow::set_event_handler(hb::shared::render::IWindowEventHandler* handler)
 {
     m_pEventHandler = handler;
 }
 
-hb::shared::render::IWindowEventHandler* SFMLWindow::GetEventHandler() const
+hb::shared::render::IWindowEventHandler* SFMLWindow::get_event_handler() const
 {
     return m_pEventHandler;
 }

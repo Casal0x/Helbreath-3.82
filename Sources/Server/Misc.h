@@ -2,8 +2,6 @@
 
 #pragma once
 
-// MODERNIZED: Prevent old winsock.h from loading (must be before windows.h)
-#include <windows.h>
 #include "CommonTypes.h"
 #include "GameGeometry.h"
 #include "DirectionHelpers.h"
@@ -13,15 +11,6 @@
 
 namespace CMisc
 {
-	static inline void GetMyCursorPos(short * pX, short * pY)
-	{
-		POINT point;
-
-		GetCursorPos(&point);
-		*pX = (short)point.x;
-		*pY = (short)point.y;
-	}
-
 	static inline char cGetNextMoveDir(short sX, short sY, short dX, short dY)
 	{
 		short absX, absY;

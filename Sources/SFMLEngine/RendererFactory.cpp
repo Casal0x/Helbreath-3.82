@@ -1,4 +1,4 @@
-﻿// RendererFactory.cpp: SFML implementation of renderer factory functions
+// RendererFactory.cpp: SFML implementation of renderer factory functions
 //
 // Part of SFMLEngine static library
 // Provides SFML-specific implementations of the factory functions
@@ -96,7 +96,7 @@ bool Renderer::Set(RendererType type)
             hb::shared::text::SetBitmapFontFactory(s_pBitmapFontFactory);
 
             // If window already exists (created before renderer), link them now
-            IWindow* pWindow = Window::Get();
+            IWindow* pWindow = Window::get();
             if (pWindow)
             {
                 SFMLWindow* sfmlWindow = static_cast<SFMLWindow*>(pWindow);
@@ -162,42 +162,50 @@ RendererType Renderer::GetType()
 }
 
 // Window class static methods
-bool Window::Create(const WindowParams& params)
+IWindow* Window::create()
 {
     if (s_pWindow)
     {
-        Destroy();
+        destroy();
     }
 
     s_pWindow = CreateGameWindow();
+    // Returns the allocated-but-not-realized window.
+    // Caller configures via set_title/set_size/etc., then calls realize().
+    return s_pWindow;
+}
+
+bool Window::realize()
+{
     if (!s_pWindow)
         return false;
 
-    if (!s_pWindow->Create(params))
+    // Create OS window from staged params
+    if (!s_pWindow->realize())
     {
         delete s_pWindow;
         s_pWindow = nullptr;
         return false;
     }
 
-    // Create input system and initialize with window handle
-    hb::shared::input::Create();
-    if (hb::shared::input::Get())
+    // Create input system (needs realized OS window)
+    hb::shared::input::create();
+    if (hb::shared::input::get())
     {
-        SFMLInput* pInput = static_cast<SFMLInput*>(hb::shared::input::Get());
-        pInput->Initialize(s_pWindow->GetHandle());
+        SFMLInput* pInput = static_cast<SFMLInput*>(hb::shared::input::get());
+        pInput->Initialize(s_pWindow->get_handle());
         pInput->SetRenderWindow(static_cast<SFMLWindow*>(s_pWindow)->GetRenderWindow());
     }
 
-    // Link the SFML window's render window to the renderer
+    // Link the SFML window's render window to the renderer (if renderer exists already)
     IRenderer* pRenderer = Renderer::Get();
-    if (pRenderer && s_pWindow)
+    if (pRenderer)
     {
         SFMLWindow* sfmlWindow = static_cast<SFMLWindow*>(s_pWindow);
         SFMLRenderer* sfmlRenderer = static_cast<SFMLRenderer*>(pRenderer);
         sfmlRenderer->SetRenderWindow(sfmlWindow->GetRenderWindow());
 
-        // Create text renderer now that we have back buffer (font loaded internally with fallback)
+        // Create text renderer now that we have back buffer
         if (!s_pTextRenderer)
         {
             s_pTextRenderer = new hb::shared::text::SFMLTextRenderer(sfmlRenderer->GetBackBuffer());
@@ -208,15 +216,15 @@ bool Window::Create(const WindowParams& params)
     return true;
 }
 
-IWindow* Window::Get()
+IWindow* Window::get()
 {
     return s_pWindow;
 }
 
-void Window::Destroy()
+void Window::destroy()
 {
     // Destroy input system first
-    hb::shared::input::Destroy();
+    hb::shared::input::destroy();
 
     if (s_pWindow)
     {
@@ -233,45 +241,45 @@ void Window::Destroy()
     }
 }
 
-hb::shared::types::NativeWindowHandle Window::GetHandle()
+hb::shared::types::NativeWindowHandle Window::get_handle()
 {
-    return s_pWindow ? s_pWindow->GetHandle() : nullptr;
+    return s_pWindow ? s_pWindow->get_handle() : nullptr;
 }
 
-bool Window::IsActive()
+bool Window::is_active()
 {
-    return s_pWindow ? s_pWindow->IsActive() : false;
+    return s_pWindow ? s_pWindow->is_active() : false;
 }
 
-void Window::Close()
+void Window::close()
 {
     if (s_pWindow)
     {
-        s_pWindow->Close();
+        s_pWindow->close();
     }
 }
 
-void Window::SetSize(int width, int height, bool center)
+void Window::set_size(int width, int height, bool center)
 {
     if (s_pWindow)
     {
-        s_pWindow->SetSize(width, height, center);
+        s_pWindow->set_size(width, height, center);
     }
 }
 
-void Window::SetBorderless(bool borderless)
+void Window::set_borderless(bool borderless)
 {
     if (s_pWindow)
     {
-        s_pWindow->SetBorderless(borderless);
+        s_pWindow->set_borderless(borderless);
     }
 }
 
-void Window::ShowError(const char* title, const char* message)
+void Window::show_error(const char* title, const char* message)
 {
     if (s_pWindow)
     {
-        s_pWindow->ShowMessageBox(title, message);
+        s_pWindow->show_message_box(title, message);
     }
     else
     {

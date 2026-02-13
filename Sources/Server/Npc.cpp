@@ -9,7 +9,7 @@
 // Construction/Destruction
 //////////////////////////////////////////////////////////////////////
 
-CNpc::CNpc(char * pName5)
+CNpc::CNpc(const char * pName5)
 {
  
 	std::memset(m_cName, 0, sizeof(m_cName));

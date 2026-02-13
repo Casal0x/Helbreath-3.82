@@ -1,4 +1,4 @@
-﻿#include "DialogBox_HudPanel.h"
+#include "DialogBox_HudPanel.h"
 #include "Game.h"
 #include "GlobalDef.h"
 #include "SharedCalculations.h"
@@ -151,7 +151,7 @@ void DialogBox_HudPanel::DrawStatusIcons(short msX, short msY)
 
 	// Map message / coordinates (or remaining EXP when Ctrl pressed)
 	std::string infoBuf;
-	if (hb::shared::input::IsCtrlDown())
+	if (hb::shared::input::is_ctrl_down())
 	{
 		uint32_t iCurExp = m_pGame->iGetLevelExp(m_pGame->m_pPlayer->m_iLevel);
 		uint32_t iNextExp = m_pGame->iGetLevelExp(m_pGame->m_pPlayer->m_iLevel + 1);

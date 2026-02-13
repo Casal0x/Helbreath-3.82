@@ -1,4 +1,4 @@
-﻿#include "Screen_CreateAccount.h"
+#include "Screen_CreateAccount.h"
 #include "Game.h"
 #include "TextInputManager.h"
 #include "GameModeManager.h"
@@ -70,9 +70,9 @@ void Screen_CreateAccount::on_update()
     uint32_t dwTime = GameClock::GetTimeMS();
     m_pGame->m_dwCurTime = dwTime;
 
-    m_sNewAcctMsX = static_cast<short>(hb::shared::input::GetMouseX());
-    m_sNewAcctMsY = static_cast<short>(hb::shared::input::GetMouseY());
-    char cLB = hb::shared::input::IsMouseButtonDown(MouseButton::Left) ? 1 : 0;
+    m_sNewAcctMsX = static_cast<short>(hb::shared::input::get_mouse_x());
+    m_sNewAcctMsY = static_cast<short>(hb::shared::input::get_mouse_y());
+    char cLB = hb::shared::input::is_mouse_button_down(MouseButton::Left) ? 1 : 0;
 
     // Handle arrow key navigation
     if (m_pGame->m_cArrowPressed != 0)
@@ -106,20 +106,20 @@ void Screen_CreateAccount::on_update()
     // Direct mouse click focus selection
     if (cLB != 0 && m_cNewAcctPrevLB == 0)
     {
-        if (hb::shared::input::IsMouseInRect(427, 84, 100, 18)) m_cCurFocus = 1;
-        if (hb::shared::input::IsMouseInRect(427, 106, 100, 18)) m_cCurFocus = 2;
-        if (hb::shared::input::IsMouseInRect(427, 129, 100, 18)) m_cCurFocus = 3;
-        if (hb::shared::input::IsMouseInRect(311, 215, 250, 18)) m_cCurFocus = 4;
+        if (hb::shared::input::is_mouse_in_rect(427, 84, 100, 18)) m_cCurFocus = 1;
+        if (hb::shared::input::is_mouse_in_rect(427, 106, 100, 18)) m_cCurFocus = 2;
+        if (hb::shared::input::is_mouse_in_rect(427, 129, 100, 18)) m_cCurFocus = 3;
+        if (hb::shared::input::is_mouse_in_rect(311, 215, 250, 18)) m_cCurFocus = 4;
 
         // Button 5: Create
-        if (hb::shared::input::IsMouseInRect(297, 398, 72, 20))
+        if (hb::shared::input::is_mouse_in_rect(297, 398, 72, 20))
         {
             m_cCurFocus = 5;
             m_pGame->PlayGameSound('E', 14, 5);
             _submit_create_account();
         }
         // Button 6: Clear
-        if (hb::shared::input::IsMouseInRect(392, 398, 72, 20))
+        if (hb::shared::input::is_mouse_in_rect(392, 398, 72, 20))
         {
             m_cCurFocus = 6;
             m_pGame->PlayGameSound('E', 14, 5);
@@ -128,7 +128,7 @@ void Screen_CreateAccount::on_update()
             m_cNewAcctPrevFocus = 0; // Trigger reset
         }
         // Button 7: Cancel
-        if (hb::shared::input::IsMouseInRect(488, 398, 72, 20))
+        if (hb::shared::input::is_mouse_in_rect(488, 398, 72, 20))
         {
             m_cCurFocus = 7;
             m_pGame->PlayGameSound('E', 14, 5);
@@ -137,17 +137,17 @@ void Screen_CreateAccount::on_update()
     }
     m_cNewAcctPrevLB = cLB;
 
-    if (hb::shared::input::IsKeyPressed(KeyCode::Escape) == true)
+    if (hb::shared::input::is_key_pressed(KeyCode::Escape) == true)
     {
         m_pGame->ChangeGameMode(GameMode::MainMenu);
         return;
     }
 
     // Handle Tab key
-    if (hb::shared::input::IsKeyPressed(KeyCode::Tab))
+    if (hb::shared::input::is_key_pressed(KeyCode::Tab))
     {
         m_pGame->PlayGameSound('E', 14, 5);
-        if (hb::shared::input::IsShiftDown())
+        if (hb::shared::input::is_shift_down())
         {
             m_cCurFocus--;
             if (m_cCurFocus < 1) m_cCurFocus = 4;
@@ -160,7 +160,7 @@ void Screen_CreateAccount::on_update()
     }
 
     // Handle Enter key
-    if (hb::shared::input::IsKeyPressed(KeyCode::Enter))
+    if (hb::shared::input::is_key_pressed(KeyCode::Enter))
     {
         m_pGame->PlayGameSound('E', 14, 5);
 

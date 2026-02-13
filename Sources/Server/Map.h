@@ -2,9 +2,7 @@
 
 #pragma once
 
-// MODERNIZED: Prevent old winsock.h from loading (must be before windows.h)
 
-#include <windows.h>
 #include "CommonTypes.h"
 #include "NetConstants.h"
 #include "OccupyFlag.h"
@@ -33,9 +31,7 @@ constexpr int MaxDynamicGates       = 10;
 constexpr int MaxHeldenianTower     = 200;
 } // namespace hb::server::map
 
-// MODERNIZED: Prevent old winsock.h from loading (must be before windows.h)
 
-#include <windows.h>
 #include "CommonTypes.h"
 #include "Game.h"
 #include "TeleportLoc.h"

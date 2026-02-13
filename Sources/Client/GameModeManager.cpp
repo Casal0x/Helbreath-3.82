@@ -125,7 +125,7 @@ void GameModeManager::UpdateScreensImpl()
     // Suppress input for base screen during transitions or when overlay is active
     if (bTransitioning || m_pActiveOverlay)
     {
-        hb::shared::input::SetSuppressed(true);
+        hb::shared::input::set_suppressed(true);
     }
 
     // Update base screen (input suppressed if transitioning or overlay active)
@@ -135,7 +135,7 @@ void GameModeManager::UpdateScreensImpl()
     }
 
     // Always restore input before overlay update
-    hb::shared::input::SetSuppressed(false);
+    hb::shared::input::set_suppressed(false);
 
     // Update overlay (receives input only when not transitioning)
     if (m_pActiveOverlay && !bTransitioning)
@@ -225,17 +225,17 @@ void GameModeManager::ApplyScreenChange()
 
             // Game screen uses user's configured FPS limit;
             // all other screens cap at 60 FPS (no reason to render menus faster)
-            hb::shared::render::IWindow* pWindow = hb::shared::render::Window::Get();
+            hb::shared::render::IWindow* pWindow = hb::shared::render::Window::get();
             if (pWindow)
             {
                 if (m_currentMode == GameMode::MainGame)
                 {
-                    pWindow->SetVSyncEnabled(ConfigManager::Get().IsVSyncEnabled());
-                    pWindow->SetFramerateLimit(ConfigManager::Get().GetFpsLimit());
+                    pWindow->set_vsync_enabled(ConfigManager::Get().IsVSyncEnabled());
+                    pWindow->set_framerate_limit(ConfigManager::Get().GetFpsLimit());
                 }
                 else
                 {
-                    pWindow->SetFramerateLimit(60);
+                    pWindow->set_framerate_limit(60);
                 }
             }
         }

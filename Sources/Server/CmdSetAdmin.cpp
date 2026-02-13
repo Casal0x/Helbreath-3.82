@@ -1,20 +1,20 @@
-#include <windows.h>
 #include "CmdSetAdmin.h"
 #include "Game.h"
 #include "GameConfigSqliteStore.h"
 #include "AccountSqliteStore.h"
 #include "AdminLevel.h"
-#include "winmain.h"
 #include <cstring>
 #include <cstdio>
 #include <cstdlib>
+#include "Log.h"
+#include "StringCompat.h"
 using namespace hb::server::config;
 
 void CmdSetAdmin::Execute(CGame* pGame, const char* pArgs)
 {
 	if (pArgs == nullptr || pArgs[0] == '\0')
 	{
-		PutLogList("Usage: setadmin <charname> [resetip]");
+		hb::logger::log("Usage: setadmin <charname> [resetip]");
 		return;
 	}
 
@@ -32,14 +32,12 @@ void CmdSetAdmin::Execute(CGame* pGame, const char* pArgs)
 		p++;
 
 	// Check for "resetip" subcommand
-	if (_stricmp(p, "resetip") == 0)
+	if (hb_stricmp(p, "resetip") == 0)
 	{
 		int idx = pGame->FindAdminByCharName(cCharName);
 		if (idx == -1)
 		{
-			char buf[128];
-			std::snprintf(buf, sizeof(buf), "(!) Admin entry not found for character: %s", cCharName);
-			PutLogList(buf);
+			hb::logger::log("Admin entry not found for character: {}", cCharName);
 			return;
 		}
 
@@ -53,9 +51,7 @@ void CmdSetAdmin::Execute(CGame* pGame, const char* pArgs)
 			CloseGameConfigDatabase(configDb);
 		}
 
-		char buf[128];
-		std::snprintf(buf, sizeof(buf), "(!) Admin IP reset for character: %s", cCharName);
-		PutLogList(buf);
+		hb::logger::log("Admin IP reset for character: {}", cCharName);
 		return;
 	}
 
@@ -66,7 +62,7 @@ void CmdSetAdmin::Execute(CGame* pGame, const char* pArgs)
 		iAdminLevel = std::atoi(p);
 		if (iAdminLevel < 1)
 		{
-			PutLogList("(!) Admin level must be >= 1. Use level 0 is Player (non-admin).");
+			hb::logger::log("Admin level must be >= 1. Use level 0 is Player (non-admin).");
 			return;
 		}
 	}
@@ -79,7 +75,7 @@ void CmdSetAdmin::Execute(CGame* pGame, const char* pArgs)
 	for (int i = 1; i < MaxClients; i++)
 	{
 		if (pGame->m_pClientList[i] != nullptr &&
-			_stricmp(pGame->m_pClientList[i]->m_cCharName, cCharName) == 0)
+			hb_stricmp(pGame->m_pClientList[i]->m_cCharName, cCharName) == 0)
 		{
 			strncpy(cAccountName, pGame->m_pClientList[i]->m_cAccountName, 10);
 			cAccountName[10] = '\0';
@@ -99,9 +95,7 @@ void CmdSetAdmin::Execute(CGame* pGame, const char* pArgs)
 
 	if (!bFound)
 	{
-		char buf[128];
-		std::snprintf(buf, sizeof(buf), "(!) Player not found: %s", cCharName);
-		PutLogList(buf);
+		hb::logger::log("Player not found: {}", cCharName);
 		return;
 	}
 
@@ -115,7 +109,7 @@ void CmdSetAdmin::Execute(CGame* pGame, const char* pArgs)
 		for (int i = 1; i < MaxClients; i++)
 		{
 			if (pGame->m_pClientList[i] != nullptr &&
-				_stricmp(pGame->m_pClientList[i]->m_cAccountName, cAccountName) == 0)
+				hb_stricmp(pGame->m_pClientList[i]->m_cAccountName, cAccountName) == 0)
 			{
 				pGame->m_pClientList[i]->m_iAdminLevel = iAdminLevel;
 				break;
@@ -130,17 +124,14 @@ void CmdSetAdmin::Execute(CGame* pGame, const char* pArgs)
 			CloseGameConfigDatabase(configDb);
 		}
 
-		char buf[128];
-		std::snprintf(buf, sizeof(buf), "(!) Admin level updated: %s (account: %s) -> level %d",
-			cCharName, cAccountName, iAdminLevel);
-		PutLogList(buf);
+		hb::logger::log("Admin level updated: {} (account: {}) -> level {}", cCharName, cAccountName, iAdminLevel);
 		return;
 	}
 
 	// Check capacity
 	if (pGame->m_iAdminCount >= MaxAdmins)
 	{
-		PutLogList("(!) Admin list is full!");
+		hb::logger::log("Admin list is full");
 		return;
 	}
 
@@ -157,8 +148,8 @@ void CmdSetAdmin::Execute(CGame* pGame, const char* pArgs)
 	for (int i = 1; i < MaxClients; i++)
 	{
 		if (pGame->m_pClientList[i] != nullptr &&
-			_stricmp(pGame->m_pClientList[i]->m_cAccountName, cAccountName) == 0 &&
-			_stricmp(pGame->m_pClientList[i]->m_cCharName, cCharName) == 0)
+			hb_stricmp(pGame->m_pClientList[i]->m_cAccountName, cAccountName) == 0 &&
+			hb_stricmp(pGame->m_pClientList[i]->m_cCharName, cCharName) == 0)
 		{
 			pGame->m_pClientList[i]->m_iAdminIndex = idx;
 			pGame->m_pClientList[i]->m_iAdminLevel = iAdminLevel;
@@ -175,7 +166,5 @@ void CmdSetAdmin::Execute(CGame* pGame, const char* pArgs)
 		CloseGameConfigDatabase(configDb);
 	}
 
-	char buf[128];
-	std::snprintf(buf, sizeof(buf), "(!) Admin added: %s (account: %s, level: %d)", cCharName, cAccountName, iAdminLevel);
-	PutLogList(buf);
+	hb::logger::log("Admin added: {} (account: {}, level: {})", cCharName, cAccountName, iAdminLevel);
 }

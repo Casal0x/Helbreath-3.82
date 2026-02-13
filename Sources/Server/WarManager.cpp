@@ -1,7 +1,7 @@
 #include "WarManager.h"
 #include "Game.h"
 #include "StatusEffectManager.h"
-#include <direct.h>
+#include <filesystem>
 #include "Item.h"
 #include "CombatManager.h"
 #include "EntityManager.h"
@@ -18,8 +18,14 @@
 #include "Skill.h"
 #include "GameConfigSqliteStore.h"
 #include "TeleportLoc.h"
+#include "Log.h"
+#include "ServerLogChannels.h"
+#include "StringCompat.h"
+#include "TimeUtils.h"
 
 using namespace hb::shared::net;
+
+using hb::log_channel;
 using namespace hb::shared::action;
 using namespace hb::server::net;
 using namespace hb::server::config;
@@ -33,25 +39,22 @@ using namespace hb::server::skill;
 
 extern char G_cTxt[512];
 extern char G_cData50000[50000];
-extern void PutLogList(char* cStr);
-extern void PutLogFileList(char* cStr);
-extern void PutHackLogFileList(char* cStr);
 
 void WarManager::CrusadeWarStarter()
 {
-	SYSTEMTIME SysTime;
+	hb::time::local_time SysTime{};
 	
 
 	if (m_pGame->m_bIsCrusadeMode) return;
 	if (m_pGame->m_bIsCrusadeWarStarter == false) return;
 
-	GetLocalTime(&SysTime);
+	SysTime = hb::time::local_time::now();
 
 	for(int i = 0; i < MaxSchedule; i++)
-		if ((m_pGame->m_stCrusadeWarSchedule[i].iDay == SysTime.wDayOfWeek) &&
-			(m_pGame->m_stCrusadeWarSchedule[i].iHour == SysTime.wHour) &&
-			(m_pGame->m_stCrusadeWarSchedule[i].iMinute == SysTime.wMinute)) {
-			PutLogList("(!) Automated crusade is being initiated!");
+		if ((m_pGame->m_stCrusadeWarSchedule[i].iDay == SysTime.day_of_week) &&
+			(m_pGame->m_stCrusadeWarSchedule[i].iHour == SysTime.hour) &&
+			(m_pGame->m_stCrusadeWarSchedule[i].iMinute == SysTime.minute)) {
+			hb::logger::log("Automated crusade initiating");
 			GlobalStartCrusadeMode();
 			return;
 		}
@@ -60,13 +63,13 @@ void WarManager::CrusadeWarStarter()
 void WarManager::GlobalStartCrusadeMode()
 {
 	uint32_t dwCrusadeGUID;
-	SYSTEMTIME SysTime;
+	hb::time::local_time SysTime{};
 
-	GetLocalTime(&SysTime);
+	SysTime = hb::time::local_time::now();
 	if (m_pGame->m_iLatestCrusadeDayOfWeek != -1) {
-		if (m_pGame->m_iLatestCrusadeDayOfWeek == SysTime.wDayOfWeek) return;
+		if (m_pGame->m_iLatestCrusadeDayOfWeek == SysTime.day_of_week) return;
 	}
-	else m_pGame->m_iLatestCrusadeDayOfWeek = SysTime.wDayOfWeek;
+	else m_pGame->m_iLatestCrusadeDayOfWeek = SysTime.day_of_week;
 
 	dwCrusadeGUID = GameClock::GetTimeMS();
 
@@ -100,7 +103,7 @@ void WarManager::LocalStartCrusadeMode(uint32_t dwCrusadeGUID)
 
 	CreateCrusadeStructures();
 
-	PutLogList("(!)Crusade Mode ON.");
+	hb::logger::log("Crusade mode enabled");
 }
 
 void WarManager::LocalEndCrusadeMode(int iWinnerSide)
@@ -108,13 +111,12 @@ void WarManager::LocalEndCrusadeMode(int iWinnerSide)
 	
 
 	//testcode
-	std::snprintf(G_cTxt, sizeof(G_cTxt), "LocalEndCrusadeMode(%d)", iWinnerSide);
-	PutLogList(G_cTxt);
+	hb::logger::log("LocalEndCrusadeMode({})", iWinnerSide);
 
 	if (m_pGame->m_bIsCrusadeMode == false) return;
 	m_pGame->m_bIsCrusadeMode = false;
 
-	PutLogList("(!)Crusade Mode OFF.");
+	hb::logger::log("Crusade mode disabled");
 
 	RemoveCrusadeStructures();
 
@@ -139,7 +141,6 @@ void WarManager::LocalEndCrusadeMode(int iWinnerSide)
 
 void WarManager::ManualEndCrusadeMode(int iWinnerSide)
 {
-
 
 	if (m_pGame->m_bIsCrusadeMode == false) return;
 
@@ -216,8 +217,7 @@ void WarManager::CreateCrusadeStructures()
 							m_pGame->m_pMapList[z]->SetNamingValueEmpty(iNamingValue);
 						}
 						else {
-							std::snprintf(G_cTxt, sizeof(G_cTxt), "(!) Creating Crusade Structure(%s) at %s(%d, %d)", cNpcName, m_pGame->m_stCrusadeStructures[i].cMapName, tX, tY);
-							PutLogList(G_cTxt);
+							hb::logger::log("Creating Crusade Structure({}) at {}({}, {})", cNpcName, m_pGame->m_stCrusadeStructures[i].cMapName, tX, tY);
 						}
 					}
 				}
@@ -371,19 +371,18 @@ void WarManager::CheckCrusadeResultCalculation(int iClientH)
 	}
 }
 
-bool WarManager::bReadCrusadeGUIDFile(char* cFn)
+bool WarManager::bReadCrusadeGUIDFile(const char* cFn)
 {
 	FILE* pFile;
-	HANDLE hFile;
 	uint32_t  dwFileSize;
 	char* cp, * token, cReadMode;
 	char seps[] = "= \t\r\n";
 
 	cReadMode = 0;
 
-	hFile = CreateFile(cFn, GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
-	dwFileSize = GetFileSize(hFile, 0);
-	if (hFile != INVALID_HANDLE_VALUE) CloseHandle(hFile);
+	std::error_code ec;
+	auto fsize = std::filesystem::file_size(cFn, ec);
+	dwFileSize = ec ? 0 : static_cast<uint32_t>(fsize);
 
 	pFile = fopen(cFn, "rt");
 	if (pFile == 0) {
@@ -402,16 +401,14 @@ bool WarManager::bReadCrusadeGUIDFile(char* cFn)
 				switch (cReadMode) {
 				case 1:
 					m_pGame->m_dwCrusadeGUID = atoi(token);
-					std::snprintf(G_cTxt, sizeof(G_cTxt), "CrusadeGUID = %d", m_pGame->m_dwCrusadeGUID);
-					PutLogList(G_cTxt);
+					hb::logger::log("CrusadeGUID = {}", m_pGame->m_dwCrusadeGUID);
 					cReadMode = 0;
 					break;
 
 				case 2:
 					// New 13/05/2004 Changed
 					m_pGame->m_iLastCrusadeWinner = atoi(token);
-					std::snprintf(G_cTxt, sizeof(G_cTxt), "CrusadeWinnerSide = %d", m_pGame->m_iLastCrusadeWinner);
-					PutLogList(G_cTxt);
+					hb::logger::log("CrusadeWinnerSide = {}", m_pGame->m_iLastCrusadeWinner);
 					cReadMode = 0;
 					break;
 				}
@@ -436,20 +433,17 @@ void WarManager::_CreateCrusadeGUID(uint32_t dwCrusadeGUID, int iWinnerSide)
 	char* cp, cTxt[256], cFn[256], cTemp[1024];
 	FILE* pFile;
 
-#ifdef _WIN32
-	_mkdir("GameData");
-#endif
+	std::filesystem::create_directories("GameData");
 	std::memset(cFn, 0, sizeof(cFn));
 
 	strcat(cFn, "GameData");
-	strcat(cFn, "\\");
-	strcat(cFn, "\\");
+	strcat(cFn, "/");
+	strcat(cFn, "/");
 	strcat(cFn, "CrusadeGUID.Txt");
 
 	pFile = fopen(cFn, "wt");
 	if (pFile == 0) {
-		std::snprintf(cTxt, sizeof(cTxt), "(!) Cannot create CrusadeGUID(%d) file", dwCrusadeGUID);
-		PutLogList(cTxt);
+		hb::logger::log("Cannot create CrusadeGUID({}) file", dwCrusadeGUID);
 	}
 	else {
 		std::memset(cTemp, 0, sizeof(cTemp));
@@ -465,8 +459,7 @@ void WarManager::_CreateCrusadeGUID(uint32_t dwCrusadeGUID, int iWinnerSide)
 		cp = (char*)cTemp;
 		fwrite(cp, strlen(cp), 1, pFile);
 
-		std::snprintf(cTxt, sizeof(cTxt), "(O) CrusadeGUID(%d) file created", dwCrusadeGUID);
-		PutLogList(cTxt);
+		hb::logger::log("CrusadeGUID({}) file created", dwCrusadeGUID);
 	}
 	if (pFile != 0) fclose(pFile);
 }
@@ -569,8 +562,7 @@ bool WarManager::__bSetConstructionKit(int iMapIndex, int dX, int dY, int iType,
 			m_pGame->m_pMapList[m_pGame->m_pClientList[iClientH]->m_cMapIndex]->SetNamingValueEmpty(iNamingValue);
 		}
 		else {
-			std::snprintf(G_cTxt, sizeof(G_cTxt), "Structure(%s) construction begin(%d,%d)!", cNpcName, tX, tY);
-			PutLogList(G_cTxt);
+			hb::logger::log("Structure({}) construction begin({},{})!", cNpcName, tX, tY);
 			return true;
 		}
 	}
@@ -586,20 +578,20 @@ void WarManager::MeteorStrikeHandler(int iMapIndex)
 	char  cOwnerType;
 	uint32_t dwTime = GameClock::GetTimeMS();
 
-	PutLogList("(!) Beginning Meteor Strike Procedure...");
+	hb::logger::log("Beginning meteor strike procedure");
 
 	if (iMapIndex == -1) {
-		PutLogList("(X) MeteorStrikeHandler Error! MapIndex -1!");
+		hb::logger::error("Meteor strike error: map index is -1");
 		return;
 	}
 
 	if (m_pGame->m_pMapList[iMapIndex] == 0) {
-		PutLogList("(X) MeteorStrikeHandler Error! 0 Map!");
+		hb::logger::error("Meteor strike error: null map");
 		return;
 	}
 
 	if (m_pGame->m_pMapList[iMapIndex]->m_iTotalStrikePoints == 0) {
-		PutLogList("(X) MeteorStrikeHandler Error! No Strike Points!");
+		hb::logger::error("Meteor strike error: no strike points");
 		return;
 	}
 
@@ -614,15 +606,14 @@ void WarManager::MeteorStrikeHandler(int iMapIndex)
 	}
 
 	//testcode
-	std::snprintf(G_cTxt, sizeof(G_cTxt), "(!) Map(%s) has %d available strike points", m_pGame->m_pMapList[iMapIndex]->m_cName, iIndex);
-	PutLogList(G_cTxt);
+	hb::logger::log("Map({}) has {} available strike points", m_pGame->m_pMapList[iMapIndex]->m_cName, iIndex);
 
 	m_pGame->m_stMeteorStrikeResult.iCasualties = 0;
 	m_pGame->m_stMeteorStrikeResult.iCrashedStructureNum = 0;
 	m_pGame->m_stMeteorStrikeResult.iStructureDamageAmount = 0;
 
 	if (iIndex == 0) {
-		PutLogList("(!) No strike points!");
+		hb::logger::log("No strike points available");
 		m_pGame->m_pDelayEventManager->bRegisterDelayEvent(sdelay::Type::CalcMeteorStrikeEffect, 0, dwTime + 6000, 0, 0, iMapIndex, 0, 0, 0, 0, 0);
 	}
 	else {
@@ -636,7 +627,7 @@ void WarManager::MeteorStrikeHandler(int iMapIndex)
 			iTargetIndex = iTargetArray[i];
 
 			if (iTargetIndex == -1) {
-				PutLogList("(X) Strike Point MapIndex: -1!");
+				hb::logger::error("Strike point error: map index is -1");
 				goto MSH_SKIP_STRIKE;
 			}
 
@@ -655,8 +646,7 @@ void WarManager::MeteorStrikeHandler(int iMapIndex)
 				}
 
 			// testcode
-			std::snprintf(G_cTxt, sizeof(G_cTxt), "(!) Meteor Strike Target(%d, %d) ESG(%d)", dX, dY, iTotalESG);
-			PutLogList(G_cTxt);
+			hb::logger::log("Meteor Strike Target({}, {}) ESG({})", dX, dY, iTotalESG);
 
 			if (iTotalESG < 2) {
 
@@ -753,8 +743,7 @@ void WarManager::CalcMeteorStrikeEffectHandler(int iMapIndex)
 	}
 
 	//testcode
-	std::snprintf(G_cTxt, sizeof(G_cTxt), "ActiveStructure:%d  MapIndex:%d AresdenMap:%d ElvineMap:%d", iActiveStructure, iMapIndex, m_pGame->m_iAresdenMapIndex, m_pGame->m_iElvineMapIndex);
-	PutLogList(G_cTxt);
+	hb::logger::log("ActiveStructure:{} MapIndex:{} AresdenMap:{} ElvineMap:{}", iActiveStructure, iMapIndex, m_pGame->m_iAresdenMapIndex, m_pGame->m_iElvineMapIndex);
 
 	if (iActiveStructure == 0) {
 		if (iMapIndex == m_pGame->m_iAresdenMapIndex) {
@@ -851,7 +840,7 @@ void WarManager::_LinkStrikePointMapIndex()
 						if ((m_pGame->m_pMapList[x] != 0) && (strcmp(m_pGame->m_pMapList[x]->m_cName, m_pGame->m_pMapList[i]->m_stStrikePoint[z].cRelatedMapName) == 0)) {
 							m_pGame->m_pMapList[i]->m_stStrikePoint[z].iMapIndex = x;
 							//testcode
-							PutLogList(G_cTxt);
+							hb::logger::log("{}", G_cTxt);
 
 							goto LSPMI_LOOPBREAK;
 						}
@@ -879,8 +868,7 @@ void WarManager::CollectedManaHandler(uint16_t wAresdenMana, uint16_t wElvineMan
 		m_pGame->m_iAresdenMana += wAresdenMana;
 		//testcode
 		if (wAresdenMana > 0) {
-			std::snprintf(G_cTxt, sizeof(G_cTxt), "Aresden Mana: %d Total:%d", wAresdenMana, m_pGame->m_iAresdenMana);
-			PutLogList(G_cTxt);
+			hb::logger::log("Aresden Mana: {} Total:{}", wAresdenMana, m_pGame->m_iAresdenMana);
 		}
 	}
 
@@ -888,8 +876,7 @@ void WarManager::CollectedManaHandler(uint16_t wAresdenMana, uint16_t wElvineMan
 		m_pGame->m_iElvineMana += wElvineMana;
 		//testcode
 		if (wElvineMana > 0) {
-			std::snprintf(G_cTxt, sizeof(G_cTxt), "Elvine Mana: %d Total:%d", wElvineMana, m_pGame->m_iElvineMana);
-			PutLogList(G_cTxt);
+			hb::logger::log("Elvine Mana: {} Total:{}", wElvineMana, m_pGame->m_iElvineMana);
 		}
 	}
 }
@@ -900,8 +887,7 @@ void WarManager::SendCollectedMana()
 	if ((m_pGame->m_iCollectedMana[1] == 0) && (m_pGame->m_iCollectedMana[2] == 0)) return;
 
 	//testcode
-	std::snprintf(G_cTxt, sizeof(G_cTxt), "Sending Collected Mana: %d %d", m_pGame->m_iCollectedMana[1], m_pGame->m_iCollectedMana[2]);
-	PutLogList(G_cTxt);
+	hb::logger::log("Sending Collected Mana: {} {}", m_pGame->m_iCollectedMana[1], m_pGame->m_iCollectedMana[2]);
 
 	CollectedManaHandler(m_pGame->m_iCollectedMana[1], m_pGame->m_iCollectedMana[2]);
 
@@ -1076,7 +1062,6 @@ void WarManager::RequestSummonWarUnitHandler(int iClientH, int dX, int dY, char 
 			cName[0] = '_';
 			cName[1] = m_pGame->m_pClientList[iClientH]->m_cMapIndex + 65;
 
-
 			switch (cType) {
 			case 43: // Light War Beetle
 				switch (m_pGame->m_pClientList[iClientH]->m_cSide) {
@@ -1194,8 +1179,7 @@ void WarManager::RequestSummonWarUnitHandler(int iClientH, int dX, int dY, char 
 			}
 
 			//testcode
-			std::snprintf(G_cTxt, sizeof(G_cTxt), "(!) Request Summon War Unit (%d) (%s)", cType, cNpcName);
-			PutLogList(G_cTxt);
+			hb::logger::log("Request Summon War Unit ({}) ({})", cType, cNpcName);
 
 			tX = (int)dX;
 			tY = (int)dY;
@@ -1315,9 +1299,7 @@ void WarManager::RequestGuildTeleportHandler(int iClientH)
 	if (!m_pGame->m_bIsCrusadeMode) {
 		try
 		{
-			std::snprintf(G_cTxt, sizeof(G_cTxt), "Accessing crusade teleport: (%s) Player: (%s) - setting teleport location when crusade is disabled.",
-				m_pGame->m_pClientList[iClientH]->m_cIPaddress, m_pGame->m_pClientList[iClientH]->m_cCharName);
-			PutHackLogFileList(G_cTxt);
+			hb::logger::warn<log_channel::security>("Crusade teleport hack: IP={} player={}, setting teleport while crusade disabled", m_pGame->m_pClientList[iClientH]->m_cIPaddress, m_pGame->m_pClientList[iClientH]->m_cCharName);
 			m_pGame->DeleteClient(iClientH, true, true);
 		}
 		catch (...)
@@ -1330,9 +1312,7 @@ void WarManager::RequestGuildTeleportHandler(int iClientH)
 	if (m_pGame->m_pClientList[iClientH]->m_iCrusadeDuty == 0) {
 		try
 		{
-			std::snprintf(G_cTxt, sizeof(G_cTxt), "Accessing crusade teleport: (%s) Player: (%s) - teleporting when not in a guild",
-				m_pGame->m_pClientList[iClientH]->m_cIPaddress, m_pGame->m_pClientList[iClientH]->m_cCharName);
-			PutHackLogFileList(G_cTxt);
+			hb::logger::warn<log_channel::security>("Crusade teleport hack: IP={} player={}, teleporting without guild", m_pGame->m_pClientList[iClientH]->m_cIPaddress, m_pGame->m_pClientList[iClientH]->m_cCharName);
 			m_pGame->DeleteClient(iClientH, true, true);
 		}
 		catch (...)
@@ -1351,8 +1331,7 @@ void WarManager::RequestGuildTeleportHandler(int iClientH)
 			strcpy(cMapName, m_pGame->m_pGuildTeleportLoc[i].m_cDestMapName);
 
 			//testcode
-			std::snprintf(G_cTxt, sizeof(G_cTxt), "ReqGuildTeleport: %d %d %d %s", m_pGame->m_pClientList[iClientH]->m_iGuildGUID, m_pGame->m_pGuildTeleportLoc[i].m_sDestX, m_pGame->m_pGuildTeleportLoc[i].m_sDestY, cMapName);
-			PutLogList(G_cTxt);
+			hb::logger::log("ReqGuildTeleport: {} {} {} {}", m_pGame->m_pClientList[iClientH]->m_iGuildGUID, m_pGame->m_pGuildTeleportLoc[i].m_sDestX, m_pGame->m_pGuildTeleportLoc[i].m_sDestY, cMapName);
 
 			// !!! RequestTeleportHandler m_cMapName
 			m_pGame->RequestTeleportHandler(iClientH, "2   ", cMapName, m_pGame->m_pGuildTeleportLoc[i].m_sDestX, m_pGame->m_pGuildTeleportLoc[i].m_sDestY);
@@ -1367,7 +1346,7 @@ void WarManager::RequestGuildTeleportHandler(int iClientH)
 	}
 }
 
-void WarManager::RequestSetGuildTeleportLocHandler(int iClientH, int dX, int dY, int iGuildGUID, char* pMapName)
+void WarManager::RequestSetGuildTeleportLocHandler(int iClientH, int dX, int dY, int iGuildGUID, const char* pMapName)
 {
 	
 	int iIndex;
@@ -1380,9 +1359,7 @@ void WarManager::RequestSetGuildTeleportLocHandler(int iClientH, int dX, int dY,
 	if (!m_pGame->m_bIsCrusadeMode) {
 		try
 		{
-			std::snprintf(G_cTxt, sizeof(G_cTxt), "Accessing Crusade Set Teleport:(%s) Player: (%s) - setting point when not a crusade.",
-				m_pGame->m_pClientList[iClientH]->m_cIPaddress, m_pGame->m_pClientList[iClientH]->m_cCharName);
-			PutHackLogFileList(G_cTxt);
+			hb::logger::warn<log_channel::security>("Crusade teleport hack: IP={} player={}, setting point outside crusade", m_pGame->m_pClientList[iClientH]->m_cIPaddress, m_pGame->m_pClientList[iClientH]->m_cCharName);
 			m_pGame->DeleteClient(iClientH, true, true);
 		}
 		catch (...)
@@ -1396,9 +1373,7 @@ void WarManager::RequestSetGuildTeleportLocHandler(int iClientH, int dX, int dY,
 	if (m_pGame->m_pClientList[iClientH]->m_iCrusadeDuty != 3) {
 		try
 		{
-			std::snprintf(G_cTxt, sizeof(G_cTxt), "Accessing Crusade Set Teleport: (%s) Player: (%s) - setting point when not a guildmaster.",
-				m_pGame->m_pClientList[iClientH]->m_cIPaddress, m_pGame->m_pClientList[iClientH]->m_cCharName);
-			PutHackLogFileList(G_cTxt);
+			hb::logger::warn<log_channel::security>("Crusade teleport hack: IP={} player={}, setting point as non-guildmaster", m_pGame->m_pClientList[iClientH]->m_cIPaddress, m_pGame->m_pClientList[iClientH]->m_cCharName);
 			m_pGame->DeleteClient(iClientH, true, true);
 		}
 		catch (...)
@@ -1414,8 +1389,7 @@ void WarManager::RequestSetGuildTeleportLocHandler(int iClientH, int dX, int dY,
 	dwTime = GameClock::GetTimeMS();
 
 	//testcode
-	std::snprintf(G_cTxt, sizeof(G_cTxt), "SetGuildTeleportLoc: %d %s %d %d", iGuildGUID, pMapName, dX, dY);
-	PutLogList(G_cTxt);
+	hb::logger::log("SetGuildTeleportLoc: {} {} {} {}", iGuildGUID, pMapName, dX, dY);
 
 	// GUID       .
 	for(int i = 0; i < MaxGuilds; i++)
@@ -1480,8 +1454,7 @@ void WarManager::RequestSetGuildConstructLocHandler(int iClientH, int dX, int dY
 	dwTime = GameClock::GetTimeMS();
 
 	//testcode
-	std::snprintf(G_cTxt, sizeof(G_cTxt), "SetGuildConstructLoc: %d %s %d %d", iGuildGUID, pMapName, dX, dY);
-	PutLogList(G_cTxt);
+	hb::logger::log("SetGuildConstructLoc: {} {} {} {}", iGuildGUID, pMapName, dX, dY);
 
 	// GUID       .
 	for(int i = 0; i < MaxGuilds; i++)
@@ -1541,11 +1514,11 @@ void WarManager::RequestSetGuildConstructLocHandler(int iClientH, int dX, int dY
 
 void WarManager::SetHeldenianMode()
 {
-	SYSTEMTIME SysTime;
+	hb::time::local_time SysTime{};
 
-	GetLocalTime(&SysTime);
-	m_pGame->m_dwHeldenianStartHour = SysTime.wHour;
-	m_pGame->m_dwHeldenianStartMinute = SysTime.wMinute;
+	SysTime = hb::time::local_time::now();
+	m_pGame->m_dwHeldenianStartHour = SysTime.hour;
+	m_pGame->m_dwHeldenianStartMinute = SysTime.minute;
 
 	if (m_pGame->m_cHeldenianModeType != 2) {
 		m_pGame->m_cHeldenianVictoryType = m_pGame->m_sLastHeldenianWinner;
@@ -1573,8 +1546,7 @@ void WarManager::LocalStartHeldenianMode(short sV1, short sV2, uint32_t dwHelden
 		m_pGame->m_cHeldenianModeType = static_cast<char>(sV1);
 	}
 	if ((m_pGame->m_sLastHeldenianWinner != -1) && (m_pGame->m_sLastHeldenianWinner == sV2)) {
-		std::snprintf(G_cTxt, sizeof(G_cTxt), "Heldenian Mode : %d , Heldenian Last Winner : %d", m_pGame->m_cHeldenianModeType, m_pGame->m_sLastHeldenianWinner);
-		PutLogFileList(G_cTxt);
+		hb::logger::log<log_channel::events>("Heldenian Mode : {} , Heldenian Last Winner : {}", m_pGame->m_cHeldenianModeType, m_pGame->m_sLastHeldenianWinner);
 	}
 
 	if (dwHeldenianGUID != 0) {
@@ -1651,8 +1623,7 @@ void WarManager::LocalStartHeldenianMode(short sV1, short sV2, uint32_t dwHelden
 							}
 						}
 					}
-					std::snprintf(G_cTxt, sizeof(G_cTxt), "HeldenianAresdenLeftTower : %d , HeldenianElvineLeftTower : %d", m_pGame->m_iHeldenianAresdenLeftTower, m_pGame->m_iHeldenianElvineLeftTower);
-					PutLogFileList(G_cTxt);
+					hb::logger::log<log_channel::events>("HeldenianAresdenLeftTower : {} , HeldenianElvineLeftTower : {}", m_pGame->m_iHeldenianAresdenLeftTower, m_pGame->m_iHeldenianElvineLeftTower);
 					UpdateHeldenianStatus();
 				}
 			}
@@ -1694,8 +1665,7 @@ void WarManager::LocalStartHeldenianMode(short sV1, short sV2, uint32_t dwHelden
 	}
 	m_pGame->m_bHeldenianInitiated = true;
 	m_pGame->m_bIsHeldenianMode = true;
-	std::snprintf(G_cTxt, sizeof(G_cTxt), "(!) HELDENIAN Start.");
-	PutLogFileList(G_cTxt);
+	hb::logger::log<log_channel::events>("Heldenian started");
 	m_pGame->m_dwHeldenianStartTime = static_cast<uint32_t>(time(0));
 }
 
@@ -1739,12 +1709,10 @@ void WarManager::LocalEndHeldenianMode()
 		}
 		m_pGame->m_sLastHeldenianWinner = m_pGame->m_cHeldenianVictoryType;
 		if (bNotifyHeldenianWinner() == false) {
-			std::snprintf(G_cTxt, sizeof(G_cTxt), "(!) HELDENIAN End. Result Report Failed");
-			PutLogList(G_cTxt);
+			hb::logger::log("Heldenian ended, result report failed");
 		}
 	}
-	std::snprintf(G_cTxt, sizeof(G_cTxt), "(!) HELDENIAN End. %d", m_pGame->m_sLastHeldenianWinner);
-	PutLogList(G_cTxt);
+	hb::logger::log("Heldenian ended, winner side: {}", m_pGame->m_sLastHeldenianWinner);
 
 	for(int i = 0; i < MaxMaps; i++)
 	{
@@ -1800,20 +1768,17 @@ void WarManager::_CreateHeldenianGUID(uint32_t dwHeldenianGUID, int iWinnerSide)
 	char* cp, cTxt[256], cFn[256], cTemp[1024];
 	FILE* pFile;
 
-#ifdef _WIN32
-	_mkdir("GameData");
-#endif
+	std::filesystem::create_directories("GameData");
 	std::memset(cFn, 0, sizeof(cFn));
 
 	strcat(cFn, "GameData");
-	strcat(cFn, "\\");
-	strcat(cFn, "\\");
+	strcat(cFn, "/");
+	strcat(cFn, "/");
 	strcat(cFn, "HeldenianGUID.Txt");
 
 	pFile = fopen(cFn, "wt");
 	if (pFile == 0) {
-		std::snprintf(cTxt, sizeof(cTxt), "(!) Cannot create HeldenianGUID(%d) file", dwHeldenianGUID);
-		PutLogList(cTxt);
+		hb::logger::log("Cannot create HeldenianGUID({}) file", dwHeldenianGUID);
 	}
 	else {
 		std::memset(cTemp, 0, sizeof(cTemp));
@@ -1829,8 +1794,7 @@ void WarManager::_CreateHeldenianGUID(uint32_t dwHeldenianGUID, int iWinnerSide)
 		cp = (char*)cTemp;
 		fwrite(cp, strlen(cp), 1, pFile);
 
-		std::snprintf(cTxt, sizeof(cTxt), "(O) HeldenianGUID(%d) file created", dwHeldenianGUID);
-		PutLogList(cTxt);
+		hb::logger::log("HeldenianGUID({}) file created", dwHeldenianGUID);
 	}
 	if (pFile != 0) fclose(pFile);
 }
@@ -1838,7 +1802,7 @@ void WarManager::_CreateHeldenianGUID(uint32_t dwHeldenianGUID, int iWinnerSide)
 void WarManager::ManualStartHeldenianMode(int iClientH, char* pData, size_t dwMsgSize)
 {
 	char cHeldenianType, cBuff[256], * token, seps[] = "= \t\r\n";
-	SYSTEMTIME SysTime;
+	hb::time::local_time SysTime{};
 	int iV1;
 
 	if (m_pGame->m_bIsHeldenianMode) return;
@@ -1846,7 +1810,7 @@ void WarManager::ManualStartHeldenianMode(int iClientH, char* pData, size_t dwMs
 	if (m_pGame->m_bIsCrusadeMode) return;
 	if ((dwMsgSize != 0) && (pData != 0)) {
 		m_pGame->m_bHeldenianRunning = true;
-		GetLocalTime(&SysTime);
+		SysTime = hb::time::local_time::now();
 
 		std::memset(cBuff, 0, sizeof(cBuff));
 		memcpy(cBuff, pData, dwMsgSize);
@@ -1854,7 +1818,7 @@ void WarManager::ManualStartHeldenianMode(int iClientH, char* pData, size_t dwMs
 		token = strtok(NULL, seps);
 		if (token != 0) {
 			iV1 = atoi(token);
-			iV1 += (SysTime.wHour * 24 + SysTime.wMinute * 60);
+			iV1 += (SysTime.hour * 24 + SysTime.minute * 60);
 			m_pGame->m_dwHeldenianStartHour = (iV1 / 24);
 			m_pGame->m_dwHeldenianStartMinute = (iV1 / 60);
 		}
@@ -1867,8 +1831,7 @@ void WarManager::ManualStartHeldenianMode(int iClientH, char* pData, size_t dwMs
 		}
 	}
 	GlobalStartHeldenianMode();
-	std::snprintf(G_cTxt, sizeof(G_cTxt), "GM Order(%s): begin Heldenian", m_pGame->m_pClientList[iClientH]->m_cCharName);
-	PutLogFileList(G_cTxt);
+	hb::logger::log<log_channel::events>("GM Order({}): begin Heldenian", m_pGame->m_pClientList[iClientH]->m_cCharName);
 }
 
 void WarManager::ManualEndHeldenianMode(int iClientH, char* pData, size_t dwMsgSize)
@@ -1876,8 +1839,7 @@ void WarManager::ManualEndHeldenianMode(int iClientH, char* pData, size_t dwMsgS
 	if (m_pGame->m_bIsHeldenianMode) {
 		GlobalEndHeldenianMode();
 		m_pGame->m_bHeldenianRunning = false;
-		std::snprintf(G_cTxt, sizeof(G_cTxt), "GM Order(%s): end Heldenian", m_pGame->m_pClientList[iClientH]->m_cCharName);
-		PutLogFileList(G_cTxt);
+		hb::logger::log<log_channel::events>("GM Order({}): end Heldenian", m_pGame->m_pClientList[iClientH]->m_cCharName);
 	}
 }
 
@@ -2111,19 +2073,19 @@ void WarManager::RemoveOccupyFlags(int iMapIndex)
 
 void WarManager::ApocalypseEnder()
 {
-	SYSTEMTIME SysTime;
+	hb::time::local_time SysTime{};
 	
 
 	if (m_pGame->m_bIsApocalypseMode == false) return;
 	if (m_pGame->m_bIsApocalypseStarter == false) return;
 
-	GetLocalTime(&SysTime);
+	SysTime = hb::time::local_time::now();
 
 	for(int i = 0; i < MaxApocalypse; i++)
-		if ((m_pGame->m_stApocalypseScheduleEnd[i].iDay == SysTime.wDayOfWeek) &&
-			(m_pGame->m_stApocalypseScheduleEnd[i].iHour == SysTime.wHour) &&
-			(m_pGame->m_stApocalypseScheduleEnd[i].iMinute == SysTime.wMinute)) {
-			PutLogList("(!) Automated apocalypse is concluded!");
+		if ((m_pGame->m_stApocalypseScheduleEnd[i].iDay == SysTime.day_of_week) &&
+			(m_pGame->m_stApocalypseScheduleEnd[i].iHour == SysTime.hour) &&
+			(m_pGame->m_stApocalypseScheduleEnd[i].iMinute == SysTime.minute)) {
+			hb::logger::log("Automated apocalypse concluded");
 			GlobalEndApocalypseMode();
 			return;
 		}
@@ -2147,8 +2109,7 @@ void WarManager::LocalEndApocalypse()
 			m_pGame->SendNotifyMsg(0, i, Notify::ApocGateEndMsg, 0, 0, 0, 0);
 		}
 	}
-	std::snprintf(G_cTxt, sizeof(G_cTxt), "(!)Apocalypse Mode OFF.");
-	PutLogList(G_cTxt);
+	hb::logger::log("Apocalypse mode disabled");
 }
 
 void WarManager::LocalStartApocalypse(uint32_t dwApocalypseGUID)
@@ -2170,23 +2131,21 @@ void WarManager::LocalStartApocalypse(uint32_t dwApocalypseGUID)
 			//m_pGame->SendNotifyMsg(0, i, Notify::ApocForceRecallPlayers, 0, 0, 0, 0);
 		}
 	}
-	std::snprintf(G_cTxt, sizeof(G_cTxt), "(!)Apocalypse Mode ON.");
-	PutLogList(G_cTxt);
+	hb::logger::log("Apocalypse mode enabled");
 }
 
-bool WarManager::bReadApocalypseGUIDFile(char* cFn)
+bool WarManager::bReadApocalypseGUIDFile(const char* cFn)
 {
 	FILE* pFile;
-	HANDLE hFile;
 	uint32_t  dwFileSize;
 	char* cp, * token, cReadMode;
 	char seps[] = "= \t\r\n";
 
 	cReadMode = 0;
 
-	hFile = CreateFile(cFn, GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
-	dwFileSize = GetFileSize(hFile, 0);
-	if (hFile != INVALID_HANDLE_VALUE) CloseHandle(hFile);
+	std::error_code ec;
+	auto fsize = std::filesystem::file_size(cFn, ec);
+	dwFileSize = ec ? 0 : static_cast<uint32_t>(fsize);
 
 	pFile = fopen(cFn, "rt");
 	if (pFile == 0) {
@@ -2205,8 +2164,7 @@ bool WarManager::bReadApocalypseGUIDFile(char* cFn)
 				switch (cReadMode) {
 				case 1:
 					m_pGame->m_dwApocalypseGUID = atoi(token);
-					std::snprintf(G_cTxt, sizeof(G_cTxt), "ApocalypseGUID = %d", m_pGame->m_dwApocalypseGUID);
-					PutLogList(G_cTxt);
+					hb::logger::log("ApocalypseGUID = {}", m_pGame->m_dwApocalypseGUID);
 					cReadMode = 0;
 					break;
 				}
@@ -2225,19 +2183,18 @@ bool WarManager::bReadApocalypseGUIDFile(char* cFn)
 	return true;
 }
 
-bool WarManager::bReadHeldenianGUIDFile(char* cFn)
+bool WarManager::bReadHeldenianGUIDFile(const char* cFn)
 {
 	FILE* pFile;
-	HANDLE hFile;
 	uint32_t  dwFileSize;
 	char* cp, * token, cReadMode;
 	char seps[] = "= \t\r\n";
 
 	cReadMode = 0;
 
-	hFile = CreateFile(cFn, GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
-	dwFileSize = GetFileSize(hFile, 0);
-	if (hFile != INVALID_HANDLE_VALUE) CloseHandle(hFile);
+	std::error_code ec;
+	auto fsize = std::filesystem::file_size(cFn, ec);
+	dwFileSize = ec ? 0 : static_cast<uint32_t>(fsize);
 
 	pFile = fopen(cFn, "rt");
 	if (pFile == 0) {
@@ -2256,14 +2213,12 @@ bool WarManager::bReadHeldenianGUIDFile(char* cFn)
 				switch (cReadMode) {
 				case 1:
 					m_pGame->m_dwHeldenianGUID = atoi(token);
-					std::snprintf(G_cTxt, sizeof(G_cTxt), "HeldenianGUID = %d", m_pGame->m_dwHeldenianGUID);
-					PutLogList(G_cTxt);
+					hb::logger::log("HeldenianGUID = {}", m_pGame->m_dwHeldenianGUID);
 					cReadMode = 0;
 					break;
 				case 2:
 					m_pGame->m_sLastHeldenianWinner = atoi(token);
-					std::snprintf(G_cTxt, sizeof(G_cTxt), "HeldenianWinnerSide = %d", m_pGame->m_sLastHeldenianWinner);
-					PutLogList(G_cTxt);
+					hb::logger::log("HeldenianWinnerSide = {}", m_pGame->m_sLastHeldenianWinner);
 					cReadMode = 0;
 					break;
 				}
@@ -2288,20 +2243,17 @@ void WarManager::_CreateApocalypseGUID(uint32_t dwApocalypseGUID)
 	char* cp, cTxt[256], cFn[256], cTemp[1024];
 	FILE* pFile;
 
-#ifdef _WIN32
-	_mkdir("GameData");
-#endif
+	std::filesystem::create_directories("GameData");
 	std::memset(cFn, 0, sizeof(cFn));
 
 	strcat(cFn, "GameData");
-	strcat(cFn, "\\");
-	strcat(cFn, "\\");
+	strcat(cFn, "/");
+	strcat(cFn, "/");
 	strcat(cFn, "ApocalypseGUID.Txt");
 
 	pFile = fopen(cFn, "wt");
 	if (pFile == 0) {
-		std::snprintf(cTxt, sizeof(cTxt), "(!) Cannot create ApocalypseGUID(%d) file", dwApocalypseGUID);
-		PutLogList(cTxt);
+		hb::logger::log("Cannot create ApocalypseGUID({}) file", dwApocalypseGUID);
 	}
 	else {
 		std::memset(cTemp, 0, sizeof(cTemp));
@@ -2313,8 +2265,7 @@ void WarManager::_CreateApocalypseGUID(uint32_t dwApocalypseGUID)
 		cp = (char*)cTemp;
 		fwrite(cp, strlen(cp), 1, pFile);
 
-		std::snprintf(cTxt, sizeof(cTxt), "(O) ApocalypseGUID(%d) file created", dwApocalypseGUID);
-		PutLogList(cTxt);
+		hb::logger::log("ApocalypseGUID({}) file created", dwApocalypseGUID);
 	}
 	if (pFile != 0) fclose(pFile);
 }
@@ -2364,9 +2315,7 @@ void WarManager::EnergySphereProcessor()
 			m_pGame->SendNotifyMsg(0, i, Notify::EnergySphereCreated, pX, pY, 0, 0);
 		}
 
-	std::snprintf(G_cTxt, sizeof(G_cTxt), "(!) Energy Sphere Created! (%d, %d)", pX, pY);
-	PutLogList(G_cTxt);
-	PutLogFileList(G_cTxt);
+	hb::logger::log<log_channel::events>("Energy sphere created at ({}, {})", pX, pY);
 }
 
 bool WarManager::bCheckEnergySphereDestination(int iNpcH, short sAttackerH, char cAttackerType)
@@ -2392,8 +2341,7 @@ bool WarManager::bCheckEnergySphereDestination(int iNpcH, short sAttackerH, char
 			if ((cAttackerType == hb::shared::owner_class::Player) && (m_pGame->m_pClientList[sAttackerH] != 0)) {
 				if (m_pGame->m_pClientList[sAttackerH]->m_cSide == 1) { // Aresden (Side:1)
 					m_pGame->m_pClientList[sAttackerH]->m_iContribution += 5;
-					std::snprintf(G_cTxt, sizeof(G_cTxt), "(!) EnergySphere Hit By Aresden Player (%s)", m_pGame->m_pClientList[sAttackerH]->m_cCharName);
-					PutLogFileList(G_cTxt);
+					hb::logger::log<log_channel::events>("EnergySphere Hit By Aresden Player ({})", m_pGame->m_pClientList[sAttackerH]->m_cCharName);
 				}
 				else {
 					m_pGame->m_pClientList[sAttackerH]->m_iContribution -= 10;
@@ -2415,8 +2363,7 @@ bool WarManager::bCheckEnergySphereDestination(int iNpcH, short sAttackerH, char
 			if ((cAttackerType == hb::shared::owner_class::Player) && (m_pGame->m_pClientList[sAttackerH] != 0)) {
 				if (m_pGame->m_pClientList[sAttackerH]->m_cSide == 2) { // Elvine (Side:2)
 					m_pGame->m_pClientList[sAttackerH]->m_iContribution += 5;
-					std::snprintf(G_cTxt, sizeof(G_cTxt), "(!) EnergySphere Hit By Elvine Player (%s)", m_pGame->m_pClientList[sAttackerH]->m_cCharName);
-					PutLogFileList(G_cTxt);
+					hb::logger::log<log_channel::events>("EnergySphere Hit By Elvine Player ({})", m_pGame->m_pClientList[sAttackerH]->m_cCharName);
 				}
 				else {
 					m_pGame->m_pClientList[sAttackerH]->m_iContribution -= 10;
@@ -2444,8 +2391,7 @@ bool WarManager::bCheckEnergySphereDestination(int iNpcH, short sAttackerH, char
 			if ((cAttackerType == hb::shared::owner_class::Player) && (m_pGame->m_pClientList[sAttackerH] != 0)) {
 				if (m_pGame->m_pClientList[sAttackerH]->m_cSide == 1) { // Aresden (Side:1)
 					m_pGame->m_pClientList[sAttackerH]->m_iContribution += 5;
-					std::snprintf(G_cTxt, sizeof(G_cTxt), "(!) EnergySphere Hit By Aresden Player (%s)", m_pGame->m_pClientList[sAttackerH]->m_cCharName);
-					PutLogFileList(G_cTxt);
+					hb::logger::log<log_channel::events>("EnergySphere Hit By Aresden Player ({})", m_pGame->m_pClientList[sAttackerH]->m_cCharName);
 				}
 				else {
 					m_pGame->m_pClientList[sAttackerH]->m_iContribution -= 10;
@@ -2467,8 +2413,7 @@ bool WarManager::bCheckEnergySphereDestination(int iNpcH, short sAttackerH, char
 			if ((cAttackerType == hb::shared::owner_class::Player) && (m_pGame->m_pClientList[sAttackerH] != 0)) {
 				if (m_pGame->m_pClientList[sAttackerH]->m_cSide == 2) { // Elvine (Side:2)
 					m_pGame->m_pClientList[sAttackerH]->m_iContribution += 5;
-					std::snprintf(G_cTxt, sizeof(G_cTxt), "(!) EnergySphere Hit By Aresden Player (%s)", m_pGame->m_pClientList[sAttackerH]->m_cCharName);
-					PutLogFileList(G_cTxt);
+					hb::logger::log<log_channel::events>("EnergySphere Hit By Aresden Player ({})", m_pGame->m_pClientList[sAttackerH]->m_cCharName);
 				}
 				else {
 					m_pGame->m_pClientList[sAttackerH]->m_iContribution -= 10;
@@ -2527,8 +2472,7 @@ void WarManager::GetOccupyFlagHandler(int iClientH)
 				pItem->m_sItemSpecEffectValue1 = iEKNum;
 
 				// testcode  .
-				std::snprintf(G_cTxt, sizeof(G_cTxt), "(*) Get Flag : Char(%s) Flag-EK(%d) Player-EK(%d)", m_pGame->m_pClientList[iClientH]->m_cCharName, iEKNum, m_pGame->m_pClientList[iClientH]->m_iEnemyKillCount);
-				PutLogFileList(G_cTxt);
+				hb::logger::log<log_channel::events>("Flag captured: player={} flag_ek={} player_ek={}", m_pGame->m_pClientList[iClientH]->m_cCharName, iEKNum, m_pGame->m_pClientList[iClientH]->m_iEnemyKillCount);
 
 				iRet = m_pGame->m_pItemManager->SendItemNotifyMsg(iClientH, Notify::ItemObtained, pItem, 0);
 
@@ -2553,7 +2497,6 @@ void WarManager::GetOccupyFlagHandler(int iClientH)
 
 				iRet = m_pGame->m_pItemManager->SendItemNotifyMsg(iClientH, Notify::CannotCarryMoreItem, 0, 0);
 
-
 				switch (iRet) {
 				case sock::Event::QueueFull:
 				case sock::Event::SocketError:
@@ -2569,16 +2512,16 @@ void WarManager::GetOccupyFlagHandler(int iClientH)
 
 size_t WarManager::_iComposeFlagStatusContents(char* pData)
 {
-	SYSTEMTIME SysTime;
+	hb::time::local_time SysTime{};
 	char cTxt[120];
 	
 
 	if (m_pGame->m_iMiddlelandMapIndex < 0) return 0;
 
-	GetLocalTime(&SysTime);
+	SysTime = hb::time::local_time::now();
 	strcat(pData, "[FILE-DATE]\n\n");
 
-	std::snprintf(cTxt, sizeof(cTxt), "file-saved-date: %d %d %d %d %d\n", SysTime.wYear, SysTime.wMonth, SysTime.wDay, SysTime.wHour, SysTime.wMinute);
+	std::snprintf(cTxt, sizeof(cTxt), "file-saved-date: %d %d %d %d %d\n", SysTime.year, SysTime.month, SysTime.day, SysTime.hour, SysTime.minute);
 	strcat(pData, cTxt);
 	strcat(pData, "\n\n");
 
@@ -2645,7 +2588,7 @@ void WarManager::SetSummonMobAction(int iClientH, int iMode, size_t dwMsgSize, c
 			{
 				// if ((m_pGame->m_pClientList[i] != 0) && (memcmp(m_pGame->m_pClientList[i]->m_cCharName, cTargetName, 10) == 0)) { // original
 				if ((m_pGame->m_pClientList[i] != 0) &&
-					(_strnicmp(m_pGame->m_pClientList[i]->m_cCharName, cTargetName, hb::shared::limits::CharNameLen - 1) == 0) &&
+					(hb_strnicmp(m_pGame->m_pClientList[i]->m_cCharName, cTargetName, hb::shared::limits::CharNameLen - 1) == 0) &&
 					(strcmp(m_pGame->m_pClientList[iClientH]->m_cMapName, m_pGame->m_pClientList[i]->m_cMapName) == 0)) // adamas(map  .)
 				{
 					iTargetIndex = i;
@@ -2777,14 +2720,14 @@ void WarManager::FightzoneReserveHandler(int iClientH, char* pData, size_t dwMsg
 	uint32_t dwGoldCount;
 	uint16_t wResult;
 	int     iRet, iResult = 1, iCannotReserveDay;
-	SYSTEMTIME SysTime;
+	hb::time::local_time SysTime{};
 
 	if (m_pGame->m_pClientList[iClientH] == 0) return;
 	if (m_pGame->m_pClientList[iClientH]->m_bIsInitComplete == false) return;
 
-	GetLocalTime(&SysTime);
+	SysTime = hb::time::local_time::now();
 
-	iEnableReserveTime = 2 * 20 * 60 - ((SysTime.wHour % 2) * 20 * 60 + SysTime.wMinute * 20) - 5 * 20;
+	iEnableReserveTime = 2 * 20 * 60 - ((SysTime.hour % 2) * 20 * 60 + SysTime.minute * 20) - 5 * 20;
 
 	dwGoldCount = m_pGame->m_pItemManager->dwGetItemCountByID(iClientH, hb::shared::item::ItemId::Gold);
 
@@ -2799,7 +2742,7 @@ void WarManager::FightzoneReserveHandler(int iClientH, char* pData, size_t dwMsg
 	// 2 4 6 8  1 3 5 7
 	// ex) 1 => {1 + 1 () + 1 (  )} %2 == 1
 
-	iCannotReserveDay = (SysTime.wDay + m_pGame->m_pClientList[iClientH]->m_cSide + iFightzoneNum) % 2;
+	iCannotReserveDay = (SysTime.day + m_pGame->m_pClientList[iClientH]->m_cSide + iFightzoneNum) % 2;
 	if (iEnableReserveTime <= 0) {
 		wResult = MsgType::Reject;
 		iResult = 0;
@@ -2831,13 +2774,11 @@ void WarManager::FightzoneReserveHandler(int iClientH, char* pData, size_t dwMsg
 		m_pGame->m_iFightZoneReserve[iFightzoneNum - 1] = iClientH;
 
 		m_pGame->m_pClientList[iClientH]->m_iFightzoneNumber = iFightzoneNum;
-		m_pGame->m_pClientList[iClientH]->m_iReserveTime = SysTime.wMonth * 10000 + SysTime.wDay * 100 + SysTime.wHour;
+		m_pGame->m_pClientList[iClientH]->m_iReserveTime = SysTime.month * 10000 + SysTime.day * 100 + SysTime.hour;
 
-		if (SysTime.wHour % 2)	m_pGame->m_pClientList[iClientH]->m_iReserveTime += 1;
+		if (SysTime.hour % 2)	m_pGame->m_pClientList[iClientH]->m_iReserveTime += 1;
 		else					m_pGame->m_pClientList[iClientH]->m_iReserveTime += 2;
-		std::snprintf(G_cTxt, sizeof(G_cTxt), "(*) Reserve FIGHTZONETICKET : Char(%s) TICKENUMBER (%d)", m_pGame->m_pClientList[iClientH]->m_cCharName, m_pGame->m_pClientList[iClientH]->m_iReserveTime);
-		PutLogFileList(G_cTxt);
-		PutLogList(G_cTxt);
+		hb::logger::log<log_channel::events>("Fight zone ticket reserved: player={} ticket={}", m_pGame->m_pClientList[iClientH]->m_cCharName, m_pGame->m_pClientList[iClientH]->m_iReserveTime);
 
 		m_pGame->m_pClientList[iClientH]->m_iFightZoneTicketNumber = 50;
 		iResult = 1;
@@ -2847,7 +2788,6 @@ void WarManager::FightzoneReserveHandler(int iClientH, char* pData, size_t dwMsg
 	resp.header.msg_id = MsgId::ResponseFightZoneReserve;
 	resp.header.msg_type = wResult;
 	resp.result = iResult;
-
 
 	iRet = m_pGame->m_pClientList[iClientH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&resp), sizeof(resp));
 
@@ -2906,11 +2846,7 @@ void WarManager::GetFightzoneTicketHandler(int iClientH)
 		pItem->m_sTouchEffectValue2 = iDay;
 		pItem->m_sTouchEffectValue3 = iHour;
 
-
-		std::snprintf(G_cTxt, sizeof(G_cTxt), "(*) Get FIGHTZONETICKET : Char(%s) TICKENUMBER (%d)(%d)(%d)", m_pGame->m_pClientList[iClientH]->m_cCharName, pItem->m_sTouchEffectValue1, pItem->m_sTouchEffectValue2, pItem->m_sTouchEffectValue3);
-		PutLogFileList(G_cTxt);
-		PutLogList(G_cTxt);
-
+		hb::logger::log<log_channel::events>("Fight zone ticket obtained: player={} ticket={}({})({})", m_pGame->m_pClientList[iClientH]->m_cCharName, pItem->m_sTouchEffectValue1, pItem->m_sTouchEffectValue2, pItem->m_sTouchEffectValue3);
 
 		iRet = m_pGame->m_pItemManager->SendItemNotifyMsg(iClientH, Notify::ItemObtained, pItem, 0);
 
@@ -2931,7 +2867,6 @@ void WarManager::GetFightzoneTicketHandler(int iClientH)
 		m_pGame->iCalcTotalWeight(iClientH);
 
 		iRet = m_pGame->m_pItemManager->SendItemNotifyMsg(iClientH, Notify::CannotCarryMoreItem, 0, 0);
-
 
 		switch (iRet) {
 		case sock::Event::QueueFull:

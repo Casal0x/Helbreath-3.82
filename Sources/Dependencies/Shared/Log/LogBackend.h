@@ -1,7 +1,10 @@
 #pragma once
 
-#include <cstdio>
+#include <array>
+#include <filesystem>
+#include <fstream>
 #include <mutex>
+#include <string_view>
 
 namespace hb::logger {
 
@@ -12,25 +15,25 @@ public:
 
 	struct config
 	{
-		const char* directory = "";
-		const char* const* filenames = nullptr;
+		std::string_view directory;
+		const std::string_view* filenames = nullptr;
 		int channel_count = 0;
-		const char* (*channel_namer)(int) = nullptr;
+		std::string_view (*channel_namer)(int) = nullptr;
 	};
 
 	void init(const config& cfg);
-	void write(int channel, int level, const char* message);
+	void write(int channel, int level, std::string_view message);
 	void close();
 
 protected:
-	virtual void write_console(int level, const char* formatted_line);
+	virtual void write_console(int level, std::string_view formatted_line);
 
 private:
-	FILE* m_files[max_channels] = {};
+	std::array<std::ofstream, max_channels> m_files;
 	std::mutex m_mutex;
-	char m_directory[512] = {};
-	const char* const* m_filenames = nullptr;
-	const char* (*m_channel_namer)(int) = nullptr;
+	std::filesystem::path m_directory;
+	const std::string_view* m_filenames = nullptr;
+	std::string_view (*m_channel_namer)(int) = nullptr;
 	int m_channel_count = 0;
 	bool m_initialized = false;
 };

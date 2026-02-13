@@ -1,4 +1,3 @@
-#include <windows.h>
 #include "GameChatCommand.h"
 #include "GameCmdWhisper.h"
 #include "GameCmdBlock.h"
@@ -15,9 +14,11 @@
 #include "Client.h"
 #include "AdminLevel.h"
 #include "GameConfigSqliteStore.h"
-#include "winmain.h"
 #include <cstring>
 #include <cstdio>
+#include "Log.h"
+#include "StringCompat.h"
+#include "TimeUtils.h"
 
 using namespace hb::shared::net;
 GameChatCommandManager& GameChatCommandManager::Get()
@@ -57,7 +58,7 @@ bool GameChatCommandManager::ProcessCommand(int iClientH, const char* pMessage, 
 		const char* cmdName = cmd->GetName();
 		size_t cmdLen = std::strlen(cmdName);
 
-		if (_strnicmp(pCommand, cmdName, cmdLen) == 0)
+		if (hb_strnicmp(pCommand, cmdName, cmdLen) == 0)
 		{
 			char nextChar = pCommand[cmdLen];
 			if (nextChar == '\0' || nextChar == ' ' || nextChar == '\t')
@@ -98,15 +99,15 @@ void GameChatCommandManager::LogCommand(int iClientH, const char* pCommand)
 	if (m_pGame == nullptr || m_pGame->m_pClientList[iClientH] == nullptr)
 		return;
 
-	FILE* pFile = fopen("GameLogs\\Commands.log", "a");
+	FILE* pFile = fopen("GameLogs/Commands.log", "a");
 	if (pFile == nullptr)
 		return;
 
-	SYSTEMTIME st;
-	GetLocalTime(&st);
+	hb::time::local_time st{};
+	st = hb::time::local_time::now();
 
 	fprintf(pFile, "[%02d:%02d:%02d] %s: %s\n",
-		st.wHour, st.wMinute, st.wSecond,
+		st.hour, st.minute, st.second,
 		m_pGame->m_pClientList[iClientH]->m_cCharName,
 		pCommand);
 
@@ -144,9 +145,7 @@ void GameChatCommandManager::SeedCommandPermissions()
 			m_pGame->m_commandPermissions[name] = perm;
 			bChanged = true;
 
-			char buf[128];
-			std::snprintf(buf, sizeof(buf), "(!) New command '/%s' added to permissions (default: level %d)", name, cmd->GetDefaultLevel());
-			PutLogList(buf);
+			hb::logger::log("Command '/{}' registered (default level: {})", name, cmd->GetDefaultLevel());
 		}
 	}
 

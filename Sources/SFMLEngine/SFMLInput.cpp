@@ -14,7 +14,7 @@ static SFMLInput* s_pInput = nullptr;
 
 // ============== Global Input Namespace Implementation ==============
 namespace hb::shared::input {
-    void Create()
+    void create()
     {
         if (!s_pInput)
         {
@@ -22,13 +22,13 @@ namespace hb::shared::input {
         }
     }
 
-    void Destroy()
+    void destroy()
     {
         delete s_pInput;
         s_pInput = nullptr;
     }
 
-    IInput* Get()
+    IInput* get()
     {
         return s_pInput;
     }
@@ -66,7 +66,7 @@ void SFMLInput::SetRenderWindow(sf::RenderWindow* pWindow)
     m_pRenderWindow = pWindow;
 }
 
-void SFMLInput::BeginFrame()
+void SFMLInput::begin_frame()
 {
     // Reset per-frame edge states (pressed/released)
     // Note: m_wheelDelta is NOT reset here — it accumulates across skip frames
@@ -77,14 +77,14 @@ void SFMLInput::BeginFrame()
     std::memset(m_keyReleased, 0, sizeof(m_keyReleased));
 }
 
-void SFMLInput::ResetMouseWheelDelta()
+void SFMLInput::reset_mouse_wheel_delta()
 {
     m_wheelDelta = 0;
 }
 
 // ============== Keyboard ==============
 
-bool SFMLInput::IsKeyDown(KeyCode key) const
+bool SFMLInput::is_key_down(KeyCode key) const
 {
     if (m_suppressed) return false;
     int k = static_cast<int>(key);
@@ -93,7 +93,7 @@ bool SFMLInput::IsKeyDown(KeyCode key) const
     return m_keyDown[k];
 }
 
-bool SFMLInput::IsKeyPressed(KeyCode key) const
+bool SFMLInput::is_key_pressed(KeyCode key) const
 {
     if (m_suppressed) return false;
     int k = static_cast<int>(key);
@@ -102,7 +102,7 @@ bool SFMLInput::IsKeyPressed(KeyCode key) const
     return m_keyPressed[k];
 }
 
-bool SFMLInput::IsKeyReleased(KeyCode key) const
+bool SFMLInput::is_key_released(KeyCode key) const
 {
     if (m_suppressed) return false;
     int k = static_cast<int>(key);
@@ -111,7 +111,7 @@ bool SFMLInput::IsKeyReleased(KeyCode key) const
     return m_keyReleased[k];
 }
 
-void SFMLInput::OnKeyDown(KeyCode key)
+void SFMLInput::on_key_down(KeyCode key)
 {
     int k = static_cast<int>(key);
     if (k < 0 || k >= kKeyCount)
@@ -125,7 +125,7 @@ void SFMLInput::OnKeyDown(KeyCode key)
     m_keyDown[k] = true;
 }
 
-void SFMLInput::OnKeyUp(KeyCode key)
+void SFMLInput::on_key_up(KeyCode key)
 {
     int k = static_cast<int>(key);
     if (k < 0 || k >= kKeyCount)
@@ -140,7 +140,7 @@ void SFMLInput::OnKeyUp(KeyCode key)
 
 // ============== Mouse Buttons ==============
 
-bool SFMLInput::IsMouseButtonDown(int button) const
+bool SFMLInput::is_mouse_button_down(int button) const
 {
     if (m_suppressed) return false;
     if (button < 0 || button > 2)
@@ -148,7 +148,7 @@ bool SFMLInput::IsMouseButtonDown(int button) const
     return m_mouseDown[button];
 }
 
-bool SFMLInput::IsMouseButtonPressed(int button) const
+bool SFMLInput::is_mouse_button_pressed(int button) const
 {
     if (m_suppressed) return false;
     if (button < 0 || button > 2)
@@ -156,7 +156,7 @@ bool SFMLInput::IsMouseButtonPressed(int button) const
     return m_mousePressed[button];
 }
 
-bool SFMLInput::IsMouseButtonReleased(int button) const
+bool SFMLInput::is_mouse_button_released(int button) const
 {
     if (m_suppressed) return false;
     if (button < 0 || button > 2)
@@ -164,7 +164,7 @@ bool SFMLInput::IsMouseButtonReleased(int button) const
     return m_mouseReleased[button];
 }
 
-void SFMLInput::OnMouseDown(int button)
+void SFMLInput::on_mouse_down(int button)
 {
     if (button < 0 || button > 2)
         return;
@@ -176,7 +176,7 @@ void SFMLInput::OnMouseDown(int button)
     m_mouseDown[button] = true;
 }
 
-void SFMLInput::OnMouseUp(int button)
+void SFMLInput::on_mouse_up(int button)
 {
     if (button < 0 || button > 2)
         return;
@@ -190,17 +190,17 @@ void SFMLInput::OnMouseUp(int button)
 
 // ============== Mouse Position ==============
 
-int SFMLInput::GetMouseX() const
+int SFMLInput::get_mouse_x() const
 {
     return m_mouseX;
 }
 
-int SFMLInput::GetMouseY() const
+int SFMLInput::get_mouse_y() const
 {
     return m_mouseY;
 }
 
-void SFMLInput::OnMouseMove(int x, int y)
+void SFMLInput::on_mouse_move(int x, int y)
 {
     // SFMLWindow already transforms to logical coordinates
     m_mouseX = x;
@@ -209,57 +209,57 @@ void SFMLInput::OnMouseMove(int x, int y)
 
 // ============== Mouse Wheel ==============
 
-int SFMLInput::GetMouseWheelDelta() const
+int SFMLInput::get_mouse_wheel_delta() const
 {
     if (m_suppressed) return 0;
     return m_wheelDelta;
 }
 
-void SFMLInput::OnMouseWheel(int delta)
+void SFMLInput::on_mouse_wheel(int delta)
 {
     m_wheelDelta += delta;
 }
 
 // ============== Modifier Keys ==============
 
-bool SFMLInput::IsShiftDown() const
+bool SFMLInput::is_shift_down() const
 {
     if (m_suppressed) return false;
-    return IsKeyDown(KeyCode::Shift) || IsKeyDown(KeyCode::LShift) || IsKeyDown(KeyCode::RShift);
+    return is_key_down(KeyCode::Shift) || is_key_down(KeyCode::LShift) || is_key_down(KeyCode::RShift);
 }
 
-bool SFMLInput::IsCtrlDown() const
+bool SFMLInput::is_ctrl_down() const
 {
     if (m_suppressed) return false;
-    return IsKeyDown(KeyCode::Control) || IsKeyDown(KeyCode::LControl) || IsKeyDown(KeyCode::RControl);
+    return is_key_down(KeyCode::Control) || is_key_down(KeyCode::LControl) || is_key_down(KeyCode::RControl);
 }
 
-bool SFMLInput::IsAltDown() const
+bool SFMLInput::is_alt_down() const
 {
     if (m_suppressed) return false;
-    return IsKeyDown(KeyCode::Alt) || IsKeyDown(KeyCode::LAlt) || IsKeyDown(KeyCode::RAlt);
+    return is_key_down(KeyCode::Alt) || is_key_down(KeyCode::LAlt) || is_key_down(KeyCode::RAlt);
 }
 
 // ============== Input Suppression ==============
 
-void SFMLInput::SetSuppressed(bool suppressed)
+void SFMLInput::set_suppressed(bool suppressed)
 {
     m_suppressed = suppressed;
 }
 
-bool SFMLInput::IsSuppressed() const
+bool SFMLInput::is_suppressed() const
 {
     return m_suppressed;
 }
 
 // ============== hb::shared::render::Window Focus ==============
 
-bool SFMLInput::IsWindowActive() const
+bool SFMLInput::is_window_active() const
 {
     return m_active;
 }
 
-void SFMLInput::SetWindowActive(bool active)
+void SFMLInput::set_window_active(bool active)
 {
     m_active = active;
 

@@ -1,7 +1,10 @@
 #pragma once
 
 #include "ServerCommand.h"
-#include <windows.h>
+
+#ifdef _WIN32
+	#include <windows.h>
+#endif
 
 class CmdShowChat : public ServerCommand
 {
@@ -12,5 +15,9 @@ public:
 	void Execute(CGame* pGame, const char* pArgs) override;
 
 private:
+#ifdef _WIN32
 	HANDLE m_hProcess = nullptr;
+#else
+	int m_pid = 0;
+#endif
 };

@@ -10,6 +10,7 @@
 #include "Packet/SharedPackets.h"
 #include "Skill.h"
 #include "GameConfigSqliteStore.h"
+#include "Log.h"
 
 using namespace hb::shared::net;
 using namespace hb::shared::action;
@@ -21,8 +22,6 @@ using namespace hb::server::skill;
 
 extern char G_cTxt[512];
 extern char G_cData50000[50000];
-extern void PutLogList(char* cStr);
-extern void PutLogFileList(char* cStr);
 
 static char _tmp_cCorpseX[] = { 0,  1, 1, 1, 0, -1, -1, -1, 0, 0, 0, 0 };
 static char _tmp_cCorpseY[] = { -1, -1, 0, 1, 1,  1,  0, -1, 0, 0, 0 };
@@ -95,10 +94,7 @@ bool SkillManager::bSendClientSkillConfigs(int iClientH)
 		case sock::Event::SocketError:
 		case sock::Event::CriticalError:
 		case sock::Event::SocketClosed:
-			std::snprintf(G_cTxt, sizeof(G_cTxt),
-				"Failed to send skill configs: Client(%d) Packet(%d)",
-				iClientH, packetIndex);
-			PutLogList(G_cTxt);
+			hb::logger::log("Failed to send skill configs: Client({}) Packet({})", iClientH, packetIndex);
 			m_pGame->DeleteClient(iClientH, true, true);
 			delete m_pGame->m_pClientList[iClientH];
 			m_pGame->m_pClientList[iClientH] = 0;
@@ -148,7 +144,6 @@ void SkillManager::TrainSkillResponse(bool bSuccess, int iClientH, int iSkillNum
 	}
 	else {
 
-
 	}
 
 }
@@ -178,8 +173,6 @@ void SkillManager::CalculateSSN_SkillIndex(int iClientH, short sSkillIndex, int 
 	if (m_pGame->m_pClientList[iClientH]->m_bIsKilled) return;
 
 	if (m_pGame->m_pClientList[iClientH]->m_cSkillMastery[sSkillIndex] == 0) return;
-
-
 
 	iOldSSN = m_pGame->m_pClientList[iClientH]->m_iSkillSSN[sSkillIndex];
 	m_pGame->m_pClientList[iClientH]->m_iSkillSSN[sSkillIndex] += iValue;
@@ -634,7 +627,7 @@ void SkillManager::ReloadSkillConfigs()
 	bool configDbCreated = false;
 	if (!EnsureGameConfigDatabase(&configDb, configDbPath, &configDbCreated) || configDbCreated)
 	{
-		PutLogList((char*)"(!) Skill config reload FAILED - GameConfigs.db unavailable");
+		hb::logger::log("Skill config reload failed: GameConfigs.db unavailable");
 		return;
 	}
 
@@ -649,14 +642,14 @@ void SkillManager::ReloadSkillConfigs()
 
 	if (!LoadSkillConfigs(configDb, m_pGame))
 	{
-		PutLogList((char*)"(!) Skill config reload FAILED");
+		hb::logger::log("Skill config reload failed");
 		CloseGameConfigDatabase(configDb);
 		return;
 	}
 
 	CloseGameConfigDatabase(configDb);
 	m_pGame->ComputeConfigHashes();
-	PutLogList((char*)"(*) Skill configs reloaded successfully");
+	hb::logger::log("Skill configs reloaded successfully");
 }
 
 void SkillManager::SetSkillAll(int iClientH, char* pData, size_t dwMsgSize)

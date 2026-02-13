@@ -1,4 +1,4 @@
-﻿// Screen_OnGame.cpp: Main gameplay screen implementation
+// Screen_OnGame.cpp: Main gameplay screen implementation
 //
 //////////////////////////////////////////////////////////////////////
 
@@ -72,18 +72,18 @@ void Screen_OnGame::on_update()
 
     m_dwTime = GameClock::GetTimeMS();
 
-    m_sMsX = static_cast<short>(hb::shared::input::GetMouseX());
-    m_sMsY = static_cast<short>(hb::shared::input::GetMouseY());
-    m_sMsZ = static_cast<short>(hb::shared::input::GetMouseWheelDelta());
-    m_cLB = hb::shared::input::IsMouseButtonDown(MouseButton::Left) ? 1 : 0;
-    m_cRB = hb::shared::input::IsMouseButtonDown(MouseButton::Right) ? 1 : 0;
+    m_sMsX = static_cast<short>(hb::shared::input::get_mouse_x());
+    m_sMsY = static_cast<short>(hb::shared::input::get_mouse_y());
+    m_sMsZ = static_cast<short>(hb::shared::input::get_mouse_wheel_delta());
+    m_cLB = hb::shared::input::is_mouse_button_down(MouseButton::Left) ? 1 : 0;
+    m_cRB = hb::shared::input::is_mouse_button_down(MouseButton::Right) ? 1 : 0;
     m_pGame->m_dwCurTime = GameClock::GetTimeMS();
 
     // Sync manager singletons with game state
     AudioManager::Get().SetListenerPosition(m_pGame->m_pPlayer->m_sPlayerX, m_pGame->m_pPlayer->m_sPlayerY);
 
     // Enter key handling
-    if (hb::shared::input::IsKeyPressed(KeyCode::Enter) == true)
+    if (hb::shared::input::is_key_pressed(KeyCode::Enter) == true)
     {
         if ((m_pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::GuildMenu) == true) && (m_pGame->m_dialogBoxManager.Info(DialogBoxId::GuildMenu).cMode == 1) && (m_pGame->m_dialogBoxManager.iGetTopDialogBoxIndex() == DialogBoxId::GuildMenu)) {
             TextInputManager::Get().EndInput();

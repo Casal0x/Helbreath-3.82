@@ -1,4 +1,4 @@
-﻿// Screen_SelectCharacter.cpp: Select Character Screen Implementation
+// Screen_SelectCharacter.cpp: Select Character Screen Implementation
 //
 //////////////////////////////////////////////////////////////////////
 
@@ -67,23 +67,23 @@ void Screen_SelectCharacter::on_update()
 
     // Handle legacy arrow input (if set by OnKeyDown) or direct input
     // NOTE: Preferring direct input for robustness
-    if (hb::shared::input::IsKeyPressed(KeyCode::Right)) {
+    if (hb::shared::input::is_key_pressed(KeyCode::Right)) {
         m_cCurFocus++;
         if (m_cCurFocus > m_cMaxFocus) m_cCurFocus = 1;
     }
-    else if (hb::shared::input::IsKeyPressed(KeyCode::Left)) {
+    else if (hb::shared::input::is_key_pressed(KeyCode::Left)) {
         m_cCurFocus--;
         if (m_cCurFocus <= 0) m_cCurFocus = m_cMaxFocus;
     }
     
 
-    if (hb::shared::input::IsKeyPressed(KeyCode::Escape) == true)
+    if (hb::shared::input::is_key_pressed(KeyCode::Escape) == true)
     {
         m_pGame->ChangeGameMode(GameMode::MainMenu);
         return;
     }
 
-    if (hb::shared::input::IsKeyPressed(KeyCode::Enter) == true)
+    if (hb::shared::input::is_key_pressed(KeyCode::Enter) == true)
     {
         m_pGame->PlayGameSound('E', 14, 5);
 
@@ -98,11 +98,11 @@ void Screen_SelectCharacter::on_update()
         }
     }
 
-    msX = static_cast<short>(hb::shared::input::GetMouseX());
-    msY = static_cast<short>(hb::shared::input::GetMouseY());
-    msZ = static_cast<short>(hb::shared::input::GetMouseWheelDelta());
-    cLB = hb::shared::input::IsMouseButtonDown(MouseButton::Left) ? 1 : 0;
-    cRB = hb::shared::input::IsMouseButtonDown(MouseButton::Right) ? 1 : 0;
+    msX = static_cast<short>(hb::shared::input::get_mouse_x());
+    msY = static_cast<short>(hb::shared::input::get_mouse_y());
+    msZ = static_cast<short>(hb::shared::input::get_mouse_wheel_delta());
+    cLB = hb::shared::input::is_mouse_button_down(MouseButton::Left) ? 1 : 0;
+    cRB = hb::shared::input::is_mouse_button_down(MouseButton::Right) ? 1 : 0;
     
     m_sSelCharMsX = msX;
     m_sSelCharMsY = msY;
@@ -124,51 +124,51 @@ void Screen_SelectCharacter::on_update()
     }
     if (m_pGame->m_cMenuDir > 8) m_pGame->m_cMenuDir = 1;
 
-    if (hb::shared::input::IsMouseButtonPressed(MouseButton::Left)) {
+    if (hb::shared::input::is_mouse_button_pressed(MouseButton::Left)) {
 
         // Determine which button was clicked
         int iMIbuttonNum = 0;
-        if (hb::shared::input::IsMouseInRect(100 + OX, 50 + OY, 110, 200))
+        if (hb::shared::input::is_mouse_in_rect(100 + OX, 50 + OY, 110, 200))
         {
             m_pGame->PlayGameSound('E', 14, 5);
             iMIbuttonNum = 1;
         }
-        else if (hb::shared::input::IsMouseInRect(211 + OX, 50 + OY, 110, 200))
+        else if (hb::shared::input::is_mouse_in_rect(211 + OX, 50 + OY, 110, 200))
         {
             m_pGame->PlayGameSound('E', 14, 5);
             iMIbuttonNum = 2;
         }
-        else if (hb::shared::input::IsMouseInRect(322 + OX, 50 + OY, 109, 200))
+        else if (hb::shared::input::is_mouse_in_rect(322 + OX, 50 + OY, 109, 200))
         {
             m_pGame->PlayGameSound('E', 14, 5);
             iMIbuttonNum = 3;
         }
-        else if (hb::shared::input::IsMouseInRect(432 + OX, 50 + OY, 110, 200))
+        else if (hb::shared::input::is_mouse_in_rect(432 + OX, 50 + OY, 110, 200))
         {
             m_pGame->PlayGameSound('E', 14, 5);
             iMIbuttonNum = 4;
         }
-        else if (hb::shared::input::IsMouseInRect(360 + OX, 283 + OY, 185, 32))
+        else if (hb::shared::input::is_mouse_in_rect(360 + OX, 283 + OY, 185, 32))
         {
             m_pGame->PlayGameSound('E', 14, 5);
             iMIbuttonNum = 5;
         }
-        else if (hb::shared::input::IsMouseInRect(360 + OX, 316 + OY, 185, 29))
+        else if (hb::shared::input::is_mouse_in_rect(360 + OX, 316 + OY, 185, 29))
         {
             m_pGame->PlayGameSound('E', 14, 5);
             iMIbuttonNum = 6;
         }
-        else if (hb::shared::input::IsMouseInRect(360 + OX, 346 + OY, 185, 29))
+        else if (hb::shared::input::is_mouse_in_rect(360 + OX, 346 + OY, 185, 29))
         {
             m_pGame->PlayGameSound('E', 14, 5);
             iMIbuttonNum = 7;
         }
-        else if (hb::shared::input::IsMouseInRect(360 + OX, 376 + OY, 185, 29))
+        else if (hb::shared::input::is_mouse_in_rect(360 + OX, 376 + OY, 185, 29))
         {
             m_pGame->PlayGameSound('E', 14, 5);
             iMIbuttonNum = 8;
         }
-        else if (hb::shared::input::IsMouseInRect(360 + OX, 406 + OY, 185, 29))
+        else if (hb::shared::input::is_mouse_in_rect(360 + OX, 406 + OY, 185, 29))
         {
             m_pGame->PlayGameSound('E', 14, 5);
             iMIbuttonNum = 9;

@@ -1,7 +1,9 @@
-#include <windows.h>
 #include "CmdShowChat.h"
-#include "winmain.h"
 #include <cstdio>
+#include <filesystem>
+#include "Log.h"
+
+#ifdef _WIN32
 
 void CmdShowChat::Execute(CGame* pGame, const char* pArgs)
 {
@@ -10,20 +12,19 @@ void CmdShowChat::Execute(CGame* pGame, const char* pArgs)
 		DWORD dwExitCode = 0;
 		if (GetExitCodeProcess(m_hProcess, &dwExitCode) && dwExitCode == STILL_ACTIVE)
 		{
-			PutLogList((char*)"(!) Chat viewer is already open.");
+			hb::logger::log("Chat viewer is already open.");
 			return;
 		}
 		CloseHandle(m_hProcess);
 		m_hProcess = nullptr;
 	}
 
-	char szLogPath[MAX_PATH];
-	GetFullPathNameA("GameLogs\\Chat.log", MAX_PATH, szLogPath, nullptr);
+	std::string logPath = std::filesystem::absolute("GameLogs/Chat.log").string();
 
 	char szCmdLine[1024];
 	std::snprintf(szCmdLine, sizeof(szCmdLine),
 		"cmd.exe /c \"title HB Chat && powershell -NoProfile -ExecutionPolicy Bypass -Command \"\"Get-Content '%s' -Wait -Tail 0\"\"\"",
-		szLogPath);
+		logPath.c_str());
 
 	STARTUPINFOA si = {};
 	si.cb = sizeof(si);
@@ -46,12 +47,25 @@ void CmdShowChat::Execute(CGame* pGame, const char* pArgs)
 	{
 		CloseHandle(pi.hThread);
 		m_hProcess = pi.hProcess;
-		PutLogList((char*)"(!) Chat viewer opened in new terminal.");
+		hb::logger::log("Chat viewer opened in new terminal.");
 	}
 	else
 	{
-		char szError[256];
-		std::snprintf(szError, sizeof(szError), "(!) Failed to open chat viewer (error %lu).", GetLastError());
-		PutLogList(szError);
+		hb::logger::log("Failed to open chat viewer (error {}).", GetLastError());
 	}
 }
+
+#else // POSIX
+
+void CmdShowChat::Execute(CGame* pGame, const char* pArgs)
+{
+	std::string logPath = std::filesystem::absolute("GameLogs/Chat.log").string();
+	std::string cmd = "tail -f \"" + logPath + "\" &";
+	int ret = std::system(cmd.c_str());
+	if (ret == 0)
+		hb::logger::log("Chat viewer started (tail -f).");
+	else
+		hb::logger::log("Failed to open chat viewer (exit code {}).", ret);
+}
+
+#endif

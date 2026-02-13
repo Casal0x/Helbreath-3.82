@@ -11,7 +11,9 @@
 #include "QuestManager.h"
 #include "DelayEventManager.h"
 #include <cstdio>
-
+#include "Log.h"
+#include "StringCompat.h"
+#include "TimeUtils.h"
 
 using namespace hb::shared::net;
 using namespace hb::shared::action;
@@ -27,8 +29,6 @@ namespace smap = hb::server::map;
 namespace sdelay = hb::server::delay_event;
 
 using namespace hb::shared::item;
-
-extern void PutLogList(char* cMsg);
 
 extern char G_cTxt[512];
 extern char _tmp_cTmpDirX[9];
@@ -107,7 +107,6 @@ void CEntityManager::ProcessSpawns()
     if (m_pGame->m_bOnExitProcess)
         return;
 
-
     ProcessRandomSpawns(0);
 
     // Loop through all maps and process their spot spawn generators
@@ -135,12 +134,12 @@ int CEntityManager::CreateEntity(
     if (iNpcConfigId < 0 || iNpcConfigId >= MaxNpcTypes) return -1;
 
     int t, j, k, iMapIndex;
-    char cTmpName[11], cTxt[120];
+    char cTmpName[11];
     short sX, sY;
     bool bFlag;
-    SYSTEMTIME SysTime;
+    hb::time::local_time SysTime{};
 
-    GetLocalTime(&SysTime);
+    SysTime = hb::time::local_time::now();
     std::memset(cTmpName, 0, sizeof(cTmpName));
     strcpy(cTmpName, pMapName);
     iMapIndex = -1;
@@ -161,8 +160,7 @@ int CEntityManager::CreateEntity(
 
             // Initialize NPC attributes from config
             if (InitEntityAttributes(m_pNpcList[i], iNpcConfigId, sClass, cSA) == false) {
-                std::snprintf(cTxt, sizeof(cTxt), "(!) Not existing NPC creation request! (config_id=%d) Ignored.", iNpcConfigId);
-                PutLogList(cTxt);
+                hb::logger::log("Invalid NPC creation request (config_id={}), ignored", iNpcConfigId);
                 delete m_pNpcList[i];
                 m_pNpcList[i] = 0;
                 return -1;
@@ -170,7 +168,7 @@ int CEntityManager::CreateEntity(
 
             // Day of week check
             if (m_pNpcList[i]->m_cDayOfWeekLimit < 10) {
-                if (m_pNpcList[i]->m_cDayOfWeekLimit != SysTime.wDayOfWeek) {
+                if (m_pNpcList[i]->m_cDayOfWeekLimit != SysTime.day_of_week) {
                     delete m_pNpcList[i];
                     m_pNpcList[i] = 0;
                     return -1;
@@ -405,7 +403,6 @@ int CEntityManager::CreateEntity(
             // Generate and assign GUID
             m_dwEntityGUID[i] = GenerateEntityGUID();
 
-
             // Register with map
             m_pMapList[iMapIndex]->SetOwner(i, hb::shared::owner_class::Npc, sX, sY);
             if (!bBypassMobLimit) {
@@ -441,10 +438,7 @@ int CEntityManager::CreateEntity(
     for(int idx = 1; idx < MaxNpcs; idx++) {
         if (m_pNpcList[idx] != 0) iUsedSlots++;
     }
-    std::snprintf(G_cTxt, sizeof(G_cTxt),
-        "[SPAWN] ERROR: No free entity slots! Used: %d/%d, ActiveList: %d, TotalEntities: %d",
-        iUsedSlots, MaxNpcs - 1, m_iActiveEntityCount, m_iTotalEntities);
-    PutLogList(G_cTxt);
+    hb::logger::log("No free entity slots: used={}/{} active={} total={}", iUsedSlots, MaxNpcs - 1, m_iActiveEntityCount, m_iTotalEntities);
     return -1; // No free slots
 }
 
@@ -482,7 +476,6 @@ void CEntityManager::OnEntityKilled(int iEntityHandle, short sAttackerH, char cA
     if (m_pGame == NULL || m_pMapList == NULL) {
         return;
     }
-
 
     // ========================================================================
     // 1. Mark entity as killed and set death state
@@ -657,9 +650,7 @@ void CEntityManager::OnEntityKilled(int iEntityHandle, short sAttackerH, char cA
                 if (m_pGame->m_pClientList[sAttackerH]->m_iWarContribution > MaxWarContribution)
                     m_pGame->m_pClientList[sAttackerH]->m_iWarContribution = MaxWarContribution;
 
-                std::snprintf(G_cTxt, sizeof(G_cTxt), "Enemy Npc Killed by player! Construction: +%d WarContribution: +%d",
-                    iConstructionPoint, iWarContribution);
-                PutLogList(G_cTxt);
+                hb::logger::log("Enemy NPC killed by player, construction +{}, war contribution +{}", iConstructionPoint, iWarContribution);
 
                 m_pGame->SendNotifyMsg(0, sAttackerH, Notify::ConstructionPoint,
                     m_pGame->m_pClientList[sAttackerH]->m_iConstructionPoint,
@@ -670,8 +661,7 @@ void CEntityManager::OnEntityKilled(int iEntityHandle, short sAttackerH, char cA
                 if (m_pGame->m_pClientList[sAttackerH]->m_iWarContribution < 0)
                     m_pGame->m_pClientList[sAttackerH]->m_iWarContribution = 0;
 
-                std::snprintf(G_cTxt, sizeof(G_cTxt), "Friendly Npc Killed by player! WarContribution: -%d", iWarContribution);
-                PutLogList(G_cTxt);
+                hb::logger::log("Friendly NPC killed by player, war contribution -{}", iWarContribution);
 
                 m_pGame->SendNotifyMsg(0, sAttackerH, Notify::ConstructionPoint,
                     m_pGame->m_pClientList[sAttackerH]->m_iConstructionPoint,
@@ -690,8 +680,7 @@ void CEntityManager::OnEntityKilled(int iEntityHandle, short sAttackerH, char cA
                             if (m_pGame->m_pClientList[i]->m_iConstructionPoint > MaxConstructionPoint)
                                 m_pGame->m_pClientList[i]->m_iConstructionPoint = MaxConstructionPoint;
 
-                            std::snprintf(G_cTxt, sizeof(G_cTxt), "Enemy Npc Killed by Npc! Construct point +%d", iConstructionPoint);
-                            PutLogList(G_cTxt);
+                            hb::logger::log("Enemy NPC killed by NPC, construction +{}", iConstructionPoint);
                             m_pGame->SendNotifyMsg(0, i, Notify::ConstructionPoint,
                                 m_pGame->m_pClientList[i]->m_iConstructionPoint,
                                 m_pGame->m_pClientList[i]->m_iWarContribution, 0, 0);
@@ -734,9 +723,8 @@ void CEntityManager::OnEntityKilled(int iEntityHandle, short sAttackerH, char cA
             }
             else if (pEntity->m_cSide == 2) {
                 m_pGame->m_iHeldenianElvineLeftTower--;
-                std::snprintf(G_cTxt, sizeof(G_cTxt), "Elvine Tower Broken, Left TOWER %d", m_pGame->m_iHeldenianElvineLeftTower);
             }
-            PutLogList(G_cTxt);
+            hb::logger::log("Elvine tower destroyed, remaining: {}", m_pGame->m_iHeldenianElvineLeftTower);
             m_pGame->m_pWarManager->UpdateHeldenianStatus();
         }
 
@@ -878,7 +866,6 @@ void CEntityManager::UpdateFleeBehavior(int iEntityHandle)
 {
     NpcBehavior_Flee(iEntityHandle);
 }
-
 
 // ========================================================================
 // NPC Behavior & Helpers (ported from CGame)
@@ -1938,7 +1925,6 @@ void CEntityManager::NpcMagicHandler(int iNpcH, short dX, short dY, short sType)
 			}
 			break;
 
-
 		case hb::shared::magic::DamageLinear:
 			sX = m_pNpcList[iNpcH]->m_sX;
 			sY = m_pNpcList[iNpcH]->m_sY;
@@ -2261,8 +2247,7 @@ void CEntityManager::_NpcBehavior_GrandMagicGenerator(int iNpcH)
 				m_pNpcList[iNpcH]->m_iManaStock = 0;
 				m_pGame->m_iAresdenMana = 0;
 			}
-			std::snprintf(G_cTxt, sizeof(G_cTxt), "(!) Aresden GMG %d/%d", m_pNpcList[iNpcH]->m_iManaStock, m_pNpcList[iNpcH]->m_iMaxMana);
-			PutLogList(G_cTxt);
+			hb::logger::log("Aresden GMG {}/{}", m_pNpcList[iNpcH]->m_iManaStock, m_pNpcList[iNpcH]->m_iMaxMana);
 		}
 		break;
 
@@ -2276,8 +2261,7 @@ void CEntityManager::_NpcBehavior_GrandMagicGenerator(int iNpcH)
 				m_pNpcList[iNpcH]->m_iManaStock = 0;
 				m_pGame->m_iElvineMana = 0;
 			}
-			std::snprintf(G_cTxt, sizeof(G_cTxt), "(!) Elvine GMG %d/%d", m_pNpcList[iNpcH]->m_iManaStock, m_pNpcList[iNpcH]->m_iMaxMana);
-			PutLogList(G_cTxt);
+			hb::logger::log("Elvine GMG {}/{}", m_pNpcList[iNpcH]->m_iManaStock, m_pNpcList[iNpcH]->m_iMaxMana);
 		}
 		break;
 	}
@@ -2334,8 +2318,6 @@ bool CEntityManager::_bNpcBehavior_Detector(int iNpcH)
 	return bFlag;
 }
 
-
-
 // ========================================================================
 // NPC Spawns & Drops (ported from CGame)
 // ========================================================================
@@ -2371,7 +2353,7 @@ NEXT_STEP_SNFM1:
 
 	case hb::shared::owner_class::Player:
 		for(int i = 1; i < MaxClients; i++)
-			if ((m_pGame->m_pClientList[i] != 0) && (_strnicmp(m_pGame->m_pClientList[i]->m_cCharName, pFollowName, hb::shared::limits::CharNameLen - 1) == 0)) {
+			if ((m_pGame->m_pClientList[i] != 0) && (hb_strnicmp(m_pGame->m_pClientList[i]->m_cCharName, pFollowName, hb::shared::limits::CharNameLen - 1) == 0)) {
 				if (m_pGame->m_pClientList[i]->m_cMapIndex != iMapIndex) return false;
 				iFollowIndex = i;
 				cFollowSide = m_pGame->m_pClientList[i]->m_cSide;
@@ -2388,7 +2370,6 @@ NEXT_STEP_SNFM2:
 	m_pNpcList[iIndex]->m_cFollowOwnerType = cFollowOwnerType;
 	m_pNpcList[iIndex]->m_iFollowOwnerIndex = iFollowIndex;
 	m_pNpcList[iIndex]->m_cSide = cFollowSide;
-
 
 	return true;
 }
@@ -2439,7 +2420,6 @@ void CEntityManager::DeleteNpcInternal(int iNpcH)
 	if (m_pNpcList[iNpcH] == 0) return;
 
 	dwTime = GameClock::GetTimeMS();
-
 
 	m_pGame->SendEventToNearClient_TypeA(iNpcH, hb::shared::owner_class::Npc, MsgId::EventLog, MsgType::Reject, 0, 0, 0);
 	m_pMapList[m_pNpcList[iNpcH]->m_cMapIndex]->ClearOwner(11, iNpcH, hb::shared::owner_class::Npc, m_pNpcList[iNpcH]->m_sX, m_pNpcList[iNpcH]->m_sY);
@@ -2830,12 +2810,12 @@ void CEntityManager::ProcessRandomSpawns(int iMapIndex)
 
 			iNamingValue = m_pMapList[i]->iGetEmptyNamingValue();
 			if (iNamingValue != -1) {
-				ZeroMemory(cName_Master, sizeof(cName_Master));
-				wsprintf(cName_Master, "XX%d", iNamingValue);
+				std::memset(cName_Master, 0, sizeof(cName_Master));
+				sprintf(cName_Master, "XX%d", iNamingValue);
 				cName_Master[0] = '_';
 				cName_Master[1] = i + 65;
 
-				ZeroMemory(cNpcName, sizeof(cNpcName));
+				std::memset(cNpcName, 0, sizeof(cNpcName));
 
 				bFirmBerserk = false;
 				iResult = m_pGame->iDice(1,100);
@@ -3449,7 +3429,7 @@ void CEntityManager::ProcessRandomSpawns(int iMapIndex)
 									case 6: iResult = 60; break;
 								}
 							}
-							wsprintf(G_cTxt, "(!) Mob-Event Map(%s)[%d (%d,%d)]", m_pMapList[i]->m_cName, iResult, pX, pY);
+							sprintf(G_cTxt, "(!) Mob-Event Map(%s)[%d (%d,%d)]", m_pMapList[i]->m_cName, iResult, pX, pY);
 						}
 						break;
 
@@ -3473,7 +3453,7 @@ void CEntityManager::ProcessRandomSpawns(int iMapIndex)
 					}
 				}
 
-				ZeroMemory(cNpcName, sizeof(cNpcName));
+				std::memset(cNpcName, 0, sizeof(cNpcName));
 				//Random Monster Spawns
 				switch (iResult) {
 				case 1:  strcpy(cNpcName, "Slime");				iNpcID = 10; iProbSA = 5;  iKindSA = 1; break;
@@ -3698,8 +3678,8 @@ void CEntityManager::ProcessRandomSpawns(int iMapIndex)
 			for (j = 0; j < iTotalMob; j++) {
 				iNamingValue = m_pMapList[i]->iGetEmptyNamingValue();
 				if (iNamingValue != -1) {
-					ZeroMemory(cName_Slave, sizeof(cName_Slave));
-					wsprintf(cName_Slave, "XX%d", iNamingValue);
+					std::memset(cName_Slave, 0, sizeof(cName_Slave));
+					sprintf(cName_Slave, "XX%d", iNamingValue);
 					cName_Slave[0] = 95; // original '_';
 					cName_Slave[1] = i + 65;
 
@@ -3724,8 +3704,6 @@ void CEntityManager::ProcessRandomSpawns(int iMapIndex)
 	}
 }
 
-
-
 void CEntityManager::ProcessSpotSpawns(int iMapIndex)
 {
     // Extracted from Game.cpp:26370-26518 (MobGenerator spot spawn logic)
@@ -3735,7 +3713,6 @@ void CEntityManager::ProcessSpotSpawns(int iMapIndex)
 
     if (m_pMapList[iMapIndex] == NULL)
         return;
-
 
     // Check if map has room for more objects
     if (m_pMapList[iMapIndex]->m_iMaximumObject <= m_pMapList[iMapIndex]->m_iTotalActiveObject) {
@@ -3829,7 +3806,6 @@ uint32_t CEntityManager::GenerateEntityGUID()
     // Handle wraparound (extremely unlikely, but safe)
     if (m_dwNextGUID == 0)
         m_dwNextGUID = 1;
-
 
     return dwGUID;
 }

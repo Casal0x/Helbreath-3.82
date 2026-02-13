@@ -171,7 +171,7 @@ bool ASIOSocket::bConnect(const char* pAddr, int iPort)
 	m_socket.set_option(tcp::no_delay(true), ec);
 
 	// Store connection info for reconnect
-	strncpy_s(m_pAddr, sizeof(m_pAddr), (pAddr != nullptr) ? pAddr : "", _TRUNCATE);
+	std::snprintf(m_pAddr, sizeof(m_pAddr), "%s", (pAddr != nullptr) ? pAddr : "");
 	m_iPortNum = iPort;
 
 	// Start async connect
@@ -232,7 +232,7 @@ bool ASIOSocket::bBlockConnect(char* pAddr, int iPort)
 	// Set non-blocking after connect completes
 	m_socket.non_blocking(true, ec);
 
-	strncpy_s(m_pAddr, sizeof(m_pAddr), (pAddr != nullptr) ? pAddr : "", _TRUNCATE);
+	std::snprintf(m_pAddr, sizeof(m_pAddr), "%s", (pAddr != nullptr) ? pAddr : "");
 	m_iPortNum = iPort;
 
 	m_cType = sock::Type::Normal;

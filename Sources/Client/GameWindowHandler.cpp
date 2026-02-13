@@ -1,4 +1,4 @@
-﻿// GameWindowHandler.cpp: hb::shared::render::Window event handler adapter for CGame
+// GameWindowHandler.cpp: hb::shared::render::Window event handler adapter for CGame
 //
 // Routes window events to CGame and hb::shared::input::
 //////////////////////////////////////////////////////////////////////
@@ -9,8 +9,6 @@
 #include "IInput.h"
 #include "RendererFactory.h"
 #include "ISpriteFactory.h"
-#include "DevConsole.h"
-#include "Overlay_DevConsole.h"
 #include "GameModeManager.h"
 
 #ifdef _WIN32
@@ -25,12 +23,12 @@ GameWindowHandler::GameWindowHandler(CGame* pGame)
 {
 }
 
-void GameWindowHandler::OnClose()
+void GameWindowHandler::on_close()
 {
     if (!m_pGame)
     {
         // No game, just close via hb::shared::render::Window abstraction
-        hb::shared::render::Window::Close();
+        hb::shared::render::Window::close();
         return;
     }
 
@@ -53,16 +51,16 @@ void GameWindowHandler::OnClose()
     else if (GameModeManager::GetMode() == GameMode::Null)
     {
         // Game code requested close (e.g., from quit screen), proceed with destruction
-        hb::shared::render::Window::Close();
+        hb::shared::render::Window::close();
     }
     else
     {
         // Other modes (loading, etc.), proceed with closing
-        hb::shared::render::Window::Close();
+        hb::shared::render::Window::close();
     }
 }
 
-void GameWindowHandler::OnDestroy()
+void GameWindowHandler::on_destroy()
 {
     if (m_pGame)
     {
@@ -71,23 +69,20 @@ void GameWindowHandler::OnDestroy()
     // ASIO handles Winsock cleanup internally
 }
 
-void GameWindowHandler::OnActivate(bool active)
+void GameWindowHandler::on_activate(bool active)
 {
     if (!m_pGame)
         return;
 
     if (!active)
     {
-        if (hb::shared::input::Get())
-            hb::shared::input::Get()->SetWindowActive(false);
+        if (hb::shared::input::get())
+            hb::shared::input::get()->set_window_active(false);
     }
     else
     {
-        if (hb::shared::input::Get())
-            hb::shared::input::Get()->SetWindowActive(true);
-
-        if (m_pGame->m_Renderer != nullptr)
-            m_pGame->m_Renderer->ChangeDisplayMode(hb::shared::render::Window::GetHandle());
+        if (hb::shared::input::get())
+            hb::shared::input::get()->set_window_active(true);
 
         // Only check files after game is fully initialized (sprite factory exists)
         // Rate-limited to at most once per 60 seconds to avoid I/O stall on every alt-tab
@@ -100,34 +95,27 @@ void GameWindowHandler::OnActivate(bool active)
                 s_dwLastFileCheck = dwNow;
                 if (m_pGame->bCheckImportantFile() == false)
                 {
-                    hb::shared::render::Window::ShowError("ERROR1", "File checksum error! Get Update again please!");
-                    hb::shared::render::Window::Close();
+                    hb::shared::render::Window::show_error("ERROR1", "File checksum error! Get Update again please!");
+                    hb::shared::render::Window::close();
                 }
             }
         }
     }
 }
 
-void GameWindowHandler::OnResize(int width, int height)
+void GameWindowHandler::on_resize(int width, int height)
 {
     // Currently not handling resize events
 }
 
-void GameWindowHandler::OnKeyDown(KeyCode keyCode)
+void GameWindowHandler::on_key_down(KeyCode keyCode)
 {
     if (!m_pGame)
         return;
 
     // Route all keys through Input system
-    if (hb::shared::input::Get())
-        hb::shared::input::Get()->OnKeyDown(keyCode);
-
-    // Route arrow/page keys to DevConsole when visible
-    if (DevConsole::Get().IsVisible())
-    {
-        DevConsole::Get().HandleKeyDown(keyCode);
-        return;
-    }
+    if (hb::shared::input::get())
+        hb::shared::input::get()->on_key_down(keyCode);
 
     // Also notify game for special key handling (hotkeys, etc.)
     // Skip modifier keys as they're handled purely through hb::shared::input::
@@ -141,38 +129,14 @@ void GameWindowHandler::OnKeyDown(KeyCode keyCode)
     }
 }
 
-void GameWindowHandler::OnKeyUp(KeyCode keyCode)
+void GameWindowHandler::on_key_up(KeyCode keyCode)
 {
     if (!m_pGame)
         return;
 
     // Route all keys through Input system
-    if (hb::shared::input::Get())
-        hb::shared::input::Get()->OnKeyUp(keyCode);
-
-    // Alt+Tilde: Toggle developer console (GM mode only)
-    if (keyCode == KeyCode::Grave && hb::shared::input::IsAltDown())
-    {
-        DevConsole& console = DevConsole::Get();
-        if (console.IsVisible())
-        {
-            console.Hide();
-            GameModeManager::clear_overlay();
-        }
-        else
-        {
-            if (m_pGame != nullptr && m_pGame->m_pPlayer != nullptr && m_pGame->m_pPlayer->m_bIsGMMode)
-            {
-                console.Show();
-                GameModeManager::set_overlay<Overlay_DevConsole>();
-            }
-        }
-        return;
-    }
-
-    // Block all other keys when DevConsole is visible
-    if (DevConsole::Get().IsVisible())
-        return;
+    if (hb::shared::input::get())
+        hb::shared::input::get()->on_key_up(keyCode);
 
     // Also notify game for special key handling
     // Skip modifier keys as they're handled purely through hb::shared::input::
@@ -186,45 +150,45 @@ void GameWindowHandler::OnKeyUp(KeyCode keyCode)
     }
 }
 
-void GameWindowHandler::OnChar(char character)
+void GameWindowHandler::on_char(char character)
 {
     // Character input is handled through OnTextInput
 }
 
-void GameWindowHandler::OnMouseMove(int x, int y)
+void GameWindowHandler::on_mouse_move(int x, int y)
 {
-    if (hb::shared::input::Get())
-        hb::shared::input::Get()->OnMouseMove(x, y);
+    if (hb::shared::input::get())
+        hb::shared::input::get()->on_mouse_move(x, y);
 }
 
-void GameWindowHandler::OnMouseButtonDown(int button, int x, int y)
+void GameWindowHandler::on_mouse_button_down(int button, int x, int y)
 {
-    if (hb::shared::input::Get())
+    if (hb::shared::input::get())
     {
-        hb::shared::input::Get()->OnMouseMove(x, y);
-        hb::shared::input::Get()->OnMouseDown(button);
+        hb::shared::input::get()->on_mouse_move(x, y);
+        hb::shared::input::get()->on_mouse_down(button);
     }
 }
 
-void GameWindowHandler::OnMouseButtonUp(int button, int x, int y)
+void GameWindowHandler::on_mouse_button_up(int button, int x, int y)
 {
-    if (hb::shared::input::Get())
+    if (hb::shared::input::get())
     {
-        hb::shared::input::Get()->OnMouseMove(x, y);
-        hb::shared::input::Get()->OnMouseUp(button);
+        hb::shared::input::get()->on_mouse_move(x, y);
+        hb::shared::input::get()->on_mouse_up(button);
     }
 }
 
-void GameWindowHandler::OnMouseWheel(int delta, int x, int y)
+void GameWindowHandler::on_mouse_wheel(int delta, int x, int y)
 {
-    if (hb::shared::input::Get())
+    if (hb::shared::input::get())
     {
-        hb::shared::input::Get()->OnMouseMove(x, y);
-        hb::shared::input::Get()->OnMouseWheel(delta);
+        hb::shared::input::get()->on_mouse_move(x, y);
+        hb::shared::input::get()->on_mouse_wheel(delta);
     }
 }
 
-bool GameWindowHandler::OnCustomMessage(uint32_t message, uintptr_t wParam, intptr_t lParam)
+bool GameWindowHandler::on_custom_message(uint32_t message, uintptr_t wParam, intptr_t lParam)
 {
 #ifdef _WIN32
     if (!m_pGame)
@@ -233,26 +197,26 @@ bool GameWindowHandler::OnCustomMessage(uint32_t message, uintptr_t wParam, intp
     switch (message)
     {
     case WM_SETCURSOR:
-        if (hb::shared::render::Window::Get())
-            hb::shared::render::Window::Get()->SetMouseCursorVisible(false);
+        if (hb::shared::render::Window::get())
+            hb::shared::render::Window::get()->set_mouse_cursor_visible(false);
         return true;
 
     case WM_SETFOCUS:
-        if (hb::shared::input::Get())
-            hb::shared::input::Get()->SetWindowActive(true);
+        if (hb::shared::input::get())
+            hb::shared::input::get()->set_window_active(true);
         return true;
 
     case WM_KILLFOCUS:
-        if (hb::shared::input::Get())
-            hb::shared::input::Get()->SetWindowActive(false);
+        if (hb::shared::input::get())
+            hb::shared::input::get()->set_window_active(false);
         return true;
 
     case WM_LBUTTONDBLCLK:
         // Handle double-click as button down for manual detection
-        if (hb::shared::input::Get())
+        if (hb::shared::input::get())
         {
-            hb::shared::input::Get()->OnMouseMove(GET_X_LPARAM(static_cast<LPARAM>(lParam)), GET_Y_LPARAM(static_cast<LPARAM>(lParam)));
-            hb::shared::input::Get()->OnMouseDown(MouseButton::Left);
+            hb::shared::input::get()->on_mouse_move(GET_X_LPARAM(static_cast<LPARAM>(lParam)), GET_Y_LPARAM(static_cast<LPARAM>(lParam)));
+            hb::shared::input::get()->on_mouse_down(MouseButton::Left);
         }
         return true;
     }
@@ -260,14 +224,8 @@ bool GameWindowHandler::OnCustomMessage(uint32_t message, uintptr_t wParam, intp
     return false;
 }
 
-bool GameWindowHandler::OnTextInput(hb::shared::types::NativeWindowHandle hWnd, uint32_t message, uintptr_t wParam, intptr_t lParam)
+bool GameWindowHandler::on_text_input(hb::shared::types::NativeWindowHandle hWnd, uint32_t message, uintptr_t wParam, intptr_t lParam)
 {
-    // Route WM_CHAR text input to DevConsole when visible
-    if (message == WM_CHAR && DevConsole::Get().IsVisible())
-    {
-        return DevConsole::Get().HandleChar(static_cast<unsigned int>(wParam));
-    }
-
     if (m_pGame)
     {
         return TextInputManager::Get().HandleChar(hWnd, message, wParam, lParam) != 0;

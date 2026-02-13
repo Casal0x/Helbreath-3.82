@@ -8,9 +8,13 @@
 #include "Portion.h"
 #include "Item.h"
 #include "Packet/SharedPackets.h"
+#include "Log.h"
+#include "ServerLogChannels.h"
+#include "TimeUtils.h"
 
 extern char G_cTxt[512];
-extern void PutLogFileList(char* cStr);
+
+using hb::log_channel;
 
 using namespace hb::shared::net;
 using namespace hb::server::config;
@@ -211,7 +215,6 @@ void CraftingManager::ReqCreatePortionHandler(int iClientH, char* pData)
 
 				iRet = m_pGame->m_pItemManager->SendItemNotifyMsg(iClientH, Notify::CannotCarryMoreItem, 0, 0);
 
-
 				switch (iRet) {
 				case sock::Event::QueueFull:
 				case sock::Event::SocketError:
@@ -284,7 +287,6 @@ void CraftingManager::ReqCreateCraftingHandler(int iClientH, char* pData)
 			RCPH_LOOPBREAK:;
 			}
 		}
-
 
 	for(int i = 0; i < 6; i++)
 		if (sItemIndex[i] != -1)
@@ -372,7 +374,6 @@ void CraftingManager::ReqCreateCraftingHandler(int iClientH, char* pData)
 				iDifficulty = m_pCraftingConfigList[i]->m_iDifficulty;
 			}
 		}
-
 
 	// Check if recipe is OK
 	if (strlen(cCraftingName) == 0)
@@ -491,21 +492,17 @@ void CraftingManager::ReqCreateCraftingHandler(int iClientH, char* pData)
 			pItem->m_sTouchEffectValue1 = static_cast<short>(m_pGame->iDice(1, 100000));
 			pItem->m_sTouchEffectValue2 = static_cast<short>(m_pGame->iDice(1, 100000));
 			// pItem->m_sTouchEffectValue3 = GameClock::GetTimeMS();
-			SYSTEMTIME SysTime;
+			hb::time::local_time SysTime{};
 			char cTemp[256];
-			GetLocalTime(&SysTime);
+			SysTime = hb::time::local_time::now();
 			std::memset(cTemp, 0, sizeof(cTemp));
-			std::snprintf(cTemp, sizeof(cTemp), "%d%2d", (short)SysTime.wMonth, (short)SysTime.wDay);
+			std::snprintf(cTemp, sizeof(cTemp), "%d%2d", (short)SysTime.month, (short)SysTime.day);
 			pItem->m_sTouchEffectValue3 = atoi(cTemp);
 
 			// SNOOPY log anything above WAREs
 			if (bNeedLog)
 			{
-				std::snprintf(G_cTxt, sizeof(G_cTxt), "PC(%s) Crafting (%s) Purity(%d)"
-					, m_pGame->m_pClientList[iClientH]->m_cCharName
-					, pItem->m_cName
-					, pItem->m_sItemSpecEffectValue2);
-				PutLogFileList(G_cTxt);
+				hb::logger::log<log_channel::events>("Player '{}' crafting '{}' purity={}", m_pGame->m_pClientList[iClientH]->m_cCharName, pItem->m_cName, pItem->m_sItemSpecEffectValue2);
 			}
 			if (m_pGame->m_pItemManager->_bAddClientItemList(iClientH, pItem, &iEraseReq))
 			{
@@ -530,7 +527,6 @@ void CraftingManager::ReqCreateCraftingHandler(int iClientH, char* pData)
 					pItem->m_sIDnum, 0, pItem->m_cItemColor, pItem->m_dwAttribute);
 
 				iRet = m_pGame->m_pItemManager->SendItemNotifyMsg(iClientH, Notify::CannotCarryMoreItem, 0, 0);
-
 
 				switch (iRet) {
 				case sock::Event::QueueFull:

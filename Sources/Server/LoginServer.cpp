@@ -6,12 +6,16 @@
 #include <cstring>
 #include <cstdlib>
 #include <cctype>
+#include "StringCompat.h"
+#include "TimeUtils.h"
 using namespace std;
 
 #include "AccountSqliteStore.h"
 #include "sqlite3.h"
 #include "PasswordHash.h"
 #include "../../Dependencies/Shared/Packet/SharedPackets.h"
+#include "Log.h"
+#include <filesystem>
 
 using namespace hb::shared::net;
 using namespace hb::server::config;
@@ -56,22 +60,14 @@ bool IsValidName(char* pStr)
 	}
 	return true;
 }
-
-void FormatTimestamp(const SYSTEMTIME& sysTime, char* outBuffer, size_t outBufferSize)
-{
-	std::snprintf(outBuffer, outBufferSize, "%04d-%02d-%02d %02d:%02d:%02d",
-		sysTime.wYear, sysTime.wMonth, sysTime.wDay, sysTime.wHour, sysTime.wMinute, sysTime.wSecond);
-}
-
 bool AccountDbExists(const char* accountName)
 {
 	char lower[hb::shared::limits::AccountNameLen] = {};
 	std::strncpy(lower, accountName, hb::shared::limits::AccountNameLen - 1);
 	LowercaseInPlace(lower, sizeof(lower));
-	char dbPath[MAX_PATH] = {};
-	std::snprintf(dbPath, sizeof(dbPath), "Accounts\\%s.db", lower);
-	DWORD attrs = GetFileAttributes(dbPath);
-	return (attrs != INVALID_FILE_ATTRIBUTES) && ((attrs & FILE_ATTRIBUTE_DIRECTORY) == 0);
+	char dbPath[256] = {};
+	std::snprintf(dbPath, sizeof(dbPath), "Accounts/%s.db", lower);
+	return std::filesystem::exists(dbPath);
 }
 
 bool OpenAccountDatabaseIfExists(const char* accountName, sqlite3** outDb)
@@ -111,8 +107,7 @@ void LoginServer::RequestLogin(int h, char* pData)
 	if (!IsValidName(cName) || !IsValidName(cPassword) || !IsValidName(world_name))
 		return;
 
-	std::snprintf(G_cTxt, sizeof(G_cTxt), "(!) Account Request Login: %s", cName);
-	PutLogList(G_cTxt);
+	hb::logger::log("Account Request Login: {}", cName);
 
 	std::vector<AccountDbCharacterSummary> chars;
 	auto status = AccountLogIn(cName, cPassword, chars);
@@ -131,12 +126,12 @@ void LoginServer::RequestLogin(int h, char* pData)
 
 	case LogIn::NoAcc:
 		SendLoginMsg(LogResMsg::NotExistingAccount, LogResMsg::NotExistingAccount, 0, 0, h);
-		PutLogList("No Acc");
+		hb::logger::log("Account not found");
 		break;
 
 	case LogIn::NoPass:
 		SendLoginMsg(LogResMsg::PasswordMismatch, LogResMsg::PasswordMismatch, 0, 0, h);
-		PutLogList("No Pass");
+		hb::logger::log("Password mismatch");
 		break;
 	}
 }
@@ -157,7 +152,6 @@ void LoginServer::GetCharList(string acc, char*& cp2, const std::vector<AccountD
 		cp2 += sizeof(pktEntry);
 	}
 }
-
 
 LogIn LoginServer::AccountLogIn(string acc, string pass, std::vector<AccountDbCharacterSummary>& chars)
 {
@@ -203,7 +197,7 @@ LogIn LoginServer::AccountLogIn(string acc, string pass, std::vector<AccountDbCh
 	}
 
 	CloseAccountDatabase(db);
-	PutLogList("Account Login!");
+	hb::logger::log("Account login");
 	return LogIn::Ok;
 }
 
@@ -239,8 +233,7 @@ void LoginServer::ResponseCharacter(int h, char* pData)
 	if (string(world_name) != WORLDNAMELS)
 		return;
 
-	std::snprintf(G_cTxt, sizeof(G_cTxt), "(!) Request create new Character: %s", cName);
-	PutLogList(G_cTxt);
+	hb::logger::log("Request create new Character: {}", cName);
 
 	std::vector<AccountDbCharacterSummary> chars;
 	auto status = AccountLogIn(cAcc, cPassword, chars);
@@ -255,23 +248,21 @@ void LoginServer::ResponseCharacter(int h, char* pData)
 
 	// Check if character name already exists globally (across all accounts)
 	if (CharacterNameExistsGlobally(cName)) {
-		std::snprintf(G_cTxt, sizeof(G_cTxt), "(!) Character name '%s' already exists globally", cName);
-		PutLogList(G_cTxt);
+		hb::logger::log("Character name '{}' already exists globally", cName);
 		SendLoginMsg(LogResMsg::NewCharacterFailed, LogResMsg::NewCharacterFailed, 0, 0, h);
 		return;
 	}
 
 	// Check if character name conflicts with an existing account name
 	if (AccountNameExists(cName)) {
-		std::snprintf(G_cTxt, sizeof(G_cTxt), "(!) Character name '%s' conflicts with existing account name", cName);
-		PutLogList(G_cTxt);
+		hb::logger::log("Character name '{}' conflicts with existing account name", cName);
 		SendLoginMsg(LogResMsg::NewCharacterFailed, LogResMsg::NewCharacterFailed, 0, 0, h);
 		return;
 	}
 
 	// Also check within current account (redundant but kept for safety)
 	for (const auto& entry : chars) {
-		if (_strnicmp(entry.characterName, cName, hb::shared::limits::CharNameLen - 1) == 0) {
+		if (hb_strnicmp(entry.characterName, cName, hb::shared::limits::CharNameLen - 1) == 0) {
 			SendLoginMsg(LogResMsg::NewCharacterFailed, LogResMsg::NewCharacterFailed, 0, 0, h);
 			return;
 		}
@@ -523,8 +514,7 @@ void LoginServer::DeleteCharacter(int h, char* pData)
 	std::memcpy(cPassword, req->password, sizeof(req->password));
 	std::memcpy(world_name, req->world_name, 30);
 
-	std::snprintf(G_cTxt, sizeof(G_cTxt), "(!) Request delete Character: %s", cName);
-	PutLogList(G_cTxt);
+	hb::logger::log("Request delete Character: {}", cName);
 
 	std::vector<AccountDbCharacterSummary> chars;
 	auto status = AccountLogIn(cAcc, cPassword, chars);
@@ -547,7 +537,7 @@ void LoginServer::DeleteCharacter(int h, char* pData)
 	CloseAccountDatabase(db);
 
 	for (auto it = chars.begin(); it != chars.end();) {
-		if (_strnicmp(it->characterName, cName, hb::shared::limits::CharNameLen - 1) == 0) {
+		if (hb_strnicmp(it->characterName, cName, hb::shared::limits::CharNameLen - 1) == 0) {
 			it = chars.erase(it);
 			continue;
 		}
@@ -577,13 +567,14 @@ void LoginServer::ChangePassword(int h, char* pData)
 	std::memcpy(cNewPw, req->new_password, sizeof(req->new_password));
 	std::memcpy(cNewPwConf, req->new_password_confirm, sizeof(req->new_password_confirm));
 
-	std::snprintf(G_cTxt, sizeof(G_cTxt), "(!) Request change password: %s", cAcc);
-	PutLogList(G_cTxt);
+	hb::logger::log("Request change password: {}", cAcc);
 
 	std::vector<AccountDbCharacterSummary> chars;
 	auto status = AccountLogIn(cAcc, cPassword, chars);
-	if (status != LogIn::Ok)
+	if (status != LogIn::Ok) {
+		SendLoginMsg(LogResMsg::PasswordChangeFail, LogResMsg::PasswordChangeFail, 0, 0, h);
 		return;
+	}
 
 	if (string(cNewPw) != cNewPwConf) {
 		SendLoginMsg(LogResMsg::PasswordChangeFail, LogResMsg::PasswordChangeFail, 0, 0, h);
@@ -636,15 +627,13 @@ void LoginServer::CreateNewAccount(int h, char* pData)
 		(strlen(cEmailAddr) == 0))
 		return;
 
-	std::snprintf(G_cTxt, sizeof(G_cTxt), "(!) Request create new Account: %s", cName);
-	PutLogList(G_cTxt);
+	hb::logger::log("Request create new Account: {}", cName);
 
 	if (!IsValidName(cName) || !IsValidName(cPassword))
 		return;
 
 	if (AccountDbExists(cName)) {
-		std::snprintf(G_cTxt, sizeof(G_cTxt), "(!) Account creation failed: '%s' already exists", cName);
-		PutLogList(G_cTxt);
+		hb::logger::log("Account creation failed: '{}' already exists", cName);
 		SendLoginMsg(LogResMsg::NewAccountFailed, LogResMsg::NewAccountFailed, 0, 0, h);
 		return;
 	}
@@ -671,10 +660,10 @@ void LoginServer::CreateNewAccount(int h, char* pData)
 	std::snprintf(data.password_salt, sizeof(data.password_salt), "%s", salt);
 	std::snprintf(data.email, sizeof(data.email), "%s", cEmailAddr);
 
-	SYSTEMTIME sysTime;
-	GetLocalTime(&sysTime);
-	FormatTimestamp(sysTime, data.createdAt, sizeof(data.createdAt));
-	FormatTimestamp(sysTime, data.passwordChangedAt, sizeof(data.passwordChangedAt));
+	hb::time::local_time sysTime{};
+	sysTime = hb::time::local_time::now();
+	hb::time::format_timestamp(sysTime, data.createdAt, sizeof(data.createdAt));
+	hb::time::format_timestamp(sysTime, data.passwordChangedAt, sizeof(data.passwordChangedAt));
 	std::snprintf(data.lastIp, sizeof(data.lastIp), "%s", G_pGame->_lclients[h]->_ip);
 
 	if (!InsertAccountRecord(db, data)) {
@@ -718,8 +707,7 @@ void LoginServer::SendLoginMsg(uint32_t msg_id, uint16_t msg_type, char* data, s
 		case sock::Event::SocketError:
 		case sock::Event::CriticalError:
 		case sock::Event::SocketClosed:
-			std::snprintf(G_cTxt, sizeof(G_cTxt), "(!) Login Connection Lost on Send (%d)", index);
-			PutLogList(G_cTxt);
+			hb::logger::log("Login Connection Lost on Send ({})", index);
 			delete G_pGame->_lclients[index];
 			G_pGame->_lclients[index] = 0;
 			return;
@@ -756,8 +744,7 @@ void LoginServer::RequestEnterGame(int h, char* pData)
 		return;
 	}
 
-	std::snprintf(G_cTxt, sizeof(G_cTxt), "(!) Request enter Game: %s", cName);
-	PutLogList(G_cTxt);
+	hb::logger::log("Request enter Game: {}", cName);
 
 	std::vector<AccountDbCharacterSummary> chars;
 	auto status = AccountLogIn(cAcc, cPass, chars);
@@ -785,7 +772,6 @@ void LoginServer::RequestEnterGame(int h, char* pData)
 	SendLoginMsg(EnterGameRes::Confirm, EnterGameRes::Confirm, cData, sizeof(enterResp), h);
 }
 
-
 void LoginServer::LocalSavePlayerData(int h)
 {
 	if (G_pGame->m_pClientList[h] == 0) return;
@@ -795,12 +781,7 @@ void LoginServer::LocalSavePlayerData(int h)
 	if (EnsureAccountDatabase(G_pGame->m_pClientList[h]->m_cAccountName, &db, dbPath)) {
 		if (!SaveCharacterSnapshot(db, G_pGame->m_pClientList[h])) {
 			char logMsg[256] = {};
-			std::snprintf(logMsg, sizeof(logMsg),
-				"(SQLITE) SaveCharacterSnapshot failed: Account(%s) Char(%s) Error(%s)",
-				G_pGame->m_pClientList[h]->m_cAccountName,
-				G_pGame->m_pClientList[h]->m_cCharName,
-				sqlite3_errmsg(db));
-			PutLogList(logMsg);
+			hb::logger::error("SaveCharacterSnapshot failed: Account({}) Char({}) Error({})", G_pGame->m_pClientList[h]->m_cAccountName, G_pGame->m_pClientList[h]->m_cCharName, sqlite3_errmsg(db));
 		}
 		if (G_pGame->m_pClientList[h]->m_bBlockListDirty) {
 			if (SaveBlockList(db, G_pGame->m_pClientList[h]->m_BlockedAccountsList)) {
@@ -810,9 +791,6 @@ void LoginServer::LocalSavePlayerData(int h)
 		CloseAccountDatabase(db);
 	} else {
 		char logMsg[256] = {};
-		std::snprintf(logMsg, sizeof(logMsg),
-			"(SQLITE) EnsureAccountDatabase failed: Account(%s)",
-			G_pGame->m_pClientList[h]->m_cAccountName);
-		PutLogList(logMsg);
+		hb::logger::error("EnsureAccountDatabase failed: Account({})", G_pGame->m_pClientList[h]->m_cAccountName);
 	}
 }

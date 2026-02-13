@@ -17,11 +17,16 @@
 #include "MiningManager.h"
 #include "Packet/SharedPackets.h"
 #include "ObjectIDRange.h"
-#include "ItemLog.h"
 #include "Skill.h"
 #include "GameConfigSqliteStore.h"
+#include "Log.h"
+#include "ServerLogChannels.h"
+#include "StringCompat.h"
+#include "TimeUtils.h"
 
 using namespace hb::shared::net;
+
+using hb::log_channel;
 using namespace hb::shared::action;
 using namespace hb::server::net;
 using namespace hb::server::config;
@@ -35,10 +40,32 @@ using namespace hb::server::skill;
 
 extern char G_cTxt[512];
 extern char G_cData50000[50000];
-extern void PutLogList(char* cStr);
-extern void PutLogFileList(char* cStr);
-extern void PutLogItemFileList(char* cStr);
-extern void PutHackLogFileList(char* cStr);
+
+static std::string format_item_info(CItem* pItem)
+{
+	if (pItem == nullptr) return "(null)";
+	char buf[256];
+	std::snprintf(buf, sizeof(buf), "%s(count=%u attr=0x%08X touch=%d:%d:%d:%d)",
+		pItem->m_cName,
+		pItem->m_dwCount,
+		pItem->m_dwAttribute,
+		pItem->m_sTouchEffectType,
+		pItem->m_sTouchEffectValue1,
+		pItem->m_sTouchEffectValue2,
+		pItem->m_sTouchEffectValue3);
+	return buf;
+}
+
+static bool is_item_suspicious(CItem* pItem)
+{
+	if (pItem == nullptr) return false;
+	if (pItem->m_sIDnum == 90) return false; // Gold
+	if (pItem->m_dwAttribute != 0 && pItem->GetTouchEffectType() != TouchEffectType::ID)
+		return true;
+	if (pItem->GetTouchEffectType() == TouchEffectType::None && pItem->m_dwAttribute != 0)
+		return true;
+	return false;
+}
 
 // Helper function (duplicated from Game.cpp - static file-scope function)
 static void NormalizeItemName(const char* src, char* dst, size_t dstSize)
@@ -147,10 +174,7 @@ bool ItemManager::bSendClientItemConfigs(int iClientH)
 		case sock::Event::SocketError:
 		case sock::Event::CriticalError:
 		case sock::Event::SocketClosed:
-			std::snprintf(G_cTxt, sizeof(G_cTxt),
-				"Failed to send item configs: Client(%d) Packet(%d)",
-				iClientH, packetIndex);
-			PutLogList(G_cTxt);
+			hb::logger::log("Failed to send item configs: Client({}) Packet({})", iClientH, packetIndex);
 			m_pGame->DeleteClient(iClientH, true, true);
 			delete m_pGame->m_pClientList[iClientH];
 			m_pGame->m_pClientList[iClientH] = 0;
@@ -203,7 +227,7 @@ bool ItemManager::_bInitItemAttr(CItem* pItem, const char* pItemName)
 		if (m_pGame->m_pItemConfigList[i] != 0) {
 			// Normalize the config name for comparison
 			NormalizeItemName(m_pGame->m_pItemConfigList[i]->m_cName, cNormalizedConfig, sizeof(cNormalizedConfig));
-			if (_stricmp(cNormalizedInput, cNormalizedConfig) == 0) {
+			if (hb_stricmp(cNormalizedInput, cNormalizedConfig) == 0) {
 				std::memset(pItem->m_cName, 0, sizeof(pItem->m_cName));
 				strcpy(pItem->m_cName, m_pGame->m_pItemConfigList[i]->m_cName);
 				pItem->m_cItemType = m_pGame->m_pItemConfigList[i]->m_cItemType;
@@ -300,7 +324,6 @@ void ItemManager::DropItemHandler(int iClientH, short sItemIndex, int iAmount, c
 		(m_pGame->m_pClientList[iClientH]->m_pItemList[sItemIndex]->GetItemType() == ItemType::Arrow)) &&
 		(iAmount == -1))
 		iAmount = m_pGame->m_pClientList[iClientH]->m_pItemList[sItemIndex]->m_dwCount;
-
 
 	if (((m_pGame->m_pClientList[iClientH]->m_pItemList[sItemIndex]->GetItemType() == ItemType::Consume) ||
 		(m_pGame->m_pClientList[iClientH]->m_pItemList[sItemIndex]->GetItemType() == ItemType::Arrow)) &&
@@ -480,7 +503,6 @@ int ItemManager::iClientMotion_GetItem_Handler(int iClientH, short sX, short sY,
 bool ItemManager::_bAddClientItemList(int iClientH, CItem* pItem, int* pDelReq)
 {
 
-
 	if (m_pGame->m_pClientList[iClientH] == 0) return false;
 	if (pItem == 0) return false;
 
@@ -619,7 +641,6 @@ bool ItemManager::bEquipItemHandler(int iClientH, short sItemIndex, bool bNotify
 	if (((m_pGame->m_pClientList[iClientH]->m_pItemList[sItemIndex]->m_dwAttribute & 0x00000001) == 0) &&
 		(m_pGame->m_pClientList[iClientH]->m_pItemList[sItemIndex]->m_sLevelLimit > m_pGame->m_pClientList[iClientH]->m_iLevel)) return false;
 
-
 	if (m_pGame->m_pClientList[iClientH]->m_pItemList[sItemIndex]->m_cGenderLimit != 0) {
 		switch (m_pGame->m_pClientList[iClientH]->m_sType) {
 		case 1:
@@ -719,7 +740,6 @@ bool ItemManager::bEquipItemHandler(int iClientH, short sItemIndex, bool bNotify
 		}
 	}
 
-
 	if (cEquipPos == EquipPos::None) return false;
 
 	if (cEquipPos == EquipPos::TwoHand) {
@@ -741,7 +761,6 @@ bool ItemManager::bEquipItemHandler(int iClientH, short sItemIndex, bool bNotify
 		if (m_pGame->m_pClientList[iClientH]->m_sItemEquipmentStatus[ToInt(cEquipPos)] != -1)
 			ReleaseItemHandler(iClientH, m_pGame->m_pClientList[iClientH]->m_sItemEquipmentStatus[ToInt(cEquipPos)], false);
 	}
-
 
 	if (cEquipPos == EquipPos::FullBody) {
 		if (m_pGame->m_pClientList[iClientH]->m_sItemEquipmentStatus[ToInt(cEquipPos)] != -1) {
@@ -776,7 +795,6 @@ bool ItemManager::bEquipItemHandler(int iClientH, short sItemIndex, bool bNotify
 		if (m_pGame->m_pClientList[iClientH]->m_sItemEquipmentStatus[ToInt(cEquipPos)] != -1)
 			ReleaseItemHandler(iClientH, m_pGame->m_pClientList[iClientH]->m_sItemEquipmentStatus[ToInt(cEquipPos)], false);
 	}
-
 
 	m_pGame->m_pClientList[iClientH]->m_sItemEquipmentStatus[ToInt(cEquipPos)] = sItemIndex;
 	m_pGame->m_pClientList[iClientH]->m_bIsItemEquipped[sItemIndex] = true;
@@ -876,7 +894,6 @@ void ItemManager::RequestPurchaseItemHandler(int iClientH, const char* pItemName
 		}
 	}
 
-
 	// New 18/05/2004
 	if (m_pGame->m_pClientList[iClientH]->m_pIsProcessingAllowed == false) return;
 
@@ -909,7 +926,6 @@ void ItemManager::RequestPurchaseItemHandler(int iClientH, const char* pItemName
 			pItem->m_dwCount = dwItemCount;
 
 			iCost = pItem->m_wPrice * pItem->m_dwCount;
-
 
 			dwGoldCount = dwGetItemCountByID(iClientH, hb::shared::item::ItemId::Gold);
 
@@ -979,7 +995,6 @@ void ItemManager::RequestPurchaseItemHandler(int iClientH, const char* pItemName
 
 				iRet = SendItemNotifyMsg(iClientH, Notify::CannotCarryMoreItem, 0, 0);
 
-
 				switch (iRet) {
 				case sock::Event::QueueFull:
 				case sock::Event::SocketError:
@@ -1006,7 +1021,6 @@ void ItemManager::GiveItemHandler(int iClientH, short sItemIndex, int iAmount, s
 	if (m_pGame->m_pClientList[iClientH]->m_pItemList[sItemIndex] == 0) return;
 	if ((sItemIndex < 0) || (sItemIndex >= hb::shared::limits::MaxItems)) return;
 	if (iAmount <= 0) return;
-
 
 	std::memset(cCharName, 0, sizeof(cCharName));
 
@@ -1098,7 +1112,6 @@ void ItemManager::GiveItemHandler(int iClientH, short sItemIndex, int iAmount, s
 						iRet = SendItemNotifyMsg(sOwnerH, Notify::CannotCarryMoreItem, 0, 0);
 					}
 
-
 					switch (iRet) {
 					case sock::Event::QueueFull:
 					case sock::Event::SocketError:
@@ -1116,7 +1129,7 @@ void ItemManager::GiveItemHandler(int iClientH, short sItemIndex, int iAmount, s
 				// NPC  .
 				memcpy(cCharName, m_pGame->m_pNpcList[sOwnerH]->m_cNpcName, hb::shared::limits::NpcNameLen - 1);
 
-				if (memcmp(m_pGame->m_pNpcList[sOwnerH]->m_cNpcName, "Howard", 6) == 0) {
+				if (m_pGame->m_pNpcList[sOwnerH]->m_iNpcConfigId == 58) { // Warehouse Keeper
 					// NPC     .
 					if (bSetItemToBankItem(iClientH, pItem) == false) {
 						m_pGame->SendNotifyMsg(0, iClientH, Notify::CannotItemToBank, 0, 0, 0, 0);
@@ -1197,7 +1210,6 @@ void ItemManager::GiveItemHandler(int iClientH, short sItemIndex, int iAmount, s
 				memcpy(cCharName, m_pGame->m_pClientList[sOwnerH]->m_cCharName, hb::shared::limits::CharNameLen - 1);
 				pItem = m_pGame->m_pClientList[iClientH]->m_pItemList[sItemIndex];
 
-
 				if (pItem->m_sIDnum == 88) {
 
 					// iClientH  sOwnerH   .
@@ -1262,7 +1274,6 @@ void ItemManager::GiveItemHandler(int iClientH, short sItemIndex, int iAmount, s
 						iRet = SendItemNotifyMsg(sOwnerH, Notify::CannotCarryMoreItem, 0, 0);
 					}
 
-
 					switch (iRet) {
 					case sock::Event::QueueFull:
 					case sock::Event::SocketError:
@@ -1278,7 +1289,7 @@ void ItemManager::GiveItemHandler(int iClientH, short sItemIndex, int iAmount, s
 			else {
 				memcpy(cCharName, m_pGame->m_pNpcList[sOwnerH]->m_cNpcName, hb::shared::limits::NpcNameLen - 1);
 
-				if (memcmp(m_pGame->m_pNpcList[sOwnerH]->m_cNpcName, "Howard", 6) == 0) {
+				if (m_pGame->m_pNpcList[sOwnerH]->m_iNpcConfigId == 58) { // Warehouse Keeper
 					if (bSetItemToBankItem(iClientH, sItemIndex) == false) {
 						m_pGame->SendNotifyMsg(0, iClientH, Notify::CannotItemToBank, 0, 0, 0, 0);
 
@@ -1296,7 +1307,7 @@ void ItemManager::GiveItemHandler(int iClientH, short sItemIndex, int iAmount, s
 							m_pGame->m_pClientList[iClientH]->m_pItemList[sItemIndex]->m_dwAttribute); // v1.4 color
 					}
 				}
-				else if (memcmp(m_pGame->m_pNpcList[sOwnerH]->m_cNpcName, "Kennedy", 7) == 0) {
+				else if (m_pGame->m_pNpcList[sOwnerH]->m_iNpcConfigId == 56) { // Shop Keeper
 					if ((m_pGame->m_bIsCrusadeMode == false) && (m_pGame->m_pClientList[iClientH]->m_pItemList[sItemIndex]->m_sIDnum == 89)) {
 
 						if ((m_pGame->m_pClientList[iClientH]->m_iGuildRank != 0) && (m_pGame->m_pClientList[iClientH]->m_iGuildRank != -1)) {
@@ -1954,7 +1965,6 @@ void ItemManager::UseItemHandler(int iClientH, short sItemIndex, short dX, short
 				m_pGame->m_pDelayEventManager->bRegisterDelayEvent(sdelay::Type::MagicRelease, hb::shared::magic::Ice, dwTime + (1 * 1000),
 					iClientH, hb::shared::owner_class::Player, 0, 0, 0, 1, 0, 0);
 
-
 				//				m_pGame->SendNotifyMsg(0, iClientH, Notify::MagicEffectOff, hb::shared::magic::Ice, 0, 0, 0);
 			}
 
@@ -2186,17 +2196,17 @@ void ItemManager::UseItemHandler(int iClientH, short sItemIndex, short dX, short
 				case 17:
 				case 18:
 				case 19:
-					SYSTEMTIME SysTime;
+					hb::time::local_time SysTime{};
 
-					GetLocalTime(&SysTime);
-					if ((m_pGame->m_pClientList[iClientH]->m_pItemList[sItemIndex]->m_sTouchEffectValue1 != SysTime.wMonth) ||
-						(m_pGame->m_pClientList[iClientH]->m_pItemList[sItemIndex]->m_sTouchEffectValue2 != SysTime.wDay) ||
-						(m_pGame->m_pClientList[iClientH]->m_pItemList[sItemIndex]->m_sTouchEffectValue3 <= SysTime.wHour)) {
+					SysTime = hb::time::local_time::now();
+					if ((m_pGame->m_pClientList[iClientH]->m_pItemList[sItemIndex]->m_sTouchEffectValue1 != SysTime.month) ||
+						(m_pGame->m_pClientList[iClientH]->m_pItemList[sItemIndex]->m_sTouchEffectValue2 != SysTime.day) ||
+						(m_pGame->m_pClientList[iClientH]->m_pItemList[sItemIndex]->m_sTouchEffectValue3 <= SysTime.hour)) {
 					}
 					else {
-						char cDestMapName[11];
-						std::memset(cDestMapName, 0, sizeof(cDestMapName));
-						std::snprintf(cDestMapName, sizeof(cDestMapName), "fightzone%d", m_pGame->m_pClientList[iClientH]->m_pItemList[sItemIndex]->m_sItemEffectValue2 - 10);
+						char cDestMapName[hb::shared::limits::MapNameLen]{};
+						int zoneNum = m_pGame->m_pClientList[iClientH]->m_pItemList[sItemIndex]->m_sItemEffectValue2 - 10;
+						std::snprintf(cDestMapName, sizeof(cDestMapName), "fightzone%d", zoneNum % 10);
 						if (memcmp(m_pGame->m_pClientList[iClientH]->m_cMapName, cDestMapName, 10) != 0) {
 							//v1.42
 							ItemDepleteHandler(iClientH, sItemIndex, true);
@@ -2566,7 +2576,6 @@ void ItemManager::ReqSellItemHandler(int iClientH, char cItemID, char cSellToWho
 			iPrice = (m_pGame->m_pClientList[iClientH]->m_pItemList[cItemID]->m_wPrice / 2) * iNum;
 			sRemainLife = m_pGame->m_pClientList[iClientH]->m_pItemList[cItemID]->m_wCurLifeSpan;
 
-
 			if (bNeutral) iPrice = iPrice / 2;
 			if (iPrice <= 0)    iPrice = 1;
 			if (iPrice > 1000000) iPrice = 1000000;
@@ -2692,7 +2701,6 @@ void ItemManager::ReqSellItemHandler(int iClientH, char cItemID, char cSellToWho
 		else m_pGame->SendNotifyMsg(0, iClientH, Notify::CannotSellItem, cItemID, 1, 0, m_pGame->m_pClientList[iClientH]->m_pItemList[cItemID]->m_cName);
 		break;
 
-
 	default:
 		break;
 	}
@@ -2709,7 +2717,6 @@ void ItemManager::ReqSellItemConfirmHandler(int iClientH, char cItemID, int iNum
 	uint32_t dwMul1, dwMul2, dwSWEType, dwSWEValue, dwAddPrice1, dwAddPrice2;
 	int    iEraseReq, iRet;
 	bool   bNeutral;
-
 
 	if (m_pGame->m_pClientList[iClientH] == 0) return;
 	if (m_pGame->m_pClientList[iClientH]->m_bIsInitComplete == false) return;
@@ -2905,7 +2912,6 @@ void ItemManager::ReqSellItemConfirmHandler(int iClientH, char cItemID, int iNum
 		m_pGame->iCalcTotalWeight(iClientH);
 
 		iRet = SendItemNotifyMsg(iClientH, Notify::CannotCarryMoreItem, 0, 0);
-
 
 		switch (iRet) {
 		case sock::Event::QueueFull:
@@ -3394,7 +3400,6 @@ void ItemManager::CalcTotalItemEffect(int iClientH, int iEquipItemID, bool bNoti
 					m_pGame->m_pClientList[iClientH]->m_iAddAR += (m_pGame->m_pClientList[iClientH]->m_pItemList[sItemIndex]->m_sItemSpecEffectValue2 / 5);
 					break;
 
-
 				case 15: // Magin Emerald	Magical damage decreased(% applied) by the purity formula.	
 					m_pGame->m_pClientList[iClientH]->m_iAddAbsMD += (m_pGame->m_pClientList[iClientH]->m_pItemList[sItemIndex]->m_sItemSpecEffectValue2 / 10);
 					if (m_pGame->m_pClientList[iClientH]->m_iAddAbsMD > 80) m_pGame->m_pClientList[iClientH]->m_iAddAbsMD = 80;
@@ -3584,7 +3589,6 @@ void ItemManager::CalcTotalItemEffect(int iClientH, int iEquipItemID, bool bNoti
 	if (m_pGame->m_pClientList[iClientH]->m_iHP > m_pGame->iGetMaxHP(iClientH)) m_pGame->m_pClientList[iClientH]->m_iHP = m_pGame->iGetMaxHP(iClientH);
 	if (m_pGame->m_pClientList[iClientH]->m_iMP > m_pGame->iGetMaxMP(iClientH)) m_pGame->m_pClientList[iClientH]->m_iMP = m_pGame->iGetMaxMP(iClientH);
 	if (m_pGame->m_pClientList[iClientH]->m_iSP > m_pGame->iGetMaxSP(iClientH)) m_pGame->m_pClientList[iClientH]->m_iSP = m_pGame->iGetMaxSP(iClientH);
-
 
 	//v1.432
 	if ((iPrevSAType != 0) && (m_pGame->m_pClientList[iClientH]->m_iSpecialAbilityType == 0) && (bNotify)) {
@@ -3825,8 +3829,7 @@ void ItemManager::GetHeroMantleHandler(int iClientH, int iItemID, const char* pS
 			if (_bAddClientItemList(iClientH, pItem, &iEraseReq)) {
 				if (m_pGame->m_pClientList[iClientH]->m_iCurWeightLoad < 0) m_pGame->m_pClientList[iClientH]->m_iCurWeightLoad = 0;
 
-				std::snprintf(G_cTxt, sizeof(G_cTxt), "(*) Get HeroItem : Char(%s) Player-EK(%d) Player-Contr(%d) Hero Obtained(%s)", m_pGame->m_pClientList[iClientH]->m_cCharName, m_pGame->m_pClientList[iClientH]->m_iEnemyKillCount, m_pGame->m_pClientList[iClientH]->m_iContribution, cItemName);
-				PutLogFileList(G_cTxt);
+				hb::logger::log<log_channel::events>("Get HeroItem : Char({}) Player-EK({}) Player-Contr({}) Hero Obtained({})", m_pGame->m_pClientList[iClientH]->m_cCharName, m_pGame->m_pClientList[iClientH]->m_iEnemyKillCount, m_pGame->m_pClientList[iClientH]->m_iContribution, cItemName);
 
 				pItem->SetTouchEffectType(TouchEffectType::UniqueOwner);
 				pItem->m_sTouchEffectValue1 = m_pGame->m_pClientList[iClientH]->m_sCharIDnum1;
@@ -3855,7 +3858,6 @@ void ItemManager::GetHeroMantleHandler(int iClientH, int iItemID, const char* pS
 				m_pGame->iCalcTotalWeight(iClientH);
 
 				iRet = SendItemNotifyMsg(iClientH, Notify::CannotCarryMoreItem, 0, 0);
-
 
 				switch (iRet) {
 				case sock::Event::QueueFull:
@@ -3938,7 +3940,6 @@ void ItemManager::ExchangeItemHandler(int iClientH, short sItemIndex, int iAmoun
 	// dX, dY     .
 	m_pGame->m_pMapList[m_pGame->m_pClientList[iClientH]->m_cMapIndex]->GetOwner(&sOwnerH, &cOwnerType, dX, dY);
 
-
 	if ((sOwnerH != 0) && (cOwnerType == hb::shared::owner_class::Player)) {
 
 		if (wObjectID != 0) {
@@ -3963,7 +3964,6 @@ void ItemManager::ExchangeItemHandler(int iClientH, short sItemIndex, int iAmoun
 				m_pGame->m_pClientList[iClientH]->m_iExchangeH = sOwnerH;
 				std::memset(m_pGame->m_pClientList[iClientH]->m_cExchangeName, 0, sizeof(m_pGame->m_pClientList[iClientH]->m_cExchangeName));
 				strcpy(m_pGame->m_pClientList[iClientH]->m_cExchangeName, m_pGame->m_pClientList[sOwnerH]->m_cCharName);
-
 
 				//Clear items in the list
 				m_pGame->m_pClientList[iClientH]->iExchangeCount = 0;
@@ -4025,7 +4025,7 @@ void ItemManager::SetExchangeItem(int iClientH, int iItemIndex, int iAmount)
 
 	if ((m_pGame->m_pClientList[iClientH]->m_bIsExchangeMode) && (m_pGame->m_pClientList[iClientH]->m_iExchangeH != 0)) {
 		iExH = m_pGame->m_pClientList[iClientH]->m_iExchangeH;
-		if ((m_pGame->m_pClientList[iExH] == 0) || (_strnicmp(m_pGame->m_pClientList[iClientH]->m_cExchangeName, m_pGame->m_pClientList[iExH]->m_cCharName, hb::shared::limits::CharNameLen - 1) != 0)) {
+		if ((m_pGame->m_pClientList[iExH] == 0) || (hb_strnicmp(m_pGame->m_pClientList[iClientH]->m_cExchangeName, m_pGame->m_pClientList[iExH]->m_cCharName, hb::shared::limits::CharNameLen - 1) != 0)) {
 
 		}
 		else {
@@ -4084,9 +4084,9 @@ void ItemManager::ConfirmExchangeItem(int iClientH)
 		if (iClientH == iExH) return;
 
 		if (m_pGame->m_pClientList[iExH] != 0) {
-			if ((_strnicmp(m_pGame->m_pClientList[iClientH]->m_cExchangeName, m_pGame->m_pClientList[iExH]->m_cCharName, hb::shared::limits::CharNameLen - 1) != 0) ||
+			if ((hb_strnicmp(m_pGame->m_pClientList[iClientH]->m_cExchangeName, m_pGame->m_pClientList[iExH]->m_cCharName, hb::shared::limits::CharNameLen - 1) != 0) ||
 				(m_pGame->m_pClientList[iExH]->m_bIsExchangeMode != true) ||
-				(_strnicmp(m_pGame->m_pClientList[iExH]->m_cExchangeName, m_pGame->m_pClientList[iClientH]->m_cCharName, hb::shared::limits::CharNameLen - 1) != 0)) {
+				(hb_strnicmp(m_pGame->m_pClientList[iExH]->m_cExchangeName, m_pGame->m_pClientList[iClientH]->m_cCharName, hb::shared::limits::CharNameLen - 1) != 0)) {
 				_ClearExchangeStatus(iClientH);
 				_ClearExchangeStatus(iExH);
 				return;
@@ -4284,7 +4284,6 @@ bool ItemManager::bAddItem(int iClientH, CItem* pItem, char cMode)
 {
 	int iRet, iEraseReq;
 
-
 	if (_bAddClientItemList(iClientH, pItem, &iEraseReq)) {
 		iRet = SendItemNotifyMsg(iClientH, Notify::ItemObtained, pItem, 0);
 
@@ -4300,7 +4299,6 @@ bool ItemManager::bAddItem(int iClientH, CItem* pItem, char cMode)
 			pItem->m_sIDnum, 0, pItem->m_cItemColor, pItem->m_dwAttribute); //v1.4 color
 
 		iRet = SendItemNotifyMsg(iClientH, Notify::CannotCarryMoreItem, 0, 0);
-
 
 		return true;
 	}
@@ -4588,20 +4586,16 @@ void ItemManager::BuildItemHandler(int iClientH, char* pData)
 				}
 
 				//testcode
-				std::snprintf(G_cTxt, sizeof(G_cTxt), "Custom-Item(%s) Value(%d) Life(%d/%d)", pItem->m_cName, pItem->m_sItemSpecEffectValue2, pItem->m_wCurLifeSpan, pItem->m_wMaxLifeSpan);
-				PutLogList(G_cTxt);
+				hb::logger::log("Custom-Item({}) Value({}) Life({}/{})", pItem->m_cName, pItem->m_sItemSpecEffectValue2, pItem->m_wCurLifeSpan, pItem->m_wMaxLifeSpan);
 
 				bAddItem(iClientH, pItem, 0);
 				m_pGame->SendNotifyMsg(0, iClientH, Notify::BuildItemSuccess, pItem->m_sItemSpecEffectValue2, pItem->m_cItemType, 0, 0); // Integer
-
-
 
 				for (x = 0; x < 6; x++)
 					if (cElementItemID[x] != -1) {
 						if (m_pGame->m_pClientList[iClientH]->m_pItemList[cElementItemID[x]] == 0) {
 							// ### BUG POINT!!!
-							std::snprintf(G_cTxt, sizeof(G_cTxt), "(?) Char(%s) ElementItemID(%d)", m_pGame->m_pClientList[iClientH]->m_cCharName, cElementItemID[x]);
-							PutLogFileList(G_cTxt);
+							hb::logger::log<log_channel::events>("(?) Char({}) ElementItemID({})", m_pGame->m_pClientList[iClientH]->m_cCharName, cElementItemID[x]);
 						}
 						else {
 							iCount = m_pGame->m_pClientList[iClientH]->m_pItemList[cElementItemID[x]]->m_dwCount - m_pGame->m_pBuildItemList[i]->m_iMaterialItemCount[x];
@@ -4947,66 +4941,52 @@ bool ItemManager::_bItemLog(int iAction, int iGiveH, int iRecvH, CItem* pItem, b
 
 	case ItemLogAction::Exchange:
 		if (m_pGame->m_pClientList[iRecvH] == 0) return false;
-		ItemLog::Get().LogExchange(m_pGame->m_pClientList[iGiveH]->m_cCharName, m_pGame->m_pClientList[iGiveH]->m_cIPaddress,
-			m_pGame->m_pClientList[iRecvH]->m_cCharName, m_pGame->m_pClientList[iGiveH]->m_cMapName,
-			m_pGame->m_pClientList[iGiveH]->m_sX, m_pGame->m_pClientList[iGiveH]->m_sY, pItem);
+		hb::logger::log<log_channel::trade>("{}{} IP({}) Exchange {} at {}({},{}) -> {}", is_item_suspicious(pItem) ? "[SUSPICIOUS] " : "", m_pGame->m_pClientList[iGiveH]->m_cCharName, m_pGame->m_pClientList[iGiveH]->m_cIPaddress, format_item_info(pItem), m_pGame->m_pClientList[iGiveH]->m_cMapName, m_pGame->m_pClientList[iGiveH]->m_sX, m_pGame->m_pClientList[iGiveH]->m_sY, m_pGame->m_pClientList[iRecvH]->m_cCharName);
 		break;
 
 	case ItemLogAction::Give:
 		if (m_pGame->m_pClientList[iRecvH] == 0) return false;
-		ItemLog::Get().LogTrade(m_pGame->m_pClientList[iGiveH]->m_cCharName, m_pGame->m_pClientList[iGiveH]->m_cIPaddress,
-			m_pGame->m_pClientList[iRecvH]->m_cCharName, m_pGame->m_pClientList[iGiveH]->m_cMapName,
-			m_pGame->m_pClientList[iGiveH]->m_sX, m_pGame->m_pClientList[iGiveH]->m_sY, pItem);
+		hb::logger::log<log_channel::trade>("{}{} IP({}) Give {} at {}({},{}) -> {}", is_item_suspicious(pItem) ? "[SUSPICIOUS] " : "", m_pGame->m_pClientList[iGiveH]->m_cCharName, m_pGame->m_pClientList[iGiveH]->m_cIPaddress, format_item_info(pItem), m_pGame->m_pClientList[iGiveH]->m_cMapName, m_pGame->m_pClientList[iGiveH]->m_sX, m_pGame->m_pClientList[iGiveH]->m_sY, m_pGame->m_pClientList[iRecvH]->m_cCharName);
 		break;
 
 	case ItemLogAction::Drop:
-		ItemLog::Get().LogDrop(m_pGame->m_pClientList[iGiveH]->m_cCharName, m_pGame->m_pClientList[iGiveH]->m_cIPaddress,
-			m_pGame->m_pClientList[iGiveH]->m_cMapName, m_pGame->m_pClientList[iGiveH]->m_sX, m_pGame->m_pClientList[iGiveH]->m_sY, pItem);
+		hb::logger::log<log_channel::drops>("{} IP({}) Drop {} at {}({},{})", m_pGame->m_pClientList[iGiveH]->m_cCharName, m_pGame->m_pClientList[iGiveH]->m_cIPaddress, format_item_info(pItem), m_pGame->m_pClientList[iGiveH]->m_cMapName, m_pGame->m_pClientList[iGiveH]->m_sX, m_pGame->m_pClientList[iGiveH]->m_sY);
 		break;
 
 	case ItemLogAction::Get:
-		ItemLog::Get().LogPickup(m_pGame->m_pClientList[iGiveH]->m_cCharName, m_pGame->m_pClientList[iGiveH]->m_cIPaddress,
-			m_pGame->m_pClientList[iGiveH]->m_cMapName, m_pGame->m_pClientList[iGiveH]->m_sX, m_pGame->m_pClientList[iGiveH]->m_sY, pItem);
+		hb::logger::log<log_channel::drops>("{} IP({}) Get {} at {}({},{})", m_pGame->m_pClientList[iGiveH]->m_cCharName, m_pGame->m_pClientList[iGiveH]->m_cIPaddress, format_item_info(pItem), m_pGame->m_pClientList[iGiveH]->m_cMapName, m_pGame->m_pClientList[iGiveH]->m_sX, m_pGame->m_pClientList[iGiveH]->m_sY);
 		break;
 
 	case ItemLogAction::Make:
-		ItemLog::Get().LogCraft(m_pGame->m_pClientList[iGiveH]->m_cCharName, m_pGame->m_pClientList[iGiveH]->m_cIPaddress,
-			m_pGame->m_pClientList[iGiveH]->m_cMapName, m_pGame->m_pClientList[iGiveH]->m_sX, m_pGame->m_pClientList[iGiveH]->m_sY, pItem);
+		hb::logger::log<log_channel::crafting>("{} IP({}) Make {} at {}({},{})", m_pGame->m_pClientList[iGiveH]->m_cCharName, m_pGame->m_pClientList[iGiveH]->m_cIPaddress, format_item_info(pItem), m_pGame->m_pClientList[iGiveH]->m_cMapName, m_pGame->m_pClientList[iGiveH]->m_sX, m_pGame->m_pClientList[iGiveH]->m_sY);
 		break;
 
 	case ItemLogAction::Deplete:
-		ItemLog::Get().LogMisc("Deplete", m_pGame->m_pClientList[iGiveH]->m_cCharName, m_pGame->m_pClientList[iGiveH]->m_cIPaddress,
-			m_pGame->m_pClientList[iGiveH]->m_cMapName, m_pGame->m_pClientList[iGiveH]->m_sX, m_pGame->m_pClientList[iGiveH]->m_sY, pItem);
+		hb::logger::log<log_channel::items_misc>("{} IP({}) {} {} at {}({},{})", m_pGame->m_pClientList[iGiveH]->m_cCharName, m_pGame->m_pClientList[iGiveH]->m_cIPaddress, "Deplete", format_item_info(pItem), m_pGame->m_pClientList[iGiveH]->m_cMapName, m_pGame->m_pClientList[iGiveH]->m_sX, m_pGame->m_pClientList[iGiveH]->m_sY);
 		break;
 
 	case ItemLogAction::Buy:
-		ItemLog::Get().LogShop("Buy", m_pGame->m_pClientList[iGiveH]->m_cCharName, m_pGame->m_pClientList[iGiveH]->m_cIPaddress,
-			m_pGame->m_pClientList[iGiveH]->m_cMapName, m_pGame->m_pClientList[iGiveH]->m_sX, m_pGame->m_pClientList[iGiveH]->m_sY, pItem);
+		hb::logger::log<log_channel::shop>("{} IP({}) {} {} at {}({},{})", m_pGame->m_pClientList[iGiveH]->m_cCharName, m_pGame->m_pClientList[iGiveH]->m_cIPaddress, "Buy", format_item_info(pItem), m_pGame->m_pClientList[iGiveH]->m_cMapName, m_pGame->m_pClientList[iGiveH]->m_sX, m_pGame->m_pClientList[iGiveH]->m_sY);
 		break;
 
 	case ItemLogAction::Sell:
-		ItemLog::Get().LogShop("Sell", m_pGame->m_pClientList[iGiveH]->m_cCharName, m_pGame->m_pClientList[iGiveH]->m_cIPaddress,
-			m_pGame->m_pClientList[iGiveH]->m_cMapName, m_pGame->m_pClientList[iGiveH]->m_sX, m_pGame->m_pClientList[iGiveH]->m_sY, pItem);
+		hb::logger::log<log_channel::shop>("{} IP({}) {} {} at {}({},{})", m_pGame->m_pClientList[iGiveH]->m_cCharName, m_pGame->m_pClientList[iGiveH]->m_cIPaddress, "Sell", format_item_info(pItem), m_pGame->m_pClientList[iGiveH]->m_cMapName, m_pGame->m_pClientList[iGiveH]->m_sX, m_pGame->m_pClientList[iGiveH]->m_sY);
 		break;
 
 	case ItemLogAction::Retrieve:
-		ItemLog::Get().LogBank("Retrieve", m_pGame->m_pClientList[iGiveH]->m_cCharName, m_pGame->m_pClientList[iGiveH]->m_cIPaddress,
-			m_pGame->m_pClientList[iGiveH]->m_cMapName, m_pGame->m_pClientList[iGiveH]->m_sX, m_pGame->m_pClientList[iGiveH]->m_sY, pItem);
+		hb::logger::log<log_channel::bank>("{} IP({}) {} {} at {}({},{})", m_pGame->m_pClientList[iGiveH]->m_cCharName, m_pGame->m_pClientList[iGiveH]->m_cIPaddress, "Retrieve", format_item_info(pItem), m_pGame->m_pClientList[iGiveH]->m_cMapName, m_pGame->m_pClientList[iGiveH]->m_sX, m_pGame->m_pClientList[iGiveH]->m_sY);
 		break;
 
 	case ItemLogAction::Deposit:
-		ItemLog::Get().LogBank("Deposit", m_pGame->m_pClientList[iGiveH]->m_cCharName, m_pGame->m_pClientList[iGiveH]->m_cIPaddress,
-			m_pGame->m_pClientList[iGiveH]->m_cMapName, m_pGame->m_pClientList[iGiveH]->m_sX, m_pGame->m_pClientList[iGiveH]->m_sY, pItem);
+		hb::logger::log<log_channel::bank>("{} IP({}) {} {} at {}({},{})", m_pGame->m_pClientList[iGiveH]->m_cCharName, m_pGame->m_pClientList[iGiveH]->m_cIPaddress, "Deposit", format_item_info(pItem), m_pGame->m_pClientList[iGiveH]->m_cMapName, m_pGame->m_pClientList[iGiveH]->m_sX, m_pGame->m_pClientList[iGiveH]->m_sY);
 		break;
 
 	case ItemLogAction::UpgradeFail:
-		ItemLog::Get().LogUpgrade(false, m_pGame->m_pClientList[iGiveH]->m_cCharName, m_pGame->m_pClientList[iGiveH]->m_cIPaddress,
-			m_pGame->m_pClientList[iGiveH]->m_cMapName, m_pGame->m_pClientList[iGiveH]->m_sX, m_pGame->m_pClientList[iGiveH]->m_sY, pItem);
+		hb::logger::log<log_channel::upgrades>("{} IP({}) Upgrade {} {} at {}({},{})", m_pGame->m_pClientList[iGiveH]->m_cCharName, m_pGame->m_pClientList[iGiveH]->m_cIPaddress, false ? "Success" : "Fail", format_item_info(pItem), m_pGame->m_pClientList[iGiveH]->m_cMapName, m_pGame->m_pClientList[iGiveH]->m_sX, m_pGame->m_pClientList[iGiveH]->m_sY);
 		break;
 
 	case ItemLogAction::UpgradeSuccess:
-		ItemLog::Get().LogUpgrade(true, m_pGame->m_pClientList[iGiveH]->m_cCharName, m_pGame->m_pClientList[iGiveH]->m_cIPaddress,
-			m_pGame->m_pClientList[iGiveH]->m_cMapName, m_pGame->m_pClientList[iGiveH]->m_sX, m_pGame->m_pClientList[iGiveH]->m_sY, pItem);
+		hb::logger::log<log_channel::upgrades>("{} IP({}) Upgrade {} {} at {}({},{})", m_pGame->m_pClientList[iGiveH]->m_cCharName, m_pGame->m_pClientList[iGiveH]->m_cIPaddress, true ? "Success" : "Fail", format_item_info(pItem), m_pGame->m_pClientList[iGiveH]->m_cMapName, m_pGame->m_pClientList[iGiveH]->m_sX, m_pGame->m_pClientList[iGiveH]->m_sY);
 		break;
 
 	default:
@@ -5030,35 +5010,31 @@ bool ItemManager::_bItemLog(int iAction, int iClientH, char* cName, CItem* pItem
 	switch (iAction) {
 
 	case ItemLogAction::NewGenDrop:
-		ItemLog::Get().LogMisc("NpcDrop", cName ? cName : "Unknown", "", "", 0, 0, pItem);
+		hb::logger::log<log_channel::items_misc>("{} IP({}) {} {} at {}({},{})", cName ? cName : "Unknown", "", "NpcDrop", format_item_info(pItem), "", 0, 0);
 		break;
 
 	case ItemLogAction::SkillLearn:
 	case ItemLogAction::MagicLearn:
 		if (cName == 0) return false;
 		if (m_pGame->m_pClientList[iClientH] == 0) return false;
-		ItemLog::Get().LogMisc("Learn", m_pGame->m_pClientList[iClientH]->m_cCharName, cTemp1,
-			m_pGame->m_pClientList[iClientH]->m_cMapName, m_pGame->m_pClientList[iClientH]->m_sX, m_pGame->m_pClientList[iClientH]->m_sY, pItem);
+		hb::logger::log<log_channel::items_misc>("{} IP({}) {} {} at {}({},{})", m_pGame->m_pClientList[iClientH]->m_cCharName, cTemp1, "Learn", format_item_info(pItem), m_pGame->m_pClientList[iClientH]->m_cMapName, m_pGame->m_pClientList[iClientH]->m_sX, m_pGame->m_pClientList[iClientH]->m_sY);
 		break;
 
 	case ItemLogAction::SummonMonster:
 		if (cName == 0) return false;
 		if (m_pGame->m_pClientList[iClientH] == 0) return false;
-		ItemLog::Get().LogMisc("Summon", m_pGame->m_pClientList[iClientH]->m_cCharName, cTemp1,
-			m_pGame->m_pClientList[iClientH]->m_cMapName, m_pGame->m_pClientList[iClientH]->m_sX, m_pGame->m_pClientList[iClientH]->m_sY, pItem);
+		hb::logger::log<log_channel::items_misc>("{} IP({}) {} {} at {}({},{})", m_pGame->m_pClientList[iClientH]->m_cCharName, cTemp1, "Summon", format_item_info(pItem), m_pGame->m_pClientList[iClientH]->m_cMapName, m_pGame->m_pClientList[iClientH]->m_sX, m_pGame->m_pClientList[iClientH]->m_sY);
 		break;
 
 	case ItemLogAction::Poisoned:
 		if (m_pGame->m_pClientList[iClientH] == 0) return false;
-		ItemLog::Get().LogMisc("Poisoned", m_pGame->m_pClientList[iClientH]->m_cCharName, cTemp1,
-			m_pGame->m_pClientList[iClientH]->m_cMapName, m_pGame->m_pClientList[iClientH]->m_sX, m_pGame->m_pClientList[iClientH]->m_sY, pItem);
+		hb::logger::log<log_channel::items_misc>("{} IP({}) {} {} at {}({},{})", m_pGame->m_pClientList[iClientH]->m_cCharName, cTemp1, "Poisoned", format_item_info(pItem), m_pGame->m_pClientList[iClientH]->m_cMapName, m_pGame->m_pClientList[iClientH]->m_sX, m_pGame->m_pClientList[iClientH]->m_sY);
 		break;
 
 	case ItemLogAction::Repair:
 		if (cName == 0) return false;
 		if (m_pGame->m_pClientList[iClientH] == 0) return false;
-		ItemLog::Get().LogMisc("Repair", m_pGame->m_pClientList[iClientH]->m_cCharName, cTemp1,
-			m_pGame->m_pClientList[iClientH]->m_cMapName, m_pGame->m_pClientList[iClientH]->m_sX, m_pGame->m_pClientList[iClientH]->m_sY, pItem);
+		hb::logger::log<log_channel::items_misc>("{} IP({}) {} {} at {}({},{})", m_pGame->m_pClientList[iClientH]->m_cCharName, cTemp1, "Repair", format_item_info(pItem), m_pGame->m_pClientList[iClientH]->m_cMapName, m_pGame->m_pClientList[iClientH]->m_sX, m_pGame->m_pClientList[iClientH]->m_sY);
 		break;
 
 	default:
@@ -5293,8 +5269,7 @@ void ItemManager::ReqCreateSlateHandler(int iClientH, char* pData)
 		//Crash Hacker Caught
 		bIsSlatePresent = false;
 		m_pGame->SendNotifyMsg(0, iClientH, Notify::SlateCreateFail, 0, 0, 0, 0);
-		std::snprintf(G_cTxt, sizeof(G_cTxt), "TSearch Slate Hack: (%s) Player: (%s) - creating slates without correct item!", m_pGame->m_pClientList[iClientH]->m_cIPaddress, m_pGame->m_pClientList[iClientH]->m_cCharName);
-		PutHackLogFileList(G_cTxt);
+		hb::logger::warn<log_channel::security>("Slate hack: IP={} player={}, creating slates without required item", m_pGame->m_pClientList[iClientH]->m_cIPaddress, m_pGame->m_pClientList[iClientH]->m_cCharName);
 		m_pGame->DeleteClient(iClientH, true, true);
 		return;
 	}
@@ -5351,7 +5326,6 @@ void ItemManager::ReqCreateSlateHandler(int iClientH, char* pData)
 	// Notify client
 	m_pGame->SendNotifyMsg(0, iClientH, Notify::SlateCreateSuccess, iSlateType, 0, 0, 0);
 
-
 	// Create slates
 	if (_bInitItemAttr(pItem, 867) == false) {
 		delete pItem;
@@ -5383,7 +5357,6 @@ void ItemManager::ReqCreateSlateHandler(int iClientH, char* pData)
 			m_pGame->SendEventToNearClient_TypeB(MsgId::EventCommon, CommonType::ItemDrop, m_pGame->m_pClientList[iClientH]->m_cMapIndex,
 				m_pGame->m_pClientList[iClientH]->m_sX, m_pGame->m_pClientList[iClientH]->m_sY, pItem->m_sIDnum, 0, pItem->m_cItemColor, pItem->m_dwAttribute);
 			iRet = SendItemNotifyMsg(iClientH, Notify::CannotCarryMoreItem, 0, 0);
-
 
 			switch (iRet) {
 			case sock::Event::QueueFull:
@@ -5517,7 +5490,7 @@ void ItemManager::ReloadItemConfigs()
 	bool configDbCreated = false;
 	if (!EnsureGameConfigDatabase(&configDb, configDbPath, &configDbCreated) || configDbCreated)
 	{
-		PutLogList((char*)"(!) Item config reload FAILED - GameConfigs.db unavailable");
+		hb::logger::log("Item config reload failed: GameConfigs.db unavailable");
 		return;
 	}
 
@@ -5532,14 +5505,14 @@ void ItemManager::ReloadItemConfigs()
 
 	if (!LoadItemConfigs(configDb, m_pGame->m_pItemConfigList, MaxItemTypes))
 	{
-		PutLogList((char*)"(!) Item config reload FAILED");
+		hb::logger::log("Item config reload failed");
 		CloseGameConfigDatabase(configDb);
 		return;
 	}
 
 	CloseGameConfigDatabase(configDb);
 	m_pGame->ComputeConfigHashes();
-	PutLogList((char*)"(*) Item configs reloaded successfully");
+	hb::logger::log("Item configs reloaded successfully");
 }
 
 void ItemManager::RequestItemUpgradeHandler(int iClientH, int iItemIndex)
@@ -5943,7 +5916,6 @@ void ItemManager::RequestItemUpgradeHandler(int iClientH, int iItemIndex)
 		default: break;
 		}
 
-
 		iSoX = iSoM = 0;
 		for(int i = 0; i < hb::shared::limits::MaxItems; i++)
 			if (m_pGame->m_pClientList[iClientH]->m_pItemList[i] != 0) {
@@ -6156,7 +6128,6 @@ void ItemManager::RequestItemUpgradeHandler(int iClientH, int iItemIndex)
 				_bItemLog(ItemLogAction::UpgradeSuccess, iClientH, (int)-1, m_pGame->m_pClientList[iClientH]->m_pItemList[iItemIndex]);
 				break;
 
-
 			}
 			else if ((iValue == 15) && (m_pGame->m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_sIDnum == 738))
 			{
@@ -6198,7 +6169,6 @@ void ItemManager::RequestItemUpgradeHandler(int iClientH, int iItemIndex)
 				_bItemLog(ItemLogAction::UpgradeSuccess, iClientH, (int)-1, m_pGame->m_pClientList[iClientH]->m_pItemList[iItemIndex]);
 				break;
 
-
 			}
 			else if ((iValue == 15) && (m_pGame->m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_sIDnum == 746))
 			{
@@ -6239,7 +6209,6 @@ void ItemManager::RequestItemUpgradeHandler(int iClientH, int iItemIndex)
 					m_pGame->m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_sIDnum);
 				_bItemLog(ItemLogAction::UpgradeSuccess, iClientH, (int)-1, m_pGame->m_pClientList[iClientH]->m_pItemList[iItemIndex]);
 				break;
-
 
 			}
 			else
@@ -6369,7 +6338,6 @@ void ItemManager::RequestItemUpgradeHandler(int iClientH, int iItemIndex)
 					m_pGame->m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_sIDnum);
 				_bItemLog(ItemLogAction::UpgradeSuccess, iClientH, (int)-1, m_pGame->m_pClientList[iClientH]->m_pItemList[iItemIndex]);
 				break;
-
 
 			}
 
@@ -6513,8 +6481,7 @@ bool ItemManager::bPlantSeedBag(int iMapIndex, int dX, int dY, int iItemEffectVa
 				}
 				m_pGame->m_pNpcList[sOwnerH]->m_appearance.iSpecialFrame = 1;
 				m_pGame->SendEventToNearClient_TypeA(sOwnerH, hb::shared::owner_class::Npc, MsgId::EventLog, MsgType::Confirm, 0, 0, 0);
-				std::snprintf(G_cTxt, sizeof(G_cTxt), "(skill:%d type:%d)plant(%s) Agriculture begin(%d,%d) sum(%d)!", m_pGame->m_pNpcList[sOwnerH]->m_cCropSkill, m_pGame->m_pNpcList[sOwnerH]->m_cCropType, cNpcName, tX, tY, m_pGame->m_pMapList[m_pGame->m_pClientList[iClientH]->m_cMapIndex]->m_iTotalAgriculture);
-				PutLogList(G_cTxt);
+				hb::logger::log("Agriculture: skill={} type={} plant={} at ({},{}) total={}", m_pGame->m_pNpcList[sOwnerH]->m_cCropSkill, m_pGame->m_pNpcList[sOwnerH]->m_cCropType, cNpcName, tX, tY, m_pGame->m_pMapList[m_pGame->m_pClientList[iClientH]->m_cMapIndex]->m_iTotalAgriculture);
 				return true;
 			}
 		}

@@ -1,8 +1,8 @@
-#include <windows.h>
 #include "GameCmdUnblock.h"
 #include "Game.h"
 #include <cstring>
 #include <algorithm>
+#include "StringCompat.h"
 
 using namespace hb::shared::net;
 bool GameCmdUnblock::Execute(CGame* pGame, int iClientH, const char* pArgs)
@@ -34,7 +34,7 @@ bool GameCmdUnblock::Execute(CGame* pGame, int iClientH, const char* pArgs)
 	auto& blockList = pGame->m_pClientList[iClientH]->m_BlockedAccountsList;
 	auto it = std::find_if(blockList.begin(), blockList.end(),
 		[&](const std::pair<std::string, std::string>& entry) {
-			return _stricmp(entry.second.c_str(), cCharName) == 0;
+			return hb_stricmp(entry.second.c_str(), cCharName) == 0;
 		});
 
 	if (it == blockList.end())

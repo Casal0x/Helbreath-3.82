@@ -2,9 +2,7 @@
 
 #pragma once
 
-// MODERNIZED: Prevent old winsock.h from loading (must be before windows.h)
 
-#include <windows.h>
 #include "CommonTypes.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -22,6 +20,7 @@
 #include "GameGeometry.h"
 #include "Appearance.h"
 #include "PlayerStatusData.h"
+#include "StringCompat.h"
 using namespace std;
 
 namespace hb::server::config { constexpr int ClientSocketBlockLimit = 2000; } // Queue size per client
@@ -391,7 +390,7 @@ public:
 	// Block list
 	struct CaseInsensitiveLess {
 		bool operator()(const std::string& a, const std::string& b) const {
-			return _stricmp(a.c_str(), b.c_str()) < 0;
+			return hb_stricmp(a.c_str(), b.c_str()) < 0;
 		}
 	};
 	std::set<std::string, CaseInsensitiveLess> m_BlockedAccounts;

@@ -1,28 +1,26 @@
-#include <windows.h>
 #include "CmdSetCmdLevel.h"
 #include "Game.h"
 #include "GameConfigSqliteStore.h"
-#include "winmain.h"
 #include <cstring>
 #include <cstdio>
 #include <cstdlib>
+#include "Log.h"
 
 void CmdSetCmdLevel::Execute(CGame* pGame, const char* pArgs)
 {
 	if (pArgs == nullptr || pArgs[0] == '\0')
 	{
-		PutLogList("Usage: setcmdlevel <command> <level>");
+		hb::logger::log("Usage: setcmdlevel <command> <level>");
 		if (!pGame->m_commandPermissions.empty())
 		{
-			PutLogList("Current command permissions:");
+			hb::logger::log("Current command permissions:");
 			for (const auto& pair : pGame->m_commandPermissions)
 			{
 				char buf[256];
 				if (pair.second.sDescription.empty())
 					std::snprintf(buf, sizeof(buf), "  /%s -> level %d", pair.first.c_str(), pair.second.iAdminLevel);
 				else
-					std::snprintf(buf, sizeof(buf), "  /%s -> level %d (%s)", pair.first.c_str(), pair.second.iAdminLevel, pair.second.sDescription.c_str());
-				PutLogList(buf);
+				hb::logger::log("/{} -> level {} ({})", pair.first.c_str(), pair.second.iAdminLevel, pair.second.sDescription.c_str());
 			}
 		}
 		return;
@@ -47,15 +45,11 @@ void CmdSetCmdLevel::Execute(CGame* pGame, const char* pArgs)
 		auto it = pGame->m_commandPermissions.find(cCmdName);
 		if (it != pGame->m_commandPermissions.end())
 		{
-			char buf[256];
-			std::snprintf(buf, sizeof(buf), "(!) Command '/%s' requires admin level %d", cCmdName, it->second.iAdminLevel);
-			PutLogList(buf);
+			hb::logger::log("Command '/{}' requires admin level {}", cCmdName, it->second.iAdminLevel);
 		}
 		else
 		{
-			char buf[128];
-			std::snprintf(buf, sizeof(buf), "(!) Command '/%s' not found in permissions table", cCmdName);
-			PutLogList(buf);
+			hb::logger::log("Command '/{}' not found in permissions table", cCmdName);
 		}
 		return;
 	}
@@ -63,7 +57,7 @@ void CmdSetCmdLevel::Execute(CGame* pGame, const char* pArgs)
 	int iLevel = std::atoi(p);
 	if (iLevel < 0)
 	{
-		PutLogList("(!) Level must be >= 0.");
+		hb::logger::log("Level must be >= 0.");
 		return;
 	}
 
@@ -89,7 +83,5 @@ void CmdSetCmdLevel::Execute(CGame* pGame, const char* pArgs)
 		CloseGameConfigDatabase(configDb);
 	}
 
-	char buf[128];
-	std::snprintf(buf, sizeof(buf), "(!) Command '/%s' now requires admin level %d", cCmdName, iLevel);
-	PutLogList(buf);
+	hb::logger::log("Command '/{}' now requires admin level {}", cCmdName, iLevel);
 }

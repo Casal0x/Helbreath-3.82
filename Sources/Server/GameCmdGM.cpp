@@ -1,7 +1,7 @@
-#include <windows.h>
 #include "GameCmdGM.h"
 #include "Game.h"
 #include <cstring>
+#include "StringCompat.h"
 
 
 using namespace hb::shared::net;
@@ -18,7 +18,7 @@ bool GameCmdGM::Execute(CGame* pGame, int iClientH, const char* pArgs)
 		return true;
 	}
 
-	if (_stricmp(pArgs, "on") == 0)
+	if (hb_stricmp(pArgs, "on") == 0)
 	{
 		pGame->m_pClientList[iClientH]->m_bIsGMMode = true;
 		pGame->m_pClientList[iClientH]->m_status.bGMMode = true;
@@ -26,7 +26,7 @@ bool GameCmdGM::Execute(CGame* pGame, int iClientH, const char* pArgs)
 		pGame->SendNotifyMsg(0, iClientH, Notify::NoticeMsg, 0, 0, 0, "GM mode enabled.");
 		return true;
 	}
-	else if (_stricmp(pArgs, "off") == 0)
+	else if (hb_stricmp(pArgs, "off") == 0)
 	{
 		pGame->m_pClientList[iClientH]->m_bIsGMMode = false;
 		pGame->m_pClientList[iClientH]->m_status.bGMMode = false;

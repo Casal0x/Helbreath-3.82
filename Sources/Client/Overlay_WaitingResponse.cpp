@@ -34,7 +34,7 @@ void Overlay_WaitingResponse::on_update()
     uint32_t dwElapsed = dwTime - m_dwStartTime;
 
     // ESC key cancels (only after 7 seconds to wait for response)
-    if (hb::shared::input::IsKeyPressed(KeyCode::Escape))
+    if (hb::shared::input::is_key_pressed(KeyCode::Escape))
     {
         if (dwElapsed > 7000)
         {

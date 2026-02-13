@@ -105,115 +105,115 @@ public:
 
     // ============== Frame Management ==============
     // Called at start of frame to reset pressed/released states
-    virtual void BeginFrame() = 0;
+    virtual void begin_frame() = 0;
 
     // ============== Keyboard ==============
-    virtual bool IsKeyDown(KeyCode key) const = 0;      // Currently held
-    virtual bool IsKeyPressed(KeyCode key) const = 0;   // Just pressed this frame
-    virtual bool IsKeyReleased(KeyCode key) const = 0;  // Just released this frame
+    virtual bool is_key_down(KeyCode key) const = 0;      // Currently held
+    virtual bool is_key_pressed(KeyCode key) const = 0;   // Just pressed this frame
+    virtual bool is_key_released(KeyCode key) const = 0;  // Just released this frame
 
     // ============== Mouse Buttons ==============
-    virtual bool IsMouseButtonDown(int button) const = 0;
-    virtual bool IsMouseButtonPressed(int button) const = 0;
-    virtual bool IsMouseButtonReleased(int button) const = 0;
+    virtual bool is_mouse_button_down(int button) const = 0;
+    virtual bool is_mouse_button_pressed(int button) const = 0;
+    virtual bool is_mouse_button_released(int button) const = 0;
 
     // ============== Mouse Position ==============
     // Returns position in logical game coordinates (0-639, 0-479)
-    virtual int GetMouseX() const = 0;
-    virtual int GetMouseY() const = 0;
+    virtual int get_mouse_x() const = 0;
+    virtual int get_mouse_y() const = 0;
 
     // ============== Mouse Wheel ==============
     // Returns accumulated delta since last reset
-    virtual int GetMouseWheelDelta() const = 0;
+    virtual int get_mouse_wheel_delta() const = 0;
     // Clear accumulated delta (called after a rendered frame consumes it)
-    virtual void ResetMouseWheelDelta() = 0;
+    virtual void reset_mouse_wheel_delta() = 0;
 
     // ============== Modifier Keys ==============
-    virtual bool IsShiftDown() const = 0;
-    virtual bool IsCtrlDown() const = 0;
-    virtual bool IsAltDown() const = 0;
+    virtual bool is_shift_down() const = 0;
+    virtual bool is_ctrl_down() const = 0;
+    virtual bool is_alt_down() const = 0;
 
     // ============== hb::shared::render::Window Focus ==============
-    virtual bool IsWindowActive() const = 0;
-    virtual void SetWindowActive(bool active) = 0;
+    virtual bool is_window_active() const = 0;
+    virtual void set_window_active(bool active) = 0;
 
     // ============== Input Suppression ==============
     // When suppressed, all input queries return false/zero (except mouse position)
     // Used internally by overlay system - developers shouldn't call this directly
-    virtual void SetSuppressed(bool suppressed) = 0;
-    virtual bool IsSuppressed() const = 0;
+    virtual void set_suppressed(bool suppressed) = 0;
+    virtual bool is_suppressed() const = 0;
 
     // ============== Input Events ==============
     // Called by window/event handler to feed input
-    virtual void OnKeyDown(KeyCode key) = 0;
-    virtual void OnKeyUp(KeyCode key) = 0;
-    virtual void OnMouseMove(int x, int y) = 0;
-    virtual void OnMouseDown(int button) = 0;
-    virtual void OnMouseUp(int button) = 0;
-    virtual void OnMouseWheel(int delta) = 0;
+    virtual void on_key_down(KeyCode key) = 0;
+    virtual void on_key_up(KeyCode key) = 0;
+    virtual void on_mouse_move(int x, int y) = 0;
+    virtual void on_mouse_down(int button) = 0;
+    virtual void on_mouse_up(int button) = 0;
+    virtual void on_mouse_wheel(int delta) = 0;
 };
 
 // ============== Global Input System ==============
 namespace hb::shared::input {
     // Lifecycle - called by engine
-    void Create();
-    void Destroy();
+    void create();
+    void destroy();
 
     // Get the implementation
-    IInput* Get();
+    IInput* get();
 
     // ============== Static Convenience Functions (Raylib style) ==============
 
     // Keyboard
-    inline bool IsKeyDown(KeyCode key) { return Get()->IsKeyDown(key); }
-    inline bool IsKeyPressed(KeyCode key) { return Get()->IsKeyPressed(key); }
-    inline bool IsKeyReleased(KeyCode key) { return Get()->IsKeyReleased(key); }
+    inline bool is_key_down(KeyCode key) { return get()->is_key_down(key); }
+    inline bool is_key_pressed(KeyCode key) { return get()->is_key_pressed(key); }
+    inline bool is_key_released(KeyCode key) { return get()->is_key_released(key); }
 
     // Mouse buttons
-    inline bool IsMouseButtonDown(int btn) { return Get()->IsMouseButtonDown(btn); }
-    inline bool IsMouseButtonPressed(int btn) { return Get()->IsMouseButtonPressed(btn); }
-    inline bool IsMouseButtonReleased(int btn) { return Get()->IsMouseButtonReleased(btn); }
+    inline bool is_mouse_button_down(int btn) { return get()->is_mouse_button_down(btn); }
+    inline bool is_mouse_button_pressed(int btn) { return get()->is_mouse_button_pressed(btn); }
+    inline bool is_mouse_button_released(int btn) { return get()->is_mouse_button_released(btn); }
 
     // Mouse position
-    inline int GetMouseX() { return Get()->GetMouseX(); }
-    inline int GetMouseY() { return Get()->GetMouseY(); }
-    inline int GetMouseWheelDelta() { return Get()->GetMouseWheelDelta(); }
-    inline void ResetMouseWheelDelta() { Get()->ResetMouseWheelDelta(); }
+    inline int get_mouse_x() { return get()->get_mouse_x(); }
+    inline int get_mouse_y() { return get()->get_mouse_y(); }
+    inline int get_mouse_wheel_delta() { return get()->get_mouse_wheel_delta(); }
+    inline void reset_mouse_wheel_delta() { get()->reset_mouse_wheel_delta(); }
 
     // Modifier keys
-    inline bool IsShiftDown() { return Get()->IsShiftDown(); }
-    inline bool IsCtrlDown() { return Get()->IsCtrlDown(); }
-    inline bool IsAltDown() { return Get()->IsAltDown(); }
+    inline bool is_shift_down() { return get()->is_shift_down(); }
+    inline bool is_ctrl_down() { return get()->is_ctrl_down(); }
+    inline bool is_alt_down() { return get()->is_alt_down(); }
 
     // hb::shared::render::Window state
-    inline bool IsWindowActive() { return Get()->IsWindowActive(); }
+    inline bool is_window_active() { return get()->is_window_active(); }
 
     // Frame management
-    inline void BeginFrame() { Get()->BeginFrame(); }
+    inline void begin_frame() { get()->begin_frame(); }
 
     // Input suppression (used internally by overlay system)
-    inline void SetSuppressed(bool suppressed) { Get()->SetSuppressed(suppressed); }
-    inline bool IsSuppressed() { return Get()->IsSuppressed(); }
+    inline void set_suppressed(bool suppressed) { get()->set_suppressed(suppressed); }
+    inline bool is_suppressed() { return get()->is_suppressed(); }
 
     // ============== Hit-Testing Helpers (replaces CMouseInterface) ==============
 
     // Check if point is inside rectangle (x, y, width, height)
-    inline bool PointInRect(int px, int py, int x, int y, int w, int h) {
+    inline bool point_in_rect(int px, int py, int x, int y, int w, int h) {
         return px >= x && px < x + w && py >= y && py < y + h;
     }
 
     // Check if mouse is inside rectangle (x, y, width, height)
-    inline bool IsMouseInRect(int x, int y, int w, int h) {
-        return PointInRect(GetMouseX(), GetMouseY(), x, y, w, h);
+    inline bool is_mouse_in_rect(int x, int y, int w, int h) {
+        return point_in_rect(get_mouse_x(), get_mouse_y(), x, y, w, h);
     }
 
     // Check if left click occurred inside rectangle this frame (x, y, width, height)
-    inline bool IsClickInRect(int x, int y, int w, int h) {
-        return IsMouseButtonPressed(hb::shared::input::MouseButton::Left) && IsMouseInRect(x, y, w, h);
+    inline bool is_click_in_rect(int x, int y, int w, int h) {
+        return is_mouse_button_pressed(hb::shared::input::MouseButton::Left) && is_mouse_in_rect(x, y, w, h);
     }
 
     // Check if right click occurred inside rectangle this frame (x, y, width, height)
-    inline bool IsRightClickInRect(int x, int y, int w, int h) {
-        return IsMouseButtonPressed(hb::shared::input::MouseButton::Right) && IsMouseInRect(x, y, w, h);
+    inline bool is_right_click_in_rect(int x, int y, int w, int h) {
+        return is_mouse_button_pressed(hb::shared::input::MouseButton::Right) && is_mouse_in_rect(x, y, w, h);
     }
 }

@@ -1,4 +1,3 @@
-#include <windows.h>
 #include "GameCmdRegen.h"
 #include "Game.h"
 #include <cstring>

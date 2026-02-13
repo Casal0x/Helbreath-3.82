@@ -68,33 +68,36 @@ private:
 class Window
 {
 public:
-    // Create the window with given parameters
-    // Returns true on success
-    static bool Create(const WindowParams& params);
+    // Allocate the window implementation (stages default params, no OS window yet)
+    // Configure via get()->set_title/set_size/etc., then call realize().
+    static IWindow* create();
+
+    // Create the OS window from staged params + initialize input system
+    static bool realize();
 
     // Get the current window instance
-    static IWindow* Get();
+    static IWindow* get();
 
     // Destroy the current window
-    static void Destroy();
+    static void destroy();
 
     // Get the window handle (HWND on Windows)
-    static hb::shared::types::NativeWindowHandle GetHandle();
+    static hb::shared::types::NativeWindowHandle get_handle();
 
     // Convenience: Check if window is open and active
-    static bool IsActive();
+    static bool is_active();
 
     // Request window close
-    static void Close();
+    static void close();
 
     // Show an error message box (platform-appropriate)
-    static void ShowError(const char* title, const char* message);
+    static void show_error(const char* title, const char* message);
 
     // Resize the window
-    static void SetSize(int width, int height, bool center = true);
+    static void set_size(int width, int height, bool center = true);
 
     // Toggle borderless/bordered window mode
-    static void SetBorderless(bool borderless);
+    static void set_borderless(bool borderless);
 
 private:
     static IWindow* s_pWindow;

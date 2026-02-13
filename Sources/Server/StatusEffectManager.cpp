@@ -12,7 +12,6 @@ using namespace hb::server::config;
 namespace sock = hb::shared::net::socket;
 
 extern char G_cTxt[512];
-extern void PutLogList(char* cStr);
 
 void StatusEffectManager::SetHeroFlag(short sOwnerH, char cOwnerType, bool bStatus)
 {

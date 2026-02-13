@@ -1,4 +1,4 @@
-﻿// Overlay_QueryForceLogin.cpp: "Character on Use" confirmation overlay
+// Overlay_QueryForceLogin.cpp: "Character on Use" confirmation overlay
 //
 //////////////////////////////////////////////////////////////////////
 
@@ -44,19 +44,19 @@ void Overlay_QueryForceLogin::on_update()
     GetCenteredDialogPos(InterfaceNdGame4, 2, dlgX, dlgY);
 
     // ESC cancels - base screen (SelectCharacter) will be revealed
-    if (hb::shared::input::IsKeyPressed(KeyCode::Escape))
+    if (hb::shared::input::is_key_pressed(KeyCode::Escape))
     {
         clear_overlay();
         return;
     }
 
     // Mouse click detection
-    if (hb::shared::input::IsMouseButtonPressed(MouseButton::Left))
+    if (hb::shared::input::is_mouse_button_pressed(MouseButton::Left))
     {
         PlayGameSound('E', 14, 5);
 
         // Yes button - force disconnect existing session
-        if (hb::shared::input::IsMouseInRect(dlgX + 38, dlgY + 114, ui_layout::btn_size_x, ui_layout::btn_size_y))
+        if (hb::shared::input::is_mouse_in_rect(dlgX + 38, dlgY + 114, ui_layout::btn_size_x, ui_layout::btn_size_y))
         {
             // Create login socket and initiate force disconnect
             m_pGame->m_pLSock = std::make_unique<hb::shared::net::ASIOSocket>(m_pGame->m_pIOPool->GetContext(), game_limits::socket_block_limit);
@@ -73,7 +73,7 @@ void Overlay_QueryForceLogin::on_update()
         }
 
         // No button - cancel, base screen (SelectCharacter) will be revealed
-        if (hb::shared::input::IsMouseInRect(dlgX + 208, dlgY + 114, ui_layout::btn_size_x, ui_layout::btn_size_y))
+        if (hb::shared::input::is_mouse_in_rect(dlgX + 208, dlgY + 114, ui_layout::btn_size_x, ui_layout::btn_size_y))
         {
             clear_overlay();
             return;
@@ -101,8 +101,8 @@ void Overlay_QueryForceLogin::on_update()
 
 void Overlay_QueryForceLogin::on_render()
 {
-    int msX = hb::shared::input::GetMouseX();
-    int msY = hb::shared::input::GetMouseY();
+    int msX = hb::shared::input::get_mouse_x();
+    int msY = hb::shared::input::get_mouse_y();
     uint32_t dwElapsed = GameClock::GetTimeMS() - m_dwStartTime;
 
     int dlgX, dlgY;

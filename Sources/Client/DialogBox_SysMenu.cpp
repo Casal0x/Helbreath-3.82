@@ -83,12 +83,12 @@ void DialogBox_SysMenu::ApplyResolution(int index)
 	ConfigManager::Get().SetWindowSize(newWidth, newHeight);
 	ConfigManager::Get().Save();
 
-	hb::shared::render::Window::SetSize(newWidth, newHeight, true);
+	hb::shared::render::Window::set_size(newWidth, newHeight, true);
 
 	if (hb::shared::render::Renderer::Get())
 		hb::shared::render::Renderer::Get()->ResizeBackBuffer(newWidth, newHeight);
 
-	hb::shared::input::Get()->SetWindowActive(true);
+	hb::shared::input::get()->set_window_active(true);
 }
 
 DialogBox_SysMenu::DialogBox_SysMenu(CGame* pGame)
@@ -872,7 +872,7 @@ bool DialogBox_SysMenu::OnClickGraphics(short sX, short sY, short msX, short msY
 		if (clickedRegion >= 0 && clickedRegion < s_NumFpsOptions) {
 			int newLimit = s_FpsOptions[clickedRegion];
 			ConfigManager::Get().SetFpsLimit(newLimit);
-			hb::shared::render::Window::Get()->SetFramerateLimit(newLimit);
+			hb::shared::render::Window::get()->set_framerate_limit(newLimit);
 			PlaySoundEffect('E', 14, 5);
 			return true;
 		}
@@ -886,7 +886,7 @@ bool DialogBox_SysMenu::OnClickGraphics(short sX, short sY, short msX, short msY
 	if (isFullscreen && msY >= aspectBoxY && msY <= aspectBoxY + wideBoxHeight && msX >= wideBoxX && msX <= wideBoxX + wideBoxWidth) {
 		bool bNewStretch = (msX >= wideBoxX + aspectRegionWidth);
 		ConfigManager::Get().SetFullscreenStretchEnabled(bNewStretch);
-		hb::shared::render::Window::Get()->SetFullscreenStretch(bNewStretch);
+		hb::shared::render::Window::get()->set_fullscreen_stretch(bNewStretch);
 		if (hb::shared::render::Renderer::Get())
 			hb::shared::render::Renderer::Get()->SetFullscreenStretch(bNewStretch);
 		PlaySoundEffect('E', 14, 5);
@@ -899,7 +899,7 @@ bool DialogBox_SysMenu::OnClickGraphics(short sX, short sY, short msX, short msY
 	if (IsInToggleArea(smallBoxX, lineY, msX, msY)) {
 		bool enabled = ConfigManager::Get().IsVSyncEnabled();
 		ConfigManager::Get().SetVSyncEnabled(!enabled);
-		hb::shared::render::Window::Get()->SetVSyncEnabled(!enabled);
+		hb::shared::render::Window::get()->set_vsync_enabled(!enabled);
 		PlaySoundEffect('E', 14, 5);
 		return true;
 	}
@@ -986,8 +986,8 @@ bool DialogBox_SysMenu::OnClickGraphics(short sX, short sY, short msX, short msY
 	const int modeBoxY = lineY - 2;
 	if (msX >= wideBoxX && msX <= wideBoxX + wideBoxWidth && msY >= modeBoxY && msY <= modeBoxY + wideBoxHeight) {
 		m_pGame->m_Renderer->SetFullscreen(!isFullscreen);
-		m_pGame->m_Renderer->ChangeDisplayMode(hb::shared::render::Window::GetHandle());
-		hb::shared::input::Get()->SetWindowActive(true);
+		m_pGame->m_Renderer->ChangeDisplayMode(hb::shared::render::Window::get_handle());
+		hb::shared::input::get()->set_window_active(true);
 		ConfigManager::Get().SetFullscreenEnabled(!isFullscreen);
 		ConfigManager::Get().Save();
 		PlaySoundEffect('E', 14, 5);
@@ -1001,8 +1001,8 @@ bool DialogBox_SysMenu::OnClickGraphics(short sX, short sY, short msX, short msY
 	if (!isFullscreen && msX >= wideBoxX && msX <= wideBoxX + wideBoxWidth && msY >= styleBoxY && msY <= styleBoxY + wideBoxHeight) {
 		bool borderless = ConfigManager::Get().IsBorderlessEnabled();
 		ConfigManager::Get().SetBorderlessEnabled(!borderless);
-		hb::shared::render::Window::SetBorderless(!borderless);
-		hb::shared::input::Get()->SetWindowActive(true);
+		hb::shared::render::Window::set_borderless(!borderless);
+		hb::shared::input::get()->set_window_active(true);
 		ConfigManager::Get().Save();
 		PlaySoundEffect('E', 14, 5);
 		return true;
@@ -1149,7 +1149,7 @@ bool DialogBox_SysMenu::OnClickSystem(short sX, short sY, short msX, short msY)
 	if (IsInToggleArea(valueX, lineY, msX, msY)) {
 		bool enabled = ConfigManager::Get().IsMouseCaptureEnabled();
 		ConfigManager::Get().SetMouseCaptureEnabled(!enabled);
-		hb::shared::render::Window::Get()->SetMouseCaptureEnabled(!enabled);
+		hb::shared::render::Window::get()->set_mouse_capture_enabled(!enabled);
 		PlaySoundEffect('E', 14, 5);
 		return true;
 	}

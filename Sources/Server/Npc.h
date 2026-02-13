@@ -2,9 +2,7 @@
 
 #pragma once
 
-// MODERNIZED: Prevent old winsock.h from loading (must be before windows.h)
 
-#include <windows.h>
 #include "CommonTypes.h"
 #include "Magic.h"
 #include "GameGeometry.h"
@@ -47,7 +45,7 @@ namespace Behavior
 class CNpc  
 {
 public:
-	CNpc(char * pName5);
+	CNpc(const char * pName5);
 	virtual ~CNpc();
 
 	// Auras

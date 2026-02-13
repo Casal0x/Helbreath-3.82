@@ -1,4 +1,4 @@
-﻿// SFMLRenderer.cpp: SFML renderer implementation
+// SFMLRenderer.cpp: SFML renderer implementation
 //
 // Part of SFMLEngine static library
 //////////////////////////////////////////////////////////////////////
@@ -210,7 +210,7 @@ void SFMLRenderer::SetVSyncMode(bool enabled)
 void SFMLRenderer::ChangeDisplayMode(hb::shared::types::NativeWindowHandle hWnd)
 {
     // Get the window through the hb::shared::render::Window factory
-    hb::shared::render::IWindow* pWindow = hb::shared::render::Window::Get();
+    hb::shared::render::IWindow* pWindow = hb::shared::render::Window::get();
     if (!pWindow)
         return;
 
@@ -219,7 +219,7 @@ void SFMLRenderer::ChangeDisplayMode(hb::shared::types::NativeWindowHandle hWnd)
 
     // Apply the fullscreen setting to the window
     // This will recreate the window with the new mode
-    pSFMLWindow->SetFullscreen(m_fullscreen);
+    pSFMLWindow->set_fullscreen(m_fullscreen);
 
     // Update our render window pointer (window was recreated)
     m_pRenderWindow = pSFMLWindow->GetRenderWindow();

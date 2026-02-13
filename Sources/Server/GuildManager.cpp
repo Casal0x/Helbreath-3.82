@@ -1,43 +1,41 @@
-﻿// GuildManager.cpp: Handles server-side guild operations.
+// GuildManager.cpp: Handles server-side guild operations.
 // Extracted from Game.cpp (Phase B4).
 
 #include "GuildManager.h"
 #include "Game.h"
 #include "Packet/SharedPackets.h"
-#ifdef _WIN32
-#include <direct.h>
-#endif
-#include <windows.h>
+#include "StringCompat.h"
+#include "TimeUtils.h"
+#include <filesystem>
 #include <cstdio>
 #include <cstring>
+#include "Log.h"
 
 using namespace hb::shared::net;
 using namespace hb::shared::action;
 namespace sock = hb::shared::net::socket;
 
 extern char G_cTxt[512];
-extern void PutLogList(char* cStr);
 
 void GuildManager::ResponseCreateNewGuildHandler(char* pData, int iType)
 {
 
 	uint16_t wResult;
-	char cCharName[hb::shared::limits::CharNameLen], cTxt[120];
+	char cCharName[hb::shared::limits::CharNameLen];
 	int iRet;
 
 	std::memset(cCharName, 0, sizeof(cCharName));
 	memcpy(cCharName, pData, hb::shared::limits::CharNameLen - 1);
 
 	for(int i = 1; i < hb::server::config::MaxClients; i++)
-		if ((m_pGame->m_pClientList[i] != 0) && (_strnicmp(m_pGame->m_pClientList[i]->m_cCharName, cCharName, hb::shared::limits::CharNameLen - 1) == 0) &&
+		if ((m_pGame->m_pClientList[i] != 0) && (hb_strnicmp(m_pGame->m_pClientList[i]->m_cCharName, cCharName, hb::shared::limits::CharNameLen - 1) == 0) &&
 			(m_pGame->m_pClientList[i]->m_iLevel >= 20) && (m_pGame->m_pClientList[i]->m_iCharisma >= 20)) {
 
 			switch (iType) {
 			case 1: // LogResMsg::Confirm
 				wResult = MsgType::Confirm;
 				m_pGame->m_pClientList[i]->m_iGuildRank = 0;
-				std::snprintf(cTxt, sizeof(cTxt), "(!) New guild(%s) creation success! : character(%s)", m_pGame->m_pClientList[i]->m_cGuildName, m_pGame->m_pClientList[i]->m_cCharName);
-				PutLogList(cTxt);
+				hb::logger::log("Guild '{}' created by {}", m_pGame->m_pClientList[i]->m_cGuildName, m_pGame->m_pClientList[i]->m_cCharName);
 				break;
 
 			case 0: // LogResMsg::Reject
@@ -46,8 +44,7 @@ void GuildManager::ResponseCreateNewGuildHandler(char* pData, int iType)
 				memcpy(m_pGame->m_pClientList[i]->m_cGuildName, "NONE", 4);
 				m_pGame->m_pClientList[i]->m_iGuildRank = -1;
 				m_pGame->m_pClientList[i]->m_iGuildGUID = -1;
-				std::snprintf(cTxt, sizeof(cTxt), "(!) New guild(%s) creation Fail! : character(%s)", m_pGame->m_pClientList[i]->m_cGuildName, m_pGame->m_pClientList[i]->m_cCharName);
-				PutLogList(cTxt);
+				hb::logger::log("Guild '{}' creation failed for {}", m_pGame->m_pClientList[i]->m_cGuildName, m_pGame->m_pClientList[i]->m_cCharName);
 				break;
 			}
 
@@ -68,15 +65,14 @@ void GuildManager::ResponseCreateNewGuildHandler(char* pData, int iType)
 			return;
 		}
 
-	std::snprintf(cTxt, sizeof(cTxt), "(!)Non-existing player data received from Log server(2): CharName(%s)", cCharName);
-	PutLogList(cTxt);
+	hb::logger::log("Non-existent player data from login server: {}", cCharName);
 }
 
 void GuildManager::RequestCreateNewGuildHandler(int iClientH, char* pData, size_t dwMsgSize)
 {
-	char cGuildName[21], cTxt[120], cData[100];
+	char cGuildName[21], cData[100];
 	int     iRet;
-	SYSTEMTIME SysTime;
+	hb::time::local_time SysTime{};
 
 	if (m_pGame->m_pClientList[iClientH] == 0) return;
 	if (m_pGame->m_pClientList[iClientH]->m_bIsInitComplete == false) return;
@@ -89,8 +85,7 @@ void GuildManager::RequestCreateNewGuildHandler(int iClientH, char* pData, size_
 	memcpy(cGuildName, pkt->guild, sizeof(pkt->guild));
 
 	if (m_pGame->m_pClientList[iClientH]->m_iGuildRank != -1) {
-		std::snprintf(cTxt, sizeof(cTxt), "(!)Cannot create guild! Already guild member.: CharName(%s)", m_pGame->m_pClientList[iClientH]->m_cCharName);
-		PutLogList(cTxt);
+		hb::logger::log("Cannot create guild: already a guild member ({})", m_pGame->m_pClientList[iClientH]->m_cCharName);
 	}
 	else {
 		if ((m_pGame->m_pClientList[iClientH]->m_iLevel < 20) || (m_pGame->m_pClientList[iClientH]->m_iCharisma < 20) ||
@@ -117,8 +112,8 @@ void GuildManager::RequestCreateNewGuildHandler(int iClientH, char* pData, size_
 			strcpy(m_pGame->m_pClientList[iClientH]->m_cGuildName, cGuildName);
 			std::memset(m_pGame->m_pClientList[iClientH]->m_cLocation, 0, sizeof(m_pGame->m_pClientList[iClientH]->m_cLocation));
 			strcpy(m_pGame->m_pClientList[iClientH]->m_cLocation, m_pGame->m_pMapList[m_pGame->m_pClientList[iClientH]->m_cMapIndex]->m_cLocationName);
-			GetLocalTime(&SysTime);
-			m_pGame->m_pClientList[iClientH]->m_iGuildGUID = (int)(SysTime.wYear + SysTime.wMonth + SysTime.wDay + SysTime.wHour + SysTime.wMinute + GameClock::GetTimeMS());
+			SysTime = hb::time::local_time::now();
+			m_pGame->m_pClientList[iClientH]->m_iGuildGUID = (int)(SysTime.year + SysTime.month + SysTime.day + SysTime.hour + SysTime.minute + GameClock::GetTimeMS());
 
 			hb::net::GuildCreatePayload guildData{};
 			std::memcpy(guildData.char_name, m_pGame->m_pClientList[iClientH]->m_cCharName, sizeof(guildData.char_name));
@@ -132,7 +127,7 @@ void GuildManager::RequestCreateNewGuildHandler(int iClientH, char* pData, size_
 
 void GuildManager::RequestDisbandGuildHandler(int iClientH, char* pData, size_t dwMsgSize)
 {
-	char cGuildName[21], cTxt[120];
+	char cGuildName[21];
 
 	if (m_pGame->m_bIsCrusadeMode) return;
 
@@ -144,8 +139,7 @@ void GuildManager::RequestDisbandGuildHandler(int iClientH, char* pData, size_t 
 	memcpy(cGuildName, pkt->guild, sizeof(pkt->guild));
 
 	if ((m_pGame->m_pClientList[iClientH]->m_iGuildRank != 0) || (memcmp(m_pGame->m_pClientList[iClientH]->m_cGuildName, cGuildName, 20) != 0)) {
-		std::snprintf(cTxt, sizeof(cTxt), "(!)Cannot Disband guild! Not guildmaster.: CharName(%s)", m_pGame->m_pClientList[iClientH]->m_cCharName);
-		PutLogList(cTxt);
+		hb::logger::log("Cannot disband guild: not guildmaster ({})", m_pGame->m_pClientList[iClientH]->m_cCharName);
 	}
 	else {
 		hb::net::GuildDisbandPayload disbandData{};
@@ -159,20 +153,19 @@ void GuildManager::ResponseDisbandGuildHandler(char* pData, int iType)
 {
 
 	uint16_t wResult;
-	char cCharName[hb::shared::limits::CharNameLen], cTxt[120];
+	char cCharName[hb::shared::limits::CharNameLen];
 	int iRet;
 
 	std::memset(cCharName, 0, sizeof(cCharName));
 	memcpy(cCharName, pData, hb::shared::limits::CharNameLen - 1);
 
 	for(int i = 1; i < hb::server::config::MaxClients; i++)
-		if ((m_pGame->m_pClientList[i] != 0) && (_strnicmp(m_pGame->m_pClientList[i]->m_cCharName, cCharName, hb::shared::limits::CharNameLen - 1) == 0)) {
+		if ((m_pGame->m_pClientList[i] != 0) && (hb_strnicmp(m_pGame->m_pClientList[i]->m_cCharName, cCharName, hb::shared::limits::CharNameLen - 1) == 0)) {
 
 			switch (iType) {
 			case 1: // LogResMsg::Confirm
 				wResult = MsgType::Confirm;
-				std::snprintf(cTxt, sizeof(cTxt), "(!) Disband guild(%s) success! : character(%s)", m_pGame->m_pClientList[i]->m_cGuildName, m_pGame->m_pClientList[i]->m_cCharName);
-				PutLogList(cTxt);
+				hb::logger::log("Guild '{}' disbanded by {}", m_pGame->m_pClientList[i]->m_cGuildName, m_pGame->m_pClientList[i]->m_cCharName);
 
 				SendGuildMsg(i, Notify::GuildDisbanded, 0, 0, 0);
 
@@ -184,8 +177,7 @@ void GuildManager::ResponseDisbandGuildHandler(char* pData, int iType)
 
 			case 0: // LogResMsg::Reject
 				wResult = MsgType::Reject;
-				std::snprintf(cTxt, sizeof(cTxt), "(!) Disband guild(%s) Fail! : character(%s)", m_pGame->m_pClientList[i]->m_cGuildName, m_pGame->m_pClientList[i]->m_cCharName);
-				PutLogList(cTxt);
+				hb::logger::log("Guild '{}' disband failed for {}", m_pGame->m_pClientList[i]->m_cGuildName, m_pGame->m_pClientList[i]->m_cCharName);
 				break;
 			}
 
@@ -205,8 +197,7 @@ void GuildManager::ResponseDisbandGuildHandler(char* pData, int iType)
 			return;
 		}
 
-	std::snprintf(cTxt, sizeof(cTxt), "(!)Non-existing player data received from Log server(2): CharName(%s)", cCharName);
-	PutLogList(cTxt);
+	hb::logger::log("Non-existent player data from login server: {}", cCharName);
 }
 
 void GuildManager::JoinGuildApproveHandler(int iClientH, const char* pName)
@@ -218,7 +209,7 @@ void GuildManager::JoinGuildApproveHandler(int iClientH, const char* pName)
 	if (m_pGame->m_pClientList[iClientH]->m_bIsInitComplete == false) return;
 
 	for(int i = 1; i < hb::server::config::MaxClients; i++)
-		if ((m_pGame->m_pClientList[i] != 0) && (_strnicmp(m_pGame->m_pClientList[i]->m_cCharName, pName, hb::shared::limits::CharNameLen - 1) == 0)) {
+		if ((m_pGame->m_pClientList[i] != 0) && (hb_strnicmp(m_pGame->m_pClientList[i]->m_cCharName, pName, hb::shared::limits::CharNameLen - 1) == 0)) {
 			if (memcmp(m_pGame->m_pClientList[i]->m_cLocation, m_pGame->m_pClientList[iClientH]->m_cLocation, 10) != 0) return;
 
 			std::memset(m_pGame->m_pClientList[i]->m_cGuildName, 0, sizeof(m_pGame->m_pClientList[i]->m_cGuildName));
@@ -246,12 +237,11 @@ void GuildManager::JoinGuildApproveHandler(int iClientH, const char* pName)
 void GuildManager::JoinGuildRejectHandler(int iClientH, const char* pName)
 {
 
-
 	if (m_pGame->m_pClientList[iClientH] == 0) return;
 	if (m_pGame->m_pClientList[iClientH]->m_bIsInitComplete == false) return;
 
 	for(int i = 1; i < hb::server::config::MaxClients; i++)
-		if ((m_pGame->m_pClientList[i] != 0) && (_strnicmp(m_pGame->m_pClientList[i]->m_cCharName, pName, hb::shared::limits::CharNameLen - 1) == 0)) {
+		if ((m_pGame->m_pClientList[i] != 0) && (hb_strnicmp(m_pGame->m_pClientList[i]->m_cCharName, pName, hb::shared::limits::CharNameLen - 1) == 0)) {
 
 			m_pGame->SendNotifyMsg(iClientH, i, CommonType::JoinGuildReject, 0, 0, 0, 0);
 			return;
@@ -262,11 +252,10 @@ void GuildManager::JoinGuildRejectHandler(int iClientH, const char* pName)
 void GuildManager::DismissGuildApproveHandler(int iClientH, const char* pName)
 {
 
-
 	if (m_pGame->m_pClientList[iClientH] == 0) return;
 	if (m_pGame->m_pClientList[iClientH]->m_bIsInitComplete == false) return;
 	for(int i = 1; i < hb::server::config::MaxClients; i++)
-		if ((m_pGame->m_pClientList[i] != 0) && (_strnicmp(m_pGame->m_pClientList[i]->m_cCharName, pName, hb::shared::limits::CharNameLen - 1) == 0)) {
+		if ((m_pGame->m_pClientList[i] != 0) && (hb_strnicmp(m_pGame->m_pClientList[i]->m_cCharName, pName, hb::shared::limits::CharNameLen - 1) == 0)) {
 
 			SendGuildMsg(i, Notify::DismissGuildsman, 0, 0, 0);
 
@@ -286,12 +275,11 @@ void GuildManager::DismissGuildApproveHandler(int iClientH, const char* pName)
 void GuildManager::DismissGuildRejectHandler(int iClientH, const char* pName)
 {
 
-
 	if (m_pGame->m_pClientList[iClientH] == 0) return;
 	if (m_pGame->m_pClientList[iClientH]->m_bIsInitComplete == false) return;
 
 	for(int i = 1; i < hb::server::config::MaxClients; i++)
-		if ((m_pGame->m_pClientList[i] != 0) && (_strnicmp(m_pGame->m_pClientList[i]->m_cCharName, pName, hb::shared::limits::CharNameLen - 1) == 0)) {
+		if ((m_pGame->m_pClientList[i] != 0) && (hb_strnicmp(m_pGame->m_pClientList[i]->m_cCharName, pName, hb::shared::limits::CharNameLen - 1) == 0)) {
 
 			m_pGame->SendNotifyMsg(iClientH, i, CommonType::DismissGuildReject, 0, 0, 0, 0);
 			return;
@@ -402,7 +390,6 @@ void GuildManager::UserCommand_BanGuildsman(int iClientH, char* pData, size_t dw
 	char   seps[] = "= \t\r\n";
 	char* token, cTargetName[11], cBuff[256];
 
-
 	if (m_pGame->m_pClientList[iClientH] == 0) return;
 	if ((dwMsgSize) <= 0) return;
 
@@ -424,7 +411,7 @@ void GuildManager::UserCommand_BanGuildsman(int iClientH, char* pData, size_t dw
 		else memcpy(cTargetName, token, strlen(token));
 
 		for(int i = 1; i < hb::server::config::MaxClients; i++)
-			if ((m_pGame->m_pClientList[i] != 0) && (_strnicmp(m_pGame->m_pClientList[i]->m_cCharName, cTargetName, hb::shared::limits::CharNameLen - 1) == 0)) {
+			if ((m_pGame->m_pClientList[i] != 0) && (hb_strnicmp(m_pGame->m_pClientList[i]->m_cCharName, cTargetName, hb::shared::limits::CharNameLen - 1) == 0)) {
 
 				if (memcmp(m_pGame->m_pClientList[iClientH]->m_cGuildName, m_pGame->m_pClientList[i]->m_cGuildName, 20) != 0) {
 
@@ -465,7 +452,7 @@ void GuildManager::RequestCreateNewGuild(int iClientH, char* pData)
 	char cTxt2[100];
 	char cGuildMasterName[hb::shared::limits::CharNameLen], cGuildLocation[11], cDir[255], cGuildName[21];
 	uint32_t dwGuildGUID;
-	SYSTEMTIME SysTime;
+	hb::time::local_time SysTime{};
 	FILE* pFile;
 
 	if (m_pGame->m_pClientList[iClientH] == 0) return;
@@ -484,24 +471,20 @@ void GuildManager::RequestCreateNewGuild(int iClientH, char* pData)
 	dwGuildGUID = guildData.guild_guid;
 
 	strcat(cFileName, "Guilds");
-	strcat(cFileName, "\\");
+	strcat(cFileName, "/");
 	std::snprintf(cTxt2, sizeof(cTxt2), "AscII%d", *cGuildName);
 	strcat(cFileName, cTxt2);
 	strcat(cDir, cFileName);
-	strcat(cFileName, "\\");
-	strcat(cFileName, "\\");
+	strcat(cFileName, "/");
+	strcat(cFileName, "/");
 	strcat(cFileName, cGuildName);
 	strcat(cFileName, ".txt");
 
-#ifdef _WIN32
-	_mkdir("Guilds");
-	_mkdir(cDir);
-#endif
+	std::filesystem::create_directories(cDir);
 
 	pFile = fopen(cFileName, "rt");
 	if (pFile != 0) {
-		std::snprintf(cTxt2, sizeof(cTxt2), "(X) Cannot create new guild - Already existing guild name: Name(%s)", cFileName);
-		PutLogList(cTxt2);
+		hb::logger::error("Cannot create guild: name already exists ({})", cFileName);
 
 		ResponseCreateNewGuildHandler(cGuildMasterName, 0);
 		fclose(pFile);
@@ -509,20 +492,18 @@ void GuildManager::RequestCreateNewGuild(int iClientH, char* pData)
 	else {
 		pFile = fopen(cFileName, "wt");
 		if (pFile == 0) {
-			std::snprintf(cTxt2, sizeof(cTxt2), "(X) Cannot create new guild - cannot create file : Name(%s)", cFileName);
-			PutLogList(cTxt2);
+			hb::logger::error("Cannot create guild: file creation failed ({})", cFileName);
 
 			ResponseCreateNewGuildHandler(cGuildMasterName, 0);
 		}
 		else {
-			std::snprintf(cTxt2, sizeof(cTxt2), "(O) New guild created : Name(%s)", cFileName);
-			PutLogList(cTxt2);
+			hb::logger::log("Guild created: {}", cFileName);
 
 			std::memset(cTxt2, 0, sizeof(cTxt2));
 			std::memset(cTxt, 0, sizeof(cTxt));
-			GetLocalTime(&SysTime);
+			SysTime = hb::time::local_time::now();
 
-			std::snprintf(cTxt, sizeof(cTxt), ";Guild file - Updated %4d/%2d/%2d/%2d/%2d", SysTime.wYear, SysTime.wMonth, SysTime.wDay, SysTime.wHour, SysTime.wMinute);
+			std::snprintf(cTxt, sizeof(cTxt), ";Guild file - Updated %4d/%2d/%2d/%2d/%2d", SysTime.year, SysTime.month, SysTime.day, SysTime.hour, SysTime.minute);
 			strcat(cTxt, "\n");
 			strcat(cTxt, ";Just created\n\n");
 
@@ -571,22 +552,21 @@ void GuildManager::RequestDisbandGuild(int iClientH, char* pData)
 	std::memcpy(cGuildName, disbandData.guild_name, sizeof(disbandData.guild_name));
 
 	strcat(cFileName, "Guilds");
-	strcat(cFileName, "\\");
-	strcat(cFileName, "\\");
+	strcat(cFileName, "/");
+	strcat(cFileName, "/");
 	std::snprintf(cTxt, sizeof(cTxt), "AscII%d", *cGuildName);
 	strcat(cFileName, cTxt);
 	strcat(cDir, cFileName);
-	strcat(cFileName, "\\");
-	strcat(cFileName, "\\");
+	strcat(cFileName, "/");
+	strcat(cFileName, "/");
 	strcat(cFileName, cGuildName);
 	strcat(cFileName, ".txt");
 
 	pFile = fopen(cFileName, "rt");
 	if (pFile != 0) {
 		fclose(pFile);
-		std::snprintf(G_cTxt, sizeof(G_cTxt), "(O) Disband Guild - Deleting guild file... : Name(%s)", cFileName);
-		PutLogList(G_cTxt);
-		if (DeleteFile(cFileName) != 0) {
+		hb::logger::log("Guild disbanded, deleting file: {}", cFileName);
+		if (std::remove(cFileName) == 0) {
 			ResponseDisbandGuildHandler(cGuildMasterName, 1);
 		}
 		else {

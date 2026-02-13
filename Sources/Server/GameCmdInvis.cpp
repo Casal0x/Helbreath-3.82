@@ -1,4 +1,3 @@
-#include <windows.h>
 #include "GameCmdInvis.h"
 #include "Game.h"
 #include <cstring>

@@ -1,6 +1,11 @@
 // SFMLWindow.h: Pure SFML window implementing hb::shared::render::IWindow interface
 //
 // Part of SFMLEngine static library
+// Supports two-phase initialization:
+//   1. Allocate (constructor) — store default params
+//   2. Configure via setters — write to staged params (no OS window yet)
+//   3. realize() — create the OS window from staged params
+// After realize(), setters modify the live OS window directly.
 //////////////////////////////////////////////////////////////////////
 
 #pragma once
@@ -9,6 +14,7 @@
 #include "IInput.h"  // For KeyCode enum
 #include <SFML/Graphics/RenderWindow.hpp>
 #include <SFML/Window/Keyboard.hpp>
+#include <string>
 
 class SFMLWindow : public hb::shared::render::IWindow
 {
@@ -19,51 +25,55 @@ public:
     // ============== hb::shared::render::IWindow Implementation ==============
 
     // Lifecycle
-    bool Create(const hb::shared::render::WindowParams& params) override;
-    void Destroy() override;
-    bool IsOpen() const override;
-    void Close() override;
+    bool realize() override;
+    void destroy() override;
+    bool is_open() const override;
+    void close() override;
 
     // Properties
-    hb::shared::types::NativeWindowHandle GetHandle() const override;
-    int GetWidth() const override;
-    int GetHeight() const override;
-    bool IsFullscreen() const override;
-    bool IsActive() const override;
+    hb::shared::types::NativeWindowHandle get_handle() const override;
+    int get_width() const override;
+    int get_height() const override;
+    bool is_fullscreen() const override;
+    bool is_active() const override;
 
     // Display
-    void SetFullscreen(bool fullscreen) override;
-    void SetBorderless(bool borderless) override;
-    bool IsBorderless() const override;
-    void SetSize(int width, int height, bool center = true) override;
-    void Show() override;
-    void Hide() override;
-    void SetTitle(const char* title) override;
+    void set_fullscreen(bool fullscreen) override;
+    void set_borderless(bool borderless) override;
+    bool is_borderless() const override;
+    void set_size(int width, int height, bool center = true) override;
+    void show() override;
+    void hide() override;
+    void set_title(const char* title) override;
 
     // Frame Rate
-    void SetFramerateLimit(int limit) override;
-    int GetFramerateLimit() const override;
-    void SetVSyncEnabled(bool enabled) override;
-    bool IsVSyncEnabled() const override;
+    void set_framerate_limit(int limit) override;
+    int get_framerate_limit() const override;
+    void set_vsync_enabled(bool enabled) override;
+    bool is_vsync_enabled() const override;
 
     // Scaling
-    void SetFullscreenStretch(bool stretch) override;
-    bool IsFullscreenStretch() const override;
+    void set_fullscreen_stretch(bool stretch) override;
+    bool is_fullscreen_stretch() const override;
+
+    // Platform (stageable)
+    void set_native_instance(hb::shared::types::NativeInstance instance) override;
+    void set_icon_resource_id(int id) override;
 
     // Cursor
-    void SetMouseCursorVisible(bool visible) override;
-    void SetMouseCaptureEnabled(bool enabled) override;
+    void set_mouse_cursor_visible(bool visible) override;
+    void set_mouse_capture_enabled(bool enabled) override;
 
     // Dialogs
-    void ShowMessageBox(const char* title, const char* message) override;
+    void show_message_box(const char* title, const char* message) override;
 
     // Message Processing
-    bool ProcessMessages() override;
-    void WaitForMessage() override;
+    bool process_messages() override;
+    void wait_for_message() override;
 
     // Event Handler
-    void SetEventHandler(hb::shared::render::IWindowEventHandler* handler) override;
-    hb::shared::render::IWindowEventHandler* GetEventHandler() const override;
+    void set_event_handler(hb::shared::render::IWindowEventHandler* handler) override;
+    hb::shared::render::IWindowEventHandler* get_event_handler() const override;
 
     // ============== SFML-Specific Access ==============
 
@@ -80,6 +90,12 @@ private:
     sf::RenderWindow m_renderWindow;
     hb::shared::types::NativeWindowHandle m_hWnd;  // Native handle for compatibility
     hb::shared::render::IWindowEventHandler* m_pEventHandler;
+    bool m_realized;
+    bool m_open;
+    bool m_active;
+
+    // Staged/live params
+    std::string m_title;
     int m_width;
     int m_height;
     bool m_fullscreen;
@@ -90,6 +106,6 @@ private:
     int m_iFpsLimit;
     int m_windowedWidth;
     int m_windowedHeight;
-    bool m_active;
-    bool m_open;
+    hb::shared::types::NativeInstance m_nativeInstance;
+    int m_iconResourceId;
 };

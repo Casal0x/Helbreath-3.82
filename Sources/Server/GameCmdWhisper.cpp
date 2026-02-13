@@ -1,7 +1,7 @@
-#include <windows.h>
 #include "GameCmdWhisper.h"
 #include "Game.h"
 #include <cstring>
+#include "StringCompat.h"
 
 using namespace hb::shared::net;
 using namespace hb::server::config;
@@ -45,7 +45,7 @@ bool GameCmdWhisper::Execute(CGame* pGame, int iClientH, const char* pArgs)
 	for(int i = 1; i < MaxClients; i++)
 	{
 		if (pGame->m_pClientList[i] != nullptr &&
-			_strnicmp(pGame->m_pClientList[i]->m_cCharName, cName, hb::shared::limits::CharNameLen - 1) == 0)
+			hb_strnicmp(pGame->m_pClientList[i]->m_cCharName, cName, hb::shared::limits::CharNameLen - 1) == 0)
 		{
 			// Can't whisper yourself
 			if (i == iClientH)

@@ -217,14 +217,28 @@ bool DialogBox_Bank::OnClick(short msX, short msY)
 	return false;
 }
 
+bool DialogBox_Bank::OnDoubleClick(short msX, short msY)
+{
+	if (CursorTarget::GetSelectedType() == SelectedObjectType::Item)
+		return OnItemDrop(msX, msY);
+
+	return false;
+}
+
 bool DialogBox_Bank::OnItemDrop(short msX, short msY)
 {
 	auto& giveInfo = m_pGame->m_dialogBoxManager.Info(DialogBoxId::GiveItem);
 	giveInfo.sV1 = CursorTarget::GetSelectedID();
 
-	if (m_pGame->m_pPlayer->m_Controller.GetCommand() < 0) return false;
-	if (m_pGame->m_pItemList[giveInfo.sV1] == nullptr) return false;
-	if (m_pGame->m_bIsItemDisabled[giveInfo.sV1]) return false;
+	if (m_pGame->m_pPlayer->m_Controller.GetCommand() < 0) {
+		return false;
+	}
+	if (m_pGame->m_pItemList[giveInfo.sV1] == nullptr) {
+		return false;
+	}
+	if (m_pGame->m_bIsItemDisabled[giveInfo.sV1]) {
+		return false;
+	}
 
 	// Check if other dialogs are blocking
 	if (m_pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::ItemDropExternal))
@@ -252,7 +266,9 @@ bool DialogBox_Bank::OnItemDrop(short msX, short msY)
 
 	// Stackable items - open quantity dialog
 	CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[giveInfo.sV1]->m_sIDnum);
-	if (pCfg == nullptr) return false;
+	if (pCfg == nullptr) {
+		return false;
+	}
 
 	if (((pCfg->GetItemType() == ItemType::Consume) ||
 		(pCfg->GetItemType() == ItemType::Arrow)) &&
@@ -274,10 +290,14 @@ bool DialogBox_Bank::OnItemDrop(short msX, short msY)
 	{
 		// Single item - deposit directly
 		if (InventoryManager::Get().GetBankItemCount() >= (m_pGame->iMaxBankItems - 1))
+		{
 			AddEventList(DLGBOX_CLICK_NPCACTION_QUERY9, 10);
+		}
 		else
+		{
 			bSendCommand(MsgId::CommandCommon, CommonType::GiveItemToChar, giveInfo.sV1, 1,
 				giveInfo.sV5, giveInfo.sV6, pCfg->m_cName, giveInfo.sV4);
+		}
 	}
 
 	return true;

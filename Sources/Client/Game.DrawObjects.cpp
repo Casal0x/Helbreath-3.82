@@ -1,4 +1,4 @@
-﻿// Game.DrawObjects.cpp: CGame partial implementation — DrawObjects coordinator + dispatchers
+// Game.DrawObjects.cpp: CGame partial implementation — DrawObjects coordinator + dispatchers
 //
 //////////////////////////////////////////////////////////////////////
 
@@ -434,7 +434,7 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 						}
 					}
 
-					if (hb::shared::input::IsShiftDown() && msX >= ix - 16 && msY >= iy - 16 && msX <= ix + 16 && msY <= iy + 16) {
+					if (hb::shared::input::is_shift_down() && msX >= ix - 16 && msY >= iy - 16 && msX <= ix + 16 && msY <= iy + 16) {
 						sItemSelectedID = sItemID;
 						dwItemSelectedAttr = dwItemAttr;
 						iItemSelectedx = ix;

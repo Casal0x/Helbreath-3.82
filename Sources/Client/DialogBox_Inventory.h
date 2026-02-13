@@ -32,7 +32,4 @@ private:
 
 	// Helper: Draw a single inventory item with proper coloring and state
 	void DrawInventoryItem(CItem* pItem, int itemIdx, int baseX, int baseY);
-
-	// Double-click helper: Find the clicked inventory item (returns item ID or -1)
-	int FindClickedItem(short msX, short msY, short sX, short sY);
 };

@@ -1,6 +1,6 @@
 #include "MapInfoSqliteStore.h"
 
-#include <windows.h>
+#include <filesystem>
 #include <cstdio>
 #include <cstring>
 #include <cstdlib>
@@ -9,9 +9,7 @@
 #include "TeleportLoc.h"
 #include "StrategicPoint.h"
 #include "sqlite3.h"
-
-extern void PutLogList(char* cMsg);
-extern void PutLogListLevel(int level, const char* cMsg);
+#include "Log.h"
 
 namespace
 {
@@ -20,9 +18,7 @@ namespace
 		char* err = nullptr;
 		int rc = sqlite3_exec(db, sql, nullptr, nullptr, &err);
 		if (rc != SQLITE_OK) {
-			char logMsg[512] = {};
-			std::snprintf(logMsg, sizeof(logMsg), "(MAPINFO-SQLITE) Exec failed: %s", err ? err : "unknown");
-			PutLogList(logMsg);
+			hb::logger::log("MapInfo SQLite exec failed: {}", err ? err : "unknown");
 			sqlite3_free(err);
 			return false;
 		}
@@ -74,32 +70,17 @@ bool EnsureMapInfoDatabase(sqlite3** outDb, std::string& outPath, bool* outCreat
 	}
 
 	std::string dbPath = "MapInfo.db";
-	DWORD attrs = GetFileAttributes(dbPath.c_str());
-	if (attrs == INVALID_FILE_ATTRIBUTES) {
-		char modulePath[MAX_PATH] = {};
-		DWORD len = GetModuleFileNameA(nullptr, modulePath, MAX_PATH);
-		if (len > 0 && len < MAX_PATH) {
-			char* lastSlash = strrchr(modulePath, '\\');
-			if (lastSlash != nullptr) {
-				*(lastSlash + 1) = '\0';
-				dbPath.assign(modulePath);
-				dbPath.append("MapInfo.db");
-			}
-		}
+	if (!std::filesystem::exists(dbPath)) {
+		auto exeDir = std::filesystem::current_path();
+		dbPath = (exeDir / "MapInfo.db").string();
 	}
 	outPath = dbPath;
 
-	bool created = false;
-	attrs = GetFileAttributes(dbPath.c_str());
-	if (attrs == INVALID_FILE_ATTRIBUTES) {
-		created = true;
-	}
+	bool created = !std::filesystem::exists(dbPath);
 
 	sqlite3* db = nullptr;
 	if (sqlite3_open(dbPath.c_str(), &db) != SQLITE_OK) {
-		char logMsg[512] = {};
-		std::snprintf(logMsg, sizeof(logMsg), "(MAPINFO-SQLITE) Open failed: %s", sqlite3_errmsg(db));
-		PutLogList(logMsg);
+		hb::logger::log("MapInfo SQLite open failed: {}", sqlite3_errmsg(db));
 		sqlite3_close(db);
 		return false;
 	}
@@ -423,9 +404,7 @@ int GetMapNamesFromDatabase(sqlite3* db, char mapNames[][11], int maxMaps)
 	const char* sql = "SELECT map_name FROM maps ORDER BY map_name;";
 	sqlite3_stmt* stmt = nullptr;
 	if (sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr) != SQLITE_OK) {
-		char logMsg[512] = {};
-		std::snprintf(logMsg, sizeof(logMsg), "(MAPINFO-SQLITE) GetMapNames prepare failed: %s", sqlite3_errmsg(db));
-		PutLogList(logMsg);
+		hb::logger::log("MapInfo SQLite: GetMapNames prepare failed: {}", sqlite3_errmsg(db));
 		return 0;
 	}
 
@@ -1077,9 +1056,7 @@ bool LoadMapConfig(sqlite3* db, const char* mapName, CMap* pMap)
 
 	// Load all components
 	if (!LoadMapBaseSettings(db, mapName, pMap)) {
-		char logMsg[256];
-		std::snprintf(logMsg, sizeof(logMsg), "(MAPINFO-SQLITE) Failed to load base settings for map: %s", mapName);
-		PutLogList(logMsg);
+		hb::logger::log("MapInfo SQLite: failed to load base settings for map {}", mapName);
 		return false;
 	}
 

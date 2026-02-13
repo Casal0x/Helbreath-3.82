@@ -45,18 +45,18 @@ void Screen_Quit::on_update()
     if (dwElapsed >= INPUT_ACTIVE_MS)
     {
         // Handle escape/enter to quit
-        if (hb::shared::input::IsKeyPressed(KeyCode::Escape) || hb::shared::input::IsKeyPressed(KeyCode::Enter))
+        if (hb::shared::input::is_key_pressed(KeyCode::Escape) || hb::shared::input::is_key_pressed(KeyCode::Enter))
         {
             m_pGame->ChangeGameMode(GameMode::Null);
-            hb::shared::render::Window::Close();
+            hb::shared::render::Window::close();
             return;
         }
 
         // Check for mouse click
-        if (hb::shared::input::IsMouseButtonPressed(MouseButton::Left))
+        if (hb::shared::input::is_mouse_button_pressed(MouseButton::Left))
         {
             m_pGame->ChangeGameMode(GameMode::Null);
-            hb::shared::render::Window::Close();
+            hb::shared::render::Window::close();
             return;
         }
     }
@@ -65,7 +65,7 @@ void Screen_Quit::on_update()
     if (dwElapsed >= AUTO_QUIT_MS)
     {
         m_pGame->ChangeGameMode(GameMode::Null);
-        hb::shared::render::Window::Close();
+        hb::shared::render::Window::close();
         return;
     }
 }

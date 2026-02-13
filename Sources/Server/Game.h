@@ -2,12 +2,7 @@
 
 #pragma once
 
-// MODERNIZED: Prevent old winsock.h from loading (must be before windows.h)
-
-#include <windows.h>
 #include "CommonTypes.h"
-#include <winbase.h>
-#include <process.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -17,14 +12,17 @@
 #include <map>
 #include <unordered_map>
 #include <string>
+#include "TimeUtils.h"
 
-#include "winmain.h"
+namespace hb::shared::net { class IOServicePool; }
+extern hb::shared::net::IOServicePool* G_pIOPool;
+extern bool G_bRunning;
+
 #include "ASIOSocket.h"
 #include "Client.h"
 #include "Npc.h"
 #include "Map.h"
 #include "ActionID_Server.h"
-#include "UserMessages.h"
 #include "NetMessages.h"
 #include "Packet/PacketMap.h"
 #include "ServerMessages.h"
@@ -339,7 +337,6 @@ public:
 
 	void CheckSpecialEvent(int iClientH);
 	char _cGetSpecialAbility(int iKindSA);
-	void OnSubLogSocketEvent(UINT message, WPARAM wParam, LPARAM lParam);
 	void GetMapInitialPoint(int iMapIndex, short * pX, short * pY, char * pPlayerLocation = 0);
 	int  iGetMaxHP(int iClientH);
 	int  iGetMaxMP(int iClientH);
@@ -362,7 +359,7 @@ public:
 	void CalcExpStock(int iClientH);
 	void ResponseSavePlayerDataReplyHandler(char * pData, size_t dwMsgSize);
 	void NoticeHandler();
-	bool bReadNotifyMsgListFile(char * cFn);
+	bool bReadNotifyMsgListFile(const char * cFn);
 	void SetPlayerReputation(int iClientH, char * pMsg, char cValue, size_t dwMsgSize);
 	void CheckDayOrNightMode();
 	int _iGetPlayerNumberOnSpot(short dX, short dY, char cMapIndex, char cRange);
@@ -373,8 +370,6 @@ public:
 	int iCalcTotalWeight(int iClientH);
 	void SendObjectMotionRejectMsg(int iClientH);
 	int iGetFollowerNumber(short sOwnerH, char cOwnerType);
-	void OnKeyUp(WPARAM wParam, LPARAM lParam);
-	void OnKeyDown(WPARAM wParam, LPARAM lParam);
 	void RequestFullObjectData(int iClientH, char * pData);
 	int _iCalcMaxLoad(int iClientH);
 	void RequestCivilRightHandler(int iClientH, char * pData);
@@ -386,22 +381,22 @@ public:
 	void TimeStaminarPointsUp(int iClientH);
 	void Quit();
 	void ReleaseFollowMode(short sOwnerH, char cOwnerType);
-	void RequestTeleportHandler(int iClientH, char * pData, char * cMapName = 0, int dX = -1, int dY = -1);
+	void RequestTeleportHandler(int iClientH, const char * pData, const char * cMapName = 0, int dX = -1, int dY = -1);
 	void ToggleCombatModeHandler(int iClientH);
 	void TimeHitPointsUp(int iClientH);
 	void OnStartGameSignal();
 	uint32_t iDice(uint32_t iThrow, uint32_t iRange);
 	bool _bInitNpcAttr(class CNpc * pNpc, int iNpcConfigId, short sClass, char cSA);
 	int GetNpcConfigIdByName(const char * pNpcName) const;
-	void SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1, uint32_t sV2, uint32_t sV3, char * pString, uint32_t sV4 = 0, uint32_t sV5 = 0, uint32_t sV6 = 0, uint32_t sV7 = 0, uint32_t sV8 = 0, uint32_t sV9 = 0, char * pString2 = 0);
+	void SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1, uint32_t sV2, uint32_t sV3, const char * pString, uint32_t sV4 = 0, uint32_t sV5 = 0, uint32_t sV6 = 0, uint32_t sV7 = 0, uint32_t sV8 = 0, uint32_t sV9 = 0, const char * pString2 = 0);
 	void BroadcastServerMessage(const char* pMessage);
 	int  iClientMotion_Stop_Handler(int iClientH, short sX, short sY, char cDir);
 
 	
 	void ClientCommonHandler(int iClientH, char * pData);
-	bool __fastcall bGetMsgQuene(char * pFrom, char * pData, size_t* pMsgSize, int * pIndex, char * pKey);
+	bool bGetMsgQuene(char * pFrom, char * pData, size_t* pMsgSize, int * pIndex, char * pKey);
 	void MsgProcess();
-	bool __fastcall bPutMsgQuene(char cFrom, char * pData, size_t dwMsgSize, int iIndex, char cKey);
+	bool bPutMsgQuene(char cFrom, char * pData, size_t dwMsgSize, int iIndex, char cKey);
 	//int  iCalculateAttackEffect(short sTargetH, char cTargetType, short sAttackerH, char cAttackerType, int tdX, int tdY, int iAttackMode, bool bNearAttack = false);
 	bool bGetEmptyPosition(short * pX, short * pY, char cMapIndex);
 	char cGetNextMoveDir(short sX, short sY, short dstX, short dstY, char cMapIndex, char cTurn, int * pError);
@@ -467,7 +462,7 @@ public:
 	void ForceRecallProcess();
 	bool IsEnemyZone(int i);
 
-	CGame(HWND hWnd);
+	CGame();
 	virtual ~CGame();
 
 	// Realm configuration (from realmlist table)
@@ -539,12 +534,10 @@ public:
 
 	char            m_pMsgBuffer[hb::shared::limits::MsgBufferSize+1];
 
-	HWND  m_hWnd;
 	int   m_iTotalClients, m_iMaxClients, m_iTotalGameServerClients, m_iTotalGameServerMaxClients;
 	int   m_iTotalBots, m_iMaxBots, m_iTotalGameServerBots, m_iTotalGameServerMaxBots;
-	SYSTEMTIME m_MaxUserSysTime;
+	hb::time::local_time m_MaxUserSysTime{};
 
-	bool  m_bF1pressed, m_bF4pressed, m_bF12pressed, m_bF5pressed;
 	bool  m_bOnExitProcess;
 	uint32_t m_dwExitProcessTime;
 
@@ -585,9 +578,9 @@ public:
 	int  m_iFightzoneNoForceRecall  ;
 
 	struct {
-		__int64 iFunds;
-		__int64 iCrimes;
-		__int64 iWins;
+		int64_t iFunds;
+		int64_t iCrimes;
+		int64_t iWins;
 
 	} m_stCityStatus[3];
 	

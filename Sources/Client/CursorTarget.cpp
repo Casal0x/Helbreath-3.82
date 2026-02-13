@@ -1,4 +1,4 @@
-﻿// CursorTarget.cpp: Cursor targeting and object focus implementation
+// CursorTarget.cpp: Cursor targeting and object focus implementation
 //
 //////////////////////////////////////////////////////////////////////
 
@@ -49,8 +49,8 @@ namespace {
 void CursorTarget::BeginFrame()
 {
     // Cache mouse position
-    s_mouseX = hb::shared::input::GetMouseX();
-    s_mouseY = hb::shared::input::GetMouseY();
+    s_mouseX = hb::shared::input::get_mouse_x();
+    s_mouseY = hb::shared::input::get_mouse_y();
 
     // Reset focus state
     s_focusedObject = FocusedObject{};
@@ -105,7 +105,7 @@ void CursorTarget::EndFrame(EntityRelationship relationship, int commandType, bo
     // Normal mode - show target cursor based on focus
     if (s_focusedObject.valid) {
         // Holding Control treats neutral targets as hostile (for force-attack)
-        if (IsHostile(relationship) || hb::shared::input::IsCtrlDown())
+        if (IsHostile(relationship) || hb::shared::input::is_ctrl_down())
             s_cursorType = CursorType::TargetHostile;
         else
             s_cursorType = CursorType::TargetNeutral;

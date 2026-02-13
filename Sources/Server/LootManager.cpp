@@ -4,8 +4,12 @@
 #include "CombatManager.h"
 #include "Packet/SharedPackets.h"
 #include "Item.h"
+#include "Log.h"
+#include "ServerLogChannels.h"
 
 using namespace hb::shared::net;
+
+using hb::log_channel;
 using namespace hb::shared::action;
 using namespace hb::server::net;
 using namespace hb::server::config;
@@ -13,9 +17,6 @@ using namespace hb::shared::item;
 namespace sock = hb::shared::net::socket;
 
 extern char G_cTxt[512];
-extern void PutLogList(char* cStr);
-extern void PutLogFileList(char* cStr);
-
 
 void LootManager::ApplyPKpenalty(short sAttackerH, short sVictumH)
 {
@@ -52,7 +53,6 @@ void LootManager::ApplyPKpenalty(short sAttackerH, short sVictumH)
 	m_pGame->m_pClientList[sAttackerH]->m_iRating -= 10;
 	if (m_pGame->m_pClientList[sAttackerH]->m_iRating > 10000)  m_pGame->m_pClientList[sAttackerH]->m_iRating = 10000;
 	if (m_pGame->m_pClientList[sAttackerH]->m_iRating < -10000) m_pGame->m_pClientList[sAttackerH]->m_iRating = -10000;
-
 
 	if (strcmp(m_pGame->m_pClientList[sAttackerH]->m_cLocation, "aresden") == 0) {
 		if ((strcmp(m_pGame->m_pMapList[m_pGame->m_pClientList[sAttackerH]->m_cMapIndex]->m_cName, "arebrk11") == 0) ||
@@ -93,7 +93,6 @@ void LootManager::ApplyPKpenalty(short sAttackerH, short sVictumH)
 	}
 }
 
-
 // 05/17/2004 - Hypnotoad - register pk log
 void LootManager::PK_KillRewardHandler(short sAttackerH, short sVictumH)
 {
@@ -108,7 +107,6 @@ void LootManager::PK_KillRewardHandler(short sAttackerH, short sVictumH)
 	}
 	else {
 		m_pGame->m_pClientList[sAttackerH]->m_iRewardGold += m_pGame->iGetExpLevel(m_pGame->m_pClientList[sVictumH]->m_iExp) * 3;
-
 
 		if (m_pGame->m_pClientList[sAttackerH]->m_iRewardGold > MaxRewardGold)
 			m_pGame->m_pClientList[sAttackerH]->m_iRewardGold = MaxRewardGold;
@@ -174,8 +172,7 @@ void LootManager::EnemyKillRewardHandler(int iAttackerH, int iClientH)
 					m_pGame->m_pClientList[iAttackerH]->m_iConstructionPoint = m_pGame->m_iMaxConstructionPoints;
 
 				//testcode
-				std::snprintf(G_cTxt, sizeof(G_cTxt), "Enemy Player Killed by Player! Construction: +%d WarContribution +%d", m_pGame->m_pClientList[iClientH]->m_iLevel / 2, (iRewardExp - (iRewardExp / 3)) * 6);
-				PutLogList(G_cTxt);
+				hb::logger::log("Enemy player killed by player, construction +{}, war contribution +{}", m_pGame->m_pClientList[iClientH]->m_iLevel / 2, (iRewardExp - (iRewardExp / 3)) * 6);
 
 				m_pGame->SendNotifyMsg(0, iAttackerH, Notify::ConstructionPoint, m_pGame->m_pClientList[iAttackerH]->m_iConstructionPoint, m_pGame->m_pClientList[iAttackerH]->m_iWarContribution, 0, 0);
 
@@ -228,8 +225,7 @@ void LootManager::EnemyKillRewardHandler(int iAttackerH, int iClientH)
 					m_pGame->m_pClientList[iAttackerH]->m_iConstructionPoint = m_pGame->m_iMaxConstructionPoints;
 
 				//testcode
-				std::snprintf(G_cTxt, sizeof(G_cTxt), "Enemy Player Killed by Player! Construction: +%d WarContribution +%d", m_pGame->m_pClientList[iClientH]->m_iLevel / 2, (iRewardExp - (iRewardExp / 3)) * 6);
-				PutLogList(G_cTxt);
+				hb::logger::log("Enemy player killed by player, construction +{}, war contribution +{}", m_pGame->m_pClientList[iClientH]->m_iLevel / 2, (iRewardExp - (iRewardExp / 3)) * 6);
 
 				m_pGame->SendNotifyMsg(0, iAttackerH, Notify::ConstructionPoint, m_pGame->m_pClientList[iAttackerH]->m_iConstructionPoint, m_pGame->m_pClientList[iAttackerH]->m_iWarContribution, 0, 0);
 
@@ -354,7 +350,7 @@ void LootManager::_PenaltyItemDrop(int iClientH, int iTotal, bool bIsSAattacked)
 		}
 		else {
 			// v2.04 testcode
-			PutLogFileList("Alter Drop Item Index Error1");
+			hb::logger::log<log_channel::events>("Alter Drop Item Index Error1");
 			for(int i = 0; i < hb::shared::limits::MaxItems; i++)
 				if ((m_pGame->m_pClientList[iClientH]->m_pItemList[i] != 0) && (m_pGame->m_pClientList[iClientH]->m_pItemList[i]->GetItemEffectType() == ItemEffectType::AlterItemDrop)) {
 					m_pGame->m_pClientList[iClientH]->m_iAlterItemDropIndex = i;
@@ -386,7 +382,6 @@ PID_DROP:
 
 		if (iRemainItem == 0) return;
 		cItemIndex = cItemIndexList[m_pGame->iDice(1, iRemainItem) - 1];
-
 
 		if ((m_pGame->m_pClientList[iClientH]->m_pItemList[cItemIndex]->GetTouchEffectType() != TouchEffectType::None) &&
 			(m_pGame->m_pClientList[iClientH]->m_pItemList[cItemIndex]->m_sTouchEffectValue1 == m_pGame->m_pClientList[iClientH]->m_sCharIDnum1) &&
@@ -421,7 +416,6 @@ void LootManager::GetRewardMoneyHandler(int iClientH)
 
 	if (m_pGame->m_pClientList[iClientH] == 0) return;
 	if (m_pGame->m_pClientList[iClientH]->m_bIsInitComplete == false) return;
-
 
 	iWeightLeft = m_pGame->_iCalcMaxLoad(iClientH) - m_pGame->iCalcTotalWeight(iClientH);
 

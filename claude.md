@@ -1,6 +1,8 @@
 # Helbreath 3.82 - Project Guide
 
 ## Build
+
+### Windows (Visual Studio / MSBuild)
 ```powershell
 powershell -ExecutionPolicy Bypass -File Sources\build.ps1 -Target All -Config Debug
 powershell -ExecutionPolicy Bypass -File Sources\build.ps1 -Target Game -Config Debug
@@ -8,8 +10,19 @@ powershell -ExecutionPolicy Bypass -File Sources\build.ps1 -Target Server -Confi
 ```
 - Delete `build_*.log` before building for clean logs.
 - Output: `Sources\Debug\Game_SFML_x64.exe` (client), `Sources\Debug\Server.exe` (server).
-- x64 platform. `Sources\Helbreath.sln`. C++17 server, C++20 client.
+- x64 platform. `Sources\Helbreath.sln`. C++20 server and client.
 - 78 LNK4099 warnings (missing SFML/freetype PDBs) are cosmetic — ignore.
+
+### Linux (CMake — Server only)
+```bash
+./Sources/build_linux.sh            # Incremental debug build
+./Sources/build_linux.sh clean      # Delete build directory
+./Sources/build_linux.sh release    # Release build
+```
+- CMakeLists.txt: `Sources/Server/CMakeLists.txt`
+- Output: `Sources/Server/build/HelbreathServer`
+- Deploy: `cp Sources/Server/build/HelbreathServer Binaries/Server/ && chmod +x Binaries/Server/HelbreathServer`
+- Run from: `cd Binaries/Server && ./HelbreathServer`
 
 ## Workflow
 
@@ -69,16 +82,27 @@ Brief (`-b`): prints `file:line | match` to stdout. Detailed (default): writes t
 
 - **Client** (`Sources/Client/`) — Game client, C++20. Depends on SFMLEngine.
 - **SFMLEngine** (`Sources/SFMLEngine/`) — Rendering abstraction over SFML.
-- **Server** (`Sources/Server/`) — Game server, C++17. Standalone.
+- **Server** (`Sources/Server/`) — Game server, C++20. Cross-platform (Windows + Linux). Standalone.
 - **Shared** (`Sources/Dependencies/Shared/`) — Protocol, enums, items, packets, networking.
 - `Binaries/Game/` — Client runtime (configs, sprites, sounds, maps, fonts).
 - `Binaries/Server/` — Server runtime (SQLite DBs, accounts).
 
 See `CLAUDE_ARCHITECTURE.md` for detailed client/server/shared architecture.
 
+## Cross-Platform Rules (Server)
+
+The server builds and runs on both Windows and Linux. **All server and shared code must be cross-platform:**
+- **No Windows API calls** (`DeleteFile`, `wsprintf`, `GetCursorPos`, `POINT`, etc.) — use C++ standard library equivalents.
+- **No MSVC-specific types/keywords** (`__int64` → `int64_t`, `__fastcall` → remove, `_TRUNCATE` → don't use).
+- **No `#ifdef _WIN32` guarding standard headers** (e.g. `<filesystem>` must be included unconditionally).
+- **Use `StringCompat.h`** for string function portability (`strtok_s` → `strtok_r`, `_stricmp` → `strcasecmp`).
+- **All headers must include what they use** — GCC is stricter than MSVC (e.g. `<cstddef>` for `size_t`).
+- **Case-sensitive filenames** — `#include` must match the exact case of the file on disk.
+- **Linux filesystem is case-sensitive** — `Binaries/Server/mapdata/` must be lowercase.
+
 ## Modernization Direction
 
-- Legacy C-style → C++17/20 while preserving game logic.
+- Legacy C-style → C++20 while preserving game logic.
 - Goal: OOP, polymorphism, templates, clearly scoped systems.
 - Modernize code you touch. Don't gold-plate untouched code.
 
@@ -106,3 +130,4 @@ After every `bak.py commit`, update `CHANGELOG.md` with a brief bullet list of c
 
 No automated tests. Manual: run server, then client with configs in `Binaries/`.
 For network changes, rebuild both client and server.
+Server can be tested on Linux — build with `build_linux.sh`, run from `Binaries/Server/`.

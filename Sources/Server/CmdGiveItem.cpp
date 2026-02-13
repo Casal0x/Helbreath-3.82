@@ -1,20 +1,20 @@
-#include <windows.h>
 #include "CmdGiveItem.h"
 #include "Game.h"
 #include "ItemManager.h"
 #include "Item.h"
 #include "Item/ItemEnums.h"
-#include "winmain.h"
 #include <cstdio>
 #include <cstring>
 #include <cstdlib>
+#include "Log.h"
+#include "StringCompat.h"
 using namespace hb::server::config;
 
 void CmdGiveItem::Execute(CGame* pGame, const char* pArgs)
 {
 	if (pArgs == nullptr || pArgs[0] == '\0')
 	{
-		PutLogList((char*)"Usage: giveitem <playername> <item_id> <amount>");
+		hb::logger::log("Usage: giveitem <playername> <item_id> <amount>");
 		return;
 	}
 
@@ -35,7 +35,7 @@ void CmdGiveItem::Execute(CGame* pGame, const char* pArgs)
 
 	if (*p == '\0')
 	{
-		PutLogList((char*)"Usage: giveitem <playername> <item_id> <amount>");
+		hb::logger::log("Usage: giveitem <playername> <item_id> <amount>");
 		return;
 	}
 
@@ -50,7 +50,7 @@ void CmdGiveItem::Execute(CGame* pGame, const char* pArgs)
 
 	if (*p == '\0')
 	{
-		PutLogList((char*)"Usage: giveitem <playername> <item_id> <amount>");
+		hb::logger::log("Usage: giveitem <playername> <item_id> <amount>");
 		return;
 	}
 
@@ -62,7 +62,7 @@ void CmdGiveItem::Execute(CGame* pGame, const char* pArgs)
 	for(int j = 1; j < MaxClients; j++)
 	{
 		if (pGame->m_pClientList[j] != nullptr &&
-			_stricmp(pGame->m_pClientList[j]->m_cCharName, cPlayerName) == 0)
+			hb_stricmp(pGame->m_pClientList[j]->m_cCharName, cPlayerName) == 0)
 		{
 			iClientH = j;
 			break;
@@ -71,18 +71,14 @@ void CmdGiveItem::Execute(CGame* pGame, const char* pArgs)
 
 	if (iClientH == 0)
 	{
-		char buf[256];
-		std::snprintf(buf, sizeof(buf), "Player '%s' not found.", cPlayerName);
-		PutLogList(buf);
+		hb::logger::log("Player '{}' not found.", cPlayerName);
 		return;
 	}
 
 	// Validate item ID
 	if (iItemID < 0 || iItemID >= MaxItemTypes || pGame->m_pItemConfigList[iItemID] == nullptr)
 	{
-		char buf[256];
-		std::snprintf(buf, sizeof(buf), "Invalid item ID: %d.", iItemID);
-		PutLogList(buf);
+		hb::logger::log("Invalid item ID: {}.", iItemID);
 		return;
 	}
 
@@ -102,16 +98,14 @@ void CmdGiveItem::Execute(CGame* pGame, const char* pArgs)
 		if (pGame->m_pItemManager->_bInitItemAttr(pItem, iItemID) == false)
 		{
 			delete pItem;
-			char buf[256];
-			std::snprintf(buf, sizeof(buf), "Failed to initialize item ID: %d.", iItemID);
-			PutLogList(buf);
+			hb::logger::log("Failed to initialize item ID: {}.", iItemID);
 			return;
 		}
 		pItem->m_dwCount = iAmount;
 
 		if (pGame->m_pItemManager->bAddItem(iClientH, pItem, 0) == false)
 		{
-			PutLogList((char*)"Failed to give item: player inventory full.");
+			hb::logger::log("Failed to give item: player inventory full.");
 			return;
 		}
 		iCreated = iAmount;
@@ -123,7 +117,5 @@ void CmdGiveItem::Execute(CGame* pGame, const char* pArgs)
 	}
 
 	// Success
-	char buf[256];
-	std::snprintf(buf, sizeof(buf), "Gave %dx %s (ID: %d) to %s.", iCreated, pItemName, iItemID, cPlayerName);
-	PutLogList(buf);
+	hb::logger::log("Gave {}x {} (ID: {}) to {}.", iCreated, pItemName, iItemID, cPlayerName);
 }

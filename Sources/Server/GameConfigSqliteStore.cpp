@@ -1,6 +1,6 @@
 #include "GameConfigSqliteStore.h"
 
-#include <windows.h>
+#include <filesystem>
 #include <cstdio>
 #include <cstring>
 
@@ -16,10 +16,9 @@
 #include "Quest.h"
 #include "Skill.h"
 #include "sqlite3.h"
+#include "Log.h"
+#include "StringCompat.h"
 using namespace hb::server::config;
-
-extern void PutLogList(char* cMsg);
-extern void PutLogListLevel(int level, const char* cMsg);
 
 namespace
 {
@@ -29,8 +28,7 @@ namespace
         int rc = sqlite3_exec(db, sql, nullptr, nullptr, &err);
         if (rc != SQLITE_OK) {
             char logMsg[512] = {};
-            std::snprintf(logMsg, sizeof(logMsg), "(SQLITE) Exec failed: %s", err ? err : "unknown");
-            PutLogList(logMsg);
+            hb::logger::error("SQLite exec failed: {}", err ? err : "unknown");
             sqlite3_free(err);
             return false;
         }
@@ -146,32 +144,18 @@ bool EnsureGameConfigDatabase(sqlite3** outDb, std::string& outPath, bool* outCr
     }
 
     std::string dbPath = "GameConfigs.db";
-    DWORD attrs = GetFileAttributes(dbPath.c_str());
-    if (attrs == INVALID_FILE_ATTRIBUTES) {
-        char modulePath[MAX_PATH] = {};
-        DWORD len = GetModuleFileNameA(nullptr, modulePath, MAX_PATH);
-        if (len > 0 && len < MAX_PATH) {
-            char* lastSlash = strrchr(modulePath, '\\');
-            if (lastSlash != nullptr) {
-                *(lastSlash + 1) = '\0';
-                dbPath.assign(modulePath);
-                dbPath.append("GameConfigs.db");
-            }
-        }
+    if (!std::filesystem::exists(dbPath)) {
+        auto exeDir = std::filesystem::current_path();
+        dbPath = (exeDir / "GameConfigs.db").string();
     }
     outPath = dbPath;
 
-    bool created = false;
-    attrs = GetFileAttributes(dbPath.c_str());
-    if (attrs == INVALID_FILE_ATTRIBUTES) {
-        created = true;
-    }
+    bool created = !std::filesystem::exists(dbPath);
 
     sqlite3* db = nullptr;
     if (sqlite3_open(dbPath.c_str(), &db) != SQLITE_OK) {
         char logMsg[512] = {};
-        std::snprintf(logMsg, sizeof(logMsg), "(SQLITE) Open failed: %s", sqlite3_errmsg(db));
-        PutLogList(logMsg);
+        hb::logger::error("SQLite open failed: {}", sqlite3_errmsg(db));
         sqlite3_close(db);
         return false;
     }
@@ -758,16 +742,13 @@ bool LoadRealmConfig(sqlite3* db, CGame* game)
         realmLoaded = true;
 
         char logMsg[256] = {};
-        std::snprintf(logMsg, sizeof(logMsg), "Loaded realm: %s (Login: %s:%d, Game: %s:%d)",
-            game->m_cRealmName, game->m_cLoginListenIP, game->m_iLoginListenPort,
-            game->m_cGameListenIP, game->m_iGameListenPort);
-        PutLogListLevel(LOG_LEVEL_NOTICE, logMsg);
+        hb::logger::log("Loaded realm: {} (Login: {}:{}, Game: {}:{})", game->m_cRealmName, game->m_cLoginListenIP, game->m_iLoginListenPort, game->m_cGameListenIP, game->m_iGameListenPort);
     }
 
     sqlite3_finalize(stmt);
 
     if (!realmLoaded) {
-        PutLogListLevel(LOG_LEVEL_ERROR, "No realm configuration found in realmlist table (id=1)");
+        hb::logger::error("No realm configuration found in realmlist table (id=1)");
         return false;
     }
 
@@ -777,7 +758,7 @@ bool LoadRealmConfig(sqlite3* db, CGame* game)
     }
 
     int mapsLoaded = 0;
-    PutLogListLevel(LOG_LEVEL_NOTICE, "Loading active maps from GameConfigs.db...");
+    hb::logger::log("Loading active maps from GameConfigs.db");
     while (sqlite3_step(stmt) == SQLITE_ROW) {
         const unsigned char* nameText = sqlite3_column_text(stmt, 0);
         if (nameText == nullptr) {
@@ -786,8 +767,7 @@ bool LoadRealmConfig(sqlite3* db, CGame* game)
         const char* name = reinterpret_cast<const char*>(nameText);
         if (!game->_bRegisterMap(const_cast<char*>(name))) {
             char logMsg[256] = {};
-            std::snprintf(logMsg, sizeof(logMsg), "Map load failed: %s", name);
-            PutLogListLevel(LOG_LEVEL_ERROR, logMsg);
+            hb::logger::error("Map load failed: {}", name);
             sqlite3_finalize(stmt);
             return false;
         }
@@ -797,8 +777,7 @@ bool LoadRealmConfig(sqlite3* db, CGame* game)
     sqlite3_finalize(stmt);
     {
         char logMsg[128] = {};
-        std::snprintf(logMsg, sizeof(logMsg), "Loaded %d maps.", mapsLoaded);
-        PutLogListLevel(LOG_LEVEL_NOTICE, logMsg);
+        hb::logger::log("Loaded {} maps.", mapsLoaded);
     }
     return true;
 }
@@ -910,9 +889,9 @@ bool LoadSettingsConfig(sqlite3* db, CGame* game)
         } else if (std::strcmp(key, "secondary-drop-rate") == 0) {
             game->m_fSecondaryDropRate = static_cast<float>(std::atof(value));
         } else if (std::strcmp(key, "enemy-kill-mode") == 0) {
-            if (_stricmp(value, "deathmatch") == 0) {
+            if (hb_stricmp(value, "deathmatch") == 0) {
                 game->m_bEnemyKillMode = true;
-            } else if (_stricmp(value, "classic") == 0) {
+            } else if (hb_stricmp(value, "classic") == 0) {
                 game->m_bEnemyKillMode = false;
             } else {
                 game->m_bEnemyKillMode = (std::atoi(value) != 0);
@@ -995,7 +974,6 @@ bool LoadSettingsConfig(sqlite3* db, CGame* game)
     sqlite3_finalize(stmt);
     return true;
 }
-
 
 bool SaveBannedListConfig(sqlite3* db, const CGame* game)
 {
@@ -1454,8 +1432,7 @@ bool LoadShopConfigs(sqlite3* db, CGame* game)
     sqlite3_stmt* stmt = nullptr;
     if (sqlite3_prepare_v2(db, mappingSql, -1, &stmt, nullptr) != SQLITE_OK) {
         char logMsg[256] = {};
-        std::snprintf(logMsg, sizeof(logMsg), "(!) LoadShopConfigs: Failed to prepare npc_shop_mapping query");
-        PutLogList(logMsg);
+        hb::logger::log("LoadShopConfigs: Failed to prepare npc_shop_mapping query");
         return false;
     }
 
@@ -1472,8 +1449,7 @@ bool LoadShopConfigs(sqlite3* db, CGame* game)
     const char* itemsSql = "SELECT shop_id, item_id FROM shop_items ORDER BY shop_id, item_id;";
     if (sqlite3_prepare_v2(db, itemsSql, -1, &stmt, nullptr) != SQLITE_OK) {
         char logMsg[256] = {};
-        std::snprintf(logMsg, sizeof(logMsg), "(!) LoadShopConfigs: Failed to prepare shop_items query");
-        PutLogList(logMsg);
+        hb::logger::log("LoadShopConfigs: Failed to prepare shop_items query");
         return false;
     }
 
@@ -1497,9 +1473,7 @@ bool LoadShopConfigs(sqlite3* db, CGame* game)
     if (mappingCount > 0 || itemCount > 0) {
         game->m_bIsShopDataAvailable = true;
         char logMsg[256] = {};
-        std::snprintf(logMsg, sizeof(logMsg), "(!) Shop configs loaded: %d NPC mappings, %d shops, %d total items",
-            mappingCount, static_cast<int>(game->m_ShopData.size()), itemCount);
-        PutLogList(logMsg);
+        hb::logger::log("Shop configs loaded: {} NPC mappings, {} shops, {} total items", mappingCount, static_cast<int>(game->m_ShopData.size()), itemCount);
     }
 
     return true;
@@ -2176,8 +2150,7 @@ bool LoadBuildItemConfigs(sqlite3* db, CGame* game)
                 build->m_sItemID = tempItem.m_sIDnum;
             } else {
                 char logMsg[256] = {};
-                std::snprintf(logMsg, sizeof(logMsg), "(!) Warning: BuildItem '%s' has invalid item_id %d", build->m_cName, storedItemId);
-                PutLogList(logMsg);
+                hb::logger::log("BuildItem '{}' has invalid item_id {}", build->m_cName, storedItemId);
                 delete build;
                 continue; // Skip this build item instead of failing completely
             }

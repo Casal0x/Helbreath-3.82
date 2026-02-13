@@ -1,4 +1,3 @@
-#include <windows.h>
 #include "GameCmdSpawn.h"
 #include "Game.h"
 #include "Npc.h"

@@ -1,35 +1,34 @@
 #include "LogBackend.h"
 #include "LogLevel.h"
-#include <cstring>
 #include <chrono>
 #include <ctime>
 #include <format>
+#include <iostream>
 #include <string>
-#include <filesystem>
 
 namespace hb::logger {
 
 void log_backend::init(const config& cfg)
 {
 	std::lock_guard lock(m_mutex);
-	strncpy(m_directory, cfg.directory, sizeof(m_directory) - 1);
+	m_directory = cfg.directory;
 	m_filenames = cfg.filenames;
 	m_channel_count = cfg.channel_count;
 	m_channel_namer = cfg.channel_namer;
 
-	if (m_directory[0] != '\0')
+	if (!m_directory.empty())
 		std::filesystem::create_directories(m_directory);
 
 	for (int i = 0; i < m_channel_count && i < max_channels; ++i)
 	{
-		if (!m_filenames[i]) continue;
-		std::string path = std::format("{}{}", m_directory, m_filenames[i]);
-		m_files[i] = fopen(path.c_str(), "a");
+		if (m_filenames[i].empty()) continue;
+		auto path = m_directory / m_filenames[i];
+		m_files[i].open(path, std::ios::app);
 	}
 	m_initialized = true;
 }
 
-void log_backend::write(int channel, int level, const char* message)
+void log_backend::write(int channel, int level, std::string_view message)
 {
 	std::lock_guard lock(m_mutex);
 	if (!m_initialized) return;
@@ -45,7 +44,7 @@ void log_backend::write(int channel, int level, const char* message)
 	localtime_r(&time_t_now, &tm_buf);
 #endif
 
-	std::string timestamp = std::format("{:02d}:{:02d}:{:02d}.{:03d}",
+	auto timestamp = std::format("{:02d}:{:02d}:{:02d}.{:03d}",
 		tm_buf.tm_hour, tm_buf.tm_min, tm_buf.tm_sec, static_cast<int>(ms.count()));
 
 	std::string line;
@@ -55,36 +54,35 @@ void log_backend::write(int channel, int level, const char* message)
 		line = std::format("[{}] [{}] [{}] {}", timestamp, level_name(level),
 			m_channel_namer(channel), message);
 
-	write_console(level, line.c_str());
+	write_console(level, line);
 
-	if (channel >= 0 && channel < m_channel_count && m_files[channel])
+	if (channel >= 0 && channel < m_channel_count && m_files[channel].is_open())
 	{
-		fprintf(m_files[channel], "%s\n", line.c_str());
-		fflush(m_files[channel]);
+		m_files[channel] << line << '\n';
+		m_files[channel].flush();
 	}
 
-	if (channel != 0 && m_files[0])
+	if (channel != 0 && m_files[0].is_open())
 	{
-		fprintf(m_files[0], "%s\n", line.c_str());
-		fflush(m_files[0]);
+		m_files[0] << line << '\n';
+		m_files[0].flush();
 	}
 }
 
-void log_backend::write_console(int level, const char* formatted_line)
+void log_backend::write_console(int level, std::string_view formatted_line)
 {
-	printf("%s\n", formatted_line);
+	std::cout << formatted_line << '\n';
 }
 
 void log_backend::close()
 {
 	std::lock_guard lock(m_mutex);
-	for (int i = 0; i < max_channels; ++i)
+	for (auto& file : m_files)
 	{
-		if (m_files[i])
+		if (file.is_open())
 		{
-			fflush(m_files[i]);
-			fclose(m_files[i]);
-			m_files[i] = nullptr;
+			file.flush();
+			file.close();
 		}
 	}
 	m_initialized = false;

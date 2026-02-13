@@ -1,7 +1,6 @@
 #include "AccountSqliteStore.h"
 
-#include <windows.h>
-#include <direct.h>
+#include <filesystem>
 #include <cstdio>
 #include <cctype>
 #include <cstring>
@@ -10,8 +9,8 @@
 
 #include "Client.h"
 #include "sqlite3.h"
-
-extern void PutLogList(char* cMsg);
+#include "Log.h"
+#include "TimeUtils.h"
 
 namespace
 {
@@ -20,21 +19,13 @@ namespace
         for (size_t i = 0; i < len && buf[i] != '\0'; i++)
             buf[i] = static_cast<char>(::tolower(static_cast<unsigned char>(buf[i])));
     }
-
-    void FormatTimestamp(const SYSTEMTIME& sysTime, char* outBuffer, size_t outBufferSize)
-    {
-        std::snprintf(outBuffer, outBufferSize, "%04d-%02d-%02d %02d:%02d:%02d",
-            sysTime.wYear, sysTime.wMonth, sysTime.wDay, sysTime.wHour, sysTime.wMinute, sysTime.wSecond);
-    }
-
     bool ExecSql(sqlite3* db, const char* sql)
     {
         char* err = nullptr;
         int rc = sqlite3_exec(db, sql, nullptr, nullptr, &err);
         if (rc != SQLITE_OK) {
             char logMsg[512] = {};
-            std::snprintf(logMsg, sizeof(logMsg), "(SQLITE) Exec failed: %s", err ? err : "unknown");
-            PutLogList(logMsg);
+            hb::logger::error("SQLite exec failed: {}", err ? err : "unknown");
             sqlite3_free(err);
             return false;
         }
@@ -138,15 +129,12 @@ static bool MigrateItemNamesToIds(sqlite3* db)
         return true;
     }
 
-    char logMsg[256];
-    std::snprintf(logMsg, sizeof(logMsg), "(SQLITE) Migrating item storage from names to IDs...");
-    PutLogList(logMsg);
+    hb::logger::error("SQLite: migrating item storage from names to IDs");
 
     // Load item mapping
     std::map<std::string, int> itemMapping;
     if (!LoadItemNameMapping(itemMapping)) {
-        std::snprintf(logMsg, sizeof(logMsg), "(SQLITE) Failed to load item mapping from GameConfigs.db");
-        PutLogList(logMsg);
+        hb::logger::error("SQLite: failed to load item mapping from GameConfigs.db");
         return false;
     }
 
@@ -339,10 +327,7 @@ static bool MigrateItemNamesToIds(sqlite3* db)
         return false;
     }
 
-    std::snprintf(logMsg, sizeof(logMsg),
-        "(SQLITE) Migration complete: %d items, %d bank items migrated (%d/%d skipped)",
-        migratedItems, migratedBankItems, skippedItems, skippedBankItems);
-    PutLogList(logMsg);
+    hb::logger::error("SQLite: migration complete, {} items, {} bank items migrated ({}/{} skipped)", migratedItems, migratedBankItems, skippedItems, skippedBankItems);
 
     return true;
 }
@@ -355,21 +340,20 @@ bool EnsureAccountDatabase(const char* accountName, sqlite3** outDb, std::string
         return false;
     }
 
-    _mkdir("Accounts");
+    std::filesystem::create_directories("Accounts");
 
     char lowerName[64] = {};
     std::strncpy(lowerName, accountName, sizeof(lowerName) - 1);
     LowercaseInPlace(lowerName, sizeof(lowerName));
-    char dbPath[MAX_PATH] = {};
-    std::snprintf(dbPath, sizeof(dbPath), "Accounts\\%s.db", lowerName);
+    char dbPath[260] = {};
+    std::snprintf(dbPath, sizeof(dbPath), "Accounts/%s.db", lowerName);
     outPath = dbPath;
 
     sqlite3* db = nullptr;
     int rc = sqlite3_open(dbPath, &db);
     if (rc != SQLITE_OK) {
         char logMsg[512] = {};
-        std::snprintf(logMsg, sizeof(logMsg), "(SQLITE) Open failed: %s", sqlite3_errmsg(db));
-        PutLogList(logMsg);
+        hb::logger::error("SQLite open failed: {}", sqlite3_errmsg(db));
         sqlite3_close(db);
         return false;
     }
@@ -617,10 +601,10 @@ bool UpdateAccountPassword(sqlite3* db, const char* accountName, const char* pas
         return false;
     }
 
-    SYSTEMTIME sysTime;
-    GetLocalTime(&sysTime);
+    hb::time::local_time sysTime{};
+    sysTime = hb::time::local_time::now();
     char timestamp[32] = {};
-    FormatTimestamp(sysTime, timestamp, sizeof(timestamp));
+    hb::time::format_timestamp(sysTime, timestamp, sizeof(timestamp));
 
     const char* sql =
         "UPDATE accounts SET password_hash = ?, password_salt = ?, password_changed_at = ? WHERE account_name = ? COLLATE NOCASE;";
@@ -1044,10 +1028,10 @@ bool InsertCharacterState(sqlite3* db, const AccountDbCharacterState& state)
         return false;
     }
 
-    SYSTEMTIME sysTime;
-    GetLocalTime(&sysTime);
+    hb::time::local_time sysTime{};
+    sysTime = hb::time::local_time::now();
     char timestamp[32] = {};
-    FormatTimestamp(sysTime, timestamp, sizeof(timestamp));
+    hb::time::format_timestamp(sysTime, timestamp, sizeof(timestamp));
 
     const char* sql =
         "INSERT INTO characters("
@@ -1417,8 +1401,7 @@ bool InsertAccountRecord(sqlite3* db, const AccountDbAccountData& data)
     sqlite3_stmt* stmt = nullptr;
     if (sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr) != SQLITE_OK) {
         char logMsg[512] = {};
-        std::snprintf(logMsg, sizeof(logMsg), "(SQLITE) Prepare account insert failed: %s", sqlite3_errmsg(db));
-        PutLogList(logMsg);
+        hb::logger::error("SQLite: account insert prepare failed: {}", sqlite3_errmsg(db));
         return false;
     }
 
@@ -1437,8 +1420,7 @@ bool InsertAccountRecord(sqlite3* db, const AccountDbAccountData& data)
 
     if (!ok) {
         char logMsg[512] = {};
-        std::snprintf(logMsg, sizeof(logMsg), "(SQLITE) Insert account failed: %s", sqlite3_errmsg(db));
-        PutLogList(logMsg);
+        hb::logger::error("SQLite: account insert failed: {}", sqlite3_errmsg(db));
     }
 
     sqlite3_finalize(stmt);
@@ -1462,8 +1444,7 @@ bool InsertCharacterRecord(sqlite3* db, const AccountDbCharacterData& data)
     sqlite3_stmt* stmt = nullptr;
     if (sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr) != SQLITE_OK) {
         char logMsg[512] = {};
-        std::snprintf(logMsg, sizeof(logMsg), "(SQLITE) Prepare character insert failed: %s", sqlite3_errmsg(db));
-        PutLogList(logMsg);
+        hb::logger::error("SQLite: character insert prepare failed: {}", sqlite3_errmsg(db));
         return false;
     }
 
@@ -1502,8 +1483,7 @@ bool InsertCharacterRecord(sqlite3* db, const AccountDbCharacterData& data)
 
     if (!ok) {
         char logMsg[512] = {};
-        std::snprintf(logMsg, sizeof(logMsg), "(SQLITE) Insert character failed: %s", sqlite3_errmsg(db));
-        PutLogList(logMsg);
+        hb::logger::error("SQLite: character insert failed: {}", sqlite3_errmsg(db));
     }
 
     sqlite3_finalize(stmt);
@@ -1538,29 +1518,26 @@ void CloseAccountDatabase(sqlite3* db)
 bool SaveCharacterSnapshot(sqlite3* db, const CClient* client)
 {
     if (db == nullptr || client == nullptr) {
-        PutLogList("(SQLITE) SaveCharacterSnapshot: null db or client");
+        hb::logger::error("SQLite: save snapshot failed, null db or client");
         return false;
     }
 
     // Helper: capture the real SQLite error before ROLLBACK clears it
     auto FailAndRollback = [&](const char* stage) {
         char logMsg[512] = {};
-        std::snprintf(logMsg, sizeof(logMsg),
-            "(SQLITE) SaveCharacterSnapshot failed at [%s]: %s",
-            stage, sqlite3_errmsg(db));
-        PutLogList(logMsg);
+        hb::logger::error("SQLite: save snapshot failed at [{}]: {}", stage, sqlite3_errmsg(db));
         ExecSql(db, "ROLLBACK;");
     };
 
     if (!ExecSql(db, "BEGIN;")) {
-        PutLogList("(SQLITE) SaveCharacterSnapshot: BEGIN failed");
+        hb::logger::error("SQLite: save snapshot BEGIN failed");
         return false;
     }
 
-    SYSTEMTIME sysTime;
-    GetLocalTime(&sysTime);
+    hb::time::local_time sysTime{};
+    sysTime = hb::time::local_time::now();
     char timestamp[32] = {};
-    FormatTimestamp(sysTime, timestamp, sizeof(timestamp));
+    hb::time::format_timestamp(sysTime, timestamp, sizeof(timestamp));
 
     const char* upsertSql =
         "INSERT OR REPLACE INTO characters("
@@ -1580,8 +1557,7 @@ bool SaveCharacterSnapshot(sqlite3* db, const CClient* client)
     sqlite3_stmt* stmt = nullptr;
     if (sqlite3_prepare_v2(db, upsertSql, -1, &stmt, nullptr) != SQLITE_OK) {
         char logMsg[512] = {};
-        std::snprintf(logMsg, sizeof(logMsg), "(SQLITE) SaveCharacterSnapshot: upsert prepare failed: %s", sqlite3_errmsg(db));
-        PutLogList(logMsg);
+        hb::logger::error("SQLite: save snapshot upsert prepare failed: {}", sqlite3_errmsg(db));
         ExecSql(db, "ROLLBACK;");
         return false;
     }
@@ -1661,8 +1637,7 @@ bool SaveCharacterSnapshot(sqlite3* db, const CClient* client)
 
     if (!ok) {
         char logMsg[512] = {};
-        std::snprintf(logMsg, sizeof(logMsg), "(SQLITE) SaveCharacterSnapshot: upsert bind failed at idx %d: %s", idx - 1, sqlite3_errmsg(db));
-        PutLogList(logMsg);
+        hb::logger::error("SQLite: save snapshot upsert bind failed at idx {}: {}", idx - 1, sqlite3_errmsg(db));
         sqlite3_finalize(stmt);
         ExecSql(db, "ROLLBACK;");
         return false;
@@ -1671,8 +1646,7 @@ bool SaveCharacterSnapshot(sqlite3* db, const CClient* client)
     int stepRc = sqlite3_step(stmt);
     if (stepRc != SQLITE_DONE) {
         char logMsg[512] = {};
-        std::snprintf(logMsg, sizeof(logMsg), "(SQLITE) SaveCharacterSnapshot: upsert step failed (rc=%d): %s", stepRc, sqlite3_errmsg(db));
-        PutLogList(logMsg);
+        hb::logger::error("SQLite: save snapshot upsert step failed (rc={}): {}", stepRc, sqlite3_errmsg(db));
         sqlite3_finalize(stmt);
         ExecSql(db, "ROLLBACK;");
         return false;
@@ -1694,8 +1668,7 @@ bool SaveCharacterSnapshot(sqlite3* db, const CClient* client)
     for (const char* deleteSql : deleteStatements) {
         if (sqlite3_prepare_v2(db, deleteSql, -1, &stmt, nullptr) != SQLITE_OK) {
             char logMsg[512] = {};
-            std::snprintf(logMsg, sizeof(logMsg), "(SQLITE) SaveCharacterSnapshot: delete prepare failed: %s | SQL: %.100s", sqlite3_errmsg(db), deleteSql);
-            PutLogList(logMsg);
+            hb::logger::error("SQLite: save snapshot delete prepare failed: {} | SQL: {}", sqlite3_errmsg(db), deleteSql);
             ExecSql(db, "ROLLBACK;");
             return false;
         }
@@ -1704,8 +1677,7 @@ bool SaveCharacterSnapshot(sqlite3* db, const CClient* client)
         sqlite3_finalize(stmt);
         if (rc != SQLITE_DONE) {
             char logMsg[512] = {};
-            std::snprintf(logMsg, sizeof(logMsg), "(SQLITE) SaveCharacterSnapshot: delete step failed (rc=%d): %s | SQL: %.100s", rc, sqlite3_errmsg(db), deleteSql);
-            PutLogList(logMsg);
+            hb::logger::error("SQLite: save snapshot delete step failed (rc={}): {} | SQL: {}", rc, sqlite3_errmsg(db), deleteSql);
             ExecSql(db, "ROLLBACK;");
             return false;
         }
@@ -1720,8 +1692,7 @@ bool SaveCharacterSnapshot(sqlite3* db, const CClient* client)
 
     if (sqlite3_prepare_v2(db, insertItemSql, -1, &stmt, nullptr) != SQLITE_OK) {
         char logMsg[512] = {};
-        std::snprintf(logMsg, sizeof(logMsg), "(SQLITE) SaveCharacterSnapshot: insert items prepare failed: %s", sqlite3_errmsg(db));
-        PutLogList(logMsg);
+        hb::logger::error("SQLite: save snapshot item insert prepare failed: {}", sqlite3_errmsg(db));
         ExecSql(db, "ROLLBACK;");
         return false;
     }
@@ -1757,13 +1728,11 @@ bool SaveCharacterSnapshot(sqlite3* db, const CClient* client)
             ok = rc == SQLITE_DONE;
             if (!ok) {
                 char logMsg[512] = {};
-                std::snprintf(logMsg, sizeof(logMsg), "(SQLITE) SaveCharacterSnapshot: insert item[%d] step failed (rc=%d): %s", i, rc, sqlite3_errmsg(db));
-                PutLogList(logMsg);
+                hb::logger::error("SQLite: save snapshot item[{}] step failed (rc={}): {}", i, rc, sqlite3_errmsg(db));
             }
         } else {
             char logMsg[256] = {};
-            std::snprintf(logMsg, sizeof(logMsg), "(SQLITE) SaveCharacterSnapshot: insert item[%d] bind failed", i);
-            PutLogList(logMsg);
+            hb::logger::error("SQLite: save snapshot item[{}] bind failed", i);
         }
         if (!ok) {
             sqlite3_finalize(stmt);
@@ -1958,41 +1927,27 @@ bool CharacterNameExistsGlobally(const char* characterName)
         return false;
     }
 
-    WIN32_FIND_DATA findData;
-    HANDLE hFind = FindFirstFile("Accounts\\*.db", &findData);
-
-    if (hFind == INVALID_HANDLE_VALUE) {
-        // No account databases found
-        return false;
-    }
-
+    std::error_code ec;
     bool found = false;
 
-    do {
-        // Skip directories
-        if (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
+    for (const auto& entry : std::filesystem::directory_iterator("Accounts", ec)) {
+        if (!entry.is_regular_file() || entry.path().extension() != ".db")
             continue;
-        }
 
-        // Build full path to database
-        char dbPath[MAX_PATH] = {};
-        std::snprintf(dbPath, sizeof(dbPath), "Accounts\\%s", findData.cFileName);
+        std::string dbPath = entry.path().string();
 
-        // Open the database
         sqlite3* db = nullptr;
-        if (sqlite3_open(dbPath, &db) != SQLITE_OK) {
+        if (sqlite3_open(dbPath.c_str(), &db) != SQLITE_OK) {
             if (db) sqlite3_close(db);
             continue;
         }
 
-        // Check if character name exists in this database
         const char* sql = "SELECT 1 FROM characters WHERE character_name = ? COLLATE NOCASE LIMIT 1";
         sqlite3_stmt* stmt = nullptr;
 
         if (sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr) == SQLITE_OK) {
             if (sqlite3_bind_text(stmt, 1, characterName, -1, SQLITE_TRANSIENT) == SQLITE_OK) {
                 if (sqlite3_step(stmt) == SQLITE_ROW) {
-                    // Character name found in this database
                     found = true;
                 }
             }
@@ -2000,14 +1955,8 @@ bool CharacterNameExistsGlobally(const char* characterName)
         }
 
         sqlite3_close(db);
-
-        if (found) {
-            break;  // No need to check remaining databases
-        }
-
-    } while (FindNextFile(hFind, &findData) != 0);
-
-    FindClose(hFind);
+        if (found) break;
+    }
 
     return found;
 }
@@ -2018,41 +1967,27 @@ bool AccountNameExists(const char* accountName)
         return false;
     }
 
-    WIN32_FIND_DATA findData;
-    HANDLE hFind = FindFirstFile("Accounts\\*.db", &findData);
-
-    if (hFind == INVALID_HANDLE_VALUE) {
-        // No account databases found
-        return false;
-    }
-
+    std::error_code ec;
     bool found = false;
 
-    do {
-        // Skip directories
-        if (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
+    for (const auto& entry : std::filesystem::directory_iterator("Accounts", ec)) {
+        if (!entry.is_regular_file() || entry.path().extension() != ".db")
             continue;
-        }
 
-        // Build full path to database
-        char dbPath[MAX_PATH] = {};
-        std::snprintf(dbPath, sizeof(dbPath), "Accounts\\%s", findData.cFileName);
+        std::string dbPath = entry.path().string();
 
-        // Open the database
         sqlite3* db = nullptr;
-        if (sqlite3_open(dbPath, &db) != SQLITE_OK) {
+        if (sqlite3_open(dbPath.c_str(), &db) != SQLITE_OK) {
             if (db) sqlite3_close(db);
             continue;
         }
 
-        // Check if account name exists in this database
         const char* sql = "SELECT 1 FROM accounts WHERE account_name = ? COLLATE NOCASE LIMIT 1";
         sqlite3_stmt* stmt = nullptr;
 
         if (sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr) == SQLITE_OK) {
             if (sqlite3_bind_text(stmt, 1, accountName, -1, SQLITE_TRANSIENT) == SQLITE_OK) {
                 if (sqlite3_step(stmt) == SQLITE_ROW) {
-                    // Account name found in this database
                     found = true;
                 }
             }
@@ -2060,14 +1995,8 @@ bool AccountNameExists(const char* accountName)
         }
 
         sqlite3_close(db);
-
-        if (found) {
-            break;  // No need to check remaining databases
-        }
-
-    } while (FindNextFile(hFind, &findData) != 0);
-
-    FindClose(hFind);
+        if (found) break;
+    }
 
     return found;
 }
@@ -2125,20 +2054,15 @@ bool ResolveCharacterToAccount(const char* characterName, char* outAccountName, 
     if (characterName == nullptr || outAccountName == nullptr || accountNameSize == 0)
         return false;
 
-    WIN32_FIND_DATA findData;
-    HANDLE hFind = FindFirstFile("Accounts\\*.db", &findData);
-
-    if (hFind == INVALID_HANDLE_VALUE)
-        return false;
-
+    std::error_code ec;
     bool found = false;
 
-    do {
-        if (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+    for (const auto& entry : std::filesystem::directory_iterator("Accounts", ec)) {
+        if (!entry.is_regular_file() || entry.path().extension() != ".db")
             continue;
 
-        char dbPath[MAX_PATH] = {};
-        std::snprintf(dbPath, sizeof(dbPath), "Accounts\\%s", findData.cFileName);
+        std::string dbPathStr = entry.path().string();
+        const char* dbPath = dbPathStr.c_str();
 
         sqlite3* db = nullptr;
         if (sqlite3_open(dbPath, &db) != SQLITE_OK)
@@ -2173,9 +2097,7 @@ bool ResolveCharacterToAccount(const char* characterName, char* outAccountName, 
         if (found)
             break;
 
-    } while (FindNextFile(hFind, &findData) != 0);
-
-    FindClose(hFind);
+    }
 
     return found;
 }

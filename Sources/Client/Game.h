@@ -65,6 +65,8 @@
 #include "GuildManager.h"
 
 #include "GameConstants.h"
+#include "Application.h"
+#include "GameEvents.h"
 
 // Overlay types for popup screens that render over base screens
 enum class OverlayType {
@@ -76,9 +78,22 @@ enum class OverlayType {
 	QueryDeleteCharacter
 };
 
-class CGame
+class CGame : public hb::shared::render::application
 {
 public:
+	CGame(hb::shared::types::NativeInstance native_instance, int icon_resource_id);
+	~CGame() override;
+
+	// --- application overrides ---
+	bool on_initialize() override;
+	bool on_start() override;
+	void on_uninitialize() override;
+	void on_run() override;
+	void on_event(const hb::shared::render::event& e) override;
+	bool on_native_message(uint32_t message, uintptr_t wparam, intptr_t lparam) override;
+	void on_key_event(KeyCode key, bool pressed) override;
+	bool on_text_input(hb::shared::types::NativeWindowHandle hwnd,
+	                   uint32_t message, uintptr_t wparam, intptr_t lparam) override;
 	// CLEROTH - AURAS
 	void CheckActiveAura(short sX, short sY, uint32_t dwTime, short sOwnerType);
 	void CheckActiveAura2(short sX, short sY, uint32_t dwTime, short sOwnerType);
@@ -121,8 +136,8 @@ public:
 
 	void UseShortCut( int num );
 	void DrawCursor();
-	void UpdateFrame();       // Logic update: audio, timers, network, game state (runs every iteration)
-	void RenderFrame();       // Render only: clear backbuffer -> draw -> flip (gated by frame limit)
+	void on_update();   // Logic update: audio, timers, network, game state
+	void on_render();   // Render only: clear backbuffer -> draw -> flip
 
 	void NpcTalkHandler(char * packet_data);
 	void SetCameraShakingEffect(short sDist, int iMul = 0);
@@ -141,7 +156,6 @@ public:
 	void _LoadTextDlgContents(int cType);
 	int  _iLoadTextDlgContents2(int iType);
 	void RequestFullObjectData(uint16_t wObjectID);
-	bool bCheckImportantFile();
 	void RetrieveItemHandler(char * pData);
 	void CivilRightAdmissionHandler(char * pData);
 	void _Draw_CharacterBody(short sX, short sY, short sType);
@@ -232,8 +246,9 @@ public:
 	void Hotkey_Simple_SpecialAbility();
 	void Hotkey_Simple_ZoomIn();
 	void Hotkey_Simple_ZoomOut();
-	void Quit();
-	bool bInit();
+	// Platform specifics (passed from main, used in on_initialize)
+	hb::shared::types::NativeInstance m_native_instance;
+	int m_icon_resource_id;
 
 	void ReserveFightzoneResponseHandler(char * pData);
 	void StartBGM();  // Forwards to AudioManager based on current location
@@ -254,8 +269,6 @@ public:
 	} m_stRepairAll[hb::shared::limits::MaxItems];
 
 	bool _ItemDropHistory(short sItemID);
-	CGame();
-	virtual ~CGame();
 
 	GameTimer m_game_timer;
 	DialogBoxManager m_dialogBoxManager;
@@ -420,7 +433,7 @@ std::array<bool, hb::shared::limits::MaxItems> m_bIsItemEquipped{};
 	static constexpr int AmountStringMaxLen = 12;
 	std::string m_cAmountString;
 	int  m_logout_count;
-	char m_cRestartCount;
+	int m_cRestartCount;
 
 	// Overlay system state
 	OverlayType m_activeOverlay = OverlayType::None;

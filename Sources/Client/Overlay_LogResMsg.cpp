@@ -101,16 +101,16 @@ void Overlay_LogResMsg::on_update()
     GetCenteredDialogPos(InterfaceNdGame4, 2, dlgX, dlgY);
 
     // ESC or Enter dismisses the message
-    if (hb::shared::input::IsKeyPressed(KeyCode::Escape) || hb::shared::input::IsKeyPressed(KeyCode::Enter))
+    if (hb::shared::input::is_key_pressed(KeyCode::Escape) || hb::shared::input::is_key_pressed(KeyCode::Enter))
     {
         HandleDismiss();
         return;
     }
 
     // Check for OK button click
-    if (hb::shared::input::IsMouseButtonPressed(MouseButton::Left))
+    if (hb::shared::input::is_mouse_button_pressed(MouseButton::Left))
     {
-        if (hb::shared::input::IsMouseInRect(dlgX + 208, dlgY + 119, ui_layout::btn_size_x, ui_layout::btn_size_y))
+        if (hb::shared::input::is_mouse_in_rect(dlgX + 208, dlgY + 119, ui_layout::btn_size_x, ui_layout::btn_size_y))
         {
             HandleDismiss();
             return;
@@ -289,8 +289,8 @@ void Overlay_LogResMsg::RenderMessage(int dlgX, int dlgY)
 
 void Overlay_LogResMsg::on_render()
 {
-    int msX = hb::shared::input::GetMouseX();
-    int msY = hb::shared::input::GetMouseY();
+    int msX = hb::shared::input::get_mouse_x();
+    int msY = hb::shared::input::get_mouse_y();
 
     int dlgX, dlgY;
     GetCenteredDialogPos(InterfaceNdGame4, 2, dlgX, dlgY);

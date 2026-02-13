@@ -1,4 +1,3 @@
-#include <windows.h>
 #include "GameCmdGiveItem.h"
 #include "Game.h"
 #include "ItemManager.h"

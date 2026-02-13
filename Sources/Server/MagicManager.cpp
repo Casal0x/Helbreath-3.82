@@ -12,8 +12,12 @@
 #include "ObjectIDRange.h"
 #include "Skill.h"
 #include "GameConfigSqliteStore.h"
+#include "Log.h"
+#include "ServerLogChannels.h"
 
 using namespace hb::shared::net;
+
+using hb::log_channel;
 using namespace hb::shared::action;
 using namespace hb::server::net;
 using namespace hb::server::config;
@@ -27,9 +31,6 @@ using namespace hb::server::skill;
 
 extern char G_cTxt[512];
 extern char G_cData50000[50000];
-extern void PutLogList(char* cStr);
-extern void PutLogFileList(char* cStr);
-extern void PutHackLogFileList(char* cStr);
 
 static int _tmp_iMCProb[] = { 0, 300, 250, 200, 150, 100, 80, 70, 60, 50, 40 };
 static int _tmp_iMLevelPenalty[] = { 0,   5,   5,   8,   8,  10, 14, 28, 32, 36, 40 };
@@ -109,10 +110,7 @@ bool MagicManager::bSendClientMagicConfigs(int iClientH)
 		case sock::Event::SocketError:
 		case sock::Event::CriticalError:
 		case sock::Event::SocketClosed:
-			std::snprintf(G_cTxt, sizeof(G_cTxt),
-				"Failed to send magic configs: Client(%d) Packet(%d)",
-				iClientH, packetIndex);
-			PutLogList(G_cTxt);
+			hb::logger::log("Failed to send magic configs: Client({}) Packet({})", iClientH, packetIndex);
 			m_pGame->DeleteClient(iClientH, true, true);
 			delete m_pGame->m_pClientList[iClientH];
 			m_pGame->m_pClientList[iClientH] = 0;
@@ -260,8 +258,7 @@ void MagicManager::PlayerMagicHandler(int iClientH, int dX, int dY, short sType,
 	if (((dwTime - m_pGame->m_pClientList[iClientH]->m_dwRecentAttackTime) < 1000) && (bItemEffect == 0)) {
 		try
 		{
-			std::snprintf(G_cTxt, sizeof(G_cTxt), "3.51 Detection: (%s) Player: (%s) - Magic casting speed is too fast! Hack?", m_pGame->m_pClientList[iClientH]->m_cIPaddress, m_pGame->m_pClientList[iClientH]->m_cCharName);
-			PutHackLogFileList(G_cTxt);
+			hb::logger::warn<log_channel::security>("Fast cast detection: IP={} player={}, magic casting too fast", m_pGame->m_pClientList[iClientH]->m_cIPaddress, m_pGame->m_pClientList[iClientH]->m_cCharName);
 			m_pGame->DeleteClient(iClientH, true, true);
 		}
 		catch (...)
@@ -333,8 +330,7 @@ void MagicManager::PlayerMagicHandler(int iClientH, int dX, int dY, short sType,
 	if ((m_pGame->m_pClientList[iClientH]->m_iSpellCount > 1) && (bItemEffect == false)) {
 		try
 		{
-			std::snprintf(G_cTxt, sizeof(G_cTxt), "TSearch Spell Hack: (%s) Player: (%s) - casting magic without precasting.", m_pGame->m_pClientList[iClientH]->m_cIPaddress, m_pGame->m_pClientList[iClientH]->m_cCharName);
-			PutHackLogFileList(G_cTxt);
+			hb::logger::warn<log_channel::security>("Spell hack: IP={} player={}, casting without precast", m_pGame->m_pClientList[iClientH]->m_cIPaddress, m_pGame->m_pClientList[iClientH]->m_cCharName);
 			m_pGame->DeleteClient(iClientH, true, true);
 		}
 		catch (...)
@@ -1288,7 +1284,6 @@ void MagicManager::PlayerMagicHandler(int iClientH, int dX, int dY, short sType,
 			}
 			break;
 
-
 		case hb::shared::magic::Inhibition:
 			m_pGame->m_pMapList[m_pGame->m_pClientList[iClientH]->m_cMapIndex]->GetOwner(&sOwnerH, &cOwnerType, dX, dY);
 			switch (cOwnerType) {
@@ -1305,7 +1300,6 @@ void MagicManager::PlayerMagicHandler(int iClientH, int dX, int dY, short sType,
 				break;
 			}
 			break;
-
 
 		case hb::shared::magic::Tremor:
 			m_pGame->m_pMapList[m_pGame->m_pClientList[iClientH]->m_cMapIndex]->GetOwner(&sOwnerH, &cOwnerType, dX, dY);
@@ -2073,8 +2067,6 @@ void MagicManager::PlayerMagicHandler(int iClientH, int dX, int dY, short sType,
 			case dynamic_object::Fire:   // Fire .
 			case dynamic_object::Spike:  // Spike
 
-
-
 				switch (m_pGame->m_pMagicConfigList[sType]->m_sValue11) {
 				case 1:
 					// wall - type
@@ -2168,7 +2160,6 @@ void MagicManager::PlayerMagicHandler(int iClientH, int dX, int dY, short sType,
 
 					iRet = m_pGame->m_pItemManager->SendItemNotifyMsg(iClientH, Notify::CannotCarryMoreItem, 0, 0);
 
-
 					switch (iRet) {
 					case sock::Event::QueueFull:
 					case sock::Event::SocketError:
@@ -2254,7 +2245,6 @@ void MagicManager::PlayerMagicHandler(int iClientH, int dX, int dY, short sType,
 					}
 			}
 			break;
-
 
 		case hb::shared::magic::Poison:
 			m_pGame->m_pMapList[m_pGame->m_pClientList[iClientH]->m_cMapIndex]->GetOwner(&sOwnerH, &cOwnerType, dX, dY);
@@ -2528,7 +2518,6 @@ void MagicManager::RequestStudyMagicHandler(int iClientH, const char* pName, boo
 	if (m_pGame->m_pClientList[iClientH] == 0) return;
 	if (m_pGame->m_pClientList[iClientH]->m_bIsInitComplete == false) return;
 
-
 	std::memset(cMagicName, 0, sizeof(cMagicName));
 	memcpy(cMagicName, pName, 30);
 
@@ -2687,8 +2676,7 @@ bool MagicManager::bCheckClientMagicFrequency(int iClientH, uint32_t dwClientTim
 		if ((dwTimeGap < 1500) && (m_pGame->m_pClientList[iClientH]->m_bMagicConfirm)) {
 			try
 			{
-				std::snprintf(G_cTxt, sizeof(G_cTxt), "Speed Cast: (%s) Player: (%s) - casting magic at irregular rates. ", m_pGame->m_pClientList[iClientH]->m_cIPaddress, m_pGame->m_pClientList[iClientH]->m_cCharName);
-				PutHackLogFileList(G_cTxt);
+				hb::logger::warn<log_channel::security>("Speed cast: IP={} player={}, irregular casting rate", m_pGame->m_pClientList[iClientH]->m_cIPaddress, m_pGame->m_pClientList[iClientH]->m_cCharName);
 				m_pGame->DeleteClient(iClientH, true, true);
 			}
 			catch (...)
@@ -2713,7 +2701,7 @@ void MagicManager::ReloadMagicConfigs()
 	bool configDbCreated = false;
 	if (!EnsureGameConfigDatabase(&configDb, configDbPath, &configDbCreated) || configDbCreated)
 	{
-		PutLogList((char*)"(!) Magic config reload FAILED - GameConfigs.db unavailable");
+		hb::logger::log("Magic config reload failed: GameConfigs.db unavailable");
 		return;
 	}
 
@@ -2728,12 +2716,12 @@ void MagicManager::ReloadMagicConfigs()
 
 	if (!LoadMagicConfigs(configDb, m_pGame))
 	{
-		PutLogList((char*)"(!) Magic config reload FAILED");
+		hb::logger::log("Magic config reload failed");
 		CloseGameConfigDatabase(configDb);
 		return;
 	}
 
 	CloseGameConfigDatabase(configDb);
 	m_pGame->ComputeConfigHashes();
-	PutLogList((char*)"(*) Magic configs reloaded successfully");
+	hb::logger::log("Magic configs reloaded successfully");
 }

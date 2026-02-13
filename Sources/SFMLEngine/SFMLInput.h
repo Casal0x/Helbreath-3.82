@@ -22,46 +22,46 @@ public:
     // ============== IInput Implementation ==============
 
     // Frame management
-    virtual void BeginFrame() override;
+    virtual void begin_frame() override;
 
     // Keyboard
-    virtual bool IsKeyDown(KeyCode key) const override;
-    virtual bool IsKeyPressed(KeyCode key) const override;
-    virtual bool IsKeyReleased(KeyCode key) const override;
+    virtual bool is_key_down(KeyCode key) const override;
+    virtual bool is_key_pressed(KeyCode key) const override;
+    virtual bool is_key_released(KeyCode key) const override;
 
     // Mouse buttons
-    virtual bool IsMouseButtonDown(int button) const override;
-    virtual bool IsMouseButtonPressed(int button) const override;
-    virtual bool IsMouseButtonReleased(int button) const override;
+    virtual bool is_mouse_button_down(int button) const override;
+    virtual bool is_mouse_button_pressed(int button) const override;
+    virtual bool is_mouse_button_released(int button) const override;
 
     // Mouse position (already in logical coordinates from SFMLWindow)
-    virtual int GetMouseX() const override;
-    virtual int GetMouseY() const override;
+    virtual int get_mouse_x() const override;
+    virtual int get_mouse_y() const override;
 
     // Mouse wheel
-    virtual int GetMouseWheelDelta() const override;
-    virtual void ResetMouseWheelDelta() override;
+    virtual int get_mouse_wheel_delta() const override;
+    virtual void reset_mouse_wheel_delta() override;
 
     // Modifier keys
-    virtual bool IsShiftDown() const override;
-    virtual bool IsCtrlDown() const override;
-    virtual bool IsAltDown() const override;
+    virtual bool is_shift_down() const override;
+    virtual bool is_ctrl_down() const override;
+    virtual bool is_alt_down() const override;
 
     // hb::shared::render::Window focus
-    virtual bool IsWindowActive() const override;
-    virtual void SetWindowActive(bool active) override;
+    virtual bool is_window_active() const override;
+    virtual void set_window_active(bool active) override;
 
     // Input suppression
-    virtual void SetSuppressed(bool suppressed) override;
-    virtual bool IsSuppressed() const override;
+    virtual void set_suppressed(bool suppressed) override;
+    virtual bool is_suppressed() const override;
 
     // Input events (called by SFMLWindow with logical coordinates)
-    virtual void OnKeyDown(KeyCode key) override;
-    virtual void OnKeyUp(KeyCode key) override;
-    virtual void OnMouseMove(int x, int y) override;
-    virtual void OnMouseDown(int button) override;
-    virtual void OnMouseUp(int button) override;
-    virtual void OnMouseWheel(int delta) override;
+    virtual void on_key_down(KeyCode key) override;
+    virtual void on_key_up(KeyCode key) override;
+    virtual void on_mouse_move(int x, int y) override;
+    virtual void on_mouse_down(int button) override;
+    virtual void on_mouse_up(int button) override;
+    virtual void on_mouse_wheel(int delta) override;
 
 private:
     void ClearAllKeys();

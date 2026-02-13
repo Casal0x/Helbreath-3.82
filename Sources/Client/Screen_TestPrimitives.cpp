@@ -30,9 +30,9 @@ void Screen_TestPrimitives::on_uninitialize()
 
 void Screen_TestPrimitives::on_update()
 {
-	if (hb::shared::input::Get() && hb::shared::input::Get()->IsKeyPressed(KeyCode::Escape))
+	if (hb::shared::input::get() && hb::shared::input::get()->is_key_pressed(KeyCode::Escape))
 	{
-		hb::shared::render::Window::Close();
+		hb::shared::render::Window::close();
 		return;
 	}
 }

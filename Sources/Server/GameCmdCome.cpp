@@ -1,4 +1,3 @@
-#include <windows.h>
 #include "GameCmdCome.h"
 #include "Game.h"
 #include "AccountSqliteStore.h"

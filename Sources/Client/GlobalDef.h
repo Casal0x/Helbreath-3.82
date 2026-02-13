@@ -21,7 +21,7 @@
 #include "Version.h"
 
 constexpr const char* NAME_WORLDNAME1 = "WS1";
-constexpr const char* DEF_SERVER_IP = "199.187.160.239";
+constexpr const char* DEF_SERVER_IP = "199.187.160.239";//"192.168.1.140"; //"199.187.160.239";
 constexpr const int DEF_SERVER_PORT = 2500;
 constexpr const int DEF_GSERVER_PORT = 9907;
 

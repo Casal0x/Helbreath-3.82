@@ -1,4 +1,4 @@
-﻿#include "DialogBox_MagicShop.h"
+#include "DialogBox_MagicShop.h"
 #include "Game.h"
 #include "IInput.h"
 #include "Misc.h"
@@ -27,7 +27,7 @@ void DialogBox_MagicShop::OnDraw(short msX, short msY, short msZ, char cLB)
 	// Mouse wheel scrolling - read and consume input directly
 	if (m_pGame->m_dialogBoxManager.iGetTopDialogBoxIndex() == DialogBoxId::MagicShop)
 	{
-		short sWheelDelta = hb::shared::input::GetMouseWheelDelta();
+		short sWheelDelta = hb::shared::input::get_mouse_wheel_delta();
 		if (sWheelDelta != 0)
 		{
 			if (sWheelDelta > 0)

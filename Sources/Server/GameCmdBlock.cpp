@@ -1,8 +1,8 @@
-#include <windows.h>
 #include "GameCmdBlock.h"
 #include "Game.h"
 #include "AccountSqliteStore.h"
 #include <cstring>
+#include "StringCompat.h"
 
 using namespace hb::shared::net;
 bool GameCmdBlock::Execute(CGame* pGame, int iClientH, const char* pArgs)
@@ -31,7 +31,7 @@ bool GameCmdBlock::Execute(CGame* pGame, int iClientH, const char* pArgs)
 		return true;
 
 	// Can't block yourself
-	if (_stricmp(cCharName, pGame->m_pClientList[iClientH]->m_cCharName) == 0)
+	if (hb_stricmp(cCharName, pGame->m_pClientList[iClientH]->m_cCharName) == 0)
 	{
 		pGame->SendNotifyMsg(0, iClientH, Notify::NoticeMsg, 0, 0, 0, "You cannot block yourself.");
 		return true;

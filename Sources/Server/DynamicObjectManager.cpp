@@ -16,8 +16,6 @@ namespace sdelay = hb::server::delay_event;
 namespace dynamic_object = hb::shared::dynamic_object;
 
 extern char G_cTxt[512];
-extern void PutLogList(char* cStr);
-
 
 void DynamicObjectManager::InitArrays()
 {
@@ -382,7 +380,6 @@ void DynamicObjectManager::DynamicObjectEffectProcessor()
 				}
 				m_pDynamicObjectList[i]->m_iCount++;
 				if (m_pDynamicObjectList[i]->m_iCount > 10) m_pDynamicObjectList[i]->m_iCount = 10;
-
 
 				for(int ix = m_pDynamicObjectList[i]->m_sX - 1; ix <= m_pDynamicObjectList[i]->m_sX + 1; ix++)
 					for(int iy = m_pDynamicObjectList[i]->m_sY - 1; iy <= m_pDynamicObjectList[i]->m_sY + 1; iy++) {

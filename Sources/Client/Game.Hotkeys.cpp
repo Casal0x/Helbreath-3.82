@@ -1,12 +1,10 @@
-﻿#include "Game.h"
+#include "Game.h"
 #include "TextInputManager.h"
 #include "MagicCastingSystem.h"
 #include "ChatManager.h"
 #include "AudioManager.h"
 #include "ConfigManager.h"
 #include "HotkeyManager.h"
-#include "DevConsole.h"
-#include "Overlay_DevConsole.h"
 #include "LAN_ENG.H"
 #include <format>
 #include <string>
@@ -41,28 +39,11 @@ void CGame::RegisterHotkeys()
 	hotkeys.Register({ KeyCode::T, ctrlOnly.ctrl, ctrlOnly.shift, ctrlOnly.alt }, HotkeyManager::Trigger::KeyUp,
 		[this]() { Hotkey_WhisperTarget(); });
 
-	// Alt+Tilde: Toggle developer console (GM mode only)
-	hotkeys.Register({ KeyCode::Grave, false, false, true }, HotkeyManager::Trigger::KeyUp,
-		[this]() {
-			DevConsole& console = DevConsole::Get();
-			if (console.IsVisible())
-			{
-				console.Hide();
-				GameModeManager::clear_overlay();
-			}
-			else
-			{
-				if (m_pPlayer == nullptr || !m_pPlayer->m_bIsGMMode)
-					return;
-				console.Show();
-				GameModeManager::set_overlay<Overlay_DevConsole>();
-			}
-		});
 }
 
 void CGame::Hotkey_ToggleForceAttack()
 {
-	if (!hb::shared::input::IsCtrlDown() || GameModeManager::GetMode() != GameMode::MainGame || TextInputManager::Get().IsActive()) {
+	if (!hb::shared::input::is_ctrl_down() || GameModeManager::GetMode() != GameMode::MainGame || TextInputManager::Get().IsActive()) {
 		return;
 	}
 	if (m_pPlayer->m_bForceAttack)
@@ -79,7 +60,7 @@ void CGame::Hotkey_ToggleForceAttack()
 
 void CGame::Hotkey_CycleDetailLevel()
 {
-	if (!hb::shared::input::IsCtrlDown() || GameModeManager::GetMode() != GameMode::MainGame || TextInputManager::Get().IsActive()) {
+	if (!hb::shared::input::is_ctrl_down() || GameModeManager::GetMode() != GameMode::MainGame || TextInputManager::Get().IsActive()) {
 		return;
 	}
 	int detailLevel = ConfigManager::Get().GetDetailLevel();
@@ -101,7 +82,7 @@ void CGame::Hotkey_CycleDetailLevel()
 
 void CGame::Hotkey_ToggleHelp()
 {
-	if (!hb::shared::input::IsCtrlDown() || GameModeManager::GetMode() != GameMode::MainGame || TextInputManager::Get().IsActive()) {
+	if (!hb::shared::input::is_ctrl_down() || GameModeManager::GetMode() != GameMode::MainGame || TextInputManager::Get().IsActive()) {
 		return;
 	}
 	if (m_dialogBoxManager.IsEnabled(DialogBoxId::Help) == false)
@@ -115,7 +96,7 @@ void CGame::Hotkey_ToggleHelp()
 
 void CGame::Hotkey_ToggleDialogTransparency()
 {
-	if (!hb::shared::input::IsCtrlDown() || GameModeManager::GetMode() != GameMode::MainGame || TextInputManager::Get().IsActive()) {
+	if (!hb::shared::input::is_ctrl_down() || GameModeManager::GetMode() != GameMode::MainGame || TextInputManager::Get().IsActive()) {
 		return;
 	}
 	bool enabled = ConfigManager::Get().IsDialogTransparencyEnabled();
@@ -124,7 +105,7 @@ void CGame::Hotkey_ToggleDialogTransparency()
 
 void CGame::Hotkey_ToggleSystemMenu()
 {
-	if (!hb::shared::input::IsCtrlDown() || GameModeManager::GetMode() != GameMode::MainGame || TextInputManager::Get().IsActive()) {
+	if (!hb::shared::input::is_ctrl_down() || GameModeManager::GetMode() != GameMode::MainGame || TextInputManager::Get().IsActive()) {
 		return;
 	}
 	if (m_dialogBoxManager.IsEnabled(DialogBoxId::SystemMenu) == false)
@@ -134,7 +115,7 @@ void CGame::Hotkey_ToggleSystemMenu()
 
 void CGame::Hotkey_ToggleGuideMap()
 {
-	if (GameModeManager::GetMode() != GameMode::MainGame || !hb::shared::input::IsCtrlDown()) {
+	if (GameModeManager::GetMode() != GameMode::MainGame || !hb::shared::input::is_ctrl_down()) {
 		return;
 	}
 	if (m_dialogBoxManager.IsEnabled(DialogBoxId::GuideMap) == true) m_dialogBoxManager.DisableDialogBox(DialogBoxId::GuideMap);
@@ -143,7 +124,7 @@ void CGame::Hotkey_ToggleGuideMap()
 
 void CGame::Hotkey_ToggleRunningMode()
 {
-	if (!hb::shared::input::IsCtrlDown() || GameModeManager::GetMode() != GameMode::MainGame || TextInputManager::Get().IsActive()) {
+	if (!hb::shared::input::is_ctrl_down() || GameModeManager::GetMode() != GameMode::MainGame || TextInputManager::Get().IsActive()) {
 		return;
 	}
 	bool runningMode = ConfigManager::Get().IsRunningModeEnabled();
@@ -161,7 +142,7 @@ void CGame::Hotkey_ToggleRunningMode()
 
 void CGame::Hotkey_ToggleSoundAndMusic()
 {
-	if (!hb::shared::input::IsCtrlDown() || GameModeManager::GetMode() != GameMode::MainGame || TextInputManager::Get().IsActive()) {
+	if (!hb::shared::input::is_ctrl_down() || GameModeManager::GetMode() != GameMode::MainGame || TextInputManager::Get().IsActive()) {
 		return;
 	}
 	if (AudioManager::Get().IsMusicEnabled())
@@ -197,7 +178,7 @@ void CGame::Hotkey_ToggleSoundAndMusic()
 
 void CGame::Hotkey_WhisperTarget()
 {
-	if (!hb::shared::input::IsCtrlDown() || GameModeManager::GetMode() != GameMode::MainGame || TextInputManager::Get().IsActive()) {
+	if (!hb::shared::input::is_ctrl_down() || GameModeManager::GetMode() != GameMode::MainGame || TextInputManager::Get().IsActive()) {
 		return;
 	}
 	std::string tempid;
@@ -206,15 +187,15 @@ void CGame::Hotkey_WhisperTarget()
 	short sX, sY, msX, msY, msZ;
 	sX = m_dialogBoxManager.Info(DialogBoxId::ChatHistory).sX;
 	sY = m_dialogBoxManager.Info(DialogBoxId::ChatHistory).sY;
-	msX = static_cast<short>(hb::shared::input::GetMouseX());
+	msX = static_cast<short>(hb::shared::input::get_mouse_x());
 
-	msY = static_cast<short>(hb::shared::input::GetMouseY());
+	msY = static_cast<short>(hb::shared::input::get_mouse_y());
 
-	msZ = static_cast<short>(hb::shared::input::GetMouseWheelDelta());
+	msZ = static_cast<short>(hb::shared::input::get_mouse_wheel_delta());
 
-	cLB = hb::shared::input::IsMouseButtonDown(MouseButton::Left) ? 1 : 0;
+	cLB = hb::shared::input::is_mouse_button_down(MouseButton::Left) ? 1 : 0;
 
-	cRB = hb::shared::input::IsMouseButtonDown(MouseButton::Right) ? 1 : 0;
+	cRB = hb::shared::input::is_mouse_button_down(MouseButton::Right) ? 1 : 0;
 	if (m_dialogBoxManager.IsEnabled(DialogBoxId::ChatHistory) == true && (msX >= sX + 20) && (msX <= sX + 360) && (msY >= sY + 35) && (msY <= sY + 139))
 	{
 		char cBuff[64];
@@ -465,7 +446,7 @@ void CGame::Hotkey_Simple_TabToggleCombat()
 {
 	if (GameModeManager::GetMode() == GameMode::MainGame)
 	{
-		if (hb::shared::input::IsShiftDown())
+		if (hb::shared::input::is_shift_down())
 		{
 			m_cCurFocus--;
 			if (m_cCurFocus < 1) m_cCurFocus = m_cMaxFocus;
@@ -488,10 +469,10 @@ void CGame::Hotkey_Simple_ToggleSafeAttack()
 
 void CGame::Hotkey_Simple_Escape()
 {
-	// Note: Escape handling is automatic through hb::shared::input::IsKeyPressed(KeyCode::Escape)
+	// Note: Escape handling is automatic through hb::shared::input::is_key_pressed(KeyCode::Escape)
 	if (GameModeManager::GetMode() == GameMode::MainGame)
 	{
-		if ((m_bIsObserverMode == true) && (hb::shared::input::IsShiftDown())) {
+		if ((m_bIsObserverMode == true) && (hb::shared::input::is_shift_down())) {
 			if (m_logout_count == -1) m_logout_count = 1;
 			m_dialogBoxManager.DisableDialogBox(DialogBoxId::SystemMenu);
 			PlayGameSound('E', 14, 5);

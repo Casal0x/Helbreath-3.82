@@ -1,4 +1,5 @@
 #pragma once
+#include <cstddef>
 #include <cstdint>
 
 class CGame;
@@ -25,7 +26,7 @@ public:
 	void SyncMiddlelandMapInfo();
 	void SelectCrusadeDutyHandler(int iClientH, int iDuty);
 	void CheckCrusadeResultCalculation(int iClientH);
-	bool bReadCrusadeGUIDFile(char* cFn);
+	bool bReadCrusadeGUIDFile(const char* cFn);
 	void _CreateCrusadeGUID(uint32_t dwCrusadeGUID, int iWinnerSide);
 	void CheckCommanderConstructionPoint(int iClientH);
 	bool __bSetConstructionKit(int iMapIndex, int dX, int dY, int iType, int iTimeCost, int iClientH);
@@ -50,7 +51,7 @@ public:
 	void MapStatusHandler(int iClientH, int iMode, const char* pMapName);
 	void RequestSummonWarUnitHandler(int iClientH, int dX, int dY, char cType, char cNum, char cMode);
 	void RequestGuildTeleportHandler(int iClientH);
-	void RequestSetGuildTeleportLocHandler(int iClientH, int dX, int dY, int iGuildGUID, char* pMapName);
+	void RequestSetGuildTeleportLocHandler(int iClientH, int dX, int dY, int iGuildGUID, const char* pMapName);
 	void RequestSetGuildConstructLocHandler(int iClientH, int dX, int dY, int iGuildGUID, const char* pMapName);
 
 	// ========================================================================
@@ -79,8 +80,8 @@ public:
 	void GlobalEndApocalypseMode();
 	void LocalEndApocalypse();
 	void LocalStartApocalypse(uint32_t dwApocalypseGUID);
-	bool bReadApocalypseGUIDFile(char* cFn);
-	bool bReadHeldenianGUIDFile(char* cFn);
+	bool bReadApocalypseGUIDFile(const char* cFn);
+	bool bReadHeldenianGUIDFile(const char* cFn);
 	void _CreateApocalypseGUID(uint32_t dwApocalypseGUID);
 
 	// ========================================================================
