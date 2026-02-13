@@ -121,21 +121,21 @@ void AudioManager::LoadSounds()
 	// Load Character sounds (C1-C24)
 	for (int i = 1; i < AUDIO_MAX_CHARACTER_SOUNDS; i++)
 	{
-		auto filename = std::format("sounds\\C{}.wav", i);
+		auto filename = std::format("sounds\\c{}.wav", i);
 		DecodeFile(filename.c_str(), m_characterSounds[i]);
 	}
 
 	// Load Monster/Magic sounds (M1-M156)
 	for (int i = 1; i < AUDIO_MAX_MONSTER_SOUNDS; i++)
 	{
-		auto filename = std::format("sounds\\M{}.wav", i);
+		auto filename = std::format("sounds\\m{}.wav", i);
 		DecodeFile(filename.c_str(), m_monsterSounds[i]);
 	}
 
 	// Load Effect sounds (E1-E53)
 	for (int i = 1; i < AUDIO_MAX_EFFECT_SOUNDS; i++)
 	{
-		auto filename = std::format("sounds\\E{}.wav", i);
+		auto filename = std::format("sounds\\e{}.wav", i);
 		DecodeFile(filename.c_str(), m_effectSounds[i]);
 	}
 }

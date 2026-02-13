@@ -324,7 +324,7 @@ bool CGame::on_start()
 	// Preload the default font for text rendering
 	if (hb::shared::text::GetTextRenderer())
 	{
-		if (!hb::shared::text::GetTextRenderer()->LoadFontFromFile("FONTS/default.ttf"))
+		if (!hb::shared::text::GetTextRenderer()->LoadFontFromFile("fonts/default.ttf"))
 		{
 			printf("[FONT] Failed to load default.ttf font file!\n");
 		}
@@ -3833,7 +3833,7 @@ void CGame::_LoadGameMsgTextContents()
 			m_pGameMsgList[i].reset();
 	}
 
-	std::ifstream file("contents\\\\GameMsgList.txt");
+	std::ifstream file("contents\\\\gamemsglist.txt");
 	if (!file) return;
 
 	std::string content((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
@@ -4619,11 +4619,11 @@ void CGame::CreateScreenShot()
 		hb::shared::text::TextStyle::Color(GameColors::UIWhite),
 		hb::shared::text::Align::TopCenter);
 
-	std::filesystem::create_directory("SAVE");
+	std::filesystem::create_directory("save");
 
 	for (int i = 0; i < 1000; i++)
 	{
-		std::string fileName = std::format("Save\\HelShot{:04d}{:02d}{:02d}_{:02d}{:02d}{:02d}_{}{:03d}.png",
+		std::string fileName = std::format("save\\helshot{:04d}{:02d}{:02d}_{:02d}{:02d}{:02d}_{}{:03d}.png",
 			tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,
 			tm.tm_hour, tm.tm_min, tm.tm_sec,
 			longMapName, i);
@@ -5834,11 +5834,11 @@ void CGame::PointCommandHandler(int indexX, int indexY, char cItemID)
 void CGame::StartBGM()
 {
 	// Determine track name based on current location
-	const char* trackName = "MainTm";
+	const char* trackName = "maintm";
 
 	if ((m_bIsXmas == true) && (WeatherManager::Get().IsSnowing()))
 	{
-		trackName = "Carol";
+		trackName = "carol";
 	}
 	else if (m_cCurLocation.starts_with("aresden"))
 	{
@@ -7705,16 +7705,21 @@ void CGame::InitDataResponseHandler(char* packet_data)
 		else WeatherManager::Get().SetWeather(false, 0);
 	}
 
+	// Lowercase map name for case-sensitive filesystem compatibility
+	std::string lower_map_name = m_cMapName;
+	std::transform(lower_map_name.begin(), lower_map_name.end(), lower_map_name.begin(),
+		[](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+
 	std::memset(map_filename, 0, sizeof(map_filename));
 	std::snprintf(map_filename + strlen(map_filename), sizeof(map_filename) - strlen(map_filename), "%s", "mapdata\\");
 	// CLEROTH - MW MAPS
-	if (m_cMapName.starts_with("defaultmw"))
+	if (lower_map_name.starts_with("defaultmw"))
 	{
 		std::snprintf(map_filename + strlen(map_filename), sizeof(map_filename) - strlen(map_filename), "%s", "mw\\defaultmw");
 	}
 	else
 	{
-		std::snprintf(map_filename + strlen(map_filename), sizeof(map_filename) - strlen(map_filename), "%s", m_cMapName.c_str());
+		std::snprintf(map_filename + strlen(map_filename), sizeof(map_filename) - strlen(map_filename), "%s", lower_map_name.c_str());
 	}
 
 	std::snprintf(map_filename + strlen(map_filename), sizeof(map_filename) - strlen(map_filename), "%s", ".amd");

@@ -8,13 +8,13 @@
 static constexpr std::string_view channel_filenames[] =
 {
 	"server.log",           // main
-	"Events.log",           // events
-	"HackEvents.log",       // security
-	"PvPEvents.log",        // pvp
-	"XSocket.log",          // network
-	"LogEvents.log",        // log_events
-	"Chat.log",             // chat
-	"Commands.log",         // commands
+	"events.log",           // events
+	"hackevents.log",       // security
+	"pvpevents.log",        // pvp
+	"xsocket.log",          // network
+	"logevents.log",        // log_events
+	"chat.log",             // chat
+	"commands.log",         // commands
 	"monster_drops.log",    // drops
 	"player_trade.log",     // trade
 	"shop.log",             // shop

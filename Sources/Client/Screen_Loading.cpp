@@ -28,7 +28,7 @@ void Screen_Loading::on_initialize()
     m_iLoadingStage = 0;
 
     // Pre-load the loading screen sprite so it can render immediately
-    m_pGame->m_pSprite[InterfaceNdLoading] = hb::shared::sprite::Sprites::Create("New-Dialog", 0, false);
+    m_pGame->m_pSprite[InterfaceNdLoading] = hb::shared::sprite::Sprites::Create("new-dialog", 0, false);
 }
 
 void Screen_Loading::on_uninitialize()
@@ -101,15 +101,15 @@ void Screen_Loading::LoadStage_Interface()
         m_pGame->m_pSprite[InterfaceNewMaps5] = loader.get_sprite(4, false);
     });
 
-    m_pGame->m_pSprite[InterfaceNdLogin] = hb::shared::sprite::Sprites::Create("LoginDialog", 0, false);
+    m_pGame->m_pSprite[InterfaceNdLogin] = hb::shared::sprite::Sprites::Create("logindialog", 0, false);
 
-    hb::shared::sprite::SpriteLoader::open_pak("New-Dialog", [&](hb::shared::sprite::SpriteLoader& loader) {
+    hb::shared::sprite::SpriteLoader::open_pak("new-dialog", [&](hb::shared::sprite::SpriteLoader& loader) {
         m_pGame->m_pSprite[InterfaceNdMainMenu] = loader.get_sprite(1, false);
         m_pGame->m_pSprite[InterfaceNdQuit] = loader.get_sprite(2, false);
         m_pGame->m_pSprite[InterfaceNdNewAccount] = loader.get_sprite(2, false);
     });
 
-    hb::shared::sprite::SpriteLoader::open_pak("GameDialog", [&](hb::shared::sprite::SpriteLoader& loader) {
+    hb::shared::sprite::SpriteLoader::open_pak("gamedialog", [&](hb::shared::sprite::SpriteLoader& loader) {
         m_pGame->m_pSprite[InterfaceNdGame1] = loader.get_sprite(0, false);
         m_pGame->m_pSprite[InterfaceNdGame2] = loader.get_sprite(1, false);
         m_pGame->m_pSprite[InterfaceNdGame3] = loader.get_sprite(2, false);
@@ -122,15 +122,15 @@ void Screen_Loading::LoadStage_Interface()
         m_pGame->m_pSprite[InterfaceNdNewExchange] = loader.get_sprite(10, false);
     });
 
-    m_pGame->m_pSprite[InterfaceNdPartyStatus] = hb::shared::sprite::Sprites::Create("PartySprite", 0, false);
+    m_pGame->m_pSprite[InterfaceNdPartyStatus] = hb::shared::sprite::Sprites::Create("partysprite", 0, false);
 
-    hb::shared::sprite::SpriteLoader::open_pak("DialogText", [&](hb::shared::sprite::SpriteLoader& loader) {
+    hb::shared::sprite::SpriteLoader::open_pak("dialogtext", [&](hb::shared::sprite::SpriteLoader& loader) {
         m_pGame->m_pSprite[InterfaceNdText] = loader.get_sprite(0, false);
         m_pGame->m_pSprite[InterfaceNdButton] = loader.get_sprite(1, false);
     });
 
-    MakeSprite("Telescope", InterfaceGuideMap, 32, false);
-    MakeSprite("Telescope2", InterfaceGuideMap + 35, 4, false);
+    MakeSprite("telescope", InterfaceGuideMap, 32, false);
+    MakeSprite("telescope2", InterfaceGuideMap + 35, 4, false);
     MakeSprite("monster", InterfaceMonster, 1, false);
 
     // Load interface2 sprites in one batch
@@ -188,9 +188,9 @@ void Screen_Loading::LoadStage_Tiles1()
     MakeTileSpr("maptiles1", 0, 32, true);
     m_pGame->m_pTileSpr[1 + 50] = hb::shared::sprite::Sprites::Create("structures1", 1, true);
     m_pGame->m_pTileSpr[5 + 50] = hb::shared::sprite::Sprites::Create("structures1", 5, true);
-    MakeTileSpr("Sinside1", 70, 27, false);
-    MakeTileSpr("Trees1", 100, 46, true);
-    MakeTileSpr("TreeShadows", 150, 46, true);
+    MakeTileSpr("sinside1", 70, 27, false);
+    MakeTileSpr("trees1", 100, 46, true);
+    MakeTileSpr("treeshadows", 150, 46, true);
     MakeTileSpr("objects1", 200, 10, true);
     MakeTileSpr("objects2", 211, 5, true);
     MakeTileSpr("objects3", 216, 4, true);
@@ -204,8 +204,8 @@ void Screen_Loading::LoadStage_Tiles1()
 //=============================================================================
 void Screen_Loading::LoadStage_Tiles2()
 {
-    MakeTileSpr("Tile223-225", 223, 3, true);
-    MakeTileSpr("Tile226-229", 226, 4, true);
+    MakeTileSpr("tile223-225", 223, 3, true);
+    MakeTileSpr("tile226-229", 226, 4, true);
     MakeTileSpr("objects5", 230, 9, true);
     MakeTileSpr("objects6", 238, 4, true);
     MakeTileSpr("objects7", 242, 7, true);
@@ -214,11 +214,11 @@ void Screen_Loading::LoadStage_Tiles2()
     MakeTileSpr("maptiles5", 330, 19, true);
     MakeTileSpr("maptiles6", 349, 4, true);
     MakeTileSpr("maptiles353-361", 353, 9, true);
-    MakeTileSpr("Tile363-366", 363, 4, true);
-    MakeTileSpr("Tile367-367", 367, 1, true);
-    MakeTileSpr("Tile370-381", 370, 12, true);
-    MakeTileSpr("Tile382-387", 382, 6, true);
-    MakeTileSpr("Tile388-402", 388, 15, true);
+    MakeTileSpr("tile363-366", 363, 4, true);
+    MakeTileSpr("tile367-367", 367, 1, true);
+    MakeTileSpr("tile370-381", 370, 12, true);
+    MakeTileSpr("tile382-387", 382, 6, true);
+    MakeTileSpr("tile388-402", 388, 15, true);
 
     m_iLoadingStage = 12;
 }
@@ -228,19 +228,19 @@ void Screen_Loading::LoadStage_Tiles2()
 //=============================================================================
 void Screen_Loading::LoadStage_Tiles3()
 {
-    MakeTileSpr("Tile403-405", 403, 3, true);
-    MakeTileSpr("Tile406-421", 406, 16, true);
-    MakeTileSpr("Tile422-429", 422, 8, true);
-    MakeTileSpr("Tile430-443", 430, 14, true);
-    MakeTileSpr("Tile444-444", 444, 1, true);
-    MakeTileSpr("Tile445-461", 445, 17, true);
-    MakeTileSpr("Tile462-473", 462, 12, true);
-    MakeTileSpr("Tile474-478", 474, 5, true);
-    MakeTileSpr("Tile479-488", 479, 10, true);
-    MakeTileSpr("Tile489-522", 489, 34, true);
-    MakeTileSpr("Tile523-530", 523, 8, true);
-    MakeTileSpr("Tile531-540", 531, 10, true);
-    MakeTileSpr("Tile541-545", 541, 5, true);
+    MakeTileSpr("tile403-405", 403, 3, true);
+    MakeTileSpr("tile406-421", 406, 16, true);
+    MakeTileSpr("tile422-429", 422, 8, true);
+    MakeTileSpr("tile430-443", 430, 14, true);
+    MakeTileSpr("tile444-444", 444, 1, true);
+    MakeTileSpr("tile445-461", 445, 17, true);
+    MakeTileSpr("tile462-473", 462, 12, true);
+    MakeTileSpr("tile474-478", 474, 5, true);
+    MakeTileSpr("tile479-488", 479, 10, true);
+    MakeTileSpr("tile489-522", 489, 34, true);
+    MakeTileSpr("tile523-530", 523, 8, true);
+    MakeTileSpr("tile531-540", 531, 10, true);
+    MakeTileSpr("tile541-545", 541, 5, true);
 
     // Item pack sprites
     hb::shared::sprite::SpriteLoader::open_pak("item-pack", [&](hb::shared::sprite::SpriteLoader& loader) {
@@ -273,7 +273,7 @@ void Screen_Loading::LoadStage_Tiles3()
 void Screen_Loading::LoadStage_Equipment1()
 {
     // Male equipment
-    hb::shared::sprite::SpriteLoader::open_pak("item-equipM", [&](hb::shared::sprite::SpriteLoader& loader) {
+    hb::shared::sprite::SpriteLoader::open_pak("item-equipm", [&](hb::shared::sprite::SpriteLoader& loader) {
         m_pGame->m_pSprite[ItemEquipPivotPoint + 0] = loader.get_sprite(0, false);
         m_pGame->m_pSprite[ItemEquipPivotPoint + 1] = loader.get_sprite(1, false);
         m_pGame->m_pSprite[ItemEquipPivotPoint + 2] = loader.get_sprite(2, false);
@@ -292,7 +292,7 @@ void Screen_Loading::LoadStage_Equipment1()
     });
 
     // Female equipment
-    hb::shared::sprite::SpriteLoader::open_pak("item-equipW", [&](hb::shared::sprite::SpriteLoader& loader) {
+    hb::shared::sprite::SpriteLoader::open_pak("item-equipw", [&](hb::shared::sprite::SpriteLoader& loader) {
         m_pGame->m_pSprite[ItemEquipPivotPoint + 40] = loader.get_sprite(0, false);
         m_pGame->m_pSprite[ItemEquipPivotPoint + 41] = loader.get_sprite(1, false);
         m_pGame->m_pSprite[ItemEquipPivotPoint + 42] = loader.get_sprite(2, false);
@@ -319,9 +319,9 @@ void Screen_Loading::LoadStage_Equipment1()
     });
 
     // Player body sprites
-    MakeSprite("Bm", 500 + 15 * 8 * 0, 96, true);  // Black Man
-    MakeSprite("Wm", 500 + 15 * 8 * 1, 96, true);  // White Man
-    MakeSprite("Ym", 500 + 15 * 8 * 2, 96, true);  // Yellow Man
+    MakeSprite("bm", 500 + 15 * 8 * 0, 96, true);  // Black Man
+    MakeSprite("wm", 500 + 15 * 8 * 1, 96, true);  // White Man
+    MakeSprite("ym", 500 + 15 * 8 * 2, 96, true);  // Yellow Man
 
     m_iLoadingStage = 20;
 }
@@ -331,14 +331,14 @@ void Screen_Loading::LoadStage_Equipment1()
 //=============================================================================
 void Screen_Loading::LoadStage_Angels()
 {
-    MakeSprite("TutelarAngel1", TutelaryAngelsPivotPoint + 50 * 0, 48, false);
-    MakeSprite("TutelarAngel2", TutelaryAngelsPivotPoint + 50 * 1, 48, false);
-    MakeSprite("TutelarAngel3", TutelaryAngelsPivotPoint + 50 * 2, 48, false);
-    MakeSprite("TutelarAngel4", TutelaryAngelsPivotPoint + 50 * 3, 48, false);
+    MakeSprite("tutelarangel1", TutelaryAngelsPivotPoint + 50 * 0, 48, false);
+    MakeSprite("tutelarangel2", TutelaryAngelsPivotPoint + 50 * 1, 48, false);
+    MakeSprite("tutelarangel3", TutelaryAngelsPivotPoint + 50 * 2, 48, false);
+    MakeSprite("tutelarangel4", TutelaryAngelsPivotPoint + 50 * 3, 48, false);
 
-    MakeSprite("Bw", 500 + 15 * 8 * 3, 96, true);  // Black Woman
-    MakeSprite("Ww", 500 + 15 * 8 * 4, 96, true);  // White Woman
-    MakeSprite("Yw", 500 + 15 * 8 * 5, 96, true);  // Yellow Woman
+    MakeSprite("bw", 500 + 15 * 8 * 3, 96, true);  // Black Woman
+    MakeSprite("ww", 500 + 15 * 8 * 4, 96, true);  // White Woman
+    MakeSprite("yw", 500 + 15 * 8 * 5, 96, true);  // Yellow Woman
 
     m_iLoadingStage = 24;
 }
@@ -350,20 +350,20 @@ void Screen_Loading::LoadStage_Monsters1()
 {
     MakeSprite("slm", Mob + 7 * 8 * 0, 40, true);
     MakeSprite("ske", Mob + 7 * 8 * 1, 40, true);
-    MakeSprite("Gol", Mob + 7 * 8 * 2, 40, true);
-    MakeSprite("Cyc", Mob + 7 * 8 * 3, 40, true);
-    MakeSprite("Orc", Mob + 7 * 8 * 4, 40, true);
-    MakeSprite("Shopkpr", Mob + 7 * 8 * 5, 8, true);
-    MakeSprite("Ant", Mob + 7 * 8 * 6, 40, true);
-    MakeSprite("Scp", Mob + 7 * 8 * 7, 40, true);
-    MakeSprite("Zom", Mob + 7 * 8 * 8, 40, true);
-    MakeSprite("Gandlf", Mob + 7 * 8 * 9, 8, true);
-    MakeSprite("Howard", Mob + 7 * 8 * 10, 8, true);
-    MakeSprite("Guard", Mob + 7 * 8 * 11, 40, true);
-    MakeSprite("Amp", Mob + 7 * 8 * 12, 40, true);
-    MakeSprite("Cla", Mob + 7 * 8 * 13, 40, true);
+    MakeSprite("gol", Mob + 7 * 8 * 2, 40, true);
+    MakeSprite("cyc", Mob + 7 * 8 * 3, 40, true);
+    MakeSprite("orc", Mob + 7 * 8 * 4, 40, true);
+    MakeSprite("shopkpr", Mob + 7 * 8 * 5, 8, true);
+    MakeSprite("ant", Mob + 7 * 8 * 6, 40, true);
+    MakeSprite("scp", Mob + 7 * 8 * 7, 40, true);
+    MakeSprite("zom", Mob + 7 * 8 * 8, 40, true);
+    MakeSprite("gandlf", Mob + 7 * 8 * 9, 8, true);
+    MakeSprite("howard", Mob + 7 * 8 * 10, 8, true);
+    MakeSprite("guard", Mob + 7 * 8 * 11, 40, true);
+    MakeSprite("amp", Mob + 7 * 8 * 12, 40, true);
+    MakeSprite("cla", Mob + 7 * 8 * 13, 40, true);
     MakeSprite("tom", Mob + 7 * 8 * 14, 8, true);
-    MakeSprite("William", Mob + 7 * 8 * 15, 8, true);
+    MakeSprite("william", Mob + 7 * 8 * 15, 8, true);
 
     m_iLoadingStage = 28;
 }
@@ -373,18 +373,18 @@ void Screen_Loading::LoadStage_Monsters1()
 //=============================================================================
 void Screen_Loading::LoadStage_Monsters2()
 {
-    MakeSprite("Kennedy", Mob + 7 * 8 * 16, 8, true);
-    MakeSprite("Helb", Mob + 7 * 8 * 17, 40, true);
-    MakeSprite("Troll", Mob + 7 * 8 * 18, 40, true);
-    MakeSprite("Orge", Mob + 7 * 8 * 19, 40, true);
-    MakeSprite("Liche", Mob + 7 * 8 * 20, 40, true);
-    MakeSprite("Demon", Mob + 7 * 8 * 21, 40, true);
-    MakeSprite("Unicorn", Mob + 7 * 8 * 22, 40, true);
-    MakeSprite("WereWolf", Mob + 7 * 8 * 23, 40, true);
-    MakeSprite("Dummy", Mob + 7 * 8 * 24, 40, true);
+    MakeSprite("kennedy", Mob + 7 * 8 * 16, 8, true);
+    MakeSprite("helb", Mob + 7 * 8 * 17, 40, true);
+    MakeSprite("troll", Mob + 7 * 8 * 18, 40, true);
+    MakeSprite("orge", Mob + 7 * 8 * 19, 40, true);
+    MakeSprite("liche", Mob + 7 * 8 * 20, 40, true);
+    MakeSprite("demon", Mob + 7 * 8 * 21, 40, true);
+    MakeSprite("unicorn", Mob + 7 * 8 * 22, 40, true);
+    MakeSprite("werewolf", Mob + 7 * 8 * 23, 40, true);
+    MakeSprite("dummy", Mob + 7 * 8 * 24, 40, true);
 
     // Energy Ball - all 40 slots use the same sprite
-    hb::shared::sprite::SpriteLoader::open_pak("Effect5", [&](hb::shared::sprite::SpriteLoader& loader) {
+    hb::shared::sprite::SpriteLoader::open_pak("effect5", [&](hb::shared::sprite::SpriteLoader& loader) {
         for (int i = 0; i < 40; i++)
             m_pGame->m_pSprite[Mob + i + 7 * 8 * 25] = loader.get_sprite(0, true);
     });
@@ -397,18 +397,18 @@ void Screen_Loading::LoadStage_Monsters2()
 //=============================================================================
 void Screen_Loading::LoadStage_Monsters3()
 {
-    MakeSprite("GT-Arrow", Mob + 7 * 8 * 26, 40, true);
-    MakeSprite("GT-Cannon", Mob + 7 * 8 * 27, 40, true);
-    MakeSprite("ManaCollector", Mob + 7 * 8 * 28, 40, true);
-    MakeSprite("Detector", Mob + 7 * 8 * 29, 40, true);
-    MakeSprite("ESG", Mob + 7 * 8 * 30, 40, true);
-    MakeSprite("GMG", Mob + 7 * 8 * 31, 40, true);
-    MakeSprite("ManaStone", Mob + 7 * 8 * 32, 40, true);
-    MakeSprite("LWB", Mob + 7 * 8 * 33, 40, true);
-    MakeSprite("GHK", Mob + 7 * 8 * 34, 40, true);
-    MakeSprite("GHKABS", Mob + 7 * 8 * 35, 40, true);
-    MakeSprite("TK", Mob + 7 * 8 * 36, 40, true);
-    MakeSprite("BG", Mob + 7 * 8 * 37, 40, true);
+    MakeSprite("gt-arrow", Mob + 7 * 8 * 26, 40, true);
+    MakeSprite("gt-cannon", Mob + 7 * 8 * 27, 40, true);
+    MakeSprite("manacollector", Mob + 7 * 8 * 28, 40, true);
+    MakeSprite("detector", Mob + 7 * 8 * 29, 40, true);
+    MakeSprite("esg", Mob + 7 * 8 * 30, 40, true);
+    MakeSprite("gmg", Mob + 7 * 8 * 31, 40, true);
+    MakeSprite("manastone", Mob + 7 * 8 * 32, 40, true);
+    MakeSprite("lwb", Mob + 7 * 8 * 33, 40, true);
+    MakeSprite("ghk", Mob + 7 * 8 * 34, 40, true);
+    MakeSprite("ghkabs", Mob + 7 * 8 * 35, 40, true);
+    MakeSprite("tk", Mob + 7 * 8 * 36, 40, true);
+    MakeSprite("bg", Mob + 7 * 8 * 37, 40, true);
 
     m_iLoadingStage = 36;
 }
@@ -418,17 +418,17 @@ void Screen_Loading::LoadStage_Monsters3()
 //=============================================================================
 void Screen_Loading::LoadStage_Monsters4()
 {
-    MakeSprite("Stalker", Mob + 7 * 8 * 38, 40, true);
-    MakeSprite("Hellclaw", Mob + 7 * 8 * 39, 40, true);
-    MakeSprite("Tigerworm", Mob + 7 * 8 * 40, 40, true);
-    MakeSprite("Catapult", Mob + 7 * 8 * 41, 40, true);
-    MakeSprite("Gagoyle", Mob + 7 * 8 * 42, 40, true);
-    MakeSprite("Beholder", Mob + 7 * 8 * 43, 40, true);
-    MakeSprite("DarkElf", Mob + 7 * 8 * 44, 40, true);
-    MakeSprite("Bunny", Mob + 7 * 8 * 45, 40, true);
-    MakeSprite("Cat", Mob + 7 * 8 * 46, 40, true);
-    MakeSprite("GiantFrog", Mob + 7 * 8 * 47, 40, true);
-    MakeSprite("MTGiant", Mob + 7 * 8 * 48, 40, true);
+    MakeSprite("stalker", Mob + 7 * 8 * 38, 40, true);
+    MakeSprite("hellclaw", Mob + 7 * 8 * 39, 40, true);
+    MakeSprite("tigerworm", Mob + 7 * 8 * 40, 40, true);
+    MakeSprite("catapult", Mob + 7 * 8 * 41, 40, true);
+    MakeSprite("gagoyle", Mob + 7 * 8 * 42, 40, true);
+    MakeSprite("beholder", Mob + 7 * 8 * 43, 40, true);
+    MakeSprite("darkelf", Mob + 7 * 8 * 44, 40, true);
+    MakeSprite("bunny", Mob + 7 * 8 * 45, 40, true);
+    MakeSprite("cat", Mob + 7 * 8 * 46, 40, true);
+    MakeSprite("giantfrog", Mob + 7 * 8 * 47, 40, true);
+    MakeSprite("mtgiant", Mob + 7 * 8 * 48, 40, true);
 
     m_iLoadingStage = 40;
 }
@@ -438,23 +438,23 @@ void Screen_Loading::LoadStage_Monsters4()
 //=============================================================================
 void Screen_Loading::LoadStage_Monsters5()
 {
-    MakeSprite("Ettin", Mob + 7 * 8 * 49, 40, true);
-    MakeSprite("CanPlant", Mob + 7 * 8 * 50, 40, true);
-    MakeSprite("Rudolph", Mob + 7 * 8 * 51, 40, true);
-    MakeSprite("DireBoar", Mob + 7 * 8 * 52, 40, true);
+    MakeSprite("ettin", Mob + 7 * 8 * 49, 40, true);
+    MakeSprite("canplant", Mob + 7 * 8 * 50, 40, true);
+    MakeSprite("rudolph", Mob + 7 * 8 * 51, 40, true);
+    MakeSprite("direboar", Mob + 7 * 8 * 52, 40, true);
     MakeSprite("frost", Mob + 7 * 8 * 53, 40, true);
-    MakeSprite("Crop", Mob + 7 * 8 * 54, 40, true);
-    MakeSprite("IceGolem", Mob + 7 * 8 * 55, 40, true);
-    MakeSprite("Wyvern", Mob + 7 * 8 * 56, 24, true);
-    MakeSprite("McGaffin", Mob + 7 * 8 * 57, 16, true);
-    MakeSprite("Perry", Mob + 7 * 8 * 58, 16, true);
-    MakeSprite("Devlin", Mob + 7 * 8 * 59, 16, true);
-    MakeSprite("Barlog", Mob + 7 * 8 * 60, 40, true);
-    MakeSprite("Centaurus", Mob + 7 * 8 * 61, 40, true);
-    MakeSprite("ClawTurtle", Mob + 7 * 8 * 62, 40, true);
-    MakeSprite("FireWyvern", Mob + 7 * 8 * 63, 24, true);
-    MakeSprite("GiantCrayfish", Mob + 7 * 8 * 64, 40, true);
-    MakeSprite("GiantLizard", Mob + 7 * 8 * 65, 40, true);
+    MakeSprite("crop", Mob + 7 * 8 * 54, 40, true);
+    MakeSprite("icegolem", Mob + 7 * 8 * 55, 40, true);
+    MakeSprite("wyvern", Mob + 7 * 8 * 56, 24, true);
+    MakeSprite("mcgaffin", Mob + 7 * 8 * 57, 16, true);
+    MakeSprite("perry", Mob + 7 * 8 * 58, 16, true);
+    MakeSprite("devlin", Mob + 7 * 8 * 59, 16, true);
+    MakeSprite("barlog", Mob + 7 * 8 * 60, 40, true);
+    MakeSprite("centaurus", Mob + 7 * 8 * 61, 40, true);
+    MakeSprite("clawturtle", Mob + 7 * 8 * 62, 40, true);
+    MakeSprite("firewyvern", Mob + 7 * 8 * 63, 24, true);
+    MakeSprite("giantcrayfish", Mob + 7 * 8 * 64, 40, true);
+    MakeSprite("giantlizard", Mob + 7 * 8 * 65, 40, true);
 
     m_iLoadingStage = 44;
 }
@@ -464,20 +464,20 @@ void Screen_Loading::LoadStage_Monsters5()
 //=============================================================================
 void Screen_Loading::LoadStage_Monsters6()
 {
-    MakeSprite("GiantPlant", Mob + 7 * 8 * 66, 40, true);
-    MakeSprite("MasterMageOrc", Mob + 7 * 8 * 67, 40, true);
-    MakeSprite("Minotaurs", Mob + 7 * 8 * 68, 40, true);
-    MakeSprite("Nizie", Mob + 7 * 8 * 69, 40, true);
-    MakeSprite("Tentocle", Mob + 7 * 8 * 70, 40, true);
+    MakeSprite("giantplant", Mob + 7 * 8 * 66, 40, true);
+    MakeSprite("mastermageorc", Mob + 7 * 8 * 67, 40, true);
+    MakeSprite("minotaurs", Mob + 7 * 8 * 68, 40, true);
+    MakeSprite("nizie", Mob + 7 * 8 * 69, 40, true);
+    MakeSprite("tentocle", Mob + 7 * 8 * 70, 40, true);
     MakeSprite("yspro", Mob + 7 * 8 * 71, 32, true);
-    MakeSprite("Sorceress", Mob + 7 * 8 * 72, 40, true);
-    MakeSprite("TPKnight", Mob + 7 * 8 * 73, 40, true);
-    MakeSprite("ElfMaster", Mob + 7 * 8 * 74, 40, true);
-    MakeSprite("DarkKnight", Mob + 7 * 8 * 75, 40, true);
-    MakeSprite("HBTank", Mob + 7 * 8 * 76, 32, true);
-    MakeSprite("CBTurret", Mob + 7 * 8 * 77, 32, true);
-    MakeSprite("Babarian", Mob + 7 * 8 * 78, 40, true);
-    MakeSprite("ACannon", Mob + 7 * 8 * 79, 32, true);
+    MakeSprite("sorceress", Mob + 7 * 8 * 72, 40, true);
+    MakeSprite("tpknight", Mob + 7 * 8 * 73, 40, true);
+    MakeSprite("elfmaster", Mob + 7 * 8 * 74, 40, true);
+    MakeSprite("darkknight", Mob + 7 * 8 * 75, 40, true);
+    MakeSprite("hbtank", Mob + 7 * 8 * 76, 32, true);
+    MakeSprite("cbturret", Mob + 7 * 8 * 77, 32, true);
+    MakeSprite("babarian", Mob + 7 * 8 * 78, 40, true);
+    MakeSprite("acannon", Mob + 7 * 8 * 79, 32, true);
 
     m_iLoadingStage = 48;
 }
@@ -487,11 +487,11 @@ void Screen_Loading::LoadStage_Monsters6()
 //=============================================================================
 void Screen_Loading::LoadStage_MaleUndies()
 {
-    MakeSprite("Gail", Mob + 7 * 8 * 80, 8, true);
-    MakeSprite("Gate", Mob + 7 * 8 * 81, 24, true);
+    MakeSprite("gail", Mob + 7 * 8 * 80, 8, true);
+    MakeSprite("gate", Mob + 7 * 8 * 81, 24, true);
 
     // Male underwear
-    hb::shared::sprite::SpriteLoader::open_pak("Mpt", [&](hb::shared::sprite::SpriteLoader& loader) {
+    hb::shared::sprite::SpriteLoader::open_pak("mpt", [&](hb::shared::sprite::SpriteLoader& loader) {
         for (int g = 0; g < 8; g++) {
             for (int i = 0; i < 12; i++) {
                 m_pGame->m_pSprite[UndiesM + i + 15 * g] = loader.get_sprite(i + 12 * g, true);
@@ -508,7 +508,7 @@ void Screen_Loading::LoadStage_MaleUndies()
 void Screen_Loading::LoadStage_MaleArmor()
 {
     // Male hair
-    hb::shared::sprite::SpriteLoader::open_pak("Mhr", [&](hb::shared::sprite::SpriteLoader& loader) {
+    hb::shared::sprite::SpriteLoader::open_pak("mhr", [&](hb::shared::sprite::SpriteLoader& loader) {
         for (int g = 0; g < 8; g++) {
             for (int i = 0; i < 12; i++) {
                 m_pGame->m_pSprite[HairM + i + 15 * g] = loader.get_sprite(i + 12 * g, true);
@@ -517,23 +517,23 @@ void Screen_Loading::LoadStage_MaleArmor()
     });
 
     // Male body armor
-    MakeSprite("MLArmor", BodyArmorM + 15 * 1, 12, true);
-    MakeSprite("MCMail", BodyArmorM + 15 * 2, 12, true);
-    MakeSprite("MSMail", BodyArmorM + 15 * 3, 12, true);
-    MakeSprite("MPMail", BodyArmorM + 15 * 4, 12, true);
-    MakeSprite("Mtunic", BodyArmorM + 15 * 5, 12, true);
-    MakeSprite("MRobe1", BodyArmorM + 15 * 6, 12, true);
-    MakeSprite("MSanta", BodyArmorM + 15 * 7, 12, true);
-    MakeSprite("MHRobe1", BodyArmorM + 15 * 10, 12, true);
-    MakeSprite("MHRobe2", BodyArmorM + 15 * 11, 12, true);
-    MakeSprite("MHPMail1", BodyArmorM + 15 * 8, 12, true);
-    MakeSprite("MHPMail2", BodyArmorM + 15 * 9, 12, true);
+    MakeSprite("mlarmor", BodyArmorM + 15 * 1, 12, true);
+    MakeSprite("mcmail", BodyArmorM + 15 * 2, 12, true);
+    MakeSprite("msmail", BodyArmorM + 15 * 3, 12, true);
+    MakeSprite("mpmail", BodyArmorM + 15 * 4, 12, true);
+    MakeSprite("mtunic", BodyArmorM + 15 * 5, 12, true);
+    MakeSprite("mrobe1", BodyArmorM + 15 * 6, 12, true);
+    MakeSprite("msanta", BodyArmorM + 15 * 7, 12, true);
+    MakeSprite("mhrobe1", BodyArmorM + 15 * 10, 12, true);
+    MakeSprite("mhrobe2", BodyArmorM + 15 * 11, 12, true);
+    MakeSprite("mhpmail1", BodyArmorM + 15 * 8, 12, true);
+    MakeSprite("mhpmail2", BodyArmorM + 15 * 9, 12, true);
 
     // Male shirts
-    MakeSprite("MShirt", BerkM + 15 * 1, 12, true);
-    MakeSprite("MHauberk", BerkM + 15 * 2, 12, true);
-    MakeSprite("MHHauberk1", BerkM + 15 * 3, 12, true);
-    MakeSprite("MHHauberk2", BerkM + 15 * 4, 12, true);
+    MakeSprite("mshirt", BerkM + 15 * 1, 12, true);
+    MakeSprite("mhauberk", BerkM + 15 * 2, 12, true);
+    MakeSprite("mhhauberk1", BerkM + 15 * 3, 12, true);
+    MakeSprite("mhhauberk2", BerkM + 15 * 4, 12, true);
 
     m_iLoadingStage = 56;
 }
@@ -544,19 +544,19 @@ void Screen_Loading::LoadStage_MaleArmor()
 void Screen_Loading::LoadStage_MaleLegs()
 {
     // Male leggings
-    MakeSprite("MTrouser", LeggM + 15 * 1, 12, true);
-    MakeSprite("MHTrouser", LeggM + 15 * 2, 12, true);
-    MakeSprite("MCHoses", LeggM + 15 * 3, 12, true);
-    MakeSprite("MLeggings", LeggM + 15 * 4, 12, true);
-    MakeSprite("MHLeggings1", LeggM + 15 * 5, 12, true);
-    MakeSprite("MHLeggings2", LeggM + 15 * 6, 12, true);
+    MakeSprite("mtrouser", LeggM + 15 * 1, 12, true);
+    MakeSprite("mhtrouser", LeggM + 15 * 2, 12, true);
+    MakeSprite("mchoses", LeggM + 15 * 3, 12, true);
+    MakeSprite("mleggings", LeggM + 15 * 4, 12, true);
+    MakeSprite("mhleggings1", LeggM + 15 * 5, 12, true);
+    MakeSprite("mhleggings2", LeggM + 15 * 6, 12, true);
 
     // Male boots
-    MakeSprite("MShoes", BootM + 15 * 1, 12, true);
-    MakeSprite("MLBoots", BootM + 15 * 2, 12, true);
+    MakeSprite("mshoes", BootM + 15 * 1, 12, true);
+    MakeSprite("mlboots", BootM + 15 * 2, 12, true);
 
     // Male swords (batch load)
-    hb::shared::sprite::SpriteLoader::open_pak("Msw", [&](hb::shared::sprite::SpriteLoader& loader) {
+    hb::shared::sprite::SpriteLoader::open_pak("msw", [&](hb::shared::sprite::SpriteLoader& loader) {
         for (int i = 0; i < 56; i++) m_pGame->m_pSprite[WeaponM + i + 64 * 1] = loader.get_sprite(i + 56 * 0, true);
         for (int i = 0; i < 56; i++) m_pGame->m_pSprite[WeaponM + i + 64 * 2] = loader.get_sprite(i + 56 * 1, true);
         for (int i = 0; i < 56; i++) m_pGame->m_pSprite[WeaponM + i + 64 * 3] = loader.get_sprite(i + 56 * 2, true);
@@ -578,24 +578,24 @@ void Screen_Loading::LoadStage_MaleLegs()
 //=============================================================================
 void Screen_Loading::LoadStage_MaleSwords()
 {
-    MakeSprite("Mswx", WeaponM + 64 * 5, 56, true);
-    MakeSprite("Msw2", WeaponM + 64 * 13, 56, true);
-    MakeSprite("Msw3", WeaponM + 64 * 14, 56, true);
-    MakeSprite("MStormBringer", WeaponM + 64 * 15, 56, true);
-    MakeSprite("MDarkExec", WeaponM + 64 * 16, 56, true);
-    MakeSprite("MKlonessBlade", WeaponM + 64 * 17, 56, true);
-    MakeSprite("MKlonessAstock", WeaponM + 64 * 18, 56, true);
-    MakeSprite("MDebastator", WeaponM + 64 * 19, 56, true);
-    MakeSprite("MAxe1", WeaponM + 64 * 20, 56, true);
-    MakeSprite("MAxe2", WeaponM + 64 * 21, 56, true);
-    MakeSprite("MAxe3", WeaponM + 64 * 22, 56, true);
-    MakeSprite("MAxe4", WeaponM + 64 * 23, 56, true);
-    MakeSprite("MAxe5", WeaponM + 64 * 24, 56, true);
-    MakeSprite("MPickAxe1", WeaponM + 64 * 25, 56, true);
-    MakeSprite("MAxe6", WeaponM + 64 * 26, 56, true);
-    MakeSprite("Mhoe", WeaponM + 64 * 27, 56, true);
-    MakeSprite("MKlonessAxe", WeaponM + 64 * 28, 56, true);
-    MakeSprite("MLightBlade", WeaponM + 64 * 29, 56, true);
+    MakeSprite("mswx", WeaponM + 64 * 5, 56, true);
+    MakeSprite("msw2", WeaponM + 64 * 13, 56, true);
+    MakeSprite("msw3", WeaponM + 64 * 14, 56, true);
+    MakeSprite("mstormbringer", WeaponM + 64 * 15, 56, true);
+    MakeSprite("mdarkexec", WeaponM + 64 * 16, 56, true);
+    MakeSprite("mklonessblade", WeaponM + 64 * 17, 56, true);
+    MakeSprite("mklonessastock", WeaponM + 64 * 18, 56, true);
+    MakeSprite("mdebastator", WeaponM + 64 * 19, 56, true);
+    MakeSprite("maxe1", WeaponM + 64 * 20, 56, true);
+    MakeSprite("maxe2", WeaponM + 64 * 21, 56, true);
+    MakeSprite("maxe3", WeaponM + 64 * 22, 56, true);
+    MakeSprite("maxe4", WeaponM + 64 * 23, 56, true);
+    MakeSprite("maxe5", WeaponM + 64 * 24, 56, true);
+    MakeSprite("mpickaxe1", WeaponM + 64 * 25, 56, true);
+    MakeSprite("maxe6", WeaponM + 64 * 26, 56, true);
+    MakeSprite("mhoe", WeaponM + 64 * 27, 56, true);
+    MakeSprite("mklonessaxe", WeaponM + 64 * 28, 56, true);
+    MakeSprite("mlightblade", WeaponM + 64 * 29, 56, true);
 
     m_iLoadingStage = 64;
 }
@@ -605,18 +605,18 @@ void Screen_Loading::LoadStage_MaleSwords()
 //=============================================================================
 void Screen_Loading::LoadStage_MaleWeapons()
 {
-    MakeSprite("MHammer", WeaponM + 64 * 30, 56, true);
-    MakeSprite("MBHammer", WeaponM + 64 * 31, 56, true);
-    MakeSprite("MBabHammer", WeaponM + 64 * 32, 56, true);
-    MakeSprite("MBShadowSword", WeaponM + 64 * 33, 56, true);
-    MakeSprite("MBerserkWand", WeaponM + 64 * 34, 56, true);
-    MakeSprite("Mstaff1", WeaponM + 64 * 35, 56, true);
-    MakeSprite("Mstaff2", WeaponM + 64 * 36, 56, true);
-    MakeSprite("MStaff3", WeaponM + 64 * 37, 56, true);
-    MakeSprite("MReMagicWand", WeaponM + 64 * 38, 56, true);
-    MakeSprite("MKlonessWand", WeaponM + 64 * 39, 56, true);
-    MakeSprite("MDirectBow", WeaponM + 64 * 42, 56, true);
-    MakeSprite("MFireBow", WeaponM + 64 * 43, 56, true);
+    MakeSprite("mhammer", WeaponM + 64 * 30, 56, true);
+    MakeSprite("mbhammer", WeaponM + 64 * 31, 56, true);
+    MakeSprite("mbabhammer", WeaponM + 64 * 32, 56, true);
+    MakeSprite("mbshadowsword", WeaponM + 64 * 33, 56, true);
+    MakeSprite("mberserkwand", WeaponM + 64 * 34, 56, true);
+    MakeSprite("mstaff1", WeaponM + 64 * 35, 56, true);
+    MakeSprite("mstaff2", WeaponM + 64 * 36, 56, true);
+    MakeSprite("mstaff3", WeaponM + 64 * 37, 56, true);
+    MakeSprite("mremagicwand", WeaponM + 64 * 38, 56, true);
+    MakeSprite("mklonesswand", WeaponM + 64 * 39, 56, true);
+    MakeSprite("mdirectbow", WeaponM + 64 * 42, 56, true);
+    MakeSprite("mfirebow", WeaponM + 64 * 43, 56, true);
 
     m_iLoadingStage = 68;
 }
@@ -627,13 +627,13 @@ void Screen_Loading::LoadStage_MaleWeapons()
 void Screen_Loading::LoadStage_MaleBows()
 {
     // Male bows
-    hb::shared::sprite::SpriteLoader::open_pak("Mbo", [&](hb::shared::sprite::SpriteLoader& loader) {
+    hb::shared::sprite::SpriteLoader::open_pak("mbo", [&](hb::shared::sprite::SpriteLoader& loader) {
         for (int i = 0; i < 56; i++) m_pGame->m_pSprite[WeaponM + i + 64 * 40] = loader.get_sprite(i + 56 * 0, true);
         for (int i = 0; i < 56; i++) m_pGame->m_pSprite[WeaponM + i + 64 * 41] = loader.get_sprite(i + 56 * 1, true);
     });
 
     // Male shields
-    hb::shared::sprite::SpriteLoader::open_pak("Msh", [&](hb::shared::sprite::SpriteLoader& loader) {
+    hb::shared::sprite::SpriteLoader::open_pak("msh", [&](hb::shared::sprite::SpriteLoader& loader) {
         for (int g = 0; g < 9; g++) {
             for (int i = 0; i < 7; i++) {
                 m_pGame->m_pSprite[ShieldM + i + 8 * (g + 1)] = loader.get_sprite(i + 7 * g, true);
@@ -650,26 +650,26 @@ void Screen_Loading::LoadStage_MaleBows()
 void Screen_Loading::LoadStage_FemaleBase()
 {
     // Male mantles
-    MakeSprite("Mmantle01", MantleM + 15 * 1, 12, true);
-    MakeSprite("Mmantle02", MantleM + 15 * 2, 12, true);
-    MakeSprite("Mmantle03", MantleM + 15 * 3, 12, true);
-    MakeSprite("Mmantle04", MantleM + 15 * 4, 12, true);
-    MakeSprite("Mmantle05", MantleM + 15 * 5, 12, true);
-    MakeSprite("Mmantle06", MantleM + 15 * 6, 12, true);
+    MakeSprite("mmantle01", MantleM + 15 * 1, 12, true);
+    MakeSprite("mmantle02", MantleM + 15 * 2, 12, true);
+    MakeSprite("mmantle03", MantleM + 15 * 3, 12, true);
+    MakeSprite("mmantle04", MantleM + 15 * 4, 12, true);
+    MakeSprite("mmantle05", MantleM + 15 * 5, 12, true);
+    MakeSprite("mmantle06", MantleM + 15 * 6, 12, true);
 
     // Male helms
-    MakeSprite("MHelm1", HeadM + 15 * 1, 12, true);
-    MakeSprite("MHelm2", HeadM + 15 * 2, 12, true);
-    MakeSprite("MHelm3", HeadM + 15 * 3, 12, true);
-    MakeSprite("MHelm4", HeadM + 15 * 4, 12, true);
-    MakeSprite("MHCap1", HeadM + 15 * 11, 12, true);
-    MakeSprite("MHCap2", HeadM + 15 * 12, 12, true);
-    MakeSprite("MHHelm1", HeadM + 15 * 9, 12, true);
-    MakeSprite("MHHelm2", HeadM + 15 * 10, 12, true);
-    MakeSprite("NMHelm1", HeadM + 15 * 5, 12, true);
-    MakeSprite("NMHelm2", HeadM + 15 * 6, 12, true);
-    MakeSprite("NMHelm3", HeadM + 15 * 7, 12, true);
-    MakeSprite("NMHelm4", HeadM + 15 * 8, 12, true);
+    MakeSprite("mhelm1", HeadM + 15 * 1, 12, true);
+    MakeSprite("mhelm2", HeadM + 15 * 2, 12, true);
+    MakeSprite("mhelm3", HeadM + 15 * 3, 12, true);
+    MakeSprite("mhelm4", HeadM + 15 * 4, 12, true);
+    MakeSprite("mhcap1", HeadM + 15 * 11, 12, true);
+    MakeSprite("mhcap2", HeadM + 15 * 12, 12, true);
+    MakeSprite("mhhelm1", HeadM + 15 * 9, 12, true);
+    MakeSprite("mhhelm2", HeadM + 15 * 10, 12, true);
+    MakeSprite("nmhelm1", HeadM + 15 * 5, 12, true);
+    MakeSprite("nmhelm2", HeadM + 15 * 6, 12, true);
+    MakeSprite("nmhelm3", HeadM + 15 * 7, 12, true);
+    MakeSprite("nmhelm4", HeadM + 15 * 8, 12, true);
 
     m_iLoadingStage = 76;
 }
@@ -680,7 +680,7 @@ void Screen_Loading::LoadStage_FemaleBase()
 void Screen_Loading::LoadStage_FemaleArmor()
 {
     // Female underwear
-    hb::shared::sprite::SpriteLoader::open_pak("Wpt", [&](hb::shared::sprite::SpriteLoader& loader) {
+    hb::shared::sprite::SpriteLoader::open_pak("wpt", [&](hb::shared::sprite::SpriteLoader& loader) {
         for (int g = 0; g < 8; g++) {
             for (int i = 0; i < 12; i++) {
                 m_pGame->m_pSprite[UndiesW + i + 15 * g] = loader.get_sprite(i + 12 * g, true);
@@ -689,7 +689,7 @@ void Screen_Loading::LoadStage_FemaleArmor()
     });
 
     // Female hair
-    hb::shared::sprite::SpriteLoader::open_pak("Whr", [&](hb::shared::sprite::SpriteLoader& loader) {
+    hb::shared::sprite::SpriteLoader::open_pak("whr", [&](hb::shared::sprite::SpriteLoader& loader) {
         for (int g = 0; g < 8; g++) {
             for (int i = 0; i < 12; i++) {
                 m_pGame->m_pSprite[HairW + i + 15 * g] = loader.get_sprite(i + 12 * g, true);
@@ -706,38 +706,38 @@ void Screen_Loading::LoadStage_FemaleArmor()
 void Screen_Loading::LoadStage_FemaleLegs()
 {
     // Female body armor
-    MakeSprite("WBodice1", BodyArmorW + 15 * 1, 12, true);
-    MakeSprite("WBodice2", BodyArmorW + 15 * 2, 12, true);
-    MakeSprite("WLArmor", BodyArmorW + 15 * 3, 12, true);
-    MakeSprite("WCMail", BodyArmorW + 15 * 4, 12, true);
-    MakeSprite("WSMail", BodyArmorW + 15 * 5, 12, true);
-    MakeSprite("WPMail", BodyArmorW + 15 * 6, 12, true);
-    MakeSprite("WRobe1", BodyArmorW + 15 * 7, 12, true);
-    MakeSprite("WSanta", BodyArmorW + 15 * 8, 12, true);
-    MakeSprite("WHRobe1", BodyArmorW + 15 * 11, 12, true);
-    MakeSprite("WHRobe2", BodyArmorW + 15 * 12, 12, true);
-    MakeSprite("WHPMail1", BodyArmorW + 15 * 9, 12, true);
-    MakeSprite("WHPMail2", BodyArmorW + 15 * 10, 12, true);
+    MakeSprite("wbodice1", BodyArmorW + 15 * 1, 12, true);
+    MakeSprite("wbodice2", BodyArmorW + 15 * 2, 12, true);
+    MakeSprite("wlarmor", BodyArmorW + 15 * 3, 12, true);
+    MakeSprite("wcmail", BodyArmorW + 15 * 4, 12, true);
+    MakeSprite("wsmail", BodyArmorW + 15 * 5, 12, true);
+    MakeSprite("wpmail", BodyArmorW + 15 * 6, 12, true);
+    MakeSprite("wrobe1", BodyArmorW + 15 * 7, 12, true);
+    MakeSprite("wsanta", BodyArmorW + 15 * 8, 12, true);
+    MakeSprite("whrobe1", BodyArmorW + 15 * 11, 12, true);
+    MakeSprite("whrobe2", BodyArmorW + 15 * 12, 12, true);
+    MakeSprite("whpmail1", BodyArmorW + 15 * 9, 12, true);
+    MakeSprite("whpmail2", BodyArmorW + 15 * 10, 12, true);
 
     // Female shirts
-    MakeSprite("WChemiss", BerkW + 15 * 1, 12, true);
-    MakeSprite("WShirt", BerkW + 15 * 2, 12, true);
-    MakeSprite("WHauberk", BerkW + 15 * 3, 12, true);
-    MakeSprite("WHHauberk1", BerkW + 15 * 4, 12, true);
-    MakeSprite("WHHauberk2", BerkW + 15 * 5, 12, true);
+    MakeSprite("wchemiss", BerkW + 15 * 1, 12, true);
+    MakeSprite("wshirt", BerkW + 15 * 2, 12, true);
+    MakeSprite("whauberk", BerkW + 15 * 3, 12, true);
+    MakeSprite("whhauberk1", BerkW + 15 * 4, 12, true);
+    MakeSprite("whhauberk2", BerkW + 15 * 5, 12, true);
 
     // Female leggings
-    MakeSprite("WSkirt", LeggW + 15 * 1, 12, true);
-    MakeSprite("WTrouser", LeggW + 15 * 2, 12, true);
-    MakeSprite("WHTrouser", LeggW + 15 * 3, 12, true);
-    MakeSprite("WHLeggings1", LeggW + 15 * 6, 12, true);
-    MakeSprite("WHLeggings2", LeggW + 15 * 7, 12, true);
-    MakeSprite("WCHoses", LeggW + 15 * 4, 12, true);
-    MakeSprite("WLeggings", LeggW + 15 * 5, 12, true);
+    MakeSprite("wskirt", LeggW + 15 * 1, 12, true);
+    MakeSprite("wtrouser", LeggW + 15 * 2, 12, true);
+    MakeSprite("whtrouser", LeggW + 15 * 3, 12, true);
+    MakeSprite("whleggings1", LeggW + 15 * 6, 12, true);
+    MakeSprite("whleggings2", LeggW + 15 * 7, 12, true);
+    MakeSprite("wchoses", LeggW + 15 * 4, 12, true);
+    MakeSprite("wleggings", LeggW + 15 * 5, 12, true);
 
     // Female boots
-    MakeSprite("WShoes", BootW + 15 * 1, 12, true);
-    MakeSprite("WLBoots", BootW + 15 * 2, 12, true);
+    MakeSprite("wshoes", BootW + 15 * 1, 12, true);
+    MakeSprite("wlboots", BootW + 15 * 2, 12, true);
 
     m_iLoadingStage = 84;
 }
@@ -748,7 +748,7 @@ void Screen_Loading::LoadStage_FemaleLegs()
 void Screen_Loading::LoadStage_FemaleSwords()
 {
     // Female swords (batch load)
-    hb::shared::sprite::SpriteLoader::open_pak("Wsw", [&](hb::shared::sprite::SpriteLoader& loader) {
+    hb::shared::sprite::SpriteLoader::open_pak("wsw", [&](hb::shared::sprite::SpriteLoader& loader) {
         for (int i = 0; i < 56; i++) m_pGame->m_pSprite[WeaponW + i + 64 * 1] = loader.get_sprite(i + 56 * 0, true);
         for (int i = 0; i < 56; i++) m_pGame->m_pSprite[WeaponW + i + 64 * 2] = loader.get_sprite(i + 56 * 1, true);
         for (int i = 0; i < 56; i++) m_pGame->m_pSprite[WeaponW + i + 64 * 3] = loader.get_sprite(i + 56 * 2, true);
@@ -762,14 +762,14 @@ void Screen_Loading::LoadStage_FemaleSwords()
         for (int i = 0; i < 56; i++) m_pGame->m_pSprite[WeaponW + i + 64 * 12] = loader.get_sprite(i + 56 * 11, true);
     });
 
-    MakeSprite("Wswx", WeaponW + 64 * 5, 56, true);
-    MakeSprite("Wsw2", WeaponW + 64 * 13, 56, true);
-    MakeSprite("Wsw3", WeaponW + 64 * 14, 56, true);
-    MakeSprite("WStormBringer", WeaponW + 64 * 15, 56, true);
-    MakeSprite("WDarkExec", WeaponW + 64 * 16, 56, true);
-    MakeSprite("WKlonessBlade", WeaponW + 64 * 17, 56, true);
-    MakeSprite("WKlonessAstock", WeaponW + 64 * 18, 56, true);
-    MakeSprite("WDebastator", WeaponW + 64 * 19, 56, true);
+    MakeSprite("wswx", WeaponW + 64 * 5, 56, true);
+    MakeSprite("wsw2", WeaponW + 64 * 13, 56, true);
+    MakeSprite("wsw3", WeaponW + 64 * 14, 56, true);
+    MakeSprite("wstormbringer", WeaponW + 64 * 15, 56, true);
+    MakeSprite("wdarkexec", WeaponW + 64 * 16, 56, true);
+    MakeSprite("wklonessblade", WeaponW + 64 * 17, 56, true);
+    MakeSprite("wklonessastock", WeaponW + 64 * 18, 56, true);
+    MakeSprite("wdebastator", WeaponW + 64 * 19, 56, true);
 
     m_iLoadingStage = 88;
 }
@@ -779,28 +779,28 @@ void Screen_Loading::LoadStage_FemaleSwords()
 //=============================================================================
 void Screen_Loading::LoadStage_FemaleWeapons()
 {
-    MakeSprite("WAxe1", WeaponW + 64 * 20, 56, true);
-    MakeSprite("WAxe2", WeaponW + 64 * 21, 56, true);
-    MakeSprite("WAxe3", WeaponW + 64 * 22, 56, true);
-    MakeSprite("WAxe4", WeaponW + 64 * 23, 56, true);
-    MakeSprite("WAxe5", WeaponW + 64 * 24, 56, true);
-    MakeSprite("WpickAxe1", WeaponW + 64 * 25, 56, true);
-    MakeSprite("WAxe6", WeaponW + 64 * 26, 56, true);
-    MakeSprite("Whoe", WeaponW + 64 * 27, 56, true);
-    MakeSprite("WKlonessAxe", WeaponW + 64 * 28, 56, true);
-    MakeSprite("WLightBlade", WeaponW + 64 * 29, 56, true);
-    MakeSprite("WHammer", WeaponW + 64 * 30, 56, true);
-    MakeSprite("WBHammer", WeaponW + 64 * 31, 56, true);
-    MakeSprite("WBabHammer", WeaponW + 64 * 32, 56, true);
-    MakeSprite("WBShadowSword", WeaponW + 64 * 33, 56, true);
-    MakeSprite("WBerserkWand", WeaponW + 64 * 34, 56, true);
-    MakeSprite("Wstaff1", WeaponW + 64 * 35, 56, true);
-    MakeSprite("Wstaff2", WeaponW + 64 * 36, 56, true);
-    MakeSprite("WStaff3", WeaponW + 64 * 37, 56, true);
-    MakeSprite("WKlonessWand", WeaponW + 64 * 39, 56, true);
-    MakeSprite("WReMagicWand", WeaponW + 64 * 38, 56, true);
-    MakeSprite("WDirectBow", WeaponW + 64 * 42, 56, true);
-    MakeSprite("WFireBow", WeaponW + 64 * 43, 56, true);
+    MakeSprite("waxe1", WeaponW + 64 * 20, 56, true);
+    MakeSprite("waxe2", WeaponW + 64 * 21, 56, true);
+    MakeSprite("waxe3", WeaponW + 64 * 22, 56, true);
+    MakeSprite("waxe4", WeaponW + 64 * 23, 56, true);
+    MakeSprite("waxe5", WeaponW + 64 * 24, 56, true);
+    MakeSprite("wpickaxe1", WeaponW + 64 * 25, 56, true);
+    MakeSprite("waxe6", WeaponW + 64 * 26, 56, true);
+    MakeSprite("whoe", WeaponW + 64 * 27, 56, true);
+    MakeSprite("wklonessaxe", WeaponW + 64 * 28, 56, true);
+    MakeSprite("wlightblade", WeaponW + 64 * 29, 56, true);
+    MakeSprite("whammer", WeaponW + 64 * 30, 56, true);
+    MakeSprite("wbhammer", WeaponW + 64 * 31, 56, true);
+    MakeSprite("wbabhammer", WeaponW + 64 * 32, 56, true);
+    MakeSprite("wbshadowsword", WeaponW + 64 * 33, 56, true);
+    MakeSprite("wberserkwand", WeaponW + 64 * 34, 56, true);
+    MakeSprite("wstaff1", WeaponW + 64 * 35, 56, true);
+    MakeSprite("wstaff2", WeaponW + 64 * 36, 56, true);
+    MakeSprite("wstaff3", WeaponW + 64 * 37, 56, true);
+    MakeSprite("wklonesswand", WeaponW + 64 * 39, 56, true);
+    MakeSprite("wremagicwand", WeaponW + 64 * 38, 56, true);
+    MakeSprite("wdirectbow", WeaponW + 64 * 42, 56, true);
+    MakeSprite("wfirebow", WeaponW + 64 * 43, 56, true);
 
     m_iLoadingStage = 92;
 }
@@ -811,24 +811,24 @@ void Screen_Loading::LoadStage_FemaleWeapons()
 void Screen_Loading::LoadStage_FemaleMantles()
 {
     // Female mantles
-    MakeSprite("Wmantle01", MantleW + 15 * 1, 12, true);
-    MakeSprite("Wmantle02", MantleW + 15 * 2, 12, true);
-    MakeSprite("Wmantle03", MantleW + 15 * 3, 12, true);
-    MakeSprite("Wmantle04", MantleW + 15 * 4, 12, true);
-    MakeSprite("Wmantle05", MantleW + 15 * 5, 12, true);
-    MakeSprite("Wmantle06", MantleW + 15 * 6, 12, true);
+    MakeSprite("wmantle01", MantleW + 15 * 1, 12, true);
+    MakeSprite("wmantle02", MantleW + 15 * 2, 12, true);
+    MakeSprite("wmantle03", MantleW + 15 * 3, 12, true);
+    MakeSprite("wmantle04", MantleW + 15 * 4, 12, true);
+    MakeSprite("wmantle05", MantleW + 15 * 5, 12, true);
+    MakeSprite("wmantle06", MantleW + 15 * 6, 12, true);
 
     // Female helms
-    MakeSprite("WHelm1", HeadW + 15 * 1, 12, true);
-    MakeSprite("WHelm4", HeadW + 15 * 4, 12, true);
-    MakeSprite("WHHelm1", HeadW + 15 * 9, 12, true);
-    MakeSprite("WHHelm2", HeadW + 15 * 10, 12, true);
-    MakeSprite("WHCap1", HeadW + 15 * 11, 12, true);
-    MakeSprite("WHCap2", HeadW + 15 * 12, 12, true);
-    MakeSprite("NWHelm1", HeadW + 15 * 5, 12, true);
-    MakeSprite("NWHelm2", HeadW + 15 * 6, 12, true);
-    MakeSprite("NWHelm3", HeadW + 15 * 7, 12, true);
-    MakeSprite("NWHelm4", HeadW + 15 * 8, 12, true);
+    MakeSprite("whelm1", HeadW + 15 * 1, 12, true);
+    MakeSprite("whelm4", HeadW + 15 * 4, 12, true);
+    MakeSprite("whhelm1", HeadW + 15 * 9, 12, true);
+    MakeSprite("whhelm2", HeadW + 15 * 10, 12, true);
+    MakeSprite("whcap1", HeadW + 15 * 11, 12, true);
+    MakeSprite("whcap2", HeadW + 15 * 12, 12, true);
+    MakeSprite("nwhelm1", HeadW + 15 * 5, 12, true);
+    MakeSprite("nwhelm2", HeadW + 15 * 6, 12, true);
+    MakeSprite("nwhelm3", HeadW + 15 * 7, 12, true);
+    MakeSprite("nwhelm4", HeadW + 15 * 8, 12, true);
 
     m_iLoadingStage = 96;
 }
@@ -839,13 +839,13 @@ void Screen_Loading::LoadStage_FemaleMantles()
 void Screen_Loading::LoadStage_FemaleBows()
 {
     // Female bows
-    hb::shared::sprite::SpriteLoader::open_pak("Wbo", [&](hb::shared::sprite::SpriteLoader& loader) {
+    hb::shared::sprite::SpriteLoader::open_pak("wbo", [&](hb::shared::sprite::SpriteLoader& loader) {
         for (int i = 0; i < 56; i++) m_pGame->m_pSprite[WeaponW + i + 64 * 40] = loader.get_sprite(i + 56 * 0, true);
         for (int i = 0; i < 56; i++) m_pGame->m_pSprite[WeaponW + i + 64 * 41] = loader.get_sprite(i + 56 * 1, true);
     });
 
     // Female shields
-    hb::shared::sprite::SpriteLoader::open_pak("Wsh", [&](hb::shared::sprite::SpriteLoader& loader) {
+    hb::shared::sprite::SpriteLoader::open_pak("wsh", [&](hb::shared::sprite::SpriteLoader& loader) {
         for (int g = 0; g < 9; g++) {
             for (int i = 0; i < 7; i++) {
                 m_pGame->m_pSprite[ShieldW + i + 8 * (g + 1)] = loader.get_sprite(i + 7 * g, true);
@@ -873,7 +873,7 @@ void Screen_Loading::LoadStage_Effects()
         }
     });
 
-    MakeEffectSpr("CruEffect1", 31, 9, false);
+    MakeEffectSpr("crueffect1", 31, 9, false);
     MakeEffectSpr("effect6", 40, 5, false);
     MakeEffectSpr("effect7", 45, 12, false);
     MakeEffectSpr("effect8", 57, 9, false);

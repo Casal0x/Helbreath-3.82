@@ -7,13 +7,13 @@ namespace hb {
 enum class log_channel : int
 {
 	main,               // server.log
-	events,             // Events.log
-	security,           // HackEvents.log
-	pvp,                // PvPEvents.log
-	network,            // XSocket.log
-	log_events,         // LogEvents.log
-	chat,               // Chat.log
-	commands,           // Commands.log
+	events,             // events.log
+	security,           // hackevents.log
+	pvp,                // pvpevents.log
+	network,            // xsocket.log
+	log_events,         // logevents.log
+	chat,               // chat.log
+	commands,           // commands.log
 	drops,              // monster_drops.log
 	trade,              // player_trade.log
 	shop,               // shop.log

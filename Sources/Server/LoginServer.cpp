@@ -66,7 +66,7 @@ bool AccountDbExists(const char* accountName)
 	std::strncpy(lower, accountName, hb::shared::limits::AccountNameLen - 1);
 	LowercaseInPlace(lower, sizeof(lower));
 	char dbPath[256] = {};
-	std::snprintf(dbPath, sizeof(dbPath), "Accounts/%s.db", lower);
+	std::snprintf(dbPath, sizeof(dbPath), "accounts/%s.db", lower);
 	return std::filesystem::exists(dbPath);
 }
 
@@ -358,7 +358,7 @@ void LoginServer::ResponseCharacter(int h, char* pData)
 
 	bool ok = InsertCharacterState(db, state);
 
-	// Starter item IDs from GameConfigs.db
+	// Starter item IDs from gameconfigs.db
 	constexpr int ITEM_DAGGER = 1;
 	constexpr int ITEM_BIG_RED_POTION = 92;    // Health potion
 	constexpr int ITEM_BIG_BLUE_POTION = 94;   // Mana potion

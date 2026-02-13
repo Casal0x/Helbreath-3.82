@@ -466,7 +466,7 @@ bool CGame::bAccept(class hb::shared::net::ASIOSocket* pXSock)
 				std::memset(cIPtoBan, 0, sizeof(cIPtoBan));
 				strcpy(cIPtoBan, m_pClientList[i]->m_cIPaddress);
 				//opens cfg file
-				pFile = fopen("GameConfigs/BannedList.cfg", "a");
+				pFile = fopen("gameconfigs/bannedlist.cfg", "a");
 				//shows log
 				hb::logger::log("Client {}: IP banned ({})", i, cIPtoBan);
 				//modifys cfg file
@@ -474,7 +474,7 @@ bool CGame::bAccept(class hb::shared::net::ASIOSocket* pXSock)
 				fprintf(pFile, "\n");
 				fclose(pFile);
 
-				//updates BannedList.cfg on the server
+				//updates bannedlist.cfg on the server
 				for(int x = 0; x < MaxBanned; x++)
 					if (strlen(m_stBannedList[x].m_cBannedIPaddress) == 0)
 						strcpy(m_stBannedList[x].m_cBannedIPaddress, cIPtoBan);
@@ -574,7 +574,7 @@ bool CGame::bAcceptFromAsync(asio::ip::tcp::socket&& peer)
 			if (iTotalip > 9) {
 				std::memset(cIPtoBan, 0, sizeof(cIPtoBan));
 				strcpy(cIPtoBan, m_pClientList[i]->m_cIPaddress);
-				pFile = fopen("GameConfigs/BannedList.cfg", "a");
+				pFile = fopen("gameconfigs/bannedlist.cfg", "a");
 				hb::logger::log("Client {}: IP banned ({})", i, cIPtoBan);
 				fprintf(pFile, "banned-ip = %s", cIPtoBan);
 				fprintf(pFile, "\n");
@@ -909,27 +909,27 @@ bool CGame::bInit()
 	sqlite3* configDb = nullptr;
 	std::string configDbPath;
 	bool configDbCreated = false;
-	hb::logger::log("Validating GameConfigs.db");
+	hb::logger::log("Validating gameconfigs.db");
 	bool configDbReady = EnsureGameConfigDatabase(&configDb, configDbPath, &configDbCreated);
 	if (!configDbReady) {
-		hb::logger::error("Cannot start server: GameConfigs.db unavailable");
+		hb::logger::error("Cannot start server: gameconfigs.db unavailable");
 		return false;
 	}
 	if (configDbCreated) {
-		hb::logger::error("Cannot start server: GameConfigs.db missing configuration data");
+		hb::logger::error("Cannot start server: gameconfigs.db missing configuration data");
 		CloseGameConfigDatabase(configDb);
 		return false;
 	}
 
 	if (!HasGameConfigRows(configDb, "realmlist") || !HasGameConfigRows(configDb, "active_maps") ||
 		!LoadRealmConfig(configDb, this)) {
-		hb::logger::error("Cannot start server: program configs missing in GameConfigs.db");
+		hb::logger::error("Cannot start server: program configs missing in gameconfigs.db");
 		CloseGameConfigDatabase(configDb);
 		return false;
 	}
 
 	if (!HasGameConfigRows(configDb, "settings") || !LoadSettingsConfig(configDb, this)) {
-		hb::logger::error("Cannot start server: settings configs missing in GameConfigs.db");
+		hb::logger::error("Cannot start server: settings configs missing in gameconfigs.db");
 		CloseGameConfigDatabase(configDb);
 		return false;
 	}
@@ -940,23 +940,23 @@ bool CGame::bInit()
 	hb::logger::log("Max stat value calculated: {}", m_iMaxStatValue);
 
 	if (!LoadBannedListConfig(configDb, this)) {
-		hb::logger::error("Cannot start server: banned list unavailable in GameConfigs.db");
+		hb::logger::error("Cannot start server: banned list unavailable in gameconfigs.db");
 		CloseGameConfigDatabase(configDb);
 		return false;
 	}
 
 	if (!LoadAdminConfig(configDb, this)) {
-		hb::logger::log("Could not load admin config from GameConfigs.db, admin list empty");
+		hb::logger::log("Could not load admin config from gameconfigs.db, admin list empty");
 	}
 	else {
-		hb::logger::log("Loaded {} admin(s) from GameConfigs.db.", m_iAdminCount);
+		hb::logger::log("Loaded {} admin(s) from gameconfigs.db.", m_iAdminCount);
 	}
 
 	if (!LoadCommandPermissions(configDb, this)) {
-		hb::logger::log("Could not load command permissions from GameConfigs.db");
+		hb::logger::log("Could not load command permissions from gameconfigs.db");
 	}
 	else if (!m_commandPermissions.empty()) {
-		hb::logger::log("Loaded {} command permission override(s) from GameConfigs.db.", (int)m_commandPermissions.size());
+		hb::logger::log("Loaded {} command permission override(s) from gameconfigs.db.", (int)m_commandPermissions.size());
 	}
 
 	srand((unsigned)time(0));
@@ -976,7 +976,7 @@ bool CGame::bInit()
 		m_cDayOrNight = 2;
 	else m_cDayOrNight = 1;
 
-	bReadNotifyMsgListFile("GameConfigs/notice.txt");
+	bReadNotifyMsgListFile("gameconfigs/notice.txt");
 	m_dwNoticeTime = dwTime;
 
 	m_pNoticementData = 0;
@@ -1016,7 +1016,7 @@ bool CGame::bInit()
 		m_bIsItemAvailable = LoadItemConfigs(configDb, m_pItemConfigList, MaxItemTypes);
 	}
 	if (!m_bIsItemAvailable) {
-		hb::logger::error("Cannot start server: item configs missing in GameConfigs.db");
+		hb::logger::error("Cannot start server: item configs missing in gameconfigs.db");
 		CloseGameConfigDatabase(configDb);
 		return false;
 	}
@@ -1026,7 +1026,7 @@ bool CGame::bInit()
 		m_bIsBuildItemAvailable = LoadBuildItemConfigs(configDb, this);
 	}
 	if (!m_bIsBuildItemAvailable) {
-		hb::logger::error("Cannot start server: build item configs missing in GameConfigs.db");
+		hb::logger::error("Cannot start server: build item configs missing in gameconfigs.db");
 		CloseGameConfigDatabase(configDb);
 		return false;
 	}
@@ -1036,7 +1036,7 @@ bool CGame::bInit()
 		m_bIsNpcAvailable = LoadNpcConfigs(configDb, this);
 	}
 	if (!m_bIsNpcAvailable) {
-		hb::logger::error("Cannot start server: NPC configs missing in GameConfigs.db");
+		hb::logger::error("Cannot start server: NPC configs missing in gameconfigs.db");
 		CloseGameConfigDatabase(configDb);
 		return false;
 	}
@@ -1046,7 +1046,7 @@ bool CGame::bInit()
 		m_bIsDropTableAvailable = LoadDropTables(configDb, this);
 	}
 	if (!m_bIsDropTableAvailable) {
-		hb::logger::error("Cannot start server: drop tables missing in GameConfigs.db");
+		hb::logger::error("Cannot start server: drop tables missing in gameconfigs.db");
 		CloseGameConfigDatabase(configDb);
 		return false;
 	}
@@ -1083,7 +1083,7 @@ bool CGame::bInit()
 		m_bIsMagicAvailable = LoadMagicConfigs(configDb, this);
 	}
 	if (!m_bIsMagicAvailable) {
-		hb::logger::error("Cannot start server: magic configs missing in GameConfigs.db");
+		hb::logger::error("Cannot start server: magic configs missing in gameconfigs.db");
 		CloseGameConfigDatabase(configDb);
 		return false;
 	}
@@ -1093,7 +1093,7 @@ bool CGame::bInit()
 		m_bIsSkillAvailable = LoadSkillConfigs(configDb, this);
 	}
 	if (!m_bIsSkillAvailable) {
-		hb::logger::error("Cannot start server: skill configs missing in GameConfigs.db");
+		hb::logger::error("Cannot start server: skill configs missing in gameconfigs.db");
 		CloseGameConfigDatabase(configDb);
 		return false;
 	}
@@ -1105,7 +1105,7 @@ bool CGame::bInit()
 		m_bIsQuestAvailable = LoadQuestConfigs(configDb, this);
 	}
 	if (!m_bIsQuestAvailable) {
-		hb::logger::error("Cannot start server: quest configs missing in GameConfigs.db");
+		hb::logger::error("Cannot start server: quest configs missing in gameconfigs.db");
 		CloseGameConfigDatabase(configDb);
 		return false;
 	}
@@ -1115,7 +1115,7 @@ bool CGame::bInit()
 		m_bIsPortionAvailable = LoadPortionConfigs(configDb, this);
 	}
 	if (!m_bIsPortionAvailable) {
-		hb::logger::error("Cannot start server: potion/crafting configs missing in GameConfigs.db");
+		hb::logger::error("Cannot start server: potion/crafting configs missing in gameconfigs.db");
 		CloseGameConfigDatabase(configDb);
 		return false;
 	}
@@ -9988,7 +9988,7 @@ void CGame::RequestNoticementHandler(int iClientH)
 {
 	if (m_pClientList[iClientH] == 0) return;
 
-	FILE* pNotiFile = fopen("GameConfigs/Noticement.txt", "rb");
+	FILE* pNotiFile = fopen("gameconfigs/noticement.txt", "rb");
 	if (!pNotiFile) return;
 	fseek(pNotiFile, 0, SEEK_END);
 	uint32_t dwFileSize = static_cast<uint32_t>(ftell(pNotiFile));
@@ -11266,16 +11266,16 @@ void CGame::OnTimer(char cType)
 
 void CGame::OnStartGameSignal()
 {
-	// Load map configurations from MapInfo.db
+	// Load map configurations from mapinfo.db
 	sqlite3* mapInfoDb = nullptr;
 	std::string mapInfoDbPath;
 	bool mapInfoDbCreated = false;
 
 	if (!EnsureMapInfoDatabase(&mapInfoDb, mapInfoDbPath, &mapInfoDbCreated)) {
-		hb::logger::error("MapInfo.db not available");
+		hb::logger::error("mapinfo.db not available");
 	}
 	else {
-		hb::logger::log("Loading map configurations from MapInfo.db");
+		hb::logger::log("Loading map configurations from mapinfo.db");
 		int mapsLoaded = 0;
 		for(int i = 0; i < MaxMaps; i++)
 		{
@@ -11315,7 +11315,7 @@ void CGame::OnStartGameSignal()
 	}
 
 	if (!loadedSchedules) {
-		hb::logger::error("Crusade/schedule configs missing in GameConfigs.db");
+		hb::logger::error("Crusade/schedule configs missing in gameconfigs.db");
 	}
 
 	m_pWarManager->_LinkStrikePointMapIndex();
@@ -11505,10 +11505,10 @@ bool CGame::_bRegisterMap(char* pName)
 			if ((m_iElvineMapIndex == -1) && (strcmp("elvine", pName) == 0))
 				m_iElvineMapIndex = i;
 
-			if ((m_iBTFieldMapIndex == -1) && (strcmp("BtField", pName) == 0))
+			if ((m_iBTFieldMapIndex == -1) && (strcmp("btfield", pName) == 0))
 				m_iBTFieldMapIndex = i;
 
-			if ((m_iGodHMapIndex == -1) && (strcmp("GodH", pName) == 0))
+			if ((m_iGodHMapIndex == -1) && (strcmp("godh", pName) == 0))
 				m_iGodHMapIndex = i;
 
 			m_iTotalMaps++;
@@ -11810,7 +11810,7 @@ void CGame::LocalUpdateConfigs(char cConfigType)
 	std::string configDbPath;
 	bool configDbCreated = false;
 	if (!EnsureGameConfigDatabase(&configDb, configDbPath, &configDbCreated) || configDbCreated) {
-		hb::logger::error("GameConfigs.db unavailable, cannot reload configs");
+		hb::logger::error("gameconfigs.db unavailable, cannot reload configs");
 		return;
 	}
 
@@ -11835,7 +11835,7 @@ void CGame::ReloadNpcConfigs()
 	bool configDbCreated = false;
 	if (!EnsureGameConfigDatabase(&configDb, configDbPath, &configDbCreated) || configDbCreated)
 	{
-		hb::logger::log("NPC config reload failed: GameConfigs.db unavailable");
+		hb::logger::log("NPC config reload failed: gameconfigs.db unavailable");
 		return;
 	}
 
@@ -12945,12 +12945,12 @@ void CGame::ForceRecallProcess() {
 					|| (strcmp(m_pMapList[m_pClientList[i]->m_cMapIndex]->m_cName, "gshop_1") == 0)
 					|| (strcmp(m_pMapList[m_pClientList[i]->m_cMapIndex]->m_cName, "bsmith_1") == 0)
 					|| (strcmp(m_pMapList[m_pClientList[i]->m_cMapIndex]->m_cName, "cath_1") == 0)
-					|| (strcmp(m_pMapList[m_pClientList[i]->m_cMapIndex]->m_cName, "CmdHall_1") == 0)
+					|| (strcmp(m_pMapList[m_pClientList[i]->m_cMapIndex]->m_cName, "cmdhall_1") == 0)
 					|| (strcmp(m_pMapList[m_pClientList[i]->m_cMapIndex]->m_cName, "cityhall_1") == 0)
 					|| (strcmp(m_pMapList[m_pClientList[i]->m_cMapIndex]->m_cName, "gshop_2") == 0)
 					|| (strcmp(m_pMapList[m_pClientList[i]->m_cMapIndex]->m_cName, "bsmith_2") == 0)
 					|| (strcmp(m_pMapList[m_pClientList[i]->m_cMapIndex]->m_cName, "cath_2") == 0)
-					|| (strcmp(m_pMapList[m_pClientList[i]->m_cMapIndex]->m_cName, "CmdHall_2") == 0)
+					|| (strcmp(m_pMapList[m_pClientList[i]->m_cMapIndex]->m_cName, "cmdhall_2") == 0)
 					|| (strcmp(m_pMapList[m_pClientList[i]->m_cMapIndex]->m_cName, "cityhall_2") == 0)
 					|| (memcmp(m_pMapList[m_pClientList[i]->m_cMapIndex]->m_cName, "wzdtwr", 6) == 0)
 					|| (memcmp(m_pMapList[m_pClientList[i]->m_cMapIndex]->m_cName, "gldhall", 7) == 0))

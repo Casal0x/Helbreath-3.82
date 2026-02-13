@@ -730,7 +730,7 @@ public:
 	char m_cRepDropModifier;
 
 	// ============================================================================
-	// Configurable Settings (loaded from GameConfigs.db)
+	// Configurable Settings (loaded from gameconfigs.db)
 	// ============================================================================
 
 	// Timing Settings (milliseconds)

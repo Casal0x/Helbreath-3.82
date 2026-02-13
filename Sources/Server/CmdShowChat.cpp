@@ -19,7 +19,7 @@ void CmdShowChat::Execute(CGame* pGame, const char* pArgs)
 		m_hProcess = nullptr;
 	}
 
-	std::string logPath = std::filesystem::absolute("GameLogs/Chat.log").string();
+	std::string logPath = std::filesystem::absolute("gamelogs/chat.log").string();
 
 	char szCmdLine[1024];
 	std::snprintf(szCmdLine, sizeof(szCmdLine),
@@ -59,7 +59,7 @@ void CmdShowChat::Execute(CGame* pGame, const char* pArgs)
 
 void CmdShowChat::Execute(CGame* pGame, const char* pArgs)
 {
-	std::string logPath = std::filesystem::absolute("GameLogs/Chat.log").string();
+	std::string logPath = std::filesystem::absolute("gamelogs/chat.log").string();
 	std::string cmd = "tail -f \"" + logPath + "\" &";
 	int ret = std::system(cmd.c_str());
 	if (ret == 0)

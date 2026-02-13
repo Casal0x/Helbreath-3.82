@@ -88,11 +88,11 @@ namespace
         std::snprintf(dest, destSize, "%s", reinterpret_cast<const char*>(text));
     }
 
-    // Load item name to ID mapping from GameConfigs.db
+    // Load item name to ID mapping from gameconfigs.db
     bool LoadItemNameMapping(std::map<std::string, int>& mapping)
 {
     sqlite3* configDb = nullptr;
-    if (sqlite3_open("GameConfigs.db", &configDb) != SQLITE_OK) {
+    if (sqlite3_open("gameconfigs.db", &configDb) != SQLITE_OK) {
         sqlite3_close(configDb);
         return false;
     }
@@ -134,7 +134,7 @@ static bool MigrateItemNamesToIds(sqlite3* db)
     // Load item mapping
     std::map<std::string, int> itemMapping;
     if (!LoadItemNameMapping(itemMapping)) {
-        hb::logger::error("SQLite: failed to load item mapping from GameConfigs.db");
+        hb::logger::error("SQLite: failed to load item mapping from gameconfigs.db");
         return false;
     }
 
@@ -340,13 +340,13 @@ bool EnsureAccountDatabase(const char* accountName, sqlite3** outDb, std::string
         return false;
     }
 
-    std::filesystem::create_directories("Accounts");
+    std::filesystem::create_directories("accounts");
 
     char lowerName[64] = {};
     std::strncpy(lowerName, accountName, sizeof(lowerName) - 1);
     LowercaseInPlace(lowerName, sizeof(lowerName));
     char dbPath[260] = {};
-    std::snprintf(dbPath, sizeof(dbPath), "Accounts/%s.db", lowerName);
+    std::snprintf(dbPath, sizeof(dbPath), "accounts/%s.db", lowerName);
     outPath = dbPath;
 
     sqlite3* db = nullptr;
@@ -1930,7 +1930,7 @@ bool CharacterNameExistsGlobally(const char* characterName)
     std::error_code ec;
     bool found = false;
 
-    for (const auto& entry : std::filesystem::directory_iterator("Accounts", ec)) {
+    for (const auto& entry : std::filesystem::directory_iterator("accounts", ec)) {
         if (!entry.is_regular_file() || entry.path().extension() != ".db")
             continue;
 
@@ -1970,7 +1970,7 @@ bool AccountNameExists(const char* accountName)
     std::error_code ec;
     bool found = false;
 
-    for (const auto& entry : std::filesystem::directory_iterator("Accounts", ec)) {
+    for (const auto& entry : std::filesystem::directory_iterator("accounts", ec)) {
         if (!entry.is_regular_file() || entry.path().extension() != ".db")
             continue;
 
@@ -2057,7 +2057,7 @@ bool ResolveCharacterToAccount(const char* characterName, char* outAccountName, 
     std::error_code ec;
     bool found = false;
 
-    for (const auto& entry : std::filesystem::directory_iterator("Accounts", ec)) {
+    for (const auto& entry : std::filesystem::directory_iterator("accounts", ec)) {
         if (!entry.is_regular_file() || entry.path().extension() != ".db")
             continue;
 

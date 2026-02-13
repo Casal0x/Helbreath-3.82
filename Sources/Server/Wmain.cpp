@@ -121,7 +121,7 @@ int main()
 	printf("Initializing server...\n\n");
 
 	// Initialize logger
-	hb::logger::initialize("GameLogs/");
+	hb::logger::initialize("gamelogs/");
 
 	// Create I/O service pool
 	G_pIOPool = new hb::shared::net::IOServicePool(4);

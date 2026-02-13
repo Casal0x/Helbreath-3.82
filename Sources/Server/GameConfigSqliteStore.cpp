@@ -143,10 +143,10 @@ bool EnsureGameConfigDatabase(sqlite3** outDb, std::string& outPath, bool* outCr
         return false;
     }
 
-    std::string dbPath = "GameConfigs.db";
+    std::string dbPath = "gameconfigs.db";
     if (!std::filesystem::exists(dbPath)) {
         auto exeDir = std::filesystem::current_path();
-        dbPath = (exeDir / "GameConfigs.db").string();
+        dbPath = (exeDir / "gameconfigs.db").string();
     }
     outPath = dbPath;
 
@@ -758,7 +758,7 @@ bool LoadRealmConfig(sqlite3* db, CGame* game)
     }
 
     int mapsLoaded = 0;
-    hb::logger::log("Loading active maps from GameConfigs.db");
+    hb::logger::log("Loading active maps from gameconfigs.db");
     while (sqlite3_step(stmt) == SQLITE_ROW) {
         const unsigned char* nameText = sqlite3_column_text(stmt, 0);
         if (nameText == nullptr) {

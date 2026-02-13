@@ -69,10 +69,10 @@ bool EnsureMapInfoDatabase(sqlite3** outDb, std::string& outPath, bool* outCreat
 		return false;
 	}
 
-	std::string dbPath = "MapInfo.db";
+	std::string dbPath = "mapinfo.db";
 	if (!std::filesystem::exists(dbPath)) {
 		auto exeDir = std::filesystem::current_path();
-		dbPath = (exeDir / "MapInfo.db").string();
+		dbPath = (exeDir / "mapinfo.db").string();
 	}
 	outPath = dbPath;
 

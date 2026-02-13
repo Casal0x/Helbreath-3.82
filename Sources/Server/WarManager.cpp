@@ -1589,7 +1589,7 @@ void WarManager::LocalStartHeldenianMode(short sV1, short sV2, uint32_t dwHelden
 			}
 
 			if (m_pGame->m_cHeldenianModeType == 1) {
-				if (strcmp(m_pGame->m_pMapList[x]->m_cName, "BtField") == 0) {
+				if (strcmp(m_pGame->m_pMapList[x]->m_cName, "btfield") == 0) {
 					for(int i = 0; i < smap::MaxHeldenianTower; i++) {
 						iNamingValue = m_pGame->m_pMapList[x]->iGetEmptyNamingValue();
 						if (m_pGame->m_pMapList[x]->m_stHeldenianTower[i].sTypeID < 1)  break;
@@ -1628,7 +1628,7 @@ void WarManager::LocalStartHeldenianMode(short sV1, short sV2, uint32_t dwHelden
 				}
 			}
 			else if (m_pGame->m_cHeldenianModeType == 2) {
-				if (strcmp(m_pGame->m_pMapList[x]->m_cName, "HRampart") == 0) {
+				if (strcmp(m_pGame->m_pMapList[x]->m_cName, "hrampart") == 0) {
 					for(int i = 0; i < smap::MaxHeldenianDoor; i++) {
 						iNamingValue = m_pGame->m_pMapList[x]->iGetEmptyNamingValue();
 						if (iNamingValue != -1) {
@@ -1754,7 +1754,7 @@ bool WarManager::UpdateHeldenianStatus()
 					bFlag = 0;
 				}
 				else {
-					if ((m_pGame->m_pClientList[iClientH] != 0) && (m_pGame->m_pClientList[iClientH]->m_bIsInitComplete) && (strcmp(m_pGame->m_pMapList[m_pGame->m_pClientList[iClientH]->m_cMapIndex]->m_cName, "BtField") == 0)) {
+					if ((m_pGame->m_pClientList[iClientH] != 0) && (m_pGame->m_pClientList[iClientH]->m_bIsInitComplete) && (strcmp(m_pGame->m_pMapList[m_pGame->m_pClientList[iClientH]->m_cMapIndex]->m_cName, "btfield") == 0)) {
 						m_pGame->SendNotifyMsg(0, iClientH, Notify::HeldenianCount, m_pGame->m_iHeldenianAresdenLeftTower, m_pGame->m_iHeldenianElvineLeftTower, m_pGame->m_iHeldenianAresdenDead, 0, m_pGame->m_iHeldenianElvineDead, 0);
 					}
 				}
@@ -1895,7 +1895,7 @@ void WarManager::RequestHeldenianTeleport(int iClientH, char* pData, size_t dwMs
 		std::memset(cTxt, 0, sizeof(cTxt));
 		if ((m_pGame->m_bIsHeldenianMode == 1) && (m_pGame->m_pClientList[iClientH]->m_bIsPlayerCivil != true) && (m_pGame->m_pClientList[iClientH]->m_cSide == 2 || m_pGame->m_pClientList[iClientH]->m_cSide == 1)) {
 			if (m_pGame->m_cHeldenianType == 1) {
-				std::memcpy(cMapName, "BtField", 7);
+				std::memcpy(cMapName, "btfield", 7);
 				if (m_pGame->m_pClientList[iClientH]->m_cSide == 1) {
 					tX = 68;
 					tY = 225;
@@ -1908,7 +1908,7 @@ void WarManager::RequestHeldenianTeleport(int iClientH, char* pData, size_t dwMs
 				}
 			}
 			else if (m_pGame->m_cHeldenianType == 2) {
-				std::memcpy(cMapName, "HRampart", 8);
+				std::memcpy(cMapName, "hrampart", 8);
 				if (m_pGame->m_pClientList[iClientH]->m_cSide == m_pGame->m_sLastHeldenianWinner) {
 					tX = 81;
 					tY = 42;

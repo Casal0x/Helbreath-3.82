@@ -59,7 +59,7 @@ hb::shared::sprite::ISpriteFactory* CreateSpriteFactory(IRenderer* renderer)
     // Create SFML sprite factory with the renderer - uses PNG sprites
     SFMLRenderer* pSFMLRenderer = static_cast<SFMLRenderer*>(renderer);
     SFMLSpriteFactory* factory = new SFMLSpriteFactory(pSFMLRenderer);
-    factory->SetSpritePath("SPRITES_PNG");
+    factory->SetSpritePath("sprites_png");
     return factory;
 }
 
@@ -88,7 +88,7 @@ bool Renderer::Set(RendererType type)
 
             // Create and set sprite factory - SFML uses PNG sprites
             s_pSpriteFactory = new SFMLSpriteFactory(sfmlRenderer);
-            s_pSpriteFactory->SetSpritePath("SPRITES_PNG");
+            s_pSpriteFactory->SetSpritePath("sprites_png");
             hb::shared::sprite::Sprites::SetFactory(s_pSpriteFactory);
 
             // Create bitmap font factory

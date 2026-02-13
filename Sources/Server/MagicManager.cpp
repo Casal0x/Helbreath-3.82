@@ -2701,7 +2701,7 @@ void MagicManager::ReloadMagicConfigs()
 	bool configDbCreated = false;
 	if (!EnsureGameConfigDatabase(&configDb, configDbPath, &configDbCreated) || configDbCreated)
 	{
-		hb::logger::log("Magic config reload failed: GameConfigs.db unavailable");
+		hb::logger::log("Magic config reload failed: gameconfigs.db unavailable");
 		return;
 	}
 

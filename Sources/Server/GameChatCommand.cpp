@@ -99,7 +99,7 @@ void GameChatCommandManager::LogCommand(int iClientH, const char* pCommand)
 	if (m_pGame == nullptr || m_pGame->m_pClientList[iClientH] == nullptr)
 		return;
 
-	FILE* pFile = fopen("GameLogs/Commands.log", "a");
+	FILE* pFile = fopen("gamelogs/commands.log", "a");
 	if (pFile == nullptr)
 		return;
 
