@@ -64,7 +64,7 @@ int application::run()
 		on_run();
 	}
 
-	// --- Shutdown ---
+	// --- shutdown ---
 	m_window->set_event_handler(nullptr);
 	on_uninitialize();
 	Window::destroy();

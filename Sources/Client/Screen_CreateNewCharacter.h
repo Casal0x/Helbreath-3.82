@@ -15,7 +15,7 @@ class Screen_CreateNewCharacter : public IGameScreen
 public:
     SCREEN_TYPE(Screen_CreateNewCharacter)
 
-    explicit Screen_CreateNewCharacter(CGame* pGame);
+    explicit Screen_CreateNewCharacter(CGame* game);
     ~Screen_CreateNewCharacter() override = default;
 
     void on_initialize() override;
@@ -34,8 +34,8 @@ private:
     bool m_bNewCharFlag;
 
     // Focus state (local to screen)
-    int m_cCurFocus;
-    int m_cMaxFocus;
+    int m_cur_focus;
+    int m_max_focus;
 
     // Offset for centering 640x480 content in 800x600 base resolution
     static constexpr short OX = 80;

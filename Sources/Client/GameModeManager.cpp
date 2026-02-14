@@ -11,10 +11,11 @@
 #include "IInput.h"       // For hb::shared::input::SetSuppressed
 #include "ConfigManager.h"
 #include "RendererFactory.h"
+#include "Log.h"
 
 // ============== Singleton ==============
 
-GameModeManager& GameModeManager::Get()
+GameModeManager& GameModeManager::get()
 {
     static GameModeManager instance;
     return instance;
@@ -24,25 +25,25 @@ GameModeManager& GameModeManager::Get()
 
 GameModeManager::GameModeManager()
 {
-    // Default initialization - actual setup happens in InitializeImpl
+    // Default initialization - actual setup happens in initialize_impl
 }
 
 GameModeManager::~GameModeManager()
 {
-    ShutdownImpl();
+    shutdown_impl();
 }
 
 // ============== Initialization ==============
 
-void GameModeManager::InitializeImpl(CGame* pGame)
+void GameModeManager::initialize_impl(CGame* game)
 {
-    m_pGame = pGame;
-    m_modeStartTime = GameClock::GetTimeMS();
+    m_game = game;
+    m_modeStartTime = GameClock::get_time_ms();
 }
 
-void GameModeManager::ShutdownImpl()
+void GameModeManager::shutdown_impl()
 {
-    // Clear overlay first
+    // clear overlay first
     clear_overlay_impl();
 
     // Ensure screen is properly uninitialized before destruction
@@ -52,7 +53,7 @@ void GameModeManager::ShutdownImpl()
         m_pCurrentScreen.reset();
     }
     m_pendingScreenFactory = nullptr;
-    m_pGame = nullptr;
+    m_game = nullptr;
 }
 
 // ============== Overlay Implementation ==============
@@ -66,14 +67,14 @@ void GameModeManager::clear_overlay_impl()
     }
 }
 
-// ============== Frame Update ==============
+// ============== Frame update ==============
 
-void GameModeManager::UpdateImpl()
+void GameModeManager::update_impl()
 {
     if (m_transitionState == TransitionState::None)
         return;
 
-    float dt = static_cast<float>(FrameTiming::GetDeltaTime());
+    float dt = static_cast<float>(FrameTiming::get_delta_time());
 
     switch (m_transitionState)
     {
@@ -89,7 +90,7 @@ void GameModeManager::UpdateImpl()
 
     case TransitionState::Switching:
         // Perform the actual screen switch at full opacity
-        ApplyScreenChange();
+        apply_screen_change();
 
         // Begin fade-in
         m_transitionState = TransitionState::FadeIn;
@@ -112,23 +113,23 @@ void GameModeManager::UpdateImpl()
     }
 }
 
-// ============== Screen Update/Render ==============
+// ============== Screen update/render ==============
 
-void GameModeManager::UpdateScreensImpl()
+void GameModeManager::update_screens_impl()
 {
     // Skip during switching phase (screen is being replaced)
     if (m_transitionState == TransitionState::Switching)
         return;
 
-    bool bTransitioning = (m_transitionState != TransitionState::None);
+    bool transitioning = (m_transitionState != TransitionState::None);
 
     // Suppress input for base screen during transitions or when overlay is active
-    if (bTransitioning || m_pActiveOverlay)
+    if (transitioning || m_pActiveOverlay)
     {
         hb::shared::input::set_suppressed(true);
     }
 
-    // Update base screen (input suppressed if transitioning or overlay active)
+    // update base screen (input suppressed if transitioning or overlay active)
     if (m_pCurrentScreen)
     {
         m_pCurrentScreen->on_update();
@@ -137,33 +138,33 @@ void GameModeManager::UpdateScreensImpl()
     // Always restore input before overlay update
     hb::shared::input::set_suppressed(false);
 
-    // Update overlay (receives input only when not transitioning)
-    if (m_pActiveOverlay && !bTransitioning)
+    // update overlay (receives input only when not transitioning)
+    if (m_pActiveOverlay && !transitioning)
     {
         m_pActiveOverlay->on_update();
     }
 }
 
-void GameModeManager::RenderImpl()
+void GameModeManager::render_impl()
 {
-    // Render base screen
+    // render base screen
     if (m_pCurrentScreen)
     {
         m_pCurrentScreen->on_render();
     }
 
-    // Render overlay on top with shadow box
+    // render overlay on top with shadow box
     if (m_pActiveOverlay)
     {
         if (m_pActiveOverlay->wants_background_dim())
-            m_pGame->m_Renderer->DrawRectFilled(0, 0, LOGICAL_MAX_X(), LOGICAL_MAX_Y(), hb::shared::render::Color::Black(128));
+            m_game->m_Renderer->draw_rect_filled(0, 0, LOGICAL_MAX_X(), LOGICAL_MAX_Y(), hb::shared::render::Color::Black(128));
         m_pActiveOverlay->on_render();
     }
 }
 
 // ============== Fade Alpha ==============
 
-float GameModeManager::GetFadeAlphaImpl() const
+float GameModeManager::get_fade_alpha_impl() const
 {
     switch (m_transitionState)
     {
@@ -203,7 +204,7 @@ GameModeManager::ScreenTypeId GameModeManager::get_current_screen_type_impl() co
 
 // ============== Screen Application ==============
 
-void GameModeManager::ApplyScreenChange()
+void GameModeManager::apply_screen_change()
 {
     // Uninitialize current screen
     if (m_pCurrentScreen)
@@ -225,25 +226,25 @@ void GameModeManager::ApplyScreenChange()
 
             // Game screen uses user's configured FPS limit;
             // all other screens cap at 60 FPS (no reason to render menus faster)
-            hb::shared::render::IWindow* pWindow = hb::shared::render::Window::get();
-            if (pWindow)
+            hb::shared::render::IWindow* window = hb::shared::render::Window::get();
+            if (window)
             {
                 if (m_currentMode == GameMode::MainGame)
                 {
-                    pWindow->set_vsync_enabled(ConfigManager::Get().IsVSyncEnabled());
-                    pWindow->set_framerate_limit(ConfigManager::Get().GetFpsLimit());
+                    window->set_vsync_enabled(config_manager::get().is_vsync_enabled());
+                    window->set_framerate_limit(config_manager::get().get_fps_limit());
                 }
                 else
                 {
-                    pWindow->set_framerate_limit(60);
+                    window->set_framerate_limit(60);
                 }
             }
         }
     }
 
-    // Clear pending screen type now that transition is complete
+    // clear pending screen type now that transition is complete
     m_pendingScreenType = nullptr;
 
-    // Reset timing for new screen
-    m_modeStartTime = GameClock::GetTimeMS();
+    // reset timing for new screen
+    m_modeStartTime = GameClock::get_time_ms();
 }

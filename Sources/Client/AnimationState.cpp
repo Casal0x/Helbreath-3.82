@@ -1,107 +1,107 @@
-// AnimationState.cpp: Animation controller implementation
+// animation_state.cpp: Animation controller implementation
 //
 //////////////////////////////////////////////////////////////////////
 
 #include "AnimationState.h"
 
 //=============================================================================
-// Reset - Clear all state back to defaults
+// reset - clear all state back to defaults
 //=============================================================================
-void AnimationState::Reset()
+void animation_state::reset()
 {
-	cAction        = 0;
-	cDir           = 0;
-	sMaxFrame      = 0;
-	sFrameTime     = 0;
-	bLoop          = true;
-	cCurrentFrame  = 0;
-	cPreviousFrame = -1;
-	dwLastFrameTime = 0;
-	bFinished       = false;
+	m_action        = 0;
+	m_dir           = 0;
+	m_max_frame      = 0;
+	m_frame_time     = 0;
+	m_loop          = true;
+	m_current_frame  = 0;
+	m_previous_frame = -1;
+	m_last_frame_time = 0;
+	m_finished       = false;
 }
 
 //=============================================================================
-// SetAction - Configure for a new action (resets playback)
+// set_action - Configure for a new action (resets playback)
 //=============================================================================
-void AnimationState::SetAction(int8_t action, int8_t dir,
+void animation_state::set_action(int8_t action, int8_t dir,
                                int16_t maxFrame, int16_t frameTime, bool loop,
                                int8_t startFrame)
 {
-	cAction        = action;
-	cDir           = dir;
-	sMaxFrame      = maxFrame;
-	sFrameTime     = frameTime;
-	bLoop          = loop;
-	cCurrentFrame  = startFrame;
-	cPreviousFrame = -1;  // Force FrameChanged() true on first check
-	dwLastFrameTime = 0;  // Will be set on first Update()
-	bFinished       = false;
+	m_action        = action;
+	m_dir           = dir;
+	m_max_frame      = maxFrame;
+	m_frame_time     = frameTime;
+	m_loop          = loop;
+	m_current_frame  = startFrame;
+	m_previous_frame = -1;  // Force frame_changed() true on first check
+	m_last_frame_time = 0;  // Will be set on first update()
+	m_finished       = false;
 }
 
 //=============================================================================
-// SetDirection - Change facing without resetting animation
+// set_direction - Change facing without resetting animation
 //=============================================================================
-void AnimationState::SetDirection(int8_t dir)
+void animation_state::set_direction(int8_t dir)
 {
-	cDir = dir;
+	m_dir = dir;
 }
 
 //=============================================================================
-// Update - Advance animation based on elapsed time
+// update - Advance animation based on elapsed time
 //
 // Preserves original Helbreath frame-advance behavior:
 // - First call sets timestamp, shows first frame for full duration
-// - Checks elapsed time against sFrameTime
+// - Checks elapsed time against frame_time
 // - Frame skip up to 3 on lag (original catchup behavior)
-// - Non-looping: bFinished when past sMaxFrame
+// - Non-looping: finished when past max_frame
 // - Looping: wraps to 0
 //
 // Returns true if frame changed this call
 //=============================================================================
-bool AnimationState::Update(uint32_t dwCurrentTime)
+bool animation_state::update(uint32_t current_time)
 {
-	if (bFinished) return false;
-	if (sFrameTime <= 0) return false;
+	if (m_finished) return false;
+	if (m_frame_time <= 0) return false;
 
-	cPreviousFrame = cCurrentFrame;
+	m_previous_frame = m_current_frame;
 
 	// First call: set timestamp, show first frame for full duration
-	if (dwLastFrameTime == 0)
+	if (m_last_frame_time == 0)
 	{
-		dwLastFrameTime = dwCurrentTime;
+		m_last_frame_time = current_time;
 		return false;
 	}
 
-	uint32_t elapsed = dwCurrentTime - dwLastFrameTime;
-	if (elapsed <= static_cast<uint32_t>(sFrameTime))
+	uint32_t elapsed = current_time - m_last_frame_time;
+	if (elapsed <= static_cast<uint32_t>(m_frame_time))
 		return false;
 
 	// Frame skip on lag (original behavior: skip up to 3 frames)
-	if (elapsed >= static_cast<uint32_t>(sFrameTime + sFrameTime))
+	if (elapsed >= static_cast<uint32_t>(m_frame_time + m_frame_time))
 	{
-		int iSkipFrame = static_cast<int>(elapsed / static_cast<uint32_t>(sFrameTime));
-		if (iSkipFrame > 3) iSkipFrame = 3;
-		cCurrentFrame += static_cast<int8_t>(iSkipFrame);
+		int skip_frame = static_cast<int>(elapsed / static_cast<uint32_t>(m_frame_time));
+		if (skip_frame > 3) skip_frame = 3;
+		m_current_frame += static_cast<int8_t>(skip_frame);
 	}
 	else
 	{
-		cCurrentFrame++;
+		m_current_frame++;
 	}
 
-	dwLastFrameTime = dwCurrentTime;
+	m_last_frame_time = current_time;
 
 	// Check frame boundary
-	if (cCurrentFrame > sMaxFrame)
+	if (m_current_frame > m_max_frame)
 	{
-		if (bLoop)
+		if (m_loop)
 		{
-			cCurrentFrame = 0;
+			m_current_frame = 0;
 		}
 		else
 		{
-			bFinished = true;
+			m_finished = true;
 		}
 	}
 
-	return cCurrentFrame != cPreviousFrame;
+	return m_current_frame != m_previous_frame;
 }

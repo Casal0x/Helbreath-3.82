@@ -48,12 +48,12 @@ namespace ServerMsgId
 
 		// Server teleport messages
 		RequestCityHallTeleport                 = 0x0EA03202,
-		RequestHeldenianTeleport                = 0x0EA03206,
+		request_heldenian_teleport                = 0x0EA03206,
 		RequestHeldenianWinner                  = 0x3D001240,
 
 		// Game server status messages
 		GameServerAlive                         = 0x12A01002,
-		GameServerDown                          = 0x12A01004,
+		game_server_down                          = 0x12A01004,
 		TotalGameServerClients                  = 0x12A01005,
 		EnterGameConfirm                        = 0x12A01006,
 
@@ -115,7 +115,7 @@ namespace ServerMsgId
 		ServerStockMsg                          = 0x3AE90013,
 
 		// Party operation
-		PartyOperation                          = 0x3C00123A,
+		party_operation                          = 0x3C00123A,
 
 		// Crusade log
 		GameCrusadeLog                          = 0x210A914F,
@@ -150,7 +150,7 @@ namespace CrusadeLog
 		EndCrusade                              = 1,
 		StartCrusade                            = 2,
 		SelectDuty                              = 3,
-		GetExp                                  = 4,
+		get_exp                                  = 4,
 	};
 }
 
@@ -172,7 +172,7 @@ namespace ItemLogAction
 	{
 		Give                                    = 1,
 		Drop                                    = 2,
-		Get                                     = 3,
+		get                                     = 3,
 		Deplete                                 = 4,
 		NewGenDrop                              = 5,
 		Buy                                     = 7,

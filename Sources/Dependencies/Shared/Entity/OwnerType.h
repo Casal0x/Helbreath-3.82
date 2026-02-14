@@ -1,11 +1,11 @@
 #pragma once
 
 // Entity owner type constants — replaces magic numbers for NPC/player type IDs.
-// Values match the server-assigned sOwnerType and the _iAttackerHeight[] array index.
+// Values match the server-assigned owner_type and the _iAttackerHeight[] array index.
 
 namespace hb::shared::owner {
 
-	constexpr short Empty = 0;
+	constexpr short empty = 0;
 
 	// Player range: 1-3 male body variants, 4-6 female body variants.
 	// Helbreath is classless — the value only affects the body sprite frame.
@@ -106,12 +106,12 @@ namespace hb::shared::owner {
 
 	// --- Helpers ---
 
-	inline bool IsPlayer(short t) { return t >= PlayerFirst && t <= PlayerLast; }
-	inline bool IsNPC(short t) { return t >= NpcFirst; }
-	inline bool IsMale(short t) { return t >= MaleFirst && t <= MaleLast; }
-	inline bool IsFemale(short t) { return t >= FemaleFirst && t <= FemaleLast; }
+	inline bool is_player(short t) { return t >= PlayerFirst && t <= PlayerLast; }
+	inline bool is_npc(short t) { return t >= NpcFirst; }
+	inline bool is_male(short t) { return t >= MaleFirst && t <= MaleLast; }
+	inline bool is_female(short t) { return t >= FemaleFirst && t <= FemaleLast; }
 
 	// Energy Sphere and Abaddon are always rendered invisible (alpha).
-	inline bool IsAlwaysInvisible(short t) { return t == EnergySphere || t == Abaddon; }
+	inline bool is_always_invisible(short t) { return t == EnergySphere || t == Abaddon; }
 
 } // namespace hb::shared::owner

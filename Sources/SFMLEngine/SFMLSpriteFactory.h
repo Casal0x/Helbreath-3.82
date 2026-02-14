@@ -15,7 +15,7 @@ class SFMLRenderer;
 class SFMLSpriteFactory : public hb::shared::sprite::ISpriteFactory
 {
 public:
-    SFMLSpriteFactory(SFMLRenderer* pRenderer);
+    SFMLSpriteFactory(SFMLRenderer* renderer);
     virtual ~SFMLSpriteFactory();
 
     //------------------------------------------------------------------
@@ -23,18 +23,18 @@ public:
     //------------------------------------------------------------------
 
     // Sprite creation
-    hb::shared::sprite::ISprite* CreateSprite(const std::string& pakName, int spriteIndex, bool alphaEffect = true) override;
-    hb::shared::sprite::ISprite* CreateSpriteFromData(const PAKLib::sprite& spriteData, bool alphaEffect = true) override;
+    hb::shared::sprite::ISprite* create_sprite(const std::string& pakName, int spriteIndex, bool alphaEffect = true) override;
+    hb::shared::sprite::ISprite* create_sprite_from_data(const PAKLib::sprite& spriteData, bool alphaEffect = true) override;
 
     // Sprite destruction
-    void DestroySprite(hb::shared::sprite::ISprite* sprite) override;
+    void destroy_sprite(hb::shared::sprite::ISprite* sprite) override;
 
     // Global alpha degree
-    void SetAmbientLightLevel(int level) override;
-    int GetAmbientLightLevel() const override;
+    void set_ambient_light_level(int level) override;
+    int get_ambient_light_level() const override;
 
     // PAK file information
-    int GetSpriteCount(const std::string& pakName) const override;
+    int get_sprite_count(const std::string& pakName) const override;
 
     //------------------------------------------------------------------
     // Configuration
@@ -42,13 +42,13 @@ public:
 
     // Set the sprite path prefix (default: "sprites")
     void SetSpritePath(const std::string& path) { m_spritePath = path; }
-    std::string GetSpritePath() const override { return m_spritePath; }
+    std::string get_sprite_path() const override { return m_spritePath; }
 
 private:
     // Build full PAK file path from pak name
     std::string BuildPakPath(const std::string& pakName) const;
 
-    SFMLRenderer* m_pRenderer;
+    SFMLRenderer* m_renderer;
     std::string m_spritePath;
     int m_ambient_light_level;
 };

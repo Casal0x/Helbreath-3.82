@@ -10,38 +10,38 @@
 class CDynamicObject
 {
 public:
-	inline CDynamicObject(short sOwner, char cOwnerType, short sType, char cMapIndex, short sX, short sY, uint32_t dwRegisterTime, uint32_t dwLastTime, int iV1)
+	inline CDynamicObject(short owner, char owner_type, short type, char map_index, short sX, short sY, uint32_t register_time, uint32_t last_time, int v1)
 	{
-		m_sOwner         = sOwner;
-		m_cOwnerType     = cOwnerType;
+		m_owner         = owner;
+		m_owner_type     = owner_type;
 
-		m_sType          = sType;
+		m_type          = type;
 
-		m_cMapIndex      = cMapIndex;
-		m_sX             = sX;
-		m_sY             = sY;
+		m_map_index      = map_index;
+		m_x             = sX;
+		m_y             = sY;
 
-		m_dwRegisterTime = dwRegisterTime;
-		m_dwLastTime     = dwLastTime;
+		m_register_time = register_time;
+		m_last_time     = last_time;
 
-		m_iCount         = 0;
-		m_iV1            = iV1;
+		m_count         = 0;
+		m_v1            = v1;
 	}
 
 	inline virtual ~CDynamicObject()
 	{
 	}
 
-	short m_sOwner;
-	char  m_cOwnerType;
+	short m_owner;
+	char  m_owner_type;
 
-	short m_sType;
-	char  m_cMapIndex;
-	short m_sX, m_sY; 
-	uint32_t m_dwRegisterTime;
-	uint32_t m_dwLastTime;
+	short m_type;
+	char  m_map_index;
+	short m_x, m_y; 
+	uint32_t m_register_time;
+	uint32_t m_last_time;
 
-	int   m_iCount;			// Ư�� ������Ʈ�� ��� ����ϴ� ī���� ���� 
-	int   m_iV1;			// �߰� ������ ������ ����Ѵ�.
+	int   m_count;			// Ư�� ������Ʈ�� ��� ����ϴ� ī���� ���� 
+	int   m_v1;			// �߰� ������ ������ ����Ѵ�.
 };
 

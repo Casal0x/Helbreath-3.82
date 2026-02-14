@@ -42,8 +42,8 @@ bak.py guard <files>  →  Read/Edit tools  →  Build  →  bak.py commit (or r
 4. **If build succeeds** — `python Scripts/bak.py commit` — deletes all .bak files, accepts changes.
 5. **If build fails** — choose:
    - `guard` again to checkpoint, then fix and rebuild (layer the fix).
-   - `revert` to undo last attempt, retry from previous checkpoint.
-   - `revert --all` to return to original clean state.
+   - `revert <id>` to undo a specific checkpoint, retry from previous.
+   - `revert <id> <file1> [file2 ...]` to revert specific files from a checkpoint.
 
 Rules:
 - If the change is specific edits to specific lines → Mode 1.
@@ -53,17 +53,28 @@ Rules:
 ### Mode 2: Python Script (BULK — 10+ files)
 
 Must justify: "This touches N files with pattern X, script appropriate because Y."
-See `CLAUDE_WORKFLOW.md` for script pattern and regex safety rules.
+See `CLAUDE_WORKFLOW.md` for script pattern, regex safety rules, and verification standards.
+
+**Required verification before applying:**
+1. `--dry-run` — preview all changes (full detail log to `Scripts/output/`).
+2. `--verify` — scan for Shared/SFMLEngine collisions, C++ keyword conflicts, duplicate targets.
+3. Only then run without flags to apply. See `PLANS/BulkScript_DryRun_Standards.md` for full spec.
 
 ### `bak.py` Commands
 
 | Command | Purpose |
 |---------|---------|
-| `bak.py guard <files>` | Create versioned checkpoint (.bak_<guid>) |
+| `bak.py guard <files>` | Create versioned checkpoint (.bak_<guid>). Warns if files already have checkpoints (`--force` to override) |
 | `bak.py status` | List checkpoints with dirty/clean status (exit 1 if any) |
-| `bak.py revert` | Peel back one checkpoint layer (most recent) |
-| `bak.py revert --all` | Revert to original state (oldest checkpoint per file) |
+| `bak.py revert <id>` | Revert all files from checkpoint `<id>`. Warns if files have other layers (`--force` to override) |
+| `bak.py revert <id> <files>` | Revert specific files from checkpoint `<id>` |
 | `bak.py commit` | Delete all .bak* files (accept current state) |
+
+Safety rules:
+- `revert` **always requires a checkpoint ID** — no implicit "most recent" behavior.
+- `guard` warns if a file already has a `.bak_*` from another checkpoint. Use `--force` to proceed.
+- `revert` warns if a file has `.bak_*` layers from other checkpoints. Use `--force` to proceed.
+- GUID collision check on `guard` — ensures new checkpoint ID is unique.
 
 ## Code Search
 
@@ -125,6 +136,68 @@ Key rules:
 - Legacy code retains old conventions until actively refactored. Do not reformat untouched code.
 
 After every `bak.py commit`, update `CHANGELOG.md` with a brief bullet list of changes under category headers. See `CLAUDE_CHANGELOG.md` for format guide and examples.
+
+## Logging
+
+Shared logging system in `Sources/Dependencies/Shared/Log/`. Uses `std::format` and multi-channel file output.
+
+### Files
+
+| File | Purpose |
+|------|---------|
+| `Log/Log.h` | **Public API** — include this to log. Provides `hb::logger::error`, `warn`, `log`, `debug` |
+| `Log/LogLevel.h` | Level constants (`error=0, warn=1, log=2, debug=3`) and `level_name()` |
+| `Log/LogBackend.h` | `log_backend` base class — multi-channel file writer, virtual `write_console()` |
+| `Log/LogBackend.cpp` | Implementation — timestamp formatting, per-channel + main dual-write, mutex-protected |
+| `Server/ServerLogChannels.h` | Server channel enum (15 channels: main, events, security, pvp, network, chat, etc.) |
+| `Server/ServerLog.cpp` | Server wiring — `server_log_backend` subclass routes to `ServerConsole` |
+| `Client/ClientLogChannels.h` | Client channel enum (2 channels: main, network) |
+| `Client/ClientLog.cpp` | Client wiring — console output only in `_DEBUG` builds |
+
+### How to Include
+
+**Basic logging (channel 0 / main)** — only need `Log.h`:
+```cpp
+#include "Log.h"
+
+hb::logger::error("SQLite open failed: {}", sqlite3_errmsg(db));
+hb::logger::warn("Unexpected value: {}", val);
+hb::logger::log("Player '{}' connected", name);
+hb::logger::debug("Tick took {}ms", elapsed);
+```
+
+**Logging to a specific channel** — also include the channels header and `using` declaration:
+```cpp
+#include "Log.h"
+#include "ServerLogChannels.h"   // or "ClientLogChannels.h"
+
+using hb::log_channel;
+
+hb::logger::warn<log_channel::security>("Swing hack: IP={} player={}", ip, name);
+hb::logger::log<log_channel::chat>("[ChatMsg] {}: {}", sender, message);
+hb::logger::log<log_channel::events>("Player '{}' crafting '{}'", name, item);
+```
+
+### Channel Behavior
+
+- Channel 0 (`main`) is the default when no template argument is given.
+- Non-zero channels write to **both** their own log file and the main log file.
+- Each channel maps to a separate `.log` file (e.g. `security` → `hackevents.log`, `chat` → `chat.log`).
+- Format: `[HH:MM:SS.mmm] [LEVEL] [channel_name] message` (channel name omitted for main).
+
+### Server Channels (`hb::log_channel`)
+
+`main`, `events`, `security`, `pvp`, `network`, `log_events`, `chat`, `commands`, `drops`, `trade`, `shop`, `crafting`, `upgrades`, `bank`, `items_misc`
+
+### Client Channels (`hb::log_channel`)
+
+`main`, `network`
+
+### Initialization / Shutdown
+
+Already wired in both targets — do not call manually:
+- **Server**: `hb::logger::initialize("gamelogs/")` in `Wmain.cpp`, `shutdown()` on exit.
+- **Client**: `hb::logger::initialize("logs")` in `Game.cpp`, `shutdown()` on exit.
 
 ## Testing
 

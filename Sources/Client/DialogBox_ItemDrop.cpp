@@ -6,123 +6,123 @@
 
 using namespace hb::shared::net;
 using namespace hb::client::sprite_id;
-DialogBox_ItemDrop::DialogBox_ItemDrop(CGame* pGame)
-	: IDialogBox(DialogBoxId::ItemDropConfirm, pGame)
+DialogBox_ItemDrop::DialogBox_ItemDrop(CGame* game)
+	: IDialogBox(DialogBoxId::ItemDropConfirm, game)
 {
-	SetDefaultRect(0 , 0 , 270, 105);
+	set_default_rect(0 , 0 , 270, 105);
 }
 
-void DialogBox_ItemDrop::OnDraw(short msX, short msY, short msZ, char cLB)
+void DialogBox_ItemDrop::on_draw(short mouse_x, short mouse_y, short z, char lb)
 {
-	if (!m_pGame->EnsureItemConfigsLoaded()) return;
-	short sX = Info().sX;
-	short sY = Info().sY;
-	std::string cTxt;
+	if (!m_game->ensure_item_configs_loaded()) return;
+	short sX = Info().m_x;
+	short sY = Info().m_y;
+	std::string txt;
 
 
-	DrawNewDialogBox(InterfaceNdGame1, sX, sY, 2);
+	draw_new_dialog_box(InterfaceNdGame1, sX, sY, 2);
 
-	auto itemInfo = ItemNameFormatter::Get().Format(m_pGame->m_pItemList[Info().sView].get());
+	auto itemInfo = item_name_formatter::get().format(m_game->m_item_list[Info().m_view].get());
 
-	if (Info().cStr[0] == '\0')
-		cTxt = itemInfo.name.c_str();
+	if (Info().m_str[0] == '\0')
+		txt = itemInfo.name.c_str();
 
 	// Item name (green if special, blue otherwise)
 	if (itemInfo.is_special)
 	{
-		PutString(sX + 35, sY + 20, cTxt.c_str(), GameColors::UIItemName_Special);
-		PutString(sX + 36, sY + 20, cTxt.c_str(), GameColors::UIItemName_Special);
+		put_string(sX + 35, sY + 20, txt.c_str(), GameColors::UIItemName_Special);
+		put_string(sX + 36, sY + 20, txt.c_str(), GameColors::UIItemName_Special);
 	}
 	else
 	{
-		PutString(sX + 35, sY + 20, cTxt.c_str(), GameColors::UIMagicBlue);
-		PutString(sX + 36, sY + 20, cTxt.c_str(), GameColors::UIMagicBlue);
+		put_string(sX + 35, sY + 20, txt.c_str(), GameColors::UIMagicBlue);
+		put_string(sX + 36, sY + 20, txt.c_str(), GameColors::UIMagicBlue);
 	}
 
 	// "Do you want to drop?" text
-	PutString(sX + 35, sY + 36, DRAW_DIALOGBOX_ITEM_DROP1, GameColors::UIMagicBlue);
-	PutString(sX + 36, sY + 36, DRAW_DIALOGBOX_ITEM_DROP1, GameColors::UIMagicBlue);
+	put_string(sX + 35, sY + 36, DRAW_DIALOGBOX_ITEM_DROP1, GameColors::UIMagicBlue);
+	put_string(sX + 36, sY + 36, DRAW_DIALOGBOX_ITEM_DROP1, GameColors::UIMagicBlue);
 
-	// Toggle option text
-	if (m_pGame->m_bItemDrop)
+	// toggle option text
+	if (m_game->m_item_drop)
 	{
 		// "Don't show this message again"
-		if ((msX >= sX + 35) && (msX <= sX + 240) && (msY >= sY + 80) && (msY <= sY + 90))
+		if ((mouse_x >= sX + 35) && (mouse_x <= sX + 240) && (mouse_y >= sY + 80) && (mouse_y <= sY + 90))
 		{
-			PutString(sX + 35, sY + 80, DRAW_DIALOGBOX_ITEM_DROP2, GameColors::UIWhite);
-			PutString(sX + 36, sY + 80, DRAW_DIALOGBOX_ITEM_DROP2, GameColors::UIWhite);
+			put_string(sX + 35, sY + 80, DRAW_DIALOGBOX_ITEM_DROP2, GameColors::UIWhite);
+			put_string(sX + 36, sY + 80, DRAW_DIALOGBOX_ITEM_DROP2, GameColors::UIWhite);
 		}
 		else
 		{
-			PutString(sX + 35, sY + 80, DRAW_DIALOGBOX_ITEM_DROP2, GameColors::UIMagicBlue);
-			PutString(sX + 36, sY + 80, DRAW_DIALOGBOX_ITEM_DROP2, GameColors::UIMagicBlue);
+			put_string(sX + 35, sY + 80, DRAW_DIALOGBOX_ITEM_DROP2, GameColors::UIMagicBlue);
+			put_string(sX + 36, sY + 80, DRAW_DIALOGBOX_ITEM_DROP2, GameColors::UIMagicBlue);
 		}
 	}
 	else
 	{
 		// "Show this message again"
-		if ((msX >= sX + 35) && (msX <= sX + 240) && (msY >= sY + 80) && (msY <= sY + 90))
+		if ((mouse_x >= sX + 35) && (mouse_x <= sX + 240) && (mouse_y >= sY + 80) && (mouse_y <= sY + 90))
 		{
-			PutString(sX + 35, sY + 80, DRAW_DIALOGBOX_ITEM_DROP3, GameColors::UIWhite);
-			PutString(sX + 36, sY + 80, DRAW_DIALOGBOX_ITEM_DROP3, GameColors::UIWhite);
+			put_string(sX + 35, sY + 80, DRAW_DIALOGBOX_ITEM_DROP3, GameColors::UIWhite);
+			put_string(sX + 36, sY + 80, DRAW_DIALOGBOX_ITEM_DROP3, GameColors::UIWhite);
 		}
 		else
 		{
-			PutString(sX + 35, sY + 80, DRAW_DIALOGBOX_ITEM_DROP3, GameColors::UIMagicBlue);
-			PutString(sX + 36, sY + 80, DRAW_DIALOGBOX_ITEM_DROP3, GameColors::UIMagicBlue);
+			put_string(sX + 35, sY + 80, DRAW_DIALOGBOX_ITEM_DROP3, GameColors::UIMagicBlue);
+			put_string(sX + 36, sY + 80, DRAW_DIALOGBOX_ITEM_DROP3, GameColors::UIMagicBlue);
 		}
 	}
 
 	// Yes button
-	if ((msX >= sX + 30) && (msX <= sX + 30 + ui_layout::btn_size_x) && (msY >= sY + 55) && (msY <= sY + 55 + ui_layout::btn_size_y))
-		DrawNewDialogBox(InterfaceNdButton, sX + 30, sY + 55, 19);
+	if ((mouse_x >= sX + 30) && (mouse_x <= sX + 30 + ui_layout::btn_size_x) && (mouse_y >= sY + 55) && (mouse_y <= sY + 55 + ui_layout::btn_size_y))
+		draw_new_dialog_box(InterfaceNdButton, sX + 30, sY + 55, 19);
 	else
-		DrawNewDialogBox(InterfaceNdButton, sX + 30, sY + 55, 18);
+		draw_new_dialog_box(InterfaceNdButton, sX + 30, sY + 55, 18);
 
 	// No button
-	if ((msX >= sX + 170) && (msX <= sX + 170 + ui_layout::btn_size_x) && (msY >= sY + 55) && (msY <= sY + 55 + ui_layout::btn_size_y))
-		DrawNewDialogBox(InterfaceNdButton, sX + 170, sY + 55, 3);
+	if ((mouse_x >= sX + 170) && (mouse_x <= sX + 170 + ui_layout::btn_size_x) && (mouse_y >= sY + 55) && (mouse_y <= sY + 55 + ui_layout::btn_size_y))
+		draw_new_dialog_box(InterfaceNdButton, sX + 170, sY + 55, 3);
 	else
-		DrawNewDialogBox(InterfaceNdButton, sX + 170, sY + 55, 2);
+		draw_new_dialog_box(InterfaceNdButton, sX + 170, sY + 55, 2);
 }
 
-bool DialogBox_ItemDrop::OnClick(short msX, short msY)
+bool DialogBox_ItemDrop::on_click(short mouse_x, short mouse_y)
 {
-	short sX = Info().sX;
-	short sY = Info().sY;
+	short sX = Info().m_x;
+	short sY = Info().m_y;
 
-	if (m_pGame->m_pPlayer->m_Controller.GetCommand() < 0) return false;
+	if (m_game->m_player->m_Controller.get_command() < 0) return false;
 
 	// Yes button - drop item
-	if ((msX >= sX + 30) && (msX <= sX + 30 + ui_layout::btn_size_x) && (msY >= sY + 55) && (msY <= sY + 55 + ui_layout::btn_size_y))
+	if ((mouse_x >= sX + 30) && (mouse_x <= sX + 30 + ui_layout::btn_size_x) && (mouse_y >= sY + 55) && (mouse_y <= sY + 55 + ui_layout::btn_size_y))
 	{
-		Info().cMode = 3;
-		CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[Info().sView]->m_sIDnum);
-		if (pCfg) bSendCommand(MsgId::CommandCommon,
+		Info().m_mode = 3;
+		CItem* cfg = m_game->get_item_config(m_game->m_item_list[Info().m_view]->m_id_num);
+		if (cfg) send_command(MsgId::CommandCommon,
 			CommonType::ItemDrop,
 			0,
-			Info().sView,
+			Info().m_view,
 			1,
 			0,
-			pCfg->m_cName);
-		DisableThisDialog();
+			cfg->m_name);
+		disable_this_dialog();
 		return true;
 	}
 
 	// No button - cancel
-	if ((msX >= sX + 170) && (msX <= sX + 170 + ui_layout::btn_size_x) && (msY >= sY + 55) && (msY <= sY + 55 + ui_layout::btn_size_y))
+	if ((mouse_x >= sX + 170) && (mouse_x <= sX + 170 + ui_layout::btn_size_x) && (mouse_y >= sY + 55) && (mouse_y <= sY + 55 + ui_layout::btn_size_y))
 	{
 		for (int i = 0; i < game_limits::max_sell_list; i++)
-			m_pGame->m_bIsItemDisabled[i] = false;
+			m_game->m_is_item_disabled[i] = false;
 
-		DisableThisDialog();
+		disable_this_dialog();
 		return true;
 	}
 
-	// Toggle "don't show again" option
-	if ((msX >= sX + 35) && (msX <= sX + 240) && (msY >= sY + 80) && (msY <= sY + 90))
+	// toggle "don't show again" option
+	if ((mouse_x >= sX + 35) && (mouse_x <= sX + 240) && (mouse_y >= sY + 80) && (mouse_y <= sY + 90))
 	{
-		m_pGame->m_bItemDrop = !m_pGame->m_bItemDrop;
+		m_game->m_item_drop = !m_game->m_item_drop;
 		return true;
 	}
 

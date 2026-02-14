@@ -1,25 +1,25 @@
-// FishingManager.h: Handles client-side fishing network messages.
+// fishing_manager.h: Handles client-side fishing network messages.
 // Extracted from NetworkMessages_Fish.cpp (Phase B1).
 
 #pragma once
 
 class CGame;
 
-class FishingManager
+class fishing_manager
 {
 public:
-	FishingManager() = default;
-	~FishingManager() = default;
+	fishing_manager() = default;
+	~fishing_manager() = default;
 
-	void SetGame(CGame* pGame) { m_pGame = pGame; }
+	void set_game(CGame* game) { m_game = game; }
 
 	// Network message handlers (moved from NetworkMessageHandlers namespace)
-	void HandleFishChance(char* pData);
-	void HandleEventFishMode(char* pData);
-	void HandleFishCanceled(char* pData);
-	void HandleFishSuccess(char* pData);
-	void HandleFishFail(char* pData);
+	void handle_fish_chance(char* data);
+	void handle_event_fish_mode(char* data);
+	void handle_fish_canceled(char* data);
+	void handle_fish_success(char* data);
+	void handle_fish_fail(char* data);
 
 private:
-	CGame* m_pGame = nullptr;
+	CGame* m_game = nullptr;
 };

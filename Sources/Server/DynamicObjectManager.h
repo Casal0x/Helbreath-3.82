@@ -11,17 +11,17 @@ public:
 	DynamicObjectManager() = default;
 	~DynamicObjectManager() = default;
 
-	void SetGame(CGame* pGame) { m_pGame = pGame; }
+	void set_game(CGame* game) { m_game = game; }
 
-	void InitArrays();
-	void CleanupArrays();
+	void init_arrays();
+	void cleanup_arrays();
 
-	int  iAddDynamicObjectList(short sOwner, char cOwnerType, short sType, char cMapIndex, short sX, short sY, uint32_t dwLastTime, int iV1 = 0);
-	void CheckDynamicObjectList();
-	void DynamicObjectEffectProcessor();
+	int  add_dynamic_object_list(short owner, char owner_type, short type, char map_index, short sX, short sY, uint32_t last_time, int v1 = 0);
+	void check_dynamic_object_list();
+	void dynamic_object_effect_processor();
 
-	CDynamicObject* m_pDynamicObjectList[60000];
+	CDynamicObject* m_dynamic_object_list[60000];
 
 private:
-	CGame* m_pGame = nullptr;
+	CGame* m_game = nullptr;
 };

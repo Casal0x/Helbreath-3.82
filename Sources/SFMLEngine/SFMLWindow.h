@@ -88,8 +88,8 @@ private:
     void TransformMouseCoords(int windowX, int windowY, int& logicalX, int& logicalY) const;
 
     sf::RenderWindow m_renderWindow;
-    hb::shared::types::NativeWindowHandle m_hWnd;  // Native handle for compatibility
-    hb::shared::render::IWindowEventHandler* m_pEventHandler;
+    hb::shared::types::NativeWindowHandle m_handle;  // Native handle for compatibility
+    hb::shared::render::IWindowEventHandler* m_event_handler;
     bool m_realized;
     bool m_open;
     bool m_active;
@@ -99,13 +99,13 @@ private:
     int m_width;
     int m_height;
     bool m_fullscreen;
-    bool m_bFullscreenStretch;
+    bool m_fullscreen_stretch;
     bool m_borderless;
-    bool m_bMouseCaptureEnabled;
-    bool m_bVSync;
-    int m_iFpsLimit;
-    int m_windowedWidth;
-    int m_windowedHeight;
+    bool m_mouse_capture_enabled;
+    bool m_vsync;
+    int m_fps_limit;
+    int m_windowed_width;
+    int m_windowed_height;
     hb::shared::types::NativeInstance m_nativeInstance;
-    int m_iconResourceId;
+    int m_icon_resource_id;
 };

@@ -8,53 +8,53 @@
 namespace hb::shared::sprite {
 
 // Static member initialization
-ISpriteFactory* Sprites::s_pFactory = nullptr;
+ISpriteFactory* Sprites::s_factory = nullptr;
 
-void Sprites::SetFactory(ISpriteFactory* factory) {
-    s_pFactory = factory;
+void Sprites::set_factory(ISpriteFactory* factory) {
+    s_factory = factory;
 }
 
-ISpriteFactory* Sprites::GetFactory() {
-    return s_pFactory;
+ISpriteFactory* Sprites::get_factory() {
+    return s_factory;
 }
 
-ISprite* Sprites::Create(const std::string& pakName, int spriteIndex, bool alphaEffect) {
-    if (s_pFactory) {
-        return s_pFactory->CreateSprite(pakName, spriteIndex, alphaEffect);
+ISprite* Sprites::create(const std::string& pakName, int spriteIndex, bool alphaEffect) {
+    if (s_factory) {
+        return s_factory->create_sprite(pakName, spriteIndex, alphaEffect);
     }
-    printf("[Sprites::Create] ERROR: No factory set! Cannot create sprite %s[%d]\n", pakName.c_str(), spriteIndex);
+    printf("[Sprites::create] ERROR: No factory set! Cannot create sprite %s[%d]\n", pakName.c_str(), spriteIndex);
     return nullptr;
 }
 
-void Sprites::Destroy(ISprite* sprite) {
-    if (s_pFactory && sprite) {
-        s_pFactory->DestroySprite(sprite);
+void Sprites::destroy(ISprite* sprite) {
+    if (s_factory && sprite) {
+        s_factory->destroy_sprite(sprite);
     }
 }
 
-void Sprites::SetAmbientLightLevel(int level) {
-    if (s_pFactory) {
-        s_pFactory->SetAmbientLightLevel(level);
+void Sprites::set_ambient_light_level(int level) {
+    if (s_factory) {
+        s_factory->set_ambient_light_level(level);
     }
 }
 
-int Sprites::GetAmbientLightLevel() {
-    if (s_pFactory) {
-        return s_pFactory->GetAmbientLightLevel();
+int Sprites::get_ambient_light_level() {
+    if (s_factory) {
+        return s_factory->get_ambient_light_level();
     }
     return 1;
 }
 
-int Sprites::GetSpriteCount(const std::string& pakName) {
-    if (s_pFactory) {
-        return s_pFactory->GetSpriteCount(pakName);
+int Sprites::get_sprite_count(const std::string& pakName) {
+    if (s_factory) {
+        return s_factory->get_sprite_count(pakName);
     }
     return 0;
 }
 
-std::string Sprites::GetSpritePath() {
-    if (s_pFactory) {
-        return s_pFactory->GetSpritePath();
+std::string Sprites::get_sprite_path() {
+    if (s_factory) {
+        return s_factory->get_sprite_path();
     }
     return "sprites";  // Default fallback
 }

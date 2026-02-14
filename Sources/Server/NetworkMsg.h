@@ -22,16 +22,16 @@ namespace Source
 class CMsg  								 
 {
 public:
-	void Get(char * pFrom, char * pData, size_t* pSize, int * pIndex, char * pKey);
-	bool bPut(char cFrom, char * pData, size_t dwSize, int iIndex, char cKey);
+	void get(char * pFrom, char * data, size_t* size, int * index, char * key);
+	bool put(char cFrom, char * data, size_t size, int index, char key);
 	CMsg();
 	virtual ~CMsg();
 
-	char   m_cFrom;
+	char   m_from;
 
-	char * m_pData;
-	size_t  m_dwSize;
+	char * m_data;
+	size_t  m_size;
 
-	int    m_iIndex;
-	char   m_cKey;   // v1.4
+	int    m_index;
+	char   m_key;   // v1.4
 };

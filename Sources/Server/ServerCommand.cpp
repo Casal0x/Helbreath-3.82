@@ -12,34 +12,34 @@
 #include "Log.h"
 #include "StringCompat.h"
 
-ServerCommandManager& ServerCommandManager::Get()
+ServerCommandManager& ServerCommandManager::get()
 {
 	static ServerCommandManager instance;
 	return instance;
 }
 
-void ServerCommandManager::Initialize(CGame* pGame)
+void ServerCommandManager::initialize(CGame* game)
 {
-	if (m_bInitialized)
+	if (m_initialized)
 		return;
 
-	m_pGame = pGame;
-	RegisterBuiltInCommands();
-	m_bInitialized = true;
+	m_game = game;
+	register_built_in_commands();
+	m_initialized = true;
 }
 
-void ServerCommandManager::RegisterCommand(std::unique_ptr<ServerCommand> command)
+void ServerCommandManager::register_command(std::unique_ptr<ServerCommand> command)
 {
 	m_commands.push_back(std::move(command));
 }
 
-bool ServerCommandManager::ProcessCommand(const char* pInput)
+bool ServerCommandManager::process_command(const char* input)
 {
-	if (pInput == nullptr)
+	if (input == nullptr)
 		return false;
 
 	// Skip leading whitespace
-	const char* p = pInput;
+	const char* p = input;
 	while (*p == ' ' || *p == '\t')
 		p++;
 
@@ -55,15 +55,15 @@ bool ServerCommandManager::ProcessCommand(const char* pInput)
 	// Skip whitespace after command name to get args
 	while (*p == ' ' || *p == '\t')
 		p++;
-	const char* pArgs = p;
+	const char* args = p;
 
 	// Find matching command (case-insensitive)
 	for (const auto& cmd : m_commands)
 	{
-		const char* cmdName = cmd->GetName();
+		const char* cmdName = cmd->get_name();
 		if (std::strlen(cmdName) == cmdLen && hb_strnicmp(cmdStart, cmdName, cmdLen) == 0)
 		{
-			cmd->Execute(m_pGame, pArgs);
+			cmd->execute(m_game, args);
 			return true;
 		}
 	}
@@ -72,13 +72,13 @@ bool ServerCommandManager::ProcessCommand(const char* pInput)
 	return false;
 }
 
-void ServerCommandManager::RegisterBuiltInCommands()
+void ServerCommandManager::register_built_in_commands()
 {
-	RegisterCommand(std::make_unique<CmdHelp>(m_commands));
-	RegisterCommand(std::make_unique<CmdShowChat>());
-	RegisterCommand(std::make_unique<CmdBroadcast>());
-	RegisterCommand(std::make_unique<CmdGiveItem>());
-	RegisterCommand(std::make_unique<CmdReload>());
-	RegisterCommand(std::make_unique<CmdSetAdmin>());
-	RegisterCommand(std::make_unique<CmdSetCmdLevel>());
+	register_command(std::make_unique<CmdHelp>(m_commands));
+	register_command(std::make_unique<CmdShowChat>());
+	register_command(std::make_unique<CmdBroadcast>());
+	register_command(std::make_unique<CmdGiveItem>());
+	register_command(std::make_unique<CmdReload>());
+	register_command(std::make_unique<CmdSetAdmin>());
+	register_command(std::make_unique<CmdSetCmdLevel>());
 }

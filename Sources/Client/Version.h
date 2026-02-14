@@ -33,10 +33,10 @@ namespace hb {
 			const char* build;
 		};
 
-		const VersionInfo& Get();
-		std::string GetSemVer();
-		std::string GetDisplayString();
-		std::string GetFullString();
+		const VersionInfo& get();
+		std::string get_sem_ver();
+		std::string get_display_string();
+		std::string get_full_string();
 
 	} // namespace version
 } //namespace hb

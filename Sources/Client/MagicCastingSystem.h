@@ -2,17 +2,17 @@
 
 class CGame;
 
-class MagicCastingSystem
+class magic_casting_system
 {
 public:
-	static MagicCastingSystem& Get();
+	static magic_casting_system& get();
 
-	void SetGame(CGame* pGame);
+	void set_game(CGame* game);
 
-	int GetManaCost(int iMagicNo);
-	void BeginCast(int iMagicNo);
+	int get_mana_cost(int magic_no);
+	void begin_cast(int magic_no);
 
 private:
-	MagicCastingSystem() = default;
+	magic_casting_system() = default;
 	CGame* m_game = nullptr;
 };

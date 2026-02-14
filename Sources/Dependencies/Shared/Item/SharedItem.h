@@ -6,7 +6,7 @@
 //   - Item.h            - Unified CItem class
 //
 // Note: Display names are now stored directly in the database.
-// The server sends display names in m_cName, no client-side lookup needed.
+// The server sends display names in m_name, no client-side lookup needed.
 //
 //////////////////////////////////////////////////////////////////////
 

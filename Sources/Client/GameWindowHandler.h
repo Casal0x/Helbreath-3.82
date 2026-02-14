@@ -13,7 +13,7 @@ class CGame;
 class GameWindowHandler : public hb::shared::render::IWindowEventHandler
 {
 public:
-    GameWindowHandler(CGame* pGame);
+    GameWindowHandler(CGame* game);
     virtual ~GameWindowHandler() = default;
 
     // ============== hb::shared::render::IWindowEventHandler Implementation ==============
@@ -40,5 +40,5 @@ public:
     virtual bool on_text_input(hb::shared::types::NativeWindowHandle hwnd, uint32_t message, uintptr_t wparam, intptr_t lparam) override;
 
 private:
-    CGame* m_pGame;
+    CGame* m_game;
 };

@@ -17,7 +17,7 @@ void OnAcceptLogin();
 void OnKeyUp(WPARAM wParam, LPARAM lParam);
 WPARAM  EventLoop();
 void OnDestroy();
-void Initialize();
+void initialize();
 void CALLBACK _TimerFunc(UINT wID, UINT wUser, DWORD_PTR dwUser, DWORD_PTR dw1, DWORD_PTR dw2);
 MMRESULT _StartTimer(uint32_t dwTime);
 void _StopTimer(MMRESULT timerid);

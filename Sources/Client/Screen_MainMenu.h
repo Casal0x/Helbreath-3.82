@@ -13,7 +13,7 @@ class Screen_MainMenu : public IGameScreen
 public:
     SCREEN_TYPE(Screen_MainMenu)
 
-    explicit Screen_MainMenu(CGame* pGame);
+    explicit Screen_MainMenu(CGame* game);
     ~Screen_MainMenu() override = default;
 
     void on_initialize() override;
@@ -22,6 +22,6 @@ public:
     void on_render() override;
 
 private:
-    char m_cCurFocus;
-    char m_cMaxFocus;
+    char m_cur_focus;
+    char m_max_focus;
 };

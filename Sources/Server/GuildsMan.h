@@ -13,13 +13,13 @@ public:
 
 	inline CGuildsMan()
 	{
-		std::memset(m_cName, 0, sizeof(m_cName));
+		std::memset(m_name, 0, sizeof(m_name));
 	}
 
 	inline virtual ~CGuildsMan()
 	{
 	}
 
-	char m_cName[hb::shared::limits::CharNameLen];
-	int  m_iRank;
+	char m_name[hb::shared::limits::CharNameLen];
+	int  m_rank;
 };

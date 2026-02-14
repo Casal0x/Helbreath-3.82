@@ -18,13 +18,13 @@ public:
 
 	}
 
-	EffectType m_sType = EffectType::INVALID;
-	char  m_cFrame = -1, m_cMaxFrame = 0;
-	char  m_cDir = 0;
-	uint32_t m_dwTime = 0, m_dwFrameTime = 0;
-	int   m_sX = 0, m_sY = 0, m_dX = 0, m_dY = 0;
-	int   m_mX = 0, m_mY = 0, m_mX2 = 0, m_mY2 = 0, m_mX3 = 0, m_mY3 = 0;
-	int   m_iErr = 0;
-	int   m_rX = 0, m_rY = 0;
-	int   m_iV1 = 0;
+	EffectType m_type = EffectType::INVALID;
+	char  m_frame = -1, m_max_frame = 0;
+	char  m_dir = 0;
+	uint32_t m_time = 0, m_frame_time = 0;
+	int   m_x = 0, m_y = 0, m_dest_x = 0, m_dest_y = 0;
+	int   m_move_x = 0, m_move_y = 0, m_move_x2 = 0, m_move_y2 = 0, m_move_x3 = 0, m_move_y3 = 0;
+	int   m_error = 0;
+	int   m_render_x = 0, m_render_y = 0;
+	int   m_value1 = 0;
 };

@@ -14,16 +14,16 @@
 #include "TextLibExt.h"
 using namespace hb::client::sprite_id;
 
-Screen_Splash::Screen_Splash(CGame* pGame)
-    : IGameScreen(pGame)
+Screen_Splash::Screen_Splash(CGame* game)
+    : IGameScreen(game)
 {
 }
 
 void Screen_Splash::on_initialize()
 {
-    GameModeManager::SetCurrentMode(GameMode::Splash);
+    GameModeManager::set_current_mode(GameMode::Splash);
 
-    m_pGame->m_pSprite[SplashScreen] = hb::shared::sprite::Sprites::Create("New-Dialog", 3, false);
+    m_game->m_sprite[SplashScreen] = hb::shared::sprite::Sprites::create("New-Dialog", 3, false);
 
     m_credits = {{
         { "Centuu - HelbreathServer starting base", "https://github.com/centuu/HelbreathServer" },
@@ -36,7 +36,7 @@ void Screen_Splash::on_initialize()
 
 void Screen_Splash::on_uninitialize()
 {
-    m_pGame->m_pSprite.remove(SplashScreen);
+    m_game->m_sprite.remove(SplashScreen);
 }
 
 void Screen_Splash::on_update()
@@ -47,18 +47,18 @@ void Screen_Splash::on_update()
     }
 }
 
-float Screen_Splash::GetContributorAlpha(uint32_t elapsedMs, int contributorIndex) const
+float Screen_Splash::get_contributor_alpha(uint32_t elapsedMs, int contributorIndex) const
 {
     uint32_t startTime = contributorIndex * TIME_PER_CONTRIBUTOR_MS;
     uint32_t endTime = startTime + TIME_PER_CONTRIBUTOR_MS;
-    bool isLastContributor = (contributorIndex == NUM_CONTRIBUTORS - 1);
+    bool last_contributor = (contributorIndex == NUM_CONTRIBUTORS - 1);
 
     // Before this contributor's time
     if (elapsedMs < startTime)
         return 0.0f;
 
     // After this contributor's time (except last one stays visible)
-    if (elapsedMs >= endTime && !isLastContributor)
+    if (elapsedMs >= endTime && !last_contributor)
         return 0.0f;
 
     uint32_t timeInSlot = elapsedMs - startTime;
@@ -68,7 +68,7 @@ float Screen_Splash::GetContributorAlpha(uint32_t elapsedMs, int contributorInde
         return static_cast<float>(timeInSlot) / FADE_DURATION_MS;
 
     // Last contributor doesn't fade out
-    if (isLastContributor)
+    if (last_contributor)
         return 1.0f;
 
     // Fade out during last FADE_DURATION_MS
@@ -82,7 +82,7 @@ float Screen_Splash::GetContributorAlpha(uint32_t elapsedMs, int contributorInde
 
 void Screen_Splash::on_render()
 {
-    m_pGame->m_pSprite[SplashScreen]->Draw(0, 0, 0);
+    m_game->m_sprite[SplashScreen]->draw(0, 0, 0);
 
     constexpr int lineHeight = 16;
     constexpr int bottomMargin = 20;
@@ -91,28 +91,28 @@ void Screen_Splash::on_render()
 
     for (int i = 0; i < NUM_CONTRIBUTORS; i++)
     {
-        float alpha = GetContributorAlpha(elapsedMs, i);
+        float alpha = get_contributor_alpha(elapsedMs, i);
         if (alpha <= 0.0f)
             continue;
 
         // Scale RGB by alpha to simulate fade (TTF fonts don't support alpha)
         auto fade = [alpha](const hb::shared::render::Color& c) {
-            return hb::shared::text::TextStyle::WithDropShadow(hb::shared::render::Color(
+            return hb::shared::text::TextStyle::with_drop_shadow(hb::shared::render::Color(
                 static_cast<uint8_t>(c.r * alpha),
                 static_cast<uint8_t>(c.g * alpha),
                 static_cast<uint8_t>(c.b * alpha)));
         };
 
         const auto& credit = m_credits[i];
-        hb::shared::text::DrawTextAligned(GameFont::Default, 0, creditY, LOGICAL_WIDTH(), lineHeight,
+        hb::shared::text::draw_text_aligned(GameFont::Default, 0, creditY, LOGICAL_WIDTH(), lineHeight,
             credit.displayLine.c_str(), fade(GameColors::UIWhite), hb::shared::text::Align::TopCenter);
 
         if (!credit.url.empty())
         {
-            hb::shared::text::DrawTextAligned(GameFont::Default, 0, creditY + lineHeight, LOGICAL_WIDTH(), lineHeight,
+            hb::shared::text::draw_text_aligned(GameFont::Default, 0, creditY + lineHeight, LOGICAL_WIDTH(), lineHeight,
                 credit.url.c_str(), fade(GameColors::UIFactionChat), hb::shared::text::Align::TopCenter);
         }
     }
 
-    m_pGame->DrawVersion();
+    m_game->draw_version();
 }

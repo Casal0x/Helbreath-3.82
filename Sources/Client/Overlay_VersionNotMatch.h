@@ -13,7 +13,7 @@ class Overlay_VersionNotMatch : public IGameScreen
 public:
     SCREEN_TYPE(Overlay_VersionNotMatch)
 
-    explicit Overlay_VersionNotMatch(CGame* pGame);
+    explicit Overlay_VersionNotMatch(CGame* game);
     ~Overlay_VersionNotMatch() override = default;
 
     void on_initialize() override;

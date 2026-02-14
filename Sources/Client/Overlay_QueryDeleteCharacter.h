@@ -14,7 +14,7 @@ class Overlay_QueryDeleteCharacter : public IGameScreen
 public:
     SCREEN_TYPE(Overlay_QueryDeleteCharacter)
 
-    explicit Overlay_QueryDeleteCharacter(CGame* pGame);
+    explicit Overlay_QueryDeleteCharacter(CGame* game);
     ~Overlay_QueryDeleteCharacter() override = default;
 
     void on_initialize() override;

@@ -1,6 +1,6 @@
 // Overlay_Msg.h: Simple message display overlay
 //
-// Displays m_cMsg message. Auto-redirects to MainMenu after 1.5 seconds.
+// Displays m_msg message. Auto-redirects to MainMenu after 1.5 seconds.
 //
 //////////////////////////////////////////////////////////////////////
 
@@ -13,7 +13,7 @@ class Overlay_Msg : public IGameScreen
 public:
     SCREEN_TYPE(Overlay_Msg)
 
-    explicit Overlay_Msg(CGame* pGame);
+    explicit Overlay_Msg(CGame* game);
     ~Overlay_Msg() override = default;
 
     void on_initialize() override;

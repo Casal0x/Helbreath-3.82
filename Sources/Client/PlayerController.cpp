@@ -6,29 +6,29 @@
 
 CPlayerController::CPlayerController()
 {
-	Reset();
+	reset();
 }
 
-void CPlayerController::Reset()
+void CPlayerController::reset()
 {
-	m_sDestX = 0;
-	m_sDestY = 0;
-	m_cCommand = 0;
-	m_bCommandAvailable = true;
-	m_dwCommandTime = 0;
-	m_cCommandCount = 0;
-	m_iPrevMoveX = 0;
-	m_iPrevMoveY = 0;
-	m_bIsPrevMoveBlocked = false;
-	m_cPlayerTurn = 0;
-	m_cPendingStopDir = 0;
-	m_dwAttackEndTime = 0;
+	m_dest_x = 0;
+	m_dest_y = 0;
+	m_command = 0;
+	m_command_available = true;
+	m_command_time = 0;
+	m_command_count = 0;
+	m_prev_move_x = 0;
+	m_prev_move_y = 0;
+	m_is_prev_move_blocked = false;
+	m_player_turn = 0;
+	m_pending_stop_dir = 0;
+	m_attack_end_time = 0;
 }
 
-char CPlayerController::GetNextMoveDir(short sX, short sY, short dstX, short dstY,
-                                        CMapData* pMapData, bool bMoveCheck, bool bMIM)
+char CPlayerController::get_next_move_dir(short sX, short sY, short dstX, short dstY,
+                                        CMapData* map_data, bool move_check, bool mim)
 {
-	char cDir, cTmpDir;
+	char dir, tmp_dir;
 	int aX, aY, dX, dY;
 	int i;
 
@@ -37,55 +37,55 @@ char CPlayerController::GetNextMoveDir(short sX, short sY, short dstX, short dst
 	dX = sX;
 	dY = sY;
 
-	if (bMIM == false)
-		cDir = CMisc::cGetNextMoveDir(dX, dY, dstX, dstY);
+	if (mim == false)
+		dir = CMisc::get_next_move_dir(dX, dY, dstX, dstY);
 	else
-		cDir = CMisc::cGetNextMoveDir(dstX, dstY, dX, dY);
+		dir = CMisc::get_next_move_dir(dstX, dstY, dX, dY);
 
-	if (cDir < 1 || cDir > 8) return 0;
+	if (dir < 1 || dir > 8) return 0;
 
-	if (m_cPlayerTurn == 0)
+	if (m_player_turn == 0)
 	{
-		for (i = cDir; i <= cDir + 2; i++)
+		for (i = dir; i <= dir + 2; i++)
 		{
-			cTmpDir = i;
-			if (cTmpDir > 8) cTmpDir -= 8;
-			aX = hb::shared::direction::OffsetX[cTmpDir];
-			aY = hb::shared::direction::OffsetY[cTmpDir];
-			if (((dX + aX) == m_iPrevMoveX) && ((dY + aY) == m_iPrevMoveY) && (m_bIsPrevMoveBlocked == true) && (bMoveCheck == true))
+			tmp_dir = i;
+			if (tmp_dir > 8) tmp_dir -= 8;
+			aX = hb::shared::direction::OffsetX[tmp_dir];
+			aY = hb::shared::direction::OffsetY[tmp_dir];
+			if (((dX + aX) == m_prev_move_x) && ((dY + aY) == m_prev_move_y) && (m_is_prev_move_blocked == true) && (move_check == true))
 			{
-				m_bIsPrevMoveBlocked = false;
+				m_is_prev_move_blocked = false;
 			}
-			else if (pMapData->bGetIsLocateable(dX + aX, dY + aY) == true)
+			else if (map_data->get_is_locatable(dX + aX, dY + aY) == true)
 			{
-				if (pMapData->bIsTeleportLoc(dX + aX, dY + aY) == true)
+				if (map_data->is_teleport_loc(dX + aX, dY + aY) == true)
 				{
-					return cTmpDir;
+					return tmp_dir;
 				}
-				else return cTmpDir;
+				else return tmp_dir;
 			}
 		}
 	}
 
-	if (m_cPlayerTurn == 1)
+	if (m_player_turn == 1)
 	{
-		for (i = cDir; i >= cDir - 2; i--)
+		for (i = dir; i >= dir - 2; i--)
 		{
-			cTmpDir = i;
-			if (cTmpDir < 1) cTmpDir += 8;
-			aX = hb::shared::direction::OffsetX[cTmpDir];
-			aY = hb::shared::direction::OffsetY[cTmpDir];
-			if (((dX + aX) == m_iPrevMoveX) && ((dY + aY) == m_iPrevMoveY) && (m_bIsPrevMoveBlocked == true) && (bMoveCheck == true))
+			tmp_dir = i;
+			if (tmp_dir < 1) tmp_dir += 8;
+			aX = hb::shared::direction::OffsetX[tmp_dir];
+			aY = hb::shared::direction::OffsetY[tmp_dir];
+			if (((dX + aX) == m_prev_move_x) && ((dY + aY) == m_prev_move_y) && (m_is_prev_move_blocked == true) && (move_check == true))
 			{
-				m_bIsPrevMoveBlocked = false;
+				m_is_prev_move_blocked = false;
 			}
-			else if (pMapData->bGetIsLocateable(dX + aX, dY + aY) == true)
+			else if (map_data->get_is_locatable(dX + aX, dY + aY) == true)
 			{
-				if (pMapData->bIsTeleportLoc(dX + aX, dY + aY) == true)
+				if (map_data->is_teleport_loc(dX + aX, dY + aY) == true)
 				{
-					return cTmpDir;
+					return tmp_dir;
 				}
-				else return cTmpDir;
+				else return tmp_dir;
 			}
 		}
 	}
@@ -95,41 +95,41 @@ char CPlayerController::GetNextMoveDir(short sX, short sY, short dstX, short dst
 
 // Determines optimal turn direction (left/right bias) for pathfinding.
 // Tries both directions with a 30-step cap to prevent infinite loops on unreachable targets.
-void CPlayerController::CalculatePlayerTurn(short playerX, short playerY, CMapData* pMapData)
+void CPlayerController::calculate_player_turn(short playerX, short playerY, CMapData* map_data)
 {
-	char cDir;
-	short sX, sY, sCnt1, sCnt2;
+	char dir;
+	short sX, sY, cnt1, cnt2;
 
 	sX = playerX;
 	sY = playerY;
-	sCnt1 = 0;
-	m_cPlayerTurn = 0;
+	cnt1 = 0;
+	m_player_turn = 0;
 
 	while (1)
 	{
-		cDir = GetNextMoveDir(sX, sY, m_sDestX, m_sDestY, pMapData);
-		if (cDir == 0) break;
-		hb::shared::direction::ApplyOffset(cDir, sX, sY);
-		sCnt1++;
-		if (sCnt1 > 30) break;
+		dir = get_next_move_dir(sX, sY, m_dest_x, m_dest_y, map_data);
+		if (dir == 0) break;
+		hb::shared::direction::ApplyOffset(dir, sX, sY);
+		cnt1++;
+		if (cnt1 > 30) break;
 	}
 
 	sX = playerX;
 	sY = playerY;
-	sCnt2 = 0;
-	m_cPlayerTurn = 1;
+	cnt2 = 0;
+	m_player_turn = 1;
 
 	while (1)
 	{
-		cDir = GetNextMoveDir(sX, sY, m_sDestX, m_sDestY, pMapData);
-		if (cDir == 0) break;
-		hb::shared::direction::ApplyOffset(cDir, sX, sY);
-		sCnt2++;
-		if (sCnt2 > 30) break;
+		dir = get_next_move_dir(sX, sY, m_dest_x, m_dest_y, map_data);
+		if (dir == 0) break;
+		hb::shared::direction::ApplyOffset(dir, sX, sY);
+		cnt2++;
+		if (cnt2 > 30) break;
 	}
 
-	if (sCnt1 > sCnt2)
-		m_cPlayerTurn = 0;
+	if (cnt1 > cnt2)
+		m_player_turn = 0;
 	else
-		m_cPlayerTurn = 1;
+		m_player_turn = 1;
 }

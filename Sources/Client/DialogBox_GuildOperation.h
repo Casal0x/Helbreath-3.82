@@ -4,14 +4,14 @@
 class DialogBox_GuildOperation : public IDialogBox
 {
 public:
-	DialogBox_GuildOperation(CGame* pGame);
+	DialogBox_GuildOperation(CGame* game);
 	~DialogBox_GuildOperation() override = default;
 
-	void OnDraw(short msX, short msY, short msZ, char cLB) override;
-	bool OnClick(short msX, short msY) override;
+	void on_draw(short mouse_x, short mouse_y, short z, char lb) override;
+	bool on_click(short mouse_x, short mouse_y) override;
 
 private:
-	void DrawJoinRequest(short sX, short sY, short msX, short msY);
-	void DrawDismissRequest(short sX, short sY, short msX, short msY);
-	void DrawInfoMessage(short sX, short sY, short msX, short msY, int mode);
+	void draw_join_request(short sX, short sY, short mouse_x, short mouse_y);
+	void draw_dismiss_request(short sX, short sY, short mouse_x, short mouse_y);
+	void draw_info_message(short sX, short sY, short mouse_x, short mouse_y, int mode);
 };

@@ -17,7 +17,7 @@ public:
     virtual ~SFMLInput();
 
     void Initialize(hb::shared::types::NativeWindowHandle hWnd);
-    void SetRenderWindow(sf::RenderWindow* pWindow);
+    void SetRenderWindow(sf::RenderWindow* window);
 
     // ============== IInput Implementation ==============
 
@@ -66,15 +66,15 @@ public:
 private:
     void ClearAllKeys();
 
-    hb::shared::types::NativeWindowHandle m_hWnd;
-    sf::RenderWindow* m_pRenderWindow;
+    hb::shared::types::NativeWindowHandle m_handle;
+    sf::RenderWindow* m_render_window;
     bool m_active;
     bool m_suppressed;
 
     // Mouse state
-    int m_mouseX;
-    int m_mouseY;
-    int m_wheelDelta;
+    int m_mouse_x;
+    int m_mouse_y;
+    int m_wheel_delta;
     bool m_mouseDown[3];     // Left, Right, Middle
     bool m_mousePressed[3];
     bool m_mouseReleased[3];

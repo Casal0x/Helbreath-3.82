@@ -40,197 +40,197 @@ using namespace hb::server::skill;
 extern char G_cTxt[512];
 extern char G_cData50000[50000];
 
-void WarManager::CrusadeWarStarter()
+void WarManager::crusade_war_starter()
 {
 	hb::time::local_time SysTime{};
 	
 
-	if (m_pGame->m_bIsCrusadeMode) return;
-	if (m_pGame->m_bIsCrusadeWarStarter == false) return;
+	if (m_game->m_is_crusade_mode) return;
+	if (m_game->m_is_crusade_war_starter == false) return;
 
 	SysTime = hb::time::local_time::now();
 
 	for(int i = 0; i < MaxSchedule; i++)
-		if ((m_pGame->m_stCrusadeWarSchedule[i].iDay == SysTime.day_of_week) &&
-			(m_pGame->m_stCrusadeWarSchedule[i].iHour == SysTime.hour) &&
-			(m_pGame->m_stCrusadeWarSchedule[i].iMinute == SysTime.minute)) {
+		if ((m_game->m_crusade_war_schedule[i].day == SysTime.day_of_week) &&
+			(m_game->m_crusade_war_schedule[i].hour == SysTime.hour) &&
+			(m_game->m_crusade_war_schedule[i].minute == SysTime.minute)) {
 			hb::logger::log("Automated crusade initiating");
-			GlobalStartCrusadeMode();
+			global_start_crusade_mode();
 			return;
 		}
 }
 
-void WarManager::GlobalStartCrusadeMode()
+void WarManager::global_start_crusade_mode()
 {
-	uint32_t dwCrusadeGUID;
+	uint32_t crusade_guid;
 	hb::time::local_time SysTime{};
 
 	SysTime = hb::time::local_time::now();
-	if (m_pGame->m_iLatestCrusadeDayOfWeek != -1) {
-		if (m_pGame->m_iLatestCrusadeDayOfWeek == SysTime.day_of_week) return;
+	if (m_game->m_latest_crusade_day_of_week != -1) {
+		if (m_game->m_latest_crusade_day_of_week == SysTime.day_of_week) return;
 	}
-	else m_pGame->m_iLatestCrusadeDayOfWeek = SysTime.day_of_week;
+	else m_game->m_latest_crusade_day_of_week = SysTime.day_of_week;
 
-	dwCrusadeGUID = GameClock::GetTimeMS();
+	crusade_guid = GameClock::GetTimeMS();
 
-	LocalStartCrusadeMode(dwCrusadeGUID);
+	local_start_crusade_mode(crusade_guid);
 }
 
-void WarManager::LocalStartCrusadeMode(uint32_t dwCrusadeGUID)
+void WarManager::local_start_crusade_mode(uint32_t crusade_guid)
 {
 	
 
-	if (m_pGame->m_bIsCrusadeMode) return;
-	m_pGame->m_bIsCrusadeMode = true;
-	m_pGame->m_iCrusadeWinnerSide = 0;
+	if (m_game->m_is_crusade_mode) return;
+	m_game->m_is_crusade_mode = true;
+	m_game->m_crusade_winner_side = 0;
 
-	if (dwCrusadeGUID != 0) {
+	if (crusade_guid != 0) {
 		// GUID  .
-		_CreateCrusadeGUID(dwCrusadeGUID, 0);
-		m_pGame->m_dwCrusadeGUID = dwCrusadeGUID;
+		create_crusade_guid(crusade_guid, 0);
+		m_game->m_crusade_guid = crusade_guid;
 	}
 
 	for(int i = 1; i < MaxClients; i++)
-		if ((m_pGame->m_pClientList[i] != 0) && (m_pGame->m_pClientList[i]->m_bIsInitComplete)) {
-			m_pGame->m_pClientList[i]->m_iCrusadeDuty = 0;
-			m_pGame->m_pClientList[i]->m_iConstructionPoint = 0;
-			m_pGame->m_pClientList[i]->m_dwCrusadeGUID = m_pGame->m_dwCrusadeGUID;
-			m_pGame->SendNotifyMsg(0, i, Notify::Crusade, (uint32_t)m_pGame->m_bIsCrusadeMode, m_pGame->m_pClientList[i]->m_iCrusadeDuty, 0, 0);
+		if ((m_game->m_client_list[i] != 0) && (m_game->m_client_list[i]->m_is_init_complete)) {
+			m_game->m_client_list[i]->m_crusade_duty = 0;
+			m_game->m_client_list[i]->m_construction_point = 0;
+			m_game->m_client_list[i]->m_crusade_guid = m_game->m_crusade_guid;
+			m_game->send_notify_msg(0, i, Notify::Crusade, (uint32_t)m_game->m_is_crusade_mode, m_game->m_client_list[i]->m_crusade_duty, 0, 0);
 		}
 
 	for(int i = 0; i < MaxMaps; i++)
-		if (m_pGame->m_pMapList[i] != 0) m_pGame->m_pMapList[i]->RestoreStrikePoints();
+		if (m_game->m_map_list[i] != 0) m_game->m_map_list[i]->restore_strike_points();
 
-	CreateCrusadeStructures();
+	create_crusade_structures();
 
 	hb::logger::log("Crusade mode enabled");
 }
 
-void WarManager::LocalEndCrusadeMode(int iWinnerSide)
+void WarManager::local_end_crusade_mode(int winner_side)
 {
 	
 
 	//testcode
-	hb::logger::log("LocalEndCrusadeMode({})", iWinnerSide);
+	hb::logger::log("local_end_crusade_mode({})", winner_side);
 
-	if (m_pGame->m_bIsCrusadeMode == false) return;
-	m_pGame->m_bIsCrusadeMode = false;
+	if (m_game->m_is_crusade_mode == false) return;
+	m_game->m_is_crusade_mode = false;
 
 	hb::logger::log("Crusade mode disabled");
 
-	RemoveCrusadeStructures();
+	remove_crusade_structures();
 
-	RemoveCrusadeNpcs();
+	remove_crusade_npcs();
 
-	_CreateCrusadeGUID(m_pGame->m_dwCrusadeGUID, iWinnerSide);
-	m_pGame->m_iCrusadeWinnerSide = iWinnerSide;
-	m_pGame->m_iLastCrusadeWinner = iWinnerSide;
+	create_crusade_guid(m_game->m_crusade_guid, winner_side);
+	m_game->m_crusade_winner_side = winner_side;
+	m_game->m_last_crusade_winner = winner_side;
 
 	for(int i = 1; i < MaxClients; i++)
-		if ((m_pGame->m_pClientList[i] != 0) && (m_pGame->m_pClientList[i]->m_bIsInitComplete)) {
-			m_pGame->m_pClientList[i]->m_iCrusadeDuty = 0;
-			m_pGame->m_pClientList[i]->m_iConstructionPoint = 0;
-			m_pGame->SendNotifyMsg(0, i, Notify::Crusade, (uint32_t)m_pGame->m_bIsCrusadeMode, 0, 0, 0, m_pGame->m_iCrusadeWinnerSide);
+		if ((m_game->m_client_list[i] != 0) && (m_game->m_client_list[i]->m_is_init_complete)) {
+			m_game->m_client_list[i]->m_crusade_duty = 0;
+			m_game->m_client_list[i]->m_construction_point = 0;
+			m_game->send_notify_msg(0, i, Notify::Crusade, (uint32_t)m_game->m_is_crusade_mode, 0, 0, 0, m_game->m_crusade_winner_side);
 		}
-	RemoveCrusadeRecallTime();
+	remove_crusade_recall_time();
 
-	if (m_pGame->m_iMiddlelandMapIndex != -1) {
-		//bSendMsgToLS(0x3D00123C, 0, true, 0);
+	if (m_game->m_middleland_map_index != -1) {
+		//send_msg_to_ls(0x3D00123C, 0, true, 0);
 	}
 }
 
-void WarManager::ManualEndCrusadeMode(int iWinnerSide)
+void WarManager::manual_end_crusade_mode(int winner_side)
 {
 
-	if (m_pGame->m_bIsCrusadeMode == false) return;
+	if (m_game->m_is_crusade_mode == false) return;
 
-	LocalEndCrusadeMode(iWinnerSide);
+	local_end_crusade_mode(winner_side);
 }
 
-void WarManager::CreateCrusadeStructures()
+void WarManager::create_crusade_structures()
 {
-	int z, tX, tY, iNamingValue;
-	char cName[6], cNpcName[hb::shared::limits::NpcNameLen], cNpcWayPoint[11];
+	int z, tX, tY, naming_value;
+	char name[6], npc_name[hb::shared::limits::NpcNameLen], npc_way_point[11];
 
-	std::memset(cName, 0, sizeof(cName));
-	std::memset(cNpcName, 0, sizeof(cNpcName));
-	std::memset(cNpcWayPoint, 0, sizeof(cNpcWayPoint));
+	std::memset(name, 0, sizeof(name));
+	std::memset(npc_name, 0, sizeof(npc_name));
+	std::memset(npc_way_point, 0, sizeof(npc_way_point));
 
 	for(int i = 0; i < hb::shared::limits::MaxCrusadeStructures; i++)
-		if (m_pGame->m_stCrusadeStructures[i].cType != 0) {
+		if (m_game->m_crusade_structures[i].type != 0) {
 			for (z = 0; z < MaxMaps; z++)
-				if ((m_pGame->m_pMapList[z] != 0) && (strcmp(m_pGame->m_pMapList[z]->m_cName, m_pGame->m_stCrusadeStructures[i].cMapName) == 0)) {
-					iNamingValue = m_pGame->m_pMapList[z]->iGetEmptyNamingValue();
-					if (iNamingValue == -1) {
+				if ((m_game->m_map_list[z] != 0) && (strcmp(m_game->m_map_list[z]->m_name, m_game->m_crusade_structures[i].map_name) == 0)) {
+					naming_value = m_game->m_map_list[z]->get_empty_naming_value();
+					if (naming_value == -1) {
 						// NPC  .     .
 					}
 					else {
 						// NPC .
-						std::snprintf(cName, sizeof(cName), "XX%d", iNamingValue);
-						cName[0] = '_';
-						cName[1] = z + 65;
+						std::snprintf(name, sizeof(name), "XX%d", naming_value);
+						name[0] = '_';
+						name[1] = z + 65;
 
-						switch (m_pGame->m_stCrusadeStructures[i].cType) {
+						switch (m_game->m_crusade_structures[i].type) {
 						case 36:
-							if (strcmp(m_pGame->m_pMapList[z]->m_cName, "aresden") == 0)
-								strcpy(cNpcName, "AGT-Aresden");
-							else if (strcmp(m_pGame->m_pMapList[z]->m_cName, "elvine") == 0)
-								strcpy(cNpcName, "AGT-Elvine");
+							if (strcmp(m_game->m_map_list[z]->m_name, "aresden") == 0)
+								strcpy(npc_name, "AGT-Aresden");
+							else if (strcmp(m_game->m_map_list[z]->m_name, "elvine") == 0)
+								strcpy(npc_name, "AGT-Elvine");
 							break;
 
 						case 37:
-							if (strcmp(m_pGame->m_pMapList[z]->m_cName, "aresden") == 0)
-								strcpy(cNpcName, "CGT-Aresden");
-							else if (strcmp(m_pGame->m_pMapList[z]->m_cName, "elvine") == 0)
-								strcpy(cNpcName, "CGT-Elvine");
+							if (strcmp(m_game->m_map_list[z]->m_name, "aresden") == 0)
+								strcpy(npc_name, "CGT-Aresden");
+							else if (strcmp(m_game->m_map_list[z]->m_name, "elvine") == 0)
+								strcpy(npc_name, "CGT-Elvine");
 							break;
 
 						case 40:
-							if (strcmp(m_pGame->m_pMapList[z]->m_cName, "aresden") == 0)
-								strcpy(cNpcName, "ESG-Aresden");
-							else if (strcmp(m_pGame->m_pMapList[z]->m_cName, "elvine") == 0)
-								strcpy(cNpcName, "ESG-Elvine");
+							if (strcmp(m_game->m_map_list[z]->m_name, "aresden") == 0)
+								strcpy(npc_name, "ESG-Aresden");
+							else if (strcmp(m_game->m_map_list[z]->m_name, "elvine") == 0)
+								strcpy(npc_name, "ESG-Elvine");
 							break;
 
 						case 41:
-							if (strcmp(m_pGame->m_pMapList[z]->m_cName, "aresden") == 0)
-								strcpy(cNpcName, "GMG-Aresden");
-							else if (strcmp(m_pGame->m_pMapList[z]->m_cName, "elvine") == 0)
-								strcpy(cNpcName, "GMG-Elvine");
+							if (strcmp(m_game->m_map_list[z]->m_name, "aresden") == 0)
+								strcpy(npc_name, "GMG-Aresden");
+							else if (strcmp(m_game->m_map_list[z]->m_name, "elvine") == 0)
+								strcpy(npc_name, "GMG-Elvine");
 							break;
 
 						case 42:
-							strcpy(cNpcName, "ManaStone");
+							strcpy(npc_name, "ManaStone");
 							break;
 
 						default:
-							strcpy(cNpcName, "Unknown");
+							strcpy(npc_name, "Unknown");
 							break;
 						}
 
-						tX = (int)m_pGame->m_stCrusadeStructures[i].dX;
-						tY = (int)m_pGame->m_stCrusadeStructures[i].dY;
-						int iNpcConfigId = m_pGame->GetNpcConfigIdByName(cNpcName);
-						if (m_pGame->bCreateNewNpc(iNpcConfigId, cName, m_pGame->m_pMapList[z]->m_cName, 0, 0, MoveType::Random,
-							&tX, &tY, cNpcWayPoint, 0, 0, -1, false) == false) {
+						tX = (int)m_game->m_crusade_structures[i].x;
+						tY = (int)m_game->m_crusade_structures[i].y;
+						int npc_config_id = m_game->get_npc_config_id_by_name(npc_name);
+						if (m_game->create_new_npc(npc_config_id, name, m_game->m_map_list[z]->m_name, 0, 0, MoveType::Random,
+							&tX, &tY, npc_way_point, 0, 0, -1, false) == false) {
 							// NameValue .
-							m_pGame->m_pMapList[z]->SetNamingValueEmpty(iNamingValue);
+							m_game->m_map_list[z]->set_naming_value_empty(naming_value);
 						}
 						else {
-							hb::logger::log("Creating Crusade Structure({}) at {}({}, {})", cNpcName, m_pGame->m_stCrusadeStructures[i].cMapName, tX, tY);
+							hb::logger::log("Creating Crusade Structure({}) at {}({}, {})", npc_name, m_game->m_crusade_structures[i].map_name, tX, tY);
 						}
 					}
 				}
 		}
 }
 
-void WarManager::RemoveCrusadeStructures()
+void WarManager::remove_crusade_structures()
 {
 	
 
 	for(int i = 0; i < MaxNpcs; i++)
-		if (m_pGame->m_pNpcList[i] != 0) {
-			switch (m_pGame->m_pNpcList[i]->m_sType) {
+		if (m_game->m_npc_list[i] != 0) {
+			switch (m_game->m_npc_list[i]->m_type) {
 			case 36:
 			case 37:
 			case 38:
@@ -239,183 +239,183 @@ void WarManager::RemoveCrusadeStructures()
 			case 41:
 			case 42:
 				// Use EntityManager for NPC deletion
-				if (m_pGame->m_pEntityManager != NULL)
-					m_pGame->m_pEntityManager->DeleteEntity(i);
+				if (m_game->m_entity_manager != NULL)
+					m_game->m_entity_manager->delete_entity(i);
 				break;
 			}
 		}
 }
 
-void WarManager::RemoveCrusadeNpcs(void)
+void WarManager::remove_crusade_npcs(void)
 {
 	for(int i = 0; i < MaxNpcs; i++) {
-		if (m_pGame->m_pNpcList[i] != 0) {
-			if ((m_pGame->m_pNpcList[i]->m_sType >= 43 && m_pGame->m_pNpcList[i]->m_sType <= 47) || m_pGame->m_pNpcList[i]->m_sType == 51) {
-				m_pGame->m_pEntityManager->OnEntityKilled(i, 0, 0, 0);
+		if (m_game->m_npc_list[i] != 0) {
+			if ((m_game->m_npc_list[i]->m_type >= 43 && m_game->m_npc_list[i]->m_type <= 47) || m_game->m_npc_list[i]->m_type == 51) {
+				m_game->m_entity_manager->on_entity_killed(i, 0, 0, 0);
 			}
 		}
 	}
 }
 
-void WarManager::RemoveCrusadeRecallTime(void)
+void WarManager::remove_crusade_recall_time(void)
 {
 	for(int i = 1; i < MaxClients; i++) {
-		if (m_pGame->m_pClientList[i] != 0) {
-			if (m_pGame->m_pClientList[i]->m_bIsWarLocation &&
-				m_pGame->m_pClientList[i]->m_bIsPlayerCivil &&
-				m_pGame->m_pClientList[i]->m_bIsInitComplete) {
-				m_pGame->m_pClientList[i]->m_iTimeLeft_ForceRecall = 0;
+		if (m_game->m_client_list[i] != 0) {
+			if (m_game->m_client_list[i]->m_is_war_location &&
+				m_game->m_client_list[i]->m_is_player_civil &&
+				m_game->m_client_list[i]->m_is_init_complete) {
+				m_game->m_client_list[i]->m_time_left_force_recall = 0;
 			}
 		}
 	}
 }
 
-void WarManager::SyncMiddlelandMapInfo()
+void WarManager::sync_middleland_map_info()
 {
 	
 
-	if (m_pGame->m_iMiddlelandMapIndex != -1) {
+	if (m_game->m_middleland_map_index != -1) {
 		for(int i = 0; i < hb::shared::limits::MaxCrusadeStructures; i++) {
-			m_pGame->m_stMiddleCrusadeStructureInfo[i].cType = 0;
-			m_pGame->m_stMiddleCrusadeStructureInfo[i].cSide = 0;
-			m_pGame->m_stMiddleCrusadeStructureInfo[i].sX = 0;
-			m_pGame->m_stMiddleCrusadeStructureInfo[i].sY = 0;
+			m_game->m_middle_crusade_structure_info[i].type = 0;
+			m_game->m_middle_crusade_structure_info[i].side = 0;
+			m_game->m_middle_crusade_structure_info[i].x = 0;
+			m_game->m_middle_crusade_structure_info[i].y = 0;
 		}
-		m_pGame->m_iTotalMiddleCrusadeStructures = m_pGame->m_pMapList[m_pGame->m_iMiddlelandMapIndex]->m_iTotalCrusadeStructures;
-		for(int i = 0; i < m_pGame->m_iTotalMiddleCrusadeStructures; i++) {
-			m_pGame->m_stMiddleCrusadeStructureInfo[i].cType = m_pGame->m_pMapList[m_pGame->m_iMiddlelandMapIndex]->m_stCrusadeStructureInfo[i].cType;
-			m_pGame->m_stMiddleCrusadeStructureInfo[i].cSide = m_pGame->m_pMapList[m_pGame->m_iMiddlelandMapIndex]->m_stCrusadeStructureInfo[i].cSide;
-			m_pGame->m_stMiddleCrusadeStructureInfo[i].sX = m_pGame->m_pMapList[m_pGame->m_iMiddlelandMapIndex]->m_stCrusadeStructureInfo[i].sX;
-			m_pGame->m_stMiddleCrusadeStructureInfo[i].sY = m_pGame->m_pMapList[m_pGame->m_iMiddlelandMapIndex]->m_stCrusadeStructureInfo[i].sY;
+		m_game->m_total_middle_crusade_structures = m_game->m_map_list[m_game->m_middleland_map_index]->m_total_crusade_structures;
+		for(int i = 0; i < m_game->m_total_middle_crusade_structures; i++) {
+			m_game->m_middle_crusade_structure_info[i].type = m_game->m_map_list[m_game->m_middleland_map_index]->m_crusade_structure_info[i].type;
+			m_game->m_middle_crusade_structure_info[i].side = m_game->m_map_list[m_game->m_middleland_map_index]->m_crusade_structure_info[i].side;
+			m_game->m_middle_crusade_structure_info[i].x = m_game->m_map_list[m_game->m_middleland_map_index]->m_crusade_structure_info[i].x;
+			m_game->m_middle_crusade_structure_info[i].y = m_game->m_map_list[m_game->m_middleland_map_index]->m_crusade_structure_info[i].y;
 
-			/**cp = m_pGame->m_stMiddleCrusadeStructureInfo[i].cType;
+			/**cp = m_game->m_middle_crusade_structure_info[i].type;
 			cp++;
-			*cp = m_pGame->m_stMiddleCrusadeStructureInfo[i].cSide;
+			*cp = m_game->m_middle_crusade_structure_info[i].side;
 			cp++;
 			sp = (short *)cp;
-			*sp = (short)m_pGame->m_stMiddleCrusadeStructureInfo[i].sX;
+			*sp = (short)m_game->m_middle_crusade_structure_info[i].x;
 			cp += 2;
 			sp = (short *)cp;
-			*sp = (short)m_pGame->m_stMiddleCrusadeStructureInfo[i].sY;
+			*sp = (short)m_game->m_middle_crusade_structure_info[i].y;
 			cp += 2;*/
 		}
 
-		if (m_pGame->m_iTotalMiddleCrusadeStructures != 0) {
+		if (m_game->m_total_middle_crusade_structures != 0) {
 			//testcode
-			//std::snprintf(G_cTxt, sizeof(G_cTxt), "m_pGame->m_iTotalMiddleCrusadeStructures: %d", m_pGame->m_iTotalMiddleCrusadeStructures);
+			//std::snprintf(G_cTxt, sizeof(G_cTxt), "m_game->m_total_middle_crusade_structures: %d", m_game->m_total_middle_crusade_structures);
 			//PutLogList(G_cTxt);
 		}
 	}
 }
 
-void WarManager::SelectCrusadeDutyHandler(int iClientH, int iDuty)
+void WarManager::select_crusade_duty_handler(int client_h, int duty)
 {
 
-	if (m_pGame->m_pClientList[iClientH] == 0) return;
-	if ((m_pGame->m_pClientList[iClientH]->m_iGuildRank != 0) && (iDuty == 3)) return;
+	if (m_game->m_client_list[client_h] == 0) return;
+	if ((m_game->m_client_list[client_h]->m_guild_rank != 0) && (duty == 3)) return;
 
-	if (m_pGame->m_iLastCrusadeWinner == m_pGame->m_pClientList[iClientH]->m_cSide &&
-		m_pGame->m_pClientList[iClientH]->m_dwCrusadeGUID == 0 && iDuty == 3) {
-		m_pGame->m_pClientList[iClientH]->m_iConstructionPoint = 3000;
+	if (m_game->m_last_crusade_winner == m_game->m_client_list[client_h]->m_side &&
+		m_game->m_client_list[client_h]->m_crusade_guid == 0 && duty == 3) {
+		m_game->m_client_list[client_h]->m_construction_point = 3000;
 	}
-	m_pGame->m_pClientList[iClientH]->m_iCrusadeDuty = iDuty;
+	m_game->m_client_list[client_h]->m_crusade_duty = duty;
 
-	m_pGame->SendNotifyMsg(0, iClientH, Notify::Crusade, (uint32_t)m_pGame->m_bIsCrusadeMode, m_pGame->m_pClientList[iClientH]->m_iCrusadeDuty, 0, 0);
+	m_game->send_notify_msg(0, client_h, Notify::Crusade, (uint32_t)m_game->m_is_crusade_mode, m_game->m_client_list[client_h]->m_crusade_duty, 0, 0);
 }
 
-void WarManager::CheckCrusadeResultCalculation(int iClientH)
+void WarManager::check_crusade_result_calculation(int client_h)
 {
-	if (m_pGame->m_pClientList[iClientH] == 0) return;
-	if (m_pGame->m_pClientList[iClientH]->m_cVar == 1) return;
+	if (m_game->m_client_list[client_h] == 0) return;
+	if (m_game->m_client_list[client_h]->m_var == 1) return;
 
-	if ((m_pGame->m_bIsCrusadeMode == false) && (m_pGame->m_pClientList[iClientH]->m_dwCrusadeGUID != 0)) {
-		if (m_pGame->m_pClientList[iClientH]->m_iWarContribution > m_pGame->m_iMaxWarContribution) m_pGame->m_pClientList[iClientH]->m_iWarContribution = m_pGame->m_iMaxWarContribution;
-		if (m_pGame->m_pClientList[iClientH]->m_dwCrusadeGUID == m_pGame->m_dwCrusadeGUID) {
-			if (m_pGame->m_iCrusadeWinnerSide == 0) {
-				m_pGame->m_pClientList[iClientH]->m_iExpStock += (m_pGame->m_pClientList[iClientH]->m_iWarContribution / 6);
-				m_pGame->SendNotifyMsg(0, iClientH, Notify::Crusade, (uint32_t)m_pGame->m_bIsCrusadeMode, 0, m_pGame->m_pClientList[iClientH]->m_iWarContribution, 0);
+	if ((m_game->m_is_crusade_mode == false) && (m_game->m_client_list[client_h]->m_crusade_guid != 0)) {
+		if (m_game->m_client_list[client_h]->m_war_contribution > m_game->m_max_war_contribution) m_game->m_client_list[client_h]->m_war_contribution = m_game->m_max_war_contribution;
+		if (m_game->m_client_list[client_h]->m_crusade_guid == m_game->m_crusade_guid) {
+			if (m_game->m_crusade_winner_side == 0) {
+				m_game->m_client_list[client_h]->m_exp_stock += (m_game->m_client_list[client_h]->m_war_contribution / 6);
+				m_game->send_notify_msg(0, client_h, Notify::Crusade, (uint32_t)m_game->m_is_crusade_mode, 0, m_game->m_client_list[client_h]->m_war_contribution, 0);
 			}
 			else {
-				if (m_pGame->m_iCrusadeWinnerSide == m_pGame->m_pClientList[iClientH]->m_cSide) {
-					if (m_pGame->m_pClientList[iClientH]->m_iLevel <= 80) {
-						m_pGame->m_pClientList[iClientH]->m_iWarContribution += m_pGame->m_pClientList[iClientH]->m_iLevel * 100;
+				if (m_game->m_crusade_winner_side == m_game->m_client_list[client_h]->m_side) {
+					if (m_game->m_client_list[client_h]->m_level <= 80) {
+						m_game->m_client_list[client_h]->m_war_contribution += m_game->m_client_list[client_h]->m_level * 100;
 					}
-					else if (m_pGame->m_pClientList[iClientH]->m_iLevel <= 100) {
-						m_pGame->m_pClientList[iClientH]->m_iWarContribution += m_pGame->m_pClientList[iClientH]->m_iLevel * 40;
+					else if (m_game->m_client_list[client_h]->m_level <= 100) {
+						m_game->m_client_list[client_h]->m_war_contribution += m_game->m_client_list[client_h]->m_level * 40;
 					}
-					else m_pGame->m_pClientList[iClientH]->m_iWarContribution += m_pGame->m_pClientList[iClientH]->m_iLevel;
-					m_pGame->m_pClientList[iClientH]->m_iExpStock += m_pGame->m_pClientList[iClientH]->m_iWarContribution;
-					m_pGame->SendNotifyMsg(0, iClientH, Notify::Crusade, (uint32_t)m_pGame->m_bIsCrusadeMode, 0, m_pGame->m_pClientList[iClientH]->m_iWarContribution, 0);
+					else m_game->m_client_list[client_h]->m_war_contribution += m_game->m_client_list[client_h]->m_level;
+					m_game->m_client_list[client_h]->m_exp_stock += m_game->m_client_list[client_h]->m_war_contribution;
+					m_game->send_notify_msg(0, client_h, Notify::Crusade, (uint32_t)m_game->m_is_crusade_mode, 0, m_game->m_client_list[client_h]->m_war_contribution, 0);
 				}
-				else if (m_pGame->m_iCrusadeWinnerSide != m_pGame->m_pClientList[iClientH]->m_cSide) {
-					if (m_pGame->m_pClientList[iClientH]->m_iLevel <= 80) {
-						m_pGame->m_pClientList[iClientH]->m_iWarContribution += m_pGame->m_pClientList[iClientH]->m_iLevel * 100;
+				else if (m_game->m_crusade_winner_side != m_game->m_client_list[client_h]->m_side) {
+					if (m_game->m_client_list[client_h]->m_level <= 80) {
+						m_game->m_client_list[client_h]->m_war_contribution += m_game->m_client_list[client_h]->m_level * 100;
 					}
-					else if (m_pGame->m_pClientList[iClientH]->m_iLevel <= 100) {
-						m_pGame->m_pClientList[iClientH]->m_iWarContribution += m_pGame->m_pClientList[iClientH]->m_iLevel * 40;
+					else if (m_game->m_client_list[client_h]->m_level <= 100) {
+						m_game->m_client_list[client_h]->m_war_contribution += m_game->m_client_list[client_h]->m_level * 40;
 					}
-					else m_pGame->m_pClientList[iClientH]->m_iWarContribution += m_pGame->m_pClientList[iClientH]->m_iLevel;
-					m_pGame->m_pClientList[iClientH]->m_iExpStock += m_pGame->m_pClientList[iClientH]->m_iWarContribution / 10;
-					m_pGame->SendNotifyMsg(0, iClientH, Notify::Crusade, (uint32_t)m_pGame->m_bIsCrusadeMode, 0, -1 * m_pGame->m_pClientList[iClientH]->m_iWarContribution, 0);
+					else m_game->m_client_list[client_h]->m_war_contribution += m_game->m_client_list[client_h]->m_level;
+					m_game->m_client_list[client_h]->m_exp_stock += m_game->m_client_list[client_h]->m_war_contribution / 10;
+					m_game->send_notify_msg(0, client_h, Notify::Crusade, (uint32_t)m_game->m_is_crusade_mode, 0, -1 * m_game->m_client_list[client_h]->m_war_contribution, 0);
 				}
 			}
 		}
 		else {
-			m_pGame->SendNotifyMsg(0, iClientH, Notify::Crusade, (uint32_t)m_pGame->m_bIsCrusadeMode, 0, 0, 0, -1);
+			m_game->send_notify_msg(0, client_h, Notify::Crusade, (uint32_t)m_game->m_is_crusade_mode, 0, 0, 0, -1);
 		}
-		m_pGame->m_pClientList[iClientH]->m_iCrusadeDuty = 0;
-		m_pGame->m_pClientList[iClientH]->m_iWarContribution = 0;
-		m_pGame->m_pClientList[iClientH]->m_dwCrusadeGUID = 0;
-		m_pGame->m_pClientList[iClientH]->m_dwSpeedHackCheckTime = GameClock::GetTimeMS();
-		m_pGame->m_pClientList[iClientH]->m_iSpeedHackCheckExp = m_pGame->m_pClientList[iClientH]->m_iExp;
+		m_game->m_client_list[client_h]->m_crusade_duty = 0;
+		m_game->m_client_list[client_h]->m_war_contribution = 0;
+		m_game->m_client_list[client_h]->m_crusade_guid = 0;
+		m_game->m_client_list[client_h]->m_speed_hack_check_time = GameClock::GetTimeMS();
+		m_game->m_client_list[client_h]->m_speed_hack_check_exp = m_game->m_client_list[client_h]->m_exp;
 	}
 }
 
-bool WarManager::bReadCrusadeGUIDFile(const char* cFn)
+bool WarManager::read_crusade_guid_file(const char* fn)
 {
-	FILE* pFile;
-	uint32_t  dwFileSize;
-	char* cp, * token, cReadMode;
+	FILE* file;
+	uint32_t  file_size;
+	char* cp, * token, read_mode;
 	char seps[] = "= \t\r\n";
 
-	cReadMode = 0;
+	read_mode = 0;
 
 	std::error_code ec;
-	auto fsize = std::filesystem::file_size(cFn, ec);
-	dwFileSize = ec ? 0 : static_cast<uint32_t>(fsize);
+	auto fsize = std::filesystem::file_size(fn, ec);
+	file_size = ec ? 0 : static_cast<uint32_t>(fsize);
 
-	pFile = fopen(cFn, "rt");
-	if (pFile == 0) {
+	file = fopen(fn, "rt");
+	if (file == 0) {
 		return false;
 	}
 	else {
-		cp = new char[dwFileSize + 2];
-		std::memset(cp, 0, dwFileSize + 2);
-		fread(cp, dwFileSize, 1, pFile);
+		cp = new char[file_size + 2];
+		std::memset(cp, 0, file_size + 2);
+		fread(cp, file_size, 1, file);
 
 		token = strtok(cp, seps);
 
 		while (token != 0) {
 
-			if (cReadMode != 0) {
-				switch (cReadMode) {
+			if (read_mode != 0) {
+				switch (read_mode) {
 				case 1:
-					m_pGame->m_dwCrusadeGUID = atoi(token);
-					hb::logger::log("CrusadeGUID = {}", m_pGame->m_dwCrusadeGUID);
-					cReadMode = 0;
+					m_game->m_crusade_guid = atoi(token);
+					hb::logger::log("CrusadeGUID = {}", m_game->m_crusade_guid);
+					read_mode = 0;
 					break;
 
 				case 2:
 					// New 13/05/2004 Changed
-					m_pGame->m_iLastCrusadeWinner = atoi(token);
-					hb::logger::log("CrusadeWinnerSide = {}", m_pGame->m_iLastCrusadeWinner);
-					cReadMode = 0;
+					m_game->m_last_crusade_winner = atoi(token);
+					hb::logger::log("CrusadeWinnerSide = {}", m_game->m_last_crusade_winner);
+					read_mode = 0;
 					break;
 				}
 			}
 			else {
-				if (memcmp(token, "CrusadeGUID", 11) == 0) cReadMode = 1;
-				if (memcmp(token, "winner-side", 11) == 0) cReadMode = 2;
+				if (memcmp(token, "CrusadeGUID", 11) == 0) read_mode = 1;
+				if (memcmp(token, "winner-side", 11) == 0) read_mode = 2;
 			}
 
 			token = strtok(NULL, seps);
@@ -423,76 +423,76 @@ bool WarManager::bReadCrusadeGUIDFile(const char* cFn)
 
 		delete cp;
 	}
-	if (pFile != 0) fclose(pFile);
+	if (file != 0) fclose(file);
 
 	return true;
 }
 
-void WarManager::_CreateCrusadeGUID(uint32_t dwCrusadeGUID, int iWinnerSide)
+void WarManager::create_crusade_guid(uint32_t crusade_guid, int winner_side)
 {
-	char* cp, cTxt[256], cFn[256], cTemp[1024];
-	FILE* pFile;
+	char* cp, txt[256], fn[256], temp[1024];
+	FILE* file;
 
 	std::filesystem::create_directories("GameData");
-	std::memset(cFn, 0, sizeof(cFn));
+	std::memset(fn, 0, sizeof(fn));
 
-	strcat(cFn, "GameData");
-	strcat(cFn, "/");
-	strcat(cFn, "/");
-	strcat(cFn, "CrusadeGUID.Txt");
+	strcat(fn, "GameData");
+	strcat(fn, "/");
+	strcat(fn, "/");
+	strcat(fn, "CrusadeGUID.Txt");
 
-	pFile = fopen(cFn, "wt");
-	if (pFile == 0) {
-		hb::logger::log("Cannot create CrusadeGUID({}) file", dwCrusadeGUID);
+	file = fopen(fn, "wt");
+	if (file == 0) {
+		hb::logger::log("Cannot create CrusadeGUID({}) file", crusade_guid);
 	}
 	else {
-		std::memset(cTemp, 0, sizeof(cTemp));
+		std::memset(temp, 0, sizeof(temp));
 
-		std::memset(cTxt, 0, sizeof(cTxt));
-		std::snprintf(cTxt, sizeof(cTxt), "CrusadeGUID = %d\n", dwCrusadeGUID);
-		strcat(cTemp, cTxt);
+		std::memset(txt, 0, sizeof(txt));
+		std::snprintf(txt, sizeof(txt), "CrusadeGUID = %d\n", crusade_guid);
+		strcat(temp, txt);
 
-		std::memset(cTxt, 0, sizeof(cTxt));
-		std::snprintf(cTxt, sizeof(cTxt), "winner-side = %d\n", iWinnerSide);
-		strcat(cTemp, cTxt);
+		std::memset(txt, 0, sizeof(txt));
+		std::snprintf(txt, sizeof(txt), "winner-side = %d\n", winner_side);
+		strcat(temp, txt);
 
-		cp = (char*)cTemp;
-		fwrite(cp, strlen(cp), 1, pFile);
+		cp = (char*)temp;
+		fwrite(cp, strlen(cp), 1, file);
 
-		hb::logger::log("CrusadeGUID({}) file created", dwCrusadeGUID);
+		hb::logger::log("CrusadeGUID({}) file created", crusade_guid);
 	}
-	if (pFile != 0) fclose(pFile);
+	if (file != 0) fclose(file);
 }
 
-void WarManager::CheckCommanderConstructionPoint(int iClientH)
+void WarManager::check_commander_construction_point(int client_h)
 {
 	
 
-	if (m_pGame->m_pClientList[iClientH] == 0) return;
-	if (m_pGame->m_bIsCrusadeMode == false) return;
-	if (m_pGame->m_pClientList[iClientH]->m_iConstructionPoint <= 0) return;
+	if (m_game->m_client_list[client_h] == 0) return;
+	if (m_game->m_is_crusade_mode == false) return;
+	if (m_game->m_client_list[client_h]->m_construction_point <= 0) return;
 
-	switch (m_pGame->m_pClientList[iClientH]->m_iCrusadeDuty) {
+	switch (m_game->m_client_list[client_h]->m_crusade_duty) {
 	case 1:
 	case 2:
 		for(int i = 0; i < MaxClients; i++)
-			if ((m_pGame->m_pClientList[i] != 0) && (m_pGame->m_pClientList[i]->m_iCrusadeDuty == 3) &&
-				(m_pGame->m_pClientList[i]->m_iGuildGUID == m_pGame->m_pClientList[iClientH]->m_iGuildGUID)) {
-				m_pGame->m_pClientList[i]->m_iConstructionPoint += m_pGame->m_pClientList[iClientH]->m_iConstructionPoint;
-				m_pGame->m_pClientList[i]->m_iWarContribution += (m_pGame->m_pClientList[iClientH]->m_iConstructionPoint / 10);
+			if ((m_game->m_client_list[i] != 0) && (m_game->m_client_list[i]->m_crusade_duty == 3) &&
+				(m_game->m_client_list[i]->m_guild_guid == m_game->m_client_list[client_h]->m_guild_guid)) {
+				m_game->m_client_list[i]->m_construction_point += m_game->m_client_list[client_h]->m_construction_point;
+				m_game->m_client_list[i]->m_war_contribution += (m_game->m_client_list[client_h]->m_construction_point / 10);
 
-				if (m_pGame->m_pClientList[i]->m_iConstructionPoint > m_pGame->m_iMaxConstructionPoints)
-					m_pGame->m_pClientList[i]->m_iConstructionPoint = m_pGame->m_iMaxConstructionPoints;
+				if (m_game->m_client_list[i]->m_construction_point > m_game->m_max_construction_points)
+					m_game->m_client_list[i]->m_construction_point = m_game->m_max_construction_points;
 
-				if (m_pGame->m_pClientList[i]->m_iWarContribution > m_pGame->m_iMaxWarContribution)
-					m_pGame->m_pClientList[i]->m_iWarContribution = m_pGame->m_iMaxWarContribution;
+				if (m_game->m_client_list[i]->m_war_contribution > m_game->m_max_war_contribution)
+					m_game->m_client_list[i]->m_war_contribution = m_game->m_max_war_contribution;
 
-				m_pGame->SendNotifyMsg(0, i, Notify::ConstructionPoint, m_pGame->m_pClientList[i]->m_iConstructionPoint, m_pGame->m_pClientList[i]->m_iWarContribution, 0, 0);
-				m_pGame->m_pClientList[iClientH]->m_iConstructionPoint = 0;
+				m_game->send_notify_msg(0, i, Notify::ConstructionPoint, m_game->m_client_list[i]->m_construction_point, m_game->m_client_list[i]->m_war_contribution, 0, 0);
+				m_game->m_client_list[client_h]->m_construction_point = 0;
 				return;
 			}
 
-		m_pGame->m_pClientList[iClientH]->m_iConstructionPoint = 0;
+		m_game->m_client_list[client_h]->m_construction_point = 0;
 		break;
 
 	case 3:
@@ -501,68 +501,68 @@ void WarManager::CheckCommanderConstructionPoint(int iClientH)
 	}
 }
 
-bool WarManager::__bSetConstructionKit(int iMapIndex, int dX, int dY, int iType, int iTimeCost, int iClientH)
+bool WarManager::set_construction_kit(int map_index, int dX, int dY, int type, int time_cost, int client_h)
 {
-	int iNamingValue, tX, tY;
-	char cNpcName[hb::shared::limits::NpcNameLen], cName[hb::shared::limits::NpcNameLen], cNpcWaypoint[11], cOwnerType;
-	short sOwnerH;
+	int naming_value, tX, tY;
+	char npc_name[hb::shared::limits::NpcNameLen], name[hb::shared::limits::NpcNameLen], npc_waypoint[11], owner_type;
+	short owner_h;
 
-	if ((m_pGame->m_bIsCrusadeMode == false) || (m_pGame->m_pClientList[iClientH]->m_iCrusadeDuty != 2)) return false;
-	if (m_pGame->m_pMapList[m_pGame->m_pClientList[iClientH]->m_cMapIndex]->m_iTotalCrusadeStructures >= hb::shared::limits::MaxCrusadeStructures) {
-		m_pGame->SendNotifyMsg(0, iClientH, Notify::NoMoreCrusadeStructure, 0, 0, 0, 0);
+	if ((m_game->m_is_crusade_mode == false) || (m_game->m_client_list[client_h]->m_crusade_duty != 2)) return false;
+	if (m_game->m_map_list[m_game->m_client_list[client_h]->m_map_index]->m_total_crusade_structures >= hb::shared::limits::MaxCrusadeStructures) {
+		m_game->send_notify_msg(0, client_h, Notify::NoMoreCrusadeStructure, 0, 0, 0, 0);
 		return false;
 	}
 
 	// NPC .
-	iNamingValue = m_pGame->m_pMapList[m_pGame->m_pClientList[iClientH]->m_cMapIndex]->iGetEmptyNamingValue();
-	if (iNamingValue == -1) {
+	naming_value = m_game->m_map_list[m_game->m_client_list[client_h]->m_map_index]->get_empty_naming_value();
+	if (naming_value == -1) {
 		// NPC  .     .
 	}
 	else {
 
 		for(int ix = dX - 3; ix <= dX + 5; ix++)
 			for(int iy = dY - 3; iy <= dX + 5; iy++) {
-				m_pGame->m_pMapList[m_pGame->m_pClientList[iClientH]->m_cMapIndex]->GetOwner(&sOwnerH, &cOwnerType, ix, iy);
-				if ((sOwnerH != 0) && (cOwnerType == hb::shared::owner_class::Npc) && (m_pGame->m_pNpcList[sOwnerH]->m_cActionLimit == 5)) return false;
+				m_game->m_map_list[m_game->m_client_list[client_h]->m_map_index]->get_owner(&owner_h, &owner_type, ix, iy);
+				if ((owner_h != 0) && (owner_type == hb::shared::owner_class::Npc) && (m_game->m_npc_list[owner_h]->m_action_limit == 5)) return false;
 			}
 
 		// NPC .
-		std::memset(cNpcName, 0, sizeof(cNpcName));
-		if (m_pGame->m_pClientList[iClientH]->m_cSide == 1) {
-			switch (iType) {
-			case 1: strcpy(cNpcName, "AGT-Aresden"); break;
-			case 2: strcpy(cNpcName, "CGT-Aresen"); break;
-			case 3: strcpy(cNpcName, "MS-Aresden"); break;
-			case 4: strcpy(cNpcName, "DT-Aresden"); break;
+		std::memset(npc_name, 0, sizeof(npc_name));
+		if (m_game->m_client_list[client_h]->m_side == 1) {
+			switch (type) {
+			case 1: strcpy(npc_name, "AGT-Aresden"); break;
+			case 2: strcpy(npc_name, "CGT-Aresen"); break;
+			case 3: strcpy(npc_name, "MS-Aresden"); break;
+			case 4: strcpy(npc_name, "DT-Aresden"); break;
 			}
 		}
-		else if (m_pGame->m_pClientList[iClientH]->m_cSide == 2) {
-			switch (iType) {
-			case 1: strcpy(cNpcName, "AGT-Elvine"); break;
-			case 2: strcpy(cNpcName, "CGT-Elvine"); break;
-			case 3: strcpy(cNpcName, "MS-Elvine"); break;
-			case 4: strcpy(cNpcName, "DT-Elvine"); break;
+		else if (m_game->m_client_list[client_h]->m_side == 2) {
+			switch (type) {
+			case 1: strcpy(npc_name, "AGT-Elvine"); break;
+			case 2: strcpy(npc_name, "CGT-Elvine"); break;
+			case 3: strcpy(npc_name, "MS-Elvine"); break;
+			case 4: strcpy(npc_name, "DT-Elvine"); break;
 			}
 		}
 		else return false;
 
-		std::memset(cName, 0, sizeof(cName));
-		std::snprintf(cName, sizeof(cName), "XX%d", iNamingValue);
-		cName[0] = '_';
-		cName[1] = m_pGame->m_pClientList[iClientH]->m_cMapIndex + 65;
+		std::memset(name, 0, sizeof(name));
+		std::snprintf(name, sizeof(name), "XX%d", naming_value);
+		name[0] = '_';
+		name[1] = m_game->m_client_list[client_h]->m_map_index + 65;
 
-		std::memset(cNpcWaypoint, 0, sizeof(cNpcWaypoint));
+		std::memset(npc_waypoint, 0, sizeof(npc_waypoint));
 
 		tX = (int)dX;
 		tY = (int)dY;
-		int iNpcConfigId = m_pGame->GetNpcConfigIdByName(cNpcName);
-		if (m_pGame->bCreateNewNpc(iNpcConfigId, cName, m_pGame->m_pMapList[m_pGame->m_pClientList[iClientH]->m_cMapIndex]->m_cName, 0, (rand() % 9),
-			MoveType::Random, &tX, &tY, cNpcWaypoint, 0, 0, -1, false, false) == false) {
+		int npc_config_id = m_game->get_npc_config_id_by_name(npc_name);
+		if (m_game->create_new_npc(npc_config_id, name, m_game->m_map_list[m_game->m_client_list[client_h]->m_map_index]->m_name, 0, (rand() % 9),
+			MoveType::Random, &tX, &tY, npc_waypoint, 0, 0, -1, false, false) == false) {
 			// NameValue .
-			m_pGame->m_pMapList[m_pGame->m_pClientList[iClientH]->m_cMapIndex]->SetNamingValueEmpty(iNamingValue);
+			m_game->m_map_list[m_game->m_client_list[client_h]->m_map_index]->set_naming_value_empty(naming_value);
 		}
 		else {
-			hb::logger::log("Structure({}) construction begin({},{})!", cNpcName, tX, tY);
+			hb::logger::log("Structure({}) construction begin({},{})!", npc_name, tX, tY);
 			return true;
 		}
 	}
@@ -570,275 +570,275 @@ bool WarManager::__bSetConstructionKit(int iMapIndex, int dX, int dY, int iType,
 	return false;
 }
 
-void WarManager::MeteorStrikeHandler(int iMapIndex)
+void WarManager::meteor_strike_handler(int map_index)
 {
-	int dX, dY, iIndex, iTargetIndex, iTotalESG, iEffect;
-	int iTargetArray[smap::MaxStrikePoints];
-	short sOwnerH;
-	char  cOwnerType;
-	uint32_t dwTime = GameClock::GetTimeMS();
+	int dX, dY, index, target_index, total_esg, effect;
+	int target_array[smap::MaxStrikePoints];
+	short owner_h;
+	char  owner_type;
+	uint32_t time = GameClock::GetTimeMS();
 
 	hb::logger::log("Beginning meteor strike procedure");
 
-	if (iMapIndex == -1) {
+	if (map_index == -1) {
 		hb::logger::error("Meteor strike error: map index is -1");
 		return;
 	}
 
-	if (m_pGame->m_pMapList[iMapIndex] == 0) {
+	if (m_game->m_map_list[map_index] == 0) {
 		hb::logger::error("Meteor strike error: null map");
 		return;
 	}
 
-	if (m_pGame->m_pMapList[iMapIndex]->m_iTotalStrikePoints == 0) {
+	if (m_game->m_map_list[map_index]->m_total_strike_points == 0) {
 		hb::logger::error("Meteor strike error: no strike points");
 		return;
 	}
 
-	for(int i = 0; i < smap::MaxStrikePoints; i++) iTargetArray[i] = -1;
+	for(int i = 0; i < smap::MaxStrikePoints; i++) target_array[i] = -1;
 
-	iIndex = 0;
-	for(int i = 1; i <= m_pGame->m_pMapList[iMapIndex]->m_iTotalStrikePoints; i++) {
-		if (m_pGame->m_pMapList[iMapIndex]->m_stStrikePoint[i].iHP > 0) {
-			iTargetArray[iIndex] = i;
-			iIndex++;
+	index = 0;
+	for(int i = 1; i <= m_game->m_map_list[map_index]->m_total_strike_points; i++) {
+		if (m_game->m_map_list[map_index]->m_strike_point[i].hp > 0) {
+			target_array[index] = i;
+			index++;
 		}
 	}
 
 	//testcode
-	hb::logger::log("Map({}) has {} available strike points", m_pGame->m_pMapList[iMapIndex]->m_cName, iIndex);
+	hb::logger::log("Map({}) has {} available strike points", m_game->m_map_list[map_index]->m_name, index);
 
-	m_pGame->m_stMeteorStrikeResult.iCasualties = 0;
-	m_pGame->m_stMeteorStrikeResult.iCrashedStructureNum = 0;
-	m_pGame->m_stMeteorStrikeResult.iStructureDamageAmount = 0;
+	m_game->m_meteor_strike_result.casualties = 0;
+	m_game->m_meteor_strike_result.crashed_structure_num = 0;
+	m_game->m_meteor_strike_result.structure_damage_amount = 0;
 
-	if (iIndex == 0) {
+	if (index == 0) {
 		hb::logger::log("No strike points available");
-		m_pGame->m_pDelayEventManager->bRegisterDelayEvent(sdelay::Type::CalcMeteorStrikeEffect, 0, dwTime + 6000, 0, 0, iMapIndex, 0, 0, 0, 0, 0);
+		m_game->m_delay_event_manager->register_delay_event(sdelay::Type::CalcMeteorStrikeEffect, 0, time + 6000, 0, 0, map_index, 0, 0, 0, 0, 0);
 	}
 	else {
 
 		for(int i = 1; i < MaxClients; i++)
-			if ((m_pGame->m_pClientList[i] != 0) && (m_pGame->m_pClientList[i]->m_bIsInitComplete) && (m_pGame->m_pClientList[i]->m_cMapIndex == iMapIndex)) {
-				m_pGame->SendNotifyMsg(0, i, Notify::MeteorStrikeHit, 0, 0, 0, 0);
+			if ((m_game->m_client_list[i] != 0) && (m_game->m_client_list[i]->m_is_init_complete) && (m_game->m_client_list[i]->m_map_index == map_index)) {
+				m_game->send_notify_msg(0, i, Notify::MeteorStrikeHit, 0, 0, 0, 0);
 			}
 
-		for(int i = 0; i < iIndex; i++) {
-			iTargetIndex = iTargetArray[i];
+		for(int i = 0; i < index; i++) {
+			target_index = target_array[i];
 
-			if (iTargetIndex == -1) {
+			if (target_index == -1) {
 				hb::logger::error("Strike point error: map index is -1");
 				goto MSH_SKIP_STRIKE;
 			}
 
-			dX = m_pGame->m_pMapList[iMapIndex]->m_stStrikePoint[iTargetIndex].dX;
-			dY = m_pGame->m_pMapList[iMapIndex]->m_stStrikePoint[iTargetIndex].dY;
+			dX = m_game->m_map_list[map_index]->m_strike_point[target_index].x;
+			dY = m_game->m_map_list[map_index]->m_strike_point[target_index].y;
 
 			// dX, dY    2  Energy Shield Generator    .  1   HP .
 			// NPC       .
-			iTotalESG = 0;
+			total_esg = 0;
 			for(int ix = dX - 10; ix <= dX + 10; ix++)
 				for(int iy = dY - 10; iy <= dY + 10; iy++) {
-					m_pGame->m_pMapList[iMapIndex]->GetOwner(&sOwnerH, &cOwnerType, ix, iy);
-					if ((cOwnerType == hb::shared::owner_class::Npc) && (m_pGame->m_pNpcList[sOwnerH] != 0) && (m_pGame->m_pNpcList[sOwnerH]->m_sType == 40)) {
-						iTotalESG++;
+					m_game->m_map_list[map_index]->get_owner(&owner_h, &owner_type, ix, iy);
+					if ((owner_type == hb::shared::owner_class::Npc) && (m_game->m_npc_list[owner_h] != 0) && (m_game->m_npc_list[owner_h]->m_type == 40)) {
+						total_esg++;
 					}
 				}
 
 			// testcode
-			hb::logger::log("Meteor Strike Target({}, {}) ESG({})", dX, dY, iTotalESG);
+			hb::logger::log("Meteor Strike Target({}, {}) ESG({})", dX, dY, total_esg);
 
-			if (iTotalESG < 2) {
+			if (total_esg < 2) {
 
-				m_pGame->m_pMapList[iMapIndex]->m_stStrikePoint[iTargetIndex].iHP -= (2 - iTotalESG);
-				if (m_pGame->m_pMapList[iMapIndex]->m_stStrikePoint[iTargetIndex].iHP <= 0) {
-					m_pGame->m_pMapList[iMapIndex]->m_stStrikePoint[iTargetIndex].iHP = 0;
-					m_pGame->m_pMapList[m_pGame->m_pMapList[iMapIndex]->m_stStrikePoint[iTargetIndex].iMapIndex]->m_bIsDisabled = true;
-					m_pGame->m_stMeteorStrikeResult.iCrashedStructureNum++;
+				m_game->m_map_list[map_index]->m_strike_point[target_index].hp -= (2 - total_esg);
+				if (m_game->m_map_list[map_index]->m_strike_point[target_index].hp <= 0) {
+					m_game->m_map_list[map_index]->m_strike_point[target_index].hp = 0;
+					m_game->m_map_list[m_game->m_map_list[map_index]->m_strike_point[target_index].map_index]->m_is_disabled = true;
+					m_game->m_meteor_strike_result.crashed_structure_num++;
 				}
 				else {
-					m_pGame->m_stMeteorStrikeResult.iStructureDamageAmount += (2 - iTotalESG);
-					iEffect = m_pGame->iDice(1, 5) - 1;
-					m_pGame->m_pDynamicObjectManager->iAddDynamicObjectList(0, hb::shared::owner_class::PlayerIndirect, dynamic_object::Fire2, iMapIndex,
-						static_cast<short>(m_pGame->m_pMapList[iMapIndex]->m_stStrikePoint[iTargetIndex].iEffectX[iEffect] + (m_pGame->iDice(1, 3) - 2)),
-						static_cast<short>(m_pGame->m_pMapList[iMapIndex]->m_stStrikePoint[iTargetIndex].iEffectY[iEffect] + (m_pGame->iDice(1, 3) - 2)),
+					m_game->m_meteor_strike_result.structure_damage_amount += (2 - total_esg);
+					effect = m_game->dice(1, 5) - 1;
+					m_game->m_dynamic_object_manager->add_dynamic_object_list(0, hb::shared::owner_class::PlayerIndirect, dynamic_object::Fire2, map_index,
+						static_cast<short>(m_game->m_map_list[map_index]->m_strike_point[target_index].effect_x[effect] + (m_game->dice(1, 3) - 2)),
+						static_cast<short>(m_game->m_map_list[map_index]->m_strike_point[target_index].effect_y[effect] + (m_game->dice(1, 3) - 2)),
 						60 * 1000 * 50);
 				}
 			}
 		MSH_SKIP_STRIKE:;
 		}
 
-		m_pGame->m_pDelayEventManager->bRegisterDelayEvent(sdelay::Type::DoMeteorStrikeDamage, 0, dwTime + 1000, 0, 0, iMapIndex, 0, 0, 0, 0, 0);
-		m_pGame->m_pDelayEventManager->bRegisterDelayEvent(sdelay::Type::DoMeteorStrikeDamage, 0, dwTime + 4000, 0, 0, iMapIndex, 0, 0, 0, 0, 0);
-		m_pGame->m_pDelayEventManager->bRegisterDelayEvent(sdelay::Type::CalcMeteorStrikeEffect, 0, dwTime + 6000, 0, 0, iMapIndex, 0, 0, 0, 0, 0);
+		m_game->m_delay_event_manager->register_delay_event(sdelay::Type::DoMeteorStrikeDamage, 0, time + 1000, 0, 0, map_index, 0, 0, 0, 0, 0);
+		m_game->m_delay_event_manager->register_delay_event(sdelay::Type::DoMeteorStrikeDamage, 0, time + 4000, 0, 0, map_index, 0, 0, 0, 0, 0);
+		m_game->m_delay_event_manager->register_delay_event(sdelay::Type::CalcMeteorStrikeEffect, 0, time + 6000, 0, 0, map_index, 0, 0, 0, 0, 0);
 	}
 }
 
-void WarManager::MeteorStrikeMsgHandler(char cAttackerSide)
+void WarManager::meteor_strike_msg_handler(char attacker_side)
 {
 	
-	uint32_t dwTime = GameClock::GetTimeMS();
+	uint32_t time = GameClock::GetTimeMS();
 
-	switch (cAttackerSide) {
+	switch (attacker_side) {
 	case 1:
-		if (m_pGame->m_iElvineMapIndex != -1) {
+		if (m_game->m_elvine_map_index != -1) {
 			for(int i = 1; i < MaxClients; i++)
-				if ((m_pGame->m_pClientList[i] != 0) && (m_pGame->m_pClientList[i]->m_bIsInitComplete)) {
-					if (strcmp(m_pGame->m_pMapList[m_pGame->m_pClientList[i]->m_cMapIndex]->m_cLocationName, "elvine") == 0) {
-						m_pGame->SendNotifyMsg(0, i, Notify::MeteorStrikeComing, 1, 0, 0, 0);
+				if ((m_game->m_client_list[i] != 0) && (m_game->m_client_list[i]->m_is_init_complete)) {
+					if (strcmp(m_game->m_map_list[m_game->m_client_list[i]->m_map_index]->m_location_name, "elvine") == 0) {
+						m_game->send_notify_msg(0, i, Notify::meteor_strike_coming, 1, 0, 0, 0);
 					}
 					else {
-						m_pGame->SendNotifyMsg(0, i, Notify::MeteorStrikeComing, 2, 0, 0, 0);
+						m_game->send_notify_msg(0, i, Notify::meteor_strike_coming, 2, 0, 0, 0);
 					}
 				}
-			m_pGame->m_pDelayEventManager->bRegisterDelayEvent(sdelay::Type::MeteorStrike, 0, dwTime + 5000, 0, 0, m_pGame->m_iElvineMapIndex, 0, 0, 0, 0, 0);
+			m_game->m_delay_event_manager->register_delay_event(sdelay::Type::MeteorStrike, 0, time + 5000, 0, 0, m_game->m_elvine_map_index, 0, 0, 0, 0, 0);
 		}
 		else {
 			for(int i = 1; i < MaxClients; i++)
-				if (m_pGame->m_pClientList[i] != 0) {
-					m_pGame->SendNotifyMsg(0, i, Notify::MeteorStrikeComing, 2, 0, 0, 0);
+				if (m_game->m_client_list[i] != 0) {
+					m_game->send_notify_msg(0, i, Notify::meteor_strike_coming, 2, 0, 0, 0);
 				}
 		}
 		break;
 
 	case 2:
-		if (m_pGame->m_iAresdenMapIndex != -1) {
+		if (m_game->m_aresden_map_index != -1) {
 			for(int i = 1; i < MaxClients; i++)
-				if ((m_pGame->m_pClientList[i] != 0) && (m_pGame->m_pClientList[i]->m_bIsInitComplete)) {
-					if (strcmp(m_pGame->m_pMapList[m_pGame->m_pClientList[i]->m_cMapIndex]->m_cLocationName, "aresden") == 0) {
-						m_pGame->SendNotifyMsg(0, i, Notify::MeteorStrikeComing, 3, 0, 0, 0);
+				if ((m_game->m_client_list[i] != 0) && (m_game->m_client_list[i]->m_is_init_complete)) {
+					if (strcmp(m_game->m_map_list[m_game->m_client_list[i]->m_map_index]->m_location_name, "aresden") == 0) {
+						m_game->send_notify_msg(0, i, Notify::meteor_strike_coming, 3, 0, 0, 0);
 					}
 					else {
-						m_pGame->SendNotifyMsg(0, i, Notify::MeteorStrikeComing, 4, 0, 0, 0);
+						m_game->send_notify_msg(0, i, Notify::meteor_strike_coming, 4, 0, 0, 0);
 					}
 				}
-			m_pGame->m_pDelayEventManager->bRegisterDelayEvent(sdelay::Type::MeteorStrike, 0, dwTime + 1000 * 5, 0, 0, m_pGame->m_iAresdenMapIndex, 0, 0, 0, 0, 0);
+			m_game->m_delay_event_manager->register_delay_event(sdelay::Type::MeteorStrike, 0, time + 1000 * 5, 0, 0, m_game->m_aresden_map_index, 0, 0, 0, 0, 0);
 		}
 		else {
 			for(int i = 1; i < MaxClients; i++)
-				if (m_pGame->m_pClientList[i] != 0) {
-					m_pGame->SendNotifyMsg(0, i, Notify::MeteorStrikeComing, 4, 0, 0, 0);
+				if (m_game->m_client_list[i] != 0) {
+					m_game->send_notify_msg(0, i, Notify::meteor_strike_coming, 4, 0, 0, 0);
 				}
 		}
 		break;
 	}
 }
 
-void WarManager::CalcMeteorStrikeEffectHandler(int iMapIndex)
+void WarManager::calc_meteor_strike_effect_handler(int map_index)
 {
-	int iActiveStructure, iStructureHP[smap::MaxStrikePoints];
-	char cWinnerSide, cTempData[120];
+	int active_structure, structure_hp[smap::MaxStrikePoints];
+	char winner_side, temp_data[120];
 
-	if (m_pGame->m_bIsCrusadeMode == false) return;
+	if (m_game->m_is_crusade_mode == false) return;
 
 	for(int i = 0; i < smap::MaxStrikePoints; i++)
-		iStructureHP[i] = 0;
+		structure_hp[i] = 0;
 
-	iActiveStructure = 0;
-	for(int i = 1; i <= m_pGame->m_pMapList[iMapIndex]->m_iTotalStrikePoints; i++) {
-		if (m_pGame->m_pMapList[iMapIndex]->m_stStrikePoint[i].iHP > 0) {
-			iActiveStructure++;
-			iStructureHP[i] = m_pGame->m_pMapList[iMapIndex]->m_stStrikePoint[i].iHP;
+	active_structure = 0;
+	for(int i = 1; i <= m_game->m_map_list[map_index]->m_total_strike_points; i++) {
+		if (m_game->m_map_list[map_index]->m_strike_point[i].hp > 0) {
+			active_structure++;
+			structure_hp[i] = m_game->m_map_list[map_index]->m_strike_point[i].hp;
 		}
 	}
 
 	//testcode
-	hb::logger::log("ActiveStructure:{} MapIndex:{} AresdenMap:{} ElvineMap:{}", iActiveStructure, iMapIndex, m_pGame->m_iAresdenMapIndex, m_pGame->m_iElvineMapIndex);
+	hb::logger::log("ActiveStructure:{} MapIndex:{} AresdenMap:{} ElvineMap:{}", active_structure, map_index, m_game->m_aresden_map_index, m_game->m_elvine_map_index);
 
-	if (iActiveStructure == 0) {
-		if (iMapIndex == m_pGame->m_iAresdenMapIndex) {
-			cWinnerSide = 2;
-			LocalEndCrusadeMode(2);
+	if (active_structure == 0) {
+		if (map_index == m_game->m_aresden_map_index) {
+			winner_side = 2;
+			local_end_crusade_mode(2);
 		}
-		else if (iMapIndex == m_pGame->m_iElvineMapIndex) {
-			cWinnerSide = 1;
-			LocalEndCrusadeMode(1);
+		else if (map_index == m_game->m_elvine_map_index) {
+			winner_side = 1;
+			local_end_crusade_mode(1);
 		}
 		else {
-			cWinnerSide = 0;
-			LocalEndCrusadeMode(0);
+			winner_side = 0;
+			local_end_crusade_mode(0);
 		}
 
 	}
 	else {
-		std::memset(cTempData, 0, sizeof(cTempData));
-		auto& meteorHdr = *reinterpret_cast<hb::net::MeteorStrikeHeader*>(cTempData);
-		meteorHdr.total_points = static_cast<uint16_t>(m_pGame->m_pMapList[iMapIndex]->m_iTotalStrikePoints);
+		std::memset(temp_data, 0, sizeof(temp_data));
+		auto& meteorHdr = *reinterpret_cast<hb::net::MeteorStrikeHeader*>(temp_data);
+		meteorHdr.total_points = static_cast<uint16_t>(m_game->m_map_list[map_index]->m_total_strike_points);
 
-		auto* hpEntries = reinterpret_cast<uint16_t*>(cTempData + sizeof(hb::net::MeteorStrikeHeader));
-		for (int i = 1; i <= m_pGame->m_pMapList[iMapIndex]->m_iTotalStrikePoints; i++) {
-			hpEntries[i - 1] = static_cast<uint16_t>(iStructureHP[i]);
+		auto* hpEntries = reinterpret_cast<uint16_t*>(temp_data + sizeof(hb::net::MeteorStrikeHeader));
+		for (int i = 1; i <= m_game->m_map_list[map_index]->m_total_strike_points; i++) {
+			hpEntries[i - 1] = static_cast<uint16_t>(structure_hp[i]);
 		}
 
-		GrandMagicResultHandler(m_pGame->m_pMapList[iMapIndex]->m_cName, m_pGame->m_stMeteorStrikeResult.iCrashedStructureNum, m_pGame->m_stMeteorStrikeResult.iStructureDamageAmount, m_pGame->m_stMeteorStrikeResult.iCasualties, iActiveStructure, m_pGame->m_pMapList[iMapIndex]->m_iTotalStrikePoints, cTempData);
+		grand_magic_result_handler(m_game->m_map_list[map_index]->m_name, m_game->m_meteor_strike_result.crashed_structure_num, m_game->m_meteor_strike_result.structure_damage_amount, m_game->m_meteor_strike_result.casualties, active_structure, m_game->m_map_list[map_index]->m_total_strike_points, temp_data);
 	}
 
-	m_pGame->m_stMeteorStrikeResult.iCasualties = 0;
-	m_pGame->m_stMeteorStrikeResult.iCrashedStructureNum = 0;
-	m_pGame->m_stMeteorStrikeResult.iStructureDamageAmount = 0;
+	m_game->m_meteor_strike_result.casualties = 0;
+	m_game->m_meteor_strike_result.crashed_structure_num = 0;
+	m_game->m_meteor_strike_result.structure_damage_amount = 0;
 }
 
-void WarManager::DoMeteorStrikeDamageHandler(int iMapIndex)
+void WarManager::do_meteor_strike_damage_handler(int map_index)
 {
-	int iDamage;
+	int damage;
 
 	for(int i = 1; i < MaxClients; i++)
-		if ((m_pGame->m_pClientList[i] != 0) && (m_pGame->m_pClientList[i]->m_cSide != 0) && (m_pGame->m_pClientList[i]->m_cMapIndex == iMapIndex)) {
-			if (m_pGame->m_pClientList[i]->m_iLevel < 80)
-				iDamage = m_pGame->m_pClientList[i]->m_iLevel + m_pGame->iDice(1, 10);
-			else iDamage = m_pGame->m_pClientList[i]->m_iLevel * 2 + m_pGame->iDice(1, 10);
-			iDamage = m_pGame->iDice(1, m_pGame->m_pClientList[i]->m_iLevel) + m_pGame->m_pClientList[i]->m_iLevel;
+		if ((m_game->m_client_list[i] != 0) && (m_game->m_client_list[i]->m_side != 0) && (m_game->m_client_list[i]->m_map_index == map_index)) {
+			if (m_game->m_client_list[i]->m_level < 80)
+				damage = m_game->m_client_list[i]->m_level + m_game->dice(1, 10);
+			else damage = m_game->m_client_list[i]->m_level * 2 + m_game->dice(1, 10);
+			damage = m_game->dice(1, m_game->m_client_list[i]->m_level) + m_game->m_client_list[i]->m_level;
 			// 255   .
-			if (iDamage > 255) iDamage = 255;
+			if (damage > 255) damage = 255;
 
-			if (m_pGame->m_pClientList[i]->m_cMagicEffectStatus[hb::shared::magic::Protect] == 2) { //magic cut in half
-				iDamage = (iDamage / 2) - 2;
+			if (m_game->m_client_list[i]->m_magic_effect_status[hb::shared::magic::Protect] == 2) { //magic cut in half
+				damage = (damage / 2) - 2;
 			}
 
-			if (m_pGame->m_pClientList[i]->m_cMagicEffectStatus[hb::shared::magic::Protect] == 5) {
-				iDamage = 0;
+			if (m_game->m_client_list[i]->m_magic_effect_status[hb::shared::magic::Protect] == 5) {
+				damage = 0;
 			}
 
-			m_pGame->m_pClientList[i]->m_iHP -= iDamage;
-			if (m_pGame->m_pClientList[i]->m_iHP <= 0) {
-				m_pGame->m_pCombatManager->ClientKilledHandler(i, 0, 0, iDamage);
-				m_pGame->m_stMeteorStrikeResult.iCasualties++;
+			m_game->m_client_list[i]->m_hp -= damage;
+			if (m_game->m_client_list[i]->m_hp <= 0) {
+				m_game->m_combat_manager->client_killed_handler(i, 0, 0, damage);
+				m_game->m_meteor_strike_result.casualties++;
 			}
 			else {
-				if (iDamage > 0) {
-					m_pGame->SendNotifyMsg(0, i, Notify::Hp, 0, 0, 0, 0);
-					m_pGame->SendEventToNearClient_TypeA(i, hb::shared::owner_class::Player, MsgId::EventMotion, Type::Damage, iDamage, 0, 0);
+				if (damage > 0) {
+					m_game->send_notify_msg(0, i, Notify::Hp, 0, 0, 0, 0);
+					m_game->send_event_to_near_client_type_a(i, hb::shared::owner_class::Player, MsgId::EventMotion, Type::Damage, damage, 0, 0);
 
-					if (m_pGame->m_pClientList[i]->m_bSkillUsingStatus[19] != true) {
-						m_pGame->m_pMapList[m_pGame->m_pClientList[i]->m_cMapIndex]->ClearOwner(0, i, hb::shared::owner_class::Player, m_pGame->m_pClientList[i]->m_sX, m_pGame->m_pClientList[i]->m_sY);
-						m_pGame->m_pMapList[m_pGame->m_pClientList[i]->m_cMapIndex]->SetOwner(i, hb::shared::owner_class::Player, m_pGame->m_pClientList[i]->m_sX, m_pGame->m_pClientList[i]->m_sY);
+					if (m_game->m_client_list[i]->m_skill_using_status[19] != true) {
+						m_game->m_map_list[m_game->m_client_list[i]->m_map_index]->clear_owner(0, i, hb::shared::owner_class::Player, m_game->m_client_list[i]->m_x, m_game->m_client_list[i]->m_y);
+						m_game->m_map_list[m_game->m_client_list[i]->m_map_index]->set_owner(i, hb::shared::owner_class::Player, m_game->m_client_list[i]->m_x, m_game->m_client_list[i]->m_y);
 					}
 
-					if (m_pGame->m_pClientList[i]->m_cMagicEffectStatus[hb::shared::magic::HoldObject] != 0) {
+					if (m_game->m_client_list[i]->m_magic_effect_status[hb::shared::magic::HoldObject] != 0) {
 						// Hold-Person    .     .
 						// 1: Hold-Person 
 						// 2: Paralize
-						m_pGame->SendNotifyMsg(0, i, Notify::MagicEffectOff, hb::shared::magic::HoldObject, m_pGame->m_pClientList[i]->m_cMagicEffectStatus[hb::shared::magic::HoldObject], 0, 0);
+						m_game->send_notify_msg(0, i, Notify::MagicEffectOff, hb::shared::magic::HoldObject, m_game->m_client_list[i]->m_magic_effect_status[hb::shared::magic::HoldObject], 0, 0);
 
-						m_pGame->m_pClientList[i]->m_cMagicEffectStatus[hb::shared::magic::HoldObject] = 0;
-						m_pGame->m_pDelayEventManager->bRemoveFromDelayEventList(i, hb::shared::owner_class::Player, hb::shared::magic::HoldObject);
+						m_game->m_client_list[i]->m_magic_effect_status[hb::shared::magic::HoldObject] = 0;
+						m_game->m_delay_event_manager->remove_from_delay_event_list(i, hb::shared::owner_class::Player, hb::shared::magic::HoldObject);
 					}
 				}
 			}
 		}
 }
 
-void WarManager::_LinkStrikePointMapIndex()
+void WarManager::link_strike_point_map_index()
 {
 	int z, x;
 
 	for(int i = 0; i < MaxMaps; i++)
-		if ((m_pGame->m_pMapList[i] != 0) && (m_pGame->m_pMapList[i]->m_iTotalStrikePoints != 0)) {
+		if ((m_game->m_map_list[i] != 0) && (m_game->m_map_list[i]->m_total_strike_points != 0)) {
 			for (z = 0; z < smap::MaxStrikePoints; z++)
-				if (strlen(m_pGame->m_pMapList[i]->m_stStrikePoint[z].cRelatedMapName) != 0) {
+				if (strlen(m_game->m_map_list[i]->m_strike_point[z].related_map_name) != 0) {
 					for (x = 0; x < MaxMaps; x++)
-						if ((m_pGame->m_pMapList[x] != 0) && (strcmp(m_pGame->m_pMapList[x]->m_cName, m_pGame->m_pMapList[i]->m_stStrikePoint[z].cRelatedMapName) == 0)) {
-							m_pGame->m_pMapList[i]->m_stStrikePoint[z].iMapIndex = x;
+						if ((m_game->m_map_list[x] != 0) && (strcmp(m_game->m_map_list[x]->m_name, m_game->m_map_list[i]->m_strike_point[z].related_map_name) == 0)) {
+							m_game->m_map_list[i]->m_strike_point[z].map_index = x;
 							//testcode
 							hb::logger::log("{}", G_cTxt);
 
@@ -849,373 +849,373 @@ void WarManager::_LinkStrikePointMapIndex()
 		}
 }
 
-void WarManager::_GrandMagicLaunchMsgSend(int iType, char cAttackerSide)
+void WarManager::grand_magic_launch_msg_send(int type, char attacker_side)
 {}
 
-void WarManager::GrandMagicResultHandler(char* cMapName, int iCrashedStructureNum, int iStructureDamageAmount, int iCasualities, int iActiveStructure, int iTotalStrikePoints, char* cData)
+void WarManager::grand_magic_result_handler(char* map_name, int crashed_structure_num, int structure_damage_amount, int casualities, int active_structure, int total_strike_points, char* data)
 {
 	
 
 	for(int i = 1; i < MaxClients; i++)
-		if (m_pGame->m_pClientList[i] != 0) {
-			m_pGame->SendNotifyMsg(0, i, Notify::GrandMagicResult, iCrashedStructureNum, iStructureDamageAmount, iCasualities, cMapName, iActiveStructure, 0, 0, 0, 0, iTotalStrikePoints, cData);
+		if (m_game->m_client_list[i] != 0) {
+			m_game->send_notify_msg(0, i, Notify::grand_magic_result, crashed_structure_num, structure_damage_amount, casualities, map_name, active_structure, 0, 0, 0, 0, total_strike_points, data);
 		}
 }
 
-void WarManager::CollectedManaHandler(uint16_t wAresdenMana, uint16_t wElvineMana)
+void WarManager::collected_mana_handler(uint16_t aresden_mana, uint16_t elvine_mana)
 {
-	if (m_pGame->m_iAresdenMapIndex != -1) {
-		m_pGame->m_iAresdenMana += wAresdenMana;
+	if (m_game->m_aresden_map_index != -1) {
+		m_game->m_aresden_mana += aresden_mana;
 		//testcode
-		if (wAresdenMana > 0) {
-			hb::logger::log("Aresden Mana: {} Total:{}", wAresdenMana, m_pGame->m_iAresdenMana);
+		if (aresden_mana > 0) {
+			hb::logger::log("Aresden Mana: {} Total:{}", aresden_mana, m_game->m_aresden_mana);
 		}
 	}
 
-	if (m_pGame->m_iElvineMapIndex != -1) {
-		m_pGame->m_iElvineMana += wElvineMana;
+	if (m_game->m_elvine_map_index != -1) {
+		m_game->m_elvine_mana += elvine_mana;
 		//testcode
-		if (wElvineMana > 0) {
-			hb::logger::log("Elvine Mana: {} Total:{}", wElvineMana, m_pGame->m_iElvineMana);
+		if (elvine_mana > 0) {
+			hb::logger::log("Elvine Mana: {} Total:{}", elvine_mana, m_game->m_elvine_mana);
 		}
 	}
 }
 
-void WarManager::SendCollectedMana()
+void WarManager::send_collected_mana()
 {
 
-	if ((m_pGame->m_iCollectedMana[1] == 0) && (m_pGame->m_iCollectedMana[2] == 0)) return;
+	if ((m_game->m_collected_mana[1] == 0) && (m_game->m_collected_mana[2] == 0)) return;
 
 	//testcode
-	hb::logger::log("Sending Collected Mana: {} {}", m_pGame->m_iCollectedMana[1], m_pGame->m_iCollectedMana[2]);
+	hb::logger::log("Sending Collected Mana: {} {}", m_game->m_collected_mana[1], m_game->m_collected_mana[2]);
 
-	CollectedManaHandler(m_pGame->m_iCollectedMana[1], m_pGame->m_iCollectedMana[2]);
+	collected_mana_handler(m_game->m_collected_mana[1], m_game->m_collected_mana[2]);
 
-	m_pGame->m_iCollectedMana[0] = 0;
-	m_pGame->m_iCollectedMana[1] = 0;
-	m_pGame->m_iCollectedMana[2] = 0;
+	m_game->m_collected_mana[0] = 0;
+	m_game->m_collected_mana[1] = 0;
+	m_game->m_collected_mana[2] = 0;
 }
 
-void WarManager::_SendMapStatus(int iClientH)
+void WarManager::send_map_status(int client_h)
 {
-	char cData[hb::shared::limits::MaxCrusadeStructures * sizeof(hb::net::CrusadeStructureEntry) + sizeof(hb::net::CrusadeMapStatusHeader)];
-	std::memset(cData, 0, sizeof(cData));
+	char data[hb::shared::limits::MaxCrusadeStructures * sizeof(hb::net::CrusadeStructureEntry) + sizeof(hb::net::CrusadeMapStatusHeader)];
+	std::memset(data, 0, sizeof(data));
 
-	auto& hdr = *reinterpret_cast<hb::net::CrusadeMapStatusHeader*>(cData);
-	std::memcpy(hdr.map_name, m_pGame->m_pClientList[iClientH]->m_cSendingMapName, sizeof(hdr.map_name));
-	hdr.send_point = static_cast<int16_t>(m_pGame->m_pClientList[iClientH]->m_iCSIsendPoint);
+	auto& hdr = *reinterpret_cast<hb::net::CrusadeMapStatusHeader*>(data);
+	std::memcpy(hdr.map_name, m_game->m_client_list[client_h]->m_sending_map_name, sizeof(hdr.map_name));
+	hdr.send_point = static_cast<int16_t>(m_game->m_client_list[client_h]->m_crusade_info_send_point);
 
-	if (m_pGame->m_pClientList[iClientH]->m_iCSIsendPoint == 0)
-		m_pGame->m_pClientList[iClientH]->m_bIsSendingMapStatus = true;
+	if (m_game->m_client_list[client_h]->m_crusade_info_send_point == 0)
+		m_game->m_client_list[client_h]->m_is_sending_map_status = true;
 
-	auto* entries = reinterpret_cast<hb::net::CrusadeStructureEntry*>(cData + sizeof(hb::net::CrusadeMapStatusHeader));
+	auto* entries = reinterpret_cast<hb::net::CrusadeStructureEntry*>(data + sizeof(hb::net::CrusadeMapStatusHeader));
 	int entryCount = 0;
 
 	for (int i = 0; i < 100; i++) {
-		if (m_pGame->m_pClientList[iClientH]->m_iCSIsendPoint >= hb::shared::limits::MaxCrusadeStructures) goto SMS_ENDOFDATA;
-		if (m_pGame->m_pClientList[iClientH]->m_stCrusadeStructureInfo[m_pGame->m_pClientList[iClientH]->m_iCSIsendPoint].cType == 0) goto SMS_ENDOFDATA;
+		if (m_game->m_client_list[client_h]->m_crusade_info_send_point >= hb::shared::limits::MaxCrusadeStructures) goto SMS_ENDOFDATA;
+		if (m_game->m_client_list[client_h]->m_crusade_structure_info[m_game->m_client_list[client_h]->m_crusade_info_send_point].type == 0) goto SMS_ENDOFDATA;
 
-		entries[entryCount].type = m_pGame->m_pClientList[iClientH]->m_stCrusadeStructureInfo[m_pGame->m_pClientList[iClientH]->m_iCSIsendPoint].cType;
-		entries[entryCount].x = m_pGame->m_pClientList[iClientH]->m_stCrusadeStructureInfo[m_pGame->m_pClientList[iClientH]->m_iCSIsendPoint].sX;
-		entries[entryCount].y = m_pGame->m_pClientList[iClientH]->m_stCrusadeStructureInfo[m_pGame->m_pClientList[iClientH]->m_iCSIsendPoint].sY;
-		entries[entryCount].side = m_pGame->m_pClientList[iClientH]->m_stCrusadeStructureInfo[m_pGame->m_pClientList[iClientH]->m_iCSIsendPoint].cSide;
+		entries[entryCount].type = m_game->m_client_list[client_h]->m_crusade_structure_info[m_game->m_client_list[client_h]->m_crusade_info_send_point].type;
+		entries[entryCount].x = m_game->m_client_list[client_h]->m_crusade_structure_info[m_game->m_client_list[client_h]->m_crusade_info_send_point].x;
+		entries[entryCount].y = m_game->m_client_list[client_h]->m_crusade_structure_info[m_game->m_client_list[client_h]->m_crusade_info_send_point].y;
+		entries[entryCount].side = m_game->m_client_list[client_h]->m_crusade_structure_info[m_game->m_client_list[client_h]->m_crusade_info_send_point].side;
 
 		entryCount++;
-		m_pGame->m_pClientList[iClientH]->m_iCSIsendPoint++;
+		m_game->m_client_list[client_h]->m_crusade_info_send_point++;
 	}
 
 	hdr.count = static_cast<uint8_t>(entryCount);
-	m_pGame->SendNotifyMsg(0, iClientH, Notify::MapStatusNext, static_cast<int>(sizeof(hb::net::CrusadeMapStatusHeader) + entryCount * sizeof(hb::net::CrusadeStructureEntry)), 0, 0, cData);
+	m_game->send_notify_msg(0, client_h, Notify::MapStatusNext, static_cast<int>(sizeof(hb::net::CrusadeMapStatusHeader) + entryCount * sizeof(hb::net::CrusadeStructureEntry)), 0, 0, data);
 	return;
 
 SMS_ENDOFDATA:
 
 	hdr.count = static_cast<uint8_t>(entryCount);
-	m_pGame->SendNotifyMsg(0, iClientH, Notify::MapStatusLast, static_cast<int>(sizeof(hb::net::CrusadeMapStatusHeader) + entryCount * sizeof(hb::net::CrusadeStructureEntry)), 0, 0, cData);
-	m_pGame->m_pClientList[iClientH]->m_bIsSendingMapStatus = false;
+	m_game->send_notify_msg(0, client_h, Notify::MapStatusLast, static_cast<int>(sizeof(hb::net::CrusadeMapStatusHeader) + entryCount * sizeof(hb::net::CrusadeStructureEntry)), 0, 0, data);
+	m_game->m_client_list[client_h]->m_is_sending_map_status = false;
 
 	return;
 }
 
-void WarManager::MapStatusHandler(int iClientH, int iMode, const char* pMapName)
+void WarManager::map_status_handler(int client_h, int mode, const char* map_name)
 {
 	
 
-	if (m_pGame->m_pClientList[iClientH] == 0) return;
+	if (m_game->m_client_list[client_h] == 0) return;
 
-	switch (iMode) {
+	switch (mode) {
 	case 1:
-		if (m_pGame->m_pClientList[iClientH]->m_iCrusadeDuty == 0) return;
+		if (m_game->m_client_list[client_h]->m_crusade_duty == 0) return;
 
 		for(int i = 0; i < MaxGuilds; i++)
-			if ((m_pGame->m_pGuildTeleportLoc[i].m_iV1 != 0) && (m_pGame->m_pGuildTeleportLoc[i].m_iV1 == m_pGame->m_pClientList[iClientH]->m_iGuildGUID)) {
-				m_pGame->SendNotifyMsg(0, iClientH, Notify::TcLoc, m_pGame->m_pGuildTeleportLoc[i].m_sDestX, m_pGame->m_pGuildTeleportLoc[i].m_sDestY,
-					0, m_pGame->m_pGuildTeleportLoc[i].m_cDestMapName, m_pGame->m_pGuildTeleportLoc[i].m_sDestX2, m_pGame->m_pGuildTeleportLoc[i].m_sDestY2,
-					0, 0, 0, 0, m_pGame->m_pGuildTeleportLoc[i].m_cDestMapName2);
-				std::memset(m_pGame->m_pClientList[iClientH]->m_cConstructMapName, 0, sizeof(m_pGame->m_pClientList[iClientH]->m_cConstructMapName));
-				memcpy(m_pGame->m_pClientList[iClientH]->m_cConstructMapName, m_pGame->m_pGuildTeleportLoc[i].m_cDestMapName2, 10);
-				m_pGame->m_pClientList[iClientH]->m_iConstructLocX = m_pGame->m_pGuildTeleportLoc[i].m_sDestX2;
-				m_pGame->m_pClientList[iClientH]->m_iConstructLocY = m_pGame->m_pGuildTeleportLoc[i].m_sDestY2;
+			if ((m_game->m_guild_teleport_loc[i].m_v1 != 0) && (m_game->m_guild_teleport_loc[i].m_v1 == m_game->m_client_list[client_h]->m_guild_guid)) {
+				m_game->send_notify_msg(0, client_h, Notify::TcLoc, m_game->m_guild_teleport_loc[i].m_dest_x, m_game->m_guild_teleport_loc[i].m_dest_y,
+					0, m_game->m_guild_teleport_loc[i].m_dest_map_name, m_game->m_guild_teleport_loc[i].m_dest_x2, m_game->m_guild_teleport_loc[i].m_dest_y2,
+					0, 0, 0, 0, m_game->m_guild_teleport_loc[i].m_dest_map_name2);
+				std::memset(m_game->m_client_list[client_h]->m_construct_map_name, 0, sizeof(m_game->m_client_list[client_h]->m_construct_map_name));
+				memcpy(m_game->m_client_list[client_h]->m_construct_map_name, m_game->m_guild_teleport_loc[i].m_dest_map_name2, 10);
+				m_game->m_client_list[client_h]->m_construct_loc_x = m_game->m_guild_teleport_loc[i].m_dest_x2;
+				m_game->m_client_list[client_h]->m_construct_loc_y = m_game->m_guild_teleport_loc[i].m_dest_y2;
 				return;
 			}
 
 		break;
 
 	case 3:
-		//if (m_pGame->m_pClientList[iClientH]->m_iCrusadeDuty != 3) return;
+		//if (m_game->m_client_list[client_h]->m_crusade_duty != 3) return;
 		for(int i = 0; i < hb::shared::limits::MaxCrusadeStructures; i++) {
-			m_pGame->m_pClientList[iClientH]->m_stCrusadeStructureInfo[i].cType = 0;
-			m_pGame->m_pClientList[iClientH]->m_stCrusadeStructureInfo[i].cSide = 0;
-			m_pGame->m_pClientList[iClientH]->m_stCrusadeStructureInfo[i].sX = 0;
-			m_pGame->m_pClientList[iClientH]->m_stCrusadeStructureInfo[i].sY = 0;
+			m_game->m_client_list[client_h]->m_crusade_structure_info[i].type = 0;
+			m_game->m_client_list[client_h]->m_crusade_structure_info[i].side = 0;
+			m_game->m_client_list[client_h]->m_crusade_structure_info[i].x = 0;
+			m_game->m_client_list[client_h]->m_crusade_structure_info[i].y = 0;
 		}
-		m_pGame->m_pClientList[iClientH]->m_iCSIsendPoint = 0;
-		std::memset(m_pGame->m_pClientList[iClientH]->m_cSendingMapName, 0, sizeof(m_pGame->m_pClientList[iClientH]->m_cSendingMapName));
+		m_game->m_client_list[client_h]->m_crusade_info_send_point = 0;
+		std::memset(m_game->m_client_list[client_h]->m_sending_map_name, 0, sizeof(m_game->m_client_list[client_h]->m_sending_map_name));
 
-		if (strcmp(pMapName, m_pGame->m_pMapList[m_pGame->m_pClientList[iClientH]->m_cMapIndex]->m_cName) == 0) {
-			for(int i = 0; i < m_pGame->m_pMapList[m_pGame->m_pClientList[iClientH]->m_cMapIndex]->m_iTotalCrusadeStructures; i++) {
-				if (m_pGame->m_pClientList[iClientH]->m_iCrusadeDuty == 3)
+		if (strcmp(map_name, m_game->m_map_list[m_game->m_client_list[client_h]->m_map_index]->m_name) == 0) {
+			for(int i = 0; i < m_game->m_map_list[m_game->m_client_list[client_h]->m_map_index]->m_total_crusade_structures; i++) {
+				if (m_game->m_client_list[client_h]->m_crusade_duty == 3)
 				{
-					m_pGame->m_pClientList[iClientH]->m_stCrusadeStructureInfo[i].cType = m_pGame->m_pMapList[m_pGame->m_pClientList[iClientH]->m_cMapIndex]->m_stCrusadeStructureInfo[i].cType;
-					m_pGame->m_pClientList[iClientH]->m_stCrusadeStructureInfo[i].cSide = m_pGame->m_pMapList[m_pGame->m_pClientList[iClientH]->m_cMapIndex]->m_stCrusadeStructureInfo[i].cSide;
-					m_pGame->m_pClientList[iClientH]->m_stCrusadeStructureInfo[i].sX = m_pGame->m_pMapList[m_pGame->m_pClientList[iClientH]->m_cMapIndex]->m_stCrusadeStructureInfo[i].sX;
-					m_pGame->m_pClientList[iClientH]->m_stCrusadeStructureInfo[i].sY = m_pGame->m_pMapList[m_pGame->m_pClientList[iClientH]->m_cMapIndex]->m_stCrusadeStructureInfo[i].sY;
+					m_game->m_client_list[client_h]->m_crusade_structure_info[i].type = m_game->m_map_list[m_game->m_client_list[client_h]->m_map_index]->m_crusade_structure_info[i].type;
+					m_game->m_client_list[client_h]->m_crusade_structure_info[i].side = m_game->m_map_list[m_game->m_client_list[client_h]->m_map_index]->m_crusade_structure_info[i].side;
+					m_game->m_client_list[client_h]->m_crusade_structure_info[i].x = m_game->m_map_list[m_game->m_client_list[client_h]->m_map_index]->m_crusade_structure_info[i].x;
+					m_game->m_client_list[client_h]->m_crusade_structure_info[i].y = m_game->m_map_list[m_game->m_client_list[client_h]->m_map_index]->m_crusade_structure_info[i].y;
 				}
-				else if (m_pGame->m_pMapList[m_pGame->m_pClientList[iClientH]->m_cMapIndex]->m_stCrusadeStructureInfo[i].cType == 42)
+				else if (m_game->m_map_list[m_game->m_client_list[client_h]->m_map_index]->m_crusade_structure_info[i].type == 42)
 				{
-					m_pGame->m_pClientList[iClientH]->m_stCrusadeStructureInfo[i].cType = m_pGame->m_pMapList[m_pGame->m_pClientList[iClientH]->m_cMapIndex]->m_stCrusadeStructureInfo[i].cType;
-					m_pGame->m_pClientList[iClientH]->m_stCrusadeStructureInfo[i].cSide = m_pGame->m_pMapList[m_pGame->m_pClientList[iClientH]->m_cMapIndex]->m_stCrusadeStructureInfo[i].cSide;
-					m_pGame->m_pClientList[iClientH]->m_stCrusadeStructureInfo[i].sX = m_pGame->m_pMapList[m_pGame->m_pClientList[iClientH]->m_cMapIndex]->m_stCrusadeStructureInfo[i].sX;
-					m_pGame->m_pClientList[iClientH]->m_stCrusadeStructureInfo[i].sY = m_pGame->m_pMapList[m_pGame->m_pClientList[iClientH]->m_cMapIndex]->m_stCrusadeStructureInfo[i].sY;
+					m_game->m_client_list[client_h]->m_crusade_structure_info[i].type = m_game->m_map_list[m_game->m_client_list[client_h]->m_map_index]->m_crusade_structure_info[i].type;
+					m_game->m_client_list[client_h]->m_crusade_structure_info[i].side = m_game->m_map_list[m_game->m_client_list[client_h]->m_map_index]->m_crusade_structure_info[i].side;
+					m_game->m_client_list[client_h]->m_crusade_structure_info[i].x = m_game->m_map_list[m_game->m_client_list[client_h]->m_map_index]->m_crusade_structure_info[i].x;
+					m_game->m_client_list[client_h]->m_crusade_structure_info[i].y = m_game->m_map_list[m_game->m_client_list[client_h]->m_map_index]->m_crusade_structure_info[i].y;
 				}
 			}
-			memcpy(m_pGame->m_pClientList[iClientH]->m_cSendingMapName, m_pGame->m_pMapList[m_pGame->m_pClientList[iClientH]->m_cMapIndex]->m_cName, 10);
+			memcpy(m_game->m_client_list[client_h]->m_sending_map_name, m_game->m_map_list[m_game->m_client_list[client_h]->m_map_index]->m_name, 10);
 		}
 		else {
-			if (strcmp(pMapName, "middleland") == 0) {
-				for(int i = 0; i < m_pGame->m_iTotalMiddleCrusadeStructures; i++) {
-					if (m_pGame->m_pClientList[iClientH]->m_iCrusadeDuty == 3)
+			if (strcmp(map_name, "middleland") == 0) {
+				for(int i = 0; i < m_game->m_total_middle_crusade_structures; i++) {
+					if (m_game->m_client_list[client_h]->m_crusade_duty == 3)
 					{
-						m_pGame->m_pClientList[iClientH]->m_stCrusadeStructureInfo[i].cType = m_pGame->m_stMiddleCrusadeStructureInfo[i].cType;
-						m_pGame->m_pClientList[iClientH]->m_stCrusadeStructureInfo[i].cSide = m_pGame->m_stMiddleCrusadeStructureInfo[i].cSide;
-						m_pGame->m_pClientList[iClientH]->m_stCrusadeStructureInfo[i].sX = m_pGame->m_stMiddleCrusadeStructureInfo[i].sX;
-						m_pGame->m_pClientList[iClientH]->m_stCrusadeStructureInfo[i].sY = m_pGame->m_stMiddleCrusadeStructureInfo[i].sY;
+						m_game->m_client_list[client_h]->m_crusade_structure_info[i].type = m_game->m_middle_crusade_structure_info[i].type;
+						m_game->m_client_list[client_h]->m_crusade_structure_info[i].side = m_game->m_middle_crusade_structure_info[i].side;
+						m_game->m_client_list[client_h]->m_crusade_structure_info[i].x = m_game->m_middle_crusade_structure_info[i].x;
+						m_game->m_client_list[client_h]->m_crusade_structure_info[i].y = m_game->m_middle_crusade_structure_info[i].y;
 					}
-					else if (m_pGame->m_stMiddleCrusadeStructureInfo[i].cType == 42)
+					else if (m_game->m_middle_crusade_structure_info[i].type == 42)
 					{
-						m_pGame->m_pClientList[iClientH]->m_stCrusadeStructureInfo[i].cType = m_pGame->m_stMiddleCrusadeStructureInfo[i].cType;
-						m_pGame->m_pClientList[iClientH]->m_stCrusadeStructureInfo[i].cSide = m_pGame->m_stMiddleCrusadeStructureInfo[i].cSide;
-						m_pGame->m_pClientList[iClientH]->m_stCrusadeStructureInfo[i].sX = m_pGame->m_stMiddleCrusadeStructureInfo[i].sX;
-						m_pGame->m_pClientList[iClientH]->m_stCrusadeStructureInfo[i].sY = m_pGame->m_stMiddleCrusadeStructureInfo[i].sY;
+						m_game->m_client_list[client_h]->m_crusade_structure_info[i].type = m_game->m_middle_crusade_structure_info[i].type;
+						m_game->m_client_list[client_h]->m_crusade_structure_info[i].side = m_game->m_middle_crusade_structure_info[i].side;
+						m_game->m_client_list[client_h]->m_crusade_structure_info[i].x = m_game->m_middle_crusade_structure_info[i].x;
+						m_game->m_client_list[client_h]->m_crusade_structure_info[i].y = m_game->m_middle_crusade_structure_info[i].y;
 					}
 				}
-				strcpy(m_pGame->m_pClientList[iClientH]->m_cSendingMapName, "middleland");
+				strcpy(m_game->m_client_list[client_h]->m_sending_map_name, "middleland");
 			}
 			else {
 			}
 		}
 
-		_SendMapStatus(iClientH);
+		send_map_status(client_h);
 		break;
 	}
 }
 
-void WarManager::RequestSummonWarUnitHandler(int iClientH, int dX, int dY, char cType, char cNum, char cMode)
+void WarManager::request_summon_war_unit_handler(int client_h, int dX, int dY, char type, char num, char mode)
 {
-	char cName[6], cNpcName[hb::shared::limits::NpcNameLen], cMapName[11], cNpcWayPoint[11], cOwnerType;
+	char name[6], npc_name[hb::shared::limits::NpcNameLen], map_name[11], npc_way_point[11], owner_type;
 	int x;
-	int iNamingValue, tX, tY;
-	int bRet;
-	short sOwnerH;
-	uint32_t dwTime = GameClock::GetTimeMS();
+	int naming_value, tX, tY;
+	int ret;
+	short owner_h;
+	uint32_t time = GameClock::GetTimeMS();
 
-	if (m_pGame->m_pClientList[iClientH] == 0) return;
-	if (m_pGame->m_pClientList[iClientH]->m_bIsInitComplete == false) return;
+	if (m_game->m_client_list[client_h] == 0) return;
+	if (m_game->m_client_list[client_h]->m_is_init_complete == false) return;
 	//hbest - crusade units summon mapcheck
-	if (((strcmp(m_pGame->m_pMapList[m_pGame->m_pClientList[iClientH]->m_cMapIndex]->m_cLocationName, "toh3") == 0) || (strcmp(m_pGame->m_pMapList[m_pGame->m_pClientList[iClientH]->m_cMapIndex]->m_cLocationName, "icebound") == 0))) {
+	if (((strcmp(m_game->m_map_list[m_game->m_client_list[client_h]->m_map_index]->m_location_name, "toh3") == 0) || (strcmp(m_game->m_map_list[m_game->m_client_list[client_h]->m_map_index]->m_location_name, "icebound") == 0))) {
 		return;
 	}
 
-	std::memset(cNpcWayPoint, 0, sizeof(cNpcWayPoint));
-	std::memset(cNpcName, 0, sizeof(cNpcName));
-	std::memset(cMapName, 0, sizeof(cMapName));
+	std::memset(npc_way_point, 0, sizeof(npc_way_point));
+	std::memset(npc_name, 0, sizeof(npc_name));
+	std::memset(map_name, 0, sizeof(map_name));
 
-	if (cType < 0) return;
-	if (cType >= MaxNpcTypes) return;
-	if (cNum > 10) return;
+	if (type < 0) return;
+	if (type >= MaxNpcTypes) return;
+	if (num > 10) return;
 
-	if (m_pGame->m_pClientList[iClientH]->m_iConstructionPoint < m_pGame->m_iNpcConstructionPoint[cType]) return;
-	if ((m_pGame->m_pMapList[m_pGame->m_pClientList[iClientH]->m_cMapIndex] != 0) && (m_pGame->m_pMapList[m_pGame->m_pClientList[iClientH]->m_cMapIndex]->m_bIsFixedDayMode)) return;
+	if (m_game->m_client_list[client_h]->m_construction_point < m_game->m_npc_construction_point[type]) return;
+	if ((m_game->m_map_list[m_game->m_client_list[client_h]->m_map_index] != 0) && (m_game->m_map_list[m_game->m_client_list[client_h]->m_map_index]->m_is_fixed_day_mode)) return;
 
-	cNum = 1;
+	num = 1;
 
 	// ConstructionPoint     .
-	for (x = 1; x <= cNum; x++) {
-		iNamingValue = m_pGame->m_pMapList[m_pGame->m_pClientList[iClientH]->m_cMapIndex]->iGetEmptyNamingValue();
-		if (iNamingValue == -1) {
+	for (x = 1; x <= num; x++) {
+		naming_value = m_game->m_map_list[m_game->m_client_list[client_h]->m_map_index]->get_empty_naming_value();
+		if (naming_value == -1) {
 			// NPC  .     .
 		}
 		else {
 			// NPC .
-			std::memset(cName, 0, sizeof(cName));
-			std::snprintf(cName, sizeof(cName), "XX%d", iNamingValue);
-			cName[0] = '_';
-			cName[1] = m_pGame->m_pClientList[iClientH]->m_cMapIndex + 65;
+			std::memset(name, 0, sizeof(name));
+			std::snprintf(name, sizeof(name), "XX%d", naming_value);
+			name[0] = '_';
+			name[1] = m_game->m_client_list[client_h]->m_map_index + 65;
 
-			switch (cType) {
+			switch (type) {
 			case 43: // Light War Beetle
-				switch (m_pGame->m_pClientList[iClientH]->m_cSide) {
-				case 1: strcpy(cNpcName, "LWB-Aresden"); break;
-				case 2: strcpy(cNpcName, "LWB-Elvine"); break;
+				switch (m_game->m_client_list[client_h]->m_side) {
+				case 1: strcpy(npc_name, "LWB-Aresden"); break;
+				case 2: strcpy(npc_name, "LWB-Elvine"); break;
 				}
 				break;
 
 			case 36: // Arrow Guard Tower
-				switch (m_pGame->m_pClientList[iClientH]->m_cSide) {
-				case 1: strcpy(cNpcName, "AGT-Aresden"); break;
-				case 2: strcpy(cNpcName, "AGT-Elvine"); break;
+				switch (m_game->m_client_list[client_h]->m_side) {
+				case 1: strcpy(npc_name, "AGT-Aresden"); break;
+				case 2: strcpy(npc_name, "AGT-Elvine"); break;
 				}
 				break;
 
 			case 37: // Cannon Guard Tower
-				switch (m_pGame->m_pClientList[iClientH]->m_cSide) {
-				case 1: strcpy(cNpcName, "CGT-Aresden"); break;
-				case 2: strcpy(cNpcName, "CGT-Elvine"); break;
+				switch (m_game->m_client_list[client_h]->m_side) {
+				case 1: strcpy(npc_name, "CGT-Aresden"); break;
+				case 2: strcpy(npc_name, "CGT-Elvine"); break;
 				}
 				break;
 
 			case 38: // Mana Collector
-				switch (m_pGame->m_pClientList[iClientH]->m_cSide) {
-				case 1: strcpy(cNpcName, "MS-Aresden"); break;
-				case 2: strcpy(cNpcName, "MS-Elvine"); break;
+				switch (m_game->m_client_list[client_h]->m_side) {
+				case 1: strcpy(npc_name, "MS-Aresden"); break;
+				case 2: strcpy(npc_name, "MS-Elvine"); break;
 				}
 				break;
 
 			case 39: // Detector
-				switch (m_pGame->m_pClientList[iClientH]->m_cSide) {
-				case 1: strcpy(cNpcName, "DT-Aresden"); break;
-				case 2: strcpy(cNpcName, "DT-Elvine"); break;
+				switch (m_game->m_client_list[client_h]->m_side) {
+				case 1: strcpy(npc_name, "DT-Aresden"); break;
+				case 2: strcpy(npc_name, "DT-Elvine"); break;
 				}
 				break;
 
 			case 51: // Catapult
-				switch (m_pGame->m_pClientList[iClientH]->m_cSide) {
-				case 1: strcpy(cNpcName, "CP-Aresden"); break;
-				case 2: strcpy(cNpcName, "CP-Elvine"); break;
+				switch (m_game->m_client_list[client_h]->m_side) {
+				case 1: strcpy(npc_name, "CP-Aresden"); break;
+				case 2: strcpy(npc_name, "CP-Elvine"); break;
 				}
 				break;
 
 			case 44:
-				strcpy(cNpcName, "GHK");
+				strcpy(npc_name, "GHK");
 				break;
 
 			case 45:
-				strcpy(cNpcName, "GHKABS");
+				strcpy(npc_name, "GHKABS");
 				break;
 
 			case 46:
-				strcpy(cNpcName, "TK");
+				strcpy(npc_name, "TK");
 				break;
 
 			case 47:
-				strcpy(cNpcName, "BG");
+				strcpy(npc_name, "BG");
 				break;
 
 			case 82:
-				switch (m_pGame->m_pClientList[iClientH]->m_cSide) {
-				case 1: strcpy(cNpcName, "Sor-Aresden"); break;
-				case 2: strcpy(cNpcName, "Sor-Elvine"); break;
+				switch (m_game->m_client_list[client_h]->m_side) {
+				case 1: strcpy(npc_name, "Sor-Aresden"); break;
+				case 2: strcpy(npc_name, "Sor-Elvine"); break;
 				}
 				break;
 
 			case 83:
-				switch (m_pGame->m_pClientList[iClientH]->m_cSide) {
-				case 1: strcpy(cNpcName, "ATK-Aresden"); break;
-				case 2: strcpy(cNpcName, "ATK-Elvine"); break;
+				switch (m_game->m_client_list[client_h]->m_side) {
+				case 1: strcpy(npc_name, "ATK-Aresden"); break;
+				case 2: strcpy(npc_name, "ATK-Elvine"); break;
 				}
 				break;
 
 			case 84:
-				switch (m_pGame->m_pClientList[iClientH]->m_cSide) {
-				case 1: strcpy(cNpcName, "Elf-Aresden"); break;
-				case 2: strcpy(cNpcName, "Elf-Elvine"); break;
+				switch (m_game->m_client_list[client_h]->m_side) {
+				case 1: strcpy(npc_name, "Elf-Aresden"); break;
+				case 2: strcpy(npc_name, "Elf-Elvine"); break;
 				}
 				break;
 
 			case 85:
-				switch (m_pGame->m_pClientList[iClientH]->m_cSide) {
-				case 1: strcpy(cNpcName, "DSK-Aresden"); break;
-				case 2: strcpy(cNpcName, "DSK-Elvine"); break;
+				switch (m_game->m_client_list[client_h]->m_side) {
+				case 1: strcpy(npc_name, "DSK-Aresden"); break;
+				case 2: strcpy(npc_name, "DSK-Elvine"); break;
 				}
 				break;
 
 			case 86:
-				switch (m_pGame->m_pClientList[iClientH]->m_cSide) {
-				case 1: strcpy(cNpcName, "HBT-Aresden"); break;
-				case 2: strcpy(cNpcName, "HBT-Elvine"); break;
+				switch (m_game->m_client_list[client_h]->m_side) {
+				case 1: strcpy(npc_name, "HBT-Aresden"); break;
+				case 2: strcpy(npc_name, "HBT-Elvine"); break;
 				}
 				break;
 
 			case 87:
-				switch (m_pGame->m_pClientList[iClientH]->m_cSide) {
-				case 1: strcpy(cNpcName, "CT-Aresden"); break;
-				case 2: strcpy(cNpcName, "CT-Elvine"); break;
+				switch (m_game->m_client_list[client_h]->m_side) {
+				case 1: strcpy(npc_name, "CT-Aresden"); break;
+				case 2: strcpy(npc_name, "CT-Elvine"); break;
 				}
 				break;
 
 			case 88:
-				switch (m_pGame->m_pClientList[iClientH]->m_cSide) {
-				case 1: strcpy(cNpcName, "Bar-Aresden"); break;
-				case 2: strcpy(cNpcName, "Bar-Elvine"); break;
+				switch (m_game->m_client_list[client_h]->m_side) {
+				case 1: strcpy(npc_name, "Bar-Aresden"); break;
+				case 2: strcpy(npc_name, "Bar-Elvine"); break;
 				}
 				break;
 
 			case 89:
-				switch (m_pGame->m_pClientList[iClientH]->m_cSide) {
-				case 1: strcpy(cNpcName, "AGC-Aresden"); break;
-				case 2: strcpy(cNpcName, "AGC-Elvine"); break;
+				switch (m_game->m_client_list[client_h]->m_side) {
+				case 1: strcpy(npc_name, "AGC-Aresden"); break;
+				case 2: strcpy(npc_name, "AGC-Elvine"); break;
 				}
 				break;
 			}
 
 			//testcode
-			hb::logger::log("Request Summon War Unit ({}) ({})", cType, cNpcName);
+			hb::logger::log("Request Summon War Unit ({}) ({})", type, npc_name);
 
 			tX = (int)dX;
 			tY = (int)dY;
 
-			bRet = false;
-			switch (cType) {
+			ret = false;
+			switch (type) {
 			case 36:
 			case 37:
 			case 38:
 			case 39:
-				if (strcmp(m_pGame->m_pClientList[iClientH]->m_cConstructMapName, m_pGame->m_pClientList[iClientH]->m_cMapName) != 0) bRet = true;
-				if (abs(m_pGame->m_pClientList[iClientH]->m_sX - m_pGame->m_pClientList[iClientH]->m_iConstructLocX) > 10) bRet = true;
-				if (abs(m_pGame->m_pClientList[iClientH]->m_sY - m_pGame->m_pClientList[iClientH]->m_iConstructLocY) > 10) bRet = true;
+				if (strcmp(m_game->m_client_list[client_h]->m_construct_map_name, m_game->m_client_list[client_h]->m_map_name) != 0) ret = true;
+				if (abs(m_game->m_client_list[client_h]->m_x - m_game->m_client_list[client_h]->m_construct_loc_x) > 10) ret = true;
+				if (abs(m_game->m_client_list[client_h]->m_y - m_game->m_client_list[client_h]->m_construct_loc_y) > 10) ret = true;
 
-				if (bRet) {
-					m_pGame->m_pMapList[m_pGame->m_pClientList[iClientH]->m_cMapIndex]->SetNamingValueEmpty(iNamingValue);
-					m_pGame->SendNotifyMsg(0, iClientH, Notify::CannotConstruct, 2, 0, 0, 0);
+				if (ret) {
+					m_game->m_map_list[m_game->m_client_list[client_h]->m_map_index]->set_naming_value_empty(naming_value);
+					m_game->send_notify_msg(0, client_h, Notify::cannot_construct, 2, 0, 0, 0);
 					return;
 				}
 
 				for(int i = 0; i < MaxGuilds; i++)
-					if (m_pGame->m_pGuildTeleportLoc[i].m_iV1 == m_pGame->m_pClientList[iClientH]->m_iGuildGUID) {
-						m_pGame->m_pGuildTeleportLoc[i].m_dwTime = dwTime;
-						if (m_pGame->m_pGuildTeleportLoc[i].m_iV2 >= MaxConstructNum) {
-							m_pGame->m_pMapList[m_pGame->m_pClientList[iClientH]->m_cMapIndex]->SetNamingValueEmpty(iNamingValue);
-							m_pGame->SendNotifyMsg(0, iClientH, Notify::CannotConstruct, 3, 0, 0, 0);
+					if (m_game->m_guild_teleport_loc[i].m_v1 == m_game->m_client_list[client_h]->m_guild_guid) {
+						m_game->m_guild_teleport_loc[i].m_time = time;
+						if (m_game->m_guild_teleport_loc[i].m_v2 >= MaxConstructNum) {
+							m_game->m_map_list[m_game->m_client_list[client_h]->m_map_index]->set_naming_value_empty(naming_value);
+							m_game->send_notify_msg(0, client_h, Notify::cannot_construct, 3, 0, 0, 0);
 							return;
 						}
 						else {
-							m_pGame->m_pGuildTeleportLoc[i].m_iV2++;
+							m_game->m_guild_teleport_loc[i].m_v2++;
 							goto RSWU_LOOPBREAK;
 						}
 					}
 
-				m_pGame->m_pMapList[m_pGame->m_pClientList[iClientH]->m_cMapIndex]->SetNamingValueEmpty(iNamingValue);
-				m_pGame->SendNotifyMsg(0, iClientH, Notify::CannotConstruct, 3, 0, 0, 0);
+				m_game->m_map_list[m_game->m_client_list[client_h]->m_map_index]->set_naming_value_empty(naming_value);
+				m_game->send_notify_msg(0, client_h, Notify::cannot_construct, 3, 0, 0, 0);
 				return;
 				break;
 			case 43:
@@ -1237,70 +1237,70 @@ void WarManager::RequestSummonWarUnitHandler(int iClientH, int dX, int dY, char 
 
 		RSWU_LOOPBREAK:
 
-			bRet = false;
-			switch (cType) {
+			ret = false;
+			switch (type) {
 			case 36:
 			case 37:
 				for(int ix = tX - 2; ix <= tX + 2; ix++)
 					for(int iy = tY - 2; iy <= tY + 2; iy++) {
-						m_pGame->m_pMapList[m_pGame->m_pClientList[iClientH]->m_cMapIndex]->GetOwner(&sOwnerH, &cOwnerType, ix, iy);
-						if ((sOwnerH != 0) && (cOwnerType == hb::shared::owner_class::Npc)) {
-							switch (m_pGame->m_pNpcList[sOwnerH]->m_sType) {
+						m_game->m_map_list[m_game->m_client_list[client_h]->m_map_index]->get_owner(&owner_h, &owner_type, ix, iy);
+						if ((owner_h != 0) && (owner_type == hb::shared::owner_class::Npc)) {
+							switch (m_game->m_npc_list[owner_h]->m_type) {
 							case 36:
 							case 37:
-								bRet = true;
+								ret = true;
 								break;
 							}
 						}
 					}
 
-				if ((dY <= 32) || (dY >= 783)) bRet = true;
+				if ((dY <= 32) || (dY >= 783)) ret = true;
 				break;
 			}
 
-			if (bRet) {
-				m_pGame->m_pMapList[m_pGame->m_pClientList[iClientH]->m_cMapIndex]->SetNamingValueEmpty(iNamingValue);
-				m_pGame->SendNotifyMsg(0, iClientH, Notify::CannotConstruct, 1, 0, 0, 0);
+			if (ret) {
+				m_game->m_map_list[m_game->m_client_list[client_h]->m_map_index]->set_naming_value_empty(naming_value);
+				m_game->send_notify_msg(0, client_h, Notify::cannot_construct, 1, 0, 0, 0);
 				return;
 			}
 
-			int iNpcConfigId = m_pGame->GetNpcConfigIdByName(cNpcName);
-			if (cMode == 0) {
-				bRet = m_pGame->bCreateNewNpc(iNpcConfigId, cName, m_pGame->m_pMapList[m_pGame->m_pClientList[iClientH]->m_cMapIndex]->m_cName, 0, 0, MoveType::Follow, &tX, &tY, cNpcWayPoint, 0, 0, -1, false, false, false, false, m_pGame->m_pClientList[iClientH]->m_iGuildGUID);
-				if (m_pGame->m_pEntityManager != 0) m_pGame->m_pEntityManager->bSetNpcFollowMode(cName, m_pGame->m_pClientList[iClientH]->m_cCharName, hb::shared::owner_class::Player);
+			int npc_config_id = m_game->get_npc_config_id_by_name(npc_name);
+			if (mode == 0) {
+				ret = m_game->create_new_npc(npc_config_id, name, m_game->m_map_list[m_game->m_client_list[client_h]->m_map_index]->m_name, 0, 0, MoveType::Follow, &tX, &tY, npc_way_point, 0, 0, -1, false, false, false, false, m_game->m_client_list[client_h]->m_guild_guid);
+				if (m_game->m_entity_manager != 0) m_game->m_entity_manager->set_npc_follow_mode(name, m_game->m_client_list[client_h]->m_char_name, hb::shared::owner_class::Player);
 			}
-			else bRet = m_pGame->bCreateNewNpc(iNpcConfigId, cName, m_pGame->m_pMapList[m_pGame->m_pClientList[iClientH]->m_cMapIndex]->m_cName, 0, 0, MoveType::Guard, &tX, &tY, cNpcWayPoint, 0, 0, -1, false, false, false, false, m_pGame->m_pClientList[iClientH]->m_iGuildGUID);
+			else ret = m_game->create_new_npc(npc_config_id, name, m_game->m_map_list[m_game->m_client_list[client_h]->m_map_index]->m_name, 0, 0, MoveType::Guard, &tX, &tY, npc_way_point, 0, 0, -1, false, false, false, false, m_game->m_client_list[client_h]->m_guild_guid);
 
-			if (bRet == false) {
+			if (ret == false) {
 				// NameValue .
-				m_pGame->m_pMapList[m_pGame->m_pClientList[iClientH]->m_cMapIndex]->SetNamingValueEmpty(iNamingValue);
+				m_game->m_map_list[m_game->m_client_list[client_h]->m_map_index]->set_naming_value_empty(naming_value);
 			}
 			else {
-				m_pGame->m_pClientList[iClientH]->m_iConstructionPoint -= m_pGame->m_iNpcConstructionPoint[cType];
-				if (m_pGame->m_pClientList[iClientH]->m_iConstructionPoint < 0) m_pGame->m_pClientList[iClientH]->m_iConstructionPoint = 0;
-				m_pGame->SendNotifyMsg(0, iClientH, Notify::ConstructionPoint, m_pGame->m_pClientList[iClientH]->m_iConstructionPoint, m_pGame->m_pClientList[iClientH]->m_iWarContribution, 0, 0);
+				m_game->m_client_list[client_h]->m_construction_point -= m_game->m_npc_construction_point[type];
+				if (m_game->m_client_list[client_h]->m_construction_point < 0) m_game->m_client_list[client_h]->m_construction_point = 0;
+				m_game->send_notify_msg(0, client_h, Notify::ConstructionPoint, m_game->m_client_list[client_h]->m_construction_point, m_game->m_client_list[client_h]->m_war_contribution, 0, 0);
 			}
 		}
 	}
 }
 
-void WarManager::RequestGuildTeleportHandler(int iClientH)
+void WarManager::request_guild_teleport_handler(int client_h)
 {
 	
-	char cMapName[11];
+	char map_name[11];
 
-	if (m_pGame->m_pClientList[iClientH] == 0) return;
-	if (m_pGame->m_pClientList[iClientH]->m_iLockedMapTime != 0) {
-		m_pGame->SendNotifyMsg(0, iClientH, Notify::LockedMap, m_pGame->m_pClientList[iClientH]->m_iLockedMapTime, 0, 0, m_pGame->m_pClientList[iClientH]->m_cLockedMapName);
+	if (m_game->m_client_list[client_h] == 0) return;
+	if (m_game->m_client_list[client_h]->m_locked_map_time != 0) {
+		m_game->send_notify_msg(0, client_h, Notify::LockedMap, m_game->m_client_list[client_h]->m_locked_map_time, 0, 0, m_game->m_client_list[client_h]->m_locked_map_name);
 		return;
 	}
 
 	// if a guild teleport is set when its not a crusade, log the hacker
-	if (!m_pGame->m_bIsCrusadeMode) {
+	if (!m_game->m_is_crusade_mode) {
 		try
 		{
-			hb::logger::warn<log_channel::security>("Crusade teleport hack: IP={} player={}, setting teleport while crusade disabled", m_pGame->m_pClientList[iClientH]->m_cIPaddress, m_pGame->m_pClientList[iClientH]->m_cCharName);
-			m_pGame->DeleteClient(iClientH, true, true);
+			hb::logger::warn<log_channel::security>("Crusade teleport hack: IP={} player={}, setting teleport while crusade disabled", m_game->m_client_list[client_h]->m_ip_address, m_game->m_client_list[client_h]->m_char_name);
+			m_game->delete_client(client_h, true, true);
 		}
 		catch (...)
 		{
@@ -1309,11 +1309,11 @@ void WarManager::RequestGuildTeleportHandler(int iClientH)
 	}
 
 	// if a player is using guild teleport and he is not in a guild, log the hacker
-	if (m_pGame->m_pClientList[iClientH]->m_iCrusadeDuty == 0) {
+	if (m_game->m_client_list[client_h]->m_crusade_duty == 0) {
 		try
 		{
-			hb::logger::warn<log_channel::security>("Crusade teleport hack: IP={} player={}, teleporting without guild", m_pGame->m_pClientList[iClientH]->m_cIPaddress, m_pGame->m_pClientList[iClientH]->m_cCharName);
-			m_pGame->DeleteClient(iClientH, true, true);
+			hb::logger::warn<log_channel::security>("Crusade teleport hack: IP={} player={}, teleporting without guild", m_game->m_client_list[client_h]->m_ip_address, m_game->m_client_list[client_h]->m_char_name);
+			m_game->delete_client(client_h, true, true);
 		}
 		catch (...)
 		{
@@ -1321,24 +1321,24 @@ void WarManager::RequestGuildTeleportHandler(int iClientH)
 		return;
 	}
 
-	if ((m_pGame->m_pClientList[iClientH]->m_cMapIndex == m_pGame->m_iMiddlelandMapIndex) &&
-		m_pGame->m_iMiddlelandMapIndex != -1)
+	if ((m_game->m_client_list[client_h]->m_map_index == m_game->m_middleland_map_index) &&
+		m_game->m_middleland_map_index != -1)
 		return;
 
 	for(int i = 0; i < MaxGuilds; i++)
-		if (m_pGame->m_pGuildTeleportLoc[i].m_iV1 == m_pGame->m_pClientList[iClientH]->m_iGuildGUID) {
-			std::memset(cMapName, 0, sizeof(cMapName));
-			strcpy(cMapName, m_pGame->m_pGuildTeleportLoc[i].m_cDestMapName);
+		if (m_game->m_guild_teleport_loc[i].m_v1 == m_game->m_client_list[client_h]->m_guild_guid) {
+			std::memset(map_name, 0, sizeof(map_name));
+			strcpy(map_name, m_game->m_guild_teleport_loc[i].m_dest_map_name);
 
 			//testcode
-			hb::logger::log("ReqGuildTeleport: {} {} {} {}", m_pGame->m_pClientList[iClientH]->m_iGuildGUID, m_pGame->m_pGuildTeleportLoc[i].m_sDestX, m_pGame->m_pGuildTeleportLoc[i].m_sDestY, cMapName);
+			hb::logger::log("ReqGuildTeleport: {} {} {} {}", m_game->m_client_list[client_h]->m_guild_guid, m_game->m_guild_teleport_loc[i].m_dest_x, m_game->m_guild_teleport_loc[i].m_dest_y, map_name);
 
-			// !!! RequestTeleportHandler m_cMapName
-			m_pGame->RequestTeleportHandler(iClientH, "2   ", cMapName, m_pGame->m_pGuildTeleportLoc[i].m_sDestX, m_pGame->m_pGuildTeleportLoc[i].m_sDestY);
+			// !!! request_teleport_handler m_map_name
+			m_game->request_teleport_handler(client_h, "2   ", map_name, m_game->m_guild_teleport_loc[i].m_dest_x, m_game->m_guild_teleport_loc[i].m_dest_y);
 			return;
 		}
 
-	switch (m_pGame->m_pClientList[iClientH]->m_cSide) {
+	switch (m_game->m_client_list[client_h]->m_side) {
 	case 1:
 		break;
 	case 2:
@@ -1346,21 +1346,21 @@ void WarManager::RequestGuildTeleportHandler(int iClientH)
 	}
 }
 
-void WarManager::RequestSetGuildTeleportLocHandler(int iClientH, int dX, int dY, int iGuildGUID, const char* pMapName)
+void WarManager::request_set_guild_teleport_loc_handler(int client_h, int dX, int dY, int guild_guid, const char* map_name)
 {
 	
-	int iIndex;
-	uint32_t dwTemp, dwTime;
+	int index;
+	uint32_t temp, time;
 
-	if (m_pGame->m_pClientList[iClientH] == 0) return;
-	if (m_pGame->m_pClientList[iClientH]->m_bIsOnServerChange) return;
+	if (m_game->m_client_list[client_h] == 0) return;
+	if (m_game->m_client_list[client_h]->m_is_on_server_change) return;
 
 	// if a player is teleporting and its not a crusade, log the hacker
-	if (!m_pGame->m_bIsCrusadeMode) {
+	if (!m_game->m_is_crusade_mode) {
 		try
 		{
-			hb::logger::warn<log_channel::security>("Crusade teleport hack: IP={} player={}, setting point outside crusade", m_pGame->m_pClientList[iClientH]->m_cIPaddress, m_pGame->m_pClientList[iClientH]->m_cCharName);
-			m_pGame->DeleteClient(iClientH, true, true);
+			hb::logger::warn<log_channel::security>("Crusade teleport hack: IP={} player={}, setting point outside crusade", m_game->m_client_list[client_h]->m_ip_address, m_game->m_client_list[client_h]->m_char_name);
+			m_game->delete_client(client_h, true, true);
 		}
 		catch (...)
 		{
@@ -1370,11 +1370,11 @@ void WarManager::RequestSetGuildTeleportLocHandler(int iClientH, int dX, int dY,
 	}
 
 	// if a player is teleporting and its not a crusade, log the hacker
-	if (m_pGame->m_pClientList[iClientH]->m_iCrusadeDuty != 3) {
+	if (m_game->m_client_list[client_h]->m_crusade_duty != 3) {
 		try
 		{
-			hb::logger::warn<log_channel::security>("Crusade teleport hack: IP={} player={}, setting point as non-guildmaster", m_pGame->m_pClientList[iClientH]->m_cIPaddress, m_pGame->m_pClientList[iClientH]->m_cCharName);
-			m_pGame->DeleteClient(iClientH, true, true);
+			hb::logger::warn<log_channel::security>("Crusade teleport hack: IP={} player={}, setting point as non-guildmaster", m_game->m_client_list[client_h]->m_ip_address, m_game->m_client_list[client_h]->m_char_name);
+			m_game->delete_client(client_h, true, true);
 		}
 		catch (...)
 		{
@@ -1386,275 +1386,275 @@ void WarManager::RequestSetGuildTeleportLocHandler(int iClientH, int dX, int dY,
 	if (dY < 100) dY = 100;
 	if (dY > 600) dY = 600;
 
-	dwTime = GameClock::GetTimeMS();
+	time = GameClock::GetTimeMS();
 
 	//testcode
-	hb::logger::log("SetGuildTeleportLoc: {} {} {} {}", iGuildGUID, pMapName, dX, dY);
+	hb::logger::log("SetGuildTeleportLoc: {} {} {} {}", guild_guid, map_name, dX, dY);
 
 	// GUID       .
 	for(int i = 0; i < MaxGuilds; i++)
-		if (m_pGame->m_pGuildTeleportLoc[i].m_iV1 == iGuildGUID) {
-			if ((m_pGame->m_pGuildTeleportLoc[i].m_sDestX == dX) && (m_pGame->m_pGuildTeleportLoc[i].m_sDestY == dY) && (strcmp(m_pGame->m_pGuildTeleportLoc[i].m_cDestMapName, pMapName) == 0)) {
-				m_pGame->m_pGuildTeleportLoc[i].m_dwTime = dwTime;
+		if (m_game->m_guild_teleport_loc[i].m_v1 == guild_guid) {
+			if ((m_game->m_guild_teleport_loc[i].m_dest_x == dX) && (m_game->m_guild_teleport_loc[i].m_dest_y == dY) && (strcmp(m_game->m_guild_teleport_loc[i].m_dest_map_name, map_name) == 0)) {
+				m_game->m_guild_teleport_loc[i].m_time = time;
 				return;
 			}
 			else {
-				m_pGame->m_pGuildTeleportLoc[i].m_sDestX = dX;
-				m_pGame->m_pGuildTeleportLoc[i].m_sDestY = dY;
-				std::memset(m_pGame->m_pGuildTeleportLoc[i].m_cDestMapName, 0, sizeof(m_pGame->m_pGuildTeleportLoc[i].m_cDestMapName));
-				strcpy(m_pGame->m_pGuildTeleportLoc[i].m_cDestMapName, pMapName);
-				m_pGame->m_pGuildTeleportLoc[i].m_dwTime = dwTime;
+				m_game->m_guild_teleport_loc[i].m_dest_x = dX;
+				m_game->m_guild_teleport_loc[i].m_dest_y = dY;
+				std::memset(m_game->m_guild_teleport_loc[i].m_dest_map_name, 0, sizeof(m_game->m_guild_teleport_loc[i].m_dest_map_name));
+				strcpy(m_game->m_guild_teleport_loc[i].m_dest_map_name, map_name);
+				m_game->m_guild_teleport_loc[i].m_time = time;
 				return;
 			}
 		}
 
-	dwTemp = 0;
-	iIndex = -1;
+	temp = 0;
+	index = -1;
 	for(int i = 0; i < MaxGuilds; i++) {
-		if (m_pGame->m_pGuildTeleportLoc[i].m_iV1 == 0) {
+		if (m_game->m_guild_teleport_loc[i].m_v1 == 0) {
 
-			m_pGame->m_pGuildTeleportLoc[i].m_iV1 = iGuildGUID;
-			m_pGame->m_pGuildTeleportLoc[i].m_sDestX = dX;
-			m_pGame->m_pGuildTeleportLoc[i].m_sDestY = dY;
-			std::memset(m_pGame->m_pGuildTeleportLoc[i].m_cDestMapName, 0, sizeof(m_pGame->m_pGuildTeleportLoc[i].m_cDestMapName));
-			strcpy(m_pGame->m_pGuildTeleportLoc[i].m_cDestMapName, pMapName);
-			m_pGame->m_pGuildTeleportLoc[i].m_dwTime = dwTime;
+			m_game->m_guild_teleport_loc[i].m_v1 = guild_guid;
+			m_game->m_guild_teleport_loc[i].m_dest_x = dX;
+			m_game->m_guild_teleport_loc[i].m_dest_y = dY;
+			std::memset(m_game->m_guild_teleport_loc[i].m_dest_map_name, 0, sizeof(m_game->m_guild_teleport_loc[i].m_dest_map_name));
+			strcpy(m_game->m_guild_teleport_loc[i].m_dest_map_name, map_name);
+			m_game->m_guild_teleport_loc[i].m_time = time;
 			return;
 		}
 		else {
-			if (dwTemp < (dwTime - m_pGame->m_pGuildTeleportLoc[i].m_dwTime)) {
-				dwTemp = (dwTime - m_pGame->m_pGuildTeleportLoc[i].m_dwTime);
-				iIndex = i;
+			if (temp < (time - m_game->m_guild_teleport_loc[i].m_time)) {
+				temp = (time - m_game->m_guild_teleport_loc[i].m_time);
+				index = i;
 			}
 		}
 	}
 
-	// .         (iIndex)   .
-	if (iIndex == -1) return;
+	// .         (index)   .
+	if (index == -1) return;
 
 	////testcode
 	//PutLogList("(X) No more GuildTeleportLoc Space! Replaced.");
 
-	//m_pGame->m_pGuildTeleportLoc[i].m_iV1 = iGuildGUID;
-	//m_pGame->m_pGuildTeleportLoc[i].m_sDestX = dX;
-	//m_pGame->m_pGuildTeleportLoc[i].m_sDestY = dY;
-	//std::memset(m_pGame->m_pGuildTeleportLoc[i].m_cDestMapName, 0, sizeof(m_pGame->m_pGuildTeleportLoc[i].m_cDestMapName));
-	//strcpy(m_pGame->m_pGuildTeleportLoc[i].m_cDestMapName, pMapName);
-	//m_pGame->m_pGuildTeleportLoc[i].m_dwTime = dwTime;
+	//m_game->m_guild_teleport_loc[i].m_v1 = guild_guid;
+	//m_game->m_guild_teleport_loc[i].m_dest_x = dX;
+	//m_game->m_guild_teleport_loc[i].m_dest_y = dY;
+	//std::memset(m_game->m_guild_teleport_loc[i].m_dest_map_name, 0, sizeof(m_game->m_guild_teleport_loc[i].m_dest_map_name));
+	//strcpy(m_game->m_guild_teleport_loc[i].m_dest_map_name, map_name);
+	//m_game->m_guild_teleport_loc[i].m_time = time;
 }
 
-void WarManager::RequestSetGuildConstructLocHandler(int iClientH, int dX, int dY, int iGuildGUID, const char* pMapName)
+void WarManager::request_set_guild_construct_loc_handler(int client_h, int dX, int dY, int guild_guid, const char* map_name)
 {
-	int iIndex;
-	uint32_t dwTemp, dwTime;
+	int index;
+	uint32_t temp, time;
 
-	if (m_pGame->m_pClientList[iClientH] == 0) return;
-	if (m_pGame->m_pClientList[iClientH]->m_bIsOnServerChange) return;
+	if (m_game->m_client_list[client_h] == 0) return;
+	if (m_game->m_client_list[client_h]->m_is_on_server_change) return;
 
-	dwTime = GameClock::GetTimeMS();
+	time = GameClock::GetTimeMS();
 
 	//testcode
-	hb::logger::log("SetGuildConstructLoc: {} {} {} {}", iGuildGUID, pMapName, dX, dY);
+	hb::logger::log("SetGuildConstructLoc: {} {} {} {}", guild_guid, map_name, dX, dY);
 
 	// GUID       .
 	for(int i = 0; i < MaxGuilds; i++)
 	{
-		if (m_pGame->m_pGuildTeleportLoc[i].m_iV1 == iGuildGUID) {
-			if ((m_pGame->m_pGuildTeleportLoc[i].m_sDestX2 == dX) && (m_pGame->m_pGuildTeleportLoc[i].m_sDestY2 == dY) && (strcmp(m_pGame->m_pGuildTeleportLoc[i].m_cDestMapName2, pMapName) == 0)) {
-				m_pGame->m_pGuildTeleportLoc[i].m_dwTime2 = dwTime;
+		if (m_game->m_guild_teleport_loc[i].m_v1 == guild_guid) {
+			if ((m_game->m_guild_teleport_loc[i].m_dest_x2 == dX) && (m_game->m_guild_teleport_loc[i].m_dest_y2 == dY) && (strcmp(m_game->m_guild_teleport_loc[i].m_dest_map_name2, map_name) == 0)) {
+				m_game->m_guild_teleport_loc[i].m_time2 = time;
 				return;
 			}
 			else {
-				m_pGame->m_pGuildTeleportLoc[i].m_sDestX2 = dX;
-				m_pGame->m_pGuildTeleportLoc[i].m_sDestY2 = dY;
-				std::memset(m_pGame->m_pGuildTeleportLoc[i].m_cDestMapName2, 0, sizeof(m_pGame->m_pGuildTeleportLoc[i].m_cDestMapName2));
-				strcpy(m_pGame->m_pGuildTeleportLoc[i].m_cDestMapName2, pMapName);
-				m_pGame->m_pGuildTeleportLoc[i].m_dwTime2 = dwTime;
+				m_game->m_guild_teleport_loc[i].m_dest_x2 = dX;
+				m_game->m_guild_teleport_loc[i].m_dest_y2 = dY;
+				std::memset(m_game->m_guild_teleport_loc[i].m_dest_map_name2, 0, sizeof(m_game->m_guild_teleport_loc[i].m_dest_map_name2));
+				strcpy(m_game->m_guild_teleport_loc[i].m_dest_map_name2, map_name);
+				m_game->m_guild_teleport_loc[i].m_time2 = time;
 				return;
 			}
 		}
 	}
 
-	dwTemp = 0;
-	iIndex = -1;
+	temp = 0;
+	index = -1;
 	for(int i = 0; i < MaxGuilds; i++) {
 		{
-			if (m_pGame->m_pGuildTeleportLoc[i].m_iV1 == 0) {
+			if (m_game->m_guild_teleport_loc[i].m_v1 == 0) {
 
-				m_pGame->m_pGuildTeleportLoc[i].m_iV1 = iGuildGUID;
-				m_pGame->m_pGuildTeleportLoc[i].m_sDestX2 = dX;
-				m_pGame->m_pGuildTeleportLoc[i].m_sDestY2 = dY;
-				std::memset(m_pGame->m_pGuildTeleportLoc[i].m_cDestMapName2, 0, sizeof(m_pGame->m_pGuildTeleportLoc[i].m_cDestMapName2));
-				strcpy(m_pGame->m_pGuildTeleportLoc[i].m_cDestMapName2, pMapName);
-				m_pGame->m_pGuildTeleportLoc[i].m_dwTime2 = dwTime;
+				m_game->m_guild_teleport_loc[i].m_v1 = guild_guid;
+				m_game->m_guild_teleport_loc[i].m_dest_x2 = dX;
+				m_game->m_guild_teleport_loc[i].m_dest_y2 = dY;
+				std::memset(m_game->m_guild_teleport_loc[i].m_dest_map_name2, 0, sizeof(m_game->m_guild_teleport_loc[i].m_dest_map_name2));
+				strcpy(m_game->m_guild_teleport_loc[i].m_dest_map_name2, map_name);
+				m_game->m_guild_teleport_loc[i].m_time2 = time;
 				return;
 			}
 			else {
-				if (dwTemp < (dwTime - m_pGame->m_pGuildTeleportLoc[i].m_dwTime2)) {
-					dwTemp = (dwTime - m_pGame->m_pGuildTeleportLoc[i].m_dwTime2);
-					iIndex = i;
+				if (temp < (time - m_game->m_guild_teleport_loc[i].m_time2)) {
+					temp = (time - m_game->m_guild_teleport_loc[i].m_time2);
+					index = i;
 				}
 			}
 		}
 	}
 
-	// .         (iIndex)   .
-	//if (iIndex == -1) return;
+	// .         (index)   .
+	//if (index == -1) return;
 
 	////testcode
 	//PutLogList("(X) No more GuildConstructLoc Space! Replaced.");
 
-	//m_pGame->m_pGuildTeleportLoc[i].m_iV1 = iGuildGUID;
-	//m_pGame->m_pGuildTeleportLoc[i].m_sDestX2 = dX;
-	//m_pGame->m_pGuildTeleportLoc[i].m_sDestY2 = dY;
-	//std::memset(m_pGame->m_pGuildTeleportLoc[i].m_cDestMapName2, 0, sizeof(m_pGame->m_pGuildTeleportLoc[i].m_cDestMapName2));
-	//strcpy(m_pGame->m_pGuildTeleportLoc[i].m_cDestMapName, pMapName);
-	//m_pGame->m_pGuildTeleportLoc[i].m_dwTime2 = dwTime;
+	//m_game->m_guild_teleport_loc[i].m_v1 = guild_guid;
+	//m_game->m_guild_teleport_loc[i].m_dest_x2 = dX;
+	//m_game->m_guild_teleport_loc[i].m_dest_y2 = dY;
+	//std::memset(m_game->m_guild_teleport_loc[i].m_dest_map_name2, 0, sizeof(m_game->m_guild_teleport_loc[i].m_dest_map_name2));
+	//strcpy(m_game->m_guild_teleport_loc[i].m_dest_map_name, map_name);
+	//m_game->m_guild_teleport_loc[i].m_time2 = time;
 }
 
-void WarManager::SetHeldenianMode()
+void WarManager::set_heldenian_mode()
 {
 	hb::time::local_time SysTime{};
 
 	SysTime = hb::time::local_time::now();
-	m_pGame->m_dwHeldenianStartHour = SysTime.hour;
-	m_pGame->m_dwHeldenianStartMinute = SysTime.minute;
+	m_game->m_heldenian_start_hour = SysTime.hour;
+	m_game->m_heldenian_start_minute = SysTime.minute;
 
-	if (m_pGame->m_cHeldenianModeType != 2) {
-		m_pGame->m_cHeldenianVictoryType = m_pGame->m_sLastHeldenianWinner;
+	if (m_game->m_heldenian_mode_type != 2) {
+		m_game->m_heldenian_victory_type = m_game->m_last_heldenian_winner;
 	}
 }
 
-void WarManager::GlobalStartHeldenianMode()
+void WarManager::global_start_heldenian_mode()
 {
-	uint32_t dwTime = GameClock::GetTimeMS();
-	LocalStartHeldenianMode(m_pGame->m_cHeldenianModeType, m_pGame->m_sLastHeldenianWinner, dwTime);
+	uint32_t time = GameClock::GetTimeMS();
+	local_start_heldenian_mode(m_game->m_heldenian_mode_type, m_game->m_last_heldenian_winner, time);
 
 }
 
-void WarManager::LocalStartHeldenianMode(short sV1, short sV2, uint32_t dwHeldenianGUID)
+void WarManager::local_start_heldenian_mode(short v1, short v2, uint32_t heldenian_guid)
 {
-	int x, z, iNamingValue;
-	char cName[hb::shared::limits::CharNameLen], cNpcWaypointIndex[10], cSide, cOwnerType;
-	short sOwnerH;
-	int bRet;
+	int x, z, naming_value;
+	char name[hb::shared::limits::CharNameLen], npc_waypoint_index[10], side, owner_type;
+	short owner_h;
+	int ret;
 	int dX, dY;
 
-	if (m_pGame->m_bIsHeldenianMode) return;
+	if (m_game->m_is_heldenian_mode) return;
 
-	if ((m_pGame->m_cHeldenianModeType == -1) || (m_pGame->m_cHeldenianModeType != sV1)) {
-		m_pGame->m_cHeldenianModeType = static_cast<char>(sV1);
+	if ((m_game->m_heldenian_mode_type == -1) || (m_game->m_heldenian_mode_type != v1)) {
+		m_game->m_heldenian_mode_type = static_cast<char>(v1);
 	}
-	if ((m_pGame->m_sLastHeldenianWinner != -1) && (m_pGame->m_sLastHeldenianWinner == sV2)) {
-		hb::logger::log<log_channel::events>("Heldenian Mode : {} , Heldenian Last Winner : {}", m_pGame->m_cHeldenianModeType, m_pGame->m_sLastHeldenianWinner);
+	if ((m_game->m_last_heldenian_winner != -1) && (m_game->m_last_heldenian_winner == v2)) {
+		hb::logger::log<log_channel::events>("Heldenian Mode : {} , Heldenian Last Winner : {}", m_game->m_heldenian_mode_type, m_game->m_last_heldenian_winner);
 	}
 
-	if (dwHeldenianGUID != 0) {
-		_CreateHeldenianGUID(dwHeldenianGUID, 0);
-		m_pGame->m_dwHeldenianGUID = dwHeldenianGUID;
+	if (heldenian_guid != 0) {
+		create_heldenian_guid(heldenian_guid, 0);
+		m_game->m_heldenian_guid = heldenian_guid;
 	}
-	m_pGame->m_iHeldenianAresdenLeftTower = 0;
-	m_pGame->m_iHeldenianElvineLeftTower = 0;
-	m_pGame->m_iHeldenianAresdenDead = 0;
-	m_pGame->m_iHeldenianElvineDead = 0;
+	m_game->m_heldenian_aresden_left_tower = 0;
+	m_game->m_heldenian_elvine_left_tower = 0;
+	m_game->m_heldenian_aresden_dead = 0;
+	m_game->m_heldenian_elvine_dead = 0;
 
 	for(int i = 0; i < MaxClients; i++) {
-		if (m_pGame->m_pClientList[i] != 0) {
-			if (m_pGame->m_pClientList[i]->m_bIsInitComplete != true) break;
-			m_pGame->m_pClientList[i]->m_cVar = 2;
-			m_pGame->SendNotifyMsg(0, i, Notify::HeldenianTeleport, 0, 0, 0, 0);
-			m_pGame->m_pClientList[i]->m_iWarContribution = 0;
-			m_pGame->m_pClientList[i]->m_iConstructionPoint = (m_pGame->m_pClientList[i]->m_iCharisma * 300);
-			if (m_pGame->m_pClientList[i]->m_iConstructionPoint > 12000) m_pGame->m_pClientList[i]->m_iConstructionPoint = 12000;
-			m_pGame->SendNotifyMsg(0, i, Notify::ConstructionPoint, m_pGame->m_pClientList[i]->m_iConstructionPoint, m_pGame->m_pClientList[i]->m_iWarContribution, 1, 0);
+		if (m_game->m_client_list[i] != 0) {
+			if (m_game->m_client_list[i]->m_is_init_complete != true) break;
+			m_game->m_client_list[i]->m_var = 2;
+			m_game->send_notify_msg(0, i, Notify::HeldenianTeleport, 0, 0, 0, 0);
+			m_game->m_client_list[i]->m_war_contribution = 0;
+			m_game->m_client_list[i]->m_construction_point = (m_game->m_client_list[i]->m_charisma * 300);
+			if (m_game->m_client_list[i]->m_construction_point > 12000) m_game->m_client_list[i]->m_construction_point = 12000;
+			m_game->send_notify_msg(0, i, Notify::ConstructionPoint, m_game->m_client_list[i]->m_construction_point, m_game->m_client_list[i]->m_war_contribution, 1, 0);
 		}
 	}
 
 	for (x = 0; x < MaxMaps; x++) {
-		if (m_pGame->m_pMapList[x] == 0) break;
-		if (m_pGame->m_pMapList[x]->m_bIsHeldenianMap) {
+		if (m_game->m_map_list[x] == 0) break;
+		if (m_game->m_map_list[x]->m_is_heldenian_map) {
 			for(int i = 0; i < MaxClients; i++) {
-				if (m_pGame->m_pClientList[i] == 0) break;
-				if (m_pGame->m_pClientList[i]->m_bIsInitComplete != true) break;
-				if (m_pGame->m_pClientList[i]->m_cMapIndex != x) break;
-				m_pGame->SendNotifyMsg(0, i, Notify::Unknown0BE8, 0, 0, 0, 0);
-				m_pGame->RequestTeleportHandler(i, "1   ", 0, -1, -1);
+				if (m_game->m_client_list[i] == 0) break;
+				if (m_game->m_client_list[i]->m_is_init_complete != true) break;
+				if (m_game->m_client_list[i]->m_map_index != x) break;
+				m_game->send_notify_msg(0, i, Notify::Unknown0BE8, 0, 0, 0, 0);
+				m_game->request_teleport_handler(i, "1   ", 0, -1, -1);
 			}
 			for(int i = 0; i < MaxNpcs; i++) {
-				if (m_pGame->m_pNpcList[i] == 0) break;
-				if (m_pGame->m_pNpcList[i]->m_bIsKilled) break;
-				if (m_pGame->m_pNpcList[i]->m_cMapIndex != x) break;
-				m_pGame->m_pNpcList[i]->m_bIsSummoned = true;
-				RemoveHeldenianNpc(i);
+				if (m_game->m_npc_list[i] == 0) break;
+				if (m_game->m_npc_list[i]->m_is_killed) break;
+				if (m_game->m_npc_list[i]->m_map_index != x) break;
+				m_game->m_npc_list[i]->m_is_summoned = true;
+				remove_heldenian_npc(i);
 			}
 
-			if (m_pGame->m_cHeldenianModeType == 1) {
-				if (strcmp(m_pGame->m_pMapList[x]->m_cName, "btfield") == 0) {
+			if (m_game->m_heldenian_mode_type == 1) {
+				if (strcmp(m_game->m_map_list[x]->m_name, "btfield") == 0) {
 					for(int i = 0; i < smap::MaxHeldenianTower; i++) {
-						iNamingValue = m_pGame->m_pMapList[x]->iGetEmptyNamingValue();
-						if (m_pGame->m_pMapList[x]->m_stHeldenianTower[i].sTypeID < 1)  break;
-						if (m_pGame->m_pMapList[x]->m_stHeldenianTower[i].sTypeID > MaxNpcTypes) break;
-						if (iNamingValue != -1) {
-							dX = m_pGame->m_pMapList[x]->m_stHeldenianTower[i].dX;
-							dY = m_pGame->m_pMapList[x]->m_stHeldenianTower[i].dY;
-							cSide = m_pGame->m_pMapList[x]->m_stHeldenianTower[i].cSide;
-							int iNpcConfigId = -1;
+						naming_value = m_game->m_map_list[x]->get_empty_naming_value();
+						if (m_game->m_map_list[x]->m_heldenian_tower[i].type_id < 1)  break;
+						if (m_game->m_map_list[x]->m_heldenian_tower[i].type_id > MaxNpcTypes) break;
+						if (naming_value != -1) {
+							dX = m_game->m_map_list[x]->m_heldenian_tower[i].x;
+							dY = m_game->m_map_list[x]->m_heldenian_tower[i].y;
+							side = m_game->m_map_list[x]->m_heldenian_tower[i].side;
+							int npc_config_id = -1;
 							for (z = 0; z < MaxNpcTypes; z++) {
-								if (m_pGame->m_pNpcConfigList[z] == 0) break;
-								if (m_pGame->m_pNpcConfigList[z]->m_sType == m_pGame->m_pMapList[x]->m_stHeldenianTower[i].sTypeID) {
-									iNpcConfigId = z;
+								if (m_game->m_npc_config_list[z] == 0) break;
+								if (m_game->m_npc_config_list[z]->m_type == m_game->m_map_list[x]->m_heldenian_tower[i].type_id) {
+									npc_config_id = z;
 								}
 							}
-							std::memset(cName, 0, sizeof(cName));
-							std::snprintf(cName, sizeof(cName), "XX%d", iNamingValue);
-							cName[0] = 95;
-							cName[1] = static_cast<char>(i + 65);
-							bRet = m_pGame->bCreateNewNpc(iNpcConfigId, cName, m_pGame->m_pMapList[x]->m_cName, (rand() % 3), 0, MoveType::Random, &dX, &dY, cNpcWaypointIndex, 0, 0, cSide, false, false, false, true, false);
-							if (bRet == 0) {
-								m_pGame->m_pMapList[x]->SetNamingValueEmpty(iNamingValue);
+							std::memset(name, 0, sizeof(name));
+							std::snprintf(name, sizeof(name), "XX%d", naming_value);
+							name[0] = 95;
+							name[1] = static_cast<char>(i + 65);
+							ret = m_game->create_new_npc(npc_config_id, name, m_game->m_map_list[x]->m_name, (rand() % 3), 0, MoveType::Random, &dX, &dY, npc_waypoint_index, 0, 0, side, false, false, false, true, false);
+							if (ret == 0) {
+								m_game->m_map_list[x]->set_naming_value_empty(naming_value);
 							}
 							else {
-								m_pGame->m_pMapList[x]->GetOwner(&sOwnerH, &cOwnerType, dX, dY);
-								if ((m_pGame->m_pNpcList[sOwnerH] != 0) && (sOwnerH > 0) && (sOwnerH < MaxNpcs)) {
-									m_pGame->m_pNpcList[sOwnerH]->m_iBuildCount = 0;
+								m_game->m_map_list[x]->get_owner(&owner_h, &owner_type, dX, dY);
+								if ((m_game->m_npc_list[owner_h] != 0) && (owner_h > 0) && (owner_h < MaxNpcs)) {
+									m_game->m_npc_list[owner_h]->m_build_count = 0;
 								}
-								if (cSide == 1)	m_pGame->m_iHeldenianAresdenLeftTower += 1;
-								if (cSide == 2) m_pGame->m_iHeldenianElvineLeftTower += 1;
+								if (side == 1)	m_game->m_heldenian_aresden_left_tower += 1;
+								if (side == 2) m_game->m_heldenian_elvine_left_tower += 1;
 							}
 						}
 					}
-					hb::logger::log<log_channel::events>("HeldenianAresdenLeftTower : {} , HeldenianElvineLeftTower : {}", m_pGame->m_iHeldenianAresdenLeftTower, m_pGame->m_iHeldenianElvineLeftTower);
-					UpdateHeldenianStatus();
+					hb::logger::log<log_channel::events>("HeldenianAresdenLeftTower : {} , HeldenianElvineLeftTower : {}", m_game->m_heldenian_aresden_left_tower, m_game->m_heldenian_elvine_left_tower);
+					update_heldenian_status();
 				}
 			}
-			else if (m_pGame->m_cHeldenianModeType == 2) {
-				if (strcmp(m_pGame->m_pMapList[x]->m_cName, "hrampart") == 0) {
+			else if (m_game->m_heldenian_mode_type == 2) {
+				if (strcmp(m_game->m_map_list[x]->m_name, "hrampart") == 0) {
 					for(int i = 0; i < smap::MaxHeldenianDoor; i++) {
-						iNamingValue = m_pGame->m_pMapList[x]->iGetEmptyNamingValue();
-						if (iNamingValue != -1) {
-							dX = m_pGame->m_pMapList[x]->m_stHeldenianGateDoor[i].dX;
-							dY = m_pGame->m_pMapList[x]->m_stHeldenianGateDoor[i].dY;
-							cSide = m_pGame->m_sLastHeldenianWinner;
-							int iNpcConfigId = -1;
+						naming_value = m_game->m_map_list[x]->get_empty_naming_value();
+						if (naming_value != -1) {
+							dX = m_game->m_map_list[x]->m_heldenian_gate_door[i].x;
+							dY = m_game->m_map_list[x]->m_heldenian_gate_door[i].y;
+							side = m_game->m_last_heldenian_winner;
+							int npc_config_id = -1;
 							for (z = 0; z < MaxNpcTypes; z++) {
-								if (m_pGame->m_pNpcConfigList[z] == 0) break;
-								if (m_pGame->m_pNpcConfigList[z]->m_sType == 91) {
-									iNpcConfigId = z;
+								if (m_game->m_npc_config_list[z] == 0) break;
+								if (m_game->m_npc_config_list[z]->m_type == 91) {
+									npc_config_id = z;
 								}
 							}
-							std::memset(cName, 0, sizeof(cName));
-							std::snprintf(cName, sizeof(cName), "XX%d", iNamingValue);
-							cName[0] = 95;
-							cName[1] = static_cast<char>(i + 65);
-							bRet = m_pGame->bCreateNewNpc(iNpcConfigId, cName, m_pGame->m_pMapList[x]->m_cName, (rand() % 3), 0, MoveType::Random, &dX, &dY, cNpcWaypointIndex, 0, 0, cSide, false, false, false, true, false);
-							if (bRet == 0) {
-								m_pGame->m_pMapList[x]->SetNamingValueEmpty(iNamingValue);
+							std::memset(name, 0, sizeof(name));
+							std::snprintf(name, sizeof(name), "XX%d", naming_value);
+							name[0] = 95;
+							name[1] = static_cast<char>(i + 65);
+							ret = m_game->create_new_npc(npc_config_id, name, m_game->m_map_list[x]->m_name, (rand() % 3), 0, MoveType::Random, &dX, &dY, npc_waypoint_index, 0, 0, side, false, false, false, true, false);
+							if (ret == 0) {
+								m_game->m_map_list[x]->set_naming_value_empty(naming_value);
 							}
 							else {
-								//m_pGame->m_pMapList[x]->GetOwner(&sOwnerH, &cOwnerType, dX, dY);
-								if ((m_pGame->m_pNpcList[bRet] != 0) && (bRet > 0) && (bRet < MaxNpcs)) {
-									m_pGame->m_pNpcList[bRet]->m_iBuildCount = 0;
-									m_pGame->m_pNpcList[bRet]->m_cDir = m_pGame->m_pMapList[x]->m_stHeldenianGateDoor[i].cDir;
+								//m_game->m_map_list[x]->get_owner(&owner_h, &owner_type, dX, dY);
+								if ((m_game->m_npc_list[ret] != 0) && (ret > 0) && (ret < MaxNpcs)) {
+									m_game->m_npc_list[ret]->m_build_count = 0;
+									m_game->m_npc_list[ret]->m_dir = m_game->m_map_list[x]->m_heldenian_gate_door[i].dir;
 								}
 							}
 						}
@@ -1663,99 +1663,99 @@ void WarManager::LocalStartHeldenianMode(short sV1, short sV2, uint32_t dwHelden
 			}
 		}
 	}
-	m_pGame->m_bHeldenianInitiated = true;
-	m_pGame->m_bIsHeldenianMode = true;
+	m_game->m_heldenian_initiated = true;
+	m_game->m_is_heldenian_mode = true;
 	hb::logger::log<log_channel::events>("Heldenian started");
-	m_pGame->m_dwHeldenianStartTime = static_cast<uint32_t>(time(0));
+	m_game->m_heldenian_start_time = static_cast<uint32_t>(time(0));
 }
 
-void WarManager::GlobalEndHeldenianMode()
+void WarManager::global_end_heldenian_mode()
 {
-	//char * cp, cData[32];
+	//char * cp, data[32];
 
-	if (m_pGame->m_bIsHeldenianMode == false) return;
+	if (m_game->m_is_heldenian_mode == false) return;
 
-	LocalEndHeldenianMode();
+	local_end_heldenian_mode();
 
 }
 
-void WarManager::LocalEndHeldenianMode()
+void WarManager::local_end_heldenian_mode()
 {
-	if (m_pGame->m_bIsHeldenianMode == false) return;
-	m_pGame->m_bIsHeldenianMode = false;
-	m_pGame->m_bHeldenianInitiated = true;
+	if (m_game->m_is_heldenian_mode == false) return;
+	m_game->m_is_heldenian_mode = false;
+	m_game->m_heldenian_initiated = true;
 
-	m_pGame->m_dwHeldenianFinishTime = static_cast<uint32_t>(time(0));
-	if (m_pGame->var_88C == 1) {
-		if (m_pGame->m_cHeldenianModeType == 1) {
-			if (m_pGame->m_iHeldenianAresdenLeftTower > m_pGame->m_iHeldenianElvineLeftTower) {
-				m_pGame->m_cHeldenianVictoryType = 1;
+	m_game->m_heldenian_finish_time = static_cast<uint32_t>(time(0));
+	if (m_game->var_88C == 1) {
+		if (m_game->m_heldenian_mode_type == 1) {
+			if (m_game->m_heldenian_aresden_left_tower > m_game->m_heldenian_elvine_left_tower) {
+				m_game->m_heldenian_victory_type = 1;
 			}
-			else if (m_pGame->m_iHeldenianAresdenLeftTower < m_pGame->m_iHeldenianElvineLeftTower) {
-				m_pGame->m_cHeldenianVictoryType = 2;
+			else if (m_game->m_heldenian_aresden_left_tower < m_game->m_heldenian_elvine_left_tower) {
+				m_game->m_heldenian_victory_type = 2;
 			}
-			else if (m_pGame->m_iHeldenianAresdenDead < m_pGame->m_iHeldenianElvineDead) {
-				m_pGame->m_cHeldenianVictoryType = 1;
+			else if (m_game->m_heldenian_aresden_dead < m_game->m_heldenian_elvine_dead) {
+				m_game->m_heldenian_victory_type = 1;
 			}
-			else if (m_pGame->m_iHeldenianAresdenDead > m_pGame->m_iHeldenianElvineDead) {
-				m_pGame->m_cHeldenianVictoryType = 2;
+			else if (m_game->m_heldenian_aresden_dead > m_game->m_heldenian_elvine_dead) {
+				m_game->m_heldenian_victory_type = 2;
 			}
 			else {
-				m_pGame->m_sLastHeldenianWinner = m_pGame->m_cHeldenianVictoryType;
+				m_game->m_last_heldenian_winner = m_game->m_heldenian_victory_type;
 			}
 		}
-		else if (m_pGame->m_cHeldenianModeType == 2) {
-			m_pGame->m_sLastHeldenianWinner = m_pGame->m_cHeldenianVictoryType;
+		else if (m_game->m_heldenian_mode_type == 2) {
+			m_game->m_last_heldenian_winner = m_game->m_heldenian_victory_type;
 		}
-		m_pGame->m_sLastHeldenianWinner = m_pGame->m_cHeldenianVictoryType;
-		if (bNotifyHeldenianWinner() == false) {
+		m_game->m_last_heldenian_winner = m_game->m_heldenian_victory_type;
+		if (notify_heldenian_winner() == false) {
 			hb::logger::log("Heldenian ended, result report failed");
 		}
 	}
-	hb::logger::log("Heldenian ended, winner side: {}", m_pGame->m_sLastHeldenianWinner);
+	hb::logger::log("Heldenian ended, winner side: {}", m_game->m_last_heldenian_winner);
 
 	for(int i = 0; i < MaxMaps; i++)
 	{
-		if (m_pGame->m_pMapList[i] != 0)
+		if (m_game->m_map_list[i] != 0)
 		{
 			for (int x = 0; x < MaxClients; x++)
-				if ((m_pGame->m_pClientList[x] != 0) && (m_pGame->m_pClientList[x]->m_bIsInitComplete)) {
-					m_pGame->SendNotifyMsg(0, x, Notify::HeldenianEnd, 0, 0, 0, 0);
-					if (m_pGame->m_pMapList[m_pGame->m_pClientList[x]->m_cMapIndex]->m_bIsHeldenianMap) {
+				if ((m_game->m_client_list[x] != 0) && (m_game->m_client_list[x]->m_is_init_complete)) {
+					m_game->send_notify_msg(0, x, Notify::HeldenianEnd, 0, 0, 0, 0);
+					if (m_game->m_map_list[m_game->m_client_list[x]->m_map_index]->m_is_heldenian_map) {
 						for (int n = 0; n < MaxNpcs; n++)
-							if ((m_pGame->m_pNpcList[n] != 0) && (m_pGame->m_pMapList[m_pGame->m_pNpcList[n]->m_cMapIndex] != 0) && (m_pGame->m_pNpcList[n]->m_bIsSummoned)) {
-								RemoveHeldenianNpc(n);
+							if ((m_game->m_npc_list[n] != 0) && (m_game->m_map_list[m_game->m_npc_list[n]->m_map_index] != 0) && (m_game->m_npc_list[n]->m_is_summoned)) {
+								remove_heldenian_npc(n);
 							}
-						RemoveOccupyFlags(x);
+						remove_occupy_flags(x);
 					}
 				}
 		}
 	}
-	_CreateHeldenianGUID(m_pGame->m_dwHeldenianGUID, m_pGame->m_cHeldenianVictoryType);
+	create_heldenian_guid(m_game->m_heldenian_guid, m_game->m_heldenian_victory_type);
 }
 
-bool WarManager::UpdateHeldenianStatus()
+bool WarManager::update_heldenian_status()
 {
 	
-	bool bFlag;
-	int iShortCutIndex, iClientH;
+	bool flag;
+	int short_cut_index, client_h;
 
-	if (m_pGame->m_bIsHeldenianMode != true) return false;
+	if (m_game->m_is_heldenian_mode != true) return false;
 	for(int i = 0; i < MaxMaps; i++)
-		if (m_pGame->m_pMapList[i] != 0) {
-			if (m_pGame->m_pMapList[i]->m_bIsHeldenianMap) {
-				bFlag = true;
-				iShortCutIndex = 0;
+		if (m_game->m_map_list[i] != 0) {
+			if (m_game->m_map_list[i]->m_is_heldenian_map) {
+				flag = true;
+				short_cut_index = 0;
 			}
-			if (bFlag) {
-				iClientH = m_pGame->m_iClientShortCut[iShortCutIndex];
-				iShortCutIndex++;
-				if (iClientH == 0) {
-					bFlag = 0;
+			if (flag) {
+				client_h = m_game->m_client_shortcut[short_cut_index];
+				short_cut_index++;
+				if (client_h == 0) {
+					flag = 0;
 				}
 				else {
-					if ((m_pGame->m_pClientList[iClientH] != 0) && (m_pGame->m_pClientList[iClientH]->m_bIsInitComplete) && (strcmp(m_pGame->m_pMapList[m_pGame->m_pClientList[iClientH]->m_cMapIndex]->m_cName, "btfield") == 0)) {
-						m_pGame->SendNotifyMsg(0, iClientH, Notify::HeldenianCount, m_pGame->m_iHeldenianAresdenLeftTower, m_pGame->m_iHeldenianElvineLeftTower, m_pGame->m_iHeldenianAresdenDead, 0, m_pGame->m_iHeldenianElvineDead, 0);
+					if ((m_game->m_client_list[client_h] != 0) && (m_game->m_client_list[client_h]->m_is_init_complete) && (strcmp(m_game->m_map_list[m_game->m_client_list[client_h]->m_map_index]->m_name, "btfield") == 0)) {
+						m_game->send_notify_msg(0, client_h, Notify::HeldenianCount, m_game->m_heldenian_aresden_left_tower, m_game->m_heldenian_elvine_left_tower, m_game->m_heldenian_aresden_dead, 0, m_game->m_heldenian_elvine_dead, 0);
 					}
 				}
 			}
@@ -1763,89 +1763,89 @@ bool WarManager::UpdateHeldenianStatus()
 	return true;
 }
 
-void WarManager::_CreateHeldenianGUID(uint32_t dwHeldenianGUID, int iWinnerSide)
+void WarManager::create_heldenian_guid(uint32_t heldenian_guid, int winner_side)
 {
-	char* cp, cTxt[256], cFn[256], cTemp[1024];
-	FILE* pFile;
+	char* cp, txt[256], fn[256], temp[1024];
+	FILE* file;
 
 	std::filesystem::create_directories("GameData");
-	std::memset(cFn, 0, sizeof(cFn));
+	std::memset(fn, 0, sizeof(fn));
 
-	strcat(cFn, "GameData");
-	strcat(cFn, "/");
-	strcat(cFn, "/");
-	strcat(cFn, "HeldenianGUID.Txt");
+	strcat(fn, "GameData");
+	strcat(fn, "/");
+	strcat(fn, "/");
+	strcat(fn, "HeldenianGUID.Txt");
 
-	pFile = fopen(cFn, "wt");
-	if (pFile == 0) {
-		hb::logger::log("Cannot create HeldenianGUID({}) file", dwHeldenianGUID);
+	file = fopen(fn, "wt");
+	if (file == 0) {
+		hb::logger::log("Cannot create HeldenianGUID({}) file", heldenian_guid);
 	}
 	else {
-		std::memset(cTemp, 0, sizeof(cTemp));
+		std::memset(temp, 0, sizeof(temp));
 
-		std::memset(cTxt, 0, sizeof(cTxt));
-		std::snprintf(cTxt, sizeof(cTxt), "HeldenianGUID = %d", dwHeldenianGUID);
-		strcat(cTemp, cTxt);
+		std::memset(txt, 0, sizeof(txt));
+		std::snprintf(txt, sizeof(txt), "HeldenianGUID = %d", heldenian_guid);
+		strcat(temp, txt);
 
-		std::memset(cTxt, 0, sizeof(cTxt));
-		std::snprintf(cTxt, sizeof(cTxt), "winner-side = %d\n", iWinnerSide);
-		strcat(cTemp, cTxt);
+		std::memset(txt, 0, sizeof(txt));
+		std::snprintf(txt, sizeof(txt), "winner-side = %d\n", winner_side);
+		strcat(temp, txt);
 
-		cp = (char*)cTemp;
-		fwrite(cp, strlen(cp), 1, pFile);
+		cp = (char*)temp;
+		fwrite(cp, strlen(cp), 1, file);
 
-		hb::logger::log("HeldenianGUID({}) file created", dwHeldenianGUID);
+		hb::logger::log("HeldenianGUID({}) file created", heldenian_guid);
 	}
-	if (pFile != 0) fclose(pFile);
+	if (file != 0) fclose(file);
 }
 
-void WarManager::ManualStartHeldenianMode(int iClientH, char* pData, size_t dwMsgSize)
+void WarManager::manual_start_heldenian_mode(int client_h, char* data, size_t msg_size)
 {
-	char cHeldenianType, cBuff[256], * token, seps[] = "= \t\r\n";
+	char heldenian_type, buff[256], * token, seps[] = "= \t\r\n";
 	hb::time::local_time SysTime{};
-	int iV1;
+	int v1;
 
-	if (m_pGame->m_bIsHeldenianMode) return;
-	if (m_pGame->m_bIsApocalypseMode) return;
-	if (m_pGame->m_bIsCrusadeMode) return;
-	if ((dwMsgSize != 0) && (pData != 0)) {
-		m_pGame->m_bHeldenianRunning = true;
+	if (m_game->m_is_heldenian_mode) return;
+	if (m_game->m_is_apocalypse_mode) return;
+	if (m_game->m_is_crusade_mode) return;
+	if ((msg_size != 0) && (data != 0)) {
+		m_game->m_heldenian_running = true;
 		SysTime = hb::time::local_time::now();
 
-		std::memset(cBuff, 0, sizeof(cBuff));
-		memcpy(cBuff, pData, dwMsgSize);
+		std::memset(buff, 0, sizeof(buff));
+		memcpy(buff, data, msg_size);
 		token = strtok(NULL, seps);
 		token = strtok(NULL, seps);
 		if (token != 0) {
-			iV1 = atoi(token);
-			iV1 += (SysTime.hour * 24 + SysTime.minute * 60);
-			m_pGame->m_dwHeldenianStartHour = (iV1 / 24);
-			m_pGame->m_dwHeldenianStartMinute = (iV1 / 60);
+			v1 = atoi(token);
+			v1 += (SysTime.hour * 24 + SysTime.minute * 60);
+			m_game->m_heldenian_start_hour = (v1 / 24);
+			m_game->m_heldenian_start_minute = (v1 / 60);
 		}
 		token = strtok(NULL, seps);
 		if (token != 0) {
-			cHeldenianType = atoi(token);
-			if ((cHeldenianType == 1) || (cHeldenianType == 2)) {
-				m_pGame->m_cHeldenianModeType = cHeldenianType;
+			heldenian_type = atoi(token);
+			if ((heldenian_type == 1) || (heldenian_type == 2)) {
+				m_game->m_heldenian_mode_type = heldenian_type;
 			}
 		}
 	}
-	GlobalStartHeldenianMode();
-	hb::logger::log<log_channel::events>("GM Order({}): begin Heldenian", m_pGame->m_pClientList[iClientH]->m_cCharName);
+	global_start_heldenian_mode();
+	hb::logger::log<log_channel::events>("GM Order({}): begin Heldenian", m_game->m_client_list[client_h]->m_char_name);
 }
 
-void WarManager::ManualEndHeldenianMode(int iClientH, char* pData, size_t dwMsgSize)
+void WarManager::manual_end_heldenian_mode(int client_h, char* data, size_t msg_size)
 {
-	if (m_pGame->m_bIsHeldenianMode) {
-		GlobalEndHeldenianMode();
-		m_pGame->m_bHeldenianRunning = false;
-		hb::logger::log<log_channel::events>("GM Order({}): end Heldenian", m_pGame->m_pClientList[iClientH]->m_cCharName);
+	if (m_game->m_is_heldenian_mode) {
+		global_end_heldenian_mode();
+		m_game->m_heldenian_running = false;
+		hb::logger::log<log_channel::events>("GM Order({}): end Heldenian", m_game->m_client_list[client_h]->m_char_name);
 	}
 }
 
-bool WarManager::bNotifyHeldenianWinner()
+bool WarManager::notify_heldenian_winner()
 {
-	if (m_pGame->var_88C == 0) {
+	if (m_game->var_88C == 0) {
 		return true;
 	}
 	else {
@@ -1854,323 +1854,323 @@ bool WarManager::bNotifyHeldenianWinner()
 
 }
 
-void WarManager::RemoveHeldenianNpc(int iNpcH)
+void WarManager::remove_heldenian_npc(int npc_h)
 {
-	if (m_pGame->m_pNpcList[iNpcH] == 0) return;
-	if (m_pGame->m_pNpcList[iNpcH]->m_bIsKilled) return;
+	if (m_game->m_npc_list[npc_h] == 0) return;
+	if (m_game->m_npc_list[npc_h]->m_is_killed) return;
 
-	m_pGame->m_pNpcList[iNpcH]->m_bIsKilled = true;
-	m_pGame->m_pNpcList[iNpcH]->m_iHP = 0;
-	m_pGame->m_pNpcList[iNpcH]->m_iLastDamage = 0;
-	m_pGame->m_pNpcList[iNpcH]->m_dwRegenTime = 0;
-	m_pGame->m_pMapList[m_pGame->m_pNpcList[iNpcH]->m_cMapIndex]->m_iTotalAliveObject--;
+	m_game->m_npc_list[npc_h]->m_is_killed = true;
+	m_game->m_npc_list[npc_h]->m_hp = 0;
+	m_game->m_npc_list[npc_h]->m_last_damage = 0;
+	m_game->m_npc_list[npc_h]->m_regen_time = 0;
+	m_game->m_map_list[m_game->m_npc_list[npc_h]->m_map_index]->m_total_alive_object--;
 
-	m_pGame->ReleaseFollowMode(iNpcH, hb::shared::owner_class::Npc);
-	m_pGame->m_pNpcList[iNpcH]->m_iTargetIndex = 0;
-	m_pGame->m_pNpcList[iNpcH]->m_cTargetType = 0;
+	m_game->release_follow_mode(npc_h, hb::shared::owner_class::Npc);
+	m_game->m_npc_list[npc_h]->m_target_index = 0;
+	m_game->m_npc_list[npc_h]->m_target_type = 0;
 
-	m_pGame->SendEventToNearClient_TypeA(iNpcH, hb::shared::owner_class::Npc, MsgId::EventMotion, Type::Dying, 0, 1, 0);
-	m_pGame->m_pMapList[m_pGame->m_pNpcList[iNpcH]->m_cMapIndex]->ClearOwner(10, iNpcH, hb::shared::owner_class::Npc, m_pGame->m_pNpcList[iNpcH]->m_sX, m_pGame->m_pNpcList[iNpcH]->m_sY);
-	m_pGame->m_pMapList[m_pGame->m_pNpcList[iNpcH]->m_cMapIndex]->SetDeadOwner(iNpcH, hb::shared::owner_class::Npc, m_pGame->m_pNpcList[iNpcH]->m_sX, m_pGame->m_pNpcList[iNpcH]->m_sY);
-	m_pGame->m_pNpcList[iNpcH]->m_cBehavior = 4;
-	m_pGame->m_pNpcList[iNpcH]->m_sBehaviorTurnCount = 0;
-	m_pGame->m_pNpcList[iNpcH]->m_dwDeadTime = GameClock::GetTimeMS();
+	m_game->send_event_to_near_client_type_a(npc_h, hb::shared::owner_class::Npc, MsgId::EventMotion, Type::Dying, 0, 1, 0);
+	m_game->m_map_list[m_game->m_npc_list[npc_h]->m_map_index]->clear_owner(10, npc_h, hb::shared::owner_class::Npc, m_game->m_npc_list[npc_h]->m_x, m_game->m_npc_list[npc_h]->m_y);
+	m_game->m_map_list[m_game->m_npc_list[npc_h]->m_map_index]->set_dead_owner(npc_h, hb::shared::owner_class::Npc, m_game->m_npc_list[npc_h]->m_x, m_game->m_npc_list[npc_h]->m_y);
+	m_game->m_npc_list[npc_h]->m_behavior = 4;
+	m_game->m_npc_list[npc_h]->m_behavior_turn_count = 0;
+	m_game->m_npc_list[npc_h]->m_dead_time = GameClock::GetTimeMS();
 
 }
 
-void WarManager::RequestHeldenianTeleport(int iClientH, char* pData, size_t dwMsgSize)
+void WarManager::request_heldenian_teleport(int client_h, char* data, size_t msg_size)
 {
-	char cTmpName[hb::shared::limits::NpcNameLen], cTxt[512], cMapName[11]{};
-	short tX = 0, tY = 0, cLoc = 0;
-	int iRet, iWhyReturn = 0;
+	char tmp_name[hb::shared::limits::NpcNameLen], txt[512], map_name[11]{};
+	short tX = 0, tY = 0, loc = 0;
+	int ret, why_return = 0;
 
-	if (m_pGame->m_pClientList[iClientH] == 0) return;
+	if (m_game->m_client_list[client_h] == 0) return;
 
-	const auto* header = hb::net::PacketCast<hb::net::PacketHeader>(pData, sizeof(hb::net::PacketHeader));
+	const auto* header = hb::net::PacketCast<hb::net::PacketHeader>(data, sizeof(hb::net::PacketHeader));
 	if (!header) return;
-	char* cp = (char*)(pData + sizeof(hb::net::PacketHeader));
-	std::memset(cTmpName, 0, sizeof(cTmpName));
-	strcpy(cTmpName, cp);
-	if (strcmp(cTmpName, "Gail") == 0) {
-		std::memset(cTxt, 0, sizeof(cTxt));
-		if ((m_pGame->m_bIsHeldenianMode == 1) && (m_pGame->m_pClientList[iClientH]->m_bIsPlayerCivil != true) && (m_pGame->m_pClientList[iClientH]->m_cSide == 2 || m_pGame->m_pClientList[iClientH]->m_cSide == 1)) {
-			if (m_pGame->m_cHeldenianType == 1) {
-				std::memcpy(cMapName, "btfield", 7);
-				if (m_pGame->m_pClientList[iClientH]->m_cSide == 1) {
+	char* cp = (char*)(data + sizeof(hb::net::PacketHeader));
+	std::memset(tmp_name, 0, sizeof(tmp_name));
+	strcpy(tmp_name, cp);
+	if (strcmp(tmp_name, "Gail") == 0) {
+		std::memset(txt, 0, sizeof(txt));
+		if ((m_game->m_is_heldenian_mode == 1) && (m_game->m_client_list[client_h]->m_is_player_civil != true) && (m_game->m_client_list[client_h]->m_side == 2 || m_game->m_client_list[client_h]->m_side == 1)) {
+			if (m_game->m_heldenian_type == 1) {
+				std::memcpy(map_name, "btfield", 7);
+				if (m_game->m_client_list[client_h]->m_side == 1) {
 					tX = 68;
 					tY = 225;
-					cLoc = 1;
+					loc = 1;
 				}
-				else if (m_pGame->m_pClientList[iClientH]->m_cSide == 2) {
+				else if (m_game->m_client_list[client_h]->m_side == 2) {
 					tX = 202;
 					tY = 70;
-					cLoc = 2;
+					loc = 2;
 				}
 			}
-			else if (m_pGame->m_cHeldenianType == 2) {
-				std::memcpy(cMapName, "hrampart", 8);
-				if (m_pGame->m_pClientList[iClientH]->m_cSide == m_pGame->m_sLastHeldenianWinner) {
+			else if (m_game->m_heldenian_type == 2) {
+				std::memcpy(map_name, "hrampart", 8);
+				if (m_game->m_client_list[client_h]->m_side == m_game->m_last_heldenian_winner) {
 					tX = 81;
 					tY = 42;
-					cLoc = 3;
+					loc = 3;
 				}
 				else {
 					tX = 156;
 					tY = 153;
-					cLoc = 4;
+					loc = 4;
 				}
 			}
-			iWhyReturn = 0;
+			why_return = 0;
 		}
 	}
 
-	// Build response into cTxt buffer
-	std::memset(cTxt, 0, sizeof(cTxt));
-	auto& resp = *reinterpret_cast<hb::net::HeldenianTeleportResponse*>(cTxt + sizeof(hb::net::PacketHeader));
+	// Build response into txt buffer
+	std::memset(txt, 0, sizeof(txt));
+	auto& resp = *reinterpret_cast<hb::net::HeldenianTeleportResponse*>(txt + sizeof(hb::net::PacketHeader));
 	resp.count = 4;
-	resp.location = cLoc;
-	std::memcpy(resp.map_name, cMapName, sizeof(resp.map_name));
+	resp.location = loc;
+	std::memcpy(resp.map_name, map_name, sizeof(resp.map_name));
 	resp.x = tX;
 	resp.y = tY;
-	resp.why_return = iWhyReturn;
+	resp.why_return = why_return;
 
-	iRet = m_pGame->m_pClientList[iClientH]->m_pXSock->iSendMsg(cTxt, static_cast<int>(sizeof(hb::net::PacketHeader) + sizeof(hb::net::HeldenianTeleportResponse)));
-	switch (iRet) {
+	ret = m_game->m_client_list[client_h]->m_socket->send_msg(txt, static_cast<int>(sizeof(hb::net::PacketHeader) + sizeof(hb::net::HeldenianTeleportResponse)));
+	switch (ret) {
 	case sock::Event::QueueFull:
 	case sock::Event::SocketError:
 	case sock::Event::CriticalError:
 	case sock::Event::SocketClosed:
-		m_pGame->DeleteClient(iClientH, true, true);
+		m_game->delete_client(client_h, true, true);
 		break;
 	}
 }
 
-bool WarManager::bCheckHeldenianMap(int sAttackerH, int iMapIndex, char cType)
+bool WarManager::check_heldenian_map(int attacker_h, int map_index, char type)
 {
 	short tX, tY;
-	int iRet;
-	class CTile* pTile;
+	int ret;
+	class CTile* tile;
 
-	iRet = 0;
-	if (m_pGame->m_pClientList[sAttackerH] == 0) return 0;
-	if ((m_pGame->m_bIsHeldenianMode == 1) || (m_pGame->m_cHeldenianType == 1)) {
-		if (cType == hb::shared::owner_class::Player) {
-			if ((m_pGame->m_pMapList[m_pGame->m_pClientList[sAttackerH]->m_cMapIndex] != 0) && (m_pGame->m_pClientList[sAttackerH]->m_cSide > 0)) {
-				tX = m_pGame->m_pClientList[sAttackerH]->m_sX;
-				tY = m_pGame->m_pClientList[sAttackerH]->m_sY;
-				if ((tX < 0) || (tX >= m_pGame->m_pMapList[m_pGame->m_pClientList[sAttackerH]->m_cMapIndex]->m_sSizeX) ||
-					(tY < 0) || (tY >= m_pGame->m_pMapList[m_pGame->m_pClientList[sAttackerH]->m_cMapIndex]->m_sSizeY)) return 0;
-				pTile = (class CTile*)(m_pGame->m_pMapList[m_pGame->m_pClientList[sAttackerH]->m_cMapIndex]->m_pTile + tX + tY * m_pGame->m_pMapList[m_pGame->m_pClientList[sAttackerH]->m_cMapIndex]->m_sSizeY);
-				if (pTile == 0) return 0;
-				if (pTile->m_iOccupyStatus != 0) {
-					if (pTile->m_iOccupyStatus < 0) {
-						if (m_pGame->m_pClientList[sAttackerH]->m_cSide == 1) {
-							iRet = 1;
+	ret = 0;
+	if (m_game->m_client_list[attacker_h] == 0) return 0;
+	if ((m_game->m_is_heldenian_mode == 1) || (m_game->m_heldenian_type == 1)) {
+		if (type == hb::shared::owner_class::Player) {
+			if ((m_game->m_map_list[m_game->m_client_list[attacker_h]->m_map_index] != 0) && (m_game->m_client_list[attacker_h]->m_side > 0)) {
+				tX = m_game->m_client_list[attacker_h]->m_x;
+				tY = m_game->m_client_list[attacker_h]->m_y;
+				if ((tX < 0) || (tX >= m_game->m_map_list[m_game->m_client_list[attacker_h]->m_map_index]->m_size_x) ||
+					(tY < 0) || (tY >= m_game->m_map_list[m_game->m_client_list[attacker_h]->m_map_index]->m_size_y)) return 0;
+				tile = (class CTile*)(m_game->m_map_list[m_game->m_client_list[attacker_h]->m_map_index]->m_tile + tX + tY * m_game->m_map_list[m_game->m_client_list[attacker_h]->m_map_index]->m_size_y);
+				if (tile == 0) return 0;
+				if (tile->m_occupy_status != 0) {
+					if (tile->m_occupy_status < 0) {
+						if (m_game->m_client_list[attacker_h]->m_side == 1) {
+							ret = 1;
 						}
 					}
-					else if (pTile->m_iOccupyStatus > 0) {
-						if (m_pGame->m_pClientList[sAttackerH]->m_cSide == 2) {
-							iRet = 1;
+					else if (tile->m_occupy_status > 0) {
+						if (m_game->m_client_list[attacker_h]->m_side == 2) {
+							ret = 1;
 						}
 					}
 				}
 			}
 		}
-		else if (cType == hb::shared::owner_class::Npc) {
-			if ((m_pGame->m_pMapList[m_pGame->m_pNpcList[sAttackerH]->m_cMapIndex] != 0) && (iMapIndex != -1) && (m_pGame->m_pNpcList[sAttackerH]->m_cSide > 0)) {
-				tX = m_pGame->m_pNpcList[sAttackerH]->m_sX;
-				tY = m_pGame->m_pNpcList[sAttackerH]->m_sY;
-				pTile = (class CTile*)(m_pGame->m_pMapList[m_pGame->m_pNpcList[sAttackerH]->m_cMapIndex]->m_pTile + tX + tY * m_pGame->m_pMapList[m_pGame->m_pNpcList[sAttackerH]->m_cMapIndex]->m_sSizeY);
-				if (pTile == 0) return 0;
-				if (pTile->m_iOccupyStatus != 0) {
-					if (pTile->m_iOccupyStatus < 0) {
-						if (m_pGame->m_pNpcList[sAttackerH]->m_cSide == 1) {
-							iRet = 1;
+		else if (type == hb::shared::owner_class::Npc) {
+			if ((m_game->m_map_list[m_game->m_npc_list[attacker_h]->m_map_index] != 0) && (map_index != -1) && (m_game->m_npc_list[attacker_h]->m_side > 0)) {
+				tX = m_game->m_npc_list[attacker_h]->m_x;
+				tY = m_game->m_npc_list[attacker_h]->m_y;
+				tile = (class CTile*)(m_game->m_map_list[m_game->m_npc_list[attacker_h]->m_map_index]->m_tile + tX + tY * m_game->m_map_list[m_game->m_npc_list[attacker_h]->m_map_index]->m_size_y);
+				if (tile == 0) return 0;
+				if (tile->m_occupy_status != 0) {
+					if (tile->m_occupy_status < 0) {
+						if (m_game->m_npc_list[attacker_h]->m_side == 1) {
+							ret = 1;
 						}
 					}
-					else if (pTile->m_iOccupyStatus > 0) {
-						if (m_pGame->m_pNpcList[sAttackerH]->m_cSide == 2) {
-							iRet = 1;
+					else if (tile->m_occupy_status > 0) {
+						if (m_game->m_npc_list[attacker_h]->m_side == 2) {
+							ret = 1;
 						}
 					}
 				}
 			}
 		}
 	}
-	return iRet;
+	return ret;
 }
 
-void WarManager::CheckHeldenianResultCalculation(int iClientH)
+void WarManager::check_heldenian_result_calculation(int client_h)
 {
-	double dV1, dV2, dV3;
+	double v1, v2, v3;
 
-	if (m_pGame->m_pClientList[iClientH] == 0) return;
-	if (m_pGame->m_pClientList[iClientH]->m_cVar != 2) return;
-	if ((m_pGame->m_cHeldenianType == 0) || (m_pGame->m_pClientList[iClientH]->m_dwHeldenianGUID == 0)) return;
-	if (m_pGame->m_pClientList[iClientH]->m_dwHeldenianGUID == m_pGame->m_dwHeldenianGUID) {
-		if (m_pGame->m_pClientList[iClientH]->m_cSide == m_pGame->m_sLastHeldenianWinner) {
-			if (m_pGame->m_pClientList[iClientH]->m_iLevel <= 80) {
-				m_pGame->m_pClientList[iClientH]->m_iWarContribution += (m_pGame->m_pClientList[iClientH]->m_iLevel) * 200;
+	if (m_game->m_client_list[client_h] == 0) return;
+	if (m_game->m_client_list[client_h]->m_var != 2) return;
+	if ((m_game->m_heldenian_type == 0) || (m_game->m_client_list[client_h]->m_heldenian_guid == 0)) return;
+	if (m_game->m_client_list[client_h]->m_heldenian_guid == m_game->m_heldenian_guid) {
+		if (m_game->m_client_list[client_h]->m_side == m_game->m_last_heldenian_winner) {
+			if (m_game->m_client_list[client_h]->m_level <= 80) {
+				m_game->m_client_list[client_h]->m_war_contribution += (m_game->m_client_list[client_h]->m_level) * 200;
 			}
-			else if (m_pGame->m_pClientList[iClientH]->m_iLevel > 80 && m_pGame->m_pClientList[iClientH]->m_iLevel <= 100) {
-				m_pGame->m_pClientList[iClientH]->m_iWarContribution += (m_pGame->m_pClientList[iClientH]->m_iLevel) * 100;
+			else if (m_game->m_client_list[client_h]->m_level > 80 && m_game->m_client_list[client_h]->m_level <= 100) {
+				m_game->m_client_list[client_h]->m_war_contribution += (m_game->m_client_list[client_h]->m_level) * 100;
 			}
-			else if (m_pGame->m_pClientList[iClientH]->m_iLevel > 100) {
-				m_pGame->m_pClientList[iClientH]->m_iWarContribution += (m_pGame->m_pClientList[iClientH]->m_iLevel) * 30;
+			else if (m_game->m_client_list[client_h]->m_level > 100) {
+				m_game->m_client_list[client_h]->m_war_contribution += (m_game->m_client_list[client_h]->m_level) * 30;
 			}
-			dV2 = (double)m_pGame->m_pClientList[iClientH]->m_iExp;
-			dV3 = (double)m_pGame->m_pClientList[iClientH]->m_iWarContribution * 1.2f;
-			dV1 = dV2 + dV3;
-			m_pGame->GetExp(iClientH, (uint32_t)dV1);
+			v2 = (double)m_game->m_client_list[client_h]->m_exp;
+			v3 = (double)m_game->m_client_list[client_h]->m_war_contribution * 1.2f;
+			v1 = v2 + v3;
+			m_game->get_exp(client_h, (uint32_t)v1);
 		}
 		else {
-			m_pGame->GetExp(iClientH, (m_pGame->m_pClientList[iClientH]->m_iWarContribution / 5));
+			m_game->get_exp(client_h, (m_game->m_client_list[client_h]->m_war_contribution / 5));
 		}
-		m_pGame->m_pClientList[iClientH]->m_iWarContribution = 0;
-		m_pGame->m_pClientList[iClientH]->m_dwHeldenianGUID = 0;
-		m_pGame->m_pClientList[iClientH]->m_dwSpeedHackCheckTime = GameClock::GetTimeMS();
-		m_pGame->m_pClientList[iClientH]->m_iSpeedHackCheckExp = m_pGame->m_pClientList[iClientH]->m_iExp;
+		m_game->m_client_list[client_h]->m_war_contribution = 0;
+		m_game->m_client_list[client_h]->m_heldenian_guid = 0;
+		m_game->m_client_list[client_h]->m_speed_hack_check_time = GameClock::GetTimeMS();
+		m_game->m_client_list[client_h]->m_speed_hack_check_exp = m_game->m_client_list[client_h]->m_exp;
 	}
 }
 
-void WarManager::RemoveOccupyFlags(int iMapIndex)
+void WarManager::remove_occupy_flags(int map_index)
 {
-	uint32_t dwTime = GameClock::GetTimeMS();
+	uint32_t time = GameClock::GetTimeMS();
 	
 	short dX, dY;
-	int iDynamicObjectIndex;
-	class COccupyFlag* iOccupyFlagIndex;
-	class CTile* pTile;
+	int dynamic_object_index;
+	class COccupyFlag* occupy_flag_index;
+	class CTile* tile;
 
-	if (m_pGame->m_pMapList[iMapIndex] == 0) return;
+	if (m_game->m_map_list[map_index] == 0) return;
 	for(int i = 1; i < smap::MaxOccupyFlag; i++)
-		//if (m_pGame->m_pMapList[iMapIndex]->m_pOccupyFlag[i]) return; // centu : wtf ?
-		if (m_pGame->m_pMapList[iMapIndex]->m_pOccupyFlag[i]) {
-			dX = m_pGame->m_pMapList[iMapIndex]->m_pOccupyFlag[i]->m_sX;
-			dY = m_pGame->m_pMapList[iMapIndex]->m_pOccupyFlag[i]->m_sY;
-			pTile = (class CTile*)(m_pGame->m_pMapList[iMapIndex]->m_pTile + dX + dY * m_pGame->m_pMapList[iMapIndex]->m_sSizeY);
-			m_pGame->m_pMapList[iMapIndex]->m_iTotalOccupyFlags--;
-			iDynamicObjectIndex = m_pGame->m_pMapList[iMapIndex]->m_pOccupyFlag[i]->m_iDynamicObjectIndex;
-			if (m_pGame->m_pDynamicObjectManager->m_pDynamicObjectList[iDynamicObjectIndex] == 0) return;
+		//if (m_game->m_map_list[map_index]->m_occupy_flag[i]) return; // centu : wtf ?
+		if (m_game->m_map_list[map_index]->m_occupy_flag[i]) {
+			dX = m_game->m_map_list[map_index]->m_occupy_flag[i]->m_x;
+			dY = m_game->m_map_list[map_index]->m_occupy_flag[i]->m_y;
+			tile = (class CTile*)(m_game->m_map_list[map_index]->m_tile + dX + dY * m_game->m_map_list[map_index]->m_size_y);
+			m_game->m_map_list[map_index]->m_total_occupy_flags--;
+			dynamic_object_index = m_game->m_map_list[map_index]->m_occupy_flag[i]->m_dynamic_object_index;
+			if (m_game->m_dynamic_object_manager->m_dynamic_object_list[dynamic_object_index] == 0) return;
 
-			m_pGame->SendEventToNearClient_TypeB(MsgId::DynamicObject, MsgType::Reject, m_pGame->m_pDynamicObjectManager->m_pDynamicObjectList[iDynamicObjectIndex]->m_cMapIndex,
-				m_pGame->m_pDynamicObjectManager->m_pDynamicObjectList[iDynamicObjectIndex]->m_sX, m_pGame->m_pDynamicObjectManager->m_pDynamicObjectList[iDynamicObjectIndex]->m_sY,
-				m_pGame->m_pDynamicObjectManager->m_pDynamicObjectList[iDynamicObjectIndex]->m_sType, iDynamicObjectIndex, 0, (short)0);
+			m_game->send_event_to_near_client_type_b(MsgId::DynamicObject, MsgType::Reject, m_game->m_dynamic_object_manager->m_dynamic_object_list[dynamic_object_index]->m_map_index,
+				m_game->m_dynamic_object_manager->m_dynamic_object_list[dynamic_object_index]->m_x, m_game->m_dynamic_object_manager->m_dynamic_object_list[dynamic_object_index]->m_y,
+				m_game->m_dynamic_object_manager->m_dynamic_object_list[dynamic_object_index]->m_type, dynamic_object_index, 0, (short)0);
 
-			m_pGame->m_pMapList[m_pGame->m_pDynamicObjectManager->m_pDynamicObjectList[iDynamicObjectIndex]->m_cMapIndex]->SetDynamicObject(0, 0, m_pGame->m_pDynamicObjectManager->m_pDynamicObjectList[iDynamicObjectIndex]->m_sX, m_pGame->m_pDynamicObjectManager->m_pDynamicObjectList[iDynamicObjectIndex]->m_sY, dwTime);
+			m_game->m_map_list[m_game->m_dynamic_object_manager->m_dynamic_object_list[dynamic_object_index]->m_map_index]->set_dynamic_object(0, 0, m_game->m_dynamic_object_manager->m_dynamic_object_list[dynamic_object_index]->m_x, m_game->m_dynamic_object_manager->m_dynamic_object_list[dynamic_object_index]->m_y, time);
 
-			iOccupyFlagIndex = m_pGame->m_pMapList[iMapIndex]->m_pOccupyFlag[i];
+			occupy_flag_index = m_game->m_map_list[map_index]->m_occupy_flag[i];
 
-			if (m_pGame->m_pDynamicObjectManager->m_pDynamicObjectList[iDynamicObjectIndex] == 0) {
+			if (m_game->m_dynamic_object_manager->m_dynamic_object_list[dynamic_object_index] == 0) {
 				for(int ix = dX - 2; ix <= dX + 2; ix++)
 					for(int iy = dY - 2; iy <= dY + 2; iy++) {
-						pTile = (class CTile*)(m_pGame->m_pMapList[iMapIndex]->m_pTile + ix + iy * m_pGame->m_pMapList[iMapIndex]->m_sSizeY);
-						pTile->m_sOwner = 0;
+						tile = (class CTile*)(m_game->m_map_list[map_index]->m_tile + ix + iy * m_game->m_map_list[map_index]->m_size_y);
+						tile->m_owner = 0;
 					}
 			}
 		}
 }
 
-void WarManager::ApocalypseEnder()
+void WarManager::apocalypse_ender()
 {
 	hb::time::local_time SysTime{};
 	
 
-	if (m_pGame->m_bIsApocalypseMode == false) return;
-	if (m_pGame->m_bIsApocalypseStarter == false) return;
+	if (m_game->m_is_apocalypse_mode == false) return;
+	if (m_game->m_is_apocalypse_starter == false) return;
 
 	SysTime = hb::time::local_time::now();
 
 	for(int i = 0; i < MaxApocalypse; i++)
-		if ((m_pGame->m_stApocalypseScheduleEnd[i].iDay == SysTime.day_of_week) &&
-			(m_pGame->m_stApocalypseScheduleEnd[i].iHour == SysTime.hour) &&
-			(m_pGame->m_stApocalypseScheduleEnd[i].iMinute == SysTime.minute)) {
+		if ((m_game->m_apocalypse_schedule_end[i].day == SysTime.day_of_week) &&
+			(m_game->m_apocalypse_schedule_end[i].hour == SysTime.hour) &&
+			(m_game->m_apocalypse_schedule_end[i].minute == SysTime.minute)) {
 			hb::logger::log("Automated apocalypse concluded");
-			GlobalEndApocalypseMode();
+			global_end_apocalypse_mode();
 			return;
 		}
 }
 
-void WarManager::GlobalEndApocalypseMode()
+void WarManager::global_end_apocalypse_mode()
 {
-	if (m_pGame->m_bIsApocalypseMode == false) return;
+	if (m_game->m_is_apocalypse_mode == false) return;
 
-	LocalEndApocalypse();
+	local_end_apocalypse();
 }
 
-void WarManager::LocalEndApocalypse()
+void WarManager::local_end_apocalypse()
 {
 	
 
-	m_pGame->m_bIsApocalypseMode = false;
+	m_game->m_is_apocalypse_mode = false;
 
 	for(int i = 1; i < MaxClients; i++) {
-		if (m_pGame->m_pClientList[i] != 0) {
-			m_pGame->SendNotifyMsg(0, i, Notify::ApocGateEndMsg, 0, 0, 0, 0);
+		if (m_game->m_client_list[i] != 0) {
+			m_game->send_notify_msg(0, i, Notify::ApocGateEndMsg, 0, 0, 0, 0);
 		}
 	}
 	hb::logger::log("Apocalypse mode disabled");
 }
 
-void WarManager::LocalStartApocalypse(uint32_t dwApocalypseGUID)
+void WarManager::local_start_apocalypse(uint32_t apocalypse_guid)
 {
 	
 	//uint32_t dwApocalypse;
 
-	m_pGame->m_bIsApocalypseMode = true;
+	m_game->m_is_apocalypse_mode = true;
 
-	if (dwApocalypseGUID != 0) {
-		_CreateApocalypseGUID(dwApocalypseGUID);
-		//m_pGame->m_dwApocalypseGUID = dwApocalypse;
+	if (apocalypse_guid != 0) {
+		create_apocalypse_guid(apocalypse_guid);
+		//m_game->m_apocalypse_guid = dwApocalypse;
 	}
 
 	for(int i = 1; i < MaxClients; i++) {
-		if (m_pGame->m_pClientList[i] != 0) {
-			m_pGame->SendNotifyMsg(0, i, Notify::ApocGateStartMsg, 0, 0, 0, 0);
-			//m_pGame->RequestTeleportHandler(i, "0   ");
-			//m_pGame->SendNotifyMsg(0, i, Notify::ApocForceRecallPlayers, 0, 0, 0, 0);
+		if (m_game->m_client_list[i] != 0) {
+			m_game->send_notify_msg(0, i, Notify::ApocGateStartMsg, 0, 0, 0, 0);
+			//m_game->request_teleport_handler(i, "0   ");
+			//m_game->send_notify_msg(0, i, Notify::ApocForceRecallPlayers, 0, 0, 0, 0);
 		}
 	}
 	hb::logger::log("Apocalypse mode enabled");
 }
 
-bool WarManager::bReadApocalypseGUIDFile(const char* cFn)
+bool WarManager::read_apocalypse_guid_file(const char* fn)
 {
-	FILE* pFile;
-	uint32_t  dwFileSize;
-	char* cp, * token, cReadMode;
+	FILE* file;
+	uint32_t  file_size;
+	char* cp, * token, read_mode;
 	char seps[] = "= \t\r\n";
 
-	cReadMode = 0;
+	read_mode = 0;
 
 	std::error_code ec;
-	auto fsize = std::filesystem::file_size(cFn, ec);
-	dwFileSize = ec ? 0 : static_cast<uint32_t>(fsize);
+	auto fsize = std::filesystem::file_size(fn, ec);
+	file_size = ec ? 0 : static_cast<uint32_t>(fsize);
 
-	pFile = fopen(cFn, "rt");
-	if (pFile == 0) {
+	file = fopen(fn, "rt");
+	if (file == 0) {
 		return false;
 	}
 	else {
-		cp = new char[dwFileSize + 2];
-		std::memset(cp, 0, dwFileSize + 2);
-		fread(cp, dwFileSize, 1, pFile);
+		cp = new char[file_size + 2];
+		std::memset(cp, 0, file_size + 2);
+		fread(cp, file_size, 1, file);
 
 		token = strtok(cp, seps);
 
 		while (token != 0) {
 
-			if (cReadMode != 0) {
-				switch (cReadMode) {
+			if (read_mode != 0) {
+				switch (read_mode) {
 				case 1:
-					m_pGame->m_dwApocalypseGUID = atoi(token);
-					hb::logger::log("ApocalypseGUID = {}", m_pGame->m_dwApocalypseGUID);
-					cReadMode = 0;
+					m_game->m_apocalypse_guid = atoi(token);
+					hb::logger::log("ApocalypseGUID = {}", m_game->m_apocalypse_guid);
+					read_mode = 0;
 					break;
 				}
 			}
 			else {
-				if (memcmp(token, "ApocalypseGUID", 14) == 0) cReadMode = 1;
+				if (memcmp(token, "ApocalypseGUID", 14) == 0) read_mode = 1;
 			}
 
 			token = strtok(NULL, seps);
@@ -2178,54 +2178,54 @@ bool WarManager::bReadApocalypseGUIDFile(const char* cFn)
 
 		delete cp;
 	}
-	if (pFile != 0) fclose(pFile);
+	if (file != 0) fclose(file);
 
 	return true;
 }
 
-bool WarManager::bReadHeldenianGUIDFile(const char* cFn)
+bool WarManager::read_heldenian_guid_file(const char* fn)
 {
-	FILE* pFile;
-	uint32_t  dwFileSize;
-	char* cp, * token, cReadMode;
+	FILE* file;
+	uint32_t  file_size;
+	char* cp, * token, read_mode;
 	char seps[] = "= \t\r\n";
 
-	cReadMode = 0;
+	read_mode = 0;
 
 	std::error_code ec;
-	auto fsize = std::filesystem::file_size(cFn, ec);
-	dwFileSize = ec ? 0 : static_cast<uint32_t>(fsize);
+	auto fsize = std::filesystem::file_size(fn, ec);
+	file_size = ec ? 0 : static_cast<uint32_t>(fsize);
 
-	pFile = fopen(cFn, "rt");
-	if (pFile == 0) {
+	file = fopen(fn, "rt");
+	if (file == 0) {
 		return false;
 	}
 	else {
-		cp = new char[dwFileSize + 2];
-		std::memset(cp, 0, dwFileSize + 2);
-		fread(cp, dwFileSize, 1, pFile);
+		cp = new char[file_size + 2];
+		std::memset(cp, 0, file_size + 2);
+		fread(cp, file_size, 1, file);
 
 		token = strtok(cp, seps);
 
 		while (token != 0) {
 
-			if (cReadMode != 0) {
-				switch (cReadMode) {
+			if (read_mode != 0) {
+				switch (read_mode) {
 				case 1:
-					m_pGame->m_dwHeldenianGUID = atoi(token);
-					hb::logger::log("HeldenianGUID = {}", m_pGame->m_dwHeldenianGUID);
-					cReadMode = 0;
+					m_game->m_heldenian_guid = atoi(token);
+					hb::logger::log("HeldenianGUID = {}", m_game->m_heldenian_guid);
+					read_mode = 0;
 					break;
 				case 2:
-					m_pGame->m_sLastHeldenianWinner = atoi(token);
-					hb::logger::log("HeldenianWinnerSide = {}", m_pGame->m_sLastHeldenianWinner);
-					cReadMode = 0;
+					m_game->m_last_heldenian_winner = atoi(token);
+					hb::logger::log("HeldenianWinnerSide = {}", m_game->m_last_heldenian_winner);
+					read_mode = 0;
 					break;
 				}
 			}
 			else {
-				if (memcmp(token, "HeldenianGUID", 13) == 0) cReadMode = 1;
-				if (memcmp(token, "winner-side", 11) == 0) cReadMode = 2;
+				if (memcmp(token, "HeldenianGUID", 13) == 0) read_mode = 1;
+				if (memcmp(token, "winner-side", 11) == 0) read_mode = 2;
 			}
 
 			token = strtok(NULL, seps);
@@ -2233,145 +2233,145 @@ bool WarManager::bReadHeldenianGUIDFile(const char* cFn)
 
 		delete cp;
 	}
-	if (pFile != 0) fclose(pFile);
+	if (file != 0) fclose(file);
 
 	return true;
 }
 
-void WarManager::_CreateApocalypseGUID(uint32_t dwApocalypseGUID)
+void WarManager::create_apocalypse_guid(uint32_t apocalypse_guid)
 {
-	char* cp, cTxt[256], cFn[256], cTemp[1024];
-	FILE* pFile;
+	char* cp, txt[256], fn[256], temp[1024];
+	FILE* file;
 
 	std::filesystem::create_directories("GameData");
-	std::memset(cFn, 0, sizeof(cFn));
+	std::memset(fn, 0, sizeof(fn));
 
-	strcat(cFn, "GameData");
-	strcat(cFn, "/");
-	strcat(cFn, "/");
-	strcat(cFn, "ApocalypseGUID.Txt");
+	strcat(fn, "GameData");
+	strcat(fn, "/");
+	strcat(fn, "/");
+	strcat(fn, "ApocalypseGUID.Txt");
 
-	pFile = fopen(cFn, "wt");
-	if (pFile == 0) {
-		hb::logger::log("Cannot create ApocalypseGUID({}) file", dwApocalypseGUID);
+	file = fopen(fn, "wt");
+	if (file == 0) {
+		hb::logger::log("Cannot create ApocalypseGUID({}) file", apocalypse_guid);
 	}
 	else {
-		std::memset(cTemp, 0, sizeof(cTemp));
+		std::memset(temp, 0, sizeof(temp));
 
-		std::memset(cTxt, 0, sizeof(cTxt));
-		std::snprintf(cTxt, sizeof(cTxt), "ApocalypseGUID = %d\n", dwApocalypseGUID);
-		strcat(cTemp, cTxt);
+		std::memset(txt, 0, sizeof(txt));
+		std::snprintf(txt, sizeof(txt), "ApocalypseGUID = %d\n", apocalypse_guid);
+		strcat(temp, txt);
 
-		cp = (char*)cTemp;
-		fwrite(cp, strlen(cp), 1, pFile);
+		cp = (char*)temp;
+		fwrite(cp, strlen(cp), 1, file);
 
-		hb::logger::log("ApocalypseGUID({}) file created", dwApocalypseGUID);
+		hb::logger::log("ApocalypseGUID({}) file created", apocalypse_guid);
 	}
-	if (pFile != 0) fclose(pFile);
+	if (file != 0) fclose(file);
 }
 
-void WarManager::EnergySphereProcessor()
+void WarManager::energy_sphere_processor()
 {
-	int iNamingValue, iCIndex, iTemp, pX, pY;
-	char cSA, cName_Internal[31], cWaypoint[31];
+	int naming_value, c_index, temp, pX, pY;
+	char sa, cName_Internal[31], waypoint[31];
 
-	if (m_pGame->m_iMiddlelandMapIndex < 0) return;
-	if (m_pGame->m_pMapList[m_pGame->m_iMiddlelandMapIndex] == 0) return;
-	if (m_pGame->iDice(1, 2000) != 123) return;
-	if (m_pGame->m_iTotalGameServerClients < 500) return;
+	if (m_game->m_middleland_map_index < 0) return;
+	if (m_game->m_map_list[m_game->m_middleland_map_index] == 0) return;
+	if (m_game->dice(1, 2000) != 123) return;
+	if (m_game->m_total_game_server_clients < 500) return;
 
-	if (m_pGame->m_pMapList[m_pGame->m_iMiddlelandMapIndex]->m_iCurEnergySphereGoalPointIndex >= 0) return;
+	if (m_game->m_map_list[m_game->m_middleland_map_index]->m_cur_energy_sphere_goal_point_index >= 0) return;
 
-	iCIndex = m_pGame->iDice(1, m_pGame->m_pMapList[m_pGame->m_iMiddlelandMapIndex]->m_iTotalEnergySphereCreationPoint);
+	c_index = m_game->dice(1, m_game->m_map_list[m_game->m_middleland_map_index]->m_total_energy_sphere_creation_point);
 
-	if (m_pGame->m_pMapList[m_pGame->m_iMiddlelandMapIndex]->m_stEnergySphereCreationList[iCIndex].cType == 0) return;
+	if (m_game->m_map_list[m_game->m_middleland_map_index]->m_energy_sphere_creation_list[c_index].type == 0) return;
 
-	cSA = 0;
-	pX = m_pGame->m_pMapList[m_pGame->m_iMiddlelandMapIndex]->m_stEnergySphereCreationList[iCIndex].sX;
-	pY = m_pGame->m_pMapList[m_pGame->m_iMiddlelandMapIndex]->m_stEnergySphereCreationList[iCIndex].sY;
-	std::memset(cWaypoint, 0, sizeof(cWaypoint));
+	sa = 0;
+	pX = m_game->m_map_list[m_game->m_middleland_map_index]->m_energy_sphere_creation_list[c_index].x;
+	pY = m_game->m_map_list[m_game->m_middleland_map_index]->m_energy_sphere_creation_list[c_index].y;
+	std::memset(waypoint, 0, sizeof(waypoint));
 
-	iNamingValue = m_pGame->m_pMapList[m_pGame->m_iMiddlelandMapIndex]->iGetEmptyNamingValue();
-	if (iNamingValue != -1) {
+	naming_value = m_game->m_map_list[m_game->m_middleland_map_index]->get_empty_naming_value();
+	if (naming_value != -1) {
 		std::memset(cName_Internal, 0, sizeof(cName_Internal));
-		std::snprintf(cName_Internal, sizeof(cName_Internal), "XX%d", iNamingValue);
+		std::snprintf(cName_Internal, sizeof(cName_Internal), "XX%d", naming_value);
 		cName_Internal[0] = '_';
-		cName_Internal[1] = m_pGame->m_iMiddlelandMapIndex + 65;
+		cName_Internal[1] = m_game->m_middleland_map_index + 65;
 
-		int iNpcConfigId = m_pGame->GetNpcConfigIdByName("Energy-Sphere");
-		if ((m_pGame->bCreateNewNpc(iNpcConfigId, cName_Internal, m_pGame->m_pMapList[m_pGame->m_iMiddlelandMapIndex]->m_cName, (rand() % 5), cSA, MoveType::Random, &pX, &pY, cWaypoint, 0, 0, -1, false, false, false)) == false) {
-			m_pGame->m_pMapList[m_pGame->m_iMiddlelandMapIndex]->SetNamingValueEmpty(iNamingValue);
+		int npc_config_id = m_game->get_npc_config_id_by_name("Energy-Sphere");
+		if ((m_game->create_new_npc(npc_config_id, cName_Internal, m_game->m_map_list[m_game->m_middleland_map_index]->m_name, (rand() % 5), sa, MoveType::Random, &pX, &pY, waypoint, 0, 0, -1, false, false, false)) == false) {
+			m_game->m_map_list[m_game->m_middleland_map_index]->set_naming_value_empty(naming_value);
 			return;
 		}
 	}
 
-	iTemp = m_pGame->iDice(1, m_pGame->m_pMapList[m_pGame->m_iMiddlelandMapIndex]->m_iTotalEnergySphereGoalPoint);
-	if (m_pGame->m_pMapList[m_pGame->m_iMiddlelandMapIndex]->m_stEnergySphereGoalList[iTemp].cResult == 0) return;
+	temp = m_game->dice(1, m_game->m_map_list[m_game->m_middleland_map_index]->m_total_energy_sphere_goal_point);
+	if (m_game->m_map_list[m_game->m_middleland_map_index]->m_energy_sphere_goal_list[temp].result == 0) return;
 
-	m_pGame->m_pMapList[m_pGame->m_iMiddlelandMapIndex]->m_iCurEnergySphereGoalPointIndex = iTemp;
+	m_game->m_map_list[m_game->m_middleland_map_index]->m_cur_energy_sphere_goal_point_index = temp;
 
 	for(int i = 1; i < MaxClients; i++)
-		if ((m_pGame->m_pClientList[i] != 0) && (m_pGame->m_pClientList[i]->m_bIsInitComplete)) {
-			m_pGame->SendNotifyMsg(0, i, Notify::EnergySphereCreated, pX, pY, 0, 0);
+		if ((m_game->m_client_list[i] != 0) && (m_game->m_client_list[i]->m_is_init_complete)) {
+			m_game->send_notify_msg(0, i, Notify::EnergySphereCreated, pX, pY, 0, 0);
 		}
 
 	hb::logger::log<log_channel::events>("Energy sphere created at ({}, {})", pX, pY);
 }
 
-bool WarManager::bCheckEnergySphereDestination(int iNpcH, short sAttackerH, char cAttackerType)
+bool WarManager::check_energy_sphere_destination(int npc_h, short attacker_h, char attacker_type)
 {
-	int sX, sY, dX, dY, iGoalMapIndex;
-	char cResult;
+	int sX, sY, dX, dY, goal_map_index;
+	char result;
 
-	if (m_pGame->m_pNpcList[iNpcH] == 0) return false;
-	if (m_pGame->m_pMapList[m_pGame->m_pNpcList[iNpcH]->m_cMapIndex]->m_iCurEnergySphereGoalPointIndex == -1) return false;
+	if (m_game->m_npc_list[npc_h] == 0) return false;
+	if (m_game->m_map_list[m_game->m_npc_list[npc_h]->m_map_index]->m_cur_energy_sphere_goal_point_index == -1) return false;
 
-	if (m_pGame->m_pNpcList[iNpcH]->m_cMapIndex != m_pGame->m_iMiddlelandMapIndex) {
-		iGoalMapIndex = m_pGame->m_pNpcList[iNpcH]->m_cMapIndex;
+	if (m_game->m_npc_list[npc_h]->m_map_index != m_game->m_middleland_map_index) {
+		goal_map_index = m_game->m_npc_list[npc_h]->m_map_index;
 
-		sX = m_pGame->m_pNpcList[iNpcH]->m_sX;
-		sY = m_pGame->m_pNpcList[iNpcH]->m_sY;
+		sX = m_game->m_npc_list[npc_h]->m_x;
+		sY = m_game->m_npc_list[npc_h]->m_y;
 
-		cResult = m_pGame->m_pMapList[iGoalMapIndex]->m_stEnergySphereGoalList[m_pGame->m_pMapList[iGoalMapIndex]->m_iCurEnergySphereGoalPointIndex].cResult;
-		dX = m_pGame->m_pMapList[iGoalMapIndex]->m_stEnergySphereGoalList[m_pGame->m_pMapList[iGoalMapIndex]->m_iCurEnergySphereGoalPointIndex].aresdenX;
-		dY = m_pGame->m_pMapList[iGoalMapIndex]->m_stEnergySphereGoalList[m_pGame->m_pMapList[iGoalMapIndex]->m_iCurEnergySphereGoalPointIndex].aresdenY;
+		result = m_game->m_map_list[goal_map_index]->m_energy_sphere_goal_list[m_game->m_map_list[goal_map_index]->m_cur_energy_sphere_goal_point_index].result;
+		dX = m_game->m_map_list[goal_map_index]->m_energy_sphere_goal_list[m_game->m_map_list[goal_map_index]->m_cur_energy_sphere_goal_point_index].aresden_x;
+		dY = m_game->m_map_list[goal_map_index]->m_energy_sphere_goal_list[m_game->m_map_list[goal_map_index]->m_cur_energy_sphere_goal_point_index].aresden_y;
 		if ((sX >= dX - 2) && (sX <= dX + 2) && (sY >= dY - 2) && (sY <= dY + 2)) {
-			m_pGame->m_pMapList[iGoalMapIndex]->m_iCurEnergySphereGoalPointIndex = -1;
+			m_game->m_map_list[goal_map_index]->m_cur_energy_sphere_goal_point_index = -1;
 
-			if ((cAttackerType == hb::shared::owner_class::Player) && (m_pGame->m_pClientList[sAttackerH] != 0)) {
-				if (m_pGame->m_pClientList[sAttackerH]->m_cSide == 1) { // Aresden (Side:1)
-					m_pGame->m_pClientList[sAttackerH]->m_iContribution += 5;
-					hb::logger::log<log_channel::events>("EnergySphere Hit By Aresden Player ({})", m_pGame->m_pClientList[sAttackerH]->m_cCharName);
+			if ((attacker_type == hb::shared::owner_class::Player) && (m_game->m_client_list[attacker_h] != 0)) {
+				if (m_game->m_client_list[attacker_h]->m_side == 1) { // Aresden (Side:1)
+					m_game->m_client_list[attacker_h]->m_contribution += 5;
+					hb::logger::log<log_channel::events>("EnergySphere Hit By Aresden Player ({})", m_game->m_client_list[attacker_h]->m_char_name);
 				}
 				else {
-					m_pGame->m_pClientList[sAttackerH]->m_iContribution -= 10;
+					m_game->m_client_list[attacker_h]->m_contribution -= 10;
 				}
 
 				for(int i = 1; i < MaxClients; i++)
-					if ((m_pGame->m_pClientList[i] != 0) && (m_pGame->m_pClientList[i]->m_bIsInitComplete)) {
-						m_pGame->SendNotifyMsg(0, i, Notify::EnergySphereGoalIn, cResult, m_pGame->m_pClientList[sAttackerH]->m_cSide, 2, m_pGame->m_pClientList[sAttackerH]->m_cCharName);
+					if ((m_game->m_client_list[i] != 0) && (m_game->m_client_list[i]->m_is_init_complete)) {
+						m_game->send_notify_msg(0, i, Notify::EnergySphereGoalIn, result, m_game->m_client_list[attacker_h]->m_side, 2, m_game->m_client_list[attacker_h]->m_char_name);
 					}
 			}
 			return true;
 		}
 
-		dX = m_pGame->m_pMapList[iGoalMapIndex]->m_stEnergySphereGoalList[m_pGame->m_pMapList[iGoalMapIndex]->m_iCurEnergySphereGoalPointIndex].elvineX;
-		dY = m_pGame->m_pMapList[iGoalMapIndex]->m_stEnergySphereGoalList[m_pGame->m_pMapList[iGoalMapIndex]->m_iCurEnergySphereGoalPointIndex].elvineY;
+		dX = m_game->m_map_list[goal_map_index]->m_energy_sphere_goal_list[m_game->m_map_list[goal_map_index]->m_cur_energy_sphere_goal_point_index].elvine_x;
+		dY = m_game->m_map_list[goal_map_index]->m_energy_sphere_goal_list[m_game->m_map_list[goal_map_index]->m_cur_energy_sphere_goal_point_index].elvine_y;
 		if ((sX >= dX - 2) && (sX <= dX + 2) && (sY >= dY - 2) && (sY <= dY + 2)) {
-			m_pGame->m_pMapList[iGoalMapIndex]->m_iCurEnergySphereGoalPointIndex = -1;
+			m_game->m_map_list[goal_map_index]->m_cur_energy_sphere_goal_point_index = -1;
 
-			if ((cAttackerType == hb::shared::owner_class::Player) && (m_pGame->m_pClientList[sAttackerH] != 0)) {
-				if (m_pGame->m_pClientList[sAttackerH]->m_cSide == 2) { // Elvine (Side:2)
-					m_pGame->m_pClientList[sAttackerH]->m_iContribution += 5;
-					hb::logger::log<log_channel::events>("EnergySphere Hit By Elvine Player ({})", m_pGame->m_pClientList[sAttackerH]->m_cCharName);
+			if ((attacker_type == hb::shared::owner_class::Player) && (m_game->m_client_list[attacker_h] != 0)) {
+				if (m_game->m_client_list[attacker_h]->m_side == 2) { // Elvine (Side:2)
+					m_game->m_client_list[attacker_h]->m_contribution += 5;
+					hb::logger::log<log_channel::events>("EnergySphere Hit By Elvine Player ({})", m_game->m_client_list[attacker_h]->m_char_name);
 				}
 				else {
-					m_pGame->m_pClientList[sAttackerH]->m_iContribution -= 10;
+					m_game->m_client_list[attacker_h]->m_contribution -= 10;
 				}
 
 				for(int i = 1; i < MaxClients; i++)
-					if ((m_pGame->m_pClientList[i] != 0) && (m_pGame->m_pClientList[i]->m_bIsInitComplete)) {
-						m_pGame->SendNotifyMsg(0, i, Notify::EnergySphereGoalIn, cResult, m_pGame->m_pClientList[sAttackerH]->m_cSide, 1, m_pGame->m_pClientList[sAttackerH]->m_cCharName);
+					if ((m_game->m_client_list[i] != 0) && (m_game->m_client_list[i]->m_is_init_complete)) {
+						m_game->send_notify_msg(0, i, Notify::EnergySphereGoalIn, result, m_game->m_client_list[attacker_h]->m_side, 1, m_game->m_client_list[attacker_h]->m_char_name);
 					}
 			}
 		}
@@ -2379,49 +2379,49 @@ bool WarManager::bCheckEnergySphereDestination(int iNpcH, short sAttackerH, char
 	}
 	else {
 
-		sX = m_pGame->m_pNpcList[iNpcH]->m_sX;
-		sY = m_pGame->m_pNpcList[iNpcH]->m_sY;
+		sX = m_game->m_npc_list[npc_h]->m_x;
+		sY = m_game->m_npc_list[npc_h]->m_y;
 
-		cResult = m_pGame->m_pMapList[m_pGame->m_iMiddlelandMapIndex]->m_stEnergySphereGoalList[m_pGame->m_pMapList[m_pGame->m_iMiddlelandMapIndex]->m_iCurEnergySphereGoalPointIndex].cResult;
-		dX = m_pGame->m_pMapList[m_pGame->m_iMiddlelandMapIndex]->m_stEnergySphereGoalList[m_pGame->m_pMapList[m_pGame->m_iMiddlelandMapIndex]->m_iCurEnergySphereGoalPointIndex].aresdenX;
-		dY = m_pGame->m_pMapList[m_pGame->m_iMiddlelandMapIndex]->m_stEnergySphereGoalList[m_pGame->m_pMapList[m_pGame->m_iMiddlelandMapIndex]->m_iCurEnergySphereGoalPointIndex].aresdenY;
+		result = m_game->m_map_list[m_game->m_middleland_map_index]->m_energy_sphere_goal_list[m_game->m_map_list[m_game->m_middleland_map_index]->m_cur_energy_sphere_goal_point_index].result;
+		dX = m_game->m_map_list[m_game->m_middleland_map_index]->m_energy_sphere_goal_list[m_game->m_map_list[m_game->m_middleland_map_index]->m_cur_energy_sphere_goal_point_index].aresden_x;
+		dY = m_game->m_map_list[m_game->m_middleland_map_index]->m_energy_sphere_goal_list[m_game->m_map_list[m_game->m_middleland_map_index]->m_cur_energy_sphere_goal_point_index].aresden_y;
 		if ((sX >= dX - 4) && (sX <= dX + 4) && (sY >= dY - 4) && (sY <= dY + 4)) {
-			m_pGame->m_pMapList[m_pGame->m_iMiddlelandMapIndex]->m_iCurEnergySphereGoalPointIndex = -1;
+			m_game->m_map_list[m_game->m_middleland_map_index]->m_cur_energy_sphere_goal_point_index = -1;
 
-			if ((cAttackerType == hb::shared::owner_class::Player) && (m_pGame->m_pClientList[sAttackerH] != 0)) {
-				if (m_pGame->m_pClientList[sAttackerH]->m_cSide == 1) { // Aresden (Side:1)
-					m_pGame->m_pClientList[sAttackerH]->m_iContribution += 5;
-					hb::logger::log<log_channel::events>("EnergySphere Hit By Aresden Player ({})", m_pGame->m_pClientList[sAttackerH]->m_cCharName);
+			if ((attacker_type == hb::shared::owner_class::Player) && (m_game->m_client_list[attacker_h] != 0)) {
+				if (m_game->m_client_list[attacker_h]->m_side == 1) { // Aresden (Side:1)
+					m_game->m_client_list[attacker_h]->m_contribution += 5;
+					hb::logger::log<log_channel::events>("EnergySphere Hit By Aresden Player ({})", m_game->m_client_list[attacker_h]->m_char_name);
 				}
 				else {
-					m_pGame->m_pClientList[sAttackerH]->m_iContribution -= 10;
+					m_game->m_client_list[attacker_h]->m_contribution -= 10;
 				}
 
 				for(int i = 1; i < MaxClients; i++)
-					if ((m_pGame->m_pClientList[i] != 0) && (m_pGame->m_pClientList[i]->m_bIsInitComplete)) {
-						m_pGame->SendNotifyMsg(0, i, Notify::EnergySphereGoalIn, cResult, m_pGame->m_pClientList[sAttackerH]->m_cSide, 2, m_pGame->m_pClientList[sAttackerH]->m_cCharName);
+					if ((m_game->m_client_list[i] != 0) && (m_game->m_client_list[i]->m_is_init_complete)) {
+						m_game->send_notify_msg(0, i, Notify::EnergySphereGoalIn, result, m_game->m_client_list[attacker_h]->m_side, 2, m_game->m_client_list[attacker_h]->m_char_name);
 					}
 			}
 			return true;
 		}
 
-		dX = m_pGame->m_pMapList[m_pGame->m_iMiddlelandMapIndex]->m_stEnergySphereGoalList[m_pGame->m_pMapList[m_pGame->m_iMiddlelandMapIndex]->m_iCurEnergySphereGoalPointIndex].elvineX;
-		dY = m_pGame->m_pMapList[m_pGame->m_iMiddlelandMapIndex]->m_stEnergySphereGoalList[m_pGame->m_pMapList[m_pGame->m_iMiddlelandMapIndex]->m_iCurEnergySphereGoalPointIndex].elvineY;
+		dX = m_game->m_map_list[m_game->m_middleland_map_index]->m_energy_sphere_goal_list[m_game->m_map_list[m_game->m_middleland_map_index]->m_cur_energy_sphere_goal_point_index].elvine_x;
+		dY = m_game->m_map_list[m_game->m_middleland_map_index]->m_energy_sphere_goal_list[m_game->m_map_list[m_game->m_middleland_map_index]->m_cur_energy_sphere_goal_point_index].elvine_y;
 		if ((sX >= dX - 4) && (sX <= dX + 4) && (sY >= dY - 4) && (sY <= dY + 4)) {
-			m_pGame->m_pMapList[m_pGame->m_iMiddlelandMapIndex]->m_iCurEnergySphereGoalPointIndex = -1;
+			m_game->m_map_list[m_game->m_middleland_map_index]->m_cur_energy_sphere_goal_point_index = -1;
 
-			if ((cAttackerType == hb::shared::owner_class::Player) && (m_pGame->m_pClientList[sAttackerH] != 0)) {
-				if (m_pGame->m_pClientList[sAttackerH]->m_cSide == 2) { // Elvine (Side:2)
-					m_pGame->m_pClientList[sAttackerH]->m_iContribution += 5;
-					hb::logger::log<log_channel::events>("EnergySphere Hit By Aresden Player ({})", m_pGame->m_pClientList[sAttackerH]->m_cCharName);
+			if ((attacker_type == hb::shared::owner_class::Player) && (m_game->m_client_list[attacker_h] != 0)) {
+				if (m_game->m_client_list[attacker_h]->m_side == 2) { // Elvine (Side:2)
+					m_game->m_client_list[attacker_h]->m_contribution += 5;
+					hb::logger::log<log_channel::events>("EnergySphere Hit By Aresden Player ({})", m_game->m_client_list[attacker_h]->m_char_name);
 				}
 				else {
-					m_pGame->m_pClientList[sAttackerH]->m_iContribution -= 10;
+					m_game->m_client_list[attacker_h]->m_contribution -= 10;
 				}
 
 				for(int i = 1; i < MaxClients; i++)
-					if ((m_pGame->m_pClientList[i] != 0) && (m_pGame->m_pClientList[i]->m_bIsInitComplete)) {
-						m_pGame->SendNotifyMsg(0, i, Notify::EnergySphereGoalIn, cResult, m_pGame->m_pClientList[sAttackerH]->m_cSide, 1, m_pGame->m_pClientList[sAttackerH]->m_cCharName);
+					if ((m_game->m_client_list[i] != 0) && (m_game->m_client_list[i]->m_is_init_complete)) {
+						m_game->send_notify_msg(0, i, Notify::EnergySphereGoalIn, result, m_game->m_client_list[attacker_h]->m_side, 1, m_game->m_client_list[attacker_h]->m_char_name);
 					}
 			}
 			return true;
@@ -2430,79 +2430,79 @@ bool WarManager::bCheckEnergySphereDestination(int iNpcH, short sAttackerH, char
 	}
 }
 
-void WarManager::GetOccupyFlagHandler(int iClientH)
+void WarManager::get_occupy_flag_handler(int client_h)
 {
-	int   iNum, iRet, iEraseReq, iEKNum;
-	char cItemName[hb::shared::limits::ItemNameLen];
-	CItem* pItem;
+	int   num, ret, erase_req, ek_num;
+	char item_name[hb::shared::limits::ItemNameLen];
+	CItem* item;
 
-	if (m_pGame->m_pClientList[iClientH] == 0) return;
-	if (m_pGame->m_pClientList[iClientH]->m_iEnemyKillCount < 3) return;
-	if (m_pGame->m_pClientList[iClientH]->m_cSide == 0) return;
+	if (m_game->m_client_list[client_h] == 0) return;
+	if (m_game->m_client_list[client_h]->m_enemy_kill_count < 3) return;
+	if (m_game->m_client_list[client_h]->m_side == 0) return;
 
-	std::memset(cItemName, 0, sizeof(cItemName));
-	switch (m_pGame->m_pClientList[iClientH]->m_cSide) {
-	case 1: strcpy(cItemName, "¾Æ·¹½ºµ§±ê¹ß"); break;
-	case 2: strcpy(cItemName, "¿¤¹ÙÀÎ±ê¹ß");   break;
+	std::memset(item_name, 0, sizeof(item_name));
+	switch (m_game->m_client_list[client_h]->m_side) {
+	case 1: strcpy(item_name, "¾Æ·¹½ºµ§±ê¹ß"); break;
+	case 2: strcpy(item_name, "¿¤¹ÙÀÎ±ê¹ß");   break;
 	}
 
 	// ReqPurchaseItemHandler   .
-	iNum = 1;
-	for(int i = 1; i <= iNum; i++) {
+	num = 1;
+	for(int i = 1; i <= num; i++) {
 
-		pItem = new CItem;
-		if (m_pGame->m_pItemManager->_bInitItemAttr(pItem, cItemName) == false) {
-			delete pItem;
+		item = new CItem;
+		if (m_game->m_item_manager->init_item_attr(item, item_name) == false) {
+			delete item;
 		}
 		else {
 
-			if (m_pGame->m_pItemManager->_bAddClientItemList(iClientH, pItem, &iEraseReq)) {
-				if (m_pGame->m_pClientList[iClientH]->m_iCurWeightLoad < 0) m_pGame->m_pClientList[iClientH]->m_iCurWeightLoad = 0;
+			if (m_game->m_item_manager->add_client_item_list(client_h, item, &erase_req)) {
+				if (m_game->m_client_list[client_h]->m_cur_weight_load < 0) m_game->m_client_list[client_h]->m_cur_weight_load = 0;
 
-				if (m_pGame->m_pClientList[iClientH]->m_iEnemyKillCount > 12) {
-					iEKNum = 12;
-					m_pGame->m_pClientList[iClientH]->m_iEnemyKillCount -= 12;
+				if (m_game->m_client_list[client_h]->m_enemy_kill_count > 12) {
+					ek_num = 12;
+					m_game->m_client_list[client_h]->m_enemy_kill_count -= 12;
 				}
 				else {
-					iEKNum = m_pGame->m_pClientList[iClientH]->m_iEnemyKillCount;
-					m_pGame->m_pClientList[iClientH]->m_iEnemyKillCount = 0;
+					ek_num = m_game->m_client_list[client_h]->m_enemy_kill_count;
+					m_game->m_client_list[client_h]->m_enemy_kill_count = 0;
 				}
 
 				// EKNum .
-				pItem->m_sItemSpecEffectValue1 = iEKNum;
+				item->m_item_special_effect_value1 = ek_num;
 
 				// testcode  .
-				hb::logger::log<log_channel::events>("Flag captured: player={} flag_ek={} player_ek={}", m_pGame->m_pClientList[iClientH]->m_cCharName, iEKNum, m_pGame->m_pClientList[iClientH]->m_iEnemyKillCount);
+				hb::logger::log<log_channel::events>("Flag captured: player={} flag_ek={} player_ek={}", m_game->m_client_list[client_h]->m_char_name, ek_num, m_game->m_client_list[client_h]->m_enemy_kill_count);
 
-				iRet = m_pGame->m_pItemManager->SendItemNotifyMsg(iClientH, Notify::ItemObtained, pItem, 0);
+				ret = m_game->m_item_manager->send_item_notify_msg(client_h, Notify::ItemObtained, item, 0);
 
-				m_pGame->iCalcTotalWeight(iClientH);
+				m_game->calc_total_weight(client_h);
 
-				switch (iRet) {
+				switch (ret) {
 				case sock::Event::QueueFull:
 				case sock::Event::SocketError:
 				case sock::Event::CriticalError:
 				case sock::Event::SocketClosed:
-					m_pGame->DeleteClient(iClientH, true, true);
+					m_game->delete_client(client_h, true, true);
 					return;
 				}
 
-				m_pGame->SendNotifyMsg(0, iClientH, Notify::EnemyKills, m_pGame->m_pClientList[iClientH]->m_iEnemyKillCount, 0, 0, 0);
+				m_game->send_notify_msg(0, client_h, Notify::EnemyKills, m_game->m_client_list[client_h]->m_enemy_kill_count, 0, 0, 0);
 			}
 			else
 			{
-				delete pItem;
+				delete item;
 
-				m_pGame->iCalcTotalWeight(iClientH);
+				m_game->calc_total_weight(client_h);
 
-				iRet = m_pGame->m_pItemManager->SendItemNotifyMsg(iClientH, Notify::CannotCarryMoreItem, 0, 0);
+				ret = m_game->m_item_manager->send_item_notify_msg(client_h, Notify::CannotCarryMoreItem, 0, 0);
 
-				switch (iRet) {
+				switch (ret) {
 				case sock::Event::QueueFull:
 				case sock::Event::SocketError:
 				case sock::Event::CriticalError:
 				case sock::Event::SocketClosed:
-					m_pGame->DeleteClient(iClientH, true, true);
+					m_game->delete_client(client_h, true, true);
 					return;
 				}
 			}
@@ -2510,88 +2510,88 @@ void WarManager::GetOccupyFlagHandler(int iClientH)
 	}
 }
 
-size_t WarManager::_iComposeFlagStatusContents(char* pData)
+size_t WarManager::compose_flag_status_contents(char* data)
 {
 	hb::time::local_time SysTime{};
-	char cTxt[120];
+	char txt[120];
 	
 
-	if (m_pGame->m_iMiddlelandMapIndex < 0) return 0;
+	if (m_game->m_middleland_map_index < 0) return 0;
 
 	SysTime = hb::time::local_time::now();
-	strcat(pData, "[FILE-DATE]\n\n");
+	strcat(data, "[FILE-DATE]\n\n");
 
-	std::snprintf(cTxt, sizeof(cTxt), "file-saved-date: %d %d %d %d %d\n", SysTime.year, SysTime.month, SysTime.day, SysTime.hour, SysTime.minute);
-	strcat(pData, cTxt);
-	strcat(pData, "\n\n");
+	std::snprintf(txt, sizeof(txt), "file-saved-date: %d %d %d %d %d\n", SysTime.year, SysTime.month, SysTime.day, SysTime.hour, SysTime.minute);
+	strcat(data, txt);
+	strcat(data, "\n\n");
 
 	for(int i = 1; i < smap::MaxOccupyFlag; i++)
-		if (m_pGame->m_pMapList[m_pGame->m_iMiddlelandMapIndex]->m_pOccupyFlag[i] != 0) {
+		if (m_game->m_map_list[m_game->m_middleland_map_index]->m_occupy_flag[i] != 0) {
 
-			std::snprintf(cTxt, sizeof(cTxt), "flag = %d %d %d %d", m_pGame->m_pMapList[m_pGame->m_iMiddlelandMapIndex]->m_pOccupyFlag[i]->m_cSide,
-				m_pGame->m_pMapList[m_pGame->m_iMiddlelandMapIndex]->m_pOccupyFlag[i]->m_sX,
-				m_pGame->m_pMapList[m_pGame->m_iMiddlelandMapIndex]->m_pOccupyFlag[i]->m_sY,
-				m_pGame->m_pMapList[m_pGame->m_iMiddlelandMapIndex]->m_pOccupyFlag[i]->m_iEKCount);
-			strcat(pData, cTxt);
-			strcat(pData, "\n");
+			std::snprintf(txt, sizeof(txt), "flag = %d %d %d %d", m_game->m_map_list[m_game->m_middleland_map_index]->m_occupy_flag[i]->m_side,
+				m_game->m_map_list[m_game->m_middleland_map_index]->m_occupy_flag[i]->m_x,
+				m_game->m_map_list[m_game->m_middleland_map_index]->m_occupy_flag[i]->m_y,
+				m_game->m_map_list[m_game->m_middleland_map_index]->m_occupy_flag[i]->m_enemy_kill_count);
+			strcat(data, txt);
+			strcat(data, "\n");
 		}
 
-	strcat(pData, "\n\n");
+	strcat(data, "\n\n");
 
-	return strlen(pData);
+	return strlen(data);
 }
 
-void WarManager::SetSummonMobAction(int iClientH, int iMode, size_t dwMsgSize, char* pData)
+void WarManager::set_summon_mob_action(int client_h, int mode, size_t msg_size, char* data)
 {
-	int iTargetIndex;
+	int target_index;
 	char   seps[] = "= \t\r\n";
-	char* token, cTargetName[11], cBuff[256];
+	char* token, target_name[11], buff[256];
 
-	if (m_pGame->m_pClientList[iClientH] == 0) return;
-	if (m_pGame->m_pClientList[iClientH]->m_cSide == 0) return;
+	if (m_game->m_client_list[client_h] == 0) return;
+	if (m_game->m_client_list[client_h]->m_side == 0) return;
 
-	switch (iMode) {
+	switch (mode) {
 	case 0: // Free
 	case 1: // Hold
-		// iClientH   .
+		// client_h   .
 		for(int i = 0; i < MaxNpcs; i++)
-			if (m_pGame->m_pNpcList[i] != 0) {
-				if ((m_pGame->m_pNpcList[i]->m_bIsSummoned) &&
-					(m_pGame->m_pNpcList[i]->m_iFollowOwnerIndex == iClientH) &&
-					(m_pGame->m_pNpcList[i]->m_cFollowOwnerType == hb::shared::owner_class::Player)) {
+			if (m_game->m_npc_list[i] != 0) {
+				if ((m_game->m_npc_list[i]->m_is_summoned) &&
+					(m_game->m_npc_list[i]->m_follow_owner_index == client_h) &&
+					(m_game->m_npc_list[i]->m_follow_owner_type == hb::shared::owner_class::Player)) {
 
-					m_pGame->m_pNpcList[i]->m_iSummonControlMode = iMode;
-					m_pGame->m_pNpcList[i]->m_bIsPermAttackMode = false;
-					m_pGame->m_pNpcList[i]->m_cBehavior = Behavior::Move;
-					m_pGame->m_pNpcList[i]->m_sBehaviorTurnCount = 0;
-					m_pGame->m_pNpcList[i]->m_iTargetIndex = 0;
+					m_game->m_npc_list[i]->m_summon_control_mode = mode;
+					m_game->m_npc_list[i]->m_is_perm_attack_mode = false;
+					m_game->m_npc_list[i]->m_behavior = Behavior::Move;
+					m_game->m_npc_list[i]->m_behavior_turn_count = 0;
+					m_game->m_npc_list[i]->m_target_index = 0;
 				}
 			}
 		break;
 
 	case 2:
-		if ((dwMsgSize) <= 0) return;
-		memcpy(cBuff, pData, dwMsgSize);
+		if ((msg_size) <= 0) return;
+		memcpy(buff, data, msg_size);
 
 		token = strtok(NULL, seps);
 		token = strtok(NULL, seps);
 
-		iTargetIndex = 0;
+		target_index = 0;
 		if (token != 0) {
 			// token
 			if (strlen(token) > hb::shared::limits::CharNameLen - 1)
-				memcpy(cTargetName, token, hb::shared::limits::CharNameLen - 1);
-			else memcpy(cTargetName, token, strlen(token));
+				memcpy(target_name, token, hb::shared::limits::CharNameLen - 1);
+			else memcpy(target_name, token, strlen(token));
 
 			// 2002.8.17
 			for(int i = 1; i < MaxClients; i++)
 			{
-				// if ((m_pGame->m_pClientList[i] != 0) && (memcmp(m_pGame->m_pClientList[i]->m_cCharName, cTargetName, 10) == 0)) { // original
-				if ((m_pGame->m_pClientList[i] != 0) &&
-					(hb_strnicmp(m_pGame->m_pClientList[i]->m_cCharName, cTargetName, hb::shared::limits::CharNameLen - 1) == 0) &&
-					(strcmp(m_pGame->m_pClientList[iClientH]->m_cMapName, m_pGame->m_pClientList[i]->m_cMapName) == 0)) // adamas(map  .)
+				// if ((m_game->m_client_list[i] != 0) && (memcmp(m_game->m_client_list[i]->m_char_name, target_name, 10) == 0)) { // original
+				if ((m_game->m_client_list[i] != 0) &&
+					(hb_strnicmp(m_game->m_client_list[i]->m_char_name, target_name, hb::shared::limits::CharNameLen - 1) == 0) &&
+					(strcmp(m_game->m_client_list[client_h]->m_map_name, m_game->m_client_list[i]->m_map_name) == 0)) // adamas(map  .)
 				{
-					iTargetIndex = i;
+					target_index = i;
 					goto SSMA_SKIPSEARCH;
 				}
 			}
@@ -2599,20 +2599,20 @@ void WarManager::SetSummonMobAction(int iClientH, int iMode, size_t dwMsgSize, c
 
 	SSMA_SKIPSEARCH:
 
-		if ((iTargetIndex != 0) && (m_pGame->m_pClientList[iTargetIndex]->m_cSide != 0) &&
-			(m_pGame->m_pClientList[iTargetIndex]->m_cSide != m_pGame->m_pClientList[iClientH]->m_cSide)) {
+		if ((target_index != 0) && (m_game->m_client_list[target_index]->m_side != 0) &&
+			(m_game->m_client_list[target_index]->m_side != m_game->m_client_list[client_h]->m_side)) {
 			for(int i = 0; i < MaxNpcs; i++)
-				if (m_pGame->m_pNpcList[i] != 0) {
-					if ((m_pGame->m_pNpcList[i]->m_bIsSummoned) &&
-						(m_pGame->m_pNpcList[i]->m_iFollowOwnerIndex == iClientH) &&
-						(m_pGame->m_pNpcList[i]->m_cFollowOwnerType == hb::shared::owner_class::Player)) {
+				if (m_game->m_npc_list[i] != 0) {
+					if ((m_game->m_npc_list[i]->m_is_summoned) &&
+						(m_game->m_npc_list[i]->m_follow_owner_index == client_h) &&
+						(m_game->m_npc_list[i]->m_follow_owner_type == hb::shared::owner_class::Player)) {
 
-						m_pGame->m_pNpcList[i]->m_iSummonControlMode = iMode;
-						m_pGame->m_pNpcList[i]->m_cBehavior = Behavior::Attack;
-						m_pGame->m_pNpcList[i]->m_sBehaviorTurnCount = 0;
-						m_pGame->m_pNpcList[i]->m_iTargetIndex = iTargetIndex;
-						m_pGame->m_pNpcList[i]->m_cTargetType = hb::shared::owner_class::Player;
-						m_pGame->m_pNpcList[i]->m_bIsPermAttackMode = true;
+						m_game->m_npc_list[i]->m_summon_control_mode = mode;
+						m_game->m_npc_list[i]->m_behavior = Behavior::Attack;
+						m_game->m_npc_list[i]->m_behavior_turn_count = 0;
+						m_game->m_npc_list[i]->m_target_index = target_index;
+						m_game->m_npc_list[i]->m_target_type = hb::shared::owner_class::Player;
+						m_game->m_npc_list[i]->m_is_perm_attack_mode = true;
 					}
 				}
 		}
@@ -2620,34 +2620,34 @@ void WarManager::SetSummonMobAction(int iClientH, int iMode, size_t dwMsgSize, c
 	}
 }
 
-bool WarManager::__bSetOccupyFlag(char cMapIndex, int dX, int dY, int iSide, int iEKNum, int iClientH)
+bool WarManager::set_occupy_flag(char map_index, int dX, int dY, int side, int ek_num, int client_h)
 {
-	int   iDynamicObjectIndex, iIndex;
-	class CTile* pTile;
-	uint32_t dwTime;
+	int   dynamic_object_index, index;
+	class CTile* tile;
+	uint32_t time;
 
-	dwTime = GameClock::GetTimeMS();
+	time = GameClock::GetTimeMS();
 
-	if (m_pGame->m_pMapList[cMapIndex] == 0) return false;
-	if (((m_pGame->m_bIsHeldenianMode == false) || (static_cast<char>(m_pGame->m_bIsHeldenianMode) != m_pGame->m_cHeldenianType)) &&
-		(m_pGame->m_bHeldenianInitiated == 1)) return false;
-	if ((m_pGame->m_cHeldenianType == 1) && (m_pGame->m_iBTFieldMapIndex == -1)) return false;
-	if ((m_pGame->m_cHeldenianType == 2) && (m_pGame->m_iGodHMapIndex == -1)) return false;
-	if ((m_pGame->m_pClientList[iClientH]->m_iGuildRank == 0)) return false;
+	if (m_game->m_map_list[map_index] == 0) return false;
+	if (((m_game->m_is_heldenian_mode == false) || (static_cast<char>(m_game->m_is_heldenian_mode) != m_game->m_heldenian_type)) &&
+		(m_game->m_heldenian_initiated == 1)) return false;
+	if ((m_game->m_heldenian_type == 1) && (m_game->m_bt_field_map_index == -1)) return false;
+	if ((m_game->m_heldenian_type == 2) && (m_game->m_godh_map_index == -1)) return false;
+	if ((m_game->m_client_list[client_h]->m_guild_rank == 0)) return false;
 
-	pTile = (class CTile*)(m_pGame->m_pMapList[cMapIndex]->m_pTile + dX + dY * m_pGame->m_pMapList[cMapIndex]->m_sSizeY);
-	if (pTile->m_iAttribute != 0) return false;
-	iSide = m_pGame->m_sLastHeldenianWinner;
-	if ((dX < 25) || (dX >= m_pGame->m_pMapList[cMapIndex]->m_sSizeX - 25) ||
-		(dY < 25) || (dY >= m_pGame->m_pMapList[cMapIndex]->m_sSizeY - 25)) return false;
+	tile = (class CTile*)(m_game->m_map_list[map_index]->m_tile + dX + dY * m_game->m_map_list[map_index]->m_size_y);
+	if (tile->m_attribute != 0) return false;
+	side = m_game->m_last_heldenian_winner;
+	if ((dX < 25) || (dX >= m_game->m_map_list[map_index]->m_size_x - 25) ||
+		(dY < 25) || (dY >= m_game->m_map_list[map_index]->m_size_y - 25)) return false;
 
-	if ((iClientH > 0) && (m_pGame->m_pClientList[iClientH] != 0)) {
-		if (m_pGame->m_pClientList[iClientH]->m_cSide != iSide) return false;
+	if ((client_h > 0) && (m_game->m_client_list[client_h] != 0)) {
+		if (m_game->m_client_list[client_h]->m_side != side) return false;
 	}
 
-	pTile = (class CTile*)(m_pGame->m_pMapList[cMapIndex]->m_pTile + dX + dY * m_pGame->m_pMapList[cMapIndex]->m_sSizeY);
-	if (pTile->m_iOccupyFlagIndex != 0) return false;
-	if (pTile->m_bIsMoveAllowed == false)  return false;
+	tile = (class CTile*)(m_game->m_map_list[map_index]->m_tile + dX + dY * m_game->m_map_list[map_index]->m_size_y);
+	if (tile->m_occupy_flag_index != 0) return false;
+	if (tile->m_is_move_allowed == false)  return false;
 
 	for(int ix = dX - 3; ix <= dX + 3; ix++)
 		for(int iy = dY - 3; iy <= dY + 3; iy++) {
@@ -2655,225 +2655,225 @@ bool WarManager::__bSetOccupyFlag(char cMapIndex, int dX, int dY, int iSide, int
 
 			}
 			else {
-				pTile = (class CTile*)(m_pGame->m_pMapList[cMapIndex]->m_pTile + ix + iy * m_pGame->m_pMapList[cMapIndex]->m_sSizeY);
-				if ((pTile->m_iOccupyFlagIndex != 0) && (pTile->m_iOccupyFlagIndex > 0) &&
-					(pTile->m_iOccupyFlagIndex < smap::MaxOccupyFlag) && (m_pGame->m_pMapList[cMapIndex]->m_pOccupyFlag[pTile->m_iOccupyFlagIndex] != 0)) {
-					if (m_pGame->m_pMapList[cMapIndex]->m_pOccupyFlag[pTile->m_iOccupyFlagIndex]->m_cSide == iSide) return false;
+				tile = (class CTile*)(m_game->m_map_list[map_index]->m_tile + ix + iy * m_game->m_map_list[map_index]->m_size_y);
+				if ((tile->m_occupy_flag_index != 0) && (tile->m_occupy_flag_index > 0) &&
+					(tile->m_occupy_flag_index < smap::MaxOccupyFlag) && (m_game->m_map_list[map_index]->m_occupy_flag[tile->m_occupy_flag_index] != 0)) {
+					if (m_game->m_map_list[map_index]->m_occupy_flag[tile->m_occupy_flag_index]->m_side == side) return false;
 				}
 			}
 		}
 
-	if (m_pGame->m_pMapList[cMapIndex]->m_iTotalOccupyFlags >= smap::MaxOccupyFlag) {
+	if (m_game->m_map_list[map_index]->m_total_occupy_flags >= smap::MaxOccupyFlag) {
 		return false;
 	}
 
-	switch (iSide) {
-	case 1:	iDynamicObjectIndex = m_pGame->m_pDynamicObjectManager->iAddDynamicObjectList(0, 0, dynamic_object::AresdenFlag1, cMapIndex, dX, dY, 0, 0);	break;
-	case 2:	iDynamicObjectIndex = m_pGame->m_pDynamicObjectManager->iAddDynamicObjectList(0, 0, dynamic_object::ElvineFlag1, cMapIndex, dX, dY, 0, 0);	break;
-	default: iDynamicObjectIndex = 0;
+	switch (side) {
+	case 1:	dynamic_object_index = m_game->m_dynamic_object_manager->add_dynamic_object_list(0, 0, dynamic_object::AresdenFlag1, map_index, dX, dY, 0, 0);	break;
+	case 2:	dynamic_object_index = m_game->m_dynamic_object_manager->add_dynamic_object_list(0, 0, dynamic_object::ElvineFlag1, map_index, dX, dY, 0, 0);	break;
+	default: dynamic_object_index = 0;
 	}
 
-	iEKNum = 1;
-	iIndex = m_pGame->m_pMapList[cMapIndex]->iRegisterOccupyFlag(dX, dY, iSide, iEKNum, iDynamicObjectIndex);
-	if (iIndex < 0) {
-		if (iDynamicObjectIndex > MaxGuilds)
+	ek_num = 1;
+	index = m_game->m_map_list[map_index]->register_occupy_flag(dX, dY, side, ek_num, dynamic_object_index);
+	if (index < 0) {
+		if (dynamic_object_index > MaxGuilds)
 			return true;
 	}
 
-	pTile = (class CTile*)(m_pGame->m_pMapList[cMapIndex]->m_pTile + dX + dY * m_pGame->m_pMapList[cMapIndex]->m_sSizeY);
-	pTile->m_iOccupyFlagIndex = iIndex;
+	tile = (class CTile*)(m_game->m_map_list[map_index]->m_tile + dX + dY * m_game->m_map_list[map_index]->m_size_y);
+	tile->m_occupy_flag_index = index;
 
-	m_pGame->m_pMapList[cMapIndex]->m_iTotalOccupyFlags++;
+	m_game->m_map_list[map_index]->m_total_occupy_flags++;
 
-	if (m_pGame->m_cHeldenianType == 1) {
+	if (m_game->m_heldenian_type == 1) {
 		for(int ix = dX - 3; ix <= dX + 3; ix++)
 			for(int iy = dY - 3; iy <= dY + 3; iy++) {
-				if ((ix < 0) || (ix >= m_pGame->m_pMapList[cMapIndex]->m_sSizeX) ||
-					(iy < 0) || (iy >= m_pGame->m_pMapList[cMapIndex]->m_sSizeY)) {
+				if ((ix < 0) || (ix >= m_game->m_map_list[map_index]->m_size_x) ||
+					(iy < 0) || (iy >= m_game->m_map_list[map_index]->m_size_y)) {
 				}
 				else {
-					pTile = (class CTile*)(m_pGame->m_pMapList[cMapIndex]->m_pTile + ix + iy * m_pGame->m_pMapList[cMapIndex]->m_sSizeY);
-					switch (iSide) {
+					tile = (class CTile*)(m_game->m_map_list[map_index]->m_tile + ix + iy * m_game->m_map_list[map_index]->m_size_y);
+					switch (side) {
 					case 1:
-						pTile->m_iOccupyStatus -= iEKNum;
+						tile->m_occupy_status -= ek_num;
 						break;
 					case 2:
-						pTile->m_iOccupyStatus += iEKNum;
+						tile->m_occupy_status += ek_num;
 						break;
 					}
 				}
 			}
 	}
 
-	if (m_pGame->m_cHeldenianType == 2) {
-		if (iSide == m_pGame->m_sLastHeldenianWinner) {
-			m_pGame->m_cHeldenianVictoryType = iSide;
+	if (m_game->m_heldenian_type == 2) {
+		if (side == m_game->m_last_heldenian_winner) {
+			m_game->m_heldenian_victory_type = side;
 			//sub_4AB9D0
 		}
 	}
 	return true;
 }
 
-void WarManager::FightzoneReserveHandler(int iClientH, char* pData, size_t dwMsgSize)
+void WarManager::fightzone_reserve_handler(int client_h, char* data, size_t msg_size)
 {
-	int iFightzoneNum, iEnableReserveTime;
-	uint32_t dwGoldCount;
-	uint16_t wResult;
-	int     iRet, iResult = 1, iCannotReserveDay;
+	int fightzone_num, enable_reserve_time;
+	uint32_t gold_count;
+	uint16_t msg_result;
+	int     ret, result = 1, cannot_reserve_day;
 	hb::time::local_time SysTime{};
 
-	if (m_pGame->m_pClientList[iClientH] == 0) return;
-	if (m_pGame->m_pClientList[iClientH]->m_bIsInitComplete == false) return;
+	if (m_game->m_client_list[client_h] == 0) return;
+	if (m_game->m_client_list[client_h]->m_is_init_complete == false) return;
 
 	SysTime = hb::time::local_time::now();
 
-	iEnableReserveTime = 2 * 20 * 60 - ((SysTime.hour % 2) * 20 * 60 + SysTime.minute * 20) - 5 * 20;
+	enable_reserve_time = 2 * 20 * 60 - ((SysTime.hour % 2) * 20 * 60 + SysTime.minute * 20) - 5 * 20;
 
-	dwGoldCount = m_pGame->m_pItemManager->dwGetItemCountByID(iClientH, hb::shared::item::ItemId::Gold);
+	gold_count = m_game->m_item_manager->get_item_count_by_id(client_h, hb::shared::item::ItemId::Gold);
 
 	const auto* pkt = hb::net::PacketCast<hb::net::PacketRequestFightzoneReserve>(
-		pData, sizeof(hb::net::PacketRequestFightzoneReserve));
+		data, sizeof(hb::net::PacketRequestFightzoneReserve));
 	if (!pkt) return;
-	iFightzoneNum = pkt->fightzone;
+	fightzone_num = pkt->fightzone;
 
 	// fightzone  .
-	if ((iFightzoneNum < 1) || (iFightzoneNum > MaxFightZone)) return;
+	if ((fightzone_num < 1) || (fightzone_num > MaxFightZone)) return;
 
 	// 2 4 6 8  1 3 5 7
 	// ex) 1 => {1 + 1 () + 1 (  )} %2 == 1
 
-	iCannotReserveDay = (SysTime.day + m_pGame->m_pClientList[iClientH]->m_cSide + iFightzoneNum) % 2;
-	if (iEnableReserveTime <= 0) {
-		wResult = MsgType::Reject;
-		iResult = 0;
+	cannot_reserve_day = (SysTime.day + m_game->m_client_list[client_h]->m_side + fightzone_num) % 2;
+	if (enable_reserve_time <= 0) {
+		msg_result = MsgType::Reject;
+		result = 0;
 	}
-	else if (m_pGame->m_iFightZoneReserve[iFightzoneNum - 1] != 0) {
-		wResult = MsgType::Reject;
-		iResult = -1;
+	else if (m_game->m_fight_zone_reserve[fightzone_num - 1] != 0) {
+		msg_result = MsgType::Reject;
+		result = -1;
 	}
-	else if (dwGoldCount < 1500) {
+	else if (gold_count < 1500) {
 		// Gold    .
-		wResult = MsgType::Reject;
-		iResult = -2;
+		msg_result = MsgType::Reject;
+		result = -2;
 	}
-	else if (iCannotReserveDay) {
-		wResult = MsgType::Reject;
-		iResult = -3;
+	else if (cannot_reserve_day) {
+		msg_result = MsgType::Reject;
+		result = -3;
 	}
-	else if (m_pGame->m_pClientList[iClientH]->m_iFightzoneNumber != 0) {
-		wResult = MsgType::Reject;
-		iResult = -4;
+	else if (m_game->m_client_list[client_h]->m_fightzone_number != 0) {
+		msg_result = MsgType::Reject;
+		result = -4;
 	}
 	else {
 
-		wResult = MsgType::Confirm;
+		msg_result = MsgType::Confirm;
 
-		m_pGame->m_pItemManager->SetItemCountByID(iClientH, hb::shared::item::ItemId::Gold, dwGoldCount - 1500);
-		m_pGame->iCalcTotalWeight(iClientH);
+		m_game->m_item_manager->set_item_count_by_id(client_h, hb::shared::item::ItemId::Gold, gold_count - 1500);
+		m_game->calc_total_weight(client_h);
 
-		m_pGame->m_iFightZoneReserve[iFightzoneNum - 1] = iClientH;
+		m_game->m_fight_zone_reserve[fightzone_num - 1] = client_h;
 
-		m_pGame->m_pClientList[iClientH]->m_iFightzoneNumber = iFightzoneNum;
-		m_pGame->m_pClientList[iClientH]->m_iReserveTime = SysTime.month * 10000 + SysTime.day * 100 + SysTime.hour;
+		m_game->m_client_list[client_h]->m_fightzone_number = fightzone_num;
+		m_game->m_client_list[client_h]->m_reserve_time = SysTime.month * 10000 + SysTime.day * 100 + SysTime.hour;
 
-		if (SysTime.hour % 2)	m_pGame->m_pClientList[iClientH]->m_iReserveTime += 1;
-		else					m_pGame->m_pClientList[iClientH]->m_iReserveTime += 2;
-		hb::logger::log<log_channel::events>("Fight zone ticket reserved: player={} ticket={}", m_pGame->m_pClientList[iClientH]->m_cCharName, m_pGame->m_pClientList[iClientH]->m_iReserveTime);
+		if (SysTime.hour % 2)	m_game->m_client_list[client_h]->m_reserve_time += 1;
+		else					m_game->m_client_list[client_h]->m_reserve_time += 2;
+		hb::logger::log<log_channel::events>("Fight zone ticket reserved: player={} ticket={}", m_game->m_client_list[client_h]->m_char_name, m_game->m_client_list[client_h]->m_reserve_time);
 
-		m_pGame->m_pClientList[iClientH]->m_iFightZoneTicketNumber = 50;
-		iResult = 1;
+		m_game->m_client_list[client_h]->m_fightzone_ticket_number = 50;
+		result = 1;
 	}
 
 	hb::net::PacketResponseFightzoneReserve resp{};
 	resp.header.msg_id = MsgId::ResponseFightZoneReserve;
-	resp.header.msg_type = wResult;
-	resp.result = iResult;
+	resp.header.msg_type = msg_result;
+	resp.result = result;
 
-	iRet = m_pGame->m_pClientList[iClientH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&resp), sizeof(resp));
+	ret = m_game->m_client_list[client_h]->m_socket->send_msg(reinterpret_cast<char*>(&resp), sizeof(resp));
 
-	switch (iRet) {
+	switch (ret) {
 	case sock::Event::QueueFull:
 	case sock::Event::SocketError:
 	case sock::Event::CriticalError:
 	case sock::Event::SocketClosed:
-		m_pGame->DeleteClient(iClientH, true, true);
+		m_game->delete_client(client_h, true, true);
 		return;
 	}
 }
 
-void WarManager::FightzoneReserveProcessor()
+void WarManager::fightzone_reserve_processor()
 {
 }
 
-void WarManager::GetFightzoneTicketHandler(int iClientH)
+void WarManager::get_fightzone_ticket_handler(int client_h)
 {
-	int   iRet, iEraseReq, iMonth, iDay, iHour;
-	char cItemName[hb::shared::limits::ItemNameLen];
-	CItem* pItem;
+	int   ret, erase_req, month, day, hour;
+	char item_name[hb::shared::limits::ItemNameLen];
+	CItem* item;
 
-	if (m_pGame->m_pClientList[iClientH] == 0) return;
+	if (m_game->m_client_list[client_h] == 0) return;
 
-	if (m_pGame->m_pClientList[iClientH]->m_iFightZoneTicketNumber <= 0) {
-		m_pGame->m_pClientList[iClientH]->m_iFightzoneNumber *= -1;
-		m_pGame->SendNotifyMsg(0, iClientH, Notify::FightZoneReserve, -1, 0, 0, 0);
+	if (m_game->m_client_list[client_h]->m_fightzone_ticket_number <= 0) {
+		m_game->m_client_list[client_h]->m_fightzone_number *= -1;
+		m_game->send_notify_msg(0, client_h, Notify::FightZoneReserve, -1, 0, 0, 0);
 		return;
 	}
 
-	std::memset(cItemName, 0, sizeof(cItemName));
+	std::memset(item_name, 0, sizeof(item_name));
 
-	if (m_pGame->m_pClientList[iClientH]->m_iFightzoneNumber == 1)
-		strcpy(cItemName, "ArenaTicket");
-	else  std::snprintf(cItemName, sizeof(cItemName), "ArenaTicket(%d)", m_pGame->m_pClientList[iClientH]->m_iFightzoneNumber);
+	if (m_game->m_client_list[client_h]->m_fightzone_number == 1)
+		strcpy(item_name, "ArenaTicket");
+	else  std::snprintf(item_name, sizeof(item_name), "ArenaTicket(%d)", m_game->m_client_list[client_h]->m_fightzone_number);
 
-	pItem = new CItem;
-	if (m_pGame->m_pItemManager->_bInitItemAttr(pItem, cItemName) == false) {
-		delete pItem;
+	item = new CItem;
+	if (m_game->m_item_manager->init_item_attr(item, item_name) == false) {
+		delete item;
 		return;
 	}
 
-	if (m_pGame->m_pItemManager->_bAddClientItemList(iClientH, pItem, &iEraseReq)) {
-		if (m_pGame->m_pClientList[iClientH]->m_iCurWeightLoad < 0) m_pGame->m_pClientList[iClientH]->m_iCurWeightLoad = 0;
+	if (m_game->m_item_manager->add_client_item_list(client_h, item, &erase_req)) {
+		if (m_game->m_client_list[client_h]->m_cur_weight_load < 0) m_game->m_client_list[client_h]->m_cur_weight_load = 0;
 
-		m_pGame->m_pClientList[iClientH]->m_iFightZoneTicketNumber = m_pGame->m_pClientList[iClientH]->m_iFightZoneTicketNumber - 1;
+		m_game->m_client_list[client_h]->m_fightzone_ticket_number = m_game->m_client_list[client_h]->m_fightzone_ticket_number - 1;
 
-		pItem->SetTouchEffectType(TouchEffectType::Date);
+		item->set_touch_effect_type(TouchEffectType::Date);
 
-		iMonth = m_pGame->m_pClientList[iClientH]->m_iReserveTime / 10000;
-		iDay = (m_pGame->m_pClientList[iClientH]->m_iReserveTime - iMonth * 10000) / 100;
-		iHour = m_pGame->m_pClientList[iClientH]->m_iReserveTime - iMonth * 10000 - iDay * 100;
+		month = m_game->m_client_list[client_h]->m_reserve_time / 10000;
+		day = (m_game->m_client_list[client_h]->m_reserve_time - month * 10000) / 100;
+		hour = m_game->m_client_list[client_h]->m_reserve_time - month * 10000 - day * 100;
 
-		pItem->m_sTouchEffectValue1 = iMonth;
-		pItem->m_sTouchEffectValue2 = iDay;
-		pItem->m_sTouchEffectValue3 = iHour;
+		item->m_touch_effect_value1 = month;
+		item->m_touch_effect_value2 = day;
+		item->m_touch_effect_value3 = hour;
 
-		hb::logger::log<log_channel::events>("Fight zone ticket obtained: player={} ticket={}({})({})", m_pGame->m_pClientList[iClientH]->m_cCharName, pItem->m_sTouchEffectValue1, pItem->m_sTouchEffectValue2, pItem->m_sTouchEffectValue3);
+		hb::logger::log<log_channel::events>("Fight zone ticket obtained: player={} ticket={}({})({})", m_game->m_client_list[client_h]->m_char_name, item->m_touch_effect_value1, item->m_touch_effect_value2, item->m_touch_effect_value3);
 
-		iRet = m_pGame->m_pItemManager->SendItemNotifyMsg(iClientH, Notify::ItemObtained, pItem, 0);
+		ret = m_game->m_item_manager->send_item_notify_msg(client_h, Notify::ItemObtained, item, 0);
 
-		m_pGame->iCalcTotalWeight(iClientH);
+		m_game->calc_total_weight(client_h);
 
-		switch (iRet) {
+		switch (ret) {
 		case sock::Event::QueueFull:
 		case sock::Event::SocketError:
 		case sock::Event::CriticalError:
 		case sock::Event::SocketClosed:
-			m_pGame->DeleteClient(iClientH, true, true);
+			m_game->delete_client(client_h, true, true);
 			return;
 		}
 	}
 	else {
-		delete pItem;
+		delete item;
 
-		m_pGame->iCalcTotalWeight(iClientH);
+		m_game->calc_total_weight(client_h);
 
-		iRet = m_pGame->m_pItemManager->SendItemNotifyMsg(iClientH, Notify::CannotCarryMoreItem, 0, 0);
+		ret = m_game->m_item_manager->send_item_notify_msg(client_h, Notify::CannotCarryMoreItem, 0, 0);
 
-		switch (iRet) {
+		switch (ret) {
 		case sock::Event::QueueFull:
 		case sock::Event::SocketError:
 		case sock::Event::CriticalError:
 		case sock::Event::SocketClosed:
-			m_pGame->DeleteClient(iClientH, true, true);
+			m_game->delete_client(client_h, true, true);
 			return;
 		}
 	}

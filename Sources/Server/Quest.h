@@ -35,38 +35,38 @@ class CQuest
 {
 public:
 	
-	char m_cSide;
+	char m_side;
 	
-	int m_iType;				// Quest
-	int m_iTargetType;			// Quest  .  Type    .
-	int m_iMaxCount;
+	int m_type;				// Quest
+	int m_target_type;			// Quest  .  Type    .
+	int m_max_count;
 
-	int m_iFrom;				// Quest  NPC
+	int m_from;				// Quest  NPC
 	
-	int m_iMinLevel;			// Quest    .
-	int m_iMaxLevel;			// Quest
+	int m_min_level;			// Quest    .
+	int m_max_level;			// Quest
 
-	int m_iRequiredSkillNum;
-	int m_iRequiredSkillLevel;
+	int m_required_skill_num;
+	int m_required_skill_level;
 
-	int m_iTimeLimit;
-	int m_iAssignType;			// . -1 . 1 Crusade .
+	int m_time_limit;
+	int m_assign_type;			// . -1 . 1 Crusade .
 
 								// . 3  1  . 0   .
-	int m_iRewardType[4]; 
-	int m_iRewardAmount[4];
+	int m_reward_type[4]; 
+	int m_reward_amount[4];
 
-	int m_iContribution;
-	int m_iContributionLimit;
+	int m_contribution;
+	int m_contribution_limit;
 
-	int m_iResponseMode;		// : 0(ok) 1(Accept/Decline) 2(Next)
+	int m_response_mode;		// : 0(ok) 1(Accept/Decline) 2(Next)
 
-	char m_cTargetName[hb::shared::limits::NpcNameLen];
-	int  m_sX, m_sY, m_iRange;
+	char m_target_name[hb::shared::limits::NpcNameLen];
+	int  m_x, m_y, m_range;
 
-	int  m_iQuestID;
+	int  m_quest_id;
 
-	int  m_iReqContribution;
+	int  m_req_contribution;
 
 
 	//CQuest();

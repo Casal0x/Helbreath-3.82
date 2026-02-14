@@ -31,90 +31,90 @@ struct EntityMotion {
     //-------------------------------------------------------------------------
     // State
     //-------------------------------------------------------------------------
-    bool bIsMoving = false;
-    int8_t cDirection = 0;          // 1-8 cardinal/ordinal directions
+    bool m_is_moving = false;
+    int8_t m_direction = 0;          // 1-8 cardinal/ordinal directions
 
     //-------------------------------------------------------------------------
     // Interpolation
     //-------------------------------------------------------------------------
-    float fProgress = 0.0f;         // 0.0 (start) to 1.0 (complete)
+    float m_progress = 0.0f;         // 0.0 (start) to 1.0 (complete)
 
     //-------------------------------------------------------------------------
     // Timing
     //-------------------------------------------------------------------------
-    uint32_t dwStartTime = 0;       // When movement started (ms)
-    uint32_t dwDuration = 0;        // Total movement duration (ms)
+    uint32_t m_start_time = 0;       // When movement started (ms)
+    uint32_t m_duration = 0;        // Total movement duration (ms)
 
     //-------------------------------------------------------------------------
     // Pixel Offsets (from current tile center)
-    // Start: offset where entity came FROM
+    // start: offset where entity came FROM
     // Target: always (0, 0) - the tile center
     // Using floats to support seamless tile transitions with non-integer offsets
     //-------------------------------------------------------------------------
-    float fStartOffsetX = 0.0f;
-    float fStartOffsetY = 0.0f;
+    float m_start_offset_x = 0.0f;
+    float m_start_offset_y = 0.0f;
 
     //-------------------------------------------------------------------------
     // Calculated Output (updated each frame) - floats for smooth interpolation
     //-------------------------------------------------------------------------
-    float fCurrentOffsetX = 0.0f;
-    float fCurrentOffsetY = 0.0f;
+    float m_current_offset_x = 0.0f;
+    float m_current_offset_y = 0.0f;
 
     //-------------------------------------------------------------------------
     // Pending next movement (2-slot queue for seamless chaining)
     //-------------------------------------------------------------------------
-    bool bHasPending = false;
-    int8_t cPendingDirection = 0;
-    uint32_t dwPendingDuration = 0;
+    bool m_has_pending = false;
+    int8_t m_pending_direction = 0;
+    uint32_t m_pending_duration = 0;
 
     //-------------------------------------------------------------------------
     // Methods
     //-------------------------------------------------------------------------
 
-    // Start movement in given direction
+    // start movement in given direction
     // direction: 1=N, 2=NE, 3=E, 4=SE, 5=S, 6=SW, 7=W, 8=NW
     // currentTime: current game time in milliseconds
     // duration: time to complete movement in milliseconds
-    void StartMove(int8_t direction, uint32_t currentTime, uint32_t duration);
+    void start_move(int8_t direction, uint32_t currentTime, uint32_t duration);
 
-    // Start movement with a custom initial offset (for seamless tile transitions)
+    // start movement with a custom initial offset (for seamless tile transitions)
     // This allows continuing from where a previous motion left off
     // offsetX, offsetY: The starting offset (can be outside normal [-32, 0] range for seamless transitions)
-    void StartMoveWithOffset(int8_t direction, uint32_t currentTime, uint32_t duration, float offsetX, float offsetY);
+    void start_move_with_offset(int8_t direction, uint32_t currentTime, uint32_t duration, float offsetX, float offsetY);
 
     // Queue a follow-up move (called when move arrives while still interpolating)
-    void QueueMove(int8_t direction, uint32_t duration);
+    void queue_move(int8_t direction, uint32_t duration);
 
-    // Update interpolation - call every frame
+    // update interpolation - call every frame
     // currentTime: current game time in milliseconds
-    void Update(uint32_t currentTime);
+    void update(uint32_t currentTime);
 
-    // Stop movement smoothly (at current position)
-    void Stop();
+    // stop movement smoothly (at current position)
+    void stop();
 
     // Hard snap back to tile center (collision/bump)
     // Preserves the classic jarring bump feel
-    void Bump();
+    void bump();
 
-    // Reset to default state
-    void Reset();
+    // reset to default state
+    void reset();
 
     //-------------------------------------------------------------------------
     // Queries
     //-------------------------------------------------------------------------
-    bool IsComplete() const { return !bIsMoving && fProgress >= 1.0f; }
-    bool IsMoving() const { return bIsMoving; }
-    bool HasPending() const { return bHasPending; }
+    bool is_complete() const { return !m_is_moving && m_progress >= 1.0f; }
+    bool is_moving() const { return m_is_moving; }
+    bool has_pending() const { return m_has_pending; }
 
     //-------------------------------------------------------------------------
     // Static Helpers
     //-------------------------------------------------------------------------
 
-    // Get starting pixel offset for a movement direction
+    // get starting pixel offset for a movement direction
     // Entity moving in direction D came FROM the opposite direction
     // Returns the pixel offset from tile center where movement starts
-    static void GetDirectionStartOffset(int8_t direction, int16_t& outX, int16_t& outY);
+    static void get_direction_start_offset(int8_t direction, int16_t& outX, int16_t& outY);
 
-    // Get movement duration for an action type
-    static uint32_t GetDurationForAction(int action, bool hasHaste = false, bool isFrozen = false);
+    // get movement duration for an action type
+    static uint32_t get_duration_for_action(int action, bool hasHaste = false, bool frozen = false);
 };

@@ -17,227 +17,227 @@
 using namespace hb::shared::net;
 namespace NetworkMessageHandlers {
 
-void HandleWeatherChange(CGame* pGame, char* pData)
+void HandleWeatherChange(CGame* game, char* data)
 {
 	const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyWhetherChange>(
-		pData, sizeof(hb::net::PacketNotifyWhetherChange));
+		data, sizeof(hb::net::PacketNotifyWhetherChange));
 	if (!pkt) return;
 	char weather_status = static_cast<char>(pkt->status);
-	WeatherManager::Get().SetWeatherStatus(weather_status);
+	weather_manager::get().set_weather_status(weather_status);
 
 	if (weather_status != 0)
 	{
-		WeatherManager::Get().SetWeather(true, weather_status);
-		if (weather_status >= 4 && weather_status <= 6 && AudioManager::Get().IsMusicEnabled())
-			pGame->StartBGM();
+		weather_manager::get().set_weather(true, weather_status);
+		if (weather_status >= 4 && weather_status <= 6 && audio_manager::get().is_music_enabled())
+			game->start_bgm();
 	}
-	else WeatherManager::Get().SetWeather(false, 0);
+	else weather_manager::get().set_weather(false, 0);
 }
 
-void HandleTimeChange(CGame* pGame, char* pData)
+void HandleTimeChange(CGame* game, char* data)
 {
 	const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyTimeChange>(
-		pData, sizeof(hb::net::PacketNotifyTimeChange));
+		data, sizeof(hb::net::PacketNotifyTimeChange));
 	if (!pkt) return;
-	WeatherManager::Get().SetAmbientLight(static_cast<char>(pkt->sprite_alpha));
-	switch (WeatherManager::Get().GetAmbientLight()) {
-	case 1:	pGame->m_bIsXmas = false; pGame->PlayGameSound('E', 32, 0); break;
-	case 2: pGame->m_bIsXmas = false; pGame->PlayGameSound('E', 31, 0); break;
+	weather_manager::get().set_ambient_light(static_cast<char>(pkt->sprite_alpha));
+	switch (weather_manager::get().get_ambient_light()) {
+	case 1:	game->m_is_xmas = false; game->play_game_sound('E', 32, 0); break;
+	case 2: game->m_is_xmas = false; game->play_game_sound('E', 31, 0); break;
 	case 3: // Snoopy Special night with chrismas bulbs
-		if (WeatherManager::Get().IsSnowing()) pGame->m_bIsXmas = true;
-		else pGame->m_bIsXmas = false;
-		WeatherManager::Get().SetXmas(pGame->m_bIsXmas);
-		pGame->PlayGameSound('E', 31, 0);
-		WeatherManager::Get().SetAmbientLight(2); break;
+		if (weather_manager::get().is_snowing()) game->m_is_xmas = true;
+		else game->m_is_xmas = false;
+		weather_manager::get().set_xmas(game->m_is_xmas);
+		game->play_game_sound('E', 31, 0);
+		weather_manager::get().set_ambient_light(2); break;
 	}
 }
 
-void HandleNoticeMsg(CGame* pGame, char* pData)
+void HandleNoticeMsg(CGame* game, char* data)
 {
 	const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyNoticeMsg>(
-		pData, sizeof(hb::net::PacketNotifyNoticeMsg));
+		data, sizeof(hb::net::PacketNotifyNoticeMsg));
 	if (!pkt) return;
-	pGame->AddEventList(pkt->text, 10);
+	game->add_event_list(pkt->text, 10);
 }
 
-void HandleStatusText(CGame* pGame, char* pData)
+void HandleStatusText(CGame* game, char* data)
 {
 	const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyStatusText>(
-		pData, sizeof(hb::net::PacketNotifyStatusText));
+		data, sizeof(hb::net::PacketNotifyStatusText));
 	if (!pkt) return;
 
 	// Display floating text above the local player's head (like "* Failed! *")
-	pGame->m_floatingText.AddDamageText(DamageTextType::Medium, pkt->text, pGame->m_dwCurTime,
-		pGame->m_pPlayer->m_sPlayerObjectID, pGame->m_pMapData.get());
+	game->m_floating_text.add_damage_text(damage_text_type::Medium, pkt->text, game->m_cur_time,
+		game->m_player->m_player_object_id, game->m_map_data.get());
 }
 
-void HandleForceDisconn(CGame* pGame, char* pData)
+void HandleForceDisconn(CGame* game, char* data)
 {
 	const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyForceDisconn>(
-		pData, sizeof(hb::net::PacketNotifyForceDisconn));
+		data, sizeof(hb::net::PacketNotifyForceDisconn));
 	if (!pkt) return;
 	const auto wpCount = pkt->seconds;
-	pGame->m_bForceDisconn = true;
-	if (pGame->m_logout_count < 0 || pGame->m_logout_count > 5) pGame->m_logout_count = 5;
-	pGame->AddEventList(NOTIFYMSG_FORCE_DISCONN1, 10);
+	game->m_force_disconn = true;
+	if (game->m_logout_count < 0 || game->m_logout_count > 5) game->m_logout_count = 5;
+	game->add_event_list(NOTIFYMSG_FORCE_DISCONN1, 10);
 }
 
-void HandleSettingSuccess(CGame* pGame, char* pData)
+void HandleSettingSuccess(CGame* game, char* data)
 {
-	int iPrevLevel;
-	std::string cTxt;
-	iPrevLevel = pGame->m_pPlayer->m_iLevel;
+	int prev_level;
+	std::string txt;
+	prev_level = game->m_player->m_level;
 	const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyLevelUp>(
-		pData, sizeof(hb::net::PacketNotifyLevelUp));
+		data, sizeof(hb::net::PacketNotifyLevelUp));
 	if (!pkt) return;
-	pGame->m_pPlayer->m_iLevel = pkt->level;
-	pGame->m_pPlayer->m_iStr = pkt->str;
-	pGame->m_pPlayer->m_iVit = pkt->vit;
-	pGame->m_pPlayer->m_iDex = pkt->dex;
-	pGame->m_pPlayer->m_iInt = pkt->intel;
-	pGame->m_pPlayer->m_iMag = pkt->mag;
-	pGame->m_pPlayer->m_iCharisma = pkt->chr;
-	pGame->m_pPlayer->m_playerStatus.iAttackDelay = pkt->attack_delay;
-	cTxt = "Your stat has been changed.";
-	pGame->AddEventList(cTxt.c_str(), 10);
+	game->m_player->m_level = pkt->level;
+	game->m_player->m_str = pkt->str;
+	game->m_player->m_vit = pkt->vit;
+	game->m_player->m_dex = pkt->dex;
+	game->m_player->m_int = pkt->intel;
+	game->m_player->m_mag = pkt->mag;
+	game->m_player->m_charisma = pkt->chr;
+	game->m_player->m_playerStatus.attack_delay = pkt->attack_delay;
+	txt = "Your stat has been changed.";
+	game->add_event_list(txt.c_str(), 10);
 	// CLEROTH - LU
-	pGame->m_pPlayer->m_iLU_Point = (pGame->m_pPlayer->m_iLevel - 1) * 3 - ((pGame->m_pPlayer->m_iStr + pGame->m_pPlayer->m_iVit + pGame->m_pPlayer->m_iDex + pGame->m_pPlayer->m_iInt + pGame->m_pPlayer->m_iMag + pGame->m_pPlayer->m_iCharisma) - 70);
-	pGame->m_pPlayer->m_wLU_Str = pGame->m_pPlayer->m_wLU_Vit = pGame->m_pPlayer->m_wLU_Dex = pGame->m_pPlayer->m_wLU_Int = pGame->m_pPlayer->m_wLU_Mag = pGame->m_pPlayer->m_wLU_Char = 0;
+	game->m_player->m_lu_point = (game->m_player->m_level - 1) * 3 - ((game->m_player->m_str + game->m_player->m_vit + game->m_player->m_dex + game->m_player->m_int + game->m_player->m_mag + game->m_player->m_charisma) - 70);
+	game->m_player->m_lu_str = game->m_player->m_lu_vit = game->m_player->m_lu_dex = game->m_player->m_lu_int = game->m_player->m_lu_mag = game->m_player->m_lu_char = 0;
 }
 
-void HandleServerChange(CGame* pGame, char* pData)
+void HandleServerChange(CGame* game, char* data)
 {
-	if (pGame->m_bIsServerChanging) return;
+	if (game->m_is_server_changing) return;
 
-	char cWorldServerAddr[16]{};
-	int iWorldServerPort;
+	char world_server_addr[16]{};
+	int world_server_port;
 
 	const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyServerChange>(
-		pData, sizeof(hb::net::PacketNotifyServerChange));
+		data, sizeof(hb::net::PacketNotifyServerChange));
 	if (!pkt) return;
 
-	pGame->m_bIsServerChanging = true;
+	game->m_is_server_changing = true;
 
 
-	pGame->m_cMapName.assign(pkt->map_name, strnlen(pkt->map_name, sizeof(pkt->map_name)));
-	memcpy(cWorldServerAddr, pkt->log_server_addr, 15);
-	iWorldServerPort = pkt->log_server_port;
-	if (pGame->m_pGSock != 0)
+	game->m_map_name.assign(pkt->map_name, strnlen(pkt->map_name, sizeof(pkt->map_name)));
+	memcpy(world_server_addr, pkt->log_server_addr, 15);
+	world_server_port = pkt->log_server_port;
+	if (game->m_g_sock != 0)
 	{
-		pGame->m_pGSock.reset();
+		game->m_g_sock.reset();
 	}
-	if (pGame->m_pLSock != 0)
+	if (game->m_l_sock != 0)
 	{
-		pGame->m_pLSock.reset();
+		game->m_l_sock.reset();
 	}
-	pGame->m_pLSock = std::make_unique<hb::shared::net::ASIOSocket>(pGame->m_pIOPool->GetContext(), game_limits::socket_block_limit);
-	pGame->m_pLSock->bConnect(pGame->m_cLogServerAddr.c_str(), iWorldServerPort);
-	pGame->m_pLSock->bInitBufferSize(hb::shared::limits::MsgBufferSize);
+	game->m_l_sock = std::make_unique<hb::shared::net::ASIOSocket>(game->m_io_pool->get_context(), game_limits::socket_block_limit);
+	game->m_l_sock->connect(game->m_log_server_addr.c_str(), world_server_port);
+	game->m_l_sock->init_buffer_size(hb::shared::limits::MsgBufferSize);
 
-	pGame->m_pPlayer->m_bIsPoisoned = false;
+	game->m_player->m_is_poisoned = false;
 
-	pGame->ChangeGameMode(GameMode::Connecting);
-	pGame->m_dwConnectMode = MsgId::RequestEnterGame;
-	//m_wEnterGameType = EnterGameMsg::New; //Gateway
-	pGame->m_wEnterGameType = EnterGameMsg::NewToWlsButMls;
-	std::snprintf(pGame->m_cMsg, sizeof(pGame->m_cMsg), "%s", "55");
+	game->change_game_mode(GameMode::Connecting);
+	game->m_connect_mode = MsgId::request_enter_game;
+	//m_enter_game_type = EnterGameMsg::New; //Gateway
+	game->m_enter_game_type = EnterGameMsg::NewToWlsButMls;
+	std::snprintf(game->m_msg, sizeof(game->m_msg), "%s", "55");
 }
 
-void HandleTotalUsers(CGame* pGame, char* pData)
+void HandleTotalUsers(CGame* game, char* data)
 {
-	int iTotal;
-	std::string cTxt;
+	int total;
+	std::string txt;
 	const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyTotalUsers>(
-		pData, sizeof(hb::net::PacketNotifyTotalUsers));
+		data, sizeof(hb::net::PacketNotifyTotalUsers));
 	if (!pkt) return;
-	iTotal = pkt->total;
-	cTxt = std::format(NOTIFYMSG_TOTAL_USER1, iTotal);
-	pGame->AddEventList(cTxt.c_str(), 10);
+	total = pkt->total;
+	txt = std::format(NOTIFYMSG_TOTAL_USER1, total);
+	game->add_event_list(txt.c_str(), 10);
 }
 
-void HandleChangePlayMode(CGame* pGame, char* pData)
+void HandleChangePlayMode(CGame* game, char* data)
 {
 	const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyChangePlayMode>(
-		pData, sizeof(hb::net::PacketNotifyChangePlayMode));
+		data, sizeof(hb::net::PacketNotifyChangePlayMode));
 	if (!pkt) return;
-	pGame->m_cLocation.assign(pkt->location, strnlen(pkt->location, sizeof(pkt->location)));
+	game->m_location.assign(pkt->location, strnlen(pkt->location, sizeof(pkt->location)));
 
-	if (pGame->m_cLocation.starts_with("aresden"))
+	if (game->m_location.starts_with("aresden"))
 	{
-		pGame->m_pPlayer->m_bAresden = true;
-		pGame->m_pPlayer->m_bCitizen = true;
-		pGame->m_pPlayer->m_bHunter = false;
+		game->m_player->m_aresden = true;
+		game->m_player->m_citizen = true;
+		game->m_player->m_hunter = false;
 	}
-	else if (pGame->m_cLocation.starts_with("arehunter"))
+	else if (game->m_location.starts_with("arehunter"))
 	{
-		pGame->m_pPlayer->m_bAresden = true;
-		pGame->m_pPlayer->m_bCitizen = true;
-		pGame->m_pPlayer->m_bHunter = true;
+		game->m_player->m_aresden = true;
+		game->m_player->m_citizen = true;
+		game->m_player->m_hunter = true;
 	}
-	else if (pGame->m_cLocation.starts_with("elvine"))
+	else if (game->m_location.starts_with("elvine"))
 	{
-		pGame->m_pPlayer->m_bAresden = false;
-		pGame->m_pPlayer->m_bCitizen = true;
-		pGame->m_pPlayer->m_bHunter = false;
+		game->m_player->m_aresden = false;
+		game->m_player->m_citizen = true;
+		game->m_player->m_hunter = false;
 	}
-	else if (pGame->m_cLocation.starts_with("elvhunter"))
+	else if (game->m_location.starts_with("elvhunter"))
 	{
-		pGame->m_pPlayer->m_bAresden = false;
-		pGame->m_pPlayer->m_bCitizen = true;
-		pGame->m_pPlayer->m_bHunter = true;
+		game->m_player->m_aresden = false;
+		game->m_player->m_citizen = true;
+		game->m_player->m_hunter = true;
 	}
 	else
 	{
-		pGame->m_pPlayer->m_bAresden = true;
-		pGame->m_pPlayer->m_bCitizen = false;
-		pGame->m_pPlayer->m_bHunter = true;
+		game->m_player->m_aresden = true;
+		game->m_player->m_citizen = false;
+		game->m_player->m_hunter = true;
 	}
-	pGame->AddEventList(DEF_MSG_GAMEMODE_CHANGED, 10);
+	game->add_event_list(DEF_MSG_GAMEMODE_CHANGED, 10);
 }
 
-void HandleForceRecallTime(CGame* pGame, char* pData)
+void HandleForceRecallTime(CGame* game, char* data)
 {
-	short sV1;
-	std::string cTxt;
+	short v1;
+	std::string txt;
 	const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyForceRecallTime>(
-		pData, sizeof(hb::net::PacketNotifyForceRecallTime));
+		data, sizeof(hb::net::PacketNotifyForceRecallTime));
 	if (!pkt) return;
-	sV1 = static_cast<short>(pkt->seconds_left);
-	if (static_cast<int>(sV1 / 20) > 0)
-		cTxt = std::format(NOTIFY_MSG_FORCERECALLTIME1, static_cast<int>(sV1 / 20));
+	v1 = static_cast<short>(pkt->seconds_left);
+	if (static_cast<int>(v1 / 20) > 0)
+		txt = std::format(NOTIFY_MSG_FORCERECALLTIME1, static_cast<int>(v1 / 20));
 	else
-		cTxt = NOTIFY_MSG_FORCERECALLTIME2;
-	pGame->AddEventList(cTxt.c_str(), 10);
+		txt = NOTIFY_MSG_FORCERECALLTIME2;
+	game->add_event_list(txt.c_str(), 10);
 }
 
-void HandleNoRecall(CGame* pGame, char* pData)
+void HandleNoRecall(CGame* game, char* data)
 {
-	pGame->AddEventList("You can not recall in this map.", 10);
+	game->add_event_list("You can not recall in this map.", 10);
 }
 
-void HandleFightZoneReserve(CGame* pGame, char* pData)
+void HandleFightZoneReserve(CGame* game, char* data)
 {
-	std::string cTxt;
+	std::string txt;
 	const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyFightZoneReserve>(
-		pData, sizeof(hb::net::PacketNotifyFightZoneReserve));
+		data, sizeof(hb::net::PacketNotifyFightZoneReserve));
 	if (!pkt) return;
 	switch (pkt->result) {
 	case -5:
-		pGame->AddEventList(NOTIFY_MSG_HANDLER68, 10);
+		game->add_event_list(NOTIFY_MSG_HANDLER68, 10);
 		break;
 	case -4:
-		pGame->AddEventList(NOTIFY_MSG_HANDLER69, 10);
+		game->add_event_list(NOTIFY_MSG_HANDLER69, 10);
 		break;
 	case -3:
-		pGame->AddEventList(NOTIFY_MSG_HANDLER70, 10);
+		game->add_event_list(NOTIFY_MSG_HANDLER70, 10);
 		break;
 	case -2:
-		pGame->m_iFightzoneNumber = 0;
-		pGame->AddEventList(NOTIFY_MSG_HANDLER71, 10);
+		game->m_fightzone_number = 0;
+		game->add_event_list(NOTIFY_MSG_HANDLER71, 10);
 		break;
 	case -1:
-		pGame->m_iFightzoneNumber = pGame->m_iFightzoneNumber * -1;
-		pGame->AddEventList(NOTIFY_MSG_HANDLER72, 10);
+		game->m_fightzone_number = game->m_fightzone_number * -1;
+		game->add_event_list(NOTIFY_MSG_HANDLER72, 10);
 		break;
 	case 1:
 	case 2:
@@ -248,40 +248,40 @@ void HandleFightZoneReserve(CGame* pGame, char* pData)
 	case 7:
 	case 8:
 	case 9:
-		cTxt = std::format(NOTIFY_MSG_HANDLER73, pkt->result);
-		pGame->AddEventList(cTxt.c_str(), 10);
+		txt = std::format(NOTIFY_MSG_HANDLER73, pkt->result);
+		game->add_event_list(txt.c_str(), 10);
 		break;
 	}
 }
 
-void HandleLoteryLost(CGame* pGame, char* pData)
+void HandleLoteryLost(CGame* game, char* data)
 {
-	pGame->AddEventList(DEF_MSG_NOTIFY_LOTERY_LOST, 10);
+	game->add_event_list(DEF_MSG_NOTIFY_LOTERY_LOST, 10);
 }
 
-void HandleNotFlagSpot(CGame* pGame, char* pData)
+void HandleNotFlagSpot(CGame* game, char* data)
 {
-	pGame->AddEventList(NOTIFY_MSG_HANDLER45, 10);
+	game->add_event_list(NOTIFY_MSG_HANDLER45, 10);
 }
 
-void HandleNpcTalk(CGame* pGame, char* pData)
+void HandleNpcTalk(CGame* game, char* data)
 {
-	pGame->NpcTalkHandler(pData);
+	game->npc_talk_handler(data);
 }
 
-void HandleTravelerLimitedLevel(CGame* pGame, char* pData)
+void HandleTravelerLimitedLevel(CGame* game, char* data)
 {
-	pGame->AddEventList(NOTIFY_MSG_HANDLER64, 10);
+	game->add_event_list(NOTIFY_MSG_HANDLER64, 10);
 }
 
-void HandleLimitedLevel(CGame* pGame, char* pData)
+void HandleLimitedLevel(CGame* game, char* data)
 {
-	pGame->AddEventList(NOTIFYMSG_LIMITED_LEVEL1, 10);
+	game->add_event_list(NOTIFYMSG_LIMITED_LEVEL1, 10);
 }
 
-void HandleToBeRecalled(CGame* pGame, char* pData)
+void HandleToBeRecalled(CGame* game, char* data)
 {
-	pGame->AddEventList(NOTIFY_MSG_HANDLER62, 10);
+	game->add_event_list(NOTIFY_MSG_HANDLER62, 10);
 }
 
 } // namespace NetworkMessageHandlers

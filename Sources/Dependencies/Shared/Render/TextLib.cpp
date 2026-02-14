@@ -21,7 +21,7 @@ static std::unique_ptr<IBitmapFont> s_ownedFonts[MAX_BITMAP_FONTS];
 
 // ============== Bitmap Font Management ==============
 
-void LoadBitmapFont(int fontId, hb::shared::sprite::ISprite* sprite, char firstChar, char lastChar,
+void load_bitmap_font(int fontId, hb::shared::sprite::ISprite* sprite, char firstChar, char lastChar,
                     int frameOffset, const FontSpacing& spacing)
 {
 	if (fontId < 0 || fontId >= MAX_BITMAP_FONTS)
@@ -30,7 +30,7 @@ void LoadBitmapFont(int fontId, hb::shared::sprite::ISprite* sprite, char firstC
 	s_ownedFonts[fontId] = CreateBitmapFont(sprite, firstChar, lastChar, frameOffset, spacing);
 }
 
-void LoadBitmapFontDynamic(int fontId, hb::shared::sprite::ISprite* sprite, char firstChar, char lastChar,
+void load_bitmap_font_dynamic(int fontId, hb::shared::sprite::ISprite* sprite, char firstChar, char lastChar,
                            int frameOffset)
 {
 	if (fontId < 0 || fontId >= MAX_BITMAP_FONTS)
@@ -39,7 +39,7 @@ void LoadBitmapFontDynamic(int fontId, hb::shared::sprite::ISprite* sprite, char
 	s_ownedFonts[fontId] = CreateBitmapFontDynamic(sprite, firstChar, lastChar, frameOffset);
 }
 
-bool IsBitmapFontLoaded(int fontId)
+bool is_bitmap_font_loaded(int fontId)
 {
 	if (fontId >= 0 && fontId < MAX_BITMAP_FONTS)
 	{
@@ -48,7 +48,7 @@ bool IsBitmapFontLoaded(int fontId)
 	return false;
 }
 
-IBitmapFont* GetBitmapFont(int fontId)
+IBitmapFont* get_bitmap_font(int fontId)
 {
 	if (fontId >= 0 && fontId < MAX_BITMAP_FONTS)
 	{
@@ -70,17 +70,17 @@ static BitmapTextParams StyleToBitmapParams(const TextStyle& style)
 	BitmapTextParams params;
 	if (style.alpha < 1.0f)
 	{
-		params = BitmapTextParams::ColorReplaceWithAlpha(style.color.r, style.color.g, style.color.b, style.alpha);
+		params = BitmapTextParams::color_replace_with_alpha(style.color.r, style.color.g, style.color.b, style.alpha);
 	}
 	else if (style.shadow == ShadowStyle::Integrated)
 	{
-		params = BitmapTextParams::ColorReplaceWithShadow(style.color.r, style.color.g, style.color.b);
+		params = BitmapTextParams::color_replace_with_shadow(style.color.r, style.color.g, style.color.b);
 	}
 	else
 	{
-		params = BitmapTextParams::ColorReplace(style.color.r, style.color.g, style.color.b);
+		params = BitmapTextParams::color_replace(style.color.r, style.color.g, style.color.b);
 	}
-	params.useAdditive = style.useAdditive;
+	params.m_use_additive = style.useAdditive;
 	return params;
 }
 
@@ -94,23 +94,23 @@ static void GetHighlightColor(const TextStyle& style, uint8_t& hr, uint8_t& hg, 
 
 // ============== Batching ==============
 
-void BeginBatch()
+void begin_batch()
 {
-	ITextRenderer* pRenderer = GetTextRenderer();
-	if (pRenderer)
-		pRenderer->BeginBatch();
+	ITextRenderer* renderer = GetTextRenderer();
+	if (renderer)
+		renderer->begin_batch();
 }
 
-void EndBatch()
+void end_batch()
 {
-	ITextRenderer* pRenderer = GetTextRenderer();
-	if (pRenderer)
-		pRenderer->EndBatch();
+	ITextRenderer* renderer = GetTextRenderer();
+	if (renderer)
+		renderer->end_batch();
 }
 
 // ============== Text Rendering ==============
 
-void DrawText(int fontId, int x, int y, const char* text, const TextStyle& style)
+void draw_text(int fontId, int x, int y, const char* text, const TextStyle& style)
 {
 	if (!text || text[0] == '\0')
 		return;
@@ -118,8 +118,8 @@ void DrawText(int fontId, int x, int y, const char* text, const TextStyle& style
 	if (IsBitmapFont(fontId))
 	{
 		// ============== Bitmap Font Rendering ==============
-		IBitmapFont* pFont = GetBitmapFont(fontId);
-		if (!pFont)
+		IBitmapFont* font = get_bitmap_font(fontId);
+		if (!font)
 			return;
 
 		// Handle shadow styles that require multiple draw calls
@@ -127,32 +127,32 @@ void DrawText(int fontId, int x, int y, const char* text, const TextStyle& style
 		{
 			case ShadowStyle::Highlight:
 			{
-				// Draw highlight first at +1,0 with brightened color
+				// draw highlight first at +1,0 with brightened color
 				uint8_t hr, hg, hb;
 				GetHighlightColor(style, hr, hg, hb);
-				pFont->DrawText(x + 1, y, text, BitmapTextParams::ColorReplace(hr, hg, hb));
+				font->draw_text(x + 1, y, text, BitmapTextParams::color_replace(hr, hg, hb));
 				// Main text drawn below
 				break;
 			}
 			case ShadowStyle::DropShadow:
 			{
-				// Draw shadow at +1,+1 in black
-				pFont->DrawText(x + 1, y + 1, text, BitmapTextParams::ColorReplace(0, 0, 0));
+				// draw shadow at +1,+1 in black
+				font->draw_text(x + 1, y + 1, text, BitmapTextParams::color_replace(0, 0, 0));
 				break;
 			}
 			case ShadowStyle::TwoPoint:
 			{
 				// 2-point shadow: 0,+1 and +1,+1 in black
-				pFont->DrawText(x, y + 1, text, BitmapTextParams::ColorReplace(0, 0, 0));
-				pFont->DrawText(x + 1, y + 1, text, BitmapTextParams::ColorReplace(0, 0, 0));
+				font->draw_text(x, y + 1, text, BitmapTextParams::color_replace(0, 0, 0));
+				font->draw_text(x + 1, y + 1, text, BitmapTextParams::color_replace(0, 0, 0));
 				break;
 			}
 			case ShadowStyle::ThreePoint:
 			{
 				// 3-point shadow: +1,+1, 0,+1, +1,0 in black
-				pFont->DrawText(x + 1, y + 1, text, BitmapTextParams::ColorReplace(0, 0, 0));
-				pFont->DrawText(x, y + 1, text, BitmapTextParams::ColorReplace(0, 0, 0));
-				pFont->DrawText(x + 1, y, text, BitmapTextParams::ColorReplace(0, 0, 0));
+				font->draw_text(x + 1, y + 1, text, BitmapTextParams::color_replace(0, 0, 0));
+				font->draw_text(x, y + 1, text, BitmapTextParams::color_replace(0, 0, 0));
+				font->draw_text(x + 1, y, text, BitmapTextParams::color_replace(0, 0, 0));
 				break;
 			}
 			default:
@@ -160,19 +160,19 @@ void DrawText(int fontId, int x, int y, const char* text, const TextStyle& style
 				break;
 		}
 
-		// Draw main text
-		pFont->DrawText(x, y, text, StyleToBitmapParams(style));
+		// draw main text
+		font->draw_text(x, y, text, StyleToBitmapParams(style));
 	}
 	else
 	{
 		// ============== TTF Font Rendering ==============
-		ITextRenderer* pRenderer = GetTextRenderer();
-		if (!pRenderer)
+		ITextRenderer* renderer = GetTextRenderer();
+		if (!renderer)
 			return;
 
 		// Set font size if specified (ignored for bitmap fonts)
 		if (style.fontSize > 0)
-			pRenderer->SetFontSize(style.fontSize);
+			renderer->SetFontSize(style.fontSize);
 
 		// Handle shadow styles
 		switch (style.shadow)
@@ -180,22 +180,22 @@ void DrawText(int fontId, int x, int y, const char* text, const TextStyle& style
 			case ShadowStyle::ThreePoint:
 			{
 				// 3-point shadow: +1,+1, 0,+1, +1,0 in black
-				pRenderer->DrawText(x + 1, y + 1, text, hb::shared::render::Color::Black());
-				pRenderer->DrawText(x, y + 1, text, hb::shared::render::Color::Black());
-				pRenderer->DrawText(x + 1, y, text, hb::shared::render::Color::Black());
+				renderer->draw_text(x + 1, y + 1, text, hb::shared::render::Color::Black());
+				renderer->draw_text(x, y + 1, text, hb::shared::render::Color::Black());
+				renderer->draw_text(x + 1, y, text, hb::shared::render::Color::Black());
 				break;
 			}
 			case ShadowStyle::DropShadow:
 			{
 				// Simple drop shadow at +1,+1 in black
-				pRenderer->DrawText(x + 1, y + 1, text, hb::shared::render::Color::Black());
+				renderer->draw_text(x + 1, y + 1, text, hb::shared::render::Color::Black());
 				break;
 			}
 			case ShadowStyle::TwoPoint:
 			{
 				// 2-point shadow: 0,+1 and +1,+1 in black
-				pRenderer->DrawText(x, y + 1, text, hb::shared::render::Color::Black());
-				pRenderer->DrawText(x + 1, y + 1, text, hb::shared::render::Color::Black());
+				renderer->draw_text(x, y + 1, text, hb::shared::render::Color::Black());
+				renderer->draw_text(x + 1, y + 1, text, hb::shared::render::Color::Black());
 				break;
 			}
 			case ShadowStyle::Highlight:
@@ -203,7 +203,7 @@ void DrawText(int fontId, int x, int y, const char* text, const TextStyle& style
 				// Highlight at +1,0 with brightened color
 				uint8_t hr, hg, hb;
 				GetHighlightColor(style, hr, hg, hb);
-				pRenderer->DrawText(x + 1, y, text, hb::shared::render::Color(hr, hg, hb));
+				renderer->draw_text(x + 1, y, text, hb::shared::render::Color(hr, hg, hb));
 				break;
 			}
 			default:
@@ -211,8 +211,8 @@ void DrawText(int fontId, int x, int y, const char* text, const TextStyle& style
 				break;
 		}
 
-		// Draw main text
-		pRenderer->DrawText(x, y, text, style.color);
+		// draw main text
+		renderer->draw_text(x, y, text, style.color);
 	}
 }
 
@@ -272,7 +272,7 @@ static void WordWrap(int fontId, const char* text, int maxWidth, std::vector<std
 	}
 
 	// Check if entire text fits on one line
-	TextMetrics metrics = MeasureText(fontId, text);
+	TextMetrics metrics = measure_text(fontId, text);
 	if (metrics.width <= maxWidth) {
 		outLines.push_back(textStr);
 		auto& slot = AllocWrapCache();
@@ -284,13 +284,13 @@ static void WordWrap(int fontId, const char* text, int maxWidth, std::vector<std
 	while (*remaining)
 	{
 		// Check if remaining fits
-		if (MeasureText(fontId, remaining).width <= maxWidth) {
+		if (measure_text(fontId, remaining).width <= maxWidth) {
 			outLines.emplace_back(remaining);
 			break;
 		}
 
-		// Get max chars that fit
-		int fitCount = GetFittingCharCount(fontId, remaining, maxWidth);
+		// get max chars that fit
+		int fitCount = get_fitting_char_count(fontId, remaining, maxWidth);
 		if (fitCount <= 0) fitCount = 1;
 
 		// Scan backwards for last space within fitCount
@@ -332,11 +332,11 @@ static void DrawTextAlignedSingleLine(int fontId, int rectX, int rectY, int rect
 
 	if (IsBitmapFont(fontId))
 	{
-		IBitmapFont* pFont = GetBitmapFont(fontId);
-		if (!pFont)
+		IBitmapFont* font = get_bitmap_font(fontId);
+		if (!font)
 			return;
 
-		int textWidth = pFont->MeasureText(text);
+		int textWidth = font->measure_text(text);
 		int textHeight = 16;
 
 		int x = rectX;
@@ -357,68 +357,68 @@ static void DrawTextAlignedSingleLine(int fontId, int rectX, int rectY, int rect
 			{
 				uint8_t hr, hg, hb;
 				GetHighlightColor(style, hr, hg, hb);
-				pFont->DrawText(x + 1, y, text, BitmapTextParams::ColorReplace(hr, hg, hb));
+				font->draw_text(x + 1, y, text, BitmapTextParams::color_replace(hr, hg, hb));
 				break;
 			}
 			case ShadowStyle::DropShadow:
-				pFont->DrawText(x + 1, y + 1, text, BitmapTextParams::ColorReplace(0, 0, 0));
+				font->draw_text(x + 1, y + 1, text, BitmapTextParams::color_replace(0, 0, 0));
 				break;
 			case ShadowStyle::ThreePoint:
-				pFont->DrawText(x + 1, y + 1, text, BitmapTextParams::ColorReplace(0, 0, 0));
-				pFont->DrawText(x, y + 1, text, BitmapTextParams::ColorReplace(0, 0, 0));
-				pFont->DrawText(x + 1, y, text, BitmapTextParams::ColorReplace(0, 0, 0));
+				font->draw_text(x + 1, y + 1, text, BitmapTextParams::color_replace(0, 0, 0));
+				font->draw_text(x, y + 1, text, BitmapTextParams::color_replace(0, 0, 0));
+				font->draw_text(x + 1, y, text, BitmapTextParams::color_replace(0, 0, 0));
 				break;
 			default:
 				break;
 		}
 
-		pFont->DrawText(x, y, text, StyleToBitmapParams(style));
+		font->draw_text(x, y, text, StyleToBitmapParams(style));
 	}
 	else
 	{
-		ITextRenderer* pRenderer = GetTextRenderer();
-		if (!pRenderer)
+		ITextRenderer* renderer = GetTextRenderer();
+		if (!renderer)
 			return;
 
 		if (style.fontSize > 0)
-			pRenderer->SetFontSize(style.fontSize);
+			renderer->SetFontSize(style.fontSize);
 
 		switch (style.shadow)
 		{
 			case ShadowStyle::ThreePoint:
-				pRenderer->DrawTextAligned(rectX + 1, rectY + 1, rectWidth, rectHeight, text, hb::shared::render::Color::Black(), alignment);
-				pRenderer->DrawTextAligned(rectX, rectY + 1, rectWidth, rectHeight, text, hb::shared::render::Color::Black(), alignment);
-				pRenderer->DrawTextAligned(rectX + 1, rectY, rectWidth, rectHeight, text, hb::shared::render::Color::Black(), alignment);
+				renderer->draw_text_aligned(rectX + 1, rectY + 1, rectWidth, rectHeight, text, hb::shared::render::Color::Black(), alignment);
+				renderer->draw_text_aligned(rectX, rectY + 1, rectWidth, rectHeight, text, hb::shared::render::Color::Black(), alignment);
+				renderer->draw_text_aligned(rectX + 1, rectY, rectWidth, rectHeight, text, hb::shared::render::Color::Black(), alignment);
 				break;
 			case ShadowStyle::DropShadow:
-				pRenderer->DrawTextAligned(rectX + 1, rectY + 1, rectWidth, rectHeight, text, hb::shared::render::Color::Black(), alignment);
+				renderer->draw_text_aligned(rectX + 1, rectY + 1, rectWidth, rectHeight, text, hb::shared::render::Color::Black(), alignment);
 				break;
 			case ShadowStyle::Highlight:
 			{
 				uint8_t hr, hg, hb;
 				GetHighlightColor(style, hr, hg, hb);
-				pRenderer->DrawTextAligned(rectX + 1, rectY, rectWidth, rectHeight, text, hb::shared::render::Color(hr, hg, hb), alignment);
+				renderer->draw_text_aligned(rectX + 1, rectY, rectWidth, rectHeight, text, hb::shared::render::Color(hr, hg, hb), alignment);
 				break;
 			}
 			default:
 				break;
 		}
 
-		pRenderer->DrawTextAligned(rectX, rectY, rectWidth, rectHeight, text, style.color, alignment);
+		renderer->draw_text_aligned(rectX, rectY, rectWidth, rectHeight, text, style.color, alignment);
 	}
 }
 
-// ============== Public DrawTextAligned (single-line, no wrapping) ==============
+// ============== Public draw_text_aligned (single-line, no wrapping) ==============
 
-void DrawTextAligned(int fontId, int rectX, int rectY, int rectWidth, int rectHeight, const char* text,
+void draw_text_aligned(int fontId, int rectX, int rectY, int rectWidth, int rectHeight, const char* text,
                      const TextStyle& style, Align alignment)
 {
 	DrawTextAlignedSingleLine(fontId, rectX, rectY, rectWidth, rectHeight, text, style, alignment);
 }
 
-// ============== Public DrawTextWrapped (word-wrap + multi-line) ==============
+// ============== Public draw_text_wrapped (word-wrap + multi-line) ==============
 
-void DrawTextWrapped(int fontId, int rectX, int rectY, int rectWidth, int rectHeight, const char* text,
+void draw_text_wrapped(int fontId, int rectX, int rectY, int rectWidth, int rectHeight, const char* text,
                      const TextStyle& style, Align alignment)
 {
 	if (!text || text[0] == '\0')
@@ -434,7 +434,7 @@ void DrawTextWrapped(int fontId, int rectX, int rectY, int rectWidth, int rectHe
 	}
 
 	// Multi-line layout
-	int lineHeight = GetLineHeight(fontId);
+	int lineHeight = get_line_height(fontId);
 	int totalTextHeight = static_cast<int>(lines.size()) * lineHeight;
 
 	uint8_t vAlign = alignment & Align::VMask;
@@ -456,40 +456,40 @@ void DrawTextWrapped(int fontId, int rectX, int rectY, int rectWidth, int rectHe
 
 // ============== Text Measurement ==============
 
-TextMetrics MeasureText(int fontId, const char* text)
+TextMetrics measure_text(int fontId, const char* text)
 {
 	if (!text || text[0] == '\0')
 		return {0, 0};
 
 	if (IsBitmapFont(fontId))
 	{
-		IBitmapFont* pFont = GetBitmapFont(fontId);
-		if (pFont)
+		IBitmapFont* font = get_bitmap_font(fontId);
+		if (font)
 		{
-			// IBitmapFont::MeasureText returns width only, estimate height
-			int width = pFont->MeasureText(text);
+			// IBitmapFont::measure_text returns width only, estimate height
+			int width = font->measure_text(text);
 			return {width, 16}; // Approximate height for bitmap fonts
 		}
 	}
 	else
 	{
-		ITextRenderer* pRenderer = GetTextRenderer();
-		if (pRenderer)
-			return pRenderer->MeasureText(text);
+		ITextRenderer* renderer = GetTextRenderer();
+		if (renderer)
+			return renderer->measure_text(text);
 	}
 
 	return {0, 0};
 }
 
-int GetFittingCharCount(int fontId, const char* text, int maxWidth)
+int get_fitting_char_count(int fontId, const char* text, int maxWidth)
 {
 	if (!text || text[0] == '\0')
 		return 0;
 
 	if (IsBitmapFont(fontId))
 	{
-		IBitmapFont* pFont = GetBitmapFont(fontId);
-		if (!pFont)
+		IBitmapFont* font = get_bitmap_font(fontId);
+		if (!font)
 			return 0;
 
 		// Measure progressively until we exceed maxWidth
@@ -502,7 +502,7 @@ int GetFittingCharCount(int fontId, const char* text, int maxWidth)
 			memcpy(temp, text, copyLen);
 			temp[copyLen] = '\0';
 
-			int width = pFont->MeasureText(temp);
+			int width = font->measure_text(temp);
 			if (width <= maxWidth)
 				return i;
 		}
@@ -510,27 +510,27 @@ int GetFittingCharCount(int fontId, const char* text, int maxWidth)
 	}
 	else
 	{
-		ITextRenderer* pRenderer = GetTextRenderer();
-		if (pRenderer)
-			return pRenderer->GetFittingCharCount(text, maxWidth);
+		ITextRenderer* renderer = GetTextRenderer();
+		if (renderer)
+			return renderer->get_fitting_char_count(text, maxWidth);
 	}
 
 	return 0;
 }
 
-int GetLineHeight(int fontId)
+int get_line_height(int fontId)
 {
 	if (IsBitmapFont(fontId))
 		return 16; // Approximate height for bitmap fonts
 
-	ITextRenderer* pRenderer = GetTextRenderer();
-	if (pRenderer)
-		return pRenderer->GetLineHeight();
+	ITextRenderer* renderer = GetTextRenderer();
+	if (renderer)
+		return renderer->get_line_height();
 
 	return 0;
 }
 
-int MeasureWrappedTextHeight(int fontId, const char* text, int maxWidth)
+int measure_wrapped_text_height(int fontId, const char* text, int maxWidth)
 {
 	if (!text || text[0] == '\0')
 		return 0;
@@ -538,7 +538,7 @@ int MeasureWrappedTextHeight(int fontId, const char* text, int maxWidth)
 	std::vector<std::string> lines;
 	WordWrap(fontId, text, maxWidth, lines);
 
-	return static_cast<int>(lines.size()) * GetLineHeight(fontId);
+	return static_cast<int>(lines.size()) * get_line_height(fontId);
 }
 
 } // namespace hb::shared::text

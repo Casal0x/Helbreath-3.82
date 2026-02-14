@@ -72,13 +72,13 @@ enum class ItemEffectType : int16_t
     MP                 = 5,   // MP restoration effect
     SP                 = 6,   // SP restoration effect
     HPStock            = 7,   // HP recovery over time (no immediate visual)
-    Get                = 8,   // Acquire something (tools, containers)
+    get                = 8,   // Acquire something (tools, containers)
     StudySkill         = 9,   // Skill learning item
     ShowLocation       = 10,  // Shows location on map
     Magic              = 11,  // Item with magic effect when used
     ChangeAttr         = 12,  // Changes player attributes (hair, skin, etc.)
     AttackManaSave     = 13,  // Attack with mana saving effect
-    AddEffect          = 14,  // Additional effect
+    add_effect          = 14,  // Additional effect
     MagicDamageSave    = 15,  // Magic damage absorption
     OccupyFlag         = 16,  // Capture flag
     Dye                = 17,  // Dye item
@@ -102,8 +102,8 @@ enum class ItemEffectType : int16_t
 };
 
 //------------------------------------------------------------------------
-// AddEffect Sub-Types (used with ItemEffectType::AddEffect)
-// m_sItemEffectValue1 contains the sub-type, m_sItemEffectValue2 contains the value
+// add_effect Sub-Types (used with ItemEffectType::add_effect)
+// m_item_effect_value1 contains the sub-type, m_item_effect_value2 contains the value
 //------------------------------------------------------------------------
 enum class AddEffectType : int16_t
 {
@@ -126,7 +126,7 @@ enum class AddEffectType : int16_t
     ParalysisImmune = 19   // Paralysis immunity
 };
 
-constexpr int16_t ToInt(AddEffectType type) { return static_cast<int16_t>(type); }
+constexpr int16_t to_int(AddEffectType type) { return static_cast<int16_t>(type); }
 
 //------------------------------------------------------------------------
 // Touch Effect Type (item-specific effects on first touch/creation)
@@ -144,7 +144,7 @@ enum class TouchEffectType : int16_t
 //------------------------------------------------------------------------
 
 // Check if equipment position is a weapon slot
-constexpr bool IsWeaponSlot(EquipPos pos)
+constexpr bool is_weapon_slot(EquipPos pos)
 {
     return pos == EquipPos::LeftHand ||
            pos == EquipPos::RightHand ||
@@ -152,7 +152,7 @@ constexpr bool IsWeaponSlot(EquipPos pos)
 }
 
 // Check if equipment position is an armor slot
-constexpr bool IsArmorSlot(EquipPos pos)
+constexpr bool is_armor_slot(EquipPos pos)
 {
     return pos == EquipPos::Head ||
            pos == EquipPos::Body ||
@@ -164,7 +164,7 @@ constexpr bool IsArmorSlot(EquipPos pos)
 }
 
 // Check if equipment position is an accessory slot
-constexpr bool IsAccessorySlot(EquipPos pos)
+constexpr bool is_accessory_slot(EquipPos pos)
 {
     return pos == EquipPos::Neck ||
            pos == EquipPos::RightFinger ||
@@ -172,7 +172,7 @@ constexpr bool IsAccessorySlot(EquipPos pos)
 }
 
 // Check if item type indicates stackable items (includes soft-linked types like potions)
-constexpr bool IsStackableType(ItemType type)
+constexpr bool is_stackable_type(ItemType type)
 {
     return type == ItemType::Arrow ||
            type == ItemType::Consume ||
@@ -185,14 +185,14 @@ constexpr bool IsStackableType(ItemType type)
 // Check if item type is a true stack (single inventory entry with count > 1).
 // Soft-linked types (Consume, Eat, etc.) are individual items that the client
 // groups by item ID and displays with a count.
-constexpr bool IsTrueStackType(ItemType type)
+constexpr bool is_true_stack_type(ItemType type)
 {
     return type == ItemType::Arrow ||
            type == ItemType::Material;
 }
 
 // Check if item effect type is an attack type
-constexpr bool IsAttackEffectType(ItemEffectType type)
+constexpr bool is_attack_effect_type(ItemEffectType type)
 {
     return type == ItemEffectType::Attack ||
            type == ItemEffectType::AttackArrow ||
@@ -203,7 +203,7 @@ constexpr bool IsAttackEffectType(ItemEffectType type)
 }
 
 // Check if item effect type is consumable (potion-like)
-constexpr bool IsConsumableEffectType(ItemEffectType type)
+constexpr bool is_consumable_effect_type(ItemEffectType type)
 {
     return type == ItemEffectType::HP ||
            type == ItemEffectType::MP ||
@@ -215,15 +215,15 @@ constexpr bool IsConsumableEffectType(ItemEffectType type)
 // Enum conversion helpers (for serialization/deserialization)
 //------------------------------------------------------------------------
 
-constexpr int8_t ToInt(EquipPos pos) { return static_cast<int8_t>(pos); }
-constexpr int8_t ToInt(ItemType type) { return static_cast<int8_t>(type); }
-constexpr int16_t ToInt(ItemEffectType type) { return static_cast<int16_t>(type); }
-constexpr int16_t ToInt(TouchEffectType type) { return static_cast<int16_t>(type); }
+constexpr int8_t to_int(EquipPos pos) { return static_cast<int8_t>(pos); }
+constexpr int8_t to_int(ItemType type) { return static_cast<int8_t>(type); }
+constexpr int16_t to_int(ItemEffectType type) { return static_cast<int16_t>(type); }
+constexpr int16_t to_int(TouchEffectType type) { return static_cast<int16_t>(type); }
 
-constexpr EquipPos ToEquipPos(int8_t val) { return static_cast<EquipPos>(val); }
-constexpr ItemType ToItemType(int8_t val) { return static_cast<ItemType>(val); }
-constexpr ItemEffectType ToItemEffectType(int16_t val) { return static_cast<ItemEffectType>(val); }
-constexpr TouchEffectType ToTouchEffectType(int16_t val) { return static_cast<TouchEffectType>(val); }
+constexpr EquipPos to_equip_pos(int8_t val) { return static_cast<EquipPos>(val); }
+constexpr ItemType to_item_type(int8_t val) { return static_cast<ItemType>(val); }
+constexpr ItemEffectType to_item_effect_type(int16_t val) { return static_cast<ItemEffectType>(val); }
+constexpr TouchEffectType to_touch_effect_type(int16_t val) { return static_cast<TouchEffectType>(val); }
 
 //------------------------------------------------------------------------
 // Common Item IDs
@@ -309,9 +309,9 @@ namespace ItemId
     constexpr short AngelicPandentMAG = 1111;
 }
 
-inline bool IsSpecialItem(short sIDnum)
+inline bool is_special_item(short i_dnum)
 {
-    switch (sIDnum) {
+    switch (i_dnum) {
     case ItemId::Excaliber:
     case ItemId::MagicWandMShield:
     case ItemId::MagicWandMS30LLF:
@@ -384,8 +384,8 @@ inline bool IsSpecialItem(short sIDnum)
         return true;
     default:
         // Also check ranges for items between known IDs
-        if (sIDnum >= ItemId::AresdenHeroHelmM && sIDnum <= ItemId::ElvineHeroLeggingsW) return true;  // Hero items 403-426
-        if (sIDnum >= ItemId::MagicNecklaceDFp15 && sIDnum <= ItemId::MagicNecklaceRM30) return true;  // Magic necklaces 1086-1101
+        if (i_dnum >= ItemId::AresdenHeroHelmM && i_dnum <= ItemId::ElvineHeroLeggingsW) return true;  // Hero items 403-426
+        if (i_dnum >= ItemId::MagicNecklaceDFp15 && i_dnum <= ItemId::MagicNecklaceRM30) return true;  // Magic necklaces 1086-1101
         return false;
     }
 }

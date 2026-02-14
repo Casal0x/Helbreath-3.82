@@ -8,7 +8,7 @@
 class CGame;
 class DialogBoxManager;
 
-// Result of OnPress - determines how the click is handled
+// Result of on_press - determines how the click is handled
 enum class PressResult
 {
 	Normal = 0,        // Normal click, allow dialog dragging
@@ -19,53 +19,53 @@ enum class PressResult
 class IDialogBox
 {
 public:
-	IDialogBox(DialogBoxId::Type id, CGame* pGame);
+	IDialogBox(DialogBoxId::Type id, CGame* game);
 	virtual ~IDialogBox() = default;
 
 	// Core virtual methods - must be implemented by derived classes
-	virtual void OnDraw(short msX, short msY, short msZ, char cLB) = 0;
-	virtual bool OnClick(short msX, short msY) = 0;
+	virtual void on_draw(short mouse_x, short mouse_y, short z, char lb) = 0;
+	virtual bool on_click(short mouse_x, short mouse_y) = 0;
 
 	// Optional virtual methods - override as needed
-	virtual void OnUpdate() {}  // Called once per frame for enabled dialogs
-	virtual bool OnDoubleClick(short msX, short msY) { return false; }
+	virtual void on_update() {}  // Called once per frame for enabled dialogs
+	virtual bool on_double_click(short mouse_x, short mouse_y) { return false; }
 
 	// Called on mouse button down within dialog bounds
-	virtual PressResult OnPress(short msX, short msY) { return PressResult::Normal; }
+	virtual PressResult on_press(short mouse_x, short mouse_y) { return PressResult::Normal; }
 
-	virtual bool OnItemDrop(short msX, short msY) { return false; }  // Item dropped on dialog
-	virtual void OnEnable(int cType, int sV1, int sV2, char* pString) {}
-	virtual void OnDisable() {}
+	virtual bool on_item_drop(short mouse_x, short mouse_y) { return false; }  // Item dropped on dialog
+	virtual void on_enable(int type, int v1, int v2, char* string) {}
+	virtual void on_disable() {}
 
 	// Accessors
-	DialogBoxId::Type GetId() const { return m_id; }
+	DialogBoxId::Type get_id() const { return m_id; }
 	DialogBoxInfo& Info();
 	const DialogBoxInfo& Info() const;
-	bool IsEnabled() const;
+	bool is_enabled() const;
 
 protected:
 	// Helper methods - delegate to CGame
-	void DrawNewDialogBox(char cType, int sX, int sY, int iFrame, bool bIsNoColorKey = false, bool bIsTrans = false);
-	void PutString(int iX, int iY, const char* pString, const hb::shared::render::Color& color);
-	void PutAlignedString(int iX1, int iX2, int iY, const char* pString, const hb::shared::render::Color& color = GameColors::UIBlack);
-	void PlaySoundEffect(char cType, int iNum, int iDist, long lPan = 0);
-	void AddEventList(const char* pTxt, char cColor = 0, bool bDupAllow = true);
-	bool bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1, int iV2, int iV3, const char* pString, int iV4 = 0);
-	void SetDefaultRect(short sX, short sY, short sSizeX, short sSizeY);
+	void draw_new_dialog_box(char type, int sX, int sY, int frame, bool is_no_color_key = false, bool is_trans = false);
+	void put_string(int iX, int iY, const char* string, const hb::shared::render::Color& color);
+	void put_aligned_string(int x1, int x2, int iY, const char* string, const hb::shared::render::Color& color = GameColors::UIBlack);
+	void play_sound_effect(char type, int num, int dist, long lPan = 0);
+	void add_event_list(const char* txt, char color = 0, bool dup_allow = true);
+	bool send_command(uint32_t msg_id, uint16_t command, char dir, int v1, int v2, int v3, const char* string, int v4 = 0);
+	void set_default_rect(short sX, short sY, short size_x, short size_y);
 
 	// Dialog management helpers
-	void EnableDialogBox(DialogBoxId::Type id, int cType = 0, int sV1 = 0, int sV2 = 0, char* pString = nullptr);
-	void DisableDialogBox(DialogBoxId::Type id);
-	void DisableThisDialog();
-	void SetCanCloseOnRightClick(bool bCanClose);
+	void enable_dialog_box(DialogBoxId::Type id, int type = 0, int v1 = 0, int v2 = 0, char* string = nullptr);
+	void disable_dialog_box(DialogBoxId::Type id);
+	void disable_this_dialog();
+	void set_can_close_on_right_click(bool can_close);
 
 	// Inter-dialog communication
-	IDialogBox* GetDialogBox(DialogBoxId::Type id);
-	DialogBoxInfo& InfoOf(DialogBoxId::Type id);
+	IDialogBox* get_dialog_box(DialogBoxId::Type id);
+	DialogBoxInfo& info_of(DialogBoxId::Type id);
 	template<typename T>
-	T* GetDialogBoxAs(DialogBoxId::Type id) { return static_cast<T*>(GetDialogBox(id)); }
+	T* get_dialog_box_as(DialogBoxId::Type id) { return static_cast<T*>(get_dialog_box(id)); }
 
-	// Direct access to game - use m_pGame->member for all game state
-	CGame* m_pGame;
+	// Direct access to game - use m_game->member for all game state
+	CGame* m_game;
 	DialogBoxId::Type m_id;
 };

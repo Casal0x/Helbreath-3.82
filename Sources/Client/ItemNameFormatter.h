@@ -15,22 +15,22 @@ struct ItemNameInfo
 	bool is_special = false;
 };
 
-class ItemNameFormatter
+class item_name_formatter
 {
 public:
-	static ItemNameFormatter& Get();
+	static item_name_formatter& get();
 
 	// Inject item config list (address must remain stable)
-	void SetItemConfigs(const std::array<std::unique_ptr<CItem>, 5000>& configs);
+	void set_item_configs(const std::array<std::unique_ptr<CItem>, 5000>& configs);
 
-	// Format item name, returning name + attribute strings + special flag
-	ItemNameInfo Format(CItem* pItem);
-	ItemNameInfo Format(short sItemId, uint32_t dwAttribute);
+	// format item name, returning name + attribute strings + special flag
+	ItemNameInfo format(CItem* item);
+	ItemNameInfo format(short item_id, uint32_t attribute);
 
 private:
-	ItemNameFormatter() = default;
+	item_name_formatter() = default;
 
-	CItem* GetConfig(int iItemID) const;
+	CItem* get_config(int item_id) const;
 
 	const std::array<std::unique_ptr<CItem>, 5000>* m_item_configs = nullptr;
 };

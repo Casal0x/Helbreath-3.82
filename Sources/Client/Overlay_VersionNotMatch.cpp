@@ -13,8 +13,8 @@ using namespace hb::client::sprite_id;
 
 namespace MouseButton = hb::shared::input::MouseButton;
 
-Overlay_VersionNotMatch::Overlay_VersionNotMatch(CGame* pGame)
-    : IGameScreen(pGame)
+Overlay_VersionNotMatch::Overlay_VersionNotMatch(CGame* game)
+    : IGameScreen(game)
 {
 }
 
@@ -23,9 +23,9 @@ void Overlay_VersionNotMatch::on_initialize()
     m_iFrameCount = 0;
 
     // Close game socket
-    if (m_pGame->m_pGSock != nullptr)
+    if (m_game->m_g_sock != nullptr)
     {
-        m_pGame->m_pGSock.reset();
+        m_game->m_g_sock.reset();
     }
 }
 
@@ -42,7 +42,7 @@ void Overlay_VersionNotMatch::on_update()
     // Any key press closes the application
     if (hb::shared::input::is_key_pressed(KeyCode::Escape) || hb::shared::input::is_key_pressed(KeyCode::Enter))
     {
-        m_pGame->ChangeGameMode(GameMode::Null);
+        m_game->change_game_mode(GameMode::Null);
         hb::shared::render::Window::close();
         return;
     }
@@ -50,7 +50,7 @@ void Overlay_VersionNotMatch::on_update()
     // Mouse click also closes
     if (hb::shared::input::is_mouse_button_pressed(MouseButton::Left))
     {
-        m_pGame->ChangeGameMode(GameMode::Null);
+        m_game->change_game_mode(GameMode::Null);
         hb::shared::render::Window::close();
         return;
     }
@@ -59,11 +59,11 @@ void Overlay_VersionNotMatch::on_update()
 void Overlay_VersionNotMatch::on_render()
 {
     int dlgX, dlgY;
-    GetCenteredDialogPos(InterfaceNdGame4, 2, dlgX, dlgY);
+    get_centered_dialog_pos(InterfaceNdGame4, 2, dlgX, dlgY);
 
-    DrawNewDialogBox(InterfaceNdQuit, 0, 0, 0, true);
-    DrawNewDialogBox(InterfaceNdGame4, dlgX, dlgY, 2);
-    PutAlignedString(dlgX + 6, dlgX + 312, dlgY + 35, UPDATE_SCREEN_ON_VERSION_NO_MATCH1);
-    PutAlignedString(dlgX + 6, dlgX + 312, dlgY + 55, UPDATE_SCREEN_ON_VERSION_NO_MATCH2);
-    DrawVersion();
+    draw_new_dialog_box(InterfaceNdQuit, 0, 0, 0, true);
+    draw_new_dialog_box(InterfaceNdGame4, dlgX, dlgY, 2);
+    put_aligned_string(dlgX + 6, dlgX + 312, dlgY + 35, UPDATE_SCREEN_ON_VERSION_NO_MATCH1);
+    put_aligned_string(dlgX + 6, dlgX + 312, dlgY + 55, UPDATE_SCREEN_ON_VERSION_NO_MATCH2);
+    draw_version();
 }

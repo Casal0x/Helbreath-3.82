@@ -1,34 +1,34 @@
 // NetworkMessages_Fish.cpp: Fish network message handlers.
-// Handlers now live in FishingManager; this file provides the
+// Handlers now live in fishing_manager; this file provides the
 // NetworkMessageHandlers namespace wrappers for backward compatibility.
 
 #include "Game.h"
 
 namespace NetworkMessageHandlers {
 
-void HandleFishChance(CGame* pGame, char* pData)
+void handle_fish_chance(CGame* game, char* data)
 {
-	pGame->m_fishingManager.HandleFishChance(pData);
+	game->m_fishing_manager.handle_fish_chance(data);
 }
 
-void HandleEventFishMode(CGame* pGame, char* pData)
+void handle_event_fish_mode(CGame* game, char* data)
 {
-	pGame->m_fishingManager.HandleEventFishMode(pData);
+	game->m_fishing_manager.handle_event_fish_mode(data);
 }
 
-void HandleFishCanceled(CGame* pGame, char* pData)
+void handle_fish_canceled(CGame* game, char* data)
 {
-	pGame->m_fishingManager.HandleFishCanceled(pData);
+	game->m_fishing_manager.handle_fish_canceled(data);
 }
 
-void HandleFishSuccess(CGame* pGame, char* pData)
+void handle_fish_success(CGame* game, char* data)
 {
-	pGame->m_fishingManager.HandleFishSuccess(pData);
+	game->m_fishing_manager.handle_fish_success(data);
 }
 
-void HandleFishFail(CGame* pGame, char* pData)
+void handle_fish_fail(CGame* game, char* data)
 {
-	pGame->m_fishingManager.HandleFishFail(pData);
+	game->m_fishing_manager.handle_fish_fail(data);
 }
 
 } // namespace NetworkMessageHandlers

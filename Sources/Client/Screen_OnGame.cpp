@@ -22,6 +22,7 @@
 #include "TextLibExt.h"
 #include "SpellAoE.h"
 #include "Magic.h"
+#include "Log.h"
 #include <string>
 #include <memory>
 #include <format>
@@ -37,215 +38,216 @@ using namespace hb::shared::item;
 using namespace hb::client::config;
 using namespace hb::client::sprite_id;
 
-Screen_OnGame::Screen_OnGame(CGame* pGame)
-    : IGameScreen(pGame)
+Screen_OnGame::Screen_OnGame(CGame* game)
+    : IGameScreen(game)
 {
 }
 
 void Screen_OnGame::on_initialize()
 {
-    // Set current mode for code that checks GameModeManager::GetMode()
-    GameModeManager::SetCurrentMode(GameMode::MainGame);
+    // Set current mode for code that checks GameModeManager::get_mode()
+    GameModeManager::set_current_mode(GameMode::MainGame);
 
-    m_dwTime = GameClock::GetTimeMS();
-    m_pGame->m_dwFPStime = m_dwTime;
-    m_pGame->m_dwCheckConnTime = m_dwTime;
-    m_pGame->m_dwCheckSprTime = m_dwTime;
-    m_pGame->m_dwCheckChatTime = m_dwTime;
+    m_time = GameClock::get_time_ms();
+    m_game->m_fps_time = m_time;
+    m_game->m_check_conn_time = m_time;
+    m_game->m_check_spr_time = m_time;
+    m_game->m_check_chat_time = m_time;
     m_dwPrevChatTime = 0;
 
-    if (AudioManager::Get().IsMusicEnabled())
-        m_pGame->StartBGM();
+    if (audio_manager::get().is_music_enabled())
+        m_game->start_bgm();
 }
 
 void Screen_OnGame::on_uninitialize()
 {
-    TextInputManager::Get().EndInput();
-    AudioManager::Get().StopMusic();
+    text_input_manager::get().end_input();
+    audio_manager::get().stop_music();
 }
 
 void Screen_OnGame::on_update()
 {
     std::string G_cTxt;
-    short sVal, absX, absY, tX, tY;
-    int i, iAmount;
+    short val, absX, absY, tX, tY;
+    int i, amount;
 
-    m_dwTime = GameClock::GetTimeMS();
+    m_time = GameClock::get_time_ms();
 
     m_sMsX = static_cast<short>(hb::shared::input::get_mouse_x());
     m_sMsY = static_cast<short>(hb::shared::input::get_mouse_y());
     m_sMsZ = static_cast<short>(hb::shared::input::get_mouse_wheel_delta());
     m_cLB = hb::shared::input::is_mouse_button_down(MouseButton::Left) ? 1 : 0;
     m_cRB = hb::shared::input::is_mouse_button_down(MouseButton::Right) ? 1 : 0;
-    m_pGame->m_dwCurTime = GameClock::GetTimeMS();
+
+    m_game->m_cur_time = GameClock::get_time_ms();
 
     // Sync manager singletons with game state
-    AudioManager::Get().SetListenerPosition(m_pGame->m_pPlayer->m_sPlayerX, m_pGame->m_pPlayer->m_sPlayerY);
+    audio_manager::get().set_listener_position(m_game->m_player->m_player_x, m_game->m_player->m_player_y);
 
     // Enter key handling
     if (hb::shared::input::is_key_pressed(KeyCode::Enter) == true)
     {
-        if ((m_pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::GuildMenu) == true) && (m_pGame->m_dialogBoxManager.Info(DialogBoxId::GuildMenu).cMode == 1) && (m_pGame->m_dialogBoxManager.iGetTopDialogBoxIndex() == DialogBoxId::GuildMenu)) {
-            TextInputManager::Get().EndInput();
-            if (m_pGame->m_pPlayer->m_cGuildName.empty()) return;
-            if (m_pGame->m_pPlayer->m_cGuildName != "NONE") {
-                m_pGame->bSendCommand(MsgId::RequestCreateNewGuild, MsgType::Confirm, 0, 0, 0, 0, 0);
-                m_pGame->m_dialogBoxManager.Info(DialogBoxId::GuildMenu).cMode = 2;
+        if ((m_game->m_dialog_box_manager.is_enabled(DialogBoxId::GuildMenu) == true) && (m_game->m_dialog_box_manager.Info(DialogBoxId::GuildMenu).m_mode == 1) && (m_game->m_dialog_box_manager.get_top_dialog_box_index() == DialogBoxId::GuildMenu)) {
+            text_input_manager::get().end_input();
+            if (m_game->m_player->m_guild_name.empty()) return;
+            if (m_game->m_player->m_guild_name != "NONE") {
+                m_game->send_command(MsgId::request_create_new_guild, MsgType::Confirm, 0, 0, 0, 0, 0);
+                m_game->m_dialog_box_manager.Info(DialogBoxId::GuildMenu).m_mode = 2;
             }
         }
-        else if ((m_pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::ItemDropExternal) == true) && (m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).cMode == 1) && (m_pGame->m_dialogBoxManager.iGetTopDialogBoxIndex() == DialogBoxId::ItemDropExternal)) {
-            TextInputManager::Get().EndInput();
+        else if ((m_game->m_dialog_box_manager.is_enabled(DialogBoxId::ItemDropExternal) == true) && (m_game->m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_mode == 1) && (m_game->m_dialog_box_manager.get_top_dialog_box_index() == DialogBoxId::ItemDropExternal)) {
+            text_input_manager::get().end_input();
 
-            if (m_pGame->m_bSkillUsingStatus == true) {
-                m_pGame->AddEventList(UPDATE_SCREEN_ONGAME1, 10);
+            if (m_game->m_skill_using_status == true) {
+                m_game->add_event_list(UPDATE_SCREEN_ONGAME1, 10);
                 return;
             }
 
-            if ((m_pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::NpcActionQuery) == true) && ((m_pGame->m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cMode == 1) || (m_pGame->m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cMode == 2))) {
-                m_pGame->AddEventList(UPDATE_SCREEN_ONGAME1, 10);
+            if ((m_game->m_dialog_box_manager.is_enabled(DialogBoxId::NpcActionQuery) == true) && ((m_game->m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_mode == 1) || (m_game->m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_mode == 2))) {
+                m_game->add_event_list(UPDATE_SCREEN_ONGAME1, 10);
                 return;
             }
 
-            if ((m_pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::ItemDropConfirm) == true) || (m_pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::SellOrRepair) == true) || (m_pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::Manufacture) == true)) {
-                m_pGame->AddEventList(UPDATE_SCREEN_ONGAME1, 10);
+            if ((m_game->m_dialog_box_manager.is_enabled(DialogBoxId::ItemDropConfirm) == true) || (m_game->m_dialog_box_manager.is_enabled(DialogBoxId::SellOrRepair) == true) || (m_game->m_dialog_box_manager.is_enabled(DialogBoxId::Manufacture) == true)) {
+                m_game->add_event_list(UPDATE_SCREEN_ONGAME1, 10);
                 return;
             }
 
-            if (m_pGame->m_cAmountString.empty()) return;
-            iAmount = 0;
-            auto [ptr, ec] = std::from_chars(m_pGame->m_cAmountString.data(), m_pGame->m_cAmountString.data() + m_pGame->m_cAmountString.size(), iAmount);
+            if (m_game->m_amount_string.empty()) return;
+            amount = 0;
+            auto [ptr, ec] = std::from_chars(m_game->m_amount_string.data(), m_game->m_amount_string.data() + m_game->m_amount_string.size(), amount);
             if (ec != std::errc{}) return;
 
-            if (static_cast<int>(m_pGame->m_pItemList[m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sView]->m_dwCount) < iAmount) {
-                iAmount = m_pGame->m_pItemList[m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sView]->m_dwCount;
+            if (static_cast<int>(m_game->m_item_list[m_game->m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_view]->m_count) < amount) {
+                amount = m_game->m_item_list[m_game->m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_view]->m_count;
             }
 
-            if (iAmount != 0) {
-                if (static_cast<int>(m_pGame->m_pItemList[m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sView]->m_dwCount) >= iAmount) {
-                    if (m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV1 != 0) {
-                        absX = abs(m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV1 - m_pGame->m_pPlayer->m_sPlayerX);
-                        absY = abs(m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV2 - m_pGame->m_pPlayer->m_sPlayerY);
+            if (amount != 0) {
+                if (static_cast<int>(m_game->m_item_list[m_game->m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_view]->m_count) >= amount) {
+                    if (m_game->m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_v1 != 0) {
+                        absX = abs(m_game->m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_v1 - m_game->m_player->m_player_x);
+                        absY = abs(m_game->m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_v2 - m_game->m_player->m_player_y);
 
                         if ((absX == 0) && (absY == 0))
-                            m_pGame->AddEventList(UPDATE_SCREEN_ONGAME5, 10);
+                            m_game->add_event_list(UPDATE_SCREEN_ONGAME5, 10);
                         else if ((absX <= 8) && (absY <= 8)) {
-                            switch (m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV3) {
+                            switch (m_game->m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_v3) {
                             case 1: case 2: case 3: case 4: case 5: case 6:
-                                m_pGame->m_dialogBoxManager.EnableDialogBox(DialogBoxId::NpcActionQuery, 1, m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sView, m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV3);
-                                m_pGame->m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV3 = iAmount;
-                                m_pGame->m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV4 = m_pGame->m_wCommObjectID;
-                                m_pGame->m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV5 = m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV1;
-                                m_pGame->m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV6 = m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV2;
+                                m_game->m_dialog_box_manager.enable_dialog_box(DialogBoxId::NpcActionQuery, 1, m_game->m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_view, m_game->m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_v3);
+                                m_game->m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_v3 = amount;
+                                m_game->m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_v4 = m_game->m_comm_object_id;
+                                m_game->m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_v5 = m_game->m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_v1;
+                                m_game->m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_v6 = m_game->m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_v2;
                                 tX = m_sMsX - 117; tY = m_sMsY - 50;
                                 if (tX < 0) tX = 0;
                                 if ((tX + 235) > LOGICAL_MAX_X()) tX = LOGICAL_MAX_X() - 235;
                                 if (tY < 0) tY = 0;
                                 if ((tY + 100) > LOGICAL_MAX_Y()) tY = LOGICAL_MAX_Y() - 100;
-                                m_pGame->m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sX = tX; m_pGame->m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sY = tY;
-                                std::snprintf(m_pGame->m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cStr, sizeof(m_pGame->m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cStr), "%s", m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).cStr);
+                                m_game->m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_x = tX; m_game->m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_y = tY;
+                                std::snprintf(m_game->m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_str, sizeof(m_game->m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_str), "%s", m_game->m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_str);
                                 break;
                             case 20:
-                                m_pGame->m_dialogBoxManager.EnableDialogBox(DialogBoxId::NpcActionQuery, 3, m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sView, m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV3);
-                                m_pGame->m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV3 = iAmount;
-                                m_pGame->m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV4 = m_pGame->m_wCommObjectID;
-                                m_pGame->m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV5 = m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV1;
-                                m_pGame->m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV6 = m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV2;
+                                m_game->m_dialog_box_manager.enable_dialog_box(DialogBoxId::NpcActionQuery, 3, m_game->m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_view, m_game->m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_v3);
+                                m_game->m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_v3 = amount;
+                                m_game->m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_v4 = m_game->m_comm_object_id;
+                                m_game->m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_v5 = m_game->m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_v1;
+                                m_game->m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_v6 = m_game->m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_v2;
                                 tX = m_sMsX - 117; tY = m_sMsY - 50;
                                 if (tX < 0) tX = 0;
                                 if ((tX + 235) > LOGICAL_MAX_X()) tX = LOGICAL_MAX_X() - 235;
                                 if (tY < 0) tY = 0;
                                 if ((tY + 100) > LOGICAL_MAX_Y()) tY = LOGICAL_MAX_Y() - 100;
-                                m_pGame->m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sX = tX; m_pGame->m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sY = tY;
-                                std::snprintf(m_pGame->m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cStr, hb::shared::limits::NpcNameLen, "%s", m_pGame->GetNpcConfigName(m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV3));
+                                m_game->m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_x = tX; m_game->m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_y = tY;
+                                std::snprintf(m_game->m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_str, hb::shared::limits::NpcNameLen, "%s", m_game->get_npc_config_name(m_game->m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_v3));
                                 break;
                             case 15: case 24:
-                                m_pGame->m_dialogBoxManager.EnableDialogBox(DialogBoxId::NpcActionQuery, 2, m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sView, m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV3);
-                                m_pGame->m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV3 = iAmount;
-                                m_pGame->m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV4 = m_pGame->m_wCommObjectID;
+                                m_game->m_dialog_box_manager.enable_dialog_box(DialogBoxId::NpcActionQuery, 2, m_game->m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_view, m_game->m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_v3);
+                                m_game->m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_v3 = amount;
+                                m_game->m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_v4 = m_game->m_comm_object_id;
                                 tX = m_sMsX - 117; tY = m_sMsY - 50;
                                 if (tX < 0) tX = 0;
                                 if ((tX + 235) > LOGICAL_MAX_X()) tX = LOGICAL_MAX_X() - 235;
                                 if (tY < 0) tY = 0;
                                 if ((tY + 100) > LOGICAL_MAX_Y()) tY = LOGICAL_MAX_Y() - 100;
-                                m_pGame->m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sX = tX; m_pGame->m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sY = tY;
-                                std::snprintf(m_pGame->m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cStr, hb::shared::limits::NpcNameLen, "%s", m_pGame->GetNpcConfigName(m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV3));
+                                m_game->m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_x = tX; m_game->m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_y = tY;
+                                std::snprintf(m_game->m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_str, hb::shared::limits::NpcNameLen, "%s", m_game->get_npc_config_name(m_game->m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_v3));
                                 break;
                             case 1000:
-                                if (m_pGame->m_stDialogBoxExchangeInfo[0].sV1 == -1) m_pGame->m_stDialogBoxExchangeInfo[0].sItemID = m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV4;
-                                else if (m_pGame->m_stDialogBoxExchangeInfo[1].sV1 == -1) m_pGame->m_stDialogBoxExchangeInfo[1].sItemID = m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV4;
-                                else if (m_pGame->m_stDialogBoxExchangeInfo[2].sV1 == -1) m_pGame->m_stDialogBoxExchangeInfo[2].sItemID = m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV4;
-                                else if (m_pGame->m_stDialogBoxExchangeInfo[3].sV1 == -1) m_pGame->m_stDialogBoxExchangeInfo[3].sItemID = m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV4;
+                                if (m_game->m_dialog_box_exchange_info[0].v1 == -1) m_game->m_dialog_box_exchange_info[0].item_id = m_game->m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_v4;
+                                else if (m_game->m_dialog_box_exchange_info[1].v1 == -1) m_game->m_dialog_box_exchange_info[1].item_id = m_game->m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_v4;
+                                else if (m_game->m_dialog_box_exchange_info[2].v1 == -1) m_game->m_dialog_box_exchange_info[2].item_id = m_game->m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_v4;
+                                else if (m_game->m_dialog_box_exchange_info[3].v1 == -1) m_game->m_dialog_box_exchange_info[3].item_id = m_game->m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_v4;
                                 else return;
-                                m_pGame->bSendCommand(MsgId::CommandCommon, CommonType::SetExchangeItem, 0, m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV4, iAmount, 0, 0);
+                                m_game->send_command(MsgId::CommandCommon, CommonType::set_exchange_item, 0, m_game->m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_v4, amount, 0, 0);
                                 break;
                             case 1001:
                                 for (i = 0; i < game_limits::max_sell_list; i++)
-                                    if (m_pGame->m_stSellItemList[i].iIndex == -1) {
-                                        m_pGame->m_stSellItemList[i].iIndex = m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV4;
-                                        m_pGame->m_stSellItemList[i].iAmount = iAmount;
-                                        m_pGame->m_bIsItemDisabled[m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV4] = true;
+                                    if (m_game->m_sell_item_list[i].index == -1) {
+                                        m_game->m_sell_item_list[i].index = m_game->m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_v4;
+                                        m_game->m_sell_item_list[i].amount = amount;
+                                        m_game->m_is_item_disabled[m_game->m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_v4] = true;
                                         break;
                                     }
-                                if (i == game_limits::max_sell_list) m_pGame->AddEventList(UPDATE_SCREEN_ONGAME6, 10);
+                                if (i == game_limits::max_sell_list) m_game->add_event_list(UPDATE_SCREEN_ONGAME6, 10);
                                 break;
                             case 1002:
-                                if (InventoryManager::Get().GetBankItemCount() >= (m_pGame->iMaxBankItems - 1)) m_pGame->AddEventList(DLGBOX_CLICK_NPCACTION_QUERY9, 10);
+                                if (inventory_manager::get().get_bank_item_count() >= (m_game->m_max_bank_items - 1)) m_game->add_event_list(DLGBOX_CLICK_NPCACTION_QUERY9, 10);
                                 else {
-                                    CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[m_pGame->m_dialogBoxManager.Info(DialogBoxId::GiveItem).sV1]->m_sIDnum);
-                                    if (pCfg) m_pGame->bSendCommand(MsgId::CommandCommon, CommonType::GiveItemToChar, m_pGame->m_dialogBoxManager.Info(DialogBoxId::GiveItem).sV1, iAmount, m_pGame->m_dialogBoxManager.Info(DialogBoxId::GiveItem).sV5, m_pGame->m_dialogBoxManager.Info(DialogBoxId::GiveItem).sV6, pCfg->m_cName, m_pGame->m_dialogBoxManager.Info(DialogBoxId::GiveItem).sV4);
+                                    CItem* cfg = m_game->get_item_config(m_game->m_item_list[m_game->m_dialog_box_manager.Info(DialogBoxId::GiveItem).m_v1]->m_id_num);
+                                    if (cfg) m_game->send_command(MsgId::CommandCommon, CommonType::GiveItemToChar, m_game->m_dialog_box_manager.Info(DialogBoxId::GiveItem).m_v1, amount, m_game->m_dialog_box_manager.Info(DialogBoxId::GiveItem).m_v5, m_game->m_dialog_box_manager.Info(DialogBoxId::GiveItem).m_v6, cfg->m_name, m_game->m_dialog_box_manager.Info(DialogBoxId::GiveItem).m_v4);
                                 }
                                 break;
                             default:
                             {
-                                CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sView]->m_sIDnum);
-                                if (pCfg) m_pGame->bSendCommand(MsgId::CommandCommon, CommonType::GiveItemToChar, static_cast<char>(m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sView), iAmount, m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV1, m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV2, pCfg->m_cName);
+                                CItem* cfg = m_game->get_item_config(m_game->m_item_list[m_game->m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_view]->m_id_num);
+                                if (cfg) m_game->send_command(MsgId::CommandCommon, CommonType::GiveItemToChar, static_cast<char>(m_game->m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_view), amount, m_game->m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_v1, m_game->m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_v2, cfg->m_name);
                             }
                                 break;
                             }
-                            m_pGame->m_bIsItemDisabled[m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sView] = true;
+                            m_game->m_is_item_disabled[m_game->m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_view] = true;
                         }
-                        else m_pGame->AddEventList(UPDATE_SCREEN_ONGAME7, 10);
+                        else m_game->add_event_list(UPDATE_SCREEN_ONGAME7, 10);
                     }
                     else {
-                        if (iAmount <= 0) m_pGame->AddEventList(UPDATE_SCREEN_ONGAME8, 10);
+                        if (amount <= 0) m_game->add_event_list(UPDATE_SCREEN_ONGAME8, 10);
                         else {
-                            CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sView]->m_sIDnum);
-                            if (pCfg) m_pGame->bSendCommand(MsgId::CommandCommon, CommonType::ItemDrop, 0, m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sView, iAmount, 0, pCfg->m_cName);
-                            m_pGame->m_bIsItemDisabled[m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sView] = true;
+                            CItem* cfg = m_game->get_item_config(m_game->m_item_list[m_game->m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_view]->m_id_num);
+                            if (cfg) m_game->send_command(MsgId::CommandCommon, CommonType::ItemDrop, 0, m_game->m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_view, amount, 0, cfg->m_name);
+                            m_game->m_is_item_disabled[m_game->m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_view] = true;
                         }
                     }
                 }
-                else m_pGame->AddEventList(UPDATE_SCREEN_ONGAME9, 10);
+                else m_game->add_event_list(UPDATE_SCREEN_ONGAME9, 10);
             }
-            m_pGame->m_dialogBoxManager.DisableDialogBox(DialogBoxId::ItemDropExternal);
+            m_game->m_dialog_box_manager.disable_dialog_box(DialogBoxId::ItemDropExternal);
         }
         else
         {
-            if (!TextInputManager::Get().IsActive()) {
-                switch (m_pGame->m_cBackupChatMsg[0]) {
+            if (!text_input_manager::get().is_active()) {
+                switch (m_game->m_backup_chat_msg[0]) {
                 case '!': case '@': case '#': case '$': case '^':
-                    m_pGame->m_cChatMsg.clear();
-                    m_pGame->m_cChatMsg += m_pGame->m_cBackupChatMsg[0];
-                    TextInputManager::Get().StartInput(CHAT_INPUT_X(), CHAT_INPUT_Y(), CGame::ChatMsgMaxLen, m_pGame->m_cChatMsg);
+                    m_game->m_chat_msg.clear();
+                    m_game->m_chat_msg += m_game->m_backup_chat_msg[0];
+                    text_input_manager::get().start_input(CHAT_INPUT_X(), CHAT_INPUT_Y(), CGame::ChatMsgMaxLen, m_game->m_chat_msg);
                     break;
                 default:
-                    TextInputManager::Get().StartInput(CHAT_INPUT_X(), CHAT_INPUT_Y(), CGame::ChatMsgMaxLen, m_pGame->m_cChatMsg);
-                    TextInputManager::Get().ClearInput();
+                    text_input_manager::get().start_input(CHAT_INPUT_X(), CHAT_INPUT_Y(), CGame::ChatMsgMaxLen, m_game->m_chat_msg);
+                    text_input_manager::get().clear_input();
                     break;
                 }
             }
             else {
-                TextInputManager::Get().EndInput();
-                G_cTxt = TextInputManager::Get().GetInputString();
-                m_pGame->m_cBackupChatMsg = G_cTxt.c_str();
-                if ((m_pGame->m_dwCurTime - m_dwPrevChatTime) >= 700) {
-                    m_dwPrevChatTime = m_pGame->m_dwCurTime;
+                G_cTxt = text_input_manager::get().get_input_string();
+                text_input_manager::get().end_input();
+                m_game->m_backup_chat_msg = G_cTxt.c_str();
+                if ((m_game->m_cur_time - m_dwPrevChatTime) >= 700) {
+                    m_dwPrevChatTime = m_game->m_cur_time;
                     if (!G_cTxt.empty()) {
-                        if (!ChatManager::Get().IsShoutEnabled() && G_cTxt[0] == '!') {
-                            m_pGame->AddEventList(BCHECK_LOCAL_CHAT_COMMAND9, 10);
+                        if (!ChatManager::get().is_shout_enabled() && G_cTxt[0] == '!') {
+                            m_game->add_event_list(BCHECK_LOCAL_CHAT_COMMAND9, 10);
                         }
                         else {
-                            m_pGame->bSendCommand(MsgId::CommandChatMsg, 0, 0, 0, 0, 0, G_cTxt.c_str());
+                            m_game->send_command(MsgId::CommandChatMsg, 0, 0, 0, 0, 0, G_cTxt.c_str());
                         }
                     }
                 }
@@ -253,58 +255,58 @@ void Screen_OnGame::on_update()
         }
     }
 
-    // Save viewport and apply camera shake
-    m_pGame->m_Camera.SavePosition();
-    m_pGame->m_Camera.ApplyShake();
+    // save viewport and apply camera shake
+    m_game->m_Camera.save_position();
+    m_game->m_Camera.apply_shake();
 
     // Calculate viewport tile coordinates
-    m_sPivotX = m_pGame->m_pMapData->m_sPivotX;
-    m_sPivotY = m_pGame->m_pMapData->m_sPivotY;
-    sVal = m_pGame->m_Camera.GetX() - (m_sPivotX * 32);
-    m_sDivX = sVal / 32;
-    m_sModX = sVal % 32;
-    sVal = m_pGame->m_Camera.GetY() - (m_sPivotY * 32);
-    m_sDivY = sVal / 32;
-    m_sModY = sVal % 32;
+    m_pivot_x = m_game->m_map_data->m_pivot_x;
+    m_pivot_y = m_game->m_map_data->m_pivot_y;
+    val = m_game->m_Camera.get_x() - (m_pivot_x * 32);
+    m_sDivX = val / 32;
+    m_sModX = val % 32;
+    val = m_game->m_Camera.get_y() - (m_pivot_y * 32);
+    m_sDivY = val / 32;
+    m_sModY = val % 32;
 
     // Logout countdown
-    if (m_pGame->m_logout_count > 0) {
-        if ((m_dwTime - m_pGame->m_logout_count_time) > 1000) {
-            m_pGame->m_logout_count--;
-            m_pGame->m_logout_count_time = m_dwTime;
-            G_cTxt = std::format(UPDATE_SCREEN_ONGAME13, m_pGame->m_logout_count);
-            m_pGame->AddEventList(G_cTxt.c_str(), 10);
+    if (m_game->m_logout_count > 0) {
+        if ((m_time - m_game->m_logout_count_time) > 1000) {
+            m_game->m_logout_count--;
+            m_game->m_logout_count_time = m_time;
+            G_cTxt = std::format(UPDATE_SCREEN_ONGAME13, m_game->m_logout_count);
+            m_game->add_event_list(G_cTxt.c_str(), 10);
         }
     }
-    if (m_pGame->m_logout_count == 0) {
-        m_pGame->m_logout_count = -1;
-        m_pGame->WriteSettings();
-        m_pGame->m_pGSock.reset();
-        PlayGameSound('E', 14, 5);
-        AudioManager::Get().StopSound(SoundType::Effect, 38);
-        AudioManager::Get().StopMusic();
-        m_pGame->ChangeGameMode(GameMode::MainMenu);
+    if (m_game->m_logout_count == 0) {
+        m_game->m_logout_count = -1;
+        m_game->write_settings();
+        m_game->m_g_sock.reset();
+        play_game_sound('E', 14, 5);
+        audio_manager::get().stop_sound(sound_type::Effect, 38);
+        audio_manager::get().stop_music();
+        m_game->change_game_mode(GameMode::MainMenu);
         return;
     }
 
     // Restart countdown
-    if (m_pGame->m_cRestartCount > 0) {
-        if ((m_dwTime - m_pGame->m_dwRestartCountTime) > 1000) {
-            m_pGame->m_cRestartCount--;
-            m_pGame->m_dwRestartCountTime = m_dwTime;
-            G_cTxt = std::format(UPDATE_SCREEN_ONGAME14, m_pGame->m_cRestartCount);
-            m_pGame->AddEventList(G_cTxt.c_str(), 10);
+    if (m_game->m_restart_count > 0) {
+        if ((m_time - m_game->m_restart_count_time) > 1000) {
+            m_game->m_restart_count--;
+            m_game->m_restart_count_time = m_time;
+            G_cTxt = std::format(UPDATE_SCREEN_ONGAME14, m_game->m_restart_count);
+            m_game->add_event_list(G_cTxt.c_str(), 10);
         }
     }
-    if (m_pGame->m_cRestartCount == 0) {
-        m_pGame->m_cRestartCount = -1;
-        m_pGame->bSendCommand(MsgId::RequestRestart, 0, 0, 0, 0, 0, 0);
+    if (m_game->m_restart_count == 0) {
+        m_game->m_restart_count = -1;
+        m_game->send_command(MsgId::RequestRestart, 0, 0, 0, 0, 0, 0);
         return;
     }
 
-    // Update frame counters and process commands
-    int iUpdateRet = m_pGame->m_pMapData->iObjectFrameCounter(m_pGame->m_pPlayer->m_cPlayerName, m_pGame->m_Camera.GetX(), m_pGame->m_Camera.GetY());
-    if (m_pGame->m_pEffectManager) m_pGame->m_pEffectManager->Update();
+    // update frame counters and process commands
+    int update_ret = m_game->m_map_data->object_frame_counter(m_game->m_player->m_player_name, m_game->m_Camera.get_x(), m_game->m_Camera.get_y());
+    if (m_game->m_effect_manager) m_game->m_effect_manager->update();
     // Command unlock logic — determines when the player can act again after an action.
     // Three unlock paths, checked in priority order:
     //
@@ -315,28 +317,28 @@ void Screen_OnGame::on_update()
     //    Also serves as the primary unlock after attack/damage animations finish and
     //    transition the tile to STOP. Respects the attack swing time floor.
     //
-    // 3. Animation completion (iUpdateRet == 2): fires once when any animation finishes.
+    // 3. Animation completion (update_ret == 2): fires once when any animation finishes.
     //    Respects the attack swing time floor.
     //
     // 4. Attack cooldown expiry: continuous per-frame check that catches the case where
     //    path 3 fired before the attack time elapsed (e.g., short damage animation replaced
     //    a longer attack). Only active when the current lock is from the attack itself
     //    (cmdTime <= attackEnd), never for subsequent movement locks.
-    if (!m_pGame->m_pPlayer->m_Controller.IsCommandAvailable()) {
-        char cmd = m_pGame->m_pPlayer->m_Controller.GetCommand();
+    if (!m_game->m_player->m_Controller.is_command_available()) {
+        char cmd = m_game->m_player->m_Controller.get_command();
 
         // Path 1: Movement pipeline — unlock at 95% motion progress for smooth chaining.
         // cmd stays as MOVE/RUN during movement (not reset to STOP until destination reached).
         // No attack end time check needed: movement can only start after attack cooldown expires.
-        if (ConfigManager::Get().IsQuickActionsEnabled() &&
+        if (config_manager::get().is_quick_actions_enabled() &&
             (cmd == Type::Move || cmd == Type::Run)) {
-            int dX = m_pGame->m_pPlayer->m_sPlayerX - m_pGame->m_pMapData->m_sPivotX;
-            int dY = m_pGame->m_pPlayer->m_sPlayerY - m_pGame->m_pMapData->m_sPivotY;
+            int dX = m_game->m_player->m_player_x - m_game->m_map_data->m_pivot_x;
+            int dY = m_game->m_player->m_player_y - m_game->m_map_data->m_pivot_y;
             if (dX >= 0 && dX < MapDataSizeX && dY >= 0 && dY < MapDataSizeY) {
-                auto& motion = m_pGame->m_pMapData->m_pData[dX][dY].m_motion;
-                if (motion.bIsMoving && motion.fProgress >= 0.95f) {
-                    m_pGame->m_pPlayer->m_Controller.SetCommandAvailable(true);
-                    m_pGame->m_pPlayer->m_Controller.SetCommandTime(0);
+                auto& motion = m_game->m_map_data->m_data[dX][dY].m_motion;
+                if (motion.m_is_moving && motion.m_progress >= 0.95f) {
+                    m_game->m_player->m_Controller.set_command_available(true);
+                    m_game->m_player->m_Controller.set_command_time(0);
                 }
             }
         }
@@ -345,337 +347,339 @@ void Screen_OnGame::on_update()
         // transitions to STOP when the action animation finishes. Once both cmd and tile
         // are STOP, unlock — but respect the attack swing time floor so interrupted attacks
         // (damage replacing attack) don't unlock before the server's expected swing time.
-        else if (cmd == Type::Stop) {
-            int dX = m_pGame->m_pPlayer->m_sPlayerX - m_pGame->m_pMapData->m_sPivotX;
-            int dY = m_pGame->m_pPlayer->m_sPlayerY - m_pGame->m_pMapData->m_sPivotY;
+        else if (cmd == Type::stop) {
+            int dX = m_game->m_player->m_player_x - m_game->m_map_data->m_pivot_x;
+            int dY = m_game->m_player->m_player_y - m_game->m_map_data->m_pivot_y;
             if (dX >= 0 && dX < MapDataSizeX && dY >= 0 && dY < MapDataSizeY) {
-                int8_t animAction = m_pGame->m_pMapData->m_pData[dX][dY].m_animation.cAction;
-                if (animAction == Type::Stop) {
-                    uint32_t cmdTime = m_pGame->m_pPlayer->m_Controller.GetCommandTime();
-                    uint32_t dwAttackEnd = m_pGame->m_pPlayer->m_Controller.GetAttackEndTime();
-                    if (cmdTime == 0 || ((m_dwTime - cmdTime) >= 100 &&
-                        (dwAttackEnd == 0 || m_dwTime >= dwAttackEnd))) {
-                        m_pGame->m_pPlayer->m_Controller.SetCommandAvailable(true);
-                        m_pGame->m_pPlayer->m_Controller.SetCommandTime(0);
+                int8_t animAction = m_game->m_map_data->m_data[dX][dY].m_animation.m_action;
+                if (animAction == Type::stop) {
+                    uint32_t cmdTime = m_game->m_player->m_Controller.get_command_time();
+                    uint32_t attack_end = m_game->m_player->m_Controller.get_attack_end_time();
+                    if (cmdTime == 0 || ((m_time - cmdTime) >= 100 &&
+                        (attack_end == 0 || m_time >= attack_end))) {
+                        m_game->m_player->m_Controller.set_command_available(true);
+                        m_game->m_player->m_Controller.set_command_time(0);
                     }
                 }
             }
         }
 
         // Path 4: Attack cooldown expiry — catches the case where the damage animation
-        // finished (iUpdateRet == 2 was blocked) but the tile hasn't transitioned to STOP
+        // finished (update_ret == 2 was blocked) but the tile hasn't transitioned to STOP
         // yet (so path 2 can't fire). Only active when this lock is from the attack that
         // set attackEnd (cmdTime <= attackEnd), not for subsequent movement locks.
         // Also skip if a damage animation is currently playing — the player must wait
         // for the damage stun to finish even if attackEndTime has expired.
-        uint32_t dwAttackEnd = m_pGame->m_pPlayer->m_Controller.GetAttackEndTime();
-        uint32_t dwCmdTime = m_pGame->m_pPlayer->m_Controller.GetCommandTime();
-        if (dwAttackEnd != 0 && dwCmdTime <= dwAttackEnd && GameClock::GetTimeMS() >= dwAttackEnd) {
-            int dX4 = m_pGame->m_pPlayer->m_sPlayerX - m_pGame->m_pMapData->m_sPivotX;
-            int dY4 = m_pGame->m_pPlayer->m_sPlayerY - m_pGame->m_pMapData->m_sPivotY;
-            bool bDamageAnimPlaying = false;
-            if (dX4 >= 0 && dX4 < MapDataSizeX && dY4 >= 0 && dY4 < MapDataSizeY) {
-                int8_t animAction = m_pGame->m_pMapData->m_pData[dX4][dY4].m_animation.cAction;
-                bDamageAnimPlaying = (animAction == Type::Damage || animAction == Type::DamageMove);
+        uint32_t attack_end = m_game->m_player->m_Controller.get_attack_end_time();
+        uint32_t cmd_time = m_game->m_player->m_Controller.get_command_time();
+        if (attack_end != 0 && cmd_time <= attack_end && GameClock::get_time_ms() >= attack_end) {
+            int x4 = m_game->m_player->m_player_x - m_game->m_map_data->m_pivot_x;
+            int y4 = m_game->m_player->m_player_y - m_game->m_map_data->m_pivot_y;
+            bool damage_anim_playing = false;
+            if (x4 >= 0 && x4 < MapDataSizeX && y4 >= 0 && y4 < MapDataSizeY) {
+                int8_t animAction = m_game->m_map_data->m_data[x4][y4].m_animation.m_action;
+                damage_anim_playing = (animAction == Type::Damage || animAction == Type::DamageMove);
             }
-            if (!bDamageAnimPlaying) {
-                m_pGame->m_pPlayer->m_Controller.SetAttackEndTime(0);
-                m_pGame->m_pPlayer->m_Controller.SetCommandAvailable(true);
-                m_pGame->m_pPlayer->m_Controller.SetCommandTime(0);
+            if (!damage_anim_playing) {
+                m_game->m_player->m_Controller.set_attack_end_time(0);
+                m_game->m_player->m_Controller.set_command_available(true);
+                m_game->m_player->m_Controller.set_command_time(0);
             }
         }
     }
 
     // Path 3: Animation completion — fires once when any animation finishes.
     // Respects attack swing time floor to prevent early unlock from short damage animations.
-    if (iUpdateRet == 2) {
-        uint32_t dwNow = GameClock::GetTimeMS();
-        uint32_t dwAttackEnd = m_pGame->m_pPlayer->m_Controller.GetAttackEndTime();
-        if (dwAttackEnd == 0 || dwNow >= dwAttackEnd) {
-            m_pGame->m_pPlayer->m_Controller.SetCommandAvailable(true);
-            m_pGame->m_pPlayer->m_Controller.SetCommandTime(0);
+    if (update_ret == 2) {
+        uint32_t now = GameClock::get_time_ms();
+        uint32_t attack_end = m_game->m_player->m_Controller.get_attack_end_time();
+        if (attack_end == 0 || now >= attack_end) {
+            m_game->m_player->m_Controller.set_command_available(true);
+            m_game->m_player->m_Controller.set_command_time(0);
         }
     }
-    WeatherManager::Get().Update(m_pGame->m_dwCurTime);
+    weather_manager::get().update(m_game->m_cur_time);
 
-    m_pGame->CommandProcessor(m_sMsX, m_sMsY,
-        ((m_sDivX + m_sPivotX) * 32 + m_sModX + m_sMsX - 17) / 32 + 1,
-        ((m_sDivY + m_sPivotY) * 32 + m_sModY + m_sMsY - 17) / 32 + 1,
+    m_game->command_processor(m_sMsX, m_sMsY,
+        ((m_sDivX + m_pivot_x) * 32 + m_sModX + m_sMsX - 17) / 32 + 1,
+        ((m_sDivY + m_pivot_y) * 32 + m_sModY + m_sMsY - 17) / 32 + 1,
         m_cLB, m_cRB);
 
     // Restore viewport
-    m_pGame->m_Camera.RestorePosition();
+    m_game->m_Camera.restore_position();
 
-    m_pGame->m_Camera.Update(m_dwTime);
+    m_game->m_Camera.update(m_time);
 
     // Observer mode camera (additional updates for keyboard-driven movement)
-    if (m_pGame->m_bIsObserverMode) {
-        if ((m_dwTime - m_pGame->m_dwObserverCamTime) > 25) {
-            m_pGame->m_dwObserverCamTime = m_dwTime;
-            m_pGame->m_Camera.Update(m_dwTime);
+    if (m_game->m_is_observer_mode) {
+        if ((m_time - m_game->m_observer_cam_time) > 25) {
+            m_game->m_observer_cam_time = m_time;
+            m_game->m_Camera.update(m_time);
         }
     }
 
-    // Draw flag animation (time-based triangle wave: 0..255..0 over 4 seconds, 32bpp range)
+    // Glare color shift — triangle wave: 0..200..0 over 4 seconds.
+    // Used as a channel reduction for non-primary colors in additive glare rendering.
+    // Range 0-200 matches original DDraw proportion (0-25 on 5-bit channels ≈ 81%).
     {
-        uint32_t phase = m_dwTime % 4000;
+        uint32_t phase = GameClock::get_time_ms() % 4000;
         if (phase < 2000)
-            m_pGame->m_iDrawFlag = (phase * 255) / 2000;
+            m_game->m_draw_flag = (phase * 200) / 2000;
         else
-            m_pGame->m_iDrawFlag = 255 - ((phase - 2000) * 255) / 2000;
+            m_game->m_draw_flag = 200 - ((phase - 2000) * 200) / 2000;
     }
 }
 
 void Screen_OnGame::on_render()
 {
-    // Update all dialog boxes first (before drawing)
-    m_pGame->m_dialogBoxManager.UpdateDialogBoxs();
+    // update all dialog boxes first (before drawing)
+    m_game->m_dialog_box_manager.update_dialog_boxs();
 
-    // Update entity motion interpolation for all tiles
-    uint32_t dwTime = m_pGame->m_dwCurTime;
+    // update entity motion interpolation for all tiles
+    uint32_t time = m_game->m_cur_time;
     for (int y = 0; y < MapDataSizeY; y++) {
         for (int x = 0; x < MapDataSizeX; x++) {
-            m_pGame->m_pMapData->m_pData[x][y].m_motion.Update(dwTime);
+            m_game->m_map_data->m_data[x][y].m_motion.update(time);
         }
     }
 
     // Snap camera to player position BEFORE drawing to eliminate character vibration
     // This ensures viewport and entity position use the same motion offset
-    if (!m_pGame->m_bIsObserverMode)
+    if (!m_game->m_is_observer_mode)
     {
-        int playerDX = m_pGame->m_pPlayer->m_sPlayerX - m_pGame->m_pMapData->m_sPivotX;
-        int playerDY = m_pGame->m_pPlayer->m_sPlayerY - m_pGame->m_pMapData->m_sPivotY;
+        int playerDX = m_game->m_player->m_player_x - m_game->m_map_data->m_pivot_x;
+        int playerDY = m_game->m_player->m_player_y - m_game->m_map_data->m_pivot_y;
         if (playerDX >= 0 && playerDX < MapDataSizeX && playerDY >= 0 && playerDY < MapDataSizeY)
         {
-            auto& motion = m_pGame->m_pMapData->m_pData[playerDX][playerDY].m_motion;
-            int camX = (m_pGame->m_pPlayer->m_sPlayerX - VIEW_CENTER_TILE_X()) * 32
-                     + static_cast<int>(motion.fCurrentOffsetX) - 16;
-            int camY = (m_pGame->m_pPlayer->m_sPlayerY - VIEW_CENTER_TILE_Y()) * 32
-                     + static_cast<int>(motion.fCurrentOffsetY) - 16;
-            m_pGame->m_Camera.SnapTo(camX, camY);
+            auto& motion = m_game->m_map_data->m_data[playerDX][playerDY].m_motion;
+            int camX = (m_game->m_player->m_player_x - VIEW_CENTER_TILE_X()) * 32
+                     + static_cast<int>(motion.m_current_offset_x) - 16;
+            int camY = (m_game->m_player->m_player_y - VIEW_CENTER_TILE_Y()) * 32
+                     + static_cast<int>(motion.m_current_offset_y) - 16;
+            m_game->m_Camera.snap_to(camX, camY);
 
             // Recalculate viewport to match snapped camera
-            int sVal = m_pGame->m_Camera.GetX() - (m_sPivotX * 32);
-            m_sDivX = sVal / 32;
-            m_sModX = sVal % 32;
-            sVal = m_pGame->m_Camera.GetY() - (m_sPivotY * 32);
-            m_sDivY = sVal / 32;
-            m_sModY = sVal % 32;
+            int val = m_game->m_Camera.get_x() - (m_pivot_x * 32);
+            m_sDivX = val / 32;
+            m_sModX = val % 32;
+            val = m_game->m_Camera.get_y() - (m_pivot_y * 32);
+            m_sDivY = val / 32;
+            m_sModY = val % 32;
         }
     }
 
     // Main scene rendering
-    FrameTiming::BeginProfile(ProfileStage::DrawBackground);
-    m_pGame->DrawBackground(m_sDivX, m_sModX, m_sDivY, m_sModY);
-    FrameTiming::EndProfile(ProfileStage::DrawBackground);
+    FrameTiming::begin_profile(ProfileStage::draw_background);
+    m_game->draw_background(m_sDivX, m_sModX, m_sDivY, m_sModY);
+    FrameTiming::end_profile(ProfileStage::draw_background);
 
-    FrameTiming::BeginProfile(ProfileStage::DrawEffectLights);
-    m_pGame->m_pEffectManager->DrawEffectLights();
-    FrameTiming::EndProfile(ProfileStage::DrawEffectLights);
+    FrameTiming::begin_profile(ProfileStage::draw_effect_lights);
+    m_game->m_effect_manager->draw_effect_lights();
+    FrameTiming::end_profile(ProfileStage::draw_effect_lights);
 
     // Tile grid BEFORE objects (so entities draw on top)
-    DrawTileGrid();
+    draw_tile_grid();
 
-    FrameTiming::BeginProfile(ProfileStage::DrawObjects);
-    m_pGame->DrawObjects(m_sPivotX, m_sPivotY, m_sDivX, m_sDivY, m_sModX, m_sModY, m_sMsX, m_sMsY);
-    FrameTiming::EndProfile(ProfileStage::DrawObjects);
+    FrameTiming::begin_profile(ProfileStage::draw_objects);
+    m_game->draw_objects(m_pivot_x, m_pivot_y, m_sDivX, m_sDivY, m_sModX, m_sModY, m_sMsX, m_sMsY);
+    FrameTiming::end_profile(ProfileStage::draw_objects);
 
-    FrameTiming::BeginProfile(ProfileStage::DrawEffects);
-    m_pGame->m_pEffectManager->DrawEffects();
-    FrameTiming::EndProfile(ProfileStage::DrawEffects);
+    FrameTiming::begin_profile(ProfileStage::draw_effects);
+    m_game->m_effect_manager->draw_effects();
+    FrameTiming::end_profile(ProfileStage::draw_effects);
 
 #ifdef _DEBUG
-    DrawSpellTargetOverlay();
+    draw_spell_target_overlay();
 #endif
 
     // Patching grid overlay (after effects, on top of everything for debug)
-    DrawPatchingGrid();
+    draw_patching_grid();
 
-    FrameTiming::BeginProfile(ProfileStage::DrawWeather);
-    WeatherManager::Get().Draw();
-    FrameTiming::EndProfile(ProfileStage::DrawWeather);
+    FrameTiming::begin_profile(ProfileStage::DrawWeather);
+    weather_manager::get().draw();
+    FrameTiming::end_profile(ProfileStage::DrawWeather);
 
-    FrameTiming::BeginProfile(ProfileStage::DrawChat);
-    m_pGame->m_floatingText.DrawAll(-100, 0, LOGICAL_WIDTH(), LOGICAL_HEIGHT(), m_pGame->m_dwCurTime, m_pGame->m_Renderer);
-    FrameTiming::EndProfile(ProfileStage::DrawChat);
+    FrameTiming::begin_profile(ProfileStage::DrawChat);
+    m_game->m_floating_text.draw_all(-100, 0, LOGICAL_WIDTH(), LOGICAL_HEIGHT(), m_game->m_cur_time, m_game->m_Renderer);
+    FrameTiming::end_profile(ProfileStage::DrawChat);
 
     // Apocalypse map effects
-    if (m_pGame->m_cMapIndex == 26) {
-        m_pGame->m_pEffectSpr[89]->Draw(1296 - m_pGame->m_Camera.GetX(), 1283 - m_pGame->m_Camera.GetY(), m_pGame->m_entityState.m_iEffectFrame % 12, hb::shared::sprite::DrawParams::Alpha(0.5f));
-        m_pGame->m_pEffectSpr[89]->Draw(1520 - m_pGame->m_Camera.GetX(), 1123 - m_pGame->m_Camera.GetY(), m_pGame->m_entityState.m_iEffectFrame % 12, hb::shared::sprite::DrawParams::Alpha(0.5f));
-        m_pGame->m_pEffectSpr[89]->Draw(1488 - m_pGame->m_Camera.GetX(), 3971 - m_pGame->m_Camera.GetY(), m_pGame->m_entityState.m_iEffectFrame % 12, hb::shared::sprite::DrawParams::Alpha(0.5f));
-        m_pGame->m_pEffectSpr[93]->Draw(2574 - m_pGame->m_Camera.GetX(), 3677 - m_pGame->m_Camera.GetY(), m_pGame->m_entityState.m_iEffectFrame % 12, hb::shared::sprite::DrawParams::Alpha(0.5f));
-        m_pGame->m_pEffectSpr[93]->Draw(3018 - m_pGame->m_Camera.GetX(), 3973 - m_pGame->m_Camera.GetY(), m_pGame->m_entityState.m_iEffectFrame % 12, hb::shared::sprite::DrawParams::Alpha(0.5f));
+    if (m_game->m_map_index == 26) {
+        m_game->m_effect_sprites[89]->draw(1296 - m_game->m_Camera.get_x(), 1283 - m_game->m_Camera.get_y(), m_game->m_entity_state.m_effect_frame % 12, hb::shared::sprite::DrawParams::alpha_blend(0.5f));
+        m_game->m_effect_sprites[89]->draw(1520 - m_game->m_Camera.get_x(), 1123 - m_game->m_Camera.get_y(), m_game->m_entity_state.m_effect_frame % 12, hb::shared::sprite::DrawParams::alpha_blend(0.5f));
+        m_game->m_effect_sprites[89]->draw(1488 - m_game->m_Camera.get_x(), 3971 - m_game->m_Camera.get_y(), m_game->m_entity_state.m_effect_frame % 12, hb::shared::sprite::DrawParams::alpha_blend(0.5f));
+        m_game->m_effect_sprites[93]->draw(2574 - m_game->m_Camera.get_x(), 3677 - m_game->m_Camera.get_y(), m_game->m_entity_state.m_effect_frame % 12, hb::shared::sprite::DrawParams::alpha_blend(0.5f));
+        m_game->m_effect_sprites[93]->draw(3018 - m_game->m_Camera.get_x(), 3973 - m_game->m_Camera.get_y(), m_game->m_entity_state.m_effect_frame % 12, hb::shared::sprite::DrawParams::alpha_blend(0.5f));
     }
-    else if (m_pGame->m_cMapIndex == 27) {
-        m_pGame->m_pEffectSpr[89]->Draw(1293 - m_pGame->m_Camera.GetX(), 3657 - m_pGame->m_Camera.GetY(), m_pGame->m_entityState.m_iEffectFrame % 12, hb::shared::sprite::DrawParams::Alpha(0.5f));
-        m_pGame->m_pEffectSpr[89]->Draw(944 - m_pGame->m_Camera.GetX(), 3881 - m_pGame->m_Camera.GetY(), m_pGame->m_entityState.m_iEffectFrame % 12, hb::shared::sprite::DrawParams::Alpha(0.5f));
-        m_pGame->m_pEffectSpr[89]->Draw(1325 - m_pGame->m_Camera.GetX(), 4137 - m_pGame->m_Camera.GetY(), m_pGame->m_entityState.m_iEffectFrame % 12, hb::shared::sprite::DrawParams::Alpha(0.5f));
-        m_pGame->m_pEffectSpr[89]->Draw(1648 - m_pGame->m_Camera.GetX(), 3913 - m_pGame->m_Camera.GetY(), m_pGame->m_entityState.m_iEffectFrame % 12, hb::shared::sprite::DrawParams::Alpha(0.5f));
+    else if (m_game->m_map_index == 27) {
+        m_game->m_effect_sprites[89]->draw(1293 - m_game->m_Camera.get_x(), 3657 - m_game->m_Camera.get_y(), m_game->m_entity_state.m_effect_frame % 12, hb::shared::sprite::DrawParams::alpha_blend(0.5f));
+        m_game->m_effect_sprites[89]->draw(944 - m_game->m_Camera.get_x(), 3881 - m_game->m_Camera.get_y(), m_game->m_entity_state.m_effect_frame % 12, hb::shared::sprite::DrawParams::alpha_blend(0.5f));
+        m_game->m_effect_sprites[89]->draw(1325 - m_game->m_Camera.get_x(), 4137 - m_game->m_Camera.get_y(), m_game->m_entity_state.m_effect_frame % 12, hb::shared::sprite::DrawParams::alpha_blend(0.5f));
+        m_game->m_effect_sprites[89]->draw(1648 - m_game->m_Camera.get_x(), 3913 - m_game->m_Camera.get_y(), m_game->m_entity_state.m_effect_frame % 12, hb::shared::sprite::DrawParams::alpha_blend(0.5f));
     }
 
     // Apocalypse gate
-    if ((m_pGame->m_iGatePositX >= m_pGame->m_Camera.GetX() / 32) && (m_pGame->m_iGatePositX <= m_pGame->m_Camera.GetX() / 32 + VIEW_TILE_WIDTH())
-        && (m_pGame->m_iGatePositY >= m_pGame->m_Camera.GetY() / 32) && (m_pGame->m_iGatePositY <= m_pGame->m_Camera.GetY() / 32 + VIEW_TILE_HEIGHT())) {
-        m_pGame->m_pEffectSpr[101]->Draw(m_pGame->m_iGatePositX * 32 - m_pGame->m_Camera.GetX() - 96, m_pGame->m_iGatePositY * 32 - m_pGame->m_Camera.GetY() - 69, m_pGame->m_entityState.m_iEffectFrame % 30, hb::shared::sprite::DrawParams::Alpha(0.5f));
+    if ((m_game->m_gate_posit_x >= m_game->m_Camera.get_x() / 32) && (m_game->m_gate_posit_x <= m_game->m_Camera.get_x() / 32 + VIEW_TILE_WIDTH())
+        && (m_game->m_gate_posit_y >= m_game->m_Camera.get_y() / 32) && (m_game->m_gate_posit_y <= m_game->m_Camera.get_y() / 32 + VIEW_TILE_HEIGHT())) {
+        m_game->m_effect_sprites[101]->draw(m_game->m_gate_posit_x * 32 - m_game->m_Camera.get_x() - 96, m_game->m_gate_posit_y * 32 - m_game->m_Camera.get_y() - 69, m_game->m_entity_state.m_effect_frame % 30, hb::shared::sprite::DrawParams::alpha_blend(0.5f));
     }
 
     // UI rendering
-    FrameTiming::BeginProfile(ProfileStage::DrawDialogs);
-    m_pGame->m_dialogBoxManager.DrawDialogBoxs(m_sMsX, m_sMsY, m_sMsZ, m_cLB);
-    FrameTiming::EndProfile(ProfileStage::DrawDialogs);
+    FrameTiming::begin_profile(ProfileStage::DrawDialogs);
+    m_game->m_dialog_box_manager.draw_dialog_boxs(m_sMsX, m_sMsY, m_sMsZ, m_cLB);
+    FrameTiming::end_profile(ProfileStage::DrawDialogs);
 
-    FrameTiming::BeginProfile(ProfileStage::DrawMisc);
-    if (TextInputManager::Get().IsActive()) {
-        if (((m_pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::GuildMenu) == true) && (m_pGame->m_dialogBoxManager.Info(DialogBoxId::GuildMenu).cMode == 1)) ||
-            ((m_pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::ItemDropExternal) == true) && (m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).cMode == 1))) {
+    FrameTiming::begin_profile(ProfileStage::DrawMisc);
+    if (text_input_manager::get().is_active()) {
+        if (((m_game->m_dialog_box_manager.is_enabled(DialogBoxId::GuildMenu) == true) && (m_game->m_dialog_box_manager.Info(DialogBoxId::GuildMenu).m_mode == 1)) ||
+            ((m_game->m_dialog_box_manager.is_enabled(DialogBoxId::ItemDropExternal) == true) && (m_game->m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_mode == 1))) {
         }
-        else m_pGame->m_Renderer->DrawRectFilled(0, LOGICAL_HEIGHT() - 69, LOGICAL_MAX_X(), 18, hb::shared::render::Color::Black(128));
-        TextInputManager::Get().ShowInput();
+        else m_game->m_Renderer->draw_rect_filled(0, LOGICAL_HEIGHT() - 69, LOGICAL_MAX_X(), 18, hb::shared::render::Color::Black(128));
+        text_input_manager::get().show_input();
     }
 
-    EventListManager::Get().ShowEvents(m_pGame->m_dwCurTime);
+    event_list_manager::get().show_events(m_game->m_cur_time);
 
     // Item tooltip on cursor
-    short iTooltipItemID = CursorTarget::GetSelectedID();
+    short tooltip_item_id = CursorTarget::get_selected_id();
     if ((CursorTarget::GetSelectedType() == SelectedObjectType::Item) &&
-        (iTooltipItemID >= 0) && (iTooltipItemID < hb::shared::limits::MaxItems) &&
-        (m_pGame->m_pItemList[iTooltipItemID] != 0))
+        (tooltip_item_id >= 0) && (tooltip_item_id < hb::shared::limits::MaxItems) &&
+        (m_game->m_item_list[tooltip_item_id] != 0))
     {
-        RenderItemTooltip();
+        render_item_tooltip();
     }
 
     // Druncncity bubbles (throttled to ~30/sec regardless of FPS)
-    if (m_pGame->m_cMapIndex == 25 && (m_pGame->m_dwCurTime - m_dwLastBubbleTime) >= 33)
+    if (m_game->m_map_index == 25 && (m_game->m_cur_time - m_dwLastBubbleTime) >= 33)
     {
-        m_dwLastBubbleTime = m_pGame->m_dwCurTime;
-        m_pGame->m_pEffectManager->AddEffect(EffectType::BUBBLES_DRUNK, m_pGame->m_Camera.GetX() + rand() % LOGICAL_MAX_X(), m_pGame->m_Camera.GetY() + rand() % LOGICAL_MAX_Y(), 0, 0, -1 * (rand() % 80), 1);
+        m_dwLastBubbleTime = m_game->m_cur_time;
+        m_game->m_effect_manager->add_effect(EffectType::BUBBLES_DRUNK, m_game->m_Camera.get_x() + rand() % LOGICAL_MAX_X(), m_game->m_Camera.get_y() + rand() % LOGICAL_MAX_Y(), 0, 0, -1 * (rand() % 80), 1);
     }
 
     // Heldenian tower count
-    if ((m_pGame->m_iHeldenianAresdenLeftTower != -1) && (m_pGame->m_cCurLocation.starts_with("BtField"))) {
+    if ((m_game->m_heldenian_aresden_left_tower != -1) && (m_game->m_cur_location.starts_with("BtField"))) {
         std::string G_cTxt;
-        G_cTxt = std::format("Aresden Flags : {}", m_pGame->m_iHeldenianAresdenFlags);
-        hb::shared::text::DrawText(GameFont::Default, 10, 140, G_cTxt.c_str(), hb::shared::text::TextStyle::Color(GameColors::UIWhite));
-        G_cTxt = std::format("Elvine Flags : {}", m_pGame->m_iHeldenianElvineFlags);
-        hb::shared::text::DrawText(GameFont::Default, 10, 160, G_cTxt.c_str(), hb::shared::text::TextStyle::Color(GameColors::UIWhite));
-        G_cTxt = std::format("Aresden's rest building number : {}", m_pGame->m_iHeldenianAresdenLeftTower);
-        hb::shared::text::DrawText(GameFont::Default, 10, 180, G_cTxt.c_str(), hb::shared::text::TextStyle::Color(GameColors::UIWhite));
-        G_cTxt = std::format("Elvine's rest building number : {}", m_pGame->m_iHeldenianElvineLeftTower);
-        hb::shared::text::DrawText(GameFont::Default, 10, 200, G_cTxt.c_str(), hb::shared::text::TextStyle::Color(GameColors::UIWhite));
+        G_cTxt = std::format("Aresden Flags : {}", m_game->m_heldenian_aresden_flags);
+        hb::shared::text::draw_text(GameFont::Default, 10, 140, G_cTxt.c_str(), hb::shared::text::TextStyle::from_color(GameColors::UIWhite));
+        G_cTxt = std::format("Elvine Flags : {}", m_game->m_heldenian_elvine_flags);
+        hb::shared::text::draw_text(GameFont::Default, 10, 160, G_cTxt.c_str(), hb::shared::text::TextStyle::from_color(GameColors::UIWhite));
+        G_cTxt = std::format("Aresden's rest building number : {}", m_game->m_heldenian_aresden_left_tower);
+        hb::shared::text::draw_text(GameFont::Default, 10, 180, G_cTxt.c_str(), hb::shared::text::TextStyle::from_color(GameColors::UIWhite));
+        G_cTxt = std::format("Elvine's rest building number : {}", m_game->m_heldenian_elvine_left_tower);
+        hb::shared::text::draw_text(GameFont::Default, 10, 200, G_cTxt.c_str(), hb::shared::text::TextStyle::from_color(GameColors::UIWhite));
     }
 
-    m_pGame->DrawTopMsg();
+    m_game->draw_top_msg();
 
-    FrameTiming::EndProfile(ProfileStage::DrawMisc);
+    FrameTiming::end_profile(ProfileStage::DrawMisc);
 
     // FPS, latency, and profiling display moved to RenderFrame (global, all screens)
 }
 
-void Screen_OnGame::RenderItemTooltip()
+void Screen_OnGame::render_item_tooltip()
 {
 	std::string G_cTxt;
-	short target_id = CursorTarget::GetSelectedID();
-    CItem* item = m_pGame->m_pItemList[target_id].get();
+	short target_id = CursorTarget::get_selected_id();
+    CItem* item = m_game->m_item_list[target_id].get();
     if (!item) return;
-    CItem* pCfg = m_pGame->GetItemConfig(item->m_sIDnum);
-    if (!pCfg) return;
+    CItem* cfg = m_game->get_item_config(item->m_id_num);
+    if (!cfg) return;
 
-    char cItemColor = item->m_cItemColor;
-    bool is_hand_item = pCfg->GetEquipPos() == EquipPos::LeftHand || pCfg->GetEquipPos() == EquipPos::RightHand || pCfg->GetEquipPos() == EquipPos::TwoHand;
-    size_t item_sprite_index = ItemPackPivotPoint + pCfg->m_sSprite;
-    hb::shared::sprite::ISprite* sprite = m_pGame->m_pSprite[item_sprite_index].get();
-    bool is_equippable = pCfg->IsArmor() || pCfg->IsWeapon() || pCfg->IsAccessory();
+    char item_color = item->m_item_color;
+    bool is_hand_item = cfg->get_equip_pos() == EquipPos::LeftHand || cfg->get_equip_pos() == EquipPos::RightHand || cfg->get_equip_pos() == EquipPos::TwoHand;
+    size_t item_sprite_index = ItemPackPivotPoint + cfg->m_sprite;
+    hb::shared::sprite::ISprite* sprite = m_game->m_sprite[item_sprite_index].get();
+    bool is_equippable = cfg->is_armor() || cfg->is_weapon() || cfg->is_accessory();
 
-    if (cItemColor != 0) {
+    if (item_color != 0) {
         if (is_hand_item) {
-            sprite->Draw(m_sMsX - CursorTarget::GetDragDistX(), m_sMsY - CursorTarget::GetDragDistY(), pCfg->m_sSpriteFrame, hb::shared::sprite::DrawParams::Tint(GameColors::Weapons[cItemColor].r, GameColors::Weapons[cItemColor].g, GameColors::Weapons[cItemColor].b));
+            sprite->draw(m_sMsX - CursorTarget::get_drag_dist_x(), m_sMsY - CursorTarget::get_drag_dist_y(), cfg->m_sprite_frame, hb::shared::sprite::DrawParams::tint(GameColors::Weapons[item_color].r, GameColors::Weapons[item_color].g, GameColors::Weapons[item_color].b));
         }
         else {
-            sprite->Draw(m_sMsX - CursorTarget::GetDragDistX(), m_sMsY - CursorTarget::GetDragDistY(), pCfg->m_sSpriteFrame, hb::shared::sprite::DrawParams::Tint(GameColors::Items[cItemColor].r, GameColors::Items[cItemColor].g, GameColors::Items[cItemColor].b));
+            sprite->draw(m_sMsX - CursorTarget::get_drag_dist_x(), m_sMsY - CursorTarget::get_drag_dist_y(), cfg->m_sprite_frame, hb::shared::sprite::DrawParams::tint(GameColors::Items[item_color].r, GameColors::Items[item_color].g, GameColors::Items[item_color].b));
         }
     }
-    else sprite->Draw(m_sMsX - CursorTarget::GetDragDistX(), m_sMsY - CursorTarget::GetDragDistY(), pCfg->m_sSpriteFrame);
+    else sprite->draw(m_sMsX - CursorTarget::get_drag_dist_x(), m_sMsY - CursorTarget::get_drag_dist_y(), cfg->m_sprite_frame);
 
-    int iLoc;
-    auto itemInfo = ItemNameFormatter::Get().Format(item);
-    iLoc = 0;
+    int loc;
+    auto itemInfo = item_name_formatter::get().format(item);
+    loc = 0;
     if (itemInfo.name.size() != 0) {
-        if (itemInfo.is_special) hb::shared::text::DrawText(GameFont::Default, m_sMsX, m_sMsY + 25, itemInfo.name.c_str(), hb::shared::text::TextStyle::WithShadow(GameColors::UIItemName_Special));
-        else hb::shared::text::DrawText(GameFont::Default, m_sMsX, m_sMsY + 25, itemInfo.name.c_str(), hb::shared::text::TextStyle::WithShadow(GameColors::UIWhite));
-        iLoc += 15;
+        if (itemInfo.is_special) hb::shared::text::draw_text(GameFont::Default, m_sMsX, m_sMsY + 25, itemInfo.name.c_str(), hb::shared::text::TextStyle::with_shadow(GameColors::UIItemName_Special));
+        else hb::shared::text::draw_text(GameFont::Default, m_sMsX, m_sMsY + 25, itemInfo.name.c_str(), hb::shared::text::TextStyle::with_shadow(GameColors::UIWhite));
+        loc += 15;
     }
-    if (itemInfo.effect.size() != 0) { hb::shared::text::DrawText(GameFont::Default, m_sMsX, m_sMsY + 25 + iLoc, itemInfo.effect.c_str(), hb::shared::text::TextStyle::WithShadow(GameColors::UIDescription)); iLoc += 15; }
-    if (itemInfo.extra.size() != 0) { hb::shared::text::DrawText(GameFont::Default, m_sMsX, m_sMsY + 25 + iLoc, itemInfo.extra.c_str(), hb::shared::text::TextStyle::WithShadow(GameColors::UIDescription)); iLoc += 15; }
-    if ((pCfg->m_sLevelLimit != 0) && item->IsCustomMade()) {
-        G_cTxt = std::format("{}: {}", DRAW_DIALOGBOX_SHOP24, pCfg->m_sLevelLimit);
-        hb::shared::text::DrawText(GameFont::Default, m_sMsX, m_sMsY + 25 + iLoc, G_cTxt.c_str(), hb::shared::text::TextStyle::WithShadow(GameColors::UIDescription)); iLoc += 15;
+    if (itemInfo.effect.size() != 0) { hb::shared::text::draw_text(GameFont::Default, m_sMsX, m_sMsY + 25 + loc, itemInfo.effect.c_str(), hb::shared::text::TextStyle::with_shadow(GameColors::UIDescription)); loc += 15; }
+    if (itemInfo.extra.size() != 0) { hb::shared::text::draw_text(GameFont::Default, m_sMsX, m_sMsY + 25 + loc, itemInfo.extra.c_str(), hb::shared::text::TextStyle::with_shadow(GameColors::UIDescription)); loc += 15; }
+    if ((cfg->m_level_limit != 0) && item->is_custom_made()) {
+        G_cTxt = std::format("{}: {}", DRAW_DIALOGBOX_SHOP24, cfg->m_level_limit);
+        hb::shared::text::draw_text(GameFont::Default, m_sMsX, m_sMsY + 25 + loc, G_cTxt.c_str(), hb::shared::text::TextStyle::with_shadow(GameColors::UIDescription)); loc += 15;
     }
     if (is_equippable) {
         // Weight below 1100 is not displayed as a strength requirement
-        if (pCfg->m_wWeight >= 1100)
+        if (cfg->m_weight >= 1100)
         {
             // Display weight, whatever the weight calculation is, divide by 100, and round up
-            int _wWeight = static_cast<int>(std::ceil(pCfg->m_wWeight / 100.0f));
+            int _wWeight = static_cast<int>(std::ceil(cfg->m_weight / 100.0f));
             G_cTxt = std::format(DRAW_DIALOGBOX_SHOP15, _wWeight);
-            hb::shared::text::DrawText(GameFont::Default, m_sMsX, m_sMsY + 25 + iLoc, G_cTxt.c_str(), hb::shared::text::TextStyle::WithShadow(GameColors::UIDescription)); iLoc += 15;
+            hb::shared::text::draw_text(GameFont::Default, m_sMsX, m_sMsY + 25 + loc, G_cTxt.c_str(), hb::shared::text::TextStyle::with_shadow(GameColors::UIDescription)); loc += 15;
         }
 
         // Display durability
-        G_cTxt = std::format(UPDATE_SCREEN_ONGAME10, item->m_wCurLifeSpan, pCfg->m_wMaxLifeSpan);
-        hb::shared::text::DrawText(GameFont::Default, m_sMsX, m_sMsY + 25 + iLoc, G_cTxt.c_str(), hb::shared::text::TextStyle::WithShadow(GameColors::UIDescription)); iLoc += 15;
+        G_cTxt = std::format(UPDATE_SCREEN_ONGAME10, item->m_cur_life_span, cfg->m_max_life_span);
+        hb::shared::text::draw_text(GameFont::Default, m_sMsX, m_sMsY + 25 + loc, G_cTxt.c_str(), hb::shared::text::TextStyle::with_shadow(GameColors::UIDescription)); loc += 15;
     }
 
-    if (pCfg->IsStackable()) {
-        auto count = std::count_if(m_pGame->m_pItemList.begin(), m_pGame->m_pItemList.end(),
+    if (cfg->is_stackable()) {
+        auto count = std::count_if(m_game->m_item_list.begin(), m_game->m_item_list.end(),
             [item](const std::unique_ptr<CItem>& otherItem) {
-                return otherItem != nullptr && otherItem->m_sIDnum == item->m_sIDnum;
+                return otherItem != nullptr && otherItem->m_id_num == item->m_id_num;
             });
 
         if (count > 1) {
             G_cTxt = std::format(DEF_MSG_TOTAL_NUMBER, static_cast<int>(count));
-            hb::shared::text::DrawText(GameFont::Default, m_sMsX, m_sMsY + 40, G_cTxt.c_str(), hb::shared::text::TextStyle::WithShadow(GameColors::UIDescription));
+            hb::shared::text::draw_text(GameFont::Default, m_sMsX, m_sMsY + 40, G_cTxt.c_str(), hb::shared::text::TextStyle::with_shadow(GameColors::UIDescription));
         }
     }
 }
 
 //=============================================================================
-// DrawSpellTargetOverlay - Debug overlay showing spell AoE tiles (DEBUG ONLY)
+// draw_spell_target_overlay - Debug overlay showing spell AoE tiles (DEBUG ONLY)
 // Draws faint blue outlines on tiles that would be affected by the current spell
-// while the player is in targeting mode (m_bIsGetPointingMode).
+// while the player is in targeting mode (m_is_get_pointing_mode).
 //=============================================================================
-void Screen_OnGame::DrawSpellTargetOverlay()
+void Screen_OnGame::draw_spell_target_overlay()
 {
 #ifndef _DEBUG
     return;
 #else
-    if (!m_pGame->m_bIsGetPointingMode) return;
-    if (m_pGame->m_iPointCommandType < 100) return;
+    if (!m_game->m_is_get_pointing_mode) return;
+    if (m_game->m_point_command_type < 100) return;
 
-    int magicId = m_pGame->m_iPointCommandType - 100;
+    int magicId = m_game->m_point_command_type - 100;
     if (magicId < 0 || magicId >= hb::shared::limits::MaxMagicType) return;
-    if (!m_pGame->m_pMagicCfgList[magicId]) return;
+    if (!m_game->m_magic_cfg_list[magicId]) return;
 
-    CMagic* pMagic = m_pGame->m_pMagicCfgList[magicId].get();
-    if (pMagic->m_sType == 0) return;
+    CMagic* magic = m_game->m_magic_cfg_list[magicId].get();
+    if (magic->m_type == 0) return;
 
-    int casterX = m_pGame->m_pPlayer->m_sPlayerX;
-    int casterY = m_pGame->m_pPlayer->m_sPlayerY;
+    int casterX = m_game->m_player->m_player_x;
+    int casterY = m_game->m_player->m_player_y;
 
-    // Mouse world tile (same formula as CommandProcessor call on line 383)
-    int targetX = ((m_sDivX + m_sPivotX) * 32 + m_sModX + m_sMsX - 17) / 32 + 1;
-    int targetY = ((m_sDivY + m_sPivotY) * 32 + m_sModY + m_sMsY - 17) / 32 + 1;
+    // Mouse world tile (same formula as command_processor call on line 383)
+    int targetX = ((m_sDivX + m_pivot_x) * 32 + m_sModX + m_sMsX - 17) / 32 + 1;
+    int targetY = ((m_sDivY + m_pivot_y) * 32 + m_sModY + m_sMsY - 17) / 32 + 1;
 
-    SpellAoEParams params;
-    params.magicType = pMagic->m_sType;
-    params.aoeRadiusX = pMagic->m_sAoERadiusX;
-    params.aoeRadiusY = pMagic->m_sAoERadiusY;
-    params.dynamicPattern = pMagic->m_sDynamicPattern;
-    params.dynamicRadius = pMagic->m_sDynamicRadius;
+    spell_aoe_params params;
+    params.m_magic_type = magic->m_type;
+    params.m_aoe_radius_x = magic->m_aoe_radius_x;
+    params.m_aoe_radius_y = magic->m_aoe_radius_y;
+    params.m_dynamic_pattern = magic->m_dynamic_pattern;
+    params.m_dynamic_radius = magic->m_dynamic_radius;
 
     constexpr int MAX_TILES = 512;
-    SpellAoETile tiles[MAX_TILES];
-    int tileCount = SpellAoE::CalculateTiles(params,
+    spell_aoe_tile tiles[MAX_TILES];
+    int tileCount = SpellAoE::calculate_tiles(params,
         casterX, casterY, targetX, targetY,
         tiles, MAX_TILES);
 
@@ -685,24 +689,24 @@ void Screen_OnGame::DrawSpellTargetOverlay()
     hb::shared::render::Color overlayColor(100, 180, 255, 60);
 
     for (int i = 0; i < tileCount; i++) {
-        int sx = (tiles[i].x - (m_sDivX + m_sPivotX)) * 32 - m_sModX - HALF_TILE;
-        int sy = (tiles[i].y - (m_sDivY + m_sPivotY)) * 32 - m_sModY - HALF_TILE;
-        m_pGame->m_Renderer->DrawRectOutline(sx, sy, 32, 32, overlayColor);
+        int sx = (tiles[i].m_x - (m_sDivX + m_pivot_x)) * 32 - m_sModX - HALF_TILE;
+        int sy = (tiles[i].m_y - (m_sDivY + m_pivot_y)) * 32 - m_sModY - HALF_TILE;
+        m_game->m_Renderer->draw_rect_outline(sx, sy, 32, 32, overlayColor);
     }
 #endif
 }
 
 //=============================================================================
-// DrawTileGrid - Simple dark grid lines showing tile boundaries (DEBUG ONLY)
+// draw_tile_grid - Simple dark grid lines showing tile boundaries (DEBUG ONLY)
 // Enabled via F12 > Graphics > Tile Grid toggle
 // Called BEFORE objects so it appears below entities
 //=============================================================================
-void Screen_OnGame::DrawTileGrid()
+void Screen_OnGame::draw_tile_grid()
 {
 #ifndef _DEBUG
     return;
 #else
-    if (!ConfigManager::Get().IsTileGridEnabled()) return;
+    if (!config_manager::get().is_tile_grid_enabled()) return;
 
     constexpr int TILE_SIZE = 32;
     constexpr int HALF_TILE = 16;
@@ -711,27 +715,27 @@ void Screen_OnGame::DrawTileGrid()
     int screenW = LOGICAL_WIDTH();
     int screenH = LOGICAL_HEIGHT();
 
-    // Draw dark gray grid lines (subtle)
+    // draw dark gray grid lines (subtle)
     hb::shared::render::Color gridColor(40, 40, 40, static_cast<uint8_t>(GRID_ALPHA * 255));
     for (int x = -m_sModX + HALF_TILE; x <= screenW; x += TILE_SIZE) {
-        m_pGame->m_Renderer->DrawLine(x, 0, x, screenH, gridColor);
+        m_game->m_Renderer->draw_line(x, 0, x, screenH, gridColor);
     }
     for (int y = -m_sModY + HALF_TILE; y <= screenH; y += TILE_SIZE) {
-        m_pGame->m_Renderer->DrawLine(0, y, screenW, y, gridColor);
+        m_game->m_Renderer->draw_line(0, y, screenW, y, gridColor);
     }
 #endif
 }
 
 //=============================================================================
-// DrawPatchingGrid - Debug grid with direction zone colors (DEBUG ONLY)
+// draw_patching_grid - Debug grid with direction zone colors (DEBUG ONLY)
 // Enabled via F12 > Graphics > Patching Grid toggle
 //=============================================================================
-void Screen_OnGame::DrawPatchingGrid()
+void Screen_OnGame::draw_patching_grid()
 {
 #ifndef _DEBUG
     return;
 #else
-    if (!ConfigManager::Get().IsPatchingGridEnabled()) return;
+    if (!config_manager::get().is_patching_grid_enabled()) return;
 
     constexpr int TILE_SIZE = 32;
     constexpr int HALF_TILE = 16;
@@ -741,8 +745,8 @@ void Screen_OnGame::DrawPatchingGrid()
     int screenW = LOGICAL_WIDTH();
     int screenH = LOGICAL_HEIGHT();
 
-    short playerX = m_pGame->m_pPlayer->m_sPlayerX;
-    short playerY = m_pGame->m_pPlayer->m_sPlayerY;
+    short playerX = m_game->m_player->m_player_x;
+    short playerY = m_game->m_player->m_player_y;
 
     // Asymmetric zones algorithm (N/S 3:1, E/W 4:1)
     auto calcDir = [](short playerX, short playerY, short destX, short destY) -> int {
@@ -774,8 +778,8 @@ void Screen_OnGame::DrawPatchingGrid()
         }
     };
 
-    int startTileX = m_sDivX + m_sPivotX;
-    int startTileY = m_sDivY + m_sPivotY;
+    int startTileX = m_sDivX + m_pivot_x;
+    int startTileY = m_sDivY + m_pivot_y;
     int tilesX = (screenW / TILE_SIZE) + 3;
     int tilesY = (screenH / TILE_SIZE) + 3;
 
@@ -793,18 +797,18 @@ void Screen_OnGame::DrawPatchingGrid()
 
             hb::shared::render::Color zoneColor(static_cast<uint8_t>(r), static_cast<uint8_t>(g), static_cast<uint8_t>(b), static_cast<uint8_t>(ZONE_ALPHA * 255));
             for (int i = 0; i < TILE_SIZE; i++) {
-                m_pGame->m_Renderer->DrawLine(screenX, screenY + i, screenX + TILE_SIZE, screenY + i, zoneColor);
+                m_game->m_Renderer->draw_line(screenX, screenY + i, screenX + TILE_SIZE, screenY + i, zoneColor);
             }
         }
     }
 
-    // Draw subtle dark grid lines over the colored zones
+    // draw subtle dark grid lines over the colored zones
     hb::shared::render::Color overlayGridColor(20, 20, 20, static_cast<uint8_t>(0.35f * 255));
     for (int x = -m_sModX + HALF_TILE; x <= screenW; x += TILE_SIZE) {
-        m_pGame->m_Renderer->DrawLine(x, 0, x, screenH, overlayGridColor);
+        m_game->m_Renderer->draw_line(x, 0, x, screenH, overlayGridColor);
     }
     for (int y = -m_sModY + HALF_TILE; y <= screenH; y += TILE_SIZE) {
-        m_pGame->m_Renderer->DrawLine(0, y, screenW, y, overlayGridColor);
+        m_game->m_Renderer->draw_line(0, y, screenW, y, overlayGridColor);
     }
 #endif
 }

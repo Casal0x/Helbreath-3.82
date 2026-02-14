@@ -7,9 +7,40 @@ Use only for large-scale mechanical transforms (e.g., "replace X with Y in every
 Must explicitly justify: "This touches N files with pattern X, a script is appropriate because Y."
 
 1. Write a script in `Scripts/` that calls `bak.py guard` internally.
-2. Run the script — it should guard, transform, and build.
-3. If errors: fix the script itself, re-run. **Never write a second "fix" script.**
-4. Once 0 errors: `python Scripts/bak.py commit` to accept.
+2. Run `--dry-run` — preview changes, full log to `Scripts/output/<script_name>_dry_run.log`.
+3. Run `--verify` — scan for collisions (Shared enums, SFMLEngine interfaces, C++ keywords, duplicate targets). Log to `Scripts/output/<script_name>_verify.log`.
+4. Review both logs. Fix any flagged collisions.
+5. Run without flags to apply.
+6. If errors: fix the script itself, re-run. **Never write a second "fix" script.**
+7. Once 0 errors: `python Scripts/bak.py commit` to accept.
+
+## Bulk Script Verification Standards
+
+All Mode 2 scripts must support two verification phases before applying changes:
+
+### `--dry-run` (Quick Preview)
+- Full detail output to `Scripts/output/<script_name>_dry_run.log` (no truncation).
+- Summary by rename entry — which entries matched and how many times.
+- Unused entries report — entries with 0 matches are flagged.
+- C++ keyword check — warn if any rename target is a reserved keyword.
+
+### `--verify` (Collision Detection)
+- **Shared enum scan** — grep `Sources/Dependencies/Shared/` for old names in enum/struct/class contexts.
+- **SFMLEngine interface scan** — grep `Sources/SFMLEngine/` for old names in virtual/override/method declarations.
+- **Cross-scope check** — flag old names appearing outside the script's target directory.
+- **Duplicate target check** — warn if two old names map to the same new name.
+- **Context preview** — show surrounding lines for each flagged collision.
+- Output to `Scripts/output/<script_name>_verify.log`.
+
+### Script template
+
+```python
+parser.add_argument("--dry-run", action="store_true", help="Preview changes without modifying files")
+parser.add_argument("--verify", action="store_true", help="Scan for collisions in Shared/SFMLEngine")
+parser.add_argument("--skip-verify", action="store_true", help="Apply without requiring prior --verify")
+```
+
+Full specification: `CLAUDE_BULKSCRIPTS_DRYRUN_STANDARDS.md`.
 
 ## Regex Safety Rules (for Mode 2 scripts)
 

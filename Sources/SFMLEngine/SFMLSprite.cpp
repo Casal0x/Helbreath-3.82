@@ -9,8 +9,8 @@
 #include <SFML/Graphics/RenderTexture.hpp>
 
 
-SFMLSprite::SFMLSprite(SFMLRenderer* pRenderer, const std::string& pakFilePath, int spriteIndex, bool alphaEffect)
-    : m_pRenderer(pRenderer)
+SFMLSprite::SFMLSprite(SFMLRenderer* renderer, const std::string& pakFilePath, int spriteIndex, bool alphaEffect)
+    : m_renderer(renderer)
     , m_pakFilePath(pakFilePath)
     , m_spriteIndex(spriteIndex)
     , m_bitmapWidth(0)
@@ -26,8 +26,8 @@ SFMLSprite::SFMLSprite(SFMLRenderer* pRenderer, const std::string& pakFilePath, 
     InitFromSpriteData(spriteData);
 }
 
-SFMLSprite::SFMLSprite(SFMLRenderer* pRenderer, const PAKLib::sprite& spriteData, bool alphaEffect)
-    : m_pRenderer(pRenderer)
+SFMLSprite::SFMLSprite(SFMLRenderer* renderer, const PAKLib::sprite& spriteData, bool alphaEffect)
+    : m_renderer(renderer)
     , m_spriteIndex(0)
     , m_bitmapWidth(0)
     , m_bitmapHeight(0)
@@ -59,10 +59,10 @@ void SFMLSprite::InitFromSpriteData(const PAKLib::sprite& spriteData)
     m_imageData = spriteData.image_data;
 
     // Don't create texture yet - lazy load on first draw to save memory
-    // CreateTexture();
+    // create_texture();
 }
 
-bool SFMLSprite::CreateTexture()
+bool SFMLSprite::create_texture()
 {
     if (m_textureLoaded)
         return true;
@@ -74,7 +74,7 @@ bool SFMLSprite::CreateTexture()
     if (!m_collisionImage.loadFromMemory(m_imageData.data(), m_imageData.size()))
         return false;
 
-    // Get dimensions from loaded image
+    // get dimensions from loaded image
     sf::Vector2u size = m_collisionImage.getSize();
     m_bitmapWidth = static_cast<uint16_t>(size.x);
     m_bitmapHeight = static_cast<uint16_t>(size.y);
@@ -94,25 +94,25 @@ bool SFMLSprite::CreateTexture()
     return true;
 }
 
-void SFMLSprite::Draw(int x, int y, int frame, const hb::shared::sprite::DrawParams& params)
+void SFMLSprite::draw(int x, int y, int frame, const hb::shared::sprite::DrawParams& params)
 {
     // Lazy load texture on first draw
     if (!m_textureLoaded)
-        CreateTexture();
+        create_texture();
 
-    if (!m_textureLoaded || !m_pRenderer || frame < 0 || frame >= static_cast<int>(m_frames.size()))
+    if (!m_textureLoaded || !m_renderer || frame < 0 || frame >= static_cast<int>(m_frames.size()))
         return;
 
     // Sync alpha degree with global (day/night mode)
-    if (m_alphaEffect && m_ambient_light_level != m_pRenderer->GetAmbientLightLevel())
+    if (m_alphaEffect && m_ambient_light_level != m_renderer->get_ambient_light_level())
     {
-        m_ambient_light_level = m_pRenderer->GetAmbientLightLevel();
+        m_ambient_light_level = m_renderer->get_ambient_light_level();
     }
 
     m_inUse = true;
     m_lastAccessTime = GetTickCount();
 
-    DrawInternal(m_pRenderer->GetBackBuffer(), x, y, frame, params);
+    DrawInternal(m_renderer->GetBackBuffer(), x, y, frame, params);
 
     m_inUse = false;
 }
@@ -121,15 +121,15 @@ void SFMLSprite::DrawToSurface(void* destSurface, int x, int y, int frame, const
 {
     // Lazy load texture on first draw
     if (!m_textureLoaded)
-        CreateTexture();
+        create_texture();
 
     if (!destSurface || !m_textureLoaded || frame < 0 || frame >= static_cast<int>(m_frames.size()))
         return;
 
     // Sync alpha degree with global (day/night mode)
-    if (m_alphaEffect && m_ambient_light_level != m_pRenderer->GetAmbientLightLevel())
+    if (m_alphaEffect && m_ambient_light_level != m_renderer->get_ambient_light_level())
     {
-        m_ambient_light_level = m_pRenderer->GetAmbientLightLevel();
+        m_ambient_light_level = m_renderer->get_ambient_light_level();
     }
 
     m_inUse = true;
@@ -149,7 +149,7 @@ void SFMLSprite::DrawInternal(sf::RenderTexture* target, int x, int y, int frame
     const PAKLib::sprite_rect& frameRect = m_frames[frame];
 
     // Shadow rendering - replicate DDraw's skewed shadow effect
-    if (params.isShadow)
+    if (params.m_shadow)
     {
         // DDraw shadow algorithm:
         // - Reads from bottom of sprite going up
@@ -169,8 +169,8 @@ void SFMLSprite::DrawInternal(sf::RenderTexture* target, int x, int y, int frame
         sf::Sprite sprite(m_texture, srcRect);
 
         // Semi-transparent black for shadow
-        // At night (m_pRenderer->GetAmbientLightLevel() == 2), reduce shadow opacity by 50%
-        uint8_t shadowAlpha = (m_pRenderer->GetAmbientLightLevel() == 2) ? 70 : 140;
+        // At night (m_renderer->get_ambient_light_level() == 2), reduce shadow opacity by 50%
+        uint8_t shadowAlpha = (m_renderer->get_ambient_light_level() == 2) ? 70 : 140;
         sprite.setColor(sf::Color(0, 0, 0, shadowAlpha));
 
         // Set origin to bottom-left of sprite so transforms anchor there (at feet)
@@ -231,7 +231,7 @@ void SFMLSprite::DrawInternal(sf::RenderTexture* target, int x, int y, int frame
     m_boundRect.bottom = drawY + frameRect.height;
 
     // Clip to render target bounds - SFML doesn't auto-clip like DDraw
-    // Get actual target size
+    // get actual target size
     sf::Vector2u targetSize = target->getSize();
     int targetWidth = static_cast<int>(targetSize.x);
     int targetHeight = static_cast<int>(targetSize.y);
@@ -280,28 +280,31 @@ void SFMLSprite::DrawInternal(sf::RenderTexture* target, int x, int y, int frame
     sprite.setPosition({static_cast<float>(drawX), static_cast<float>(drawY)});
 
     // Check if we need any color modifications
-    bool needsColorChange = (params.alpha < 1.0f) ||
-                            (params.tintR != 0 || params.tintG != 0 || params.tintB != 0) ||
-                            params.isShadow || params.isFade ||
+    // Skip multiplicative tint for AdditiveOffset — shader handles the color offset
+    bool is_additive_offset = (params.m_blend_mode == hb::shared::sprite::BlendMode::AdditiveOffset);
+    bool needs_color_change = (params.m_alpha < 1.0f) ||
+                            (params.m_has_tint && !is_additive_offset) ||
+                            params.m_shadow || params.m_fade ||
                             (m_ambient_light_level == 2 && m_alphaEffect);
 
-    if (needsColorChange)
+    if (needs_color_change)
     {
         sf::Color color = sf::Color::White;
 
         // Apply alpha
-        if (params.alpha < 1.0f)
+        if (params.m_alpha < 1.0f)
         {
-            color.a = static_cast<uint8_t>(params.alpha * 255.0f);
+            color.a = static_cast<uint8_t>(params.m_alpha * 255.0f);
         }
 
         // Apply tint: SFML multiplies sprite pixels by color/255
         // (255,255,255) = no change, (0,0,0) = black, (255,200,0) = gold
-        if (params.tintR != 0 || params.tintG != 0 || params.tintB != 0)
+        // Skipped for AdditiveOffset — tint is passed to shader as additive offset
+        if (params.m_has_tint && !is_additive_offset)
         {
-            int r = params.tintR;
-            int g = params.tintG;
-            int b = params.tintB;
+            int r = params.m_tint_r;
+            int g = params.m_tint_g;
+            int b = params.m_tint_b;
 
             // Clamp to valid range
             color.r = static_cast<uint8_t>(r < 0 ? 0 : (r > 255 ? 255 : r));
@@ -312,7 +315,7 @@ void SFMLSprite::DrawInternal(sf::RenderTexture* target, int x, int y, int frame
         // Apply shadow effect (darken)
         // Use semi-transparent black with alpha blending - the sprite's own alpha
         // channel will mask where the shadow appears (only on non-transparent pixels)
-        if (params.isShadow)
+        if (params.m_shadow)
         {
             color.r = 0;
             color.g = 0;
@@ -321,14 +324,14 @@ void SFMLSprite::DrawInternal(sf::RenderTexture* target, int x, int y, int frame
         }
 
         // Apply fade effect - darkens destination like DDraw's DrawFadeInternal
-        // At night (m_pRenderer->GetAmbientLightLevel() == 2), reduce fade intensity by 50%
+        // At night (m_renderer->get_ambient_light_level() == 2), reduce fade intensity by 50%
         // Day: 75% alpha -> 25% brightness | Night: 50% alpha -> 50% brightness
-        if (params.isFade)
+        if (params.m_fade)
         {
             color.r = 0;
             color.g = 0;
             color.b = 0;
-            color.a = (m_pRenderer->GetAmbientLightLevel() == 2) ? 127 : 191;  // Less darkening at night
+            color.a = (m_renderer->get_ambient_light_level() == 2) ? 127 : 191;  // Less darkening at night
         }
 
         // Apply alpha degree darkening (night mode)
@@ -345,15 +348,48 @@ void SFMLSprite::DrawInternal(sf::RenderTexture* target, int x, int y, int frame
     // Set up render states based on blend mode
     sf::RenderStates states;
     bool wasSmooth = m_texture.isSmooth();
+    bool needSmoothRestore = false;
 
-    if (params.blendMode == hb::shared::sprite::BlendMode::Additive) {
+    if (params.m_blend_mode == hb::shared::sprite::BlendMode::AdditiveOffset) {
+        // Additive blend with per-pixel color offset via fragment shader
+        // Matches DDraw PutTransSpriteRGB: dest += clamp(src + (r, g, b))
+        states.blendMode = sf::BlendAdd;
+        if (!wasSmooth) {
+            m_texture.setSmooth(true);
+            needSmoothRestore = true;
+        }
+
+        const sf::Shader* shader = m_renderer->get_additive_offset_shader();
+        if (shader)
+        {
+            auto* mutableShader = const_cast<sf::Shader*>(shader);
+            mutableShader->setUniform("colorOffset", sf::Glsl::Vec3(
+                params.m_tint_r / 255.0f,
+                params.m_tint_g / 255.0f,
+                params.m_tint_b / 255.0f));
+            states.shader = shader;
+        }
+
+        // Shader handles the color offset — only set alpha via sprite color if needed
+        if (params.m_alpha < 1.0f)
+        {
+            sf::Color c = sf::Color::White;
+            c.a = static_cast<uint8_t>(params.m_alpha * 255.0f);
+            sprite.setColor(c);
+        }
+        else
+        {
+            sprite.setColor(sf::Color::White);
+        }
+    } else if (params.m_blend_mode == hb::shared::sprite::BlendMode::Additive) {
         states.blendMode = sf::BlendAdd;
         // Enable smooth filtering for additive blending (light effects)
         // This produces smooth gradients like DDraw's per-pixel blending
         if (!wasSmooth) {
             m_texture.setSmooth(true);
+            needSmoothRestore = true;
         }
-    } else if (params.blendMode == hb::shared::sprite::BlendMode::Average) {
+    } else if (params.m_blend_mode == hb::shared::sprite::BlendMode::Average) {
         // 50/50 averaging: result = (src + dst) / 2
         // Achieved with alpha blending at 50% opacity
         states.blendMode = sf::BlendAlpha;
@@ -364,11 +400,11 @@ void SFMLSprite::DrawInternal(sf::RenderTexture* target, int x, int y, int frame
         states.blendMode = sf::BlendAlpha;
     }
 
-    // Draw the sprite
+    // draw the sprite
     target->draw(sprite, states);
 
     // Restore smooth setting if we changed it
-    if (params.blendMode == hb::shared::sprite::BlendMode::Additive && !wasSmooth) {
+    if (needSmoothRestore) {
         m_texture.setSmooth(false);
     }
 }
@@ -377,15 +413,15 @@ void SFMLSprite::DrawWidth(int x, int y, int frame, int width, bool vertical)
 {
     // Lazy load texture on first draw
     if (!m_textureLoaded)
-        CreateTexture();
+        create_texture();
 
-    if (!m_textureLoaded || !m_pRenderer || frame < 0 || frame >= static_cast<int>(m_frames.size()))
+    if (!m_textureLoaded || !m_renderer || frame < 0 || frame >= static_cast<int>(m_frames.size()))
         return;
 
     // Sync alpha degree with global (day/night mode)
-    if (m_alphaEffect && m_ambient_light_level != m_pRenderer->GetAmbientLightLevel())
+    if (m_alphaEffect && m_ambient_light_level != m_renderer->get_ambient_light_level())
     {
-        m_ambient_light_level = m_pRenderer->GetAmbientLightLevel();
+        m_ambient_light_level = m_renderer->get_ambient_light_level();
     }
 
     m_inUse = true;
@@ -422,7 +458,7 @@ void SFMLSprite::DrawWidth(int x, int y, int frame, int width, bool vertical)
     sprite.setPosition({static_cast<float>(drawX), static_cast<float>(drawY)});
 
     // Use explicit alpha blending to respect PNG transparency
-    m_pRenderer->GetBackBuffer()->draw(sprite, sf::RenderStates(sf::BlendAlpha));
+    m_renderer->GetBackBuffer()->draw(sprite, sf::RenderStates(sf::BlendAlpha));
 
     // Update bounds
     m_boundRect.left = drawX;
@@ -439,20 +475,20 @@ void SFMLSprite::DrawShifted(int x, int y, int shiftX, int shiftY, int frame, co
     // This is used for the guide map to show a viewport window into a large map sprite
     // Matches DDraw's CSprite::PutShiftSpriteFast / PutShiftTransSprite2
 
-    // Lazy load texture on first draw (same as Draw())
+    // Lazy load texture on first draw (same as draw())
     if (!m_textureLoaded)
-        CreateTexture();
+        create_texture();
 
-    if (!m_textureLoaded || !m_pRenderer || frame < 0 || frame >= static_cast<int>(m_frames.size()))
+    if (!m_textureLoaded || !m_renderer || frame < 0 || frame >= static_cast<int>(m_frames.size()))
         return;
 
     // Sync alpha degree with global (day/night mode)
-    if (m_alphaEffect && m_ambient_light_level != m_pRenderer->GetAmbientLightLevel())
+    if (m_alphaEffect && m_ambient_light_level != m_renderer->get_ambient_light_level())
     {
-        m_ambient_light_level = m_pRenderer->GetAmbientLightLevel();
+        m_ambient_light_level = m_renderer->get_ambient_light_level();
     }
 
-    sf::RenderTexture* target = m_pRenderer->GetBackBuffer();
+    sf::RenderTexture* target = m_renderer->GetBackBuffer();
     if (!target)
         return;
 
@@ -470,7 +506,7 @@ void SFMLSprite::DrawShifted(int x, int y, int shiftX, int shiftY, int frame, co
     int drawX = x + frameRect.pivotX;
     int drawY = y + frameRect.pivotY;
 
-    // Get render target size for clipping
+    // get render target size for clipping
     sf::Vector2u targetSize = target->getSize();
     int targetWidth = static_cast<int>(targetSize.x);
     int targetHeight = static_cast<int>(targetSize.y);
@@ -518,18 +554,18 @@ void SFMLSprite::DrawShifted(int x, int y, int shiftX, int shiftY, int frame, co
     sf::Sprite sprite(m_texture, srcRect);
 
     // Apply alpha if specified
-    if (params.alpha < 1.0f)
+    if (params.m_alpha < 1.0f)
     {
-        std::uint8_t alphaVal = static_cast<std::uint8_t>(params.alpha * 255.0f);
+        std::uint8_t alphaVal = static_cast<std::uint8_t>(params.m_alpha * 255.0f);
         sprite.setColor(sf::Color(255, 255, 255, alphaVal));
     }
 
     // Position at destination
     sprite.setPosition({static_cast<float>(drawX), static_cast<float>(drawY)});
 
-    // Draw to target
+    // draw to target
     sf::RenderStates states;
-    states.blendMode = params.alpha < 1.0f ? sf::BlendAlpha : sf::BlendNone;
+    states.blendMode = params.m_alpha < 1.0f ? sf::BlendAlpha : sf::BlendNone;
     target->draw(sprite, states);
 
     m_inUse = false;
@@ -640,7 +676,7 @@ void SFMLSprite::Preload()
 {
     if (!m_textureLoaded && !m_imageData.empty())
     {
-        CreateTexture();
+        create_texture();
     }
 }
 
@@ -662,7 +698,7 @@ void SFMLSprite::Restore()
     // If needed, recreate from image data
     if (!m_textureLoaded && !m_imageData.empty())
     {
-        CreateTexture();
+        create_texture();
     }
 }
 
@@ -676,7 +712,7 @@ uint32_t SFMLSprite::GetLastAccessTime() const
     return m_lastAccessTime;
 }
 
-void SFMLSprite::SetAmbientLightLevel(char level)
+void SFMLSprite::set_ambient_light_level(char level)
 {
     if (m_ambient_light_level != level && m_alphaEffect)
     {

@@ -1,28 +1,28 @@
 #include "ChatManager.h"
 #include <cstring>
 
-ChatManager& ChatManager::Get()
+ChatManager& ChatManager::get()
 {
 	static ChatManager instance;
 	return instance;
 }
 
-void ChatManager::Initialize()
+void ChatManager::initialize()
 {
 	m_whisper_index = game_limits::max_whisper_msgs;
 	m_whisper_enabled = true;
 	m_shout_enabled = true;
-	ClearMessages();
-	ClearWhispers();
+	clear_messages();
+	clear_whispers();
 }
 
-void ChatManager::Shutdown()
+void ChatManager::shutdown()
 {
-	ClearMessages();
-	ClearWhispers();
+	clear_messages();
+	clear_whispers();
 }
 
-void ChatManager::AddMessage(char* msg, char type)
+void ChatManager::add_message(char* msg, char type)
 {
 	if (m_messages[game_limits::max_chat_scroll_msgs - 1] != nullptr)
 	{
@@ -35,7 +35,7 @@ void ChatManager::AddMessage(char* msg, char type)
 	m_messages[0] = std::make_unique<CMsg>(1, msg, type);
 }
 
-void ChatManager::ClearMessages()
+void ChatManager::clear_messages()
 {
 	for (auto& msg : m_messages) msg.reset();
 }
@@ -46,7 +46,7 @@ CMsg* ChatManager::GetMessage(int index) const
 	return m_messages[index].get();
 }
 
-void ChatManager::AddWhisperTarget(const char* name)
+void ChatManager::add_whisper_target(const char* name)
 {
 	if (m_whisper_targets[game_limits::max_whisper_msgs - 1] != nullptr)
 	{
@@ -60,25 +60,25 @@ void ChatManager::AddWhisperTarget(const char* name)
 	m_whisper_index = 0;
 }
 
-void ChatManager::ClearWhispers()
+void ChatManager::clear_whispers()
 {
 	for (auto& msg : m_whisper_targets) msg.reset();
 }
 
-const char* ChatManager::GetWhisperTargetName(int index) const
+const char* ChatManager::get_whisper_target_name(int index) const
 {
 	if (index < 0 || index >= game_limits::max_whisper_msgs) return nullptr;
 	if (!m_whisper_targets[index]) return nullptr;
 	return m_whisper_targets[index]->m_pMsg;
 }
 
-bool ChatManager::HasWhisperTarget(int index) const
+bool ChatManager::has_whisper_target(int index) const
 {
 	if (index < 0 || index >= game_limits::max_whisper_msgs) return false;
 	return m_whisper_targets[index] != nullptr;
 }
 
-void ChatManager::CycleWhisperUp()
+void ChatManager::cycle_whisper_up()
 {
 	int max_index = 0;
 	for (int i = game_limits::max_whisper_msgs - 1; i >= 0; i--)
@@ -93,7 +93,7 @@ void ChatManager::CycleWhisperUp()
 	if (m_whisper_index > max_index) m_whisper_index = 0;
 }
 
-void ChatManager::CycleWhisperDown()
+void ChatManager::cycle_whisper_down()
 {
 	int max_index = 0;
 	for (int i = game_limits::max_whisper_msgs - 1; i >= 0; i--)

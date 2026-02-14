@@ -4,13 +4,13 @@
 class DialogBox_Help : public IDialogBox
 {
 public:
-	DialogBox_Help(CGame* pGame);
+	DialogBox_Help(CGame* game);
 	~DialogBox_Help() override = default;
 
-	void OnDraw(short msX, short msY, short msZ, char cLB) override;
-	bool OnClick(short msX, short msY) override;
+	void on_draw(short mouse_x, short mouse_y, short z, char lb) override;
+	bool on_click(short mouse_x, short mouse_y) override;
 
 private:
-	bool IsMouseOverItem(short msX, short msY, short sX, short sY, int iItem);
-	void DrawHelpItem(short sX, short szX, short sY, int iItem, const char* pText, bool bHighlight);
+	bool is_mouse_over_item(short mouse_x, short mouse_y, short sX, short sY, int item);
+	void draw_help_item(short sX, short size_x, short sY, int item, const char* text, bool highlight);
 };

@@ -1,4 +1,4 @@
-﻿// BuildItem.h: interface for the CBuildItem class.
+﻿// BuildItem.h: interface for the build_item class.
 //
 //////////////////////////////////////////////////////////////////////
 
@@ -9,43 +9,43 @@
 #include "CommonTypes.h"
 #include "NetConstants.h"
 
-class CBuildItem
+class build_item
 {
 public:
-	inline CBuildItem()
+	inline build_item()
 	{
 		int i;
 
-		m_bBuildEnabled = false;
-		m_iSkillLimit   = 0;
-		m_iMaxSkill     = 0;
+		m_build_enabled = false;
+		m_skill_limit   = 0;
+		m_max_skill     = 0;
 
-		m_iSprH     = 0;
-		m_iSprFrame = 0;
+		m_sprite_handle     = 0;
+		m_sprite_frame = 0;
 
 		for (i = 0; i < 7; i++) {
-			m_iElementCount[i] = 0;
-			m_bElementFlag[i]  = 0;
+			m_element_count[i] = 0;
+			m_element_flag[i]  = 0;
 		}
 	}
 
-	inline virtual ~CBuildItem()
+	inline virtual ~build_item()
 	{
 
 	}
 
-	bool m_bBuildEnabled;
-	std::string m_cName;
-	int	 m_iSkillLimit;
-	int  m_iMaxSkill;
-	int  m_iSprH, m_iSprFrame;
-	std::string m_cElementName1;
-	std::string m_cElementName2;
-	std::string m_cElementName3;
-	std::string m_cElementName4;
-	std::string m_cElementName5;
-	std::string m_cElementName6;
-	uint32_t m_iElementCount[7];
-	bool  m_bElementFlag[7];
+	bool m_build_enabled;
+	std::string m_name;
+	int	 m_skill_limit;
+	int  m_max_skill;
+	int  m_sprite_handle, m_sprite_frame;
+	std::string m_element_name_1;
+	std::string m_element_name_2;
+	std::string m_element_name_3;
+	std::string m_element_name_4;
+	std::string m_element_name_5;
+	std::string m_element_name_6;
+	uint32_t m_element_count[7];
+	bool  m_element_flag[7];
 
 };

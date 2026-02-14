@@ -13,19 +13,19 @@ public:
 	MiningManager();
 	~MiningManager();
 
-	void SetGame(CGame* pGame) { m_pGame = pGame; }
+	void set_game(CGame* game) { m_game = game; }
 
 	// Lifecycle
-	void InitArrays();
-	void CleanupArrays();
+	void init_arrays();
+	void cleanup_arrays();
 
 	// Core mining methods (moved from CGame)
-	void MineralGenerator();
-	int iCreateMineral(char cMapIndex, int tX, int tY, char cLevel);
-	void _CheckMiningAction(int iClientH, int dX, int dY);
-	bool bDeleteMineral(int iIndex);
+	void mineral_generator();
+	int create_mineral(char map_index, int tX, int tY, char level);
+	void check_mining_action(int client_h, int dX, int dY);
+	bool delete_mineral(int index);
 
 private:
-	CGame* m_pGame = nullptr;
-	CMineral* m_pMineral[hb::server::config::MaxMinerals]{};
+	CGame* m_game = nullptr;
+	CMineral* m_mineral[hb::server::config::MaxMinerals]{};
 };

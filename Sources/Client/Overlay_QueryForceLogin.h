@@ -14,7 +14,7 @@ class Overlay_QueryForceLogin : public IGameScreen
 public:
     SCREEN_TYPE(Overlay_QueryForceLogin)
 
-    explicit Overlay_QueryForceLogin(CGame* pGame);
+    explicit Overlay_QueryForceLogin(CGame* game);
     ~Overlay_QueryForceLogin() override = default;
 
     void on_initialize() override;

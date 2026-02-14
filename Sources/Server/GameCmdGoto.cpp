@@ -5,71 +5,71 @@
 #include <cstdio>
 
 using namespace hb::shared::net;
-bool GameCmdGoto::Execute(CGame* pGame, int iClientH, const char* pArgs)
+bool GameCmdGoto::execute(CGame* game, int client_h, const char* args)
 {
-	if (pGame->m_pClientList[iClientH] == nullptr)
+	if (game->m_client_list[client_h] == nullptr)
 		return true;
 
-	if (pArgs == nullptr || pArgs[0] == '\0')
+	if (args == nullptr || args[0] == '\0')
 	{
-		pGame->SendNotifyMsg(0, iClientH, Notify::NoticeMsg, 0, 0, 0, "Usage: /goto <playername>");
+		game->send_notify_msg(0, client_h, Notify::NoticeMsg, 0, 0, 0, "Usage: /goto <playername>");
 		return true;
 	}
 
 	// Try online first
-	int iTargetH = pGame->FindClientByName(pArgs);
-	if (iTargetH != 0 && pGame->m_pClientList[iTargetH] != nullptr)
+	int target_h = game->find_client_by_name(args);
+	if (target_h != 0 && game->m_client_list[target_h] != nullptr)
 	{
-		if (pGame->GMTeleportTo(iClientH, pGame->m_pClientList[iTargetH]->m_cMapName,
-			pGame->m_pClientList[iTargetH]->m_sX, pGame->m_pClientList[iTargetH]->m_sY))
+		if (game->gm_teleport_to(client_h, game->m_client_list[target_h]->m_map_name,
+			game->m_client_list[target_h]->m_x, game->m_client_list[target_h]->m_y))
 		{
 			char buf[64];
-			std::snprintf(buf, sizeof(buf), "Teleported to %s.", pGame->m_pClientList[iTargetH]->m_cCharName);
-			pGame->SendNotifyMsg(0, iClientH, Notify::NoticeMsg, 0, 0, 0, buf);
+			std::snprintf(buf, sizeof(buf), "Teleported to %s.", game->m_client_list[target_h]->m_char_name);
+			game->send_notify_msg(0, client_h, Notify::NoticeMsg, 0, 0, 0, buf);
 		}
 		else
 		{
-			pGame->SendNotifyMsg(0, iClientH, Notify::NoticeMsg, 0, 0, 0, "Teleport failed (invalid map).");
+			game->send_notify_msg(0, client_h, Notify::NoticeMsg, 0, 0, 0, "Teleport failed (invalid map).");
 		}
 		return true;
 	}
 
 	// Offline path: look up last-logout position from DB
-	char cAccountName[12];
-	std::memset(cAccountName, 0, sizeof(cAccountName));
-	if (!ResolveCharacterToAccount(pArgs, cAccountName, sizeof(cAccountName)))
+	char account_name[12];
+	std::memset(account_name, 0, sizeof(account_name));
+	if (!ResolveCharacterToAccount(args, account_name, sizeof(account_name)))
 	{
-		pGame->SendNotifyMsg(0, iClientH, Notify::NoticeMsg, 0, 0, 0, "Player not found.");
+		game->send_notify_msg(0, client_h, Notify::NoticeMsg, 0, 0, 0, "Player not found.");
 		return true;
 	}
 
 	sqlite3* db = nullptr;
 	std::string dbPath;
-	if (!EnsureAccountDatabase(cAccountName, &db, dbPath))
+	if (!EnsureAccountDatabase(account_name, &db, dbPath))
 	{
-		pGame->SendNotifyMsg(0, iClientH, Notify::NoticeMsg, 0, 0, 0, "Failed to open account database.");
+		game->send_notify_msg(0, client_h, Notify::NoticeMsg, 0, 0, 0, "Failed to open account database.");
 		return true;
 	}
 
 	AccountDbCharacterState state{};
-	bool bLoaded = LoadCharacterState(db, pArgs, state);
+	bool loaded = LoadCharacterState(db, args, state);
 	CloseAccountDatabase(db);
 
-	if (!bLoaded)
+	if (!loaded)
 	{
-		pGame->SendNotifyMsg(0, iClientH, Notify::NoticeMsg, 0, 0, 0, "Failed to load character data.");
+		game->send_notify_msg(0, client_h, Notify::NoticeMsg, 0, 0, 0, "Failed to load character data.");
 		return true;
 	}
 
-	if (pGame->GMTeleportTo(iClientH, state.mapName, static_cast<short>(state.mapX), static_cast<short>(state.mapY)))
+	if (game->gm_teleport_to(client_h, state.map_name, static_cast<short>(state.map_x), static_cast<short>(state.map_y)))
 	{
 		char buf[64];
-		std::snprintf(buf, sizeof(buf), "Teleported to %s's last position (offline).", state.characterName);
-		pGame->SendNotifyMsg(0, iClientH, Notify::NoticeMsg, 0, 0, 0, buf);
+		std::snprintf(buf, sizeof(buf), "Teleported to %s's last position (offline).", state.character_name);
+		game->send_notify_msg(0, client_h, Notify::NoticeMsg, 0, 0, 0, buf);
 	}
 	else
 	{
-		pGame->SendNotifyMsg(0, iClientH, Notify::NoticeMsg, 0, 0, 0, "Teleport failed (invalid map).");
+		game->send_notify_msg(0, client_h, Notify::NoticeMsg, 0, 0, 0, "Teleport failed (invalid map).");
 	}
 
 	return true;

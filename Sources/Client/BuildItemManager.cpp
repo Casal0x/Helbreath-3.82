@@ -4,21 +4,21 @@
 #include <fstream>
 #include <string>
 
-BuildItemManager::BuildItemManager() = default;
-BuildItemManager::~BuildItemManager() = default;
+build_item_manager::build_item_manager() = default;
+build_item_manager::~build_item_manager() = default;
 
-BuildItemManager& BuildItemManager::Get()
+build_item_manager& build_item_manager::get()
 {
-	static BuildItemManager instance;
+	static build_item_manager instance;
 	return instance;
 }
 
-void BuildItemManager::SetGame(CGame* pGame)
+void build_item_manager::set_game(CGame* game)
 {
-	m_game = pGame;
+	m_game = game;
 }
 
-bool BuildItemManager::LoadRecipes()
+bool build_item_manager::load_recipes()
 {
 	for (int i = 0; i < hb::shared::limits::MaxBuildItems; i++)
 	{
@@ -31,70 +31,70 @@ bool BuildItemManager::LoadRecipes()
 
 	std::string content((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
 
-	return ParseRecipeFile(content);
+	return parse_recipe_file(content);
 }
 
-bool BuildItemManager::UpdateAvailableRecipes()
+bool build_item_manager::update_available_recipes()
 {
-	int iIndex, i, j, iMatch, iCount;
-	char cTempName[hb::shared::limits::ItemNameLen];
-	int  iItemCount[hb::shared::limits::MaxItems];
+	int index, i, j, match, count;
+	char temp_name[hb::shared::limits::ItemNameLen];
+	int  item_count[hb::shared::limits::MaxItems];
 
 	for (i = 0; i < hb::shared::limits::MaxBuildItems; i++)
 		if (m_display_recipes[i] != 0)
 		{
 			m_display_recipes[i].reset();
 		}
-	iIndex = 0;
+	index = 0;
 	for (i = 0; i < hb::shared::limits::MaxBuildItems; i++)
 		if (m_recipes[i] != 0)
 		{	// Skill-Limit
-			if (m_game->m_pPlayer->m_iSkillMastery[13] >= m_recipes[i]->m_iSkillLimit)
+			if (m_game->m_player->m_skill_mastery[13] >= m_recipes[i]->m_skill_limit)
 			{
-				iMatch = 0;
-				m_display_recipes[iIndex] = std::make_unique<CBuildItem>();
-				m_display_recipes[iIndex]->m_cName = m_recipes[i]->m_cName;
+				match = 0;
+				m_display_recipes[index] = std::make_unique<build_item>();
+				m_display_recipes[index]->m_name = m_recipes[i]->m_name;
 
-				m_display_recipes[iIndex]->m_cElementName1 = m_recipes[i]->m_cElementName1;
-				m_display_recipes[iIndex]->m_cElementName2 = m_recipes[i]->m_cElementName2;
-				m_display_recipes[iIndex]->m_cElementName3 = m_recipes[i]->m_cElementName3;
-				m_display_recipes[iIndex]->m_cElementName4 = m_recipes[i]->m_cElementName4;
-				m_display_recipes[iIndex]->m_cElementName5 = m_recipes[i]->m_cElementName5;
-				m_display_recipes[iIndex]->m_cElementName6 = m_recipes[i]->m_cElementName6;
+				m_display_recipes[index]->m_element_name_1 = m_recipes[i]->m_element_name_1;
+				m_display_recipes[index]->m_element_name_2 = m_recipes[i]->m_element_name_2;
+				m_display_recipes[index]->m_element_name_3 = m_recipes[i]->m_element_name_3;
+				m_display_recipes[index]->m_element_name_4 = m_recipes[i]->m_element_name_4;
+				m_display_recipes[index]->m_element_name_5 = m_recipes[i]->m_element_name_5;
+				m_display_recipes[index]->m_element_name_6 = m_recipes[i]->m_element_name_6;
 
-				m_display_recipes[iIndex]->m_iElementCount[1] = m_recipes[i]->m_iElementCount[1];
-				m_display_recipes[iIndex]->m_iElementCount[2] = m_recipes[i]->m_iElementCount[2];
-				m_display_recipes[iIndex]->m_iElementCount[3] = m_recipes[i]->m_iElementCount[3];
-				m_display_recipes[iIndex]->m_iElementCount[4] = m_recipes[i]->m_iElementCount[4];
-				m_display_recipes[iIndex]->m_iElementCount[5] = m_recipes[i]->m_iElementCount[5];
-				m_display_recipes[iIndex]->m_iElementCount[6] = m_recipes[i]->m_iElementCount[6];
+				m_display_recipes[index]->m_element_count[1] = m_recipes[i]->m_element_count[1];
+				m_display_recipes[index]->m_element_count[2] = m_recipes[i]->m_element_count[2];
+				m_display_recipes[index]->m_element_count[3] = m_recipes[i]->m_element_count[3];
+				m_display_recipes[index]->m_element_count[4] = m_recipes[i]->m_element_count[4];
+				m_display_recipes[index]->m_element_count[5] = m_recipes[i]->m_element_count[5];
+				m_display_recipes[index]->m_element_count[6] = m_recipes[i]->m_element_count[6];
 
-				m_display_recipes[iIndex]->m_iSprH = m_recipes[i]->m_iSprH;
-				m_display_recipes[iIndex]->m_iSprFrame = m_recipes[i]->m_iSprFrame;
-				m_display_recipes[iIndex]->m_iMaxSkill = m_recipes[i]->m_iMaxSkill;
-				m_display_recipes[iIndex]->m_iSkillLimit = m_recipes[i]->m_iSkillLimit;
+				m_display_recipes[index]->m_sprite_handle = m_recipes[i]->m_sprite_handle;
+				m_display_recipes[index]->m_sprite_frame = m_recipes[i]->m_sprite_frame;
+				m_display_recipes[index]->m_max_skill = m_recipes[i]->m_max_skill;
+				m_display_recipes[index]->m_skill_limit = m_recipes[i]->m_skill_limit;
 
 				// ItemCount
 				for (j = 0; j < hb::shared::limits::MaxItems; j++)
-					if (m_game->m_pItemList[j] != 0)
-						iItemCount[j] = m_game->m_pItemList[j]->m_dwCount;
-					else iItemCount[j] = 0;
+					if (m_game->m_item_list[j] != 0)
+						item_count[j] = m_game->m_item_list[j]->m_count;
+					else item_count[j] = 0;
 
 				// Element1
-				std::snprintf(cTempName, sizeof(cTempName), "%s", m_recipes[i]->m_cElementName1.c_str());
-				iCount = m_recipes[i]->m_iElementCount[1];
-				if (iCount == 0) iMatch++;
+				std::snprintf(temp_name, sizeof(temp_name), "%s", m_recipes[i]->m_element_name_1.c_str());
+				count = m_recipes[i]->m_element_count[1];
+				if (count == 0) match++;
 				else
 				{
 					for (j = 0; j < hb::shared::limits::MaxItems; j++)
-						if (m_game->m_pItemList[j] != 0) {
-							CItem* pCfgJ = m_game->GetItemConfig(m_game->m_pItemList[j]->m_sIDnum);
-							if (pCfgJ && (memcmp(pCfgJ->m_cName, cTempName, hb::shared::limits::ItemNameLen - 1) == 0) && (m_game->m_pItemList[j]->m_dwCount >= static_cast<DWORD>(iCount)) &&
-								(iItemCount[j] > 0))
+						if (m_game->m_item_list[j] != 0) {
+							CItem* cfg_j = m_game->get_item_config(m_game->m_item_list[j]->m_id_num);
+							if (cfg_j && (memcmp(cfg_j->m_name, temp_name, hb::shared::limits::ItemNameLen - 1) == 0) && (m_game->m_item_list[j]->m_count >= static_cast<DWORD>(count)) &&
+								(item_count[j] > 0))
 							{
-								iMatch++;
-								m_display_recipes[iIndex]->m_bElementFlag[1] = true;
-								iItemCount[j] -= iCount;
+								match++;
+								m_display_recipes[index]->m_element_flag[1] = true;
+								item_count[j] -= count;
 								goto CBIS_STEP2;
 							}
 						}
@@ -102,21 +102,21 @@ bool BuildItemManager::UpdateAvailableRecipes()
 
 			CBIS_STEP2:;
 				// Element2
-				std::snprintf(cTempName, sizeof(cTempName), "%s", m_recipes[i]->m_cElementName2.c_str());
-				iCount = m_recipes[i]->m_iElementCount[2];
-				if (iCount == 0) iMatch++;
+				std::snprintf(temp_name, sizeof(temp_name), "%s", m_recipes[i]->m_element_name_2.c_str());
+				count = m_recipes[i]->m_element_count[2];
+				if (count == 0) match++;
 				else
 				{
 					for (j = 0; j < hb::shared::limits::MaxItems; j++)
-						if (m_game->m_pItemList[j] != 0)
+						if (m_game->m_item_list[j] != 0)
 						{
-							CItem* pCfgJ = m_game->GetItemConfig(m_game->m_pItemList[j]->m_sIDnum);
-							if (pCfgJ && (memcmp(pCfgJ->m_cName, cTempName, hb::shared::limits::ItemNameLen - 1) == 0) && (m_game->m_pItemList[j]->m_dwCount >= static_cast<DWORD>(iCount)) &&
-								(iItemCount[j] > 0))
+							CItem* cfg_j = m_game->get_item_config(m_game->m_item_list[j]->m_id_num);
+							if (cfg_j && (memcmp(cfg_j->m_name, temp_name, hb::shared::limits::ItemNameLen - 1) == 0) && (m_game->m_item_list[j]->m_count >= static_cast<DWORD>(count)) &&
+								(item_count[j] > 0))
 							{
-								iMatch++;
-								m_display_recipes[iIndex]->m_bElementFlag[2] = true;
-								iItemCount[j] -= iCount;
+								match++;
+								m_display_recipes[index]->m_element_flag[2] = true;
+								item_count[j] -= count;
 								goto CBIS_STEP3;
 							}
 						}
@@ -124,21 +124,21 @@ bool BuildItemManager::UpdateAvailableRecipes()
 
 			CBIS_STEP3:;
 				// Element3
-				std::snprintf(cTempName, sizeof(cTempName), "%s", m_recipes[i]->m_cElementName3.c_str());
-				iCount = m_recipes[i]->m_iElementCount[3];
-				if (iCount == 0) iMatch++;
+				std::snprintf(temp_name, sizeof(temp_name), "%s", m_recipes[i]->m_element_name_3.c_str());
+				count = m_recipes[i]->m_element_count[3];
+				if (count == 0) match++;
 				else
 				{
 					for (j = 0; j < hb::shared::limits::MaxItems; j++)
-						if (m_game->m_pItemList[j] != 0)
+						if (m_game->m_item_list[j] != 0)
 						{
-							CItem* pCfgJ = m_game->GetItemConfig(m_game->m_pItemList[j]->m_sIDnum);
-							if (pCfgJ && (memcmp(pCfgJ->m_cName, cTempName, hb::shared::limits::ItemNameLen - 1) == 0) && (m_game->m_pItemList[j]->m_dwCount >= static_cast<DWORD>(iCount)) &&
-								(iItemCount[j] > 0))
+							CItem* cfg_j = m_game->get_item_config(m_game->m_item_list[j]->m_id_num);
+							if (cfg_j && (memcmp(cfg_j->m_name, temp_name, hb::shared::limits::ItemNameLen - 1) == 0) && (m_game->m_item_list[j]->m_count >= static_cast<DWORD>(count)) &&
+								(item_count[j] > 0))
 							{
-								iMatch++;
-								m_display_recipes[iIndex]->m_bElementFlag[3] = true;
-								iItemCount[j] -= iCount;
+								match++;
+								m_display_recipes[index]->m_element_flag[3] = true;
+								item_count[j] -= count;
 								goto CBIS_STEP4;
 							}
 						}
@@ -146,21 +146,21 @@ bool BuildItemManager::UpdateAvailableRecipes()
 
 			CBIS_STEP4:;
 				// Element4 �˻�
-				std::snprintf(cTempName, sizeof(cTempName), "%s", m_recipes[i]->m_cElementName4.c_str());
-				iCount = m_recipes[i]->m_iElementCount[4];
-				if (iCount == 0) iMatch++;
+				std::snprintf(temp_name, sizeof(temp_name), "%s", m_recipes[i]->m_element_name_4.c_str());
+				count = m_recipes[i]->m_element_count[4];
+				if (count == 0) match++;
 				else
 				{
 					for (j = 0; j < hb::shared::limits::MaxItems; j++)
-						if (m_game->m_pItemList[j] != 0)
+						if (m_game->m_item_list[j] != 0)
 						{
-							CItem* pCfgJ = m_game->GetItemConfig(m_game->m_pItemList[j]->m_sIDnum);
-							if (pCfgJ && (memcmp(pCfgJ->m_cName, cTempName, hb::shared::limits::ItemNameLen - 1) == 0) && (m_game->m_pItemList[j]->m_dwCount >= static_cast<DWORD>(iCount)) &&
-								(iItemCount[j] > 0))
+							CItem* cfg_j = m_game->get_item_config(m_game->m_item_list[j]->m_id_num);
+							if (cfg_j && (memcmp(cfg_j->m_name, temp_name, hb::shared::limits::ItemNameLen - 1) == 0) && (m_game->m_item_list[j]->m_count >= static_cast<DWORD>(count)) &&
+								(item_count[j] > 0))
 							{
-								iMatch++;
-								m_display_recipes[iIndex]->m_bElementFlag[4] = true;
-								iItemCount[j] -= iCount;
+								match++;
+								m_display_recipes[index]->m_element_flag[4] = true;
+								item_count[j] -= count;
 								goto CBIS_STEP5;
 							}
 						}
@@ -169,21 +169,21 @@ bool BuildItemManager::UpdateAvailableRecipes()
 			CBIS_STEP5:;
 
 				// Element5
-				std::snprintf(cTempName, sizeof(cTempName), "%s", m_recipes[i]->m_cElementName5.c_str());
-				iCount = m_recipes[i]->m_iElementCount[5];
-				if (iCount == 0) iMatch++;
+				std::snprintf(temp_name, sizeof(temp_name), "%s", m_recipes[i]->m_element_name_5.c_str());
+				count = m_recipes[i]->m_element_count[5];
+				if (count == 0) match++;
 				else
 				{
 					for (j = 0; j < hb::shared::limits::MaxItems; j++)
-						if (m_game->m_pItemList[j] != 0)
+						if (m_game->m_item_list[j] != 0)
 						{
-							CItem* pCfgJ = m_game->GetItemConfig(m_game->m_pItemList[j]->m_sIDnum);
-							if (pCfgJ && (memcmp(pCfgJ->m_cName, cTempName, hb::shared::limits::ItemNameLen - 1) == 0) && (m_game->m_pItemList[j]->m_dwCount >= static_cast<DWORD>(iCount)) &&
-								(iItemCount[j] > 0))
+							CItem* cfg_j = m_game->get_item_config(m_game->m_item_list[j]->m_id_num);
+							if (cfg_j && (memcmp(cfg_j->m_name, temp_name, hb::shared::limits::ItemNameLen - 1) == 0) && (m_game->m_item_list[j]->m_count >= static_cast<DWORD>(count)) &&
+								(item_count[j] > 0))
 							{
-								iMatch++;
-								m_display_recipes[iIndex]->m_bElementFlag[5] = true;
-								iItemCount[j] -= iCount;
+								match++;
+								m_display_recipes[index]->m_element_flag[5] = true;
+								item_count[j] -= count;
 								goto CBIS_STEP6;
 							}
 						}
@@ -192,21 +192,21 @@ bool BuildItemManager::UpdateAvailableRecipes()
 			CBIS_STEP6:;
 
 				// Element6
-				std::snprintf(cTempName, sizeof(cTempName), "%s", m_recipes[i]->m_cElementName6.c_str());
-				iCount = m_recipes[i]->m_iElementCount[6];
-				if (iCount == 0) iMatch++;
+				std::snprintf(temp_name, sizeof(temp_name), "%s", m_recipes[i]->m_element_name_6.c_str());
+				count = m_recipes[i]->m_element_count[6];
+				if (count == 0) match++;
 				else
 				{
 					for (j = 0; j < hb::shared::limits::MaxItems; j++)
-						if (m_game->m_pItemList[j] != 0)
+						if (m_game->m_item_list[j] != 0)
 						{
-							CItem* pCfgJ = m_game->GetItemConfig(m_game->m_pItemList[j]->m_sIDnum);
-							if (pCfgJ && (memcmp(pCfgJ->m_cName, cTempName, hb::shared::limits::ItemNameLen - 1) == 0) && (m_game->m_pItemList[j]->m_dwCount >= static_cast<DWORD>(iCount)) &&
-								(iItemCount[j] > 0))
+							CItem* cfg_j = m_game->get_item_config(m_game->m_item_list[j]->m_id_num);
+							if (cfg_j && (memcmp(cfg_j->m_name, temp_name, hb::shared::limits::ItemNameLen - 1) == 0) && (m_game->m_item_list[j]->m_count >= static_cast<DWORD>(count)) &&
+								(item_count[j] > 0))
 							{
-								iMatch++;
-								m_display_recipes[iIndex]->m_bElementFlag[6] = true;
-								iItemCount[j] -= iCount;
+								match++;
+								m_display_recipes[index]->m_element_flag[6] = true;
+								item_count[j] -= count;
 								goto CBIS_STEP7;
 							}
 						}
@@ -214,19 +214,19 @@ bool BuildItemManager::UpdateAvailableRecipes()
 
 			CBIS_STEP7:;
 
-				if (iMatch == 6) m_display_recipes[iIndex]->m_bBuildEnabled = true;
-				iIndex++;
+				if (match == 6) m_display_recipes[index]->m_build_enabled = true;
+				index++;
 			}
 		}
 	return true;
 }
 
-bool BuildItemManager::ParseRecipeFile(const std::string& buffer)
+bool build_item_manager::parse_recipe_file(const std::string& buffer)
 {
 	constexpr std::string_view seps = "= ,\t\n";
-	char cReadModeA = 0;
-	char cReadModeB = 0;
-	int iIndex = 0;
+	char read_mode_a = 0;
+	char read_mode_b = 0;
+	int index = 0;
 
 	auto copyToCharArray = [](char* dest, size_t destSize, const std::string& src) {
 		std::memset(dest, 0, destSize);
@@ -244,86 +244,86 @@ bool BuildItemManager::ParseRecipeFile(const std::string& buffer)
 		{
 			std::string token = buffer.substr(start, end - start);
 
-			if (cReadModeA != 0)
+			if (read_mode_a != 0)
 			{
-				switch (cReadModeA) {
+				switch (read_mode_a) {
 				case 1:
-					switch (cReadModeB) {
+					switch (read_mode_b) {
 					case 1:
-						m_recipes[iIndex]->m_cName = token;
-						cReadModeB = 2;
+						m_recipes[index]->m_name = token;
+						read_mode_b = 2;
 						break;
 					case 2:
-						m_recipes[iIndex]->m_iSkillLimit = std::stoi(token);
-						cReadModeB = 3;
+						m_recipes[index]->m_skill_limit = std::stoi(token);
+						read_mode_b = 3;
 						break;
 					case 3:
-						m_recipes[iIndex]->m_cElementName1 = token;
-						cReadModeB = 4;
+						m_recipes[index]->m_element_name_1 = token;
+						read_mode_b = 4;
 						break;
 					case 4:
-						m_recipes[iIndex]->m_iElementCount[1] = std::stoi(token);
-						cReadModeB = 5;
+						m_recipes[index]->m_element_count[1] = std::stoi(token);
+						read_mode_b = 5;
 						break;
 					case 5:
-						m_recipes[iIndex]->m_cElementName2 = token;
-						cReadModeB = 6;
+						m_recipes[index]->m_element_name_2 = token;
+						read_mode_b = 6;
 						break;
 					case 6:
-						m_recipes[iIndex]->m_iElementCount[2] = std::stoi(token);
-						cReadModeB = 7;
+						m_recipes[index]->m_element_count[2] = std::stoi(token);
+						read_mode_b = 7;
 						break;
 					case 7:
-						m_recipes[iIndex]->m_cElementName3 = token;
-						cReadModeB = 8;
+						m_recipes[index]->m_element_name_3 = token;
+						read_mode_b = 8;
 						break;
 					case 8:
-						m_recipes[iIndex]->m_iElementCount[3] = std::stoi(token);
-						cReadModeB = 9;
+						m_recipes[index]->m_element_count[3] = std::stoi(token);
+						read_mode_b = 9;
 						break;
 					case 9:
-						m_recipes[iIndex]->m_cElementName4 = token;
-						cReadModeB = 10;
+						m_recipes[index]->m_element_name_4 = token;
+						read_mode_b = 10;
 						break;
 					case 10:
-						m_recipes[iIndex]->m_iElementCount[4] = std::stoi(token);
-						cReadModeB = 11;
+						m_recipes[index]->m_element_count[4] = std::stoi(token);
+						read_mode_b = 11;
 						break;
 					case 11:
-						m_recipes[iIndex]->m_cElementName5 = token;
-						cReadModeB = 12;
+						m_recipes[index]->m_element_name_5 = token;
+						read_mode_b = 12;
 						break;
 					case 12:
 						if (token == "xxx")
-							m_recipes[iIndex]->m_iElementCount[5] = 0;
+							m_recipes[index]->m_element_count[5] = 0;
 						else
-							m_recipes[iIndex]->m_iElementCount[5] = std::stoi(token);
-						cReadModeB = 13;
+							m_recipes[index]->m_element_count[5] = std::stoi(token);
+						read_mode_b = 13;
 						break;
 					case 13:
-						m_recipes[iIndex]->m_cElementName6 = token;
-						cReadModeB = 14;
+						m_recipes[index]->m_element_name_6 = token;
+						read_mode_b = 14;
 						break;
 					case 14:
 						if(token == "xxx")
-							m_recipes[iIndex]->m_iElementCount[6] = 0;
+							m_recipes[index]->m_element_count[6] = 0;
 						else
-							m_recipes[iIndex]->m_iElementCount[6] = std::stoi(token);
-						cReadModeB = 15;
+							m_recipes[index]->m_element_count[6] = std::stoi(token);
+						read_mode_b = 15;
 						break;
 					case 15:
-						m_recipes[iIndex]->m_iSprH = std::stoi(token);
-						cReadModeB = 16;
+						m_recipes[index]->m_sprite_handle = std::stoi(token);
+						read_mode_b = 16;
 						break;
 					case 16:
-						m_recipes[iIndex]->m_iSprFrame = std::stoi(token);
-						cReadModeB = 17;
+						m_recipes[index]->m_sprite_frame = std::stoi(token);
+						read_mode_b = 17;
 						break;
 					case 17:
-						m_recipes[iIndex]->m_iMaxSkill = std::stoi(token);
-						cReadModeA = 0;
-						cReadModeB = 0;
-						iIndex++;
+						m_recipes[index]->m_max_skill = std::stoi(token);
+						read_mode_a = 0;
+						read_mode_b = 0;
+						index++;
 						break;
 					}
 					break;
@@ -333,62 +333,62 @@ bool BuildItemManager::ParseRecipeFile(const std::string& buffer)
 			{
 				if (token.starts_with("BuildItem"))
 				{
-					if (iIndex >= hb::shared::limits::MaxBuildItems) break;
-					cReadModeA = 1;
-					cReadModeB = 1;
-					m_recipes[iIndex] = std::make_unique<CBuildItem>();
+					if (index >= hb::shared::limits::MaxBuildItems) break;
+					read_mode_a = 1;
+					read_mode_b = 1;
+					m_recipes[index] = std::make_unique<build_item>();
 				}
 			}
 		}
 		start = end + 1;
 	}
-	return (cReadModeA == 0) && (cReadModeB == 0);
+	return (read_mode_a == 0) && (read_mode_b == 0);
 }
 
-bool BuildItemManager::ValidateCurrentRecipe()
+bool build_item_manager::validate_current_recipe()
 {
-	int i, iCount2, iMatch, iIndex, iItemIndex[7];
-	int iCount;
-	int iItemCount[7];
-	char cTempName[hb::shared::limits::ItemNameLen];
-	bool bItemFlag[7];
+	int i, count2, match, index, item_index[7];
+	int count;
+	int item_count[7];
+	char temp_name[hb::shared::limits::ItemNameLen];
+	bool item_flag[7];
 
-	iIndex = m_game->m_dialogBoxManager.Info(DialogBoxId::Manufacture).cStr[0];
-	if (iIndex < 0 || iIndex >= hb::shared::limits::MaxBuildItems) return false;
+	index = m_game->m_dialog_box_manager.Info(DialogBoxId::Manufacture).m_str[0];
+	if (index < 0 || index >= hb::shared::limits::MaxBuildItems) return false;
 
-	if (m_display_recipes[iIndex] == 0) return false;
+	if (m_display_recipes[index] == 0) return false;
 
-	iItemIndex[1] = m_game->m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV1;
-	iItemIndex[2] = m_game->m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV2;
-	iItemIndex[3] = m_game->m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV3;
-	iItemIndex[4] = m_game->m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV4;
-	iItemIndex[5] = m_game->m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV5;
-	iItemIndex[6] = m_game->m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV6;
+	item_index[1] = m_game->m_dialog_box_manager.Info(DialogBoxId::Manufacture).m_v1;
+	item_index[2] = m_game->m_dialog_box_manager.Info(DialogBoxId::Manufacture).m_v2;
+	item_index[3] = m_game->m_dialog_box_manager.Info(DialogBoxId::Manufacture).m_v3;
+	item_index[4] = m_game->m_dialog_box_manager.Info(DialogBoxId::Manufacture).m_v4;
+	item_index[5] = m_game->m_dialog_box_manager.Info(DialogBoxId::Manufacture).m_v5;
+	item_index[6] = m_game->m_dialog_box_manager.Info(DialogBoxId::Manufacture).m_v6;
 
 	for (i = 1; i <= 6; i++)
-		if (iItemIndex[i] != -1)
-			iItemCount[i] = m_game->m_pItemList[iItemIndex[i]]->m_dwCount;
-		else iItemCount[i] = 0;
-	iMatch = 0;
-	for (i = 1; i <= 6; i++) bItemFlag[i] = false;
+		if (item_index[i] != -1)
+			item_count[i] = m_game->m_item_list[item_index[i]]->m_count;
+		else item_count[i] = 0;
+	match = 0;
+	for (i = 1; i <= 6; i++) item_flag[i] = false;
 
 	// Element1
-	std::snprintf(cTempName, sizeof(cTempName), "%s", m_display_recipes[iIndex]->m_cElementName1.c_str());
-	iCount = m_display_recipes[iIndex]->m_iElementCount[1];
-	if (iCount == 0) iMatch++;
+	std::snprintf(temp_name, sizeof(temp_name), "%s", m_display_recipes[index]->m_element_name_1.c_str());
+	count = m_display_recipes[index]->m_element_count[1];
+	if (count == 0) match++;
 	else
 	{
 		for (i = 1; i <= 6; i++)
 		{
-			if (iItemIndex[i] == -1) continue;
-			CItem* pCfgBI = m_game->GetItemConfig(m_game->m_pItemList[iItemIndex[i]]->m_sIDnum);
-			if (pCfgBI && (memcmp(pCfgBI->m_cName, cTempName, hb::shared::limits::ItemNameLen - 1) == 0) &&
-				(m_game->m_pItemList[iItemIndex[i]]->m_dwCount >= static_cast<DWORD>(iCount)) &&
-				(iItemCount[i] > 0) && (bItemFlag[i] == false))
+			if (item_index[i] == -1) continue;
+			CItem* cfg_bi = m_game->get_item_config(m_game->m_item_list[item_index[i]]->m_id_num);
+			if (cfg_bi && (memcmp(cfg_bi->m_name, temp_name, hb::shared::limits::ItemNameLen - 1) == 0) &&
+				(m_game->m_item_list[item_index[i]]->m_count >= static_cast<DWORD>(count)) &&
+				(item_count[i] > 0) && (item_flag[i] == false))
 			{
-				iMatch++;
-				iItemCount[i] -= iCount;
-				bItemFlag[i] = true;
+				match++;
+				item_count[i] -= count;
+				item_flag[i] = true;
 				goto CCBIS_STEP2;
 			}
 		}
@@ -397,22 +397,22 @@ bool BuildItemManager::ValidateCurrentRecipe()
 CCBIS_STEP2:;
 
 	// Element2
-	std::snprintf(cTempName, sizeof(cTempName), "%s", m_display_recipes[iIndex]->m_cElementName2.c_str());
-	iCount = m_display_recipes[iIndex]->m_iElementCount[2];
-	if (iCount == 0) iMatch++;
+	std::snprintf(temp_name, sizeof(temp_name), "%s", m_display_recipes[index]->m_element_name_2.c_str());
+	count = m_display_recipes[index]->m_element_count[2];
+	if (count == 0) match++;
 	else
 	{
 		for (i = 1; i <= 6; i++)
 		{
-			if (iItemIndex[i] == -1) continue;
-			CItem* pCfgBI = m_game->GetItemConfig(m_game->m_pItemList[iItemIndex[i]]->m_sIDnum);
-			if (pCfgBI && (memcmp(pCfgBI->m_cName, cTempName, hb::shared::limits::ItemNameLen - 1) == 0) &&
-				(m_game->m_pItemList[iItemIndex[i]]->m_dwCount >= static_cast<DWORD>(iCount)) &&
-				(iItemCount[i] > 0) && (bItemFlag[i] == false))
+			if (item_index[i] == -1) continue;
+			CItem* cfg_bi = m_game->get_item_config(m_game->m_item_list[item_index[i]]->m_id_num);
+			if (cfg_bi && (memcmp(cfg_bi->m_name, temp_name, hb::shared::limits::ItemNameLen - 1) == 0) &&
+				(m_game->m_item_list[item_index[i]]->m_count >= static_cast<DWORD>(count)) &&
+				(item_count[i] > 0) && (item_flag[i] == false))
 			{
-				iMatch++;
-				iItemCount[i] -= iCount;
-				bItemFlag[i] = true;
+				match++;
+				item_count[i] -= count;
+				item_flag[i] = true;
 				goto CCBIS_STEP3;
 			}
 		}
@@ -421,22 +421,22 @@ CCBIS_STEP2:;
 CCBIS_STEP3:;
 
 	// Element3
-	std::snprintf(cTempName, sizeof(cTempName), "%s", m_display_recipes[iIndex]->m_cElementName3.c_str());
-	iCount = m_display_recipes[iIndex]->m_iElementCount[3];
-	if (iCount == 0) iMatch++;
+	std::snprintf(temp_name, sizeof(temp_name), "%s", m_display_recipes[index]->m_element_name_3.c_str());
+	count = m_display_recipes[index]->m_element_count[3];
+	if (count == 0) match++;
 	else
 	{
 		for (i = 1; i <= 6; i++)
 		{
-			if (iItemIndex[i] == -1) continue;
-			CItem* pCfgBI = m_game->GetItemConfig(m_game->m_pItemList[iItemIndex[i]]->m_sIDnum);
-			if (pCfgBI && (memcmp(pCfgBI->m_cName, cTempName, hb::shared::limits::ItemNameLen - 1) == 0) &&
-				(m_game->m_pItemList[iItemIndex[i]]->m_dwCount >= static_cast<DWORD>(iCount)) &&
-				(iItemCount[i] > 0) && (bItemFlag[i] == false))
+			if (item_index[i] == -1) continue;
+			CItem* cfg_bi = m_game->get_item_config(m_game->m_item_list[item_index[i]]->m_id_num);
+			if (cfg_bi && (memcmp(cfg_bi->m_name, temp_name, hb::shared::limits::ItemNameLen - 1) == 0) &&
+				(m_game->m_item_list[item_index[i]]->m_count >= static_cast<DWORD>(count)) &&
+				(item_count[i] > 0) && (item_flag[i] == false))
 			{
-				iMatch++;
-				iItemCount[i] -= iCount;
-				bItemFlag[i] = true;
+				match++;
+				item_count[i] -= count;
+				item_flag[i] = true;
 				goto CCBIS_STEP4;
 			}
 		}
@@ -445,22 +445,22 @@ CCBIS_STEP3:;
 CCBIS_STEP4:;
 
 	// Element4
-	std::snprintf(cTempName, sizeof(cTempName), "%s", m_display_recipes[iIndex]->m_cElementName4.c_str());
-	iCount = m_display_recipes[iIndex]->m_iElementCount[4];
-	if (iCount == 0) iMatch++;
+	std::snprintf(temp_name, sizeof(temp_name), "%s", m_display_recipes[index]->m_element_name_4.c_str());
+	count = m_display_recipes[index]->m_element_count[4];
+	if (count == 0) match++;
 	else
 	{
 		for (i = 1; i <= 6; i++)
 		{
-			if (iItemIndex[i] == -1) continue;
-			CItem* pCfgBI = m_game->GetItemConfig(m_game->m_pItemList[iItemIndex[i]]->m_sIDnum);
-			if (pCfgBI && (memcmp(pCfgBI->m_cName, cTempName, hb::shared::limits::ItemNameLen - 1) == 0) &&
-				(m_game->m_pItemList[iItemIndex[i]]->m_dwCount >= static_cast<DWORD>(iCount)) &&
-				(iItemCount[i] > 0) && (bItemFlag[i] == false))
+			if (item_index[i] == -1) continue;
+			CItem* cfg_bi = m_game->get_item_config(m_game->m_item_list[item_index[i]]->m_id_num);
+			if (cfg_bi && (memcmp(cfg_bi->m_name, temp_name, hb::shared::limits::ItemNameLen - 1) == 0) &&
+				(m_game->m_item_list[item_index[i]]->m_count >= static_cast<DWORD>(count)) &&
+				(item_count[i] > 0) && (item_flag[i] == false))
 			{
-				iMatch++;
-				iItemCount[i] -= iCount;
-				bItemFlag[i] = true;
+				match++;
+				item_count[i] -= count;
+				item_flag[i] = true;
 				goto CCBIS_STEP5;
 			}
 		}
@@ -469,22 +469,22 @@ CCBIS_STEP4:;
 CCBIS_STEP5:;
 
 	// Element5
-	std::snprintf(cTempName, sizeof(cTempName), "%s", m_display_recipes[iIndex]->m_cElementName5.c_str());
-	iCount = m_display_recipes[iIndex]->m_iElementCount[5];
-	if (iCount == 0) iMatch++;
+	std::snprintf(temp_name, sizeof(temp_name), "%s", m_display_recipes[index]->m_element_name_5.c_str());
+	count = m_display_recipes[index]->m_element_count[5];
+	if (count == 0) match++;
 	else
 	{
 		for (i = 1; i <= 6; i++)
 		{
-			if (iItemIndex[i] == -1) continue;
-			CItem* pCfgBI = m_game->GetItemConfig(m_game->m_pItemList[iItemIndex[i]]->m_sIDnum);
-			if (pCfgBI && (memcmp(pCfgBI->m_cName, cTempName, hb::shared::limits::ItemNameLen - 1) == 0) &&
-				(m_game->m_pItemList[iItemIndex[i]]->m_dwCount >= static_cast<DWORD>(iCount)) &&
-				(iItemCount[i] > 0) && (bItemFlag[i] == false))
+			if (item_index[i] == -1) continue;
+			CItem* cfg_bi = m_game->get_item_config(m_game->m_item_list[item_index[i]]->m_id_num);
+			if (cfg_bi && (memcmp(cfg_bi->m_name, temp_name, hb::shared::limits::ItemNameLen - 1) == 0) &&
+				(m_game->m_item_list[item_index[i]]->m_count >= static_cast<DWORD>(count)) &&
+				(item_count[i] > 0) && (item_flag[i] == false))
 			{
-				iMatch++;
-				iItemCount[i] -= iCount;
-				bItemFlag[i] = true;
+				match++;
+				item_count[i] -= count;
+				item_flag[i] = true;
 				goto CCBIS_STEP6;
 			}
 		}
@@ -493,22 +493,22 @@ CCBIS_STEP5:;
 CCBIS_STEP6:;
 
 	// Element6
-	std::snprintf(cTempName, sizeof(cTempName), "%s", m_display_recipes[iIndex]->m_cElementName6.c_str());
-	iCount = m_display_recipes[iIndex]->m_iElementCount[6];
-	if (iCount == 0) iMatch++;
+	std::snprintf(temp_name, sizeof(temp_name), "%s", m_display_recipes[index]->m_element_name_6.c_str());
+	count = m_display_recipes[index]->m_element_count[6];
+	if (count == 0) match++;
 	else
 	{
 		for (i = 1; i <= 6; i++)
 		{
-			if (iItemIndex[i] == -1) continue;
-			CItem* pCfgBI = m_game->GetItemConfig(m_game->m_pItemList[iItemIndex[i]]->m_sIDnum);
-			if (pCfgBI && (memcmp(pCfgBI->m_cName, cTempName, hb::shared::limits::ItemNameLen - 1) == 0) &&
-				(m_game->m_pItemList[iItemIndex[i]]->m_dwCount >= static_cast<DWORD>(iCount)) &&
-				(iItemCount[i] > 0) && (bItemFlag[i] == false))
+			if (item_index[i] == -1) continue;
+			CItem* cfg_bi = m_game->get_item_config(m_game->m_item_list[item_index[i]]->m_id_num);
+			if (cfg_bi && (memcmp(cfg_bi->m_name, temp_name, hb::shared::limits::ItemNameLen - 1) == 0) &&
+				(m_game->m_item_list[item_index[i]]->m_count >= static_cast<DWORD>(count)) &&
+				(item_count[i] > 0) && (item_flag[i] == false))
 			{
-				iMatch++;
-				iItemCount[i] -= iCount;
-				bItemFlag[i] = true;
+				match++;
+				item_count[i] -= count;
+				item_flag[i] = true;
 				goto CCBIS_STEP7;
 			}
 		}
@@ -516,13 +516,13 @@ CCBIS_STEP6:;
 
 CCBIS_STEP7:;
 
-	iCount = 0;
+	count = 0;
 	for (i = 1; i <= 6; i++)
-		if (m_display_recipes[iIndex]->m_iElementCount[i] != 0) iCount++;
-	iCount2 = 0;
+		if (m_display_recipes[index]->m_element_count[i] != 0) count++;
+	count2 = 0;
 	for (i = 1; i <= 6; i++)
-		if (iItemIndex[i] != -1) iCount2++;
-	if ((iMatch == 6) && (iCount == iCount2)) return true;
+		if (item_index[i] != -1) count2++;
+	if ((match == 6) && (count == count2)) return true;
 	return false;
 }
 

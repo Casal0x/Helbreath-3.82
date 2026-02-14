@@ -10,26 +10,26 @@ public:
 	MagicManager() = default;
 	~MagicManager() = default;
 
-	void SetGame(CGame* pGame) { m_pGame = pGame; }
+	void set_game(CGame* game) { m_game = game; }
 
 	// Magic config
-	bool bSendClientMagicConfigs(int iClientH);
-	void ReloadMagicConfigs();
+	bool send_client_magic_configs(int client_h);
+	void reload_magic_configs();
 
 	// Magic casting
-	void PlayerMagicHandler(int iClientH, int dX, int dY, short sType, bool bItemEffect = false, int iV1 = 0, uint16_t targetObjectID = 0);
-	int iClientMotion_Magic_Handler(int iClientH, short sX, short sY, char cDir);
+	void player_magic_handler(int client_h, int dX, int dY, short type, bool item_effect = false, int v1 = 0, uint16_t targetObjectID = 0);
+	int client_motion_magic_handler(int client_h, short sX, short sY, char dir);
 
 	// Magic study
-	void RequestStudyMagicHandler(int iClientH, const char* pName, bool bIsPurchase = true);
-	int _iGetMagicNumber(char* pMagicName, int* pReqInt, int* pCost);
-	void GetMagicAbilityHandler(int iClientH);
+	void request_study_magic_handler(int client_h, const char* name, bool is_purchase = true);
+	int get_magic_number(char* magic_name, int* req_int, int* cost);
+	void get_magic_ability_handler(int client_h);
 
 	// Magic checks
-	bool bCheckMagicInt(int iClientH);
-	bool bCheckClientMagicFrequency(int iClientH, uint32_t dwClientTime);
-	int iGetWhetherMagicBonusEffect(short sType, char cWheatherStatus);
+	bool check_magic_int(int client_h);
+	bool check_client_magic_frequency(int client_h, uint32_t client_time);
+	int get_weather_magic_bonus_effect(short type, char wheather_status);
 
 private:
-	CGame* m_pGame = nullptr;
+	CGame* m_game = nullptr;
 };

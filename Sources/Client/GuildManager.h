@@ -1,45 +1,45 @@
-// GuildManager.h: Handles client-side guild network messages.
+// guild_manager.h: Handles client-side guild network messages.
 // Extracted from NetworkMessages_Guild.cpp (Phase B4).
 
 #pragma once
 
 class CGame;
 
-class GuildManager
+class guild_manager
 {
 public:
-	GuildManager() = default;
-	~GuildManager() = default;
+	guild_manager() = default;
+	~guild_manager() = default;
 
-	void SetGame(CGame* pGame) { m_pGame = pGame; }
+	void set_game(CGame* game) { m_game = game; }
 
 	// Guild creation/disband responses
-	void HandleCreateNewGuildResponse(char* pData);
-	void HandleDisbandGuildResponse(char* pData);
+	void handle_create_new_guild_response(char* data);
+	void handle_disband_guild_response(char* data);
 
 	// Guild notification handlers
-	void HandleGuildDisbanded(char* pData);
-	void HandleNewGuildsMan(char* pData);
-	void HandleDismissGuildsMan(char* pData);
-	void HandleCannotJoinMoreGuildsMan(char* pData);
+	void handle_guild_disbanded(char* data);
+	void handle_new_guilds_man(char* data);
+	void handle_dismiss_guilds_man(char* data);
+	void handle_cannot_join_more_guilds_man(char* data);
 
 	// Guild membership responses
-	void HandleJoinGuildApprove(char* pData);
-	void HandleJoinGuildReject(char* pData);
-	void HandleDismissGuildApprove(char* pData);
-	void HandleDismissGuildReject(char* pData);
+	void handle_join_guild_approve(char* data);
+	void handle_join_guild_reject(char* data);
+	void handle_dismiss_guild_approve(char* data);
+	void handle_dismiss_guild_reject(char* data);
 
 	// Guild queries
-	void HandleQueryJoinGuildPermission(char* pData);
-	void HandleQueryDismissGuildPermission(char* pData);
-	void HandleReqGuildNameAnswer(char* pData);
+	void handle_query_join_guild_permission(char* data);
+	void handle_query_dismiss_guild_permission(char* data);
+	void handle_req_guild_name_answer(char* data);
 
 	// Simple notification handlers
-	void HandleNoGuildMasterLevel(char* pData);
-	void HandleSuccessBanGuildMan(char* pData);
-	void HandleCannotBanGuildMan(char* pData);
+	void handle_no_guild_master_level(char* data);
+	void handle_success_ban_guild_man(char* data);
+	void handle_cannot_ban_guild_man(char* data);
 
 private:
-	static void UpdateLocationFlags(CGame* pGame, const char* cLocation);
-	CGame* m_pGame = nullptr;
+	static void update_location_flags(CGame* game, const char* location);
+	CGame* m_game = nullptr;
 };

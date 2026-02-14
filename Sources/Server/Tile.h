@@ -13,26 +13,26 @@ public:
 	CTile();
 	virtual ~CTile();
 
-	char  m_cOwnerClass;		// DEF_OT_PLAYER / DEF_OT_NPC
-	short m_sOwner;
+	char  m_owner_class;		// DEF_OT_PLAYER / DEF_OT_NPC
+	short m_owner;
 
-	char  m_cDeadOwnerClass;	// DEF_OT_PLAYER / DEF_OT_NPC
-	short m_sDeadOwner;
+	char  m_dead_owner_class;	// DEF_OT_PLAYER / DEF_OT_NPC
+	short m_dead_owner;
 
-	CItem * m_pItem[hb::server::map::TilePerItems];
-	char  m_cTotalItem;
+	CItem * m_item[hb::server::map::TilePerItems];
+	char  m_total_item;
 
-	uint16_t  m_wDynamicObjectID;
-	short m_sDynamicObjectType;
-	uint32_t m_dwDynamicObjectRegisterTime;
+	uint16_t  m_dynamic_object_id;
+	short m_dynamic_object_type;
+	uint32_t m_dynamic_object_register_time;
 
-	bool  m_bIsMoveAllowed, m_bIsTeleport, m_bIsWater, m_bIsFarm, m_bIsTempMoveAllowed;
+	bool  m_is_move_allowed, m_is_teleport, m_is_water, m_is_farm, m_is_temp_move_allowed;
 
-	int   m_iOccupyStatus;    // Aresden -, Elvine + .
-	int   m_iOccupyFlagIndex;
+	int   m_occupy_status;    // Aresden -, Elvine + .
+	int   m_occupy_flag_index;
 
 	// Crusade
-	int	  m_iAttribute;		  // :  ( )  (  )  ()
+	int	  m_attribute;		  // :  ( )  (  )  ()
 	
 	
 };

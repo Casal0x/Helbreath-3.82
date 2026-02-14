@@ -5,69 +5,69 @@
 
 using namespace hb::shared::net;
 using namespace hb::server::config;
-bool GameCmdWhisper::Execute(CGame* pGame, int iClientH, const char* pArgs)
+bool GameCmdWhisper::execute(CGame* game, int client_h, const char* args)
 {
-	if (pGame->m_pClientList[iClientH] == nullptr)
+	if (game->m_client_list[client_h] == nullptr)
 		return true;
 
-	if (pArgs == nullptr || pArgs[0] == '\0')
+	if (args == nullptr || args[0] == '\0')
 	{
 		// No name = disable whisper mode
-		pGame->m_pClientList[iClientH]->m_iWhisperPlayerIndex = -1;
-		std::memset(pGame->m_pClientList[iClientH]->m_cWhisperPlayerName, 0,
-			sizeof(pGame->m_pClientList[iClientH]->m_cWhisperPlayerName));
-		pGame->m_pClientList[iClientH]->m_bIsCheckingWhisperPlayer = false;
+		game->m_client_list[client_h]->m_whisper_player_index = -1;
+		std::memset(game->m_client_list[client_h]->m_whisper_player_name, 0,
+			sizeof(game->m_client_list[client_h]->m_whisper_player_name));
+		game->m_client_list[client_h]->m_is_checking_whisper_player = false;
 
-		char cName[hb::shared::limits::CharNameLen] = {};
-		pGame->SendNotifyMsg(0, iClientH, Notify::WhisperModeOff, 0, 0, 0, cName);
+		char name[hb::shared::limits::CharNameLen] = {};
+		game->send_notify_msg(0, client_h, Notify::WhisperModeOff, 0, 0, 0, name);
 		return true;
 	}
 
 	// Extract player name (max 10 chars)
-	char cName[hb::shared::limits::CharNameLen] = {};
-	size_t nameLen = std::strlen(pArgs);
+	char name[hb::shared::limits::CharNameLen] = {};
+	size_t nameLen = std::strlen(args);
 	if (nameLen > hb::shared::limits::CharNameLen - 1) nameLen = hb::shared::limits::CharNameLen - 1;
 
 	// Copy only the first word (stop at space)
 	for (size_t i = 0; i < nameLen; i++)
 	{
-		if (pArgs[i] == ' ' || pArgs[i] == '\t')
+		if (args[i] == ' ' || args[i] == '\t')
 			break;
-		cName[i] = pArgs[i];
+		name[i] = args[i];
 	}
 
-	if (cName[0] == '\0')
+	if (name[0] == '\0')
 		return true;
 
-	pGame->m_pClientList[iClientH]->m_iWhisperPlayerIndex = -1;
+	game->m_client_list[client_h]->m_whisper_player_index = -1;
 
 	// Search for player on this server (case-insensitive)
 	for(int i = 1; i < MaxClients; i++)
 	{
-		if (pGame->m_pClientList[i] != nullptr &&
-			hb_strnicmp(pGame->m_pClientList[i]->m_cCharName, cName, hb::shared::limits::CharNameLen - 1) == 0)
+		if (game->m_client_list[i] != nullptr &&
+			hb_strnicmp(game->m_client_list[i]->m_char_name, name, hb::shared::limits::CharNameLen - 1) == 0)
 		{
 			// Can't whisper yourself
-			if (i == iClientH)
+			if (i == client_h)
 				return true;
 
-			pGame->m_pClientList[iClientH]->m_iWhisperPlayerIndex = i;
-			std::memset(pGame->m_pClientList[iClientH]->m_cWhisperPlayerName, 0,
-				sizeof(pGame->m_pClientList[iClientH]->m_cWhisperPlayerName));
-			std::strcpy(pGame->m_pClientList[iClientH]->m_cWhisperPlayerName,
-				pGame->m_pClientList[i]->m_cCharName);
+			game->m_client_list[client_h]->m_whisper_player_index = i;
+			std::memset(game->m_client_list[client_h]->m_whisper_player_name, 0,
+				sizeof(game->m_client_list[client_h]->m_whisper_player_name));
+			std::strcpy(game->m_client_list[client_h]->m_whisper_player_name,
+				game->m_client_list[i]->m_char_name);
 			break;
 		}
 	}
 
-	if (pGame->m_pClientList[iClientH]->m_iWhisperPlayerIndex == -1)
+	if (game->m_client_list[client_h]->m_whisper_player_index == -1)
 	{
-		pGame->SendNotifyMsg(0, iClientH, Notify::PlayerNotOnGame, 0, 0, 0, cName);
+		game->send_notify_msg(0, client_h, Notify::PlayerNotOnGame, 0, 0, 0, name);
 	}
 	else
 	{
-		pGame->SendNotifyMsg(0, iClientH, Notify::WhisperModeOn, 0, 0, 0,
-			pGame->m_pClientList[iClientH]->m_cWhisperPlayerName);
+		game->send_notify_msg(0, client_h, Notify::WhisperModeOn, 0, 0, 0,
+			game->m_client_list[client_h]->m_whisper_player_name);
 	}
 
 	return true;

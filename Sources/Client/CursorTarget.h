@@ -43,29 +43,29 @@ enum class FocusedObjectType {
 // Focused Object Information
 //=============================================================================
 struct FocusedObject {
-    bool valid = false;
+    bool m_valid = false;
 
     // Identification
-    uint16_t objectID = 0;
-    short mapX = 0, mapY = 0;
-    short screenX = 0, screenY = 0;
-    short dataX = 0, dataY = 0;  // Map data array indices
+    uint16_t m_object_id = 0;
+    short m_map_x = 0, m_map_y = 0;
+    short m_screen_x = 0, m_screen_y = 0;
+    short m_data_x = 0, m_data_y = 0;  // Map data array indices
 
     // Type info
-    FocusedObjectType type = FocusedObjectType::None;
-    short ownerType = 0;
-    char action = 0;
-    char direction = 0;
-    char frame = 0;
+    FocusedObjectType m_type = FocusedObjectType::None;
+    short m_owner_type = 0;
+    char m_action = 0;
+    char m_direction = 0;
+    char m_frame = 0;
 
     // Display info
-    std::string name;
-    hb::shared::entity::PlayerAppearance appearance;
-    hb::shared::entity::PlayerStatus status;
+    std::string m_name;
+    hb::shared::entity::PlayerAppearance m_appearance;
+    hb::shared::entity::PlayerStatus m_status;
 
     // Query helpers
-    bool IsDead() const {
-        return type == FocusedObjectType::DeadBody;
+    bool is_dead() const {
+        return m_type == FocusedObjectType::DeadBody;
     }
 };
 
@@ -73,16 +73,16 @@ struct FocusedObject {
 // Object Info for Testing (passed during iteration)
 //=============================================================================
 struct TargetObjectInfo {
-    uint16_t objectID;
-    short mapX, mapY;
-    short screenX, screenY;
-    short dataX, dataY;  // Map data array indices
-    short ownerType;
-    char action, direction, frame;
-    const char* name;  // Points to existing string, no copy
-    hb::shared::entity::PlayerAppearance appearance;
-    hb::shared::entity::PlayerStatus status;
-    FocusedObjectType type;
+    uint16_t m_object_id;
+    short m_map_x, m_map_y;
+    short m_screen_x, m_screen_y;
+    short m_data_x, m_data_y;  // Map data array indices
+    short m_owner_type;
+    char m_action, m_direction, m_frame;
+    const char* m_name;  // Points to existing string, no copy
+    hb::shared::entity::PlayerAppearance m_appearance;
+    hb::shared::entity::PlayerStatus m_status;
+    FocusedObjectType m_type;
 };
 
 //=============================================================================
@@ -112,53 +112,53 @@ namespace CursorTarget {
     //-------------------------------------------------------------------------
     // Frame Lifecycle
     //-------------------------------------------------------------------------
-    // Call at start of DrawObjects() to reset state
-    void BeginFrame();
+    // Call at start of draw_objects() to reset state
+    void begin_frame();
 
-    // Call at end of DrawObjects() to finalize cursor type
+    // Call at end of draw_objects() to finalize cursor type
     // relationship: server-computed relationship of focused entity (Neutral if no focus)
-    // commandType: m_iPointCommandType
-    // commandAvailable: m_bCommandAvailable
-    // isGetPointingMode: m_bIsGetPointingMode
-    void EndFrame(EntityRelationship relationship, int commandType, bool commandAvailable, bool isGetPointingMode);
+    // commandType: m_point_command_type
+    // commandAvailable: m_command_available
+    // get_pointing_mode: m_is_get_pointing_mode
+    void end_frame(EntityRelationship relationship, int commandType, bool commandAvailable, bool get_pointing_mode);
 
     //-------------------------------------------------------------------------
-    // Object Testing (called during DrawObjects iteration)
+    // Object Testing (called during draw_objects iteration)
     //-------------------------------------------------------------------------
     // Test if mouse is over object's bounding rect
     // screenY used for depth sorting (lower Y = further back)
     // maxScreenY: bottom boundary for valid targeting (typically LOGICAL_HEIGHT() - 49)
-    void TestObject(const hb::shared::sprite::BoundRect& bounds, const TargetObjectInfo& info, int screenY, int maxScreenY);
+    void test_object(const hb::shared::sprite::BoundRect& bounds, const TargetObjectInfo& info, int screenY, int maxScreenY);
 
     // Test ground item with circular proximity (13px radius)
-    void TestGroundItem(int screenX, int screenY, int maxScreenY);
+    void test_ground_item(int screenX, int screenY, int maxScreenY);
 
     // Test dynamic object (minerals, etc)
-    void TestDynamicObject(const hb::shared::sprite::BoundRect& bounds, short mapX, short mapY, int maxScreenY);
+    void test_dynamic_object(const hb::shared::sprite::BoundRect& bounds, short mapX, short mapY, int maxScreenY);
 
     //-------------------------------------------------------------------------
     // Query Functions
     //-------------------------------------------------------------------------
     const FocusedObject& GetFocusedObject();
-    bool HasFocusedObject();
+    bool has_focused_object();
 
     CursorType GetCursorType();
-    int GetCursorFrame();  // Returns (int)CursorType for compatibility
+    int get_cursor_frame();  // Returns (int)CursorType for compatibility
 
-    // Map coordinates (for m_sMCX/m_sMCY compatibility)
-    short GetFocusedMapX();
-    short GetFocusedMapY();
-    const char* GetFocusedName();  // Returns pointer to internal name buffer
+    // Map coordinates (for m_mcx/m_mcy compatibility)
+    short get_focused_map_x();
+    short get_focused_map_y();
+    const char* get_focused_name();  // Returns pointer to internal name buffer
 
     // Ground item hover state
-    bool IsOverGroundItem();
+    bool is_over_ground_item();
 
     //-------------------------------------------------------------------------
     // Focus Highlight Data (for redrawing focused object)
     //-------------------------------------------------------------------------
     // Returns full appearance data needed to redraw focused object
     // with transparency highlight
-    bool GetFocusHighlightData(
+    bool get_focus_highlight_data(
         short& outScreenX, short& outScreenY,
         uint16_t& outObjectID,
         short& outOwnerType, char& outAction, char& outDir, char& outFrame,
@@ -166,42 +166,42 @@ namespace CursorTarget {
         short& outDataX, short& outDataY
     );
 
-    // Get focus status for relationship lookup
+    // get focus status for relationship lookup
     const hb::shared::entity::PlayerStatus& GetFocusStatus();
 
     //-------------------------------------------------------------------------
     // Utilities
     //-------------------------------------------------------------------------
-    bool PointInRect(int x, int y, const hb::shared::sprite::BoundRect& rect);
-    bool PointInCircle(int x, int y, int cx, int cy, int radius);
+    bool point_in_rect(int x, int y, const hb::shared::sprite::BoundRect& rect);
+    bool point_in_circle(int x, int y, int cx, int cy, int radius);
 
     //-------------------------------------------------------------------------
     // UI Selection State (for item/dialog dragging)
     //-------------------------------------------------------------------------
     // Set selection when user clicks/drags an item or dialog
-    void SetSelection(SelectedObjectType type, short objectID, short distX, short distY);
-    void ClearSelection();
+    void set_selection(SelectedObjectType type, short objectID, short distX, short distY);
+    void clear_selection();
 
     // Query selection state
     SelectedObjectType GetSelectedType();
-    short GetSelectedID();
-    short GetDragDistX();
-    short GetDragDistY();
-    bool HasSelection();
+    short get_selected_id();
+    short get_drag_dist_x();
+    short get_drag_dist_y();
+    bool has_selection();
 
     // Selection click tracking (for double-click detection)
-    void RecordSelectionClick(short x, short y, uint32_t time);
-    void ResetSelectionClickTime();
-    uint32_t GetSelectionClickTime();
-    short GetSelectionClickX();
-    short GetSelectionClickY();
+    void record_selection_click(short x, short y, uint32_t time);
+    void reset_selection_click_time();
+    uint32_t get_selection_click_time();
+    short get_selection_click_x();
+    short get_selection_click_y();
 
     // Previous position tracking (for drag delta)
-    void SetPrevPosition(short x, short y);
-    short GetPrevX();
-    short GetPrevY();
+    void set_prev_position(short x, short y);
+    short get_prev_x();
+    short get_prev_y();
 
     // Cursor interaction status (mouse button state machine)
-    void SetCursorStatus(CursorStatus status);
+    void set_cursor_status(CursorStatus status);
     CursorStatus GetCursorStatus();
 }

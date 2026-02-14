@@ -6,33 +6,33 @@
 #include <cstdlib>
 #include "Log.h"
 
-void CmdSetCmdLevel::Execute(CGame* pGame, const char* pArgs)
+void CmdSetCmdLevel::execute(CGame* game, const char* args)
 {
-	if (pArgs == nullptr || pArgs[0] == '\0')
+	if (args == nullptr || args[0] == '\0')
 	{
 		hb::logger::log("Usage: setcmdlevel <command> <level>");
-		if (!pGame->m_commandPermissions.empty())
+		if (!game->m_command_permissions.empty())
 		{
 			hb::logger::log("Current command permissions:");
-			for (const auto& pair : pGame->m_commandPermissions)
+			for (const auto& pair : game->m_command_permissions)
 			{
 				char buf[256];
-				if (pair.second.sDescription.empty())
-					std::snprintf(buf, sizeof(buf), "  /%s -> level %d", pair.first.c_str(), pair.second.iAdminLevel);
+				if (pair.second.description.empty())
+					std::snprintf(buf, sizeof(buf), "  /%s -> level %d", pair.first.c_str(), pair.second.admin_level);
 				else
-				hb::logger::log("/{} -> level {} ({})", pair.first.c_str(), pair.second.iAdminLevel, pair.second.sDescription.c_str());
+				hb::logger::log("/{} -> level {} ({})", pair.first.c_str(), pair.second.admin_level, pair.second.description.c_str());
 			}
 		}
 		return;
 	}
 
 	// Parse command name (first word)
-	char cCmdName[64] = {};
-	const char* p = pArgs;
+	char cmd_name[64] = {};
+	const char* p = args;
 	int ci = 0;
 	while (*p != '\0' && *p != ' ' && *p != '\t' && ci < 63)
 	{
-		cCmdName[ci++] = *p++;
+		cmd_name[ci++] = *p++;
 	}
 
 	// Skip whitespace
@@ -42,36 +42,36 @@ void CmdSetCmdLevel::Execute(CGame* pGame, const char* pArgs)
 	if (*p == '\0')
 	{
 		// Show current level for this command
-		auto it = pGame->m_commandPermissions.find(cCmdName);
-		if (it != pGame->m_commandPermissions.end())
+		auto it = game->m_command_permissions.find(cmd_name);
+		if (it != game->m_command_permissions.end())
 		{
-			hb::logger::log("Command '/{}' requires admin level {}", cCmdName, it->second.iAdminLevel);
+			hb::logger::log("Command '/{}' requires admin level {}", cmd_name, it->second.admin_level);
 		}
 		else
 		{
-			hb::logger::log("Command '/{}' not found in permissions table", cCmdName);
+			hb::logger::log("Command '/{}' not found in permissions table", cmd_name);
 		}
 		return;
 	}
 
-	int iLevel = std::atoi(p);
-	if (iLevel < 0)
+	int level = std::atoi(p);
+	if (level < 0)
 	{
 		hb::logger::log("Level must be >= 0.");
 		return;
 	}
 
 	// Update or create the permission entry, preserving existing description
-	auto it = pGame->m_commandPermissions.find(cCmdName);
-	if (it != pGame->m_commandPermissions.end())
+	auto it = game->m_command_permissions.find(cmd_name);
+	if (it != game->m_command_permissions.end())
 	{
-		it->second.iAdminLevel = iLevel;
+		it->second.admin_level = level;
 	}
 	else
 	{
 		CommandPermission perm;
-		perm.iAdminLevel = iLevel;
-		pGame->m_commandPermissions[cCmdName] = perm;
+		perm.admin_level = level;
+		game->m_command_permissions[cmd_name] = perm;
 	}
 
 	// Save to DB
@@ -79,9 +79,9 @@ void CmdSetCmdLevel::Execute(CGame* pGame, const char* pArgs)
 	std::string dbPath;
 	if (EnsureGameConfigDatabase(&configDb, dbPath, nullptr))
 	{
-		SaveCommandPermissions(configDb, pGame);
+		SaveCommandPermissions(configDb, game);
 		CloseGameConfigDatabase(configDb);
 	}
 
-	hb::logger::log("Command '/{}' now requires admin level {}", cCmdName, iLevel);
+	hb::logger::log("Command '/{}' now requires admin level {}", cmd_name, level);
 }

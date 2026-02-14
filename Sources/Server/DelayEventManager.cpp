@@ -14,59 +14,59 @@ using namespace hb::shared::action;
 using namespace hb::server::config;
 namespace sdelay = hb::server::delay_event;
 
-void DelayEventManager::InitArrays()
+void DelayEventManager::init_arrays()
 {
 	for (int i = 0; i < MaxDelayEvents; i++)
-		m_pDelayEventList[i] = 0;
+		m_delay_event_list[i] = 0;
 }
 
-void DelayEventManager::CleanupArrays()
+void DelayEventManager::cleanup_arrays()
 {
 	for (int i = 0; i < MaxDelayEvents; i++)
-		if (m_pDelayEventList[i] != 0) delete m_pDelayEventList[i];
+		if (m_delay_event_list[i] != 0) delete m_delay_event_list[i];
 }
 
-bool DelayEventManager::bRegisterDelayEvent(int iDelayType, int iEffectType, uint32_t dwLastTime, int iTargetH, char cTargetType, char cMapIndex, int dX, int dY, int iV1, int iV2, int iV3)
+bool DelayEventManager::register_delay_event(int delay_type, int effect_type, uint32_t last_time, int target_h, char target_type, char map_index, int dX, int dY, int v1, int v2, int v3)
 {
 
 	for(int i = 0; i < MaxDelayEvents; i++)
-		if (m_pDelayEventList[i] == 0) {
-			m_pDelayEventList[i] = new class CDelayEvent;
-			m_pDelayEventList[i]->m_iDelayType = iDelayType;
-			m_pDelayEventList[i]->m_iEffectType = iEffectType;
-			m_pDelayEventList[i]->m_cMapIndex = cMapIndex;
-			m_pDelayEventList[i]->m_dX = dX;
-			m_pDelayEventList[i]->m_dY = dY;
-			m_pDelayEventList[i]->m_iTargetH = iTargetH;
-			m_pDelayEventList[i]->m_cTargetType = cTargetType;
-			m_pDelayEventList[i]->m_iV1 = iV1;
-			m_pDelayEventList[i]->m_iV2 = iV2;
-			m_pDelayEventList[i]->m_iV3 = iV3;
-			m_pDelayEventList[i]->m_dwTriggerTime = dwLastTime;
+		if (m_delay_event_list[i] == 0) {
+			m_delay_event_list[i] = new class CDelayEvent;
+			m_delay_event_list[i]->m_delay_type = delay_type;
+			m_delay_event_list[i]->m_effect_type = effect_type;
+			m_delay_event_list[i]->m_map_index = map_index;
+			m_delay_event_list[i]->m_dx = dX;
+			m_delay_event_list[i]->m_dy = dY;
+			m_delay_event_list[i]->m_target_handle = target_h;
+			m_delay_event_list[i]->m_target_type = target_type;
+			m_delay_event_list[i]->m_v1 = v1;
+			m_delay_event_list[i]->m_v2 = v2;
+			m_delay_event_list[i]->m_v3 = v3;
+			m_delay_event_list[i]->m_trigger_time = last_time;
 			return true;
 		}
 	return false;
 }
 
-bool DelayEventManager::bRemoveFromDelayEventList(int iH, char cType, int iEffectType)
+bool DelayEventManager::remove_from_delay_event_list(int iH, char type, int effect_type)
 {
 
 	for(int i = 0; i < MaxDelayEvents; i++)
-		if (m_pDelayEventList[i] != 0) {
+		if (m_delay_event_list[i] != 0) {
 
-			if (iEffectType == 0) {
+			if (effect_type == 0) {
 				// Effect
-				if ((m_pDelayEventList[i]->m_iTargetH == iH) && (m_pDelayEventList[i]->m_cTargetType == cType)) {
-					delete m_pDelayEventList[i];
-					m_pDelayEventList[i] = 0;
+				if ((m_delay_event_list[i]->m_target_handle == iH) && (m_delay_event_list[i]->m_target_type == type)) {
+					delete m_delay_event_list[i];
+					m_delay_event_list[i] = 0;
 				}
 			}
 			else {
 				// Effect .
-				if ((m_pDelayEventList[i]->m_iTargetH == iH) && (m_pDelayEventList[i]->m_cTargetType == cType) &&
-					(m_pDelayEventList[i]->m_iEffectType == iEffectType)) {
-					delete m_pDelayEventList[i];
-					m_pDelayEventList[i] = 0;
+				if ((m_delay_event_list[i]->m_target_handle == iH) && (m_delay_event_list[i]->m_target_type == type) &&
+					(m_delay_event_list[i]->m_effect_type == effect_type)) {
+					delete m_delay_event_list[i];
+					m_delay_event_list[i] = 0;
 				}
 			}
 		}
@@ -74,62 +74,62 @@ bool DelayEventManager::bRemoveFromDelayEventList(int iH, char cType, int iEffec
 	return true;
 }
 
-void DelayEventManager::DelayEventProcessor()
+void DelayEventManager::delay_event_processor()
 {
-	int iSkillNum, iResult;
-	uint32_t dwTime = GameClock::GetTimeMS();
-	int iTemp;
+	int skill_num, result;
+	uint32_t time = GameClock::GetTimeMS();
+	int temp;
 
 	for(int i = 0; i < MaxDelayEvents; i++)
-		if ((m_pDelayEventList[i] != 0) && (m_pDelayEventList[i]->m_dwTriggerTime < dwTime)) {
+		if ((m_delay_event_list[i] != 0) && (m_delay_event_list[i]->m_trigger_time < time)) {
 
-			switch (m_pDelayEventList[i]->m_iDelayType) {
+			switch (m_delay_event_list[i]->m_delay_type) {
 
 			case sdelay::Type::AncientTablet:
-				if (m_pGame->m_pClientList[m_pDelayEventList[i]->m_iTargetH]->m_status.bSlateInvincible) {
-					iTemp = 1;
+				if (m_game->m_client_list[m_delay_event_list[i]->m_target_handle]->m_status.slate_invincible) {
+					temp = 1;
 				}
-				else if (m_pGame->m_pClientList[m_pDelayEventList[i]->m_iTargetH]->m_status.bSlateMana) {
-					iTemp = 3;
+				else if (m_game->m_client_list[m_delay_event_list[i]->m_target_handle]->m_status.slate_mana) {
+					temp = 3;
 				}
-				else if (m_pGame->m_pClientList[m_pDelayEventList[i]->m_iTargetH]->m_status.bSlateExp) {
-					iTemp = 4;
+				else if (m_game->m_client_list[m_delay_event_list[i]->m_target_handle]->m_status.slate_exp) {
+					temp = 4;
 				}
 
-				m_pGame->SendNotifyMsg(0, m_pDelayEventList[i]->m_iTargetH, Notify::SlateStatus, iTemp, 0, 0, 0);
-				m_pGame->m_pItemManager->SetSlateFlag(m_pDelayEventList[i]->m_iTargetH, iTemp, false);
+				m_game->send_notify_msg(0, m_delay_event_list[i]->m_target_handle, Notify::SlateStatus, temp, 0, 0, 0);
+				m_game->m_item_manager->set_slate_flag(m_delay_event_list[i]->m_target_handle, temp, false);
 				break;
 
 			case sdelay::Type::CalcMeteorStrikeEffect:
-				m_pGame->m_pWarManager->CalcMeteorStrikeEffectHandler(m_pDelayEventList[i]->m_cMapIndex);
+				m_game->m_war_manager->calc_meteor_strike_effect_handler(m_delay_event_list[i]->m_map_index);
 				break;
 
 			case sdelay::Type::DoMeteorStrikeDamage:
-				m_pGame->m_pWarManager->DoMeteorStrikeDamageHandler(m_pDelayEventList[i]->m_cMapIndex);
+				m_game->m_war_manager->do_meteor_strike_damage_handler(m_delay_event_list[i]->m_map_index);
 				break;
 
 			case sdelay::Type::MeteorStrike:
-				m_pGame->m_pWarManager->MeteorStrikeHandler(m_pDelayEventList[i]->m_cMapIndex);
+				m_game->m_war_manager->meteor_strike_handler(m_delay_event_list[i]->m_map_index);
 				break;
 
 			case sdelay::Type::UseItemSkill:
-				switch (m_pDelayEventList[i]->m_cTargetType) {
+				switch (m_delay_event_list[i]->m_target_type) {
 				case hb::shared::owner_class::Player:
-					iSkillNum = m_pDelayEventList[i]->m_iEffectType;
+					skill_num = m_delay_event_list[i]->m_effect_type;
 
-					if (m_pGame->m_pClientList[m_pDelayEventList[i]->m_iTargetH] == 0) break;
-					if (m_pGame->m_pClientList[m_pDelayEventList[i]->m_iTargetH]->m_bSkillUsingStatus[iSkillNum] == false) break;
+					if (m_game->m_client_list[m_delay_event_list[i]->m_target_handle] == 0) break;
+					if (m_game->m_client_list[m_delay_event_list[i]->m_target_handle]->m_skill_using_status[skill_num] == false) break;
 					// ID   v1.12
-					if (m_pGame->m_pClientList[m_pDelayEventList[i]->m_iTargetH]->m_iSkillUsingTimeID[iSkillNum] != m_pDelayEventList[i]->m_iV2) break;
+					if (m_game->m_client_list[m_delay_event_list[i]->m_target_handle]->m_skill_using_time_id[skill_num] != m_delay_event_list[i]->m_v2) break;
 
-					m_pGame->m_pClientList[m_pDelayEventList[i]->m_iTargetH]->m_bSkillUsingStatus[iSkillNum] = false;
-					m_pGame->m_pClientList[m_pDelayEventList[i]->m_iTargetH]->m_iSkillUsingTimeID[iSkillNum] = 0;
+					m_game->m_client_list[m_delay_event_list[i]->m_target_handle]->m_skill_using_status[skill_num] = false;
+					m_game->m_client_list[m_delay_event_list[i]->m_target_handle]->m_skill_using_time_id[skill_num] = 0;
 
 					// Skill    .
-					iResult = m_pGame->m_pItemManager->iCalculateUseSkillItemEffect(m_pDelayEventList[i]->m_iTargetH, m_pDelayEventList[i]->m_cTargetType,
-						m_pDelayEventList[i]->m_iV1, iSkillNum, m_pDelayEventList[i]->m_cMapIndex, m_pDelayEventList[i]->m_dX, m_pDelayEventList[i]->m_dY);
+					result = m_game->m_item_manager->calculate_use_skill_item_effect(m_delay_event_list[i]->m_target_handle, m_delay_event_list[i]->m_target_type,
+						m_delay_event_list[i]->m_v1, skill_num, m_delay_event_list[i]->m_map_index, m_delay_event_list[i]->m_dx, m_delay_event_list[i]->m_dy);
 
-					m_pGame->SendNotifyMsg(0, m_pDelayEventList[i]->m_iTargetH, Notify::SkillUsingEnd, iResult, 0, 0, 0);
+					m_game->send_notify_msg(0, m_delay_event_list[i]->m_target_handle, Notify::SkillUsingEnd, result, 0, 0, 0);
 					break;
 				}
 				break;
@@ -139,105 +139,105 @@ void DelayEventManager::DelayEventProcessor()
 
 			case sdelay::Type::MagicRelease:
 				// Removes the aura after time
-				switch (m_pDelayEventList[i]->m_cTargetType) {
+				switch (m_delay_event_list[i]->m_target_type) {
 				case hb::shared::owner_class::Player:
-					if (m_pGame->m_pClientList[m_pDelayEventList[i]->m_iTargetH] == 0) break;
+					if (m_game->m_client_list[m_delay_event_list[i]->m_target_handle] == 0) break;
 
-					m_pGame->SendNotifyMsg(0, m_pDelayEventList[i]->m_iTargetH, Notify::MagicEffectOff,
-						m_pDelayEventList[i]->m_iEffectType, m_pGame->m_pClientList[m_pDelayEventList[i]->m_iTargetH]->m_cMagicEffectStatus[m_pDelayEventList[i]->m_iEffectType], 0, 0);
+					m_game->send_notify_msg(0, m_delay_event_list[i]->m_target_handle, Notify::MagicEffectOff,
+						m_delay_event_list[i]->m_effect_type, m_game->m_client_list[m_delay_event_list[i]->m_target_handle]->m_magic_effect_status[m_delay_event_list[i]->m_effect_type], 0, 0);
 
-					m_pGame->m_pClientList[m_pDelayEventList[i]->m_iTargetH]->m_cMagicEffectStatus[m_pDelayEventList[i]->m_iEffectType] = 0;
+					m_game->m_client_list[m_delay_event_list[i]->m_target_handle]->m_magic_effect_status[m_delay_event_list[i]->m_effect_type] = 0;
 
 					// Inbitition casting
-					if (m_pDelayEventList[i]->m_iEffectType == hb::shared::magic::Inhibition)
-						m_pGame->m_pClientList[m_pDelayEventList[i]->m_iTargetH]->m_bInhibition = false;
+					if (m_delay_event_list[i]->m_effect_type == hb::shared::magic::Inhibition)
+						m_game->m_client_list[m_delay_event_list[i]->m_target_handle]->m_inhibition = false;
 
 					// Invisibility
-					if (m_pDelayEventList[i]->m_iEffectType == hb::shared::magic::Invisibility)
-						m_pGame->m_pStatusEffectManager->SetInvisibilityFlag(m_pDelayEventList[i]->m_iTargetH, hb::shared::owner_class::Player, false);
+					if (m_delay_event_list[i]->m_effect_type == hb::shared::magic::Invisibility)
+						m_game->m_status_effect_manager->set_invisibility_flag(m_delay_event_list[i]->m_target_handle, hb::shared::owner_class::Player, false);
 
 					// Berserk
-					if (m_pDelayEventList[i]->m_iEffectType == hb::shared::magic::Berserk)
-						m_pGame->m_pStatusEffectManager->SetBerserkFlag(m_pDelayEventList[i]->m_iTargetH, hb::shared::owner_class::Player, false);
+					if (m_delay_event_list[i]->m_effect_type == hb::shared::magic::Berserk)
+						m_game->m_status_effect_manager->set_berserk_flag(m_delay_event_list[i]->m_target_handle, hb::shared::owner_class::Player, false);
 
 					// Haste
-					if (m_pDelayEventList[i]->m_iEffectType == hb::shared::magic::Haste)
-						m_pGame->m_pStatusEffectManager->SetHasteFlag(m_pDelayEventList[i]->m_iTargetH, hb::shared::owner_class::Player, false);
+					if (m_delay_event_list[i]->m_effect_type == hb::shared::magic::Haste)
+						m_game->m_status_effect_manager->set_haste_flag(m_delay_event_list[i]->m_target_handle, hb::shared::owner_class::Player, false);
 
 					// Confusion
-					if (m_pDelayEventList[i]->m_iEffectType == hb::shared::magic::Confuse)
-						switch (m_pDelayEventList[i]->m_iV1) {
-						case 3: m_pGame->m_pStatusEffectManager->SetIllusionFlag(m_pDelayEventList[i]->m_iTargetH, hb::shared::owner_class::Player, false); break;
-						case 4: m_pGame->m_pStatusEffectManager->SetIllusionMovementFlag(m_pDelayEventList[i]->m_iTargetH, hb::shared::owner_class::Player, false); break;
+					if (m_delay_event_list[i]->m_effect_type == hb::shared::magic::Confuse)
+						switch (m_delay_event_list[i]->m_v1) {
+						case 3: m_game->m_status_effect_manager->set_illusion_flag(m_delay_event_list[i]->m_target_handle, hb::shared::owner_class::Player, false); break;
+						case 4: m_game->m_status_effect_manager->set_illusion_movement_flag(m_delay_event_list[i]->m_target_handle, hb::shared::owner_class::Player, false); break;
 						}
 
 					// Protection Magic
-					if (m_pDelayEventList[i]->m_iEffectType == hb::shared::magic::Protect) {
-						switch (m_pDelayEventList[i]->m_iV1) {
+					if (m_delay_event_list[i]->m_effect_type == hb::shared::magic::Protect) {
+						switch (m_delay_event_list[i]->m_v1) {
 						case 1:
-							m_pGame->m_pStatusEffectManager->SetProtectionFromArrowFlag(m_pDelayEventList[i]->m_iTargetH, hb::shared::owner_class::Player, false);
+							m_game->m_status_effect_manager->set_protection_from_arrow_flag(m_delay_event_list[i]->m_target_handle, hb::shared::owner_class::Player, false);
 							break;
 						case 2:
 						case 5:
-							m_pGame->m_pStatusEffectManager->SetMagicProtectionFlag(m_pDelayEventList[i]->m_iTargetH, hb::shared::owner_class::Player, false);
+							m_game->m_status_effect_manager->set_magic_protection_flag(m_delay_event_list[i]->m_target_handle, hb::shared::owner_class::Player, false);
 							break;
 						case 3:
 						case 4:
-							m_pGame->m_pStatusEffectManager->SetDefenseShieldFlag(m_pDelayEventList[i]->m_iTargetH, hb::shared::owner_class::Player, false);
+							m_game->m_status_effect_manager->set_defense_shield_flag(m_delay_event_list[i]->m_target_handle, hb::shared::owner_class::Player, false);
 							break;
 						}
 					}
 
 
 					// polymorph
-					if (m_pDelayEventList[i]->m_iEffectType == hb::shared::magic::Polymorph) {
-						m_pGame->m_pClientList[m_pDelayEventList[i]->m_iTargetH]->m_sType = m_pGame->m_pClientList[m_pDelayEventList[i]->m_iTargetH]->m_sOriginalType;
-						m_pGame->SendEventToNearClient_TypeA(m_pDelayEventList[i]->m_iTargetH, hb::shared::owner_class::Player, MsgId::EventMotion, Type::NullAction, 0, 0, 0);
+					if (m_delay_event_list[i]->m_effect_type == hb::shared::magic::Polymorph) {
+						m_game->m_client_list[m_delay_event_list[i]->m_target_handle]->m_type = m_game->m_client_list[m_delay_event_list[i]->m_target_handle]->m_original_type;
+						m_game->send_event_to_near_client_type_a(m_delay_event_list[i]->m_target_handle, hb::shared::owner_class::Player, MsgId::EventMotion, Type::NullAction, 0, 0, 0);
 					}
 
-					if (m_pDelayEventList[i]->m_iEffectType == hb::shared::magic::Ice)
-						m_pGame->m_pStatusEffectManager->SetIceFlag(m_pDelayEventList[i]->m_iTargetH, hb::shared::owner_class::Player, false);
+					if (m_delay_event_list[i]->m_effect_type == hb::shared::magic::Ice)
+						m_game->m_status_effect_manager->set_ice_flag(m_delay_event_list[i]->m_target_handle, hb::shared::owner_class::Player, false);
 					break;
 
 				case hb::shared::owner_class::Npc:
-					if (m_pGame->m_pNpcList[m_pDelayEventList[i]->m_iTargetH] == 0) break;
+					if (m_game->m_npc_list[m_delay_event_list[i]->m_target_handle] == 0) break;
 
-					m_pGame->m_pNpcList[m_pDelayEventList[i]->m_iTargetH]->m_cMagicEffectStatus[m_pDelayEventList[i]->m_iEffectType] = 0;
+					m_game->m_npc_list[m_delay_event_list[i]->m_target_handle]->m_magic_effect_status[m_delay_event_list[i]->m_effect_type] = 0;
 
 					// Invisibility
-					if (m_pDelayEventList[i]->m_iEffectType == hb::shared::magic::Invisibility)
-						m_pGame->m_pStatusEffectManager->SetInvisibilityFlag(m_pDelayEventList[i]->m_iTargetH, hb::shared::owner_class::Npc, false);
+					if (m_delay_event_list[i]->m_effect_type == hb::shared::magic::Invisibility)
+						m_game->m_status_effect_manager->set_invisibility_flag(m_delay_event_list[i]->m_target_handle, hb::shared::owner_class::Npc, false);
 
 					// Berserk
-					if (m_pDelayEventList[i]->m_iEffectType == hb::shared::magic::Berserk)
-						m_pGame->m_pStatusEffectManager->SetBerserkFlag(m_pDelayEventList[i]->m_iTargetH, hb::shared::owner_class::Npc, false);
+					if (m_delay_event_list[i]->m_effect_type == hb::shared::magic::Berserk)
+						m_game->m_status_effect_manager->set_berserk_flag(m_delay_event_list[i]->m_target_handle, hb::shared::owner_class::Npc, false);
 
 					// polymorph
-					if (m_pDelayEventList[i]->m_iEffectType == hb::shared::magic::Polymorph) {
-						m_pGame->m_pNpcList[m_pDelayEventList[i]->m_iTargetH]->m_sType = m_pGame->m_pNpcList[m_pDelayEventList[i]->m_iTargetH]->m_sOriginalType;
-						m_pGame->SendEventToNearClient_TypeA(m_pDelayEventList[i]->m_iTargetH, hb::shared::owner_class::Npc, MsgId::EventMotion, Type::NullAction, 0, 0, 0);
+					if (m_delay_event_list[i]->m_effect_type == hb::shared::magic::Polymorph) {
+						m_game->m_npc_list[m_delay_event_list[i]->m_target_handle]->m_type = m_game->m_npc_list[m_delay_event_list[i]->m_target_handle]->m_original_type;
+						m_game->send_event_to_near_client_type_a(m_delay_event_list[i]->m_target_handle, hb::shared::owner_class::Npc, MsgId::EventMotion, Type::NullAction, 0, 0, 0);
 					}
 
-					if (m_pDelayEventList[i]->m_iEffectType == hb::shared::magic::Ice)
-						m_pGame->m_pStatusEffectManager->SetIceFlag(m_pDelayEventList[i]->m_iTargetH, hb::shared::owner_class::Npc, false);
+					if (m_delay_event_list[i]->m_effect_type == hb::shared::magic::Ice)
+						m_game->m_status_effect_manager->set_ice_flag(m_delay_event_list[i]->m_target_handle, hb::shared::owner_class::Npc, false);
 
 					// Illusion
-					if (m_pDelayEventList[i]->m_iEffectType == hb::shared::magic::Confuse)
-						m_pGame->m_pStatusEffectManager->SetIllusionFlag(m_pDelayEventList[i]->m_iTargetH, hb::shared::owner_class::Npc, false);
+					if (m_delay_event_list[i]->m_effect_type == hb::shared::magic::Confuse)
+						m_game->m_status_effect_manager->set_illusion_flag(m_delay_event_list[i]->m_target_handle, hb::shared::owner_class::Npc, false);
 
 					// Protection Magic
-					if (m_pDelayEventList[i]->m_iEffectType == hb::shared::magic::Protect) {
-						switch (m_pDelayEventList[i]->m_iV1) {
+					if (m_delay_event_list[i]->m_effect_type == hb::shared::magic::Protect) {
+						switch (m_delay_event_list[i]->m_v1) {
 						case 1:
-							m_pGame->m_pStatusEffectManager->SetProtectionFromArrowFlag(m_pDelayEventList[i]->m_iTargetH, hb::shared::owner_class::Npc, false);
+							m_game->m_status_effect_manager->set_protection_from_arrow_flag(m_delay_event_list[i]->m_target_handle, hb::shared::owner_class::Npc, false);
 							break;
 						case 2:
 						case 5:
-							m_pGame->m_pStatusEffectManager->SetMagicProtectionFlag(m_pDelayEventList[i]->m_iTargetH, hb::shared::owner_class::Npc, false);
+							m_game->m_status_effect_manager->set_magic_protection_flag(m_delay_event_list[i]->m_target_handle, hb::shared::owner_class::Npc, false);
 							break;
 						case 3:
 						case 4:
-							m_pGame->m_pStatusEffectManager->SetDefenseShieldFlag(m_pDelayEventList[i]->m_iTargetH, hb::shared::owner_class::Npc, false);
+							m_game->m_status_effect_manager->set_defense_shield_flag(m_delay_event_list[i]->m_target_handle, hb::shared::owner_class::Npc, false);
 							break;
 						}
 					}
@@ -247,12 +247,12 @@ void DelayEventManager::DelayEventProcessor()
 				break;
 			}
 
-			delete m_pDelayEventList[i];
-			m_pDelayEventList[i] = 0;
+			delete m_delay_event_list[i];
+			m_delay_event_list[i] = 0;
 		}
 }
 
-void DelayEventManager::DelayEventProcess()
+void DelayEventManager::delay_event_process()
 {
 
 }

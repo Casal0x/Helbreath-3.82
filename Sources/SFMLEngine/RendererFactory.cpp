@@ -18,9 +18,9 @@
 namespace hb::shared::render {
 
 // Static member initialization (matches RendererFactory.h class declarations)
-IRenderer* Renderer::s_pRenderer = nullptr;
+IRenderer* Renderer::s_renderer = nullptr;
 RendererType Renderer::s_type = RendererType::SFML;
-IWindow* Window::s_pWindow = nullptr;
+IWindow* Window::s_window = nullptr;
 
 // Local static for sprite factory
 static SFMLSpriteFactory* s_pSpriteFactory = nullptr;
@@ -57,8 +57,8 @@ hb::shared::sprite::ISpriteFactory* CreateSpriteFactory(IRenderer* renderer)
         return nullptr;
 
     // Create SFML sprite factory with the renderer - uses PNG sprites
-    SFMLRenderer* pSFMLRenderer = static_cast<SFMLRenderer*>(renderer);
-    SFMLSpriteFactory* factory = new SFMLSpriteFactory(pSFMLRenderer);
+    SFMLRenderer* sfml_renderer = static_cast<SFMLRenderer*>(renderer);
+    SFMLSpriteFactory* factory = new SFMLSpriteFactory(sfml_renderer);
     factory->SetSpritePath("sprites_png");
     return factory;
 }
@@ -72,7 +72,7 @@ void DestroySpriteFactory(hb::shared::sprite::ISpriteFactory* factory)
 bool Renderer::Set(RendererType type)
 {
     // Clean up existing renderer
-    if (s_pRenderer)
+    if (s_renderer)
     {
         Destroy();
     }
@@ -81,25 +81,25 @@ bool Renderer::Set(RendererType type)
 
     if (type == RendererType::SFML)
     {
-        s_pRenderer = CreateRenderer();
-        if (s_pRenderer)
+        s_renderer = CreateRenderer();
+        if (s_renderer)
         {
-            SFMLRenderer* sfmlRenderer = static_cast<SFMLRenderer*>(s_pRenderer);
+            SFMLRenderer* sfmlRenderer = static_cast<SFMLRenderer*>(s_renderer);
 
             // Create and set sprite factory - SFML uses PNG sprites
             s_pSpriteFactory = new SFMLSpriteFactory(sfmlRenderer);
             s_pSpriteFactory->SetSpritePath("sprites_png");
-            hb::shared::sprite::Sprites::SetFactory(s_pSpriteFactory);
+            hb::shared::sprite::Sprites::set_factory(s_pSpriteFactory);
 
             // Create bitmap font factory
             s_pBitmapFontFactory = new hb::shared::text::SFMLBitmapFontFactory();
             hb::shared::text::SetBitmapFontFactory(s_pBitmapFontFactory);
 
             // If window already exists (created before renderer), link them now
-            IWindow* pWindow = Window::get();
-            if (pWindow)
+            IWindow* window = Window::get();
+            if (window)
             {
-                SFMLWindow* sfmlWindow = static_cast<SFMLWindow*>(pWindow);
+                SFMLWindow* sfmlWindow = static_cast<SFMLWindow*>(window);
                 sfmlRenderer->SetRenderWindow(sfmlWindow->GetRenderWindow());
 
                 // Create text renderer with back buffer (font loaded internally with fallback)
@@ -107,15 +107,15 @@ bool Renderer::Set(RendererType type)
                 hb::shared::text::SetTextRenderer(s_pTextRenderer);
             }
         }
-        return s_pRenderer != nullptr;
+        return s_renderer != nullptr;
     }
 
     return false;
 }
 
-IRenderer* Renderer::Get()
+IRenderer* Renderer::get()
 {
-    return s_pRenderer;
+    return s_renderer;
 }
 
 void Renderer::Destroy()
@@ -139,21 +139,21 @@ void Renderer::Destroy()
     // Destroy sprite factory
     if (s_pSpriteFactory)
     {
-        hb::shared::sprite::Sprites::SetFactory(nullptr);
+        hb::shared::sprite::Sprites::set_factory(nullptr);
         delete s_pSpriteFactory;
         s_pSpriteFactory = nullptr;
     }
 
-    if (s_pRenderer)
+    if (s_renderer)
     {
-        DestroyRenderer(s_pRenderer);
-        s_pRenderer = nullptr;
+        DestroyRenderer(s_renderer);
+        s_renderer = nullptr;
     }
 }
 
 void* Renderer::GetNative()
 {
-    return s_pRenderer;
+    return s_renderer;
 }
 
 RendererType Renderer::GetType()
@@ -164,27 +164,27 @@ RendererType Renderer::GetType()
 // Window class static methods
 IWindow* Window::create()
 {
-    if (s_pWindow)
+    if (s_window)
     {
         destroy();
     }
 
-    s_pWindow = CreateGameWindow();
+    s_window = CreateGameWindow();
     // Returns the allocated-but-not-realized window.
     // Caller configures via set_title/set_size/etc., then calls realize().
-    return s_pWindow;
+    return s_window;
 }
 
 bool Window::realize()
 {
-    if (!s_pWindow)
+    if (!s_window)
         return false;
 
     // Create OS window from staged params
-    if (!s_pWindow->realize())
+    if (!s_window->realize())
     {
-        delete s_pWindow;
-        s_pWindow = nullptr;
+        delete s_window;
+        s_window = nullptr;
         return false;
     }
 
@@ -192,17 +192,17 @@ bool Window::realize()
     hb::shared::input::create();
     if (hb::shared::input::get())
     {
-        SFMLInput* pInput = static_cast<SFMLInput*>(hb::shared::input::get());
-        pInput->Initialize(s_pWindow->get_handle());
-        pInput->SetRenderWindow(static_cast<SFMLWindow*>(s_pWindow)->GetRenderWindow());
+        SFMLInput* input = static_cast<SFMLInput*>(hb::shared::input::get());
+        input->Initialize(s_window->get_handle());
+        input->SetRenderWindow(static_cast<SFMLWindow*>(s_window)->GetRenderWindow());
     }
 
     // Link the SFML window's render window to the renderer (if renderer exists already)
-    IRenderer* pRenderer = Renderer::Get();
-    if (pRenderer)
+    IRenderer* renderer = Renderer::get();
+    if (renderer)
     {
-        SFMLWindow* sfmlWindow = static_cast<SFMLWindow*>(s_pWindow);
-        SFMLRenderer* sfmlRenderer = static_cast<SFMLRenderer*>(pRenderer);
+        SFMLWindow* sfmlWindow = static_cast<SFMLWindow*>(s_window);
+        SFMLRenderer* sfmlRenderer = static_cast<SFMLRenderer*>(renderer);
         sfmlRenderer->SetRenderWindow(sfmlWindow->GetRenderWindow());
 
         // Create text renderer now that we have back buffer
@@ -218,7 +218,7 @@ bool Window::realize()
 
 IWindow* Window::get()
 {
-    return s_pWindow;
+    return s_window;
 }
 
 void Window::destroy()
@@ -226,60 +226,60 @@ void Window::destroy()
     // Destroy input system first
     hb::shared::input::destroy();
 
-    if (s_pWindow)
+    if (s_window)
     {
         // Unlink from renderer
-        IRenderer* pRenderer = Renderer::Get();
-        if (pRenderer)
+        IRenderer* renderer = Renderer::get();
+        if (renderer)
         {
-            SFMLRenderer* sfmlRenderer = static_cast<SFMLRenderer*>(pRenderer);
+            SFMLRenderer* sfmlRenderer = static_cast<SFMLRenderer*>(renderer);
             sfmlRenderer->SetRenderWindow(nullptr);
         }
 
-        DestroyGameWindow(s_pWindow);
-        s_pWindow = nullptr;
+        DestroyGameWindow(s_window);
+        s_window = nullptr;
     }
 }
 
 hb::shared::types::NativeWindowHandle Window::get_handle()
 {
-    return s_pWindow ? s_pWindow->get_handle() : nullptr;
+    return s_window ? s_window->get_handle() : nullptr;
 }
 
 bool Window::is_active()
 {
-    return s_pWindow ? s_pWindow->is_active() : false;
+    return s_window ? s_window->is_active() : false;
 }
 
 void Window::close()
 {
-    if (s_pWindow)
+    if (s_window)
     {
-        s_pWindow->close();
+        s_window->close();
     }
 }
 
 void Window::set_size(int width, int height, bool center)
 {
-    if (s_pWindow)
+    if (s_window)
     {
-        s_pWindow->set_size(width, height, center);
+        s_window->set_size(width, height, center);
     }
 }
 
 void Window::set_borderless(bool borderless)
 {
-    if (s_pWindow)
+    if (s_window)
     {
-        s_pWindow->set_borderless(borderless);
+        s_window->set_borderless(borderless);
     }
 }
 
 void Window::show_error(const char* title, const char* message)
 {
-    if (s_pWindow)
+    if (s_window)
     {
-        s_pWindow->show_message_box(title, message);
+        s_window->show_message_box(title, message);
     }
     else
     {
@@ -292,6 +292,6 @@ void Window::show_error(const char* title, const char* message)
 }
 
 // Sprite factory static storage (defined in ISpriteFactory.cpp in Shared)
-// The implementation uses hb::shared::sprite::Sprites::SetFactory/GetFactory
+// The implementation uses hb::shared::sprite::Sprites::set_factory/get_factory
 
 } // namespace hb::shared::render

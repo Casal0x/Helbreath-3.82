@@ -8,7 +8,7 @@ namespace Type
 {
 	enum : int
 	{
-		Stop       = 0,
+		stop       = 0,
 		Move       = 1,
 		Run        = 2,
 		Attack     = 3,

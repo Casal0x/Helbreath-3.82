@@ -9,7 +9,7 @@
 
 // Internal state (static, not exposed)
 namespace {
-    // Mouse position (cached from hb::shared::input:: at BeginFrame)
+    // Mouse position (cached from hb::shared::input:: at begin_frame)
     int s_mouseX = 0;
     int s_mouseY = 0;
 
@@ -46,34 +46,34 @@ namespace {
 // Frame Lifecycle
 //-----------------------------------------------------------------------------
 
-void CursorTarget::BeginFrame()
+void CursorTarget::begin_frame()
 {
     // Cache mouse position
     s_mouseX = hb::shared::input::get_mouse_x();
     s_mouseY = hb::shared::input::get_mouse_y();
 
-    // Reset focus state
+    // reset focus state
     s_focusedObject = FocusedObject{};
     s_bestHitY = -99999;
 
-    // Reset ground item state
+    // reset ground item state
     s_overGroundItem = false;
 
-    // Reset cursor (will be determined in EndFrame)
+    // reset cursor (will be determined in end_frame)
     s_cursorType = CursorType::Arrow;
 }
 
-void CursorTarget::EndFrame(EntityRelationship relationship, int commandType, bool commandAvailable, bool isGetPointingMode)
+void CursorTarget::end_frame(EntityRelationship relationship, int commandType, bool commandAvailable, bool get_pointing_mode)
 {
     auto now = std::chrono::duration_cast<std::chrono::milliseconds>(
         std::chrono::steady_clock::now().time_since_epoch()).count();
 
     // Check pointing mode FIRST - spell/item targeting takes priority over ground items
-    if (isGetPointingMode) {
+    if (get_pointing_mode) {
         // Spell targeting mode (100-199) - takes priority over everything
         if (commandType >= 100 && commandType < 200) {
             if (commandAvailable) {
-                if (s_focusedObject.valid && IsHostile(relationship))
+                if (s_focusedObject.m_valid && IsHostile(relationship))
                     s_cursorType = CursorType::SpellHostile;
                 else
                     s_cursorType = CursorType::SpellFriendly;
@@ -103,7 +103,7 @@ void CursorTarget::EndFrame(EntityRelationship relationship, int commandType, bo
     }
 
     // Normal mode - show target cursor based on focus
-    if (s_focusedObject.valid) {
+    if (s_focusedObject.m_valid) {
         // Holding Control treats neutral targets as hostile (for force-attack)
         if (IsHostile(relationship) || hb::shared::input::is_ctrl_down())
             s_cursorType = CursorType::TargetHostile;
@@ -120,7 +120,7 @@ void CursorTarget::EndFrame(EntityRelationship relationship, int commandType, bo
 // Object Testing
 //-----------------------------------------------------------------------------
 
-void CursorTarget::TestObject(const hb::shared::sprite::BoundRect& bounds, const TargetObjectInfo& info, int screenY, int maxScreenY)
+void CursorTarget::test_object(const hb::shared::sprite::BoundRect& bounds, const TargetObjectInfo& info, int screenY, int maxScreenY)
 {
     // Skip invalid bounds
     if (bounds.top == -1) return;
@@ -138,41 +138,41 @@ void CursorTarget::TestObject(const hb::shared::sprite::BoundRect& bounds, const
         s_bestHitY = screenY;
 
         // Copy info to focused object
-        s_focusedObject.valid = true;
-        s_focusedObject.objectID = info.objectID;
-        s_focusedObject.mapX = info.mapX;
-        s_focusedObject.mapY = info.mapY;
-        s_focusedObject.screenX = info.screenX;
-        s_focusedObject.screenY = info.screenY;
-        s_focusedObject.dataX = info.dataX;
-        s_focusedObject.dataY = info.dataY;
-        s_focusedObject.ownerType = info.ownerType;
-        s_focusedObject.type = info.type;
-        s_focusedObject.action = info.action;
-        s_focusedObject.direction = info.direction;
-        s_focusedObject.frame = info.frame;
-        s_focusedObject.appearance = info.appearance;
-        s_focusedObject.status = info.status;
+        s_focusedObject.m_valid = true;
+        s_focusedObject.m_object_id = info.m_object_id;
+        s_focusedObject.m_map_x = info.m_map_x;
+        s_focusedObject.m_map_y = info.m_map_y;
+        s_focusedObject.m_screen_x = info.m_screen_x;
+        s_focusedObject.m_screen_y = info.m_screen_y;
+        s_focusedObject.m_data_x = info.m_data_x;
+        s_focusedObject.m_data_y = info.m_data_y;
+        s_focusedObject.m_owner_type = info.m_owner_type;
+        s_focusedObject.m_type = info.m_type;
+        s_focusedObject.m_action = info.m_action;
+        s_focusedObject.m_direction = info.m_direction;
+        s_focusedObject.m_frame = info.m_frame;
+        s_focusedObject.m_appearance = info.m_appearance;
+        s_focusedObject.m_status = info.m_status;
 
         // Copy name
-        if (info.name) {
-            s_focusedObject.name = info.name;
+        if (info.m_name) {
+            s_focusedObject.m_name = info.m_name;
         }
     }
 }
 
-void CursorTarget::TestGroundItem(int screenX, int screenY, int maxScreenY)
+void CursorTarget::test_ground_item(int screenX, int screenY, int maxScreenY)
 {
     // Skip if mouse is below the valid targeting area
     if (s_mouseY > maxScreenY) return;
 
     // Check circular proximity (13px radius)
-    if (PointInCircle(s_mouseX, s_mouseY, screenX, screenY, 13)) {
+    if (point_in_circle(s_mouseX, s_mouseY, screenX, screenY, 13)) {
         s_overGroundItem = true;
     }
 }
 
-void CursorTarget::TestDynamicObject(const hb::shared::sprite::BoundRect& bounds, short mapX, short mapY, int maxScreenY)
+void CursorTarget::test_dynamic_object(const hb::shared::sprite::BoundRect& bounds, short mapX, short mapY, int maxScreenY)
 {
     // Skip invalid bounds
     if (bounds.top == -1) return;
@@ -185,11 +185,11 @@ void CursorTarget::TestDynamicObject(const hb::shared::sprite::BoundRect& bounds
         s_mouseY > bounds.top && s_mouseY < bounds.bottom) {
 
         // Dynamic objects (minerals) set focus without full object info
-        s_focusedObject.valid = true;
-        s_focusedObject.mapX = mapX;
-        s_focusedObject.mapY = mapY;
-        s_focusedObject.type = FocusedObjectType::DynamicObject;
-        s_focusedObject.status.Clear();
+        s_focusedObject.m_valid = true;
+        s_focusedObject.m_map_x = mapX;
+        s_focusedObject.m_map_y = mapY;
+        s_focusedObject.m_type = FocusedObjectType::DynamicObject;
+        s_focusedObject.m_status.clear();
     }
 }
 
@@ -202,9 +202,9 @@ const FocusedObject& CursorTarget::GetFocusedObject()
     return s_focusedObject;
 }
 
-bool CursorTarget::HasFocusedObject()
+bool CursorTarget::has_focused_object()
 {
-    return s_focusedObject.valid;
+    return s_focusedObject.m_valid;
 }
 
 CursorType CursorTarget::GetCursorType()
@@ -212,62 +212,62 @@ CursorType CursorTarget::GetCursorType()
     return s_cursorType;
 }
 
-int CursorTarget::GetCursorFrame()
+int CursorTarget::get_cursor_frame()
 {
     return static_cast<int>(s_cursorType);
 }
 
-short CursorTarget::GetFocusedMapX()
+short CursorTarget::get_focused_map_x()
 {
-    return s_focusedObject.valid ? s_focusedObject.mapX : 0;
+    return s_focusedObject.m_valid ? s_focusedObject.m_map_x : 0;
 }
 
-short CursorTarget::GetFocusedMapY()
+short CursorTarget::get_focused_map_y()
 {
-    return s_focusedObject.valid ? s_focusedObject.mapY : 0;
+    return s_focusedObject.m_valid ? s_focusedObject.m_map_y : 0;
 }
 
-const char* CursorTarget::GetFocusedName()
+const char* CursorTarget::get_focused_name()
 {
-    return s_focusedObject.name.c_str();
+    return s_focusedObject.m_name.c_str();
 }
 
-bool CursorTarget::IsOverGroundItem()
+bool CursorTarget::is_over_ground_item()
 {
     return s_overGroundItem;
 }
 
 const hb::shared::entity::PlayerStatus& CursorTarget::GetFocusStatus()
 {
-    return s_focusedObject.status;
+    return s_focusedObject.m_status;
 }
 
 //-----------------------------------------------------------------------------
 // Focus Highlight Data
 //-----------------------------------------------------------------------------
 
-bool CursorTarget::GetFocusHighlightData(
+bool CursorTarget::get_focus_highlight_data(
     short& outScreenX, short& outScreenY,
     uint16_t& outObjectID,
     short& outOwnerType, char& outAction, char& outDir, char& outFrame,
     hb::shared::entity::PlayerAppearance& outAppearance, hb::shared::entity::PlayerStatus& outStatus,
     short& outDataX, short& outDataY)
 {
-    if (!s_focusedObject.valid) {
+    if (!s_focusedObject.m_valid) {
         return false;
     }
 
-    outScreenX = s_focusedObject.screenX;
-    outScreenY = s_focusedObject.screenY;
-    outObjectID = s_focusedObject.objectID;
-    outOwnerType = s_focusedObject.ownerType;
-    outAction = s_focusedObject.action;
-    outDir = s_focusedObject.direction;
-    outFrame = s_focusedObject.frame;
-    outAppearance = s_focusedObject.appearance;
-    outStatus = s_focusedObject.status;
-    outDataX = s_focusedObject.dataX;
-    outDataY = s_focusedObject.dataY;
+    outScreenX = s_focusedObject.m_screen_x;
+    outScreenY = s_focusedObject.m_screen_y;
+    outObjectID = s_focusedObject.m_object_id;
+    outOwnerType = s_focusedObject.m_owner_type;
+    outAction = s_focusedObject.m_action;
+    outDir = s_focusedObject.m_direction;
+    outFrame = s_focusedObject.m_frame;
+    outAppearance = s_focusedObject.m_appearance;
+    outStatus = s_focusedObject.m_status;
+    outDataX = s_focusedObject.m_data_x;
+    outDataY = s_focusedObject.m_data_y;
 
     return true;
 }
@@ -276,13 +276,13 @@ bool CursorTarget::GetFocusHighlightData(
 // Utilities
 //-----------------------------------------------------------------------------
 
-bool CursorTarget::PointInRect(int x, int y, const hb::shared::sprite::BoundRect& rect)
+bool CursorTarget::point_in_rect(int x, int y, const hb::shared::sprite::BoundRect& rect)
 {
     return x >= rect.left && x < rect.right &&
            y >= rect.top && y < rect.bottom;
 }
 
-bool CursorTarget::PointInCircle(int x, int y, int cx, int cy, int radius)
+bool CursorTarget::point_in_circle(int x, int y, int cx, int cy, int radius)
 {
     int dx = x - cx;
     int dy = y - cy;
@@ -293,7 +293,7 @@ bool CursorTarget::PointInCircle(int x, int y, int cx, int cy, int radius)
 // UI Selection State
 //-----------------------------------------------------------------------------
 
-void CursorTarget::SetSelection(SelectedObjectType type, short objectID, short distX, short distY)
+void CursorTarget::set_selection(SelectedObjectType type, short objectID, short distX, short distY)
 {
     s_selectedType = type;
     s_selectedID = objectID;
@@ -301,7 +301,7 @@ void CursorTarget::SetSelection(SelectedObjectType type, short objectID, short d
     s_dragDistY = distY;
 }
 
-void CursorTarget::ClearSelection()
+void CursorTarget::clear_selection()
 {
     s_selectedType = SelectedObjectType::None;
     s_selectedID = 0;
@@ -314,65 +314,65 @@ SelectedObjectType CursorTarget::GetSelectedType()
     return s_selectedType;
 }
 
-short CursorTarget::GetSelectedID()
+short CursorTarget::get_selected_id()
 {
     return s_selectedID;
 }
 
-short CursorTarget::GetDragDistX()
+short CursorTarget::get_drag_dist_x()
 {
     return s_dragDistX;
 }
 
-short CursorTarget::GetDragDistY()
+short CursorTarget::get_drag_dist_y()
 {
     return s_dragDistY;
 }
 
-bool CursorTarget::HasSelection()
+bool CursorTarget::has_selection()
 {
     return s_selectedType != SelectedObjectType::None;
 }
 
-void CursorTarget::RecordSelectionClick(short x, short y, uint32_t time)
+void CursorTarget::record_selection_click(short x, short y, uint32_t time)
 {
     s_selectClickTime = time;
     s_clickX = x;
     s_clickY = y;
 }
 
-void CursorTarget::ResetSelectionClickTime()
+void CursorTarget::reset_selection_click_time()
 {
     s_selectClickTime = 0;
 }
 
-uint32_t CursorTarget::GetSelectionClickTime()
+uint32_t CursorTarget::get_selection_click_time()
 {
     return s_selectClickTime;
 }
 
-short CursorTarget::GetSelectionClickX()
+short CursorTarget::get_selection_click_x()
 {
     return s_clickX;
 }
 
-short CursorTarget::GetSelectionClickY()
+short CursorTarget::get_selection_click_y()
 {
     return s_clickY;
 }
 
-void CursorTarget::SetPrevPosition(short x, short y)
+void CursorTarget::set_prev_position(short x, short y)
 {
     s_prevX = x;
     s_prevY = y;
 }
 
-short CursorTarget::GetPrevX()
+short CursorTarget::get_prev_x()
 {
     return s_prevX;
 }
 
-short CursorTarget::GetPrevY()
+short CursorTarget::get_prev_y()
 {
     return s_prevY;
 }
@@ -381,7 +381,7 @@ short CursorTarget::GetPrevY()
 // Cursor Interaction Status
 //-----------------------------------------------------------------------------
 
-void CursorTarget::SetCursorStatus(CursorStatus status)
+void CursorTarget::set_cursor_status(CursorStatus status)
 {
     s_cursorStatus = status;
 }

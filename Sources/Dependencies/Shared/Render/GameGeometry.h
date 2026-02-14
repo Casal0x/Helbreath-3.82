@@ -72,13 +72,13 @@ struct GameRectangle
 // Bresenham Line Algorithm
 // ============================================================================
 
-// Steps iCount pixels along the Bresenham line from (x0,y0) toward (x1,y1).
-// pError carries the accumulated error between calls for incremental stepping.
+// Steps count pixels along the Bresenham line from (x0,y0) toward (x1,y1).
+// error_acc carries the accumulated error between calls for incremental stepping.
 // On return, *pX/*pY hold the resulting position.
-static inline void GetPoint2(int x0, int y0, int x1, int y1, int* pX, int* pY, int* pError, int iCount)
+static inline void GetPoint2(int x0, int y0, int x1, int y1, int* pX, int* pY, int* error_acc, int count)
 {
     int dx, dy, x_inc, y_inc, error, index;
-    int iResultX, iResultY, iCnt = 0;
+    int result_x, result_y, cnt = 0;
 
     if ((x0 == x1) && (y0 == y1)) {
         *pX = x0;
@@ -86,10 +86,10 @@ static inline void GetPoint2(int x0, int y0, int x1, int y1, int* pX, int* pY, i
         return;
     }
 
-    error = *pError;
+    error = *error_acc;
 
-    iResultX = x0;
-    iResultY = y0;
+    result_x = x0;
+    result_y = y0;
 
     dx = x1 - x0;
     dy = y1 - y0;
@@ -115,11 +115,11 @@ static inline void GetPoint2(int x0, int y0, int x1, int y1, int* pX, int* pY, i
             error += dy;
             if (error > dx) {
                 error -= dx;
-                iResultY += y_inc;
+                result_y += y_inc;
             }
-            iResultX += x_inc;
-            iCnt++;
-            if (iCnt >= iCount)
+            result_x += x_inc;
+            cnt++;
+            if (cnt >= count)
                 goto GP2_DONE;
         }
     }
@@ -128,20 +128,20 @@ static inline void GetPoint2(int x0, int y0, int x1, int y1, int* pX, int* pY, i
             error += dx;
             if (error > dy) {
                 error -= dy;
-                iResultX += x_inc;
+                result_x += x_inc;
             }
-            iResultY += y_inc;
-            iCnt++;
-            if (iCnt >= iCount)
+            result_y += y_inc;
+            cnt++;
+            if (cnt >= count)
                 goto GP2_DONE;
         }
     }
 
 GP2_DONE:;
 
-    *pX = iResultX;
-    *pY = iResultY;
-    *pError = error;
+    *pX = result_x;
+    *pY = result_y;
+    *error_acc = error;
 }
 
 } // namespace hb::shared::geometry

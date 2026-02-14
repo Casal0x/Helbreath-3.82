@@ -13,7 +13,7 @@ namespace net {
 // Flow:
 // 1. Client opens shop NPC → sends PacketShopRequest with NPC type
 // 2. Server looks up shop for NPC type → sends PacketShopResponse with item IDs
-// 3. Client populates shop UI from m_pItemConfigList using received IDs
+// 3. Client populates shop UI from m_item_config_list using received IDs
 // 4. Client purchases item → sends item ID (not name) to server
 //------------------------------------------------------------------------
 
@@ -55,9 +55,9 @@ HB_PACK_END
 // but now sends item ID instead of item name
 //
 // Parameters:
-//   iV1 = quantity
-//   iV2 = item ID (NEW - primary lookup method)
-//   pString = item name (deprecated, kept for logging only)
+//   v1 = quantity
+//   v2 = item ID (NEW - primary lookup method)
+//   string = item name (deprecated, kept for logging only)
 //------------------------------------------------------------------------
 
 //------------------------------------------------------------------------

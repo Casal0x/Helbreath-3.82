@@ -11,34 +11,34 @@ class CEntityRenderState;
 struct EquipmentIndices
 {
 	// Sprite indices (-1 = not drawn)
-	int iBodyIndex;
-	int iUndiesIndex;
-	int iHairIndex;
-	int iBodyArmorIndex;
-	int iArmArmorIndex;
-	int iPantsIndex;
-	int iBootsIndex;
-	int iWeaponIndex;
-	int iShieldIndex;
-	int iMantleIndex;
-	int iHelmIndex;
+	int m_body_index;
+	int m_undies_index;
+	int m_hair_index;
+	int m_body_armor_index;
+	int m_arm_armor_index;
+	int m_pants_index;
+	int m_boots_index;
+	int m_weapon_index;
+	int m_shield_index;
+	int m_mantle_index;
+	int m_helm_index;
 
 	// Equipment colors (0 = no tint, >0 = palette index)
-	int iWeaponColor;
-	int iShieldColor;
-	int iArmorColor;
-	int iMantleColor;
-	int iArmColor;
-	int iPantsColor;
-	int iBootsColor;
-	int iHelmColor;
+	int m_weapon_color;
+	int m_shield_color;
+	int m_armor_color;
+	int m_mantle_color;
+	int m_arm_color;
+	int m_pants_color;
+	int m_boots_color;
+	int m_helm_color;
 
 	// Glare effects
-	int iWeaponGlare;
-	int iShieldGlare;
+	int m_weapon_glare;
+	int m_shield_glare;
 
 	// Female skirt flag (pants type 1 on female character)
-	int iSkirtDraw;
+	int m_skirt_draw;
 
 	// Calculate all equipment indices for a player character.
 	// bodyPose: pose for body sprite and equipment layers (0-14 range)
@@ -59,5 +59,5 @@ struct EquipmentIndices
 	// Fill color fields from entity appearance, respecting detail level.
 	// When detail level is 0, all colors are set to 0 (no tinting).
 	// Also sets glare values (note: glare fields are swapped in original code).
-	void CalcColors(const CEntityRenderState& state);
+	void calc_colors(const CEntityRenderState& state);
 };

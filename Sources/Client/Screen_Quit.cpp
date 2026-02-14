@@ -13,22 +13,22 @@ using namespace hb::client::sprite_id;
 
 namespace MouseButton = hb::shared::input::MouseButton;
 
-Screen_Quit::Screen_Quit(CGame* pGame)
-    : IGameScreen(pGame)
+Screen_Quit::Screen_Quit(CGame* game)
+    : IGameScreen(game)
 {
 }
 
 void Screen_Quit::on_initialize()
 {
-    // Set current mode for code that checks GameModeManager::GetMode()
-    GameModeManager::SetCurrentMode(GameMode::Quit);
+    // Set current mode for code that checks GameModeManager::get_mode()
+    GameModeManager::set_current_mode(GameMode::Quit);
 
-    m_dwStartTime = GameClock::GetTimeMS();
+    m_dwStartTime = GameClock::get_time_ms();
 
     // Close game socket
-    if (m_pGame->m_pGSock != nullptr)
+    if (m_game->m_g_sock != nullptr)
     {
-        m_pGame->m_pGSock.reset();
+        m_game->m_g_sock.reset();
     }
 }
 
@@ -39,15 +39,15 @@ void Screen_Quit::on_uninitialize()
 
 void Screen_Quit::on_update()
 {
-    uint32_t dwElapsed = GameClock::GetTimeMS() - m_dwStartTime;
+    uint32_t elapsed = GameClock::get_time_ms() - m_dwStartTime;
 
     // After 3 seconds, allow input to skip
-    if (dwElapsed >= INPUT_ACTIVE_MS)
+    if (elapsed >= INPUT_ACTIVE_MS)
     {
         // Handle escape/enter to quit
         if (hb::shared::input::is_key_pressed(KeyCode::Escape) || hb::shared::input::is_key_pressed(KeyCode::Enter))
         {
-            m_pGame->ChangeGameMode(GameMode::Null);
+            m_game->change_game_mode(GameMode::Null);
             hb::shared::render::Window::close();
             return;
         }
@@ -55,16 +55,16 @@ void Screen_Quit::on_update()
         // Check for mouse click
         if (hb::shared::input::is_mouse_button_pressed(MouseButton::Left))
         {
-            m_pGame->ChangeGameMode(GameMode::Null);
+            m_game->change_game_mode(GameMode::Null);
             hb::shared::render::Window::close();
             return;
         }
     }
 
     // Auto-quit after 10 seconds
-    if (dwElapsed >= AUTO_QUIT_MS)
+    if (elapsed >= AUTO_QUIT_MS)
     {
-        m_pGame->ChangeGameMode(GameMode::Null);
+        m_game->change_game_mode(GameMode::Null);
         hb::shared::render::Window::close();
         return;
     }
@@ -72,19 +72,19 @@ void Screen_Quit::on_update()
 
 void Screen_Quit::on_render()
 {
-    DrawNewDialogBox(InterfaceNdQuit, 0, 0, 0, true);
+    draw_new_dialog_box(InterfaceNdQuit, 0, 0, 0, true);
 
     // Fade in the quit dialog over 500ms
-    uint32_t dwElapsed = GameClock::GetTimeMS() - m_dwStartTime;
-    if (dwElapsed >= FADE_IN_MS)
+    uint32_t elapsed = GameClock::get_time_ms() - m_dwStartTime;
+    if (elapsed >= FADE_IN_MS)
     {
-        DrawNewDialogBox(InterfaceNdQuit, 335, 183, 1, true);
+        draw_new_dialog_box(InterfaceNdQuit, 335, 183, 1, true);
     }
     else
     {
-        float fAlpha = static_cast<float>(dwElapsed) / static_cast<float>(FADE_IN_MS);
-        m_pGame->m_pSprite[InterfaceNdQuit]->Draw(335, 183, 1, hb::shared::sprite::DrawParams::Alpha(fAlpha));
+        float alpha = static_cast<float>(elapsed) / static_cast<float>(FADE_IN_MS);
+        m_game->m_sprite[InterfaceNdQuit]->draw(335, 183, 1, hb::shared::sprite::DrawParams::alpha_blend(alpha));
     }
 
-    DrawVersion();
+    draw_version();
 }

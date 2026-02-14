@@ -13,94 +13,94 @@ using namespace hb::shared::net;
 using namespace hb::shared::item;
 using namespace hb::client::sprite_id;
 
-DialogBox_Slates::DialogBox_Slates(CGame* pGame)
-	: IDialogBox(DialogBoxId::Slates, pGame)
+DialogBox_Slates::DialogBox_Slates(CGame* game)
+	: IDialogBox(DialogBoxId::Slates, game)
 {
-	SetDefaultRect(100 , 60 , 258, 339);
+	set_default_rect(100 , 60 , 258, 339);
 }
 
-void DialogBox_Slates::OnDraw(short msX, short msY, short msZ, char cLB)
+void DialogBox_Slates::on_draw(short mouse_x, short mouse_y, short z, char lb)
 {
-	int iAdjX, iAdjY;
+	int adj_x, adj_y;
 	short sX, sY;
-	uint32_t dwTime = m_pGame->m_dwCurTime;
+	uint32_t time = m_game->m_cur_time;
 
-	iAdjX = 5;
-	iAdjY = 8;
+	adj_x = 5;
+	adj_y = 8;
 
-	switch (Info().cMode) {
+	switch (Info().m_mode) {
 	case 1:
-		sX = Info().sX;
-		sY = Info().sY;
-		iAdjX = -1;
-		iAdjY = -7;
+		sX = Info().m_x;
+		sY = Info().m_y;
+		adj_x = -1;
+		adj_y = -7;
 
-		DrawNewDialogBox(InterfaceNdInventory, sX, sY, 4);
+		draw_new_dialog_box(InterfaceNdInventory, sX, sY, 4);
 
-		if (Info().sV1 != -1) {
-			DrawNewDialogBox(InterfaceNdInventory, sX + 20, sY + 12, 5);
+		if (Info().m_v1 != -1) {
+			draw_new_dialog_box(InterfaceNdInventory, sX + 20, sY + 12, 5);
 		}
-		if (Info().sV2 != -1) {
-			DrawNewDialogBox(InterfaceNdInventory, sX + 20, sY + 87, 6);
+		if (Info().m_v2 != -1) {
+			draw_new_dialog_box(InterfaceNdInventory, sX + 20, sY + 87, 6);
 		}
-		if (Info().sV3 != -1) {
-			DrawNewDialogBox(InterfaceNdInventory, sX + 85, sY + 32, 7);
+		if (Info().m_v3 != -1) {
+			draw_new_dialog_box(InterfaceNdInventory, sX + 85, sY + 32, 7);
 		}
-		if (Info().sV4 != -1) {
-			DrawNewDialogBox(InterfaceNdInventory, sX + 70, sY + 97, 8);
+		if (Info().m_v4 != -1) {
+			draw_new_dialog_box(InterfaceNdInventory, sX + 70, sY + 97, 8);
 		}
 
-		if ((Info().sV1 != -1) && (Info().sV2 != -1) && (Info().sV3 != -1) && (Info().sV4 != -1)) {
-			if ((msX >= sX + 120) && (msX <= sX + 180) && (msY >= sY + 150) && (msY <= sY + 165))
-				hb::shared::text::DrawText(GameFont::Bitmap1, sX + 120, sY + 150, "Casting", hb::shared::text::TextStyle::WithHighlight(GameColors::UIMagicBlue));
-			else hb::shared::text::DrawText(GameFont::Bitmap1, sX + 120, sY + 150, "Casting", hb::shared::text::TextStyle::WithHighlight(GameColors::BmpBtnNormal));
+		if ((Info().m_v1 != -1) && (Info().m_v2 != -1) && (Info().m_v3 != -1) && (Info().m_v4 != -1)) {
+			if ((mouse_x >= sX + 120) && (mouse_x <= sX + 180) && (mouse_y >= sY + 150) && (mouse_y <= sY + 165))
+				hb::shared::text::draw_text(GameFont::Bitmap1, sX + 120, sY + 150, "Casting", hb::shared::text::TextStyle::with_highlight(GameColors::UIMagicBlue));
+			else hb::shared::text::draw_text(GameFont::Bitmap1, sX + 120, sY + 150, "Casting", hb::shared::text::TextStyle::with_highlight(GameColors::BmpBtnNormal));
 		}
 		break;
 
 	case 2:
-		m_pGame->PlayGameSound('E', 16, 0);
-		if (Info().cStr[0] != 0)
+		m_game->play_game_sound('E', 16, 0);
+		if (Info().m_str[0] != 0)
 		{
-			sX = Info().sX + iAdjX + (Info().cStr[0] - (rand() % (Info().cStr[0] * 2)));
-			sY = Info().sY + iAdjY + (Info().cStr[0] - (rand() % (Info().cStr[0] * 2)));
+			sX = Info().m_x + adj_x + (Info().m_str[0] - (rand() % (Info().m_str[0] * 2)));
+			sY = Info().m_y + adj_y + (Info().m_str[0] - (rand() % (Info().m_str[0] * 2)));
 		}
 		else
 		{
-			sX = Info().sX;
-			sY = Info().sY;
+			sX = Info().m_x;
+			sY = Info().m_y;
 		}
-		m_pGame->m_pSprite[InterfaceNdInventory]->Draw(sX, sY, 4);
-		m_pGame->m_pSprite[InterfaceNdInventory]->Draw(sX + 22, sY + 14, 3);
-		PutAlignedString(199, 438, 201, "KURURURURURURURURU!!!", GameColors::UISlatesPink);
-		PutAlignedString(200, 439, 200, "KURURURURURURURURU!!!", GameColors::UISlatesCyan);
+		m_game->m_sprite[InterfaceNdInventory]->draw(sX, sY, 4);
+		m_game->m_sprite[InterfaceNdInventory]->draw(sX + 22, sY + 14, 3);
+		put_aligned_string(199, 438, 201, "KURURURURURURURURU!!!", GameColors::UISlatesPink);
+		put_aligned_string(200, 439, 200, "KURURURURURURURURU!!!", GameColors::UISlatesCyan);
 
-		if ((dwTime - Info().dwT1) > 1000)
+		if ((time - Info().m_dw_t1) > 1000)
 		{
-			Info().dwT1 = dwTime;
-			Info().cStr[0]++;
+			Info().m_dw_t1 = time;
+			Info().m_str[0]++;
 		}
-		if (Info().cStr[0] >= 5)
+		if (Info().m_str[0] >= 5)
 		{
-			bSendCommand(MsgId::CommandCommon, CommonType::ReqCreateSlate, 0, Info().sV1, Info().sV2, Info().sV3, 0, Info().sV4);
-			DisableDialogBox(DialogBoxId::Slates);
+			send_command(MsgId::CommandCommon, CommonType::ReqCreateSlate, 0, Info().m_v1, Info().m_v2, Info().m_v3, 0, Info().m_v4);
+			disable_dialog_box(DialogBoxId::Slates);
 		}
 		break;
 	}
 }
 
-bool DialogBox_Slates::OnClick(short msX, short msY)
+bool DialogBox_Slates::on_click(short mouse_x, short mouse_y)
 {
 	short sX, sY;
 
-	sX = Info().sX;
-	sY = Info().sY;
+	sX = Info().m_x;
+	sY = Info().m_y;
 
-	switch (Info().cMode) {
+	switch (Info().m_mode) {
 	case 1:
-		if ((Info().sV1 != -1) && (Info().sV2 != -1) && (Info().sV3 != -1) && (Info().sV4 != -1)) {
-			if ((msX >= sX + 120) && (msX <= sX + 180) && (msY >= sY + 150) && (msY <= sY + 165)) {
-				Info().cMode = 2;
-				PlaySoundEffect('E', 14, 5);
+		if ((Info().m_v1 != -1) && (Info().m_v2 != -1) && (Info().m_v3 != -1) && (Info().m_v4 != -1)) {
+			if ((mouse_x >= sX + 120) && (mouse_x <= sX + 180) && (mouse_y >= sY + 150) && (mouse_y <= sY + 165)) {
+				Info().m_mode = 2;
+				play_sound_effect('E', 14, 5);
 			}
 		}
 		break;
@@ -108,75 +108,75 @@ bool DialogBox_Slates::OnClick(short msX, short msY)
 	return false;
 }
 
-bool DialogBox_Slates::OnItemDrop(short msX, short msY)
+bool DialogBox_Slates::on_item_drop(short mouse_x, short mouse_y)
 {
-	if (m_pGame->m_pPlayer->m_Controller.GetCommand() < 0) return false;
+	if (m_game->m_player->m_Controller.get_command() < 0) return false;
 
-	int cItemID = CursorTarget::GetSelectedID();
-	if (cItemID < 0 || cItemID >= hb::shared::limits::MaxItems) return false;
-	if (m_pGame->m_pItemList[cItemID] == nullptr) return false;
-	if (m_pGame->m_bIsItemDisabled[cItemID]) return false;
+	int item_id = CursorTarget::get_selected_id();
+	if (item_id < 0 || item_id >= hb::shared::limits::MaxItems) return false;
+	if (m_game->m_item_list[item_id] == nullptr) return false;
+	if (m_game->m_is_item_disabled[item_id]) return false;
 
 	// Check if other dialogs are blocking
-	if (m_pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::ItemDropExternal))
+	if (m_game->m_dialog_box_manager.is_enabled(DialogBoxId::ItemDropExternal))
 	{
-		AddEventList(BITEMDROP_SKILLDIALOG1, 10);
+		add_event_list(BITEMDROP_SKILLDIALOG1, 10);
 		return false;
 	}
-	if (m_pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::NpcActionQuery) &&
-		(m_pGame->m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cMode == 1 ||
-		 m_pGame->m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cMode == 2))
+	if (m_game->m_dialog_box_manager.is_enabled(DialogBoxId::NpcActionQuery) &&
+		(m_game->m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_mode == 1 ||
+		 m_game->m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_mode == 2))
 	{
-		AddEventList(BITEMDROP_SKILLDIALOG1, 10);
+		add_event_list(BITEMDROP_SKILLDIALOG1, 10);
 		return false;
 	}
-	if (m_pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::SellOrRepair))
+	if (m_game->m_dialog_box_manager.is_enabled(DialogBoxId::SellOrRepair))
 	{
-		AddEventList(BITEMDROP_SKILLDIALOG1, 10);
+		add_event_list(BITEMDROP_SKILLDIALOG1, 10);
 		return false;
 	}
 
-	switch (Info().cMode) {
+	switch (Info().m_mode) {
 	case 1:
 	{
 		// Only accept slate items (sprite frame 151-154)
-		CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[cItemID]->m_sIDnum);
-		if (pCfg && (pCfg->GetItemType() == ItemType::UseSkillEnableDialogBox) &&
-			(pCfg->m_sSpriteFrame >= 151) &&
-			(pCfg->m_sSpriteFrame <= 154))
+		CItem* cfg = m_game->get_item_config(m_game->m_item_list[item_id]->m_id_num);
+		if (cfg && (cfg->get_item_type() == ItemType::UseSkillEnableDialogBox) &&
+			(cfg->m_sprite_frame >= 151) &&
+			(cfg->m_sprite_frame <= 154))
 		{
-			std::string cItemIDText;
-			switch (pCfg->m_sSpriteFrame) {
+			std::string item_id_text;
+			switch (cfg->m_sprite_frame) {
 			case 151:
-				if (Info().sV1 == -1) {
-					m_pGame->m_bIsItemDisabled[cItemID] = true;
-					Info().sV1 = cItemID;
-					cItemIDText = std::format("Item ID : {}", cItemID);
-					AddEventList(cItemIDText.c_str(), 10);
+				if (Info().m_v1 == -1) {
+					m_game->m_is_item_disabled[item_id] = true;
+					Info().m_v1 = item_id;
+					item_id_text = std::format("Item ID : {}", item_id);
+					add_event_list(item_id_text.c_str(), 10);
 				}
 				break;
 			case 152:
-				if (Info().sV2 == -1) {
-					m_pGame->m_bIsItemDisabled[cItemID] = true;
-					Info().sV2 = cItemID;
-					cItemIDText = std::format("Item ID : {}", cItemID);
-					AddEventList(cItemIDText.c_str(), 10);
+				if (Info().m_v2 == -1) {
+					m_game->m_is_item_disabled[item_id] = true;
+					Info().m_v2 = item_id;
+					item_id_text = std::format("Item ID : {}", item_id);
+					add_event_list(item_id_text.c_str(), 10);
 				}
 				break;
 			case 153:
-				if (Info().sV3 == -1) {
-					m_pGame->m_bIsItemDisabled[cItemID] = true;
-					Info().sV3 = cItemID;
-					cItemIDText = std::format("Item ID : {}", cItemID);
-					AddEventList(cItemIDText.c_str(), 10);
+				if (Info().m_v3 == -1) {
+					m_game->m_is_item_disabled[item_id] = true;
+					Info().m_v3 = item_id;
+					item_id_text = std::format("Item ID : {}", item_id);
+					add_event_list(item_id_text.c_str(), 10);
 				}
 				break;
 			case 154:
-				if (Info().sV4 == -1) {
-					m_pGame->m_bIsItemDisabled[cItemID] = true;
-					Info().sV4 = cItemID;
-					cItemIDText = std::format("Item ID : {}", cItemID);
-					AddEventList(cItemIDText.c_str(), 10);
+				if (Info().m_v4 == -1) {
+					m_game->m_is_item_disabled[item_id] = true;
+					Info().m_v4 = item_id;
+					item_id_text = std::format("Item ID : {}", item_id);
+					add_event_list(item_id_text.c_str(), 10);
 				}
 				break;
 			}

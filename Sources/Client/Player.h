@@ -25,13 +25,13 @@ constexpr int PlayerMaxSkillType = 60;
 //=============================================================================
 struct AnimDef
 {
-	int16_t sMaxFrame;
-	int16_t sFrameTime;  // Base ms per frame (before status modifiers)
-	bool    bLoop;
+	int16_t m_max_frame;
+	int16_t m_frame_time;  // Base ms per frame (before status modifiers)
+	bool    m_loop;
 };
 
 namespace PlayerAnim {
-	static constexpr AnimDef Stop       = { 14, 60,  false };
+	static constexpr AnimDef stop       = { 14, 60,  false };
 	static constexpr AnimDef Move       = {  7, 70,  false };
 	static constexpr AnimDef Run        = {  7, 39,  false };
 	static constexpr AnimDef Attack     = {  7, 78,  false };
@@ -42,10 +42,10 @@ namespace PlayerAnim {
 	static constexpr AnimDef DamageMove = {  3, 50,  false };
 	static constexpr AnimDef Dying      = { 12, 80,  false };
 
-	inline const AnimDef& FromAction(int8_t action)
+	inline const AnimDef& from_action(int8_t action)
 	{
 		switch (action) {
-		case hb::shared::action::Type::Stop:       return Stop;
+		case hb::shared::action::Type::stop:       return stop;
 		case hb::shared::action::Type::Move:       return Move;
 		case hb::shared::action::Type::Run:        return Run;
 		case hb::shared::action::Type::Attack:     return Attack;
@@ -55,7 +55,7 @@ namespace PlayerAnim {
 		case hb::shared::action::Type::Damage:     return Damage;
 		case hb::shared::action::Type::DamageMove: return DamageMove;
 		case hb::shared::action::Type::Dying:      return Dying;
-		default:                   return Stop;
+		default:                   return stop;
 		}
 	}
 }
@@ -65,44 +65,44 @@ class CPlayer
 public:
     CPlayer();
     ~CPlayer();
-    void Reset();
+    void reset();
 
     // Movement Controller
     CPlayerController m_Controller;
 
     // IDENTITY & ACCOUNT
-    std::string m_cPlayerName;
-    short m_sPlayerObjectID;
-    short m_sPlayerType;
-    std::string m_cAccountName;
-    std::string m_cAccountPassword;
-    std::string m_cGuildName;
-    int m_iGuildRank;
+    std::string m_player_name;
+    short m_player_object_id;
+    short m_player_type;
+    std::string m_account_name;
+    std::string m_account_password;
+    std::string m_guild_name;
+    int m_guild_rank;
 
     // POSITION & MOVEMENT
-    short m_sPlayerX, m_sPlayerY;
-    int8_t m_iPlayerDir;
-    short m_sDamageMove, m_sDamageMoveAmount;
+    short m_player_x, m_player_y;
+    int8_t m_player_dir;
+    short m_damage_move, m_damage_move_amount;
 
     // RESOURCES
-    int m_iHP, m_iMP, m_iSP, m_iHungerStatus;
+    int m_hp, m_mp, m_sp, m_hunger_status;
 
     // BASE STATS
-    int m_iStr, m_iVit, m_iDex, m_iInt, m_iMag, m_iCharisma;
-    int m_iAngelicStr, m_iAngelicInt, m_iAngelicDex, m_iAngelicMag;
+    int m_str, m_vit, m_dex, m_int, m_mag, m_charisma;
+    int m_angelic_str, m_angelic_int, m_angelic_dex, m_angelic_mag;
 
     // PROGRESSION
-    int m_iLevel;
-    uint32_t m_iExp;
-    int m_iLU_Point;
-    int16_t m_wLU_Str, m_wLU_Vit, m_wLU_Dex, m_wLU_Int, m_wLU_Mag, m_wLU_Char;
-    int8_t m_iStatModStr, m_iStatModVit, m_iStatModDex, m_iStatModInt, m_iStatModMag, m_iStatModChr;
+    int m_level;
+    uint32_t m_exp;
+    int m_lu_point;
+    int16_t m_lu_str, m_lu_vit, m_lu_dex, m_lu_int, m_lu_mag, m_lu_char;
+    int8_t m_stat_mod_str, m_stat_mod_vit, m_stat_mod_dex, m_stat_mod_int, m_stat_mod_mag, m_stat_mod_chr;
 
     // COMBAT
-    int m_iAC, m_iTHAC0;
+    int m_ac, m_thac0;
     hb::shared::entity::PlayerStatus m_playerStatus;
-    int m_iPKCount, m_iEnemyKillCount, m_iRewardGold, m_iContribution;
-    int m_iSuperAttackLeft, m_iSpecialAbilityType, m_iSpecialAbilityTimeLeftSec;
+    int m_pk_count, m_enemy_kill_count, m_reward_gold, m_contribution;
+    int m_super_attack_left, m_special_ability_type, m_special_ability_time_left_sec;
 
     // APPEARANCE
     hb::shared::entity::PlayerAppearance m_playerAppearance;
@@ -110,22 +110,22 @@ public:
     // Illusion Effect appearance
     hb::shared::entity::PlayerStatus m_illusionStatus;
     hb::shared::entity::PlayerAppearance m_illusionAppearance;
-    int8_t m_iGender, m_iSkinCol, m_iHairStyle, m_iHairCol, m_iUnderCol;
+    int8_t m_gender, m_skin_col, m_hair_style, m_hair_col, m_under_col;
 
     // SKILLS & MAGIC
-    std::array<int8_t, hb::client::config::PlayerMaxMagicType> m_iMagicMastery{};
-    std::array<uint8_t, hb::client::config::PlayerMaxSkillType> m_iSkillMastery{};
+    std::array<int8_t, hb::client::config::PlayerMaxMagicType> m_magic_mastery{};
+    std::array<uint8_t, hb::client::config::PlayerMaxSkillType> m_skill_mastery{};
 
     // STATUS FLAGS
-    bool m_bIsPoisoned, m_bIsConfusion, m_bParalyze;
-    bool m_bIsCombatMode, m_bIsSafeAttackMode, m_bForceAttack;
-    bool m_bSuperAttackMode, m_bIsSpecialAbilityEnabled;
-    bool m_bHunter, m_bAresden, m_bCitizen;
+    bool m_is_poisoned, m_is_confusion, m_paralyze;
+    bool m_is_combat_mode, m_is_safe_attack_mode, m_force_attack;
+    bool m_super_attack_mode, m_is_special_ability_enabled;
+    bool m_hunter, m_aresden, m_citizen;
 
     // ADMIN / GM
-    bool m_bIsGMMode = false;
+    bool m_is_gm_mode = false;
 
     // CRUSADE/WAR
-    int m_iCrusadeDuty, m_iWarContribution, m_iConstructionPoint;
-    int m_iConstructLocX, m_iConstructLocY;
+    int m_crusade_duty, m_war_contribution, m_construction_point;
+    int m_construct_loc_x, m_construct_loc_y;
 };

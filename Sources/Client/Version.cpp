@@ -5,7 +5,7 @@
 namespace hb {
 	namespace version {
 
-		const VersionInfo& Get()
+		const VersionInfo& get()
 		{
 			static const VersionInfo kVersion{
 				HB_VERSION_MAJOR,
@@ -17,9 +17,9 @@ namespace hb {
 			return kVersion;
 		}
 
-		std::string GetSemVer()
+		std::string get_sem_ver()
 		{
-			const VersionInfo& ver = Get();
+			const VersionInfo& ver = get();
 
 			if (ver.prerelease[0] != '\0') {
 				return std::format("{}.{}.{}-{}", ver.major, ver.minor, ver.patch, ver.prerelease);
@@ -27,15 +27,15 @@ namespace hb {
 			return std::format("{}.{}.{}", ver.major, ver.minor, ver.patch);
 		}
 
-		std::string GetDisplayString()
+		std::string get_display_string()
 		{
-			return GetSemVer();
+			return get_sem_ver();
 		}
 
-		std::string GetFullString()
+		std::string get_full_string()
 		{
-			const VersionInfo& ver = Get();
-			std::string semver = GetSemVer();
+			const VersionInfo& ver = get();
+			std::string semver = get_sem_ver();
 
 			if (ver.build[0] != '\0') {
 				return std::format("{}+{}", semver, ver.build);

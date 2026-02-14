@@ -10,270 +10,270 @@
 using hb::shared::item::ItemType;
 using hb::shared::item::EquipPos;
 
-ItemNameFormatter& ItemNameFormatter::Get()
+item_name_formatter& item_name_formatter::get()
 {
-	static ItemNameFormatter instance;
+	static item_name_formatter instance;
 	return instance;
 }
 
-void ItemNameFormatter::SetItemConfigs(const std::array<std::unique_ptr<CItem>, 5000>& configs)
+void item_name_formatter::set_item_configs(const std::array<std::unique_ptr<CItem>, 5000>& configs)
 {
 	m_item_configs = &configs;
 }
 
-CItem* ItemNameFormatter::GetConfig(int iItemID) const
+CItem* item_name_formatter::get_config(int item_id) const
 {
-	if (!m_item_configs || iItemID <= 0 || iItemID >= 5000) return nullptr;
-	return (*m_item_configs)[iItemID].get();
+	if (!m_item_configs || item_id <= 0 || item_id >= 5000) return nullptr;
+	return (*m_item_configs)[item_id].get();
 }
 
-ItemNameInfo ItemNameFormatter::Format(CItem* pItem)
+ItemNameInfo item_name_formatter::format(CItem* item)
 {
 	ItemNameInfo result;
-	std::string cTxt;
-	uint32_t dwType1, dwType2, dwValue1, dwValue2, dwValue3;
+	std::string txt;
+	uint32_t type1, type2, value1, value2, value3;
 
-	CItem* pCfg = GetConfig(pItem->m_sIDnum);
-	if (!pCfg) {
+	CItem* cfg = get_config(item->m_id_num);
+	if (!cfg) {
 		result.name = "Unknown Item";
 		return result;
 	}
 
-	const char* cName = pCfg->GetDisplayName();
+	const char* name = cfg->get_display_name();
 
-	if (hb::shared::item::IsSpecialItem(pItem->m_sIDnum)) result.is_special = true;
+	if (hb::shared::item::is_special_item(item->m_id_num)) result.is_special = true;
 
-	if ((pItem->m_dwAttribute & 0x00000001) != 0)
+	if ((item->m_attribute & 0x00000001) != 0)
 	{
 		result.is_special = true;
-		result.name = cName;
-		if (pCfg->GetItemType() == ItemType::Material)
-			result.effect = std::format(GET_ITEM_NAME1, pItem->m_sItemSpecEffectValue2);
+		result.name = name;
+		if (cfg->get_item_type() == ItemType::Material)
+			result.effect = std::format(GET_ITEM_NAME1, item->m_item_special_effect_value2);
 		else
 		{
-			if (pCfg->GetEquipPos() == EquipPos::LeftFinger)
+			if (cfg->get_equip_pos() == EquipPos::LeftFinger)
 			{
-				result.effect = std::format(GET_ITEM_NAME2, pItem->m_sItemSpecEffectValue2);
+				result.effect = std::format(GET_ITEM_NAME2, item->m_item_special_effect_value2);
 			}
 			else
 			{
-				result.effect = std::format(GET_ITEM_NAME2, pItem->m_sItemSpecEffectValue2 + 100);
+				result.effect = std::format(GET_ITEM_NAME2, item->m_item_special_effect_value2 + 100);
 			}
 		}
 	}
 	else
 	{
-		if (pItem->m_dwCount == 1)
-			result.name = cName;
-		else result.name = std::format(DRAW_DIALOGBOX_SELLOR_REPAIR_ITEM1, pItem->m_dwCount, cName);
+		if (item->m_count == 1)
+			result.name = name;
+		else result.name = std::format(DRAW_DIALOGBOX_SELLOR_REPAIR_ITEM1, item->m_count, name);
 	}
 
-	if ((pItem->m_dwAttribute & 0x00F0F000) != 0)
+	if ((item->m_attribute & 0x00F0F000) != 0)
 	{
 		result.is_special = true;
-		dwType1 = (pItem->m_dwAttribute & 0x00F00000) >> 20;
-		dwValue1 = (pItem->m_dwAttribute & 0x000F0000) >> 16;
-		dwType2 = (pItem->m_dwAttribute & 0x0000F000) >> 12;
-		dwValue2 = (pItem->m_dwAttribute & 0x00000F00) >> 8;
-		if (dwType1 != 0)
+		type1 = (item->m_attribute & 0x00F00000) >> 20;
+		value1 = (item->m_attribute & 0x000F0000) >> 16;
+		type2 = (item->m_attribute & 0x0000F000) >> 12;
+		value2 = (item->m_attribute & 0x00000F00) >> 8;
+		if (type1 != 0)
 		{
-			switch (dwType1) {
-			case 1: cTxt = GET_ITEM_NAME3;   break;
-			case 2: cTxt = GET_ITEM_NAME4;   break;
-			case 3: cTxt = GET_ITEM_NAME5;   break;
+			switch (type1) {
+			case 1: txt = GET_ITEM_NAME3;   break;
+			case 2: txt = GET_ITEM_NAME4;   break;
+			case 3: txt = GET_ITEM_NAME5;   break;
 			case 4: break;
-			case 5: cTxt = GET_ITEM_NAME6;   break;
-			case 6: cTxt = GET_ITEM_NAME7;   break;
-			case 7: cTxt = GET_ITEM_NAME8;   break;
-			case 8: cTxt = GET_ITEM_NAME9;   break;
-			case 9: cTxt = GET_ITEM_NAME10;  break;
-			case hb::shared::owner::Slime: cTxt = GET_ITEM_NAME11; break;
-			case hb::shared::owner::Skeleton: cTxt = GET_ITEM_NAME12; break;
-			case hb::shared::owner::StoneGolem: cTxt = GET_ITEM_NAME13; break;
+			case 5: txt = GET_ITEM_NAME6;   break;
+			case 6: txt = GET_ITEM_NAME7;   break;
+			case 7: txt = GET_ITEM_NAME8;   break;
+			case 8: txt = GET_ITEM_NAME9;   break;
+			case 9: txt = GET_ITEM_NAME10;  break;
+			case hb::shared::owner::Slime: txt = GET_ITEM_NAME11; break;
+			case hb::shared::owner::Skeleton: txt = GET_ITEM_NAME12; break;
+			case hb::shared::owner::StoneGolem: txt = GET_ITEM_NAME13; break;
 			}
-			cTxt += result.name;
-			result.name = cTxt;
+			txt += result.name;
+			result.name = txt;
 
-			switch (dwType1) {
-			case 1: cTxt = std::format(GET_ITEM_NAME14, dwValue1); break;
-			case 2: cTxt = std::format(GET_ITEM_NAME15, dwValue1 * 5); break;
+			switch (type1) {
+			case 1: txt = std::format(GET_ITEM_NAME14, value1); break;
+			case 2: txt = std::format(GET_ITEM_NAME15, value1 * 5); break;
 			case 3: break;
 			case 4: break;
-			case 5: cTxt = GET_ITEM_NAME16; break;
-			case 6: cTxt = std::format(GET_ITEM_NAME17, dwValue1 * 4); break;
-			case 7: cTxt = GET_ITEM_NAME18; break;
-			case 8: cTxt = std::format(GET_ITEM_NAME19, dwValue1 * 7); break;
-			case 9: cTxt = GET_ITEM_NAME20; break;
-			case hb::shared::owner::Slime: cTxt = std::format(GET_ITEM_NAME21, dwValue1 * 3); break;
-			case hb::shared::owner::Skeleton: cTxt = std::format(GET_ITEM_NAME22, dwValue1); break;
-			case hb::shared::owner::StoneGolem: cTxt = std::format(GET_ITEM_NAME23, dwValue1); break;
+			case 5: txt = GET_ITEM_NAME16; break;
+			case 6: txt = std::format(GET_ITEM_NAME17, value1 * 4); break;
+			case 7: txt = GET_ITEM_NAME18; break;
+			case 8: txt = std::format(GET_ITEM_NAME19, value1 * 7); break;
+			case 9: txt = GET_ITEM_NAME20; break;
+			case hb::shared::owner::Slime: txt = std::format(GET_ITEM_NAME21, value1 * 3); break;
+			case hb::shared::owner::Skeleton: txt = std::format(GET_ITEM_NAME22, value1); break;
+			case hb::shared::owner::StoneGolem: txt = std::format(GET_ITEM_NAME23, value1); break;
 			}
-			result.effect += cTxt;
+			result.effect += txt;
 
-			if (dwType2 != 0) {
-				switch (dwType2) {
-				case 1:  cTxt = std::format(GET_ITEM_NAME24, dwValue2 * 7); break;
-				case 2:  cTxt = std::format(GET_ITEM_NAME25, dwValue2 * 7); break;
-				case 3:  cTxt = std::format(GET_ITEM_NAME26, dwValue2 * 7); break;
-				case 4:  cTxt = std::format(GET_ITEM_NAME27, dwValue2 * 7); break;
-				case 5:  cTxt = std::format(GET_ITEM_NAME28, dwValue2 * 7); break;
-				case 6:  cTxt = std::format(GET_ITEM_NAME29, dwValue2 * 7); break;
-				case 7:  cTxt = std::format(GET_ITEM_NAME30, dwValue2 * 7); break;
-				case 8:  cTxt = std::format(GET_ITEM_NAME31, dwValue2 * 3); break;
-				case 9:  cTxt = std::format(GET_ITEM_NAME32, dwValue2 * 3); break;
-				case hb::shared::owner::Slime: cTxt = std::format(GET_ITEM_NAME33, dwValue2);   break;
-				case hb::shared::owner::Skeleton: cTxt = std::format(GET_ITEM_NAME34, dwValue2 * 10); break;
-				case hb::shared::owner::StoneGolem: cTxt = std::format(GET_ITEM_NAME35, dwValue2 * 10); break;
+			if (type2 != 0) {
+				switch (type2) {
+				case 1:  txt = std::format(GET_ITEM_NAME24, value2 * 7); break;
+				case 2:  txt = std::format(GET_ITEM_NAME25, value2 * 7); break;
+				case 3:  txt = std::format(GET_ITEM_NAME26, value2 * 7); break;
+				case 4:  txt = std::format(GET_ITEM_NAME27, value2 * 7); break;
+				case 5:  txt = std::format(GET_ITEM_NAME28, value2 * 7); break;
+				case 6:  txt = std::format(GET_ITEM_NAME29, value2 * 7); break;
+				case 7:  txt = std::format(GET_ITEM_NAME30, value2 * 7); break;
+				case 8:  txt = std::format(GET_ITEM_NAME31, value2 * 3); break;
+				case 9:  txt = std::format(GET_ITEM_NAME32, value2 * 3); break;
+				case hb::shared::owner::Slime: txt = std::format(GET_ITEM_NAME33, value2);   break;
+				case hb::shared::owner::Skeleton: txt = std::format(GET_ITEM_NAME34, value2 * 10); break;
+				case hb::shared::owner::StoneGolem: txt = std::format(GET_ITEM_NAME35, value2 * 10); break;
 				}
-				result.extra = cTxt;
+				result.extra = txt;
 			}
 		}
 	}
 
-	dwValue3 = (pItem->m_dwAttribute & 0xF0000000) >> 28;
-	if (dwValue3 > 0)
+	value3 = (item->m_attribute & 0xF0000000) >> 28;
+	if (value3 > 0)
 	{
 		auto plusPos = result.name.rfind('+');
 		if (plusPos != std::string::npos && plusPos + 1 < result.name.size())
 		{
 			try {
 				int existingPlus = std::stoi(result.name.substr(plusPos + 1));
-				dwValue3 += existingPlus;
-				result.name = std::format("{}+{}", result.name.substr(0, plusPos), dwValue3);
+				value3 += existingPlus;
+				result.name = std::format("{}+{}", result.name.substr(0, plusPos), value3);
 			} catch (...) {
-				result.name += std::format("+{}", dwValue3);
+				result.name += std::format("+{}", value3);
 			}
 		}
 		else
 		{
-			result.name += std::format("+{}", dwValue3);
+			result.name += std::format("+{}", value3);
 		}
 	}
 
 	// Display mana save effect if present
-	auto effectType = pCfg->GetItemEffectType();
-	int iManaSaveValue = 0;
+	auto effectType = cfg->get_item_effect_type();
+	int mana_save_value = 0;
 	if (effectType == hb::shared::item::ItemEffectType::AttackManaSave)
 	{
-		iManaSaveValue = pCfg->m_sItemEffectValue4;
+		mana_save_value = cfg->m_item_effect_value4;
 	}
-	else if (effectType == hb::shared::item::ItemEffectType::AddEffect &&
-	         pCfg->m_sItemEffectValue1 == hb::shared::item::ToInt(hb::shared::item::AddEffectType::ManaSave))
+	else if (effectType == hb::shared::item::ItemEffectType::add_effect &&
+	         cfg->m_item_effect_value1 == hb::shared::item::to_int(hb::shared::item::AddEffectType::ManaSave))
 	{
-		iManaSaveValue = pCfg->m_sItemEffectValue2;
+		mana_save_value = cfg->m_item_effect_value2;
 	}
 
-	if (iManaSaveValue > 0)
+	if (mana_save_value > 0)
 	{
 		result.is_special = true;
-		cTxt = std::format("Mana Save +{}%", iManaSaveValue);
+		txt = std::format("Mana save +{}%", mana_save_value);
 		if (result.effect.empty())
-			result.effect = cTxt;
+			result.effect = txt;
 		else if (result.extra.empty())
-			result.extra = cTxt;
+			result.extra = txt;
 	}
 
 	return result;
 }
 
-ItemNameInfo ItemNameFormatter::Format(short sItemId, uint32_t dwAttribute)
+ItemNameInfo item_name_formatter::format(short item_id, uint32_t attribute)
 {
 	ItemNameInfo result;
-	std::string cTxt;
-	uint32_t dwType1, dwType2, dwValue1, dwValue2, dwValue3;
+	std::string txt;
+	uint32_t type1, type2, value1, value2, value3;
 
 	// Look up item config by ID to get display name
-	const char* cName = nullptr;
-	CItem* pCfg = GetConfig(sItemId);
-	if (pCfg != nullptr) {
-		cName = pCfg->m_cName;
+	const char* name = nullptr;
+	CItem* cfg = get_config(item_id);
+	if (cfg != nullptr) {
+		name = cfg->m_name;
 	}
-	if (cName == nullptr || cName[0] == '\0') {
+	if (name == nullptr || name[0] == '\0') {
 		result.name = "Unknown Item";
 		return result;
 	}
-	result.name = cName;
+	result.name = name;
 
-	if ((dwAttribute & 0x00F0F000) != 0)
+	if ((attribute & 0x00F0F000) != 0)
 	{
 		result.is_special = true;
-		dwType1 = (dwAttribute & 0x00F00000) >> 20;
-		dwValue1 = (dwAttribute & 0x000F0000) >> 16;
-		dwType2 = (dwAttribute & 0x0000F000) >> 12;
-		dwValue2 = (dwAttribute & 0x00000F00) >> 8;
-		if (dwType1 != 0)
+		type1 = (attribute & 0x00F00000) >> 20;
+		value1 = (attribute & 0x000F0000) >> 16;
+		type2 = (attribute & 0x0000F000) >> 12;
+		value2 = (attribute & 0x00000F00) >> 8;
+		if (type1 != 0)
 		{
-			switch (dwType1) {
-			case 1: cTxt = GET_ITEM_NAME3; break;
-			case 2: cTxt = GET_ITEM_NAME4; break;
-			case 3: cTxt = GET_ITEM_NAME5; break;
+			switch (type1) {
+			case 1: txt = GET_ITEM_NAME3; break;
+			case 2: txt = GET_ITEM_NAME4; break;
+			case 3: txt = GET_ITEM_NAME5; break;
 			case 4: break;
-			case 5: cTxt = GET_ITEM_NAME6; break;
-			case 6: cTxt = GET_ITEM_NAME7; break;
-			case 7: cTxt = GET_ITEM_NAME8; break;
-			case 8: cTxt = GET_ITEM_NAME9; break;
-			case 9: cTxt = GET_ITEM_NAME10; break;
-			case hb::shared::owner::Slime: cTxt = GET_ITEM_NAME11; break;
-			case hb::shared::owner::Skeleton: cTxt = GET_ITEM_NAME12; break;
-			case hb::shared::owner::StoneGolem: cTxt = GET_ITEM_NAME13; break;
+			case 5: txt = GET_ITEM_NAME6; break;
+			case 6: txt = GET_ITEM_NAME7; break;
+			case 7: txt = GET_ITEM_NAME8; break;
+			case 8: txt = GET_ITEM_NAME9; break;
+			case 9: txt = GET_ITEM_NAME10; break;
+			case hb::shared::owner::Slime: txt = GET_ITEM_NAME11; break;
+			case hb::shared::owner::Skeleton: txt = GET_ITEM_NAME12; break;
+			case hb::shared::owner::StoneGolem: txt = GET_ITEM_NAME13; break;
 			}
-			cTxt += result.name;
-			result.name = cTxt;
+			txt += result.name;
+			result.name = txt;
 
-			switch (dwType1) {
-			case 1: cTxt = std::format(GET_ITEM_NAME14, dwValue1); break;
-			case 2: cTxt = std::format(GET_ITEM_NAME15, dwValue1 * 5); break;
+			switch (type1) {
+			case 1: txt = std::format(GET_ITEM_NAME14, value1); break;
+			case 2: txt = std::format(GET_ITEM_NAME15, value1 * 5); break;
 			case 3: break;
 			case 4: break;
-			case 5: cTxt = GET_ITEM_NAME16; break;
-			case 6: cTxt = std::format(GET_ITEM_NAME17, dwValue1 * 4); break;
-			case 7: cTxt = GET_ITEM_NAME18; break;
-			case 8: cTxt = std::format(GET_ITEM_NAME19, dwValue1 * 7); break;
-			case 9: cTxt = GET_ITEM_NAME20; break;
-			case hb::shared::owner::Slime: cTxt = std::format(GET_ITEM_NAME21, dwValue1 * 3); break;
-			case hb::shared::owner::Skeleton: cTxt = std::format(GET_ITEM_NAME22, dwValue1); break;
-			case hb::shared::owner::StoneGolem: cTxt = std::format(GET_ITEM_NAME23, dwValue1); break;
+			case 5: txt = GET_ITEM_NAME16; break;
+			case 6: txt = std::format(GET_ITEM_NAME17, value1 * 4); break;
+			case 7: txt = GET_ITEM_NAME18; break;
+			case 8: txt = std::format(GET_ITEM_NAME19, value1 * 7); break;
+			case 9: txt = GET_ITEM_NAME20; break;
+			case hb::shared::owner::Slime: txt = std::format(GET_ITEM_NAME21, value1 * 3); break;
+			case hb::shared::owner::Skeleton: txt = std::format(GET_ITEM_NAME22, value1); break;
+			case hb::shared::owner::StoneGolem: txt = std::format(GET_ITEM_NAME23, value1); break;
 			}
-			result.effect += cTxt;
+			result.effect += txt;
 
-			if (dwType2 != 0)
+			if (type2 != 0)
 			{
-				switch (dwType2) {
-				case 1:  cTxt = std::format(GET_ITEM_NAME24, dwValue2 * 7);  break;
-				case 2:  cTxt = std::format(GET_ITEM_NAME25, dwValue2 * 7);  break;
-				case 3:  cTxt = std::format(GET_ITEM_NAME26, dwValue2 * 7);  break;
-				case 4:  cTxt = std::format(GET_ITEM_NAME27, dwValue2 * 7);  break;
-				case 5:  cTxt = std::format(GET_ITEM_NAME28, dwValue2 * 7);  break;
-				case 6:  cTxt = std::format(GET_ITEM_NAME29, dwValue2 * 7);  break;
-				case 7:  cTxt = std::format(GET_ITEM_NAME30, dwValue2 * 7);  break;
-				case 8:  cTxt = std::format(GET_ITEM_NAME31, dwValue2 * 3);  break;
-				case 9:  cTxt = std::format(GET_ITEM_NAME32, dwValue2 * 3);  break;
-				case hb::shared::owner::Slime: cTxt = std::format(GET_ITEM_NAME33, dwValue2);    break;
-				case hb::shared::owner::Skeleton: cTxt = std::format(GET_ITEM_NAME34, dwValue2 * 10); break;
-				case hb::shared::owner::StoneGolem: cTxt = std::format(GET_ITEM_NAME35, dwValue2 * 10); break;
+				switch (type2) {
+				case 1:  txt = std::format(GET_ITEM_NAME24, value2 * 7);  break;
+				case 2:  txt = std::format(GET_ITEM_NAME25, value2 * 7);  break;
+				case 3:  txt = std::format(GET_ITEM_NAME26, value2 * 7);  break;
+				case 4:  txt = std::format(GET_ITEM_NAME27, value2 * 7);  break;
+				case 5:  txt = std::format(GET_ITEM_NAME28, value2 * 7);  break;
+				case 6:  txt = std::format(GET_ITEM_NAME29, value2 * 7);  break;
+				case 7:  txt = std::format(GET_ITEM_NAME30, value2 * 7);  break;
+				case 8:  txt = std::format(GET_ITEM_NAME31, value2 * 3);  break;
+				case 9:  txt = std::format(GET_ITEM_NAME32, value2 * 3);  break;
+				case hb::shared::owner::Slime: txt = std::format(GET_ITEM_NAME33, value2);    break;
+				case hb::shared::owner::Skeleton: txt = std::format(GET_ITEM_NAME34, value2 * 10); break;
+				case hb::shared::owner::StoneGolem: txt = std::format(GET_ITEM_NAME35, value2 * 10); break;
 				}
-				result.extra = cTxt;
+				result.extra = txt;
 			}
 		}
 	}
 
-	dwValue3 = (dwAttribute & 0xF0000000) >> 28;
-	if (dwValue3 > 0)
+	value3 = (attribute & 0xF0000000) >> 28;
+	if (value3 > 0)
 	{
 		auto plusPos = result.name.rfind('+');
 		if (plusPos != std::string::npos && plusPos + 1 < result.name.size())
 		{
 			try {
 				int existingPlus = std::stoi(result.name.substr(plusPos + 1));
-				dwValue3 += existingPlus;
-				result.name = std::format("{}+{}", result.name.substr(0, plusPos), dwValue3);
+				value3 += existingPlus;
+				result.name = std::format("{}+{}", result.name.substr(0, plusPos), value3);
 			} catch (...) {
-				result.name += std::format("+{}", dwValue3);
+				result.name += std::format("+{}", value3);
 			}
 		}
 		else
 		{
-			result.name += std::format("+{}", dwValue3);
+			result.name += std::format("+{}", value3);
 		}
 	}
 

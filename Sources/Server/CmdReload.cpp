@@ -8,51 +8,51 @@
 #include "Log.h"
 #include "StringCompat.h"
 
-void CmdReload::Execute(CGame* pGame, const char* pArgs)
+void CmdReload::execute(CGame* game, const char* args)
 {
-	if (pArgs == nullptr || pArgs[0] == '\0')
+	if (args == nullptr || args[0] == '\0')
 	{
 		hb::logger::log("Usage: reload <items|magic|skills|npcs|all>");
 		return;
 	}
 
-	bool bItems = false;
-	bool bMagic = false;
-	bool bSkills = false;
-	bool bNpcs = false;
+	bool items = false;
+	bool magic = false;
+	bool skills = false;
+	bool npcs = false;
 
-	if (hb_stricmp(pArgs, "items") == 0)
-		bItems = true;
-	else if (hb_stricmp(pArgs, "magic") == 0)
-		bMagic = true;
-	else if (hb_stricmp(pArgs, "skills") == 0)
-		bSkills = true;
-	else if (hb_stricmp(pArgs, "npcs") == 0)
-		bNpcs = true;
-	else if (hb_stricmp(pArgs, "all") == 0)
+	if (hb_stricmp(args, "items") == 0)
+		items = true;
+	else if (hb_stricmp(args, "magic") == 0)
+		magic = true;
+	else if (hb_stricmp(args, "skills") == 0)
+		skills = true;
+	else if (hb_stricmp(args, "npcs") == 0)
+		npcs = true;
+	else if (hb_stricmp(args, "all") == 0)
 	{
-		bItems = true;
-		bMagic = true;
-		bSkills = true;
-		bNpcs = true;
+		items = true;
+		magic = true;
+		skills = true;
+		npcs = true;
 	}
 	else
 	{
-		hb::logger::log("Unknown reload target: '{}'. Use items, magic, skills, npcs, or all.", pArgs);
+		hb::logger::log("Unknown reload target: '{}'. Use items, magic, skills, npcs, or all.", args);
 		return;
 	}
 
 	// Send reload notification to clients first (shows top bar message)
-	if (bItems || bMagic || bSkills || bNpcs)
-		pGame->SendConfigReloadNotification(bItems, bMagic, bSkills, bNpcs);
+	if (items || magic || skills || npcs)
+		game->send_config_reload_notification(items, magic, skills, npcs);
 
 	// Reload configs from database
-	if (bItems)  pGame->m_pItemManager->ReloadItemConfigs();
-	if (bMagic)  pGame->m_pMagicManager->ReloadMagicConfigs();
-	if (bSkills) pGame->m_pSkillManager->ReloadSkillConfigs();
-	if (bNpcs)   pGame->ReloadNpcConfigs();
+	if (items)  game->m_item_manager->reload_item_configs();
+	if (magic)  game->m_magic_manager->reload_magic_configs();
+	if (skills) game->m_skill_manager->reload_skill_configs();
+	if (npcs)   game->reload_npc_configs();
 
 	// Stream updated config data to clients
-	if (bItems || bMagic || bSkills || bNpcs)
-		pGame->PushConfigReloadToClients(bItems, bMagic, bSkills, bNpcs);
+	if (items || magic || skills || npcs)
+		game->push_config_reload_to_clients(items, magic, skills, npcs);
 }

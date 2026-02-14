@@ -13,27 +13,27 @@
 
 namespace hb::shared::text {
 
-// DrawText overload accepting hb::shared::render::Color
-inline void DrawText(int fontId, int x, int y, const char* text, const hb::shared::render::Color& color) {
-	DrawText(fontId, x, y, text, TextStyle::Color(color));
+// draw_text overload accepting hb::shared::render::Color
+inline void draw_text(int fontId, int x, int y, const char* text, const hb::shared::render::Color& color) {
+	draw_text(fontId, x, y, text, TextStyle::from_color(color));
 }
 
-// DrawTextAligned overload accepting hb::shared::geometry::GameRectangle
-inline void DrawTextAligned(int fontId, const hb::shared::geometry::GameRectangle& rect, const char* text,
+// draw_text_aligned overload accepting hb::shared::geometry::GameRectangle
+inline void draw_text_aligned(int fontId, const hb::shared::geometry::GameRectangle& rect, const char* text,
                             const TextStyle& style, Align alignment = Align::TopLeft) {
-	DrawTextAligned(fontId, rect.x, rect.y, rect.width, rect.height, text, style, alignment);
+	draw_text_aligned(fontId, rect.x, rect.y, rect.width, rect.height, text, style, alignment);
 }
 
-// DrawTextAligned overload accepting hb::shared::geometry::GameRectangle + hb::shared::render::Color
-inline void DrawTextAligned(int fontId, const hb::shared::geometry::GameRectangle& rect, const char* text,
+// draw_text_aligned overload accepting hb::shared::geometry::GameRectangle + hb::shared::render::Color
+inline void draw_text_aligned(int fontId, const hb::shared::geometry::GameRectangle& rect, const char* text,
                             const hb::shared::render::Color& color, Align alignment = Align::TopLeft) {
-	DrawTextAligned(fontId, rect, text, TextStyle::Color(color), alignment);
+	draw_text_aligned(fontId, rect, text, TextStyle::from_color(color), alignment);
 }
 
-// DrawTextAligned overload accepting hb::shared::render::Color
-inline void DrawTextAligned(int fontId, int x, int y, int width, int height, const char* text,
+// draw_text_aligned overload accepting hb::shared::render::Color
+inline void draw_text_aligned(int fontId, int x, int y, int width, int height, const char* text,
                             const hb::shared::render::Color& color, Align alignment = Align::TopLeft) {
-	DrawTextAligned(fontId, x, y, width, height, text, TextStyle::Color(color), alignment);
+	draw_text_aligned(fontId, x, y, width, height, text, TextStyle::from_color(color), alignment);
 }
 
 } // namespace hb::shared::text

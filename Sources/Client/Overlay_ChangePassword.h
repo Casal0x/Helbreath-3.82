@@ -16,7 +16,7 @@ class Overlay_ChangePassword : public IGameScreen
 public:
     SCREEN_TYPE(Overlay_ChangePassword)
 
-    explicit Overlay_ChangePassword(CGame* pGame);
+    explicit Overlay_ChangePassword(CGame* game);
     ~Overlay_ChangePassword() override = default;
 
     void on_initialize() override;
@@ -25,12 +25,12 @@ public:
     void on_render() override;
 
 private:
-    void UpdateFocusedInput();
-    void HandleSubmit();
-    bool ValidateInputs();
+    void update_focused_input();
+    void handle_submit();
+    bool validate_inputs();
 
     // Input buffers
-    std::string m_cAccountName;
+    std::string m_account_name;
     std::string m_cOldPassword;
     std::string m_cNewPassword;
     std::string m_cConfirmPassword;

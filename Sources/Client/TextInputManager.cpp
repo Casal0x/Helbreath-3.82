@@ -3,34 +3,34 @@
 #include "TextLibExt.h"
 #include "GameTimer.h"
 
-TextInputManager& TextInputManager::Get()
+text_input_manager& text_input_manager::get()
 {
-	static TextInputManager instance;
+	static text_input_manager instance;
 	return instance;
 }
 
-void TextInputManager::StartInput(int x, int y, unsigned char maxLen, std::string& buffer, bool isHidden)
+void text_input_manager::start_input(int x, int y, unsigned char maxLen, std::string& buffer, bool hidden)
 {
 	m_is_active = true;
 	m_input_x = x;
 	m_input_y = y;
 	m_buffer = &buffer;
 	m_max_len = maxLen;
-	m_is_hidden = isHidden;
+	m_is_hidden = hidden;
 }
 
-void TextInputManager::EndInput()
+void text_input_manager::end_input()
 {
 	m_is_active = false;
 	m_buffer = nullptr;
 }
 
-void TextInputManager::ClearInput()
+void text_input_manager::clear_input()
 {
 	if (m_buffer) m_buffer->clear();
 }
 
-void TextInputManager::ShowInput()
+void text_input_manager::show_input()
 {
 	if (m_buffer == nullptr) return;
 
@@ -42,12 +42,12 @@ void TextInputManager::ShowInput()
 			if (ch != 0) ch = '*';
 	}
 
-	if ((GameClock::GetTimeMS() % 400) < 210) display += '_';
+	if ((GameClock::get_time_ms() % 400) < 210) display += '_';
 
-	hb::shared::text::DrawText(GameFont::Default, m_input_x, m_input_y, display.c_str(), hb::shared::text::TextStyle::WithShadow(GameColors::InputNormal));
+	hb::shared::text::draw_text(GameFont::Default, m_input_x, m_input_y, display.c_str(), hb::shared::text::TextStyle::with_shadow(GameColors::InputNormal));
 }
 
-bool TextInputManager::HandleChar(hb::shared::types::NativeWindowHandle hWnd, uint32_t msg, uintptr_t wparam, intptr_t lparam)
+bool text_input_manager::handle_char(hb::shared::types::NativeWindowHandle hWnd, uint32_t msg, uintptr_t wparam, intptr_t lparam)
 {
 	if (m_buffer == nullptr) return false;
 
@@ -62,7 +62,7 @@ bool TextInputManager::HandleChar(hb::shared::types::NativeWindowHandle hWnd, ui
 			if (!m_buffer->empty())
 			{
 				int len = static_cast<int>(m_buffer->size());
-				switch (GetCharKind(*m_buffer, len - 1)) {
+				switch (get_char_kind(*m_buffer, len - 1)) {
 				case 1:
 					m_buffer->pop_back();
 					break;
@@ -87,7 +87,7 @@ bool TextInputManager::HandleChar(hb::shared::types::NativeWindowHandle hWnd, ui
 	return false;
 }
 
-int TextInputManager::GetCharKind(const std::string& str, int index)
+int text_input_manager::get_char_kind(const std::string& str, int index)
 {
 	int kind = 1;
 	int i = 0;

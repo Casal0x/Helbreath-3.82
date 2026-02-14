@@ -7,21 +7,21 @@
 // Floating text category enums
 // ---------------------------------------------------------------
 
-enum class ChatTextType : uint8_t {
-	PlayerChat
+enum class chat_text_type : uint8_t {
+	player_chat
 };
 
-enum class DamageTextType : uint8_t {
+enum class damage_text_type : uint8_t {
 	Small,      // <12 pts  - small sprite font
 	Medium,     // 12-39 pts, Immune, Failed - medium sprite font
 	Large,      // 40+ pts, Critical! - large sprite font
 };
 
-enum class NotifyTextType : uint8_t {
-	SkillChange,    // "+2% Mining" - yellow, delayed 650ms
-	MagicCastName,  // "Fire Ball!" - red sprite font
+enum class notify_text_type : uint8_t {
+	skill_change,    // "+2% Mining" - yellow, delayed 650ms
+	magic_cast_name,  // "Fire Ball!" - red sprite font
 	LevelUp,        // "Level up!" - large sprite font
-	EnemyKill,      // "Enemy Kill!" - large sprite font
+	enemy_kill,      // "Enemy Kill!" - large sprite font
 };
 
 // ---------------------------------------------------------------
@@ -29,14 +29,14 @@ enum class NotifyTextType : uint8_t {
 // ---------------------------------------------------------------
 
 struct AnimParams {
-	uint32_t dwLifetimeMs;    // Total display duration
-	uint32_t dwShowDelayMs;   // Delay before visible (0 = instant)
-	int iStartOffsetY;        // Starting Y offset above entity foot (pixels)
-	int iRisePixels;          // Total upward rise distance
-	int iRiseDurationMs;      // Time to reach final position
-	int iFontOffset;          // Offset from SprFont3_0 (0=large, 1=medium, 2=small)
-	hb::shared::render::Color color;              // Text color
-	bool bUseSpriteFont;      // true = sprite font, false = renderer text
+	uint32_t m_lifetime_ms;    // Total display duration
+	uint32_t m_show_delay_ms;   // Delay before visible (0 = instant)
+	int m_start_offset_y;        // Starting Y offset above entity foot (pixels)
+	int m_rise_pixels;          // Total upward rise distance
+	int m_rise_duration_ms;      // Time to reach final position
+	int m_font_offset;          // Offset from SprFont3_0 (0=large, 1=medium, 2=small)
+	hb::shared::render::Color m_color;              // Text color
+	bool m_use_sprite_font;      // true = sprite font, false = renderer text
 };
 
 // ---------------------------------------------------------------
@@ -46,7 +46,7 @@ struct AnimParams {
 namespace FloatingTextParams {
 
 inline constexpr AnimParams Chat[] = {
-	// PlayerChat: white renderer text, 4s, slow rise
+	// player_chat: white renderer text, 4s, slow rise
 	{ 4000, 0, 55, 1, 200, 0, GameColors::UIWhite, false },
 };
 
@@ -60,13 +60,13 @@ inline constexpr AnimParams Damage[] = {
 };
 
 inline constexpr AnimParams Notify[] = {
-	// SkillChange: yellow renderer text, 4s, delayed 650ms
+	// skill_change: yellow renderer text, 4s, delayed 650ms
 	{ 4000, 0, 55, 10, 80, 0, GameColors::UIDmgYellow, false },
-	// MagicCastName: red sprite font (large), 2s
+	// magic_cast_name: red sprite font (large), 2s
 	{ 2000, 0, 55, 15, 200, 0, GameColors::UIDmgRed, true },
 	// LevelUp: yellow sprite font (large), 2s, fast rise
 	{ 2000, 0, 55, 10, 80, 0, GameColors::UIDmgYellow, true },
-	// EnemyKill: yellow sprite font (large), 2s, fast rise
+	// enemy_kill: yellow sprite font (large), 2s, fast rise
 	{ 2000, 0, 55, 10, 80, 0, GameColors::UIDmgYellow, true },
 };
 

@@ -15,150 +15,150 @@ namespace squest = hb::server::quest;
 QuestManager::QuestManager()
 {
 	for (int i = 0; i < MaxQuestType; i++)
-		m_pQuestConfigList[i] = 0;
+		m_quest_config_list[i] = 0;
 }
 
 QuestManager::~QuestManager()
 {
-	CleanupArrays();
+	cleanup_arrays();
 }
 
-void QuestManager::InitArrays()
+void QuestManager::init_arrays()
 {
 	for (int i = 0; i < MaxQuestType; i++)
-		m_pQuestConfigList[i] = 0;
+		m_quest_config_list[i] = 0;
 }
 
-void QuestManager::CleanupArrays()
+void QuestManager::cleanup_arrays()
 {
 	for (int i = 0; i < MaxQuestType; i++)
-		if (m_pQuestConfigList[i] != 0) delete m_pQuestConfigList[i];
+		if (m_quest_config_list[i] != 0) delete m_quest_config_list[i];
 }
 
-void QuestManager::NpcTalkHandler(int iClientH, int iWho)
+void QuestManager::npc_talk_handler(int client_h, int who)
 {
-	char cRewardName[hb::shared::limits::ItemNameLen], cTargetName[hb::shared::limits::NpcNameLen];
-	int iResMode, iQuestNum, iQuestType, iRewardType, iRewardAmount, iContribution, iX, iY, iRange, iTargetType, iTargetCount;
+	char reward_name[hb::shared::limits::ItemNameLen], target_name[hb::shared::limits::NpcNameLen];
+	int res_mode, quest_num, quest_type, reward_type, reward_amount, contribution, iX, iY, range, target_type, target_count;
 
-	iQuestNum = 0;
-	std::memset(cTargetName, 0, sizeof(cTargetName));
-	if (m_pGame->m_pClientList[iClientH] == 0) return;
-	switch (iWho) {
+	quest_num = 0;
+	std::memset(target_name, 0, sizeof(target_name));
+	if (m_game->m_client_list[client_h] == 0) return;
+	switch (who) {
 	case 1: break;
 	case 2:	break;
 	case 3:	break;
 	case 4:
-		iQuestNum = _iTalkToNpcResult_Cityhall(iClientH, &iQuestType, &iResMode, &iRewardType, &iRewardAmount, &iContribution, cTargetName, &iTargetType, &iTargetCount, &iX, &iY, &iRange);
+		quest_num = talk_to_npc_result_cityhall(client_h, &quest_type, &res_mode, &reward_type, &reward_amount, &contribution, target_name, &target_type, &target_count, &iX, &iY, &range);
 		break;
 	case 5: break;
 	case 6:	break;
 	case 32: break;
 	case 21:
-		iQuestNum = _iTalkToNpcResult_Guard(iClientH, &iQuestType, &iResMode, &iRewardType, &iRewardAmount, &iContribution, cTargetName, &iTargetType, &iTargetCount, &iX, &iY, &iRange);
-		if (iQuestNum >= 1000) return;
+		quest_num = talk_to_npc_result_guard(client_h, &quest_type, &res_mode, &reward_type, &reward_amount, &contribution, target_name, &target_type, &target_count, &iX, &iY, &range);
+		if (quest_num >= 1000) return;
 		break;
 	}
 
-	std::memset(cRewardName, 0, sizeof(cRewardName));
-	if (iQuestNum > 0) {
-		if (iRewardType > 1) {
-			strcpy(cRewardName, m_pGame->m_pItemConfigList[iRewardType]->m_cName);
+	std::memset(reward_name, 0, sizeof(reward_name));
+	if (quest_num > 0) {
+		if (reward_type > 1) {
+			strcpy(reward_name, m_game->m_item_config_list[reward_type]->m_name);
 		}
 		else {
-			switch (iRewardType) {
-			case -10: strcpy(cRewardName, "���F-�"); break;
+			switch (reward_type) {
+			case -10: strcpy(reward_name, "���F-�"); break;
 			}
 		}
 
-		m_pGame->m_pClientList[iClientH]->m_iAskedQuest = iQuestNum;
-		m_pGame->m_pClientList[iClientH]->m_iQuestRewardType = iRewardType;
-		m_pGame->m_pClientList[iClientH]->m_iQuestRewardAmount = iRewardAmount;
+		m_game->m_client_list[client_h]->m_asked_quest = quest_num;
+		m_game->m_client_list[client_h]->m_quest_reward_type = reward_type;
+		m_game->m_client_list[client_h]->m_quest_reward_amount = reward_amount;
 
-		m_pGame->SendNotifyMsg(0, iClientH, Notify::NpcTalk, iQuestType, iResMode, iRewardAmount, cRewardName, iContribution,
-			iTargetType, iTargetCount, iX, iY, iRange, cTargetName);
+		m_game->send_notify_msg(0, client_h, Notify::NpcTalk, quest_type, res_mode, reward_amount, reward_name, contribution,
+			target_type, target_count, iX, iY, range, target_name);
 	}
 	else {
-		switch (iQuestNum) {
-		case  0: m_pGame->SendNotifyMsg(0, iClientH, Notify::NpcTalk, (iWho + 130), 0, 0, 0, 0); break;
+		switch (quest_num) {
+		case  0: m_game->send_notify_msg(0, client_h, Notify::NpcTalk, (who + 130), 0, 0, 0, 0); break;
 		case -1:
 		case -2:
 		case -3:
-		case -4: m_pGame->SendNotifyMsg(0, iClientH, Notify::NpcTalk, abs(iQuestNum) + 100, 0, 0, 0, 0); break;
+		case -4: m_game->send_notify_msg(0, client_h, Notify::NpcTalk, abs(quest_num) + 100, 0, 0, 0, 0); break;
 		case -5: break;
 		}
 	}
 }
 
-int QuestManager::_iTalkToNpcResult_Cityhall(int iClientH, int* pQuestType, int* pMode, int* pRewardType, int* pRewardAmount, int* pContribution, char* pTargetName, int* pTargetType, int* pTargetCount, int* pX, int* pY, int* pRange)
+int QuestManager::talk_to_npc_result_cityhall(int client_h, int* quest_type, int* mode, int* reward_type, int* reward_amount, int* contribution, char* target_name, int* target_type, int* target_count, int* pX, int* pY, int* range)
 {
-	int iQuest, iEraseReq;
-	CItem* pItem;
-	uint32_t iExp;
+	int quest, erase_req;
+	CItem* item;
+	uint32_t exp;
 
-	if (m_pGame->m_pClientList[iClientH] == 0) return 0;
+	if (m_game->m_client_list[client_h] == 0) return 0;
 
-	if (m_pGame->m_pClientList[iClientH]->m_iQuest != 0) {
-		if (m_pQuestConfigList[m_pGame->m_pClientList[iClientH]->m_iQuest] == 0) return -4;
-		else if (m_pQuestConfigList[m_pGame->m_pClientList[iClientH]->m_iQuest]->m_iFrom == 4) {
-			if (m_pGame->m_pClientList[iClientH]->m_bIsQuestCompleted) {
-				if ((m_pGame->m_pClientList[iClientH]->m_iQuestRewardType > 0) &&
-					(m_pGame->m_pItemConfigList[m_pGame->m_pClientList[iClientH]->m_iQuestRewardType] != 0)) {
-					pItem = new CItem;
-					m_pGame->m_pItemManager->_bInitItemAttr(pItem, m_pGame->m_pItemConfigList[m_pGame->m_pClientList[iClientH]->m_iQuestRewardType]->m_cName);
-					pItem->m_dwCount = m_pGame->m_pClientList[iClientH]->m_iQuestRewardAmount;
-					if (m_pGame->m_pItemManager->_bCheckItemReceiveCondition(iClientH, pItem)) {
-						m_pGame->m_pItemManager->_bAddClientItemList(iClientH, pItem, &iEraseReq);
-						m_pGame->m_pItemManager->SendItemNotifyMsg(iClientH, Notify::ItemObtained, pItem, 0);
-						if (iEraseReq == 1) delete pItem;
+	if (m_game->m_client_list[client_h]->m_quest != 0) {
+		if (m_quest_config_list[m_game->m_client_list[client_h]->m_quest] == 0) return -4;
+		else if (m_quest_config_list[m_game->m_client_list[client_h]->m_quest]->m_from == 4) {
+			if (m_game->m_client_list[client_h]->m_is_quest_completed) {
+				if ((m_game->m_client_list[client_h]->m_quest_reward_type > 0) &&
+					(m_game->m_item_config_list[m_game->m_client_list[client_h]->m_quest_reward_type] != 0)) {
+					item = new CItem;
+					m_game->m_item_manager->init_item_attr(item, m_game->m_item_config_list[m_game->m_client_list[client_h]->m_quest_reward_type]->m_name);
+					item->m_count = m_game->m_client_list[client_h]->m_quest_reward_amount;
+					if (m_game->m_item_manager->check_item_receive_condition(client_h, item)) {
+						m_game->m_item_manager->add_client_item_list(client_h, item, &erase_req);
+						m_game->m_item_manager->send_item_notify_msg(client_h, Notify::ItemObtained, item, 0);
+						if (erase_req == 1) delete item;
 
-						m_pGame->m_pClientList[iClientH]->m_iContribution += m_pQuestConfigList[m_pGame->m_pClientList[iClientH]->m_iQuest]->m_iContribution;
+						m_game->m_client_list[client_h]->m_contribution += m_quest_config_list[m_game->m_client_list[client_h]->m_quest]->m_contribution;
 
-						m_pGame->SendNotifyMsg(0, iClientH, Notify::QuestReward, 4, 1, m_pGame->m_pClientList[iClientH]->m_iQuestRewardAmount,
-							m_pGame->m_pItemConfigList[m_pGame->m_pClientList[iClientH]->m_iQuestRewardType]->m_cName, m_pGame->m_pClientList[iClientH]->m_iContribution);
+						m_game->send_notify_msg(0, client_h, Notify::QuestReward, 4, 1, m_game->m_client_list[client_h]->m_quest_reward_amount,
+							m_game->m_item_config_list[m_game->m_client_list[client_h]->m_quest_reward_type]->m_name, m_game->m_client_list[client_h]->m_contribution);
 
-						_ClearQuestStatus(iClientH);
+						clear_quest_status(client_h);
 						return -5;
 					}
 					else {
-						delete pItem;
-						m_pGame->m_pItemManager->SendItemNotifyMsg(iClientH, Notify::CannotCarryMoreItem, 0, 0);
+						delete item;
+						m_game->m_item_manager->send_item_notify_msg(client_h, Notify::CannotCarryMoreItem, 0, 0);
 
-						m_pGame->SendNotifyMsg(0, iClientH, Notify::QuestReward, 4, 0, m_pGame->m_pClientList[iClientH]->m_iQuestRewardAmount,
-							m_pGame->m_pItemConfigList[m_pGame->m_pClientList[iClientH]->m_iQuestRewardType]->m_cName, m_pGame->m_pClientList[iClientH]->m_iContribution);
+						m_game->send_notify_msg(0, client_h, Notify::QuestReward, 4, 0, m_game->m_client_list[client_h]->m_quest_reward_amount,
+							m_game->m_item_config_list[m_game->m_client_list[client_h]->m_quest_reward_type]->m_name, m_game->m_client_list[client_h]->m_contribution);
 
 						return -5;
 					}
 				}
-				else if (m_pGame->m_pClientList[iClientH]->m_iQuestRewardType == -1) {
-					m_pGame->m_pClientList[iClientH]->m_iExpStock += m_pGame->m_pClientList[iClientH]->m_iQuestRewardAmount;
-					m_pGame->m_pClientList[iClientH]->m_iContribution += m_pQuestConfigList[m_pGame->m_pClientList[iClientH]->m_iQuest]->m_iContribution;
+				else if (m_game->m_client_list[client_h]->m_quest_reward_type == -1) {
+					m_game->m_client_list[client_h]->m_exp_stock += m_game->m_client_list[client_h]->m_quest_reward_amount;
+					m_game->m_client_list[client_h]->m_contribution += m_quest_config_list[m_game->m_client_list[client_h]->m_quest]->m_contribution;
 
-					m_pGame->SendNotifyMsg(0, iClientH, Notify::QuestReward, 4, 1, m_pGame->m_pClientList[iClientH]->m_iQuestRewardAmount,
-						"°æÇèÄ¡              ", m_pGame->m_pClientList[iClientH]->m_iContribution);
+					m_game->send_notify_msg(0, client_h, Notify::QuestReward, 4, 1, m_game->m_client_list[client_h]->m_quest_reward_amount,
+						"°æÇèÄ¡              ", m_game->m_client_list[client_h]->m_contribution);
 
-					_ClearQuestStatus(iClientH);
+					clear_quest_status(client_h);
 					return -5;
 				}
-				else if (m_pGame->m_pClientList[iClientH]->m_iQuestRewardType == -2) {
-					iExp = m_pGame->iDice(1, (10 * m_pGame->m_pClientList[iClientH]->m_iLevel));
-					iExp = iExp * m_pGame->m_pClientList[iClientH]->m_iQuestRewardAmount;
+				else if (m_game->m_client_list[client_h]->m_quest_reward_type == -2) {
+					exp = m_game->dice(1, (10 * m_game->m_client_list[client_h]->m_level));
+					exp = exp * m_game->m_client_list[client_h]->m_quest_reward_amount;
 
-					m_pGame->m_pClientList[iClientH]->m_iExpStock += iExp;
-					m_pGame->m_pClientList[iClientH]->m_iContribution += m_pQuestConfigList[m_pGame->m_pClientList[iClientH]->m_iQuest]->m_iContribution;
+					m_game->m_client_list[client_h]->m_exp_stock += exp;
+					m_game->m_client_list[client_h]->m_contribution += m_quest_config_list[m_game->m_client_list[client_h]->m_quest]->m_contribution;
 
-					m_pGame->SendNotifyMsg(0, iClientH, Notify::QuestReward, 4, 1, iExp,
-						"°æÇèÄ¡              ", m_pGame->m_pClientList[iClientH]->m_iContribution);
+					m_game->send_notify_msg(0, client_h, Notify::QuestReward, 4, 1, exp,
+						"°æÇèÄ¡              ", m_game->m_client_list[client_h]->m_contribution);
 
-					_ClearQuestStatus(iClientH);
+					clear_quest_status(client_h);
 					return -5;
 				}
 				else {
-					m_pGame->m_pClientList[iClientH]->m_iContribution += m_pQuestConfigList[m_pGame->m_pClientList[iClientH]->m_iQuest]->m_iContribution;
+					m_game->m_client_list[client_h]->m_contribution += m_quest_config_list[m_game->m_client_list[client_h]->m_quest]->m_contribution;
 
-					m_pGame->SendNotifyMsg(0, iClientH, Notify::QuestReward, 4, 1, 0,
-						"                     ", m_pGame->m_pClientList[iClientH]->m_iContribution);
+					m_game->send_notify_msg(0, client_h, Notify::QuestReward, 4, 1, 0,
+						"                     ", m_game->m_client_list[client_h]->m_contribution);
 
-					_ClearQuestStatus(iClientH);
+					clear_quest_status(client_h);
 					return -5;
 				}
 			}
@@ -168,13 +168,13 @@ int QuestManager::_iTalkToNpcResult_Cityhall(int iClientH, int* pQuestType, int*
 		return -4;
 	}
 
-	if (memcmp(m_pGame->m_pClientList[iClientH]->m_cLocation, m_pGame->m_pMapList[m_pGame->m_pClientList[iClientH]->m_cMapIndex]->m_cLocationName, 10) == 0) {
-		if (m_pGame->m_pClientList[iClientH]->m_iPKCount > 0) return -3;
+	if (memcmp(m_game->m_client_list[client_h]->m_location, m_game->m_map_list[m_game->m_client_list[client_h]->m_map_index]->m_location_name, 10) == 0) {
+		if (m_game->m_client_list[client_h]->m_player_kill_count > 0) return -3;
 
-		iQuest = __iSearchForQuest(iClientH, 4, pQuestType, pMode, pRewardType, pRewardAmount, pContribution, pTargetName, pTargetType, pTargetCount, pX, pY, pRange);
-		if (iQuest <= 0) return -4;
+		quest = search_for_quest(client_h, 4, quest_type, mode, reward_type, reward_amount, contribution, target_name, target_type, target_count, pX, pY, range);
+		if (quest <= 0) return -4;
 
-		return iQuest;
+		return quest;
 	}
 	else return -2;
 
@@ -182,47 +182,47 @@ int QuestManager::_iTalkToNpcResult_Cityhall(int iClientH, int* pQuestType, int*
 }
 
 
-int QuestManager::_iTalkToNpcResult_Guard(int iClientH, int* pQuestType, int* pMode, int* pRewardType, int* pRewardAmount, int* pContribution, char* pTargetName, int* pTargetType, int* pTargetCount, int* pX, int* pY, int* pRange)
+int QuestManager::talk_to_npc_result_guard(int client_h, int* quest_type, int* mode, int* reward_type, int* reward_amount, int* contribution, char* target_name, int* target_type, int* target_count, int* pX, int* pY, int* range)
 {
-	if (m_pGame->m_pClientList[iClientH] == 0) return 0;
+	if (m_game->m_client_list[client_h] == 0) return 0;
 
-	if (memcmp(m_pGame->m_pClientList[iClientH]->m_cLocation, "are", 3) == 0) {
-		if (memcmp(m_pGame->m_pClientList[iClientH]->m_cMapName, "aresden", 7) == 0) {
-			m_pGame->SendNotifyMsg(0, iClientH, Notify::NpcTalk, (200), 0, 0, 0, 0);
+	if (memcmp(m_game->m_client_list[client_h]->m_location, "are", 3) == 0) {
+		if (memcmp(m_game->m_client_list[client_h]->m_map_name, "aresden", 7) == 0) {
+			m_game->send_notify_msg(0, client_h, Notify::NpcTalk, (200), 0, 0, 0, 0);
 			return 1000;
 		}
 		else
-			if (memcmp(m_pGame->m_pClientList[iClientH]->m_cMapName, "elv", 3) == 0) {
-				m_pGame->SendNotifyMsg(0, iClientH, Notify::NpcTalk, (201), 0, 0, 0, 0);
+			if (memcmp(m_game->m_client_list[client_h]->m_map_name, "elv", 3) == 0) {
+				m_game->send_notify_msg(0, client_h, Notify::NpcTalk, (201), 0, 0, 0, 0);
 				return 1001;
 			}
 	}
 	else
-		if (memcmp(m_pGame->m_pClientList[iClientH]->m_cLocation, "elv", 3) == 0) {
-			if (memcmp(m_pGame->m_pClientList[iClientH]->m_cMapName, "aresden", 7) == 0) {
-				m_pGame->SendNotifyMsg(0, iClientH, Notify::NpcTalk, (202), 0, 0, 0, 0);
+		if (memcmp(m_game->m_client_list[client_h]->m_location, "elv", 3) == 0) {
+			if (memcmp(m_game->m_client_list[client_h]->m_map_name, "aresden", 7) == 0) {
+				m_game->send_notify_msg(0, client_h, Notify::NpcTalk, (202), 0, 0, 0, 0);
 				return 1002;
 			}
 			else
-				if (memcmp(m_pGame->m_pClientList[iClientH]->m_cMapName, "elv", 3) == 0) {
-					m_pGame->SendNotifyMsg(0, iClientH, Notify::NpcTalk, (203), 0, 0, 0, 0);
+				if (memcmp(m_game->m_client_list[client_h]->m_map_name, "elv", 3) == 0) {
+					m_game->send_notify_msg(0, client_h, Notify::NpcTalk, (203), 0, 0, 0, 0);
 					return 1003;
 				}
 		}
 		else
-			if (memcmp(m_pGame->m_pClientList[iClientH]->m_cLocation, "NONE", 4) == 0) {
-				if (memcmp(m_pGame->m_pClientList[iClientH]->m_cMapName, "aresden", 7) == 0) {
-					m_pGame->SendNotifyMsg(0, iClientH, Notify::NpcTalk, (204), 0, 0, 0, 0);
+			if (memcmp(m_game->m_client_list[client_h]->m_location, "NONE", 4) == 0) {
+				if (memcmp(m_game->m_client_list[client_h]->m_map_name, "aresden", 7) == 0) {
+					m_game->send_notify_msg(0, client_h, Notify::NpcTalk, (204), 0, 0, 0, 0);
 					return 1004;
 				}
 				else
-					if (memcmp(m_pGame->m_pClientList[iClientH]->m_cMapName, "elvine", 6) == 0) {
-						m_pGame->SendNotifyMsg(0, iClientH, Notify::NpcTalk, (205), 0, 0, 0, 0);
+					if (memcmp(m_game->m_client_list[client_h]->m_map_name, "elvine", 6) == 0) {
+						m_game->send_notify_msg(0, client_h, Notify::NpcTalk, (205), 0, 0, 0, 0);
 						return 1005;
 					}
 					else
-						if (memcmp(m_pGame->m_pClientList[iClientH]->m_cMapName, "default", 7) == 0) {
-							m_pGame->SendNotifyMsg(0, iClientH, Notify::NpcTalk, (206), 0, 0, 0, 0);
+						if (memcmp(m_game->m_client_list[client_h]->m_map_name, "default", 7) == 0) {
+							m_game->send_notify_msg(0, client_h, Notify::NpcTalk, (206), 0, 0, 0, 0);
 							return 1006;
 						}
 			}
@@ -231,197 +231,197 @@ int QuestManager::_iTalkToNpcResult_Guard(int iClientH, int* pQuestType, int* pM
 }
 
 
-int QuestManager::__iSearchForQuest(int iClientH, int iWho, int* pQuestType, int* pMode, int* pRewardType, int* pRewardAmount, int* pContribution, char* pTargetName, int* pTargetType, int* pTargetCount, int* pX, int* pY, int* pRange)
+int QuestManager::search_for_quest(int client_h, int who, int* quest_type, int* mode, int* reward_type, int* reward_amount, int* contribution, char* target_name, int* target_type, int* target_count, int* pX, int* pY, int* range)
 {
-	int iQuestList[MaxQuestType], iIndex, iQuest, iReward, iQuestIndex;
+	int quest_list[MaxQuestType], index, quest, reward, quest_index;
 
-	if (m_pGame->m_pClientList[iClientH] == 0) return -1;
+	if (m_game->m_client_list[client_h] == 0) return -1;
 
-	iIndex = 0;
+	index = 0;
 	for(int i = 0; i < MaxQuestType; i++)
-		iQuestList[i] = -1;
+		quest_list[i] = -1;
 
 	for(int i = 1; i < MaxQuestType; i++)
-		if (m_pQuestConfigList[i] != 0) {
+		if (m_quest_config_list[i] != 0) {
 
-			if (m_pQuestConfigList[i]->m_iFrom != iWho) goto SFQ_SKIP;
-			if (m_pQuestConfigList[i]->m_cSide != m_pGame->m_pClientList[iClientH]->m_cSide) goto SFQ_SKIP;
-			if (m_pQuestConfigList[i]->m_iMinLevel > m_pGame->m_pClientList[iClientH]->m_iLevel) goto SFQ_SKIP;
-			if (m_pQuestConfigList[i]->m_iMaxLevel < m_pGame->m_pClientList[iClientH]->m_iLevel) goto SFQ_SKIP;
-			if (m_pQuestConfigList[i]->m_iReqContribution > m_pGame->m_pClientList[iClientH]->m_iContribution) goto SFQ_SKIP;
+			if (m_quest_config_list[i]->m_from != who) goto SFQ_SKIP;
+			if (m_quest_config_list[i]->m_side != m_game->m_client_list[client_h]->m_side) goto SFQ_SKIP;
+			if (m_quest_config_list[i]->m_min_level > m_game->m_client_list[client_h]->m_level) goto SFQ_SKIP;
+			if (m_quest_config_list[i]->m_max_level < m_game->m_client_list[client_h]->m_level) goto SFQ_SKIP;
+			if (m_quest_config_list[i]->m_req_contribution > m_game->m_client_list[client_h]->m_contribution) goto SFQ_SKIP;
 
-			if (m_pQuestConfigList[i]->m_iRequiredSkillNum != -1) {
-				if (m_pGame->m_pClientList[iClientH]->m_cSkillMastery[m_pQuestConfigList[i]->m_iRequiredSkillNum] <
-					m_pQuestConfigList[i]->m_iRequiredSkillLevel) goto SFQ_SKIP;
+			if (m_quest_config_list[i]->m_required_skill_num != -1) {
+				if (m_game->m_client_list[client_h]->m_skill_mastery[m_quest_config_list[i]->m_required_skill_num] <
+					m_quest_config_list[i]->m_required_skill_level) goto SFQ_SKIP;
 			}
 
-			if ((m_pGame->m_bIsCrusadeMode) && (m_pQuestConfigList[i]->m_iAssignType != 1)) goto SFQ_SKIP;
-			if ((m_pGame->m_bIsCrusadeMode == false) && (m_pQuestConfigList[i]->m_iAssignType == 1)) goto SFQ_SKIP;
+			if ((m_game->m_is_crusade_mode) && (m_quest_config_list[i]->m_assign_type != 1)) goto SFQ_SKIP;
+			if ((m_game->m_is_crusade_mode == false) && (m_quest_config_list[i]->m_assign_type == 1)) goto SFQ_SKIP;
 
-			if (m_pQuestConfigList[i]->m_iContributionLimit < m_pGame->m_pClientList[iClientH]->m_iContribution) goto SFQ_SKIP;
+			if (m_quest_config_list[i]->m_contribution_limit < m_game->m_client_list[client_h]->m_contribution) goto SFQ_SKIP;
 
-			iQuestList[iIndex] = i;
-			iIndex++;
+			quest_list[index] = i;
+			index++;
 
 		SFQ_SKIP:;
 		}
 
-	// iIndex     .    1 .
-	if (iIndex == 0) return -1;
-	iQuest = (m_pGame->iDice(1, iIndex)) - 1;
-	iQuestIndex = iQuestList[iQuest];
-	iReward = m_pGame->iDice(1, 3);
-	*pMode = m_pQuestConfigList[iQuestIndex]->m_iResponseMode;
-	*pRewardType = m_pQuestConfigList[iQuestIndex]->m_iRewardType[iReward];
-	*pRewardAmount = m_pQuestConfigList[iQuestIndex]->m_iRewardAmount[iReward];
-	*pContribution = m_pQuestConfigList[iQuestIndex]->m_iContribution;
+	// index     .    1 .
+	if (index == 0) return -1;
+	quest = (m_game->dice(1, index)) - 1;
+	quest_index = quest_list[quest];
+	reward = m_game->dice(1, 3);
+	*mode = m_quest_config_list[quest_index]->m_response_mode;
+	*reward_type = m_quest_config_list[quest_index]->m_reward_type[reward];
+	*reward_amount = m_quest_config_list[quest_index]->m_reward_amount[reward];
+	*contribution = m_quest_config_list[quest_index]->m_contribution;
 
-	strcpy(pTargetName, m_pQuestConfigList[iQuestIndex]->m_cTargetName);
-	*pX = m_pQuestConfigList[iQuestIndex]->m_sX;
-	*pY = m_pQuestConfigList[iQuestIndex]->m_sY;
-	*pRange = m_pQuestConfigList[iQuestIndex]->m_iRange;
+	strcpy(target_name, m_quest_config_list[quest_index]->m_target_name);
+	*pX = m_quest_config_list[quest_index]->m_x;
+	*pY = m_quest_config_list[quest_index]->m_y;
+	*range = m_quest_config_list[quest_index]->m_range;
 
-	*pTargetType = m_pQuestConfigList[iQuestIndex]->m_iTargetType;
-	*pTargetCount = m_pQuestConfigList[iQuestIndex]->m_iMaxCount;
-	*pQuestType = m_pQuestConfigList[iQuestIndex]->m_iType;
+	*target_type = m_quest_config_list[quest_index]->m_target_type;
+	*target_count = m_quest_config_list[quest_index]->m_max_count;
+	*quest_type = m_quest_config_list[quest_index]->m_type;
 
-	return iQuestIndex;
+	return quest_index;
 }
 
 // New 14/05/2004
-void QuestManager::QuestAcceptedHandler(int iClientH)
+void QuestManager::quest_accepted_handler(int client_h)
 {
-	int iIndex;
+	int index;
 
-	if (m_pGame->m_pClientList[iClientH] == 0) return;
+	if (m_game->m_client_list[client_h] == 0) return;
 
 	// Does the quest exist ??
-	if (m_pQuestConfigList[m_pGame->m_pClientList[iClientH]->m_iAskedQuest] == 0) return;
+	if (m_quest_config_list[m_game->m_client_list[client_h]->m_asked_quest] == 0) return;
 
-	if (m_pQuestConfigList[m_pGame->m_pClientList[iClientH]->m_iAskedQuest]->m_iAssignType == 1) {
-		switch (m_pQuestConfigList[m_pGame->m_pClientList[iClientH]->m_iAskedQuest]->m_iType) {
+	if (m_quest_config_list[m_game->m_client_list[client_h]->m_asked_quest]->m_assign_type == 1) {
+		switch (m_quest_config_list[m_game->m_client_list[client_h]->m_asked_quest]->m_type) {
 		case 10:
-			_ClearQuestStatus(iClientH);
-			m_pGame->RequestTeleportHandler(iClientH, "2   ", m_pQuestConfigList[m_pGame->m_pClientList[iClientH]->m_iAskedQuest]->m_cTargetName,
-				m_pQuestConfigList[m_pGame->m_pClientList[iClientH]->m_iAskedQuest]->m_sX, m_pQuestConfigList[m_pGame->m_pClientList[iClientH]->m_iAskedQuest]->m_sY);
+			clear_quest_status(client_h);
+			m_game->request_teleport_handler(client_h, "2   ", m_quest_config_list[m_game->m_client_list[client_h]->m_asked_quest]->m_target_name,
+				m_quest_config_list[m_game->m_client_list[client_h]->m_asked_quest]->m_x, m_quest_config_list[m_game->m_client_list[client_h]->m_asked_quest]->m_y);
 			return;
 		}
 	}
 
-	m_pGame->m_pClientList[iClientH]->m_iQuest = m_pGame->m_pClientList[iClientH]->m_iAskedQuest;
-	iIndex = m_pGame->m_pClientList[iClientH]->m_iQuest;
-	m_pGame->m_pClientList[iClientH]->m_iQuestID = m_pQuestConfigList[iIndex]->m_iQuestID;
-	m_pGame->m_pClientList[iClientH]->m_iCurQuestCount = 0;
-	m_pGame->m_pClientList[iClientH]->m_bIsQuestCompleted = false;
+	m_game->m_client_list[client_h]->m_quest = m_game->m_client_list[client_h]->m_asked_quest;
+	index = m_game->m_client_list[client_h]->m_quest;
+	m_game->m_client_list[client_h]->m_quest_id = m_quest_config_list[index]->m_quest_id;
+	m_game->m_client_list[client_h]->m_cur_quest_count = 0;
+	m_game->m_client_list[client_h]->m_is_quest_completed = false;
 
-	_CheckQuestEnvironment(iClientH);
-	_SendQuestContents(iClientH);
+	check_quest_environment(client_h);
+	send_quest_contents(client_h);
 }
 
 
-void QuestManager::_SendQuestContents(int iClientH)
+void QuestManager::send_quest_contents(int client_h)
 {
-	int iWho, iIndex, iQuestType, iContribution, iTargetType, iTargetCount, iX, iY, iRange, iQuestCompleted;
-	char cTargetName[hb::shared::limits::NpcNameLen];
+	int who, index, quest_type, contribution, target_type, target_count, iX, iY, range, quest_completed;
+	char target_name[hb::shared::limits::NpcNameLen];
 
-	if (m_pGame->m_pClientList[iClientH] == 0) return;
+	if (m_game->m_client_list[client_h] == 0) return;
 
-	iIndex = m_pGame->m_pClientList[iClientH]->m_iQuest;
-	if (iIndex == 0) {
+	index = m_game->m_client_list[client_h]->m_quest;
+	if (index == 0) {
 		// Quest .
-		m_pGame->SendNotifyMsg(0, iClientH, Notify::QuestContents, 0, 0, 0, 0,
+		m_game->send_notify_msg(0, client_h, Notify::QuestContents, 0, 0, 0, 0,
 			0, 0, 0, 0, 0, 0, 0);
 	}
 	else {
 		// Quest  .
-		iWho = m_pQuestConfigList[iIndex]->m_iFrom;
-		iQuestType = m_pQuestConfigList[iIndex]->m_iType;
-		iContribution = m_pQuestConfigList[iIndex]->m_iContribution;
-		iTargetType = m_pQuestConfigList[iIndex]->m_iTargetType;
-		iTargetCount = m_pQuestConfigList[iIndex]->m_iMaxCount;
-		iX = m_pQuestConfigList[iIndex]->m_sX;
-		iY = m_pQuestConfigList[iIndex]->m_sY;
-		iRange = m_pQuestConfigList[iIndex]->m_iRange;
-		std::memset(cTargetName, 0, sizeof(cTargetName));
-		memcpy(cTargetName, m_pQuestConfigList[iIndex]->m_cTargetName, hb::shared::limits::NpcNameLen - 1);
-		iQuestCompleted = (int)m_pGame->m_pClientList[iClientH]->m_bIsQuestCompleted;
+		who = m_quest_config_list[index]->m_from;
+		quest_type = m_quest_config_list[index]->m_type;
+		contribution = m_quest_config_list[index]->m_contribution;
+		target_type = m_quest_config_list[index]->m_target_type;
+		target_count = m_quest_config_list[index]->m_max_count;
+		iX = m_quest_config_list[index]->m_x;
+		iY = m_quest_config_list[index]->m_y;
+		range = m_quest_config_list[index]->m_range;
+		std::memset(target_name, 0, sizeof(target_name));
+		memcpy(target_name, m_quest_config_list[index]->m_target_name, hb::shared::limits::NpcNameLen - 1);
+		quest_completed = (int)m_game->m_client_list[client_h]->m_is_quest_completed;
 
-		m_pGame->SendNotifyMsg(0, iClientH, Notify::QuestContents, iWho, iQuestType, iContribution, 0,
-			iTargetType, iTargetCount, iX, iY, iRange, iQuestCompleted, cTargetName);
+		m_game->send_notify_msg(0, client_h, Notify::QuestContents, who, quest_type, contribution, 0,
+			target_type, target_count, iX, iY, range, quest_completed, target_name);
 	}
 }
 
-void QuestManager::_CheckQuestEnvironment(int iClientH)
+void QuestManager::check_quest_environment(int client_h)
 {
-	int iIndex;
-	char cTargetName[hb::shared::limits::NpcNameLen];
+	int index;
+	char target_name[hb::shared::limits::NpcNameLen];
 
-	if (m_pGame->m_pClientList[iClientH] == 0) return;
+	if (m_game->m_client_list[client_h] == 0) return;
 
-	iIndex = m_pGame->m_pClientList[iClientH]->m_iQuest;
-	if (iIndex == 0) return;
-	if (m_pQuestConfigList[iIndex] == 0) return;
+	index = m_game->m_client_list[client_h]->m_quest;
+	if (index == 0) return;
+	if (m_quest_config_list[index] == 0) return;
 
-	if (iIndex >= 35 && iIndex <= 40) {
-		m_pGame->m_pClientList[iClientH]->m_iQuest = 0;
-		m_pGame->m_pClientList[iClientH]->m_iQuestID = 0;
-		m_pGame->m_pClientList[iClientH]->m_iQuestRewardAmount = 0;
-		m_pGame->m_pClientList[iClientH]->m_iQuestRewardType = 0;
-		m_pGame->SendNotifyMsg(0, iClientH, Notify::QuestAborted, 0, 0, 0, 0);
+	if (index >= 35 && index <= 40) {
+		m_game->m_client_list[client_h]->m_quest = 0;
+		m_game->m_client_list[client_h]->m_quest_id = 0;
+		m_game->m_client_list[client_h]->m_quest_reward_amount = 0;
+		m_game->m_client_list[client_h]->m_quest_reward_type = 0;
+		m_game->send_notify_msg(0, client_h, Notify::QuestAborted, 0, 0, 0, 0);
 		return;
 	}
 
-	if (m_pQuestConfigList[iIndex]->m_iQuestID != m_pGame->m_pClientList[iClientH]->m_iQuestID) {
-		m_pGame->m_pClientList[iClientH]->m_iQuest = 0;
-		m_pGame->m_pClientList[iClientH]->m_iQuestID = 0;
-		m_pGame->m_pClientList[iClientH]->m_iQuestRewardAmount = 0;
-		m_pGame->m_pClientList[iClientH]->m_iQuestRewardType = 0;
+	if (m_quest_config_list[index]->m_quest_id != m_game->m_client_list[client_h]->m_quest_id) {
+		m_game->m_client_list[client_h]->m_quest = 0;
+		m_game->m_client_list[client_h]->m_quest_id = 0;
+		m_game->m_client_list[client_h]->m_quest_reward_amount = 0;
+		m_game->m_client_list[client_h]->m_quest_reward_type = 0;
 
-		m_pGame->SendNotifyMsg(0, iClientH, Notify::QuestAborted, 0, 0, 0, 0);
+		m_game->send_notify_msg(0, client_h, Notify::QuestAborted, 0, 0, 0, 0);
 		return;
 	}
 
-	switch (m_pQuestConfigList[iIndex]->m_iType) {
+	switch (m_quest_config_list[index]->m_type) {
 	case squest::Type::MonsterHunt:
 	case squest::Type::GoPlace:
-		std::memset(cTargetName, 0, sizeof(cTargetName));
-		memcpy(cTargetName, m_pQuestConfigList[iIndex]->m_cTargetName, hb::shared::limits::NpcNameLen - 1);
-		if (memcmp(m_pGame->m_pMapList[m_pGame->m_pClientList[iClientH]->m_cMapIndex]->m_cName, cTargetName, 10) == 0)
-			m_pGame->m_pClientList[iClientH]->m_bQuestMatchFlag_Loc = true;
-		else m_pGame->m_pClientList[iClientH]->m_bQuestMatchFlag_Loc = false;
+		std::memset(target_name, 0, sizeof(target_name));
+		memcpy(target_name, m_quest_config_list[index]->m_target_name, hb::shared::limits::NpcNameLen - 1);
+		if (memcmp(m_game->m_map_list[m_game->m_client_list[client_h]->m_map_index]->m_name, target_name, 10) == 0)
+			m_game->m_client_list[client_h]->m_quest_match_flag_loc = true;
+		else m_game->m_client_list[client_h]->m_quest_match_flag_loc = false;
 		break;
 	}
 
 }
 
-bool QuestManager::_bCheckIsQuestCompleted(int iClientH)
+bool QuestManager::check_is_quest_completed(int client_h)
 {
-	int iQuestIndex;
+	int quest_index;
 
-	if (m_pGame->m_pClientList[iClientH] == 0) return false;
-	if (m_pGame->m_pClientList[iClientH]->m_bIsQuestCompleted) return false;
-	iQuestIndex = m_pGame->m_pClientList[iClientH]->m_iQuest;
-	if (iQuestIndex == 0) return false;
+	if (m_game->m_client_list[client_h] == 0) return false;
+	if (m_game->m_client_list[client_h]->m_is_quest_completed) return false;
+	quest_index = m_game->m_client_list[client_h]->m_quest;
+	if (quest_index == 0) return false;
 
-	if (m_pQuestConfigList[iQuestIndex] != 0) {
-		switch (m_pQuestConfigList[iQuestIndex]->m_iType) {
+	if (m_quest_config_list[quest_index] != 0) {
+		switch (m_quest_config_list[quest_index]->m_type) {
 		case squest::Type::MonsterHunt:
-			if ((m_pGame->m_pClientList[iClientH]->m_bQuestMatchFlag_Loc) &&
-				(m_pGame->m_pClientList[iClientH]->m_iCurQuestCount >= m_pQuestConfigList[iQuestIndex]->m_iMaxCount)) {
-				m_pGame->m_pClientList[iClientH]->m_bIsQuestCompleted = true;
-				m_pGame->SendNotifyMsg(0, iClientH, Notify::QuestCompleted, 0, 0, 0, 0);
+			if ((m_game->m_client_list[client_h]->m_quest_match_flag_loc) &&
+				(m_game->m_client_list[client_h]->m_cur_quest_count >= m_quest_config_list[quest_index]->m_max_count)) {
+				m_game->m_client_list[client_h]->m_is_quest_completed = true;
+				m_game->send_notify_msg(0, client_h, Notify::QuestCompleted, 0, 0, 0, 0);
 				return true;
 			}
 			break;
 
 		case squest::Type::GoPlace:
-			if ((m_pGame->m_pClientList[iClientH]->m_bQuestMatchFlag_Loc) &&
-				(m_pGame->m_pClientList[iClientH]->m_sX >= m_pQuestConfigList[iQuestIndex]->m_sX - m_pQuestConfigList[iQuestIndex]->m_iRange) &&
-				(m_pGame->m_pClientList[iClientH]->m_sX <= m_pQuestConfigList[iQuestIndex]->m_sX + m_pQuestConfigList[iQuestIndex]->m_iRange) &&
-				(m_pGame->m_pClientList[iClientH]->m_sY >= m_pQuestConfigList[iQuestIndex]->m_sY - m_pQuestConfigList[iQuestIndex]->m_iRange) &&
-				(m_pGame->m_pClientList[iClientH]->m_sY <= m_pQuestConfigList[iQuestIndex]->m_sY + m_pQuestConfigList[iQuestIndex]->m_iRange)) {
-				m_pGame->m_pClientList[iClientH]->m_bIsQuestCompleted = true;
-				m_pGame->SendNotifyMsg(0, iClientH, Notify::QuestCompleted, 0, 0, 0, 0);
+			if ((m_game->m_client_list[client_h]->m_quest_match_flag_loc) &&
+				(m_game->m_client_list[client_h]->m_x >= m_quest_config_list[quest_index]->m_x - m_quest_config_list[quest_index]->m_range) &&
+				(m_game->m_client_list[client_h]->m_x <= m_quest_config_list[quest_index]->m_x + m_quest_config_list[quest_index]->m_range) &&
+				(m_game->m_client_list[client_h]->m_y >= m_quest_config_list[quest_index]->m_y - m_quest_config_list[quest_index]->m_range) &&
+				(m_game->m_client_list[client_h]->m_y <= m_quest_config_list[quest_index]->m_y + m_quest_config_list[quest_index]->m_range)) {
+				m_game->m_client_list[client_h]->m_is_quest_completed = true;
+				m_game->send_notify_msg(0, client_h, Notify::QuestCompleted, 0, 0, 0, 0);
 				return true;
 			}
 			break;
@@ -431,21 +431,21 @@ bool QuestManager::_bCheckIsQuestCompleted(int iClientH)
 	return false;
 }
 
-void QuestManager::_ClearQuestStatus(int iClientH)
+void QuestManager::clear_quest_status(int client_h)
 {
-	if (m_pGame->m_pClientList[iClientH] == 0) return;
+	if (m_game->m_client_list[client_h] == 0) return;
 
-	m_pGame->m_pClientList[iClientH]->m_iQuest = 0;
-	m_pGame->m_pClientList[iClientH]->m_iQuestID = 0;
-	m_pGame->m_pClientList[iClientH]->m_iQuestRewardType = 0;
-	m_pGame->m_pClientList[iClientH]->m_iQuestRewardAmount = 0;
-	m_pGame->m_pClientList[iClientH]->m_bIsQuestCompleted = false;
+	m_game->m_client_list[client_h]->m_quest = 0;
+	m_game->m_client_list[client_h]->m_quest_id = 0;
+	m_game->m_client_list[client_h]->m_quest_reward_type = 0;
+	m_game->m_client_list[client_h]->m_quest_reward_amount = 0;
+	m_game->m_client_list[client_h]->m_is_quest_completed = false;
 }
 
-void QuestManager::CancelQuestHandler(int iClientH)
+void QuestManager::cancel_quest_handler(int client_h)
 {
-	if (m_pGame->m_pClientList[iClientH] == 0) return;
+	if (m_game->m_client_list[client_h] == 0) return;
 
-	_ClearQuestStatus(iClientH);
-	m_pGame->SendNotifyMsg(0, iClientH, Notify::QuestAborted, 0, 0, 0, 0);
+	clear_quest_status(client_h);
+	m_game->send_notify_msg(0, client_h, Notify::QuestAborted, 0, 0, 0, 0);
 }

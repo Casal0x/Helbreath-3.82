@@ -6,49 +6,49 @@
 
 using namespace hb::shared::net;
 using namespace hb::server::config;
-bool GameCmdSpawn::Execute(CGame* pGame, int iClientH, const char* pArgs)
+bool GameCmdSpawn::execute(CGame* game, int client_h, const char* args)
 {
-	if (pGame->m_pClientList[iClientH] == nullptr)
+	if (game->m_client_list[client_h] == nullptr)
 		return true;
 
-	int iNpcID = 0, iAmount = 1;
-	if (pArgs == nullptr || pArgs[0] == '\0' || sscanf(pArgs, "%d %d", &iNpcID, &iAmount) < 1)
+	int npc_id = 0, amount = 1;
+	if (args == nullptr || args[0] == '\0' || sscanf(args, "%d %d", &npc_id, &amount) < 1)
 	{
-		pGame->SendNotifyMsg(0, iClientH, Notify::NoticeMsg, 0, 0, 0, "Usage: /spawn <npc_id> [amount]");
-		return true;
-	}
-
-	if (iNpcID < 0 || iNpcID >= MaxNpcTypes || pGame->m_pNpcConfigList[iNpcID] == nullptr)
-	{
-		pGame->SendNotifyMsg(0, iClientH, Notify::NoticeMsg, 0, 0, 0, "Invalid NPC ID.");
+		game->send_notify_msg(0, client_h, Notify::NoticeMsg, 0, 0, 0, "Usage: /spawn <npc_id> [amount]");
 		return true;
 	}
 
-	if (iAmount < 1) iAmount = 1;
-	if (iAmount > 50) iAmount = 50;
-
-	char* pMapName = pGame->m_pMapList[pGame->m_pClientList[iClientH]->m_cMapIndex]->m_cName;
-	int iSpawned = 0;
-
-	for (int i = 0; i < iAmount; i++)
+	if (npc_id < 0 || npc_id >= MaxNpcTypes || game->m_npc_config_list[npc_id] == nullptr)
 	{
-		char cUniqueName[21];
-		std::snprintf(cUniqueName, sizeof(cUniqueName), "GM-spawn%d", i);
+		game->send_notify_msg(0, client_h, Notify::NoticeMsg, 0, 0, 0, "Invalid NPC ID.");
+		return true;
+	}
 
-		int tX = pGame->m_pClientList[iClientH]->m_sX;
-		int tY = pGame->m_pClientList[iClientH]->m_sY;
+	if (amount < 1) amount = 1;
+	if (amount > 50) amount = 50;
 
-		// bIsSummoned=false so NPCs give EXP/drops, bBypassMobLimit=true so they don't count toward map limit
-		if (pGame->bCreateNewNpc(iNpcID, cUniqueName, pMapName, 0, 0, hb::server::npc::MoveType::Random,
+	char* map_name = game->m_map_list[game->m_client_list[client_h]->m_map_index]->m_name;
+	int spawned = 0;
+
+	for (int i = 0; i < amount; i++)
+	{
+		char unique_name[21];
+		std::snprintf(unique_name, sizeof(unique_name), "GM-spawn%d", i);
+
+		int tX = game->m_client_list[client_h]->m_x;
+		int tY = game->m_client_list[client_h]->m_y;
+
+		// is_summoned=false so NPCs give EXP/drops, bypass_mob_limit=true so they don't count toward map limit
+		if (game->create_new_npc(npc_id, unique_name, map_name, 0, 0, hb::server::npc::MoveType::Random,
 			&tX, &tY, nullptr, nullptr, 0, -1, false, false, false, false, 0, true))
 		{
-			iSpawned++;
+			spawned++;
 		}
 	}
 
 	char buf[128];
-	std::snprintf(buf, sizeof(buf), "Spawned %d x %s (ID: %d).", iSpawned, pGame->m_pNpcConfigList[iNpcID]->m_cNpcName, iNpcID);
-	pGame->SendNotifyMsg(0, iClientH, Notify::NoticeMsg, 0, 0, 0, buf);
+	std::snprintf(buf, sizeof(buf), "Spawned %d x %s (ID: %d).", spawned, game->m_npc_config_list[npc_id]->m_npc_name, npc_id);
+	game->send_notify_msg(0, client_h, Notify::NoticeMsg, 0, 0, 0, buf);
 
 	return true;
 }

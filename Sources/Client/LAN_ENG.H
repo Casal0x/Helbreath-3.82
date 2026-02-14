@@ -627,9 +627,9 @@
 #define	BCHECK_LOCAL_CHAT_COMMAND3	"Character {} has been listed on the message refusing list."
 #define	BCHECK_LOCAL_CHAT_COMMAND4	"There is no space in the refusing message character list."
 #define	BCHECK_LOCAL_CHAT_COMMAND5	"The character's name you want to refuse is too long."
-#define	BCHECK_LOCAL_CHAT_COMMAND6	"Enable to listen to whispers."
+#define	BCHECK_LOCAL_CHAT_COMMAND6	"enable to listen to whispers."
 #define	BCHECK_LOCAL_CHAT_COMMAND7	"Unable to listen to whispers."
-#define	BCHECK_LOCAL_CHAT_COMMAND8	"Enable to chat in public."
+#define	BCHECK_LOCAL_CHAT_COMMAND8	"enable to chat in public."
 #define	BCHECK_LOCAL_CHAT_COMMAND9	"Unable to chat in public."
 
 
@@ -863,7 +863,7 @@
 #define	DRAW_DIALOGBOX_GUILDMENU7	"Buy a guild admission ticket"
 #define	DRAW_DIALOGBOX_GUILDMENU9	"Buy a guild withdrawal ticket"
 #define	DRAW_DIALOGBOX_GUILDMENU11	"Reserve the arena"
-#define	DRAW_DIALOGBOX_GUILDMENU13	"Get an entrance ticket"
+#define	DRAW_DIALOGBOX_GUILDMENU13	"get an entrance ticket"
 
 #define	DRAW_DIALOGBOX_GUILDMENU17	"* Select an Item you want."
 #define	DRAW_DIALOGBOX_GUILDMENU18	"Enter a new guild name"
@@ -1005,7 +1005,7 @@
 #define	DRAW_DIALOGBOX_NOTICEMSG4	"safely. After beginning of shutdown, user's"
 #define	DRAW_DIALOGBOX_NOTICEMSG5	"data are not saved and the lost data cannot"
 #define	DRAW_DIALOGBOX_NOTICEMSG6	"be recovered. So be careful!!"
-#define	DRAW_DIALOGBOX_NOTICEMSG7	" Shutdown has started.!!!!"
+#define	DRAW_DIALOGBOX_NOTICEMSG7	" shutdown has started.!!!!"
 #define	DRAW_DIALOGBOX_NOTICEMSG8	"Your connection will be lost automatically"
 #define	DRAW_DIALOGBOX_NOTICEMSG9	"soon. Don't drop items or give them other"
 #define	DRAW_DIALOGBOX_NOTICEMSG10	"people. Data could be lost. And lost data"

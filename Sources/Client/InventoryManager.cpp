@@ -9,322 +9,322 @@
 using namespace hb::shared::net;
 using hb::shared::item::ItemType;
 using hb::shared::item::EquipPos;
-using hb::shared::item::ToInt;
+using hb::shared::item::to_int;
 
-InventoryManager& InventoryManager::Get()
+inventory_manager& inventory_manager::get()
 {
-	static InventoryManager instance;
+	static inventory_manager instance;
 	return instance;
 }
 
-void InventoryManager::SetGame(CGame* pGame)
+void inventory_manager::set_game(CGame* game)
 {
-	m_game = pGame;
+	m_game = game;
 }
 
-void InventoryManager::SetItemOrder(int cWhere, int cItemID)
+void inventory_manager::set_item_order(int where, int item_id)
 {
-	if (cItemID < 0 || cItemID >= hb::shared::limits::MaxItems) return;
+	if (item_id < 0 || item_id >= hb::shared::limits::MaxItems) return;
 	int i;
 
-	switch (cWhere) {
+	switch (where) {
 	case 0:
 		for (i = 0; i < hb::shared::limits::MaxItems; i++)
-			if (m_game->m_cItemOrder[i] == cItemID)
-				m_game->m_cItemOrder[i] = -1;
+			if (m_game->m_item_order[i] == item_id)
+				m_game->m_item_order[i] = -1;
 
 		for (i = 1; i < hb::shared::limits::MaxItems; i++)
-			if ((m_game->m_cItemOrder[i - 1] == -1) && (m_game->m_cItemOrder[i] != -1)) {
-				m_game->m_cItemOrder[i - 1] = m_game->m_cItemOrder[i];
-				m_game->m_cItemOrder[i] = -1;
+			if ((m_game->m_item_order[i - 1] == -1) && (m_game->m_item_order[i] != -1)) {
+				m_game->m_item_order[i - 1] = m_game->m_item_order[i];
+				m_game->m_item_order[i] = -1;
 			}
 
 		for (i = 0; i < hb::shared::limits::MaxItems; i++)
-			if (m_game->m_cItemOrder[i] == -1) {
-				m_game->m_cItemOrder[i] = cItemID;
+			if (m_game->m_item_order[i] == -1) {
+				m_game->m_item_order[i] = item_id;
 				return;
 			}
 		break;
 	}
 }
 
-int InventoryManager::CalcTotalWeight()
+int inventory_manager::calc_total_weight()
 {
-	int i, iWeight, iCnt, iTemp;
-	iCnt = 0;
-	iWeight = 0;
+	int i, weight, cnt, temp;
+	cnt = 0;
+	weight = 0;
 	for (i = 0; i < hb::shared::limits::MaxItems; i++)
-		if (m_game->m_pItemList[i] != 0)
+		if (m_game->m_item_list[i] != 0)
 		{
-			CItem* pCfg = m_game->GetItemConfig(m_game->m_pItemList[i]->m_sIDnum);
-			if (pCfg && ((pCfg->GetItemType() == ItemType::Consume)
-				|| (pCfg->GetItemType() == ItemType::Arrow)))
+			CItem* cfg = m_game->get_item_config(m_game->m_item_list[i]->m_id_num);
+			if (cfg && ((cfg->get_item_type() == ItemType::Consume)
+				|| (cfg->get_item_type() == ItemType::Arrow)))
 			{
-				iTemp = pCfg->m_wWeight * m_game->m_pItemList[i]->m_dwCount;
-				if (m_game->m_pItemList[i]->m_sIDnum == hb::shared::item::ItemId::Gold) iTemp = iTemp / 20;
-				iWeight += iTemp;
+				temp = cfg->m_weight * m_game->m_item_list[i]->m_count;
+				if (m_game->m_item_list[i]->m_id_num == hb::shared::item::ItemId::Gold) temp = temp / 20;
+				weight += temp;
 			}
-			else if (pCfg) iWeight += pCfg->m_wWeight;
-			iCnt++;
+			else if (cfg) weight += cfg->m_weight;
+			cnt++;
 		}
 
-	return iWeight;
+	return weight;
 }
 
-int InventoryManager::GetTotalItemCount()
+int inventory_manager::get_total_item_count()
 {
-	int i, iCnt;
-	iCnt = 0;
+	int i, cnt;
+	cnt = 0;
 	for (i = 0; i < hb::shared::limits::MaxItems; i++)
-		if (m_game->m_pItemList[i] != 0) iCnt++;
-	return iCnt;
+		if (m_game->m_item_list[i] != 0) cnt++;
+	return cnt;
 }
 
-int InventoryManager::GetBankItemCount()
+int inventory_manager::get_bank_item_count()
 {
-	int i, iCnt;
+	int i, cnt;
 
-	iCnt = 0;
+	cnt = 0;
 	for (i = 0; i < hb::shared::limits::MaxBankItems; i++)
-		if (m_game->m_pBankList[i] != 0) iCnt++;
+		if (m_game->m_bank_list[i] != 0) cnt++;
 
-	return iCnt;
+	return cnt;
 }
 
-void InventoryManager::EraseItem(int cItemID)
+void inventory_manager::erase_item(int item_id)
 {
-	if (cItemID < 0 || cItemID >= hb::shared::limits::MaxItems) return;
+	if (item_id < 0 || item_id >= hb::shared::limits::MaxItems) return;
 	int i;
 	for (i = 0; i < 6; i++)
 	{
-		if (m_game->m_sShortCut[i] == cItemID)
+		if (m_game->m_short_cut[i] == item_id)
 		{
 			std::string G_cTxt;
-			auto itemInfo = ItemNameFormatter::Get().Format(m_game->m_pItemList[cItemID].get());
+			auto itemInfo = item_name_formatter::get().format(m_game->m_item_list[item_id].get());
 			if (i < 3) G_cTxt = std::format(ERASE_ITEM, itemInfo.name.c_str(), itemInfo.effect.c_str(), itemInfo.extra.c_str(), i + 1);
 			else G_cTxt = std::format(ERASE_ITEM, itemInfo.name.c_str(), itemInfo.effect.c_str(), itemInfo.extra.c_str(), i + 7);
-			m_game->AddEventList(G_cTxt.c_str(), 10);
-			m_game->m_sShortCut[i] = -1;
+			m_game->add_event_list(G_cTxt.c_str(), 10);
+			m_game->m_short_cut[i] = -1;
 		}
 	}
 
-	if (cItemID == m_game->m_sRecentShortCut)
-		m_game->m_sRecentShortCut = -1;
+	if (item_id == m_game->m_recent_short_cut)
+		m_game->m_recent_short_cut = -1;
 	// ItemOrder
 	for (i = 0; i < hb::shared::limits::MaxItems; i++)
-		if (m_game->m_cItemOrder[i] == cItemID)
-			m_game->m_cItemOrder[i] = -1;
+		if (m_game->m_item_order[i] == item_id)
+			m_game->m_item_order[i] = -1;
 	for (i = 1; i < hb::shared::limits::MaxItems; i++)
-		if ((m_game->m_cItemOrder[i - 1] == -1) && (m_game->m_cItemOrder[i] != -1))
+		if ((m_game->m_item_order[i - 1] == -1) && (m_game->m_item_order[i] != -1))
 		{
-			m_game->m_cItemOrder[i - 1] = m_game->m_cItemOrder[i];
-			m_game->m_cItemOrder[i] = -1;
+			m_game->m_item_order[i - 1] = m_game->m_item_order[i];
+			m_game->m_item_order[i] = -1;
 		}
 	// ItemList
-	m_game->m_pItemList[cItemID].reset();
-	m_game->m_bIsItemEquipped[cItemID] = false;
-	m_game->m_bIsItemDisabled[cItemID] = false;
+	m_game->m_item_list[item_id].reset();
+	m_game->m_is_item_equipped[item_id] = false;
+	m_game->m_is_item_disabled[item_id] = false;
 }
 
-bool InventoryManager::CheckItemOperationEnabled(int cItemID)
+bool inventory_manager::check_item_operation_enabled(int item_id)
 {
-	if (cItemID < 0 || cItemID >= hb::shared::limits::MaxItems) return false;
-	if (m_game->m_pItemList[cItemID] == 0) return false;
-	if (m_game->m_pPlayer->m_Controller.GetCommand() < 0) return false;
-	if (TeleportManager::Get().IsRequested()) return false;
-	if (m_game->m_bIsItemDisabled[cItemID] == true) return false;
+	if (item_id < 0 || item_id >= hb::shared::limits::MaxItems) return false;
+	if (m_game->m_item_list[item_id] == 0) return false;
+	if (m_game->m_player->m_Controller.get_command() < 0) return false;
+	if (teleport_manager::get().is_requested()) return false;
+	if (m_game->m_is_item_disabled[item_id] == true) return false;
 
-	if ((m_game->m_pItemList[cItemID]->m_sSpriteFrame == 155) && (m_game->m_bUsingSlate == true))
+	if ((m_game->m_item_list[item_id]->m_sprite_frame == 155) && (m_game->m_using_slate == true))
 	{
-		if ((m_game->m_cMapIndex == 35) || (m_game->m_cMapIndex == 36) || (m_game->m_cMapIndex == 37))
+		if ((m_game->m_map_index == 35) || (m_game->m_map_index == 36) || (m_game->m_map_index == 37))
 		{
-			m_game->AddEventList(DEF_MSG_NOTIFY_SLATE_WRONG_MAP, 10);
+			m_game->add_event_list(DEF_MSG_NOTIFY_SLATE_WRONG_MAP, 10);
 			return false;
 		}
-		m_game->AddEventList(DEF_MSG_NOTIFY_SLATE_ALREADYUSING, 10);
+		m_game->add_event_list(DEF_MSG_NOTIFY_SLATE_ALREADYUSING, 10);
 		return false;
 	}
 
-	if (m_game->m_dialogBoxManager.IsEnabled(DialogBoxId::ItemDropExternal) == true)
+	if (m_game->m_dialog_box_manager.is_enabled(DialogBoxId::ItemDropExternal) == true)
 	{
-		m_game->AddEventList(BCHECK_ITEM_OPERATION_ENABLE1, 10);
+		m_game->add_event_list(BCHECK_ITEM_OPERATION_ENABLE1, 10);
 		return false;
 	}
 
-	if (m_game->m_dialogBoxManager.IsEnabled(DialogBoxId::NpcActionQuery) == true)
+	if (m_game->m_dialog_box_manager.is_enabled(DialogBoxId::NpcActionQuery) == true)
 	{
-		m_game->AddEventList(BCHECK_ITEM_OPERATION_ENABLE1, 10);
+		m_game->add_event_list(BCHECK_ITEM_OPERATION_ENABLE1, 10);
 		return false;
 	}
 
-	if (m_game->m_dialogBoxManager.IsEnabled(DialogBoxId::SellOrRepair) == true)
+	if (m_game->m_dialog_box_manager.is_enabled(DialogBoxId::SellOrRepair) == true)
 	{
-		m_game->AddEventList(BCHECK_ITEM_OPERATION_ENABLE1, 10);
+		m_game->add_event_list(BCHECK_ITEM_OPERATION_ENABLE1, 10);
 		return false;
 	}
 
-	if (m_game->m_dialogBoxManager.IsEnabled(DialogBoxId::Manufacture) == true)
+	if (m_game->m_dialog_box_manager.is_enabled(DialogBoxId::Manufacture) == true)
 	{
-		m_game->AddEventList(BCHECK_ITEM_OPERATION_ENABLE1, 10);
+		m_game->add_event_list(BCHECK_ITEM_OPERATION_ENABLE1, 10);
 		return false;
 	}
 
-	if (m_game->m_dialogBoxManager.IsEnabled(DialogBoxId::Exchange) == true)
+	if (m_game->m_dialog_box_manager.is_enabled(DialogBoxId::Exchange) == true)
 	{
-		m_game->AddEventList(BCHECK_ITEM_OPERATION_ENABLE1, 10);
+		m_game->add_event_list(BCHECK_ITEM_OPERATION_ENABLE1, 10);
 		return false;
 	}
 
-	if (m_game->m_dialogBoxManager.IsEnabled(DialogBoxId::SellList) == true)
+	if (m_game->m_dialog_box_manager.is_enabled(DialogBoxId::SellList) == true)
 	{
-		m_game->AddEventList(BCHECK_ITEM_OPERATION_ENABLE1, 10);
+		m_game->add_event_list(BCHECK_ITEM_OPERATION_ENABLE1, 10);
 		return false;
 	}
 
-	if (m_game->m_dialogBoxManager.IsEnabled(DialogBoxId::ItemDropConfirm) == true)
+	if (m_game->m_dialog_box_manager.is_enabled(DialogBoxId::ItemDropConfirm) == true)
 	{
-		m_game->AddEventList(BCHECK_ITEM_OPERATION_ENABLE1, 10);
+		m_game->add_event_list(BCHECK_ITEM_OPERATION_ENABLE1, 10);
 		return false;
 	}
 
 	return true;
 }
 
-void InventoryManager::UnequipSlot(int cEquipPos)
+void inventory_manager::unequip_slot(int equip_pos)
 {
-	if (cEquipPos < 0 || cEquipPos >= hb::shared::item::DEF_MAXITEMEQUIPPOS) return;
+	if (equip_pos < 0 || equip_pos >= hb::shared::item::DEF_MAXITEMEQUIPPOS) return;
 	std::string G_cTxt;
-	if (m_game->m_sItemEquipmentStatus[cEquipPos] < 0) return;
+	if (m_game->m_item_equipment_status[equip_pos] < 0) return;
 	// Remove Angelic Stats
-	CItem* pCfgEq = m_game->GetItemConfig(m_game->m_pItemList[m_game->m_sItemEquipmentStatus[cEquipPos]]->m_sIDnum);
-	if ((cEquipPos >= 11)
-		&& (pCfgEq && pCfgEq->GetItemType() == ItemType::Equip))
+	CItem* cfg_eq = m_game->get_item_config(m_game->m_item_list[m_game->m_item_equipment_status[equip_pos]]->m_id_num);
+	if ((equip_pos >= 11)
+		&& (cfg_eq && cfg_eq->get_item_type() == ItemType::Equip))
 	{
-		short sItemID = m_game->m_sItemEquipmentStatus[cEquipPos];
-		if (m_game->m_pItemList[sItemID]->m_sIDnum == hb::shared::item::ItemId::AngelicPandentSTR)
-			m_game->m_pPlayer->m_iAngelicStr = 0;
-		else if (m_game->m_pItemList[sItemID]->m_sIDnum == hb::shared::item::ItemId::AngelicPandentDEX)
-			m_game->m_pPlayer->m_iAngelicDex = 0;
-		else if (m_game->m_pItemList[sItemID]->m_sIDnum == hb::shared::item::ItemId::AngelicPandentINT)
-			m_game->m_pPlayer->m_iAngelicInt = 0;
-		else if (m_game->m_pItemList[sItemID]->m_sIDnum == hb::shared::item::ItemId::AngelicPandentMAG)
-			m_game->m_pPlayer->m_iAngelicMag = 0;
+		short item_id = m_game->m_item_equipment_status[equip_pos];
+		if (m_game->m_item_list[item_id]->m_id_num == hb::shared::item::ItemId::AngelicPandentSTR)
+			m_game->m_player->m_angelic_str = 0;
+		else if (m_game->m_item_list[item_id]->m_id_num == hb::shared::item::ItemId::AngelicPandentDEX)
+			m_game->m_player->m_angelic_dex = 0;
+		else if (m_game->m_item_list[item_id]->m_id_num == hb::shared::item::ItemId::AngelicPandentINT)
+			m_game->m_player->m_angelic_int = 0;
+		else if (m_game->m_item_list[item_id]->m_id_num == hb::shared::item::ItemId::AngelicPandentMAG)
+			m_game->m_player->m_angelic_mag = 0;
 	}
 
-	auto itemInfo2 = ItemNameFormatter::Get().Format(m_game->m_pItemList[m_game->m_sItemEquipmentStatus[cEquipPos]].get());
+	auto itemInfo2 = item_name_formatter::get().format(m_game->m_item_list[m_game->m_item_equipment_status[equip_pos]].get());
 	G_cTxt = std::format(ITEM_EQUIPMENT_RELEASED, itemInfo2.name.c_str());
-	m_game->AddEventList(G_cTxt.c_str(), 10);
-	m_game->m_bIsItemEquipped[m_game->m_sItemEquipmentStatus[cEquipPos]] = false;
-	m_game->m_sItemEquipmentStatus[cEquipPos] = -1;
+	m_game->add_event_list(G_cTxt.c_str(), 10);
+	m_game->m_is_item_equipped[m_game->m_item_equipment_status[equip_pos]] = false;
+	m_game->m_item_equipment_status[equip_pos] = -1;
 }
 
-void InventoryManager::EquipItem(int cItemID)
+void inventory_manager::equip_item(int item_id)
 {
-	if (cItemID < 0 || cItemID >= hb::shared::limits::MaxItems) return;
+	if (item_id < 0 || item_id >= hb::shared::limits::MaxItems) return;
 	std::string G_cTxt;
-	if (CheckItemOperationEnabled(cItemID) == false) return;
-	if (m_game->m_bIsItemEquipped[cItemID] == true) return;
-	CItem* pCfg = m_game->GetItemConfig(m_game->m_pItemList[cItemID]->m_sIDnum);
-	if (!pCfg) return;
-	if (pCfg->GetEquipPos() == EquipPos::None)
+	if (check_item_operation_enabled(item_id) == false) return;
+	if (m_game->m_is_item_equipped[item_id] == true) return;
+	CItem* cfg = m_game->get_item_config(m_game->m_item_list[item_id]->m_id_num);
+	if (!cfg) return;
+	if (cfg->get_equip_pos() == EquipPos::None)
 	{
-		m_game->AddEventList(BITEMDROP_CHARACTER3, 10);
+		m_game->add_event_list(BITEMDROP_CHARACTER3, 10);
 		return;
 	}
-	if (m_game->m_pItemList[cItemID]->m_wCurLifeSpan == 0)
+	if (m_game->m_item_list[item_id]->m_cur_life_span == 0)
 	{
-		m_game->AddEventList(BITEMDROP_CHARACTER1, 10);
+		m_game->add_event_list(BITEMDROP_CHARACTER1, 10);
 		return;
 	}
-	if (pCfg->m_wWeight / 100 > m_game->m_pPlayer->m_iStr + m_game->m_pPlayer->m_iAngelicStr)
+	if (cfg->m_weight / 100 > m_game->m_player->m_str + m_game->m_player->m_angelic_str)
 	{
-		m_game->AddEventList(BITEMDROP_CHARACTER2, 10);
+		m_game->add_event_list(BITEMDROP_CHARACTER2, 10);
 		return;
 	}
-	if (((m_game->m_pItemList[cItemID]->m_dwAttribute & 0x00000001) == 0) && (pCfg->m_sLevelLimit > m_game->m_pPlayer->m_iLevel))
+	if (((m_game->m_item_list[item_id]->m_attribute & 0x00000001) == 0) && (cfg->m_level_limit > m_game->m_player->m_level))
 	{
-		m_game->AddEventList(BITEMDROP_CHARACTER4, 10);
+		m_game->add_event_list(BITEMDROP_CHARACTER4, 10);
 		return;
 	}
-	if (m_game->m_bSkillUsingStatus == true)
+	if (m_game->m_skill_using_status == true)
 	{
-		m_game->AddEventList(BITEMDROP_CHARACTER5, 10);
+		m_game->add_event_list(BITEMDROP_CHARACTER5, 10);
 		return;
 	}
-	if (pCfg->m_cGenderLimit != 0)
+	if (cfg->m_gender_limit != 0)
 	{
-		switch (m_game->m_pPlayer->m_sPlayerType) {
+		switch (m_game->m_player->m_player_type) {
 		case 1:
 		case 2:
 		case 3:
-			if (pCfg->m_cGenderLimit != 1)
+			if (cfg->m_gender_limit != 1)
 			{
-				m_game->AddEventList(BITEMDROP_CHARACTER6, 10);
+				m_game->add_event_list(BITEMDROP_CHARACTER6, 10);
 				return;
 			}
 			break;
 		case 4:
 		case 5:
 		case 6:
-			if (pCfg->m_cGenderLimit != 2)
+			if (cfg->m_gender_limit != 2)
 			{
-				m_game->AddEventList(BITEMDROP_CHARACTER7, 10);
+				m_game->add_event_list(BITEMDROP_CHARACTER7, 10);
 				return;
 			}
 			break;
 		}
 	}
 
-	m_game->bSendCommand(MsgId::CommandCommon, CommonType::EquipItem, 0, cItemID, 0, 0, 0);
-	m_game->m_sRecentShortCut = cItemID;
-	UnequipSlot(pCfg->m_cEquipPos);
-	switch (pCfg->GetEquipPos()) {
+	m_game->send_command(MsgId::CommandCommon, CommonType::equip_item, 0, item_id, 0, 0, 0);
+	m_game->m_recent_short_cut = item_id;
+	unequip_slot(cfg->m_equip_pos);
+	switch (cfg->get_equip_pos()) {
 	case EquipPos::Head:
 	case EquipPos::Body:
 	case EquipPos::Arms:
 	case EquipPos::Pants:
 	case EquipPos::Leggings:
 	case EquipPos::Back:
-		UnequipSlot(ToInt(EquipPos::FullBody));
+		unequip_slot(to_int(EquipPos::FullBody));
 		break;
 	case EquipPos::FullBody:
-		UnequipSlot(ToInt(EquipPos::Head));
-		UnequipSlot(ToInt(EquipPos::Body));
-		UnequipSlot(ToInt(EquipPos::Arms));
-		UnequipSlot(ToInt(EquipPos::Pants));
-		UnequipSlot(ToInt(EquipPos::Leggings));
-		UnequipSlot(ToInt(EquipPos::Back));
+		unequip_slot(to_int(EquipPos::Head));
+		unequip_slot(to_int(EquipPos::Body));
+		unequip_slot(to_int(EquipPos::Arms));
+		unequip_slot(to_int(EquipPos::Pants));
+		unequip_slot(to_int(EquipPos::Leggings));
+		unequip_slot(to_int(EquipPos::Back));
 		break;
 	case EquipPos::LeftHand:
 	case EquipPos::RightHand:
-		UnequipSlot(ToInt(EquipPos::TwoHand));
+		unequip_slot(to_int(EquipPos::TwoHand));
 		break;
 	case EquipPos::TwoHand:
-		UnequipSlot(ToInt(EquipPos::RightHand));
-		UnequipSlot(ToInt(EquipPos::LeftHand));
+		unequip_slot(to_int(EquipPos::RightHand));
+		unequip_slot(to_int(EquipPos::LeftHand));
 		break;
 	}
 
-	m_game->m_sItemEquipmentStatus[pCfg->m_cEquipPos] = cItemID;
-	m_game->m_bIsItemEquipped[cItemID] = true;
+	m_game->m_item_equipment_status[cfg->m_equip_pos] = item_id;
+	m_game->m_is_item_equipped[item_id] = true;
 
 	// Add Angelic Stats
-	if ((pCfg->GetItemType() == ItemType::Equip)
-		&& (pCfg->m_cEquipPos >= 11))
+	if ((cfg->get_item_type() == ItemType::Equip)
+		&& (cfg->m_equip_pos >= 11))
 	{
-		int iAngelValue = (m_game->m_pItemList[cItemID]->m_dwAttribute & 0xF0000000) >> 28;
-		if (m_game->m_pItemList[cItemID]->m_sIDnum == hb::shared::item::ItemId::AngelicPandentSTR)
-			m_game->m_pPlayer->m_iAngelicStr = 1 + iAngelValue;
-		else if (m_game->m_pItemList[cItemID]->m_sIDnum == hb::shared::item::ItemId::AngelicPandentDEX)
-			m_game->m_pPlayer->m_iAngelicDex = 1 + iAngelValue;
-		else if (m_game->m_pItemList[cItemID]->m_sIDnum == hb::shared::item::ItemId::AngelicPandentINT)
-			m_game->m_pPlayer->m_iAngelicInt = 1 + iAngelValue;
-		else if (m_game->m_pItemList[cItemID]->m_sIDnum == hb::shared::item::ItemId::AngelicPandentMAG)
-			m_game->m_pPlayer->m_iAngelicMag = 1 + iAngelValue;
+		int angel_value = (m_game->m_item_list[item_id]->m_attribute & 0xF0000000) >> 28;
+		if (m_game->m_item_list[item_id]->m_id_num == hb::shared::item::ItemId::AngelicPandentSTR)
+			m_game->m_player->m_angelic_str = 1 + angel_value;
+		else if (m_game->m_item_list[item_id]->m_id_num == hb::shared::item::ItemId::AngelicPandentDEX)
+			m_game->m_player->m_angelic_dex = 1 + angel_value;
+		else if (m_game->m_item_list[item_id]->m_id_num == hb::shared::item::ItemId::AngelicPandentINT)
+			m_game->m_player->m_angelic_int = 1 + angel_value;
+		else if (m_game->m_item_list[item_id]->m_id_num == hb::shared::item::ItemId::AngelicPandentMAG)
+			m_game->m_player->m_angelic_mag = 1 + angel_value;
 	}
 
-	auto itemInfo3 = ItemNameFormatter::Get().Format(m_game->m_pItemList[cItemID].get());
+	auto itemInfo3 = item_name_formatter::get().format(m_game->m_item_list[item_id].get());
 	G_cTxt = std::format(BITEMDROP_CHARACTER9, itemInfo3.name.c_str());
-	m_game->AddEventList(G_cTxt.c_str(), 10);
-	m_game->PlayGameSound('E', 28, 0);
+	m_game->add_event_list(G_cTxt.c_str(), 10);
+	m_game->play_game_sound('E', 28, 0);
 }

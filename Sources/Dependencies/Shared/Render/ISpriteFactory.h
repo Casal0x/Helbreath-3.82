@@ -23,15 +23,15 @@ public:
     // pakName: Name of the PAK file (without path/extension, e.g., "Gmtile")
     // spriteIndex: Index of the sprite within the PAK
     // alphaEffect: Whether this sprite supports alpha degree changes
-    virtual ISprite* CreateSprite(const std::string& pakName, int spriteIndex, bool alphaEffect = true) = 0;
+    virtual ISprite* create_sprite(const std::string& pakName, int spriteIndex, bool alphaEffect = true) = 0;
 
     // Create a sprite from pre-loaded PAK sprite data (used by SpriteLoader for batch loading)
     // spriteData: Pre-loaded sprite data from PAKLib
     // alphaEffect: Whether this sprite supports alpha degree changes
-    virtual ISprite* CreateSpriteFromData(const PAKLib::sprite& spriteData, bool alphaEffect = true) = 0;
+    virtual ISprite* create_sprite_from_data(const PAKLib::sprite& spriteData, bool alphaEffect = true) = 0;
 
     // Destroy a sprite and free its resources
-    virtual void DestroySprite(ISprite* sprite) = 0;
+    virtual void destroy_sprite(ISprite* sprite) = 0;
 
     //------------------------------------------------------------------
     // Global Alpha Degree (legacy feature)
@@ -39,23 +39,23 @@ public:
 
     // Set global alpha degree affecting all sprites with alphaEffect enabled
     // Degree 1 = normal, Degree 2 = night/dark mode
-    virtual void SetAmbientLightLevel(int level) = 0;
-    virtual int GetAmbientLightLevel() const = 0;
+    virtual void set_ambient_light_level(int level) = 0;
+    virtual int get_ambient_light_level() const = 0;
 
     //------------------------------------------------------------------
     // PAK File Information
     //------------------------------------------------------------------
 
-    // Get the number of sprites in a PAK file
+    // get the number of sprites in a PAK file
     // Returns 0 if the file cannot be opened or is invalid
-    virtual int GetSpriteCount(const std::string& pakName) const = 0;
+    virtual int get_sprite_count(const std::string& pakName) const = 0;
 
     //------------------------------------------------------------------
     // Path Configuration
     //------------------------------------------------------------------
 
-    // Get the base path for sprite PAK files (e.g., "SPRITES_PNG" or "SPRITES_BMP")
-    virtual std::string GetSpritePath() const = 0;
+    // get the base path for sprite PAK files (e.g., "SPRITES_PNG" or "SPRITES_BMP")
+    virtual std::string get_sprite_path() const = 0;
 };
 
 //------------------------------------------------------------------
@@ -65,27 +65,27 @@ public:
 class Sprites {
 public:
     // Set the active sprite factory (called by renderer during init)
-    static void SetFactory(ISpriteFactory* factory);
+    static void set_factory(ISpriteFactory* factory);
 
-    // Get the active sprite factory
-    static ISpriteFactory* GetFactory();
+    // get the active sprite factory
+    static ISpriteFactory* get_factory();
 
     // Convenience methods that delegate to the active factory
-    static ISprite* Create(const std::string& pakName, int spriteIndex, bool alphaEffect = true);
-    static void Destroy(ISprite* sprite);
+    static ISprite* create(const std::string& pakName, int spriteIndex, bool alphaEffect = true);
+    static void destroy(ISprite* sprite);
 
     // Global alpha degree
-    static void SetAmbientLightLevel(int level);
-    static int GetAmbientLightLevel();
+    static void set_ambient_light_level(int level);
+    static int get_ambient_light_level();
 
     // PAK file information
-    static int GetSpriteCount(const std::string& pakName);
+    static int get_sprite_count(const std::string& pakName);
 
     // Path configuration
-    static std::string GetSpritePath();
+    static std::string get_sprite_path();
 
 private:
-    static ISpriteFactory* s_pFactory;
+    static ISpriteFactory* s_factory;
 };
 
 } // namespace hb::shared::sprite

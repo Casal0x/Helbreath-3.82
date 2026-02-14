@@ -46,7 +46,7 @@ public:
     bool operator==(int zero) const;
     bool operator!=(int zero) const;
 
-    // Get raw pointer
+    // get raw pointer
     ISprite* get();
     const ISprite* get() const;
 
@@ -65,7 +65,7 @@ public:
     struct SpriteDeleter {
         void operator()(ISprite* sprite) const {
             if (sprite) {
-                Sprites::Destroy(sprite);
+                Sprites::destroy(sprite);
             }
         }
     };
@@ -87,7 +87,7 @@ public:
     // Array-style Access
     //------------------------------------------------------------------
 
-    // Returns a proxy for array-style access: collection[index]->Draw(...)
+    // Returns a proxy for array-style access: collection[index]->draw(...)
     SpriteProxy operator[](size_t index);
 
     // Const access returns raw pointer (no proxy assignment)
@@ -97,7 +97,7 @@ public:
     // Direct Access
     //------------------------------------------------------------------
 
-    // Get sprite at index (nullptr if not present)
+    // get sprite at index (nullptr if not present)
     ISprite* get(size_t index);
     const ISprite* get(size_t index) const;
 
@@ -272,7 +272,7 @@ inline void SpriteCollection::set(size_t index, ISprite* sprite)
 
 inline ISprite* SpriteCollection::create(size_t index, const std::string& pakName, int spriteIndex, bool alphaEffect)
 {
-    ISprite* sprite = Sprites::Create(pakName, spriteIndex, alphaEffect);
+    ISprite* sprite = Sprites::create(pakName, spriteIndex, alphaEffect);
     if (sprite) {
         m_sprites[index] = SpritePtr(sprite);
     }

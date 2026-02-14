@@ -1,4 +1,4 @@
-// AnimationState.h: Clean animation controller replacing scattered CTile fields
+// animation_state.h: Clean animation controller replacing scattered CTile fields
 //
 // Manages frame advancement, timing, looping, and completion detection
 // for entity animations. Caller computes final frame time with modifiers.
@@ -8,35 +8,35 @@
 
 #include <cstdint>
 
-struct AnimationState
+struct animation_state
 {
 	// --- Config (set when action changes) ---
-	int8_t  cAction        = 0;    // hb::shared::action::Type::Stop, MOVE, RUN, ATTACK, etc.
-	int8_t  cDir           = 0;    // Facing direction (1-8)
-	int16_t sMaxFrame      = 0;    // Total frame count
-	int16_t sFrameTime     = 0;    // Milliseconds per frame (final, after modifiers)
-	bool    bLoop          = true; // STOP/MOVE/RUN loop; others play once
+	int8_t  m_action        = 0;    // hb::shared::action::Type::stop, MOVE, RUN, ATTACK, etc.
+	int8_t  m_dir           = 0;    // Facing direction (1-8)
+	int16_t m_max_frame      = 0;    // Total frame count
+	int16_t m_frame_time     = 0;    // Milliseconds per frame (final, after modifiers)
+	bool    m_loop          = true; // STOP/MOVE/RUN loop; others play once
 
 	// --- Playback State ---
-	int8_t   cCurrentFrame  = 0;
-	int8_t   cPreviousFrame = -1;  // -1 forces FrameChanged() true initially
-	uint32_t dwLastFrameTime = 0;  // 0 = not started yet
-	bool     bFinished       = false;
+	int8_t   m_current_frame  = 0;
+	int8_t   m_previous_frame = -1;  // -1 forces frame_changed() true initially
+	uint32_t m_last_frame_time = 0;  // 0 = not started yet
+	bool     m_finished       = false;
 
 	// --- Lifecycle ---
-	void Reset();
-	void SetAction(int8_t action, int8_t dir,
+	void reset();
+	void set_action(int8_t action, int8_t dir,
 	               int16_t maxFrame, int16_t frameTime, bool loop,
 	               int8_t startFrame = 0);
-	void SetDirection(int8_t dir);
+	void set_direction(int8_t dir);
 
 	// --- Per-frame update. Returns true if frame changed ---
-	bool Update(uint32_t dwCurrentTime);
+	bool update(uint32_t current_time);
 
 	// --- Queries ---
-	bool IsFinished() const    { return bFinished; }
-	bool FrameChanged() const  { return cCurrentFrame != cPreviousFrame; }
-	bool JustChangedTo(int8_t frame) const {
-		return cCurrentFrame == frame && cPreviousFrame != frame;
+	bool is_finished() const    { return m_finished; }
+	bool frame_changed() const  { return m_current_frame != m_previous_frame; }
+	bool just_changed_to(int8_t frame) const {
+		return m_current_frame == frame && m_previous_frame != frame;
 	}
 };

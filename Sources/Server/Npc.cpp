@@ -9,58 +9,58 @@
 // Construction/Destruction
 //////////////////////////////////////////////////////////////////////
 
-CNpc::CNpc(const char * pName5)
+CNpc::CNpc(const char * name5)
 {
  
-	std::memset(m_cName, 0, sizeof(m_cName));
-	memcpy(m_cName, pName5, 5);
+	std::memset(m_name, 0, sizeof(m_name));
+	memcpy(m_name, name5, 5);
 	
 	for(int i = 0; i < hb::server::npc::MaxWaypoints; i++)			  
-		m_iWayPointIndex[i] = -1;
+		m_waypoint_index[i] = -1;
 	
 	for(int i = 0; i < hb::server::config::MaxMagicEffects; i++) 
-		m_cMagicEffectStatus[i]	= 0;
+		m_magic_effect_status[i]	= 0;
 
-	m_bIsSummoned       = false;
-	m_bBypassMobLimit   = false;
-	m_bIsPermAttackMode = false;
+	m_is_summoned       = false;
+	m_bypass_mob_limit   = false;
+	m_is_perm_attack_mode = false;
 
-	m_dwRegenTime = 0;
-	m_bIsKilled   = false;
+	m_regen_time = 0;
+	m_is_killed   = false;
 
-	m_sOriginalType      = 0;
-	m_iNpcConfigId       = -1;
-	m_iSummonControlMode = 0;
+	m_original_type      = 0;
+	m_npc_config_id       = -1;
+	m_summon_control_mode = 0;
 	
-	m_cAttribute = 0;
-	m_iAbsDamage = 0;
-	m_status.Clear();
-	m_appearance.Clear();
+	m_attribute = 0;
+	m_abs_damage = 0;
+	m_status.clear();
+	m_appearance.clear();
 
-	m_iAttackRange    = 1;
-	m_cSpecialAbility = 0;
+	m_attack_range    = 1;
+	m_special_ability = 0;
 	
-	m_iExp = 0;
+	m_exp = 0;
 
-	m_iBuildCount = 0;
-	m_iManaStock  = 0;
-	m_bIsUnsummoned = false;
-	m_cCropType = 0;
-	m_cCropSkill = 0;
+	m_build_count = 0;
+	m_mana_stock  = 0;
+	m_is_unsummoned = false;
+	m_crop_type = 0;
+	m_crop_skill = 0;
 
-	m_bIsMaster  = false;
-	m_iGuildGUID = 0;
-	m_iV1 = 0;
+	m_is_master  = false;
+	m_guild_guid = 0;
+	m_v1 = 0;
 
-	m_iNpcItemType = 0;
-	m_iNpcItemMax = 0;
-	m_iDropTableId = 0;
+	m_npc_item_type = 0;
+	m_npc_item_max = 0;
+	m_drop_table_id = 0;
 
-	std::memset(m_cNpcName, 0, sizeof(m_cNpcName));
+	std::memset(m_npc_name, 0, sizeof(m_npc_name));
 
-	// OPTIMIZATION FIX #3: Initialize previous position for delta detection
-	m_sPrevX = -1;
-	m_sPrevY = -1;
+	// OPTIMIZATION FIX #3: initialize previous position for delta detection
+	m_prev_x = -1;
+	m_prev_y = -1;
 
 }
 
@@ -74,27 +74,27 @@ CNpc::~CNpc()
 // xfers to: m_vNpcItem.at, bGetItemNameWhenDeleteNpc, sub_4BC360
 void CNpc::m_vNpcItem.size()
 {
- int iRet;
- class CNpcItem * pTempNpcItem;
+ int ret;
+ class CNpcItem * temp_npc_item;
 	
-	if (pTempNpcItem->m_cName == 0) {
-		iRet = 0;
+	if (temp_npc_item->m_name == 0) {
+		ret = 0;
 	}
 	else {
-		iRet = pTempNpcItem->8 - (pTempNpcItem->m_cName >> 5);
+		ret = temp_npc_item->8 - (temp_npc_item->m_name >> 5);
 	}
-	return iRet;
+	return ret;
 
 }
 
 // .text:.text:004BB010
 // xfers to: bGetItemNameWhenDeleteNpc
 // xfers from: sub_4BB3D0, sub_4BB340, m_vNpcItem.size
-void CNpc::m_vNpcItem.at(int iResult)
+void CNpc::m_vNpcItem.at(int result)
 { 
-	if (iResult < m_vNpcItem.size()) {
+	if (result < m_vNpcItem.size()) {
 		sub_4BB3D0();
 	}
-	sub_4BB340() += (iResult << 5);
+	sub_4BB340() += (result << 5);
 
 }*/

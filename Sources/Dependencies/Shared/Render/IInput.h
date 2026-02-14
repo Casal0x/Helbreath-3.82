@@ -159,7 +159,7 @@ namespace hb::shared::input {
     void create();
     void destroy();
 
-    // Get the implementation
+    // get the implementation
     IInput* get();
 
     // ============== Static Convenience Functions (Raylib style) ==============

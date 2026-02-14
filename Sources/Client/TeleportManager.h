@@ -8,46 +8,46 @@ class CGame;
 
 struct TeleportEntry
 {
-	int iIndex = 0;
+	int index = 0;
 	std::string mapname;
-	int iX = 0;
-	int iY = 0;
-	int iCost = 0;
+	int x = 0;
+	int y = 0;
+	int cost = 0;
 };
 
-class TeleportManager
+class teleport_manager
 {
 public:
-	static TeleportManager& Get();
-	void SetGame(CGame* pGame);
-	void Reset();
+	static teleport_manager& get();
+	void set_game(CGame* game);
+	void reset();
 
 	// Response handlers (moved from CGame)
-	void HandleTeleportList(char* pData);
-	void HandleChargedTeleport(char* pData);
-	void HandleHeldenianTeleportList(char* pData);
+	void handle_teleport_list(char* data);
+	void handle_charged_teleport(char* data);
+	void handle_heldenian_teleport_list(char* data);
 
 	// Teleport list access
-	int GetMapCount() const { return m_map_count; }
-	void SetMapCount(int count) { m_map_count = count; }
-	auto& GetList() { return m_list; }
-	const auto& GetList() const { return m_list; }
+	int get_map_count() const { return m_map_count; }
+	void set_map_count(int count) { m_map_count = count; }
+	auto& get_list() { return m_list; }
+	const auto& get_list() const { return m_list; }
 
 	// Crusade teleport location
-	int GetLocX() const { return m_loc_x; }
-	int GetLocY() const { return m_loc_y; }
-	void SetLocation(int x, int y) { m_loc_x = x; m_loc_y = y; }
-	const char* GetMapName() { return m_map_name.c_str(); }
-	const char* GetMapName() const { return m_map_name.c_str(); }
-	void SetMapName(const char* src, size_t len) { m_map_name.assign(src, len); }
+	int get_loc_x() const { return m_loc_x; }
+	int get_loc_y() const { return m_loc_y; }
+	void set_location(int x, int y) { m_loc_x = x; m_loc_y = y; }
+	const char* get_map_name() { return m_map_name.c_str(); }
+	const char* get_map_name() const { return m_map_name.c_str(); }
+	void set_map_name(const char* src, size_t len) { m_map_name.assign(src, len); }
 
 	// Request state
-	bool IsRequested() const { return m_is_requested; }
-	void SetRequested(bool val) { m_is_requested = val; }
+	bool is_requested() const { return m_is_requested; }
+	void set_requested(bool val) { m_is_requested = val; }
 
 private:
-	TeleportManager();
-	~TeleportManager();
+	teleport_manager();
+	~teleport_manager();
 
 	CGame* m_game = nullptr;
 	int m_map_count = 0;

@@ -74,60 +74,60 @@ struct TextStyle
 	// ============== Factory Methods ==============
 
 	// Simple color
-	static constexpr TextStyle Color(const hb::shared::render::Color& c) {
+	static constexpr TextStyle from_color(const hb::shared::render::Color& c) {
 		return TextStyle(c);
 	}
 
 	// hb::shared::render::Color with 3-point shadow (like PutString2)
-	static constexpr TextStyle WithShadow(const hb::shared::render::Color& c) {
+	static constexpr TextStyle with_shadow(const hb::shared::render::Color& c) {
 		return TextStyle(c, ShadowStyle::ThreePoint);
 	}
 
 	// hb::shared::render::Color with 2-point shadow (0,+1 and +1,+1) (like PutString_SprFont3)
-	static constexpr TextStyle WithTwoPointShadow(const hb::shared::render::Color& c) {
+	static constexpr TextStyle with_two_point_shadow(const hb::shared::render::Color& c) {
 		return TextStyle(c, ShadowStyle::TwoPoint);
 	}
 
 	// hb::shared::render::Color with drop shadow (+1,+1)
-	static constexpr TextStyle WithDropShadow(const hb::shared::render::Color& c) {
+	static constexpr TextStyle with_drop_shadow(const hb::shared::render::Color& c) {
 		return TextStyle(c, ShadowStyle::DropShadow);
 	}
 
 	// hb::shared::render::Color with highlight effect (like PutString_SprFont)
-	static constexpr TextStyle WithHighlight(const hb::shared::render::Color& c) {
+	static constexpr TextStyle with_highlight(const hb::shared::render::Color& c) {
 		return TextStyle(c, ShadowStyle::Highlight);
 	}
 
 	// hb::shared::render::Color with integrated shadow (like PutString_SprFont2)
-	static constexpr TextStyle WithIntegratedShadow(const hb::shared::render::Color& c) {
+	static constexpr TextStyle with_integrated_shadow(const hb::shared::render::Color& c) {
 		return TextStyle(c, ShadowStyle::Integrated);
 	}
 
 	// hb::shared::render::Color with alpha transparency
-	static constexpr TextStyle Transparent(const hb::shared::render::Color& c, float alpha) {
+	static constexpr TextStyle transparent(const hb::shared::render::Color& c, float alpha) {
 		return TextStyle(c, alpha);
 	}
 
 	// ============== Modifier Methods ==============
 
 	// Create a copy with different shadow style
-	constexpr TextStyle WithShadowStyle(ShadowStyle s) const {
+	constexpr TextStyle with_shadow_style(ShadowStyle s) const {
 		return TextStyle(color, alpha, s, fontSize, useAdditive);
 	}
 
 	// Create a copy with different alpha
-	constexpr TextStyle WithAlpha(float a) const {
+	constexpr TextStyle with_alpha(float a) const {
 		return TextStyle(color, a, shadow, fontSize, useAdditive);
 	}
 
 	// Create a copy with different font size (ignored for bitmap fonts)
-	constexpr TextStyle WithFontSize(int size) const {
+	constexpr TextStyle with_font_size(int size) const {
 		return TextStyle(color, alpha, shadow, size, useAdditive);
 	}
 
 	// Create a copy with additive blending enabled
 	// Use this for bright text (damage numbers) that needs DDraw-like brightness
-	constexpr TextStyle WithAdditive() const {
+	constexpr TextStyle with_additive() const {
 		return TextStyle(color, alpha, shadow, fontSize, true);
 	}
 };
@@ -136,62 +136,62 @@ struct TextStyle
 
 // Load and register a bitmap font with explicit character widths
 // TextLib takes ownership of the font - no need to store it elsewhere
-void LoadBitmapFont(int fontId, hb::shared::sprite::ISprite* sprite, char firstChar, char lastChar,
+void load_bitmap_font(int fontId, hb::shared::sprite::ISprite* sprite, char firstChar, char lastChar,
                     int frameOffset, const FontSpacing& spacing);
 
 // Load and register a bitmap font with dynamic spacing (width from sprite frames)
-void LoadBitmapFontDynamic(int fontId, hb::shared::sprite::ISprite* sprite, char firstChar, char lastChar,
+void load_bitmap_font_dynamic(int fontId, hb::shared::sprite::ISprite* sprite, char firstChar, char lastChar,
                            int frameOffset);
 
 // Check if a bitmap font is loaded
-bool IsBitmapFontLoaded(int fontId);
+bool is_bitmap_font_loaded(int fontId);
 
-// Get a registered bitmap font (for internal use)
-IBitmapFont* GetBitmapFont(int fontId);
+// get a registered bitmap font (for internal use)
+IBitmapFont* get_bitmap_font(int fontId);
 
 // ============== Text Rendering API ==============
 
-// Draw text at position (x, y)
+// draw text at position (x, y)
 // fontId: FONT_ID_DEFAULT for TTF, or game-defined bitmap font ID
-void DrawText(int fontId, int x, int y, const char* text, const TextStyle& style);
+void draw_text(int fontId, int x, int y, const char* text, const TextStyle& style);
 
-// Draw text aligned within a rectangle (x, y, width, height) — single line, no wrapping
+// draw text aligned within a rectangle (x, y, width, height) — single line, no wrapping
 // Use Align flags: Align::Left, Align::HCenter, Align::Right, Align::Top, Align::VCenter, Align::Bottom
 // Combine with bitwise OR: Align::HCenter | Align::VCenter, or use presets: Align::Center
-void DrawTextAligned(int fontId, int x, int y, int width, int height, const char* text,
+void draw_text_aligned(int fontId, int x, int y, int width, int height, const char* text,
                      const TextStyle& style, Align alignment = Align::TopLeft);
 
-// Draw text with word-wrapping within a rectangle — splits long text into multiple lines
-void DrawTextWrapped(int fontId, int x, int y, int width, int height, const char* text,
+// draw text with word-wrapping within a rectangle — splits long text into multiple lines
+void draw_text_wrapped(int fontId, int x, int y, int width, int height, const char* text,
                      const TextStyle& style, Align alignment = Align::TopLeft);
 
 // ============== Text Measurement ==============
 
 // Measure text dimensions
-TextMetrics MeasureText(int fontId, const char* text);
+TextMetrics measure_text(int fontId, const char* text);
 
-// Get number of characters that fit within maxWidth pixels
-int GetFittingCharCount(int fontId, const char* text, int maxWidth);
+// get number of characters that fit within maxWidth pixels
+int get_fitting_char_count(int fontId, const char* text, int maxWidth);
 
-// Get line height for a font
-int GetLineHeight(int fontId);
+// get line height for a font
+int get_line_height(int fontId);
 
-// Get pixel height of text after word-wrapping within maxWidth
-int MeasureWrappedTextHeight(int fontId, const char* text, int maxWidth);
+// get pixel height of text after word-wrapping within maxWidth
+int measure_wrapped_text_height(int fontId, const char* text, int maxWidth);
 
 // ============== Batching ==============
 // For DDraw, text rendering requires DC acquisition. Wrap multiple text calls
 // in Begin/End for better performance. SFML ignores these (no-op).
 
-void BeginBatch();
-void EndBatch();
+void begin_batch();
+void end_batch();
 
 // RAII helper for automatic batch management
 class ScopedBatch
 {
 public:
-	ScopedBatch() { BeginBatch(); }
-	~ScopedBatch() { EndBatch(); }
+	ScopedBatch() { begin_batch(); }
+	~ScopedBatch() { end_batch(); }
 
 	// Non-copyable
 	ScopedBatch(const ScopedBatch&) = delete;

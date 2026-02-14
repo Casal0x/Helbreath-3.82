@@ -3,7 +3,7 @@
 // Singleton manager for screen transitions with fade-out to black and fade-in effects
 //
 // Usage:
-//   GameModeManager::Initialize(pGame);  // Call once at startup
+//   GameModeManager::initialize(game);  // Call once at startup
 //   GameModeManager::set_screen<Screen_Login>();  // Transition to new screen
 //
 //////////////////////////////////////////////////////////////////////
@@ -76,101 +76,101 @@ public:
 
     // ============== Singleton Access ==============
 
-    static GameModeManager& Get();
+    static GameModeManager& get();
 
     // ============== Initialization ==============
 
-    static void Initialize(CGame* pGame) { Get().InitializeImpl(pGame); }
-    static void Shutdown() { Get().ShutdownImpl(); }
+    static void initialize(CGame* game) { get().initialize_impl(game); }
+    static void shutdown() { get().shutdown_impl(); }
 
     // ============== Template-Based Screen Creation (Static API) ==============
 
     template<typename T, typename... Args>
     static void set_screen(Args&&... args) {
-        Get().set_screen_impl<T>(std::forward<Args>(args)...);
+        get().set_screen_impl<T>(std::forward<Args>(args)...);
     }
 
     // ============== Overlay System (Static API) ==============
 
     template<typename T, typename... Args>
     static void set_overlay(Args&&... args) {
-        Get().set_overlay_impl<T>(std::forward<Args>(args)...);
+        get().set_overlay_impl<T>(std::forward<Args>(args)...);
     }
 
-    static void clear_overlay() { Get().clear_overlay_impl(); }
-    static bool has_overlay() { return Get().m_pActiveOverlay != nullptr; }
-    static IGameScreen* GetActiveOverlay() { return Get().m_pActiveOverlay.get(); }
+    static void clear_overlay() { get().clear_overlay_impl(); }
+    static bool has_overlay() { return get().m_pActiveOverlay != nullptr; }
+    static IGameScreen* get_active_overlay() { return get().m_pActiveOverlay.get(); }
 
     template<typename T>
-    static T* GetActiveOverlayAs() { return dynamic_cast<T*>(Get().m_pActiveOverlay.get()); }
+    static T* get_active_overlay_as() { return dynamic_cast<T*>(get().m_pActiveOverlay.get()); }
 
     template<typename T>
     static bool overlay_is() {
         static_assert(std::is_base_of_v<IGameScreen, T>, "T must derive from IGameScreen");
-        auto& inst = Get();
+        auto& inst = get();
         if (!inst.m_pActiveOverlay) return false;
         return inst.m_pActiveOverlay->get_type_id() == T::screen_type_id;
     }
 
     // ============== Mode Tracking (Static API) ==============
     // Mode tracking is still needed for code that checks what screen is active
-    // Screens call SetCurrentMode() in on_initialize() to set their mode value
+    // Screens call set_current_mode() in on_initialize() to set their mode value
 
-    static GameMode GetMode() { return Get().m_currentMode; }
-    static int8_t GetModeValue() { return static_cast<int8_t>(Get().m_currentMode); }
-    static void SetCurrentMode(GameMode mode) { Get().m_currentMode = mode; }
+    static GameMode get_mode() { return get().m_currentMode; }
+    static int8_t get_mode_value() { return static_cast<int8_t>(get().m_currentMode); }
+    static void set_current_mode(GameMode mode) { get().m_currentMode = mode; }
 
-    // ============== Frame Update (Static API) ==============
+    // ============== Frame update (Static API) ==============
 
-    static void Update() { Get().UpdateImpl(); }
-    static void UpdateScreens() { Get().UpdateScreensImpl(); }
-    static void Render() { Get().RenderImpl(); }
+    static void update() { get().update_impl(); }
+    static void update_screens() { get().update_screens_impl(); }
+    static void render() { get().render_impl(); }
 
     // ============== Transition State Queries (Static API) ==============
 
-    static bool IsTransitioning() { return Get().m_transitionState != TransitionState::None; }
-    static TransitionState GetTransitionState() { return Get().m_transitionState; }
-    static float GetFadeAlpha() { return Get().GetFadeAlphaImpl(); }
+    static bool is_transitioning() { return get().m_transitionState != TransitionState::None; }
+    static TransitionState get_transition_state() { return get().m_transitionState; }
+    static float get_fade_alpha() { return get().get_fade_alpha_impl(); }
 
     // ============== Active Screen Access (Static API) ==============
 
-    static IGameScreen* GetActiveScreen() { return Get().m_pCurrentScreen.get(); }
+    static IGameScreen* get_active_screen() { return get().m_pCurrentScreen.get(); }
 
     template<typename T>
-    static T* GetActiveScreenAs() { return dynamic_cast<T*>(Get().m_pCurrentScreen.get()); }
+    static T* get_active_screen_as() { return dynamic_cast<T*>(get().m_pCurrentScreen.get()); }
 
     // ============== Type Checking (Static API) ==============
 
-    static ScreenTypeId get_previous_screen_type() { return Get().m_previousScreenType; }
-    static ScreenTypeId get_current_screen_type() { return Get().get_current_screen_type_impl(); }
+    static ScreenTypeId get_previous_screen_type() { return get().m_previousScreenType; }
+    static ScreenTypeId get_current_screen_type() { return get().get_current_screen_type_impl(); }
 
     template<typename T>
     static bool previous_screen_is() {
         static_assert(std::is_base_of_v<IGameScreen, T>, "T must derive from IGameScreen");
-        auto& inst = Get();
+        auto& inst = get();
         return inst.m_previousScreenType != nullptr && inst.m_previousScreenType == T::screen_type_id;
     }
 
     template<typename T>
     static bool current_screen_is() {
         static_assert(std::is_base_of_v<IGameScreen, T>, "T must derive from IGameScreen");
-        auto& inst = Get();
+        auto& inst = get();
         if (!inst.m_pCurrentScreen) return false;
         return inst.m_pCurrentScreen->get_type_id() == T::screen_type_id;
     }
 
     // ============== Configuration (Static API) ==============
 
-    static void set_transition_config(const TransitionConfig& config) { Get().m_config = config; }
-    static const TransitionConfig& get_transition_config() { return Get().m_config; }
+    static void set_transition_config(const TransitionConfig& config) { get().m_config = config; }
+    static const TransitionConfig& get_transition_config() { return get().m_config; }
 
     // ============== Timing (Static API) ==============
 
-    static uint32_t GetModeStartTime() { return Get().m_modeStartTime; }
+    static uint32_t get_mode_start_time() { return get().m_modeStartTime; }
 
     // ============== CGame Access (for screens) ==============
 
-    static CGame* GetGame() { return Get().m_pGame; }
+    static CGame* get_game() { return get().m_game; }
 
 private:
     // Private constructor/destructor for singleton
@@ -181,12 +181,12 @@ private:
 
     // ============== Implementation Methods ==============
 
-    void InitializeImpl(CGame* pGame);
-    void ShutdownImpl();
-    void UpdateImpl();
-    void UpdateScreensImpl();
-    void RenderImpl();
-    float GetFadeAlphaImpl() const;
+    void initialize_impl(CGame* game);
+    void shutdown_impl();
+    void update_impl();
+    void update_screens_impl();
+    void render_impl();
+    float get_fade_alpha_impl() const;
     ScreenTypeId get_current_screen_type_impl() const;
 
     template<typename T, typename... Args>
@@ -197,7 +197,7 @@ private:
         if (m_pendingScreenType == T::screen_type_id)
             return;
 
-        // Clear any active overlay when transitioning to a new screen
+        // clear any active overlay when transitioning to a new screen
         clear_overlay_impl();
 
         // Track the pending screen type
@@ -208,7 +208,7 @@ private:
         auto argsTuple = std::make_tuple(std::forward<Args>(args)...);
         m_pendingScreenFactory = [this, argsTuple = std::move(argsTuple)]() mutable {
             return std::apply([this](auto&&... capturedArgs) {
-                return std::make_unique<T>(m_pGame, std::forward<decltype(capturedArgs)>(capturedArgs)...);
+                return std::make_unique<T>(m_game, std::forward<decltype(capturedArgs)>(capturedArgs)...);
             }, std::move(argsTuple));
         };
 
@@ -221,21 +221,21 @@ private:
     void set_overlay_impl(Args&&... args) {
         static_assert(std::is_base_of_v<IGameScreen, T>, "T must derive from IGameScreen");
 
-        // Clear existing overlay first
+        // clear existing overlay first
         clear_overlay_impl();
 
         // Create overlay immediately (no fade transition for overlays)
-        m_pActiveOverlay = std::make_unique<T>(m_pGame, std::forward<Args>(args)...);
+        m_pActiveOverlay = std::make_unique<T>(m_game, std::forward<Args>(args)...);
         m_pActiveOverlay->on_initialize();
     }
 
     void clear_overlay_impl();
 
-    void ApplyScreenChange();
+    void apply_screen_change();
 
     // ============== State ==============
 
-    CGame* m_pGame = nullptr;
+    CGame* m_game = nullptr;
 
     // Current screen object (owned) - null for legacy screens
     std::unique_ptr<IGameScreen> m_pCurrentScreen;

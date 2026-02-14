@@ -10,58 +10,58 @@ namespace hb::shared::sprite { class SpriteCollection; }
 class CCamera;
 class CMapData;
 
-struct WeatherParticle
+struct weather_particle
 {
-	short sX = 0;
-	short sY = 0;
-	short sBX = 0;
-	char cStep = 0;
+	short x = 0;
+	short y = 0;
+	short bx = 0;
+	char step = 0;
 };
 
-class WeatherManager
+class weather_manager
 {
 public:
-	static WeatherManager& Get();
+	static weather_manager& get();
 
 	// Lifecycle
-	void Initialize();
-	void Shutdown();
+	void initialize();
+	void shutdown();
 
 	// Core API
-	void Draw();
-	void Update(uint32_t current_time);
-	void SetWeather(bool start, char effect_type);
-	void DrawThunderEffect(int sX, int sY, int dX, int dY, int rX, int rY, char cType);
-	void ResetParticles();
+	void draw();
+	void update(uint32_t current_time);
+	void set_weather(bool start, char effect_type);
+	void draw_thunder_effect(int sX, int sY, int dX, int dY, int rX, int rY, char type);
+	void reset_particles();
 
 	// Dependencies (call from Screen_Loading after loading effect sprites)
-	void SetDependencies(hb::shared::render::IRenderer& renderer,
+	void set_dependencies(hb::shared::render::IRenderer& renderer,
 	                     hb::shared::sprite::SpriteCollection& effect_sprites,
 	                     CCamera& camera);
-	void SetMapData(CMapData* map_data);
-	void SetXmas(bool is_xmas) { m_is_xmas = is_xmas; }
+	void set_map_data(CMapData* map_data);
+	void set_xmas(bool is_xmas) { m_is_xmas = is_xmas; }
 
 	// Accessors
-	char GetEffectType() const { return m_effect_type; }
-	char GetWeatherStatus() const { return m_weather_status; }
-	void SetWeatherStatus(char status) { m_weather_status = status; }
-	bool IsActive() const { return m_is_active; }
-	bool IsRaining() const { return m_effect_type >= 1 && m_effect_type <= 3; }
-	bool IsSnowing() const { return m_effect_type >= 4; }
+	char get_effect_type() const { return m_effect_type; }
+	char get_weather_status() const { return m_weather_status; }
+	void set_weather_status(char status) { m_weather_status = status; }
+	bool is_active() const { return m_is_active; }
+	bool is_raining() const { return m_effect_type >= 1 && m_effect_type <= 3; }
+	bool is_snowing() const { return m_effect_type >= 4; }
 
 	// Ambient light (day/night)
-	void SetAmbientLight(char level);
-	char GetAmbientLight() const { return m_ambient_light_level; }
-	bool IsNight() const { return m_ambient_light_level == 2; }
+	void set_ambient_light(char level);
+	char get_ambient_light() const { return m_ambient_light_level; }
+	bool is_night() const { return m_ambient_light_level == 2; }
 
 private:
-	WeatherManager() = default;
-	~WeatherManager() = default;
-	WeatherManager(const WeatherManager&) = delete;
-	WeatherManager& operator=(const WeatherManager&) = delete;
+	weather_manager() = default;
+	~weather_manager() = default;
+	weather_manager(const weather_manager&) = delete;
+	weather_manager& operator=(const weather_manager&) = delete;
 
 	// Particle state
-	std::array<WeatherParticle, game_limits::max_weather_objects> m_particles{};
+	std::array<weather_particle, game_limits::max_weather_objects> m_particles{};
 
 	// Weather state
 	bool m_is_active = false;

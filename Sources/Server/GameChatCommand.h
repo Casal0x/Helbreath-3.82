@@ -11,22 +11,22 @@ class GameChatCommand
 {
 public:
 	virtual ~GameChatCommand() = default;
-	virtual const char* GetName() const = 0;
-	virtual int GetDefaultLevel() const { return 0; }
-	virtual bool RequiresGMMode() const { return GetDefaultLevel() > 0; }
-	virtual bool Execute(CGame* pGame, int iClientH, const char* pArgs) = 0;
+	virtual const char* get_name() const = 0;
+	virtual int get_default_level() const { return 0; }
+	virtual bool requires_gm_mode() const { return get_default_level() > 0; }
+	virtual bool execute(CGame* game, int client_h, const char* args) = 0;
 };
 
 class GameChatCommandManager
 {
 public:
-	static GameChatCommandManager& Get();
+	static GameChatCommandManager& get();
 
-	void Initialize(CGame* pGame);
-	void RegisterCommand(std::unique_ptr<GameChatCommand> command);
+	void initialize(CGame* game);
+	void register_command(std::unique_ptr<GameChatCommand> command);
 
 	// Process a chat message starting with '/'. Returns true if consumed.
-	bool ProcessCommand(int iClientH, const char* pMessage, size_t dwMsgSize);
+	bool process_command(int client_h, const char* message, size_t msg_size);
 
 private:
 	GameChatCommandManager() = default;
@@ -34,11 +34,11 @@ private:
 	GameChatCommandManager(const GameChatCommandManager&) = delete;
 	GameChatCommandManager& operator=(const GameChatCommandManager&) = delete;
 
-	void RegisterBuiltInCommands();
-	void SeedCommandPermissions();
-	void LogCommand(int iClientH, const char* pCommand);
+	void register_built_in_commands();
+	void seed_command_permissions();
+	void log_command(int client_h, const char* command);
 
-	CGame* m_pGame = nullptr;
+	CGame* m_game = nullptr;
 	std::vector<std::unique_ptr<GameChatCommand>> m_commands;
-	bool m_bInitialized = false;
+	bool m_initialized = false;
 };

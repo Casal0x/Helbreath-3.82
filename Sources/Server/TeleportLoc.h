@@ -12,19 +12,19 @@ public:
 	inline CTeleportLoc()
 	{
 
-		std::memset(m_cDestMapName, 0, sizeof(m_cDestMapName));
-		//std::memset(m_cDestMapName2, 0, sizeof(m_cDestMapName2));
-		m_sSrcX   = -1;
-		m_sSrcY	  = -1;
-		m_sDestX  = -1;
-		m_sDestY  = -1;
-		m_sDestX2 = -1;
-		m_sDestY2 = -1;
+		std::memset(m_dest_map_name, 0, sizeof(m_dest_map_name));
+		//std::memset(m_dest_map_name2, 0, sizeof(m_dest_map_name2));
+		m_src_x   = -1;
+		m_src_y	  = -1;
+		m_dest_x  = -1;
+		m_dest_y  = -1;
+		m_dest_x2 = -1;
+		m_dest_y2 = -1;
 
-		m_iV1     = 0;
-		m_iV2     = 0;
-		m_dwTime  = 0;
-		m_dwTime2 = 0;
+		m_v1     = 0;
+		m_v2     = 0;
+		m_time  = 0;
+		m_time2 = 0;
 
 	}
 
@@ -33,14 +33,14 @@ public:
 
 	}
 												  
-	short m_sSrcX, m_sSrcY;
+	short m_src_x, m_src_y;
 
-	char  m_cDestMapName[11],  m_cDir;
-	char  m_cDestMapName2[11];
-	short m_sDestX,  m_sDestY;
-	short m_sDestX2, m_sDestY2;
+	char  m_dest_map_name[11],  m_dir;
+	char  m_dest_map_name2[11];
+	short m_dest_x,  m_dest_y;
+	short m_dest_x2, m_dest_y2;
 
-	int   m_iV1, m_iV2;
-	uint32_t m_dwTime, m_dwTime2;
+	int   m_v1, m_v2;
+	uint32_t m_time, m_time2;
 
 };

@@ -2,109 +2,109 @@
 
 CPlayer::CPlayer()
 {
-    Reset();
+    reset();
 }
 
 CPlayer::~CPlayer()
 {
 }
 
-void CPlayer::Reset()
+void CPlayer::reset()
 {
     // IDENTITY & ACCOUNT
-    m_cPlayerName.clear();
-    m_sPlayerObjectID = 0;
-    m_sPlayerType = 0;
-    m_cAccountName.clear();
-    m_cAccountPassword.clear();
-    m_cGuildName.clear();
-    m_iGuildRank = 0;
+    m_player_name.clear();
+    m_player_object_id = 0;
+    m_player_type = 0;
+    m_account_name.clear();
+    m_account_password.clear();
+    m_guild_name.clear();
+    m_guild_rank = 0;
 
     // POSITION & MOVEMENT
-    m_sPlayerX = 0;
-    m_sPlayerY = 0;
-    m_iPlayerDir = 0;
-    m_sDamageMove = 0;
-    m_sDamageMoveAmount = 0;
+    m_player_x = 0;
+    m_player_y = 0;
+    m_player_dir = 0;
+    m_damage_move = 0;
+    m_damage_move_amount = 0;
 
     // RESOURCES
-    m_iHP = 0;
-    m_iMP = 0;
-    m_iSP = 0;
-    m_iHungerStatus = 0;
+    m_hp = 0;
+    m_mp = 0;
+    m_sp = 0;
+    m_hunger_status = 0;
 
     // BASE STATS
-    m_iStr = 0;
-    m_iVit = 0;
-    m_iDex = 0;
-    m_iInt = 0;
-    m_iMag = 0;
-    m_iCharisma = 0;
-    m_iAngelicStr = 0;
-    m_iAngelicInt = 0;
-    m_iAngelicDex = 0;
-    m_iAngelicMag = 0;
+    m_str = 0;
+    m_vit = 0;
+    m_dex = 0;
+    m_int = 0;
+    m_mag = 0;
+    m_charisma = 0;
+    m_angelic_str = 0;
+    m_angelic_int = 0;
+    m_angelic_dex = 0;
+    m_angelic_mag = 0;
 
     // PROGRESSION
-    m_iLevel = 0;
-    m_iExp = 0;
-    m_iLU_Point = 0;
-    m_wLU_Str = 0;
-    m_wLU_Vit = 0;
-    m_wLU_Dex = 0;
-    m_wLU_Int = 0;
-    m_wLU_Mag = 0;
-    m_wLU_Char = 0;
-    m_iStatModStr = 0;
-    m_iStatModVit = 0;
-    m_iStatModDex = 0;
-    m_iStatModInt = 0;
-    m_iStatModMag = 0;
-    m_iStatModChr = 0;
+    m_level = 0;
+    m_exp = 0;
+    m_lu_point = 0;
+    m_lu_str = 0;
+    m_lu_vit = 0;
+    m_lu_dex = 0;
+    m_lu_int = 0;
+    m_lu_mag = 0;
+    m_lu_char = 0;
+    m_stat_mod_str = 0;
+    m_stat_mod_vit = 0;
+    m_stat_mod_dex = 0;
+    m_stat_mod_int = 0;
+    m_stat_mod_mag = 0;
+    m_stat_mod_chr = 0;
 
     // COMBAT
-    m_iAC = 0;
-    m_iTHAC0 = 0;
-    m_playerStatus.Clear();
-    m_iPKCount = 0;
-    m_iEnemyKillCount = 0;
-    m_iRewardGold = 0;
-    m_iContribution = 0;
-    m_iSuperAttackLeft = 0;
-    m_iSpecialAbilityType = 0;
-    m_iSpecialAbilityTimeLeftSec = 0;
+    m_ac = 0;
+    m_thac0 = 0;
+    m_playerStatus.clear();
+    m_pk_count = 0;
+    m_enemy_kill_count = 0;
+    m_reward_gold = 0;
+    m_contribution = 0;
+    m_super_attack_left = 0;
+    m_special_ability_type = 0;
+    m_special_ability_time_left_sec = 0;
 
     // APPEARANCE
-    m_playerAppearance.Clear();
-    m_illusionStatus.Clear();
-    m_illusionAppearance.Clear();
-    m_iGender = 0;
-    m_iSkinCol = 0;
-    m_iHairStyle = 0;
-    m_iHairCol = 0;
-    m_iUnderCol = 0;
+    m_playerAppearance.clear();
+    m_illusionStatus.clear();
+    m_illusionAppearance.clear();
+    m_gender = 0;
+    m_skin_col = 0;
+    m_hair_style = 0;
+    m_hair_col = 0;
+    m_under_col = 0;
 
     // SKILLS & MAGIC
-    m_iMagicMastery.fill(0);
-    m_iSkillMastery.fill(0);
+    m_magic_mastery.fill(0);
+    m_skill_mastery.fill(0);
 
     // STATUS FLAGS
-    m_bIsPoisoned = false;
-    m_bIsConfusion = false;
-    m_bParalyze = false;
-    m_bIsCombatMode = false;
-    m_bIsSafeAttackMode = false;
-    m_bForceAttack = false;
-    m_bSuperAttackMode = false;
-    m_bIsSpecialAbilityEnabled = false;
-    m_bHunter = false;
-    m_bAresden = false;
-    m_bCitizen = false;
+    m_is_poisoned = false;
+    m_is_confusion = false;
+    m_paralyze = false;
+    m_is_combat_mode = false;
+    m_is_safe_attack_mode = false;
+    m_force_attack = false;
+    m_super_attack_mode = false;
+    m_is_special_ability_enabled = false;
+    m_hunter = false;
+    m_aresden = false;
+    m_citizen = false;
 
     // CRUSADE/WAR
-    m_iCrusadeDuty = 0;
-    m_iWarContribution = 0;
-    m_iConstructionPoint = 0;
-    m_iConstructLocX = 0;
-    m_iConstructLocY = 0;
+    m_crusade_duty = 0;
+    m_war_contribution = 0;
+    m_construction_point = 0;
+    m_construct_loc_x = 0;
+    m_construct_loc_y = 0;
 }

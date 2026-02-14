@@ -1,4 +1,4 @@
-// FishingManager.cpp: Client-side fishing network message handlers.
+// fishing_manager.cpp: Client-side fishing network message handlers.
 // Extracted from NetworkMessages_Fish.cpp (Phase B1).
 
 #include "FishingManager.h"
@@ -10,87 +10,87 @@
 #include <cstring>
 #include <windows.h>
 
-void FishingManager::HandleFishChance(char* pData)
+void fishing_manager::handle_fish_chance(char* data)
 {
-	if (!m_pGame) return;
-	int iFishChance;
+	if (!m_game) return;
+	int fish_chance;
 	const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyFishChance>(
-		pData, sizeof(hb::net::PacketNotifyFishChance));
+		data, sizeof(hb::net::PacketNotifyFishChance));
 	if (!pkt) return;
-	iFishChance = pkt->chance;
-	m_pGame->m_dialogBoxManager.Info(DialogBoxId::Fishing).sV1 = iFishChance;
+	fish_chance = pkt->chance;
+	m_game->m_dialog_box_manager.Info(DialogBoxId::Fishing).m_v1 = fish_chance;
 }
 
-void FishingManager::HandleEventFishMode(char* pData)
+void fishing_manager::handle_event_fish_mode(char* data)
 {
-	if (!m_pGame) return;
-	short sSprite, sSpriteFrame;
-	char cName[hb::shared::limits::ItemNameLen]{};
-	WORD wPrice;
+	if (!m_game) return;
+	short sprite, sprite_frame;
+	char name[hb::shared::limits::ItemNameLen]{};
+	WORD price;
 
 	const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyEventFishMode>(
-		pData, sizeof(hb::net::PacketNotifyEventFishMode));
+		data, sizeof(hb::net::PacketNotifyEventFishMode));
 	if (!pkt) return;
 
-	wPrice = pkt->price;
-	sSprite = static_cast<short>(pkt->sprite);
-	sSpriteFrame = static_cast<short>(pkt->sprite_frame);
+	price = pkt->price;
+	sprite = static_cast<short>(pkt->sprite);
+	sprite_frame = static_cast<short>(pkt->sprite_frame);
 
-	static_assert(sizeof(pkt->name) <= sizeof(cName), "Packet name field exceeds local buffer");
-	memcpy(cName, pkt->name, sizeof(pkt->name));
+	static_assert(sizeof(pkt->name) <= sizeof(name), "Packet name field exceeds local buffer");
+	memcpy(name, pkt->name, sizeof(pkt->name));
 
-	m_pGame->m_dialogBoxManager.EnableDialogBox(DialogBoxId::Fishing, 0, 0, wPrice, cName);
-	m_pGame->m_dialogBoxManager.Info(DialogBoxId::Fishing).sV3 = sSprite;
-	m_pGame->m_dialogBoxManager.Info(DialogBoxId::Fishing).sV4 = sSpriteFrame;
+	m_game->m_dialog_box_manager.enable_dialog_box(DialogBoxId::Fishing, 0, 0, price, name);
+	m_game->m_dialog_box_manager.Info(DialogBoxId::Fishing).m_v3 = sprite;
+	m_game->m_dialog_box_manager.Info(DialogBoxId::Fishing).m_v4 = sprite_frame;
 
-	m_pGame->AddEventList(NOTIFYMSG_EVENTFISHMODE1, 10);
+	m_game->add_event_list(NOTIFYMSG_EVENTFISHMODE1, 10);
 }
 
-void FishingManager::HandleFishCanceled(char* pData)
+void fishing_manager::handle_fish_canceled(char* data)
 {
-	if (!m_pGame) return;
+	if (!m_game) return;
 	const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyFishCanceled>(
-		pData, sizeof(hb::net::PacketNotifyFishCanceled));
+		data, sizeof(hb::net::PacketNotifyFishCanceled));
 	if (!pkt) return;
 	switch (pkt->reason) {
 	case 0:
-		m_pGame->AddEventList(NOTIFY_MSG_HANDLER52, 10);
-		m_pGame->m_dialogBoxManager.DisableDialogBox(DialogBoxId::Fishing);
+		m_game->add_event_list(NOTIFY_MSG_HANDLER52, 10);
+		m_game->m_dialog_box_manager.disable_dialog_box(DialogBoxId::Fishing);
 		break;
 	case 1:
-		m_pGame->AddEventList(NOTIFY_MSG_HANDLER53, 10);
-		m_pGame->m_dialogBoxManager.DisableDialogBox(DialogBoxId::Fishing);
+		m_game->add_event_list(NOTIFY_MSG_HANDLER53, 10);
+		m_game->m_dialog_box_manager.disable_dialog_box(DialogBoxId::Fishing);
 		break;
 	case 2:
-		m_pGame->AddEventList(NOTIFY_MSG_HANDLER54, 10);
-		m_pGame->m_dialogBoxManager.DisableDialogBox(DialogBoxId::Fishing);
+		m_game->add_event_list(NOTIFY_MSG_HANDLER54, 10);
+		m_game->m_dialog_box_manager.disable_dialog_box(DialogBoxId::Fishing);
 		break;
 	}
 }
 
-void FishingManager::HandleFishSuccess(char* pData)
+void fishing_manager::handle_fish_success(char* data)
 {
-	if (!m_pGame) return;
-	m_pGame->AddEventList(NOTIFY_MSG_HANDLER55, 10);
-	m_pGame->PlayGameSound('E', 23, 5);
-	m_pGame->PlayGameSound('E', 17, 5);
-	switch (m_pGame->m_pPlayer->m_sPlayerType) {
+	if (!m_game) return;
+	m_game->add_event_list(NOTIFY_MSG_HANDLER55, 10);
+	m_game->play_game_sound('E', 23, 5);
+	m_game->play_game_sound('E', 17, 5);
+	switch (m_game->m_player->m_player_type) {
 	case 1:
 	case 2:
 	case 3:
-		m_pGame->PlayGameSound('C', 21, 0);
+		m_game->play_game_sound('C', 21, 0);
 		break;
 	case 4:
 	case 5:
 	case 6:
-		m_pGame->PlayGameSound('C', 22, 0);
+		m_game->play_game_sound('C', 22, 0);
 		break;
 	}
 }
 
-void FishingManager::HandleFishFail(char* pData)
+void fishing_manager::handle_fish_fail(char* data)
 {
-	if (!m_pGame) return;
-	m_pGame->AddEventList(NOTIFY_MSG_HANDLER56, 10);
-	m_pGame->PlayGameSound('E', 24, 5);
+	if (!m_game) return;
+	m_game->add_event_list(NOTIFY_MSG_HANDLER56, 10);
+	m_game->play_game_sound('E', 24, 5);
 }

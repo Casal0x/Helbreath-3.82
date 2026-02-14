@@ -29,11 +29,11 @@ public:
     // ISprite Implementation - All no-ops
     //------------------------------------------------------------------
 
-    void Draw(int, int, int, const DrawParams&) override {
+    void draw(int, int, int, const DrawParams&) override {
         static int s_nullDrawCount = 0;
         s_nullDrawCount++;
         if (s_nullDrawCount <= 5 || (s_nullDrawCount % 1000) == 0) {
-            printf("[NullSprite::Draw] call #%d (sprite missing!)\n", s_nullDrawCount);
+            printf("[NullSprite::draw] call #%d (sprite missing!)\n", s_nullDrawCount);
         }
     }
     void DrawToSurface(void*, int, int, int, const DrawParams&) override {}

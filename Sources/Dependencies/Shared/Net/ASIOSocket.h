@@ -43,7 +43,7 @@ namespace Type
 	{
 		Listen   = 1,
 		Normal   = 2,
-		Shutdown = 3,
+		shutdown = 3,
 	};
 }
 
@@ -81,7 +81,7 @@ namespace Event
 
 } // namespace socket
 
-// Native socket handle type (for iGetSocket compatibility)
+// Native socket handle type (for get_socket compatibility)
 using NativeSocketHandle = asio::ip::tcp::socket::native_handle_type;
 
 struct NetworkPacket {
@@ -89,12 +89,12 @@ struct NetworkPacket {
 	size_t reportedSize;
 
 	NetworkPacket() : reportedSize(0) {}
-	NetworkPacket(const char* pData, size_t dwSize)
-		: reportedSize(dwSize)
+	NetworkPacket(const char* src, size_t size)
+		: reportedSize(size)
 	{
-		data.reserve(dwSize + 1024);
-		data.assign(reinterpret_cast<const uint8_t*>(pData),
-			reinterpret_cast<const uint8_t*>(pData) + dwSize);
+		data.reserve(size + 1024);
+		data.assign(reinterpret_cast<const uint8_t*>(src),
+			reinterpret_cast<const uint8_t*>(src) + size);
 		data.insert(data.end(), 1024, 0);
 	}
 
@@ -109,15 +109,15 @@ struct UnsentBlock {
 	size_t offset = 0;  // bytes already sent from this block
 
 	UnsentBlock() = default;
-	UnsentBlock(const char* pData, size_t iSize)
-		: data(pData, pData + iSize), offset(0) {}
+	UnsentBlock(const char* data, size_t size)
+		: data(data, data + size), offset(0) {}
 
 	const char* remaining() const { return data.data() + offset; }
 	size_t remainingSize() const { return data.size() - offset; }
 };
 
 // Async callback types
-using MessageCallback = std::function<void(int socketIndex, const char* pData, size_t dwSize, char cKey)>;
+using MessageCallback = std::function<void(int socketIndex, const char* data, size_t size, char key)>;
 using ErrorCallback = std::function<void(int socketIndex, int errorCode)>;
 using AcceptCallback = std::function<void(asio::ip::tcp::socket peer)>;
 
@@ -125,7 +125,7 @@ class ASIOSocket
 {
 public:
 	// Constructor takes a reference to an external io_context (from IOServicePool)
-	ASIOSocket(asio::io_context& ctx, int iBlockLimit);
+	ASIOSocket(asio::io_context& ctx, int block_limit);
 	virtual ~ASIOSocket();
 
 	// Non-copyable
@@ -133,73 +133,73 @@ public:
 	ASIOSocket& operator=(const ASIOSocket&) = delete;
 
 	// Buffer initialization
-	bool bInitBufferSize(size_t dwBufferSize);
+	bool init_buffer_size(size_t buffer_size);
 
 	// Connection management
-	bool bConnect(const char* pAddr, int iPort);
-	bool bBlockConnect(char* pAddr, int iPort);
-	bool bListen(char* pAddr, int iPort);
-	bool bAccept(ASIOSocket* pSock);
+	bool connect(const char* addr, int port);
+	bool block_connect(char* addr, int port);
+	bool listen(char* addr, int port);
+	bool accept(ASIOSocket* sock);
 
 	// Accept a pre-connected socket (for async accept path)
-	bool bAcceptFromSocket(asio::ip::tcp::socket&& peer);
+	bool accept_from_socket(asio::ip::tcp::socket&& peer);
 
-	// Polling (replaces WSAEventSelect + iOnSocketEvent) - still works for client
+	// Polling (replaces WSAEventSelect + on_socket_event) - still works for client
 	int Poll();
 
 	// Sending (synchronous path for polling mode)
-	int iSendMsg(char* cData, size_t dwSize, char cKey = 0);
-	int iSendMsgBlockingMode(char* buf, int nbytes);
+	int send_msg(char* data, size_t size, char key = 0);
+	int send_msg_blocking_mode(char* buf, int nbytes);
 
 	// Async sending (posts to strand, builds frame, chains async_write)
-	int iSendMsgAsync(char* cData, size_t dwSize, char cKey = 0);
+	int send_msg_async(char* data, size_t size, char key = 0);
 
 	// Receiving (synchronous path for polling mode)
-	char* pGetRcvDataPointer(size_t* pMsgSize, char* pKey = 0);
+	char* get_rcv_data_pointer(size_t* msg_size, char* key = 0);
 
 	// v4 Networking API (packet queue) - polling mode only
-	int DrainToQueue();
-	bool PeekPacket(NetworkPacket& outPacket) const;
-	bool PopPacket();
-	bool HasPendingPackets() const { return !m_RecvQueue.empty(); }
-	size_t GetQueueSize() const { return m_RecvQueue.size(); }
-	void ClearQueue() { m_RecvQueue.clear(); }
-	void QueueCompletedPacket(const char* pData, size_t dwSize) { m_RecvQueue.emplace_back(pData, dwSize); }
+	int drain_to_queue();
+	bool peek_packet(NetworkPacket& outPacket) const;
+	bool pop_packet();
+	bool has_pending_packets() const { return !m_recv_queue.empty(); }
+	size_t get_queue_size() const { return m_recv_queue.size(); }
+	void clear_queue() { m_recv_queue.clear(); }
+	void queue_completed_packet(const char* data, size_t size) { m_recv_queue.emplace_back(data, size); }
 
 	// Connection info
-	int iGetPeerAddress(char* pAddrString);
-	NativeSocketHandle iGetSocket();
+	int get_peer_address(char* addr_string);
+	NativeSocketHandle get_socket();
 
 	// Close
-	void CloseConnection();
+	void close_connection();
 
 	// --- Async mode (server) ---
-	void SetSocketIndex(int idx) { m_iSocketIndex = idx; }
-	void SetCallbacks(MessageCallback onMessage, ErrorCallback onError);
-	void StartAsyncRead();
-	void StartAsyncAccept(AcceptCallback callback);
-	void CancelAsync();
+	void set_socket_index(int idx) { m_socket_index = idx; }
+	void set_callbacks(MessageCallback onMessage, ErrorCallback onError);
+	void start_async_read();
+	void start_async_accept(AcceptCallback callback);
+	void cancel_async();
 
 	// Public state
 	int  m_WSAErr = 0;
-	bool m_bIsAvailable = false;
-	bool m_bIsWriteEnabled = false;
-	char m_cType = 0;
+	bool m_is_available = false;
+	bool m_is_write_enabled = false;
+	char m_type = 0;
 
 private:
 	// Internal read/send helpers (synchronous polling path)
-	int _iOnRead();
-	int _iSend(const char* cData, size_t iSize, bool bSaveFlag);
-	int _iSend_ForInternalUse(const char* cData, size_t iSize);
-	int _iSendUnsentData();
-	bool _iRegisterUnsentData(const char* cData, size_t iSize);
+	int on_read();
+	int send(const char* data, size_t size, bool save_flag);
+	int send_for_internal_use(const char* data, size_t size);
+	int send_unsent_data();
+	bool register_unsent_data(const char* data, size_t size);
 
 	// Async read chain
-	void _DoAsyncReadHeader();
-	void _DoAsyncReadBody(size_t bodySize);
+	void do_async_read_header();
+	void do_async_read_body(size_t bodySize);
 
 	// Async write chain
-	void _DoAsyncWrite();
+	void do_async_write();
 
 	// ASIO internals - reference to external io_context
 	asio::io_context& m_ioContext;
@@ -212,33 +212,33 @@ private:
 	bool m_connectResultReady = false;
 	asio::error_code m_connectError;
 
-	// Pending accept socket (stored between Poll detecting accept and bAccept call)
+	// Pending accept socket (stored between Poll detecting accept and accept call)
 	std::optional<asio::ip::tcp::socket> m_pendingAcceptSocket;
 
 	// Receive/send buffers (RAII vectors replace raw char*)
 	std::vector<char> m_rcvBuffer;
 	std::vector<char> m_sndBuffer;
-	size_t m_dwBufferSize = 0;
+	size_t m_buffer_size = 0;
 
 	// Read state machine (polling mode)
-	char     m_cStatus = hb::shared::net::socket::Status::ReadingHeader;
-	size_t m_dwReadSize = 3;
-	size_t m_dwTotalReadSize = 0;
+	char     m_status = hb::shared::net::socket::Status::ReadingHeader;
+	size_t m_read_size = 3;
+	size_t m_total_read_size = 0;
 
 	// Stored connection info (for reconnect)
-	char m_pAddr[30] = {};
-	int  m_iPortNum = 0;
+	char m_addr[30] = {};
+	int  m_port_num = 0;
 
 	// Unsent data queue (replaces raw pointer circular buffer) - polling mode
 	std::deque<UnsentBlock> m_unsentQueue;
-	int m_iBlockLimit;
+	int m_block_limit;
 
 	// Packet receive queue - polling mode
-	std::deque<NetworkPacket> m_RecvQueue;
+	std::deque<NetworkPacket> m_recv_queue;
 	static constexpr size_t MAX_QUEUE_SIZE = 2000;
 
 	// --- Async mode members ---
-	int m_iSocketIndex = -1;
+	int m_socket_index = -1;
 	MessageCallback m_onMessage;
 	ErrorCallback m_onError;
 	AcceptCallback m_onAccept;
@@ -248,13 +248,13 @@ private:
 
 	// Async write queue (strand-serialized)
 	std::deque<std::vector<char>> m_asyncWriteQueue;
-	bool m_bAsyncWriteInProgress = false;
+	bool m_async_write_in_progress = false;
 
 	// Async write queue size limit
 	static constexpr size_t MAX_ASYNC_WRITE_QUEUE = 5000;
 
 	// Flag to indicate async mode is active
-	std::atomic<bool> m_bAsyncMode{false};
+	std::atomic<bool> m_async_mode{false};
 };
 
 } // namespace hb::shared::net

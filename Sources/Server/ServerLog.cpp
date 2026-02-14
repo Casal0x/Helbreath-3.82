@@ -38,7 +38,7 @@ protected:
 		default:                       color = console_color::normal;  break;
 		}
 		std::string line(formatted_line);
-		GetServerConsole().WriteLine(line.c_str(), color);
+		GetServerConsole().write_line(line.c_str(), color);
 	}
 };
 

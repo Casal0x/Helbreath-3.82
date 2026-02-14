@@ -9,68 +9,68 @@
 #include <string>
 using namespace hb::client::sprite_id;
 
-DialogBox_ItemDropAmount::DialogBox_ItemDropAmount(CGame* pGame)
-	: IDialogBox(DialogBoxId::ItemDropExternal, pGame)
+DialogBox_ItemDropAmount::DialogBox_ItemDropAmount(CGame* game)
+	: IDialogBox(DialogBoxId::ItemDropExternal, game)
 {
-	SetDefaultRect(0 , 0 , 215, 87);
+	set_default_rect(0 , 0 , 215, 87);
 }
 
-void DialogBox_ItemDropAmount::OnDraw(short msX, short msY, short msZ, char cLB)
+void DialogBox_ItemDropAmount::on_draw(short mouse_x, short mouse_y, short z, char lb)
 {
-	short sX = Info().sX;
-	short sY = Info().sY;
-	std::string cTxt;
+	short sX = Info().m_x;
+	short sY = Info().m_y;
+	std::string txt;
 
 
-	DrawNewDialogBox(InterfaceNdGame2, sX, sY, 5);
+	draw_new_dialog_box(InterfaceNdGame2, sX, sY, 5);
 
-	switch (Info().cMode)
+	switch (Info().m_mode)
 	{
 	case 1:
 	{
-		auto itemInfo = ItemNameFormatter::Get().Format(m_pGame->m_pItemList[Info().sView].get());
+		auto itemInfo = item_name_formatter::get().format(m_game->m_item_list[Info().m_view].get());
 
-		if (Info().cStr[0] == '\0')
-			cTxt = std::format(DRAW_DIALOGBOX_QUERY_DROP_ITEM_AMOUNT1, itemInfo.name.c_str());
+		if (Info().m_str[0] == '\0')
+			txt = std::format(DRAW_DIALOGBOX_QUERY_DROP_ITEM_AMOUNT1, itemInfo.name.c_str());
 		else
-			cTxt = std::format(DRAW_DIALOGBOX_QUERY_DROP_ITEM_AMOUNT2, itemInfo.name.c_str(), Info().cStr);
+			txt = std::format(DRAW_DIALOGBOX_QUERY_DROP_ITEM_AMOUNT2, itemInfo.name.c_str(), Info().m_str);
 
-		if (Info().sV3 < 1000)
-			PutString(sX + 30, sY + 20, cTxt.c_str(), GameColors::UILabel);
+		if (Info().m_v3 < 1000)
+			put_string(sX + 30, sY + 20, txt.c_str(), GameColors::UILabel);
 
-		PutString(sX + 30, sY + 35, DRAW_DIALOGBOX_QUERY_DROP_ITEM_AMOUNT3, GameColors::UILabel);
+		put_string(sX + 30, sY + 35, DRAW_DIALOGBOX_QUERY_DROP_ITEM_AMOUNT3, GameColors::UILabel);
 
-		if (m_pGame->m_dialogBoxManager.iGetTopDialogBoxIndex() != DialogBoxId::ItemDropExternal)
-			hb::shared::text::DrawText(GameFont::Default, sX + 40, sY + 57, m_pGame->m_cAmountString.c_str(), hb::shared::text::TextStyle::Color(GameColors::UIWhite));
+		if (m_game->m_dialog_box_manager.get_top_dialog_box_index() != DialogBoxId::ItemDropExternal)
+			hb::shared::text::draw_text(GameFont::Default, sX + 40, sY + 57, m_game->m_amount_string.c_str(), hb::shared::text::TextStyle::from_color(GameColors::UIWhite));
 
-		cTxt = std::format("__________ (0 ~ {})", m_pGame->m_pItemList[Info().sView]->m_dwCount);
-		PutString(sX + 38, sY + 62, cTxt.c_str(), GameColors::UILabel);
+		txt = std::format("__________ (0 ~ {})", m_game->m_item_list[Info().m_view]->m_count);
+		put_string(sX + 38, sY + 62, txt.c_str(), GameColors::UILabel);
 		break;
 	}
 
 	case 20:
 	{
-		auto itemInfo2 = ItemNameFormatter::Get().Format(m_pGame->m_pItemList[Info().sView].get());
+		auto itemInfo2 = item_name_formatter::get().format(m_game->m_item_list[Info().m_view].get());
 
-		if (Info().cStr[0] == '\0')
-			cTxt = std::format(DRAW_DIALOGBOX_QUERY_DROP_ITEM_AMOUNT1, itemInfo2.name.c_str());
+		if (Info().m_str[0] == '\0')
+			txt = std::format(DRAW_DIALOGBOX_QUERY_DROP_ITEM_AMOUNT1, itemInfo2.name.c_str());
 		else
-			cTxt = std::format(DRAW_DIALOGBOX_QUERY_DROP_ITEM_AMOUNT2, itemInfo2.name.c_str(), Info().cStr);
+			txt = std::format(DRAW_DIALOGBOX_QUERY_DROP_ITEM_AMOUNT2, itemInfo2.name.c_str(), Info().m_str);
 
-		if (Info().sV3 < 1000)
-			PutString(sX + 30, sY + 20, cTxt.c_str(), GameColors::UILabel);
+		if (Info().m_v3 < 1000)
+			put_string(sX + 30, sY + 20, txt.c_str(), GameColors::UILabel);
 
-		PutString(sX + 30, sY + 35, DRAW_DIALOGBOX_QUERY_DROP_ITEM_AMOUNT3, GameColors::UILabel);
-		hb::shared::text::DrawText(GameFont::Default, sX + 40, sY + 57, m_pGame->m_cAmountString.c_str(), hb::shared::text::TextStyle::Color(GameColors::UIWhite));
+		put_string(sX + 30, sY + 35, DRAW_DIALOGBOX_QUERY_DROP_ITEM_AMOUNT3, GameColors::UILabel);
+		hb::shared::text::draw_text(GameFont::Default, sX + 40, sY + 57, m_game->m_amount_string.c_str(), hb::shared::text::TextStyle::from_color(GameColors::UIWhite));
 
-		cTxt = std::format("__________ (0 ~ {})", m_pGame->m_pItemList[Info().sView]->m_dwCount);
-		PutString(sX + 38, sY + 62, cTxt.c_str(), GameColors::UILabel);
+		txt = std::format("__________ (0 ~ {})", m_game->m_item_list[Info().m_view]->m_count);
+		put_string(sX + 38, sY + 62, txt.c_str(), GameColors::UILabel);
 		break;
 	}
 	}
 }
 
-bool DialogBox_ItemDropAmount::OnClick(short msX, short msY)
+bool DialogBox_ItemDropAmount::on_click(short mouse_x, short mouse_y)
 {
 	// Click handling for this dialog is done elsewhere (text input handling)
 	return false;

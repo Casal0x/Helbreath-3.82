@@ -5,63 +5,63 @@
 
 // Profiling stage IDs - add new stages here
 enum class ProfileStage {
-	Update,           // UpdateScreen logic
+	update,           // UpdateScreen logic
 	ClearBuffer,      // ClearBackB4
-	DrawBackground,   // Map tiles
-	DrawEffectLights, // Lighting effects
-	DrawObjects,      // Characters, NPCs, items
-	DrawEffects,      // Particle effects
+	draw_background,   // Map tiles
+	draw_effect_lights, // Lighting effects
+	draw_objects,      // Characters, NPCs, items
+	draw_effects,      // Particle effects
 	DrawWeather,      // Weather effects
 	DrawChat,         // Chat messages
 	DrawDialogs,      // Dialog boxes/UI
 	DrawMisc,         // Misc rendering (tooltips, cursor, etc.)
-	Flip,             // iFlip to display
+	Flip,             // flip to display
 	FrameTotal,       // Total frame time
 	COUNT             // Must be last
 };
 
 // FrameTiming: Per-frame delta timing and stage profiling
 //
-// FPS and frame counting are handled engine-side (hb::shared::render::IRenderer::GetFPS).
+// FPS and frame counting are handled engine-side (hb::shared::render::IRenderer::get_fps).
 // FrameTiming provides: Per-frame delta and per-stage profiling.
 //
 // Usage:
-//   FrameTiming::Initialize();  // Call once at startup
+//   FrameTiming::initialize();  // Call once at startup
 //
 //   // In game loop:
-//   FrameTiming::BeginFrame();
+//   FrameTiming::begin_frame();
 //   // ... update and render ...
-//   FrameTiming::EndFrame();
+//   FrameTiming::end_frame();
 //
-//   double dt = FrameTiming::GetDeltaTime();  // Seconds since last frame
+//   double dt = FrameTiming::get_delta_time();  // Seconds since last frame
 //
 // Profiling Usage:
-//   FrameTiming::BeginProfile(ProfileStage::DrawObjects);
-//   DrawObjects();
-//   FrameTiming::EndProfile(ProfileStage::DrawObjects);
+//   FrameTiming::begin_profile(ProfileStage::draw_objects);
+//   draw_objects();
+//   FrameTiming::end_profile(ProfileStage::draw_objects);
 //
-//   double ms = FrameTiming::GetProfileTimeMS(ProfileStage::DrawObjects);
+//   double ms = FrameTiming::get_profile_time_ms(ProfileStage::draw_objects);
 //
 class FrameTiming
 {
 public:
-	static void Initialize();
-	static void BeginFrame();
-	static void EndFrame();
+	static void initialize();
+	static void begin_frame();
+	static void end_frame();
 
 	// Accessors
-	static double GetDeltaTime();        // Seconds since last frame
-	static double GetDeltaTimeMS();      // Milliseconds since last frame
+	static double get_delta_time();        // Seconds since last frame
+	static double get_delta_time_ms();      // Milliseconds since last frame
 
 	// Profiling
-	static void SetProfilingEnabled(bool enabled);
-	static bool IsProfilingEnabled();
-	static void SetFrameRendered(bool rendered);  // Call after skip check in RenderFrame
-	static void BeginProfile(ProfileStage stage);
-	static void EndProfile(ProfileStage stage);
-	static double GetProfileTimeMS(ProfileStage stage);     // Current frame time
-	static double GetProfileAvgTimeMS(ProfileStage stage);  // Averaged over ~1 second
-	static const char* GetStageName(ProfileStage stage);
+	static void set_profiling_enabled(bool enabled);
+	static bool is_profiling_enabled();
+	static void set_frame_rendered(bool rendered);  // Call after skip check in RenderFrame
+	static void begin_profile(ProfileStage stage);
+	static void end_profile(ProfileStage stage);
+	static double get_profile_time_ms(ProfileStage stage);     // Current frame time
+	static double get_profile_avg_time_ms(ProfileStage stage);  // Averaged over ~1 second
+	static const char* get_stage_name(ProfileStage stage);
 
 private:
 	using Clock = std::chrono::steady_clock;

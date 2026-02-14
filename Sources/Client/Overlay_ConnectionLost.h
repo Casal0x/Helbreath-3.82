@@ -13,7 +13,7 @@ class Overlay_ConnectionLost : public IGameScreen
 public:
     SCREEN_TYPE(Overlay_ConnectionLost)
 
-    explicit Overlay_ConnectionLost(CGame* pGame);
+    explicit Overlay_ConnectionLost(CGame* game);
     ~Overlay_ConnectionLost() override = default;
 
     void on_initialize() override;

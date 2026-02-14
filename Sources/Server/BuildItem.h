@@ -13,22 +13,22 @@ public:
 	{
 		
 
-		std::memset(m_cName, 0, sizeof(m_cName));
-		m_sItemID = -1;
+		std::memset(m_name, 0, sizeof(m_name));
+		m_item_id = -1;
 
-		m_iSkillLimit = 0;
+		m_skill_limit = 0;
 
 		for(int i = 0; i < 6; i++) {
-			m_iMaterialItemID[i]    = 0;
-			m_iMaterialItemCount[i] = 0;
-			m_iMaterialItemValue[i] = 0;
-			m_iIndex[i]            = -1;
+			m_material_item_id[i]    = 0;
+			m_material_item_count[i] = 0;
+			m_material_item_value[i] = 0;
+			m_index[i]            = -1;
 		}
 
-		m_iMaxValue     = 0;
-		m_iAverageValue = 0;
-		m_iMaxSkill     = 0;
-		m_wAttribute    = 0;
+		m_max_value     = 0;
+		m_average_value = 0;
+		m_max_skill     = 0;
+		m_attribute    = 0;
 	}
 
 	inline virtual ~CBuildItem()
@@ -36,19 +36,19 @@ public:
 
 	}
 
-	char  m_cName[hb::shared::limits::ItemNameLen];
-	short m_sItemID;
+	char  m_name[hb::shared::limits::ItemNameLen];
+	short m_item_id;
 
-	int  m_iSkillLimit;
+	int  m_skill_limit;
 	
-	int  m_iMaterialItemID[6];
-	int  m_iMaterialItemCount[6];
-	int  m_iMaterialItemValue[6];
-	int  m_iIndex[6];
+	int  m_material_item_id[6];
+	int  m_material_item_count[6];
+	int  m_material_item_value[6];
+	int  m_index[6];
 
-	int	 m_iMaxValue;
-	int  m_iAverageValue;	
-	int   m_iMaxSkill;
-	uint16_t  m_wAttribute;
+	int	 m_max_value;
+	int  m_average_value;	
+	int   m_max_skill;
+	uint16_t  m_attribute;
 };
 

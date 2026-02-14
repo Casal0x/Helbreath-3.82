@@ -26,17 +26,17 @@ public:
     ~SFMLBitmapFont() override = default;
 
     // Text measurement
-    int MeasureText(const char* text) const override;
-    int GetCharWidth(char c) const override;
+    int measure_text(const char* text) const override;
+    int get_char_width(char c) const override;
 
     // Drawing
-    void DrawText(int x, int y, const char* text, const BitmapTextParams& params) override;
-    void DrawTextCentered(int x1, int x2, int y, const char* text, const BitmapTextParams& params) override;
+    void draw_text(int x, int y, const char* text, const BitmapTextParams& params) override;
+    void draw_text_centered(int x1, int x2, int y, const char* text, const BitmapTextParams& params) override;
 
 private:
     int GetFrameForChar(char c) const;
 
-    hb::shared::sprite::ISprite* m_pSprite;
+    hb::shared::sprite::ISprite* m_sprite;
     char m_firstChar;
     char m_lastChar;
     int m_frameOffset;

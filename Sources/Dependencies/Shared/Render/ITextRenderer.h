@@ -8,9 +8,9 @@
 #include <cstdint>
 #include "PrimitiveTypes.h"
 
-// Undefine Windows DrawText macro to avoid naming conflict
-#ifdef DrawText
-#undef DrawText
+// Undefine Windows draw_text macro to avoid naming conflict
+#ifdef draw_text
+#undef draw_text
 #endif
 
 namespace hb::shared::text {
@@ -69,18 +69,18 @@ public:
     virtual bool IsFontLoaded() const = 0;
 
     // Text measurement
-    virtual TextMetrics MeasureText(const char* text) const = 0;
-    virtual int GetFittingCharCount(const char* text, int maxWidth) const = 0;
-    virtual int GetLineHeight() const = 0;
+    virtual TextMetrics measure_text(const char* text) const = 0;
+    virtual int get_fitting_char_count(const char* text, int maxWidth) const = 0;
+    virtual int get_line_height() const = 0;
 
     // Drawing
-    virtual void DrawText(int x, int y, const char* text, const hb::shared::render::Color& color) = 0;
-    virtual void DrawTextAligned(int x, int y, int width, int height, const char* text, const hb::shared::render::Color& color,
+    virtual void draw_text(int x, int y, const char* text, const hb::shared::render::Color& color) = 0;
+    virtual void draw_text_aligned(int x, int y, int width, int height, const char* text, const hb::shared::render::Color& color,
                                  Align alignment = Align::TopLeft) = 0;
 
     // Batching for performance (DDraw needs DC acquisition)
-    virtual void BeginBatch() = 0;
-    virtual void EndBatch() = 0;
+    virtual void begin_batch() = 0;
+    virtual void end_batch() = 0;
 };
 
 // Global accessor - set by RendererFactory during initialization

@@ -27,7 +27,7 @@ class IGameScreen
 public:
     using ScreenTypeId = const char*;
 
-    explicit IGameScreen(CGame* pGame);
+    explicit IGameScreen(CGame* game);
     virtual ~IGameScreen() = default;
 
     // Prevent copying/moving - screens own state and should not be copied
@@ -48,7 +48,7 @@ public:
     // Called each frame to update logic, handle input, process state changes
     virtual void on_update() = 0;
 
-    // Called each frame to render the screen (after BeginFrame, before EndFrame)
+    // Called each frame to render the screen (after begin_frame, before end_frame)
     virtual void on_render() = 0;
 
     // Returns the screen type identifier for runtime type checking
@@ -58,37 +58,37 @@ public:
     // Override to false for overlays that draw their own background (e.g. DevConsole).
     virtual bool wants_background_dim() const { return true; }
 
-    // Called when a server response arrives in LogResponseHandler.
+    // Called when a server response arrives in log_response_handler.
     // Return true if this screen handled the response (stops further processing),
     // false to fall through to default handling. Optional — not all screens need this.
-    virtual bool on_net_response(uint16_t wResponseType, char* pData) { return false; }
+    virtual bool on_net_response(uint16_t response_type, char* data) { return false; }
 
 protected:
     // ============== Helper Methods (delegate to CGame) ==============
     // These provide convenient access to common CGame functionality
 
     // Drawing helpers
-    void DrawNewDialogBox(char cType, int sX, int sY, int iFrame,
-                          bool bIsNoColorKey = false, bool bIsTrans = false);
+    void draw_new_dialog_box(char type, int sX, int sY, int frame,
+                          bool is_no_color_key = false, bool is_trans = false);
     // Computes centered position for a dialog sprite frame within the logical resolution
-    void GetCenteredDialogPos(char cType, int iFrame, int& outX, int& outY);
-    void PutString(int iX, int iY, const char* pString, const hb::shared::render::Color& color);
-    void PutAlignedString(int iX1, int iX2, int iY, const char* pString,
+    void get_centered_dialog_pos(char type, int frame, int& outX, int& outY);
+    void put_string(int iX, int iY, const char* string, const hb::shared::render::Color& color);
+    void put_aligned_string(int x1, int x2, int iY, const char* string,
                           const hb::shared::render::Color& color = GameColors::UIBlack);
-    void PutString_SprFont(int iX, int iY, const char* pStr, uint8_t r, uint8_t g, uint8_t b);
-    void DrawVersion();
+    void put_string_spr_font(int iX, int iY, const char* str, uint8_t r, uint8_t g, uint8_t b);
+    void draw_version();
 
     // Audio helpers
-    void PlayGameSound(char cType, int iNum, int iDist, long lPan = 0);
+    void play_game_sound(char type, int num, int dist, long lPan = 0);
 
     // Event/message helpers
-    void AddEventList(const char* pTxt, char cColor = 0, bool bDupAllow = true);
+    void add_event_list(const char* txt, char color = 0, bool dup_allow = true);
 
     // Input string helpers (for text entry screens)
-    void StartInputString(int sX, int sY, unsigned char iLen, std::string& buffer, bool bIsHide = false);
-    void EndInputString();
-    void ClearInputString();
-    void ShowReceivedString();
+    void start_input_string(int sX, int sY, unsigned char len, std::string& buffer, bool is_hide = false);
+    void end_input_string();
+    void clear_input_string();
+    void show_received_string();
 
     // Screen transition helper - request transition to a new screen
     // This delegates to GameModeManager::set_screen<T>()
@@ -106,7 +106,7 @@ protected:
     uint32_t get_elapsed_ms() const;
 
     // Access to owning game instance
-    CGame* m_pGame;
+    CGame* m_game;
 };
 
 // Template implementation - defined inline since it just forwards to GameModeManager

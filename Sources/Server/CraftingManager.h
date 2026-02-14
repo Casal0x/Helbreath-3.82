@@ -13,20 +13,20 @@ public:
 	CraftingManager();
 	~CraftingManager();
 
-	void SetGame(CGame* pGame) { m_pGame = pGame; }
+	void set_game(CGame* game) { m_game = game; }
 
 	// Lifecycle
-	void InitArrays();
-	void CleanupArrays();
+	void init_arrays();
+	void cleanup_arrays();
 
 	// Crafting handlers (moved from CGame)
-	void ReqCreatePortionHandler(int iClientH, char* pData);
-	void ReqCreateCraftingHandler(int iClientH, char* pData);
+	void req_create_portion_handler(int client_h, char* data);
+	void req_create_crafting_handler(int client_h, char* data);
 
 	// Config arrays (public for database loading)
-	CPortion* m_pPortionConfigList[hb::server::config::MaxPortionTypes]{};
-	CPortion* m_pCraftingConfigList[hb::server::config::MaxPortionTypes]{};
+	CPortion* m_portion_config_list[hb::server::config::MaxPortionTypes]{};
+	CPortion* m_crafting_config_list[hb::server::config::MaxPortionTypes]{};
 
 private:
-	CGame* m_pGame = nullptr;
+	CGame* m_game = nullptr;
 };

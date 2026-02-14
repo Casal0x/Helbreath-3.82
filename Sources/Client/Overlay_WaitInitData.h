@@ -13,7 +13,7 @@ class Overlay_WaitInitData : public IGameScreen
 public:
     SCREEN_TYPE(Overlay_WaitInitData)
 
-    explicit Overlay_WaitInitData(CGame* pGame);
+    explicit Overlay_WaitInitData(CGame* game);
     ~Overlay_WaitInitData() override = default;
 
     void on_initialize() override;

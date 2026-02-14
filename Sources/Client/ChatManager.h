@@ -9,32 +9,32 @@
 class ChatManager
 {
 public:
-	static ChatManager& Get();
+	static ChatManager& get();
 
 	// Lifecycle
-	void Initialize();
-	void Shutdown();
+	void initialize();
+	void shutdown();
 
 	// Message buffer management
-	void AddMessage(char* msg, char type);
-	void ClearMessages();
+	void add_message(char* msg, char type);
+	void clear_messages();
 	CMsg* GetMessage(int index) const;
 
 	// Whisper target management
-	void AddWhisperTarget(const char* name);
-	void ClearWhispers();
-	const char* GetWhisperTargetName(int index) const;
-	bool HasWhisperTarget(int index) const;
-	int GetWhisperIndex() const { return m_whisper_index; }
-	void SetWhisperIndex(int index) { m_whisper_index = static_cast<char>(index); }
-	void CycleWhisperUp();
-	void CycleWhisperDown();
+	void add_whisper_target(const char* name);
+	void clear_whispers();
+	const char* get_whisper_target_name(int index) const;
+	bool has_whisper_target(int index) const;
+	int get_whisper_index() const { return m_whisper_index; }
+	void set_whisper_index(int index) { m_whisper_index = static_cast<char>(index); }
+	void cycle_whisper_up();
+	void cycle_whisper_down();
 
-	// Toggle accessors
-	bool IsWhisperEnabled() const { return m_whisper_enabled; }
-	void SetWhisperEnabled(bool enabled) { m_whisper_enabled = enabled; }
-	bool IsShoutEnabled() const { return m_shout_enabled; }
-	void SetShoutEnabled(bool enabled) { m_shout_enabled = enabled; }
+	// toggle accessors
+	bool is_whisper_enabled() const { return m_whisper_enabled; }
+	void set_whisper_enabled(bool enabled) { m_whisper_enabled = enabled; }
+	bool is_shout_enabled() const { return m_shout_enabled; }
+	void set_shout_enabled(bool enabled) { m_shout_enabled = enabled; }
 
 private:
 	ChatManager() = default;
@@ -49,7 +49,7 @@ private:
 	std::array<std::unique_ptr<CMsg>, game_limits::max_whisper_msgs> m_whisper_targets;
 	char m_whisper_index = 0;
 
-	// Toggle state
+	// toggle state
 	bool m_whisper_enabled = true;
 	bool m_shout_enabled = true;
 };

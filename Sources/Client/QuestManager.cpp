@@ -1,4 +1,4 @@
-﻿// QuestManager.cpp: Handles client-side quest network messages.
+﻿// quest_manager.cpp: Handles client-side quest network messages.
 // Extracted from NetworkMessages_Quest.cpp (Phase B3).
 
 #include "QuestManager.h"
@@ -12,112 +12,112 @@
 #include <format>
 #include <string>
 
-void QuestManager::HandleQuestCounter(char* pData)
+void quest_manager::handle_quest_counter(char* data)
 {
 	const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyQuestCounter>(
-		pData, sizeof(hb::net::PacketNotifyQuestCounter));
+		data, sizeof(hb::net::PacketNotifyQuestCounter));
 	if (!pkt) return;
-	m_pGame->m_stQuest.sCurrentCount = static_cast<short>(pkt->current_count);
+	m_game->m_quest.current_count = static_cast<short>(pkt->current_count);
 }
 
-void QuestManager::HandleQuestContents(char* pData)
+void quest_manager::handle_quest_contents(char* data)
 {
 	const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyQuestContents>(
-		pData, sizeof(hb::net::PacketNotifyQuestContents));
+		data, sizeof(hb::net::PacketNotifyQuestContents));
 	if (!pkt) return;
-	m_pGame->m_stQuest.sWho = pkt->who;
-	m_pGame->m_stQuest.sQuestType = pkt->quest_type;
-	m_pGame->m_stQuest.sContribution = pkt->contribution;
-	m_pGame->m_stQuest.sTargetType = pkt->target_type;
-	m_pGame->m_stQuest.sTargetCount = pkt->target_count;
-	m_pGame->m_stQuest.sX = pkt->x;
-	m_pGame->m_stQuest.sY = pkt->y;
-	m_pGame->m_stQuest.sRange = pkt->range;
-	m_pGame->m_stQuest.bIsQuestCompleted = (pkt->is_completed != 0);
-	m_pGame->m_stQuest.cTargetName.assign(pkt->target_name, strnlen(pkt->target_name, 20));
+	m_game->m_quest.who = pkt->who;
+	m_game->m_quest.quest_type = pkt->quest_type;
+	m_game->m_quest.contribution = pkt->contribution;
+	m_game->m_quest.target_type = pkt->target_type;
+	m_game->m_quest.target_count = pkt->target_count;
+	m_game->m_quest.x = pkt->x;
+	m_game->m_quest.y = pkt->y;
+	m_game->m_quest.range = pkt->range;
+	m_game->m_quest.is_quest_completed = (pkt->is_completed != 0);
+	m_game->m_quest.target_name.assign(pkt->target_name, strnlen(pkt->target_name, 20));
 }
 
-void QuestManager::HandleQuestReward(char* pData)
+void quest_manager::handle_quest_reward(char* data)
 {
-	short sWho, sFlag;
-	std::string cTxt;
+	short who, flag;
+	std::string txt;
 
-	char cRewardName[hb::shared::limits::ItemNameLen]{};
-	int iAmount, iIndex, iPreCon;
+	char reward_name[hb::shared::limits::ItemNameLen]{};
+	int amount, index, pre_con;
 	const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyQuestReward>(
-		pData, sizeof(hb::net::PacketNotifyQuestReward));
+		data, sizeof(hb::net::PacketNotifyQuestReward));
 	if (!pkt) return;
-	sWho = pkt->who;
-	sFlag = pkt->flag;
-	iAmount = pkt->amount;
-	memcpy(cRewardName, pkt->reward_name, sizeof(pkt->reward_name));
-	iPreCon = m_pGame->m_pPlayer->m_iContribution;
-	m_pGame->m_pPlayer->m_iContribution = pkt->contribution;
+	who = pkt->who;
+	flag = pkt->flag;
+	amount = pkt->amount;
+	memcpy(reward_name, pkt->reward_name, sizeof(pkt->reward_name));
+	pre_con = m_game->m_player->m_contribution;
+	m_game->m_player->m_contribution = pkt->contribution;
 
-	if (sFlag == 1)
+	if (flag == 1)
 	{
-		m_pGame->m_stQuest.sWho = 0;
-		m_pGame->m_stQuest.sQuestType = 0;
-		m_pGame->m_stQuest.sContribution = 0;
-		m_pGame->m_stQuest.sTargetType = 0;
-		m_pGame->m_stQuest.sTargetCount = 0;
-		m_pGame->m_stQuest.sX = 0;
-		m_pGame->m_stQuest.sY = 0;
-		m_pGame->m_stQuest.sRange = 0;
-		m_pGame->m_stQuest.sCurrentCount = 0;
-		m_pGame->m_stQuest.bIsQuestCompleted = false;
-		m_pGame->m_dialogBoxManager.EnableDialogBox(DialogBoxId::NpcTalk, 0, sWho + 110, 0);
-		iIndex = m_pGame->m_dialogBoxManager.Info(DialogBoxId::NpcTalk).sV1;
-		if (iIndex < 0 || iIndex + 3 >= game_limits::max_text_dlg_lines) return;
-		m_pGame->m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, "  ", 0);
-		iIndex++;
+		m_game->m_quest.who = 0;
+		m_game->m_quest.quest_type = 0;
+		m_game->m_quest.contribution = 0;
+		m_game->m_quest.target_type = 0;
+		m_game->m_quest.target_count = 0;
+		m_game->m_quest.x = 0;
+		m_game->m_quest.y = 0;
+		m_game->m_quest.range = 0;
+		m_game->m_quest.current_count = 0;
+		m_game->m_quest.is_quest_completed = false;
+		m_game->m_dialog_box_manager.enable_dialog_box(DialogBoxId::NpcTalk, 0, who + 110, 0);
+		index = m_game->m_dialog_box_manager.Info(DialogBoxId::NpcTalk).m_v1;
+		if (index < 0 || index + 3 >= game_limits::max_text_dlg_lines) return;
+		m_game->m_msg_text_list2[index] = std::make_unique<CMsg>(0, "  ", 0);
+		index++;
 		// Gold reward sentinel — raw bytes from EUC-KR source (encoding was corrupted during UTF-8 conversion)
-		if (memcmp(cRewardName, "\xC4\xA1", 2) == 0)
+		if (memcmp(reward_name, "\xC4\xA1", 2) == 0)
 		{
-			if (iAmount > 0) cTxt = std::format(NOTIFYMSG_QUEST_REWARD1, iAmount);
+			if (amount > 0) txt = std::format(NOTIFYMSG_QUEST_REWARD1, amount);
 		}
 		else
 		{
-			cTxt = std::format(NOTIFYMSG_QUEST_REWARD2, iAmount, cRewardName);
+			txt = std::format(NOTIFYMSG_QUEST_REWARD2, amount, reward_name);
 		}
-		m_pGame->m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, cTxt.empty() ? "  " : cTxt.c_str(), 0);
-		iIndex++;
-		m_pGame->m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, "  ", 0);
-		iIndex++;
-		if (iPreCon < m_pGame->m_pPlayer->m_iContribution)
-			cTxt = std::format(NOTIFYMSG_QUEST_REWARD3, m_pGame->m_pPlayer->m_iContribution - iPreCon);
-		else cTxt = std::format(NOTIFYMSG_QUEST_REWARD4, iPreCon - m_pGame->m_pPlayer->m_iContribution);
+		m_game->m_msg_text_list2[index] = std::make_unique<CMsg>(0, txt.empty() ? "  " : txt.c_str(), 0);
+		index++;
+		m_game->m_msg_text_list2[index] = std::make_unique<CMsg>(0, "  ", 0);
+		index++;
+		if (pre_con < m_game->m_player->m_contribution)
+			txt = std::format(NOTIFYMSG_QUEST_REWARD3, m_game->m_player->m_contribution - pre_con);
+		else txt = std::format(NOTIFYMSG_QUEST_REWARD4, pre_con - m_game->m_player->m_contribution);
 
-		m_pGame->m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, "  ", 0);
-		iIndex++;
+		m_game->m_msg_text_list2[index] = std::make_unique<CMsg>(0, "  ", 0);
+		index++;
 	}
-	else m_pGame->m_dialogBoxManager.EnableDialogBox(DialogBoxId::NpcTalk, 0, sWho + 120, 0);
+	else m_game->m_dialog_box_manager.enable_dialog_box(DialogBoxId::NpcTalk, 0, who + 120, 0);
 }
 
-void QuestManager::HandleQuestCompleted(char* pData)
+void quest_manager::handle_quest_completed(char* data)
 {
-	m_pGame->m_stQuest.bIsQuestCompleted = true;
-	m_pGame->m_dialogBoxManager.DisableDialogBox(DialogBoxId::Quest);
-	m_pGame->m_dialogBoxManager.EnableDialogBox(DialogBoxId::Quest, 1, 0, 0);
-	switch (m_pGame->m_pPlayer->m_sPlayerType) {
+	m_game->m_quest.is_quest_completed = true;
+	m_game->m_dialog_box_manager.disable_dialog_box(DialogBoxId::Quest);
+	m_game->m_dialog_box_manager.enable_dialog_box(DialogBoxId::Quest, 1, 0, 0);
+	switch (m_game->m_player->m_player_type) {
 	case 1:
 	case 2:
 	case 3:
-		m_pGame->PlayGameSound('C', 21, 0);
+		m_game->play_game_sound('C', 21, 0);
 		break;
 	case 4:
 	case 5:
 	case 6:
-		m_pGame->PlayGameSound('C', 22, 0);
+		m_game->play_game_sound('C', 22, 0);
 		break;
 	}
-	m_pGame->PlayGameSound('E', 23, 0);
-	m_pGame->AddEventList(NOTIFY_MSG_HANDLER44, 10);
+	m_game->play_game_sound('E', 23, 0);
+	m_game->add_event_list(NOTIFY_MSG_HANDLER44, 10);
 }
 
-void QuestManager::HandleQuestAborted(char* pData)
+void quest_manager::handle_quest_aborted(char* data)
 {
-	m_pGame->m_stQuest.sQuestType = 0;
-	m_pGame->m_dialogBoxManager.DisableDialogBox(DialogBoxId::Quest);
-	m_pGame->m_dialogBoxManager.EnableDialogBox(DialogBoxId::Quest, 2, 0, 0);
+	m_game->m_quest.quest_type = 0;
+	m_game->m_dialog_box_manager.disable_dialog_box(DialogBoxId::Quest);
+	m_game->m_dialog_box_manager.enable_dialog_box(DialogBoxId::Quest, 2, 0, 0);
 }

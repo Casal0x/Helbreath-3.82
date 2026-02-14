@@ -1,7 +1,7 @@
 // ItemAttributes.h: Item attribute parsing and formatting helpers
 //
 // Provides shared logic for both client and server to interpret item
-// attribute flags encoded in m_dwAttribute.
+// attribute flags encoded in m_attribute.
 //
 //////////////////////////////////////////////////////////////////////
 
@@ -14,7 +14,7 @@ namespace hb::shared::item {
 //------------------------------------------------------------------------
 // Attribute Bit Layout
 //
-// m_dwAttribute: aaaa bbbb cccc dddd eeee ffff xxxx xxx1
+// m_attribute: aaaa bbbb cccc dddd eeee ffff xxxx xxx1
 //
 // Bit 0:       Custom-Made Item flag
 // Bits 8-11:   Secondary effect value (f nibble)
@@ -72,7 +72,7 @@ enum class SecondaryEffectType : uint8_t
 //------------------------------------------------------------------------
 
 // Primary effect value multipliers (indexed by AttributePrefixType)
-constexpr int GetPrimaryEffectMultiplier(AttributePrefixType type)
+constexpr int get_primary_effect_multiplier(AttributePrefixType type)
 {
     switch (type)
     {
@@ -91,7 +91,7 @@ constexpr int GetPrimaryEffectMultiplier(AttributePrefixType type)
 }
 
 // Secondary effect value multipliers (indexed by SecondaryEffectType)
-constexpr int GetSecondaryEffectMultiplier(SecondaryEffectType type)
+constexpr int get_secondary_effect_multiplier(SecondaryEffectType type)
 {
     switch (type)
     {
@@ -116,7 +116,7 @@ constexpr int GetSecondaryEffectMultiplier(SecondaryEffectType type)
 //------------------------------------------------------------------------
 struct ParsedAttribute
 {
-    bool isCustomMade;                    // Bit 0
+    bool custom_made;                    // Bit 0
     AttributePrefixType prefixType;       // Bits 20-23
     uint8_t prefixValue;                  // Bits 16-19
     SecondaryEffectType secondaryType;    // Bits 12-15
@@ -128,12 +128,12 @@ struct ParsedAttribute
     int secondaryEffectAmount;            // secondaryValue * multiplier
 
     // Check if item has any special attributes
-    bool HasSpecialAttributes() const
+    bool has_special_attributes() const
     {
         return prefixType != AttributePrefixType::None ||
                secondaryType != SecondaryEffectType::None ||
                enchantBonus > 0 ||
-               isCustomMade;
+               custom_made;
     }
 };
 
@@ -141,40 +141,40 @@ struct ParsedAttribute
 // Attribute Parsing Functions
 //------------------------------------------------------------------------
 
-// Parse m_dwAttribute into a structured format
-inline ParsedAttribute ParseAttribute(uint32_t dwAttribute)
+// Parse m_attribute into a structured format
+inline ParsedAttribute parse_attribute(uint32_t attribute)
 {
     ParsedAttribute result;
 
-    result.isCustomMade    = (dwAttribute & 0x00000001) != 0;
-    result.prefixType      = static_cast<AttributePrefixType>((dwAttribute >> 20) & 0x0F);
-    result.prefixValue     = static_cast<uint8_t>((dwAttribute >> 16) & 0x0F);
-    result.secondaryType   = static_cast<SecondaryEffectType>((dwAttribute >> 12) & 0x0F);
-    result.secondaryValue  = static_cast<uint8_t>((dwAttribute >> 8) & 0x0F);
-    result.enchantBonus    = static_cast<uint8_t>((dwAttribute >> 28) & 0x0F);
+    result.custom_made    = (attribute & 0x00000001) != 0;
+    result.prefixType      = static_cast<AttributePrefixType>((attribute >> 20) & 0x0F);
+    result.prefixValue     = static_cast<uint8_t>((attribute >> 16) & 0x0F);
+    result.secondaryType   = static_cast<SecondaryEffectType>((attribute >> 12) & 0x0F);
+    result.secondaryValue  = static_cast<uint8_t>((attribute >> 8) & 0x0F);
+    result.enchantBonus    = static_cast<uint8_t>((attribute >> 28) & 0x0F);
 
-    result.primaryEffectAmount = result.prefixValue * GetPrimaryEffectMultiplier(result.prefixType);
-    result.secondaryEffectAmount = result.secondaryValue * GetSecondaryEffectMultiplier(result.secondaryType);
+    result.primaryEffectAmount = result.prefixValue * get_primary_effect_multiplier(result.prefixType);
+    result.secondaryEffectAmount = result.secondaryValue * get_secondary_effect_multiplier(result.secondaryType);
 
     return result;
 }
 
 // Check if attribute flags indicate any special effects
-inline bool HasSpecialEffects(uint32_t dwAttribute)
+inline bool has_special_effects(uint32_t attribute)
 {
-    return (dwAttribute & 0x00F0F000) != 0;
+    return (attribute & 0x00F0F000) != 0;
 }
 
-// Get enchant bonus from attribute (the +X at end of name)
-inline uint8_t GetEnchantBonus(uint32_t dwAttribute)
+// get enchant bonus from attribute (the +X at end of name)
+inline uint8_t get_enchant_bonus(uint32_t attribute)
 {
-    return static_cast<uint8_t>((dwAttribute >> 28) & 0x0F);
+    return static_cast<uint8_t>((attribute >> 28) & 0x0F);
 }
 
 // Check if item is custom made
-inline bool IsCustomMade(uint32_t dwAttribute)
+inline bool is_custom_made(uint32_t attribute)
 {
-    return (dwAttribute & 0x00000001) != 0;
+    return (attribute & 0x00000001) != 0;
 }
 
 //------------------------------------------------------------------------
@@ -182,7 +182,7 @@ inline bool IsCustomMade(uint32_t dwAttribute)
 //------------------------------------------------------------------------
 
 // Build attribute flags from components
-inline uint32_t BuildAttribute(
+inline uint32_t build_attribute(
     bool customMade,
     AttributePrefixType prefixType,
     uint8_t prefixValue,
@@ -205,18 +205,18 @@ inline uint32_t BuildAttribute(
 }
 
 // Set just the enchant bonus, preserving other flags
-inline uint32_t SetEnchantBonus(uint32_t dwAttribute, uint8_t bonus)
+inline uint32_t set_enchant_bonus(uint32_t attribute, uint8_t bonus)
 {
-    return (dwAttribute & 0x0FFFFFFF) | ((static_cast<uint32_t>(bonus) & 0x0F) << 28);
+    return (attribute & 0x0FFFFFFF) | ((static_cast<uint32_t>(bonus) & 0x0F) << 28);
 }
 
 // Set custom made flag, preserving other flags
-inline uint32_t SetCustomMade(uint32_t dwAttribute, bool customMade)
+inline uint32_t set_custom_made(uint32_t attribute, bool customMade)
 {
     if (customMade)
-        return dwAttribute | 0x00000001;
+        return attribute | 0x00000001;
     else
-        return dwAttribute & ~0x00000001;
+        return attribute & ~0x00000001;
 }
 
 } // namespace hb::shared::item

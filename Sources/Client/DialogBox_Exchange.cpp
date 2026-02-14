@@ -12,207 +12,207 @@ using namespace hb::shared::net;
 using namespace hb::shared::item;
 using namespace hb::client::sprite_id;
 
-DialogBox_Exchange::DialogBox_Exchange(CGame* pGame)
-	: IDialogBox(DialogBoxId::Exchange, pGame)
+DialogBox_Exchange::DialogBox_Exchange(CGame* game)
+	: IDialogBox(DialogBoxId::Exchange, game)
 {
-	SetDefaultRect(100 , 30 , 520, 357);
+	set_default_rect(100 , 30 , 520, 357);
 }
 
-void DialogBox_Exchange::OnDraw(short msX, short msY, short msZ, char cLB)
+void DialogBox_Exchange::on_draw(short mouse_x, short mouse_y, short z, char lb)
 {
-	if (!m_pGame->EnsureItemConfigsLoaded()) return;
-	short sX = Info().sX;
-	short sY = Info().sY;
-	short szX = Info().sSizeX;
+	if (!m_game->ensure_item_configs_loaded()) return;
+	short sX = Info().m_x;
+	short sY = Info().m_y;
+	short size_x = Info().m_size_x;
 
-	m_pGame->DrawNewDialogBox(InterfaceNdNewExchange, sX, sY, 0);
+	m_game->draw_new_dialog_box(InterfaceNdNewExchange, sX, sY, 0);
 
-	switch (Info().cMode) {
+	switch (Info().m_mode) {
 	case 1: // Not yet confirmed exchange
-		PutAlignedString(sX + 80, sX + 180, sY + 38, m_pGame->m_pPlayer->m_cPlayerName.c_str(), GameColors::UIDarkGreen);
-		if (m_pGame->m_stDialogBoxExchangeInfo[4].sV1 != -1)
-			PutAlignedString(sX + 250, sX + 540, sY + 38, m_pGame->m_stDialogBoxExchangeInfo[4].cStr2.c_str(), GameColors::UIDarkGreen);
+		put_aligned_string(sX + 80, sX + 180, sY + 38, m_game->m_player->m_player_name.c_str(), GameColors::UIDarkGreen);
+		if (m_game->m_dialog_box_exchange_info[4].v1 != -1)
+			put_aligned_string(sX + 250, sX + 540, sY + 38, m_game->m_dialog_box_exchange_info[4].str2.c_str(), GameColors::UIDarkGreen);
 
-		DrawItems(sX, sY, msX, msY, 0, 8);
+		draw_items(sX, sY, mouse_x, mouse_y, 0, 8);
 
-		if ((m_pGame->m_stDialogBoxExchangeInfo[0].sV1 != -1) && (m_pGame->m_stDialogBoxExchangeInfo[4].sV1 == -1)) {
-			PutAlignedString(sX, sX + szX, sY + 245, DRAW_DIALOGBOX_EXCHANGE9, GameColors::UILabel);
-			PutAlignedString(sX, sX + szX, sY + 260, DRAW_DIALOGBOX_EXCHANGE10, GameColors::UILabel);
-			PutAlignedString(sX, sX + szX, sY + 275, DRAW_DIALOGBOX_EXCHANGE11, GameColors::UILabel);
-			hb::shared::text::DrawText(GameFont::Bitmap1, sX + 220, sY + 310, "Exchange", hb::shared::text::TextStyle::WithHighlight(GameColors::BmpBtnHover));
+		if ((m_game->m_dialog_box_exchange_info[0].v1 != -1) && (m_game->m_dialog_box_exchange_info[4].v1 == -1)) {
+			put_aligned_string(sX, sX + size_x, sY + 245, DRAW_DIALOGBOX_EXCHANGE9, GameColors::UILabel);
+			put_aligned_string(sX, sX + size_x, sY + 260, DRAW_DIALOGBOX_EXCHANGE10, GameColors::UILabel);
+			put_aligned_string(sX, sX + size_x, sY + 275, DRAW_DIALOGBOX_EXCHANGE11, GameColors::UILabel);
+			hb::shared::text::draw_text(GameFont::Bitmap1, sX + 220, sY + 310, "Exchange", hb::shared::text::TextStyle::with_highlight(GameColors::BmpBtnHover));
 		}
-		else if ((m_pGame->m_stDialogBoxExchangeInfo[0].sV1 == -1) && (m_pGame->m_stDialogBoxExchangeInfo[4].sV1 != -1)) {
-			PutAlignedString(sX, sX + szX, sY + 215, DRAW_DIALOGBOX_EXCHANGE12, GameColors::UILabel);
-			PutAlignedString(sX, sX + szX, sY + 230, DRAW_DIALOGBOX_EXCHANGE13, GameColors::UILabel);
-			PutAlignedString(sX, sX + szX, sY + 245, DRAW_DIALOGBOX_EXCHANGE14, GameColors::UILabel);
-			PutAlignedString(sX, sX + szX, sY + 260, DRAW_DIALOGBOX_EXCHANGE15, GameColors::UILabel);
-			PutAlignedString(sX, sX + szX, sY + 275, DRAW_DIALOGBOX_EXCHANGE16, GameColors::UILabel);
-			PutAlignedString(sX, sX + szX, sY + 290, DRAW_DIALOGBOX_EXCHANGE17, GameColors::UILabel);
-			hb::shared::text::DrawText(GameFont::Bitmap1, sX + 220, sY + 310, "Exchange", hb::shared::text::TextStyle::WithHighlight(GameColors::BmpBtnHover));
+		else if ((m_game->m_dialog_box_exchange_info[0].v1 == -1) && (m_game->m_dialog_box_exchange_info[4].v1 != -1)) {
+			put_aligned_string(sX, sX + size_x, sY + 215, DRAW_DIALOGBOX_EXCHANGE12, GameColors::UILabel);
+			put_aligned_string(sX, sX + size_x, sY + 230, DRAW_DIALOGBOX_EXCHANGE13, GameColors::UILabel);
+			put_aligned_string(sX, sX + size_x, sY + 245, DRAW_DIALOGBOX_EXCHANGE14, GameColors::UILabel);
+			put_aligned_string(sX, sX + size_x, sY + 260, DRAW_DIALOGBOX_EXCHANGE15, GameColors::UILabel);
+			put_aligned_string(sX, sX + size_x, sY + 275, DRAW_DIALOGBOX_EXCHANGE16, GameColors::UILabel);
+			put_aligned_string(sX, sX + size_x, sY + 290, DRAW_DIALOGBOX_EXCHANGE17, GameColors::UILabel);
+			hb::shared::text::draw_text(GameFont::Bitmap1, sX + 220, sY + 310, "Exchange", hb::shared::text::TextStyle::with_highlight(GameColors::BmpBtnHover));
 		}
-		else if ((m_pGame->m_stDialogBoxExchangeInfo[0].sV1 != -1) && (m_pGame->m_stDialogBoxExchangeInfo[4].sV1 != -1)) {
-			PutAlignedString(sX, sX + szX, sY + 215, DRAW_DIALOGBOX_EXCHANGE18, GameColors::UILabel);
-			PutAlignedString(sX, sX + szX, sY + 230, DRAW_DIALOGBOX_EXCHANGE19, GameColors::UILabel);
-			PutAlignedString(sX, sX + szX, sY + 245, DRAW_DIALOGBOX_EXCHANGE20, GameColors::UILabel);
-			PutAlignedString(sX, sX + szX, sY + 260, DRAW_DIALOGBOX_EXCHANGE21, GameColors::UILabel);
-			PutAlignedString(sX, sX + szX, sY + 275, DRAW_DIALOGBOX_EXCHANGE22, GameColors::UILabel);
-			PutAlignedString(sX, sX + szX, sY + 290, DRAW_DIALOGBOX_EXCHANGE23, GameColors::UILabel);
-			if ((msX >= sX + 200) && (msX <= sX + 200 + ui_layout::btn_size_x) && (msY >= sY + 310) && (msY <= sY + 310 + ui_layout::btn_size_y))
-				hb::shared::text::DrawText(GameFont::Bitmap1, sX + 220, sY + 310, "Exchange", hb::shared::text::TextStyle::WithHighlight(GameColors::UIMagicBlue));
+		else if ((m_game->m_dialog_box_exchange_info[0].v1 != -1) && (m_game->m_dialog_box_exchange_info[4].v1 != -1)) {
+			put_aligned_string(sX, sX + size_x, sY + 215, DRAW_DIALOGBOX_EXCHANGE18, GameColors::UILabel);
+			put_aligned_string(sX, sX + size_x, sY + 230, DRAW_DIALOGBOX_EXCHANGE19, GameColors::UILabel);
+			put_aligned_string(sX, sX + size_x, sY + 245, DRAW_DIALOGBOX_EXCHANGE20, GameColors::UILabel);
+			put_aligned_string(sX, sX + size_x, sY + 260, DRAW_DIALOGBOX_EXCHANGE21, GameColors::UILabel);
+			put_aligned_string(sX, sX + size_x, sY + 275, DRAW_DIALOGBOX_EXCHANGE22, GameColors::UILabel);
+			put_aligned_string(sX, sX + size_x, sY + 290, DRAW_DIALOGBOX_EXCHANGE23, GameColors::UILabel);
+			if ((mouse_x >= sX + 200) && (mouse_x <= sX + 200 + ui_layout::btn_size_x) && (mouse_y >= sY + 310) && (mouse_y <= sY + 310 + ui_layout::btn_size_y))
+				hb::shared::text::draw_text(GameFont::Bitmap1, sX + 220, sY + 310, "Exchange", hb::shared::text::TextStyle::with_highlight(GameColors::UIMagicBlue));
 			else
-				hb::shared::text::DrawText(GameFont::Bitmap1, sX + 220, sY + 310, "Exchange", hb::shared::text::TextStyle::WithHighlight(GameColors::BmpBtnNormal));
+				hb::shared::text::draw_text(GameFont::Bitmap1, sX + 220, sY + 310, "Exchange", hb::shared::text::TextStyle::with_highlight(GameColors::BmpBtnNormal));
 		}
-		if ((msX >= sX + 450) && (msX <= sX + 450 + ui_layout::btn_size_x) && (msY >= sY + 310) && (msY <= sY + 310 + ui_layout::btn_size_y)
-			&& (m_pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::ConfirmExchange) == false))
-			hb::shared::text::DrawText(GameFont::Bitmap1, sX + 450, sY + 310, "Cancel", hb::shared::text::TextStyle::WithHighlight(GameColors::UIMagicBlue));
+		if ((mouse_x >= sX + 450) && (mouse_x <= sX + 450 + ui_layout::btn_size_x) && (mouse_y >= sY + 310) && (mouse_y <= sY + 310 + ui_layout::btn_size_y)
+			&& (m_game->m_dialog_box_manager.is_enabled(DialogBoxId::ConfirmExchange) == false))
+			hb::shared::text::draw_text(GameFont::Bitmap1, sX + 450, sY + 310, "Cancel", hb::shared::text::TextStyle::with_highlight(GameColors::UIMagicBlue));
 		else
-			hb::shared::text::DrawText(GameFont::Bitmap1, sX + 450, sY + 310, "Cancel", hb::shared::text::TextStyle::WithHighlight(GameColors::BmpBtnNormal));
+			hb::shared::text::draw_text(GameFont::Bitmap1, sX + 450, sY + 310, "Cancel", hb::shared::text::TextStyle::with_highlight(GameColors::BmpBtnNormal));
 		break;
 
 	case 2: // You have confirmed the exchange
-		PutAlignedString(sX + 80, sX + 180, sY + 38, m_pGame->m_pPlayer->m_cPlayerName.c_str(), GameColors::UIDarkGreen);
-		if (m_pGame->m_stDialogBoxExchangeInfo[4].sV1 != -1)
-			PutAlignedString(sX + 250, sX + 540, sY + 38, m_pGame->m_stDialogBoxExchangeInfo[4].cStr2.c_str(), GameColors::UIDarkGreen);
+		put_aligned_string(sX + 80, sX + 180, sY + 38, m_game->m_player->m_player_name.c_str(), GameColors::UIDarkGreen);
+		if (m_game->m_dialog_box_exchange_info[4].v1 != -1)
+			put_aligned_string(sX + 250, sX + 540, sY + 38, m_game->m_dialog_box_exchange_info[4].str2.c_str(), GameColors::UIDarkGreen);
 
-		DrawItems(sX, sY, msX, msY, 0, 8);
+		draw_items(sX, sY, mouse_x, mouse_y, 0, 8);
 
 		std::string exchangeBuf;
-		exchangeBuf = std::format(DRAW_DIALOGBOX_EXCHANGE33, m_pGame->m_stDialogBoxExchangeInfo[4].cStr2);
-		PutAlignedString(sX, sX + szX, sY + 215, exchangeBuf.c_str(), GameColors::UILabel);
-		PutAlignedString(sX, sX + szX, sY + 230, DRAW_DIALOGBOX_EXCHANGE34, GameColors::UILabel);
-		PutAlignedString(sX, sX + szX, sY + 245, DRAW_DIALOGBOX_EXCHANGE35, GameColors::UILabel);
-		PutAlignedString(sX, sX + szX, sY + 260, DRAW_DIALOGBOX_EXCHANGE36, GameColors::UILabel);
-		PutAlignedString(sX, sX + szX, sY + 275, DRAW_DIALOGBOX_EXCHANGE37, GameColors::UILabel);
-		PutAlignedString(sX, sX + szX, sY + 290, DRAW_DIALOGBOX_EXCHANGE38, GameColors::UILabel);
-		PutAlignedString(sX, sX + szX, sY + 305, DRAW_DIALOGBOX_EXCHANGE39, GameColors::UILabel);
+		exchangeBuf = std::format(DRAW_DIALOGBOX_EXCHANGE33, m_game->m_dialog_box_exchange_info[4].str2);
+		put_aligned_string(sX, sX + size_x, sY + 215, exchangeBuf.c_str(), GameColors::UILabel);
+		put_aligned_string(sX, sX + size_x, sY + 230, DRAW_DIALOGBOX_EXCHANGE34, GameColors::UILabel);
+		put_aligned_string(sX, sX + size_x, sY + 245, DRAW_DIALOGBOX_EXCHANGE35, GameColors::UILabel);
+		put_aligned_string(sX, sX + size_x, sY + 260, DRAW_DIALOGBOX_EXCHANGE36, GameColors::UILabel);
+		put_aligned_string(sX, sX + size_x, sY + 275, DRAW_DIALOGBOX_EXCHANGE37, GameColors::UILabel);
+		put_aligned_string(sX, sX + size_x, sY + 290, DRAW_DIALOGBOX_EXCHANGE38, GameColors::UILabel);
+		put_aligned_string(sX, sX + size_x, sY + 305, DRAW_DIALOGBOX_EXCHANGE39, GameColors::UILabel);
 		break;
 	}
 }
 
-void DialogBox_Exchange::DrawItems(short sX, short sY, short msX, short msY, int iStartIndex, int iEndIndex)
+void DialogBox_Exchange::draw_items(short sX, short sY, short mouse_x, short mouse_y, int start_index, int end_index)
 {
-	uint32_t dwTime = m_pGame->m_dwCurTime;
-	char cItemColor;
-	short sXadd;
+	uint32_t time = m_game->m_cur_time;
+	char item_color;
+	short xadd;
 
-	for (int i = iStartIndex; i < iEndIndex; i++) {
-		sXadd = (58 * i) + 48;
-		if (i > 3) sXadd += 20;
+	for (int i = start_index; i < end_index; i++) {
+		xadd = (58 * i) + 48;
+		if (i > 3) xadd += 20;
 
-		if (m_pGame->m_stDialogBoxExchangeInfo[i].sV1 != -1) {
-			cItemColor = m_pGame->m_stDialogBoxExchangeInfo[i].sV4;
-			if (cItemColor == 0) {
-				m_pGame->m_pSprite[ItemPackPivotPoint + m_pGame->m_stDialogBoxExchangeInfo[i].sV1]->Draw(sX + sXadd, sY + 130, m_pGame->m_stDialogBoxExchangeInfo[i].sV2);
+		if (m_game->m_dialog_box_exchange_info[i].v1 != -1) {
+			item_color = m_game->m_dialog_box_exchange_info[i].v4;
+			if (item_color == 0) {
+				m_game->m_sprite[ItemPackPivotPoint + m_game->m_dialog_box_exchange_info[i].v1]->draw(sX + xadd, sY + 130, m_game->m_dialog_box_exchange_info[i].v2);
 			}
 			else {
-				switch (m_pGame->m_stDialogBoxExchangeInfo[i].sV1) {
+				switch (m_game->m_dialog_box_exchange_info[i].v1) {
 				case 1:  // Swds
 				case 2:  // Bows
 				case 3:  // Shields
 				case 15: // Axes hammers
 				case 17: // Wands
-					m_pGame->m_pSprite[ItemPackPivotPoint + m_pGame->m_stDialogBoxExchangeInfo[i].sV1]->Draw(sX + sXadd, sY + 130, m_pGame->m_stDialogBoxExchangeInfo[i].sV2, hb::shared::sprite::DrawParams::Tint(GameColors::Weapons[cItemColor].r, GameColors::Weapons[cItemColor].g, GameColors::Weapons[cItemColor].b));
+					m_game->m_sprite[ItemPackPivotPoint + m_game->m_dialog_box_exchange_info[i].v1]->draw(sX + xadd, sY + 130, m_game->m_dialog_box_exchange_info[i].v2, hb::shared::sprite::DrawParams::tint(GameColors::Weapons[item_color].r, GameColors::Weapons[item_color].g, GameColors::Weapons[item_color].b));
 					break;
 				default:
-					m_pGame->m_pSprite[ItemPackPivotPoint + m_pGame->m_stDialogBoxExchangeInfo[i].sV1]->Draw(sX + sXadd, sY + 130, m_pGame->m_stDialogBoxExchangeInfo[i].sV2, hb::shared::sprite::DrawParams::Tint(GameColors::Items[cItemColor].r, GameColors::Items[cItemColor].g, GameColors::Items[cItemColor].b));
+					m_game->m_sprite[ItemPackPivotPoint + m_game->m_dialog_box_exchange_info[i].v1]->draw(sX + xadd, sY + 130, m_game->m_dialog_box_exchange_info[i].v2, hb::shared::sprite::DrawParams::tint(GameColors::Items[item_color].r, GameColors::Items[item_color].g, GameColors::Items[item_color].b));
 					break;
 				}
 			}
 
-			DrawItemInfo(sX, sY, Info().sSizeX, msX, msY, i, sXadd);
+			draw_item_info(sX, sY, Info().m_size_x, mouse_x, mouse_y, i, xadd);
 		}
 	}
 }
 
-void DialogBox_Exchange::DrawItemInfo(short sX, short sY, short szX, short msX, short msY, int iItemIndex, short sXadd)
+void DialogBox_Exchange::draw_item_info(short sX, short sY, short size_x, short mouse_x, short mouse_y, int item_index, short xadd)
 {
-	std::string cTxt, cTxt2;
-	int iLoc;
+	std::string txt, txt2;
+	int loc;
 
-	auto itemInfo = ItemNameFormatter::Get().Format(m_pGame->m_stDialogBoxExchangeInfo[iItemIndex].sItemID,  m_pGame->m_stDialogBoxExchangeInfo[iItemIndex].dwV1);
+	auto itemInfo = item_name_formatter::get().format(m_game->m_dialog_box_exchange_info[item_index].item_id,  m_game->m_dialog_box_exchange_info[item_index].dw_v1);
 
-	if ((msX >= sX + sXadd - 6) && (msX <= sX + sXadd + 42) && (msY >= sY + 61) && (msY <= sY + 200)) {
-		cTxt = itemInfo.name.c_str();
+	if ((mouse_x >= sX + xadd - 6) && (mouse_x <= sX + xadd + 42) && (mouse_y >= sY + 61) && (mouse_y <= sY + 200)) {
+		txt = itemInfo.name.c_str();
 		if (itemInfo.is_special) {
-			PutAlignedString(sX + 15, sX + 155, sY + 215, cTxt.c_str(), GameColors::UIItemName_Special);
-			PutAlignedString(sX + 16, sX + 156, sY + 215, cTxt.c_str(), GameColors::UIItemName_Special);
+			put_aligned_string(sX + 15, sX + 155, sY + 215, txt.c_str(), GameColors::UIItemName_Special);
+			put_aligned_string(sX + 16, sX + 156, sY + 215, txt.c_str(), GameColors::UIItemName_Special);
 		}
 		else {
-			PutAlignedString(sX + 15, sX + 155, sY + 215, cTxt.c_str(), GameColors::UILabel);
-			PutAlignedString(sX + 16, sX + 156, sY + 215, cTxt.c_str(), GameColors::UILabel);
+			put_aligned_string(sX + 15, sX + 155, sY + 215, txt.c_str(), GameColors::UILabel);
+			put_aligned_string(sX + 16, sX + 156, sY + 215, txt.c_str(), GameColors::UILabel);
 		}
 
-		iLoc = 0;
+		loc = 0;
 		if (itemInfo.effect.size() != 0) {
-			PutAlignedString(sX + 16, sX + 155, sY + 235 + iLoc, itemInfo.effect.c_str(), GameColors::UIBlack);
-			iLoc += 15;
+			put_aligned_string(sX + 16, sX + 155, sY + 235 + loc, itemInfo.effect.c_str(), GameColors::UIBlack);
+			loc += 15;
 		}
 		if (itemInfo.extra.size() != 0) {
-			PutAlignedString(sX + 16, sX + 155, sY + 235 + iLoc, itemInfo.extra.c_str(), GameColors::UIBlack);
-			iLoc += 15;
+			put_aligned_string(sX + 16, sX + 155, sY + 235 + loc, itemInfo.extra.c_str(), GameColors::UIBlack);
+			loc += 15;
 		}
 
-		if (m_pGame->m_stDialogBoxExchangeInfo[iItemIndex].sV3 != 1) {
-			if (m_pGame->m_stDialogBoxExchangeInfo[iItemIndex].sV3 > 1) {
-				cTxt2 = m_pGame->FormatCommaNumber(m_pGame->m_stDialogBoxExchangeInfo[iItemIndex].sV3);
+		if (m_game->m_dialog_box_exchange_info[item_index].v3 != 1) {
+			if (m_game->m_dialog_box_exchange_info[item_index].v3 > 1) {
+				txt2 = m_game->format_comma_number(m_game->m_dialog_box_exchange_info[item_index].v3);
 			}
 			else {
-				cTxt2 = std::format(DRAW_DIALOGBOX_EXCHANGE2, m_pGame->m_stDialogBoxExchangeInfo[iItemIndex].sV3);
+				txt2 = std::format(DRAW_DIALOGBOX_EXCHANGE2, m_game->m_dialog_box_exchange_info[item_index].v3);
 			}
-			PutAlignedString(sX + 16, sX + 155, sY + 235 + iLoc, cTxt2.c_str(), GameColors::UILabel);
-			iLoc += 15;
+			put_aligned_string(sX + 16, sX + 155, sY + 235 + loc, txt2.c_str(), GameColors::UILabel);
+			loc += 15;
 		}
 
-		if (m_pGame->m_stDialogBoxExchangeInfo[iItemIndex].sV5 != -1) {
+		if (m_game->m_dialog_box_exchange_info[item_index].v5 != -1) {
 			// Crafting Magins completion fix
-			if (m_pGame->m_stDialogBoxExchangeInfo[iItemIndex].sV1 == 22) {
-				if ((m_pGame->m_stDialogBoxExchangeInfo[iItemIndex].sV2 > 5) &&
-					(m_pGame->m_stDialogBoxExchangeInfo[iItemIndex].sV2 < 10)) {
-					cTxt = std::format(GET_ITEM_NAME2, (m_pGame->m_stDialogBoxExchangeInfo[iItemIndex].sV7 - 100));
+			if (m_game->m_dialog_box_exchange_info[item_index].v1 == 22) {
+				if ((m_game->m_dialog_box_exchange_info[item_index].v2 > 5) &&
+					(m_game->m_dialog_box_exchange_info[item_index].v2 < 10)) {
+					txt = std::format(GET_ITEM_NAME2, (m_game->m_dialog_box_exchange_info[item_index].v7 - 100));
 				}
 			}
-			else if (m_pGame->m_stDialogBoxExchangeInfo[iItemIndex].sV1 == 6) {
-				cTxt = std::format(GET_ITEM_NAME1, (m_pGame->m_stDialogBoxExchangeInfo[iItemIndex].sV7 - 100));
+			else if (m_game->m_dialog_box_exchange_info[item_index].v1 == 6) {
+				txt = std::format(GET_ITEM_NAME1, (m_game->m_dialog_box_exchange_info[item_index].v7 - 100));
 			}
 			else {
-				cTxt = std::format(GET_ITEM_NAME2, m_pGame->m_stDialogBoxExchangeInfo[iItemIndex].sV7);
+				txt = std::format(GET_ITEM_NAME2, m_game->m_dialog_box_exchange_info[item_index].v7);
 			}
-			PutAlignedString(sX + 16, sX + 155, sY + 235 + iLoc, cTxt.c_str(), GameColors::UILabel);
-			iLoc += 15;
+			put_aligned_string(sX + 16, sX + 155, sY + 235 + loc, txt.c_str(), GameColors::UILabel);
+			loc += 15;
 		}
 
-		if (iLoc < 45) {
-			cTxt = std::format(DRAW_DIALOGBOX_EXCHANGE3, m_pGame->m_stDialogBoxExchangeInfo[iItemIndex].sV5, m_pGame->m_stDialogBoxExchangeInfo[iItemIndex].sV6);
-			PutAlignedString(sX + 16, sX + 155, sY + 235 + iLoc, cTxt.c_str(), GameColors::UILabel);
+		if (loc < 45) {
+			txt = std::format(DRAW_DIALOGBOX_EXCHANGE3, m_game->m_dialog_box_exchange_info[item_index].v5, m_game->m_dialog_box_exchange_info[item_index].v6);
+			put_aligned_string(sX + 16, sX + 155, sY + 235 + loc, txt.c_str(), GameColors::UILabel);
 		}
 	}
 }
 
-bool DialogBox_Exchange::OnClick(short msX, short msY)
+bool DialogBox_Exchange::on_click(short mouse_x, short mouse_y)
 {
-	short sX = Info().sX;
-	short sY = Info().sY;
+	short sX = Info().m_x;
+	short sY = Info().m_y;
 
-	switch (Info().cMode) {
+	switch (Info().m_mode) {
 	case 1: // Not yet confirmed the exchange
-		if ((msX >= sX + 220) && (msX <= sX + 220 + ui_layout::btn_size_x) && (msY >= sY + 310) && (msY <= sY + 310 + ui_layout::btn_size_y)) {
+		if ((mouse_x >= sX + 220) && (mouse_x <= sX + 220 + ui_layout::btn_size_x) && (mouse_y >= sY + 310) && (mouse_y <= sY + 310 + ui_layout::btn_size_y)) {
 			// Exchange button
-			if ((m_pGame->m_stDialogBoxExchangeInfo[0].sV1 != -1) && (m_pGame->m_stDialogBoxExchangeInfo[4].sV1 != -1)) {
-				PlaySoundEffect('E', 14, 5);
-				Info().cMode = 2;
+			if ((m_game->m_dialog_box_exchange_info[0].v1 != -1) && (m_game->m_dialog_box_exchange_info[4].v1 != -1)) {
+				play_sound_effect('E', 14, 5);
+				Info().m_mode = 2;
 				// Show confirmation dialog
-				m_pGame->m_dialogBoxManager.EnableDialogBox(DialogBoxId::ConfirmExchange, 0, 0, 0);
-				m_pGame->m_dialogBoxManager.Info(DialogBoxId::ConfirmExchange).cMode = 1;
+				m_game->m_dialog_box_manager.enable_dialog_box(DialogBoxId::ConfirmExchange, 0, 0, 0);
+				m_game->m_dialog_box_manager.Info(DialogBoxId::ConfirmExchange).m_mode = 1;
 			}
 			return true;
 		}
-		if ((msX >= sX + 450) && (msX <= sX + 450 + ui_layout::btn_size_x) && (msY >= sY + 310) && (msY <= sY + 310 + ui_layout::btn_size_y)
-			&& (m_pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::ConfirmExchange) == false)) {
+		if ((mouse_x >= sX + 450) && (mouse_x <= sX + 450 + ui_layout::btn_size_x) && (mouse_y >= sY + 310) && (mouse_y <= sY + 310 + ui_layout::btn_size_y)
+			&& (m_game->m_dialog_box_manager.is_enabled(DialogBoxId::ConfirmExchange) == false)) {
 			// Cancel button
-			m_pGame->m_dialogBoxManager.DisableDialogBox(DialogBoxId::Exchange);
-			m_pGame->m_dialogBoxManager.DisableDialogBox(DialogBoxId::Map);
-			bSendCommand(MsgId::CommandCommon, CommonType::CancelExchangeItem, 0, 0, 0, 0, 0);
-			PlaySoundEffect('E', 14, 5);
+			m_game->m_dialog_box_manager.disable_dialog_box(DialogBoxId::Exchange);
+			m_game->m_dialog_box_manager.disable_dialog_box(DialogBoxId::Map);
+			send_command(MsgId::CommandCommon, CommonType::cancel_exchange_item, 0, 0, 0, 0, 0);
+			play_sound_effect('E', 14, 5);
 			return true;
 		}
 		break;
@@ -224,47 +224,47 @@ bool DialogBox_Exchange::OnClick(short msX, short msY)
 	return false;
 }
 
-bool DialogBox_Exchange::OnItemDrop(short msX, short msY)
+bool DialogBox_Exchange::on_item_drop(short mouse_x, short mouse_y)
 {
-	if (m_pGame->m_pPlayer->m_Controller.GetCommand() < 0) return false;
-	if (m_pGame->m_stDialogBoxExchangeInfo[3].sV1 != -1) return false; // Already 4 items
+	if (m_game->m_player->m_Controller.get_command() < 0) return false;
+	if (m_game->m_dialog_box_exchange_info[3].v1 != -1) return false; // Already 4 items
 
-	int cItemID = CursorTarget::GetSelectedID();
-	if (cItemID < 0 || cItemID >= hb::shared::limits::MaxItems) return false;
+	int item_id = CursorTarget::get_selected_id();
+	if (item_id < 0 || item_id >= hb::shared::limits::MaxItems) return false;
 
 	// Find first empty exchange slot
-	int iSlot = -1;
-	if (m_pGame->m_stDialogBoxExchangeInfo[0].sV1 == -1) iSlot = 0;
-	else if (m_pGame->m_stDialogBoxExchangeInfo[1].sV1 == -1) iSlot = 1;
-	else if (m_pGame->m_stDialogBoxExchangeInfo[2].sV1 == -1) iSlot = 2;
-	else if (m_pGame->m_stDialogBoxExchangeInfo[3].sV1 == -1) iSlot = 3;
+	int slot = -1;
+	if (m_game->m_dialog_box_exchange_info[0].v1 == -1) slot = 0;
+	else if (m_game->m_dialog_box_exchange_info[1].v1 == -1) slot = 1;
+	else if (m_game->m_dialog_box_exchange_info[2].v1 == -1) slot = 2;
+	else if (m_game->m_dialog_box_exchange_info[3].v1 == -1) slot = 3;
 	else return false; // Impossible case
 
 	// Stackable items - open quantity dialog
-	CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[cItemID]->m_sIDnum);
-	if (pCfg && ((pCfg->GetItemType() == ItemType::Consume) ||
-		(pCfg->GetItemType() == ItemType::Arrow)) &&
-		(m_pGame->m_pItemList[cItemID]->m_dwCount > 1))
+	CItem* cfg = m_game->get_item_config(m_game->m_item_list[item_id]->m_id_num);
+	if (cfg && ((cfg->get_item_type() == ItemType::Consume) ||
+		(cfg->get_item_type() == ItemType::Arrow)) &&
+		(m_game->m_item_list[item_id]->m_count > 1))
 	{
-		auto& dropInfo = m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal);
-		dropInfo.sX = msX - 140;
-		dropInfo.sY = msY - 70;
-		if (dropInfo.sY < 0) dropInfo.sY = 0;
-		dropInfo.sV1 = m_pGame->m_pPlayer->m_sPlayerX + 1;
-		dropInfo.sV2 = m_pGame->m_pPlayer->m_sPlayerY + 1;
-		dropInfo.sV3 = 1000;
-		dropInfo.sV4 = cItemID;
-		m_pGame->m_stDialogBoxExchangeInfo[iSlot].sItemID = cItemID;
-		std::memset(dropInfo.cStr, 0, sizeof(dropInfo.cStr));
-		m_pGame->m_dialogBoxManager.EnableDialogBox(DialogBoxId::ItemDropExternal, cItemID,
-			m_pGame->m_pItemList[cItemID]->m_dwCount, 0);
+		auto& dropInfo = m_game->m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal);
+		dropInfo.m_x = mouse_x - 140;
+		dropInfo.m_y = mouse_y - 70;
+		if (dropInfo.m_y < 0) dropInfo.m_y = 0;
+		dropInfo.m_v1 = m_game->m_player->m_player_x + 1;
+		dropInfo.m_v2 = m_game->m_player->m_player_y + 1;
+		dropInfo.m_v3 = 1000;
+		dropInfo.m_v4 = item_id;
+		m_game->m_dialog_box_exchange_info[slot].item_id = item_id;
+		std::memset(dropInfo.m_str, 0, sizeof(dropInfo.m_str));
+		m_game->m_dialog_box_manager.enable_dialog_box(DialogBoxId::ItemDropExternal, item_id,
+			m_game->m_item_list[item_id]->m_count, 0);
 	}
 	else
 	{
 		// Single item - add directly
-		m_pGame->m_stDialogBoxExchangeInfo[iSlot].sItemID = cItemID;
-		m_pGame->m_bIsItemDisabled[cItemID] = true;
-		bSendCommand(MsgId::CommandCommon, CommonType::SetExchangeItem, 0, cItemID, 1, 0, 0);
+		m_game->m_dialog_box_exchange_info[slot].item_id = item_id;
+		m_game->m_is_item_disabled[item_id] = true;
+		send_command(MsgId::CommandCommon, CommonType::set_exchange_item, 0, item_id, 1, 0, 0);
 	}
 
 	return true;

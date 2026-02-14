@@ -6,7 +6,7 @@
 class GameCmdGiveItem : public GameChatCommand
 {
 public:
-	const char* GetName() const override { return "giveitem"; }
-	int GetDefaultLevel() const override { return hb::shared::admin::Administrator; }
-	bool Execute(CGame* pGame, int iClientH, const char* pArgs) override;
+	const char* get_name() const override { return "giveitem"; }
+	int get_default_level() const override { return hb::shared::admin::Administrator; }
+	bool execute(CGame* game, int client_h, const char* args) override;
 };

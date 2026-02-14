@@ -14,7 +14,7 @@ class Screen_SelectCharacter : public IGameScreen
 public:
     SCREEN_TYPE(Screen_SelectCharacter)
 
-    explicit Screen_SelectCharacter(CGame* pGame);
+    explicit Screen_SelectCharacter(CGame* game);
     ~Screen_SelectCharacter() override = default;
 
     void on_initialize() override;
@@ -25,9 +25,9 @@ public:
     // Static helper for drawing the character selection background
     // Used by this screen and other screens (ChangePassword, QueryForceLogin, etc.)
     // to maintain the background visual context.
-    static void DrawBackground(CGame* pGame, short sX, short sY, short msX, short msY, bool bIgnoreFocus);
+    static void draw_background(CGame* game, short sX, short sY, short mouse_x, short mouse_y, bool ignore_focus);
 
-    bool EnterGame();
+    bool enter_game();
 
 private:
     // Screen-specific state (migrated from file-scope statics and member vars)
@@ -36,8 +36,8 @@ private:
     short m_sSelCharMsY;
     
     // Focus state (local to screen)
-    int m_cCurFocus;
-    int m_cMaxFocus;
+    int m_cur_focus;
+    int m_max_focus;
 
     // Offset for centering 640x480 content in 800x600 base resolution
     static constexpr short OX = 80;

@@ -4,18 +4,18 @@
 
 class CPlayer;
 
-class CombatSystem
+class combat_system
 {
 public:
-	static CombatSystem& Get();
+	static combat_system& get();
 
-	void SetPlayer(CPlayer& player);
+	void set_player(CPlayer& player);
 
-	int GetAttackType() const;
-	int GetWeaponSkillType() const;
-	bool CanSuperAttack() const;
+	int get_attack_type() const;
+	int get_weapon_skill_type() const;
+	bool can_super_attack() const;
 
 private:
-	CombatSystem() = default;
+	combat_system() = default;
 	CPlayer* m_player = nullptr;
 };

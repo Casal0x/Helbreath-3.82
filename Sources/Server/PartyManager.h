@@ -18,26 +18,26 @@ namespace hb::server::party { constexpr int MaxParty = 5000; constexpr int MaxPa
 class PartyManager
 {
 public:
-	void CheckMemberActivity();
-	void SetServerChangeStatus(char* pName, int iPartyID);
-	void GameServerDown();
-	bool bGetPartyInfo(int iGSCH, char* pName, int iPartyID);
-	bool bCheckPartyMember(int iGSCH, int iPartyID, char* pName);
-	bool bRemoveMember(int iPartyID, char* pMemberName);
-	bool bAddMember(int iPartyID, char* pMemberName);
-	bool bDeleteParty(int iPartyID);
-	int iCreateNewParty(char* pMasterName);
-	PartyManager(class CGame* pGame);
+	void check_member_activity();
+	void set_server_change_status(char* name, int party_id);
+	void game_server_down();
+	bool get_party_info(int gsch, char* name, int party_id);
+	bool check_party_member(int gsch, int party_id, char* name);
+	bool remove_member(int party_id, char* member_name);
+	bool add_member(int party_id, char* member_name);
+	bool delete_party(int party_id);
+	int create_new_party_id(char* master_name);
+	PartyManager(class CGame* game);
 	virtual ~PartyManager();
 
-	int m_iMemberNumList[hb::server::party::MaxParty];
+	int m_member_num_list[hb::server::party::MaxParty];
 
 	struct {
-		int  m_iPartyID, m_iIndex;
-		char m_cName[hb::shared::limits::CharNameLen];
-		uint32_t m_dwServerChangeTime;
-	} m_stMemberNameList[hb::server::party::MaxParty];
+		int  m_party_id, m_index;
+		char m_name[hb::shared::limits::CharNameLen];
+		uint32_t server_change_time;
+	} m_member_name_list[hb::server::party::MaxParty];
 
-	class CGame* m_pGame;
-	uint32_t m_dwCheckMemberActTime;
+	class CGame* m_game;
+	uint32_t m_check_member_act_time;
 };

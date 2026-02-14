@@ -6,91 +6,91 @@
 #include <algorithm>
 using namespace hb::client::sprite_id;
 
-hb::shared::sprite::BoundRect CNpcRenderer::DrawStop(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime)
+hb::shared::sprite::BoundRect CNpcRenderer::draw_stop(int indexX, int indexY, int sX, int sY, bool trans, uint32_t time)
 {
 	hb::shared::sprite::BoundRect invalidRect = {0, -1, 0, 0};
-	auto& state = m_game.m_entityState;
-	bool bInv = false;
-	bool bAdminInvis = false;
+	auto& state = m_game.m_entity_state;
+	bool inv = false;
+	bool admin_invis = false;
 
 	// Apply motion offset if entity is still interpolating
-	sX += static_cast<int>(m_game.m_pMapData->m_pData[state.m_iDataX][state.m_iDataY].m_motion.fCurrentOffsetX);
-	sY += static_cast<int>(m_game.m_pMapData->m_pData[state.m_iDataX][state.m_iDataY].m_motion.fCurrentOffsetY);
+	sX += static_cast<int>(m_game.m_map_data->m_data[state.m_data_x][state.m_data_y].m_motion.m_current_offset_x);
+	sY += static_cast<int>(m_game.m_map_data->m_data[state.m_data_x][state.m_data_y].m_motion.m_current_offset_y);
 
 	// Invisibility check
-	if (RenderHelpers::CheckInvisibility(m_game, state, bInv, bAdminInvis))
+	if (RenderHelpers::check_invisibility(m_game, state, inv, admin_invis))
 		return invalidRect;
 
 	// Single-direction monster override
-	RenderHelpers::ApplyDirectionOverride(state);
+	RenderHelpers::apply_direction_override(state);
 
 	// NPC body index calculation
 	EquipmentIndices eq = EquipmentIndices::CalcNpc(state, 0);
-	eq.CalcColors(state);
+	eq.calc_colors(state);
 
 	// Special frame from NPC appearance
 	if (state.m_appearance.HasNpcSpecialState())
 	{
-		eq.iBodyIndex = Mob + (state.m_sOwnerType - 10) * 8 * 7 + (4 * 8);
-		state.m_iFrame = state.m_appearance.iSpecialFrame - 1;
+		eq.m_body_index = Mob + (state.m_owner_type - 10) * 8 * 7 + (4 * 8);
+		state.m_frame = state.m_appearance.special_frame - 1;
 	}
 
 	// Crusade FOE indicator
-	if (m_game.m_bIsCrusadeMode)
-		m_game.DrawObjectFOE(sX, sY, state.m_iFrame);
+	if (m_game.m_is_crusade_mode)
+		m_game.draw_object_foe(sX, sY, state.m_frame);
 
 	// NPC ground lights
-	RenderHelpers::DrawNpcLight(m_game, state.m_sOwnerType, sX, sY);
+	RenderHelpers::draw_npc_light(m_game, state.m_owner_type, sX, sY);
 
 	// Effect auras
-	RenderHelpers::DrawEffectAuras(m_game, state, sX, sY);
+	RenderHelpers::draw_effect_auras(m_game, state, sX, sY);
 
-	if (!bTrans)
+	if (!trans)
 	{
-		m_game.CheckActiveAura(sX, sY, dwTime, state.m_sOwnerType);
+		m_game.check_active_aura(sX, sY, time, state.m_owner_type);
 
-		// Draw NPC body (shadow + body sprite)
-		RenderHelpers::DrawNpcLayers(m_game, eq, state, sX, sY, bInv);
+		// draw NPC body (shadow + body sprite)
+		RenderHelpers::draw_npc_layers(m_game, eq, state, sX, sY, inv);
 
 		// Crop effects
-		if (state.m_sOwnerType == hb::shared::owner::Crops)
+		if (state.m_owner_type == hb::shared::owner::Crops)
 		{
-			switch (state.m_iFrame) {
-			case 0: m_game.m_pEffectSpr[84]->Draw(sX + 52, sY + 54, (dwTime % 3000) / 120, hb::shared::sprite::DrawParams::Alpha(0.5f)); break;
-			case 1: m_game.m_pEffectSpr[83]->Draw(sX + 53, sY + 59, (dwTime % 3000) / 120, hb::shared::sprite::DrawParams::Alpha(0.5f)); break;
-			case 2: m_game.m_pEffectSpr[82]->Draw(sX + 53, sY + 65, (dwTime % 3000) / 120, hb::shared::sprite::DrawParams::Alpha(0.5f)); break;
+			switch (state.m_frame) {
+			case 0: m_game.m_effect_sprites[84]->draw(sX + 52, sY + 54, (time % 3000) / 120, hb::shared::sprite::DrawParams::alpha_blend(0.5f)); break;
+			case 1: m_game.m_effect_sprites[83]->draw(sX + 53, sY + 59, (time % 3000) / 120, hb::shared::sprite::DrawParams::alpha_blend(0.5f)); break;
+			case 2: m_game.m_effect_sprites[82]->draw(sX + 53, sY + 65, (time % 3000) / 120, hb::shared::sprite::DrawParams::alpha_blend(0.5f)); break;
 			}
 		}
 
 		// Berserk glow
-		RenderHelpers::DrawBerserkGlow(m_game, eq, state, sX, sY);
+		RenderHelpers::draw_berserk_glow(m_game, eq, state, sX, sY);
 
 		// Angel + aura
-		m_game.DrawAngel(40 + (state.m_iDir - 1), sX + 20, sY - 20, state.m_iFrame % 4, dwTime);
-		m_game.CheckActiveAura2(sX, sY, dwTime, state.m_sOwnerType);
+		m_game.draw_angel(40 + (state.m_dir - 1), sX + 20, sY - 20, state.m_frame % 4, time);
+		m_game.check_active_aura2(sX, sY, time, state.m_owner_type);
 	}
-	else if (state.m_cName[0] != '\0')
+	else if (state.m_name[0] != '\0')
 	{
-		RenderHelpers::DrawName(m_game, state, sX, sY);
+		RenderHelpers::draw_name(m_game, state, sX, sY);
 	}
 
 	// Chat message (always)
-	RenderHelpers::UpdateChat(m_game, state, sX, sY, indexX, indexY);
+	RenderHelpers::update_chat(m_game, state, sX, sY, indexX, indexY);
 
 	// Abaddon effects (always)
-	RenderHelpers::DrawAbaddonEffects(m_game, state, sX, sY);
+	RenderHelpers::draw_abaddon_effects(m_game, state, sX, sY);
 
 	// GM mode (always)
-	RenderHelpers::DrawGMEffect(m_game, state, sX, sY);
+	RenderHelpers::draw_gm_effect(m_game, state, sX, sY);
 
-	return m_game.m_pSprite[eq.iBodyIndex + (state.m_iDir - 1)]->GetBoundRect();
+	return m_game.m_sprite[eq.m_body_index + (state.m_dir - 1)]->GetBoundRect();
 }
 
 // Helper: returns true if this NPC type should keep full animation frames (no halving).
 // Types NOT in this list get frame /= 2 during move animation.
-static bool ShouldKeepFullFrames(short sOwnerType)
+static bool ShouldKeepFullFrames(short owner_type)
 {
-	switch (sOwnerType) {
+	switch (owner_type) {
 	case hb::shared::owner::Troll:
 	case hb::shared::owner::Ogre:
 	case hb::shared::owner::Liche:
@@ -146,200 +146,200 @@ static bool ShouldKeepFullFrames(short sOwnerType)
 	}
 }
 
-hb::shared::sprite::BoundRect CNpcRenderer::DrawMove(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime)
+hb::shared::sprite::BoundRect CNpcRenderer::draw_move(int indexX, int indexY, int sX, int sY, bool trans, uint32_t time)
 {
 	hb::shared::sprite::BoundRect invalidRect = {0, -1, 0, 0};
-	auto& state = m_game.m_entityState;
-	bool bInv = false;
-	bool bAdminInvis = false;
+	auto& state = m_game.m_entity_state;
+	bool inv = false;
+	bool admin_invis = false;
 
 	// Invisibility check
-	if (RenderHelpers::CheckInvisibility(m_game, state, bInv, bAdminInvis))
+	if (RenderHelpers::check_invisibility(m_game, state, inv, admin_invis))
 		return invalidRect;
 
 	// NPC body index: HBT uses pose 0, all others use pose 1
-	int npcPose = (state.m_sOwnerType == hb::shared::owner::HBT) ? 0 : 1;
+	int npcPose = (state.m_owner_type == hb::shared::owner::HBT) ? 0 : 1;
 	EquipmentIndices eq = EquipmentIndices::CalcNpc(state, npcPose);
-	eq.CalcColors(state);
+	eq.calc_colors(state);
 
 	// Motion offset
-	int dx = static_cast<int>(m_game.m_pMapData->m_pData[state.m_iDataX][state.m_iDataY].m_motion.fCurrentOffsetX);
-	int dy = static_cast<int>(m_game.m_pMapData->m_pData[state.m_iDataX][state.m_iDataY].m_motion.fCurrentOffsetY);
+	int dx = static_cast<int>(m_game.m_map_data->m_data[state.m_data_x][state.m_data_y].m_motion.m_current_offset_x);
+	int dy = static_cast<int>(m_game.m_map_data->m_data[state.m_data_x][state.m_data_y].m_motion.m_current_offset_y);
 	int fix_x = sX + dx;
 	int fix_y = sY + dy;
 
 	// Frame halving for non-exempt NPC types
-	if (!ShouldKeepFullFrames(state.m_sOwnerType))
-		state.m_iFrame = state.m_iFrame / 2;
+	if (!ShouldKeepFullFrames(state.m_owner_type))
+		state.m_frame = state.m_frame / 2;
 
 	// Crusade FOE indicator
-	if (m_game.m_bIsCrusadeMode)
-		m_game.DrawObjectFOE(fix_x, fix_y, state.m_iFrame);
+	if (m_game.m_is_crusade_mode)
+		m_game.draw_object_foe(fix_x, fix_y, state.m_frame);
 
 	// Effect auras
-	RenderHelpers::DrawEffectAuras(m_game, state, fix_x, fix_y);
+	RenderHelpers::draw_effect_auras(m_game, state, fix_x, fix_y);
 
 	// IceGolem particle effects
-	if (state.m_sOwnerType == hb::shared::owner::IceGolem)
+	if (state.m_owner_type == hb::shared::owner::IceGolem)
 	{
 		switch (rand() % 3) {
-		case 0: m_game.m_pEffectSpr[76]->Draw(fix_x, fix_y, state.m_iFrame, hb::shared::sprite::DrawParams::Alpha(0.7f)); break;
-		case 1: m_game.m_pEffectSpr[77]->Draw(fix_x, fix_y, state.m_iFrame, hb::shared::sprite::DrawParams::Alpha(0.7f)); break;
-		case 2: m_game.m_pEffectSpr[78]->Draw(fix_x, fix_y, state.m_iFrame, hb::shared::sprite::DrawParams::Alpha(0.7f)); break;
+		case 0: m_game.m_effect_sprites[76]->draw(fix_x, fix_y, state.m_frame, hb::shared::sprite::DrawParams::alpha_blend(0.7f)); break;
+		case 1: m_game.m_effect_sprites[77]->draw(fix_x, fix_y, state.m_frame, hb::shared::sprite::DrawParams::alpha_blend(0.7f)); break;
+		case 2: m_game.m_effect_sprites[78]->draw(fix_x, fix_y, state.m_frame, hb::shared::sprite::DrawParams::alpha_blend(0.7f)); break;
 		}
 	}
 
-	if (!bTrans)
+	if (!trans)
 	{
-		m_game.CheckActiveAura(fix_x, fix_y, dwTime, state.m_sOwnerType);
+		m_game.check_active_aura(fix_x, fix_y, time, state.m_owner_type);
 
-		// Draw NPC body (shadow + body sprite)
-		RenderHelpers::DrawNpcLayers(m_game, eq, state, fix_x, fix_y, bInv);
+		// draw NPC body (shadow + body sprite)
+		RenderHelpers::draw_npc_layers(m_game, eq, state, fix_x, fix_y, inv);
 
 		// Berserk glow
-		RenderHelpers::DrawBerserkGlow(m_game, eq, state, fix_x, fix_y);
+		RenderHelpers::draw_berserk_glow(m_game, eq, state, fix_x, fix_y);
 
 		// Angel + aura
-		m_game.DrawAngel(40 + (state.m_iDir - 1), fix_x + 20, fix_y - 20, state.m_iFrame % 4, dwTime);
-		m_game.CheckActiveAura2(fix_x, fix_y, dwTime, state.m_sOwnerType);
+		m_game.draw_angel(40 + (state.m_dir - 1), fix_x + 20, fix_y - 20, state.m_frame % 4, time);
+		m_game.check_active_aura2(fix_x, fix_y, time, state.m_owner_type);
 	}
-	else if (state.m_cName[0] != '\0')
+	else if (state.m_name[0] != '\0')
 	{
-		RenderHelpers::DrawName(m_game, state, fix_x, fix_y);
+		RenderHelpers::draw_name(m_game, state, fix_x, fix_y);
 	}
 
 	// Chat message (always)
-	RenderHelpers::UpdateChat(m_game, state, fix_x, fix_y, indexX, indexY);
+	RenderHelpers::update_chat(m_game, state, fix_x, fix_y, indexX, indexY);
 
 	// Store motion offsets
-	state.m_iMoveOffsetX = dx;
-	state.m_iMoveOffsetY = dy;
+	state.m_move_offset_x = dx;
+	state.m_move_offset_y = dy;
 
 	// Abaddon effects — surrounding effects use sX/sY (tile-anchored),
 	// direction-based effects use fix_x/fix_y (entity-following)
-	if (state.m_sOwnerType == hb::shared::owner::Abaddon)
+	if (state.m_owner_type == hb::shared::owner::Abaddon)
 	{
-		int randFrame = state.m_iEffectFrame % 12;
-		m_game.m_pEffectSpr[154]->Draw(sX - 50, sY - 50, randFrame, hb::shared::sprite::DrawParams::Alpha(0.7f));
-		m_game.m_pEffectSpr[155]->Draw(sX - 20, sY - 80, randFrame, hb::shared::sprite::DrawParams::Alpha(0.7f));
-		m_game.m_pEffectSpr[156]->Draw(sX + 70, sY - 50, randFrame, hb::shared::sprite::DrawParams::Alpha(0.7f));
-		m_game.m_pEffectSpr[157]->Draw(sX - 30, sY, randFrame, hb::shared::sprite::DrawParams::Alpha(0.7f));
-		m_game.m_pEffectSpr[158]->Draw(sX - 60, sY + 90, randFrame, hb::shared::sprite::DrawParams::Alpha(0.7f));
-		m_game.m_pEffectSpr[159]->Draw(sX + 65, sY + 85, randFrame, hb::shared::sprite::DrawParams::Alpha(0.7f));
-		int ef = state.m_iEffectFrame;
-		switch (state.m_iDir) {
+		int randFrame = state.m_effect_frame % 12;
+		m_game.m_effect_sprites[154]->draw(sX - 50, sY - 50, randFrame, hb::shared::sprite::DrawParams::alpha_blend(0.7f));
+		m_game.m_effect_sprites[155]->draw(sX - 20, sY - 80, randFrame, hb::shared::sprite::DrawParams::alpha_blend(0.7f));
+		m_game.m_effect_sprites[156]->draw(sX + 70, sY - 50, randFrame, hb::shared::sprite::DrawParams::alpha_blend(0.7f));
+		m_game.m_effect_sprites[157]->draw(sX - 30, sY, randFrame, hb::shared::sprite::DrawParams::alpha_blend(0.7f));
+		m_game.m_effect_sprites[158]->draw(sX - 60, sY + 90, randFrame, hb::shared::sprite::DrawParams::alpha_blend(0.7f));
+		m_game.m_effect_sprites[159]->draw(sX + 65, sY + 85, randFrame, hb::shared::sprite::DrawParams::alpha_blend(0.7f));
+		int ef = state.m_effect_frame;
+		switch (state.m_dir) {
 		case 1:
-			m_game.m_pEffectSpr[153]->Draw(fix_x, fix_y + 108, ef % 28, hb::shared::sprite::DrawParams::Alpha(0.7f));
-			m_game.m_pEffectSpr[164]->Draw(fix_x - 50, fix_y + 10, ef % 15, hb::shared::sprite::DrawParams::Alpha(0.7f));
+			m_game.m_effect_sprites[153]->draw(fix_x, fix_y + 108, ef % 28, hb::shared::sprite::DrawParams::alpha_blend(0.7f));
+			m_game.m_effect_sprites[164]->draw(fix_x - 50, fix_y + 10, ef % 15, hb::shared::sprite::DrawParams::alpha_blend(0.7f));
 			break;
 		case 2:
-			m_game.m_pEffectSpr[153]->Draw(fix_x, fix_y + 95, ef % 28, hb::shared::sprite::DrawParams::Alpha(0.7f));
-			m_game.m_pEffectSpr[164]->Draw(fix_x - 70, fix_y + 10, ef % 15, hb::shared::sprite::DrawParams::Alpha(0.7f));
+			m_game.m_effect_sprites[153]->draw(fix_x, fix_y + 95, ef % 28, hb::shared::sprite::DrawParams::alpha_blend(0.7f));
+			m_game.m_effect_sprites[164]->draw(fix_x - 70, fix_y + 10, ef % 15, hb::shared::sprite::DrawParams::alpha_blend(0.7f));
 			break;
 		case 3:
-			m_game.m_pEffectSpr[153]->Draw(fix_x, fix_y + 105, ef % 28, hb::shared::sprite::DrawParams::Alpha(0.7f));
-			m_game.m_pEffectSpr[164]->Draw(fix_x - 90, fix_y + 10, ef % 15, hb::shared::sprite::DrawParams::Alpha(0.7f));
+			m_game.m_effect_sprites[153]->draw(fix_x, fix_y + 105, ef % 28, hb::shared::sprite::DrawParams::alpha_blend(0.7f));
+			m_game.m_effect_sprites[164]->draw(fix_x - 90, fix_y + 10, ef % 15, hb::shared::sprite::DrawParams::alpha_blend(0.7f));
 			break;
 		case 4:
-			m_game.m_pEffectSpr[153]->Draw(fix_x - 35, fix_y + 100, ef % 28, hb::shared::sprite::DrawParams::Alpha(0.7f));
-			m_game.m_pEffectSpr[164]->Draw(fix_x - 80, fix_y + 10, ef % 15, hb::shared::sprite::DrawParams::Alpha(0.7f));
+			m_game.m_effect_sprites[153]->draw(fix_x - 35, fix_y + 100, ef % 28, hb::shared::sprite::DrawParams::alpha_blend(0.7f));
+			m_game.m_effect_sprites[164]->draw(fix_x - 80, fix_y + 10, ef % 15, hb::shared::sprite::DrawParams::alpha_blend(0.7f));
 			break;
 		case 5:
-			m_game.m_pEffectSpr[153]->Draw(fix_x, fix_y + 95, ef % 28, hb::shared::sprite::DrawParams::Alpha(0.7f));
-			m_game.m_pEffectSpr[164]->Draw(fix_x - 65, fix_y - 5, ef % 15, hb::shared::sprite::DrawParams::Alpha(0.7f));
+			m_game.m_effect_sprites[153]->draw(fix_x, fix_y + 95, ef % 28, hb::shared::sprite::DrawParams::alpha_blend(0.7f));
+			m_game.m_effect_sprites[164]->draw(fix_x - 65, fix_y - 5, ef % 15, hb::shared::sprite::DrawParams::alpha_blend(0.7f));
 			break;
 		case 6:
-			m_game.m_pEffectSpr[153]->Draw(fix_x + 45, fix_y + 95, ef % 28, hb::shared::sprite::DrawParams::Alpha(0.7f));
-			m_game.m_pEffectSpr[164]->Draw(fix_x - 31, fix_y + 10, ef % 15, hb::shared::sprite::DrawParams::Alpha(0.7f));
+			m_game.m_effect_sprites[153]->draw(fix_x + 45, fix_y + 95, ef % 28, hb::shared::sprite::DrawParams::alpha_blend(0.7f));
+			m_game.m_effect_sprites[164]->draw(fix_x - 31, fix_y + 10, ef % 15, hb::shared::sprite::DrawParams::alpha_blend(0.7f));
 			break;
 		case 7:
-			m_game.m_pEffectSpr[153]->Draw(fix_x + 40, fix_y + 110, ef % 28, hb::shared::sprite::DrawParams::Alpha(0.7f));
-			m_game.m_pEffectSpr[164]->Draw(fix_x - 30, fix_y + 10, ef % 15, hb::shared::sprite::DrawParams::Alpha(0.7f));
+			m_game.m_effect_sprites[153]->draw(fix_x + 40, fix_y + 110, ef % 28, hb::shared::sprite::DrawParams::alpha_blend(0.7f));
+			m_game.m_effect_sprites[164]->draw(fix_x - 30, fix_y + 10, ef % 15, hb::shared::sprite::DrawParams::alpha_blend(0.7f));
 			break;
 		case 8:
-			m_game.m_pEffectSpr[153]->Draw(fix_x + 20, fix_y + 110, ef % 28, hb::shared::sprite::DrawParams::Alpha(0.7f));
-			m_game.m_pEffectSpr[164]->Draw(fix_x - 20, fix_y + 16, ef % 15, hb::shared::sprite::DrawParams::Alpha(0.7f));
+			m_game.m_effect_sprites[153]->draw(fix_x + 20, fix_y + 110, ef % 28, hb::shared::sprite::DrawParams::alpha_blend(0.7f));
+			m_game.m_effect_sprites[164]->draw(fix_x - 20, fix_y + 16, ef % 15, hb::shared::sprite::DrawParams::alpha_blend(0.7f));
 			break;
 		}
 	}
 
 	// GM mode (always)
-	RenderHelpers::DrawGMEffect(m_game, state, fix_x, fix_y);
+	RenderHelpers::draw_gm_effect(m_game, state, fix_x, fix_y);
 
-	return m_game.m_pSprite[eq.iBodyIndex + (state.m_iDir - 1)]->GetBoundRect();
+	return m_game.m_sprite[eq.m_body_index + (state.m_dir - 1)]->GetBoundRect();
 }
 
-hb::shared::sprite::BoundRect CNpcRenderer::DrawRun(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime)
+hb::shared::sprite::BoundRect CNpcRenderer::draw_run(int indexX, int indexY, int sX, int sY, bool trans, uint32_t time)
 {
 	// NPCs don't normally run, but the function still handles the NPC default case
 	hb::shared::sprite::BoundRect invalidRect = {0, -1, 0, 0};
-	auto& state = m_game.m_entityState;
-	bool bInv = false;
-	bool bAdminInvis = false;
+	auto& state = m_game.m_entity_state;
+	bool inv = false;
+	bool admin_invis = false;
 
 	// Invisibility check
-	if (RenderHelpers::CheckInvisibility(m_game, state, bInv, bAdminInvis))
+	if (RenderHelpers::check_invisibility(m_game, state, inv, admin_invis))
 		return invalidRect;
 
 	// NPC default in OnRun: all equipment -1, no specific body index pose override
-	// Original code has no iBodyIndex assignment for NPC default in OnRun
+	// Original code has no body_index assignment for NPC default in OnRun
 	EquipmentIndices eq = EquipmentIndices::CalcNpc(state, 1);
-	eq.CalcColors(state);
+	eq.calc_colors(state);
 
 	// Motion offset
-	int dx = static_cast<int>(m_game.m_pMapData->m_pData[state.m_iDataX][state.m_iDataY].m_motion.fCurrentOffsetX);
-	int dy = static_cast<int>(m_game.m_pMapData->m_pData[state.m_iDataX][state.m_iDataY].m_motion.fCurrentOffsetY);
+	int dx = static_cast<int>(m_game.m_map_data->m_data[state.m_data_x][state.m_data_y].m_motion.m_current_offset_x);
+	int dy = static_cast<int>(m_game.m_map_data->m_data[state.m_data_x][state.m_data_y].m_motion.m_current_offset_y);
 	int fix_x = sX + dx;
 	int fix_y = sY + dy;
 
 	// Crusade FOE indicator
-	if (m_game.m_bIsCrusadeMode)
-		m_game.DrawObjectFOE(fix_x, fix_y, state.m_iFrame);
+	if (m_game.m_is_crusade_mode)
+		m_game.draw_object_foe(fix_x, fix_y, state.m_frame);
 
 	// Effect auras
-	RenderHelpers::DrawEffectAuras(m_game, state, fix_x, fix_y);
+	RenderHelpers::draw_effect_auras(m_game, state, fix_x, fix_y);
 
-	if (!bTrans)
+	if (!trans)
 	{
-		m_game.CheckActiveAura(fix_x, fix_y, dwTime, state.m_sOwnerType);
+		m_game.check_active_aura(fix_x, fix_y, time, state.m_owner_type);
 
-		// Draw NPC body
-		RenderHelpers::DrawNpcLayers(m_game, eq, state, fix_x, fix_y, bInv);
+		// draw NPC body
+		RenderHelpers::draw_npc_layers(m_game, eq, state, fix_x, fix_y, inv);
 
 		// Berserk glow
-		RenderHelpers::DrawBerserkGlow(m_game, eq, state, fix_x, fix_y);
+		RenderHelpers::draw_berserk_glow(m_game, eq, state, fix_x, fix_y);
 
 		// Angel + aura
-		m_game.DrawAngel(40 + (state.m_iDir - 1), fix_x + 20, fix_y - 20, state.m_iFrame % 4, dwTime);
-		m_game.CheckActiveAura2(fix_x, fix_y, dwTime, state.m_sOwnerType);
+		m_game.draw_angel(40 + (state.m_dir - 1), fix_x + 20, fix_y - 20, state.m_frame % 4, time);
+		m_game.check_active_aura2(fix_x, fix_y, time, state.m_owner_type);
 	}
-	else if (state.m_cName[0] != '\0')
+	else if (state.m_name[0] != '\0')
 	{
-		RenderHelpers::DrawName(m_game, state, fix_x, fix_y);
+		RenderHelpers::draw_name(m_game, state, fix_x, fix_y);
 	}
 
 	// Chat message (always)
-	RenderHelpers::UpdateChat(m_game, state, fix_x, fix_y, indexX, indexY);
+	RenderHelpers::update_chat(m_game, state, fix_x, fix_y, indexX, indexY);
 
 	// Store motion offsets
-	state.m_iMoveOffsetX = dx;
-	state.m_iMoveOffsetY = dy;
+	state.m_move_offset_x = dx;
+	state.m_move_offset_y = dy;
 
 	// GM mode (always)
-	RenderHelpers::DrawGMEffect(m_game, state, fix_x, fix_y);
+	RenderHelpers::draw_gm_effect(m_game, state, fix_x, fix_y);
 
-	return m_game.m_pSprite[eq.iBodyIndex + (state.m_iDir - 1)]->GetBoundRect();
+	return m_game.m_sprite[eq.m_body_index + (state.m_dir - 1)]->GetBoundRect();
 }
 
-hb::shared::sprite::BoundRect CNpcRenderer::DrawAttack(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime)
+hb::shared::sprite::BoundRect CNpcRenderer::draw_attack(int indexX, int indexY, int sX, int sY, bool trans, uint32_t time)
 {
 	hb::shared::sprite::BoundRect invalidRect = {0, -1, 0, 0};
-	auto& state = m_game.m_entityState;
-	bool bInv = false;
-	bool bAdminInvis = false;
+	auto& state = m_game.m_entity_state;
+	bool inv = false;
+	bool admin_invis = false;
 
 	// Invisibility check
-	if (RenderHelpers::CheckInvisibility(m_game, state, bInv, bAdminInvis))
+	if (RenderHelpers::check_invisibility(m_game, state, inv, admin_invis))
 		return invalidRect;
 
 	// NPC attack pose calculation with per-mob-type overrides
@@ -347,123 +347,123 @@ hb::shared::sprite::BoundRect CNpcRenderer::DrawAttack(int indexX, int indexY, i
 	if (state.m_appearance.HasNpcSpecialState())
 	{
 		eq = EquipmentIndices::CalcNpc(state, 4);
-		state.m_iFrame = state.m_appearance.iSpecialFrame - 1;
+		state.m_frame = state.m_appearance.special_frame - 1;
 	}
-	else if (state.m_sOwnerType == hb::shared::owner::Wyvern || state.m_sOwnerType == hb::shared::owner::FireWyvern)
+	else if (state.m_owner_type == hb::shared::owner::Wyvern || state.m_owner_type == hb::shared::owner::FireWyvern)
 		eq = EquipmentIndices::CalcNpc(state, 0);
-	else if (state.m_sOwnerType == hb::shared::owner::HBT || state.m_sOwnerType == hb::shared::owner::CT || state.m_sOwnerType == hb::shared::owner::AGC)
+	else if (state.m_owner_type == hb::shared::owner::HBT || state.m_owner_type == hb::shared::owner::CT || state.m_owner_type == hb::shared::owner::AGC)
 		eq = EquipmentIndices::CalcNpc(state, 1);
 	else
 		eq = EquipmentIndices::CalcNpc(state, 2);
-	eq.CalcColors(state);
+	eq.calc_colors(state);
 
 	// Crusade FOE indicator
-	if (m_game.m_bIsCrusadeMode)
-		m_game.DrawObjectFOE(sX, sY, state.m_iFrame);
+	if (m_game.m_is_crusade_mode)
+		m_game.draw_object_foe(sX, sY, state.m_frame);
 
 	// Effect auras
-	RenderHelpers::DrawEffectAuras(m_game, state, sX, sY);
+	RenderHelpers::draw_effect_auras(m_game, state, sX, sY);
 
-	if (!bTrans)
+	if (!trans)
 	{
-		m_game.CheckActiveAura(sX, sY, dwTime, state.m_sOwnerType);
+		m_game.check_active_aura(sX, sY, time, state.m_owner_type);
 
-		// Draw NPC body
-		RenderHelpers::DrawNpcLayers(m_game, eq, state, sX, sY, bInv);
+		// draw NPC body
+		RenderHelpers::draw_npc_layers(m_game, eq, state, sX, sY, inv);
 
 		// Berserk glow
-		RenderHelpers::DrawBerserkGlow(m_game, eq, state, sX, sY);
+		RenderHelpers::draw_berserk_glow(m_game, eq, state, sX, sY);
 
 		// Angel + aura — OnAttack uses (dir-1) angel index, frame % 8
-		m_game.DrawAngel(state.m_iDir - 1, sX + 20, sY - 20, state.m_iFrame % 8, dwTime);
-		m_game.CheckActiveAura2(sX, sY, dwTime, state.m_sOwnerType);
+		m_game.draw_angel(state.m_dir - 1, sX + 20, sY - 20, state.m_frame % 8, time);
+		m_game.check_active_aura2(sX, sY, time, state.m_owner_type);
 	}
-	else if (state.m_cName[0] != '\0')
+	else if (state.m_name[0] != '\0')
 	{
-		RenderHelpers::DrawName(m_game, state, sX, sY);
+		RenderHelpers::draw_name(m_game, state, sX, sY);
 	}
 
 	// Chat message (always)
-	RenderHelpers::UpdateChat(m_game, state, sX, sY, indexX, indexY);
+	RenderHelpers::update_chat(m_game, state, sX, sY, indexX, indexY);
 
 	// Abaddon effects (always)
-	RenderHelpers::DrawAbaddonEffects(m_game, state, sX, sY);
+	RenderHelpers::draw_abaddon_effects(m_game, state, sX, sY);
 
 	// GM mode (always)
-	RenderHelpers::DrawGMEffect(m_game, state, sX, sY);
+	RenderHelpers::draw_gm_effect(m_game, state, sX, sY);
 
-	return m_game.m_pSprite[eq.iBodyIndex + (state.m_iDir - 1)]->GetBoundRect();
+	return m_game.m_sprite[eq.m_body_index + (state.m_dir - 1)]->GetBoundRect();
 }
 
-hb::shared::sprite::BoundRect CNpcRenderer::DrawAttackMove(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime)
+hb::shared::sprite::BoundRect CNpcRenderer::draw_attack_move(int indexX, int indexY, int sX, int sY, bool trans, uint32_t time)
 {
 	hb::shared::sprite::BoundRect invalidRect = {0, -1, 0, 0};
-	auto& state = m_game.m_entityState;
-	bool bInv = false;
-	bool bAdminInvis = false;
+	auto& state = m_game.m_entity_state;
+	bool inv = false;
+	bool admin_invis = false;
 
 	// Invisibility check
-	if (RenderHelpers::CheckInvisibility(m_game, state, bInv, bAdminInvis))
+	if (RenderHelpers::check_invisibility(m_game, state, inv, admin_invis))
 		return invalidRect;
 
 	// Frame clamping — same as original
-	switch (state.m_iFrame) {
-	case 4: case 5: case 6: case 7: case 8: case 9: state.m_iFrame = 4; break;
-	case 10: state.m_iFrame = 5; break;
-	case 11: state.m_iFrame = 6; break;
-	case 12: state.m_iFrame = 7; break;
+	switch (state.m_frame) {
+	case 4: case 5: case 6: case 7: case 8: case 9: state.m_frame = 4; break;
+	case 10: state.m_frame = 5; break;
+	case 11: state.m_frame = 6; break;
+	case 12: state.m_frame = 7; break;
 	}
 
 	// NPC attack-move uses pose 2
 	EquipmentIndices eq = EquipmentIndices::CalcNpc(state, 2);
-	eq.CalcColors(state);
+	eq.calc_colors(state);
 
 	// Frame-based motion offset — same as player
 	int dx = 0, dy = 0;
-	bool bDashDraw = false;
+	bool dash_draw = false;
 	int dsx = 0, dsy = 0;
-	int cFrameMoveDots = 0;
+	int frame_move_dots = 0;
 
-	if ((state.m_iFrame >= 1) && (state.m_iFrame <= 3))
+	if ((state.m_frame >= 1) && (state.m_frame <= 3))
 	{
-		switch (state.m_iFrame) {
-		case 1: cFrameMoveDots = 26; break;
-		case 2: cFrameMoveDots = 16; break;
-		case 3: cFrameMoveDots = 0;  break;
+		switch (state.m_frame) {
+		case 1: frame_move_dots = 26; break;
+		case 2: frame_move_dots = 16; break;
+		case 3: frame_move_dots = 0;  break;
 		}
-		switch (state.m_iDir) {
-		case 1: dy = cFrameMoveDots; break;
-		case 2: dy = cFrameMoveDots; dx = -cFrameMoveDots; break;
-		case 3: dx = -cFrameMoveDots; break;
-		case 4: dx = -cFrameMoveDots; dy = -cFrameMoveDots; break;
-		case 5: dy = -cFrameMoveDots; break;
-		case 6: dy = -cFrameMoveDots; dx = cFrameMoveDots; break;
-		case 7: dx = cFrameMoveDots; break;
-		case 8: dx = cFrameMoveDots; dy = cFrameMoveDots; break;
+		switch (state.m_dir) {
+		case 1: dy = frame_move_dots; break;
+		case 2: dy = frame_move_dots; dx = -frame_move_dots; break;
+		case 3: dx = -frame_move_dots; break;
+		case 4: dx = -frame_move_dots; dy = -frame_move_dots; break;
+		case 5: dy = -frame_move_dots; break;
+		case 6: dy = -frame_move_dots; dx = frame_move_dots; break;
+		case 7: dx = frame_move_dots; break;
+		case 8: dx = frame_move_dots; dy = frame_move_dots; break;
 		}
-		switch (state.m_iFrame) {
+		switch (state.m_frame) {
 		case 1: dy++;    break;
 		case 2: dy += 2; break;
 		case 3: dy++;    break;
 		}
-		switch (state.m_iFrame) {
-		case 2: bDashDraw = true; cFrameMoveDots = 26; break;
-		case 3: bDashDraw = true; cFrameMoveDots = 16; break;
+		switch (state.m_frame) {
+		case 2: dash_draw = true; frame_move_dots = 26; break;
+		case 3: dash_draw = true; frame_move_dots = 16; break;
 		}
-		switch (state.m_iDir) {
-		case 1: dsy = cFrameMoveDots; break;
-		case 2: dsy = cFrameMoveDots; dsx = -cFrameMoveDots; break;
-		case 3: dsx = -cFrameMoveDots; break;
-		case 4: dsx = -cFrameMoveDots; dsy = -cFrameMoveDots; break;
-		case 5: dsy = -cFrameMoveDots; break;
-		case 6: dsy = -cFrameMoveDots; dsx = cFrameMoveDots; break;
-		case 7: dsx = cFrameMoveDots; break;
-		case 8: dsx = cFrameMoveDots; dsy = cFrameMoveDots; break;
+		switch (state.m_dir) {
+		case 1: dsy = frame_move_dots; break;
+		case 2: dsy = frame_move_dots; dsx = -frame_move_dots; break;
+		case 3: dsx = -frame_move_dots; break;
+		case 4: dsx = -frame_move_dots; dsy = -frame_move_dots; break;
+		case 5: dsy = -frame_move_dots; break;
+		case 6: dsy = -frame_move_dots; dsx = frame_move_dots; break;
+		case 7: dsx = frame_move_dots; break;
+		case 8: dsx = frame_move_dots; dsy = frame_move_dots; break;
 		}
 	}
-	else if (state.m_iFrame == 0)
+	else if (state.m_frame == 0)
 	{
-		switch (state.m_iDir) {
+		switch (state.m_dir) {
 		case 1: dy = 32; break;
 		case 2: dy = 32; dx = -32; break;
 		case 3: dx = -32; break;
@@ -476,280 +476,280 @@ hb::shared::sprite::BoundRect CNpcRenderer::DrawAttackMove(int indexX, int index
 	}
 
 	// Crusade FOE indicator
-	if (m_game.m_bIsCrusadeMode)
-		m_game.DrawObjectFOE(sX + dx, sY + dy, state.m_iFrame);
+	if (m_game.m_is_crusade_mode)
+		m_game.draw_object_foe(sX + dx, sY + dy, state.m_frame);
 
 	// Effect auras
-	RenderHelpers::DrawEffectAuras(m_game, state, sX + dx, sY + dy);
+	RenderHelpers::draw_effect_auras(m_game, state, sX + dx, sY + dy);
 
-	if (!bTrans)
+	if (!trans)
 	{
-		m_game.CheckActiveAura(sX + dx, sY + dy, dwTime, state.m_sOwnerType);
+		m_game.check_active_aura(sX + dx, sY + dy, time, state.m_owner_type);
 
-		// Draw NPC body
-		RenderHelpers::DrawNpcLayers(m_game, eq, state, sX + dx, sY + dy, bInv);
+		// draw NPC body
+		RenderHelpers::draw_npc_layers(m_game, eq, state, sX + dx, sY + dy, inv);
 
 		// Berserk glow
-		RenderHelpers::DrawBerserkGlow(m_game, eq, state, sX + dx, sY + dy);
+		RenderHelpers::draw_berserk_glow(m_game, eq, state, sX + dx, sY + dy);
 
 		// Angel + aura
-		m_game.DrawAngel(8 + (state.m_iDir - 1), sX + dx + 20, sY + dy - 20, state.m_iFrame % 8, dwTime);
-		m_game.CheckActiveAura2(sX + dx, sY + dy, dwTime, state.m_sOwnerType);
+		m_game.draw_angel(8 + (state.m_dir - 1), sX + dx + 20, sY + dy - 20, state.m_frame % 8, time);
+		m_game.check_active_aura2(sX + dx, sY + dy, time, state.m_owner_type);
 
 		// Dash ghost effect
-		if (bDashDraw)
+		if (dash_draw)
 		{
-			m_game.m_pSprite[eq.iBodyIndex + (state.m_iDir - 1)]->Draw(sX + dsx, sY + dsy, state.m_iFrame,
-				hb::shared::sprite::DrawParams::TintedAlpha(126, 192, 242, 0.7f));
+			m_game.m_sprite[eq.m_body_index + (state.m_dir - 1)]->draw(sX + dsx, sY + dsy, state.m_frame,
+				hb::shared::sprite::DrawParams::tinted_alpha(126, 192, 242, 0.7f));
 		}
 	}
-	else if (state.m_cName[0] != '\0')
+	else if (state.m_name[0] != '\0')
 	{
-		RenderHelpers::DrawName(m_game, state, sX + dx, sY + dy);
+		RenderHelpers::draw_name(m_game, state, sX + dx, sY + dy);
 	}
 
 	// Chat message (always)
-	RenderHelpers::UpdateChat(m_game, state, sX + dx, sY + dy, indexX, indexY);
+	RenderHelpers::update_chat(m_game, state, sX + dx, sY + dy, indexX, indexY);
 
 	// Store motion offsets
-	state.m_iMoveOffsetX = dx;
-	state.m_iMoveOffsetY = dy;
+	state.m_move_offset_x = dx;
+	state.m_move_offset_y = dy;
 
 	// GM mode (always)
-	RenderHelpers::DrawGMEffect(m_game, state, sX + dx, sY + dy);
+	RenderHelpers::draw_gm_effect(m_game, state, sX + dx, sY + dy);
 
-	return m_game.m_pSprite[eq.iBodyIndex + (state.m_iDir - 1)]->GetBoundRect();
+	return m_game.m_sprite[eq.m_body_index + (state.m_dir - 1)]->GetBoundRect();
 }
 
-hb::shared::sprite::BoundRect CNpcRenderer::DrawMagic(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime)
+hb::shared::sprite::BoundRect CNpcRenderer::draw_magic(int indexX, int indexY, int sX, int sY, bool trans, uint32_t time)
 {
 	// NPCs don't have a magic animation in the original code — the original OnMagic
 	// only handles player types 1-6. For NPCs, we just draw them stopped.
-	return DrawStop(indexX, indexY, sX, sY, bTrans, dwTime);
+	return draw_stop(indexX, indexY, sX, sY, trans, time);
 }
 
-hb::shared::sprite::BoundRect CNpcRenderer::DrawGetItem(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime)
+hb::shared::sprite::BoundRect CNpcRenderer::draw_get_item(int indexX, int indexY, int sX, int sY, bool trans, uint32_t time)
 {
 	// NPCs don't have a get-item animation in the original code — the original OnGetItem
-	// has no iBodyIndex set for the NPC default case. Fall back to stop.
-	return DrawStop(indexX, indexY, sX, sY, bTrans, dwTime);
+	// has no body_index set for the NPC default case. Fall back to stop.
+	return draw_stop(indexX, indexY, sX, sY, trans, time);
 }
 
-hb::shared::sprite::BoundRect CNpcRenderer::DrawDamage(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime)
+hb::shared::sprite::BoundRect CNpcRenderer::draw_damage(int indexX, int indexY, int sX, int sY, bool trans, uint32_t time)
 {
 	hb::shared::sprite::BoundRect invalidRect = {0, -1, 0, 0};
-	auto& state = m_game.m_entityState;
-	bool bInv = false;
-	bool bAdminInvis = false;
+	auto& state = m_game.m_entity_state;
+	bool inv = false;
+	bool admin_invis = false;
 
 	// Invisibility check
-	if (RenderHelpers::CheckInvisibility(m_game, state, bInv, bAdminInvis))
+	if (RenderHelpers::check_invisibility(m_game, state, inv, admin_invis))
 		return invalidRect;
 
 	// Two-state NPC damage: complex per-mob overrides
-	char cFrame = state.m_iFrame;
+	char frame = state.m_frame;
 	int npcPose;
 
-	if (cFrame < 4)
+	if (frame < 4)
 	{
 		// Idle state — per-mob overrides
 		if (state.m_appearance.HasNpcSpecialState())
 			npcPose = 4; // special frame from NPC appearance
-		else if (state.m_sOwnerType == hb::shared::owner::Wyvern) npcPose = 0;
-		else if (state.m_sOwnerType == hb::shared::owner::McGaffin) npcPose = 0;
-		else if (state.m_sOwnerType == hb::shared::owner::Perry) npcPose = 0;
-		else if (state.m_sOwnerType == hb::shared::owner::Devlin) npcPose = 0;
-		else if (state.m_sOwnerType == hb::shared::owner::FireWyvern) npcPose = 0;
-		else if (state.m_sOwnerType == hb::shared::owner::Abaddon) npcPose = 2;
-		else if (state.m_sOwnerType == hb::shared::owner::HBT) npcPose = 2;
-		else if (state.m_sOwnerType == hb::shared::owner::CT) npcPose = 2;
-		else if (state.m_sOwnerType == hb::shared::owner::AGC) npcPose = 2;
-		else if (state.m_sOwnerType == hb::shared::owner::Gate) npcPose = 0;
+		else if (state.m_owner_type == hb::shared::owner::Wyvern) npcPose = 0;
+		else if (state.m_owner_type == hb::shared::owner::McGaffin) npcPose = 0;
+		else if (state.m_owner_type == hb::shared::owner::Perry) npcPose = 0;
+		else if (state.m_owner_type == hb::shared::owner::Devlin) npcPose = 0;
+		else if (state.m_owner_type == hb::shared::owner::FireWyvern) npcPose = 0;
+		else if (state.m_owner_type == hb::shared::owner::Abaddon) npcPose = 2;
+		else if (state.m_owner_type == hb::shared::owner::HBT) npcPose = 2;
+		else if (state.m_owner_type == hb::shared::owner::CT) npcPose = 2;
+		else if (state.m_owner_type == hb::shared::owner::AGC) npcPose = 2;
+		else if (state.m_owner_type == hb::shared::owner::Gate) npcPose = 0;
 		else npcPose = 0;
 	}
 	else
 	{
-		cFrame -= 4;
+		frame -= 4;
 		// Damage recoil state — per-mob overrides
 		if (state.m_appearance.HasNpcSpecialState())
 			npcPose = 4;
-		else if (state.m_sOwnerType == hb::shared::owner::Wyvern) npcPose = 0;
-		else if (state.m_sOwnerType == hb::shared::owner::McGaffin) npcPose = 0;
-		else if (state.m_sOwnerType == hb::shared::owner::Perry) npcPose = 0;
-		else if (state.m_sOwnerType == hb::shared::owner::Devlin) npcPose = 0;
-		else if (state.m_sOwnerType == hb::shared::owner::FireWyvern) npcPose = 0;
-		else if (state.m_sOwnerType == hb::shared::owner::Abaddon) npcPose = 2;
-		else if (state.m_sOwnerType == hb::shared::owner::HBT) npcPose = 2;
-		else if (state.m_sOwnerType == hb::shared::owner::CT) npcPose = 2;
-		else if (state.m_sOwnerType == hb::shared::owner::AGC) npcPose = 2;
-		else if (state.m_sOwnerType == hb::shared::owner::Gate) npcPose = 1;
+		else if (state.m_owner_type == hb::shared::owner::Wyvern) npcPose = 0;
+		else if (state.m_owner_type == hb::shared::owner::McGaffin) npcPose = 0;
+		else if (state.m_owner_type == hb::shared::owner::Perry) npcPose = 0;
+		else if (state.m_owner_type == hb::shared::owner::Devlin) npcPose = 0;
+		else if (state.m_owner_type == hb::shared::owner::FireWyvern) npcPose = 0;
+		else if (state.m_owner_type == hb::shared::owner::Abaddon) npcPose = 2;
+		else if (state.m_owner_type == hb::shared::owner::HBT) npcPose = 2;
+		else if (state.m_owner_type == hb::shared::owner::CT) npcPose = 2;
+		else if (state.m_owner_type == hb::shared::owner::AGC) npcPose = 2;
+		else if (state.m_owner_type == hb::shared::owner::Gate) npcPose = 1;
 		else npcPose = 3;
 	}
 
 	EquipmentIndices eq = EquipmentIndices::CalcNpc(state, npcPose);
-	eq.CalcColors(state);
+	eq.calc_colors(state);
 
 	// Apply NPC special frame override
 	if (state.m_appearance.HasNpcSpecialState())
-		cFrame = state.m_appearance.iSpecialFrame - 1;
+		frame = state.m_appearance.special_frame - 1;
 
-	state.m_iFrame = cFrame;
+	state.m_frame = frame;
 
 	// Crusade FOE indicator
-	if (m_game.m_bIsCrusadeMode)
-		m_game.DrawObjectFOE(sX, sY, cFrame);
+	if (m_game.m_is_crusade_mode)
+		m_game.draw_object_foe(sX, sY, frame);
 
 	// Effect auras
-	RenderHelpers::DrawEffectAuras(m_game, state, sX, sY);
+	RenderHelpers::draw_effect_auras(m_game, state, sX, sY);
 
-	if (!bTrans)
+	if (!trans)
 	{
-		m_game.CheckActiveAura(sX, sY, dwTime, state.m_sOwnerType);
+		m_game.check_active_aura(sX, sY, time, state.m_owner_type);
 
-		// Draw NPC body
-		RenderHelpers::DrawNpcLayers(m_game, eq, state, sX, sY, bInv);
+		// draw NPC body
+		RenderHelpers::draw_npc_layers(m_game, eq, state, sX, sY, inv);
 
 		// Berserk glow
-		RenderHelpers::DrawBerserkGlow(m_game, eq, state, sX, sY);
+		RenderHelpers::draw_berserk_glow(m_game, eq, state, sX, sY);
 
-		// Angel + aura — OnDamage uses 16+dir-1, cFrame%4
-		m_game.DrawAngel(16 + (state.m_iDir - 1), sX + 20, sY - 20, cFrame % 4, dwTime);
-		m_game.CheckActiveAura2(sX, sY, dwTime, state.m_sOwnerType);
+		// Angel + aura — OnDamage uses 16+dir-1, frame%4
+		m_game.draw_angel(16 + (state.m_dir - 1), sX + 20, sY - 20, frame % 4, time);
+		m_game.check_active_aura2(sX, sY, time, state.m_owner_type);
 	}
-	else if (state.m_cName[0] != '\0')
+	else if (state.m_name[0] != '\0')
 	{
-		RenderHelpers::DrawName(m_game, state, sX, sY);
+		RenderHelpers::draw_name(m_game, state, sX, sY);
 	}
 
 	// Chat message (always)
-	RenderHelpers::UpdateChat(m_game, state, sX, sY, indexX, indexY);
+	RenderHelpers::update_chat(m_game, state, sX, sY, indexX, indexY);
 
 	// Abaddon effects (always)
-	RenderHelpers::DrawAbaddonEffects(m_game, state, sX, sY);
+	RenderHelpers::draw_abaddon_effects(m_game, state, sX, sY);
 
 	// GM mode (always)
-	RenderHelpers::DrawGMEffect(m_game, state, sX, sY);
+	RenderHelpers::draw_gm_effect(m_game, state, sX, sY);
 
-	return m_game.m_pSprite[eq.iBodyIndex + (state.m_iDir - 1)]->GetBoundRect();
+	return m_game.m_sprite[eq.m_body_index + (state.m_dir - 1)]->GetBoundRect();
 }
 
-hb::shared::sprite::BoundRect CNpcRenderer::DrawDamageMove(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime)
+hb::shared::sprite::BoundRect CNpcRenderer::draw_damage_move(int indexX, int indexY, int sX, int sY, bool trans, uint32_t time)
 {
 	hb::shared::sprite::BoundRect invalidRect = {0, -1, 0, 0};
-	auto& state = m_game.m_entityState;
-	bool bInv = false;
-	bool bAdminInvis = false;
+	auto& state = m_game.m_entity_state;
+	bool inv = false;
+	bool admin_invis = false;
 
 	// Early return for McGaffin/Perry/Devlin/Abaddon
-	if (state.m_sOwnerType == hb::shared::owner::McGaffin ||
-		state.m_sOwnerType == hb::shared::owner::Perry ||
-		state.m_sOwnerType == hb::shared::owner::Devlin ||
-		state.m_sOwnerType == hb::shared::owner::Abaddon)
+	if (state.m_owner_type == hb::shared::owner::McGaffin ||
+		state.m_owner_type == hb::shared::owner::Perry ||
+		state.m_owner_type == hb::shared::owner::Devlin ||
+		state.m_owner_type == hb::shared::owner::Abaddon)
 		return invalidRect;
 
 	// Invisibility check
-	if (RenderHelpers::CheckInvisibility(m_game, state, bInv, bAdminInvis))
+	if (RenderHelpers::check_invisibility(m_game, state, inv, admin_invis))
 		return invalidRect;
 
 	// Direction inversion (knockback is opposite direction)
-	switch (state.m_iDir) {
-	case 1: state.m_iDir = 5; break;
-	case 2: state.m_iDir = 6; break;
-	case 3: state.m_iDir = 7; break;
-	case 4: state.m_iDir = 8; break;
-	case 5: state.m_iDir = 1; break;
-	case 6: state.m_iDir = 2; break;
-	case 7: state.m_iDir = 3; break;
-	case 8: state.m_iDir = 4; break;
+	switch (state.m_dir) {
+	case 1: state.m_dir = 5; break;
+	case 2: state.m_dir = 6; break;
+	case 3: state.m_dir = 7; break;
+	case 4: state.m_dir = 8; break;
+	case 5: state.m_dir = 1; break;
+	case 6: state.m_dir = 2; break;
+	case 7: state.m_dir = 3; break;
+	case 8: state.m_dir = 4; break;
 	}
 
 	// Per-mob pose overrides
 	int npcPose;
-	if (state.m_sOwnerType == hb::shared::owner::Wyvern) npcPose = 0;
-	else if (state.m_sOwnerType == hb::shared::owner::FireWyvern) npcPose = 0;
-	else if (state.m_sOwnerType == hb::shared::owner::HBT) npcPose = 2;
-	else if (state.m_sOwnerType == hb::shared::owner::CT) npcPose = 2;
-	else if (state.m_sOwnerType == hb::shared::owner::AGC) npcPose = 2;
+	if (state.m_owner_type == hb::shared::owner::Wyvern) npcPose = 0;
+	else if (state.m_owner_type == hb::shared::owner::FireWyvern) npcPose = 0;
+	else if (state.m_owner_type == hb::shared::owner::HBT) npcPose = 2;
+	else if (state.m_owner_type == hb::shared::owner::CT) npcPose = 2;
+	else if (state.m_owner_type == hb::shared::owner::AGC) npcPose = 2;
 	else npcPose = 3;
 
 	EquipmentIndices eq = EquipmentIndices::CalcNpc(state, npcPose);
-	eq.CalcColors(state);
+	eq.calc_colors(state);
 
 	// Motion offset
-	int dx = static_cast<int>(m_game.m_pMapData->m_pData[state.m_iDataX][state.m_iDataY].m_motion.fCurrentOffsetX);
-	int dy = static_cast<int>(m_game.m_pMapData->m_pData[state.m_iDataX][state.m_iDataY].m_motion.fCurrentOffsetY);
+	int dx = static_cast<int>(m_game.m_map_data->m_data[state.m_data_x][state.m_data_y].m_motion.m_current_offset_x);
+	int dy = static_cast<int>(m_game.m_map_data->m_data[state.m_data_x][state.m_data_y].m_motion.m_current_offset_y);
 	int fix_x = sX + dx;
 	int fix_y = sY + dy;
 
-	int cFrame = state.m_iFrame;
+	int frame = state.m_frame;
 
 	// Crusade FOE indicator
-	if (m_game.m_bIsCrusadeMode)
-		m_game.DrawObjectFOE(fix_x, fix_y, cFrame);
+	if (m_game.m_is_crusade_mode)
+		m_game.draw_object_foe(fix_x, fix_y, frame);
 
 	// Effect auras
-	RenderHelpers::DrawEffectAuras(m_game, state, fix_x, fix_y);
+	RenderHelpers::draw_effect_auras(m_game, state, fix_x, fix_y);
 
-	if (!bTrans)
+	if (!trans)
 	{
-		m_game.CheckActiveAura(fix_x, fix_y, dwTime, state.m_sOwnerType);
+		m_game.check_active_aura(fix_x, fix_y, time, state.m_owner_type);
 
-		// Draw NPC body
-		RenderHelpers::DrawNpcLayers(m_game, eq, state, fix_x, fix_y, bInv);
+		// draw NPC body
+		RenderHelpers::draw_npc_layers(m_game, eq, state, fix_x, fix_y, inv);
 
 		// Berserk glow
-		RenderHelpers::DrawBerserkGlow(m_game, eq, state, fix_x, fix_y);
+		RenderHelpers::draw_berserk_glow(m_game, eq, state, fix_x, fix_y);
 
-		// Angel + aura — OnDamageMove uses 16+dir-1, cFrame%4
-		m_game.DrawAngel(16 + (state.m_iDir - 1), fix_x + 20, fix_y - 20, cFrame % 4, dwTime);
-		m_game.CheckActiveAura2(fix_x, fix_y, dwTime, state.m_sOwnerType);
+		// Angel + aura — OnDamageMove uses 16+dir-1, frame%4
+		m_game.draw_angel(16 + (state.m_dir - 1), fix_x + 20, fix_y - 20, frame % 4, time);
+		m_game.check_active_aura2(fix_x, fix_y, time, state.m_owner_type);
 	}
-	else if (state.m_cName[0] != '\0')
+	else if (state.m_name[0] != '\0')
 	{
-		RenderHelpers::DrawName(m_game, state, fix_x, fix_y);
+		RenderHelpers::draw_name(m_game, state, fix_x, fix_y);
 	}
 
 	// Chat message (always)
-	RenderHelpers::UpdateChat(m_game, state, fix_x, fix_y, indexX, indexY);
+	RenderHelpers::update_chat(m_game, state, fix_x, fix_y, indexX, indexY);
 
 	// Store motion offsets
-	state.m_iMoveOffsetX = dx;
-	state.m_iMoveOffsetY = dy;
+	state.m_move_offset_x = dx;
+	state.m_move_offset_y = dy;
 
 	// GM mode (always)
-	RenderHelpers::DrawGMEffect(m_game, state, fix_x, fix_y);
+	RenderHelpers::draw_gm_effect(m_game, state, fix_x, fix_y);
 
-	return m_game.m_pSprite[eq.iBodyIndex + (state.m_iDir - 1)]->GetBoundRect();
+	return m_game.m_sprite[eq.m_body_index + (state.m_dir - 1)]->GetBoundRect();
 }
 
-hb::shared::sprite::BoundRect CNpcRenderer::DrawDying(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime)
+hb::shared::sprite::BoundRect CNpcRenderer::draw_dying(int indexX, int indexY, int sX, int sY, bool trans, uint32_t time)
 {
 	hb::shared::sprite::BoundRect invalidRect = {0, -1, 0, 0};
-	auto& state = m_game.m_entityState;
+	auto& state = m_game.m_entity_state;
 
 	// No invisibility check for dying
 
-	int originalFrame = state.m_iFrame;
-	char cFrame = state.m_iFrame;
+	int originalFrame = state.m_frame;
+	char frame = state.m_frame;
 
 	// NPC dying: two-state with per-mob overrides
 	int npcPose;
 
-	if (cFrame < 4)
+	if (frame < 4)
 	{
 		if (state.m_appearance.HasNpcSpecialState())
 			npcPose = 4;
-		else if (state.m_sOwnerType == hb::shared::owner::Wyvern) npcPose = 2;
-		else if (state.m_sOwnerType == hb::shared::owner::FireWyvern) npcPose = 2;
-		else if (state.m_sOwnerType == hb::shared::owner::Abaddon) npcPose = 3;
-		else if (state.m_sOwnerType == hb::shared::owner::HBT) npcPose = 3;
-		else if (state.m_sOwnerType == hb::shared::owner::CT) npcPose = 3;
-		else if (state.m_sOwnerType == hb::shared::owner::AGC) npcPose = 3;
-		else if (state.m_sOwnerType == hb::shared::owner::Gate) npcPose = 2;
+		else if (state.m_owner_type == hb::shared::owner::Wyvern) npcPose = 2;
+		else if (state.m_owner_type == hb::shared::owner::FireWyvern) npcPose = 2;
+		else if (state.m_owner_type == hb::shared::owner::Abaddon) npcPose = 3;
+		else if (state.m_owner_type == hb::shared::owner::HBT) npcPose = 3;
+		else if (state.m_owner_type == hb::shared::owner::CT) npcPose = 3;
+		else if (state.m_owner_type == hb::shared::owner::AGC) npcPose = 3;
+		else if (state.m_owner_type == hb::shared::owner::Gate) npcPose = 2;
 		else npcPose = 0;
 
-		// Guard tower types: no special state → cFrame=0
-		switch (state.m_sOwnerType) {
+		// Guard tower types: no special state → frame=0
+		switch (state.m_owner_type) {
 		case hb::shared::owner::ArrowGuardTower:
 		case hb::shared::owner::CannonGuardTower:
 		case hb::shared::owner::ManaCollector:
@@ -757,139 +757,139 @@ hb::shared::sprite::BoundRect CNpcRenderer::DrawDying(int indexX, int indexY, in
 		case hb::shared::owner::EnergyShield:
 		case hb::shared::owner::GrandMagicGenerator:
 		case hb::shared::owner::ManaStone:
-			if (!state.m_appearance.HasNpcSpecialState()) cFrame = 0;
+			if (!state.m_appearance.HasNpcSpecialState()) frame = 0;
 			break;
-		case hb::shared::owner::Catapult: cFrame = 0; break;
+		case hb::shared::owner::Catapult: frame = 0; break;
 		}
 	}
 	else
 	{
-		switch (state.m_sOwnerType) {
-		case hb::shared::owner::Catapult: cFrame = 0; break;
-		default: cFrame -= 4; break;
+		switch (state.m_owner_type) {
+		case hb::shared::owner::Catapult: frame = 0; break;
+		default: frame -= 4; break;
 		}
 
 		if (state.m_appearance.HasNpcSpecialState())
 			npcPose = 4;
-		else if (state.m_sOwnerType == hb::shared::owner::Wyvern) npcPose = 2;
-		else if (state.m_sOwnerType == hb::shared::owner::FireWyvern) npcPose = 2;
-		else if (state.m_sOwnerType == hb::shared::owner::Abaddon) npcPose = 3;
-		else if (state.m_sOwnerType == hb::shared::owner::HBT) npcPose = 3;
-		else if (state.m_sOwnerType == hb::shared::owner::CT) npcPose = 3;
-		else if (state.m_sOwnerType == hb::shared::owner::AGC) npcPose = 3;
-		else if (state.m_sOwnerType == hb::shared::owner::Gate) npcPose = 2;
+		else if (state.m_owner_type == hb::shared::owner::Wyvern) npcPose = 2;
+		else if (state.m_owner_type == hb::shared::owner::FireWyvern) npcPose = 2;
+		else if (state.m_owner_type == hb::shared::owner::Abaddon) npcPose = 3;
+		else if (state.m_owner_type == hb::shared::owner::HBT) npcPose = 3;
+		else if (state.m_owner_type == hb::shared::owner::CT) npcPose = 3;
+		else if (state.m_owner_type == hb::shared::owner::AGC) npcPose = 3;
+		else if (state.m_owner_type == hb::shared::owner::Gate) npcPose = 2;
 		else npcPose = 4;
 	}
 
 	EquipmentIndices eq = EquipmentIndices::CalcNpc(state, npcPose);
-	eq.CalcColors(state);
+	eq.calc_colors(state);
 
 	// Apply NPC special frame override
 	if (state.m_appearance.HasNpcSpecialState())
-		cFrame = state.m_appearance.iSpecialFrame - 1;
+		frame = state.m_appearance.special_frame - 1;
 
-	state.m_iFrame = cFrame;
+	state.m_frame = frame;
 
 	// Crusade FOE indicator
-	if (m_game.m_bIsCrusadeMode)
-		m_game.DrawObjectFOE(sX, sY, cFrame);
+	if (m_game.m_is_crusade_mode)
+		m_game.draw_object_foe(sX, sY, frame);
 
 	// Effect auras
-	RenderHelpers::DrawEffectAuras(m_game, state, sX, sY);
+	RenderHelpers::draw_effect_auras(m_game, state, sX, sY);
 
-	if (!bTrans)
+	if (!trans)
 	{
 		// Shadow — includes Wyvern/FireWyvern in skip list for dying
-		RenderHelpers::DrawShadow(m_game, eq.iBodyIndex, sX, sY, cFrame, false, state.m_sOwnerType);
+		RenderHelpers::draw_shadow(m_game, eq.m_body_index, sX, sY, frame, false, state.m_owner_type);
 
 		// Abaddon death effects
-		if (state.m_sOwnerType == hb::shared::owner::Abaddon)
+		if (state.m_owner_type == hb::shared::owner::Abaddon)
 		{
-			m_game.m_pEffectSpr[152]->Draw(sX - 80, sY - 15, state.m_iEffectFrame % 27, hb::shared::sprite::DrawParams::Alpha(0.7f));
-			m_game.m_pEffectSpr[152]->Draw(sX, sY - 15, state.m_iEffectFrame % 27, hb::shared::sprite::DrawParams::Alpha(0.7f));
-			m_game.m_pEffectSpr[152]->Draw(sX - 40, sY, state.m_iEffectFrame % 27, hb::shared::sprite::DrawParams::Alpha(0.7f));
-			m_game.m_pEffectSpr[163]->Draw(sX - 90, sY - 80, state.m_iEffectFrame % 12, hb::shared::sprite::DrawParams::Alpha(0.7f));
-			m_game.m_pEffectSpr[160]->Draw(sX - 60, sY - 50, state.m_iEffectFrame % 12, hb::shared::sprite::DrawParams::Alpha(0.7f));
-			m_game.m_pEffectSpr[161]->Draw(sX - 30, sY - 20, state.m_iEffectFrame % 12, hb::shared::sprite::DrawParams::Alpha(0.7f));
-			m_game.m_pEffectSpr[162]->Draw(sX, sY - 100, state.m_iEffectFrame % 12, hb::shared::sprite::DrawParams::Alpha(0.7f));
-			m_game.m_pEffectSpr[163]->Draw(sX + 30, sY - 30, state.m_iEffectFrame % 12, hb::shared::sprite::DrawParams::Alpha(0.7f));
-			m_game.m_pEffectSpr[162]->Draw(sX + 60, sY - 90, state.m_iEffectFrame % 12, hb::shared::sprite::DrawParams::Alpha(0.7f));
-			m_game.m_pEffectSpr[163]->Draw(sX + 90, sY - 50, state.m_iEffectFrame % 12, hb::shared::sprite::DrawParams::Alpha(0.7f));
-			switch (state.m_iDir) {
-			case 1: m_game.m_pEffectSpr[140]->Draw(sX, sY, cFrame, hb::shared::sprite::DrawParams::Alpha(0.7f)); break;
-			case 2: m_game.m_pEffectSpr[141]->Draw(sX, sY, cFrame, hb::shared::sprite::DrawParams::Alpha(0.7f)); break;
-			case 3: m_game.m_pEffectSpr[142]->Draw(sX, sY, cFrame, hb::shared::sprite::DrawParams::Alpha(0.7f)); break;
-			case 4: m_game.m_pEffectSpr[143]->Draw(sX, sY, cFrame, hb::shared::sprite::DrawParams::Alpha(0.7f)); break;
-			case 5: m_game.m_pEffectSpr[144]->Draw(sX, sY, cFrame, hb::shared::sprite::DrawParams::Alpha(0.7f)); break;
-			case 6: m_game.m_pEffectSpr[145]->Draw(sX, sY, cFrame, hb::shared::sprite::DrawParams::Alpha(0.7f)); break;
-			case 7: m_game.m_pEffectSpr[146]->Draw(sX, sY, cFrame, hb::shared::sprite::DrawParams::Alpha(0.7f)); break;
-			case 8: m_game.m_pEffectSpr[147]->Draw(sX, sY, cFrame, hb::shared::sprite::DrawParams::Alpha(0.7f)); break;
+			m_game.m_effect_sprites[152]->draw(sX - 80, sY - 15, state.m_effect_frame % 27, hb::shared::sprite::DrawParams::alpha_blend(0.7f));
+			m_game.m_effect_sprites[152]->draw(sX, sY - 15, state.m_effect_frame % 27, hb::shared::sprite::DrawParams::alpha_blend(0.7f));
+			m_game.m_effect_sprites[152]->draw(sX - 40, sY, state.m_effect_frame % 27, hb::shared::sprite::DrawParams::alpha_blend(0.7f));
+			m_game.m_effect_sprites[163]->draw(sX - 90, sY - 80, state.m_effect_frame % 12, hb::shared::sprite::DrawParams::alpha_blend(0.7f));
+			m_game.m_effect_sprites[160]->draw(sX - 60, sY - 50, state.m_effect_frame % 12, hb::shared::sprite::DrawParams::alpha_blend(0.7f));
+			m_game.m_effect_sprites[161]->draw(sX - 30, sY - 20, state.m_effect_frame % 12, hb::shared::sprite::DrawParams::alpha_blend(0.7f));
+			m_game.m_effect_sprites[162]->draw(sX, sY - 100, state.m_effect_frame % 12, hb::shared::sprite::DrawParams::alpha_blend(0.7f));
+			m_game.m_effect_sprites[163]->draw(sX + 30, sY - 30, state.m_effect_frame % 12, hb::shared::sprite::DrawParams::alpha_blend(0.7f));
+			m_game.m_effect_sprites[162]->draw(sX + 60, sY - 90, state.m_effect_frame % 12, hb::shared::sprite::DrawParams::alpha_blend(0.7f));
+			m_game.m_effect_sprites[163]->draw(sX + 90, sY - 50, state.m_effect_frame % 12, hb::shared::sprite::DrawParams::alpha_blend(0.7f));
+			switch (state.m_dir) {
+			case 1: m_game.m_effect_sprites[140]->draw(sX, sY, frame, hb::shared::sprite::DrawParams::alpha_blend(0.7f)); break;
+			case 2: m_game.m_effect_sprites[141]->draw(sX, sY, frame, hb::shared::sprite::DrawParams::alpha_blend(0.7f)); break;
+			case 3: m_game.m_effect_sprites[142]->draw(sX, sY, frame, hb::shared::sprite::DrawParams::alpha_blend(0.7f)); break;
+			case 4: m_game.m_effect_sprites[143]->draw(sX, sY, frame, hb::shared::sprite::DrawParams::alpha_blend(0.7f)); break;
+			case 5: m_game.m_effect_sprites[144]->draw(sX, sY, frame, hb::shared::sprite::DrawParams::alpha_blend(0.7f)); break;
+			case 6: m_game.m_effect_sprites[145]->draw(sX, sY, frame, hb::shared::sprite::DrawParams::alpha_blend(0.7f)); break;
+			case 7: m_game.m_effect_sprites[146]->draw(sX, sY, frame, hb::shared::sprite::DrawParams::alpha_blend(0.7f)); break;
+			case 8: m_game.m_effect_sprites[147]->draw(sX, sY, frame, hb::shared::sprite::DrawParams::alpha_blend(0.7f)); break;
 			}
 		}
-		else if (state.m_sOwnerType == hb::shared::owner::Wyvern)
+		else if (state.m_owner_type == hb::shared::owner::Wyvern)
 		{
-			m_game.m_pSprite[eq.iBodyIndex + (state.m_iDir - 1)]->Draw(sX, sY, cFrame, hb::shared::sprite::DrawParams::Alpha(0.5f));
+			m_game.m_sprite[eq.m_body_index + (state.m_dir - 1)]->draw(sX, sY, frame, hb::shared::sprite::DrawParams::alpha_blend(0.5f));
 		}
-		else if (state.m_sOwnerType == hb::shared::owner::FireWyvern)
+		else if (state.m_owner_type == hb::shared::owner::FireWyvern)
 		{
-			m_game.m_pSprite[33]->Draw(sX, sY, cFrame, hb::shared::sprite::DrawParams::Alpha(0.5f));
-			switch (state.m_iDir) {
-			case 1: m_game.m_pEffectSpr[141]->Draw(sX, sY, cFrame + 8, hb::shared::sprite::DrawParams::Alpha(0.7f)); break;
-			case 2: m_game.m_pEffectSpr[142]->Draw(sX, sY, cFrame + 8, hb::shared::sprite::DrawParams::Alpha(0.7f)); break;
-			case 3: m_game.m_pEffectSpr[143]->Draw(sX, sY, cFrame + 8, hb::shared::sprite::DrawParams::Alpha(0.7f)); break;
-			case 4: m_game.m_pEffectSpr[144]->Draw(sX, sY, cFrame + 8, hb::shared::sprite::DrawParams::Alpha(0.7f)); break;
-			case 5: m_game.m_pEffectSpr[145]->Draw(sX, sY, cFrame + 8, hb::shared::sprite::DrawParams::Alpha(0.7f)); break;
-			case 6: m_game.m_pEffectSpr[146]->Draw(sX, sY, cFrame + 8, hb::shared::sprite::DrawParams::Alpha(0.7f)); break;
-			case 7: m_game.m_pEffectSpr[147]->Draw(sX, sY, cFrame + 8, hb::shared::sprite::DrawParams::Alpha(0.7f)); break;
-			case 8: m_game.m_pEffectSpr[141]->Draw(sX, sY, cFrame + 8, hb::shared::sprite::DrawParams::Alpha(0.7f)); break;
+			m_game.m_sprite[33]->draw(sX, sY, frame, hb::shared::sprite::DrawParams::alpha_blend(0.5f));
+			switch (state.m_dir) {
+			case 1: m_game.m_effect_sprites[141]->draw(sX, sY, frame + 8, hb::shared::sprite::DrawParams::alpha_blend(0.7f)); break;
+			case 2: m_game.m_effect_sprites[142]->draw(sX, sY, frame + 8, hb::shared::sprite::DrawParams::alpha_blend(0.7f)); break;
+			case 3: m_game.m_effect_sprites[143]->draw(sX, sY, frame + 8, hb::shared::sprite::DrawParams::alpha_blend(0.7f)); break;
+			case 4: m_game.m_effect_sprites[144]->draw(sX, sY, frame + 8, hb::shared::sprite::DrawParams::alpha_blend(0.7f)); break;
+			case 5: m_game.m_effect_sprites[145]->draw(sX, sY, frame + 8, hb::shared::sprite::DrawParams::alpha_blend(0.7f)); break;
+			case 6: m_game.m_effect_sprites[146]->draw(sX, sY, frame + 8, hb::shared::sprite::DrawParams::alpha_blend(0.7f)); break;
+			case 7: m_game.m_effect_sprites[147]->draw(sX, sY, frame + 8, hb::shared::sprite::DrawParams::alpha_blend(0.7f)); break;
+			case 8: m_game.m_effect_sprites[141]->draw(sX, sY, frame + 8, hb::shared::sprite::DrawParams::alpha_blend(0.7f)); break;
 			}
 		}
 		else
 		{
 			// Normal NPC body draw
-			RenderHelpers::DrawBody(m_game, eq.iBodyIndex, sX, sY, cFrame, false, state.m_sOwnerType, state.m_status.bFrozen);
+			RenderHelpers::draw_body(m_game, eq.m_body_index, sX, sY, frame, false, state.m_owner_type, state.m_status.frozen);
 		}
 
-		{ auto br = m_game.m_pSprite[eq.iBodyIndex + (state.m_iDir - 1)]->GetBoundRect();
-		  m_game.m_rcBodyRect = hb::shared::geometry::GameRectangle(br.left, br.top, br.right - br.left, br.bottom - br.top); }
+		{ auto br = m_game.m_sprite[eq.m_body_index + (state.m_dir - 1)]->GetBoundRect();
+		  m_game.m_body_rect = hb::shared::geometry::GameRectangle(br.left, br.top, br.right - br.left, br.bottom - br.top); }
 
 		// Berserk glow
-		RenderHelpers::DrawBerserkGlow(m_game, eq, state, sX, sY);
+		RenderHelpers::draw_berserk_glow(m_game, eq, state, sX, sY);
 
 		// Angel + aura — OnDying uses 24+dir-1, ORIGINAL frame
-		m_game.DrawAngel(24 + (state.m_iDir - 1), sX + 20, sY - 20, originalFrame, dwTime);
-		m_game.CheckActiveAura2(sX, sY, dwTime, state.m_sOwnerType);
+		m_game.draw_angel(24 + (state.m_dir - 1), sX + 20, sY - 20, originalFrame, time);
+		m_game.check_active_aura2(sX, sY, time, state.m_owner_type);
 	}
-	else if (state.m_cName[0] != '\0')
+	else if (state.m_name[0] != '\0')
 	{
-		RenderHelpers::DrawName(m_game, state, sX, sY);
+		RenderHelpers::draw_name(m_game, state, sX, sY);
 	}
 
 	// Chat message (always)
-	RenderHelpers::UpdateChat(m_game, state, sX, sY, indexX, indexY);
+	RenderHelpers::update_chat(m_game, state, sX, sY, indexX, indexY);
 
-	return m_game.m_pSprite[eq.iBodyIndex + (state.m_iDir - 1)]->GetBoundRect();
+	return m_game.m_sprite[eq.m_body_index + (state.m_dir - 1)]->GetBoundRect();
 }
 
-hb::shared::sprite::BoundRect CNpcRenderer::DrawDead(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime)
+hb::shared::sprite::BoundRect CNpcRenderer::draw_dead(int indexX, int indexY, int sX, int sY, bool trans, uint32_t time)
 {
 	hb::shared::sprite::BoundRect invalidRect = {0, -1, 0, 0};
-	auto& state = m_game.m_entityState;
+	auto& state = m_game.m_entity_state;
 
 	// Wyvern: early return — no corpse
-	if (state.m_sOwnerType == hb::shared::owner::Wyvern) return invalidRect;
+	if (state.m_owner_type == hb::shared::owner::Wyvern) return invalidRect;
 
 	// Per-mob frame and pose table
-	int iFrame;
+	int frame;
 	int npcPose;
 
-	switch (state.m_sOwnerType) {
+	switch (state.m_owner_type) {
 	case hb::shared::owner::Troll:
 	case hb::shared::owner::Ogre:
 	case hb::shared::owner::Liche:
 	case hb::shared::owner::Demon:
 	case hb::shared::owner::Frost:
-		iFrame = 5;
+		frame = 5;
 		npcPose = 4;
 		break;
 
@@ -930,109 +930,109 @@ hb::shared::sprite::BoundRect CNpcRenderer::DrawDead(int indexX, int indexY, int
 	case hb::shared::owner::MasterElf:
 	case hb::shared::owner::DSK:
 	case hb::shared::owner::Barbarian:
-		iFrame = 7;
+		frame = 7;
 		npcPose = 4;
 		break;
 
 	case hb::shared::owner::HBT:
 	case hb::shared::owner::CT:
 	case hb::shared::owner::AGC:
-		iFrame = 7;
+		frame = 7;
 		npcPose = 3;
 		break;
 
 	case hb::shared::owner::Wyvern:
-		iFrame = 15;
+		frame = 15;
 		npcPose = 2;
 		break;
 
 	case hb::shared::owner::FireWyvern:
-		iFrame = 7;
+		frame = 7;
 		npcPose = 2;
-		bTrans = true;
+		trans = true;
 		break;
 
 	case hb::shared::owner::Abaddon:
-		iFrame = 0;
+		frame = 0;
 		npcPose = 3;
-		bTrans = true;
+		trans = true;
 		break;
 
 	case hb::shared::owner::Catapult:
-		iFrame = 0;
+		frame = 0;
 		npcPose = 4;
 		break;
 
 	case hb::shared::owner::Gargoyle:
-		iFrame = 11;
+		frame = 11;
 		npcPose = 4;
 		break;
 
 	case hb::shared::owner::Gate:
-		iFrame = 5;
+		frame = 5;
 		npcPose = 2;
 		break;
 
 	default:
-		iFrame = 3;
+		frame = 3;
 		npcPose = 4;
 		break;
 	}
 
 	EquipmentIndices eq = EquipmentIndices::CalcNpc(state, npcPose);
-	eq.CalcColors(state);
+	eq.calc_colors(state);
 
-	if (!bTrans)
+	if (!trans)
 	{
-		if (state.m_iFrame == -1)
+		if (state.m_frame == -1)
 		{
 			// Full corpse draw — just-died state
-			state.m_iFrame = iFrame;
-			RenderHelpers::DrawBody(m_game, eq.iBodyIndex, sX, sY, iFrame, false, state.m_sOwnerType, state.m_status.bFrozen);
+			state.m_frame = frame;
+			RenderHelpers::draw_body(m_game, eq.m_body_index, sX, sY, frame, false, state.m_owner_type, state.m_status.frozen);
 		}
-		else if (state.m_status.bBerserk)
+		else if (state.m_status.berserk)
 		{
 			// Berserk corpse fade (clamped to prevent negative color values)
-			int r = (std::max)(0, 202 - 4 * state.m_iFrame);
-			int gb = (std::max)(0, 182 - 4 * state.m_iFrame);
-			m_game.m_pSprite[eq.iBodyIndex + (state.m_iDir - 1)]->Draw(sX, sY, iFrame,
-				hb::shared::sprite::DrawParams::TintedAlpha(r, gb, gb, 0.7f));
+			int r = (std::max)(0, 202 - 4 * state.m_frame);
+			int gb = (std::max)(0, 182 - 4 * state.m_frame);
+			m_game.m_sprite[eq.m_body_index + (state.m_dir - 1)]->draw(sX, sY, frame,
+				hb::shared::sprite::DrawParams::tinted_alpha(r, gb, gb, 0.7f));
 		}
 		else
 		{
 			// Normal corpse fade (clamped to prevent negative color values)
-			int fade = (std::max)(0, 192 - 4 * state.m_iFrame);
-			m_game.m_pSprite[eq.iBodyIndex + (state.m_iDir - 1)]->Draw(sX, sY, iFrame,
-				hb::shared::sprite::DrawParams::TintedAlpha(fade, fade, fade, 0.7f));
+			int fade = (std::max)(0, 192 - 4 * state.m_frame);
+			m_game.m_sprite[eq.m_body_index + (state.m_dir - 1)]->draw(sX, sY, frame,
+				hb::shared::sprite::DrawParams::tinted_alpha(fade, fade, fade, 0.7f));
 		}
 	}
-	else if (state.m_cName[0] != '\0')
+	else if (state.m_name[0] != '\0')
 	{
-		RenderHelpers::DrawName(m_game, state, sX, sY);
+		RenderHelpers::draw_name(m_game, state, sX, sY);
 	}
 
-	// Chat message — uses ClearDeadChatMsg for dead entities
-	if (state.m_iChatIndex != 0)
+	// Chat message — uses clear_dead_chat_msg for dead entities
+	if (state.m_chat_index != 0)
 	{
-		if (m_game.m_floatingText.IsValid(state.m_iChatIndex, state.m_wObjectID))
+		if (m_game.m_floating_text.is_valid(state.m_chat_index, state.m_object_id))
 		{
-			m_game.m_floatingText.UpdatePosition(state.m_iChatIndex, static_cast<short>(sX), static_cast<short>(sY));
+			m_game.m_floating_text.update_position(state.m_chat_index, static_cast<short>(sX), static_cast<short>(sY));
 		}
 		else
 		{
-			m_game.m_pMapData->ClearDeadChatMsg(indexX, indexY);
+			m_game.m_map_data->clear_dead_chat_msg(indexX, indexY);
 		}
 	}
 
 	// Abaddon corpse effects
-	if (state.m_sOwnerType == hb::shared::owner::Abaddon)
+	if (state.m_owner_type == hb::shared::owner::Abaddon)
 	{
-		m_game.Abaddon_corpse(sX, sY);
+		m_game.abaddon_corpse(sX, sY);
 	}
-	else if (state.m_sOwnerType == hb::shared::owner::FireWyvern)
+	else if (state.m_owner_type == hb::shared::owner::FireWyvern)
 	{
-		m_game.m_pEffectSpr[35]->Draw(sX + 20, sY - 15, rand() % 10, hb::shared::sprite::DrawParams::Alpha(0.7f));
+		m_game.m_effect_sprites[35]->draw(sX + 20, sY - 15, rand() % 10, hb::shared::sprite::DrawParams::alpha_blend(0.7f));
 	}
 
-	return m_game.m_pSprite[eq.iBodyIndex + (state.m_iDir - 1)]->GetBoundRect();
+	return m_game.m_sprite[eq.m_body_index + (state.m_dir - 1)]->GetBoundRect();
 }

@@ -35,15 +35,15 @@ public:
 	{
 	}
 
-	int m_iDelayType;
-	int m_iEffectType;
+	int m_delay_type;
+	int m_effect_type;
 
-	char m_cMapIndex;
-	int m_dX, m_dY;
+	char m_map_index;
+	int m_dx, m_dy;
 
-	int  m_iTargetH;
-	char m_cTargetType;
-	int m_iV1, m_iV2, m_iV3;
+	int  m_target_handle;
+	char m_target_type;
+	int m_v1, m_v2, m_v3;
 
-	uint32_t m_dwTriggerTime;
+	uint32_t m_trigger_time;
 };

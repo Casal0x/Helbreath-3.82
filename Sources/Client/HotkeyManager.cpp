@@ -2,33 +2,33 @@
 #include "IInput.h"
 #include <utility>
 
-HotkeyManager& HotkeyManager::Get()
+HotkeyManager& HotkeyManager::get()
 {
 	static HotkeyManager s_instance;
 	return s_instance;
 }
 
-void HotkeyManager::Clear()
+void HotkeyManager::clear()
 {
 	m_entries.clear();
 }
 
-void HotkeyManager::Register(const KeyCombo& combo, Trigger trigger, std::function<void()> callback)
+void HotkeyManager::register_hotkey(const KeyCombo& combo, Trigger trigger, std::function<void()> callback)
 {
 	m_entries.push_back(Entry{ combo, trigger, std::move(callback) });
 }
 
-bool HotkeyManager::HandleKeyDown(KeyCode vk)
+bool HotkeyManager::handle_key_down(KeyCode vk)
 {
-	return HandleKey(vk, Trigger::KeyDown);
+	return handle_key(vk, Trigger::KeyDown);
 }
 
-bool HotkeyManager::HandleKeyUp(KeyCode vk)
+bool HotkeyManager::handle_key_up(KeyCode vk)
 {
-	return HandleKey(vk, Trigger::KeyUp);
+	return handle_key(vk, Trigger::KeyUp);
 }
 
-bool HotkeyManager::HandleKey(KeyCode vk, Trigger trigger)
+bool HotkeyManager::handle_key(KeyCode vk, Trigger trigger)
 {
 	if (m_entries.empty()) {
 		return false;

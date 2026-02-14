@@ -9,13 +9,13 @@
 #include <direct.h>
 #endif
 
-LocalCacheManager& LocalCacheManager::Get()
+LocalCacheManager& LocalCacheManager::get()
 {
 	static LocalCacheManager instance;
 	return instance;
 }
 
-void LocalCacheManager::Initialize()
+void LocalCacheManager::initialize()
 {
 #ifdef _WIN32
 	_mkdir("cache");
@@ -27,7 +27,7 @@ void LocalCacheManager::Initialize()
 	}
 }
 
-void LocalCacheManager::Shutdown()
+void LocalCacheManager::shutdown()
 {
 	for (int i = 0; i < static_cast<int>(ConfigCacheType::COUNT); i++) {
 		m_state[i] = {};
@@ -36,17 +36,17 @@ void LocalCacheManager::Shutdown()
 	}
 }
 
-bool LocalCacheManager::HasCache(ConfigCacheType type) const
+bool LocalCacheManager::has_cache(ConfigCacheType type) const
 {
 	return m_state[static_cast<int>(type)].hasCache;
 }
 
-uint32_t LocalCacheManager::GetHash(ConfigCacheType type) const
+uint32_t LocalCacheManager::get_hash(ConfigCacheType type) const
 {
 	return m_state[static_cast<int>(type)].hash;
 }
 
-void LocalCacheManager::AccumulatePacket(ConfigCacheType type, const char* pData, uint32_t size)
+void LocalCacheManager::accumulate_packet(ConfigCacheType type, const char* data, uint32_t size)
 {
 	if (m_bIsReplaying) return;
 
@@ -59,11 +59,11 @@ void LocalCacheManager::AccumulatePacket(ConfigCacheType type, const char* pData
 	acc.data.push_back(lenBytes[0]);
 	acc.data.push_back(lenBytes[1]);
 	acc.data.insert(acc.data.end(),
-		reinterpret_cast<const uint8_t*>(pData),
-		reinterpret_cast<const uint8_t*>(pData) + size);
+		reinterpret_cast<const uint8_t*>(data),
+		reinterpret_cast<const uint8_t*>(data) + size);
 }
 
-bool LocalCacheManager::FinalizeAndSave(ConfigCacheType type)
+bool LocalCacheManager::finalize_and_save(ConfigCacheType type)
 {
 	if (m_bIsReplaying) return false;
 
@@ -97,7 +97,7 @@ bool LocalCacheManager::FinalizeAndSave(ConfigCacheType type)
 	return true;
 }
 
-bool LocalCacheManager::ReplayFromCache(ConfigCacheType type, PacketCallback cb, void* ctx)
+bool LocalCacheManager::replay_from_cache(ConfigCacheType type, PacketCallback cb, void* ctx)
 {
 	m_bIsReplaying = true;
 
@@ -149,7 +149,7 @@ bool LocalCacheManager::ReplayFromCache(ConfigCacheType type, PacketCallback cb,
 	return true;
 }
 
-void LocalCacheManager::ResetAccumulator(ConfigCacheType type)
+void LocalCacheManager::reset_accumulator(ConfigCacheType type)
 {
 	auto& acc = m_accum[static_cast<int>(type)];
 	acc.data.clear();

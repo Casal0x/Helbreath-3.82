@@ -26,7 +26,7 @@ private:
 #endif
 
 public:
-    static void Allocate()
+    static void allocate()
     {
 #ifdef _WIN32
         if (s_bAllocated) return;
@@ -38,11 +38,11 @@ public:
 
             SetConsoleTitleA("Helbreath Debug Console");
 
-            // Enable ANSI colors (Windows 10+)
+            // enable ANSI colors (Windows 10+)
             HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
-            DWORD dwMode = 0;
-            GetConsoleMode(hOut, &dwMode);
-            SetConsoleMode(hOut, dwMode | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+            DWORD mode = 0;
+            GetConsoleMode(hOut, &mode);
+            SetConsoleMode(hOut, mode | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
 
             s_bAllocated = true;
             s_lastWorkingSet = 0;
@@ -51,7 +51,7 @@ public:
 #endif
     }
 
-    static void Deallocate()
+    static void deallocate()
     {
 #ifdef _WIN32
         if (!s_bAllocated) return;
@@ -66,9 +66,9 @@ public:
 #endif
     }
 
-    static bool IsAllocated() { return s_bAllocated; }
+    static bool is_allocated() { return s_bAllocated; }
 
-    static void PrintMemory(const char* pLabel)
+    static void print_memory(const char* label)
     {
 #ifdef _WIN32
         if (!s_bAllocated) return;
@@ -76,21 +76,21 @@ public:
         PROCESS_MEMORY_COUNTERS_EX pmc;
         if (GetProcessMemoryInfo(GetCurrentProcess(), (PROCESS_MEMORY_COUNTERS*)&pmc, sizeof(pmc)))
         {
-            double dWorkingMB = pmc.WorkingSetSize / (1024.0 * 1024.0);
-            double dPrivateMB = pmc.PrivateUsage / (1024.0 * 1024.0);
-            double dPeakMB = pmc.PeakWorkingSetSize / (1024.0 * 1024.0);
+            double working_mb = pmc.WorkingSetSize / (1024.0 * 1024.0);
+            double private_mb = pmc.PrivateUsage / (1024.0 * 1024.0);
+            double peak_mb = pmc.PeakWorkingSetSize / (1024.0 * 1024.0);
 
             if (s_lastWorkingSet > 0)
             {
-                double dDeltaMB = static_cast<double>((LONGLONG)pmc.WorkingSetSize - (LONGLONG)s_lastWorkingSet) / (1024.0 * 1024.0);
-                const char* pSign = (dDeltaMB >= 0) ? "+" : "";
+                double delta_mb = static_cast<double>((LONGLONG)pmc.WorkingSetSize - (LONGLONG)s_lastWorkingSet) / (1024.0 * 1024.0);
+                const char* sign = (delta_mb >= 0) ? "+" : "";
                 printf("[MEMORY] %-20s Working: %6.2f MB | Private: %6.2f MB | Peak: %6.2f MB (%s%.2f MB)\n",
-                    pLabel, dWorkingMB, dPrivateMB, dPeakMB, pSign, dDeltaMB);
+                    label, working_mb, private_mb, peak_mb, sign, delta_mb);
             }
             else
             {
                 printf("[MEMORY] %-20s Working: %6.2f MB | Private: %6.2f MB | Peak: %6.2f MB\n",
-                    pLabel, dWorkingMB, dPrivateMB, dPeakMB);
+                    label, working_mb, private_mb, peak_mb);
             }
 
             s_lastWorkingSet = pmc.WorkingSetSize;
@@ -98,7 +98,7 @@ public:
 #endif
     }
 
-    static void ResetMemoryDelta()
+    static void reset_memory_delta()
     {
 #ifdef _WIN32
         s_lastWorkingSet = 0;
@@ -130,35 +130,35 @@ private:
     const char* m_pName;
 
     struct BenchmarkSlot {
-        const char* pName;
-        int64_t accumulated_ns;
-        int iCallCount;
-        TimePoint lastOutputTime;
+        const char* m_name;
+        int64_t m_accumulated_ns;
+        int m_call_count;
+        TimePoint m_last_output_time;
     };
     static BenchmarkSlot s_slots[64];
     static int s_iSlotCount;
 
-    int FindOrCreateSlot(const char* pName) {
+    int find_or_create_slot(const char* name) {
         for (int i = 0; i < s_iSlotCount; i++) {
-            if (strcmp(s_slots[i].pName, pName) == 0) {
+            if (strcmp(s_slots[i].m_name, name) == 0) {
                 return i;
             }
         }
 
         if (s_iSlotCount < 64) {
             int idx = s_iSlotCount++;
-            s_slots[idx].pName = pName;
-            s_slots[idx].accumulated_ns = 0;
-            s_slots[idx].iCallCount = 0;
-            s_slots[idx].lastOutputTime = Clock::now();
+            s_slots[idx].m_name = name;
+            s_slots[idx].m_accumulated_ns = 0;
+            s_slots[idx].m_call_count = 0;
+            s_slots[idx].m_last_output_time = Clock::now();
             return idx;
         }
         return -1;
     }
 
 public:
-    BenchmarkScope(const char* pName)
-        : m_pName(pName)
+    BenchmarkScope(const char* name)
+        : m_pName(name)
         , m_start(Clock::now())
     {
     }
@@ -168,29 +168,29 @@ public:
         auto end = Clock::now();
         int64_t elapsed_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(end - m_start).count();
 
-        int slot = FindOrCreateSlot(m_pName);
+        int slot = find_or_create_slot(m_pName);
         if (slot < 0) return;
 
-        s_slots[slot].accumulated_ns += elapsed_ns;
-        s_slots[slot].iCallCount++;
+        s_slots[slot].m_accumulated_ns += elapsed_ns;
+        s_slots[slot].m_call_count++;
 
-        auto since_last = std::chrono::duration_cast<std::chrono::milliseconds>(end - s_slots[slot].lastOutputTime).count();
+        auto since_last = std::chrono::duration_cast<std::chrono::milliseconds>(end - s_slots[slot].m_last_output_time).count();
         if (since_last >= 1000) {
-            double dAvgMs = (s_slots[slot].accumulated_ns / 1000000.0) / s_slots[slot].iCallCount;
-            double dAvgUs = (s_slots[slot].accumulated_ns / 1000.0) / s_slots[slot].iCallCount;
-            double dTotalMs = s_slots[slot].accumulated_ns / 1000000.0;
+            double avg_ms = (s_slots[slot].m_accumulated_ns / 1000000.0) / s_slots[slot].m_call_count;
+            double avg_us = (s_slots[slot].m_accumulated_ns / 1000.0) / s_slots[slot].m_call_count;
+            double total_ms = s_slots[slot].m_accumulated_ns / 1000000.0;
 
-            if (dAvgMs >= 1.0) {
+            if (avg_ms >= 1.0) {
                 printf("[BENCHMARK] %s: %.3f ms/call (%d calls, %.1f ms total in 1s)\n",
-                         m_pName, dAvgMs, s_slots[slot].iCallCount, dTotalMs);
+                         m_pName, avg_ms, s_slots[slot].m_call_count, total_ms);
             } else {
                 printf("[BENCHMARK] %s: %.1f us/call (%d calls, %.3f ms total in 1s)\n",
-                         m_pName, dAvgUs, s_slots[slot].iCallCount, dTotalMs);
+                         m_pName, avg_us, s_slots[slot].m_call_count, total_ms);
             }
 
-            s_slots[slot].accumulated_ns = 0;
-            s_slots[slot].iCallCount = 0;
-            s_slots[slot].lastOutputTime = end;
+            s_slots[slot].m_accumulated_ns = 0;
+            s_slots[slot].m_call_count = 0;
+            s_slots[slot].m_last_output_time = end;
         }
     }
 };

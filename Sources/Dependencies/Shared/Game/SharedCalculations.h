@@ -16,23 +16,23 @@ namespace hb::shared::calc {
 
 // Calculate maximum HP
 // Formula: Vit * 3 + Level * 2 + (Str + AngelicStr) / 2
-inline int CalculateMaxHP(int iVit, int iLevel, int iStr, int iAngelicStr)
+inline int CalculateMaxHP(int vit, int level, int str, int angelic_str)
 {
-	return iVit * 3 + iLevel * 2 + (iStr + iAngelicStr) / 2;
+	return vit * 3 + level * 2 + (str + angelic_str) / 2;
 }
 
 // Calculate maximum MP
 // Formula: (Mag + AngelicMag) * 2 + Level * 2 + (Int + AngelicInt) / 2
-inline int CalculateMaxMP(int iMag, int iAngelicMag, int iLevel, int iInt, int iAngelicInt)
+inline int CalculateMaxMP(int mag, int angelic_mag, int level, int iInt, int angelic_int)
 {
-	return (iMag + iAngelicMag) * 2 + iLevel * 2 + (iInt + iAngelicInt) / 2;
+	return (mag + angelic_mag) * 2 + level * 2 + (iInt + angelic_int) / 2;
 }
 
 // Calculate maximum SP (Stamina)
 // Formula: (Str + AngelicStr) * 2 + Level * 2
-inline int CalculateMaxSP(int iStr, int iAngelicStr, int iLevel)
+inline int CalculateMaxSP(int str, int angelic_str, int level)
 {
-	return (iStr + iAngelicStr) * 2 + iLevel * 2;
+	return (str + angelic_str) * 2 + level * 2;
 }
 
 // ============================================================================
@@ -41,9 +41,9 @@ inline int CalculateMaxSP(int iStr, int iAngelicStr, int iLevel)
 
 // Calculate maximum carry weight
 // Formula: (Str + AngelicStr) * 5 + Level * 5
-inline int CalculateMaxLoad(int iStr, int iAngelicStr, int iLevel)
+inline int CalculateMaxLoad(int str, int angelic_str, int level)
 {
-	return (iStr + iAngelicStr) * 5 + iLevel * 5;
+	return (str + angelic_str) * 5 + level * 5;
 }
 
 // ============================================================================
@@ -52,9 +52,9 @@ inline int CalculateMaxLoad(int iStr, int iAngelicStr, int iLevel)
 
 // Calculate maximum stat value based on server configuration
 // Formula: BaseStatValue + CreationStatBonus + (LevelupStatGain * MaxLevel) + AngelicBonus(16)
-inline int CalculateMaxStatValue(int iBaseStatValue, int iCreationStatBonus, int iLevelupStatGain, int iMaxLevel)
+inline int CalculateMaxStatValue(int base_stat_value, int creation_stat_bonus, int levelup_stat_gain, int max_level)
 {
-	return iBaseStatValue + iCreationStatBonus + (iLevelupStatGain * iMaxLevel) + 16;
+	return base_stat_value + creation_stat_bonus + (levelup_stat_gain * max_level) + 16;
 }
 
 // ============================================================================
@@ -63,11 +63,11 @@ inline int CalculateMaxStatValue(int iBaseStatValue, int iCreationStatBonus, int
 
 // Calculate experience required for a given level
 // Formula: Recursive - GetLevelExp(Level-1) + Level * (50 + (Level * (Level/17) * (Level/17)))
-// Note: This is a recursive function - for performance, server pre-caches this in m_iLevelExpTable[]
-inline uint32_t CalculateLevelExp(int iLevel)
+// Note: This is a recursive function - for performance, server pre-caches this in m_level_exp_table[]
+inline uint32_t CalculateLevelExp(int level)
 {
-	if (iLevel <= 0) return 0;
-	return CalculateLevelExp(iLevel - 1) + iLevel * (50 + (iLevel * (iLevel / 17) * (iLevel / 17)));
+	if (level <= 0) return 0;
+	return CalculateLevelExp(level - 1) + level * (50 + (level * (level / 17) * (level / 17)));
 }
 
 // ============================================================================
@@ -77,17 +77,17 @@ inline uint32_t CalculateLevelExp(int iLevel)
 // Calculate level-up stat points pool (server-side storage value)
 // Formula: Level * 3 - (TotalStats - 70)
 // Where TotalStats = Str + Vit + Dex + Int + Mag + Charisma
-inline int CalculateLevelUpPool(int iLevel, int iTotalStats)
+inline int CalculateLevelUpPool(int level, int total_stats)
 {
-	return iLevel * 3 - (iTotalStats - 70);
+	return level * 3 - (total_stats - 70);
 }
 
 // Calculate level-up stat points for display (client-side)
 // Formula: Level * 3 - (TotalStats - 70) - 3
 // The -3 accounts for base starting points in display
-inline int CalculateLevelUpPointsDisplay(int iLevel, int iTotalStats)
+inline int CalculateLevelUpPointsDisplay(int level, int total_stats)
 {
-	return CalculateLevelUpPool(iLevel, iTotalStats) - 3;
+	return CalculateLevelUpPool(level, total_stats) - 3;
 }
 
 } // namespace hb::shared::calc

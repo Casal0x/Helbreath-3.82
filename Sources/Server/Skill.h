@@ -13,7 +13,7 @@ namespace EffectType
 {
 	enum : int
 	{
-		Get     = 1,
+		get     = 1,
 		Pretend = 2,
 		Taming  = 3,
 	};
@@ -26,21 +26,21 @@ class CSkill
 public:
 	inline CSkill()
 	{
-		std::memset(m_cName, 0, sizeof(m_cName));
-		m_bIsUseable = false;
-		m_cUseMethod = 0;
+		std::memset(m_name, 0, sizeof(m_name));
+		m_is_useable = false;
+		m_use_method = 0;
 	}
 
 	inline virtual ~CSkill()
 	{
 	}
 
-	char m_cName[42];
+	char m_name[42];
 
-	short m_sType;
-	short m_sValue1, m_sValue2, m_sValue3, m_sValue4, m_sValue5, m_sValue6;
+	short m_type;
+	short m_value_1, m_value_2, m_value_3, m_value_4, m_value_5, m_value_6;
 
 	// Client display fields (sent via PacketSkillConfig)
-	bool  m_bIsUseable;    // Whether skill can be actively used
-	char  m_cUseMethod;    // Use method (0=passive, 1=click, 2=target)
+	bool  m_is_useable;    // Whether skill can be actively used
+	char  m_use_method;    // Use method (0=passive, 1=click, 2=target)
 };

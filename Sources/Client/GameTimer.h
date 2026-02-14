@@ -7,7 +7,7 @@ class GameTimer
 public:
     bool check_and_reset()
     {
-        uint32_t now = GameClock::GetTimeMS();
+        uint32_t now = GameClock::get_time_ms();
         if (now - last_tick_ms_ >= interval_ms_) {
             last_tick_ms_ = now;
             return true;

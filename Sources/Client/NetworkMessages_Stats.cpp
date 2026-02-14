@@ -11,149 +11,149 @@
 
 
 namespace NetworkMessageHandlers {
-	void HandleHP(CGame* pGame, char* pData)
+	void HandleHP(CGame* game, char* data)
 	{
-		int iPrevHP;
-		std::string cTxt;
+		int prev_hp;
+		std::string txt;
 
-		iPrevHP = pGame->m_pPlayer->m_iHP;
+		prev_hp = game->m_player->m_hp;
 	const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyHP>(
-		pData, sizeof(hb::net::PacketNotifyHP));
+		data, sizeof(hb::net::PacketNotifyHP));
 	if (!pkt) return;
-	pGame->m_pPlayer->m_iHP = static_cast<int>(pkt->hp);
-	pGame->m_pPlayer->m_iHungerStatus = static_cast<int>(pkt->hunger);
+	game->m_player->m_hp = static_cast<int>(pkt->hp);
+	game->m_player->m_hunger_status = static_cast<int>(pkt->hunger);
 
-	if (pGame->m_pPlayer->m_iHP > iPrevHP)
+	if (game->m_player->m_hp > prev_hp)
 	{
-		if ((pGame->m_pPlayer->m_iHP - iPrevHP) < 10) return;
-		cTxt = std::format(NOTIFYMSG_HP_UP, pGame->m_pPlayer->m_iHP - iPrevHP);
-		pGame->AddEventList(cTxt.c_str(), 10);
-		pGame->PlayGameSound('E', 21, 0);
+		if ((game->m_player->m_hp - prev_hp) < 10) return;
+		txt = std::format(NOTIFYMSG_HP_UP, game->m_player->m_hp - prev_hp);
+		game->add_event_list(txt.c_str(), 10);
+		game->play_game_sound('E', 21, 0);
 	}
 	else
 	{
-		if ((pGame->m_logout_count > 0) && (pGame->m_bForceDisconn == false))
+		if ((game->m_logout_count > 0) && (game->m_force_disconn == false))
 		{
-			pGame->m_logout_count = -1;
-			pGame->AddEventList(NOTIFYMSG_HP2, 10);
+			game->m_logout_count = -1;
+			game->add_event_list(NOTIFYMSG_HP2, 10);
 		}
-		pGame->m_dwDamagedTime = GameClock::GetTimeMS();
-		if (pGame->m_pPlayer->m_iHP < 20) pGame->AddEventList(NOTIFYMSG_HP3, 10);
-		if ((iPrevHP - pGame->m_pPlayer->m_iHP) < 10) return;
-		cTxt = std::format(NOTIFYMSG_HP_DOWN, iPrevHP - pGame->m_pPlayer->m_iHP);
-		pGame->AddEventList(cTxt.c_str(), 10);
+		game->m_damaged_time = GameClock::get_time_ms();
+		if (game->m_player->m_hp < 20) game->add_event_list(NOTIFYMSG_HP3, 10);
+		if ((prev_hp - game->m_player->m_hp) < 10) return;
+		txt = std::format(NOTIFYMSG_HP_DOWN, prev_hp - game->m_player->m_hp);
+		game->add_event_list(txt.c_str(), 10);
 	}
 	}
 
-	void HandleMP(CGame* pGame, char* pData)
+	void HandleMP(CGame* game, char* data)
 	{
-		int iPrevMP;
-		std::string cTxt;
-		iPrevMP = pGame->m_pPlayer->m_iMP;
+		int prev_mp;
+		std::string txt;
+		prev_mp = game->m_player->m_mp;
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyMP>(
-			pData, sizeof(hb::net::PacketNotifyMP));
+			data, sizeof(hb::net::PacketNotifyMP));
 		if (!pkt) return;
-		pGame->m_pPlayer->m_iMP = static_cast<int>(pkt->mp);
-		if (abs(pGame->m_pPlayer->m_iMP - iPrevMP) < 10) return;
-		if (pGame->m_pPlayer->m_iMP > iPrevMP)
+		game->m_player->m_mp = static_cast<int>(pkt->mp);
+		if (abs(game->m_player->m_mp - prev_mp) < 10) return;
+		if (game->m_player->m_mp > prev_mp)
 		{
-			cTxt = std::format(NOTIFYMSG_MP_UP, pGame->m_pPlayer->m_iMP - iPrevMP);
-			pGame->AddEventList(cTxt.c_str(), 10);
-			pGame->PlayGameSound('E', 21, 0);
+			txt = std::format(NOTIFYMSG_MP_UP, game->m_player->m_mp - prev_mp);
+			game->add_event_list(txt.c_str(), 10);
+			game->play_game_sound('E', 21, 0);
 		}
 		else
 		{
-			cTxt = std::format(NOTIFYMSG_MP_DOWN, iPrevMP - pGame->m_pPlayer->m_iMP);
-			pGame->AddEventList(cTxt.c_str(), 10);
+			txt = std::format(NOTIFYMSG_MP_DOWN, prev_mp - game->m_player->m_mp);
+			game->add_event_list(txt.c_str(), 10);
 		}
 	}
 
-	void HandleSP(CGame* pGame, char* pData)
+	void HandleSP(CGame* game, char* data)
 	{
-		int iPrevSP;
-		std::string cTxt;
-		iPrevSP = pGame->m_pPlayer->m_iSP;
+		int prev_sp;
+		std::string txt;
+		prev_sp = game->m_player->m_sp;
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifySP>(
-			pData, sizeof(hb::net::PacketNotifySP));
+			data, sizeof(hb::net::PacketNotifySP));
 		if (!pkt) return;
-		pGame->m_pPlayer->m_iSP = static_cast<int>(pkt->sp);
-		if (abs(pGame->m_pPlayer->m_iSP - iPrevSP) < 10) return;
-		if (pGame->m_pPlayer->m_iSP > iPrevSP)
+		game->m_player->m_sp = static_cast<int>(pkt->sp);
+		if (abs(game->m_player->m_sp - prev_sp) < 10) return;
+		if (game->m_player->m_sp > prev_sp)
 		{
-			cTxt = std::format(NOTIFYMSG_SP_UP, pGame->m_pPlayer->m_iSP - iPrevSP);
-			pGame->AddEventList(cTxt.c_str(), 10);
-			pGame->PlayGameSound('E', 21, 0);
+			txt = std::format(NOTIFYMSG_SP_UP, game->m_player->m_sp - prev_sp);
+			game->add_event_list(txt.c_str(), 10);
+			game->play_game_sound('E', 21, 0);
 		}
 		else
 		{
-			cTxt = std::format(NOTIFYMSG_SP_DOWN, iPrevSP - pGame->m_pPlayer->m_iSP);
-			pGame->AddEventList(cTxt.c_str(), 10);
+			txt = std::format(NOTIFYMSG_SP_DOWN, prev_sp - game->m_player->m_sp);
+			game->add_event_list(txt.c_str(), 10);
 		}
 	}
 
-	void HandleExp(CGame* pGame, char* pData)
+	void HandleExp(CGame* game, char* data)
 	{
-		DWORD iPrevExp;
-		std::string cTxt;
+		DWORD prev_exp;
+		std::string txt;
 
-		iPrevExp = pGame->m_pPlayer->m_iExp;
+		prev_exp = game->m_player->m_exp;
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyExp>(
-			pData, sizeof(hb::net::PacketNotifyExp));
+			data, sizeof(hb::net::PacketNotifyExp));
 		if (!pkt) return;
-		pGame->m_pPlayer->m_iExp = pkt->exp;
+		game->m_player->m_exp = pkt->exp;
 
-		if (pGame->m_pPlayer->m_iExp > iPrevExp)
+		if (game->m_player->m_exp > prev_exp)
 		{
-			cTxt = std::format(EXP_INCREASED, pGame->m_pPlayer->m_iExp - iPrevExp);
-			pGame->AddEventList(cTxt.c_str(), 10);
+			txt = std::format(EXP_INCREASED, game->m_player->m_exp - prev_exp);
+			game->add_event_list(txt.c_str(), 10);
 		}
 		else
 		{
-			cTxt = std::format(EXP_DECREASED, iPrevExp - pGame->m_pPlayer->m_iExp);
-			pGame->AddEventList(cTxt.c_str(), 10);
+			txt = std::format(EXP_DECREASED, prev_exp - game->m_player->m_exp);
+			game->add_event_list(txt.c_str(), 10);
 		}
 	}
 
-	void HandleLevelUp(CGame* pGame, char* pData)
+	void HandleLevelUp(CGame* game, char* data)
 	{
-		int iPrevLevel;
-		std::string cTxt;
+		int prev_level;
+		std::string txt;
 
-		iPrevLevel = pGame->m_pPlayer->m_iLevel;
+		prev_level = game->m_player->m_level;
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyLevelUp>(
-			pData, sizeof(hb::net::PacketNotifyLevelUp));
+			data, sizeof(hb::net::PacketNotifyLevelUp));
 		if (!pkt) return;
 
-		pGame->m_pPlayer->m_iLevel = pkt->level;
-		pGame->m_pPlayer->m_iStr = pkt->str;
-		pGame->m_pPlayer->m_iVit = pkt->vit;
-		pGame->m_pPlayer->m_iDex = pkt->dex;
-		pGame->m_pPlayer->m_iInt = pkt->intel;
-		pGame->m_pPlayer->m_iMag = pkt->mag;
-		pGame->m_pPlayer->m_iCharisma = pkt->chr;
+		game->m_player->m_level = pkt->level;
+		game->m_player->m_str = pkt->str;
+		game->m_player->m_vit = pkt->vit;
+		game->m_player->m_dex = pkt->dex;
+		game->m_player->m_int = pkt->intel;
+		game->m_player->m_mag = pkt->mag;
+		game->m_player->m_charisma = pkt->chr;
 
-		pGame->m_pPlayer->m_iLU_Point = (pGame->m_pPlayer->m_iLevel - 1) * 3 - ((pGame->m_pPlayer->m_iStr + pGame->m_pPlayer->m_iVit + pGame->m_pPlayer->m_iDex + pGame->m_pPlayer->m_iInt + pGame->m_pPlayer->m_iMag + pGame->m_pPlayer->m_iCharisma) - 70);
-		pGame->m_pPlayer->m_wLU_Str = pGame->m_pPlayer->m_wLU_Vit = pGame->m_pPlayer->m_wLU_Dex = pGame->m_pPlayer->m_wLU_Int = pGame->m_pPlayer->m_wLU_Mag = pGame->m_pPlayer->m_wLU_Char = 0;
+		game->m_player->m_lu_point = (game->m_player->m_level - 1) * 3 - ((game->m_player->m_str + game->m_player->m_vit + game->m_player->m_dex + game->m_player->m_int + game->m_player->m_mag + game->m_player->m_charisma) - 70);
+		game->m_player->m_lu_str = game->m_player->m_lu_vit = game->m_player->m_lu_dex = game->m_player->m_lu_int = game->m_player->m_lu_mag = game->m_player->m_lu_char = 0;
 
-		cTxt = std::format(NOTIFYMSG_LEVELUP1, pGame->m_pPlayer->m_iLevel);
-		pGame->AddEventList(cTxt.c_str(), 10);
+		txt = std::format(NOTIFYMSG_LEVELUP1, game->m_player->m_level);
+		game->add_event_list(txt.c_str(), 10);
 
-		switch (pGame->m_pPlayer->m_sPlayerType) {
+		switch (game->m_player->m_player_type) {
 		case 1:
 		case 2:
 		case 3:
-			pGame->PlayGameSound('C', 21, 0);
+			game->play_game_sound('C', 21, 0);
 			break;
 		case 4:
 		case 5:
 		case 6:
-			pGame->PlayGameSound('C', 22, 0);
+			game->play_game_sound('C', 22, 0);
 			break;
 		}
 
-		pGame->m_floatingText.RemoveByObjectID(pGame->m_pPlayer->m_sPlayerObjectID);
-		pGame->m_floatingText.AddNotifyText(NotifyTextType::LevelUp, "Level up!", pGame->m_dwCurTime,
-			pGame->m_pPlayer->m_sPlayerObjectID, pGame->m_pMapData.get());
+		game->m_floating_text.remove_by_object_id(game->m_player->m_player_object_id);
+		game->m_floating_text.add_notify_text(notify_text_type::LevelUp, "Level up!", game->m_cur_time,
+			game->m_player->m_player_object_id, game->m_map_data.get());
 		return;
 	}
 } // namespace NetworkMessageHandlers

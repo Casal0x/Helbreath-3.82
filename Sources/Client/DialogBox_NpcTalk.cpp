@@ -6,170 +6,170 @@
 
 using namespace hb::shared::net;
 using namespace hb::client::sprite_id;
-DialogBox_NpcTalk::DialogBox_NpcTalk(CGame* pGame)
-	: IDialogBox(DialogBoxId::NpcTalk, pGame)
+DialogBox_NpcTalk::DialogBox_NpcTalk(CGame* game)
+	: IDialogBox(DialogBoxId::NpcTalk, game)
 {
-	SetDefaultRect(337 , 57 , 258, 339);
+	set_default_rect(337 , 57 , 258, 339);
 }
 
-int DialogBox_NpcTalk::GetTotalLines() const
+int DialogBox_NpcTalk::get_total_lines() const
 {
-	int iTotalLines = 0;
+	int total_lines = 0;
 	for (int i = 0; i < game_limits::max_text_dlg_lines; i++)
 	{
-		if (m_pGame->m_pMsgTextList2[i] != nullptr)
-			iTotalLines++;
+		if (m_game->m_msg_text_list2[i] != nullptr)
+			total_lines++;
 	}
-	return iTotalLines;
+	return total_lines;
 }
 
-void DialogBox_NpcTalk::OnDraw(short msX, short msY, short msZ, char cLB)
+void DialogBox_NpcTalk::on_draw(short mouse_x, short mouse_y, short z, char lb)
 {
-	short sX = m_pGame->m_dialogBoxManager.Info(DialogBoxId::NpcTalk).sX;
-	short sY = m_pGame->m_dialogBoxManager.Info(DialogBoxId::NpcTalk).sY;
+	short sX = m_game->m_dialog_box_manager.Info(DialogBoxId::NpcTalk).m_x;
+	short sY = m_game->m_dialog_box_manager.Info(DialogBoxId::NpcTalk).m_y;
 
-	m_pGame->DrawNewDialogBox(InterfaceNdGame2, sX, sY, 2);
+	m_game->draw_new_dialog_box(InterfaceNdGame2, sX, sY, 2);
 
-	DrawButtons(sX, sY, msX, msY);
-	DrawTextContent(sX, sY);
+	draw_buttons(sX, sY, mouse_x, mouse_y);
+	draw_text_content(sX, sY);
 
-	int iTotalLines = GetTotalLines();
-	DrawScrollBar(sX, sY, iTotalLines);
-	HandleScrollBarDrag(sX, sY, msX, msY, iTotalLines, cLB);
+	int total_lines = get_total_lines();
+	draw_scroll_bar(sX, sY, total_lines);
+	handle_scroll_bar_drag(sX, sY, mouse_x, mouse_y, total_lines, lb);
 }
 
-void DialogBox_NpcTalk::DrawButtons(short sX, short sY, short msX, short msY)
+void DialogBox_NpcTalk::draw_buttons(short sX, short sY, short mouse_x, short mouse_y)
 {
-	switch (m_pGame->m_dialogBoxManager.Info(DialogBoxId::NpcTalk).cMode)
+	switch (m_game->m_dialog_box_manager.Info(DialogBoxId::NpcTalk).m_mode)
 	{
 	case 0: // OK button only
-		if ((msX >= sX + ui_layout::right_btn_x) && (msX <= sX + ui_layout::right_btn_x + ui_layout::btn_size_x) &&
-			(msY > sY + ui_layout::btn_y) && (msY < sY + ui_layout::btn_y + ui_layout::btn_size_y))
-			m_pGame->DrawNewDialogBox(InterfaceNdButton, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 1);
+		if ((mouse_x >= sX + ui_layout::right_btn_x) && (mouse_x <= sX + ui_layout::right_btn_x + ui_layout::btn_size_x) &&
+			(mouse_y > sY + ui_layout::btn_y) && (mouse_y < sY + ui_layout::btn_y + ui_layout::btn_size_y))
+			m_game->draw_new_dialog_box(InterfaceNdButton, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 1);
 		else
-			m_pGame->DrawNewDialogBox(InterfaceNdButton, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 0);
+			m_game->draw_new_dialog_box(InterfaceNdButton, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 0);
 		break;
 
 	case 1: // Accept / Decline buttons
-		if ((msX >= sX + ui_layout::left_btn_x) && (msX <= sX + ui_layout::left_btn_x + ui_layout::btn_size_x) &&
-			(msY >= sY + ui_layout::btn_y) && (msY <= sY + ui_layout::btn_y + ui_layout::btn_size_y))
-			m_pGame->DrawNewDialogBox(InterfaceNdButton, sX + ui_layout::left_btn_x, sY + ui_layout::btn_y, 33);
+		if ((mouse_x >= sX + ui_layout::left_btn_x) && (mouse_x <= sX + ui_layout::left_btn_x + ui_layout::btn_size_x) &&
+			(mouse_y >= sY + ui_layout::btn_y) && (mouse_y <= sY + ui_layout::btn_y + ui_layout::btn_size_y))
+			m_game->draw_new_dialog_box(InterfaceNdButton, sX + ui_layout::left_btn_x, sY + ui_layout::btn_y, 33);
 		else
-			m_pGame->DrawNewDialogBox(InterfaceNdButton, sX + ui_layout::left_btn_x, sY + ui_layout::btn_y, 32);
+			m_game->draw_new_dialog_box(InterfaceNdButton, sX + ui_layout::left_btn_x, sY + ui_layout::btn_y, 32);
 
-		if ((msX >= sX + ui_layout::right_btn_x) && (msX <= sX + ui_layout::right_btn_x + ui_layout::btn_size_x) &&
-			(msY >= sY + ui_layout::btn_y) && (msY <= sY + ui_layout::btn_y + ui_layout::btn_size_y))
-			m_pGame->DrawNewDialogBox(InterfaceNdButton, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 41);
+		if ((mouse_x >= sX + ui_layout::right_btn_x) && (mouse_x <= sX + ui_layout::right_btn_x + ui_layout::btn_size_x) &&
+			(mouse_y >= sY + ui_layout::btn_y) && (mouse_y <= sY + ui_layout::btn_y + ui_layout::btn_size_y))
+			m_game->draw_new_dialog_box(InterfaceNdButton, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 41);
 		else
-			m_pGame->DrawNewDialogBox(InterfaceNdButton, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 40);
+			m_game->draw_new_dialog_box(InterfaceNdButton, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 40);
 		break;
 
 	case 2: // Next button
-		if ((msX >= sX + 190) && (msX <= sX + 278) &&
-			(msY >= sY + 296) && (msY <= sY + 316))
-			hb::shared::text::DrawText(GameFont::Bitmap1, sX + 190, sY + 270, "Next", hb::shared::text::TextStyle::WithHighlight(GameColors::UIMagicBlue));
+		if ((mouse_x >= sX + 190) && (mouse_x <= sX + 278) &&
+			(mouse_y >= sY + 296) && (mouse_y <= sY + 316))
+			hb::shared::text::draw_text(GameFont::Bitmap1, sX + 190, sY + 270, "Next", hb::shared::text::TextStyle::with_highlight(GameColors::UIMagicBlue));
 		else
-			hb::shared::text::DrawText(GameFont::Bitmap1, sX + 190, sY + 270, "Next", hb::shared::text::TextStyle::WithHighlight(GameColors::BmpBtnNormal));
+			hb::shared::text::draw_text(GameFont::Bitmap1, sX + 190, sY + 270, "Next", hb::shared::text::TextStyle::with_highlight(GameColors::BmpBtnNormal));
 		break;
 	}
 }
 
-void DialogBox_NpcTalk::DrawTextContent(short sX, short sY)
+void DialogBox_NpcTalk::draw_text_content(short sX, short sY)
 {
-	short sView = m_pGame->m_dialogBoxManager.Info(DialogBoxId::NpcTalk).sView;
-	short sSizeX = m_pGame->m_dialogBoxManager.Info(DialogBoxId::NpcTalk).sSizeX;
+	short view = m_game->m_dialog_box_manager.Info(DialogBoxId::NpcTalk).m_view;
+	short size_x = m_game->m_dialog_box_manager.Info(DialogBoxId::NpcTalk).m_size_x;
 
 	for (int i = 0; i < 17; i++)
 	{
-		if ((i < game_limits::max_text_dlg_lines) && (m_pGame->m_pMsgTextList2[i + sView] != nullptr))
+		if ((i < game_limits::max_text_dlg_lines) && (m_game->m_msg_text_list2[i + view] != nullptr))
 		{
-			hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 57 + i * 15, sX + sSizeX - sX, 15,
-				m_pGame->m_pMsgTextList2[i + sView]->m_pMsg, hb::shared::text::TextStyle::Color(GameColors::UILabel), hb::shared::text::Align::TopCenter);
+			hb::shared::text::draw_text_aligned(GameFont::Default, sX, sY + 57 + i * 15, sX + size_x - sX, 15,
+				m_game->m_msg_text_list2[i + view]->m_pMsg, hb::shared::text::TextStyle::from_color(GameColors::UILabel), hb::shared::text::Align::TopCenter);
 		}
 	}
 }
 
-void DialogBox_NpcTalk::DrawScrollBar(short sX, short sY, int iTotalLines)
+void DialogBox_NpcTalk::draw_scroll_bar(short sX, short sY, int total_lines)
 {
-	if (iTotalLines > 17)
+	if (total_lines > 17)
 	{
-		double d1 = static_cast<double>(m_pGame->m_dialogBoxManager.Info(DialogBoxId::NpcTalk).sView);
-		double d2 = static_cast<double>(iTotalLines - 17);
+		double d1 = static_cast<double>(m_game->m_dialog_box_manager.Info(DialogBoxId::NpcTalk).m_view);
+		double d2 = static_cast<double>(total_lines - 17);
 		double d3 = (274.0 * d1) / d2;
-		int iPointerLoc = static_cast<int>(d3);
-		m_pGame->DrawNewDialogBox(InterfaceNdGame2, sX, sY, 3);
+		int pointer_loc = static_cast<int>(d3);
+		m_game->draw_new_dialog_box(InterfaceNdGame2, sX, sY, 3);
 	}
 }
 
-void DialogBox_NpcTalk::HandleScrollBarDrag(short sX, short sY, short msX, short msY, int iTotalLines, char cLB)
+void DialogBox_NpcTalk::handle_scroll_bar_drag(short sX, short sY, short mouse_x, short mouse_y, int total_lines, char lb)
 {
-	if (cLB != 0 && iTotalLines > 17)
+	if (lb != 0 && total_lines > 17)
 	{
-		if (m_pGame->m_dialogBoxManager.iGetTopDialogBoxIndex() == DialogBoxId::NpcTalk)
+		if (m_game->m_dialog_box_manager.get_top_dialog_box_index() == DialogBoxId::NpcTalk)
 		{
-			if ((msX >= sX + 240) && (msX <= sX + 260) &&
-				(msY >= sY + 40) && (msY <= sY + 320))
+			if ((mouse_x >= sX + 240) && (mouse_x <= sX + 260) &&
+				(mouse_y >= sY + 40) && (mouse_y <= sY + 320))
 			{
-				double d1 = static_cast<double>(msY - (sY + 40));
-				double d2 = static_cast<double>(iTotalLines - 17);
+				double d1 = static_cast<double>(mouse_y - (sY + 40));
+				double d2 = static_cast<double>(total_lines - 17);
 				double d3 = (d1 * d2) / 274.0;
-				int iPointerLoc = static_cast<int>(d3);
+				int pointer_loc = static_cast<int>(d3);
 
-				if (iPointerLoc > iTotalLines)
-					iPointerLoc = iTotalLines;
-				m_pGame->m_dialogBoxManager.Info(DialogBoxId::NpcTalk).sView = iPointerLoc;
+				if (pointer_loc > total_lines)
+					pointer_loc = total_lines;
+				m_game->m_dialog_box_manager.Info(DialogBoxId::NpcTalk).m_view = pointer_loc;
 			}
 		}
 	}
 	else
 	{
-		m_pGame->m_dialogBoxManager.Info(DialogBoxId::NpcTalk).bIsScrollSelected = false;
+		m_game->m_dialog_box_manager.Info(DialogBoxId::NpcTalk).m_is_scroll_selected = false;
 	}
 }
 
-bool DialogBox_NpcTalk::OnClick(short msX, short msY)
+bool DialogBox_NpcTalk::on_click(short mouse_x, short mouse_y)
 {
-	short sX = m_pGame->m_dialogBoxManager.Info(DialogBoxId::NpcTalk).sX;
-	short sY = m_pGame->m_dialogBoxManager.Info(DialogBoxId::NpcTalk).sY;
+	short sX = m_game->m_dialog_box_manager.Info(DialogBoxId::NpcTalk).m_x;
+	short sY = m_game->m_dialog_box_manager.Info(DialogBoxId::NpcTalk).m_y;
 
-	switch (m_pGame->m_dialogBoxManager.Info(DialogBoxId::NpcTalk).cMode)
+	switch (m_game->m_dialog_box_manager.Info(DialogBoxId::NpcTalk).m_mode)
 	{
 	case 0: // OK button
-		if ((msX >= sX + ui_layout::right_btn_x) && (msX <= sX + ui_layout::right_btn_x + ui_layout::btn_size_x) &&
-			(msY >= sY + ui_layout::btn_y) && (msY <= sY + ui_layout::btn_y + ui_layout::btn_size_y))
+		if ((mouse_x >= sX + ui_layout::right_btn_x) && (mouse_x <= sX + ui_layout::right_btn_x + ui_layout::btn_size_x) &&
+			(mouse_y >= sY + ui_layout::btn_y) && (mouse_y <= sY + ui_layout::btn_y + ui_layout::btn_size_y))
 		{
-			m_pGame->m_dialogBoxManager.DisableDialogBox(DialogBoxId::NpcTalk);
-			m_pGame->PlayGameSound('E', 14, 5);
+			m_game->m_dialog_box_manager.disable_dialog_box(DialogBoxId::NpcTalk);
+			m_game->play_game_sound('E', 14, 5);
 			return true;
 		}
 		break;
 
 	case 1: // Accept / Decline buttons
-		if ((msX >= sX + ui_layout::left_btn_x) && (msX <= sX + ui_layout::left_btn_x + ui_layout::btn_size_x) &&
-			(msY >= sY + ui_layout::btn_y) && (msY <= sY + ui_layout::btn_y + ui_layout::btn_size_y))
+		if ((mouse_x >= sX + ui_layout::left_btn_x) && (mouse_x <= sX + ui_layout::left_btn_x + ui_layout::btn_size_x) &&
+			(mouse_y >= sY + ui_layout::btn_y) && (mouse_y <= sY + ui_layout::btn_y + ui_layout::btn_size_y))
 		{
 			// Accept
-			m_pGame->bSendCommand(MsgId::CommandCommon, CommonType::QuestAccepted, 0, 0, 0, 0, 0);
-			m_pGame->m_dialogBoxManager.DisableDialogBox(DialogBoxId::NpcTalk);
-			m_pGame->PlayGameSound('E', 14, 5);
+			m_game->send_command(MsgId::CommandCommon, CommonType::QuestAccepted, 0, 0, 0, 0, 0);
+			m_game->m_dialog_box_manager.disable_dialog_box(DialogBoxId::NpcTalk);
+			m_game->play_game_sound('E', 14, 5);
 			return true;
 		}
-		if ((msX >= sX + ui_layout::right_btn_x) && (msX <= sX + ui_layout::right_btn_x + ui_layout::btn_size_x) &&
-			(msY >= sY + ui_layout::btn_y) && (msY <= sY + ui_layout::btn_y + ui_layout::btn_size_y))
+		if ((mouse_x >= sX + ui_layout::right_btn_x) && (mouse_x <= sX + ui_layout::right_btn_x + ui_layout::btn_size_x) &&
+			(mouse_y >= sY + ui_layout::btn_y) && (mouse_y <= sY + ui_layout::btn_y + ui_layout::btn_size_y))
 		{
 			// Decline
-			m_pGame->m_dialogBoxManager.DisableDialogBox(DialogBoxId::NpcTalk);
-			m_pGame->PlayGameSound('E', 14, 5);
+			m_game->m_dialog_box_manager.disable_dialog_box(DialogBoxId::NpcTalk);
+			m_game->play_game_sound('E', 14, 5);
 			return true;
 		}
 		break;
 
 	case 2: // Next button
-		if ((msX >= sX + ui_layout::right_btn_x) && (msX <= sX + ui_layout::right_btn_x + ui_layout::btn_size_x) &&
-			(msY >= sY + ui_layout::btn_y) && (msY <= sY + ui_layout::btn_y + ui_layout::btn_size_y))
+		if ((mouse_x >= sX + ui_layout::right_btn_x) && (mouse_x <= sX + ui_layout::right_btn_x + ui_layout::btn_size_x) &&
+			(mouse_y >= sY + ui_layout::btn_y) && (mouse_y <= sY + ui_layout::btn_y + ui_layout::btn_size_y))
 		{
-			m_pGame->m_dialogBoxManager.DisableDialogBox(DialogBoxId::NpcTalk);
-			m_pGame->PlayGameSound('E', 14, 5);
+			m_game->m_dialog_box_manager.disable_dialog_box(DialogBoxId::NpcTalk);
+			m_game->play_game_sound('E', 14, 5);
 			return true;
 		}
 		break;
@@ -178,13 +178,13 @@ bool DialogBox_NpcTalk::OnClick(short msX, short msY)
 	return false;
 }
 
-PressResult DialogBox_NpcTalk::OnPress(short msX, short msY)
+PressResult DialogBox_NpcTalk::on_press(short mouse_x, short mouse_y)
 {
-	short sX = Info().sX;
-	short sY = Info().sY;
+	short sX = Info().m_x;
+	short sY = Info().m_y;
 
 	// Scroll bar region
-	if ((msX >= sX + 240) && (msX <= sX + 260) && (msY >= sY + 40) && (msY <= sY + 320))
+	if ((mouse_x >= sX + 240) && (mouse_x <= sX + 260) && (mouse_y >= sY + 40) && (mouse_y <= sY + 320))
 	{
 		return PressResult::ScrollClaimed;
 	}

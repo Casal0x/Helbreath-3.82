@@ -10,6 +10,7 @@
 #include "SFMLTexture.h"
 #include <SFML/Graphics/RenderWindow.hpp>
 #include <SFML/Graphics/RenderTexture.hpp>
+#include <SFML/Graphics/Shader.hpp>
 #include <vector>
 #include <string>
 #include <chrono>
@@ -23,90 +24,93 @@ public:
     // ============== hb::shared::render::IRenderer Implementation ==============
 
     // Initialization
-    bool Init(hb::shared::types::NativeWindowHandle hWnd) override;
-    void Shutdown() override;
+    bool init(hb::shared::types::NativeWindowHandle hWnd) override;
+    void shutdown() override;
 
     // Display Modes
-    void SetFullscreen(bool fullscreen) override;
-    bool IsFullscreen() const override;
-    void ChangeDisplayMode(hb::shared::types::NativeWindowHandle hWnd) override;
+    void set_fullscreen(bool fullscreen) override;
+    bool is_fullscreen() const override;
+    void change_display_mode(hb::shared::types::NativeWindowHandle hWnd) override;
 
     // Scaling
-    void SetFullscreenStretch(bool stretch) override;
-    bool IsFullscreenStretch() const override;
+    void set_fullscreen_stretch(bool stretch) override;
+    bool is_fullscreen_stretch() const override;
 
     // Frame Management
-    void BeginFrame() override;
-    void EndFrame() override;
-    bool EndFrameCheckLostSurface() override;
-    bool WasFramePresented() const override;
+    void begin_frame() override;
+    void end_frame() override;
+    bool end_frame_check_lost_surface() override;
+    bool was_frame_presented() const override;
 
     // Frame Metrics
-    uint32_t GetFPS() const override;
-    double GetDeltaTime() const override;
-    double GetDeltaTimeMS() const override;
+    uint32_t get_fps() const override;
+    double get_delta_time() const override;
+    double get_delta_time_ms() const override;
 
     // Primitive Rendering
-    void DrawPixel(int x, int y, const hb::shared::render::Color& color) override;
-    void DrawLine(int x0, int y0, int x1, int y1, const hb::shared::render::Color& color,
+    void draw_pixel(int x, int y, const hb::shared::render::Color& color) override;
+    void draw_line(int x0, int y0, int x1, int y1, const hb::shared::render::Color& color,
                   hb::shared::render::BlendMode blend = hb::shared::render::BlendMode::Alpha) override;
-    void DrawRectFilled(int x, int y, int w, int h, const hb::shared::render::Color& color) override;
-    void DrawRectOutline(int x, int y, int w, int h, const hb::shared::render::Color& color,
+    void draw_rect_filled(int x, int y, int w, int h, const hb::shared::render::Color& color) override;
+    void draw_rect_outline(int x, int y, int w, int h, const hb::shared::render::Color& color,
                          int thickness = 1) override;
-    void DrawRoundedRectFilled(int x, int y, int w, int h, int radius,
+    void draw_rounded_rect_filled(int x, int y, int w, int h, int radius,
                                const hb::shared::render::Color& color) override;
-    void DrawRoundedRectOutline(int x, int y, int w, int h, int radius,
+    void draw_rounded_rect_outline(int x, int y, int w, int h, int radius,
                                 const hb::shared::render::Color& color, int thickness = 1) override;
 
     // Text Rendering
-    void BeginTextBatch() override;
-    void EndTextBatch() override;
-    void DrawText(int x, int y, const char* text, const hb::shared::render::Color& color) override;
-    void DrawTextRect(const hb::shared::geometry::GameRectangle& rect, const char* text, const hb::shared::render::Color& color) override;
+    void begin_text_batch() override;
+    void end_text_batch() override;
+    void draw_text(int x, int y, const char* text, const hb::shared::render::Color& color) override;
+    void draw_text_rect(const hb::shared::geometry::GameRectangle& rect, const char* text, const hb::shared::render::Color& color) override;
 
     // Surface/Texture Management
-    hb::shared::render::ITexture* CreateTexture(uint16_t width, uint16_t height) override;
-    void DestroyTexture(hb::shared::render::ITexture* texture) override;
+    hb::shared::render::ITexture* create_texture(uint16_t width, uint16_t height) override;
+    void destroy_texture(hb::shared::render::ITexture* texture) override;
 
     // Clip Area
-    void SetClipArea(int x, int y, int w, int h) override;
-    hb::shared::geometry::GameRectangle GetClipArea() const override;
+    void set_clip_area(int x, int y, int w, int h) override;
+    hb::shared::geometry::GameRectangle get_clip_area() const override;
 
-    // Screenshot
-    bool Screenshot(const char* filename) override;
+    // screenshot
+    bool screenshot(const char* filename) override;
 
     // Resolution
-    int GetWidth() const override;
-    int GetHeight() const override;
-    int GetWidthMid() const override;
-    int GetHeightMid() const override;
-    void ResizeBackBuffer(int width, int height) override;
+    int get_width() const override;
+    int get_height() const override;
+    int get_width_mid() const override;
+    int get_height_mid() const override;
+    void resize_back_buffer(int width, int height) override;
 
     // Ambient Light
-    char GetAmbientLightLevel() const override;
-    void SetAmbientLightLevel(char level) override;
+    char get_ambient_light_level() const override;
+    void set_ambient_light_level(char level) override;
 
     // hb::shared::render::Color Utilities
-    void ColorTransferRGB(uint32_t rgb, int* outR, int* outG, int* outB) override;
+    void color_transfer_rgb(uint32_t rgb, int* outR, int* outG, int* outB) override;
 
     // Text Measurement
-    int GetTextLength(const char* text, int maxWidth) override;
-    int GetTextWidth(const char* text) override;
+    int get_text_length(const char* text, int maxWidth) override;
+    int get_text_width(const char* text) override;
 
     // Surface Operations
-    void* GetBackBufferNative() override;
+    void* get_back_buffer_native() override;
 
     // Native Access
-    void* GetNativeRenderer() override;
+    void* get_native_renderer() override;
 
     // ============== SFML-Specific Access ==============
 
-    // Get the back buffer render texture for sprite drawing
+    // get the back buffer render texture for sprite drawing
     sf::RenderTexture* GetBackBuffer() { return &m_backBuffer; }
 
     // Set the window to render to (called from SFMLWindow)
     // This also creates the render textures since they need an OpenGL context
     void SetRenderWindow(sf::RenderWindow* window);
+
+    // Additive offset shader for PutTransSpriteRGB emulation
+    const sf::Shader* get_additive_offset_shader() const;
 
     // Engine-owned frame rate control (called from SFMLWindow)
     void SetFramerateLimit(int limit);
@@ -117,7 +121,7 @@ private:
     // Create render textures (called when OpenGL context is available)
     bool CreateRenderTextures();
 
-    sf::RenderWindow* m_pRenderWindow;  // Not owned, set by SFMLWindow
+    sf::RenderWindow* m_render_window;  // Not owned, set by SFMLWindow
     bool m_texturesCreated;
     sf::RenderTexture m_backBuffer;
 
@@ -125,24 +129,28 @@ private:
     int m_width;
     int m_height;
     bool m_fullscreen;
-    bool m_bFullscreenStretch;
+    bool m_fullscreen_stretch;
     hb::shared::geometry::GameRectangle m_clipArea;
 
     // Engine-owned frame timing
-    int m_iFpsLimit;
-    bool m_bVSync;
-    bool m_bSkipFrame;
+    int m_fps_limit;
+    bool m_vsync;
+    bool m_skip_frame;
     std::chrono::steady_clock::time_point m_lastPresentTime;
     std::chrono::steady_clock::duration m_targetFrameDuration;
 
     // Frame metrics (tracked at actual present)
     uint32_t m_fps;
     uint32_t m_framesThisSecond;
-    double m_deltaTime;
-    double m_fpsAccumulator;
+    double m_delta_time;
+    double m_fps_accumulator;
     std::chrono::steady_clock::time_point m_lastPresentedFrameTime;
 
     // Ambient light level
     char m_ambient_light_level;
+
+    // Additive offset shader (PutTransSpriteRGB emulation)
+    sf::Shader m_additive_offset_shader;
+    bool m_additive_offset_shader_loaded = false;
 
 };

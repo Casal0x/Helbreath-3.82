@@ -9,31 +9,31 @@
 #include <string>
 
 namespace NetworkMessageHandlers {
-	void HandleSpawnEvent(CGame* pGame, char* pData)
+	void HandleSpawnEvent(CGame* game, char* data)
 	{
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifySpawnEvent>(
-			pData, sizeof(hb::net::PacketNotifySpawnEvent));
+			data, sizeof(hb::net::PacketNotifySpawnEvent));
 		if (!pkt) return;
-		pGame->m_sMonsterID = pkt->monster_id;
-		pGame->m_sEventX = pkt->x;
-		pGame->m_sEventY = pkt->y;
-		pGame->m_dwMonsterEventTime = pGame->m_dwCurTime;
+		game->m_monster_id = pkt->monster_id;
+		game->m_event_x = pkt->x;
+		game->m_event_y = pkt->y;
+		game->m_monster_event_time = game->m_cur_time;
 	}
 
-	void HandleMonsterCount(CGame* pGame, char* pData)
+	void HandleMonsterCount(CGame* game, char* data)
 	{
-		std::string cTxt;
-		int iCount;
+		std::string txt;
+		int count;
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyMonsterCount>(
-			pData, sizeof(hb::net::PacketNotifyMonsterCount));
+			data, sizeof(hb::net::PacketNotifyMonsterCount));
 		if (!pkt) return;
-		iCount = pkt->count;
-		cTxt = std::format("Rest Monster :{}", iCount);
-		pGame->AddEventList(cTxt.c_str(), 10);
+		count = pkt->count;
+		txt = std::format("Rest Monster :{}", count);
+		game->add_event_list(txt.c_str(), 10);
 	}
 
-	void HandleResurrectPlayer(CGame* pGame, char* pData)
+	void HandleResurrectPlayer(CGame* game, char* data)
 	{
-		pGame->m_dialogBoxManager.EnableDialogBox(DialogBoxId::Resurrect, 0, 0, 0);
+		game->m_dialog_box_manager.enable_dialog_box(DialogBoxId::Resurrect, 0, 0, 0);
 	}
 } // namespace NetworkMessageHandlers

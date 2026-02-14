@@ -7,33 +7,33 @@
 #include <cstdio>
 
 namespace NetworkMessageHandlers {
-	void HandleExchangeItemComplete(CGame* pGame, char* pData)
+	void HandleExchangeItemComplete(CGame* game, char* data)
 	{
-		pGame->AddEventList(NOTIFYMSG_EXCHANGEITEM_COMPLETE1, 10);
-		pGame->m_dialogBoxManager.DisableDialogBox(DialogBoxId::Exchange);
+		game->add_event_list(NOTIFYMSG_EXCHANGEITEM_COMPLETE1, 10);
+		game->m_dialog_box_manager.disable_dialog_box(DialogBoxId::Exchange);
 		//Snoopy: MultiTrade
-		pGame->m_dialogBoxManager.DisableDialogBox(DialogBoxId::ConfirmExchange);
-		pGame->PlayGameSound('E', 23, 5);
+		game->m_dialog_box_manager.disable_dialog_box(DialogBoxId::ConfirmExchange);
+		game->play_game_sound('E', 23, 5);
 	}
 
-	void HandleCancelExchangeItem(CGame* pGame, char* pData)
+	void HandleCancelExchangeItem(CGame* game, char* data)
 	{
-		pGame->PlayGameSound('E', 24, 5);
-		pGame->AddEventList(NOTIFYMSG_CANCEL_EXCHANGEITEM1, 10);
-		pGame->AddEventList(NOTIFYMSG_CANCEL_EXCHANGEITEM2, 10);
+		game->play_game_sound('E', 24, 5);
+		game->add_event_list(NOTIFYMSG_CANCEL_EXCHANGEITEM1, 10);
+		game->add_event_list(NOTIFYMSG_CANCEL_EXCHANGEITEM2, 10);
 
 		// Explicitly clear item disabled flags before disabling dialogs.
-		// DisableDialogBox(Exchange) also clears these, but if exchange info
+		// disable_dialog_box(Exchange) also clears these, but if exchange info
 		// was partially cleared by item removal, flags could get stuck.
 		for (int i = 0; i < 4; i++)
 		{
-			int item_id = pGame->m_stDialogBoxExchangeInfo[i].sItemID;
+			int item_id = game->m_dialog_box_exchange_info[i].item_id;
 			if (item_id >= 0 && item_id < hb::shared::limits::MaxItems)
-				pGame->m_bIsItemDisabled[item_id] = false;
+				game->m_is_item_disabled[item_id] = false;
 		}
 
 		//Snoopy: MultiTrade
-		pGame->m_dialogBoxManager.DisableDialogBox(DialogBoxId::ConfirmExchange);
-		pGame->m_dialogBoxManager.DisableDialogBox(DialogBoxId::Exchange);
+		game->m_dialog_box_manager.disable_dialog_box(DialogBoxId::ConfirmExchange);
+		game->m_dialog_box_manager.disable_dialog_box(DialogBoxId::Exchange);
 	}
 } // namespace NetworkMessageHandlers

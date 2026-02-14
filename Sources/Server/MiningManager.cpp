@@ -17,100 +17,100 @@ namespace dynamic_object = hb::shared::dynamic_object;
 
 MiningManager::MiningManager()
 {
-	InitArrays();
+	init_arrays();
 }
 
 MiningManager::~MiningManager()
 {
-	CleanupArrays();
+	cleanup_arrays();
 }
 
-void MiningManager::InitArrays()
+void MiningManager::init_arrays()
 {
 	for (int i = 0; i < MaxMinerals; i++)
-		m_pMineral[i] = 0;
+		m_mineral[i] = 0;
 }
 
-void MiningManager::CleanupArrays()
+void MiningManager::cleanup_arrays()
 {
 	for (int i = 0; i < MaxMinerals; i++)
-		if (m_pMineral[i] != 0) {
-			delete m_pMineral[i];
-			m_pMineral[i] = 0;
+		if (m_mineral[i] != 0) {
+			delete m_mineral[i];
+			m_mineral[i] = 0;
 		}
 }
 
-void MiningManager::MineralGenerator()
+void MiningManager::mineral_generator()
 {
-	int iP, tX, tY, iRet;
+	int iP, tX, tY, ret;
 
 	for(int i = 0; i < MaxMaps; i++) {
-		if ((m_pGame->iDice(1, 4) == 1) && (m_pGame->m_pMapList[i] != 0) &&
-			(m_pGame->m_pMapList[i]->m_bMineralGenerator) &&
-			(m_pGame->m_pMapList[i]->m_iCurMineral < m_pGame->m_pMapList[i]->m_iMaxMineral)) {
+		if ((m_game->dice(1, 4) == 1) && (m_game->m_map_list[i] != 0) &&
+			(m_game->m_map_list[i]->m_mineral_generator) &&
+			(m_game->m_map_list[i]->m_cur_mineral < m_game->m_map_list[i]->m_max_mineral)) {
 
-			iP = m_pGame->iDice(1, m_pGame->m_pMapList[i]->m_iTotalMineralPoint) - 1;
-			if ((m_pGame->m_pMapList[i]->m_MineralPointList[iP].x == -1) || (m_pGame->m_pMapList[i]->m_MineralPointList[iP].y == -1)) break;
+			iP = m_game->dice(1, m_game->m_map_list[i]->m_total_mineral_point) - 1;
+			if ((m_game->m_map_list[i]->m_mineral_point_list[iP].x == -1) || (m_game->m_map_list[i]->m_mineral_point_list[iP].y == -1)) break;
 
-			tX = m_pGame->m_pMapList[i]->m_MineralPointList[iP].x;
-			tY = m_pGame->m_pMapList[i]->m_MineralPointList[iP].y;
+			tX = m_game->m_map_list[i]->m_mineral_point_list[iP].x;
+			tY = m_game->m_map_list[i]->m_mineral_point_list[iP].y;
 
-			iRet = iCreateMineral(i, tX, tY, m_pGame->m_pMapList[i]->m_cMineralGeneratorLevel);
+			ret = create_mineral(i, tX, tY, m_game->m_map_list[i]->m_mineral_generator_level);
 		}
 	}
 }
 
-int MiningManager::iCreateMineral(char cMapIndex, int tX, int tY, char cLevel)
+int MiningManager::create_mineral(char map_index, int tX, int tY, char level)
 {
-	int iDynamicHandle, iMineralType;
+	int dynamic_handle, mineral_type;
 
-	if ((cMapIndex < 0) || (cMapIndex >= MaxMaps)) return 0;
-	if (m_pGame->m_pMapList[cMapIndex] == 0) return 0;
+	if ((map_index < 0) || (map_index >= MaxMaps)) return 0;
+	if (m_game->m_map_list[map_index] == 0) return 0;
 
 	for(int i = 1; i < MaxMinerals; i++)
-		if (m_pMineral[i] == 0) {
-			iMineralType = m_pGame->iDice(1, cLevel);
-			m_pMineral[i] = new class CMineral(iMineralType, cMapIndex, tX, tY, 1);
-			if (m_pMineral[i] == 0) return 0;
+		if (m_mineral[i] == 0) {
+			mineral_type = m_game->dice(1, level);
+			m_mineral[i] = new class CMineral(mineral_type, map_index, tX, tY, 1);
+			if (m_mineral[i] == 0) return 0;
 
-			iDynamicHandle = 0;
-			switch (iMineralType) {
+			dynamic_handle = 0;
+			switch (mineral_type) {
 			case 1:
 			case 2:
 			case 3:
 			case 4:
-				iDynamicHandle = m_pGame->m_pDynamicObjectManager->iAddDynamicObjectList(0, 0, dynamic_object::Mineral1, cMapIndex, tX, tY, 0, i);
+				dynamic_handle = m_game->m_dynamic_object_manager->add_dynamic_object_list(0, 0, dynamic_object::Mineral1, map_index, tX, tY, 0, i);
 				break;
 
 			case 5:
 			case 6:
-				iDynamicHandle = m_pGame->m_pDynamicObjectManager->iAddDynamicObjectList(0, 0, dynamic_object::Mineral2, cMapIndex, tX, tY, 0, i);
+				dynamic_handle = m_game->m_dynamic_object_manager->add_dynamic_object_list(0, 0, dynamic_object::Mineral2, map_index, tX, tY, 0, i);
 				break;
 
 			default:
-				iDynamicHandle = m_pGame->m_pDynamicObjectManager->iAddDynamicObjectList(0, 0, dynamic_object::Mineral1, cMapIndex, tX, tY, 0, i);
+				dynamic_handle = m_game->m_dynamic_object_manager->add_dynamic_object_list(0, 0, dynamic_object::Mineral1, map_index, tX, tY, 0, i);
 				break;
 			}
 
-			if (iDynamicHandle == 0) {
-				delete m_pMineral[i];
-				m_pMineral[i] = 0;
+			if (dynamic_handle == 0) {
+				delete m_mineral[i];
+				m_mineral[i] = 0;
 				return 0;
 			}
-			m_pMineral[i]->m_sDynamicObjectHandle = iDynamicHandle;
-			m_pMineral[i]->m_cMapIndex = cMapIndex;
+			m_mineral[i]->m_dynamic_object_handle = dynamic_handle;
+			m_mineral[i]->m_map_index = map_index;
 
-			switch (iMineralType) {
-			case 1: m_pMineral[i]->m_iDifficulty = 10; m_pMineral[i]->m_iRemain = 20; break;
-			case 2: m_pMineral[i]->m_iDifficulty = 15; m_pMineral[i]->m_iRemain = 15; break;
-			case 3: m_pMineral[i]->m_iDifficulty = 20; m_pMineral[i]->m_iRemain = 10; break;
-			case 4: m_pMineral[i]->m_iDifficulty = 50; m_pMineral[i]->m_iRemain = 8; break;
-			case 5: m_pMineral[i]->m_iDifficulty = 70; m_pMineral[i]->m_iRemain = 6; break;
-			case 6: m_pMineral[i]->m_iDifficulty = 90; m_pMineral[i]->m_iRemain = 4; break;
-			default: m_pMineral[i]->m_iDifficulty = 10; m_pMineral[i]->m_iRemain = 20; break;
+			switch (mineral_type) {
+			case 1: m_mineral[i]->m_difficulty = 10; m_mineral[i]->m_remain = 20; break;
+			case 2: m_mineral[i]->m_difficulty = 15; m_mineral[i]->m_remain = 15; break;
+			case 3: m_mineral[i]->m_difficulty = 20; m_mineral[i]->m_remain = 10; break;
+			case 4: m_mineral[i]->m_difficulty = 50; m_mineral[i]->m_remain = 8; break;
+			case 5: m_mineral[i]->m_difficulty = 70; m_mineral[i]->m_remain = 6; break;
+			case 6: m_mineral[i]->m_difficulty = 90; m_mineral[i]->m_remain = 4; break;
+			default: m_mineral[i]->m_difficulty = 10; m_mineral[i]->m_remain = 20; break;
 			}
 
-			m_pGame->m_pMapList[cMapIndex]->m_iCurMineral++;
+			m_game->m_map_list[map_index]->m_cur_mineral++;
 
 			return i;
 		}
@@ -119,170 +119,170 @@ int MiningManager::iCreateMineral(char cMapIndex, int tX, int tY, char cLevel)
 }
 
 
-void MiningManager::_CheckMiningAction(int iClientH, int dX, int dY)
+void MiningManager::check_mining_action(int client_h, int dX, int dY)
 {
-	short sType;
-	uint32_t dwRegisterTime;
-	int   iDynamicIndex, iSkillLevel, iResult, iItemID;
-	CItem* pItem;
-	uint16_t  wWeaponType;
+	short type;
+	uint32_t register_time;
+	int   dynamic_index, skill_level, result, item_id;
+	CItem* item;
+	uint16_t  weapon_type;
 
-	iItemID = 0;
+	item_id = 0;
 
-	if (m_pGame->m_pClientList[iClientH] == 0)  return;
+	if (m_game->m_client_list[client_h] == 0)  return;
 
-	m_pGame->m_pMapList[m_pGame->m_pClientList[iClientH]->m_cMapIndex]->bGetDynamicObject(dX, dY, &sType, &dwRegisterTime, &iDynamicIndex);
+	m_game->m_map_list[m_game->m_client_list[client_h]->m_map_index]->get_dynamic_object(dX, dY, &type, &register_time, &dynamic_index);
 
-	if (m_pGame->m_pClientList[iClientH]->m_status.bInvisibility) {
-		m_pGame->m_pStatusEffectManager->SetInvisibilityFlag(iClientH, hb::shared::owner_class::Player, false);
-		m_pGame->m_pDelayEventManager->bRemoveFromDelayEventList(iClientH, hb::shared::owner_class::Player, hb::shared::magic::Invisibility);
-		m_pGame->m_pClientList[iClientH]->m_cMagicEffectStatus[hb::shared::magic::Invisibility] = 0;
+	if (m_game->m_client_list[client_h]->m_status.invisibility) {
+		m_game->m_status_effect_manager->set_invisibility_flag(client_h, hb::shared::owner_class::Player, false);
+		m_game->m_delay_event_manager->remove_from_delay_event_list(client_h, hb::shared::owner_class::Player, hb::shared::magic::Invisibility);
+		m_game->m_client_list[client_h]->m_magic_effect_status[hb::shared::magic::Invisibility] = 0;
 	}
 
-	switch (sType) {
+	switch (type) {
 	case dynamic_object::Mineral1:
 	case dynamic_object::Mineral2:
-		wWeaponType = m_pGame->m_pClientList[iClientH]->m_appearance.iWeaponType;
-		if (wWeaponType == 25) {
+		weapon_type = m_game->m_client_list[client_h]->m_appearance.weapon_type;
+		if (weapon_type == 25) {
 		}
 		else return;
 
-		if (!m_pGame->m_pClientList[iClientH]->m_appearance.bIsWalking) return;
+		if (!m_game->m_client_list[client_h]->m_appearance.is_walking) return;
 
-		iSkillLevel = m_pGame->m_pClientList[iClientH]->m_cSkillMastery[0];
-		if (iSkillLevel == 0) break;
+		skill_level = m_game->m_client_list[client_h]->m_skill_mastery[0];
+		if (skill_level == 0) break;
 
-		if (m_pGame->m_pDynamicObjectManager->m_pDynamicObjectList[iDynamicIndex] == 0) break;
-		iSkillLevel -= m_pMineral[m_pGame->m_pDynamicObjectManager->m_pDynamicObjectList[iDynamicIndex]->m_iV1]->m_iDifficulty;
-		if (iSkillLevel <= 0) iSkillLevel = 1;
+		if (m_game->m_dynamic_object_manager->m_dynamic_object_list[dynamic_index] == 0) break;
+		skill_level -= m_mineral[m_game->m_dynamic_object_manager->m_dynamic_object_list[dynamic_index]->m_v1]->m_difficulty;
+		if (skill_level <= 0) skill_level = 1;
 
-		iResult = m_pGame->iDice(1, 100);
-		if (iResult <= iSkillLevel) {
-			m_pGame->m_pSkillManager->CalculateSSN_SkillIndex(iClientH, 0, 1);
+		result = m_game->dice(1, 100);
+		if (result <= skill_level) {
+			m_game->m_skill_manager->calculate_ssn_skill_index(client_h, 0, 1);
 
-			switch (m_pMineral[m_pGame->m_pDynamicObjectManager->m_pDynamicObjectList[iDynamicIndex]->m_iV1]->m_cType) {
+			switch (m_mineral[m_game->m_dynamic_object_manager->m_dynamic_object_list[dynamic_index]->m_v1]->m_type) {
 			case 1:
-				switch (m_pGame->iDice(1, 5)) {
+				switch (m_game->dice(1, 5)) {
 				case 1:
 				case 2:
 				case 3:
-					iItemID = 355; // Coal
-					m_pGame->m_pClientList[iClientH]->m_iExpStock += m_pGame->iDice(1, 3);
+					item_id = 355; // Coal
+					m_game->m_client_list[client_h]->m_exp_stock += m_game->dice(1, 3);
 					break;
 				case 4:
-					iItemID = 357; // IronOre
-					m_pGame->m_pClientList[iClientH]->m_iExpStock += m_pGame->iDice(1, 3);
+					item_id = 357; // IronOre
+					m_game->m_client_list[client_h]->m_exp_stock += m_game->dice(1, 3);
 					break;
 				case 5:
-					iItemID = 507; // BlondeStone
-					m_pGame->m_pClientList[iClientH]->m_iExpStock += m_pGame->iDice(1, 3);
+					item_id = 507; // BlondeStone
+					m_game->m_client_list[client_h]->m_exp_stock += m_game->dice(1, 3);
 					break;
 				}
 				break;
 
 			case 2:
-				switch (m_pGame->iDice(1, 5)) {
+				switch (m_game->dice(1, 5)) {
 				case 1:
 				case 2:
-					iItemID = 355; // Coal
-					m_pGame->m_pClientList[iClientH]->m_iExpStock += m_pGame->iDice(1, 3);
+					item_id = 355; // Coal
+					m_game->m_client_list[client_h]->m_exp_stock += m_game->dice(1, 3);
 					break;
 				case 3:
 				case 4:
-					iItemID = 357; // IronOre
-					m_pGame->m_pClientList[iClientH]->m_iExpStock += m_pGame->iDice(1, 3);
+					item_id = 357; // IronOre
+					m_game->m_client_list[client_h]->m_exp_stock += m_game->dice(1, 3);
 					break;
 				case 5:
-					if (m_pGame->iDice(1, 3) == 2) {
-						iItemID = 356; // SilverNugget
-						m_pGame->m_pClientList[iClientH]->m_iExpStock += m_pGame->iDice(1, 4);
+					if (m_game->dice(1, 3) == 2) {
+						item_id = 356; // SilverNugget
+						m_game->m_client_list[client_h]->m_exp_stock += m_game->dice(1, 4);
 					}
 					else {
-						iItemID = 507; // BlondeStone
-						m_pGame->m_pClientList[iClientH]->m_iExpStock += m_pGame->iDice(1, 3);
+						item_id = 507; // BlondeStone
+						m_game->m_client_list[client_h]->m_exp_stock += m_game->dice(1, 3);
 					}
 					break;
 				}
 				break;
 
 			case 3:
-				switch (m_pGame->iDice(1, 6)) {
+				switch (m_game->dice(1, 6)) {
 				case 1:
-					iItemID = 355; // Coal
-					m_pGame->m_pClientList[iClientH]->m_iExpStock += m_pGame->iDice(1, 3);
+					item_id = 355; // Coal
+					m_game->m_client_list[client_h]->m_exp_stock += m_game->dice(1, 3);
 					break;
 				case 2:
 				case 3:
 				case 4:
 				case 5:
-					iItemID = 357; // IronOre
-					m_pGame->m_pClientList[iClientH]->m_iExpStock += m_pGame->iDice(1, 3);
+					item_id = 357; // IronOre
+					m_game->m_client_list[client_h]->m_exp_stock += m_game->dice(1, 3);
 					break;
 				case 6:
-					if (m_pGame->iDice(1, 8) == 3) {
-						if (m_pGame->iDice(1, 2) == 1) {
-							iItemID = 356; // SilverNugget
-							m_pGame->m_pClientList[iClientH]->m_iExpStock += m_pGame->iDice(1, 4);
+					if (m_game->dice(1, 8) == 3) {
+						if (m_game->dice(1, 2) == 1) {
+							item_id = 356; // SilverNugget
+							m_game->m_client_list[client_h]->m_exp_stock += m_game->dice(1, 4);
 						}
 						else {
-							iItemID = 357; // IronOre
-							m_pGame->m_pClientList[iClientH]->m_iExpStock += m_pGame->iDice(1, 3);
+							item_id = 357; // IronOre
+							m_game->m_client_list[client_h]->m_exp_stock += m_game->dice(1, 3);
 						}
 						break;
 					}
 					else {
-						iItemID = 357; // IronOre
-						m_pGame->m_pClientList[iClientH]->m_iExpStock += m_pGame->iDice(1, 3);
+						item_id = 357; // IronOre
+						m_game->m_client_list[client_h]->m_exp_stock += m_game->dice(1, 3);
 					}
 					break;
 				}
 				break;
 
 			case 4:
-				switch (m_pGame->iDice(1, 6)) {
+				switch (m_game->dice(1, 6)) {
 				case 1:
-					iItemID = 355; // Coal
-					m_pGame->m_pClientList[iClientH]->m_iExpStock += m_pGame->iDice(1, 3);
+					item_id = 355; // Coal
+					m_game->m_client_list[client_h]->m_exp_stock += m_game->dice(1, 3);
 					break;
 				case 2:
-					if (m_pGame->iDice(1, 3) == 2) {
-						iItemID = 356; // SilverNugget
-						m_pGame->m_pClientList[iClientH]->m_iExpStock += m_pGame->iDice(1, 4);
+					if (m_game->dice(1, 3) == 2) {
+						item_id = 356; // SilverNugget
+						m_game->m_client_list[client_h]->m_exp_stock += m_game->dice(1, 4);
 					}
 					break;
 				case 3:
 				case 4:
 				case 5:
-					iItemID = 357; // IronOre
-					m_pGame->m_pClientList[iClientH]->m_iExpStock += m_pGame->iDice(1, 3);
+					item_id = 357; // IronOre
+					m_game->m_client_list[client_h]->m_exp_stock += m_game->dice(1, 3);
 					break;
 				case 6:
-					if (m_pGame->iDice(1, 8) == 3) {
-						if (m_pGame->iDice(1, 4) == 3) {
-							if (m_pGame->iDice(1, 4) < 3) {
-								iItemID = 508; // Mithral
-								m_pGame->m_pClientList[iClientH]->m_iExpStock += m_pGame->iDice(1, 15);
+					if (m_game->dice(1, 8) == 3) {
+						if (m_game->dice(1, 4) == 3) {
+							if (m_game->dice(1, 4) < 3) {
+								item_id = 508; // Mithral
+								m_game->m_client_list[client_h]->m_exp_stock += m_game->dice(1, 15);
 							}
 							else {
-								iItemID = 354; // GoldNugget
-								m_pGame->m_pClientList[iClientH]->m_iExpStock += m_pGame->iDice(1, 5);
+								item_id = 354; // GoldNugget
+								m_game->m_client_list[client_h]->m_exp_stock += m_game->dice(1, 5);
 							}
 							break;
 						}
 						else {
-							iItemID = 356; // SilverNugget
-							m_pGame->m_pClientList[iClientH]->m_iExpStock += m_pGame->iDice(1, 4);
+							item_id = 356; // SilverNugget
+							m_game->m_client_list[client_h]->m_exp_stock += m_game->dice(1, 4);
 						}
 						break;
 					}
 					else {
-						if (m_pGame->iDice(1, 2) == 1) {
-							iItemID = 354; // GoldNugget
-							m_pGame->m_pClientList[iClientH]->m_iExpStock += m_pGame->iDice(1, 5);
+						if (m_game->dice(1, 2) == 1) {
+							item_id = 354; // GoldNugget
+							m_game->m_client_list[client_h]->m_exp_stock += m_game->dice(1, 5);
 						}
 						else {
-							iItemID = 357;  // IronOre
-							m_pGame->m_pClientList[iClientH]->m_iExpStock += m_pGame->iDice(1, 3);
+							item_id = 357;  // IronOre
+							m_game->m_client_list[client_h]->m_exp_stock += m_game->dice(1, 3);
 						}
 						break;
 					}
@@ -291,62 +291,62 @@ void MiningManager::_CheckMiningAction(int iClientH, int dX, int dY)
 				break;
 
 			case 5:
-				switch (m_pGame->iDice(1, 19)) {
+				switch (m_game->dice(1, 19)) {
 				case 3:
-					iItemID = 352; // Sapphire
-					m_pGame->m_pClientList[iClientH]->m_iExpStock += m_pGame->iDice(2, 3);
+					item_id = 352; // Sapphire
+					m_game->m_client_list[client_h]->m_exp_stock += m_game->dice(2, 3);
 					break;
 				default:
-					iItemID = 358; // Crystal
-					m_pGame->m_pClientList[iClientH]->m_iExpStock += m_pGame->iDice(2, 3);
+					item_id = 358; // Crystal
+					m_game->m_client_list[client_h]->m_exp_stock += m_game->dice(2, 3);
 					break;
 				}
 				break;
 
 			case 6:
-				switch (m_pGame->iDice(1, 5)) {
+				switch (m_game->dice(1, 5)) {
 				case 1:
-					if (m_pGame->iDice(1, 6) == 3) {
-						iItemID = 353; // Emerald
-						m_pGame->m_pClientList[iClientH]->m_iExpStock += m_pGame->iDice(2, 4);
+					if (m_game->dice(1, 6) == 3) {
+						item_id = 353; // Emerald
+						m_game->m_client_list[client_h]->m_exp_stock += m_game->dice(2, 4);
 					}
 					else {
-						iItemID = 358; // Crystal
-						m_pGame->m_pClientList[iClientH]->m_iExpStock += m_pGame->iDice(2, 3);
+						item_id = 358; // Crystal
+						m_game->m_client_list[client_h]->m_exp_stock += m_game->dice(2, 3);
 					}
 					break;
 				case 2:
-					if (m_pGame->iDice(1, 6) == 3) {
-						iItemID = 352; // Saphire
-						m_pGame->m_pClientList[iClientH]->m_iExpStock += m_pGame->iDice(2, 4);
+					if (m_game->dice(1, 6) == 3) {
+						item_id = 352; // Saphire
+						m_game->m_client_list[client_h]->m_exp_stock += m_game->dice(2, 4);
 					}
 					else {
-						iItemID = 358; // Crystal
-						m_pGame->m_pClientList[iClientH]->m_iExpStock += m_pGame->iDice(2, 3);
+						item_id = 358; // Crystal
+						m_game->m_client_list[client_h]->m_exp_stock += m_game->dice(2, 3);
 					}
 					break;
 				case 3:
-					if (m_pGame->iDice(1, 6) == 3) {
-						iItemID = 351; // Ruby
-						m_pGame->m_pClientList[iClientH]->m_iExpStock += m_pGame->iDice(2, 4);
+					if (m_game->dice(1, 6) == 3) {
+						item_id = 351; // Ruby
+						m_game->m_client_list[client_h]->m_exp_stock += m_game->dice(2, 4);
 					}
 					else {
-						iItemID = 358; // Crystal
-						m_pGame->m_pClientList[iClientH]->m_iExpStock += m_pGame->iDice(2, 3);
+						item_id = 358; // Crystal
+						m_game->m_client_list[client_h]->m_exp_stock += m_game->dice(2, 3);
 					}
 					break;
 				case 4:
-					iItemID = 358; // Crystal
-					m_pGame->m_pClientList[iClientH]->m_iExpStock += m_pGame->iDice(2, 3);
+					item_id = 358; // Crystal
+					m_game->m_client_list[client_h]->m_exp_stock += m_game->dice(2, 3);
 					break;
 				case 5:
-					if (m_pGame->iDice(1, 12) == 3) {
-						iItemID = 350; // Diamond
-						m_pGame->m_pClientList[iClientH]->m_iExpStock += m_pGame->iDice(2, 5);
+					if (m_game->dice(1, 12) == 3) {
+						item_id = 350; // Diamond
+						m_game->m_client_list[client_h]->m_exp_stock += m_game->dice(2, 5);
 					}
 					else {
-						iItemID = 358; // Crystal
-						m_pGame->m_pClientList[iClientH]->m_iExpStock += m_pGame->iDice(2, 3);
+						item_id = 358; // Crystal
+						m_game->m_client_list[client_h]->m_exp_stock += m_game->dice(2, 3);
 					}
 					break;
 				}
@@ -354,25 +354,25 @@ void MiningManager::_CheckMiningAction(int iClientH, int dX, int dY)
 
 			}
 
-			pItem = new CItem;
-			if (m_pGame->m_pItemManager->_bInitItemAttr(pItem, iItemID) == false) {
-				delete pItem;
+			item = new CItem;
+			if (m_game->m_item_manager->init_item_attr(item, item_id) == false) {
+				delete item;
 			}
 			else {
-				m_pGame->m_pMapList[m_pGame->m_pClientList[iClientH]->m_cMapIndex]->bSetItem(m_pGame->m_pClientList[iClientH]->m_sX,
-					m_pGame->m_pClientList[iClientH]->m_sY, pItem);
-				m_pGame->SendEventToNearClient_TypeB(MsgId::EventCommon, CommonType::ItemDrop, m_pGame->m_pClientList[iClientH]->m_cMapIndex,
-					m_pGame->m_pClientList[iClientH]->m_sX, m_pGame->m_pClientList[iClientH]->m_sY,
-					pItem->m_sIDnum, 0, pItem->m_cItemColor, pItem->m_dwAttribute); // v1.4
+				m_game->m_map_list[m_game->m_client_list[client_h]->m_map_index]->set_item(m_game->m_client_list[client_h]->m_x,
+					m_game->m_client_list[client_h]->m_y, item);
+				m_game->send_event_to_near_client_type_b(MsgId::EventCommon, CommonType::ItemDrop, m_game->m_client_list[client_h]->m_map_index,
+					m_game->m_client_list[client_h]->m_x, m_game->m_client_list[client_h]->m_y,
+					item->m_id_num, 0, item->m_item_color, item->m_attribute); // v1.4
 			}
 
-			m_pMineral[m_pGame->m_pDynamicObjectManager->m_pDynamicObjectList[iDynamicIndex]->m_iV1]->m_iRemain--;
-			if (m_pMineral[m_pGame->m_pDynamicObjectManager->m_pDynamicObjectList[iDynamicIndex]->m_iV1]->m_iRemain <= 0) {
+			m_mineral[m_game->m_dynamic_object_manager->m_dynamic_object_list[dynamic_index]->m_v1]->m_remain--;
+			if (m_mineral[m_game->m_dynamic_object_manager->m_dynamic_object_list[dynamic_index]->m_v1]->m_remain <= 0) {
 				// . Delete Mineral
-				bDeleteMineral(m_pGame->m_pDynamicObjectManager->m_pDynamicObjectList[iDynamicIndex]->m_iV1);
+				delete_mineral(m_game->m_dynamic_object_manager->m_dynamic_object_list[dynamic_index]->m_v1);
 
-				delete m_pGame->m_pDynamicObjectManager->m_pDynamicObjectList[iDynamicIndex];
-				m_pGame->m_pDynamicObjectManager->m_pDynamicObjectList[iDynamicIndex] = 0;
+				delete m_game->m_dynamic_object_manager->m_dynamic_object_list[dynamic_index];
+				m_game->m_dynamic_object_manager->m_dynamic_object_list[dynamic_index] = 0;
 			}
 		}
 		break;
@@ -382,27 +382,27 @@ void MiningManager::_CheckMiningAction(int iClientH, int dX, int dY)
 	}
 }
 
-bool MiningManager::bDeleteMineral(int iIndex)
+bool MiningManager::delete_mineral(int index)
 {
-	int iDynamicIndex;
-	uint32_t dwTime;
+	int dynamic_index;
+	uint32_t time;
 
-	dwTime = GameClock::GetTimeMS();
+	time = GameClock::GetTimeMS();
 
-	if (m_pMineral[iIndex] == 0) return false;
-	iDynamicIndex = m_pMineral[iIndex]->m_sDynamicObjectHandle;
-	if (m_pGame->m_pDynamicObjectManager->m_pDynamicObjectList[iDynamicIndex] == 0) return false;
+	if (m_mineral[index] == 0) return false;
+	dynamic_index = m_mineral[index]->m_dynamic_object_handle;
+	if (m_game->m_dynamic_object_manager->m_dynamic_object_list[dynamic_index] == 0) return false;
 
-	m_pGame->SendEventToNearClient_TypeB(MsgId::DynamicObject, MsgType::Reject, m_pGame->m_pDynamicObjectManager->m_pDynamicObjectList[iDynamicIndex]->m_cMapIndex,
-		m_pGame->m_pDynamicObjectManager->m_pDynamicObjectList[iDynamicIndex]->m_sX, m_pGame->m_pDynamicObjectManager->m_pDynamicObjectList[iDynamicIndex]->m_sY,
-		m_pGame->m_pDynamicObjectManager->m_pDynamicObjectList[iDynamicIndex]->m_sType, iDynamicIndex, 0, (short)0);
-	m_pGame->m_pMapList[m_pGame->m_pDynamicObjectManager->m_pDynamicObjectList[iDynamicIndex]->m_cMapIndex]->SetDynamicObject(0, 0, m_pGame->m_pDynamicObjectManager->m_pDynamicObjectList[iDynamicIndex]->m_sX, m_pGame->m_pDynamicObjectManager->m_pDynamicObjectList[iDynamicIndex]->m_sY, dwTime);
-	m_pGame->m_pMapList[m_pMineral[iIndex]->m_cMapIndex]->SetTempMoveAllowedFlag(m_pGame->m_pDynamicObjectManager->m_pDynamicObjectList[iDynamicIndex]->m_sX, m_pGame->m_pDynamicObjectManager->m_pDynamicObjectList[iDynamicIndex]->m_sY, true);
+	m_game->send_event_to_near_client_type_b(MsgId::DynamicObject, MsgType::Reject, m_game->m_dynamic_object_manager->m_dynamic_object_list[dynamic_index]->m_map_index,
+		m_game->m_dynamic_object_manager->m_dynamic_object_list[dynamic_index]->m_x, m_game->m_dynamic_object_manager->m_dynamic_object_list[dynamic_index]->m_y,
+		m_game->m_dynamic_object_manager->m_dynamic_object_list[dynamic_index]->m_type, dynamic_index, 0, (short)0);
+	m_game->m_map_list[m_game->m_dynamic_object_manager->m_dynamic_object_list[dynamic_index]->m_map_index]->set_dynamic_object(0, 0, m_game->m_dynamic_object_manager->m_dynamic_object_list[dynamic_index]->m_x, m_game->m_dynamic_object_manager->m_dynamic_object_list[dynamic_index]->m_y, time);
+	m_game->m_map_list[m_mineral[index]->m_map_index]->set_temp_move_allowed_flag(m_game->m_dynamic_object_manager->m_dynamic_object_list[dynamic_index]->m_x, m_game->m_dynamic_object_manager->m_dynamic_object_list[dynamic_index]->m_y, true);
 
-	m_pGame->m_pMapList[m_pMineral[iIndex]->m_cMapIndex]->m_iCurMineral--;
+	m_game->m_map_list[m_mineral[index]->m_map_index]->m_cur_mineral--;
 
-	delete m_pMineral[iIndex];
-	m_pMineral[iIndex] = 0;
+	delete m_mineral[index];
+	m_mineral[index] = 0;
 
 	return true;
 }

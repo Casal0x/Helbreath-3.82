@@ -7,27 +7,27 @@
 class CItem;
 class CGame;
 
-class ShopManager
+class shop_manager
 {
 public:
-	static ShopManager& Get();
-	void SetGame(CGame* pGame);
+	static shop_manager& get();
+	void set_game(CGame* game);
 
-	void RequestShopMenu(char cType);
-	void HandleResponse(char* pData);
+	void request_shop_menu(char type);
+	void handle_response(char* data);
 
-	void ClearItems();
-	bool HasItems() const;
+	void clear_items();
+	bool has_items() const;
 
-	auto& GetItemList() { return m_item_list; }
-	int16_t GetPendingShopType() const { return m_pending_shop_type; }
-	void SetPendingShopType(int16_t type) { m_pending_shop_type = type; }
+	auto& get_item_list() { return m_item_list; }
+	int16_t get_pending_shop_type() const { return m_pending_shop_type; }
+	void set_pending_shop_type(int16_t type) { m_pending_shop_type = type; }
 
 private:
-	ShopManager();
-	~ShopManager();
+	shop_manager();
+	~shop_manager();
 
-	void SendRequest(int16_t npcType);
+	void send_request(int16_t npcType);
 
 	CGame* m_game = nullptr;
 	std::array<std::unique_ptr<CItem>, game_limits::max_menu_items> m_item_list;

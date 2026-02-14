@@ -59,7 +59,7 @@ class CDebugWindow* DbgWnd;
 extern char G_cTxt[512];
 extern char	G_cData50000[50000];
 
-// extern void PutDebugMsg(char * cStr);	// 2002-09-09 #2
+// extern void PutDebugMsg(char * str);	// 2002-09-09 #2
 
 
 // Move location tables  auto-calculated from hb::shared::view::InitDataTilesX/Y.
@@ -149,182 +149,182 @@ CGame::CGame()
 
 	BuildMoveLocTables();
 
-	m_bIsGameStarted = false;
+	m_is_game_started = false;
 	_lsock = 0;
 	g_login = new LoginServer;
 
-	// Initialize configurable settings with defaults
+	// initialize configurable settings with defaults
 	// Timing Settings (milliseconds)
-	m_iClientTimeout = ClientTimeout;
-	m_iStaminaRegenInterval = SpUpTime;
-	m_iPoisonDamageInterval = PoisonTime;
-	m_iHealthRegenInterval = HpUpTime;
-	m_iManaRegenInterval = MpUpTime;
-	m_iHungerConsumeInterval = HungerTime;
-	m_iSummonCreatureDuration = SummonTime;
-	m_iAutosaveInterval = AutoSaveTime;
-	m_iLagProtectionInterval = RagProtectionTime;
+	m_client_timeout = ClientTimeout;
+	m_stamina_regen_interval = SpUpTime;
+	m_poison_damage_interval = PoisonTime;
+	m_health_regen_interval = HpUpTime;
+	m_mana_regen_interval = MpUpTime;
+	m_hunger_consume_interval = HungerTime;
+	m_summon_creature_duration = SummonTime;
+	m_autosave_interval = AutoSaveTime;
+	m_lag_protection_interval = RagProtectionTime;
 
 	// Character/Leveling Settings
-	m_iBaseStatValue = 10;
-	m_iCreationStatBonus = 4;
-	m_iLevelupStatGain = TotalLevelUpPoint;
-	m_iMaxLevel = hb::shared::limits::PlayerMaxLevel;
-	m_iMaxStatValue = 0; // Calculated after config load
+	m_base_stat_value = 10;
+	m_creation_stat_bonus = 4;
+	m_levelup_stat_gain = TotalLevelUpPoint;
+	m_max_level = hb::shared::limits::PlayerMaxLevel;
+	m_max_stat_value = 0; // Calculated after config load
 
 	// Combat Settings
-	m_iMinimumHitRatio = MinimumHitRatio;
-	m_iMaximumHitRatio = MaximumHitRatio;
+	m_minimum_hit_ratio = MinimumHitRatio;
+	m_maximum_hit_ratio = MaximumHitRatio;
 
 	// Gameplay Settings
-	m_iNighttimeDuration = NightTime;
-	m_iStartingGuildRank = m_iStartingGuildRank;
-	m_iGrandMagicManaConsumption = GmgManaConsumeUnit;
-	m_iMaxConstructionPoints = m_iMaxConstructionPoints;
-	m_iMaxSummonPoints = MaxSummonPoints;
-	m_iMaxWarContribution = m_iMaxWarContribution;
-	m_iMaxBankItems = 200; // Default soft cap
+	m_nighttime_duration = NightTime;
+	m_starting_guild_rank = m_starting_guild_rank;
+	m_grand_magic_mana_consumption = GmgManaConsumeUnit;
+	m_max_construction_points = m_max_construction_points;
+	m_max_summon_points = MaxSummonPoints;
+	m_max_war_contribution = m_max_war_contribution;
+	m_max_bank_items = 200; // Default soft cap
 
-	m_bIsDropTableAvailable = false;
-	m_DropTables.clear();
+	m_is_drop_table_available = false;
+	m_drop_tables.clear();
 
 	for(int i = 0; i < MaxClients; i++)
-		m_pClientList[i] = 0;
+		m_client_list[i] = 0;
 
 	for(int i = 0; i < MaxMaps; i++)
-		m_pMapList[i] = 0;
+		m_map_list[i] = 0;
 
 	for(int i = 0; i < MaxItemTypes; i++)
-		m_pItemConfigList[i] = 0;
+		m_item_config_list[i] = 0;
 
 	for(int i = 0; i < MaxNpcTypes; i++)
-		m_pNpcConfigList[i] = 0;
+		m_npc_config_list[i] = 0;
 
-	// Initialize Entity Manager (MUST be before any entity operations)
-	m_pEntityManager = new CEntityManager();
+	// initialize Entity Manager (MUST be before any entity operations)
+	m_entity_manager = new CEntityManager();
 
-	// Get reference to EntityManager's entity array for backward compatibility
-	// This allows existing code to access entities via m_pNpcList
-	m_pNpcList = m_pEntityManager->GetEntityArray();
-	m_pEntityManager->SetMapList(m_pMapList, MaxMaps);
-	m_pEntityManager->SetGame(this);
+	// get reference to EntityManager's entity array for backward compatibility
+	// This allows existing code to access entities via m_npc_list
+	m_npc_list = m_entity_manager->get_entity_array();
+	m_entity_manager->set_map_list(m_map_list, MaxMaps);
+	m_entity_manager->set_game(this);
 
-	// Initialize Gathering Managers
-	m_pFishingManager = new FishingManager();
-	m_pFishingManager->SetGame(this);
-	m_pMiningManager = new MiningManager();
-	m_pMiningManager->SetGame(this);
-	m_pCraftingManager = new CraftingManager();
-	m_pCraftingManager->SetGame(this);
-	m_pQuestManager = new QuestManager();
-	m_pQuestManager->SetGame(this);
-	m_pGuildManager = new GuildManager();
-	m_pGuildManager->SetGame(this);
-	m_pDelayEventManager = new DelayEventManager();
-	m_pDelayEventManager->SetGame(this);
-	m_pDelayEventManager->InitArrays();
-	m_pDynamicObjectManager = new DynamicObjectManager();
-	m_pDynamicObjectManager->SetGame(this);
-	m_pDynamicObjectManager->InitArrays();
-	m_pLootManager = new LootManager();
-	m_pLootManager->SetGame(this);
-	m_pCombatManager = new CombatManager();
-	m_pItemManager = new ItemManager();
-	m_pMagicManager = new MagicManager();
-	m_pSkillManager = new SkillManager();
-	m_pWarManager = new WarManager();
-	m_pStatusEffectManager = new StatusEffectManager();
-	m_pCombatManager->SetGame(this);
-	m_pItemManager->SetGame(this);
-	m_pMagicManager->SetGame(this);
-	m_pSkillManager->SetGame(this);
-	m_pWarManager->SetGame(this);
-	m_pStatusEffectManager->SetGame(this);
+	// initialize Gathering Managers
+	m_fishing_manager = new FishingManager();
+	m_fishing_manager->set_game(this);
+	m_mining_manager = new MiningManager();
+	m_mining_manager->set_game(this);
+	m_crafting_manager = new CraftingManager();
+	m_crafting_manager->set_game(this);
+	m_quest_manager = new QuestManager();
+	m_quest_manager->set_game(this);
+	m_guild_manager = new GuildManager();
+	m_guild_manager->set_game(this);
+	m_delay_event_manager = new DelayEventManager();
+	m_delay_event_manager->set_game(this);
+	m_delay_event_manager->init_arrays();
+	m_dynamic_object_manager = new DynamicObjectManager();
+	m_dynamic_object_manager->set_game(this);
+	m_dynamic_object_manager->init_arrays();
+	m_loot_manager = new LootManager();
+	m_loot_manager->set_game(this);
+	m_combat_manager = new CombatManager();
+	m_item_manager = new ItemManager();
+	m_magic_manager = new MagicManager();
+	m_skill_manager = new SkillManager();
+	m_war_manager = new WarManager();
+	m_status_effect_manager = new StatusEffectManager();
+	m_combat_manager->set_game(this);
+	m_item_manager->set_game(this);
+	m_magic_manager->set_game(this);
+	m_skill_manager->set_game(this);
+	m_war_manager->set_game(this);
+	m_status_effect_manager->set_game(this);
 
 	for(int i = 0; i < hb::shared::limits::MaxMagicType; i++)
-		m_pMagicConfigList[i] = 0;
+		m_magic_config_list[i] = 0;
 
 	for(int i = 0; i < hb::shared::limits::MaxSkillType; i++)
-		m_pSkillConfigList[i] = 0;
+		m_skill_config_list[i] = 0;
 
 	for(int i = 0; i < MaxNotifyMsgs; i++)
-		m_pNoticeMsgList[i] = 0;
+		m_notice_msg_list[i] = 0;
 
 	//	/for(int i = 0; i < DEF_MAXTELEPORTTYPE; i++)
 	//		m_pTeleportConfigList[i] = 0;
 
 	for(int i = 0; i < hb::shared::limits::MaxBuildItems; i++)
-		m_pBuildItemList[i] = 0;
+		m_build_item_list[i] = 0;
 
 	// New 06/05/2004
 	for(int i = 0; i < MaxClients; i++) {
-		m_stPartyInfo[i].iTotalMembers = 0;
+		m_party_info[i].total_members = 0;
 		for (x = 0; x < hb::shared::limits::MaxPartyMembers; x++)
-			m_stPartyInfo[i].iIndex[x] = 0;
+			m_party_info[i].index[x] = 0;
 	}
 
-	m_iTotalClients = 0;
-	m_iMaxClients = 0;
-	m_iTotalMaps = 0;
+	m_total_clients = 0;
+	m_max_clients = 0;
+	m_total_maps = 0;
 
-	m_iTotalGameServerClients = 0;
-	m_iTotalGameServerMaxClients = 0;
+	m_total_game_server_clients = 0;
+	m_total_game_server_max_clients = 0;
 
-	m_MaxUserSysTime.hour = 0;
-	m_MaxUserSysTime.minute = 0;
+	m_max_user_sys_time.hour = 0;
+	m_max_user_sys_time.minute = 0;
 
-	m_bIsServerShutdowned = false;
-	m_cShutDownCode = 0;
+	m_is_server_shutdown = false;
+	m_shutdown_code = 0;
 
-	m_iMiddlelandMapIndex = -1;
-	m_iAresdenOccupyTiles = 0;
-	m_iElvineOccupyTiles = 0;
+	m_middleland_map_index = -1;
+	m_aresden_occupy_tiles = 0;
+	m_elvine_occupy_tiles = 0;
 
-	m_iCurMsgs = 0;
-	m_iMaxMsgs = 0;
+	m_cur_msgs = 0;
+	m_max_msgs = 0;
 
-	m_stCityStatus[1].iCrimes = 0;
-	m_stCityStatus[1].iFunds = 0;
-	m_stCityStatus[1].iWins = 0;
+	m_city_status[1].crimes = 0;
+	m_city_status[1].funds = 0;
+	m_city_status[1].wins = 0;
 
-	m_stCityStatus[2].iCrimes = 0;
-	m_stCityStatus[2].iFunds = 0;
-	m_stCityStatus[2].iWins = 0;
+	m_city_status[2].crimes = 0;
+	m_city_status[2].funds = 0;
+	m_city_status[2].wins = 0;
 
-	m_iAutoRebootingCount = 0;
-	m_bEnemyKillMode = false;
-	m_iEnemyKillAdjust = 1;
-	m_sRaidTimeMonday = 0;
-	m_sRaidTimeTuesday = 0;
-	m_sRaidTimeWednesday = 0;
-	m_sRaidTimeThursday = 0;
-	m_sRaidTimeFriday = 0;
-	m_sRaidTimeSaturday = 0;
-	m_sRaidTimeSunday = 0;
-	m_sCharPointLimit = 0;
-	m_sSlateSuccessRate = 0;
-	m_sForceRecallTime = 0;
-	m_fPrimaryDropRate = 1.0f;    // 1.0 = normal (10% base), 1.5 = 150%, etc.
-	m_fGoldDropRate = 1.0f;       // 1.0 = normal (30% base), 1.5 = 150%, etc.
-	m_fSecondaryDropRate = 1.0f;  // 1.0 = normal (5% base), 1.5 = 150%, etc.
+	m_auto_rebooting_count = 0;
+	m_enemy_kill_mode = false;
+	m_enemy_kill_adjust = 1;
+	m_raid_time_monday = 0;
+	m_raid_time_tuesday = 0;
+	m_raid_time_wednesday = 0;
+	m_raid_time_thursday = 0;
+	m_raid_time_friday = 0;
+	m_raid_time_saturday = 0;
+	m_raid_time_sunday = 0;
+	m_char_point_limit = 0;
+	m_slate_success_rate = 0;
+	m_force_recall_time = 0;
+	m_primary_drop_rate = 1.0f;    // 1.0 = normal (10% base), 1.5 = 150%, etc.
+	m_gold_drop_rate = 1.0f;       // 1.0 = normal (30% base), 1.5 = 150%, etc.
+	m_secondary_drop_rate = 1.0f;  // 1.0 = normal (5% base), 1.5 = 150%, etc.
 
 	//Show Debug hb::shared::render::Window
 	//DbgWnd = new CDebugWindow();
 	//DbgWnd->Startup();
 	//DbgWnd->AddEventMsg("CGame Startup");
 	// 2002-09-09 #1
-	m_bReceivedItemList = false;
+	m_received_item_list = false;
 
 	for(int i = 0; i < MaxClientLoginSock; i++)
 		_lclients[i] = nullptr;
 
-	m_pPartyManager = new class PartyManager(this);
+	m_party_manager = new class PartyManager(this);
 
 }
 
 CGame::~CGame()
 {
-	//DbgWnd->Shutdown();
+	//DbgWnd->shutdown();
 	//delete DbgWnd;
 
 	for(int i = 0; i < MaxClientLoginSock; i++)
@@ -336,63 +336,63 @@ CGame::~CGame()
 		}
 	}
 
-	delete m_pPartyManager;
+	delete m_party_manager;
 
 	// Cleanup Entity Manager
-	if (m_pEntityManager != NULL) {
-		delete m_pEntityManager;
-		m_pEntityManager = NULL;
+	if (m_entity_manager != NULL) {
+		delete m_entity_manager;
+		m_entity_manager = NULL;
 	}
 
 	// Cleanup Gathering Managers
-	if (m_pFishingManager != nullptr) {
-		delete m_pFishingManager;
-		m_pFishingManager = nullptr;
+	if (m_fishing_manager != nullptr) {
+		delete m_fishing_manager;
+		m_fishing_manager = nullptr;
 	}
-	if (m_pMiningManager != nullptr) {
-		delete m_pMiningManager;
-		m_pMiningManager = nullptr;
+	if (m_mining_manager != nullptr) {
+		delete m_mining_manager;
+		m_mining_manager = nullptr;
 	}
-	if (m_pCraftingManager != nullptr) {
-		delete m_pCraftingManager;
-		m_pCraftingManager = nullptr;
+	if (m_crafting_manager != nullptr) {
+		delete m_crafting_manager;
+		m_crafting_manager = nullptr;
 	}
-	if (m_pQuestManager != nullptr) {
-		delete m_pQuestManager;
-		m_pQuestManager = nullptr;
+	if (m_quest_manager != nullptr) {
+		delete m_quest_manager;
+		m_quest_manager = nullptr;
 	}
-	if (m_pGuildManager != nullptr) {
-		delete m_pGuildManager;
-		m_pGuildManager = nullptr;
+	if (m_guild_manager != nullptr) {
+		delete m_guild_manager;
+		m_guild_manager = nullptr;
 	}
-	if (m_pDelayEventManager != nullptr) {
-		m_pDelayEventManager->CleanupArrays();
-		delete m_pDelayEventManager;
-		m_pDelayEventManager = nullptr;
+	if (m_delay_event_manager != nullptr) {
+		m_delay_event_manager->cleanup_arrays();
+		delete m_delay_event_manager;
+		m_delay_event_manager = nullptr;
 	}
-	if (m_pDynamicObjectManager != nullptr) {
-		m_pDynamicObjectManager->CleanupArrays();
-		delete m_pDynamicObjectManager;
-		m_pDynamicObjectManager = nullptr;
+	if (m_dynamic_object_manager != nullptr) {
+		m_dynamic_object_manager->cleanup_arrays();
+		delete m_dynamic_object_manager;
+		m_dynamic_object_manager = nullptr;
 	}
-	if (m_pLootManager != nullptr) {
-		delete m_pLootManager;
-		m_pLootManager = nullptr;
+	if (m_loot_manager != nullptr) {
+		delete m_loot_manager;
+		m_loot_manager = nullptr;
 	}
-	if (m_pCombatManager != nullptr) {
-		delete m_pCombatManager;
-	delete m_pItemManager;
-	delete m_pMagicManager;
-	delete m_pSkillManager;
-	delete m_pWarManager;
-	delete m_pStatusEffectManager;
-		m_pCombatManager = nullptr;
+	if (m_combat_manager != nullptr) {
+		delete m_combat_manager;
+	delete m_item_manager;
+	delete m_magic_manager;
+	delete m_skill_manager;
+	delete m_war_manager;
+	delete m_status_effect_manager;
+		m_combat_manager = nullptr;
 	}
 }
 
-bool CGame::bAcceptLogin(hb::shared::net::ASIOSocket* sock)
+bool CGame::accept_login(hb::shared::net::ASIOSocket* sock)
 {
-	if (m_bIsGameStarted == false)
+	if (m_is_game_started == false)
 	{
 		hb::logger::log("Connection closed (not initialized)");
 		goto CLOSE_ANYWAY;
@@ -403,10 +403,10 @@ bool CGame::bAcceptLogin(hb::shared::net::ASIOSocket* sock)
 		auto& p = _lclients[i];
 		if (!p)
 		{
-			p = new LoginClient(G_pIOPool->GetContext());
-			sock->bAccept(p->_sock);  // MODERNIZED: Removed WM_USER_BOT_ACCEPT message ID
-			std::memset(p->_ip, 0, sizeof(p->_ip));
-			p->_sock->iGetPeerAddress(p->_ip);
+			p = new LoginClient(G_pIOPool->get_context());
+			sock->accept(p->sock);  // MODERNIZED: Removed WM_USER_BOT_ACCEPT message ID
+			std::memset(p->ip, 0, sizeof(p->ip));
+			p->sock->get_peer_address(p->ip);
 			return true;
 		}
 	}
@@ -414,117 +414,117 @@ bool CGame::bAcceptLogin(hb::shared::net::ASIOSocket* sock)
 CLOSE_ANYWAY:
 
 	// MODERNIZED: Removed m_hWnd parameter
-	auto pTmpSock = new hb::shared::net::ASIOSocket(G_pIOPool->GetContext(), ServerSocketBlockLimit);
-	sock->bAccept(pTmpSock);
-	delete pTmpSock;
+	auto tmp_sock = new hb::shared::net::ASIOSocket(G_pIOPool->get_context(), ServerSocketBlockLimit);
+	sock->accept(tmp_sock);
+	delete tmp_sock;
 
 	return false;
 }
 
-bool CGame::bAccept(class hb::shared::net::ASIOSocket* pXSock)
+bool CGame::accept(class hb::shared::net::ASIOSocket* x_sock)
 {
-	int iTotalip = 0, a;
-	class hb::shared::net::ASIOSocket* pTmpSock;
-	char cIPtoBan[21];
-	FILE* pFile;
+	int totalip = 0, a;
+	class hb::shared::net::ASIOSocket* tmp_sock;
+	char i_pto_ban[21];
+	FILE* file;
 
-	if (m_bIsGameStarted == false)
+	if (m_is_game_started == false)
 		goto CLOSE_ANYWAY;
 
 	for(int i = 1; i < MaxClients; i++)
-		if (m_pClientList[i] == 0) {
+		if (m_client_list[i] == 0) {
 
-			m_pClientList[i] = new class CClient(G_pIOPool->GetContext());
-			bAddClientShortCut(i);
-			m_pClientList[i]->m_dwSPTime = m_pClientList[i]->m_dwMPTime =
-				m_pClientList[i]->m_dwHPTime = m_pClientList[i]->m_dwAutoSaveTime =
-				m_pClientList[i]->m_dwTime = m_pClientList[i]->m_dwHungerTime = m_pClientList[i]->m_dwExpStockTime =
-				m_pClientList[i]->m_dwRecentAttackTime = m_pClientList[i]->m_dwAutoExpTime = m_pClientList[i]->m_dwSpeedHackCheckTime =
-				m_pClientList[i]->m_dwAfkActivityTime = GameClock::GetTimeMS();
+			m_client_list[i] = new class CClient(G_pIOPool->get_context());
+			add_client_short_cut(i);
+			m_client_list[i]->m_sp_time = m_client_list[i]->m_mp_time =
+				m_client_list[i]->m_hp_time = m_client_list[i]->m_auto_save_time =
+				m_client_list[i]->m_time = m_client_list[i]->m_hunger_time = m_client_list[i]->m_exp_stock_time =
+				m_client_list[i]->m_recent_attack_time = m_client_list[i]->m_auto_exp_time = m_client_list[i]->m_speed_hack_check_time =
+				m_client_list[i]->m_afk_activity_time = GameClock::GetTimeMS();
 
-			pXSock->bAccept(m_pClientList[i]->m_pXSock);
+			x_sock->accept(m_client_list[i]->m_socket);
 
-			std::memset(m_pClientList[i]->m_cIPaddress, 0, sizeof(m_pClientList[i]->m_cIPaddress));
-			m_pClientList[i]->m_pXSock->iGetPeerAddress(m_pClientList[i]->m_cIPaddress);
+			std::memset(m_client_list[i]->m_ip_address, 0, sizeof(m_client_list[i]->m_ip_address));
+			m_client_list[i]->m_socket->get_peer_address(m_client_list[i]->m_ip_address);
 
 			a = i;
 
 			for(int v = 0; v < MaxBanned; v++)
 			{
-				if (strcmp(m_stBannedList[v].m_cBannedIPaddress, m_pClientList[i]->m_cIPaddress) == 0)
+				if (strcmp(m_banned_list[v].banned_ip_address, m_client_list[i]->m_ip_address) == 0)
 				{
 					goto CLOSE_CONN;
 				}
 			}
 			//centu: Anti-Downer
 			for(int j = 0; j < MaxClients; j++) {
-				if (m_pClientList[j] != 0) {
-					if (strcmp(m_pClientList[j]->m_cIPaddress, m_pClientList[i]->m_cIPaddress) == 0) iTotalip++;
+				if (m_client_list[j] != 0) {
+					if (strcmp(m_client_list[j]->m_ip_address, m_client_list[i]->m_ip_address) == 0) totalip++;
 				}
 			}
-			if (iTotalip > 9) {
-				std::memset(cIPtoBan, 0, sizeof(cIPtoBan));
-				strcpy(cIPtoBan, m_pClientList[i]->m_cIPaddress);
+			if (totalip > 9) {
+				std::memset(i_pto_ban, 0, sizeof(i_pto_ban));
+				strcpy(i_pto_ban, m_client_list[i]->m_ip_address);
 				//opens cfg file
-				pFile = fopen("gameconfigs/bannedlist.cfg", "a");
+				file = fopen("gameconfigs/bannedlist.cfg", "a");
 				//shows log
-				hb::logger::log("Client {}: IP banned ({})", i, cIPtoBan);
+				hb::logger::log("Client {}: IP banned ({})", i, i_pto_ban);
 				//modifys cfg file
-				fprintf(pFile, "banned-ip = %s", cIPtoBan);
-				fprintf(pFile, "\n");
-				fclose(pFile);
+				fprintf(file, "banned-ip = %s", i_pto_ban);
+				fprintf(file, "\n");
+				fclose(file);
 
 				//updates bannedlist.cfg on the server
 				for(int x = 0; x < MaxBanned; x++)
-					if (strlen(m_stBannedList[x].m_cBannedIPaddress) == 0)
-						strcpy(m_stBannedList[x].m_cBannedIPaddress, cIPtoBan);
+					if (strlen(m_banned_list[x].banned_ip_address) == 0)
+						strcpy(m_banned_list[x].banned_ip_address, i_pto_ban);
 
 				goto CLOSE_CONN;
 			}
 
-			hb::logger::log("Client {}: connected from {}", i, m_pClientList[i]->m_cIPaddress);
+			hb::logger::log("Client {}: connected from {}", i, m_client_list[i]->m_ip_address);
 
-			m_iTotalClients++;
+			m_total_clients++;
 
-			if (m_iTotalClients > m_iMaxClients) {
-				m_iMaxClients = m_iTotalClients;
-				//m_MaxUserSysTime = hb::time::local_time::now();
-				//std::snprintf(cTxt, sizeof(cTxt), "Maximum Players: %d", m_iMaxClients);
-				//PutLogFileList(cTxt);
+			if (m_total_clients > m_max_clients) {
+				m_max_clients = m_total_clients;
+				//m_max_user_sys_time = hb::time::local_time::now();
+				//std::snprintf(txt, sizeof(txt), "Maximum Players: %d", m_max_clients);
+				//PutLogFileList(txt);
 			}
 
-			// m_pClientList[iClientH]->m_bIsInitComplete   .
+			// m_client_list[client_h]->m_is_init_complete   .
 			return true;
 		}
 
 CLOSE_ANYWAY:
 
-	pTmpSock = new class hb::shared::net::ASIOSocket(G_pIOPool->GetContext(), ServerSocketBlockLimit);
-	pXSock->bAccept(pTmpSock);
-	delete pTmpSock;
+	tmp_sock = new class hb::shared::net::ASIOSocket(G_pIOPool->get_context(), ServerSocketBlockLimit);
+	x_sock->accept(tmp_sock);
+	delete tmp_sock;
 
 	return false;
 
 CLOSE_CONN:
-	delete m_pClientList[a];
-	m_pClientList[a] = 0;
-	RemoveClientShortCut(a);
+	delete m_client_list[a];
+	m_client_list[a] = 0;
+	remove_client_short_cut(a);
 	return false;
 }
 
-bool CGame::bAcceptLoginFromAsync(asio::ip::tcp::socket&& peer)
+bool CGame::accept_login_from_async(asio::ip::tcp::socket&& peer)
 {
-	if (m_bIsGameStarted == false) return false;
+	if (m_is_game_started == false) return false;
 
 	for(int i = 0; i < MaxClientLoginSock; i++)
 	{
 		auto& p = _lclients[i];
 		if (!p)
 		{
-			p = new LoginClient(G_pIOPool->GetContext());
-			p->_sock->bAcceptFromSocket(std::move(peer));
-			std::memset(p->_ip, 0, sizeof(p->_ip));
-			p->_sock->iGetPeerAddress(p->_ip);
+			p = new LoginClient(G_pIOPool->get_context());
+			p->sock->accept_from_socket(std::move(peer));
+			std::memset(p->ip, 0, sizeof(p->ip));
+			p->sock->get_peer_address(p->ip);
 			return true;
 		}
 	}
@@ -532,75 +532,75 @@ bool CGame::bAcceptLoginFromAsync(asio::ip::tcp::socket&& peer)
 	return false;
 }
 
-bool CGame::bAcceptFromAsync(asio::ip::tcp::socket&& peer)
+bool CGame::accept_from_async(asio::ip::tcp::socket&& peer)
 {
-	int iTotalip = 0, a;
-	char cIPtoBan[21];
-	FILE* pFile;
+	int totalip = 0, a;
+	char i_pto_ban[21];
+	FILE* file;
 
-	if (m_bIsGameStarted == false) return false;
+	if (m_is_game_started == false) return false;
 
 	for(int i = 1; i < MaxClients; i++)
-		if (m_pClientList[i] == 0) {
+		if (m_client_list[i] == 0) {
 
-			m_pClientList[i] = new class CClient(G_pIOPool->GetContext());
-			bAddClientShortCut(i);
-			m_pClientList[i]->m_dwSPTime = m_pClientList[i]->m_dwMPTime =
-				m_pClientList[i]->m_dwHPTime = m_pClientList[i]->m_dwAutoSaveTime =
-				m_pClientList[i]->m_dwTime = m_pClientList[i]->m_dwHungerTime = m_pClientList[i]->m_dwExpStockTime =
-				m_pClientList[i]->m_dwRecentAttackTime = m_pClientList[i]->m_dwAutoExpTime = m_pClientList[i]->m_dwSpeedHackCheckTime =
-				m_pClientList[i]->m_dwAfkActivityTime = GameClock::GetTimeMS();
+			m_client_list[i] = new class CClient(G_pIOPool->get_context());
+			add_client_short_cut(i);
+			m_client_list[i]->m_sp_time = m_client_list[i]->m_mp_time =
+				m_client_list[i]->m_hp_time = m_client_list[i]->m_auto_save_time =
+				m_client_list[i]->m_time = m_client_list[i]->m_hunger_time = m_client_list[i]->m_exp_stock_time =
+				m_client_list[i]->m_recent_attack_time = m_client_list[i]->m_auto_exp_time = m_client_list[i]->m_speed_hack_check_time =
+				m_client_list[i]->m_afk_activity_time = GameClock::GetTimeMS();
 
-			m_pClientList[i]->m_pXSock->bAcceptFromSocket(std::move(peer));
+			m_client_list[i]->m_socket->accept_from_socket(std::move(peer));
 
-			std::memset(m_pClientList[i]->m_cIPaddress, 0, sizeof(m_pClientList[i]->m_cIPaddress));
-			m_pClientList[i]->m_pXSock->iGetPeerAddress(m_pClientList[i]->m_cIPaddress);
+			std::memset(m_client_list[i]->m_ip_address, 0, sizeof(m_client_list[i]->m_ip_address));
+			m_client_list[i]->m_socket->get_peer_address(m_client_list[i]->m_ip_address);
 
 			a = i;
 
 			for(int v = 0; v < MaxBanned; v++)
 			{
-				if (strcmp(m_stBannedList[v].m_cBannedIPaddress, m_pClientList[i]->m_cIPaddress) == 0)
+				if (strcmp(m_banned_list[v].banned_ip_address, m_client_list[i]->m_ip_address) == 0)
 				{
 					goto CLOSE_CONN_ASYNC;
 				}
 			}
 
 			for(int j = 0; j < MaxClients; j++) {
-				if (m_pClientList[j] != 0) {
-					if (strcmp(m_pClientList[j]->m_cIPaddress, m_pClientList[i]->m_cIPaddress) == 0) iTotalip++;
+				if (m_client_list[j] != 0) {
+					if (strcmp(m_client_list[j]->m_ip_address, m_client_list[i]->m_ip_address) == 0) totalip++;
 				}
 			}
-			if (iTotalip > 9) {
-				std::memset(cIPtoBan, 0, sizeof(cIPtoBan));
-				strcpy(cIPtoBan, m_pClientList[i]->m_cIPaddress);
-				pFile = fopen("gameconfigs/bannedlist.cfg", "a");
-				hb::logger::log("Client {}: IP banned ({})", i, cIPtoBan);
-				fprintf(pFile, "banned-ip = %s", cIPtoBan);
-				fprintf(pFile, "\n");
-				fclose(pFile);
+			if (totalip > 9) {
+				std::memset(i_pto_ban, 0, sizeof(i_pto_ban));
+				strcpy(i_pto_ban, m_client_list[i]->m_ip_address);
+				file = fopen("gameconfigs/bannedlist.cfg", "a");
+				hb::logger::log("Client {}: IP banned ({})", i, i_pto_ban);
+				fprintf(file, "banned-ip = %s", i_pto_ban);
+				fprintf(file, "\n");
+				fclose(file);
 
 				for(int x = 0; x < MaxBanned; x++)
-					if (strlen(m_stBannedList[x].m_cBannedIPaddress) == 0)
-						strcpy(m_stBannedList[x].m_cBannedIPaddress, cIPtoBan);
+					if (strlen(m_banned_list[x].banned_ip_address) == 0)
+						strcpy(m_banned_list[x].banned_ip_address, i_pto_ban);
 
 				goto CLOSE_CONN_ASYNC;
 			}
 
-			hb::logger::log("Client {}: connected from {}", i, m_pClientList[i]->m_cIPaddress);
+			hb::logger::log("Client {}: connected from {}", i, m_client_list[i]->m_ip_address);
 
-			m_iTotalClients++;
+			m_total_clients++;
 
-			if (m_iTotalClients > m_iMaxClients) {
-				m_iMaxClients = m_iTotalClients;
+			if (m_total_clients > m_max_clients) {
+				m_max_clients = m_total_clients;
 			}
 
 			// Set up async callbacks and start async read
-			m_pClientList[i]->m_pXSock->SetSocketIndex(i);
+			m_client_list[i]->m_socket->set_socket_index(i);
 			{
-				hb::shared::net::ASIOSocket* pSock = m_pClientList[i]->m_pXSock;
-				m_pClientList[i]->m_pXSock->SetCallbacks(
-					[this, pSock](int idx, const char* data, size_t size, char key) {
+				hb::shared::net::ASIOSocket* sock = m_client_list[i]->m_socket;
+				m_client_list[i]->m_socket->set_callbacks(
+					[this, sock](int idx, const char* data, size_t size, char key) {
 						// Fast-track ping: respond immediately from I/O thread for accurate latency
 						if (size >= sizeof(hb::net::PacketCommandCheckConnection)) {
 							const auto* hdr = reinterpret_cast<const hb::net::PacketHeader*>(data);
@@ -610,19 +610,19 @@ bool CGame::bAcceptFromAsync(asio::ip::tcp::socket&& peer)
 								resp.header.msg_id = MsgId::CommandCheckConnection;
 								resp.header.msg_type = MsgType::Confirm;
 								resp.time_ms = ping->time_ms;
-								pSock->iSendMsg(reinterpret_cast<char*>(&resp), sizeof(resp));
-								// Still queue it so MsgProcess updates m_dwTime and timeout tracking
+								sock->send_msg(reinterpret_cast<char*>(&resp), sizeof(resp));
+								// Still queue it so msg_process updates m_time and timeout tracking
 							}
 						}
-						bPutMsgQuene(Source::Client, (char*)data, size, idx, key);
+						put_msg_queue(Source::Client, (char*)data, size, idx, key);
 					},
 					[](int idx, int err) {
 						extern hb::shared::net::ConcurrentQueue<hb::shared::net::SocketErrorEvent> G_errorQueue;
-						G_errorQueue.Push(hb::shared::net::SocketErrorEvent{idx, err});
+						G_errorQueue.push(hb::shared::net::SocketErrorEvent{idx, err});
 					}
 				);
 			}
-			m_pClientList[i]->m_pXSock->StartAsyncRead();
+			m_client_list[i]->m_socket->start_async_read();
 
 			return true;
 		}
@@ -630,281 +630,281 @@ bool CGame::bAcceptFromAsync(asio::ip::tcp::socket&& peer)
 	return false;
 
 CLOSE_CONN_ASYNC:
-	delete m_pClientList[a];
-	m_pClientList[a] = 0;
-	RemoveClientShortCut(a);
+	delete m_client_list[a];
+	m_client_list[a] = 0;
+	remove_client_short_cut(a);
 	return false;
 }
 
 // MODERNIZED: No longer uses window messages, directly polls socket
-void CGame::OnClientSocketEvent(int iClientH)
+void CGame::on_client_socket_event(int client_h)
 {
-	int iRet;
-	uint32_t dwTime = GameClock::GetTimeMS();
+	int ret;
+	uint32_t time = GameClock::GetTimeMS();
 
-	if (iClientH <= 0) return;
+	if (client_h <= 0) return;
 
-	if (m_pClientList[iClientH] == 0) return;
+	if (m_client_list[client_h] == 0) return;
 
-	iRet = m_pClientList[iClientH]->m_pXSock->Poll();  // MODERNIZED: Poll() instead of iOnSocketEvent()
+	ret = m_client_list[client_h]->m_socket->Poll();  // MODERNIZED: Poll() instead of on_socket_event()
 
-	switch (iRet) {
+	switch (ret) {
 	case sock::Event::ReadComplete:
-		OnClientRead(iClientH);
-		m_pClientList[iClientH]->m_dwTime = GameClock::GetTimeMS();
+		on_client_read(client_h);
+		m_client_list[client_h]->m_time = GameClock::GetTimeMS();
 		break;
 
 	case sock::Event::Block:
-		hb::logger::log("Client {}: socket blocked (send buffer full)", iClientH);
+		hb::logger::log("Client {}: socket blocked (send buffer full)", client_h);
 		break;
 
 	case sock::Event::ConfirmCodeNotMatch:
-		hb::logger::log("Client {}: confirm code mismatch", iClientH);
-		DeleteClient(iClientH, false, true);
+		hb::logger::log("Client {}: confirm code mismatch", client_h);
+		delete_client(client_h, false, true);
 		break;
 
 	case sock::Event::MsgSizeTooLarge:
-		hb::logger::log("Client {}: disconnected, message too large ({})", iClientH, m_pClientList[iClientH]->m_cIPaddress);
-		DeleteClient(iClientH, true, true);
+		hb::logger::log("Client {}: disconnected, message too large ({})", client_h, m_client_list[client_h]->m_ip_address);
+		delete_client(client_h, true, true);
 		break;
 
 	case sock::Event::SocketError:
-		hb::logger::log("Client {}: disconnected, socket error ({}) WSA={} last_msg=0x{:08X} age={}ms size={} char={}", iClientH, m_pClientList[iClientH]->m_cIPaddress, m_pClientList[iClientH]->m_pXSock->m_WSAErr, m_pClientList[iClientH]->m_dwLastMsgId, dwTime - m_pClientList[iClientH]->m_dwLastMsgTime, m_pClientList[iClientH]->m_dwLastMsgSize, m_pClientList[iClientH]->m_cCharName);
-		DeleteClient(iClientH, true, true);
+		hb::logger::log("Client {}: disconnected, socket error ({}) WSA={} last_msg=0x{:08X} age={}ms size={} char={}", client_h, m_client_list[client_h]->m_ip_address, m_client_list[client_h]->m_socket->m_WSAErr, m_client_list[client_h]->m_last_msg_id, time - m_client_list[client_h]->m_last_msg_time, m_client_list[client_h]->m_last_msg_size, m_client_list[client_h]->m_char_name);
+		delete_client(client_h, true, true);
 		break;
 
 	case sock::Event::SocketClosed:
-		hb::logger::log("Client {}: disconnected, socket closed ({}) WSA={} idle={}ms last_msg=0x{:08X} age={}ms size={} char={}", iClientH, m_pClientList[iClientH]->m_cIPaddress, m_pClientList[iClientH]->m_pXSock->m_WSAErr, dwTime - m_pClientList[iClientH]->m_dwTime, m_pClientList[iClientH]->m_dwLastMsgId, dwTime - m_pClientList[iClientH]->m_dwLastMsgTime, m_pClientList[iClientH]->m_dwLastMsgSize, m_pClientList[iClientH]->m_cCharName);
-		if ((dwTime - m_pClientList[iClientH]->m_dwLogoutHackCheck) < 1000) {
+		hb::logger::log("Client {}: disconnected, socket closed ({}) WSA={} idle={}ms last_msg=0x{:08X} age={}ms size={} char={}", client_h, m_client_list[client_h]->m_ip_address, m_client_list[client_h]->m_socket->m_WSAErr, time - m_client_list[client_h]->m_time, m_client_list[client_h]->m_last_msg_id, time - m_client_list[client_h]->m_last_msg_time, m_client_list[client_h]->m_last_msg_size, m_client_list[client_h]->m_char_name);
+		if ((time - m_client_list[client_h]->m_logout_hack_check) < 1000) {
 			try
 			{
-				hb::logger::warn<log_channel::security>("Logout hack: IP={} player={}, disconnected within 10s of last damage", m_pClientList[iClientH]->m_cIPaddress, m_pClientList[iClientH]->m_cCharName);
+				hb::logger::warn<log_channel::security>("Logout hack: IP={} player={}, disconnected within 10s of last damage", m_client_list[client_h]->m_ip_address, m_client_list[client_h]->m_char_name);
 			}
 			catch (...)
 			{
 			}
 		}
 
-		DeleteClient(iClientH, true, true);
+		delete_client(client_h, true, true);
 		break;
 
 	case sock::Event::CriticalError:
-		hb::logger::log("Client {}: disconnected, critical error ({}) WSA={} last_msg=0x{:08X} age={}ms size={} char={}", iClientH, m_pClientList[iClientH]->m_cIPaddress, m_pClientList[iClientH]->m_pXSock->m_WSAErr, m_pClientList[iClientH]->m_dwLastMsgId, dwTime - m_pClientList[iClientH]->m_dwLastMsgTime, m_pClientList[iClientH]->m_dwLastMsgSize, m_pClientList[iClientH]->m_cCharName);
-		DeleteClient(iClientH, true, true);
+		hb::logger::log("Client {}: disconnected, critical error ({}) WSA={} last_msg=0x{:08X} age={}ms size={} char={}", client_h, m_client_list[client_h]->m_ip_address, m_client_list[client_h]->m_socket->m_WSAErr, m_client_list[client_h]->m_last_msg_id, time - m_client_list[client_h]->m_last_msg_time, m_client_list[client_h]->m_last_msg_size, m_client_list[client_h]->m_char_name);
+		delete_client(client_h, true, true);
 		break;
 	}
 }
 
-bool CGame::bInit()
+bool CGame::init()
 {
 	hb::time::local_time SysTime{};
-	uint32_t dwTime = GameClock::GetTimeMS();
+	uint32_t time = GameClock::GetTimeMS();
 
 	//CMisc::Temp();
 
 	hb::logger::log("Initializing game server");
 
 	for(int i = 0; i < MaxClients + 1; i++)
-		m_iClientShortCut[i] = 0;
+		m_client_shortcut[i] = 0;
 
 	if (_lsock != 0)
 		delete _lsock;
 
 	for(int i = 0; i < MaxClients; i++)
-		if (m_pClientList[i] != 0) delete m_pClientList[i];
+		if (m_client_list[i] != 0) delete m_client_list[i];
 
 	for(int i = 0; i < MaxNpcs; i++)
-		if (m_pNpcList[i] != 0) delete m_pNpcList[i];
+		if (m_npc_list[i] != 0) delete m_npc_list[i];
 
 	for(int i = 0; i < MaxMaps; i++)
-		if (m_pMapList[i] != 0) delete m_pMapList[i];
+		if (m_map_list[i] != 0) delete m_map_list[i];
 
 	for(int i = 0; i < MaxItemTypes; i++)
-		if (m_pItemConfigList[i] != 0) delete m_pItemConfigList[i];
+		if (m_item_config_list[i] != 0) delete m_item_config_list[i];
 
 	for(int i = 0; i < MaxNpcTypes; i++)
-		if (m_pNpcConfigList[i] != 0) delete m_pNpcConfigList[i];
+		if (m_npc_config_list[i] != 0) delete m_npc_config_list[i];
 
 	for(int i = 0; i < hb::shared::limits::MaxMagicType; i++)
-		if (m_pMagicConfigList[i] != 0) delete m_pMagicConfigList[i];
+		if (m_magic_config_list[i] != 0) delete m_magic_config_list[i];
 
 	for(int i = 0; i < hb::shared::limits::MaxSkillType; i++)
-		if (m_pSkillConfigList[i] != 0) delete m_pSkillConfigList[i];
+		if (m_skill_config_list[i] != 0) delete m_skill_config_list[i];
 
 	for(int i = 0; i < MaxNotifyMsgs; i++)
-		if (m_pNoticeMsgList[i] != 0) delete m_pNoticeMsgList[i];
+		if (m_notice_msg_list[i] != 0) delete m_notice_msg_list[i];
 
 	//	for(int i = 0; i < DEF_MAXTELEPORTTYPE; i++)
 	//	if (m_pTeleportConfigList[i] != 0) delete m_pTeleportConfigList[i];
 
 	for(int i = 0; i < hb::shared::limits::MaxBuildItems; i++)
-		if (m_pBuildItemList[i] != 0) delete m_pBuildItemList[i];
+		if (m_build_item_list[i] != 0) delete m_build_item_list[i];
 
 	for(int i = 0; i < MaxNpcTypes; i++)
-		m_iNpcConstructionPoint[i] = 0;
+		m_npc_construction_point[i] = 0;
 
 	for(int i = 0; i < MaxSchedule; i++) {
-		m_stCrusadeWarSchedule[i].iDay = -1;
-		m_stCrusadeWarSchedule[i].iHour = -1;
-		m_stCrusadeWarSchedule[i].iMinute = -1;
+		m_crusade_war_schedule[i].day = -1;
+		m_crusade_war_schedule[i].hour = -1;
+		m_crusade_war_schedule[i].minute = -1;
 	}
 
 	for(int i = 0; i < MaxApocalypse; i++) {
-		m_stApocalypseScheduleStart[i].iDay = -1;
-		m_stApocalypseScheduleStart[i].iHour = -1;
-		m_stApocalypseScheduleStart[i].iMinute = -1;
+		m_apocalypse_schedule_start[i].day = -1;
+		m_apocalypse_schedule_start[i].hour = -1;
+		m_apocalypse_schedule_start[i].minute = -1;
 	}
 
 	for(int i = 0; i < MaxHeldenian; i++) {
-		m_stHeldenianSchedule[i].iDay = -1;
-		m_stHeldenianSchedule[i].StartiHour = -1;
-		m_stHeldenianSchedule[i].StartiMinute = -1;
-		m_stHeldenianSchedule[i].EndiHour = -1;
-		m_stHeldenianSchedule[i].EndiMinute = -1;
+		m_heldenian_schedule[i].day = -1;
+		m_heldenian_schedule[i].start_hour = -1;
+		m_heldenian_schedule[i].start_minute = -1;
+		m_heldenian_schedule[i].end_hour = -1;
+		m_heldenian_schedule[i].end_minute = -1;
 	}
 
 	for(int i = 0; i < MaxApocalypse; i++) {
-		m_stApocalypseScheduleEnd[i].iDay = -1;
-		m_stApocalypseScheduleEnd[i].iHour = -1;
-		m_stApocalypseScheduleEnd[i].iMinute = -1;
+		m_apocalypse_schedule_end[i].day = -1;
+		m_apocalypse_schedule_end[i].hour = -1;
+		m_apocalypse_schedule_end[i].minute = -1;
 	}
 
-	m_iNpcConstructionPoint[1] = 100;
-	m_iNpcConstructionPoint[2] = 100;
-	m_iNpcConstructionPoint[3] = 100;
-	m_iNpcConstructionPoint[4] = 100;
-	m_iNpcConstructionPoint[5] = 100;
-	m_iNpcConstructionPoint[6] = 100;
+	m_npc_construction_point[1] = 100;
+	m_npc_construction_point[2] = 100;
+	m_npc_construction_point[3] = 100;
+	m_npc_construction_point[4] = 100;
+	m_npc_construction_point[5] = 100;
+	m_npc_construction_point[6] = 100;
 
-	m_iNpcConstructionPoint[43] = 1000; // LWB
-	m_iNpcConstructionPoint[44] = 2000; // GHK
-	m_iNpcConstructionPoint[45] = 3000; // GHKABS
-	m_iNpcConstructionPoint[46] = 2000;
-	m_iNpcConstructionPoint[47] = 3000;
-	m_iNpcConstructionPoint[51] = 1500; // Catapult
+	m_npc_construction_point[43] = 1000; // LWB
+	m_npc_construction_point[44] = 2000; // GHK
+	m_npc_construction_point[45] = 3000; // GHKABS
+	m_npc_construction_point[46] = 2000;
+	m_npc_construction_point[47] = 3000;
+	m_npc_construction_point[51] = 1500; // Catapult
 
-	m_bIsGameStarted = false;
+	m_is_game_started = false;
 
 	_lsock = 0;
 
 	for(int i = 0; i < MaxClients; i++)
-		m_pClientList[i] = 0;
+		m_client_list[i] = 0;
 
 	for(int i = 0; i < MaxMaps; i++)
-		m_pMapList[i] = 0;
+		m_map_list[i] = 0;
 
 	for(int i = 0; i < MaxItemTypes; i++)
-		m_pItemConfigList[i] = 0;
+		m_item_config_list[i] = 0;
 
 	for(int i = 0; i < MaxNpcTypes; i++)
-		m_pNpcConfigList[i] = 0;
+		m_npc_config_list[i] = 0;
 
 	for(int i = 0; i < MaxNpcs; i++)
-		m_pNpcList[i] = 0;
+		m_npc_list[i] = 0;
 
 	for(int i = 0; i < hb::shared::limits::MaxMagicType; i++)
-		m_pMagicConfigList[i] = 0;
+		m_magic_config_list[i] = 0;
 
 	for(int i = 0; i < hb::shared::limits::MaxSkillType; i++)
-		m_pSkillConfigList[i] = 0;
+		m_skill_config_list[i] = 0;
 
 	for(int i = 0; i < MaxNotifyMsgs; i++)
-		m_pNoticeMsgList[i] = 0;
+		m_notice_msg_list[i] = 0;
 
 	//	for(int i = 0; i < DEF_MAXTELEPORTTYPE; i++)
 	//		m_pTeleportConfigList[i] = 0;
 
 	for(int i = 0; i < hb::shared::limits::MaxBuildItems; i++)
-		m_pBuildItemList[i] = 0;
+		m_build_item_list[i] = 0;
 
 	for(int i = 0; i < hb::shared::limits::MaxCrusadeStructures; i++) {
-		std::memset(m_stCrusadeStructures[i].cMapName, 0, sizeof(m_stCrusadeStructures[i].cMapName));
-		m_stCrusadeStructures[i].cType = 0;
-		m_stCrusadeStructures[i].dX = 0;
-		m_stCrusadeStructures[i].dY = 0;
+		std::memset(m_crusade_structures[i].map_name, 0, sizeof(m_crusade_structures[i].map_name));
+		m_crusade_structures[i].type = 0;
+		m_crusade_structures[i].x = 0;
+		m_crusade_structures[i].y = 0;
 	}
 
 	for(int i = 0; i < MaxBanned; i++) {
-		std::memset(m_stBannedList[i].m_cBannedIPaddress, 0, sizeof(m_stBannedList[i].m_cBannedIPaddress));
+		std::memset(m_banned_list[i].banned_ip_address, 0, sizeof(m_banned_list[i].banned_ip_address));
 	}
 
 	for(int i = 0; i < MaxGuilds; i++)
-		m_pGuildTeleportLoc[i].m_iV1 = 0;
+		m_guild_teleport_loc[i].m_v1 = 0;
 
 	for(int i = 0; i < hb::shared::limits::MaxCrusadeStructures; i++) {
-		m_stMiddleCrusadeStructureInfo[i].cType = 0;
-		m_stMiddleCrusadeStructureInfo[i].cSide = 0;
-		m_stMiddleCrusadeStructureInfo[i].sX = 0;
-		m_stMiddleCrusadeStructureInfo[i].sY = 0;
+		m_middle_crusade_structure_info[i].type = 0;
+		m_middle_crusade_structure_info[i].side = 0;
+		m_middle_crusade_structure_info[i].x = 0;
+		m_middle_crusade_structure_info[i].y = 0;
 	}
-	m_iTotalMiddleCrusadeStructures = 0;
+	m_total_middle_crusade_structures = 0;
 
-	m_pNoticementData = 0;
+	m_notice_data = 0;
 
-	m_iTotalClients = 0;
-	m_iMaxClients = 0;
-	m_iTotalMaps = 0;
+	m_total_clients = 0;
+	m_max_clients = 0;
+	m_total_maps = 0;
 
-	m_iTotalGameServerClients = 0;
-	m_iTotalGameServerMaxClients = 0;
+	m_total_game_server_clients = 0;
+	m_total_game_server_max_clients = 0;
 
-	m_MaxUserSysTime.hour = 0;
-	m_MaxUserSysTime.minute = 0;
+	m_max_user_sys_time.hour = 0;
+	m_max_user_sys_time.minute = 0;
 
-	m_bIsServerShutdowned = false;
-	m_cShutDownCode = 0;
+	m_is_server_shutdown = false;
+	m_shutdown_code = 0;
 
-	m_iMiddlelandMapIndex = -1;
-	m_iAresdenMapIndex = -1;
-	m_iElvineMapIndex = -1;
-	m_iGodHMapIndex = -1;
-	m_iBTFieldMapIndex = -1;
+	m_middleland_map_index = -1;
+	m_aresden_map_index = -1;
+	m_elvine_map_index = -1;
+	m_godh_map_index = -1;
+	m_bt_field_map_index = -1;
 
-	m_iAresdenOccupyTiles = 0;
-	m_iElvineOccupyTiles = 0;
+	m_aresden_occupy_tiles = 0;
+	m_elvine_occupy_tiles = 0;
 
-	m_iCurMsgs = 0;
-	m_iMaxMsgs = 0;
+	m_cur_msgs = 0;
+	m_max_msgs = 0;
 
-	m_stCityStatus[1].iCrimes = 0;
-	m_stCityStatus[1].iFunds = 0;
-	m_stCityStatus[1].iWins = 0;
+	m_city_status[1].crimes = 0;
+	m_city_status[1].funds = 0;
+	m_city_status[1].wins = 0;
 
-	m_stCityStatus[2].iCrimes = 0;
-	m_stCityStatus[2].iFunds = 0;
-	m_stCityStatus[2].iWins = 0;
+	m_city_status[2].crimes = 0;
+	m_city_status[2].funds = 0;
+	m_city_status[2].wins = 0;
 
-	m_iStrategicStatus = 0;
+	m_strategic_status = 0;
 
-	m_iCollectedMana[0] = 0;
-	m_iCollectedMana[1] = 0;
-	m_iCollectedMana[2] = 0;
+	m_collected_mana[0] = 0;
+	m_collected_mana[1] = 0;
+	m_collected_mana[2] = 0;
 
-	m_iAresdenMana = 0;
-	m_iElvineMana = 0;
+	m_aresden_mana = 0;
+	m_elvine_mana = 0;
 
-	if (m_pFishingManager != nullptr) m_pFishingManager->m_dwFishTime = dwTime;
-	m_dwSpecialEventTime = m_dwWhetherTime = m_dwGameTime1 =
-		m_dwGameTime2 = m_dwGameTime3 = m_dwGameTime4 = m_dwGameTime5 = m_dwGameTime6 = dwTime;
+	if (m_fishing_manager != nullptr) m_fishing_manager->m_fish_time = time;
+	m_special_event_time = m_weather_time = m_game_time_1 =
+		m_game_time_2 = m_game_time_3 = m_game_time_4 = m_game_time_5 = m_game_time_6 = time;
 
-	m_bIsSpecialEventTime = false;
+	m_is_special_event_time = false;
 
 	SysTime = hb::time::local_time::now();
-	m_dwCanFightzoneReserveTime = dwTime - ((SysTime.hour % 2) * 60 * 60 + SysTime.minute * 60) * 1000;
+	m_can_fightzone_reserve_time = time - ((SysTime.hour % 2) * 60 * 60 + SysTime.minute * 60) * 1000;
 
 	for(int i = 0; i < MaxFightZone; i++)
-		m_iFightZoneReserve[i] = 0;
+		m_fight_zone_reserve[i] = 0;
 
-	m_iFightzoneNoForceRecall = 0;
+	m_fightzone_no_force_recall = 0;
 
 	for(int i = 1; i < 1000; i++) {
-		m_iLevelExpTable[i] = iGetLevelExp(i);
+		m_level_exp_table[i] = get_level_exp(i);
 		//testcode
-		//std::snprintf(G_cTxt, sizeof(G_cTxt), "Level:%d --- Exp:%d", i, m_iLevelExpTable[i]);
+		//std::snprintf(G_cTxt, sizeof(G_cTxt), "Level:%d --- Exp:%d", i, m_level_exp_table[i]);
 		//PutLogFileList(G_cTxt);
 	}
 
-	m_iLevelExp20 = m_iLevelExpTable[20];
+	m_level_exp_20 = m_level_exp_table[20];
 
 	sqlite3* configDb = nullptr;
 	std::string configDbPath;
@@ -934,10 +934,10 @@ bool CGame::bInit()
 		return false;
 	}
 
-	// Calculate m_iMaxStatValue after settings are loaded
+	// Calculate m_max_stat_value after settings are loaded
 	// Formula: base + creation + (levelup * max_level) + angelic_max(16)
-	m_iMaxStatValue = m_iBaseStatValue + m_iCreationStatBonus + (m_iLevelupStatGain * m_iMaxLevel) + 16;
-	hb::logger::log("Max stat value calculated: {}", m_iMaxStatValue);
+	m_max_stat_value = m_base_stat_value + m_creation_stat_bonus + (m_levelup_stat_gain * m_max_level) + 16;
+	hb::logger::log("Max stat value calculated: {}", m_max_stat_value);
 
 	if (!LoadBannedListConfig(configDb, this)) {
 		hb::logger::error("Cannot start server: banned list unavailable in gameconfigs.db");
@@ -949,103 +949,103 @@ bool CGame::bInit()
 		hb::logger::log("Could not load admin config from gameconfigs.db, admin list empty");
 	}
 	else {
-		hb::logger::log("Loaded {} admin(s) from gameconfigs.db.", m_iAdminCount);
+		hb::logger::log("Loaded {} admin(s) from gameconfigs.db.", m_admin_count);
 	}
 
 	if (!LoadCommandPermissions(configDb, this)) {
 		hb::logger::log("Could not load command permissions from gameconfigs.db");
 	}
-	else if (!m_commandPermissions.empty()) {
-		hb::logger::log("Loaded {} command permission override(s) from gameconfigs.db.", (int)m_commandPermissions.size());
+	else if (!m_command_permissions.empty()) {
+		hb::logger::log("Loaded {} command permission override(s) from gameconfigs.db.", (int)m_command_permissions.size());
 	}
 
-	srand((unsigned)time(0));
+	srand((unsigned)std::time(0));
 
-	_lsock = new class hb::shared::net::ASIOSocket(G_pIOPool->GetContext(), ServerSocketBlockLimit);
-	_lsock->bConnect(m_cLoginListenIP, m_iLoginListenPort);
-	_lsock->bInitBufferSize(hb::shared::limits::MsgBufferSize);
+	_lsock = new class hb::shared::net::ASIOSocket(G_pIOPool->get_context(), ServerSocketBlockLimit);
+	_lsock->connect(m_login_listen_ip, m_login_listen_port);
+	_lsock->init_buffer_size(hb::shared::limits::MsgBufferSize);
 
-	m_bOnExitProcess = false;
+	m_on_exit_process = false;
 
 	for(int i = 0; i <= 100; i++) {
-		m_iSkillSSNpoint[i] = m_pSkillManager->_iCalcSkillSSNpoint(i);
+		m_skill_progress_threshold[i] = m_skill_manager->calc_skill_ssn_point(i);
 	}
 
 	SysTime = hb::time::local_time::now();
-	if (SysTime.minute >= m_iNighttimeDuration)
-		m_cDayOrNight = 2;
-	else m_cDayOrNight = 1;
+	if (SysTime.minute >= m_nighttime_duration)
+		m_day_or_night = 2;
+	else m_day_or_night = 1;
 
-	bReadNotifyMsgListFile("gameconfigs/notice.txt");
-	m_dwNoticeTime = dwTime;
+	read_notify_msg_list_file("gameconfigs/notice.txt");
+	m_notice_time = time;
 
-	m_pNoticementData = 0;
-	m_dwNoticementDataSize = 0;
+	m_notice_data = 0;
+	m_notice_data_size = 0;
 
-	m_dwMapSectorInfoTime = dwTime;
-	m_iMapSectorInfoUpdateCount = 0;
+	m_map_sector_info_time = time;
+	m_map_sector_info_update_count = 0;
 
-	m_iCrusadeCount = 0;
-	m_bIsCrusadeMode = false;
-	m_bIsApocalypseMode = false;
-	m_dwCrusadeGUID = 0;
-	m_iCrusadeWinnerSide = 0;
-	m_iLastCrusadeWinner = 0;
-	m_sLastHeldenianWinner = 0;
-	m_sLastCrusadeDate = -1;
-	m_iFinalShutdownCount = 0;
-	m_bIsCrusadeWarStarter = false;
-	m_bIsApocalypseStarter = false;
-	m_iLatestCrusadeDayOfWeek = -1;
+	m_crusade_count = 0;
+	m_is_crusade_mode = false;
+	m_is_apocalypse_mode = false;
+	m_crusade_guid = 0;
+	m_crusade_winner_side = 0;
+	m_last_crusade_winner = 0;
+	m_last_heldenian_winner = 0;
+	m_last_crusade_date = -1;
+	m_final_shutdown_count = 0;
+	m_is_crusade_war_starter = false;
+	m_is_apocalypse_starter = false;
+	m_latest_crusade_day_of_week = -1;
 
-	m_bHeldenianInitiated = false;
-	m_cHeldenianType = false;
-	m_bIsHeldenianMode = false;
-	m_bHeldenianRunning = false;
-	m_iHeldenianAresdenLeftTower = 0;
-	m_cHeldenianModeType = -1;
-	m_sLastHeldenianWinner = -1;
-	m_iHeldenianAresdenLeftTower = 0;
-	m_iHeldenianElvineLeftTower = 0;
-	m_iHeldenianAresdenDead = 0;
-	m_iHeldenianElvineDead = 0;
+	m_heldenian_initiated = false;
+	m_heldenian_type = false;
+	m_is_heldenian_mode = false;
+	m_heldenian_running = false;
+	m_heldenian_aresden_left_tower = 0;
+	m_heldenian_mode_type = -1;
+	m_last_heldenian_winner = -1;
+	m_heldenian_aresden_left_tower = 0;
+	m_heldenian_elvine_left_tower = 0;
+	m_heldenian_aresden_dead = 0;
+	m_heldenian_elvine_dead = 0;
 
-	int dwMsgSize = 0;
-	m_bIsItemAvailable = false;
+	int msg_size = 0;
+	m_is_item_available = false;
 	if (HasGameConfigRows(configDb, "items")) {
-		m_bIsItemAvailable = LoadItemConfigs(configDb, m_pItemConfigList, MaxItemTypes);
+		m_is_item_available = LoadItemConfigs(configDb, m_item_config_list, MaxItemTypes);
 	}
-	if (!m_bIsItemAvailable) {
+	if (!m_is_item_available) {
 		hb::logger::error("Cannot start server: item configs missing in gameconfigs.db");
 		CloseGameConfigDatabase(configDb);
 		return false;
 	}
 
-	m_bIsBuildItemAvailable = false;
+	m_is_build_item_available = false;
 	if (HasGameConfigRows(configDb, "builditem_configs")) {
-		m_bIsBuildItemAvailable = LoadBuildItemConfigs(configDb, this);
+		m_is_build_item_available = LoadBuildItemConfigs(configDb, this);
 	}
-	if (!m_bIsBuildItemAvailable) {
+	if (!m_is_build_item_available) {
 		hb::logger::error("Cannot start server: build item configs missing in gameconfigs.db");
 		CloseGameConfigDatabase(configDb);
 		return false;
 	}
 
-	m_bIsNpcAvailable = false;
+	m_is_npc_available = false;
 	if (HasGameConfigRows(configDb, "npc_configs")) {
-		m_bIsNpcAvailable = LoadNpcConfigs(configDb, this);
+		m_is_npc_available = LoadNpcConfigs(configDb, this);
 	}
-	if (!m_bIsNpcAvailable) {
+	if (!m_is_npc_available) {
 		hb::logger::error("Cannot start server: NPC configs missing in gameconfigs.db");
 		CloseGameConfigDatabase(configDb);
 		return false;
 	}
 
-	m_bIsDropTableAvailable = false;
+	m_is_drop_table_available = false;
 	if (HasGameConfigRows(configDb, "drop_tables") && HasGameConfigRows(configDb, "drop_entries")) {
-		m_bIsDropTableAvailable = LoadDropTables(configDb, this);
+		m_is_drop_table_available = LoadDropTables(configDb, this);
 	}
-	if (!m_bIsDropTableAvailable) {
+	if (!m_is_drop_table_available) {
 		hb::logger::error("Cannot start server: drop tables missing in gameconfigs.db");
 		CloseGameConfigDatabase(configDb);
 		return false;
@@ -1054,13 +1054,13 @@ bool CGame::bInit()
 	{
 		int missingDrops = 0;
 		for(int i = 0; i < MaxNpcTypes; i++) {
-			const CNpc* npc = m_pNpcConfigList[i];
+			const CNpc* npc = m_npc_config_list[i];
 			if (npc == nullptr) {
 				continue;
 			}
-			if (npc->m_iDropTableId == 0 &&
-				(npc->m_iExpDiceMax > 0 || npc->m_iGoldDiceMax > 0)) {
-				hb::logger::warn("NPC missing drop table: {} (exp {}-{}, gold {}-{})", npc->m_cNpcName, static_cast<unsigned int>(npc->m_iExpDiceMin), static_cast<unsigned int>(npc->m_iExpDiceMax), static_cast<unsigned int>(npc->m_iGoldDiceMin), static_cast<unsigned int>(npc->m_iGoldDiceMax));
+			if (npc->m_drop_table_id == 0 &&
+				(npc->m_exp_dice_max > 0 || npc->m_gold_dice_max > 0)) {
+				hb::logger::warn("NPC missing drop table: {} (exp {}-{}, gold {}-{})", npc->m_npc_name, static_cast<unsigned int>(npc->m_exp_dice_min), static_cast<unsigned int>(npc->m_exp_dice_max), static_cast<unsigned int>(npc->m_gold_dice_min), static_cast<unsigned int>(npc->m_gold_dice_max));
 				missingDrops++;
 			}
 		}
@@ -1070,51 +1070,51 @@ bool CGame::bInit()
 	}
 
 	// Load shop configurations (optional - server works without shops)
-	m_bIsShopDataAvailable = false;
+	m_is_shop_data_available = false;
 	if (HasGameConfigRows(configDb, "npc_shop_mapping") || HasGameConfigRows(configDb, "shop_items")) {
 		LoadShopConfigs(configDb, this);
 	}
-	if (!m_bIsShopDataAvailable) {
+	if (!m_is_shop_data_available) {
 		hb::logger::log("Shop data not configured, NPCs will not have shop inventories");
 	}
 
-	m_bIsMagicAvailable = false;
+	m_is_magic_available = false;
 	if (HasGameConfigRows(configDb, "magic_configs")) {
-		m_bIsMagicAvailable = LoadMagicConfigs(configDb, this);
+		m_is_magic_available = LoadMagicConfigs(configDb, this);
 	}
-	if (!m_bIsMagicAvailable) {
+	if (!m_is_magic_available) {
 		hb::logger::error("Cannot start server: magic configs missing in gameconfigs.db");
 		CloseGameConfigDatabase(configDb);
 		return false;
 	}
 
-	m_bIsSkillAvailable = false;
+	m_is_skill_available = false;
 	if (HasGameConfigRows(configDb, "skill_configs")) {
-		m_bIsSkillAvailable = LoadSkillConfigs(configDb, this);
+		m_is_skill_available = LoadSkillConfigs(configDb, this);
 	}
-	if (!m_bIsSkillAvailable) {
+	if (!m_is_skill_available) {
 		hb::logger::error("Cannot start server: skill configs missing in gameconfigs.db");
 		CloseGameConfigDatabase(configDb);
 		return false;
 	}
 
-	ComputeConfigHashes();
+	compute_config_hashes();
 
-	m_bIsQuestAvailable = false;
+	m_is_quest_available = false;
 	if (HasGameConfigRows(configDb, "quest_configs")) {
-		m_bIsQuestAvailable = LoadQuestConfigs(configDb, this);
+		m_is_quest_available = LoadQuestConfigs(configDb, this);
 	}
-	if (!m_bIsQuestAvailable) {
+	if (!m_is_quest_available) {
 		hb::logger::error("Cannot start server: quest configs missing in gameconfigs.db");
 		CloseGameConfigDatabase(configDb);
 		return false;
 	}
 
-	m_bIsPortionAvailable = false;
+	m_is_portion_available = false;
 	if (HasGameConfigRows(configDb, "potion_configs") || HasGameConfigRows(configDb, "crafting_configs")) {
-		m_bIsPortionAvailable = LoadPortionConfigs(configDb, this);
+		m_is_portion_available = LoadPortionConfigs(configDb, this);
 	}
-	if (!m_bIsPortionAvailable) {
+	if (!m_is_portion_available) {
 		hb::logger::error("Cannot start server: potion/crafting configs missing in gameconfigs.db");
 		CloseGameConfigDatabase(configDb);
 		return false;
@@ -1125,159 +1125,159 @@ bool CGame::bInit()
 	return true;
 }
 
-void CGame::OnClientRead(int iClientH)
+void CGame::on_client_read(int client_h)
 {
-	char* pData, cKey;
-	size_t  dwMsgSize;
+	char* data, key;
+	size_t  msg_size;
 
-	if (m_pClientList[iClientH] == 0) return;
+	if (m_client_list[client_h] == 0) return;
 
-	pData = m_pClientList[iClientH]->m_pXSock->pGetRcvDataPointer(&dwMsgSize, &cKey); // v1.4
+	data = m_client_list[client_h]->m_socket->get_rcv_data_pointer(&msg_size, &key); // v1.4
 
 	const auto* header = hb::net::PacketCast<hb::net::PacketHeader>(
-		pData, sizeof(hb::net::PacketHeader));
+		data, sizeof(hb::net::PacketHeader));
 	if (header) {
-		m_pClientList[iClientH]->m_dwLastMsgId = header->msg_id;
-		m_pClientList[iClientH]->m_dwLastMsgTime = GameClock::GetTimeMS();
-		m_pClientList[iClientH]->m_dwLastMsgSize = dwMsgSize;
+		m_client_list[client_h]->m_last_msg_id = header->msg_id;
+		m_client_list[client_h]->m_last_msg_time = GameClock::GetTimeMS();
+		m_client_list[client_h]->m_last_msg_size = msg_size;
 
 		// Fast-track ping responses: bypass the message queue (which only drains every 300ms)
 		// so latency measurement reflects actual round-trip time
 		if (header->msg_id == MsgId::CommandCheckConnection) {
-			CheckConnectionHandler(iClientH, pData);
+			check_connection_handler(client_h, data);
 			return;
 		}
 	}
 
-	if (bPutMsgQuene(Source::Client, pData, dwMsgSize, iClientH, cKey) == false) {
+	if (put_msg_queue(Source::Client, data, msg_size, client_h, key) == false) {
 		hb::logger::error("Critical error in message queue");
 	}
 }
 
-void CGame::ClientMotionHandler(int iClientH, char* pData)
+void CGame::client_motion_handler(int client_h, char* data)
 {
-	uint32_t dwClientTime;
-	uint16_t wCommand, wTargetObjectID = 0;
-	short sX, sY, dX, dY, wType;
-	char cDir;
-	int   iRet, iTemp;
+	uint32_t client_time;
+	uint16_t command, target_object_id = 0;
+	short sX, sY, dX, dY, type;
+	char dir;
+	int   ret, temp;
 
-	if (m_pClientList[iClientH] == 0) return;
-	if (m_pClientList[iClientH]->m_bIsInitComplete == false) return;
-	if (m_pClientList[iClientH]->m_bIsKilled) return;
+	if (m_client_list[client_h] == 0) return;
+	if (m_client_list[client_h]->m_is_init_complete == false) return;
+	if (m_client_list[client_h]->m_is_killed) return;
 
 	const auto* base = hb::net::PacketCast<hb::net::PacketCommandMotionBase>(
-		pData, sizeof(hb::net::PacketCommandMotionBase));
+		data, sizeof(hb::net::PacketCommandMotionBase));
 	if (!base) return;
-	wCommand = base->header.msg_type;
+	command = base->header.msg_type;
 	sX = base->x;
 	sY = base->y;
-	cDir = static_cast<char>(base->dir);
+	dir = static_cast<char>(base->dir);
 	dX = base->dx;
 	dY = base->dy;
-	wType = base->type;
+	type = base->type;
 
-	if ((wCommand == Type::Attack) || (wCommand == Type::AttackMove)) { // v1.4
+	if ((command == Type::Attack) || (command == Type::AttackMove)) { // v1.4
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketCommandMotionAttack>(
-			pData, sizeof(hb::net::PacketCommandMotionAttack));
+			data, sizeof(hb::net::PacketCommandMotionAttack));
 		if (!pkt) return;
-		wTargetObjectID = pkt->target_id;
-		dwClientTime = pkt->time_ms;
+		target_object_id = pkt->target_id;
+		client_time = pkt->time_ms;
 	}
 	else {
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketCommandMotionSimple>(
-			pData, sizeof(hb::net::PacketCommandMotionSimple));
+			data, sizeof(hb::net::PacketCommandMotionSimple));
 		if (!pkt) return;
-		dwClientTime = pkt->time_ms;
+		client_time = pkt->time_ms;
 	}
 
-	switch (wCommand) {
-	case Type::Stop:
-		iRet = iClientMotion_Stop_Handler(iClientH, sX, sY, cDir);
-		if (iRet == 1) {
-			SendEventToNearClient_TypeA(iClientH, hb::shared::owner_class::Player, MsgId::EventMotion, Type::Stop, 0, 0, 0);
+	switch (command) {
+	case Type::stop:
+		ret = client_motion_stop_handler(client_h, sX, sY, dir);
+		if (ret == 1) {
+			send_event_to_near_client_type_a(client_h, hb::shared::owner_class::Player, MsgId::EventMotion, Type::stop, 0, 0, 0);
 		}
-		else if (iRet == 2) SendObjectMotionRejectMsg(iClientH);
+		else if (ret == 2) send_object_motion_reject_msg(client_h);
 		break;
 
 	case Type::Run:
-		iRet = iClientMotion_Move_Handler(iClientH, sX, sY, cDir, 1);
-		if (iRet == 1) {
-			SendEventToNearClient_TypeA(iClientH, hb::shared::owner_class::Player, MsgId::EventMotion, Type::Run, 0, 0, 0);
+		ret = client_motion_move_handler(client_h, sX, sY, dir, 1);
+		if (ret == 1) {
+			send_event_to_near_client_type_a(client_h, hb::shared::owner_class::Player, MsgId::EventMotion, Type::Run, 0, 0, 0);
 		}
-		else if (iRet == 2) SendObjectMotionRejectMsg(iClientH);
-		if ((m_pClientList[iClientH] != 0) && (m_pClientList[iClientH]->m_iHP <= 0)) m_pCombatManager->ClientKilledHandler(iClientH, 0, 0, 1); // v1.4
+		else if (ret == 2) send_object_motion_reject_msg(client_h);
+		if ((m_client_list[client_h] != 0) && (m_client_list[client_h]->m_hp <= 0)) m_combat_manager->client_killed_handler(client_h, 0, 0, 1); // v1.4
 		// v2.171
-		bCheckClientMoveFrequency(iClientH, dwClientTime);
+		check_client_move_frequency(client_h, client_time);
 		break;
 
 	case Type::Move:
-		iRet = iClientMotion_Move_Handler(iClientH, sX, sY, cDir, 2);
-		if (iRet == 1) {
-			SendEventToNearClient_TypeA(iClientH, hb::shared::owner_class::Player, MsgId::EventMotion, Type::Move, 0, 0, 0);
+		ret = client_motion_move_handler(client_h, sX, sY, dir, 2);
+		if (ret == 1) {
+			send_event_to_near_client_type_a(client_h, hb::shared::owner_class::Player, MsgId::EventMotion, Type::Move, 0, 0, 0);
 		}
-		else if (iRet == 2) SendObjectMotionRejectMsg(iClientH);
-		if ((m_pClientList[iClientH] != 0) && (m_pClientList[iClientH]->m_iHP <= 0)) m_pCombatManager->ClientKilledHandler(iClientH, 0, 0, 1); // v1.4
+		else if (ret == 2) send_object_motion_reject_msg(client_h);
+		if ((m_client_list[client_h] != 0) && (m_client_list[client_h]->m_hp <= 0)) m_combat_manager->client_killed_handler(client_h, 0, 0, 1); // v1.4
 		// v2.171
-		bCheckClientMoveFrequency(iClientH, dwClientTime);
+		check_client_move_frequency(client_h, client_time);
 		break;
 
 	case Type::DamageMove:
-		iRet = iClientMotion_Move_Handler(iClientH, sX, sY, cDir, 0);
-		if (iRet == 1) {
-			SendEventToNearClient_TypeA(iClientH, hb::shared::owner_class::Player, MsgId::EventMotion, Type::DamageMove, m_pClientList[iClientH]->m_iLastDamage, 0, 0);
+		ret = client_motion_move_handler(client_h, sX, sY, dir, 0);
+		if (ret == 1) {
+			send_event_to_near_client_type_a(client_h, hb::shared::owner_class::Player, MsgId::EventMotion, Type::DamageMove, m_client_list[client_h]->m_last_damage, 0, 0);
 		}
-		else if (iRet == 2) SendObjectMotionRejectMsg(iClientH);
-		if ((m_pClientList[iClientH] != 0) && (m_pClientList[iClientH]->m_iHP <= 0)) m_pCombatManager->ClientKilledHandler(iClientH, 0, 0, 1); // v1.4
+		else if (ret == 2) send_object_motion_reject_msg(client_h);
+		if ((m_client_list[client_h] != 0) && (m_client_list[client_h]->m_hp <= 0)) m_combat_manager->client_killed_handler(client_h, 0, 0, 1); // v1.4
 		break;
 
 	case Type::AttackMove:
-		iRet = iClientMotion_Move_Handler(iClientH, sX, sY, cDir, 0);
-		if ((iRet == 1) && (m_pClientList[iClientH] != 0)) {
-			SendEventToNearClient_TypeA(iClientH, hb::shared::owner_class::Player, MsgId::EventMotion, Type::AttackMove, 0, 0, 0);
-			iClientMotion_Attack_Handler(iClientH, m_pClientList[iClientH]->m_sX, m_pClientList[iClientH]->m_sY, dX, dY, wType, cDir, wTargetObjectID, dwClientTime, false, true); // v1.4
+		ret = client_motion_move_handler(client_h, sX, sY, dir, 0);
+		if ((ret == 1) && (m_client_list[client_h] != 0)) {
+			send_event_to_near_client_type_a(client_h, hb::shared::owner_class::Player, MsgId::EventMotion, Type::AttackMove, 0, 0, 0);
+			client_motion_attack_handler(client_h, m_client_list[client_h]->m_x, m_client_list[client_h]->m_y, dX, dY, type, dir, target_object_id, client_time, false, true); // v1.4
 		}
-		else if (iRet == 2) SendObjectMotionRejectMsg(iClientH);
-		if ((m_pClientList[iClientH] != 0) && (m_pClientList[iClientH]->m_iHP <= 0)) m_pCombatManager->ClientKilledHandler(iClientH, 0, 0, 1); // v1.4
+		else if (ret == 2) send_object_motion_reject_msg(client_h);
+		if ((m_client_list[client_h] != 0) && (m_client_list[client_h]->m_hp <= 0)) m_combat_manager->client_killed_handler(client_h, 0, 0, 1); // v1.4
 		// v2.171
-		m_pCombatManager->bCheckClientAttackFrequency(iClientH, dwClientTime);
+		m_combat_manager->check_client_attack_frequency(client_h, client_time);
 		break;
 
 	case Type::Attack:
-		m_pCombatManager->_CheckAttackType(iClientH, &wType);
-		iRet = iClientMotion_Attack_Handler(iClientH, sX, sY, dX, dY, wType, cDir, wTargetObjectID, dwClientTime); // v1.4
-		if (iRet == 1) {
-			if (wType >= 20) {
-				m_pClientList[iClientH]->m_iSuperAttackLeft--;
-				if (m_pClientList[iClientH]->m_iSuperAttackLeft < 0) m_pClientList[iClientH]->m_iSuperAttackLeft = 0;
-				SendNotifyMsg(0, iClientH, Notify::SuperAttackLeft, 0, 0, 0, 0);
+		m_combat_manager->check_attack_type(client_h, &type);
+		ret = client_motion_attack_handler(client_h, sX, sY, dX, dY, type, dir, target_object_id, client_time); // v1.4
+		if (ret == 1) {
+			if (type >= 20) {
+				m_client_list[client_h]->m_super_attack_left--;
+				if (m_client_list[client_h]->m_super_attack_left < 0) m_client_list[client_h]->m_super_attack_left = 0;
+				send_notify_msg(0, client_h, Notify::SuperAttackLeft, 0, 0, 0, 0);
 			}
 
-			SendEventToNearClient_TypeA(iClientH, hb::shared::owner_class::Player, MsgId::EventMotion, Type::Attack, dX, dY, wType);
+			send_event_to_near_client_type_a(client_h, hb::shared::owner_class::Player, MsgId::EventMotion, Type::Attack, dX, dY, type);
 		}
-		else if (iRet == 2) SendObjectMotionRejectMsg(iClientH);
+		else if (ret == 2) send_object_motion_reject_msg(client_h);
 		// v2.171
-		m_pCombatManager->bCheckClientAttackFrequency(iClientH, dwClientTime);
+		m_combat_manager->check_client_attack_frequency(client_h, client_time);
 		break;
 
 	case Type::GetItem:
-		iRet = m_pItemManager->iClientMotion_GetItem_Handler(iClientH, sX, sY, cDir);
-		if (iRet == 1) {
-			SendEventToNearClient_TypeA(iClientH, hb::shared::owner_class::Player, MsgId::EventMotion, Type::GetItem, 0, 0, 0);
+		ret = m_item_manager->client_motion_get_item_handler(client_h, sX, sY, dir);
+		if (ret == 1) {
+			send_event_to_near_client_type_a(client_h, hb::shared::owner_class::Player, MsgId::EventMotion, Type::GetItem, 0, 0, 0);
 		}
-		else if (iRet == 2) SendObjectMotionRejectMsg(iClientH);
+		else if (ret == 2) send_object_motion_reject_msg(client_h);
 		break;
 
 	case Type::Magic:
-		iRet = m_pMagicManager->iClientMotion_Magic_Handler(iClientH, sX, sY, cDir);
-		if (iRet == 1) {
-			m_pClientList[iClientH]->m_bMagicPauseTime = true;
-			iTemp = 10;
-			SendEventToNearClient_TypeA(iClientH, hb::shared::owner_class::Player, MsgId::EventMotion, Type::Magic, dX, iTemp, 0);
-			m_pClientList[iClientH]->m_iSpellCount++;
-			m_pMagicManager->bCheckClientMagicFrequency(iClientH, dwClientTime);
+		ret = m_magic_manager->client_motion_magic_handler(client_h, sX, sY, dir);
+		if (ret == 1) {
+			m_client_list[client_h]->m_magic_pause_time = true;
+			temp = 10;
+			send_event_to_near_client_type_a(client_h, hb::shared::owner_class::Player, MsgId::EventMotion, Type::Magic, dX, temp, 0);
+			m_client_list[client_h]->m_spell_count++;
+			m_magic_manager->check_client_magic_frequency(client_h, client_time);
 		}
-		else if (iRet == 2) SendObjectMotionRejectMsg(iClientH);
+		else if (ret == 2) send_object_motion_reject_msg(client_h);
 		break;
 
 	default:
@@ -1285,132 +1285,132 @@ void CGame::ClientMotionHandler(int iClientH, char* pData)
 	}
 }
 
-int CGame::iClientMotion_Move_Handler(int iClientH, short sX, short sY, char cDir, char cMoveType)
+int CGame::client_motion_move_handler(int client_h, short sX, short sY, char dir, char move_type)
 {
 	char moveMapData[3000];
-	class CTile* pTile;
-	uint32_t dwTime;
-	uint16_t wObjectID;
-	short dX, dY, sDOtype, pTopItem;
-	int   iRet, iSize, iDamage;
-	bool  bRet, bIsBlocked = false;
+	class CTile* tile;
+	uint32_t time;
+	uint16_t object_id;
+	short dX, dY, d_otype, top_item;
+	int   ret, size, damage;
+	bool  ret_ok, is_blocked = false;
 	hb::net::PacketWriter writer;
 
-	if (m_pClientList[iClientH] == 0) return 0;
-	if ((cDir <= 0) || (cDir > 8))       return 0;
-	if (m_pClientList[iClientH]->m_bIsKilled) return 0;
-	if (m_pClientList[iClientH]->m_bIsInitComplete == false) return 0;
+	if (m_client_list[client_h] == 0) return 0;
+	if ((dir <= 0) || (dir > 8))       return 0;
+	if (m_client_list[client_h]->m_is_killed) return 0;
+	if (m_client_list[client_h]->m_is_init_complete == false) return 0;
 
-	if ((sX != m_pClientList[iClientH]->m_sX) || (sY != m_pClientList[iClientH]->m_sY)) return 2;
+	if ((sX != m_client_list[client_h]->m_x) || (sY != m_client_list[client_h]->m_y)) return 2;
 
 	//locobans
-	dwTime = GameClock::GetTimeMS();
-	/*m_pClientList[iClientH]->m_dwLastActionTime = dwTime;
-	if (cMoveType == 2) {
-		if (m_pClientList[iClientH]->m_iRecentWalkTime > dwTime) {
-			m_pClientList[iClientH]->m_iRecentWalkTime = dwTime;
-			if (m_pClientList[iClientH]->m_sV1 < 1) {
-				if (m_pClientList[iClientH]->m_iRecentWalkTime < dwTime) {
-					m_pClientList[iClientH]->m_sV1++;
+	time = GameClock::GetTimeMS();
+	/*m_client_list[client_h]->m_last_action_time = time;
+	if (move_type == 2) {
+		if (m_client_list[client_h]->m_recent_walk_time > time) {
+			m_client_list[client_h]->m_recent_walk_time = time;
+			if (m_client_list[client_h]->m_v1 < 1) {
+				if (m_client_list[client_h]->m_recent_walk_time < time) {
+					m_client_list[client_h]->m_v1++;
 				}
 				else {
-					bIsBlocked = true;
-					m_pClientList[iClientH]->m_sV1 = 0;
+					is_blocked = true;
+					m_client_list[client_h]->m_v1 = 0;
 				}
 			}
-		m_pClientList[iClientH]->m_iRecentWalkTime = dwTime;
+		m_client_list[client_h]->m_recent_walk_time = time;
 		}
-		if (bIsBlocked == false) m_pClientList[iClientH]->m_iMoveMsgRecvCount++;
-		if (m_pClientList[iClientH]->m_iMoveMsgRecvCount >= 3) {
-			if (m_pClientList[iClientH]->m_dwMoveLAT != 0) {
-				if ((dwTime - m_pClientList[iClientH]->m_dwMoveLAT) < (590)) {
-					//sprintf(G_cTxt, "3.51 Walk Speeder: (%s) Player: (%s) walk difference: %d. Speed Hack?", m_pClientList[iClientH]->m_cIPaddress, m_pClientList[iClientH]->m_cCharName, dwTime - m_pClientList[iClientH]->m_dwMoveLAT);
+		if (is_blocked == false) m_client_list[client_h]->m_move_msg_recv_count++;
+		if (m_client_list[client_h]->m_move_msg_recv_count >= 3) {
+			if (m_client_list[client_h]->m_move_last_action_time != 0) {
+				if ((time - m_client_list[client_h]->m_move_last_action_time) < (590)) {
+					//sprintf(G_cTxt, "3.51 Walk Speeder: (%s) Player: (%s) walk difference: %d. Speed Hack?", m_client_list[client_h]->m_ip_address, m_client_list[client_h]->m_char_name, time - m_client_list[client_h]->m_move_last_action_time);
 					//PutHackLogFileList(G_cTxt);
-					bIsBlocked = true;
+					is_blocked = true;
 				}
 			}
-			m_pClientList[iClientH]->m_dwMoveLAT = dwTime;
-			m_pClientList[iClientH]->m_iMoveMsgRecvCount = 0;
+			m_client_list[client_h]->m_move_last_action_time = time;
+			m_client_list[client_h]->m_move_msg_recv_count = 0;
 		}
 	}
-	else if (cMoveType == 1) {
-		if (m_pClientList[iClientH]->m_iRecentRunTime > dwTime) {
-			m_pClientList[iClientH]->m_iRecentRunTime = dwTime;
-			if (m_pClientList[iClientH]->m_sV1 < 1) {
-				if (m_pClientList[iClientH]->m_iRecentRunTime < dwTime) {
-					m_pClientList[iClientH]->m_sV1++;
+	else if (move_type == 1) {
+		if (m_client_list[client_h]->m_recent_run_time > time) {
+			m_client_list[client_h]->m_recent_run_time = time;
+			if (m_client_list[client_h]->m_v1 < 1) {
+				if (m_client_list[client_h]->m_recent_run_time < time) {
+					m_client_list[client_h]->m_v1++;
 				}
 				else {
-					bIsBlocked = true;
-					m_pClientList[iClientH]->m_sV1 = 0;
+					is_blocked = true;
+					m_client_list[client_h]->m_v1 = 0;
 				}
 			}
-		m_pClientList[iClientH]->m_iRecentRunTime = dwTime;
+		m_client_list[client_h]->m_recent_run_time = time;
 		}
-		if (bIsBlocked == false) m_pClientList[iClientH]->m_iRunMsgRecvCount++;
-		if (m_pClientList[iClientH]->m_iRunMsgRecvCount >= 3) {
-			if (m_pClientList[iClientH]->m_dwRunLAT != 0) {
-				if ((dwTime - m_pClientList[iClientH]->m_dwRunLAT) < (290)) {
-					//sprintf(G_cTxt, "3.51 Run Speeder: (%s) Player: (%s) run difference: %d. Speed Hack?", m_pClientList[iClientH]->m_cIPaddress, m_pClientList[iClientH]->m_cCharName, dwTime - m_pClientList[iClientH]->m_dwRunLAT);
+		if (is_blocked == false) m_client_list[client_h]->m_run_msg_recv_count++;
+		if (m_client_list[client_h]->m_run_msg_recv_count >= 3) {
+			if (m_client_list[client_h]->m_run_last_action_time != 0) {
+				if ((time - m_client_list[client_h]->m_run_last_action_time) < (290)) {
+					//sprintf(G_cTxt, "3.51 Run Speeder: (%s) Player: (%s) run difference: %d. Speed Hack?", m_client_list[client_h]->m_ip_address, m_client_list[client_h]->m_char_name, time - m_client_list[client_h]->m_run_last_action_time);
 					//PutHackLogFileList(G_cTxt);
-					bIsBlocked = true;
+					is_blocked = true;
 				}
 			}
-			m_pClientList[iClientH]->m_dwRunLAT	= dwTime;
-			m_pClientList[iClientH]->m_iRunMsgRecvCount = 0;
+			m_client_list[client_h]->m_run_last_action_time	= time;
+			m_client_list[client_h]->m_run_msg_recv_count = 0;
 		}
 	}*/
 
-	int iStX, iStY;
-	if (m_pMapList[m_pClientList[iClientH]->m_cMapIndex] != 0) {
-		iStX = m_pClientList[iClientH]->m_sX / 20;
-		iStY = m_pClientList[iClientH]->m_sY / 20;
-		m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_stTempSectorInfo[iStX][iStY].iPlayerActivity++;
+	int st_x, st_y;
+	if (m_map_list[m_client_list[client_h]->m_map_index] != 0) {
+		st_x = m_client_list[client_h]->m_x / 20;
+		st_y = m_client_list[client_h]->m_y / 20;
+		m_map_list[m_client_list[client_h]->m_map_index]->m_temp_sector_info[st_x][st_y].player_activity++;
 
-		switch (m_pClientList[iClientH]->m_cSide) {
-		case 0: m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_stTempSectorInfo[iStX][iStY].iNeutralActivity++; break;
-		case 1: m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_stTempSectorInfo[iStX][iStY].iAresdenActivity++; break;
-		case 2: m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_stTempSectorInfo[iStX][iStY].iElvineActivity++;  break;
+		switch (m_client_list[client_h]->m_side) {
+		case 0: m_map_list[m_client_list[client_h]->m_map_index]->m_temp_sector_info[st_x][st_y].neutral_activity++; break;
+		case 1: m_map_list[m_client_list[client_h]->m_map_index]->m_temp_sector_info[st_x][st_y].aresden_activity++; break;
+		case 2: m_map_list[m_client_list[client_h]->m_map_index]->m_temp_sector_info[st_x][st_y].elvine_activity++;  break;
 		}
 	}
 
-	m_pSkillManager->ClearSkillUsingStatus(iClientH);
+	m_skill_manager->clear_skill_using_status(client_h);
 
-	dX = m_pClientList[iClientH]->m_sX;
-	dY = m_pClientList[iClientH]->m_sY;
-	hb::shared::direction::ApplyOffset(cDir, dX, dY);
+	dX = m_client_list[client_h]->m_x;
+	dY = m_client_list[client_h]->m_y;
+	hb::shared::direction::ApplyOffset(dir, dX, dY);
 
-	pTopItem = 0;
-	bRet = m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->bGetMoveable(dX, dY, &sDOtype, &pTopItem);
+	top_item = 0;
+	ret_ok = m_map_list[m_client_list[client_h]->m_map_index]->get_moveable(dX, dY, &d_otype, &top_item);
 
-	if (m_pClientList[iClientH]->m_cMagicEffectStatus[hb::shared::magic::HoldObject] != 0)
-		bRet = false;
+	if (m_client_list[client_h]->m_magic_effect_status[hb::shared::magic::HoldObject] != 0)
+		ret_ok = false;
 
-	if ((bRet) && (bIsBlocked == false)) {
-		if (m_pClientList[iClientH]->m_iQuest != 0) m_pQuestManager->_bCheckIsQuestCompleted(iClientH);
+	if ((ret_ok) && (is_blocked == false)) {
+		if (m_client_list[client_h]->m_quest != 0) m_quest_manager->check_is_quest_completed(client_h);
 
-		m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->ClearOwner(1, iClientH, hb::shared::owner_class::Player, m_pClientList[iClientH]->m_sX, m_pClientList[iClientH]->m_sY);
+		m_map_list[m_client_list[client_h]->m_map_index]->clear_owner(1, client_h, hb::shared::owner_class::Player, m_client_list[client_h]->m_x, m_client_list[client_h]->m_y);
 
-		m_pClientList[iClientH]->m_sX = dX;
-		m_pClientList[iClientH]->m_sY = dY;
-		m_pClientList[iClientH]->m_cDir = cDir;
+		m_client_list[client_h]->m_x = dX;
+		m_client_list[client_h]->m_y = dY;
+		m_client_list[client_h]->m_dir = dir;
 
-		m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->SetOwner((short)iClientH,
+		m_map_list[m_client_list[client_h]->m_map_index]->set_owner((short)client_h,
 			hb::shared::owner_class::Player,
 			dX, dY);
 
-		if (sDOtype == dynamic_object::Spike) {
-			if ((m_pClientList[iClientH]->m_bIsNeutral) && (!m_pClientList[iClientH]->m_appearance.bIsWalking)) {
+		if (d_otype == dynamic_object::Spike) {
+			if ((m_client_list[client_h]->m_is_neutral) && (!m_client_list[client_h]->m_appearance.is_walking)) {
 
 			}
 			else {
-				iDamage = iDice(2, 4);
+				damage = dice(2, 4);
 
-				m_pClientList[iClientH]->m_iHP -= iDamage;
+				m_client_list[client_h]->m_hp -= damage;
 			}
 		}
 
-		if (m_pClientList[iClientH]->m_iHP <= 0) m_pClientList[iClientH]->m_iHP = 0;
+		if (m_client_list[client_h]->m_hp <= 0) m_client_list[client_h]->m_hp = 0;
 
 		writer.Reset();
 		auto* pkt = writer.Append<hb::net::PacketResponseMotionMoveConfirm>();
@@ -1418,185 +1418,185 @@ int CGame::iClientMotion_Move_Handler(int iClientH, short sX, short sY, char cDi
 		pkt->header.msg_type = Confirm::MoveConfirm;
 		pkt->x = static_cast<std::int16_t>(dX - hb::shared::view::CenterX);
 		pkt->y = static_cast<std::int16_t>(dY - hb::shared::view::CenterY);
-		pkt->dir = static_cast<std::uint8_t>(cDir);
+		pkt->dir = static_cast<std::uint8_t>(dir);
 		pkt->stamina_cost = 0;
-		if (cMoveType == 1) {
-			if (m_pClientList[iClientH]->m_iSP > 0) {
-				if (m_pClientList[iClientH]->m_iTimeLeft_FirmStaminar == 0) {
-					m_pClientList[iClientH]->m_iSP--;
+		if (move_type == 1) {
+			if (m_client_list[client_h]->m_sp > 0) {
+				if (m_client_list[client_h]->m_time_left_firm_stamina == 0) {
+					m_client_list[client_h]->m_sp--;
 					pkt->stamina_cost = 1;
 				}
 			}
 		}
 
-		pTile = (class CTile*)(m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_pTile + dX + dY * m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_sSizeY);
-		pkt->occupy_status = static_cast<std::uint8_t>(pTile->m_iOccupyStatus);
-		pkt->hp = m_pClientList[iClientH]->m_iHP;
+		tile = (class CTile*)(m_map_list[m_client_list[client_h]->m_map_index]->m_tile + dX + dY * m_map_list[m_client_list[client_h]->m_map_index]->m_size_y);
+		pkt->occupy_status = static_cast<std::uint8_t>(tile->m_occupy_status);
+		pkt->hp = m_client_list[client_h]->m_hp;
 
-		iSize = iComposeMoveMapData((short)(dX - hb::shared::view::CenterX), (short)(dY - hb::shared::view::CenterY), iClientH, cDir, moveMapData);
-		writer.AppendBytes(moveMapData, static_cast<std::size_t>(iSize));
+		size = compose_move_map_data((short)(dX - hb::shared::view::CenterX), (short)(dY - hb::shared::view::CenterY), client_h, dir, moveMapData);
+		writer.AppendBytes(moveMapData, static_cast<std::size_t>(size));
 
-		iRet = m_pClientList[iClientH]->m_pXSock->iSendMsg(writer.Data(), static_cast<int>(writer.Size()));
-		switch (iRet) {
+		ret = m_client_list[client_h]->m_socket->send_msg(writer.Data(), static_cast<int>(writer.size()));
+		switch (ret) {
 		case sock::Event::QueueFull:
 		case sock::Event::SocketError:
 		case sock::Event::CriticalError:
 		case sock::Event::SocketClosed:
-			DeleteClient(iClientH, true, true);
+			delete_client(client_h, true, true);
 			return 0;
 		}
 	}
 	else {
-		m_pClientList[iClientH]->m_bIsMoveBlocked = true;
+		m_client_list[client_h]->m_is_move_blocked = true;
 
-		m_pClientList[iClientH]->m_dwAttackLAT = 0;
+		m_client_list[client_h]->m_attack_last_action_time = 0;
 
-		wObjectID = (uint16_t)iClientH;
+		object_id = (uint16_t)client_h;
 		writer.Reset();
 		auto* pkt = writer.Append<hb::net::PacketResponseMotionMoveReject>();
 		pkt->header.msg_id = MsgId::ResponseMotion;
 		pkt->header.msg_type = Confirm::MoveReject;
-		pkt->object_id = static_cast<std::uint16_t>(wObjectID);
-		pkt->x = m_pClientList[wObjectID]->m_sX;
-		pkt->y = m_pClientList[wObjectID]->m_sY;
-		pkt->type = m_pClientList[wObjectID]->m_sType;
-		pkt->dir = static_cast<std::uint8_t>(m_pClientList[wObjectID]->m_cDir);
-		std::memcpy(pkt->name, m_pClientList[wObjectID]->m_cCharName, sizeof(pkt->name));
-		pkt->appearance = m_pClientList[wObjectID]->m_appearance;
+		pkt->object_id = static_cast<std::uint16_t>(object_id);
+		pkt->x = m_client_list[object_id]->m_x;
+		pkt->y = m_client_list[object_id]->m_y;
+		pkt->type = m_client_list[object_id]->m_type;
+		pkt->dir = static_cast<std::uint8_t>(m_client_list[object_id]->m_dir);
+		std::memcpy(pkt->name, m_client_list[object_id]->m_char_name, sizeof(pkt->name));
+		pkt->appearance = m_client_list[object_id]->m_appearance;
 		{
-			auto pktStatus = m_pClientList[wObjectID]->m_status;
-			pktStatus.bPK = (m_pClientList[wObjectID]->m_iPKCount != 0) ? 1 : 0;
-			pktStatus.bCitizen = (m_pClientList[wObjectID]->m_cSide != 0) ? 1 : 0;
-			pktStatus.bAresden = (m_pClientList[wObjectID]->m_cSide == 1) ? 1 : 0;
-			pktStatus.bHunter = m_pClientList[wObjectID]->m_bIsPlayerCivil ? 1 : 0;
-			pktStatus.iRelationship = m_pCombatManager->GetPlayerRelationship(wObjectID, iClientH);
+			auto pktStatus = m_client_list[object_id]->m_status;
+			pktStatus.pk = (m_client_list[object_id]->m_player_kill_count != 0) ? 1 : 0;
+			pktStatus.citizen = (m_client_list[object_id]->m_side != 0) ? 1 : 0;
+			pktStatus.aresden = (m_client_list[object_id]->m_side == 1) ? 1 : 0;
+			pktStatus.hunter = m_client_list[object_id]->m_is_player_civil ? 1 : 0;
+			pktStatus.relationship = m_combat_manager->get_player_relationship(object_id, client_h);
 			pkt->status = pktStatus;
 		}
 		pkt->padding = 0;
 
-		iRet = m_pClientList[iClientH]->m_pXSock->iSendMsg(writer.Data(), static_cast<int>(writer.Size()));
+		ret = m_client_list[client_h]->m_socket->send_msg(writer.Data(), static_cast<int>(writer.size()));
 
-		switch (iRet) {
+		switch (ret) {
 		case sock::Event::QueueFull:
 		case sock::Event::SocketError:
 		case sock::Event::CriticalError:
 		case sock::Event::SocketClosed:
-			DeleteClient(iClientH, true, true);
+			delete_client(client_h, true, true);
 			return 0;
 		}
 		// locobans
-		SendEventToNearClient_TypeA(iClientH, hb::shared::owner_class::Player, MsgId::EventMotion, Type::NullAction, 0, 0, 0);
+		send_event_to_near_client_type_a(client_h, hb::shared::owner_class::Player, MsgId::EventMotion, Type::NullAction, 0, 0, 0);
 		return 0;
 	}
 
 	return 1;
 }
 
-void CGame::RequestInitPlayerHandler(int iClientH, char* pData, char cKey)
+void CGame::request_init_player_handler(int client_h, char* data, char key)
 {
 	
-	char cCharName[hb::shared::limits::CharNameLen], cAccountName[hb::shared::limits::AccountNameLen], cAccountPassword[hb::shared::limits::AccountPassLen], cTxt[120];
-	bool bIsObserverMode;
+	char char_name[hb::shared::limits::CharNameLen], account_name[hb::shared::limits::AccountNameLen], account_password[hb::shared::limits::AccountPassLen], txt[120];
+	bool is_observer_mode;
 
-	if (m_pClientList[iClientH] == 0) return;
-	if (m_pClientList[iClientH]->m_bIsInitComplete) return;
+	if (m_client_list[client_h] == 0) return;
+	if (m_client_list[client_h]->m_is_init_complete) return;
 
-	std::memset(cCharName, 0, sizeof(cCharName));
-	std::memset(cAccountName, 0, sizeof(cAccountName));
-	std::memset(cAccountPassword, 0, sizeof(cAccountPassword));
+	std::memset(char_name, 0, sizeof(char_name));
+	std::memset(account_name, 0, sizeof(account_name));
+	std::memset(account_password, 0, sizeof(account_password));
 
-	std::memset(m_pClientList[iClientH]->m_cCharName, 0, sizeof(m_pClientList[iClientH]->m_cCharName));
-	std::memset(m_pClientList[iClientH]->m_cAccountName, 0, sizeof(m_pClientList[iClientH]->m_cAccountName));
-	std::memset(m_pClientList[iClientH]->m_cAccountPassword, 0, sizeof(m_pClientList[iClientH]->m_cAccountPassword));
+	std::memset(m_client_list[client_h]->m_char_name, 0, sizeof(m_client_list[client_h]->m_char_name));
+	std::memset(m_client_list[client_h]->m_account_name, 0, sizeof(m_client_list[client_h]->m_account_name));
+	std::memset(m_client_list[client_h]->m_account_password, 0, sizeof(m_client_list[client_h]->m_account_password));
 
 	const auto* req = hb::net::PacketCast<hb::net::PacketRequestInitPlayer>(
-		pData, sizeof(hb::net::PacketRequestInitPlayer));
+		data, sizeof(hb::net::PacketRequestInitPlayer));
 	if (!req) return;
 
-	memcpy(cCharName, req->player, hb::shared::limits::CharNameLen - 1);
+	memcpy(char_name, req->player, hb::shared::limits::CharNameLen - 1);
 
-	std::memset(cTxt, 0, sizeof(cTxt)); // v1.4
-	memcpy(cTxt, cCharName, hb::shared::limits::CharNameLen - 1);
-	std::memset(cCharName, 0, sizeof(cCharName));
-	memcpy(cCharName, cTxt, hb::shared::limits::CharNameLen - 1);
+	std::memset(txt, 0, sizeof(txt)); // v1.4
+	memcpy(txt, char_name, hb::shared::limits::CharNameLen - 1);
+	std::memset(char_name, 0, sizeof(char_name));
+	memcpy(char_name, txt, hb::shared::limits::CharNameLen - 1);
 
 	//testcode
-	if (strlen(cTxt) == 0) hb::logger::warn("RequestInitPlayerHandler: empty character name after copy");
+	if (strlen(txt) == 0) hb::logger::warn("request_init_player_handler: empty character name after copy");
 
-	memcpy(cAccountName, req->account, hb::shared::limits::AccountNameLen - 1);
+	memcpy(account_name, req->account, hb::shared::limits::AccountNameLen - 1);
 
-	std::memset(cTxt, 0, sizeof(cTxt)); // v1.4
-	memcpy(cTxt, cAccountName, hb::shared::limits::AccountNameLen - 1);
-	std::memset(cAccountName, 0, sizeof(cAccountName));
-	memcpy(cAccountName, cTxt, hb::shared::limits::AccountNameLen - 1);
+	std::memset(txt, 0, sizeof(txt)); // v1.4
+	memcpy(txt, account_name, hb::shared::limits::AccountNameLen - 1);
+	std::memset(account_name, 0, sizeof(account_name));
+	memcpy(account_name, txt, hb::shared::limits::AccountNameLen - 1);
 
 	// Lowercase account name to match how it was stored during account creation
-	for (int ci = 0; ci < 10 && cAccountName[ci] != '\0'; ci++)
-		cAccountName[ci] = static_cast<char>(::tolower(static_cast<unsigned char>(cAccountName[ci])));
+	for (int ci = 0; ci < 10 && account_name[ci] != '\0'; ci++)
+		account_name[ci] = static_cast<char>(::tolower(static_cast<unsigned char>(account_name[ci])));
 
-	memcpy(cAccountPassword, req->password, hb::shared::limits::AccountPassLen - 1);
+	memcpy(account_password, req->password, hb::shared::limits::AccountPassLen - 1);
 
-	std::memset(cTxt, 0, sizeof(cTxt)); // v1.4
-	memcpy(cTxt, cAccountPassword, hb::shared::limits::AccountPassLen - 1);
-	std::memset(cAccountPassword, 0, sizeof(cAccountPassword));
-	memcpy(cAccountPassword, cTxt, hb::shared::limits::AccountPassLen - 1);
+	std::memset(txt, 0, sizeof(txt)); // v1.4
+	memcpy(txt, account_password, hb::shared::limits::AccountPassLen - 1);
+	std::memset(account_password, 0, sizeof(account_password));
+	memcpy(account_password, txt, hb::shared::limits::AccountPassLen - 1);
 
-	bIsObserverMode = (req->is_observer != 0);
+	is_observer_mode = (req->is_observer != 0);
 
 	for(int i = 1; i < MaxClients; i++)
-		if ((m_pClientList[i] != 0) && (iClientH != i) && (hb_strnicmp(m_pClientList[i]->m_cAccountName, cAccountName, hb::shared::limits::AccountNameLen - 1) == 0)) {
-			if (memcmp(m_pClientList[i]->m_cAccountPassword, cAccountPassword, 10) == 0) {
-				sprintf(G_cTxt, "<%d> Duplicate account player! Deleted with data save : CharName(%s) AccntName(%s) IP(%s)", i, m_pClientList[i]->m_cCharName, m_pClientList[i]->m_cAccountName, m_pClientList[i]->m_cIPaddress);
+		if ((m_client_list[i] != 0) && (client_h != i) && (hb_strnicmp(m_client_list[i]->m_account_name, account_name, hb::shared::limits::AccountNameLen - 1) == 0)) {
+			if (memcmp(m_client_list[i]->m_account_password, account_password, 10) == 0) {
+				sprintf(G_cTxt, "<%d> Duplicate account player! Deleted with data save : CharName(%s) AccntName(%s) IP(%s)", i, m_client_list[i]->m_char_name, m_client_list[i]->m_account_name, m_client_list[i]->m_ip_address);
 				hb::logger::log("{}", G_cTxt);
 				//PutLogFileList(G_cTxt);
-				DeleteClient(i, true, true, false);
+				delete_client(i, true, true, false);
 			}
 			else {
-				memcpy(m_pClientList[iClientH]->m_cCharName, cCharName, hb::shared::limits::CharNameLen - 1);
-				memcpy(m_pClientList[iClientH]->m_cAccountName, cAccountName, hb::shared::limits::AccountNameLen - 1);
-				memcpy(m_pClientList[iClientH]->m_cAccountPassword, cAccountPassword, hb::shared::limits::AccountPassLen - 1);
+				memcpy(m_client_list[client_h]->m_char_name, char_name, hb::shared::limits::CharNameLen - 1);
+				memcpy(m_client_list[client_h]->m_account_name, account_name, hb::shared::limits::AccountNameLen - 1);
+				memcpy(m_client_list[client_h]->m_account_password, account_password, hb::shared::limits::AccountPassLen - 1);
 
-				DeleteClient(iClientH, false, false, false);
+				delete_client(client_h, false, false, false);
 				return;
 			}
 		}
 
 	for(int i = 1; i < MaxClients; i++)
-		if ((m_pClientList[i] != 0) && (iClientH != i) && (hb_strnicmp(m_pClientList[i]->m_cCharName, cCharName, hb::shared::limits::CharNameLen - 1) == 0)) {
-			if (memcmp(m_pClientList[i]->m_cAccountPassword, cAccountPassword, 10) == 0) {
-				sprintf(G_cTxt, "<%d> Duplicate player! Deleted with data save : CharName(%s) IP(%s)", i, m_pClientList[i]->m_cCharName, m_pClientList[i]->m_cIPaddress);
+		if ((m_client_list[i] != 0) && (client_h != i) && (hb_strnicmp(m_client_list[i]->m_char_name, char_name, hb::shared::limits::CharNameLen - 1) == 0)) {
+			if (memcmp(m_client_list[i]->m_account_password, account_password, 10) == 0) {
+				sprintf(G_cTxt, "<%d> Duplicate player! Deleted with data save : CharName(%s) IP(%s)", i, m_client_list[i]->m_char_name, m_client_list[i]->m_ip_address);
 				hb::logger::log("{}", G_cTxt);
 				//PutLogFileList(G_cTxt);
-				DeleteClient(i, true, true, false);
+				delete_client(i, true, true, false);
 			}
 			else {
-				memcpy(m_pClientList[iClientH]->m_cCharName, cCharName, hb::shared::limits::CharNameLen - 1);
-				memcpy(m_pClientList[iClientH]->m_cAccountName, cAccountName, hb::shared::limits::AccountNameLen - 1);
-				memcpy(m_pClientList[iClientH]->m_cAccountPassword, cAccountPassword, hb::shared::limits::AccountPassLen - 1);
+				memcpy(m_client_list[client_h]->m_char_name, char_name, hb::shared::limits::CharNameLen - 1);
+				memcpy(m_client_list[client_h]->m_account_name, account_name, hb::shared::limits::AccountNameLen - 1);
+				memcpy(m_client_list[client_h]->m_account_password, account_password, hb::shared::limits::AccountPassLen - 1);
 
-				DeleteClient(iClientH, false, false);
+				delete_client(client_h, false, false);
 				return;
 			}
 		}
 
-	memcpy(m_pClientList[iClientH]->m_cCharName, cCharName, hb::shared::limits::CharNameLen - 1);
-	memcpy(m_pClientList[iClientH]->m_cAccountName, cAccountName, hb::shared::limits::AccountNameLen - 1);
-	memcpy(m_pClientList[iClientH]->m_cAccountPassword, cAccountPassword, hb::shared::limits::AccountPassLen - 1);
+	memcpy(m_client_list[client_h]->m_char_name, char_name, hb::shared::limits::CharNameLen - 1);
+	memcpy(m_client_list[client_h]->m_account_name, account_name, hb::shared::limits::AccountNameLen - 1);
+	memcpy(m_client_list[client_h]->m_account_password, account_password, hb::shared::limits::AccountPassLen - 1);
 
-	m_pClientList[iClientH]->m_bIsObserverMode = bIsObserverMode;
+	m_client_list[client_h]->m_is_observer_mode = is_observer_mode;
 
 	// Admin validation
-	m_pClientList[iClientH]->m_iAdminIndex = -1;
-	m_pClientList[iClientH]->m_iAdminLevel = 0;
-	m_pClientList[iClientH]->m_bIsGMMode = false;
-	int iAdminIdx = FindAdminByAccount(cAccountName);
-	if (iAdminIdx != -1 && hb_stricmp(m_stAdminList[iAdminIdx].m_cCharName, cCharName) == 0)
+	m_client_list[client_h]->m_admin_index = -1;
+	m_client_list[client_h]->m_admin_level = 0;
+	m_client_list[client_h]->m_is_gm_mode = false;
+	int admin_idx = find_admin_by_account(account_name);
+	if (admin_idx != -1 && hb_stricmp(m_admin_list[admin_idx].m_char_name, char_name) == 0)
 	{
-		if (strcmp(m_stAdminList[iAdminIdx].m_cApprovedIP, "0.0.0.0") == 0)
+		if (strcmp(m_admin_list[admin_idx].approved_ip, "0.0.0.0") == 0)
 		{
-			strncpy(m_stAdminList[iAdminIdx].m_cApprovedIP, m_pClientList[iClientH]->m_cIPaddress, 20);
-			m_stAdminList[iAdminIdx].m_cApprovedIP[20] = '\0';
-			hb::logger::log("Admin IP auto-set: account={} ip={}", cAccountName, m_pClientList[iClientH]->m_cIPaddress);
+			strncpy(m_admin_list[admin_idx].approved_ip, m_client_list[client_h]->m_ip_address, 20);
+			m_admin_list[admin_idx].approved_ip[20] = '\0';
+			hb::logger::log("Admin IP auto-set: account={} ip={}", account_name, m_client_list[client_h]->m_ip_address);
 
 			sqlite3* configDb = nullptr;
 			std::string dbPath;
@@ -1606,143 +1606,143 @@ void CGame::RequestInitPlayerHandler(int iClientH, char* pData, char cKey)
 				CloseGameConfigDatabase(configDb);
 			}
 
-			m_pClientList[iClientH]->m_iAdminIndex = iAdminIdx;
-			m_pClientList[iClientH]->m_iAdminLevel = m_stAdminList[iAdminIdx].m_iAdminLevel;
+			m_client_list[client_h]->m_admin_index = admin_idx;
+			m_client_list[client_h]->m_admin_level = m_admin_list[admin_idx].m_admin_level;
 		}
-		else if (strcmp(m_stAdminList[iAdminIdx].m_cApprovedIP, m_pClientList[iClientH]->m_cIPaddress) == 0)
+		else if (strcmp(m_admin_list[admin_idx].approved_ip, m_client_list[client_h]->m_ip_address) == 0)
 		{
-			m_pClientList[iClientH]->m_iAdminIndex = iAdminIdx;
-			m_pClientList[iClientH]->m_iAdminLevel = m_stAdminList[iAdminIdx].m_iAdminLevel;
+			m_client_list[client_h]->m_admin_index = admin_idx;
+			m_client_list[client_h]->m_admin_level = m_admin_list[admin_idx].m_admin_level;
 		}
 		else
 		{
-			hb::logger::error("Admin IP mismatch for account {} (expected {}, got {})", cAccountName, m_stAdminList[iAdminIdx].m_cApprovedIP, m_pClientList[iClientH]->m_cIPaddress);
-			DeleteClient(iClientH, false, false, false);
+			hb::logger::error("Admin IP mismatch for account {} (expected {}, got {})", account_name, m_admin_list[admin_idx].approved_ip, m_client_list[client_h]->m_ip_address);
+			delete_client(client_h, false, false, false);
 			return;
 		}
 	}
 
-	InitPlayerData(iClientH, 0, 0); //bSendMsgToLS(ServerMsgId::RequestPlayerData, iClientH);
+	init_player_data(client_h, 0, 0); //send_msg_to_ls(ServerMsgId::RequestPlayerData, client_h);
 }
 
 // 05/22/2004 - Hypnotoad - sends client to proper location after dieing
-void CGame::RequestInitDataHandler(int iClientH, char* pData, char cKey, size_t dwMsgSize)
+void CGame::request_init_data_handler(int client_h, char* data, char key, size_t msg_size)
 {
-	char cPlayerName[hb::shared::limits::CharNameLen], cTxt[120];
-	int sSummonPoints;
-	int iTotalItemA, iTotalItemB, iSize, iRet, iStats;
+	char player_name[hb::shared::limits::CharNameLen], txt[120];
+	int summon_points;
+	int total_item_a, total_item_b, size, ret, stats;
 	hb::time::local_time SysTime{};
 	hb::net::PacketWriter writer;
 	char initMapData[hb::shared::limits::MsgBufferSize + 1];
 
-	if (m_pClientList[iClientH] == 0) return;
+	if (m_client_list[client_h] == 0) return;
 
 	const auto* req = hb::net::PacketCast<hb::net::PacketRequestInitPlayer>(
-		pData, sizeof(hb::net::PacketRequestInitPlayer));
+		data, sizeof(hb::net::PacketRequestInitPlayer));
 	if (!req) {
 		return;
 	}
 
-	std::memset(cPlayerName, 0, sizeof(cPlayerName));
-	memcpy(cPlayerName, req->player, hb::shared::limits::CharNameLen - 1);
+	std::memset(player_name, 0, sizeof(player_name));
+	memcpy(player_name, req->player, hb::shared::limits::CharNameLen - 1);
 
-	std::memset(cTxt, 0, sizeof(cTxt)); // v1.4
-	memcpy(cTxt, cPlayerName, hb::shared::limits::CharNameLen - 1);
-	std::memset(cPlayerName, 0, sizeof(cPlayerName));
-	memcpy(cPlayerName, cTxt, hb::shared::limits::CharNameLen - 1);
+	std::memset(txt, 0, sizeof(txt)); // v1.4
+	memcpy(txt, player_name, hb::shared::limits::CharNameLen - 1);
+	std::memset(player_name, 0, sizeof(player_name));
+	memcpy(player_name, txt, hb::shared::limits::CharNameLen - 1);
 
-	if (hb_strnicmp(m_pClientList[iClientH]->m_cCharName, cPlayerName, hb::shared::limits::CharNameLen - 1) != 0) {
-		DeleteClient(iClientH, false, true);
+	if (hb_strnicmp(m_client_list[client_h]->m_char_name, player_name, hb::shared::limits::CharNameLen - 1) != 0) {
+		delete_client(client_h, false, true);
 		return;
 	}
 
 	// Send configs FIRST so the client has item/magic/skill definitions
 	// before receiving player data that references them.
 	uint32_t clientItemHash = 0, clientMagicHash = 0, clientSkillHash = 0, clientNpcHash = 0;
-	if (dwMsgSize >= sizeof(hb::net::PacketRequestInitDataEx)) {
-		const auto* exReq = reinterpret_cast<const hb::net::PacketRequestInitDataEx*>(pData);
+	if (msg_size >= sizeof(hb::net::PacketRequestInitDataEx)) {
+		const auto* exReq = reinterpret_cast<const hb::net::PacketRequestInitDataEx*>(data);
 		clientItemHash = exReq->itemConfigHash;
 		clientMagicHash = exReq->magicConfigHash;
 		clientSkillHash = exReq->skillConfigHash;
 		clientNpcHash = exReq->npcConfigHash;
 	}
 
-	bool bItemCacheValid  = (clientItemHash != 0 && clientItemHash == m_dwConfigHash[0]);
-	bool bMagicCacheValid = (clientMagicHash != 0 && clientMagicHash == m_dwConfigHash[1]);
-	bool bSkillCacheValid = (clientSkillHash != 0 && clientSkillHash == m_dwConfigHash[2]);
-	bool bNpcCacheValid   = (clientNpcHash != 0 && clientNpcHash == m_dwConfigHash[3]);
+	bool item_cache_valid  = (clientItemHash != 0 && clientItemHash == m_config_hash[0]);
+	bool magic_cache_valid = (clientMagicHash != 0 && clientMagicHash == m_config_hash[1]);
+	bool skill_cache_valid = (clientSkillHash != 0 && clientSkillHash == m_config_hash[2]);
+	bool npc_cache_valid   = (clientNpcHash != 0 && clientNpcHash == m_config_hash[3]);
 
 	{
 		hb::net::PacketResponseConfigCacheStatus cacheStatus{};
 		cacheStatus.header.msg_id = MSGID_RESPONSE_CONFIGCACHESTATUS;
 		cacheStatus.header.msg_type = MsgType::Confirm;
-		cacheStatus.itemCacheValid = bItemCacheValid ? 1 : 0;
-		cacheStatus.magicCacheValid = bMagicCacheValid ? 1 : 0;
-		cacheStatus.skillCacheValid = bSkillCacheValid ? 1 : 0;
-		cacheStatus.npcCacheValid = bNpcCacheValid ? 1 : 0;
-		m_pClientList[iClientH]->m_pXSock->iSendMsg(
+		cacheStatus.itemCacheValid = item_cache_valid ? 1 : 0;
+		cacheStatus.magicCacheValid = magic_cache_valid ? 1 : 0;
+		cacheStatus.skillCacheValid = skill_cache_valid ? 1 : 0;
+		cacheStatus.npcCacheValid = npc_cache_valid ? 1 : 0;
+		m_client_list[client_h]->m_socket->send_msg(
 			reinterpret_cast<char*>(&cacheStatus), sizeof(cacheStatus));
 	}
 
-	if (!bItemCacheValid)  m_pItemManager->bSendClientItemConfigs(iClientH);
-	if (!bMagicCacheValid) m_pMagicManager->bSendClientMagicConfigs(iClientH);
-	if (!bSkillCacheValid) m_pSkillManager->bSendClientSkillConfigs(iClientH);
-	if (!bNpcCacheValid)   bSendClientNpcConfigs(iClientH);
+	if (!item_cache_valid)  m_item_manager->send_client_item_configs(client_h);
+	if (!magic_cache_valid) m_magic_manager->send_client_magic_configs(client_h);
+	if (!skill_cache_valid) m_skill_manager->send_client_skill_configs(client_h);
+	if (!npc_cache_valid)   send_client_npc_configs(client_h);
 
 	// Now send player data (configs are guaranteed loaded on client)
 	writer.Reset();
 	auto* char_pkt = writer.Append<hb::net::PacketResponsePlayerCharacterContents>();
 	char_pkt->header.msg_id = MsgId::PlayerCharacterContents;
 	char_pkt->header.msg_type = MsgType::Confirm;
-	char_pkt->hp = m_pClientList[iClientH]->m_iHP;
-	char_pkt->mp = m_pClientList[iClientH]->m_iMP;
-	char_pkt->sp = m_pClientList[iClientH]->m_iSP;
-	char_pkt->ac = m_pClientList[iClientH]->m_iDefenseRatio;
-	char_pkt->thac0 = m_pClientList[iClientH]->m_iHitRatio;
-	char_pkt->level = m_pClientList[iClientH]->m_iLevel;
-	char_pkt->str = m_pClientList[iClientH]->m_iStr;
-	char_pkt->intel = m_pClientList[iClientH]->m_iInt;
-	char_pkt->vit = m_pClientList[iClientH]->m_iVit;
-	char_pkt->dex = m_pClientList[iClientH]->m_iDex;
-	char_pkt->mag = m_pClientList[iClientH]->m_iMag;
-	char_pkt->chr = m_pClientList[iClientH]->m_iCharisma;
+	char_pkt->hp = m_client_list[client_h]->m_hp;
+	char_pkt->mp = m_client_list[client_h]->m_mp;
+	char_pkt->sp = m_client_list[client_h]->m_sp;
+	char_pkt->ac = m_client_list[client_h]->m_defense_ratio;
+	char_pkt->thac0 = m_client_list[client_h]->m_hit_ratio;
+	char_pkt->level = m_client_list[client_h]->m_level;
+	char_pkt->str = m_client_list[client_h]->m_str;
+	char_pkt->intel = m_client_list[client_h]->m_int;
+	char_pkt->vit = m_client_list[client_h]->m_vit;
+	char_pkt->dex = m_client_list[client_h]->m_dex;
+	char_pkt->mag = m_client_list[client_h]->m_mag;
+	char_pkt->chr = m_client_list[client_h]->m_charisma;
 
-	iStats = (m_pClientList[iClientH]->m_iStr + m_pClientList[iClientH]->m_iDex + m_pClientList[iClientH]->m_iVit +
-		m_pClientList[iClientH]->m_iInt + m_pClientList[iClientH]->m_iMag + m_pClientList[iClientH]->m_iCharisma);
+	stats = (m_client_list[client_h]->m_str + m_client_list[client_h]->m_dex + m_client_list[client_h]->m_vit +
+		m_client_list[client_h]->m_int + m_client_list[client_h]->m_mag + m_client_list[client_h]->m_charisma);
 
-	m_pClientList[iClientH]->m_iLU_Pool = (m_pClientList[iClientH]->m_iLevel - 1) * 3 - (iStats - 70);
-	char_pkt->lu_point = static_cast<std::uint16_t>(m_pClientList[iClientH]->m_iLU_Pool);
-	char_pkt->lu_unused[0] = static_cast<std::uint8_t>(m_pClientList[iClientH]->m_cVar);
+	m_client_list[client_h]->m_levelup_pool = (m_client_list[client_h]->m_level - 1) * 3 - (stats - 70);
+	char_pkt->lu_point = static_cast<std::uint16_t>(m_client_list[client_h]->m_levelup_pool);
+	char_pkt->lu_unused[0] = static_cast<std::uint8_t>(m_client_list[client_h]->m_var);
 	char_pkt->lu_unused[1] = 0;
 	char_pkt->lu_unused[2] = 0;
 	char_pkt->lu_unused[3] = 0;
 	char_pkt->lu_unused[4] = 0;
-	char_pkt->exp = m_pClientList[iClientH]->m_iExp;
-	char_pkt->enemy_kills = m_pClientList[iClientH]->m_iEnemyKillCount;
-	char_pkt->pk_count = m_pClientList[iClientH]->m_iPKCount;
-	char_pkt->reward_gold = m_pClientList[iClientH]->m_iRewardGold;
-	std::memcpy(char_pkt->location, m_pClientList[iClientH]->m_cLocation, sizeof(char_pkt->location));
-	std::memcpy(char_pkt->guild_name, m_pClientList[iClientH]->m_cGuildName, sizeof(char_pkt->guild_name));
-	char_pkt->guild_rank = m_pClientList[iClientH]->m_iGuildRank;
-	char_pkt->super_attack_left = static_cast<std::uint8_t>(m_pClientList[iClientH]->m_iSuperAttackLeft);
-	char_pkt->fightzone_number = m_pClientList[iClientH]->m_iFightzoneNumber;
-	char_pkt->max_stats = m_iMaxStatValue;
-	char_pkt->max_level = m_iMaxLevel;
-	char_pkt->max_bank_items = m_iMaxBankItems;
+	char_pkt->exp = m_client_list[client_h]->m_exp;
+	char_pkt->enemy_kills = m_client_list[client_h]->m_enemy_kill_count;
+	char_pkt->pk_count = m_client_list[client_h]->m_player_kill_count;
+	char_pkt->reward_gold = m_client_list[client_h]->m_reward_gold;
+	std::memcpy(char_pkt->location, m_client_list[client_h]->m_location, sizeof(char_pkt->location));
+	std::memcpy(char_pkt->guild_name, m_client_list[client_h]->m_guild_name, sizeof(char_pkt->guild_name));
+	char_pkt->guild_rank = m_client_list[client_h]->m_guild_rank;
+	char_pkt->super_attack_left = static_cast<std::uint8_t>(m_client_list[client_h]->m_super_attack_left);
+	char_pkt->fightzone_number = m_client_list[client_h]->m_fightzone_number;
+	char_pkt->max_stats = m_max_stat_value;
+	char_pkt->max_level = m_max_level;
+	char_pkt->max_bank_items = m_max_bank_items;
 
 	//hbest
-	m_pClientList[iClientH]->isForceSet = false;
-	m_pClientList[iClientH]->m_iPartyID = 0;
-	m_pClientList[iClientH]->m_iPartyStatus = PartyStatus::Null;
-	m_pClientList[iClientH]->m_iReqJoinPartyClientH = 0;
+	m_client_list[client_h]->is_force_set = false;
+	m_client_list[client_h]->m_party_id = 0;
+	m_client_list[client_h]->m_party_status = PartyStatus::Null;
+	m_client_list[client_h]->m_req_join_party_client_h = 0;
 
-	iRet = m_pClientList[iClientH]->m_pXSock->iSendMsg(writer.Data(), static_cast<int>(writer.Size()));
-	switch (iRet) {
+	ret = m_client_list[client_h]->m_socket->send_msg(writer.Data(), static_cast<int>(writer.size()));
+	switch (ret) {
 	case sock::Event::QueueFull:
 	case sock::Event::SocketError:
 	case sock::Event::CriticalError:
 	case sock::Event::SocketClosed:
-		DeleteClient(iClientH, true, true);
+		delete_client(client_h, true, true);
 		return;
 	}
 
@@ -1751,358 +1751,358 @@ void CGame::RequestInitDataHandler(int iClientH, char* pData, char cKey, size_t 
 	item_header->header.msg_id = MsgId::PlayerItemListContents;
 	item_header->header.msg_type = MsgType::Confirm;
 
-	iTotalItemA = 0;
+	total_item_a = 0;
 	for(int i = 0; i < hb::shared::limits::MaxItems; i++)
-		if (m_pClientList[iClientH]->m_pItemList[i] != 0)
-			iTotalItemA++;
+		if (m_client_list[client_h]->m_item_list[i] != 0)
+			total_item_a++;
 
-	item_header->item_count = static_cast<std::uint8_t>(iTotalItemA);
+	item_header->item_count = static_cast<std::uint8_t>(total_item_a);
 
-	for(int i = 0; i < iTotalItemA; i++) {
+	for(int i = 0; i < total_item_a; i++) {
 		// ### ERROR POINT!!!
-		if (m_pClientList[iClientH]->m_pItemList[i] == 0) {
-			sprintf(G_cTxt, "RequestInitDataHandler error: Client(%s) Item(%d)", m_pClientList[iClientH]->m_cCharName, i);
+		if (m_client_list[client_h]->m_item_list[i] == 0) {
+			sprintf(G_cTxt, "request_init_data_handler error: Client(%s) Item(%d)", m_client_list[client_h]->m_char_name, i);
 			hb::logger::log<log_channel::events>("{}", G_cTxt);
 
-			DeleteClient(iClientH, false, true);
+			delete_client(client_h, false, true);
 			return;
 		}
 		auto* entry = writer.Append<hb::net::PacketResponseItemListEntry>();
-		std::memcpy(entry->name, m_pClientList[iClientH]->m_pItemList[i]->m_cName, sizeof(entry->name));
-		entry->count = m_pClientList[iClientH]->m_pItemList[i]->m_dwCount;
-		entry->item_type = m_pClientList[iClientH]->m_pItemList[i]->m_cItemType;
-		entry->equip_pos = m_pClientList[iClientH]->m_pItemList[i]->m_cEquipPos;
-		entry->is_equipped = static_cast<std::uint8_t>(m_pClientList[iClientH]->m_bIsItemEquipped[i]);
-		entry->level_limit = m_pClientList[iClientH]->m_pItemList[i]->m_sLevelLimit;
-		entry->gender_limit = m_pClientList[iClientH]->m_pItemList[i]->m_cGenderLimit;
-		entry->cur_lifespan = m_pClientList[iClientH]->m_pItemList[i]->m_wCurLifeSpan;
-		entry->weight = m_pClientList[iClientH]->m_pItemList[i]->m_wWeight;
-		entry->sprite = m_pClientList[iClientH]->m_pItemList[i]->m_sSprite;
-		entry->sprite_frame = m_pClientList[iClientH]->m_pItemList[i]->m_sSpriteFrame;
-		entry->item_color = m_pClientList[iClientH]->m_pItemList[i]->m_cItemColor;
-		entry->spec_value2 = static_cast<std::uint8_t>(m_pClientList[iClientH]->m_pItemList[i]->m_sItemSpecEffectValue2);
-		entry->attribute = m_pClientList[iClientH]->m_pItemList[i]->m_dwAttribute;
-		entry->item_id = m_pClientList[iClientH]->m_pItemList[i]->m_sIDnum;
-		entry->max_lifespan = m_pClientList[iClientH]->m_pItemList[i]->m_wMaxLifeSpan;
+		std::memcpy(entry->name, m_client_list[client_h]->m_item_list[i]->m_name, sizeof(entry->name));
+		entry->count = m_client_list[client_h]->m_item_list[i]->m_count;
+		entry->item_type = m_client_list[client_h]->m_item_list[i]->m_item_type;
+		entry->equip_pos = m_client_list[client_h]->m_item_list[i]->m_equip_pos;
+		entry->is_equipped = static_cast<std::uint8_t>(m_client_list[client_h]->m_is_item_equipped[i]);
+		entry->level_limit = m_client_list[client_h]->m_item_list[i]->m_level_limit;
+		entry->gender_limit = m_client_list[client_h]->m_item_list[i]->m_gender_limit;
+		entry->cur_lifespan = m_client_list[client_h]->m_item_list[i]->m_cur_life_span;
+		entry->weight = m_client_list[client_h]->m_item_list[i]->m_weight;
+		entry->sprite = m_client_list[client_h]->m_item_list[i]->m_sprite;
+		entry->sprite_frame = m_client_list[client_h]->m_item_list[i]->m_sprite_frame;
+		entry->item_color = m_client_list[client_h]->m_item_list[i]->m_item_color;
+		entry->spec_value2 = static_cast<std::uint8_t>(m_client_list[client_h]->m_item_list[i]->m_item_special_effect_value2);
+		entry->attribute = m_client_list[client_h]->m_item_list[i]->m_attribute;
+		entry->item_id = m_client_list[client_h]->m_item_list[i]->m_id_num;
+		entry->max_lifespan = m_client_list[client_h]->m_item_list[i]->m_max_life_span;
 	}
 
-	iTotalItemB = 0;
+	total_item_b = 0;
 	for(int i = 0; i < hb::shared::limits::MaxBankItems; i++)
-		if (m_pClientList[iClientH]->m_pItemInBankList[i] != 0)
-			iTotalItemB++;
+		if (m_client_list[client_h]->m_item_in_bank_list[i] != 0)
+			total_item_b++;
 
 	auto* bank_header = writer.Append<hb::net::PacketResponseBankItemListHeader>();
-	bank_header->bank_item_count = static_cast<std::uint16_t>(iTotalItemB);
+	bank_header->bank_item_count = static_cast<std::uint16_t>(total_item_b);
 
-	for(int i = 0; i < iTotalItemB; i++) {
-		if (m_pClientList[iClientH]->m_pItemInBankList[i] == 0) {
-			sprintf(G_cTxt, "RequestInitDataHandler error: Client(%s) Bank-Item(%d)", m_pClientList[iClientH]->m_cCharName, i);
+	for(int i = 0; i < total_item_b; i++) {
+		if (m_client_list[client_h]->m_item_in_bank_list[i] == 0) {
+			sprintf(G_cTxt, "request_init_data_handler error: Client(%s) Bank-Item(%d)", m_client_list[client_h]->m_char_name, i);
 			hb::logger::log<log_channel::events>("{}", G_cTxt);
 
-			DeleteClient(iClientH, false, true);
+			delete_client(client_h, false, true);
 			return;
 		}
 		auto* entry = writer.Append<hb::net::PacketResponseBankItemEntry>();
-		std::memcpy(entry->name, m_pClientList[iClientH]->m_pItemInBankList[i]->m_cName, sizeof(entry->name));
-		entry->count = m_pClientList[iClientH]->m_pItemInBankList[i]->m_dwCount;
-		entry->item_type = m_pClientList[iClientH]->m_pItemInBankList[i]->m_cItemType;
-		entry->equip_pos = m_pClientList[iClientH]->m_pItemInBankList[i]->m_cEquipPos;
-		entry->level_limit = m_pClientList[iClientH]->m_pItemInBankList[i]->m_sLevelLimit;
-		entry->gender_limit = m_pClientList[iClientH]->m_pItemInBankList[i]->m_cGenderLimit;
-		entry->cur_lifespan = m_pClientList[iClientH]->m_pItemInBankList[i]->m_wCurLifeSpan;
-		entry->weight = m_pClientList[iClientH]->m_pItemInBankList[i]->m_wWeight;
-		entry->sprite = m_pClientList[iClientH]->m_pItemInBankList[i]->m_sSprite;
-		entry->sprite_frame = m_pClientList[iClientH]->m_pItemInBankList[i]->m_sSpriteFrame;
-		entry->item_color = m_pClientList[iClientH]->m_pItemInBankList[i]->m_cItemColor;
-		entry->spec_value2 = static_cast<std::uint8_t>(m_pClientList[iClientH]->m_pItemInBankList[i]->m_sItemSpecEffectValue2);
-		entry->attribute = m_pClientList[iClientH]->m_pItemInBankList[i]->m_dwAttribute;
-		entry->item_id = m_pClientList[iClientH]->m_pItemInBankList[i]->m_sIDnum;
-		entry->max_lifespan = m_pClientList[iClientH]->m_pItemInBankList[i]->m_wMaxLifeSpan;
+		std::memcpy(entry->name, m_client_list[client_h]->m_item_in_bank_list[i]->m_name, sizeof(entry->name));
+		entry->count = m_client_list[client_h]->m_item_in_bank_list[i]->m_count;
+		entry->item_type = m_client_list[client_h]->m_item_in_bank_list[i]->m_item_type;
+		entry->equip_pos = m_client_list[client_h]->m_item_in_bank_list[i]->m_equip_pos;
+		entry->level_limit = m_client_list[client_h]->m_item_in_bank_list[i]->m_level_limit;
+		entry->gender_limit = m_client_list[client_h]->m_item_in_bank_list[i]->m_gender_limit;
+		entry->cur_lifespan = m_client_list[client_h]->m_item_in_bank_list[i]->m_cur_life_span;
+		entry->weight = m_client_list[client_h]->m_item_in_bank_list[i]->m_weight;
+		entry->sprite = m_client_list[client_h]->m_item_in_bank_list[i]->m_sprite;
+		entry->sprite_frame = m_client_list[client_h]->m_item_in_bank_list[i]->m_sprite_frame;
+		entry->item_color = m_client_list[client_h]->m_item_in_bank_list[i]->m_item_color;
+		entry->spec_value2 = static_cast<std::uint8_t>(m_client_list[client_h]->m_item_in_bank_list[i]->m_item_special_effect_value2);
+		entry->attribute = m_client_list[client_h]->m_item_in_bank_list[i]->m_attribute;
+		entry->item_id = m_client_list[client_h]->m_item_in_bank_list[i]->m_id_num;
+		entry->max_lifespan = m_client_list[client_h]->m_item_in_bank_list[i]->m_max_life_span;
 	}
 
 	auto* mastery = writer.Append<hb::net::PacketResponseMasteryData>();
-	std::memcpy(mastery->magic_mastery, m_pClientList[iClientH]->m_cMagicMastery, hb::shared::limits::MaxMagicType);
-	std::memcpy(mastery->skill_mastery, m_pClientList[iClientH]->m_cSkillMastery, hb::shared::limits::MaxSkillType);
+	std::memcpy(mastery->magic_mastery, m_client_list[client_h]->m_magic_mastery, hb::shared::limits::MaxMagicType);
+	std::memcpy(mastery->skill_mastery, m_client_list[client_h]->m_skill_mastery, hb::shared::limits::MaxSkillType);
 
-	iRet = m_pClientList[iClientH]->m_pXSock->iSendMsg(writer.Data(), static_cast<int>(writer.Size()));
-	switch (iRet) {
+	ret = m_client_list[client_h]->m_socket->send_msg(writer.Data(), static_cast<int>(writer.size()));
+	switch (ret) {
 	case sock::Event::QueueFull:
 	case sock::Event::SocketError:
 	case sock::Event::CriticalError:
 	case sock::Event::SocketClosed:
-		DeleteClient(iClientH, true, true);
+		delete_client(client_h, true, true);
 		return;
 	}
 
 	// Send item positions right after item list so positions are applied
 	// while items are still freshly initialized
-	SendNotifyMsg(0, iClientH, Notify::ItemPosList, 0, 0, 0, 0);
+	send_notify_msg(0, client_h, Notify::ItemPosList, 0, 0, 0, 0);
 
 	writer.Reset();
 	auto* init_header = writer.Append<hb::net::PacketResponseInitDataHeader>();
 	init_header->header.msg_id = MsgId::ResponseInitData;
 	init_header->header.msg_type = MsgType::Confirm;
 
-	if (m_pClientList[iClientH]->m_bIsObserverMode == false)
-		bGetEmptyPosition(&m_pClientList[iClientH]->m_sX, &m_pClientList[iClientH]->m_sY, m_pClientList[iClientH]->m_cMapIndex);
-	else GetMapInitialPoint(m_pClientList[iClientH]->m_cMapIndex, &m_pClientList[iClientH]->m_sX, &m_pClientList[iClientH]->m_sY);
+	if (m_client_list[client_h]->m_is_observer_mode == false)
+		get_empty_position(&m_client_list[client_h]->m_x, &m_client_list[client_h]->m_y, m_client_list[client_h]->m_map_index);
+	else get_map_initial_point(m_client_list[client_h]->m_map_index, &m_client_list[client_h]->m_x, &m_client_list[client_h]->m_y);
 
-	init_header->player_object_id = static_cast<std::int16_t>(iClientH);
-	init_header->pivot_x = static_cast<std::int16_t>(m_pClientList[iClientH]->m_sX - hb::shared::view::PlayerPivotOffsetX);
-	init_header->pivot_y = static_cast<std::int16_t>(m_pClientList[iClientH]->m_sY - hb::shared::view::PlayerPivotOffsetY);
-	init_header->player_type = m_pClientList[iClientH]->m_sType;
-	init_header->appearance = m_pClientList[iClientH]->m_appearance;
-	init_header->status = m_pClientList[iClientH]->m_status;
-	std::memcpy(init_header->map_name, m_pClientList[iClientH]->m_cMapName, sizeof(init_header->map_name));
-	std::memcpy(init_header->cur_location, m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_cLocationName, sizeof(init_header->cur_location));
+	init_header->player_object_id = static_cast<std::int16_t>(client_h);
+	init_header->pivot_x = static_cast<std::int16_t>(m_client_list[client_h]->m_x - hb::shared::view::PlayerPivotOffsetX);
+	init_header->pivot_y = static_cast<std::int16_t>(m_client_list[client_h]->m_y - hb::shared::view::PlayerPivotOffsetY);
+	init_header->player_type = m_client_list[client_h]->m_type;
+	init_header->appearance = m_client_list[client_h]->m_appearance;
+	init_header->status = m_client_list[client_h]->m_status;
+	std::memcpy(init_header->map_name, m_client_list[client_h]->m_map_name, sizeof(init_header->map_name));
+	std::memcpy(init_header->cur_location, m_map_list[m_client_list[client_h]->m_map_index]->m_location_name, sizeof(init_header->cur_location));
 
-	if (m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_bIsFixedDayMode)
+	if (m_map_list[m_client_list[client_h]->m_map_index]->m_is_fixed_day_mode)
 		init_header->sprite_alpha = 1;
-	else init_header->sprite_alpha = m_cDayOrNight;
+	else init_header->sprite_alpha = m_day_or_night;
 
-	if (m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_bIsFixedDayMode)
+	if (m_map_list[m_client_list[client_h]->m_map_index]->m_is_fixed_day_mode)
 		init_header->weather_status = 0;
-	else init_header->weather_status = m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_cWhetherStatus;
+	else init_header->weather_status = m_map_list[m_client_list[client_h]->m_map_index]->m_weather_status;
 
-	init_header->contribution = m_pClientList[iClientH]->m_iContribution;
+	init_header->contribution = m_client_list[client_h]->m_contribution;
 
-	if (m_pClientList[iClientH]->m_bIsObserverMode == false) {
-		m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->SetOwner(iClientH,
+	if (m_client_list[client_h]->m_is_observer_mode == false) {
+		m_map_list[m_client_list[client_h]->m_map_index]->set_owner(client_h,
 			hb::shared::owner_class::Player,
-			m_pClientList[iClientH]->m_sX,
-			m_pClientList[iClientH]->m_sY);
+			m_client_list[client_h]->m_x,
+			m_client_list[client_h]->m_y);
 	}
 
-	init_header->observer_mode = static_cast<std::uint8_t>(m_pClientList[iClientH]->m_bIsObserverMode);
-	init_header->rating = m_pClientList[iClientH]->m_iRating;
-	init_header->hp = m_pClientList[iClientH]->m_iHP;
+	init_header->observer_mode = static_cast<std::uint8_t>(m_client_list[client_h]->m_is_observer_mode);
+	init_header->rating = m_client_list[client_h]->m_rating;
+	init_header->hp = m_client_list[client_h]->m_hp;
 	init_header->discount = 0;
 
-	iSize = iComposeInitMapData(m_pClientList[iClientH]->m_sX - hb::shared::view::CenterX, m_pClientList[iClientH]->m_sY - hb::shared::view::CenterY, iClientH, initMapData);
-	writer.AppendBytes(initMapData, static_cast<std::size_t>(iSize));
+	size = compose_init_map_data(m_client_list[client_h]->m_x - hb::shared::view::CenterX, m_client_list[client_h]->m_y - hb::shared::view::CenterY, client_h, initMapData);
+	writer.AppendBytes(initMapData, static_cast<std::size_t>(size));
 
-	iRet = m_pClientList[iClientH]->m_pXSock->iSendMsg(writer.Data(), static_cast<int>(writer.Size()));
-	switch (iRet) {
+	ret = m_client_list[client_h]->m_socket->send_msg(writer.Data(), static_cast<int>(writer.size()));
+	switch (ret) {
 	case sock::Event::QueueFull:
 	case sock::Event::SocketError:
 	case sock::Event::CriticalError:
 	case sock::Event::SocketClosed:
-		DeleteClient(iClientH, true, true);
+		delete_client(client_h, true, true);
 		return;
 	}
 
-	SendEventToNearClient_TypeA(iClientH, hb::shared::owner_class::Player, MsgId::EventLog, MsgType::Confirm, 0, 0, 0);
+	send_event_to_near_client_type_a(client_h, hb::shared::owner_class::Player, MsgId::EventLog, MsgType::Confirm, 0, 0, 0);
 
 	// v2.13 
-	if ((memcmp(m_pClientList[iClientH]->m_cLocation, "are", 3) == 0) &&
-		(memcmp(m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_cLocationName, "elvine", 6) == 0)
+	if ((memcmp(m_client_list[client_h]->m_location, "are", 3) == 0) &&
+		(memcmp(m_map_list[m_client_list[client_h]->m_map_index]->m_location_name, "elvine", 6) == 0)
 		) {
 
-		m_pClientList[iClientH]->m_dwWarBeginTime = GameClock::GetTimeMS();
-		m_pClientList[iClientH]->m_bIsWarLocation = true;
+		m_client_list[client_h]->m_war_begin_time = GameClock::GetTimeMS();
+		m_client_list[client_h]->m_is_war_location = true;
 		// v2.17 2002-7-15
-		SetForceRecallTime(iClientH);
+		set_force_recall_time(client_h);
 	}
 	// v2.13 
-	else if ((memcmp(m_pClientList[iClientH]->m_cLocation, "elv", 3) == 0) &&
-		(memcmp(m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_cLocationName, "aresden", 7) == 0)
+	else if ((memcmp(m_client_list[client_h]->m_location, "elv", 3) == 0) &&
+		(memcmp(m_map_list[m_client_list[client_h]->m_map_index]->m_location_name, "aresden", 7) == 0)
 		) {
 
-		m_pClientList[iClientH]->m_dwWarBeginTime = GameClock::GetTimeMS();
-		m_pClientList[iClientH]->m_bIsWarLocation = true;
+		m_client_list[client_h]->m_war_begin_time = GameClock::GetTimeMS();
+		m_client_list[client_h]->m_is_war_location = true;
 
 		// v2.17 2002-7-15
-		SetForceRecallTime(iClientH);
+		set_force_recall_time(client_h);
 	}
-	else if (((memcmp(m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_cLocationName, "arejail", 7) == 0) ||
-		(memcmp(m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_cLocationName, "elvjail", 7) == 0))
+	else if (((memcmp(m_map_list[m_client_list[client_h]->m_map_index]->m_location_name, "arejail", 7) == 0) ||
+		(memcmp(m_map_list[m_client_list[client_h]->m_map_index]->m_location_name, "elvjail", 7) == 0))
 		) {
-		m_pClientList[iClientH]->m_bIsWarLocation = true;
-		m_pClientList[iClientH]->m_dwWarBeginTime = GameClock::GetTimeMS();
+		m_client_list[client_h]->m_is_war_location = true;
+		m_client_list[client_h]->m_war_begin_time = GameClock::GetTimeMS();
 
 		// v2.17 2002-7-15 
-		if (m_pClientList[iClientH]->m_iTimeLeft_ForceRecall == 0) {
-			m_pClientList[iClientH]->m_iTimeLeft_ForceRecall = 20 * 5;
+		if (m_client_list[client_h]->m_time_left_force_recall == 0) {
+			m_client_list[client_h]->m_time_left_force_recall = 20 * 5;
 		}
-		else if (m_pClientList[iClientH]->m_iTimeLeft_ForceRecall > 20 * 5) {
-			m_pClientList[iClientH]->m_iTimeLeft_ForceRecall = 20 * 5;
+		else if (m_client_list[client_h]->m_time_left_force_recall > 20 * 5) {
+			m_client_list[client_h]->m_time_left_force_recall = 20 * 5;
 		}
 
 	}
-	else if ((m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_bIsFightZone) &&
-		(m_iFightzoneNoForceRecall == 0) ) {
+	else if ((m_map_list[m_client_list[client_h]->m_map_index]->m_is_fight_zone) &&
+		(m_fightzone_no_force_recall == 0) ) {
 
-		m_pClientList[iClientH]->m_dwWarBeginTime = GameClock::GetTimeMS();
-		m_pClientList[iClientH]->m_bIsWarLocation = true;
+		m_client_list[client_h]->m_war_begin_time = GameClock::GetTimeMS();
+		m_client_list[client_h]->m_is_war_location = true;
 
 		SysTime = hb::time::local_time::now();
-		m_pClientList[iClientH]->m_iTimeLeft_ForceRecall = 2 * 60 * 20 - ((SysTime.hour % 2) * 20 * 60 + SysTime.minute * 20) - 2 * 20;
+		m_client_list[client_h]->m_time_left_force_recall = 2 * 60 * 20 - ((SysTime.hour % 2) * 20 * 60 + SysTime.minute * 20) - 2 * 20;
 	}
 	else
 	{
-		m_pClientList[iClientH]->m_bIsWarLocation = false;
+		m_client_list[client_h]->m_is_war_location = false;
 		// v1.42
-		m_pClientList[iClientH]->m_iTimeLeft_ForceRecall = 0;
+		m_client_list[client_h]->m_time_left_force_recall = 0;
 		// 06/11/2004
-		SetForceRecallTime(iClientH);
+		set_force_recall_time(client_h);
 	}
 
 	// v2.17 2002-7-15
 	//hbest...
-	if ((m_pClientList[iClientH]->m_iTimeLeft_ForceRecall > 0) && (m_pClientList[iClientH]->m_bIsWarLocation) && IsEnemyZone(iClientH)) {
-		SendNotifyMsg(0, iClientH, Notify::ForceRecallTime, m_pClientList[iClientH]->m_iTimeLeft_ForceRecall, 0, 0, 0);
-		//sprintf(G_cTxt,"(!) Game Server Force Recall Time  %d (%d)min", m_pClientList[iClientH]->m_iTimeLeft_ForceRecall, m_pClientList[iClientH]->m_iTimeLeft_ForceRecall/20) ;
+	if ((m_client_list[client_h]->m_time_left_force_recall > 0) && (m_client_list[client_h]->m_is_war_location) && is_enemy_zone(client_h)) {
+		send_notify_msg(0, client_h, Notify::ForceRecallTime, m_client_list[client_h]->m_time_left_force_recall, 0, 0, 0);
+		//sprintf(G_cTxt,"(!) Game Server Force Recall Time  %d (%d)min", m_client_list[client_h]->m_time_left_force_recall, m_client_list[client_h]->m_time_left_force_recall/20) ;
 		//PutLogList(G_cTxt) ;
 	}
 
-	if (m_pClientList[iClientH]->m_iGizonItemUpgradeLeft < 0) {
-		m_pClientList[iClientH]->m_iGizonItemUpgradeLeft = 0;
+	if (m_client_list[client_h]->m_gizon_item_upgrade_left < 0) {
+		m_client_list[client_h]->m_gizon_item_upgrade_left = 0;
 	}
 
 	// No entering enemy shops
-	int iMapside, iMapside2;
+	int mapside, mapside2;
 
-	iMapside = iGetMapLocationSide(m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_cName);
-	if (iMapside > 3) iMapside2 = iMapside - 2;
-	else iMapside2 = iMapside;
-	m_pClientList[iClientH]->m_bIsInsideOwnTown = false;
-	if ((m_pClientList[iClientH]->m_cSide != iMapside2) && (iMapside != 0)) {
-		if ((iMapside <= 2)) {
-			if (m_pClientList[iClientH]->m_cSide != 0) {
-				m_pClientList[iClientH]->m_dwWarBeginTime = GameClock::GetTimeMS();
-				m_pClientList[iClientH]->m_bIsWarLocation = true;
-				m_pClientList[iClientH]->m_iTimeLeft_ForceRecall = 1;
-				m_pClientList[iClientH]->m_bIsInsideOwnTown = true;
+	mapside = get_map_location_side(m_map_list[m_client_list[client_h]->m_map_index]->m_name);
+	if (mapside > 3) mapside2 = mapside - 2;
+	else mapside2 = mapside;
+	m_client_list[client_h]->m_is_inside_own_town = false;
+	if ((m_client_list[client_h]->m_side != mapside2) && (mapside != 0)) {
+		if ((mapside <= 2)) {
+			if (m_client_list[client_h]->m_side != 0) {
+				m_client_list[client_h]->m_war_begin_time = GameClock::GetTimeMS();
+				m_client_list[client_h]->m_is_war_location = true;
+				m_client_list[client_h]->m_time_left_force_recall = 1;
+				m_client_list[client_h]->m_is_inside_own_town = true;
 			}
 		}
 	}
 	else {
-		if (m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_bIsFightZone &&
-			m_iFightzoneNoForceRecall == false) {
-			m_pClientList[iClientH]->m_dwWarBeginTime = GameClock::GetTimeMS();
-			m_pClientList[iClientH]->m_bIsWarLocation = true;
+		if (m_map_list[m_client_list[client_h]->m_map_index]->m_is_fight_zone &&
+			m_fightzone_no_force_recall == false) {
+			m_client_list[client_h]->m_war_begin_time = GameClock::GetTimeMS();
+			m_client_list[client_h]->m_is_war_location = true;
 			SysTime = hb::time::local_time::now();
-			m_pClientList[iClientH]->m_iTimeLeft_ForceRecall = 2 * 60 * 20 - ((SysTime.hour % 2) * 20 * 60 + SysTime.minute * 20) - 2 * 20;
+			m_client_list[client_h]->m_time_left_force_recall = 2 * 60 * 20 - ((SysTime.hour % 2) * 20 * 60 + SysTime.minute * 20) - 2 * 20;
 		}
 		else {
-			if (memcmp(m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_cLocationName, "arejail", 7) == 0 ||
-				memcmp(m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_cLocationName, "elvjail", 7) == 0) {
-				m_pClientList[iClientH]->m_bIsWarLocation = true;
-				m_pClientList[iClientH]->m_dwWarBeginTime = GameClock::GetTimeMS();
-				if (m_pClientList[iClientH]->m_iTimeLeft_ForceRecall == 0)
-					m_pClientList[iClientH]->m_iTimeLeft_ForceRecall = 100;
-				else if (m_pClientList[iClientH]->m_iTimeLeft_ForceRecall > 100)
-					m_pClientList[iClientH]->m_iTimeLeft_ForceRecall = 100;
+			if (memcmp(m_map_list[m_client_list[client_h]->m_map_index]->m_location_name, "arejail", 7) == 0 ||
+				memcmp(m_map_list[m_client_list[client_h]->m_map_index]->m_location_name, "elvjail", 7) == 0) {
+				m_client_list[client_h]->m_is_war_location = true;
+				m_client_list[client_h]->m_war_begin_time = GameClock::GetTimeMS();
+				if (m_client_list[client_h]->m_time_left_force_recall == 0)
+					m_client_list[client_h]->m_time_left_force_recall = 100;
+				else if (m_client_list[client_h]->m_time_left_force_recall > 100)
+					m_client_list[client_h]->m_time_left_force_recall = 100;
 			}
 		}
 	}
 
-	/*if ((m_pClientList[iClientH]->m_iTimeLeft_ForceRecall > 0) &&
-		(m_pClientList[iClientH]->m_bIsWarLocation )) {
-		SendNotifyMsg(0, iClientH, Notify::ForceRecallTime, m_pClientList[iClientH]->m_iTimeLeft_ForceRecall, 0, 0, 0);
+	/*if ((m_client_list[client_h]->m_time_left_force_recall > 0) &&
+		(m_client_list[client_h]->m_is_war_location )) {
+		send_notify_msg(0, client_h, Notify::ForceRecallTime, m_client_list[client_h]->m_time_left_force_recall, 0, 0, 0);
 	}*/
 
-	SendNotifyMsg(0, iClientH, Notify::SafeAttackMode, 0, 0, 0, 0);
-	SendNotifyMsg(0, iClientH, Notify::DownSkillIndexSet, m_pClientList[iClientH]->m_iDownSkillIndex, 0, 0, 0);
+	send_notify_msg(0, client_h, Notify::SafeAttackMode, 0, 0, 0, 0);
+	send_notify_msg(0, client_h, Notify::DownSkillIndexSet, m_client_list[client_h]->m_down_skill_index, 0, 0, 0);
 
-	m_pQuestManager->_SendQuestContents(iClientH);
-	m_pQuestManager->_CheckQuestEnvironment(iClientH);
+	m_quest_manager->send_quest_contents(client_h);
+	m_quest_manager->check_quest_environment(client_h);
 
 	// v1.432
-	if (m_pClientList[iClientH]->m_iSpecialAbilityTime == 0) {
-		SendNotifyMsg(0, iClientH, Notify::SpecialAbilityEnabled, 0, 0, 0, 0);
+	if (m_client_list[client_h]->m_special_ability_time == 0) {
+		send_notify_msg(0, client_h, Notify::SpecialAbilityEnabled, 0, 0, 0, 0);
 	}
 
 	// Crusade 
-	if (m_bIsCrusadeMode) {
-		if (m_pClientList[iClientH]->m_dwCrusadeGUID == 0) {
-			m_pClientList[iClientH]->m_iCrusadeDuty = 0;
-			m_pClientList[iClientH]->m_iConstructionPoint = 0;
-			m_pClientList[iClientH]->m_dwCrusadeGUID = m_dwCrusadeGUID;
+	if (m_is_crusade_mode) {
+		if (m_client_list[client_h]->m_crusade_guid == 0) {
+			m_client_list[client_h]->m_crusade_duty = 0;
+			m_client_list[client_h]->m_construction_point = 0;
+			m_client_list[client_h]->m_crusade_guid = m_crusade_guid;
 		}
-		else if (m_pClientList[iClientH]->m_dwCrusadeGUID != m_dwCrusadeGUID) {
-			m_pClientList[iClientH]->m_iCrusadeDuty = 0;
-			m_pClientList[iClientH]->m_iConstructionPoint = 0;
-			m_pClientList[iClientH]->m_iWarContribution = 0;
-			m_pClientList[iClientH]->m_dwCrusadeGUID = m_dwCrusadeGUID;
-			SendNotifyMsg(0, iClientH, Notify::Crusade, (uint32_t)m_bIsCrusadeMode, 0, 0, 0, -1);
+		else if (m_client_list[client_h]->m_crusade_guid != m_crusade_guid) {
+			m_client_list[client_h]->m_crusade_duty = 0;
+			m_client_list[client_h]->m_construction_point = 0;
+			m_client_list[client_h]->m_war_contribution = 0;
+			m_client_list[client_h]->m_crusade_guid = m_crusade_guid;
+			send_notify_msg(0, client_h, Notify::Crusade, (uint32_t)m_is_crusade_mode, 0, 0, 0, -1);
 		}
-		m_pClientList[iClientH]->m_cVar = 1;
-		SendNotifyMsg(0, iClientH, Notify::Crusade, (uint32_t)m_bIsCrusadeMode, m_pClientList[iClientH]->m_iCrusadeDuty, 0, 0);
+		m_client_list[client_h]->m_var = 1;
+		send_notify_msg(0, client_h, Notify::Crusade, (uint32_t)m_is_crusade_mode, m_client_list[client_h]->m_crusade_duty, 0, 0);
 	}
-	else if (m_bIsHeldenianMode) {
-		sSummonPoints = m_pClientList[iClientH]->m_iCharisma * 300;
-		if (sSummonPoints > m_iMaxSummonPoints) sSummonPoints = m_iMaxSummonPoints;
-		if (m_pClientList[iClientH]->m_dwHeldenianGUID == 0) {
-			m_pClientList[iClientH]->m_dwHeldenianGUID = m_dwHeldenianGUID;
-			m_pClientList[iClientH]->m_iConstructionPoint = sSummonPoints;
+	else if (m_is_heldenian_mode) {
+		summon_points = m_client_list[client_h]->m_charisma * 300;
+		if (summon_points > m_max_summon_points) summon_points = m_max_summon_points;
+		if (m_client_list[client_h]->m_heldenian_guid == 0) {
+			m_client_list[client_h]->m_heldenian_guid = m_heldenian_guid;
+			m_client_list[client_h]->m_construction_point = summon_points;
 		}
-		else if (m_pClientList[iClientH]->m_dwHeldenianGUID != m_dwHeldenianGUID) {
-			m_pClientList[iClientH]->m_iConstructionPoint = sSummonPoints;
-			m_pClientList[iClientH]->m_iWarContribution = 0;
-			m_pClientList[iClientH]->m_dwHeldenianGUID = m_dwHeldenianGUID;
+		else if (m_client_list[client_h]->m_heldenian_guid != m_heldenian_guid) {
+			m_client_list[client_h]->m_construction_point = summon_points;
+			m_client_list[client_h]->m_war_contribution = 0;
+			m_client_list[client_h]->m_heldenian_guid = m_heldenian_guid;
 		}
-		m_pClientList[iClientH]->m_cVar = 2;
-		if (m_bIsHeldenianMode) {
-			SendNotifyMsg(0, iClientH, Notify::Crusade, 0, 0, 0, 0);
-			if (m_bHeldenianInitiated == false) {
-				SendNotifyMsg(0, iClientH, Notify::HeldenianStart, 0, 0, 0, 0);
+		m_client_list[client_h]->m_var = 2;
+		if (m_is_heldenian_mode) {
+			send_notify_msg(0, client_h, Notify::Crusade, 0, 0, 0, 0);
+			if (m_heldenian_initiated == false) {
+				send_notify_msg(0, client_h, Notify::HeldenianStart, 0, 0, 0, 0);
 			}
-			SendNotifyMsg(0, iClientH, Notify::ConstructionPoint, m_pClientList[iClientH]->m_iConstructionPoint, m_pClientList[iClientH]->m_iWarContribution, 0, 0);
-			m_pWarManager->UpdateHeldenianStatus();
+			send_notify_msg(0, client_h, Notify::ConstructionPoint, m_client_list[client_h]->m_construction_point, m_client_list[client_h]->m_war_contribution, 0, 0);
+			m_war_manager->update_heldenian_status();
 		}
 	}
-	else if ((m_pClientList[iClientH]->m_cVar == 1) && (m_pClientList[iClientH]->m_dwCrusadeGUID == m_dwCrusadeGUID)) {
-		m_pClientList[iClientH]->m_iCrusadeDuty = 0;
-		m_pClientList[iClientH]->m_iConstructionPoint = 0;
+	else if ((m_client_list[client_h]->m_var == 1) && (m_client_list[client_h]->m_crusade_guid == m_crusade_guid)) {
+		m_client_list[client_h]->m_crusade_duty = 0;
+		m_client_list[client_h]->m_construction_point = 0;
 	}
 	else {
-		if (m_pClientList[iClientH]->m_dwCrusadeGUID == m_dwCrusadeGUID) {
-			if (m_pClientList[iClientH]->m_cVar == 1) {
-				SendNotifyMsg(0, iClientH, Notify::Crusade, (uint32_t)m_bIsCrusadeMode, 0, 0, 0, -1);
+		if (m_client_list[client_h]->m_crusade_guid == m_crusade_guid) {
+			if (m_client_list[client_h]->m_var == 1) {
+				send_notify_msg(0, client_h, Notify::Crusade, (uint32_t)m_is_crusade_mode, 0, 0, 0, -1);
 			}
 		}
 		else {
-			SendNotifyMsg(0, iClientH, Notify::Crusade, (uint32_t)m_bIsCrusadeMode, 0, 0, 0, -1);
-			m_pClientList[iClientH]->m_dwCrusadeGUID = 0;
-			m_pClientList[iClientH]->m_iWarContribution = 0;
-			m_pClientList[iClientH]->m_dwCrusadeGUID = 0;
+			send_notify_msg(0, client_h, Notify::Crusade, (uint32_t)m_is_crusade_mode, 0, 0, 0, -1);
+			m_client_list[client_h]->m_crusade_guid = 0;
+			m_client_list[client_h]->m_war_contribution = 0;
+			m_client_list[client_h]->m_crusade_guid = 0;
 		}
 	}
 
 	// v1.42
-	if (memcmp(m_pClientList[iClientH]->m_cMapName, "fightzone", 9) == 0) {
-		sprintf(G_cTxt, "Char(%s)-Enter(%s) Observer(%d)", m_pClientList[iClientH]->m_cCharName, m_pClientList[iClientH]->m_cMapName, m_pClientList[iClientH]->m_bIsObserverMode);
+	if (memcmp(m_client_list[client_h]->m_map_name, "fightzone", 9) == 0) {
+		sprintf(G_cTxt, "Char(%s)-Enter(%s) Observer(%d)", m_client_list[client_h]->m_char_name, m_client_list[client_h]->m_map_name, m_client_list[client_h]->m_is_observer_mode);
 		hb::logger::log<log_channel::log_events>("{}", G_cTxt);
 	}
 
-	if (m_bIsHeldenianMode) SendNotifyMsg(0, iClientH, Notify::HeldenianTeleport, 0, 0, 0, 0, 0);
-	if (m_bHeldenianInitiated) SendNotifyMsg(0, iClientH, Notify::HeldenianStart, 0, 0, 0, 0, 0);
+	if (m_is_heldenian_mode) send_notify_msg(0, client_h, Notify::HeldenianTeleport, 0, 0, 0, 0, 0);
+	if (m_heldenian_initiated) send_notify_msg(0, client_h, Notify::HeldenianStart, 0, 0, 0, 0, 0);
 
 	// Crusade
-	SendNotifyMsg(0, iClientH, Notify::ConstructionPoint, m_pClientList[iClientH]->m_iConstructionPoint, m_pClientList[iClientH]->m_iWarContribution, 1, 0);
+	send_notify_msg(0, client_h, Notify::ConstructionPoint, m_client_list[client_h]->m_construction_point, m_client_list[client_h]->m_war_contribution, 1, 0);
 	//Fix Sprite Bug
-	//			SendEventToNearClient_TypeA(iClientH, hb::shared::owner_class::Player, MsgId::EventMotion, Type::NullAction, 0, 0, 0);
+	//			send_event_to_near_client_type_a(client_h, hb::shared::owner_class::Player, MsgId::EventMotion, Type::NullAction, 0, 0, 0);
 	//Gizon point lefT???
-	SendNotifyMsg(0, iClientH, Notify::GizonItemUpgradeLeft, m_pClientList[iClientH]->m_iGizonItemUpgradeLeft, 0, 0, 0);
+	send_notify_msg(0, client_h, Notify::GizonItemUpgradeLeft, m_client_list[client_h]->m_gizon_item_upgrade_left, 0, 0, 0);
 
-	if ((m_bIsApocalypseMode) && (m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_bIsApocalypseMap)) {
-		RequestTeleportHandler(iClientH, "1   ");
+	if ((m_is_apocalypse_mode) && (m_map_list[m_client_list[client_h]->m_map_index]->m_is_apocalypse_map)) {
+		request_teleport_handler(client_h, "1   ");
 	}
 
-	if (m_bIsApocalypseMode) {
-		SendNotifyMsg(0, iClientH, Notify::ApocGateStartMsg, 0, 0, 0, 0, 0);
+	if (m_is_apocalypse_mode) {
+		send_notify_msg(0, client_h, Notify::ApocGateStartMsg, 0, 0, 0, 0, 0);
 	}
 
-	SendNotifyMsg(0, iClientH, Notify::Hunger, m_pClientList[iClientH]->m_iHungerStatus, 0, 0, 0);
-	SendNotifyMsg(0, iClientH, Notify::SuperAttackLeft, 0, 0, 0, 0);
+	send_notify_msg(0, client_h, Notify::Hunger, m_client_list[client_h]->m_hunger_status, 0, 0, 0);
+	send_notify_msg(0, client_h, Notify::SuperAttackLeft, 0, 0, 0, 0);
 
-	RequestNoticementHandler(iClientH); // send noticement when log in
+	request_noticement_handler(client_h); // send noticement when log in
 }
 
-bool CGame::bSendClientNpcConfigs(int iClientH)
+bool CGame::send_client_npc_configs(int client_h)
 {
-	if (m_pClientList[iClientH] == 0) {
+	if (m_client_list[client_h] == 0) {
 		return false;
 	}
 
@@ -2114,7 +2114,7 @@ bool CGame::bSendClientNpcConfigs(int iClientH)
 	// Count total NPCs
 	int totalNpcs = 0;
 	for(int i = 0; i < MaxNpcTypes; i++) {
-		if (m_pNpcConfigList[i] != 0) {
+		if (m_npc_config_list[i] != 0) {
 			totalNpcs++;
 		}
 	}
@@ -2138,7 +2138,7 @@ bool CGame::bSendClientNpcConfigs(int iClientH)
 		int skipped = 0;
 
 		for(int i = 0; i < MaxNpcTypes && entriesInPacket < maxEntriesPerPacket; i++) {
-			if (m_pNpcConfigList[i] == 0) {
+			if (m_npc_config_list[i] == 0) {
 				continue;
 			}
 
@@ -2147,13 +2147,13 @@ bool CGame::bSendClientNpcConfigs(int iClientH)
 				continue;
 			}
 
-			const CNpc* npc = m_pNpcConfigList[i];
+			const CNpc* npc = m_npc_config_list[i];
 			auto& entry = entries[entriesInPacket];
 
 			entry.npcId = static_cast<int16_t>(i);
-			entry.npcType = npc->m_sType;
+			entry.npcType = npc->m_type;
 			std::memset(entry.name, 0, sizeof(entry.name));
-			std::snprintf(entry.name, sizeof(entry.name), "%s", npc->m_cNpcName);
+			std::snprintf(entry.name, sizeof(entry.name), "%s", npc->m_npc_name);
 
 			entriesInPacket++;
 		}
@@ -2161,16 +2161,16 @@ bool CGame::bSendClientNpcConfigs(int iClientH)
 		pktHeader->npcCount = entriesInPacket;
 		size_t packetSize = headerSize + (entriesInPacket * entrySize);
 
-		int iRet = m_pClientList[iClientH]->m_pXSock->iSendMsg(G_cData50000, static_cast<int>(packetSize));
-		switch (iRet) {
+		int ret = m_client_list[client_h]->m_socket->send_msg(G_cData50000, static_cast<int>(packetSize));
+		switch (ret) {
 		case sock::Event::QueueFull:
 		case sock::Event::SocketError:
 		case sock::Event::CriticalError:
 		case sock::Event::SocketClosed:
-			hb::logger::log("Failed to send NPC configs: Client({}) Packet({})", iClientH, packetIndex);
-			DeleteClient(iClientH, true, true);
-			delete m_pClientList[iClientH];
-			m_pClientList[iClientH] = 0;
+			hb::logger::log("Failed to send NPC configs: Client({}) Packet({})", client_h, packetIndex);
+			delete_client(client_h, true, true);
+			delete m_client_list[client_h];
+			m_client_list[client_h] = 0;
 			return false;
 		}
 
@@ -2181,7 +2181,7 @@ bool CGame::bSendClientNpcConfigs(int iClientH)
 	return true;
 }
 
-void CGame::ComputeConfigHashes()
+void CGame::compute_config_hashes()
 {
 	// Compute CRC32 for item configs
 	{
@@ -2192,7 +2192,7 @@ void CGame::ComputeConfigHashes()
 		std::vector<uint8_t> allData;
 		int totalItems = 0;
 		for(int i = 0; i < MaxItemTypes; i++) {
-			if (m_pItemConfigList[i] != 0) totalItems++;
+			if (m_item_config_list[i] != 0) totalItems++;
 		}
 
 		int itemsSent = 0;
@@ -2210,38 +2210,38 @@ void CGame::ComputeConfigHashes()
 			int skipped = 0;
 
 			for(int i = 0; i < MaxItemTypes && entriesInPacket < maxEntriesPerPacket; i++) {
-				if (m_pItemConfigList[i] == 0) continue;
+				if (m_item_config_list[i] == 0) continue;
 				if (skipped < itemsSent) { skipped++; continue; }
 
-				const CItem* item = m_pItemConfigList[i];
+				const CItem* item = m_item_config_list[i];
 				auto& entry = entries[entriesInPacket];
-				entry.itemId = item->m_sIDnum;
+				entry.itemId = item->m_id_num;
 				std::memset(entry.name, 0, sizeof(entry.name));
-				std::snprintf(entry.name, sizeof(entry.name), "%s", item->m_cName);
-				entry.itemType = item->m_cItemType;
-				entry.equipPos = item->m_cEquipPos;
-				entry.effectType = item->m_sItemEffectType;
-				entry.effectValue1 = item->m_sItemEffectValue1;
-				entry.effectValue2 = item->m_sItemEffectValue2;
-				entry.effectValue3 = item->m_sItemEffectValue3;
-				entry.effectValue4 = item->m_sItemEffectValue4;
-				entry.effectValue5 = item->m_sItemEffectValue5;
-				entry.effectValue6 = item->m_sItemEffectValue6;
-				entry.maxLifeSpan = item->m_wMaxLifeSpan;
-				entry.specialEffect = item->m_sSpecialEffect;
-				entry.sprite = item->m_sSprite;
-				entry.spriteFrame = item->m_sSpriteFrame;
-				entry.price = item->m_bIsForSale ? static_cast<int32_t>(item->m_wPrice) : -static_cast<int32_t>(item->m_wPrice);
-				entry.weight = item->m_wWeight;
-				entry.apprValue = item->m_cApprValue;
-				entry.speed = item->m_cSpeed;
-				entry.levelLimit = item->m_sLevelLimit;
-				entry.genderLimit = item->m_cGenderLimit;
-				entry.specialEffectValue1 = item->m_sSpecialEffectValue1;
-				entry.specialEffectValue2 = item->m_sSpecialEffectValue2;
-				entry.relatedSkill = item->m_sRelatedSkill;
-				entry.category = item->m_cCategory;
-				entry.itemColor = item->m_cItemColor;
+				std::snprintf(entry.name, sizeof(entry.name), "%s", item->m_name);
+				entry.itemType = item->m_item_type;
+				entry.equipPos = item->m_equip_pos;
+				entry.effectType = item->m_item_effect_type;
+				entry.effectValue1 = item->m_item_effect_value1;
+				entry.effectValue2 = item->m_item_effect_value2;
+				entry.effectValue3 = item->m_item_effect_value3;
+				entry.effectValue4 = item->m_item_effect_value4;
+				entry.effectValue5 = item->m_item_effect_value5;
+				entry.effectValue6 = item->m_item_effect_value6;
+				entry.maxLifeSpan = item->m_max_life_span;
+				entry.specialEffect = item->m_special_effect;
+				entry.sprite = item->m_sprite;
+				entry.spriteFrame = item->m_sprite_frame;
+				entry.price = item->m_is_for_sale ? static_cast<int32_t>(item->m_price) : -static_cast<int32_t>(item->m_price);
+				entry.weight = item->m_weight;
+				entry.apprValue = item->m_appearance_value;
+				entry.speed = item->m_speed;
+				entry.levelLimit = item->m_level_limit;
+				entry.genderLimit = item->m_gender_limit;
+				entry.specialEffectValue1 = item->m_special_effect_value1;
+				entry.specialEffectValue2 = item->m_special_effect_value2;
+				entry.relatedSkill = item->m_related_skill;
+				entry.category = item->m_category;
+				entry.itemColor = item->m_item_color;
 				entriesInPacket++;
 			}
 
@@ -2257,7 +2257,7 @@ void CGame::ComputeConfigHashes()
 			itemsSent += entriesInPacket;
 			packetIndex++;
 		}
-		m_dwConfigHash[0] = allData.empty() ? 0 : hb::shared::util::hb_crc32(allData.data(), allData.size());
+		m_config_hash[0] = allData.empty() ? 0 : hb::shared::util::hb_crc32(allData.data(), allData.size());
 	}
 
 	// Compute CRC32 for magic configs
@@ -2269,7 +2269,7 @@ void CGame::ComputeConfigHashes()
 		std::vector<uint8_t> allData;
 		int totalMagics = 0;
 		for(int i = 0; i < hb::shared::limits::MaxMagicType; i++) {
-			if (m_pMagicConfigList[i] != 0) totalMagics++;
+			if (m_magic_config_list[i] != 0) totalMagics++;
 		}
 
 		int magicsSent = 0;
@@ -2287,23 +2287,23 @@ void CGame::ComputeConfigHashes()
 			int skipped = 0;
 
 			for(int i = 0; i < hb::shared::limits::MaxMagicType && entriesInPacket < maxEntriesPerPacket; i++) {
-				if (m_pMagicConfigList[i] == 0) continue;
+				if (m_magic_config_list[i] == 0) continue;
 				if (skipped < magicsSent) { skipped++; continue; }
 
-				const CMagic* magic = m_pMagicConfigList[i];
+				const CMagic* magic = m_magic_config_list[i];
 				auto& entry = entries[entriesInPacket];
 				entry.magicId = static_cast<int16_t>(i);
 				std::memset(entry.name, 0, sizeof(entry.name));
-				std::snprintf(entry.name, sizeof(entry.name), "%s", magic->m_cName);
-				entry.manaCost = magic->m_sValue1;
-				entry.intLimit = magic->m_sIntLimit;
-				entry.goldCost = magic->m_iGoldCost;
-				entry.isVisible = (magic->m_iGoldCost >= 0) ? 1 : 0;
-				entry.magicType = magic->m_sType;
-				entry.aoeRadiusX = magic->m_sValue2;
-				entry.aoeRadiusY = magic->m_sValue3;
-				entry.dynamicPattern = magic->m_sValue11;
-				entry.dynamicRadius = magic->m_sValue12;
+				std::snprintf(entry.name, sizeof(entry.name), "%s", magic->m_name);
+				entry.manaCost = magic->m_value_1;
+				entry.intLimit = magic->m_intelligence_limit;
+				entry.goldCost = magic->m_gold_cost;
+				entry.visible = (magic->m_gold_cost >= 0) ? 1 : 0;
+				entry.magicType = magic->m_type;
+				entry.aoeRadiusX = magic->m_value_2;
+				entry.aoeRadiusY = magic->m_value_3;
+				entry.dynamicPattern = magic->m_value_11;
+				entry.dynamicRadius = magic->m_value_12;
 				entriesInPacket++;
 			}
 
@@ -2319,7 +2319,7 @@ void CGame::ComputeConfigHashes()
 			magicsSent += entriesInPacket;
 			packetIndex++;
 		}
-		m_dwConfigHash[1] = allData.empty() ? 0 : hb::shared::util::hb_crc32(allData.data(), allData.size());
+		m_config_hash[1] = allData.empty() ? 0 : hb::shared::util::hb_crc32(allData.data(), allData.size());
 	}
 
 	// Compute CRC32 for skill configs
@@ -2331,7 +2331,7 @@ void CGame::ComputeConfigHashes()
 		std::vector<uint8_t> allData;
 		int totalSkills = 0;
 		for(int i = 0; i < hb::shared::limits::MaxSkillType; i++) {
-			if (m_pSkillConfigList[i] != 0) totalSkills++;
+			if (m_skill_config_list[i] != 0) totalSkills++;
 		}
 
 		int skillsSent = 0;
@@ -2349,16 +2349,16 @@ void CGame::ComputeConfigHashes()
 			int skipped = 0;
 
 			for(int i = 0; i < hb::shared::limits::MaxSkillType && entriesInPacket < maxEntriesPerPacket; i++) {
-				if (m_pSkillConfigList[i] == 0) continue;
+				if (m_skill_config_list[i] == 0) continue;
 				if (skipped < skillsSent) { skipped++; continue; }
 
-				const CSkill* skill = m_pSkillConfigList[i];
+				const CSkill* skill = m_skill_config_list[i];
 				auto& entry = entries[entriesInPacket];
 				entry.skillId = static_cast<int16_t>(i);
 				std::memset(entry.name, 0, sizeof(entry.name));
-				std::snprintf(entry.name, sizeof(entry.name), "%s", skill->m_cName);
-				entry.isUseable = skill->m_bIsUseable ? 1 : 0;
-				entry.useMethod = skill->m_cUseMethod;
+				std::snprintf(entry.name, sizeof(entry.name), "%s", skill->m_name);
+				entry.useable = skill->m_is_useable ? 1 : 0;
+				entry.useMethod = skill->m_use_method;
 				entriesInPacket++;
 			}
 
@@ -2374,7 +2374,7 @@ void CGame::ComputeConfigHashes()
 			skillsSent += entriesInPacket;
 			packetIndex++;
 		}
-		m_dwConfigHash[2] = allData.empty() ? 0 : hb::shared::util::hb_crc32(allData.data(), allData.size());
+		m_config_hash[2] = allData.empty() ? 0 : hb::shared::util::hb_crc32(allData.data(), allData.size());
 	}
 
 	// Compute CRC32 for NPC configs
@@ -2386,7 +2386,7 @@ void CGame::ComputeConfigHashes()
 		std::vector<uint8_t> allData;
 		int totalNpcs = 0;
 		for(int i = 0; i < MaxNpcTypes; i++) {
-			if (m_pNpcConfigList[i] != 0) totalNpcs++;
+			if (m_npc_config_list[i] != 0) totalNpcs++;
 		}
 
 		int npcsSent = 0;
@@ -2404,15 +2404,15 @@ void CGame::ComputeConfigHashes()
 			int skipped = 0;
 
 			for(int i = 0; i < MaxNpcTypes && entriesInPacket < maxEntriesPerPacket; i++) {
-				if (m_pNpcConfigList[i] == 0) continue;
+				if (m_npc_config_list[i] == 0) continue;
 				if (skipped < npcsSent) { skipped++; continue; }
 
-				const CNpc* npc = m_pNpcConfigList[i];
+				const CNpc* npc = m_npc_config_list[i];
 				auto& entry = entries[entriesInPacket];
 				entry.npcId = static_cast<int16_t>(i);
-				entry.npcType = npc->m_sType;
+				entry.npcType = npc->m_type;
 				std::memset(entry.name, 0, sizeof(entry.name));
-				std::snprintf(entry.name, sizeof(entry.name), "%s", npc->m_cNpcName);
+				std::snprintf(entry.name, sizeof(entry.name), "%s", npc->m_npc_name);
 				entriesInPacket++;
 			}
 
@@ -2428,52 +2428,52 @@ void CGame::ComputeConfigHashes()
 			npcsSent += entriesInPacket;
 			packetIndex++;
 		}
-		m_dwConfigHash[3] = allData.empty() ? 0 : hb::shared::util::hb_crc32(allData.data(), allData.size());
+		m_config_hash[3] = allData.empty() ? 0 : hb::shared::util::hb_crc32(allData.data(), allData.size());
 	}
 
-	hb::logger::log("Config hashes computed - Items: 0x{:08X}, Magic: 0x{:08X}, Skills: 0x{:08X}, Npcs: 0x{:08X}", m_dwConfigHash[0], m_dwConfigHash[1], m_dwConfigHash[2], m_dwConfigHash[3]);
+	hb::logger::log("Config hashes computed - Items: 0x{:08X}, Magic: 0x{:08X}, Skills: 0x{:08X}, Npcs: 0x{:08X}", m_config_hash[0], m_config_hash[1], m_config_hash[2], m_config_hash[3]);
 }
 
-void CGame::FillPlayerMapObject(hb::net::PacketMapDataObjectPlayer& obj, short sOwnerH, int iViewerH)
+void CGame::fill_player_map_object(hb::net::PacketMapDataObjectPlayer& obj, short owner_h, int viewer_h)
 {
-	auto* client = m_pClientList[sOwnerH];
-	obj.base.object_id = static_cast<uint16_t>(sOwnerH);
-	obj.type = client->m_sType;
-	obj.dir = client->m_cDir;
+	auto* client = m_client_list[owner_h];
+	obj.base.object_id = static_cast<uint16_t>(owner_h);
+	obj.type = client->m_type;
+	obj.dir = client->m_dir;
 	obj.appearance = client->m_appearance;
 	obj.status = client->m_status;
-	obj.status.bPK = (client->m_iPKCount != 0) ? 1 : 0;
-	obj.status.bCitizen = (client->m_cSide != 0) ? 1 : 0;
-	obj.status.bAresden = (client->m_cSide == 1) ? 1 : 0;
-	obj.status.bHunter = client->m_bIsPlayerCivil ? 1 : 0;
-	obj.status.iRelationship = m_pCombatManager->GetPlayerRelationship(sOwnerH, iViewerH);
-	std::memcpy(obj.name, client->m_cCharName, sizeof(obj.name));
+	obj.status.pk = (client->m_player_kill_count != 0) ? 1 : 0;
+	obj.status.citizen = (client->m_side != 0) ? 1 : 0;
+	obj.status.aresden = (client->m_side == 1) ? 1 : 0;
+	obj.status.hunter = client->m_is_player_civil ? 1 : 0;
+	obj.status.relationship = m_combat_manager->get_player_relationship(owner_h, viewer_h);
+	std::memcpy(obj.name, client->m_char_name, sizeof(obj.name));
 }
 
-void CGame::FillNpcMapObject(hb::net::PacketMapDataObjectNpc& obj, short sOwnerH, int iViewerH)
+void CGame::fill_npc_map_object(hb::net::PacketMapDataObjectNpc& obj, short owner_h, int viewer_h)
 {
-	auto* npc = m_pNpcList[sOwnerH];
-	obj.base.object_id = static_cast<uint16_t>(sOwnerH + hb::shared::object_id::NpcMin);
-	obj.config_id = npc->m_iNpcConfigId;
-	obj.dir = npc->m_cDir;
+	auto* npc = m_npc_list[owner_h];
+	obj.base.object_id = static_cast<uint16_t>(owner_h + hb::shared::object_id::NpcMin);
+	obj.config_id = npc->m_npc_config_id;
+	obj.dir = npc->m_dir;
 	obj.appearance = npc->m_appearance;
 	obj.status = npc->m_status;
-	obj.status.iRelationship = m_pEntityManager->GetNpcRelationship(sOwnerH, iViewerH);
-	std::memcpy(obj.name, npc->m_cName, sizeof(obj.name));
+	obj.status.relationship = m_entity_manager->get_npc_relationship(owner_h, viewer_h);
+	std::memcpy(obj.name, npc->m_name, sizeof(obj.name));
 }
 
-int CGame::iComposeInitMapData(short sX, short sY, int iClientH, char* pData)
+int CGame::compose_init_map_data(short sX, short sY, int client_h, char* data)
 {
-	int iSize, iTileExists;
-	class CTile* pTile;
+	int size, tile_exists;
+	class CTile* tile;
 	unsigned char ucHeader;
 	char* cp;
 
-	if (m_pClientList[iClientH] == 0) return 0;
+	if (m_client_list[client_h] == 0) return 0;
 
-	cp = pData + sizeof(hb::net::PacketMapDataHeader);
-	iSize = sizeof(hb::net::PacketMapDataHeader);
-	iTileExists = 0;
+	cp = data + sizeof(hb::net::PacketMapDataHeader);
+	size = sizeof(hb::net::PacketMapDataHeader);
+	tile_exists = 0;
 
 	for(int iy = 0; iy < hb::shared::view::InitDataTilesY; iy++)
 		for(int ix = 0; ix < hb::shared::view::InitDataTilesX; ix++) {
@@ -2481,27 +2481,27 @@ int CGame::iComposeInitMapData(short sX, short sY, int iClientH, char* pData)
 			if (((sX + ix) == 100) && ((sY + iy) == 100))
 				sX = sX;
 
-			pTile = (class CTile*)(m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_pTile + (sX + ix) + (sY + iy) * m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_sSizeY);
+			tile = (class CTile*)(m_map_list[m_client_list[client_h]->m_map_index]->m_tile + (sX + ix) + (sY + iy) * m_map_list[m_client_list[client_h]->m_map_index]->m_size_y);
 
 			//If player not same side and is invied (Beholder Hack)
-			/*if ((m_pClientList[pTile->m_sOwner] != 0) && (pTile->m_sOwner != iClientH))
-				if ((m_pClientList[pTile->m_sOwner]->m_cSide != 0) &&
-					(m_pClientList[pTile->m_sOwner]->m_cSide != m_pClientList[iClientH]->m_cSide) &&
-					(m_pClientList[pTile->m_sOwner]->m_status.bInvisibility)) {
+			/*if ((m_client_list[tile->m_owner] != 0) && (tile->m_owner != client_h))
+				if ((m_client_list[tile->m_owner]->m_side != 0) &&
+					(m_client_list[tile->m_owner]->m_side != m_client_list[client_h]->m_side) &&
+					(m_client_list[tile->m_owner]->m_status.invisibility)) {
 					continue;
 				}*/
 
-			if ((pTile->m_sOwner != 0) || (pTile->m_sDeadOwner != 0) ||
-				(pTile->m_pItem[0] != 0) || (pTile->m_sDynamicObjectType != 0)) {
-				iTileExists++;
+			if ((tile->m_owner != 0) || (tile->m_dead_owner != 0) ||
+				(tile->m_item[0] != 0) || (tile->m_dynamic_object_type != 0)) {
+				tile_exists++;
 
 				ucHeader = 0;
-				if (pTile->m_sOwner != 0) {
-					if (pTile->m_cOwnerClass == hb::shared::owner_class::Player) {
-						if (m_pClientList[pTile->m_sOwner] != 0) {
-							if (m_pClientList[pTile->m_sOwner]->m_bIsAdminInvisible &&
-								pTile->m_sOwner != iClientH &&
-								m_pClientList[iClientH]->m_iAdminLevel <= m_pClientList[pTile->m_sOwner]->m_iAdminLevel)
+				if (tile->m_owner != 0) {
+					if (tile->m_owner_class == hb::shared::owner_class::Player) {
+						if (m_client_list[tile->m_owner] != 0) {
+							if (m_client_list[tile->m_owner]->m_is_admin_invisible &&
+								tile->m_owner != client_h &&
+								m_client_list[client_h]->m_admin_level <= m_client_list[tile->m_owner]->m_admin_level)
 							{
 							}
 							else
@@ -2510,28 +2510,28 @@ int CGame::iComposeInitMapData(short sX, short sY, int iClientH, char* pData)
 							}
 						}
 						else {
-							std::snprintf(G_cTxt, sizeof(G_cTxt), "Empty player handle: %d", pTile->m_sOwner);
-							pTile->m_sOwner = 0;
+							std::snprintf(G_cTxt, sizeof(G_cTxt), "empty player handle: %d", tile->m_owner);
+							tile->m_owner = 0;
 						}
 					}
 
-					if (pTile->m_cOwnerClass == hb::shared::owner_class::Npc) {
-						if (m_pNpcList[pTile->m_sOwner] != 0) ucHeader = ucHeader | 0x01;
-						else pTile->m_sOwner = 0;
+					if (tile->m_owner_class == hb::shared::owner_class::Npc) {
+						if (m_npc_list[tile->m_owner] != 0) ucHeader = ucHeader | 0x01;
+						else tile->m_owner = 0;
 					}
 				}
-				if (pTile->m_sDeadOwner != 0) {
-					if (pTile->m_cDeadOwnerClass == hb::shared::owner_class::Player) {
-						if (m_pClientList[pTile->m_sDeadOwner] != 0) ucHeader = ucHeader | 0x02;
-						else pTile->m_sDeadOwner = 0;
+				if (tile->m_dead_owner != 0) {
+					if (tile->m_dead_owner_class == hb::shared::owner_class::Player) {
+						if (m_client_list[tile->m_dead_owner] != 0) ucHeader = ucHeader | 0x02;
+						else tile->m_dead_owner = 0;
 					}
-					if (pTile->m_cDeadOwnerClass == hb::shared::owner_class::Npc) {
-						if (m_pNpcList[pTile->m_sDeadOwner] != 0) ucHeader = ucHeader | 0x02;
-						else pTile->m_sDeadOwner = 0;
+					if (tile->m_dead_owner_class == hb::shared::owner_class::Npc) {
+						if (m_npc_list[tile->m_dead_owner] != 0) ucHeader = ucHeader | 0x02;
+						else tile->m_dead_owner = 0;
 					}
 				}
-				if (pTile->m_pItem[0] != 0)				ucHeader = ucHeader | 0x04;
-				if (pTile->m_sDynamicObjectType != 0)    ucHeader = ucHeader | 0x08;
+				if (tile->m_item[0] != 0)				ucHeader = ucHeader | 0x04;
+				if (tile->m_dynamic_object_type != 0)    ucHeader = ucHeader | 0x08;
 
 				hb::net::PacketMapDataEntryHeader entryHeader{};
 				entryHeader.x = static_cast<int16_t>(ix);
@@ -2539,409 +2539,409 @@ int CGame::iComposeInitMapData(short sX, short sY, int iClientH, char* pData)
 				entryHeader.flags = ucHeader;
 				std::memcpy(cp, &entryHeader, sizeof(entryHeader));
 				cp += sizeof(entryHeader);
-				iSize += sizeof(entryHeader);
+				size += sizeof(entryHeader);
 
 				if ((ucHeader & 0x01) != 0) {
-					switch (pTile->m_cOwnerClass) {
+					switch (tile->m_owner_class) {
 					case hb::shared::owner_class::Player:
 					{
 						hb::net::PacketMapDataObjectPlayer obj{};
-						FillPlayerMapObject(obj, pTile->m_sOwner, iClientH);
-						if (m_pClientList[pTile->m_sOwner]->m_bIsAdminInvisible) {
-							obj.status.bInvisibility = true;
-							obj.status.bGMMode = true;
+						fill_player_map_object(obj, tile->m_owner, client_h);
+						if (m_client_list[tile->m_owner]->m_is_admin_invisible) {
+							obj.status.invisibility = true;
+							obj.status.gm_mode = true;
 						}
 						std::memcpy(cp, &obj, sizeof(obj));
 						cp += sizeof(obj);
-						iSize += sizeof(obj);
+						size += sizeof(obj);
 						break;
 					}
 					case hb::shared::owner_class::Npc:
 					{
 						hb::net::PacketMapDataObjectNpc obj{};
-						FillNpcMapObject(obj, pTile->m_sOwner, iClientH);
+						fill_npc_map_object(obj, tile->m_owner, client_h);
 						std::memcpy(cp, &obj, sizeof(obj));
 						cp += sizeof(obj);
-						iSize += sizeof(obj);
+						size += sizeof(obj);
 						break;
 					}
 					}
 				}
 
 				if ((ucHeader & 0x02) != 0) {
-					switch (pTile->m_cDeadOwnerClass) {
+					switch (tile->m_dead_owner_class) {
 					case hb::shared::owner_class::Player:
 					{
 						hb::net::PacketMapDataObjectPlayer obj{};
-						FillPlayerMapObject(obj, pTile->m_sDeadOwner, iClientH);
+						fill_player_map_object(obj, tile->m_dead_owner, client_h);
 						std::memcpy(cp, &obj, sizeof(obj));
 						cp += sizeof(obj);
-						iSize += sizeof(obj);
+						size += sizeof(obj);
 						break;
 					}
 					case hb::shared::owner_class::Npc:
 					{
 						hb::net::PacketMapDataObjectNpc obj{};
-						FillNpcMapObject(obj, pTile->m_sDeadOwner, iClientH);
+						fill_npc_map_object(obj, tile->m_dead_owner, client_h);
 						std::memcpy(cp, &obj, sizeof(obj));
 						cp += sizeof(obj);
-						iSize += sizeof(obj);
+						size += sizeof(obj);
 						break;
 					}
 					}
 				}
 
-				if (pTile->m_pItem[0] != 0) {
+				if (tile->m_item[0] != 0) {
 					hb::net::PacketMapDataItem itemObj{};
-					itemObj.item_id = pTile->m_pItem[0]->m_sIDnum;
-					itemObj.color = pTile->m_pItem[0]->m_cItemColor;
-					itemObj.attribute = pTile->m_pItem[0]->m_dwAttribute;
+					itemObj.item_id = tile->m_item[0]->m_id_num;
+					itemObj.color = tile->m_item[0]->m_item_color;
+					itemObj.attribute = tile->m_item[0]->m_attribute;
 					std::memcpy(cp, &itemObj, sizeof(itemObj));
 					cp += sizeof(itemObj);
-					iSize += sizeof(itemObj);
+					size += sizeof(itemObj);
 				}
 
-				if (pTile->m_sDynamicObjectType != 0) {
+				if (tile->m_dynamic_object_type != 0) {
 					hb::net::PacketMapDataDynamicObject dynObj{};
-					dynObj.object_id = pTile->m_wDynamicObjectID;
-					dynObj.type = pTile->m_sDynamicObjectType;
+					dynObj.object_id = tile->m_dynamic_object_id;
+					dynObj.type = tile->m_dynamic_object_type;
 					std::memcpy(cp, &dynObj, sizeof(dynObj));
 					cp += sizeof(dynObj);
-					iSize += sizeof(dynObj);
+					size += sizeof(dynObj);
 				}
 			} // Big if
 		} // while(1)
 
 	hb::net::PacketMapDataHeader header{};
-	header.total = static_cast<int16_t>(iTileExists);
-	std::memcpy(pData, &header, sizeof(header));
-	return iSize;
+	header.total = static_cast<int16_t>(tile_exists);
+	std::memcpy(data, &header, sizeof(header));
+	return size;
 }
 
-void CGame::DeleteClient(int iClientH, bool bSave, bool bNotify, bool bCountLogout, bool bForceCloseConn)
+void CGame::delete_client(int client_h, bool save, bool notify, bool count_logout, bool force_close_conn)
 {
-	int iExH;
-	char cTmpMap[30];
+	int ex_h;
+	char tmp_map[30];
 
-	if (m_pClientList[iClientH] == 0) return;
-	if (m_pClientList[iClientH]->m_bIsInitComplete) {
-		if (memcmp(m_pClientList[iClientH]->m_cMapName, "fight", 5) == 0) {
-			hb::logger::log<log_channel::log_events>("Player '{}' exited map '{}'", m_pClientList[iClientH]->m_cCharName, m_pClientList[iClientH]->m_cMapName);
+	if (m_client_list[client_h] == 0) return;
+	if (m_client_list[client_h]->m_is_init_complete) {
+		if (memcmp(m_client_list[client_h]->m_map_name, "fight", 5) == 0) {
+			hb::logger::log<log_channel::log_events>("Player '{}' exited map '{}'", m_client_list[client_h]->m_char_name, m_client_list[client_h]->m_map_name);
 		}
 
-		if (m_pClientList[iClientH]->m_bIsExchangeMode) {
-			iExH = m_pClientList[iClientH]->m_iExchangeH;
-			m_pItemManager->_ClearExchangeStatus(iExH);
-			m_pItemManager->_ClearExchangeStatus(iClientH);
+		if (m_client_list[client_h]->m_is_exchange_mode) {
+			ex_h = m_client_list[client_h]->m_exchange_h;
+			m_item_manager->clear_exchange_status(ex_h);
+			m_item_manager->clear_exchange_status(client_h);
 		}
 
-		m_pFishingManager->ReleaseFishEngagement(iClientH);
+		m_fishing_manager->release_fish_engagement(client_h);
 
-		if (bNotify)
-			SendEventToNearClient_TypeA(iClientH, hb::shared::owner_class::Player, MsgId::EventLog, MsgType::Reject, 0, 0, 0);
+		if (notify)
+			send_event_to_near_client_type_a(client_h, hb::shared::owner_class::Player, MsgId::EventLog, MsgType::Reject, 0, 0, 0);
 
-		m_pCombatManager->RemoveFromTarget(iClientH, hb::shared::owner_class::Player);
+		m_combat_manager->remove_from_target(client_h, hb::shared::owner_class::Player);
 
 		// Delete all summoned NPCs belonging to this player
 		for (int i = 0; i < MaxNpcs; i++)
-			if (m_pNpcList[i] != 0) {
-				if ((m_pNpcList[i]->m_bIsSummoned) &&
-					(m_pNpcList[i]->m_iFollowOwnerIndex == iClientH) &&
-					(m_pNpcList[i]->m_cFollowOwnerType == hb::shared::owner_class::Player)) {
-					m_pEntityManager->DeleteEntity(i);
+			if (m_npc_list[i] != 0) {
+				if ((m_npc_list[i]->m_is_summoned) &&
+					(m_npc_list[i]->m_follow_owner_index == client_h) &&
+					(m_npc_list[i]->m_follow_owner_type == hb::shared::owner_class::Player)) {
+					m_entity_manager->delete_entity(i);
 				}
 			}
 
 		for(int i = 1; i < MaxClients; i++)
-			if ((m_pClientList[i] != 0) && (m_pClientList[i]->m_iWhisperPlayerIndex == iClientH)) {
-				m_pClientList[i]->m_iWhisperPlayerIndex = -1;
-				SendNotifyMsg(0, i, Notify::WhisperModeOff, 0, 0, 0, m_pClientList[iClientH]->m_cCharName);
+			if ((m_client_list[i] != 0) && (m_client_list[i]->m_whisper_player_index == client_h)) {
+				m_client_list[i]->m_whisper_player_index = -1;
+				send_notify_msg(0, i, Notify::WhisperModeOff, 0, 0, 0, m_client_list[client_h]->m_char_name);
 			}
 
-		m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->ClearOwner(2, iClientH, hb::shared::owner_class::Player,
-			m_pClientList[iClientH]->m_sX,
-			m_pClientList[iClientH]->m_sY);
+		m_map_list[m_client_list[client_h]->m_map_index]->clear_owner(2, client_h, hb::shared::owner_class::Player,
+			m_client_list[client_h]->m_x,
+			m_client_list[client_h]->m_y);
 
-		m_pDelayEventManager->bRemoveFromDelayEventList(iClientH, hb::shared::owner_class::Player, 0);
+		m_delay_event_manager->remove_from_delay_event_list(client_h, hb::shared::owner_class::Player, 0);
 	}
 
-	if ((bSave) && (m_pClientList[iClientH]->m_bIsOnServerChange == false)) {
+	if ((save) && (m_client_list[client_h]->m_is_on_server_change == false)) {
 
-		if (m_pClientList[iClientH]->m_bIsKilled) {
-			m_pClientList[iClientH]->m_sX = -1;
-			m_pClientList[iClientH]->m_sY = -1;
+		if (m_client_list[client_h]->m_is_killed) {
+			m_client_list[client_h]->m_x = -1;
+			m_client_list[client_h]->m_y = -1;
 
-			strcpy(cTmpMap, m_pClientList[iClientH]->m_cMapName);
+			strcpy(tmp_map, m_client_list[client_h]->m_map_name);
 
-			std::memset(m_pClientList[iClientH]->m_cMapName, 0, sizeof(m_pClientList[iClientH]->m_cMapName));
+			std::memset(m_client_list[client_h]->m_map_name, 0, sizeof(m_client_list[client_h]->m_map_name));
 
-			if (m_pClientList[iClientH]->m_cSide == 0) {
-				strcpy(m_pClientList[iClientH]->m_cMapName, "default");
+			if (m_client_list[client_h]->m_side == 0) {
+				strcpy(m_client_list[client_h]->m_map_name, "default");
 			}
 			else {
-				if (memcmp(m_pClientList[iClientH]->m_cLocation, "are", 3) == 0) {
-					if (m_bIsCrusadeMode) {
-						if (m_pClientList[iClientH]->m_iDeadPenaltyTime > 0) {
-							std::memset(m_pClientList[iClientH]->m_cLockedMapName, 0, sizeof(m_pClientList[iClientH]->m_cLockedMapName));
-							strcpy(m_pClientList[iClientH]->m_cLockedMapName, "aresden");
-							m_pClientList[iClientH]->m_iLockedMapTime = 60 * 5;
-							m_pClientList[iClientH]->m_iDeadPenaltyTime = 60 * 10;
+				if (memcmp(m_client_list[client_h]->m_location, "are", 3) == 0) {
+					if (m_is_crusade_mode) {
+						if (m_client_list[client_h]->m_dead_penalty_time > 0) {
+							std::memset(m_client_list[client_h]->m_locked_map_name, 0, sizeof(m_client_list[client_h]->m_locked_map_name));
+							strcpy(m_client_list[client_h]->m_locked_map_name, "aresden");
+							m_client_list[client_h]->m_locked_map_time = 60 * 5;
+							m_client_list[client_h]->m_dead_penalty_time = 60 * 10;
 						}
 						else {
-							m_pClientList[iClientH]->m_iDeadPenaltyTime = 60 * 10;
+							m_client_list[client_h]->m_dead_penalty_time = 60 * 10;
 						}
 					}
 
-					if (strcmp(cTmpMap, "elvine") == 0) {
-						strcpy(m_pClientList[iClientH]->m_cLockedMapName, "elvjail");
-						m_pClientList[iClientH]->m_iLockedMapTime = 60 * 3;
-						memcpy(m_pClientList[iClientH]->m_cMapName, "elvjail", 7);
+					if (strcmp(tmp_map, "elvine") == 0) {
+						strcpy(m_client_list[client_h]->m_locked_map_name, "elvjail");
+						m_client_list[client_h]->m_locked_map_time = 60 * 3;
+						memcpy(m_client_list[client_h]->m_map_name, "elvjail", 7);
 					}
-					else if (m_pClientList[iClientH]->m_iLevel > 80)
-						memcpy(m_pClientList[iClientH]->m_cMapName, "resurr1", 7);
-					else memcpy(m_pClientList[iClientH]->m_cMapName, "arefarm", 7);
+					else if (m_client_list[client_h]->m_level > 80)
+						memcpy(m_client_list[client_h]->m_map_name, "resurr1", 7);
+					else memcpy(m_client_list[client_h]->m_map_name, "arefarm", 7);
 				}
 				else {
-					if (m_bIsCrusadeMode) {
-						if (m_pClientList[iClientH]->m_iDeadPenaltyTime > 0) {
-							std::memset(m_pClientList[iClientH]->m_cLockedMapName, 0, sizeof(m_pClientList[iClientH]->m_cLockedMapName));
-							strcpy(m_pClientList[iClientH]->m_cLockedMapName, "elvine");
-							m_pClientList[iClientH]->m_iLockedMapTime = 60 * 5;
-							m_pClientList[iClientH]->m_iDeadPenaltyTime = 60 * 10;
+					if (m_is_crusade_mode) {
+						if (m_client_list[client_h]->m_dead_penalty_time > 0) {
+							std::memset(m_client_list[client_h]->m_locked_map_name, 0, sizeof(m_client_list[client_h]->m_locked_map_name));
+							strcpy(m_client_list[client_h]->m_locked_map_name, "elvine");
+							m_client_list[client_h]->m_locked_map_time = 60 * 5;
+							m_client_list[client_h]->m_dead_penalty_time = 60 * 10;
 						}
 						else {
-							m_pClientList[iClientH]->m_iDeadPenaltyTime = 60 * 10;
+							m_client_list[client_h]->m_dead_penalty_time = 60 * 10;
 						}
 					}
-					if (strcmp(cTmpMap, "aresden") == 0) {
-						strcpy(m_pClientList[iClientH]->m_cLockedMapName, "arejail");
-						m_pClientList[iClientH]->m_iLockedMapTime = 60 * 3;
-						memcpy(m_pClientList[iClientH]->m_cMapName, "arejail", 7);
+					if (strcmp(tmp_map, "aresden") == 0) {
+						strcpy(m_client_list[client_h]->m_locked_map_name, "arejail");
+						m_client_list[client_h]->m_locked_map_time = 60 * 3;
+						memcpy(m_client_list[client_h]->m_map_name, "arejail", 7);
 
 					}
-					else if (m_pClientList[iClientH]->m_iLevel > 80)
-						memcpy(m_pClientList[iClientH]->m_cMapName, "resurr2", 7);
-					else memcpy(m_pClientList[iClientH]->m_cMapName, "elvfarm", 7);
+					else if (m_client_list[client_h]->m_level > 80)
+						memcpy(m_client_list[client_h]->m_map_name, "resurr2", 7);
+					else memcpy(m_client_list[client_h]->m_map_name, "elvfarm", 7);
 				}
 			}
 		}
-		else if (bForceCloseConn) {
-			std::memset(m_pClientList[iClientH]->m_cMapName, 0, sizeof(m_pClientList[iClientH]->m_cMapName));
-			memcpy(m_pClientList[iClientH]->m_cMapName, "bisle", 5);
-			m_pClientList[iClientH]->m_sX = -1;
-			m_pClientList[iClientH]->m_sY = -1;
+		else if (force_close_conn) {
+			std::memset(m_client_list[client_h]->m_map_name, 0, sizeof(m_client_list[client_h]->m_map_name));
+			memcpy(m_client_list[client_h]->m_map_name, "bisle", 5);
+			m_client_list[client_h]->m_x = -1;
+			m_client_list[client_h]->m_y = -1;
 
-			std::memset(m_pClientList[iClientH]->m_cLockedMapName, 0, sizeof(m_pClientList[iClientH]->m_cLockedMapName));
-			strcpy(m_pClientList[iClientH]->m_cLockedMapName, "bisle");
-			m_pClientList[iClientH]->m_iLockedMapTime = 10 * 60;
+			std::memset(m_client_list[client_h]->m_locked_map_name, 0, sizeof(m_client_list[client_h]->m_locked_map_name));
+			strcpy(m_client_list[client_h]->m_locked_map_name, "bisle");
+			m_client_list[client_h]->m_locked_map_time = 10 * 60;
 		}
 
-		if (m_pClientList[iClientH]->m_bIsObserverMode) {
-			std::memset(m_pClientList[iClientH]->m_cMapName, 0, sizeof(m_pClientList[iClientH]->m_cMapName));
-			if (m_pClientList[iClientH]->m_cSide == 0) {
-				switch (iDice(1, 2)) {
+		if (m_client_list[client_h]->m_is_observer_mode) {
+			std::memset(m_client_list[client_h]->m_map_name, 0, sizeof(m_client_list[client_h]->m_map_name));
+			if (m_client_list[client_h]->m_side == 0) {
+				switch (dice(1, 2)) {
 				case 1:
-					memcpy(m_pClientList[iClientH]->m_cMapName, "aresden", 7);
+					memcpy(m_client_list[client_h]->m_map_name, "aresden", 7);
 					break;
 				case 2:
-					memcpy(m_pClientList[iClientH]->m_cMapName, "elvine", 6);
+					memcpy(m_client_list[client_h]->m_map_name, "elvine", 6);
 					break;
 				}
 			}
 			else {
-				memcpy(m_pClientList[iClientH]->m_cMapName, m_pClientList[iClientH]->m_cLocation, 10);
+				memcpy(m_client_list[client_h]->m_map_name, m_client_list[client_h]->m_location, 10);
 			}
-			m_pClientList[iClientH]->m_sX = -1;
-			m_pClientList[iClientH]->m_sY = -1;
+			m_client_list[client_h]->m_x = -1;
+			m_client_list[client_h]->m_y = -1;
 		}
 
-		if (memcmp(m_pClientList[iClientH]->m_cMapName, "fight", 5) == 0) {
-			std::memset(m_pClientList[iClientH]->m_cMapName, 0, sizeof(m_pClientList[iClientH]->m_cMapName));
-			if (m_pClientList[iClientH]->m_cSide == 0) {
-				switch (iDice(1, 2)) {
+		if (memcmp(m_client_list[client_h]->m_map_name, "fight", 5) == 0) {
+			std::memset(m_client_list[client_h]->m_map_name, 0, sizeof(m_client_list[client_h]->m_map_name));
+			if (m_client_list[client_h]->m_side == 0) {
+				switch (dice(1, 2)) {
 				case 1:
-					memcpy(m_pClientList[iClientH]->m_cMapName, "aresden", 7);
+					memcpy(m_client_list[client_h]->m_map_name, "aresden", 7);
 					break;
 				case 2:
-					memcpy(m_pClientList[iClientH]->m_cMapName, "elvine", 6);
+					memcpy(m_client_list[client_h]->m_map_name, "elvine", 6);
 					break;
 				}
 			}
 			else {
-				memcpy(m_pClientList[iClientH]->m_cMapName, m_pClientList[iClientH]->m_cLocation, 10);
+				memcpy(m_client_list[client_h]->m_map_name, m_client_list[client_h]->m_location, 10);
 			}
-			m_pClientList[iClientH]->m_sX = -1;
-			m_pClientList[iClientH]->m_sY = -1;
+			m_client_list[client_h]->m_x = -1;
+			m_client_list[client_h]->m_y = -1;
 		}
 
-		if (m_pClientList[iClientH]->m_bIsInitComplete) {
-			if (m_pClientList[iClientH]->m_iPartyID != 0) {
+		if (m_client_list[client_h]->m_is_init_complete) {
+			if (m_client_list[client_h]->m_party_id != 0) {
 				hb::net::PartyOpPayload partyOp{};
 				partyOp.op_type = 4;
-				partyOp.client_h = static_cast<uint16_t>(iClientH);
-				std::memcpy(partyOp.name, m_pClientList[iClientH]->m_cCharName, sizeof(partyOp.name));
-				partyOp.party_id = static_cast<uint16_t>(m_pClientList[iClientH]->m_iPartyID);
-				PartyOperation(reinterpret_cast<char*>(&partyOp));
+				partyOp.client_h = static_cast<uint16_t>(client_h);
+				std::memcpy(partyOp.name, m_client_list[client_h]->m_char_name, sizeof(partyOp.name));
+				partyOp.party_id = static_cast<uint16_t>(m_client_list[client_h]->m_party_id);
+				party_operation(reinterpret_cast<char*>(&partyOp));
 			}
 		}
-		g_login->LocalSavePlayerData(iClientH);
+		g_login->local_save_player_data(client_h);
 	}
 	else {
-		if (m_pClientList[iClientH]->m_bIsOnServerChange == false) {
-			if (m_pClientList[iClientH]->m_iPartyID != 0) {
+		if (m_client_list[client_h]->m_is_on_server_change == false) {
+			if (m_client_list[client_h]->m_party_id != 0) {
 				hb::net::PartyOpPayload partyOp{};
 				partyOp.op_type = 4;
-				partyOp.client_h = static_cast<uint16_t>(iClientH);
-				std::memcpy(partyOp.name, m_pClientList[iClientH]->m_cCharName, sizeof(partyOp.name));
-				partyOp.party_id = static_cast<uint16_t>(m_pClientList[iClientH]->m_iPartyID);
-				PartyOperation(reinterpret_cast<char*>(&partyOp));
+				partyOp.client_h = static_cast<uint16_t>(client_h);
+				std::memcpy(partyOp.name, m_client_list[client_h]->m_char_name, sizeof(partyOp.name));
+				partyOp.party_id = static_cast<uint16_t>(m_client_list[client_h]->m_party_id);
+				party_operation(reinterpret_cast<char*>(&partyOp));
 			}
 		}
 		else {
-			if (m_pClientList[iClientH]->m_iPartyID != 0) {
+			if (m_client_list[client_h]->m_party_id != 0) {
 				hb::net::PartyOpPayload partyOp{};
 				partyOp.op_type = 7;
 				partyOp.client_h = 0;
-				std::memcpy(partyOp.name, m_pClientList[iClientH]->m_cCharName, sizeof(partyOp.name));
-				partyOp.party_id = static_cast<uint16_t>(m_pClientList[iClientH]->m_iPartyID);
-				PartyOperation(reinterpret_cast<char*>(&partyOp));
+				std::memcpy(partyOp.name, m_client_list[client_h]->m_char_name, sizeof(partyOp.name));
+				partyOp.party_id = static_cast<uint16_t>(m_client_list[client_h]->m_party_id);
+				party_operation(reinterpret_cast<char*>(&partyOp));
 			}
 		}
 	}
 
-	if (m_pClientList[iClientH]->m_iPartyID != 0) {
+	if (m_client_list[client_h]->m_party_id != 0) {
 		for(int i = 0; i < hb::shared::limits::MaxPartyMembers; i++)
-			if (m_stPartyInfo[m_pClientList[iClientH]->m_iPartyID].iIndex[i] == iClientH) {
-				m_stPartyInfo[m_pClientList[iClientH]->m_iPartyID].iIndex[i] = 0;
-				m_stPartyInfo[m_pClientList[iClientH]->m_iPartyID].iTotalMembers--;
-				m_pClientList[iClientH]->m_iPartyID = 0;
-				m_pClientList[iClientH]->m_iPartyStatus = PartyStatus::Null;
-				m_pClientList[iClientH]->m_iReqJoinPartyClientH = 0;
-				hb::logger::log("Party {}: member {} removed (deleted), total={}", m_pClientList[iClientH]->m_iPartyID, iClientH, m_stPartyInfo[m_pClientList[iClientH]->m_iPartyID].iTotalMembers);
+			if (m_party_info[m_client_list[client_h]->m_party_id].index[i] == client_h) {
+				m_party_info[m_client_list[client_h]->m_party_id].index[i] = 0;
+				m_party_info[m_client_list[client_h]->m_party_id].total_members--;
+				m_client_list[client_h]->m_party_id = 0;
+				m_client_list[client_h]->m_party_status = PartyStatus::Null;
+				m_client_list[client_h]->m_req_join_party_client_h = 0;
+				hb::logger::log("Party {}: member {} removed (deleted), total={}", m_client_list[client_h]->m_party_id, client_h, m_party_info[m_client_list[client_h]->m_party_id].total_members);
 				goto DC_LOOPBREAK1;
 			}
 	DC_LOOPBREAK1:
 		for(int i = 0; i < hb::shared::limits::MaxPartyMembers - 1; i++)
-			if ((m_stPartyInfo[m_pClientList[iClientH]->m_iPartyID].iIndex[i] == 0) && (m_stPartyInfo[m_pClientList[iClientH]->m_iPartyID].iIndex[i + 1] != 0)) {
-				m_stPartyInfo[m_pClientList[iClientH]->m_iPartyID].iIndex[i] = m_stPartyInfo[m_pClientList[iClientH]->m_iPartyID].iIndex[i + 1];
-				m_stPartyInfo[m_pClientList[iClientH]->m_iPartyID].iIndex[i + 1] = 0;
+			if ((m_party_info[m_client_list[client_h]->m_party_id].index[i] == 0) && (m_party_info[m_client_list[client_h]->m_party_id].index[i + 1] != 0)) {
+				m_party_info[m_client_list[client_h]->m_party_id].index[i] = m_party_info[m_client_list[client_h]->m_party_id].index[i + 1];
+				m_party_info[m_client_list[client_h]->m_party_id].index[i + 1] = 0;
 			}
 	}
 
-	m_iTotalClients--;
+	m_total_clients--;
 
 	// Cancel async operations before freeing the socket
-	if (m_pClientList[iClientH]->m_pXSock != 0)
-		m_pClientList[iClientH]->m_pXSock->CancelAsync();
+	if (m_client_list[client_h]->m_socket != 0)
+		m_client_list[client_h]->m_socket->cancel_async();
 
-	delete m_pClientList[iClientH];
-	m_pClientList[iClientH] = 0;
+	delete m_client_list[client_h];
+	m_client_list[client_h] = 0;
 
-	RemoveClientShortCut(iClientH);
+	remove_client_short_cut(client_h);
 }
 
-void CGame::SendEventToNearClient_TypeA(short sOwnerH, char cOwnerType, uint32_t dwMsgID, uint16_t wMsgType, short sV1, short sV2, short sV3)
+void CGame::send_event_to_near_client_type_a(short owner_h, char owner_type, uint32_t msg_id, uint16_t msg_type, short v1, short v2, short v3)
 {
-	int iRet, iShortCutIndex;
-	bool bFlag;
-	int sRange;
+	int ret, short_cut_index;
+	bool flag;
+	int range;
 	short sX, sY;
-	bool cOwnerSend;
+	bool owner_send;
 
-	if ((dwMsgID == MsgId::EventLog) || (wMsgType == Type::Move) || (wMsgType == Type::Run) ||
-		(wMsgType == Type::AttackMove) || (wMsgType == Type::DamageMove) || (wMsgType == Type::Dying))
-		sRange = hb::shared::view::RangeBuffer;
-	else sRange = 0;
+	if ((msg_id == MsgId::EventLog) || (msg_type == Type::Move) || (msg_type == Type::Run) ||
+		(msg_type == Type::AttackMove) || (msg_type == Type::DamageMove) || (msg_type == Type::Dying))
+		range = hb::shared::view::RangeBuffer;
+	else range = 0;
 
-	if (cOwnerType == hb::shared::owner_class::Player) {
-		if (m_pClientList[sOwnerH] == 0) return;
+	if (owner_type == hb::shared::owner_class::Player) {
+		if (m_client_list[owner_h] == 0) return;
 
-		sX = m_pClientList[sOwnerH]->m_sX;
-		sY = m_pClientList[sOwnerH]->m_sY;
+		sX = m_client_list[owner_h]->m_x;
+		sY = m_client_list[owner_h]->m_y;
 
-		switch (wMsgType) {
+		switch (msg_type) {
 		case Type::NullAction:
 		case Type::Damage:
 		case Type::Dying:
 		case MsgType::Confirm:
-			cOwnerSend = true;
+			owner_send = true;
 			break;
 		default:
-			cOwnerSend = false;
+			owner_send = false;
 			break;
 		}
 
 		hb::net::PacketEventMotionPlayer base_all{};
-		base_all.header.msg_id = dwMsgID;
-		base_all.header.msg_type = wMsgType;
-		base_all.object_id = static_cast<std::uint16_t>(sOwnerH);
+		base_all.header.msg_id = msg_id;
+		base_all.header.msg_type = msg_type;
+		base_all.object_id = static_cast<std::uint16_t>(owner_h);
 		base_all.x = sX;
 		base_all.y = sY;
-		base_all.type = m_pClientList[sOwnerH]->m_sType;
-		base_all.dir = static_cast<std::uint8_t>(m_pClientList[sOwnerH]->m_cDir);
-		std::memcpy(base_all.name, m_pClientList[sOwnerH]->m_cCharName, sizeof(base_all.name));
-		base_all.appearance = m_pClientList[sOwnerH]->m_appearance;
-		base_all.status = m_pClientList[sOwnerH]->m_status;
+		base_all.type = m_client_list[owner_h]->m_type;
+		base_all.dir = static_cast<std::uint8_t>(m_client_list[owner_h]->m_dir);
+		std::memcpy(base_all.name, m_client_list[owner_h]->m_char_name, sizeof(base_all.name));
+		base_all.appearance = m_client_list[owner_h]->m_appearance;
+		base_all.status = m_client_list[owner_h]->m_status;
 		base_all.loc = 0;
-		if (wMsgType == Type::NullAction) {
-			base_all.loc = m_pClientList[sOwnerH]->m_bIsKilled ? 1 : 0;
+		if (msg_type == Type::NullAction) {
+			base_all.loc = m_client_list[owner_h]->m_is_killed ? 1 : 0;
 		}
 
 		hb::net::PacketEventMotionShort pkt_short{};
-		pkt_short.header.msg_id = dwMsgID;
-		pkt_short.header.msg_type = wMsgType;
-		pkt_short.object_id = static_cast<std::uint16_t>(sOwnerH + hb::shared::object_id::NearbyOffset);
-		pkt_short.dir = static_cast<std::uint8_t>(m_pClientList[sOwnerH]->m_cDir);
-		pkt_short.v1 = static_cast<std::int16_t>(sV1);
-		pkt_short.v2 = static_cast<std::uint8_t>(sV2);
+		pkt_short.header.msg_id = msg_id;
+		pkt_short.header.msg_type = msg_type;
+		pkt_short.object_id = static_cast<std::uint16_t>(owner_h + hb::shared::object_id::NearbyOffset);
+		pkt_short.dir = static_cast<std::uint8_t>(m_client_list[owner_h]->m_dir);
+		pkt_short.v1 = static_cast<std::int16_t>(v1);
+		pkt_short.v2 = static_cast<std::uint8_t>(v2);
 
 		hb::net::PacketEventMotionMove pkt_move{};
-		pkt_move.header.msg_id = dwMsgID;
-		pkt_move.header.msg_type = wMsgType;
-		pkt_move.object_id = static_cast<std::uint16_t>(sOwnerH + hb::shared::object_id::NearbyOffset);
-		pkt_move.dir = static_cast<std::uint8_t>(m_pClientList[sOwnerH]->m_cDir);
-		pkt_move.v1 = static_cast<std::uint8_t>(sV1);
-		pkt_move.v2 = static_cast<std::uint8_t>(sV2);
+		pkt_move.header.msg_id = msg_id;
+		pkt_move.header.msg_type = msg_type;
+		pkt_move.object_id = static_cast<std::uint16_t>(owner_h + hb::shared::object_id::NearbyOffset);
+		pkt_move.dir = static_cast<std::uint8_t>(m_client_list[owner_h]->m_dir);
+		pkt_move.v1 = static_cast<std::uint8_t>(v1);
+		pkt_move.v2 = static_cast<std::uint8_t>(v2);
 		pkt_move.x = sX;
 		pkt_move.y = sY;
 
 		hb::net::PacketEventMotionAttack pkt_attack{};
-		pkt_attack.header.msg_id = dwMsgID;
-		pkt_attack.header.msg_type = wMsgType;
-		pkt_attack.object_id = static_cast<std::uint16_t>(sOwnerH + hb::shared::object_id::NearbyOffset);
-		pkt_attack.dir = static_cast<std::uint8_t>(m_pClientList[sOwnerH]->m_cDir);
-		pkt_attack.v1 = static_cast<std::int8_t>(sV1 - sX);
-		pkt_attack.v2 = static_cast<std::int8_t>(sV2 - sY);
-		pkt_attack.v3 = static_cast<std::int16_t>(sV3);
+		pkt_attack.header.msg_id = msg_id;
+		pkt_attack.header.msg_type = msg_type;
+		pkt_attack.object_id = static_cast<std::uint16_t>(owner_h + hb::shared::object_id::NearbyOffset);
+		pkt_attack.dir = static_cast<std::uint8_t>(m_client_list[owner_h]->m_dir);
+		pkt_attack.v1 = static_cast<std::int8_t>(v1 - sX);
+		pkt_attack.v2 = static_cast<std::int8_t>(v2 - sY);
+		pkt_attack.v3 = static_cast<std::int16_t>(v3);
 
 		hb::net::PacketEventMotionDirOnly pkt_dir{};
-		pkt_dir.header.msg_id = dwMsgID;
-		pkt_dir.header.msg_type = wMsgType;
-		pkt_dir.object_id = static_cast<std::uint16_t>(sOwnerH + hb::shared::object_id::NearbyOffset);
-		pkt_dir.dir = static_cast<std::uint8_t>(m_pClientList[sOwnerH]->m_cDir);
+		pkt_dir.header.msg_id = msg_id;
+		pkt_dir.header.msg_type = msg_type;
+		pkt_dir.object_id = static_cast<std::uint16_t>(owner_h + hb::shared::object_id::NearbyOffset);
+		pkt_dir.dir = static_cast<std::uint8_t>(m_client_list[owner_h]->m_dir);
 
 		// Per-viewer status filtering is handled at packet build time
 
-		const char cKey = static_cast<char>((rand() % 255) + 1);
+		const char key = static_cast<char>((rand() % 255) + 1);
 
-		bFlag = true;
-		iShortCutIndex = 0;
+		flag = true;
+		short_cut_index = 0;
 
-		while (bFlag) {
-			int i = m_iClientShortCut[iShortCutIndex];
-			iShortCutIndex++;
-			if (i == 0) bFlag = false;
+		while (flag) {
+			int i = m_client_shortcut[short_cut_index];
+			short_cut_index++;
+			if (i == 0) flag = false;
 
-			if ((bFlag) && (m_pClientList[i] != 0) && (m_pClientList[i]->m_bIsInitComplete))
-				if ((m_pClientList[i]->m_cMapIndex == m_pClientList[sOwnerH]->m_cMapIndex) &&
-					(m_pClientList[i]->m_sX >= m_pClientList[sOwnerH]->m_sX - hb::shared::view::RangeX - sRange) &&
-					(m_pClientList[i]->m_sX <= m_pClientList[sOwnerH]->m_sX + hb::shared::view::RangeX + sRange) &&
-					(m_pClientList[i]->m_sY >= m_pClientList[sOwnerH]->m_sY - hb::shared::view::RangeY - sRange) &&
-					(m_pClientList[i]->m_sY <= m_pClientList[sOwnerH]->m_sY + hb::shared::view::RangeY + sRange)) {
+			if ((flag) && (m_client_list[i] != 0) && (m_client_list[i]->m_is_init_complete))
+				if ((m_client_list[i]->m_map_index == m_client_list[owner_h]->m_map_index) &&
+					(m_client_list[i]->m_x >= m_client_list[owner_h]->m_x - hb::shared::view::RangeX - range) &&
+					(m_client_list[i]->m_x <= m_client_list[owner_h]->m_x + hb::shared::view::RangeX + range) &&
+					(m_client_list[i]->m_y >= m_client_list[owner_h]->m_y - hb::shared::view::RangeY - range) &&
+					(m_client_list[i]->m_y <= m_client_list[owner_h]->m_y + hb::shared::view::RangeY + range)) {
 
 					// Admin invisibility filtering: skip clients that shouldn't see this player
-					if (m_pClientList[sOwnerH]->m_bIsAdminInvisible && i != sOwnerH &&
-						m_pClientList[i]->m_iAdminLevel <= m_pClientList[sOwnerH]->m_iAdminLevel)
+					if (m_client_list[owner_h]->m_is_admin_invisible && i != owner_h &&
+						m_client_list[i]->m_admin_level <= m_client_list[owner_h]->m_admin_level)
 					{
 						// Don't send any packet to this client
 					}
@@ -2950,125 +2950,125 @@ void CGame::SendEventToNearClient_TypeA(short sOwnerH, char cOwnerType, uint32_t
 
 					auto pkt_all = base_all;
 					{
-						auto viewerStatus = m_pClientList[sOwnerH]->m_status;
-						viewerStatus.bPK = (m_pClientList[sOwnerH]->m_iPKCount != 0) ? 1 : 0;
-						viewerStatus.bCitizen = (m_pClientList[sOwnerH]->m_cSide != 0) ? 1 : 0;
-						viewerStatus.bAresden = (m_pClientList[sOwnerH]->m_cSide == 1) ? 1 : 0;
-						viewerStatus.bHunter = m_pClientList[sOwnerH]->m_bIsPlayerCivil ? 1 : 0;
-						viewerStatus.iRelationship = m_pCombatManager->GetPlayerRelationship(sOwnerH, i);
-						if (m_pClientList[sOwnerH]->m_cSide != m_pClientList[i]->m_cSide && i != sOwnerH) {
-							viewerStatus.bPoisoned = false;
-							viewerStatus.bIllusion = false;
+						auto viewerStatus = m_client_list[owner_h]->m_status;
+						viewerStatus.pk = (m_client_list[owner_h]->m_player_kill_count != 0) ? 1 : 0;
+						viewerStatus.citizen = (m_client_list[owner_h]->m_side != 0) ? 1 : 0;
+						viewerStatus.aresden = (m_client_list[owner_h]->m_side == 1) ? 1 : 0;
+						viewerStatus.hunter = m_client_list[owner_h]->m_is_player_civil ? 1 : 0;
+						viewerStatus.relationship = m_combat_manager->get_player_relationship(owner_h, i);
+						if (m_client_list[owner_h]->m_side != m_client_list[i]->m_side && i != owner_h) {
+							viewerStatus.poisoned = false;
+							viewerStatus.illusion = false;
 						}
-						if (m_pClientList[sOwnerH]->m_bIsAdminInvisible) {
-							viewerStatus.bInvisibility = true;
-							viewerStatus.bGMMode = true;
+						if (m_client_list[owner_h]->m_is_admin_invisible) {
+							viewerStatus.invisibility = true;
+							viewerStatus.gm_mode = true;
 						}
 						pkt_all.status = viewerStatus;
 					}
 
 					auto send_packet = [&](const void* packet, std::size_t size) -> int {
-						return m_pClientList[i]->m_pXSock->iSendMsg(reinterpret_cast<char*>(const_cast<void*>(packet)), static_cast<int>(size), cKey);
+						return m_client_list[i]->m_socket->send_msg(reinterpret_cast<char*>(const_cast<void*>(packet)), static_cast<int>(size), key);
 						};
 
-					const bool is_near = (m_pClientList[i]->m_sX >= m_pClientList[sOwnerH]->m_sX - (hb::shared::view::CenterX - 1)) &&
-						(m_pClientList[i]->m_sX <= m_pClientList[sOwnerH]->m_sX + (hb::shared::view::CenterX - 1)) &&
-						(m_pClientList[i]->m_sY >= m_pClientList[sOwnerH]->m_sY - hb::shared::view::CenterY) &&
-						(m_pClientList[i]->m_sY <= m_pClientList[sOwnerH]->m_sY + hb::shared::view::CenterY);
+					const bool is_near = (m_client_list[i]->m_x >= m_client_list[owner_h]->m_x - (hb::shared::view::CenterX - 1)) &&
+						(m_client_list[i]->m_x <= m_client_list[owner_h]->m_x + (hb::shared::view::CenterX - 1)) &&
+						(m_client_list[i]->m_y >= m_client_list[owner_h]->m_y - hb::shared::view::CenterY) &&
+						(m_client_list[i]->m_y <= m_client_list[owner_h]->m_y + hb::shared::view::CenterY);
 
 					if (is_near) {
-						switch (wMsgType) {
+						switch (msg_type) {
 						case MsgType::Confirm:
 						case MsgType::Reject:
 						case Type::NullAction:
-							if (cOwnerSend)
-								iRet = send_packet(&pkt_all, sizeof(pkt_all));
-							else if (i != sOwnerH)
-								iRet = send_packet(&pkt_all, sizeof(pkt_all));
+							if (owner_send)
+								ret = send_packet(&pkt_all, sizeof(pkt_all));
+							else if (i != owner_h)
+								ret = send_packet(&pkt_all, sizeof(pkt_all));
 							break;
 
 						case Type::Attack:
 						case Type::AttackMove:
-							if (cOwnerSend)
-								iRet = send_packet(&pkt_attack, sizeof(pkt_attack));
-							else if (i != sOwnerH)
-								iRet = send_packet(&pkt_attack, sizeof(pkt_attack));
+							if (owner_send)
+								ret = send_packet(&pkt_attack, sizeof(pkt_attack));
+							else if (i != owner_h)
+								ret = send_packet(&pkt_attack, sizeof(pkt_attack));
 							break;
 
 						case Type::Magic:
 						case Type::Damage:
 						case Type::DamageMove:
-							if (cOwnerSend)
-								iRet = send_packet(&pkt_short, sizeof(pkt_short));
-							else if (i != sOwnerH)
-								iRet = send_packet(&pkt_short, sizeof(pkt_short));
+							if (owner_send)
+								ret = send_packet(&pkt_short, sizeof(pkt_short));
+							else if (i != owner_h)
+								ret = send_packet(&pkt_short, sizeof(pkt_short));
 							break;
 
 						case Type::Dying:
-							if (cOwnerSend)
-								iRet = send_packet(&pkt_move, sizeof(pkt_move));
-							else if (i != sOwnerH)
-								iRet = send_packet(&pkt_move, sizeof(pkt_move));
+							if (owner_send)
+								ret = send_packet(&pkt_move, sizeof(pkt_move));
+							else if (i != owner_h)
+								ret = send_packet(&pkt_move, sizeof(pkt_move));
 							break;
 
 						default:
-							if (cOwnerSend)
-								iRet = send_packet(&pkt_dir, sizeof(pkt_dir));
-							else if (i != sOwnerH)
-								iRet = send_packet(&pkt_dir, sizeof(pkt_dir));
+							if (owner_send)
+								ret = send_packet(&pkt_dir, sizeof(pkt_dir));
+							else if (i != owner_h)
+								ret = send_packet(&pkt_dir, sizeof(pkt_dir));
 							break;
 						}
 					}
 					else {
-						switch (wMsgType) {
+						switch (msg_type) {
 						case MsgType::Confirm:
 						case MsgType::Reject:
 						case Type::NullAction:
-							if (cOwnerSend)
-								iRet = send_packet(&pkt_all, sizeof(pkt_all));
-							else if (i != sOwnerH)
-								iRet = send_packet(&pkt_all, sizeof(pkt_all));
+							if (owner_send)
+								ret = send_packet(&pkt_all, sizeof(pkt_all));
+							else if (i != owner_h)
+								ret = send_packet(&pkt_all, sizeof(pkt_all));
 							break;
 
 						case Type::Attack:
 						case Type::AttackMove:
-							if (cOwnerSend)
-								iRet = send_packet(&pkt_attack, sizeof(pkt_attack));
-							else if (i != sOwnerH)
-								iRet = send_packet(&pkt_attack, sizeof(pkt_attack));
+							if (owner_send)
+								ret = send_packet(&pkt_attack, sizeof(pkt_attack));
+							else if (i != owner_h)
+								ret = send_packet(&pkt_attack, sizeof(pkt_attack));
 							break;
 
 						case Type::Magic:
 						case Type::Damage:
 						case Type::DamageMove:
-							if (cOwnerSend)
-								iRet = send_packet(&pkt_short, sizeof(pkt_short));
-							else if (i != sOwnerH)
-								iRet = send_packet(&pkt_short, sizeof(pkt_short));
+							if (owner_send)
+								ret = send_packet(&pkt_short, sizeof(pkt_short));
+							else if (i != owner_h)
+								ret = send_packet(&pkt_short, sizeof(pkt_short));
 							break;
 
 						case Type::Dying:
-							if (cOwnerSend)
-								iRet = send_packet(&pkt_move, sizeof(pkt_move));
-							else if (i != sOwnerH)
-								iRet = send_packet(&pkt_move, sizeof(pkt_move));
+							if (owner_send)
+								ret = send_packet(&pkt_move, sizeof(pkt_move));
+							else if (i != owner_h)
+								ret = send_packet(&pkt_move, sizeof(pkt_move));
 							break;
 
 						default:
-							if (cOwnerSend)
-								iRet = send_packet(&pkt_all, sizeof(pkt_all));
-							else if (i != sOwnerH)
-								iRet = send_packet(&pkt_all, sizeof(pkt_all));
+							if (owner_send)
+								ret = send_packet(&pkt_all, sizeof(pkt_all));
+							else if (i != owner_h)
+								ret = send_packet(&pkt_all, sizeof(pkt_all));
 							break;
 						}
 
-						if ((iRet == sock::Event::QueueFull) || (iRet == sock::Event::SocketError) ||
-							(iRet == sock::Event::SocketClosed) || (iRet == sock::Event::CriticalError)) {
+						if ((ret == sock::Event::QueueFull) || (ret == sock::Event::SocketError) ||
+							(ret == sock::Event::SocketClosed) || (ret == sock::Event::CriticalError)) {
 							static uint32_t s_dwLastNetWarn = 0;
-							uint32_t dwNow = GameClock::GetTimeMS();
-							if (dwNow - s_dwLastNetWarn > 5000) {
-								hb::logger::log("SendEventToNearClient_TypeA: client={} ret={} ownerType={} msgType=0x{:X}", i, iRet, cOwnerType, wMsgType);
-								s_dwLastNetWarn = dwNow;
+							uint32_t now = GameClock::GetTimeMS();
+							if (now - s_dwLastNetWarn > 5000) {
+								hb::logger::log("send_event_to_near_client_type_a: client={} ret={} ownerType={} msgType=0x{:X}", i, ret, owner_type, msg_type);
+								s_dwLastNetWarn = now;
 							}
 						}
 					}
@@ -3077,174 +3077,174 @@ void CGame::SendEventToNearClient_TypeA(short sOwnerH, char cOwnerType, uint32_t
 		}
 	}
 	else {
-		if (m_pNpcList[sOwnerH] == 0) return;
+		if (m_npc_list[owner_h] == 0) return;
 
-		sX = m_pNpcList[sOwnerH]->m_sX;
-		sY = m_pNpcList[sOwnerH]->m_sY;
+		sX = m_npc_list[owner_h]->m_x;
+		sY = m_npc_list[owner_h]->m_y;
 
 		hb::net::PacketEventMotionNpc base_all{};
-		base_all.header.msg_id = dwMsgID;
-		base_all.header.msg_type = wMsgType;
-		base_all.object_id = static_cast<std::uint16_t>(sOwnerH + hb::shared::object_id::NpcMin);
+		base_all.header.msg_id = msg_id;
+		base_all.header.msg_type = msg_type;
+		base_all.object_id = static_cast<std::uint16_t>(owner_h + hb::shared::object_id::NpcMin);
 		base_all.x = sX;
 		base_all.y = sY;
-		base_all.config_id = m_pNpcList[sOwnerH]->m_iNpcConfigId;
-		base_all.dir = static_cast<std::uint8_t>(m_pNpcList[sOwnerH]->m_cDir);
-		std::memcpy(base_all.name, m_pNpcList[sOwnerH]->m_cName, sizeof(base_all.name));
-		base_all.appearance = m_pNpcList[sOwnerH]->m_appearance;
-		base_all.status = m_pNpcList[sOwnerH]->m_status;
+		base_all.config_id = m_npc_list[owner_h]->m_npc_config_id;
+		base_all.dir = static_cast<std::uint8_t>(m_npc_list[owner_h]->m_dir);
+		std::memcpy(base_all.name, m_npc_list[owner_h]->m_name, sizeof(base_all.name));
+		base_all.appearance = m_npc_list[owner_h]->m_appearance;
+		base_all.status = m_npc_list[owner_h]->m_status;
 		base_all.loc = 0;
-		if (wMsgType == Type::NullAction) {
-			base_all.loc = m_pNpcList[sOwnerH]->m_bIsKilled ? 1 : 0;
+		if (msg_type == Type::NullAction) {
+			base_all.loc = m_npc_list[owner_h]->m_is_killed ? 1 : 0;
 		}
 
 		hb::net::PacketEventMotionShort pkt_short{};
-		pkt_short.header.msg_id = dwMsgID;
-		pkt_short.header.msg_type = wMsgType;
-		pkt_short.object_id = static_cast<std::uint16_t>(sOwnerH + 40000);
-		pkt_short.dir = static_cast<std::uint8_t>(m_pNpcList[sOwnerH]->m_cDir);
-		pkt_short.v1 = static_cast<std::int16_t>(sV1);
-		pkt_short.v2 = static_cast<std::uint8_t>(sV2);
+		pkt_short.header.msg_id = msg_id;
+		pkt_short.header.msg_type = msg_type;
+		pkt_short.object_id = static_cast<std::uint16_t>(owner_h + 40000);
+		pkt_short.dir = static_cast<std::uint8_t>(m_npc_list[owner_h]->m_dir);
+		pkt_short.v1 = static_cast<std::int16_t>(v1);
+		pkt_short.v2 = static_cast<std::uint8_t>(v2);
 
 		hb::net::PacketEventMotionMove pkt_move{};
-		pkt_move.header.msg_id = dwMsgID;
-		pkt_move.header.msg_type = wMsgType;
-		pkt_move.object_id = static_cast<std::uint16_t>(sOwnerH + 40000);
-		pkt_move.dir = static_cast<std::uint8_t>(m_pNpcList[sOwnerH]->m_cDir);
-		pkt_move.v1 = static_cast<std::uint8_t>(sV1);
-		pkt_move.v2 = static_cast<std::uint8_t>(sV2);
+		pkt_move.header.msg_id = msg_id;
+		pkt_move.header.msg_type = msg_type;
+		pkt_move.object_id = static_cast<std::uint16_t>(owner_h + 40000);
+		pkt_move.dir = static_cast<std::uint8_t>(m_npc_list[owner_h]->m_dir);
+		pkt_move.v1 = static_cast<std::uint8_t>(v1);
+		pkt_move.v2 = static_cast<std::uint8_t>(v2);
 		pkt_move.x = sX;
 		pkt_move.y = sY;
 
 		hb::net::PacketEventMotionAttack pkt_attack{};
-		pkt_attack.header.msg_id = dwMsgID;
-		pkt_attack.header.msg_type = wMsgType;
-		pkt_attack.object_id = static_cast<std::uint16_t>(sOwnerH + 40000);
-		pkt_attack.dir = static_cast<std::uint8_t>(m_pNpcList[sOwnerH]->m_cDir);
-		pkt_attack.v1 = static_cast<std::int8_t>(sV1 - sX);
-		pkt_attack.v2 = static_cast<std::int8_t>(sV2 - sY);
-		pkt_attack.v3 = static_cast<std::int16_t>(sV3);
+		pkt_attack.header.msg_id = msg_id;
+		pkt_attack.header.msg_type = msg_type;
+		pkt_attack.object_id = static_cast<std::uint16_t>(owner_h + 40000);
+		pkt_attack.dir = static_cast<std::uint8_t>(m_npc_list[owner_h]->m_dir);
+		pkt_attack.v1 = static_cast<std::int8_t>(v1 - sX);
+		pkt_attack.v2 = static_cast<std::int8_t>(v2 - sY);
+		pkt_attack.v3 = static_cast<std::int16_t>(v3);
 
 		hb::net::PacketEventMotionDirOnly pkt_dir{};
-		pkt_dir.header.msg_id = dwMsgID;
-		pkt_dir.header.msg_type = wMsgType;
-		pkt_dir.object_id = static_cast<std::uint16_t>(sOwnerH + 40000);
-		pkt_dir.dir = static_cast<std::uint8_t>(m_pNpcList[sOwnerH]->m_cDir);
+		pkt_dir.header.msg_id = msg_id;
+		pkt_dir.header.msg_type = msg_type;
+		pkt_dir.object_id = static_cast<std::uint16_t>(owner_h + 40000);
+		pkt_dir.dir = static_cast<std::uint8_t>(m_npc_list[owner_h]->m_dir);
 
-		const char cKey = static_cast<char>((rand() % 255) + 1);
+		const char key = static_cast<char>((rand() % 255) + 1);
 
-		bFlag = true;
-		iShortCutIndex = 0;
+		flag = true;
+		short_cut_index = 0;
 
-		while (bFlag) {
+		while (flag) {
 
-			int i = m_iClientShortCut[iShortCutIndex];
-			iShortCutIndex++;
-			if (i == 0) bFlag = false;
+			int i = m_client_shortcut[short_cut_index];
+			short_cut_index++;
+			if (i == 0) flag = false;
 
-			if ((bFlag) && (m_pClientList[i] != 0))
+			if ((flag) && (m_client_list[i] != 0))
 
-				if ((m_pClientList[i]->m_cMapIndex == m_pNpcList[sOwnerH]->m_cMapIndex) &&
-					(m_pClientList[i]->m_sX >= m_pNpcList[sOwnerH]->m_sX - hb::shared::view::RangeX - sRange) &&
-					(m_pClientList[i]->m_sX <= m_pNpcList[sOwnerH]->m_sX + hb::shared::view::RangeX + sRange) &&
-					(m_pClientList[i]->m_sY >= m_pNpcList[sOwnerH]->m_sY - hb::shared::view::RangeY - sRange) &&
-					(m_pClientList[i]->m_sY <= m_pNpcList[sOwnerH]->m_sY + hb::shared::view::RangeY + sRange)) {
+				if ((m_client_list[i]->m_map_index == m_npc_list[owner_h]->m_map_index) &&
+					(m_client_list[i]->m_x >= m_npc_list[owner_h]->m_x - hb::shared::view::RangeX - range) &&
+					(m_client_list[i]->m_x <= m_npc_list[owner_h]->m_x + hb::shared::view::RangeX + range) &&
+					(m_client_list[i]->m_y >= m_npc_list[owner_h]->m_y - hb::shared::view::RangeY - range) &&
+					(m_client_list[i]->m_y <= m_npc_list[owner_h]->m_y + hb::shared::view::RangeY + range)) {
 
 					auto pkt_all = base_all;
-					pkt_all.status.iRelationship = m_pEntityManager->GetNpcRelationship(sOwnerH, i);
+					pkt_all.status.relationship = m_entity_manager->get_npc_relationship(owner_h, i);
 
 					auto send_packet = [&](const void* packet, std::size_t size) -> int {
-						return m_pClientList[i]->m_pXSock->iSendMsg(reinterpret_cast<char*>(const_cast<void*>(packet)), static_cast<int>(size), cKey);
+						return m_client_list[i]->m_socket->send_msg(reinterpret_cast<char*>(const_cast<void*>(packet)), static_cast<int>(size), key);
 						};
 
-					const bool is_near = (m_pClientList[i]->m_sX >= m_pNpcList[sOwnerH]->m_sX - (hb::shared::view::CenterX - 1)) &&
-						(m_pClientList[i]->m_sX <= m_pNpcList[sOwnerH]->m_sX + (hb::shared::view::CenterX - 1)) &&
-						(m_pClientList[i]->m_sY >= m_pNpcList[sOwnerH]->m_sY - hb::shared::view::CenterY) &&
-						(m_pClientList[i]->m_sY <= m_pNpcList[sOwnerH]->m_sY + hb::shared::view::CenterY);
+					const bool is_near = (m_client_list[i]->m_x >= m_npc_list[owner_h]->m_x - (hb::shared::view::CenterX - 1)) &&
+						(m_client_list[i]->m_x <= m_npc_list[owner_h]->m_x + (hb::shared::view::CenterX - 1)) &&
+						(m_client_list[i]->m_y >= m_npc_list[owner_h]->m_y - hb::shared::view::CenterY) &&
+						(m_client_list[i]->m_y <= m_npc_list[owner_h]->m_y + hb::shared::view::CenterY);
 
 					if (is_near) {
-						switch (wMsgType) {
+						switch (msg_type) {
 						case MsgType::Confirm:
 						case MsgType::Reject:
 						case Type::NullAction:
-							iRet = send_packet(&pkt_all, sizeof(pkt_all));
+							ret = send_packet(&pkt_all, sizeof(pkt_all));
 							break;
 
-						case Type::Stop:
-							iRet = send_packet(&pkt_all, sizeof(pkt_all));
+						case Type::stop:
+							ret = send_packet(&pkt_all, sizeof(pkt_all));
 							break;
 
 						case Type::Dying:
-							iRet = send_packet(&pkt_move, sizeof(pkt_move));
+							ret = send_packet(&pkt_move, sizeof(pkt_move));
 							break;
 
 						case Type::Damage:
 						case Type::DamageMove:
-							iRet = send_packet(&pkt_short, sizeof(pkt_short));
+							ret = send_packet(&pkt_short, sizeof(pkt_short));
 							break;
 
 						case Type::Attack:
 						case Type::AttackMove:
-							iRet = send_packet(&pkt_attack, sizeof(pkt_attack));
+							ret = send_packet(&pkt_attack, sizeof(pkt_attack));
 							break;
 
 						case Type::Move:
 						case Type::Run:
 							// Send full position data to prevent desync for nearby players
-							iRet = send_packet(&pkt_all, sizeof(pkt_all));
+							ret = send_packet(&pkt_all, sizeof(pkt_all));
 							break;
 
 						default:
-							iRet = send_packet(&pkt_dir, sizeof(pkt_dir));
+							ret = send_packet(&pkt_dir, sizeof(pkt_dir));
 							break;
 
 						}
 
-						if ((iRet == sock::Event::QueueFull) || (iRet == sock::Event::SocketError) ||
-							(iRet == sock::Event::SocketClosed) || (iRet == sock::Event::CriticalError)) {
+						if ((ret == sock::Event::QueueFull) || (ret == sock::Event::SocketError) ||
+							(ret == sock::Event::SocketClosed) || (ret == sock::Event::CriticalError)) {
 							static uint32_t s_dwLastNetWarnNpc = 0;
-							uint32_t dwNow = GameClock::GetTimeMS();
-							if (dwNow - s_dwLastNetWarnNpc > 5000) {
-								hb::logger::log("SendEventToNearClient_TypeA(NPC): client={} ret={} ownerType={} msgType=0x{:X}", i, iRet, cOwnerType, wMsgType);
-								s_dwLastNetWarnNpc = dwNow;
+							uint32_t now = GameClock::GetTimeMS();
+							if (now - s_dwLastNetWarnNpc > 5000) {
+								hb::logger::log("send_event_to_near_client_type_a(NPC): client={} ret={} ownerType={} msgType=0x{:X}", i, ret, owner_type, msg_type);
+								s_dwLastNetWarnNpc = now;
 							}
 						}
 					}
 					else {
-						switch (wMsgType) {
+						switch (msg_type) {
 						case MsgType::Confirm:
 						case MsgType::Reject:
 						case Type::NullAction:
-							iRet = send_packet(&pkt_all, sizeof(pkt_all));
+							ret = send_packet(&pkt_all, sizeof(pkt_all));
 							break;
 
 						case Type::Dying:
-							iRet = send_packet(&pkt_move, sizeof(pkt_move));
+							ret = send_packet(&pkt_move, sizeof(pkt_move));
 							break;
 
 						case Type::Damage:
 						case Type::DamageMove:
-							iRet = send_packet(&pkt_short, sizeof(pkt_short));
+							ret = send_packet(&pkt_short, sizeof(pkt_short));
 							break;
 
 						case Type::Attack:
 						case Type::AttackMove:
-							iRet = send_packet(&pkt_attack, sizeof(pkt_attack));
+							ret = send_packet(&pkt_attack, sizeof(pkt_attack));
 							break;
 
 						default:
-							iRet = send_packet(&pkt_all, sizeof(pkt_all));
+							ret = send_packet(&pkt_all, sizeof(pkt_all));
 							break;
 
 						} //Switch
 
-						if ((iRet == sock::Event::QueueFull) || (iRet == sock::Event::SocketError) ||
-							(iRet == sock::Event::SocketClosed) || (iRet == sock::Event::CriticalError)) {
+						if ((ret == sock::Event::QueueFull) || (ret == sock::Event::SocketError) ||
+							(ret == sock::Event::SocketClosed) || (ret == sock::Event::CriticalError)) {
 							static uint32_t s_dwLastNetWarnNpcFar = 0;
-							uint32_t dwNow = GameClock::GetTimeMS();
-							if (dwNow - s_dwLastNetWarnNpcFar > 5000) {
-								hb::logger::log("SendEventToNearClient_TypeA(NPC-far): client={} ret={} ownerType={} msgType=0x{:X}", i, iRet, cOwnerType, wMsgType);
-								s_dwLastNetWarnNpcFar = dwNow;
+							uint32_t now = GameClock::GetTimeMS();
+							if (now - s_dwLastNetWarnNpcFar > 5000) {
+								hb::logger::log("send_event_to_near_client_type_a(NPC-far): client={} ret={} ownerType={} msgType=0x{:X}", i, ret, owner_type, msg_type);
+								s_dwLastNetWarnNpcFar = now;
 							}
 						}
 					}
@@ -3253,52 +3253,52 @@ void CGame::SendEventToNearClient_TypeA(short sOwnerH, char cOwnerType, uint32_t
 	} // else - NPC
 }
 
-int CGame::iComposeMoveMapData(short sX, short sY, int iClientH, char cDir, char* pData)
+int CGame::compose_move_map_data(short sX, short sY, int client_h, char dir, char* data)
 {
-	int ix, iy, iSize, iTileExists, iIndex;
-	class CTile* pTile;
+	int ix, iy, size, tile_exists, index;
+	class CTile* tile;
 	unsigned char ucHeader;
 	char* cp;
 
-	if (m_pClientList[iClientH] == 0) return 0;
+	if (m_client_list[client_h] == 0) return 0;
 
-	cp = pData + sizeof(hb::net::PacketMapDataHeader);
-	iSize = sizeof(hb::net::PacketMapDataHeader);
-	iTileExists = 0;
+	cp = data + sizeof(hb::net::PacketMapDataHeader);
+	size = sizeof(hb::net::PacketMapDataHeader);
+	tile_exists = 0;
 
-	iIndex = 0;
+	index = 0;
 
 	while (1) {
-		ix = _tmp_iMoveLocX[cDir][iIndex];
-		iy = _tmp_iMoveLocY[cDir][iIndex];
+		ix = _tmp_iMoveLocX[dir][index];
+		iy = _tmp_iMoveLocY[dir][index];
 		if ((ix == -1) || (iy == -1)) break;
 
-		iIndex++;
+		index++;
 
-		pTile = (class CTile*)(m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_pTile + (sX + ix) + (sY + iy) * m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_sSizeY);
+		tile = (class CTile*)(m_map_list[m_client_list[client_h]->m_map_index]->m_tile + (sX + ix) + (sY + iy) * m_map_list[m_client_list[client_h]->m_map_index]->m_size_y);
 
 		//If player not same side and is invied (Beholder Hack)
 		// there is another person on the tiles, and the owner is not the player
 //xxxxxx
-		/*if ((m_pClientList[pTile->m_sOwner] != 0) && (pTile->m_sOwner != iClientH))
-			if ((m_pClientList[pTile->m_sOwner]->m_cSide != 0) &&
-				(m_pClientList[pTile->m_sOwner]->m_cSide != m_pClientList[iClientH]->m_cSide) &&
-				(m_pClientList[pTile->m_sOwner]->m_status.bInvisibility)) {
+		/*if ((m_client_list[tile->m_owner] != 0) && (tile->m_owner != client_h))
+			if ((m_client_list[tile->m_owner]->m_side != 0) &&
+				(m_client_list[tile->m_owner]->m_side != m_client_list[client_h]->m_side) &&
+				(m_client_list[tile->m_owner]->m_status.invisibility)) {
 				continue;
 			}*/
 
-		if ((pTile->m_sOwner != 0) || (pTile->m_sDeadOwner != 0) ||
-			(pTile->m_pItem[0] != 0) || (pTile->m_sDynamicObjectType != 0)) {
+		if ((tile->m_owner != 0) || (tile->m_dead_owner != 0) ||
+			(tile->m_item[0] != 0) || (tile->m_dynamic_object_type != 0)) {
 
-			iTileExists++;
+			tile_exists++;
 
 			ucHeader = 0;
-			if (pTile->m_sOwner != 0) {
-				if (pTile->m_cOwnerClass == hb::shared::owner_class::Player) {
-					if (m_pClientList[pTile->m_sOwner] != 0) {
-						if (m_pClientList[pTile->m_sOwner]->m_bIsAdminInvisible &&
-							pTile->m_sOwner != iClientH &&
-							m_pClientList[iClientH]->m_iAdminLevel <= m_pClientList[pTile->m_sOwner]->m_iAdminLevel)
+			if (tile->m_owner != 0) {
+				if (tile->m_owner_class == hb::shared::owner_class::Player) {
+					if (m_client_list[tile->m_owner] != 0) {
+						if (m_client_list[tile->m_owner]->m_is_admin_invisible &&
+							tile->m_owner != client_h &&
+							m_client_list[client_h]->m_admin_level <= m_client_list[tile->m_owner]->m_admin_level)
 						{
 						}
 						else
@@ -3306,25 +3306,25 @@ int CGame::iComposeMoveMapData(short sX, short sY, int iClientH, char cDir, char
 							ucHeader = ucHeader | 0x01;
 						}
 					}
-					else pTile->m_sOwner = 0;
+					else tile->m_owner = 0;
 				}
-				if (pTile->m_cOwnerClass == hb::shared::owner_class::Npc) {
-					if (m_pNpcList[pTile->m_sOwner] != 0) ucHeader = ucHeader | 0x01;
-					else pTile->m_sOwner = 0;
-				}
-			}
-			if (pTile->m_sDeadOwner != 0) {
-				if (pTile->m_cDeadOwnerClass == hb::shared::owner_class::Player) {
-					if (m_pClientList[pTile->m_sDeadOwner] != 0)	ucHeader = ucHeader | 0x02;
-					else pTile->m_sDeadOwner = 0;
-				}
-				if (pTile->m_cDeadOwnerClass == hb::shared::owner_class::Npc) {
-					if (m_pNpcList[pTile->m_sDeadOwner] != 0) ucHeader = ucHeader | 0x02;
-					else pTile->m_sDeadOwner = 0;
+				if (tile->m_owner_class == hb::shared::owner_class::Npc) {
+					if (m_npc_list[tile->m_owner] != 0) ucHeader = ucHeader | 0x01;
+					else tile->m_owner = 0;
 				}
 			}
-			if (pTile->m_pItem[0] != 0)				ucHeader = ucHeader | 0x04;
-			if (pTile->m_sDynamicObjectType != 0)    ucHeader = ucHeader | 0x08;
+			if (tile->m_dead_owner != 0) {
+				if (tile->m_dead_owner_class == hb::shared::owner_class::Player) {
+					if (m_client_list[tile->m_dead_owner] != 0)	ucHeader = ucHeader | 0x02;
+					else tile->m_dead_owner = 0;
+				}
+				if (tile->m_dead_owner_class == hb::shared::owner_class::Npc) {
+					if (m_npc_list[tile->m_dead_owner] != 0) ucHeader = ucHeader | 0x02;
+					else tile->m_dead_owner = 0;
+				}
+			}
+			if (tile->m_item[0] != 0)				ucHeader = ucHeader | 0x04;
+			if (tile->m_dynamic_object_type != 0)    ucHeader = ucHeader | 0x08;
 
 			hb::net::PacketMapDataEntryHeader entryHeader{};
 			entryHeader.x = static_cast<int16_t>(ix);
@@ -3332,468 +3332,468 @@ int CGame::iComposeMoveMapData(short sX, short sY, int iClientH, char cDir, char
 			entryHeader.flags = ucHeader;
 			std::memcpy(cp, &entryHeader, sizeof(entryHeader));
 			cp += sizeof(entryHeader);
-			iSize += sizeof(entryHeader);
+			size += sizeof(entryHeader);
 
 			if ((ucHeader & 0x01) != 0) {
-				switch (pTile->m_cOwnerClass) {
+				switch (tile->m_owner_class) {
 				case hb::shared::owner_class::Player:
 				{
 					hb::net::PacketMapDataObjectPlayer obj{};
-					FillPlayerMapObject(obj, pTile->m_sOwner, iClientH);
-					if (m_pClientList[iClientH]->m_cSide != m_pClientList[pTile->m_sOwner]->m_cSide && iClientH != pTile->m_sOwner) {
-						obj.status.bPoisoned = false;
-						obj.status.bIllusion = false;
+					fill_player_map_object(obj, tile->m_owner, client_h);
+					if (m_client_list[client_h]->m_side != m_client_list[tile->m_owner]->m_side && client_h != tile->m_owner) {
+						obj.status.poisoned = false;
+						obj.status.illusion = false;
 					}
-					if (m_pClientList[pTile->m_sOwner]->m_bIsAdminInvisible) {
-						obj.status.bInvisibility = true;
-						obj.status.bGMMode = true;
+					if (m_client_list[tile->m_owner]->m_is_admin_invisible) {
+						obj.status.invisibility = true;
+						obj.status.gm_mode = true;
 					}
 					std::memcpy(cp, &obj, sizeof(obj));
 					cp += sizeof(obj);
-					iSize += sizeof(obj);
+					size += sizeof(obj);
 					break;
 				}
 				case hb::shared::owner_class::Npc:
 				{
 					hb::net::PacketMapDataObjectNpc obj{};
-					FillNpcMapObject(obj, pTile->m_sOwner, iClientH);
+					fill_npc_map_object(obj, tile->m_owner, client_h);
 					std::memcpy(cp, &obj, sizeof(obj));
 					cp += sizeof(obj);
-					iSize += sizeof(obj);
+					size += sizeof(obj);
 					break;
 				}
 				}
 			}
 
 			if ((ucHeader & 0x02) != 0) {
-				switch (pTile->m_cDeadOwnerClass) {
+				switch (tile->m_dead_owner_class) {
 				case hb::shared::owner_class::Player:
 				{
 					hb::net::PacketMapDataObjectPlayer obj{};
-					FillPlayerMapObject(obj, pTile->m_sDeadOwner, iClientH);
-					if (m_pClientList[iClientH]->m_cSide != m_pClientList[pTile->m_sDeadOwner]->m_cSide && iClientH != pTile->m_sDeadOwner) {
-						obj.status.bPoisoned = false;
-						obj.status.bIllusion = false;
+					fill_player_map_object(obj, tile->m_dead_owner, client_h);
+					if (m_client_list[client_h]->m_side != m_client_list[tile->m_dead_owner]->m_side && client_h != tile->m_dead_owner) {
+						obj.status.poisoned = false;
+						obj.status.illusion = false;
 					}
 					std::memcpy(cp, &obj, sizeof(obj));
 					cp += sizeof(obj);
-					iSize += sizeof(obj);
+					size += sizeof(obj);
 					break;
 				}
 				case hb::shared::owner_class::Npc:
 				{
 					hb::net::PacketMapDataObjectNpc obj{};
-					FillNpcMapObject(obj, pTile->m_sDeadOwner, iClientH);
+					fill_npc_map_object(obj, tile->m_dead_owner, client_h);
 					std::memcpy(cp, &obj, sizeof(obj));
 					cp += sizeof(obj);
-					iSize += sizeof(obj);
+					size += sizeof(obj);
 					break;
 				}
 				}
 			}
 
-			if (pTile->m_pItem[0] != 0) {
+			if (tile->m_item[0] != 0) {
 				hb::net::PacketMapDataItem itemObj{};
-				itemObj.item_id = pTile->m_pItem[0]->m_sIDnum;
-				itemObj.color = pTile->m_pItem[0]->m_cItemColor;
-				itemObj.attribute = pTile->m_pItem[0]->m_dwAttribute;
+				itemObj.item_id = tile->m_item[0]->m_id_num;
+				itemObj.color = tile->m_item[0]->m_item_color;
+				itemObj.attribute = tile->m_item[0]->m_attribute;
 				std::memcpy(cp, &itemObj, sizeof(itemObj));
 				cp += sizeof(itemObj);
-				iSize += sizeof(itemObj);
+				size += sizeof(itemObj);
 			}
 
-			if (pTile->m_sDynamicObjectType != 0) {
+			if (tile->m_dynamic_object_type != 0) {
 				hb::net::PacketMapDataDynamicObject dynObj{};
-				dynObj.object_id = pTile->m_wDynamicObjectID;
-				dynObj.type = pTile->m_sDynamicObjectType;
+				dynObj.object_id = tile->m_dynamic_object_id;
+				dynObj.type = tile->m_dynamic_object_type;
 				std::memcpy(cp, &dynObj, sizeof(dynObj));
 				cp += sizeof(dynObj);
-				iSize += sizeof(dynObj);
+				size += sizeof(dynObj);
 			}
 
-		} //(pTile->m_sOwner != 0)
+		} //(tile->m_owner != 0)
 	} // end While(1)
 
 	hb::net::PacketMapDataHeader header{};
-	header.total = static_cast<int16_t>(iTileExists);
-	std::memcpy(pData, &header, sizeof(header));
-	return iSize;
+	header.total = static_cast<int16_t>(tile_exists);
+	std::memcpy(data, &header, sizeof(header));
+	return size;
 }
 
-void CGame::CheckClientResponseTime()
+void CGame::check_client_response_time()
 {
-	int iPlusTime, iMaxSuperAttack, iValue;
-	uint32_t dwTime;
-	short sItemIndex;
+	int plus_time, max_super_attack, value;
+	uint32_t time;
+	short item_index;
 	static uint32_t s_dwLastIdleLog = 0;
 	//locobans
 
 	   /*
 	   SysTime = hb::time::local_time::now();
 	   switch (SysTime.day_of_week) {
-	   case 1:	iWarPeriod = 30; break;
-	   case 2:	iWarPeriod = 30; break;
-	   case 3:	iWarPeriod = 60; break;
-	   case 4:	iWarPeriod = 60*2;  break;
-	   case 5:	iWarPeriod = 60*5;  break;
-	   case 6:	iWarPeriod = 60*10; break;
-	   case 0:	iWarPeriod = 60*20; break;
+	   case 1:	war_period = 30; break;
+	   case 2:	war_period = 30; break;
+	   case 3:	war_period = 60; break;
+	   case 4:	war_period = 60*2;  break;
+	   case 5:	war_period = 60*5;  break;
+	   case 6:	war_period = 60*10; break;
+	   case 0:	war_period = 60*20; break;
 	   }
 	   */
 
-	dwTime = GameClock::GetTimeMS();
+	time = GameClock::GetTimeMS();
 
 	for(int i = 1; i < MaxClients; i++) {
-		if (m_pClientList[i] != 0) {
+		if (m_client_list[i] != 0) {
 
-			if ((dwTime - m_pClientList[i]->m_dwTime) > (uint32_t)m_iClientTimeout) {
-				if (m_pClientList[i]->m_bIsInitComplete) {
+			if ((time - m_client_list[i]->m_time) > (uint32_t)m_client_timeout) {
+				if (m_client_list[i]->m_is_init_complete) {
 					//Testcode
-					hb::logger::log("Client timeout: {}", m_pClientList[i]->m_cIPaddress);
+					hb::logger::log("Client timeout: {}", m_client_list[i]->m_ip_address);
 
-					DeleteClient(i, true, true);
+					delete_client(i, true, true);
 				}
-				else if ((dwTime - m_pClientList[i]->m_dwTime) > (uint32_t)m_iClientTimeout) {
-					DeleteClient(i, false, false);
+				else if ((time - m_client_list[i]->m_time) > (uint32_t)m_client_timeout) {
+					delete_client(i, false, false);
 				}
 			}
-			else if (m_pClientList[i]->m_bIsInitComplete) {
-				uint32_t dwIdle = dwTime - m_pClientList[i]->m_dwTime;
-				if (dwIdle > 5000 && (dwTime - m_pClientList[i]->m_dwLastMsgTime) > 5000 &&
-					(dwTime - s_dwLastIdleLog) > 5000) {
-					hb::logger::log("[NET] IDLE slot={} idle={}ms lastmsg=0x{:08X} lastage={}ms size={} char={} ip={}", i, dwIdle, m_pClientList[i]->m_dwLastMsgId, dwTime - m_pClientList[i]->m_dwLastMsgTime, m_pClientList[i]->m_dwLastMsgSize, m_pClientList[i]->m_cCharName, m_pClientList[i]->m_cIPaddress);
-					s_dwLastIdleLog = dwTime;
+			else if (m_client_list[i]->m_is_init_complete) {
+				uint32_t idle = time - m_client_list[i]->m_time;
+				if (idle > 5000 && (time - m_client_list[i]->m_last_msg_time) > 5000 &&
+					(time - s_dwLastIdleLog) > 5000) {
+					hb::logger::log("[NET] IDLE slot={} idle={}ms lastmsg=0x{:08X} lastage={}ms size={} char={} ip={}", i, idle, m_client_list[i]->m_last_msg_id, time - m_client_list[i]->m_last_msg_time, m_client_list[i]->m_last_msg_size, m_client_list[i]->m_char_name, m_client_list[i]->m_ip_address);
+					s_dwLastIdleLog = time;
 				}
 
 				// AFK detection: 3 minutes of no meaningful activity
 				constexpr uint32_t AFK_TIMEOUT_MS = 180000;
-				bool bWasAfk = m_pClientList[i]->m_status.bAfk;
-				bool bNowAfk = (dwTime - m_pClientList[i]->m_dwAfkActivityTime) > AFK_TIMEOUT_MS;
-				if (bWasAfk != bNowAfk) {
-					m_pClientList[i]->m_status.bAfk = bNowAfk;
-					SendEventToNearClient_TypeA(i, hb::shared::owner_class::Player,
+				bool was_afk = m_client_list[i]->m_status.afk;
+				bool now_afk = (time - m_client_list[i]->m_afk_activity_time) > AFK_TIMEOUT_MS;
+				if (was_afk != now_afk) {
+					m_client_list[i]->m_status.afk = now_afk;
+					send_event_to_near_client_type_a(i, hb::shared::owner_class::Player,
 						MsgId::EventMotion, Type::NullAction, 0, 0, 0);
 				}
 
-				m_pClientList[i]->m_iTimeLeft_Rating--;
-				if (m_pClientList[i]->m_iTimeLeft_Rating < 0) m_pClientList[i]->m_iTimeLeft_Rating = 0;
+				m_client_list[i]->m_time_left_rating--;
+				if (m_client_list[i]->m_time_left_rating < 0) m_client_list[i]->m_time_left_rating = 0;
 
-				if (((dwTime - m_pClientList[i]->m_dwHungerTime) > (uint32_t)m_iHungerConsumeInterval) && (m_pClientList[i]->m_bIsKilled == false)) {
-					m_pClientList[i]->m_iHungerStatus--;
-					if (m_pClientList[i]->m_iHungerStatus <= 0) m_pClientList[i]->m_iHungerStatus = 0;
-					m_pClientList[i]->m_dwHungerTime = dwTime;
+				if (((time - m_client_list[i]->m_hunger_time) > (uint32_t)m_hunger_consume_interval) && (m_client_list[i]->m_is_killed == false)) {
+					m_client_list[i]->m_hunger_status--;
+					if (m_client_list[i]->m_hunger_status <= 0) m_client_list[i]->m_hunger_status = 0;
+					m_client_list[i]->m_hunger_time = time;
 
-					SendNotifyMsg(0, i, Notify::Hunger, m_pClientList[i]->m_iHungerStatus, 0, 0, 0);
+					send_notify_msg(0, i, Notify::Hunger, m_client_list[i]->m_hunger_status, 0, 0, 0);
 				}
 
-				if (_bCheckCharacterData(i) == false) {
-					DeleteClient(i, true, true);
+				if (check_character_data(i) == false) {
+					delete_client(i, true, true);
 					break;
 				}
 
-				if ((m_pClientList[i]->m_iHungerStatus <= 30) && (m_pClientList[i]->m_iHungerStatus >= 0))
-					iPlusTime = (30 - m_pClientList[i]->m_iHungerStatus) * 1000;
-				else iPlusTime = 0;
+				if ((m_client_list[i]->m_hunger_status <= 30) && (m_client_list[i]->m_hunger_status >= 0))
+					plus_time = (30 - m_client_list[i]->m_hunger_status) * 1000;
+				else plus_time = 0;
 
-				iPlusTime = abs(iPlusTime);
+				plus_time = abs(plus_time);
 
-				if ((dwTime - m_pClientList[i]->m_dwHPTime) > (uint32_t)(m_iHealthRegenInterval + iPlusTime)) {
-					TimeHitPointsUp(i);
-					m_pClientList[i]->m_dwHPTime = dwTime;
+				if ((time - m_client_list[i]->m_hp_time) > (uint32_t)(m_health_regen_interval + plus_time)) {
+					time_hit_points_up(i);
+					m_client_list[i]->m_hp_time = time;
 				}
 
-				if ((dwTime - m_pClientList[i]->m_dwMPTime) > (uint32_t)(m_iManaRegenInterval + iPlusTime)) {
-					TimeManaPointsUp(i);
-					m_pClientList[i]->m_dwMPTime = dwTime;
+				if ((time - m_client_list[i]->m_mp_time) > (uint32_t)(m_mana_regen_interval + plus_time)) {
+					time_mana_points_up(i);
+					m_client_list[i]->m_mp_time = time;
 				}
 
-				if ((dwTime - m_pClientList[i]->m_dwSPTime) > (uint32_t)(m_iStaminaRegenInterval + iPlusTime)) {
-					TimeStaminarPointsUp(i);
-					m_pClientList[i]->m_dwSPTime = dwTime;
+				if ((time - m_client_list[i]->m_sp_time) > (uint32_t)(m_stamina_regen_interval + plus_time)) {
+					time_stamina_points_up(i);
+					m_client_list[i]->m_sp_time = time;
 				}
 
-				if ((m_pClientList[i]->m_bIsPoisoned) && ((dwTime - m_pClientList[i]->m_dwPoisonTime) > (uint32_t)m_iPoisonDamageInterval)) {
-					m_pCombatManager->PoisonEffect(i, 0);
-					m_pClientList[i]->m_dwPoisonTime = dwTime;
+				if ((m_client_list[i]->m_is_poisoned) && ((time - m_client_list[i]->m_poison_time) > (uint32_t)m_poison_damage_interval)) {
+					m_combat_manager->poison_effect(i, 0);
+					m_client_list[i]->m_poison_time = time;
 				}
 
-				if ((m_pMapList[m_pClientList[i]->m_cMapIndex]->m_bIsFightZone == false) &&
-					((dwTime - m_pClientList[i]->m_dwAutoSaveTime) > (uint32_t)m_iAutosaveInterval)) {
-					g_login->LocalSavePlayerData(i); //bSendMsgToLS(ServerMsgId::RequestSavePlayerData, i);
-					m_pClientList[i]->m_dwAutoSaveTime = dwTime;
+				if ((m_map_list[m_client_list[i]->m_map_index]->m_is_fight_zone == false) &&
+					((time - m_client_list[i]->m_auto_save_time) > (uint32_t)m_autosave_interval)) {
+					g_login->local_save_player_data(i); //send_msg_to_ls(ServerMsgId::RequestSavePlayerData, i);
+					m_client_list[i]->m_auto_save_time = time;
 				}
 
 				// ExpStock
-				if ((dwTime - m_pClientList[i]->m_dwExpStockTime) > (uint32_t)ExpStockTime) {
-					m_pClientList[i]->m_dwExpStockTime = dwTime;
-					CalcExpStock(i);
-					m_pItemManager->CheckUniqueItemEquipment(i);
-					m_pWarManager->CheckCrusadeResultCalculation(i);
-					m_pWarManager->CheckHeldenianResultCalculation(i);
+				if ((time - m_client_list[i]->m_exp_stock_time) > (uint32_t)ExpStockTime) {
+					m_client_list[i]->m_exp_stock_time = time;
+					calc_exp_stock(i);
+					m_item_manager->check_unique_item_equipment(i);
+					m_war_manager->check_crusade_result_calculation(i);
+					m_war_manager->check_heldenian_result_calculation(i);
 				}
 
 				// AutoExe
-				if ((dwTime - m_pClientList[i]->m_dwAutoExpTime) > (uint32_t)AutoExpTime) {
-					iValue = (m_pClientList[i]->m_iLevel / 2);
-					if (iValue <= 0) iValue = 1;
-					uint32_t iValueDw = static_cast<uint32_t>(iValue);
-					if (m_pClientList[i]->m_iAutoExpAmount < iValueDw) {
-						if ((m_pClientList[i]->m_iExp + iValueDw) < m_iLevelExpTable[m_pClientList[i]->m_iLevel + 1]) {
-							//m_pClientList[i]->m_iExpStock += iValue;
-							GetExp(i, iValueDw, false);
-							CalcExpStock(i);
+				if ((time - m_client_list[i]->m_auto_exp_time) > (uint32_t)AutoExpTime) {
+					value = (m_client_list[i]->m_level / 2);
+					if (value <= 0) value = 1;
+					uint32_t value_dw = static_cast<uint32_t>(value);
+					if (m_client_list[i]->m_auto_exp_amount < value_dw) {
+						if ((m_client_list[i]->m_exp + value_dw) < m_level_exp_table[m_client_list[i]->m_level + 1]) {
+							//m_client_list[i]->m_exp_stock += value;
+							get_exp(i, value_dw, false);
+							calc_exp_stock(i);
 						}
 					}
 
-					m_pClientList[i]->m_iAutoExpAmount = 0;
-					m_pClientList[i]->m_dwAutoExpTime = dwTime;
+					m_client_list[i]->m_auto_exp_amount = 0;
+					m_client_list[i]->m_auto_exp_time = time;
 				}
 
 				// v1.432
-				if (m_pClientList[i]->m_iSpecialAbilityTime == 3) {
-					SendNotifyMsg(0, i, Notify::SpecialAbilityEnabled, 0, 0, 0, 0);
+				if (m_client_list[i]->m_special_ability_time == 3) {
+					send_notify_msg(0, i, Notify::SpecialAbilityEnabled, 0, 0, 0, 0);
 					// New 25/05/2004
 					// After the time up, add magic back
-					sItemIndex = m_pClientList[i]->m_sItemEquipmentStatus[ToInt(EquipPos::RightHand)];
-					if (sItemIndex != -1) {
-						if ((m_pClientList[i]->m_pItemList[sItemIndex]->m_sIDnum == 865) || (m_pClientList[i]->m_pItemList[sItemIndex]->m_sIDnum == 866)) {
-							if ((m_pClientList[i]->m_iInt + m_pClientList[i]->m_iAngelicInt) > 99 && (m_pClientList[i]->m_iMag + m_pClientList[i]->m_iAngelicMag) > 99) {
-								m_pClientList[i]->m_cMagicMastery[94] = true;
-								SendNotifyMsg(0, i, Notify::StateChangeSuccess, 0, 0, 0, 0);
+					item_index = m_client_list[i]->m_item_equipment_status[to_int(EquipPos::RightHand)];
+					if (item_index != -1) {
+						if ((m_client_list[i]->m_item_list[item_index]->m_id_num == 865) || (m_client_list[i]->m_item_list[item_index]->m_id_num == 866)) {
+							if ((m_client_list[i]->m_int + m_client_list[i]->m_angelic_int) > 99 && (m_client_list[i]->m_mag + m_client_list[i]->m_angelic_mag) > 99) {
+								m_client_list[i]->m_magic_mastery[94] = true;
+								send_notify_msg(0, i, Notify::StateChangeSuccess, 0, 0, 0, 0);
 							}
 						}
 					}
 				}
-				m_pClientList[i]->m_iSpecialAbilityTime -= 3;
-				if (m_pClientList[i]->m_iSpecialAbilityTime < 0) m_pClientList[i]->m_iSpecialAbilityTime = 0;
+				m_client_list[i]->m_special_ability_time -= 3;
+				if (m_client_list[i]->m_special_ability_time < 0) m_client_list[i]->m_special_ability_time = 0;
 
 				// v1.432
-				if (m_pClientList[i]->m_bIsSpecialAbilityEnabled) {
-					uint32_t elapsedSec = (dwTime - m_pClientList[i]->m_dwSpecialAbilityStartTime) / 1000;
-					if (elapsedSec > static_cast<uint32_t>(m_pClientList[i]->m_iSpecialAbilityLastSec)) {
-						SendNotifyMsg(0, i, Notify::SpecialAbilityStatus, 3, 0, 0, 0);
-						m_pClientList[i]->m_bIsSpecialAbilityEnabled = false;
-						m_pClientList[i]->m_iSpecialAbilityTime = SpecialAbilityTimeSec;
-						m_pClientList[i]->m_appearance.iEffectType = 0;
-						SendEventToNearClient_TypeA(i, hb::shared::owner_class::Player, MsgId::EventMotion, Type::NullAction, 0, 0, 0);
+				if (m_client_list[i]->m_is_special_ability_enabled) {
+					uint32_t elapsedSec = (time - m_client_list[i]->m_special_ability_start_time) / 1000;
+					if (elapsedSec > static_cast<uint32_t>(m_client_list[i]->m_special_ability_last_sec)) {
+						send_notify_msg(0, i, Notify::SpecialAbilityStatus, 3, 0, 0, 0);
+						m_client_list[i]->m_is_special_ability_enabled = false;
+						m_client_list[i]->m_special_ability_time = SpecialAbilityTimeSec;
+						m_client_list[i]->m_appearance.effect_type = 0;
+						send_event_to_near_client_type_a(i, hb::shared::owner_class::Player, MsgId::EventMotion, Type::NullAction, 0, 0, 0);
 					}
 				}
 
 				//Crusade
-				m_pClientList[i]->m_iLockedMapTime -= 3;
-				if (m_pClientList[i]->m_iLockedMapTime < 0) {
-					m_pClientList[i]->m_iLockedMapTime = 0;
-					std::memset(m_pClientList[i]->m_cLockedMapName, 0, sizeof(m_pClientList[i]->m_cLockedMapName));
-					strcpy(m_pClientList[i]->m_cLockedMapName, "NONE");
+				m_client_list[i]->m_locked_map_time -= 3;
+				if (m_client_list[i]->m_locked_map_time < 0) {
+					m_client_list[i]->m_locked_map_time = 0;
+					std::memset(m_client_list[i]->m_locked_map_name, 0, sizeof(m_client_list[i]->m_locked_map_name));
+					strcpy(m_client_list[i]->m_locked_map_name, "NONE");
 				}
 
 				// v2.04
-				m_pClientList[i]->m_iDeadPenaltyTime -= 3;
-				if (m_pClientList[i]->m_iDeadPenaltyTime < 0) m_pClientList[i]->m_iDeadPenaltyTime = 0;
+				m_client_list[i]->m_dead_penalty_time -= 3;
+				if (m_client_list[i]->m_dead_penalty_time < 0) m_client_list[i]->m_dead_penalty_time = 0;
 
-				if ((m_pClientList[i]->m_bIsWarLocation) && IsEnemyZone(i)) {
+				if ((m_client_list[i]->m_is_war_location) && is_enemy_zone(i)) {
 					// Crusade
-					if (m_bIsCrusadeMode == false)
-						if (m_pClientList[i]->m_bIsInsideOwnTown == false)
-							m_pClientList[i]->m_iTimeLeft_ForceRecall--;
+					if (m_is_crusade_mode == false)
+						if (m_client_list[i]->m_is_inside_own_town == false)
+							m_client_list[i]->m_time_left_force_recall--;
 
-					if (m_pClientList[i]->m_iTimeLeft_ForceRecall <= 0) {
-						m_pClientList[i]->m_iTimeLeft_ForceRecall = 0;
-						m_pClientList[i]->m_dwWarBeginTime = dwTime;
-						m_pClientList[i]->m_bIsWarLocation = false;
+					if (m_client_list[i]->m_time_left_force_recall <= 0) {
+						m_client_list[i]->m_time_left_force_recall = 0;
+						m_client_list[i]->m_war_begin_time = time;
+						m_client_list[i]->m_is_war_location = false;
 
-						SendNotifyMsg(0, i, Notify::ToBeRecalled, 0, 0, 0, 0);
-						RequestTeleportHandler(i, "1   ");
+						send_notify_msg(0, i, Notify::ToBeRecalled, 0, 0, 0, 0);
+						request_teleport_handler(i, "1   ");
 					}
 				}
 
-				if ((m_bIsHeldenianMode) && (m_pMapList[m_pClientList[i]->m_cMapIndex] != 0)) {
-					if (m_pWarManager->bCheckHeldenianMap(i, m_iBTFieldMapIndex, hb::shared::owner_class::Player) == 1) {
-						m_pStatusEffectManager->SetHeroFlag(i, hb::shared::owner_class::Player, true);
+				if ((m_is_heldenian_mode) && (m_map_list[m_client_list[i]->m_map_index] != 0)) {
+					if (m_war_manager->check_heldenian_map(i, m_bt_field_map_index, hb::shared::owner_class::Player) == 1) {
+						m_status_effect_manager->set_hero_flag(i, hb::shared::owner_class::Player, true);
 					}
 					else {
-						m_pStatusEffectManager->SetHeroFlag(i, hb::shared::owner_class::Player, false);
+						m_status_effect_manager->set_hero_flag(i, hb::shared::owner_class::Player, false);
 					}
 				}
 
-				if (m_pClientList[i] == 0) break;
-				if (m_pClientList[i]->m_iSkillMsgRecvCount >= 2) {
-					// std::snprintf(G_cTxt, sizeof(G_cTxt), "(!)  (%s)  ", m_pClientList[i]->m_cCharName);
+				if (m_client_list[i] == 0) break;
+				if (m_client_list[i]->m_skill_msg_recv_count >= 2) {
+					// std::snprintf(G_cTxt, sizeof(G_cTxt), "(!)  (%s)  ", m_client_list[i]->m_char_name);
 					//PutLogFileList(G_cTxt);
-					DeleteClient(i, true, true);
+					delete_client(i, true, true);
 				}
 				else {
-					m_pClientList[i]->m_iSkillMsgRecvCount = 0;
+					m_client_list[i]->m_skill_msg_recv_count = 0;
 				}
 
-				if (m_pClientList[i] == 0) break;
-				//if (m_pClientList[i]->m_iLevel < m_pMapList[m_pClientList[i]->m_cMapIndex]->m_iLevelLimit) {
-				if ((m_pClientList[i]->m_iLevel < m_pMapList[m_pClientList[i]->m_cMapIndex]->m_iLevelLimit)) {
-					SendNotifyMsg(0, i, Notify::ToBeRecalled, 0, 0, 0, 0);
-					RequestTeleportHandler(i, "0   ");
+				if (m_client_list[i] == 0) break;
+				//if (m_client_list[i]->m_level < m_map_list[m_client_list[i]->m_map_index]->m_level_limit) {
+				if ((m_client_list[i]->m_level < m_map_list[m_client_list[i]->m_map_index]->m_level_limit)) {
+					send_notify_msg(0, i, Notify::ToBeRecalled, 0, 0, 0, 0);
+					request_teleport_handler(i, "0   ");
 				}
 
-				if (m_pClientList[i] == 0) break;
-				//if ( (m_pMapList[m_pClientList[i]->m_cMapIndex]->m_iUpperLevelLimit != 0) &&
-				//	 (m_pClientList[i]->m_iLevel > m_pMapList[m_pClientList[i]->m_cMapIndex]->m_iUpperLevelLimit) ) {
-				if ((m_pMapList[m_pClientList[i]->m_cMapIndex]->m_iUpperLevelLimit != 0) &&
-					(m_pClientList[i]->m_iLevel > m_pMapList[m_pClientList[i]->m_cMapIndex]->m_iUpperLevelLimit)) {
-					SendNotifyMsg(0, i, Notify::ToBeRecalled, 0, 0, 0, 0);
-					if (m_pClientList[i]->m_cSide == 1) {
-						RequestTeleportHandler(i, "2   ", "aresden", -1, -1);
+				if (m_client_list[i] == 0) break;
+				//if ( (m_map_list[m_client_list[i]->m_map_index]->m_upper_level_limit != 0) &&
+				//	 (m_client_list[i]->m_level > m_map_list[m_client_list[i]->m_map_index]->m_upper_level_limit) ) {
+				if ((m_map_list[m_client_list[i]->m_map_index]->m_upper_level_limit != 0) &&
+					(m_client_list[i]->m_level > m_map_list[m_client_list[i]->m_map_index]->m_upper_level_limit)) {
+					send_notify_msg(0, i, Notify::ToBeRecalled, 0, 0, 0, 0);
+					if (m_client_list[i]->m_side == 1) {
+						request_teleport_handler(i, "2   ", "aresden", -1, -1);
 					}
-					else if (m_pClientList[i]->m_cSide == 2) {
-						RequestTeleportHandler(i, "2   ", "elvine", -1, -1);
+					else if (m_client_list[i]->m_side == 2) {
+						request_teleport_handler(i, "2   ", "elvine", -1, -1);
 					}
 				}
 
-				if (m_pClientList[i] == 0) break;
-				if ((strcmp(m_pClientList[i]->m_cLocation, "elvine") != 0) &&
-					(strcmp(m_pClientList[i]->m_cLocation, "elvhunter") != 0) &&
-					(strcmp(m_pClientList[i]->m_cLocation, "arehunter") != 0) &&
-					(strcmp(m_pClientList[i]->m_cLocation, "aresden") != 0) &&
-					(m_pClientList[i]->m_iLevel >= 20)) {
-					hb::logger::warn<log_channel::security>("Traveller hack: IP={} player={}, traveller exceeds level 19", m_pClientList[i]->m_cIPaddress, m_pClientList[i]->m_cCharName);
-					DeleteClient(i, true, true);
+				if (m_client_list[i] == 0) break;
+				if ((strcmp(m_client_list[i]->m_location, "elvine") != 0) &&
+					(strcmp(m_client_list[i]->m_location, "elvhunter") != 0) &&
+					(strcmp(m_client_list[i]->m_location, "arehunter") != 0) &&
+					(strcmp(m_client_list[i]->m_location, "aresden") != 0) &&
+					(m_client_list[i]->m_level >= 20)) {
+					hb::logger::warn<log_channel::security>("Traveller hack: IP={} player={}, traveller exceeds level 19", m_client_list[i]->m_ip_address, m_client_list[i]->m_char_name);
+					delete_client(i, true, true);
 				}
 
-				if (m_pClientList[i] == 0) break;
-				if ((m_pMapList[m_pClientList[i]->m_cMapIndex]->m_bIsApocalypseMap) &&
-					(m_bIsApocalypseMode == false))
+				if (m_client_list[i] == 0) break;
+				if ((m_map_list[m_client_list[i]->m_map_index]->m_is_apocalypse_map) &&
+					(m_is_apocalypse_mode == false))
 				{
-					RequestTeleportHandler(i, "1   ");
+					request_teleport_handler(i, "1   ");
 				}
 
-				//(m_bIsCrusadeMode )
+				//(m_is_crusade_mode )
 				/*
-				if (m_pClientList[i] == 0) break;
-				if (((memcmp(m_pClientList[i]->m_cLocation, "aresden",7) == 0) || (memcmp(m_pClientList[i]->m_cLocation, "elvine",6) == 0)) ) {
-					iMapside = iGetMapLocationSide(m_pMapList[m_pClientList[i]->m_cMapIndex]->m_cName);
-					if (iMapside > 3) iMapside2 = iMapside - 2;
-					else iMapside2 = iMapside;
+				if (m_client_list[i] == 0) break;
+				if (((memcmp(m_client_list[i]->m_location, "aresden",7) == 0) || (memcmp(m_client_list[i]->m_location, "elvine",6) == 0)) ) {
+					mapside = get_map_location_side(m_map_list[m_client_list[i]->m_map_index]->m_name);
+					if (mapside > 3) mapside2 = mapside - 2;
+					else mapside2 = mapside;
 
-					if ((m_pClientList[i]->m_cSide != iMapside2) && (iMapside != 0)) {
-						if ((iMapside <= 2)) {
-							if (m_pClientList[i]->m_cSide != 0) {
-								m_pClientList[i]->m_dwWarBeginTime = GameClock::GetTimeMS();
-								m_pClientList[i]->m_bIsWarLocation = true;
-								m_pClientList[i]->m_iTimeLeft_ForceRecall = 1;
+					if ((m_client_list[i]->m_side != mapside2) && (mapside != 0)) {
+						if ((mapside <= 2)) {
+							if (m_client_list[i]->m_side != 0) {
+								m_client_list[i]->m_war_begin_time = GameClock::GetTimeMS();
+								m_client_list[i]->m_is_war_location = true;
+								m_client_list[i]->m_time_left_force_recall = 1;
 
-								RequestTeleportHandler(i, "1   ");
-								SendNotifyMsg(0, i, Notify::ToBeRecalled, 0, 0, 0, 0);
+								request_teleport_handler(i, "1   ");
+								send_notify_msg(0, i, Notify::ToBeRecalled, 0, 0, 0, 0);
 							}
 						}
 					}
 				}*/
 
-				if (m_pClientList[i] == 0) break;
-				if (((memcmp(m_pClientList[i]->m_cLocation, "arehunter", 9) == 0) || (memcmp(m_pClientList[i]->m_cLocation, "elvhunter", 9) == 0)) &&
-					((strcmp(m_pMapList[m_pClientList[i]->m_cMapIndex]->m_cName, "2ndmiddle") == 0) || (strcmp(m_pMapList[m_pClientList[i]->m_cMapIndex]->m_cName, "middleland") == 0))) {
-					SendNotifyMsg(0, i, Notify::ToBeRecalled, 0, 0, 0, 0);
-					RequestTeleportHandler(i, "1   ");
+				if (m_client_list[i] == 0) break;
+				if (((memcmp(m_client_list[i]->m_location, "arehunter", 9) == 0) || (memcmp(m_client_list[i]->m_location, "elvhunter", 9) == 0)) &&
+					((strcmp(m_map_list[m_client_list[i]->m_map_index]->m_name, "2ndmiddle") == 0) || (strcmp(m_map_list[m_client_list[i]->m_map_index]->m_name, "middleland") == 0))) {
+					send_notify_msg(0, i, Notify::ToBeRecalled, 0, 0, 0, 0);
+					request_teleport_handler(i, "1   ");
 				}
 
-				if (m_bIsApocalypseMode) {
-					if (memcmp(m_pMapList[m_pClientList[i]->m_cMapIndex]->m_cName, "abaddon", 7) == 0)
-						SendNotifyMsg(0, i, Notify::ApocGateOpen, 167, 169, 0, m_pClientList[i]->m_cMapName);
-					else if (memcmp(m_pMapList[m_pClientList[i]->m_cMapIndex]->m_cName, "icebound", 8) == 0)
-						SendNotifyMsg(0, i, Notify::ApocGateOpen, 89, 31, 0, m_pClientList[i]->m_cMapName);
+				if (m_is_apocalypse_mode) {
+					if (memcmp(m_map_list[m_client_list[i]->m_map_index]->m_name, "abaddon", 7) == 0)
+						send_notify_msg(0, i, Notify::ApocGateOpen, 167, 169, 0, m_client_list[i]->m_map_name);
+					else if (memcmp(m_map_list[m_client_list[i]->m_map_index]->m_name, "icebound", 8) == 0)
+						send_notify_msg(0, i, Notify::ApocGateOpen, 89, 31, 0, m_client_list[i]->m_map_name);
 				}
 
-				if (m_pClientList[i] == 0) break;
-				if ((m_bIsApocalypseMode) &&
-					(memcmp(m_pMapList[m_pClientList[i]->m_cMapIndex]->m_cName, "icebound", 8) == 0) &&
-					((m_pClientList[i]->m_sX == 89 && m_pClientList[i]->m_sY == 31) ||
-						(m_pClientList[i]->m_sX == 89 && m_pClientList[i]->m_sY == 32) ||
-						(m_pClientList[i]->m_sX == 90 && m_pClientList[i]->m_sY == 31) ||
-						(m_pClientList[i]->m_sX == 90 && m_pClientList[i]->m_sY == 32))) {
-					RequestTeleportHandler(i, "2   ", "druncncity", -1, -1);
+				if (m_client_list[i] == 0) break;
+				if ((m_is_apocalypse_mode) &&
+					(memcmp(m_map_list[m_client_list[i]->m_map_index]->m_name, "icebound", 8) == 0) &&
+					((m_client_list[i]->m_x == 89 && m_client_list[i]->m_y == 31) ||
+						(m_client_list[i]->m_x == 89 && m_client_list[i]->m_y == 32) ||
+						(m_client_list[i]->m_x == 90 && m_client_list[i]->m_y == 31) ||
+						(m_client_list[i]->m_x == 90 && m_client_list[i]->m_y == 32))) {
+					request_teleport_handler(i, "2   ", "druncncity", -1, -1);
 				}
 
-				if (m_pClientList[i] == 0) break;
-				if ((memcmp(m_pClientList[i]->m_cLocation, "are", 3) == 0) &&
-					(strcmp(m_pMapList[m_pClientList[i]->m_cMapIndex]->m_cName, "elvfarm") == 0)) {
-					SendNotifyMsg(0, i, Notify::ToBeRecalled, 0, 0, 0, 0);
-					RequestTeleportHandler(i, "0   ");
+				if (m_client_list[i] == 0) break;
+				if ((memcmp(m_client_list[i]->m_location, "are", 3) == 0) &&
+					(strcmp(m_map_list[m_client_list[i]->m_map_index]->m_name, "elvfarm") == 0)) {
+					send_notify_msg(0, i, Notify::ToBeRecalled, 0, 0, 0, 0);
+					request_teleport_handler(i, "0   ");
 				}
 
-				if (m_pClientList[i] == 0) break;
-				if ((memcmp(m_pClientList[i]->m_cLocation, "elv", 3) == 0) &&
-					(strcmp(m_pMapList[m_pClientList[i]->m_cMapIndex]->m_cName, "arefarm") == 0)) {
-					SendNotifyMsg(0, i, Notify::ToBeRecalled, 0, 0, 0, 0);
-					RequestTeleportHandler(i, "0   ");
+				if (m_client_list[i] == 0) break;
+				if ((memcmp(m_client_list[i]->m_location, "elv", 3) == 0) &&
+					(strcmp(m_map_list[m_client_list[i]->m_map_index]->m_name, "arefarm") == 0)) {
+					send_notify_msg(0, i, Notify::ToBeRecalled, 0, 0, 0, 0);
+					request_teleport_handler(i, "0   ");
 				}
 
-				if (m_pClientList[i] == 0) break;
-				if ((strcmp(m_pMapList[m_pClientList[i]->m_cMapIndex]->m_cName, "middleland") == 0)
-					&& (strcmp(m_pClientList[i]->m_cLocation, "NONE") == 0)) {
-					SendNotifyMsg(0, i, Notify::ToBeRecalled, 0, 0, 0, 0);
-					RequestTeleportHandler(i, "0   ");
+				if (m_client_list[i] == 0) break;
+				if ((strcmp(m_map_list[m_client_list[i]->m_map_index]->m_name, "middleland") == 0)
+					&& (strcmp(m_client_list[i]->m_location, "NONE") == 0)) {
+					send_notify_msg(0, i, Notify::ToBeRecalled, 0, 0, 0, 0);
+					request_teleport_handler(i, "0   ");
 				}
 
-				if ((m_pClientList[i]->m_bInRecallImpossibleMap)) {
-					m_pClientList[i]->m_iTimeLeft_ForceRecall--;
-					if (m_pClientList[i]->m_iTimeLeft_ForceRecall <= 0) {
-						m_pClientList[i]->m_iTimeLeft_ForceRecall = 0;
-						m_pClientList[i]->m_bInRecallImpossibleMap = false;
-						SendNotifyMsg(0, i, Notify::ToBeRecalled, 0, 0, 0, 0);
-						RequestTeleportHandler(i, "0   ");
+				if ((m_client_list[i]->m_in_recall_impossible_map)) {
+					m_client_list[i]->m_time_left_force_recall--;
+					if (m_client_list[i]->m_time_left_force_recall <= 0) {
+						m_client_list[i]->m_time_left_force_recall = 0;
+						m_client_list[i]->m_in_recall_impossible_map = false;
+						send_notify_msg(0, i, Notify::ToBeRecalled, 0, 0, 0, 0);
+						request_teleport_handler(i, "0   ");
 					}
 				}
 
-				if (m_pClientList[i] == 0) break;
-				m_pClientList[i]->m_iSuperAttackCount++;
-				if (m_pClientList[i]->m_iSuperAttackCount > 12) {
+				if (m_client_list[i] == 0) break;
+				m_client_list[i]->m_super_attack_count++;
+				if (m_client_list[i]->m_super_attack_count > 12) {
 
-					m_pClientList[i]->m_iSuperAttackCount = 0;
-					iMaxSuperAttack = (m_pClientList[i]->m_iLevel / 10);
-					if (m_pClientList[i]->m_iSuperAttackLeft < iMaxSuperAttack) m_pClientList[i]->m_iSuperAttackLeft++;
+					m_client_list[i]->m_super_attack_count = 0;
+					max_super_attack = (m_client_list[i]->m_level / 10);
+					if (m_client_list[i]->m_super_attack_left < max_super_attack) m_client_list[i]->m_super_attack_left++;
 
 					// v1.12
-					SendNotifyMsg(0, i, Notify::SuperAttackLeft, 0, 0, 0, 0);
+					send_notify_msg(0, i, Notify::SuperAttackLeft, 0, 0, 0, 0);
 				}
 
 				// v1.42
-				m_pClientList[i]->m_iTimeLeft_FirmStaminar--;
-				if (m_pClientList[i]->m_iTimeLeft_FirmStaminar < 0) m_pClientList[i]->m_iTimeLeft_FirmStaminar = 0;
+				m_client_list[i]->m_time_left_firm_stamina--;
+				if (m_client_list[i]->m_time_left_firm_stamina < 0) m_client_list[i]->m_time_left_firm_stamina = 0;
 
 				// Crusade
-				if (m_pClientList[i] == 0) break;
-				if (m_pClientList[i]->m_bIsSendingMapStatus) m_pWarManager->_SendMapStatus(i);
+				if (m_client_list[i] == 0) break;
+				if (m_client_list[i]->m_is_sending_map_status) m_war_manager->send_map_status(i);
 
-				if (m_pClientList[i]->m_iConstructionPoint > 0) {
-					m_pWarManager->CheckCommanderConstructionPoint(i);
+				if (m_client_list[i]->m_construction_point > 0) {
+					m_war_manager->check_commander_construction_point(i);
 				}
 			}
 		}
 	}
 }
 
-void CGame::ResponsePlayerDataHandler(char* pData, uint32_t dwSize)
+void CGame::response_player_data_handler(char* data, uint32_t size)
 {
-	char* cp, cCharName[hb::shared::limits::CharNameLen];
+	char* cp, char_name[hb::shared::limits::CharNameLen];
 
-	std::memset(cCharName, 0, sizeof(cCharName));
-	const auto* header = hb::net::PacketCast<hb::net::PacketHeader>(pData, sizeof(hb::net::PacketHeader));
+	std::memset(char_name, 0, sizeof(char_name));
+	const auto* header = hb::net::PacketCast<hb::net::PacketHeader>(data, sizeof(hb::net::PacketHeader));
 	if (!header) return;
-	cp = (char*)(pData + sizeof(hb::net::PacketHeader));
+	cp = (char*)(data + sizeof(hb::net::PacketHeader));
 
-	memcpy(cCharName, cp, hb::shared::limits::CharNameLen);
+	memcpy(char_name, cp, hb::shared::limits::CharNameLen);
 	cp += hb::shared::limits::CharNameLen;
 
 	for(int i = 1; i < MaxClients; i++)
-		if (m_pClientList[i] != 0) {
-			if (hb_strnicmp(m_pClientList[i]->m_cCharName, cCharName, hb::shared::limits::CharNameLen - 1) == 0) {
+		if (m_client_list[i] != 0) {
+			if (hb_strnicmp(m_client_list[i]->m_char_name, char_name, hb::shared::limits::CharNameLen - 1) == 0) {
 				switch (header->msg_type) {
 				case LogResMsg::Confirm:
-					InitPlayerData(i, pData, dwSize);
+					init_player_data(i, data, size);
 					break;
 
 				case LogResMsg::Reject:
-					hb::logger::log("Non-existent character '{}' data request, rejected", m_pClientList[i]->m_cCharName);
+					hb::logger::log("Non-existent character '{}' data request, rejected", m_client_list[i]->m_char_name);
 					//PutLogFileList(G_cTxt); // v1.4
 
-					DeleteClient(i, false, false);
+					delete_client(i, false, false);
 					break;
 
 				default:
@@ -3804,349 +3804,349 @@ void CGame::ResponsePlayerDataHandler(char* pData, uint32_t dwSize)
 			}
 		}
 
-	hb::logger::log("Non-existent player data from login server: {}", cCharName);
+	hb::logger::log("Non-existent player data from login server: {}", char_name);
 }
 
-bool CGame::LoadPlayerDataFromDb(int iClientH)
+bool CGame::load_player_data_from_db(int client_h)
 {
-	if (m_pClientList[iClientH] == 0) return false;
+	if (m_client_list[client_h] == 0) return false;
 
 	sqlite3* db = nullptr;
 	std::string dbPath;
-	if (!EnsureAccountDatabase(m_pClientList[iClientH]->m_cAccountName, &db, dbPath)) {
+	if (!EnsureAccountDatabase(m_client_list[client_h]->m_account_name, &db, dbPath)) {
 		return false;
 	}
 
 	AccountDbCharacterState state = {};
-	if (!LoadCharacterState(db, m_pClientList[iClientH]->m_cCharName, state)) {
+	if (!LoadCharacterState(db, m_client_list[client_h]->m_char_name, state)) {
 		CloseAccountDatabase(db);
 		return false;
 	}
 
-	std::memset(m_pClientList[iClientH]->m_cProfile, 0, sizeof(m_pClientList[iClientH]->m_cProfile));
-	std::snprintf(m_pClientList[iClientH]->m_cProfile, sizeof(m_pClientList[iClientH]->m_cProfile), "%s", state.profile);
+	std::memset(m_client_list[client_h]->m_profile, 0, sizeof(m_client_list[client_h]->m_profile));
+	std::snprintf(m_client_list[client_h]->m_profile, sizeof(m_client_list[client_h]->m_profile), "%s", state.profile);
 
-	std::memset(m_pClientList[iClientH]->m_cLocation, 0, sizeof(m_pClientList[iClientH]->m_cLocation));
-	std::snprintf(m_pClientList[iClientH]->m_cLocation, sizeof(m_pClientList[iClientH]->m_cLocation), "%s", state.location);
+	std::memset(m_client_list[client_h]->m_location, 0, sizeof(m_client_list[client_h]->m_location));
+	std::snprintf(m_client_list[client_h]->m_location, sizeof(m_client_list[client_h]->m_location), "%s", state.location);
 
-	std::memset(m_pClientList[iClientH]->m_cGuildName, 0, sizeof(m_pClientList[iClientH]->m_cGuildName));
-	std::snprintf(m_pClientList[iClientH]->m_cGuildName, sizeof(m_pClientList[iClientH]->m_cGuildName), "%s", state.guildName);
-	m_pClientList[iClientH]->m_iGuildGUID = state.guildGuid;
-	m_pClientList[iClientH]->m_iGuildRank = state.guildRank;
+	std::memset(m_client_list[client_h]->m_guild_name, 0, sizeof(m_client_list[client_h]->m_guild_name));
+	std::snprintf(m_client_list[client_h]->m_guild_name, sizeof(m_client_list[client_h]->m_guild_name), "%s", state.guild_name);
+	m_client_list[client_h]->m_guild_guid = state.guild_guid;
+	m_client_list[client_h]->m_guild_rank = state.guild_rank;
 
-	std::memset(m_pClientList[iClientH]->m_cMapName, 0, sizeof(m_pClientList[iClientH]->m_cMapName));
-	std::snprintf(m_pClientList[iClientH]->m_cMapName, sizeof(m_pClientList[iClientH]->m_cMapName), "%s", state.mapName);
-	m_pClientList[iClientH]->m_cMapIndex = -1;
+	std::memset(m_client_list[client_h]->m_map_name, 0, sizeof(m_client_list[client_h]->m_map_name));
+	std::snprintf(m_client_list[client_h]->m_map_name, sizeof(m_client_list[client_h]->m_map_name), "%s", state.map_name);
+	m_client_list[client_h]->m_map_index = -1;
 	for(int i = 0; i < MaxMaps; i++) {
-		if ((m_pMapList[i] != 0) && (memcmp(m_pMapList[i]->m_cName, m_pClientList[iClientH]->m_cMapName, 10) == 0)) {
-			m_pClientList[iClientH]->m_cMapIndex = (char)i;
+		if ((m_map_list[i] != 0) && (memcmp(m_map_list[i]->m_name, m_client_list[client_h]->m_map_name, 10) == 0)) {
+			m_client_list[client_h]->m_map_index = (char)i;
 			break;
 		}
 	}
-	if (m_pClientList[iClientH]->m_cMapIndex == -1) {
-		hb::logger::log("Player '{}' tried to enter unknown map: {}", m_pClientList[iClientH]->m_cCharName, m_pClientList[iClientH]->m_cMapName);
+	if (m_client_list[client_h]->m_map_index == -1) {
+		hb::logger::log("Player '{}' tried to enter unknown map: {}", m_client_list[client_h]->m_char_name, m_client_list[client_h]->m_map_name);
 		CloseAccountDatabase(db);
 		return false;
 	}
 
-	m_pClientList[iClientH]->m_sX = (short)state.mapX;
-	m_pClientList[iClientH]->m_sY = (short)state.mapY;
-	m_pClientList[iClientH]->m_iHP = state.hp;
-	m_pClientList[iClientH]->m_iMP = state.mp;
-	m_pClientList[iClientH]->m_iSP = state.sp;
-	m_pClientList[iClientH]->m_iLevel = state.level;
-	m_pClientList[iClientH]->m_iRating = state.rating;
-	m_pClientList[iClientH]->m_iStr = state.str;
-	m_pClientList[iClientH]->m_iInt = state.intl;
-	m_pClientList[iClientH]->m_iVit = state.vit;
-	m_pClientList[iClientH]->m_iDex = state.dex;
-	m_pClientList[iClientH]->m_iMag = state.mag;
-	m_pClientList[iClientH]->m_iCharisma = state.chr;
-	m_pClientList[iClientH]->m_iLuck = state.luck;
-	m_pClientList[iClientH]->m_iExp = state.exp;
-	m_pClientList[iClientH]->m_iLU_Pool = state.luPool;
-	m_pClientList[iClientH]->m_iEnemyKillCount = state.enemyKillCount;
-	m_pClientList[iClientH]->m_iPKCount = state.pkCount;
-	m_pClientList[iClientH]->m_iRewardGold = state.rewardGold;
-	m_pClientList[iClientH]->m_iDownSkillIndex = state.downSkillIndex;
-	m_pClientList[iClientH]->m_sCharIDnum1 = (short)state.idnum1;
-	m_pClientList[iClientH]->m_sCharIDnum2 = (short)state.idnum2;
-	m_pClientList[iClientH]->m_sCharIDnum3 = (short)state.idnum3;
-	m_pClientList[iClientH]->m_cSex = (char)state.sex;
-	m_pClientList[iClientH]->m_cSkin = (char)state.skin;
-	m_pClientList[iClientH]->m_cHairStyle = (char)state.hairStyle;
-	m_pClientList[iClientH]->m_cHairColor = (char)state.hairColor;
-	m_pClientList[iClientH]->m_cUnderwear = (char)state.underwear;
-	m_pClientList[iClientH]->m_iHungerStatus = state.hungerStatus;
-	m_pClientList[iClientH]->m_iTimeLeft_Rating = state.timeleftRating;
-	m_pClientList[iClientH]->m_iTimeLeft_ForceRecall = state.timeleftForceRecall;
-	m_pClientList[iClientH]->m_iTimeLeft_FirmStaminar = state.timeleftFirmStaminar;
-	m_pClientList[iClientH]->m_iPenaltyBlockYear = state.penaltyBlockYear;
-	m_pClientList[iClientH]->m_iPenaltyBlockMonth = state.penaltyBlockMonth;
-	m_pClientList[iClientH]->m_iPenaltyBlockDay = state.penaltyBlockDay;
-	m_pClientList[iClientH]->m_iQuest = state.questNumber;
-	m_pClientList[iClientH]->m_iQuestID = state.questId;
-	m_pClientList[iClientH]->m_iCurQuestCount = state.currentQuestCount;
-	m_pClientList[iClientH]->m_iQuestRewardType = state.questRewardType;
-	m_pClientList[iClientH]->m_iQuestRewardAmount = state.questRewardAmount;
-	m_pClientList[iClientH]->m_iContribution = state.contribution;
-	m_pClientList[iClientH]->m_iWarContribution = state.warContribution;
-	m_pClientList[iClientH]->m_bIsQuestCompleted = (state.questCompleted != 0);
-	m_pClientList[iClientH]->m_iSpecialEventID = state.specialEventId;
-	m_pClientList[iClientH]->m_iSuperAttackLeft = state.superAttackLeft;
-	m_pClientList[iClientH]->m_iFightzoneNumber = state.fightzoneNumber;
-	m_pClientList[iClientH]->m_iReserveTime = state.reserveTime;
-	m_pClientList[iClientH]->m_iFightZoneTicketNumber = state.fightzoneTicketNumber;
-	m_pClientList[iClientH]->m_iSpecialAbilityTime = state.specialAbilityTime;
-	std::memset(m_pClientList[iClientH]->m_cLockedMapName, 0, sizeof(m_pClientList[iClientH]->m_cLockedMapName));
-	std::snprintf(m_pClientList[iClientH]->m_cLockedMapName, sizeof(m_pClientList[iClientH]->m_cLockedMapName), "%s", state.lockedMapName);
-	m_pClientList[iClientH]->m_iLockedMapTime = state.lockedMapTime;
-	m_pClientList[iClientH]->m_iCrusadeDuty = state.crusadeJob;
-	m_pClientList[iClientH]->m_dwCrusadeGUID = state.crusadeGuid;
-	m_pClientList[iClientH]->m_iConstructionPoint = state.constructPoint;
-	m_pClientList[iClientH]->m_iDeadPenaltyTime = state.deadPenaltyTime;
-	m_pClientList[iClientH]->m_iPartyID = state.partyId;
-	m_pClientList[iClientH]->m_iGizonItemUpgradeLeft = state.gizonItemUpgradeLeft;
-	m_pClientList[iClientH]->m_appearance = state.appearance;
+	m_client_list[client_h]->m_x = (short)state.map_x;
+	m_client_list[client_h]->m_y = (short)state.map_y;
+	m_client_list[client_h]->m_hp = state.hp;
+	m_client_list[client_h]->m_mp = state.mp;
+	m_client_list[client_h]->m_sp = state.sp;
+	m_client_list[client_h]->m_level = state.level;
+	m_client_list[client_h]->m_rating = state.rating;
+	m_client_list[client_h]->m_str = state.str;
+	m_client_list[client_h]->m_int = state.intl;
+	m_client_list[client_h]->m_vit = state.vit;
+	m_client_list[client_h]->m_dex = state.dex;
+	m_client_list[client_h]->m_mag = state.mag;
+	m_client_list[client_h]->m_charisma = state.chr;
+	m_client_list[client_h]->m_luck = state.luck;
+	m_client_list[client_h]->m_exp = state.exp;
+	m_client_list[client_h]->m_levelup_pool = state.lu_pool;
+	m_client_list[client_h]->m_enemy_kill_count = state.enemy_kill_count;
+	m_client_list[client_h]->m_player_kill_count = state.pk_count;
+	m_client_list[client_h]->m_reward_gold = state.reward_gold;
+	m_client_list[client_h]->m_down_skill_index = state.down_skill_index;
+	m_client_list[client_h]->m_char_id_num1 = (short)state.id_num1;
+	m_client_list[client_h]->m_char_id_num2 = (short)state.id_num2;
+	m_client_list[client_h]->m_char_id_num3 = (short)state.id_num3;
+	m_client_list[client_h]->m_sex = (char)state.sex;
+	m_client_list[client_h]->m_skin = (char)state.skin;
+	m_client_list[client_h]->m_hair_style = (char)state.hair_style;
+	m_client_list[client_h]->m_hair_color = (char)state.hair_color;
+	m_client_list[client_h]->m_underwear = (char)state.underwear;
+	m_client_list[client_h]->m_hunger_status = state.hunger_status;
+	m_client_list[client_h]->m_time_left_rating = state.timeleft_rating;
+	m_client_list[client_h]->m_time_left_force_recall = state.timeleft_force_recall;
+	m_client_list[client_h]->m_time_left_firm_stamina = state.timeleft_firm_stamina;
+	m_client_list[client_h]->m_penalty_block_year = state.penalty_block_year;
+	m_client_list[client_h]->m_penalty_block_month = state.penalty_block_month;
+	m_client_list[client_h]->m_penalty_block_day = state.penalty_block_day;
+	m_client_list[client_h]->m_quest = state.quest_number;
+	m_client_list[client_h]->m_quest_id = state.quest_id;
+	m_client_list[client_h]->m_cur_quest_count = state.current_quest_count;
+	m_client_list[client_h]->m_quest_reward_type = state.quest_reward_type;
+	m_client_list[client_h]->m_quest_reward_amount = state.quest_reward_amount;
+	m_client_list[client_h]->m_contribution = state.contribution;
+	m_client_list[client_h]->m_war_contribution = state.war_contribution;
+	m_client_list[client_h]->m_is_quest_completed = (state.quest_completed != 0);
+	m_client_list[client_h]->m_special_event_id = state.special_event_id;
+	m_client_list[client_h]->m_super_attack_left = state.super_attack_left;
+	m_client_list[client_h]->m_fightzone_number = state.fightzone_number;
+	m_client_list[client_h]->m_reserve_time = state.reserve_time;
+	m_client_list[client_h]->m_fightzone_ticket_number = state.fightzone_ticket_number;
+	m_client_list[client_h]->m_special_ability_time = state.special_ability_time;
+	std::memset(m_client_list[client_h]->m_locked_map_name, 0, sizeof(m_client_list[client_h]->m_locked_map_name));
+	std::snprintf(m_client_list[client_h]->m_locked_map_name, sizeof(m_client_list[client_h]->m_locked_map_name), "%s", state.locked_map_name);
+	m_client_list[client_h]->m_locked_map_time = state.locked_map_time;
+	m_client_list[client_h]->m_crusade_duty = state.crusade_job;
+	m_client_list[client_h]->m_crusade_guid = state.crusade_guid;
+	m_client_list[client_h]->m_construction_point = state.construct_point;
+	m_client_list[client_h]->m_dead_penalty_time = state.dead_penalty_time;
+	m_client_list[client_h]->m_party_id = state.party_id;
+	m_client_list[client_h]->m_gizon_item_upgrade_left = state.gizon_item_upgrade_left;
+	m_client_list[client_h]->m_appearance = state.appearance;
 
 	for(int i = 0; i < hb::shared::limits::MaxItems; i++) {
-		if (m_pClientList[iClientH]->m_pItemList[i] != 0) {
-			delete m_pClientList[iClientH]->m_pItemList[i];
-			m_pClientList[iClientH]->m_pItemList[i] = 0;
+		if (m_client_list[client_h]->m_item_list[i] != 0) {
+			delete m_client_list[client_h]->m_item_list[i];
+			m_client_list[client_h]->m_item_list[i] = 0;
 		}
-		m_pClientList[iClientH]->m_ItemPosList[i].x = 40;
-		m_pClientList[iClientH]->m_ItemPosList[i].y = 30;
-		m_pClientList[iClientH]->m_bIsItemEquipped[i] = false;
+		m_client_list[client_h]->m_item_pos_list[i].x = 40;
+		m_client_list[client_h]->m_item_pos_list[i].y = 30;
+		m_client_list[client_h]->m_is_item_equipped[i] = false;
 	}
 
 	for(int i = 0; i < hb::shared::limits::MaxBankItems; i++) {
-		if (m_pClientList[iClientH]->m_pItemInBankList[i] != 0) {
-			delete m_pClientList[iClientH]->m_pItemInBankList[i];
-			m_pClientList[iClientH]->m_pItemInBankList[i] = 0;
+		if (m_client_list[client_h]->m_item_in_bank_list[i] != 0) {
+			delete m_client_list[client_h]->m_item_in_bank_list[i];
+			m_client_list[client_h]->m_item_in_bank_list[i] = 0;
 		}
 	}
 
 	std::vector<AccountDbIndexedValue> positionsX;
 	std::vector<AccountDbIndexedValue> positionsY;
-	LoadCharacterItemPositions(db, m_pClientList[iClientH]->m_cCharName, positionsX, positionsY);
+	LoadCharacterItemPositions(db, m_client_list[client_h]->m_char_name, positionsX, positionsY);
 	for (size_t i = 0; i < positionsX.size(); i++) {
 		int slot = positionsX[i].index;
 		if (slot >= 0 && slot < hb::shared::limits::MaxItems) {
-			m_pClientList[iClientH]->m_ItemPosList[slot].x = positionsX[i].value;
-			m_pClientList[iClientH]->m_ItemPosList[slot].y = positionsY[i].value;
+			m_client_list[client_h]->m_item_pos_list[slot].x = positionsX[i].value;
+			m_client_list[client_h]->m_item_pos_list[slot].y = positionsY[i].value;
 		}
 	}
 
 	std::vector<AccountDbItemRow> items;
-	LoadCharacterItems(db, m_pClientList[iClientH]->m_cCharName, items);
+	LoadCharacterItems(db, m_client_list[client_h]->m_char_name, items);
 	for (const auto& item : items) {
 		if (item.slot < 0 || item.slot >= hb::shared::limits::MaxItems) {
 			continue;
 		}
-		if (m_pClientList[iClientH]->m_pItemList[item.slot] != 0) {
-			delete m_pClientList[iClientH]->m_pItemList[item.slot];
+		if (m_client_list[client_h]->m_item_list[item.slot] != 0) {
+			delete m_client_list[client_h]->m_item_list[item.slot];
 		}
-		m_pClientList[iClientH]->m_pItemList[item.slot] = new CItem;
-		if (m_pItemManager->_bInitItemAttr(m_pClientList[iClientH]->m_pItemList[item.slot], item.itemId) == false) {
-			delete m_pClientList[iClientH]->m_pItemList[item.slot];
-			m_pClientList[iClientH]->m_pItemList[item.slot] = 0;
+		m_client_list[client_h]->m_item_list[item.slot] = new CItem;
+		if (m_item_manager->init_item_attr(m_client_list[client_h]->m_item_list[item.slot], item.item_id) == false) {
+			delete m_client_list[client_h]->m_item_list[item.slot];
+			m_client_list[client_h]->m_item_list[item.slot] = 0;
 			continue;
 		}
-		m_pClientList[iClientH]->m_pItemList[item.slot]->m_dwCount = item.count;
-		m_pClientList[iClientH]->m_pItemList[item.slot]->m_sTouchEffectType = item.touchEffectType;
-		m_pClientList[iClientH]->m_pItemList[item.slot]->m_sTouchEffectValue1 = item.touchEffectValue1;
-		m_pClientList[iClientH]->m_pItemList[item.slot]->m_sTouchEffectValue2 = item.touchEffectValue2;
-		m_pClientList[iClientH]->m_pItemList[item.slot]->m_sTouchEffectValue3 = item.touchEffectValue3;
-		m_pClientList[iClientH]->m_pItemList[item.slot]->m_cItemColor = item.itemColor;
-		m_pClientList[iClientH]->m_pItemList[item.slot]->m_sItemSpecEffectValue1 = item.specEffectValue1;
-		m_pClientList[iClientH]->m_pItemList[item.slot]->m_sItemSpecEffectValue2 = item.specEffectValue2;
-		m_pClientList[iClientH]->m_pItemList[item.slot]->m_sItemSpecEffectValue3 = item.specEffectValue3;
-		m_pClientList[iClientH]->m_pItemList[item.slot]->m_wCurLifeSpan = (short)item.curLifeSpan;
-		m_pClientList[iClientH]->m_pItemList[item.slot]->m_dwAttribute = item.attribute;
+		m_client_list[client_h]->m_item_list[item.slot]->m_count = item.count;
+		m_client_list[client_h]->m_item_list[item.slot]->m_touch_effect_type = item.touch_effect_type;
+		m_client_list[client_h]->m_item_list[item.slot]->m_touch_effect_value1 = item.touch_effect_value1;
+		m_client_list[client_h]->m_item_list[item.slot]->m_touch_effect_value2 = item.touch_effect_value2;
+		m_client_list[client_h]->m_item_list[item.slot]->m_touch_effect_value3 = item.touch_effect_value3;
+		m_client_list[client_h]->m_item_list[item.slot]->m_item_color = item.item_color;
+		m_client_list[client_h]->m_item_list[item.slot]->m_item_special_effect_value1 = item.spec_effect_value1;
+		m_client_list[client_h]->m_item_list[item.slot]->m_item_special_effect_value2 = item.spec_effect_value2;
+		m_client_list[client_h]->m_item_list[item.slot]->m_item_special_effect_value3 = item.spec_effect_value3;
+		m_client_list[client_h]->m_item_list[item.slot]->m_cur_life_span = (short)item.cur_life_span;
+		m_client_list[client_h]->m_item_list[item.slot]->m_attribute = item.attribute;
 
-		if ((m_pClientList[iClientH]->m_pItemList[item.slot]->m_dwAttribute & 0x00000001) != 0) {
-			m_pClientList[iClientH]->m_pItemList[item.slot]->m_wMaxLifeSpan = m_pClientList[iClientH]->m_pItemList[item.slot]->m_sItemSpecEffectValue1;
+		if ((m_client_list[client_h]->m_item_list[item.slot]->m_attribute & 0x00000001) != 0) {
+			m_client_list[client_h]->m_item_list[item.slot]->m_max_life_span = m_client_list[client_h]->m_item_list[item.slot]->m_item_special_effect_value1;
 		}
-		m_pItemManager->_AdjustRareItemValue(m_pClientList[iClientH]->m_pItemList[item.slot]);
-		if (m_pClientList[iClientH]->m_pItemList[item.slot]->m_wCurLifeSpan > m_pClientList[iClientH]->m_pItemList[item.slot]->m_wMaxLifeSpan) {
-			m_pClientList[iClientH]->m_pItemList[item.slot]->m_wCurLifeSpan = m_pClientList[iClientH]->m_pItemList[item.slot]->m_wMaxLifeSpan;
+		m_item_manager->adjust_rare_item_value(m_client_list[client_h]->m_item_list[item.slot]);
+		if (m_client_list[client_h]->m_item_list[item.slot]->m_cur_life_span > m_client_list[client_h]->m_item_list[item.slot]->m_max_life_span) {
+			m_client_list[client_h]->m_item_list[item.slot]->m_cur_life_span = m_client_list[client_h]->m_item_list[item.slot]->m_max_life_span;
 		}
-		m_pItemManager->bCheckAndConvertPlusWeaponItem(iClientH, item.slot);
+		m_item_manager->check_and_convert_plus_weapon_item(client_h, item.slot);
 	}
 
 	std::vector<AccountDbBankItemRow> bankItems;
-	LoadCharacterBankItems(db, m_pClientList[iClientH]->m_cCharName, bankItems);
+	LoadCharacterBankItems(db, m_client_list[client_h]->m_char_name, bankItems);
 	for (const auto& item : bankItems) {
 		if (item.slot < 0 || item.slot >= hb::shared::limits::MaxBankItems) {
 			continue;
 		}
-		if (m_pClientList[iClientH]->m_pItemInBankList[item.slot] != 0) {
-			delete m_pClientList[iClientH]->m_pItemInBankList[item.slot];
+		if (m_client_list[client_h]->m_item_in_bank_list[item.slot] != 0) {
+			delete m_client_list[client_h]->m_item_in_bank_list[item.slot];
 		}
-		m_pClientList[iClientH]->m_pItemInBankList[item.slot] = new CItem;
-		if (m_pItemManager->_bInitItemAttr(m_pClientList[iClientH]->m_pItemInBankList[item.slot], item.itemId) == false) {
-			delete m_pClientList[iClientH]->m_pItemInBankList[item.slot];
-			m_pClientList[iClientH]->m_pItemInBankList[item.slot] = 0;
+		m_client_list[client_h]->m_item_in_bank_list[item.slot] = new CItem;
+		if (m_item_manager->init_item_attr(m_client_list[client_h]->m_item_in_bank_list[item.slot], item.item_id) == false) {
+			delete m_client_list[client_h]->m_item_in_bank_list[item.slot];
+			m_client_list[client_h]->m_item_in_bank_list[item.slot] = 0;
 			continue;
 		}
-		m_pClientList[iClientH]->m_pItemInBankList[item.slot]->m_dwCount = item.count;
-		m_pClientList[iClientH]->m_pItemInBankList[item.slot]->m_sTouchEffectType = item.touchEffectType;
-		m_pClientList[iClientH]->m_pItemInBankList[item.slot]->m_sTouchEffectValue1 = item.touchEffectValue1;
-		m_pClientList[iClientH]->m_pItemInBankList[item.slot]->m_sTouchEffectValue2 = item.touchEffectValue2;
-		m_pClientList[iClientH]->m_pItemInBankList[item.slot]->m_sTouchEffectValue3 = item.touchEffectValue3;
-		m_pClientList[iClientH]->m_pItemInBankList[item.slot]->m_cItemColor = item.itemColor;
-		m_pClientList[iClientH]->m_pItemInBankList[item.slot]->m_sItemSpecEffectValue1 = item.specEffectValue1;
-		m_pClientList[iClientH]->m_pItemInBankList[item.slot]->m_sItemSpecEffectValue2 = item.specEffectValue2;
-		m_pClientList[iClientH]->m_pItemInBankList[item.slot]->m_sItemSpecEffectValue3 = item.specEffectValue3;
-		m_pClientList[iClientH]->m_pItemInBankList[item.slot]->m_wCurLifeSpan = (short)item.curLifeSpan;
-		m_pClientList[iClientH]->m_pItemInBankList[item.slot]->m_dwAttribute = item.attribute;
-		if ((m_pClientList[iClientH]->m_pItemInBankList[item.slot]->m_dwAttribute & 0x00000001) != 0) {
-			m_pClientList[iClientH]->m_pItemInBankList[item.slot]->m_wMaxLifeSpan = m_pClientList[iClientH]->m_pItemInBankList[item.slot]->m_sItemSpecEffectValue1;
+		m_client_list[client_h]->m_item_in_bank_list[item.slot]->m_count = item.count;
+		m_client_list[client_h]->m_item_in_bank_list[item.slot]->m_touch_effect_type = item.touch_effect_type;
+		m_client_list[client_h]->m_item_in_bank_list[item.slot]->m_touch_effect_value1 = item.touch_effect_value1;
+		m_client_list[client_h]->m_item_in_bank_list[item.slot]->m_touch_effect_value2 = item.touch_effect_value2;
+		m_client_list[client_h]->m_item_in_bank_list[item.slot]->m_touch_effect_value3 = item.touch_effect_value3;
+		m_client_list[client_h]->m_item_in_bank_list[item.slot]->m_item_color = item.item_color;
+		m_client_list[client_h]->m_item_in_bank_list[item.slot]->m_item_special_effect_value1 = item.spec_effect_value1;
+		m_client_list[client_h]->m_item_in_bank_list[item.slot]->m_item_special_effect_value2 = item.spec_effect_value2;
+		m_client_list[client_h]->m_item_in_bank_list[item.slot]->m_item_special_effect_value3 = item.spec_effect_value3;
+		m_client_list[client_h]->m_item_in_bank_list[item.slot]->m_cur_life_span = (short)item.cur_life_span;
+		m_client_list[client_h]->m_item_in_bank_list[item.slot]->m_attribute = item.attribute;
+		if ((m_client_list[client_h]->m_item_in_bank_list[item.slot]->m_attribute & 0x00000001) != 0) {
+			m_client_list[client_h]->m_item_in_bank_list[item.slot]->m_max_life_span = m_client_list[client_h]->m_item_in_bank_list[item.slot]->m_item_special_effect_value1;
 		}
-		m_pItemManager->_AdjustRareItemValue(m_pClientList[iClientH]->m_pItemInBankList[item.slot]);
-		if (m_pClientList[iClientH]->m_pItemInBankList[item.slot]->m_wCurLifeSpan > m_pClientList[iClientH]->m_pItemInBankList[item.slot]->m_wMaxLifeSpan) {
-			m_pClientList[iClientH]->m_pItemInBankList[item.slot]->m_wCurLifeSpan = m_pClientList[iClientH]->m_pItemInBankList[item.slot]->m_wMaxLifeSpan;
+		m_item_manager->adjust_rare_item_value(m_client_list[client_h]->m_item_in_bank_list[item.slot]);
+		if (m_client_list[client_h]->m_item_in_bank_list[item.slot]->m_cur_life_span > m_client_list[client_h]->m_item_in_bank_list[item.slot]->m_max_life_span) {
+			m_client_list[client_h]->m_item_in_bank_list[item.slot]->m_cur_life_span = m_client_list[client_h]->m_item_in_bank_list[item.slot]->m_max_life_span;
 		}
 	}
 
 	std::vector<AccountDbIndexedValue> equips;
-	LoadCharacterItemEquips(db, m_pClientList[iClientH]->m_cCharName, equips);
+	LoadCharacterItemEquips(db, m_client_list[client_h]->m_char_name, equips);
 	for (const auto& equip : equips) {
 		if (equip.index >= 0 && equip.index < hb::shared::limits::MaxItems) {
-			m_pClientList[iClientH]->m_bIsItemEquipped[equip.index] = (equip.value != 0);
+			m_client_list[client_h]->m_is_item_equipped[equip.index] = (equip.value != 0);
 		}
 	}
 
 	int packedIndex = 0;
 	for(int i = 0; i < hb::shared::limits::MaxItems; i++) {
-		if (m_pClientList[iClientH]->m_pItemList[i] == 0) {
+		if (m_client_list[client_h]->m_item_list[i] == 0) {
 			continue;
 		}
 		if (i != packedIndex) {
-			m_pClientList[iClientH]->m_pItemList[packedIndex] = m_pClientList[iClientH]->m_pItemList[i];
-			m_pClientList[iClientH]->m_pItemList[i] = 0;
-			m_pClientList[iClientH]->m_ItemPosList[packedIndex] = m_pClientList[iClientH]->m_ItemPosList[i];
-			m_pClientList[iClientH]->m_bIsItemEquipped[packedIndex] = m_pClientList[iClientH]->m_bIsItemEquipped[i];
+			m_client_list[client_h]->m_item_list[packedIndex] = m_client_list[client_h]->m_item_list[i];
+			m_client_list[client_h]->m_item_list[i] = 0;
+			m_client_list[client_h]->m_item_pos_list[packedIndex] = m_client_list[client_h]->m_item_pos_list[i];
+			m_client_list[client_h]->m_is_item_equipped[packedIndex] = m_client_list[client_h]->m_is_item_equipped[i];
 		}
 		packedIndex++;
 	}
 	for(int i = packedIndex; i < hb::shared::limits::MaxItems; i++) {
-		m_pClientList[iClientH]->m_ItemPosList[i].x = 40;
-		m_pClientList[iClientH]->m_ItemPosList[i].y = 30;
-		m_pClientList[iClientH]->m_bIsItemEquipped[i] = false;
+		m_client_list[client_h]->m_item_pos_list[i].x = 40;
+		m_client_list[client_h]->m_item_pos_list[i].y = 30;
+		m_client_list[client_h]->m_is_item_equipped[i] = false;
 	}
 
 	packedIndex = 0;
 	for(int i = 0; i < hb::shared::limits::MaxBankItems; i++) {
-		if (m_pClientList[iClientH]->m_pItemInBankList[i] == 0) {
+		if (m_client_list[client_h]->m_item_in_bank_list[i] == 0) {
 			continue;
 		}
 		if (i != packedIndex) {
-			m_pClientList[iClientH]->m_pItemInBankList[packedIndex] = m_pClientList[iClientH]->m_pItemInBankList[i];
-			m_pClientList[iClientH]->m_pItemInBankList[i] = 0;
+			m_client_list[client_h]->m_item_in_bank_list[packedIndex] = m_client_list[client_h]->m_item_in_bank_list[i];
+			m_client_list[client_h]->m_item_in_bank_list[i] = 0;
 		}
 		packedIndex++;
 	}
 	for(int i = packedIndex; i < hb::shared::limits::MaxBankItems; i++) {
-		m_pClientList[iClientH]->m_pItemInBankList[i] = 0;
+		m_client_list[client_h]->m_item_in_bank_list[i] = 0;
 	}
 
 	for(int i = 0; i < DEF_MAXITEMEQUIPPOS; i++) {
-		m_pClientList[iClientH]->m_sItemEquipmentStatus[i] = -1;
+		m_client_list[client_h]->m_item_equipment_status[i] = -1;
 	}
 
 	for(int i = 0; i < hb::shared::limits::MaxItems; i++) {
-		if ((m_pClientList[iClientH]->m_pItemList[i] != 0) && m_pClientList[iClientH]->m_bIsItemEquipped[i]) {
-			if (m_pClientList[iClientH]->m_pItemList[i]->GetItemType() == ItemType::Equip) {
-				if (m_pItemManager->bEquipItemHandler(iClientH, i) == false) {
-					m_pClientList[iClientH]->m_bIsItemEquipped[i] = false;
+		if ((m_client_list[client_h]->m_item_list[i] != 0) && m_client_list[client_h]->m_is_item_equipped[i]) {
+			if (m_client_list[client_h]->m_item_list[i]->get_item_type() == ItemType::Equip) {
+				if (m_item_manager->equip_item_handler(client_h, i) == false) {
+					m_client_list[client_h]->m_is_item_equipped[i] = false;
 				}
 			}
 			else {
-				m_pClientList[iClientH]->m_bIsItemEquipped[i] = false;
+				m_client_list[client_h]->m_is_item_equipped[i] = false;
 			}
 		}
 	}
 
 	for(int i = 0; i < hb::shared::limits::MaxMagicType; i++) {
-		m_pClientList[iClientH]->m_cMagicMastery[i] = 0;
+		m_client_list[client_h]->m_magic_mastery[i] = 0;
 	}
 	std::vector<AccountDbIndexedValue> magicMastery;
-	LoadCharacterMagicMastery(db, m_pClientList[iClientH]->m_cCharName, magicMastery);
+	LoadCharacterMagicMastery(db, m_client_list[client_h]->m_char_name, magicMastery);
 	for (const auto& entry : magicMastery) {
 		if (entry.index >= 0 && entry.index < hb::shared::limits::MaxMagicType) {
-			m_pClientList[iClientH]->m_cMagicMastery[entry.index] = (char)entry.value;
+			m_client_list[client_h]->m_magic_mastery[entry.index] = (char)entry.value;
 		}
 	}
 
 	for(int i = 0; i < hb::shared::limits::MaxSkillType; i++) {
-		m_pClientList[iClientH]->m_cSkillMastery[i] = 0;
-		m_pClientList[iClientH]->m_iSkillSSN[i] = 0;
+		m_client_list[client_h]->m_skill_mastery[i] = 0;
+		m_client_list[client_h]->m_skill_progress[i] = 0;
 	}
 	std::vector<AccountDbIndexedValue> skillMastery;
-	LoadCharacterSkillMastery(db, m_pClientList[iClientH]->m_cCharName, skillMastery);
+	LoadCharacterSkillMastery(db, m_client_list[client_h]->m_char_name, skillMastery);
 	for (const auto& entry : skillMastery) {
 		if (entry.index >= 0 && entry.index < hb::shared::limits::MaxSkillType) {
-			m_pClientList[iClientH]->m_cSkillMastery[entry.index] = (unsigned char)entry.value;
+			m_client_list[client_h]->m_skill_mastery[entry.index] = (unsigned char)entry.value;
 		}
 	}
 
 	std::vector<AccountDbIndexedValue> skillSsn;
-	LoadCharacterSkillSSN(db, m_pClientList[iClientH]->m_cCharName, skillSsn);
+	LoadCharacterSkillSSN(db, m_client_list[client_h]->m_char_name, skillSsn);
 	for (const auto& entry : skillSsn) {
 		if (entry.index >= 0 && entry.index < hb::shared::limits::MaxSkillType) {
-			m_pClientList[iClientH]->m_iSkillSSN[entry.index] = entry.value;
+			m_client_list[client_h]->m_skill_progress[entry.index] = entry.value;
 		}
 	}
 
-	short sTmpType = 0;
-	if (m_pClientList[iClientH]->m_cSex == 1) {
-		sTmpType = 1;
+	short tmp_type = 0;
+	if (m_client_list[client_h]->m_sex == 1) {
+		tmp_type = 1;
 	}
-	else if (m_pClientList[iClientH]->m_cSex == 2) {
-		sTmpType = 4;
+	else if (m_client_list[client_h]->m_sex == 2) {
+		tmp_type = 4;
 	}
-	switch (m_pClientList[iClientH]->m_cSkin) {
+	switch (m_client_list[client_h]->m_skin) {
 	case 1:
 		break;
 	case 2:
-		sTmpType += 1;
+		tmp_type += 1;
 		break;
 	case 3:
-		sTmpType += 2;
+		tmp_type += 2;
 		break;
 	}
-	m_pClientList[iClientH]->m_sType = sTmpType;
-	m_pClientList[iClientH]->m_appearance.iHairStyle = m_pClientList[iClientH]->m_cHairStyle;
-	m_pClientList[iClientH]->m_appearance.iHairColor = m_pClientList[iClientH]->m_cHairColor;
-	m_pClientList[iClientH]->m_appearance.iUnderwearType = m_pClientList[iClientH]->m_cUnderwear;
+	m_client_list[client_h]->m_type = tmp_type;
+	m_client_list[client_h]->m_appearance.hair_style = m_client_list[client_h]->m_hair_style;
+	m_client_list[client_h]->m_appearance.hair_color = m_client_list[client_h]->m_hair_color;
+	m_client_list[client_h]->m_appearance.underwear_type = m_client_list[client_h]->m_underwear;
 
-	if (m_pClientList[iClientH]->m_sCharIDnum1 == 0) {
+	if (m_client_list[client_h]->m_char_id_num1 == 0) {
 		int temp1 = 1;
 		int temp2 = 1;
 		for(int i = 0; i < 10; i++) {
-			temp1 += m_pClientList[iClientH]->m_cCharName[i];
-			temp2 += abs(m_pClientList[iClientH]->m_cCharName[i] ^ m_pClientList[iClientH]->m_cCharName[i]);
+			temp1 += m_client_list[client_h]->m_char_name[i];
+			temp2 += abs(m_client_list[client_h]->m_char_name[i] ^ m_client_list[client_h]->m_char_name[i]);
 		}
-		m_pClientList[iClientH]->m_sCharIDnum1 = (short)GameClock::GetTimeMS();
-		m_pClientList[iClientH]->m_sCharIDnum2 = (short)temp1;
-		m_pClientList[iClientH]->m_sCharIDnum3 = (short)temp2;
+		m_client_list[client_h]->m_char_id_num1 = (short)GameClock::GetTimeMS();
+		m_client_list[client_h]->m_char_id_num2 = (short)temp1;
+		m_client_list[client_h]->m_char_id_num3 = (short)temp2;
 	}
 
-	m_pClientList[iClientH]->m_iSpeedHackCheckExp = m_pClientList[iClientH]->m_iExp;
-	if (memcmp(m_pClientList[iClientH]->m_cLocation, "NONE", 4) == 0) {
-		m_pClientList[iClientH]->m_bIsNeutral = true;
+	m_client_list[client_h]->m_speed_hack_check_exp = m_client_list[client_h]->m_exp;
+	if (memcmp(m_client_list[client_h]->m_location, "NONE", 4) == 0) {
+		m_client_list[client_h]->m_is_neutral = true;
 	}
 
 	// Load block list
-	m_pClientList[iClientH]->m_BlockedAccounts.clear();
-	m_pClientList[iClientH]->m_BlockedAccountsList.clear();
-	m_pClientList[iClientH]->m_bBlockListDirty = false;
+	m_client_list[client_h]->m_blocked_accounts.clear();
+	m_client_list[client_h]->m_blocked_accounts_list.clear();
+	m_client_list[client_h]->m_block_list_dirty = false;
 	std::vector<std::pair<std::string, std::string>> blocks;
 	if (LoadBlockList(db, blocks)) {
 		for (const auto& entry : blocks) {
-			m_pClientList[iClientH]->m_BlockedAccounts.insert(entry.first);
-			m_pClientList[iClientH]->m_BlockedAccountsList.push_back(entry);
+			m_client_list[client_h]->m_blocked_accounts.insert(entry.first);
+			m_client_list[client_h]->m_blocked_accounts_list.push_back(entry);
 		}
 	}
 
@@ -4154,72 +4154,72 @@ bool CGame::LoadPlayerDataFromDb(int iClientH)
 	return true;
 }
 
-void CGame::InitPlayerData(int iClientH, char* pData, uint32_t dwSize)
+void CGame::init_player_data(int client_h, char* data, uint32_t size)
 {
-	char cQuestRemain;
-	int     iRet, iTotalPoints;
-	bool    bRet, bGuildStatus;
+	char quest_remain;
+	int     ret, total_points;
+	bool    ret_ok, guild_status;
 
-	if (m_pClientList[iClientH] == 0) return;
-	if (m_pClientList[iClientH]->m_bIsInitComplete) return;
+	if (m_client_list[client_h] == 0) return;
+	if (m_client_list[client_h]->m_is_init_complete) return;
 
 	// Log Server
-	//cp = (char *)(pData + hb::shared::net::MessageOffsetType + 2);
+	//cp = (char *)(data + hb::shared::net::MessageOffsetType + 2);
 
-	//std::memset(cName, 0, sizeof(cName));
-	//memcpy(cName, cp, hb::shared::limits::CharNameLen - 1);
+	//std::memset(name, 0, sizeof(name));
+	//memcpy(name, cp, hb::shared::limits::CharNameLen - 1);
 	//cp += 10;
 
-	////m_pClientList[iClientH]->m_cAccountStatus = *cp;
+	////m_client_list[client_h]->m_cAccountStatus = *cp;
 	//cp++;
 
 	//cGuildStatus = *cp;
 	//cp++;
 
-	m_pClientList[iClientH]->m_iHitRatio = 0;
-	m_pClientList[iClientH]->m_iDefenseRatio = 0;
-	m_pClientList[iClientH]->m_cSide = 0;
+	m_client_list[client_h]->m_hit_ratio = 0;
+	m_client_list[client_h]->m_defense_ratio = 0;
+	m_client_list[client_h]->m_side = 0;
 
-	bRet = LoadPlayerDataFromDb(iClientH);
-	if (bRet == false) {
-		std::snprintf(G_cTxt, sizeof(G_cTxt), "(HACK?) Character(%s) data error!", m_pClientList[iClientH]->m_cCharName);
-		DeleteClient(iClientH, false, true);
+	ret_ok = load_player_data_from_db(client_h);
+	if (ret_ok == false) {
+		std::snprintf(G_cTxt, sizeof(G_cTxt), "(HACK?) Character(%s) data error!", m_client_list[client_h]->m_char_name);
+		delete_client(client_h, false, true);
 		return;
 	}
 
-	___RestorePlayerCharacteristics(iClientH);
+	restore_player_characteristics(client_h);
 
-	___RestorePlayerRating(iClientH);
+	restore_player_rating(client_h);
 
-	if ((m_pClientList[iClientH]->m_sX == -1) && (m_pClientList[iClientH]->m_sY == -1)) {
-		GetMapInitialPoint(m_pClientList[iClientH]->m_cMapIndex, &m_pClientList[iClientH]->m_sX, &m_pClientList[iClientH]->m_sY, m_pClientList[iClientH]->m_cLocation);
+	if ((m_client_list[client_h]->m_x == -1) && (m_client_list[client_h]->m_y == -1)) {
+		get_map_initial_point(m_client_list[client_h]->m_map_index, &m_client_list[client_h]->m_x, &m_client_list[client_h]->m_y, m_client_list[client_h]->m_location);
 	}
 
 	// New 17/05/2004
-	SetPlayingStatus(iClientH);
+	set_playing_status(client_h);
 	// Set faction/identity status fields from player data
-	m_pClientList[iClientH]->m_status.bPK = (m_pClientList[iClientH]->m_iPKCount != 0) ? 1 : 0;
-	m_pClientList[iClientH]->m_status.bCitizen = (m_pClientList[iClientH]->m_cSide != 0) ? 1 : 0;
-	m_pClientList[iClientH]->m_status.bAresden = (m_pClientList[iClientH]->m_cSide == 1) ? 1 : 0;
-	m_pClientList[iClientH]->m_status.bHunter = m_pClientList[iClientH]->m_bIsPlayerCivil ? 1 : 0;
+	m_client_list[client_h]->m_status.pk = (m_client_list[client_h]->m_player_kill_count != 0) ? 1 : 0;
+	m_client_list[client_h]->m_status.citizen = (m_client_list[client_h]->m_side != 0) ? 1 : 0;
+	m_client_list[client_h]->m_status.aresden = (m_client_list[client_h]->m_side == 1) ? 1 : 0;
+	m_client_list[client_h]->m_status.hunter = m_client_list[client_h]->m_is_player_civil ? 1 : 0;
 
-	if (m_pClientList[iClientH]->m_iLevel > 100)
-		if (m_pClientList[iClientH]->m_bIsPlayerCivil)
-			ForceChangePlayMode(iClientH, false);
+	if (m_client_list[client_h]->m_level > 100)
+		if (m_client_list[client_h]->m_is_player_civil)
+			force_change_play_mode(client_h, false);
 
-	m_pClientList[iClientH]->m_iNextLevelExp = m_iLevelExpTable[m_pClientList[iClientH]->m_iLevel + 1]; //iGetLevelExp(m_pClientList[iClientH]->m_iLevel + 1);
+	m_client_list[client_h]->m_next_level_exp = m_level_exp_table[m_client_list[client_h]->m_level + 1]; //get_level_exp(m_client_list[client_h]->m_level + 1);
 
-	m_pItemManager->CalcTotalItemEffect(iClientH, -1, true); //false
-	iCalcTotalWeight(iClientH);
+	m_item_manager->calc_total_item_effect(client_h, -1, true); //false
+	calc_total_weight(client_h);
 
-	iTotalPoints = 0;
+	total_points = 0;
 	for(int i = 0; i < hb::shared::limits::MaxSkillType; i++)
-		iTotalPoints += m_pClientList[iClientH]->m_cSkillMastery[i];
-	if ((iTotalPoints - 21 > MaxSkillPoints) ) {
+		total_points += m_client_list[client_h]->m_skill_mastery[i];
+	if ((total_points - 21 > MaxSkillPoints) ) {
 		try
 		{
-			hb::logger::warn<log_channel::security>("Packet editing: IP={} player={}, exceeds allowed skill points ({})", m_pClientList[iClientH]->m_cIPaddress, m_pClientList[iClientH]->m_cCharName, iTotalPoints);
-			DeleteClient(iClientH, true, true);
+			hb::logger::warn<log_channel::security>("Packet editing: IP={} player={}, exceeds allowed skill points ({})", m_client_list[client_h]->m_ip_address, m_client_list[client_h]->m_char_name, total_points);
+			delete_client(client_h, true, true);
 		}
 		catch (...)
 		{
@@ -4227,46 +4227,46 @@ void CGame::InitPlayerData(int iClientH, char* pData, uint32_t dwSize)
 		return;
 	}
 
-	CheckSpecialEvent(iClientH);
-	m_pMagicManager->bCheckMagicInt(iClientH);
+	check_special_event(client_h);
+	m_magic_manager->check_magic_int(client_h);
 
-	SendNotifyMsg(0, iClientH, Notify::Hunger, m_pClientList[iClientH]->m_iHungerStatus, 0, 0, 0);
+	send_notify_msg(0, client_h, Notify::Hunger, m_client_list[client_h]->m_hunger_status, 0, 0, 0);
 
-	if (strcmp(m_pClientList[iClientH]->m_cGuildName, "NONE") != 0) {
-		char cFn[112] = {};
-		std::memset(cFn, 0, sizeof(cFn));
-		std::snprintf(cFn, sizeof(cFn), "Guilds/AscII%d/%s.txt", m_pClientList[iClientH]->m_cGuildName[0], m_pClientList[iClientH]->m_cGuildName);
-		bGuildStatus = std::filesystem::exists(cFn);
+	if (strcmp(m_client_list[client_h]->m_guild_name, "NONE") != 0) {
+		char fn[112] = {};
+		std::memset(fn, 0, sizeof(fn));
+		std::snprintf(fn, sizeof(fn), "Guilds/AscII%d/%s.txt", m_client_list[client_h]->m_guild_name[0], m_client_list[client_h]->m_guild_name);
+		guild_status = std::filesystem::exists(fn);
 		// GuildName
-		if ((!bGuildStatus) && (memcmp(m_pClientList[iClientH]->m_cGuildName, "NONE", 4) != 0)) {
-			std::memset(m_pClientList[iClientH]->m_cGuildName, 0, sizeof(m_pClientList[iClientH]->m_cGuildName));
-			strcpy(m_pClientList[iClientH]->m_cGuildName, "NONE");
-			m_pClientList[iClientH]->m_iGuildRank = -1;
-			m_pClientList[iClientH]->m_iGuildGUID = -1;
+		if ((!guild_status) && (memcmp(m_client_list[client_h]->m_guild_name, "NONE", 4) != 0)) {
+			std::memset(m_client_list[client_h]->m_guild_name, 0, sizeof(m_client_list[client_h]->m_guild_name));
+			strcpy(m_client_list[client_h]->m_guild_name, "NONE");
+			m_client_list[client_h]->m_guild_rank = -1;
+			m_client_list[client_h]->m_guild_guid = -1;
 
-			SendNotifyMsg(0, iClientH, Notify::GuildDisbanded, 0, 0, 0, m_pClientList[iClientH]->m_cGuildName);
+			send_notify_msg(0, client_h, Notify::GuildDisbanded, 0, 0, 0, m_client_list[client_h]->m_guild_name);
 		}
 	}
 
-	if (m_pClientList[iClientH]->m_iQuest > 0) {
+	if (m_client_list[client_h]->m_quest > 0) {
 		// Validate quest number to prevent out-of-bounds access
-		if(m_pClientList[iClientH]->m_iQuest >= hb::server::config::MaxQuestType || !m_pQuestManager->m_pQuestConfigList[m_pClientList[iClientH]->m_iQuest])
+		if(m_client_list[client_h]->m_quest >= hb::server::config::MaxQuestType || !m_quest_manager->m_quest_config_list[m_client_list[client_h]->m_quest])
 		{
-			m_pClientList[iClientH]->m_iQuest = 0;
-			m_pClientList[iClientH]->m_iCurQuestCount = 0;
-			m_pClientList[iClientH]->m_iQuestRewardAmount = 0;
-			m_pClientList[iClientH]->m_iQuestRewardType = 0;
-			m_pClientList[iClientH]->m_bIsQuestCompleted = false;
+			m_client_list[client_h]->m_quest = 0;
+			m_client_list[client_h]->m_cur_quest_count = 0;
+			m_client_list[client_h]->m_quest_reward_amount = 0;
+			m_client_list[client_h]->m_quest_reward_type = 0;
+			m_client_list[client_h]->m_is_quest_completed = false;
 		}
 		else {
-			cQuestRemain = (m_pQuestManager->m_pQuestConfigList[m_pClientList[iClientH]->m_iQuest]->m_iMaxCount - m_pClientList[iClientH]->m_iCurQuestCount);
-			SendNotifyMsg(0, iClientH, Notify::QuestCounter, cQuestRemain, 0, 0, 0);
-			m_pQuestManager->_bCheckIsQuestCompleted(iClientH);
+			quest_remain = (m_quest_manager->m_quest_config_list[m_client_list[client_h]->m_quest]->m_max_count - m_client_list[client_h]->m_cur_quest_count);
+			send_notify_msg(0, client_h, Notify::QuestCounter, quest_remain, 0, 0, 0);
+			m_quest_manager->check_is_quest_completed(client_h);
 		}
 	}
 
-	if (m_pClientList[iClientH] == 0) {
-		hb::logger::log("Client {}: init player data failed (socket error), disconnected", iClientH);
+	if (m_client_list[client_h] == 0) {
+		hb::logger::log("Client {}: init player data failed (socket error), disconnected", client_h);
 		return;
 	}
 
@@ -4274,30 +4274,30 @@ void CGame::InitPlayerData(int iClientH, char* pData, uint32_t dwSize)
 	pkt.header.msg_id = MsgId::ResponseInitPlayer;
 	pkt.header.msg_type = MsgType::Confirm;
 
-	iRet = m_pClientList[iClientH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
-	switch (iRet) {
+	ret = m_client_list[client_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+	switch (ret) {
 	case sock::Event::QueueFull:
 	case sock::Event::SocketError:
 	case sock::Event::CriticalError:
 	case sock::Event::SocketClosed:
 		// ## BUG POINT!!!
-		hb::logger::log("Client {}: init player data socket error, disconnected", iClientH);
+		hb::logger::log("Client {}: init player data socket error, disconnected", client_h);
 
-		DeleteClient(iClientH, false, true);
+		delete_client(client_h, false, true);
 		return;
 	}
 
-	m_pClientList[iClientH]->m_bIsInitComplete = true;
+	m_client_list[client_h]->m_is_init_complete = true;
 }
 
-void CGame::GameProcess()
+void CGame::game_process()
 {
 	// MODERNIZED: Socket polling moved to EventLoop (wmain.cpp) for continuous responsiveness
 	// This function now handles only game logic processing
-	NpcProcess();
-	MsgProcess();
-	ForceRecallProcess();
-	m_pDelayEventManager->DelayEventProcess();
+	npc_process();
+	msg_process();
+	force_recall_process();
+	m_delay_event_manager->delay_event_process();
 }
 
 // Helper function to normalize item name for comparison (removes spaces and underscores)
@@ -4312,29 +4312,29 @@ static void NormalizeItemName(const char* src, char* dst, size_t dstSize)
 	dst[j] = '\0';
 }
 
-bool CGame::_bGetIsStringIsNumber(char* pStr)
+bool CGame::get_is_string_is_number(char* str)
 {
 	
-	for(int i = 0; i < (int)strlen(pStr); i++)
-		if ((pStr[i] != '-') && ((pStr[i] < (char)'0') || (pStr[i] > (char)'9'))) return false;
+	for(int i = 0; i < (int)strlen(str); i++)
+		if ((str[i] != '-') && ((str[i] < (char)'0') || (str[i] > (char)'9'))) return false;
 
 	return true;
 }
 
-int CGame::bCreateNewNpc(int iNpcConfigId, char* pName, char* pMapName, short sClass, char cSA, char cMoveType, int* poX, int* poY, char* pWaypointList, hb::shared::geometry::GameRectangle* pArea, int iSpotMobIndex, char cChangeSide, bool bHideGenMode, bool bIsSummoned, bool bFirmBerserk, bool bIsMaster, int iGuildGUID, bool bBypassMobLimit)
+int CGame::create_new_npc(int npc_config_id, char* name, char* map_name, short sClass, char sa, char move_type, int* offset_x, int* offset_y, char* waypoint_list, hb::shared::geometry::GameRectangle* area, int spot_mob_index, char change_side, bool hide_gen_mode, bool is_summoned, bool firm_berserk, bool is_master, int guild_guid, bool bypass_mob_limit)
 {
-	if (m_pEntityManager == 0)
+	if (m_entity_manager == 0)
 		return false;
 
-	return (m_pEntityManager->CreateEntity(
-		iNpcConfigId, pName, pMapName, sClass, cSA, cMoveType,
-		poX, poY, pWaypointList, pArea, iSpotMobIndex, cChangeSide,
-		bHideGenMode, bIsSummoned, bFirmBerserk, bIsMaster, iGuildGUID, bBypassMobLimit) > 0);
+	return (m_entity_manager->create_entity(
+		npc_config_id, name, map_name, sClass, sa, move_type,
+		offset_x, offset_y, waypoint_list, area, spot_mob_index, change_side,
+		hide_gen_mode, is_summoned, firm_berserk, is_master, guild_guid, bypass_mob_limit) > 0);
 }
 
-int CGame::SpawnMapNpcsFromDatabase(sqlite3* db, int iMapIndex)
+int CGame::spawn_map_npcs_from_database(sqlite3* db, int map_index)
 {
-	if (db == nullptr || m_pMapList[iMapIndex] == nullptr)
+	if (db == nullptr || m_map_list[map_index] == nullptr)
 		return 0;
 
 	const char* sql =
@@ -4346,28 +4346,28 @@ int CGame::SpawnMapNpcsFromDatabase(sqlite3* db, int iMapIndex)
 		return 0;
 	}
 
-	sqlite3_bind_text(stmt, 1, m_pMapList[iMapIndex]->m_cName, -1, SQLITE_STATIC);
+	sqlite3_bind_text(stmt, 1, m_map_list[map_index]->m_name, -1, SQLITE_STATIC);
 
 	int npcCount = 0;
-	char cNpcWaypointIndex[12];
-	char cNamePrefix;
-	char cNpcMoveType;
-	char cName[8];
-	int iNamingValue;
+	char npc_waypoint_index[12];
+	char name_prefix;
+	char npc_move_type;
+	char name[8];
+	int naming_value;
 
 	while (sqlite3_step(stmt) == SQLITE_ROW) {
-		// Get NPC config ID directly
-		int iNpcConfigId = sqlite3_column_int(stmt, 0);
-		if (iNpcConfigId < 0 || iNpcConfigId >= MaxNpcTypes || m_pNpcConfigList[iNpcConfigId] == nullptr) {
-			hb::logger::log("Invalid npc_config_id {} in map_npcs for map {}", iNpcConfigId, m_pMapList[iMapIndex]->m_cName);
+		// get NPC config ID directly
+		int npc_config_id = sqlite3_column_int(stmt, 0);
+		if (npc_config_id < 0 || npc_config_id >= MaxNpcTypes || m_npc_config_list[npc_config_id] == nullptr) {
+			hb::logger::log("Invalid npc_config_id {} in map_npcs for map {}", npc_config_id, m_map_list[map_index]->m_name);
 			continue;
 		}
 
-		// Get move type
-		cNpcMoveType = static_cast<char>(sqlite3_column_int(stmt, 1));
+		// get move type
+		npc_move_type = static_cast<char>(sqlite3_column_int(stmt, 1));
 
-		// Get waypoint list (comma-separated string like "0,0,0,0,0,0,0,0,0,0")
-		std::memset(cNpcWaypointIndex, 0, sizeof(cNpcWaypointIndex));
+		// get waypoint list (comma-separated string like "0,0,0,0,0,0,0,0,0,0")
+		std::memset(npc_waypoint_index, 0, sizeof(npc_waypoint_index));
 		const char* waypointList = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 2));
 		if (waypointList != nullptr && strlen(waypointList) > 0) {
 			char waypointCopy[64];
@@ -4376,31 +4376,31 @@ int CGame::SpawnMapNpcsFromDatabase(sqlite3* db, int iMapIndex)
 			char* token = strtok(waypointCopy, ",");
 			int wpIndex = 0;
 			while (token != nullptr && wpIndex < 10) {
-				cNpcWaypointIndex[wpIndex] = static_cast<char>(atoi(token));
+				npc_waypoint_index[wpIndex] = static_cast<char>(atoi(token));
 				token = strtok(nullptr, ",");
 				wpIndex++;
 			}
 		}
 
-		// Get name prefix
+		// get name prefix
 		const char* prefix = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 3));
-		cNamePrefix = (prefix != nullptr && strlen(prefix) > 0) ? prefix[0] : '_';
+		name_prefix = (prefix != nullptr && strlen(prefix) > 0) ? prefix[0] : '_';
 
-		// Get a naming value for this NPC
-		iNamingValue = m_pMapList[iMapIndex]->iGetEmptyNamingValue();
-		if (iNamingValue == -1) {
+		// get a naming value for this NPC
+		naming_value = m_map_list[map_index]->get_empty_naming_value();
+		if (naming_value == -1) {
 			continue;
 		}
 
 		// Construct the NPC instance name
-		std::memset(cName, 0, sizeof(cName));
-		std::snprintf(cName, sizeof(cName), "XX%d", iNamingValue);
-		cName[0] = cNamePrefix;
-		cName[1] = static_cast<char>(iMapIndex + 65);
+		std::memset(name, 0, sizeof(name));
+		std::snprintf(name, sizeof(name), "XX%d", naming_value);
+		name[0] = name_prefix;
+		name[1] = static_cast<char>(map_index + 65);
 
 		// Spawn the NPC
-		if (bCreateNewNpc(iNpcConfigId, cName, m_pMapList[iMapIndex]->m_cName, 0, 0, cNpcMoveType, 0, 0, cNpcWaypointIndex, 0, 0, -1, false) == false) {
-			m_pMapList[iMapIndex]->SetNamingValueEmpty(iNamingValue);
+		if (create_new_npc(npc_config_id, name, m_map_list[map_index]->m_name, 0, 0, npc_move_type, 0, 0, npc_waypoint_index, 0, 0, -1, false) == false) {
+			m_map_list[map_index]->set_naming_value_empty(naming_value);
 		}
 		else {
 			npcCount++;
@@ -4410,28 +4410,28 @@ int CGame::SpawnMapNpcsFromDatabase(sqlite3* db, int iMapIndex)
 	sqlite3_finalize(stmt);
 
 	if (npcCount > 0) {
-		hb::logger::log("- Spawned {} static NPCs for map: {}", npcCount, m_pMapList[iMapIndex]->m_cName);
+		hb::logger::log("- Spawned {} static NPCs for map: {}", npcCount, m_map_list[map_index]->m_name);
 	}
 
 	return npcCount;
 }
 
-void CGame::NpcProcess()
+void CGame::npc_process()
 {
-	if (m_pEntityManager != 0)
-		m_pEntityManager->ProcessEntities();
+	if (m_entity_manager != 0)
+		m_entity_manager->process_entities();
 }
 
-void CGame::BroadcastServerMessage(const char* pMessage)
+void CGame::broadcast_server_message(const char* message)
 {
-	if (pMessage == nullptr || pMessage[0] == '\0')
+	if (message == nullptr || message[0] == '\0')
 		return;
 
 	// Build a chat packet: header(6) + x(2) + y(2) + name(10) + chat_type(1) + message + null
 	char pkt[256];
 	std::memset(pkt, 0, sizeof(pkt));
 
-	size_t msgLen = std::strlen(pMessage);
+	size_t msgLen = std::strlen(message);
 	if (msgLen > sizeof(pkt) - 22) msgLen = sizeof(pkt) - 22;
 
 	auto& chatPkt = *reinterpret_cast<hb::net::PacketChatMsg*>(pkt);
@@ -4444,69 +4444,69 @@ void CGame::BroadcastServerMessage(const char* pMessage)
 
 	// Message text follows immediately after the chat header
 	constexpr size_t chat_header_size = sizeof(hb::net::PacketChatMsg);
-	std::memcpy(pkt + chat_header_size, pMessage, msgLen);
+	std::memcpy(pkt + chat_header_size, message, msgLen);
 	pkt[chat_header_size + msgLen] = '\0';
 
-	uint32_t dwSize = static_cast<uint32_t>(chat_header_size + msgLen + 1);
+	uint32_t size = static_cast<uint32_t>(chat_header_size + msgLen + 1);
 
 	for(int i = 1; i < MaxClients; i++)
 	{
-		if (m_pClientList[i] != nullptr && m_pClientList[i]->m_bIsInitComplete)
-			m_pClientList[i]->m_pXSock->iSendMsg(pkt, dwSize);
+		if (m_client_list[i] != nullptr && m_client_list[i]->m_is_init_complete)
+			m_client_list[i]->m_socket->send_msg(pkt, size);
 	}
 
-	hb::logger::log<log_channel::chat>("[Broadcast] {}: {}", "Server", pMessage);
+	hb::logger::log<log_channel::chat>("[Broadcast] {}: {}", "Server", message);
 }
 
-bool CGame::IsBlockedBy(int iSenderH, int iReceiverH) const
+bool CGame::is_blocked_by(int sender_h, int receiver_h) const
 {
-	if (m_pClientList[iSenderH] == nullptr || m_pClientList[iReceiverH] == nullptr)
+	if (m_client_list[sender_h] == nullptr || m_client_list[receiver_h] == nullptr)
 		return false;
-	return m_pClientList[iReceiverH]->m_BlockedAccounts.count(
-		m_pClientList[iSenderH]->m_cAccountName) > 0;
+	return m_client_list[receiver_h]->m_blocked_accounts.count(
+		m_client_list[sender_h]->m_account_name) > 0;
 }
 
 // 05/29/2004 - Hypnotoad - GM chat tweak
-void CGame::ChatMsgHandler(int iClientH, char* pData, size_t dwMsgSize)
+void CGame::chat_msg_handler(int client_h, char* data, size_t msg_size)
 {
-	int iRet;
-	char* cp;
-	char cSendMode = 0;
+	int ret = sock::Event::CriticalError;
+	char* cp = 0;
+	uint8_t send_mode = 0;
 
-	if (m_pClientList[iClientH] == 0) return;
-	if (m_pClientList[iClientH]->m_bIsInitComplete == false) return;
-	if (dwMsgSize > 83 + 30) {
-		hb::logger::log<log_channel::chat>("[ChatMsg] Rejected from client {} — size {} exceeds max", iClientH, dwMsgSize);
+	if (m_client_list[client_h] == 0) return;
+	if (m_client_list[client_h]->m_is_init_complete == false) return;
+	if (msg_size > 83 + 30) {
+		hb::logger::debug<log_channel::chat>("[ChatMsg] Rejected from client {} — size {} exceeds max", client_h, msg_size);
 		return;
 	}
 
-	auto* header = hb::net::PacketCast<hb::net::PacketHeader>(pData, sizeof(hb::net::PacketHeader));
+	auto* header = hb::net::PacketCast<hb::net::PacketHeader>(data, sizeof(hb::net::PacketHeader));
 	if (!header) return;
-	const auto* pkt = hb::net::PacketCast<hb::net::PacketCommandChatMsgHeader>(pData, sizeof(hb::net::PacketCommandChatMsgHeader));
+	const auto* pkt = hb::net::PacketCast<hb::net::PacketCommandChatMsgHeader>(data, sizeof(hb::net::PacketCommandChatMsgHeader));
 	if (!pkt) return;
-	char* message = pData + sizeof(hb::net::PacketCommandChatMsgHeader);
+	char* message = data + sizeof(hb::net::PacketCommandChatMsgHeader);
 
-	hb::logger::log<log_channel::chat>("[ChatMsg] client={} pkt->name='{}' expected='{}' msgSize={}",
-		iClientH, pkt->name, m_pClientList[iClientH]->m_cCharName, dwMsgSize);
+	hb::logger::debug<log_channel::chat>("[ChatMsg] client={} pkt->name='{}' expected='{}' msgSize={}",
+		client_h, pkt->name, m_client_list[client_h]->m_char_name, msg_size);
 
-	if (hb_strnicmp(pkt->name, m_pClientList[iClientH]->m_cCharName, strlen(m_pClientList[iClientH]->m_cCharName)) != 0) {
-		hb::logger::log<log_channel::chat>("[ChatMsg] Name mismatch — possible struct packing issue. PacketCommandChatMsgHeader size={}", sizeof(hb::net::PacketCommandChatMsgHeader));
+	if (hb_strnicmp(pkt->name, m_client_list[client_h]->m_char_name, strlen(m_client_list[client_h]->m_char_name)) != 0) {
+		hb::logger::debug<log_channel::chat>("[ChatMsg] Name mismatch — possible struct packing issue. PacketCommandChatMsgHeader size={}", sizeof(hb::net::PacketCommandChatMsgHeader));
 		return;
 	}
 
-	if (m_pClientList[iClientH]->m_bIsObserverMode) return;
+	if (m_client_list[client_h]->m_is_observer_mode) return;
 
 	// v1.432-2
-	int iStX, iStY;
-	if (m_pMapList[m_pClientList[iClientH]->m_cMapIndex] != 0) {
-		iStX = m_pClientList[iClientH]->m_sX / 20;
-		iStY = m_pClientList[iClientH]->m_sY / 20;
-		m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_stTempSectorInfo[iStX][iStY].iPlayerActivity++;
+	int st_x, st_y;
+	if (m_map_list[m_client_list[client_h]->m_map_index] != 0) {
+		st_x = m_client_list[client_h]->m_x / 20;
+		st_y = m_client_list[client_h]->m_y / 20;
+		m_map_list[m_client_list[client_h]->m_map_index]->m_temp_sector_info[st_x][st_y].player_activity++;
 
-		switch (m_pClientList[iClientH]->m_cSide) {
-		case 0: m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_stTempSectorInfo[iStX][iStY].iNeutralActivity++; break;
-		case 1: m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_stTempSectorInfo[iStX][iStY].iAresdenActivity++; break;
-		case 2: m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_stTempSectorInfo[iStX][iStY].iElvineActivity++;  break;
+		switch (m_client_list[client_h]->m_side) {
+		case 0: m_map_list[m_client_list[client_h]->m_map_index]->m_temp_sector_info[st_x][st_y].neutral_activity++; break;
+		case 1: m_map_list[m_client_list[client_h]->m_map_index]->m_temp_sector_info[st_x][st_y].aresden_activity++; break;
+		case 2: m_map_list[m_client_list[client_h]->m_map_index]->m_temp_sector_info[st_x][st_y].elvine_activity++;  break;
 		}
 	}
 	cp = message;
@@ -4515,15 +4515,15 @@ void CGame::ChatMsgHandler(int iClientH, char* pData, size_t dwMsgSize)
 	case '@':
 		*cp = 32;
 
-		if ((m_pClientList[iClientH]->m_iLevel > 1) &&
-			(m_pClientList[iClientH]->m_iSP >= 3)) {
-			if (m_pClientList[iClientH]->m_iTimeLeft_FirmStaminar == 0) {
-				m_pClientList[iClientH]->m_iSP -= 3;
-				SendNotifyMsg(0, iClientH, Notify::Sp, 0, 0, 0, 0);
+		if ((m_client_list[client_h]->m_level > 1) &&
+			(m_client_list[client_h]->m_sp >= 3)) {
+			if (m_client_list[client_h]->m_time_left_firm_stamina == 0) {
+				m_client_list[client_h]->m_sp -= 3;
+				send_notify_msg(0, client_h, Notify::Sp, 0, 0, 0, 0);
 			}
-			cSendMode = 1;
+			send_mode = 1;
 		}
-		else cSendMode = 0;
+		else send_mode = 0;
 		break;
 
 		// New 08/05/2004
@@ -4531,85 +4531,85 @@ void CGame::ChatMsgHandler(int iClientH, char* pData, size_t dwMsgSize)
 	case '$':
 		*cp = 32;
 
-		if (m_pClientList[iClientH]->m_iSP >= 3) {
-			if (m_pClientList[iClientH]->m_iTimeLeft_FirmStaminar == 0) {
-				m_pClientList[iClientH]->m_iSP -= 3;
-				SendNotifyMsg(0, iClientH, Notify::Sp, 0, 0, 0, 0);
+		if (m_client_list[client_h]->m_sp >= 3) {
+			if (m_client_list[client_h]->m_time_left_firm_stamina == 0) {
+				m_client_list[client_h]->m_sp -= 3;
+				send_notify_msg(0, client_h, Notify::Sp, 0, 0, 0, 0);
 			}
-			cSendMode = 4;
+			send_mode = 4;
 		}
 		else {
-			cSendMode = 0;
+			send_mode = 0;
 		}
 		break;
 
 	case '^':
 		*cp = 32;
 
-		if ((m_pClientList[iClientH]->m_iLevel > 10) &&
-			(m_pClientList[iClientH]->m_iSP > 5) && m_pClientList[iClientH]->m_iGuildRank != -1) {
-			if (m_pClientList[iClientH]->m_iTimeLeft_FirmStaminar == 0) {
-				m_pClientList[iClientH]->m_iSP -= 3;
-				SendNotifyMsg(0, iClientH, Notify::Sp, 0, 0, 0, 0);
+		if ((m_client_list[client_h]->m_level > 10) &&
+			(m_client_list[client_h]->m_sp > 5) && m_client_list[client_h]->m_guild_rank != -1) {
+			if (m_client_list[client_h]->m_time_left_firm_stamina == 0) {
+				m_client_list[client_h]->m_sp -= 3;
+				send_notify_msg(0, client_h, Notify::Sp, 0, 0, 0, 0);
 			}
-			cSendMode = 1;
+			send_mode = 1;
 		}
-		else cSendMode = 0;
+		else send_mode = 0;
 
 		// v1.4334
-		if (m_pClientList[iClientH]->m_iHP < 0) cSendMode = 0;
+		if (m_client_list[client_h]->m_hp < 0) send_mode = 0;
 
 		break;
 
 	case '!':
 		*cp = 32;
 
-		if ((m_pClientList[iClientH]->m_iLevel > 10) &&
-			(m_pClientList[iClientH]->m_iSP >= 5)) {
-			if (m_pClientList[iClientH]->m_iTimeLeft_FirmStaminar == 0) {
-				m_pClientList[iClientH]->m_iSP -= 5;
-				SendNotifyMsg(0, iClientH, Notify::Sp, 0, 0, 0, 0);
+		if ((m_client_list[client_h]->m_level > 10) &&
+			(m_client_list[client_h]->m_sp >= 5)) {
+			if (m_client_list[client_h]->m_time_left_firm_stamina == 0) {
+				m_client_list[client_h]->m_sp -= 5;
+				send_notify_msg(0, client_h, Notify::Sp, 0, 0, 0, 0);
 			}
-			cSendMode = 2;
+			send_mode = 2;
 		}
-		else cSendMode = 0;
+		else send_mode = 0;
 
 		// v1.4334
-		if (m_pClientList[iClientH]->m_iHP <= 0) cSendMode = 0;
+		if (m_client_list[client_h]->m_hp <= 0) send_mode = 0;
 
 		break;
 
 	case '~':
 		*cp = 32;
-		if ((m_pClientList[iClientH]->m_iLevel > 1) &&
-			(m_pClientList[iClientH]->m_iSP >= 3)) {
-			if (m_pClientList[iClientH]->m_iTimeLeft_FirmStaminar == 0) {
-				m_pClientList[iClientH]->m_iSP -= 3;
-				SendNotifyMsg(0, iClientH, Notify::Sp, 0, 0, 0, 0);
+		if ((m_client_list[client_h]->m_level > 1) &&
+			(m_client_list[client_h]->m_sp >= 3)) {
+			if (m_client_list[client_h]->m_time_left_firm_stamina == 0) {
+				m_client_list[client_h]->m_sp -= 3;
+				send_notify_msg(0, client_h, Notify::Sp, 0, 0, 0, 0);
 			}
-			cSendMode = 3;
+			send_mode = 3;
 		}
-		else cSendMode = 0;
+		else send_mode = 0;
 		// v1.4334
-		if (m_pClientList[iClientH]->m_iHP <= 0) cSendMode = 0;
+		if (m_client_list[client_h]->m_hp <= 0) send_mode = 0;
 		break;
 
 	case '/':
-		if (GameChatCommandManager::Get().ProcessCommand(iClientH, cp, dwMsgSize - sizeof(hb::net::PacketCommandChatMsgHeader)))
+		if (GameChatCommandManager::get().process_command(client_h, cp, msg_size - sizeof(hb::net::PacketCommandChatMsgHeader)))
 			return;
 		// Not a recognized command - fall through as normal chat
 		break;
 	}
 
-	pData[dwMsgSize - 1] = 0;
+	data[msg_size - 1] = 0;
 
-	if ((m_pClientList[iClientH]->m_cMagicEffectStatus[hb::shared::magic::Confuse] == 1) && (iDice(1, 3) != 2)) {
+	if ((m_client_list[client_h]->m_magic_effect_status[hb::shared::magic::Confuse] == 1) && (dice(1, 3) != 2)) {
 		// Confuse Language
 		cp = message;
 
 		while (*cp != 0) {
 			if ((cp[0] != 0) && (cp[0] != ' ') && (cp[1] != 0) && (cp[1] != ' ')) {
-				switch (iDice(1, 3)) {
+				switch (dice(1, 3)) {
 				case 1:	memcpy(cp, "¿ö", 2); break;
 				case 2:	memcpy(cp, "¿ì", 2); break;
 				case 3:	memcpy(cp, "¿ù", 2); break;
@@ -4622,151 +4622,171 @@ void CGame::ChatMsgHandler(int iClientH, char* pData, size_t dwMsgSize)
 
 	cp = message;
 
-	if ((cSendMode == 0) && (m_pClientList[iClientH]->m_iWhisperPlayerIndex != -1)) {
-		cSendMode = 20;
+	if ((send_mode == 0) && (m_client_list[client_h]->m_whisper_player_index != -1)) {
+		send_mode = 20;
 
-		if (*cp == '#') cSendMode = 0;
+		if (*cp == '#') send_mode = 0;
 	}
 
 	// Refresh AFK timer for non-whisper chat (whispers don't break AFK)
-	if (cSendMode != 20) {
-		m_pClientList[iClientH]->m_dwAfkActivityTime = GameClock::GetTimeMS();
+	if (send_mode != 20) {
+		m_client_list[client_h]->m_afk_activity_time = GameClock::GetTimeMS();
 	}
 
-	hb::logger::log<log_channel::chat>("[type:{}] {} -> {}: {}", cSendMode, m_pClientList[iClientH]->m_cCharName, (cSendMode == 20) ? m_pClientList[iClientH]->m_cWhisperPlayerName : nullptr, message);
+	std::string chat_type = "Local";
+	std::string player_name = m_client_list[client_h]->m_char_name;
 
-	header->msg_type = (uint16_t)iClientH;
+	switch (send_mode)
+	{
+	case 0:  chat_type = "[Local]"; break;
+	case 1:  chat_type = "[Guild]"; break;
+	case 2:  chat_type = "[Shout]"; break;
+	case 3:  chat_type = "[Faction]"; break;
+	case 4:  chat_type = "[Party]"; break;
+	case 10: chat_type = "[GMBroadcast]"; break;
+	case 20: chat_type = "[Whisper]"; break;
+	}
+	if (send_mode == 20)
+	{
+		std::string whispered_player = m_client_list[client_h]->m_whisper_player_name;
+		hb::logger::log<log_channel::chat>("{} {}->{}:{}", chat_type, player_name, whispered_player, message);
+	}
+	else {
+		hb::logger::log<log_channel::chat>("{} {}:{}", chat_type, player_name, message);
+	}
+
+	header->msg_type = (uint16_t)client_h;
 	// Write chat send mode into the packet's chat_type field before relaying to clients
-	pData[offsetof(hb::net::PacketCommandChatMsgHeader, chat_type)] = cSendMode;
+	data[offsetof(hb::net::PacketCommandChatMsgHeader, chat_type)] = send_mode;
 
-	if (cSendMode != 20) {
+	if (send_mode != 20) {
 		for(int i = 1; i < MaxClients; i++)
-			if (m_pClientList[i] != 0) {
-				if (IsBlockedBy(iClientH, i)) continue;
-				switch (cSendMode) {
+			if (m_client_list[i] != 0) {
+				if (is_blocked_by(client_h, i)) continue;
+				switch (send_mode) {
 				case 0:
-					if (m_pClientList[i]->m_bIsInitComplete == false) break;
+					if (m_client_list[i]->m_is_init_complete == false) break;
 
-					if ((m_pClientList[i]->m_cMapIndex == m_pClientList[iClientH]->m_cMapIndex) &&
-						(m_pClientList[i]->m_sX > m_pClientList[iClientH]->m_sX - hb::shared::view::CenterX) &&
-						(m_pClientList[i]->m_sX < m_pClientList[iClientH]->m_sX + hb::shared::view::CenterX) &&
-						(m_pClientList[i]->m_sY > m_pClientList[iClientH]->m_sY - hb::shared::view::CenterY) &&
-						(m_pClientList[i]->m_sY < m_pClientList[iClientH]->m_sY + hb::shared::view::CenterY)) {
+					if ((m_client_list[i]->m_map_index == m_client_list[client_h]->m_map_index) &&
+						(m_client_list[i]->m_x > m_client_list[client_h]->m_x - hb::shared::view::CenterX) &&
+						(m_client_list[i]->m_x < m_client_list[client_h]->m_x + hb::shared::view::CenterX) &&
+						(m_client_list[i]->m_y > m_client_list[client_h]->m_y - hb::shared::view::CenterY) &&
+						(m_client_list[i]->m_y < m_client_list[client_h]->m_y + hb::shared::view::CenterY)) {
 
 						// Crusade
-						if (m_bIsCrusadeMode) {
-							if ((m_pClientList[iClientH]->m_cSide != 0) && (m_pClientList[i]->m_cSide != 0) &&
-								(m_pClientList[i]->m_cSide != m_pClientList[iClientH]->m_cSide)) {
+						if (m_is_crusade_mode) {
+							if ((m_client_list[client_h]->m_side != 0) && (m_client_list[i]->m_side != 0) &&
+								(m_client_list[i]->m_side != m_client_list[client_h]->m_side)) {
 							}
-							else iRet = m_pClientList[i]->m_pXSock->iSendMsg(pData, dwMsgSize);
+							else ret = m_client_list[i]->m_socket->send_msg(data, msg_size);
 						}
-						else iRet = m_pClientList[i]->m_pXSock->iSendMsg(pData, dwMsgSize);
+						else ret = m_client_list[i]->m_socket->send_msg(data, msg_size);
 					}
 					break;
 
 				case 1:
-					if (m_pClientList[i]->m_bIsInitComplete == false) break;
+					if (m_client_list[i]->m_is_init_complete == false) break;
 
-					if ((memcmp(m_pClientList[i]->m_cGuildName, m_pClientList[iClientH]->m_cGuildName, 20) == 0) &&
-						(memcmp(m_pClientList[i]->m_cGuildName, "NONE", 4) != 0)) {
+					if ((memcmp(m_client_list[i]->m_guild_name, m_client_list[client_h]->m_guild_name, 20) == 0) &&
+						(memcmp(m_client_list[i]->m_guild_name, "NONE", 4) != 0)) {
 
 						// Crusade
-						if (m_bIsCrusadeMode) {
-							if ((m_pClientList[iClientH]->m_cSide != 0) && (m_pClientList[i]->m_cSide != 0) &&
-								(m_pClientList[i]->m_cSide != m_pClientList[iClientH]->m_cSide)) {
+						if (m_is_crusade_mode) {
+							if ((m_client_list[client_h]->m_side != 0) && (m_client_list[i]->m_side != 0) &&
+								(m_client_list[i]->m_side != m_client_list[client_h]->m_side)) {
 							}
-							else iRet = m_pClientList[i]->m_pXSock->iSendMsg(pData, dwMsgSize);
+							else ret = m_client_list[i]->m_socket->send_msg(data, msg_size);
 						}
-						else iRet = m_pClientList[i]->m_pXSock->iSendMsg(pData, dwMsgSize);
+						else ret = m_client_list[i]->m_socket->send_msg(data, msg_size);
 					}
 					break;
 
 				case 2:
 				case 10:
 					// Crusade
-					if (m_bIsCrusadeMode) {
-						if ((m_pClientList[iClientH]->m_cSide != 0) && (m_pClientList[i]->m_cSide != 0) &&
-							(m_pClientList[i]->m_cSide != m_pClientList[iClientH]->m_cSide)) {
+					if (m_is_crusade_mode) {
+						if ((m_client_list[client_h]->m_side != 0) && (m_client_list[i]->m_side != 0) &&
+							(m_client_list[i]->m_side != m_client_list[client_h]->m_side)) {
 						}
-						else iRet = m_pClientList[i]->m_pXSock->iSendMsg(pData, dwMsgSize);
+						else ret = m_client_list[i]->m_socket->send_msg(data, msg_size);
 					}
-					else iRet = m_pClientList[i]->m_pXSock->iSendMsg(pData, dwMsgSize);
+					else ret = m_client_list[i]->m_socket->send_msg(data, msg_size);
 					break;
 
 				case 3:
-					if (m_pClientList[i]->m_bIsInitComplete == false) break;
+					if (m_client_list[i]->m_is_init_complete == false) break;
 
-					if ((m_pClientList[i]->m_cSide == m_pClientList[iClientH]->m_cSide))
-						iRet = m_pClientList[i]->m_pXSock->iSendMsg(pData, dwMsgSize);
+					if ((m_client_list[i]->m_side == m_client_list[client_h]->m_side))
+						ret = m_client_list[i]->m_socket->send_msg(data, msg_size);
 					break;
 
 				case 4:
-					if (m_pClientList[i]->m_bIsInitComplete == false) break;
-					if ((m_pClientList[i]->m_iPartyID != 0) && (m_pClientList[i]->m_iPartyID == m_pClientList[iClientH]->m_iPartyID))
-						iRet = m_pClientList[i]->m_pXSock->iSendMsg(pData, dwMsgSize);
+					if (m_client_list[i]->m_is_init_complete == false) break;
+					if ((m_client_list[i]->m_party_id != 0) && (m_client_list[i]->m_party_id == m_client_list[client_h]->m_party_id))
+						ret = m_client_list[i]->m_socket->send_msg(data, msg_size);
 					break;
 				}
 
-				switch (iRet) {
+				switch (ret) {
 				case sock::Event::QueueFull:
 				case sock::Event::SocketError:
 				case sock::Event::CriticalError:
 				case sock::Event::SocketClosed:
-					//DeleteClient(i, true, true);
+					//delete_client(i, true, true);
 					break;
 				}
 			}
 	}
 	else {
 		// New 16/05/2004
-		iRet = m_pClientList[iClientH]->m_pXSock->iSendMsg(pData, dwMsgSize);
+		ret = m_client_list[client_h]->m_socket->send_msg(data, msg_size);
 		{
-			int whisperTarget = m_pClientList[iClientH]->m_iWhisperPlayerIndex;
-			if (m_pClientList[whisperTarget] != 0 &&
-				hb_stricmp(m_pClientList[iClientH]->m_cWhisperPlayerName, m_pClientList[whisperTarget]->m_cCharName) == 0) {
-				if (!IsBlockedBy(iClientH, whisperTarget)) {
-					iRet = m_pClientList[whisperTarget]->m_pXSock->iSendMsg(pData, dwMsgSize);
+			int whisperTarget = m_client_list[client_h]->m_whisper_player_index;
+			if (m_client_list[whisperTarget] != 0 &&
+				hb_stricmp(m_client_list[client_h]->m_whisper_player_name, m_client_list[whisperTarget]->m_char_name) == 0) {
+				if (!is_blocked_by(client_h, whisperTarget)) {
+					ret = m_client_list[whisperTarget]->m_socket->send_msg(data, msg_size);
 				}
 			}
 		}
 
-		switch (iRet) {
+		switch (ret) {
 		case sock::Event::QueueFull:
 		case sock::Event::SocketError:
 		case sock::Event::CriticalError:
 		case sock::Event::SocketClosed:
-			//DeleteClient(i, true, true);
+			//delete_client(i, true, true);
 			break;
 		}
 	}
 }
 
-void CGame::ChatMsgHandlerGSM(int iMsgType, int iV1, char* pName, char* pData, size_t dwMsgSize)
+void CGame::chat_msg_handler_gsm(int msg_type, int v1, char* name, char* data, size_t msg_size)
 {
-	int iRet;
-	char cTemp[256], cSendMode = 0;
+	int ret;
+	char temp[256], send_mode = 0;
 
-	std::memset(cTemp, 0, sizeof(cTemp));
+	std::memset(temp, 0, sizeof(temp));
 
-	auto& chatPkt = *reinterpret_cast<hb::net::PacketChatMsg*>(cTemp);
+	auto& chatPkt = *reinterpret_cast<hb::net::PacketChatMsg*>(temp);
 	chatPkt.header.msg_id = MsgId::CommandChatMsg;
 	chatPkt.header.msg_type = 0;
 	chatPkt.reserved1 = 0;
 	chatPkt.reserved2 = 0;
-	std::memcpy(chatPkt.name, pName, sizeof(chatPkt.name));
-	chatPkt.chat_type = static_cast<uint8_t>(iMsgType);
+	std::memcpy(chatPkt.name, name, sizeof(chatPkt.name));
+	chatPkt.chat_type = static_cast<uint8_t>(msg_type);
 
-	char* cp = cTemp + sizeof(hb::net::PacketChatMsg);
-	memcpy(cp, pData, dwMsgSize);
-	cp += dwMsgSize;
+	char* cp = temp + sizeof(hb::net::PacketChatMsg);
+	memcpy(cp, data, msg_size);
+	cp += msg_size;
 
-	switch (iMsgType) {
+	switch (msg_type) {
 	case 1:
 		for(int i = 1; i < MaxClients; i++)
-			if (m_pClientList[i] != 0) {
-				if (m_pClientList[i]->m_bIsInitComplete == false) break;
-				if ((m_pClientList[i]->m_iGuildGUID == iV1) && (m_pClientList[i]->m_iGuildGUID != 0)) {
-					iRet = m_pClientList[i]->m_pXSock->iSendMsg(cTemp, dwMsgSize + 22);
+			if (m_client_list[i] != 0) {
+				if (m_client_list[i]->m_is_init_complete == false) break;
+				if ((m_client_list[i]->m_guild_guid == v1) && (m_client_list[i]->m_guild_guid != 0)) {
+					ret = m_client_list[i]->m_socket->send_msg(temp, msg_size + 22);
 				}
 			}
 		break;
@@ -4774,209 +4794,209 @@ void CGame::ChatMsgHandlerGSM(int iMsgType, int iV1, char* pName, char* pData, s
 	case 2:
 	case 10:
 		for(int i = 1; i < MaxClients; i++)
-			if (m_pClientList[i] != 0) {
-				iRet = m_pClientList[i]->m_pXSock->iSendMsg(cTemp, dwMsgSize + 22);
+			if (m_client_list[i] != 0) {
+				ret = m_client_list[i]->m_socket->send_msg(temp, msg_size + 22);
 			}
 		break;
 	}
 }
 
-//  int CGame::iClientMotion_Attack_Handler(int iClientH, short sX, short sY, short dX, short dY, short wType, char cDir, uint16_t wTargetObjectID, bool bResponse, bool bIsDash)
+//  int CGame::client_motion_attack_handler(int client_h, short sX, short sY, short dX, short dY, short type, char dir, uint16_t target_object_id, bool response, bool is_dash)
 //  description			:: controls player attack
 //	return value		:: int
 //  last updated		:: October 29, 2004; 8:06 PM; Hypnotoad
 //  commentary			:: - contains attack hack detection
-//						   - added checks for Firebow and Directionbow to see if player is m_bIsInsideWarehouse, m_bIsInsideWizardTower, m_bIsInsideOwnTown 
+//						   - added checks for Firebow and Directionbow to see if player is m_is_inside_warehouse, m_is_inside_wizard_tower, m_is_inside_own_town 
 //						   - added ability to attack moving object
 //						   - fixed attack unmoving object
 // Incomplete: 
 //			- Direction Bow damage disabled
-int CGame::iClientMotion_Attack_Handler(int iClientH, short sX, short sY, short dX, short dY, short wType, char cDir, uint16_t wTargetObjectID, uint32_t dwClientTime, bool bResponse, bool bIsDash)
+int CGame::client_motion_attack_handler(int client_h, short sX, short sY, short dX, short dY, short type, char dir, uint16_t target_object_id, uint32_t client_time, bool response, bool is_dash)
 {
-	uint32_t dwTime, iExp;
-	int     iRet, tdX = 0, tdY = 0;
-	short   sOwner, sAbsX, sAbsY;
-	char    cOwnerType;
-	bool    bNearAttack = false, var_AC = false;
-	short sItemIndex;
-	int tX, tY, iErr, iStX, iStY;
+	uint32_t time, exp;
+	int     ret, tdX = 0, tdY = 0;
+	short   owner, abs_x, abs_y;
+	char    owner_type;
+	bool    near_attack = false, var_AC = false;
+	short item_index;
+	int tX, tY, err, st_x, st_y;
 
-	if (m_pClientList[iClientH] == 0) return 0;
-	if ((cDir <= 0) || (cDir > 8))       return 0;
-	if (m_pClientList[iClientH]->m_bIsInitComplete == false) return 0;
-	if (m_pClientList[iClientH]->m_bIsKilled) return 0;
+	if (m_client_list[client_h] == 0) return 0;
+	if ((dir <= 0) || (dir > 8))       return 0;
+	if (m_client_list[client_h]->m_is_init_complete == false) return 0;
+	if (m_client_list[client_h]->m_is_killed) return 0;
 
-	dwTime = GameClock::GetTimeMS();
-	m_pClientList[iClientH]->m_dwLastActionTime = dwTime;
-	m_pClientList[iClientH]->m_iAttackMsgRecvCount++;
-	if (m_pClientList[iClientH]->m_iAttackMsgRecvCount >= 7) {
-		if (m_pClientList[iClientH]->m_dwAttackLAT != 0) {
+	time = GameClock::GetTimeMS();
+	m_client_list[client_h]->m_last_action_time = time;
+	m_client_list[client_h]->m_attack_msg_recv_count++;
+	if (m_client_list[client_h]->m_attack_msg_recv_count >= 7) {
+		if (m_client_list[client_h]->m_attack_last_action_time != 0) {
 			// Compute expected time for 7 consecutive attacks from weapon speed and status.
 			// Uses client time to avoid false positives from TCP buffering/network jitter.
-			// Must match client-side animation timing (PlayerAnim::Attack: sMaxFrame=7, frames 0-7 = 8 durations @ 78ms base).
+			// Must match client-side animation timing (PlayerAnim::Attack: max_frame=7, frames 0-7 = 8 durations @ 78ms base).
 			constexpr int ATTACK_FRAME_DURATIONS = 8;
 			constexpr int BASE_FRAME_TIME = 78;
 			constexpr int RUN_FRAME_TIME = 39;
 			constexpr int BATCH_TOLERANCE_MS = 100;
 
-			const auto& status = m_pClientList[iClientH]->m_status;
-			int iAttackDelay = status.iAttackDelay;
-			bool bHaste = status.bHaste;
-			bool bFrozen = status.bFrozen;
+			const auto& status = m_client_list[client_h]->m_status;
+			int attack_delay = status.attack_delay;
+			bool haste = status.haste;
+			bool frozen = status.frozen;
 
-			int effectiveFrameTime = BASE_FRAME_TIME + (iAttackDelay * 12);
-			if (bFrozen) effectiveFrameTime += BASE_FRAME_TIME >> 2;
-			if (bHaste)  effectiveFrameTime -= static_cast<int>(RUN_FRAME_TIME / 2.3);
+			int effectiveFrameTime = BASE_FRAME_TIME + (attack_delay * 12);
+			if (frozen) effectiveFrameTime += BASE_FRAME_TIME >> 2;
+			if (haste)  effectiveFrameTime -= static_cast<int>(RUN_FRAME_TIME / 2.3);
 
 			int singleSwingTime = ATTACK_FRAME_DURATIONS * effectiveFrameTime;
 			int batchThreshold = 7 * singleSwingTime - BATCH_TOLERANCE_MS;
 			if (batchThreshold < 2800) batchThreshold = 2800;
 
-			uint32_t dwClientGap = dwClientTime - m_pClientList[iClientH]->m_dwAttackLAT;
-			if (dwClientGap < static_cast<uint32_t>(batchThreshold)) {
-				hb::logger::warn<log_channel::security>("Batch swing hack: IP={} player={}, 7 attacks in {}ms (min={}ms)", m_pClientList[iClientH]->m_cIPaddress, m_pClientList[iClientH]->m_cCharName, dwClientGap, batchThreshold);
-				DeleteClient(iClientH, true, true, true);
+			uint32_t client_gap = client_time - m_client_list[client_h]->m_attack_last_action_time;
+			if (client_gap < static_cast<uint32_t>(batchThreshold)) {
+				hb::logger::warn<log_channel::security>("Batch swing hack: IP={} player={}, 7 attacks in {}ms (min={}ms)", m_client_list[client_h]->m_ip_address, m_client_list[client_h]->m_char_name, client_gap, batchThreshold);
+				delete_client(client_h, true, true, true);
 				return 0;
 			}
 		}
-		m_pClientList[iClientH]->m_dwAttackLAT = dwClientTime;
-		m_pClientList[iClientH]->m_iAttackMsgRecvCount = 0;
+		m_client_list[client_h]->m_attack_last_action_time = client_time;
+		m_client_list[client_h]->m_attack_msg_recv_count = 0;
 	}
 
-	if ((wTargetObjectID != 0) && (wType != 2)) {
-		if (wTargetObjectID < MaxClients) {
-			if (m_pClientList[wTargetObjectID] != 0) {
-				tdX = m_pClientList[wTargetObjectID]->m_sX;
-				tdY = m_pClientList[wTargetObjectID]->m_sY;
+	if ((target_object_id != 0) && (type != 2)) {
+		if (target_object_id < MaxClients) {
+			if (m_client_list[target_object_id] != 0) {
+				tdX = m_client_list[target_object_id]->m_x;
+				tdY = m_client_list[target_object_id]->m_y;
 			}
 		}
-		else if (hb::shared::object_id::IsNpcID(wTargetObjectID) && (hb::shared::object_id::ToNpcIndex(wTargetObjectID) < MaxNpcs)) {
-			if (m_pNpcList[hb::shared::object_id::ToNpcIndex(wTargetObjectID)] != 0) {
-				tdX = m_pNpcList[hb::shared::object_id::ToNpcIndex(wTargetObjectID)]->m_sX;
-				tdY = m_pNpcList[hb::shared::object_id::ToNpcIndex(wTargetObjectID)]->m_sY;
+		else if (hb::shared::object_id::IsNpcID(target_object_id) && (hb::shared::object_id::ToNpcIndex(target_object_id) < MaxNpcs)) {
+			if (m_npc_list[hb::shared::object_id::ToNpcIndex(target_object_id)] != 0) {
+				tdX = m_npc_list[hb::shared::object_id::ToNpcIndex(target_object_id)]->m_x;
+				tdY = m_npc_list[hb::shared::object_id::ToNpcIndex(target_object_id)]->m_y;
 			}
 		}
 
-		m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->GetOwner(&sOwner, &cOwnerType, dX, dY);
-		if ((sOwner == hb::shared::object_id::ToNpcIndex(wTargetObjectID)) && (m_pNpcList[sOwner] != 0)) {
-			tdX = m_pNpcList[sOwner]->m_sX;
+		m_map_list[m_client_list[client_h]->m_map_index]->get_owner(&owner, &owner_type, dX, dY);
+		if ((owner == hb::shared::object_id::ToNpcIndex(target_object_id)) && (m_npc_list[owner] != 0)) {
+			tdX = m_npc_list[owner]->m_x;
 			dX = tdX;
-			tdY = m_pNpcList[sOwner]->m_sY;
+			tdY = m_npc_list[owner]->m_y;
 			dY = tdY;
-			bNearAttack = false;
+			near_attack = false;
 			var_AC = true;
 		}
 		if (var_AC != true) {
 			if ((tdX == dX) && (tdY == dY)) {
-				bNearAttack = false;
+				near_attack = false;
 			}
 			else if ((abs(tdX - dX) <= 1) && (abs(tdY - dY) <= 1)) {
 				dX = tdX;
 				dY = tdY;
-				bNearAttack = true;
+				near_attack = true;
 			}
 		}
 	}
 
-	if ((dX < 0) || (dX >= m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_sSizeX) ||
-		(dY < 0) || (dY >= m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_sSizeY)) return 0;
+	if ((dX < 0) || (dX >= m_map_list[m_client_list[client_h]->m_map_index]->m_size_x) ||
+		(dY < 0) || (dY >= m_map_list[m_client_list[client_h]->m_map_index]->m_size_y)) return 0;
 
-	if ((sX != m_pClientList[iClientH]->m_sX) || (sY != m_pClientList[iClientH]->m_sY)) return 2;
+	if ((sX != m_client_list[client_h]->m_x) || (sY != m_client_list[client_h]->m_y)) return 2;
 
-	if (m_pMapList[m_pClientList[iClientH]->m_cMapIndex] != 0) {
-		iStX = m_pClientList[iClientH]->m_sX / 20;
-		iStY = m_pClientList[iClientH]->m_sY / 20;
-		m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_stTempSectorInfo[iStX][iStY].iPlayerActivity++;
+	if (m_map_list[m_client_list[client_h]->m_map_index] != 0) {
+		st_x = m_client_list[client_h]->m_x / 20;
+		st_y = m_client_list[client_h]->m_y / 20;
+		m_map_list[m_client_list[client_h]->m_map_index]->m_temp_sector_info[st_x][st_y].player_activity++;
 
-		switch (m_pClientList[iClientH]->m_cSide) {
-		case 0: m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_stTempSectorInfo[iStX][iStY].iNeutralActivity++; break;
-		case 1: m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_stTempSectorInfo[iStX][iStY].iAresdenActivity++; break;
-		case 2: m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_stTempSectorInfo[iStX][iStY].iElvineActivity++;  break;
+		switch (m_client_list[client_h]->m_side) {
+		case 0: m_map_list[m_client_list[client_h]->m_map_index]->m_temp_sector_info[st_x][st_y].neutral_activity++; break;
+		case 1: m_map_list[m_client_list[client_h]->m_map_index]->m_temp_sector_info[st_x][st_y].aresden_activity++; break;
+		case 2: m_map_list[m_client_list[client_h]->m_map_index]->m_temp_sector_info[st_x][st_y].elvine_activity++;  break;
 		}
 	}
 
-	sAbsX = abs(sX - dX);
-	sAbsY = abs(sY - dY);
-	if ((wType != 2) && (wType < 20)) {
+	abs_x = abs(sX - dX);
+	abs_y = abs(sY - dY);
+	if ((type != 2) && (type < 20)) {
 		if (var_AC == false) {
-			sItemIndex = m_pClientList[iClientH]->m_sItemEquipmentStatus[ToInt(EquipPos::TwoHand)];
-			if (sItemIndex != -1) {
-				if (m_pClientList[iClientH]->m_pItemList[sItemIndex] == 0) return 0;
-				if (m_pClientList[iClientH]->m_pItemList[sItemIndex]->m_sIDnum == 845) {
-					if ((sAbsX > 4) || (sAbsY > 4)) wType = 0;
+			item_index = m_client_list[client_h]->m_item_equipment_status[to_int(EquipPos::TwoHand)];
+			if (item_index != -1) {
+				if (m_client_list[client_h]->m_item_list[item_index] == 0) return 0;
+				if (m_client_list[client_h]->m_item_list[item_index]->m_id_num == 845) {
+					if ((abs_x > 4) || (abs_y > 4)) type = 0;
 				}
 				else {
-					if ((sAbsX > 1) || (sAbsY > 1)) wType = 0;
+					if ((abs_x > 1) || (abs_y > 1)) type = 0;
 				}
 			}
 			else {
-				if ((sAbsX > 1) || (sAbsY > 1)) wType = 0;
+				if ((abs_x > 1) || (abs_y > 1)) type = 0;
 			}
 		}
 		else {
-			cDir = CMisc::cGetNextMoveDir(sX, sY, dX, dY);
-			if ((m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->bCheckFlySpaceAvailable(
-				sX, static_cast<char>(sY), cDir, sOwner)))
-				wType = 0;
+			dir = CMisc::get_next_move_dir(sX, sY, dX, dY);
+			if ((m_map_list[m_client_list[client_h]->m_map_index]->check_fly_space_available(
+				sX, static_cast<char>(sY), dir, owner)))
+				type = 0;
 		}
 	}
-	else if (wType >= 20) {
-		short sMaxRange;
-		switch (wType) {
-		case 30: sMaxRange = 5; break; // StormBlade critical
-		case 22: sMaxRange = 4; break; // Esterk
-		case 23: sMaxRange = 3; break; // Long Sword
-		case 24: sMaxRange = 2; break; // Axe
-		case 26: sMaxRange = 2; break; // Hammer
-		case 27: sMaxRange = 2; break; // Wand
-		case 25: sMaxRange = 0; break; // Bow - ranged, no melee limit
-		default: sMaxRange = 1; break; // Boxing (20), Dagger/SS (21)
+	else if (type >= 20) {
+		short max_range;
+		switch (type) {
+		case 30: max_range = 5; break; // StormBlade critical
+		case 22: max_range = 4; break; // Esterk
+		case 23: max_range = 3; break; // Long Sword
+		case 24: max_range = 2; break; // Axe
+		case 26: max_range = 2; break; // Hammer
+		case 27: max_range = 2; break; // Wand
+		case 25: max_range = 0; break; // Bow - ranged, no melee limit
+		default: max_range = 1; break; // Boxing (20), Dagger/SS (21)
 		}
-		if ((sMaxRange > 0) && ((sAbsX > sMaxRange) || (sAbsY > sMaxRange))) wType = 0;
+		if ((max_range > 0) && ((abs_x > max_range) || (abs_y > max_range))) type = 0;
 	}
 
-	m_pSkillManager->ClearSkillUsingStatus(iClientH);
-	m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->ClearOwner(0, iClientH, hb::shared::owner_class::Player, sX, sY);
-	m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->SetOwner(iClientH, hb::shared::owner_class::Player, sX, sY);
+	m_skill_manager->clear_skill_using_status(client_h);
+	m_map_list[m_client_list[client_h]->m_map_index]->clear_owner(0, client_h, hb::shared::owner_class::Player, sX, sY);
+	m_map_list[m_client_list[client_h]->m_map_index]->set_owner(client_h, hb::shared::owner_class::Player, sX, sY);
 
-	m_pClientList[iClientH]->m_cDir = cDir;
+	m_client_list[client_h]->m_dir = dir;
 
-	iExp = 0;
-	m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->GetOwner(&sOwner, &cOwnerType, dX, dY);
+	exp = 0;
+	m_map_list[m_client_list[client_h]->m_map_index]->get_owner(&owner, &owner_type, dX, dY);
 
-	if (sOwner != 0) {
-		if ((wType != 0) && ((dwTime - m_pClientList[iClientH]->m_dwRecentAttackTime) > 100)) {
-			if ((m_pClientList[iClientH]->m_pIsProcessingAllowed == false) && (m_pClientList[iClientH]->m_bIsInsideWarehouse == false)
-				&& (m_pClientList[iClientH]->m_bIsInsideWizardTower == false) && (m_pClientList[iClientH]->m_bIsInsideOwnTown == false)) {
+	if (owner != 0) {
+		if ((type != 0) && ((time - m_client_list[client_h]->m_recent_attack_time) > 100)) {
+			if ((m_client_list[client_h]->m_is_processing_allowed == false) && (m_client_list[client_h]->m_is_inside_warehouse == false)
+				&& (m_client_list[client_h]->m_is_inside_wizard_tower == false) && (m_client_list[client_h]->m_is_inside_own_town == false)) {
 
-				uint32_t dwType1 = 0, dwType2, dwValue1, dwValue2;
-				if (m_pClientList[iClientH]->m_sItemEquipmentStatus[ToInt(EquipPos::RightHand)] != -1) {
-					sItemIndex = m_pClientList[iClientH]->m_sItemEquipmentStatus[ToInt(EquipPos::RightHand)];
+				uint32_t type1 = 0, type2, value1, value2;
+				if (m_client_list[client_h]->m_item_equipment_status[to_int(EquipPos::RightHand)] != -1) {
+					item_index = m_client_list[client_h]->m_item_equipment_status[to_int(EquipPos::RightHand)];
 				}
-				else if (m_pClientList[iClientH]->m_sItemEquipmentStatus[ToInt(EquipPos::TwoHand)] != -1) {
-					sItemIndex = m_pClientList[iClientH]->m_sItemEquipmentStatus[ToInt(EquipPos::TwoHand)];
+				else if (m_client_list[client_h]->m_item_equipment_status[to_int(EquipPos::TwoHand)] != -1) {
+					item_index = m_client_list[client_h]->m_item_equipment_status[to_int(EquipPos::TwoHand)];
 				}
-				else sItemIndex = -1;
+				else item_index = -1;
 
-				if (sItemIndex != -1 && m_pClientList[iClientH]->m_pItemList[sItemIndex] != 0) {
-					if ((m_pClientList[iClientH]->m_pItemList[sItemIndex]->m_dwAttribute & 0x00F00000) != 0) {
-						dwType1 = (m_pClientList[iClientH]->m_pItemList[sItemIndex]->m_dwAttribute & 0x00F00000) >> 20;
-						dwValue1 = (m_pClientList[iClientH]->m_pItemList[sItemIndex]->m_dwAttribute & 0x000F0000) >> 16;
-						dwType2 = (m_pClientList[iClientH]->m_pItemList[sItemIndex]->m_dwAttribute & 0x0000F000) >> 12;
-						dwValue2 = (m_pClientList[iClientH]->m_pItemList[sItemIndex]->m_dwAttribute & 0x00000F00) >> 8;
+				if (item_index != -1 && m_client_list[client_h]->m_item_list[item_index] != 0) {
+					if ((m_client_list[client_h]->m_item_list[item_index]->m_attribute & 0x00F00000) != 0) {
+						type1 = (m_client_list[client_h]->m_item_list[item_index]->m_attribute & 0x00F00000) >> 20;
+						value1 = (m_client_list[client_h]->m_item_list[item_index]->m_attribute & 0x000F0000) >> 16;
+						type2 = (m_client_list[client_h]->m_item_list[item_index]->m_attribute & 0x0000F000) >> 12;
+						value2 = (m_client_list[client_h]->m_item_list[item_index]->m_attribute & 0x00000F00) >> 8;
 					}
 
-					if (dwType1 == 2) {
+					if (type1 == 2) {
 						// Centuu - fix for poison
-						switch (cOwnerType) {
+						switch (owner_type) {
 						case hb::shared::owner_class::Player:
-							if (!m_pClientList[sOwner]->m_bIsPoisoned && !m_pCombatManager->bCheckResistingPoisonSuccess(sOwner, cOwnerType))
+							if (!m_client_list[owner]->m_is_poisoned && !m_combat_manager->check_resisting_poison_success(owner, owner_type))
 							{
-								m_pClientList[sOwner]->m_bIsPoisoned = true;
-								m_pClientList[sOwner]->m_iPoisonLevel = dwValue1 * 5;
-								m_pClientList[sOwner]->m_dwPoisonTime = dwTime;
-								m_pStatusEffectManager->SetPoisonFlag(sOwner, cOwnerType, true);
-								SendNotifyMsg(0, sOwner, Notify::MagicEffectOn, hb::shared::magic::Poison, m_pClientList[sOwner]->m_iPoisonLevel, 0, 0);
+								m_client_list[owner]->m_is_poisoned = true;
+								m_client_list[owner]->m_poison_level = value1 * 5;
+								m_client_list[owner]->m_poison_time = time;
+								m_status_effect_manager->set_poison_flag(owner, owner_type, true);
+								send_notify_msg(0, owner, Notify::MagicEffectOn, hb::shared::magic::Poison, m_client_list[owner]->m_poison_level, 0, 0);
 							}
 							break;
 						case hb::shared::owner_class::Npc:
@@ -4985,60 +5005,60 @@ int CGame::iClientMotion_Attack_Handler(int iClientH, short sX, short sY, short 
 					}
 				}
 
-				sItemIndex = m_pClientList[iClientH]->m_sItemEquipmentStatus[ToInt(EquipPos::TwoHand)];
-				if (sItemIndex != -1 && m_pClientList[iClientH]->m_pItemList[sItemIndex] != 0) {
-					if (m_pClientList[iClientH]->m_pItemList[sItemIndex]->m_sIDnum == 874) { // Directional bow
+				item_index = m_client_list[client_h]->m_item_equipment_status[to_int(EquipPos::TwoHand)];
+				if (item_index != -1 && m_client_list[client_h]->m_item_list[item_index] != 0) {
+					if (m_client_list[client_h]->m_item_list[item_index]->m_id_num == 874) { // Directional bow
 						for(int i = 2; i < 10; i++) {
-							iErr = 0;
-							CMisc::GetPoint2(sX, sY, dX, dY, &tX, &tY, &iErr, i);
-							m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->GetOwner(&sOwner, &cOwnerType, tX, tY);
-							//iExp += m_pCombatManager->iCalculateAttackEffect(sOwner, cOwnerType, iClientH, hb::shared::owner_class::Player, tX, tY, wType, bNearAttack, bIsDash, true); // 1
+							err = 0;
+							CMisc::GetPoint2(sX, sY, dX, dY, &tX, &tY, &err, i);
+							m_map_list[m_client_list[client_h]->m_map_index]->get_owner(&owner, &owner_type, tX, tY);
+							//exp += m_combat_manager->calculate_attack_effect(owner, owner_type, client_h, hb::shared::owner_class::Player, tX, tY, type, near_attack, is_dash, true); // 1
 							if ((abs(tdX - dX) <= 1) && (abs(tdY - dY) <= 1)) {
-								m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->GetOwner(&sOwner, &cOwnerType, dX, dY);
-								//iExp += m_pCombatManager->iCalculateAttackEffect(sOwner, cOwnerType, iClientH, hb::shared::owner_class::Player, dX, dY, wType, bNearAttack, bIsDash, false); // 0
+								m_map_list[m_client_list[client_h]->m_map_index]->get_owner(&owner, &owner_type, dX, dY);
+								//exp += m_combat_manager->calculate_attack_effect(owner, owner_type, client_h, hb::shared::owner_class::Player, dX, dY, type, near_attack, is_dash, false); // 0
 							}
 						}
 					}
-					else if (m_pClientList[iClientH]->m_pItemList[sItemIndex]->m_sIDnum == 873) { // Firebow
-						if (m_pClientList[iClientH]->m_appearance.bIsWalking) {
-							if (m_bHeldenianInitiated != 1) {
-								m_pDynamicObjectManager->iAddDynamicObjectList(iClientH, hb::shared::owner_class::PlayerIndirect, dynamic_object::Fire3, m_pClientList[iClientH]->m_cMapIndex, dX, dY, (iDice(1, 7) + 3) * 1000, 8);
+					else if (m_client_list[client_h]->m_item_list[item_index]->m_id_num == 873) { // Firebow
+						if (m_client_list[client_h]->m_appearance.is_walking) {
+							if (m_heldenian_initiated != 1) {
+								m_dynamic_object_manager->add_dynamic_object_list(client_h, hb::shared::owner_class::PlayerIndirect, dynamic_object::Fire3, m_client_list[client_h]->m_map_index, dX, dY, (dice(1, 7) + 3) * 1000, 8);
 							}
-							iExp += m_pCombatManager->iCalculateAttackEffect(sOwner, cOwnerType, iClientH, hb::shared::owner_class::Player, dX, dY, wType, bNearAttack, bIsDash, false);
+							exp += m_combat_manager->calculate_attack_effect(owner, owner_type, client_h, hb::shared::owner_class::Player, dX, dY, type, near_attack, is_dash, false);
 						}
 					}
 					else {
-						iExp += m_pCombatManager->iCalculateAttackEffect(sOwner, cOwnerType, iClientH, hb::shared::owner_class::Player, dX, dY, wType, bNearAttack, bIsDash, false);
+						exp += m_combat_manager->calculate_attack_effect(owner, owner_type, client_h, hb::shared::owner_class::Player, dX, dY, type, near_attack, is_dash, false);
 					}
 				}
 				else {
-					iExp += m_pCombatManager->iCalculateAttackEffect(sOwner, cOwnerType, iClientH, hb::shared::owner_class::Player, dX, dY, wType, bNearAttack, bIsDash, false);
+					exp += m_combat_manager->calculate_attack_effect(owner, owner_type, client_h, hb::shared::owner_class::Player, dX, dY, type, near_attack, is_dash, false);
 				}
 			}
 			else {
-				iExp += m_pCombatManager->iCalculateAttackEffect(sOwner, cOwnerType, iClientH, hb::shared::owner_class::Player, dX, dY, wType, bNearAttack, bIsDash, false);
+				exp += m_combat_manager->calculate_attack_effect(owner, owner_type, client_h, hb::shared::owner_class::Player, dX, dY, type, near_attack, is_dash, false);
 			}
-			if (m_pClientList[iClientH] == 0) return 0;
-			m_pClientList[iClientH]->m_dwRecentAttackTime = dwTime;
+			if (m_client_list[client_h] == 0) return 0;
+			m_client_list[client_h]->m_recent_attack_time = time;
 		}
 	}
-	else m_pMiningManager->_CheckMiningAction(iClientH, dX, dY);
+	else m_mining_manager->check_mining_action(client_h, dX, dY);
 
-	if (iExp != 0) {
-		GetExp(iClientH, iExp, true);
+	if (exp != 0) {
+		get_exp(client_h, exp, true);
 	}
 
-	if (bResponse) {
+	if (response) {
 		hb::net::PacketResponseMotionHeader pkt{};
 		pkt.header.msg_id = MsgId::ResponseMotion;
 		pkt.header.msg_type = Confirm::MotionAttackConfirm;
-		iRet = m_pClientList[iClientH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
-		switch (iRet) {
+		ret = m_client_list[client_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+		switch (ret) {
 		case sock::Event::QueueFull:
 		case sock::Event::SocketError:
 		case sock::Event::CriticalError:
 		case sock::Event::SocketClosed:
-			DeleteClient(iClientH, true, true);
+			delete_client(client_h, true, true);
 			return 0;
 		}
 	}
@@ -5046,11 +5066,11 @@ int CGame::iClientMotion_Attack_Handler(int iClientH, short sX, short sY, short 
 	return 1;
 }
 
-char CGame::cGetNextMoveDir(short sX, short sY, short dstX, short dstY, char cMapIndex, char cTurn, int* pError)
+char CGame::get_next_move_dir(short sX, short sY, short dstX, short dstY, char map_index, char turn, int* error_acc)
 {
-	char  cDir, cTmpDir;
+	char  dir, tmp_dir;
 	int   aX, aY, dX, dY;
-	int   iResX, iResY;
+	int   res_x, res_y;
 
 	if ((sX == dstX) && (sY == dstY)) return 0;
 
@@ -5058,29 +5078,29 @@ char CGame::cGetNextMoveDir(short sX, short sY, short dstX, short dstY, char cMa
 	dY = sY;
 
 	if ((abs(dX - dstX) <= 1) && (abs(dY - dstY) <= 1)) {
-		iResX = dstX;
-		iResY = dstY;
+		res_x = dstX;
+		res_y = dstY;
 	}
-	else CMisc::GetPoint(dX, dY, dstX, dstY, &iResX, &iResY, pError);
+	else CMisc::GetPoint(dX, dY, dstX, dstY, &res_x, &res_y, error_acc);
 
-	cDir = CMisc::cGetNextMoveDir(dX, dY, iResX, iResY);
+	dir = CMisc::get_next_move_dir(dX, dY, res_x, res_y);
 
-	if (cTurn == 0)
-		for(int i = cDir; i <= cDir + 7; i++) {
-			cTmpDir = i;
-			if (cTmpDir > 8) cTmpDir -= 8;
-			aX = _tmp_cTmpDirX[cTmpDir];
-			aY = _tmp_cTmpDirY[cTmpDir];
-			if (m_pMapList[cMapIndex]->bGetMoveable(dX + aX, dY + aY)) return cTmpDir;
+	if (turn == 0)
+		for(int i = dir; i <= dir + 7; i++) {
+			tmp_dir = i;
+			if (tmp_dir > 8) tmp_dir -= 8;
+			aX = _tmp_cTmpDirX[tmp_dir];
+			aY = _tmp_cTmpDirY[tmp_dir];
+			if (m_map_list[map_index]->get_moveable(dX + aX, dY + aY)) return tmp_dir;
 		}
 
-	if (cTurn == 1)
-		for(int i = cDir; i >= cDir - 7; i--) {
-			cTmpDir = i;
-			if (cTmpDir < 1) cTmpDir += 8;
-			aX = _tmp_cTmpDirX[cTmpDir];
-			aY = _tmp_cTmpDirY[cTmpDir];
-			if (m_pMapList[cMapIndex]->bGetMoveable(dX + aX, dY + aY)) return cTmpDir;
+	if (turn == 1)
+		for(int i = dir; i >= dir - 7; i--) {
+			tmp_dir = i;
+			if (tmp_dir < 1) tmp_dir += 8;
+			aX = _tmp_cTmpDirX[tmp_dir];
+			aY = _tmp_cTmpDirY[tmp_dir];
+			if (m_map_list[map_index]->get_moveable(dX + aX, dY + aY)) return tmp_dir;
 		}
 
 	return 0;
@@ -5089,14 +5109,14 @@ char CGame::cGetNextMoveDir(short sX, short sY, short dstX, short dstY, char cMa
 char _tmp_cEmptyPosX[] = { 0, 1, 1, 0, -1, -1, -1, 0 ,1, 2, 2, 2, 2, 1, 0, -1, -2, -2, -2, -2, -2, -1, 0, 1, 2 };
 char _tmp_cEmptyPosY[] = { 0, 0, 1, 1, 1, 0, -1, -1, -1, -1, 0, 1, 2, 2, 2, 2, 2, 1, 0, -1, -2, -2, -2, -2, -2 };
 
-bool CGame::bGetEmptyPosition(short* pX, short* pY, char cMapIndex)
+bool CGame::get_empty_position(short* pX, short* pY, char map_index)
 {
 	
 	short sX, sY;
 
 	for(int i = 0; i < 25; i++)
-		if ((m_pMapList[cMapIndex]->bGetMoveable(*pX + _tmp_cEmptyPosX[i], *pY + _tmp_cEmptyPosY[i])) &&
-			(m_pMapList[cMapIndex]->bGetIsTeleport(*pX + _tmp_cEmptyPosX[i], *pY + _tmp_cEmptyPosY[i]) == false)) {
+		if ((m_map_list[map_index]->get_moveable(*pX + _tmp_cEmptyPosX[i], *pY + _tmp_cEmptyPosY[i])) &&
+			(m_map_list[map_index]->get_is_teleport(*pX + _tmp_cEmptyPosX[i], *pY + _tmp_cEmptyPosY[i]) == false)) {
 			sX = *pX + _tmp_cEmptyPosX[i];
 			sY = *pY + _tmp_cEmptyPosY[i];
 			*pX = sX;
@@ -5104,206 +5124,206 @@ bool CGame::bGetEmptyPosition(short* pX, short* pY, char cMapIndex)
 			return true;
 		}
 
-	GetMapInitialPoint(cMapIndex, &sX, &sY);
+	get_map_initial_point(map_index, &sX, &sY);
 	*pX = sX;
 	*pY = sY;
 
 	return false;
 }
 
-void CGame::MsgProcess()
+void CGame::msg_process()
 {
-	char* pData, cFrom, cKey;
-	size_t    dwMsgSize;
-	int      iClientH;
-	uint32_t dwTime = GameClock::GetTimeMS();
+	char* data, cFrom, key;
+	size_t    msg_size;
+	int      client_h;
+	uint32_t time = GameClock::GetTimeMS();
 
-	std::memset(m_pMsgBuffer, 0, hb::shared::limits::MsgBufferSize + 1);
-	pData = (char*)m_pMsgBuffer;
+	std::memset(m_msg_buffer, 0, hb::shared::limits::MsgBufferSize + 1);
+	data = (char*)m_msg_buffer;
 
-	m_iCurMsgs = 0;
-	while (bGetMsgQuene(&cFrom, pData, &dwMsgSize, &iClientH, &cKey)) {
+	m_cur_msgs = 0;
+	while (get_msg_queue(&cFrom, data, &msg_size, &client_h, &key)) {
 
 		//v1.31
-		m_iCurMsgs++;
-		if (m_iCurMsgs > m_iMaxMsgs) m_iMaxMsgs = m_iCurMsgs;
+		m_cur_msgs++;
+		if (m_cur_msgs > m_max_msgs) m_max_msgs = m_cur_msgs;
 
 		switch (cFrom) {
 		case Source::Client: {
-			if (m_pClientList[iClientH] == nullptr) break;
+			if (m_client_list[client_h] == nullptr) break;
 
-			// Update activity tracking (async reads bypass OnClientSocketEvent)
-			m_pClientList[iClientH]->m_dwTime = dwTime;
+			// Update activity tracking (async reads bypass on_client_socket_event)
+			m_client_list[client_h]->m_time = time;
 
 			const auto* header = hb::net::PacketCast<hb::net::PacketHeader>(
-				pData, sizeof(hb::net::PacketHeader));
+				data, sizeof(hb::net::PacketHeader));
 			if (!header) break;
 
-			m_pClientList[iClientH]->m_dwLastMsgId = header->msg_id;
-			m_pClientList[iClientH]->m_dwLastMsgTime = dwTime;
-			m_pClientList[iClientH]->m_dwLastMsgSize = dwMsgSize;
+			m_client_list[client_h]->m_last_msg_id = header->msg_id;
+			m_client_list[client_h]->m_last_msg_time = time;
+			m_client_list[client_h]->m_last_msg_size = msg_size;
 
 			// Update AFK activity timer for all messages except keepalive and chat
-			// (chat is handled separately in ChatMsgHandler to exclude whispers)
+			// (chat is handled separately in chat_msg_handler to exclude whispers)
 			if (header->msg_id != MsgId::CommandCheckConnection && header->msg_id != MsgId::CommandChatMsg) {
-				m_pClientList[iClientH]->m_dwAfkActivityTime = dwTime;
+				m_client_list[client_h]->m_afk_activity_time = time;
 			}
 
 			switch (header->msg_id) {
 
 			case MsgId::RequestAngel: // Angels by Snoopy...
-				GetAngelHandler(iClientH, pData, dwMsgSize);
+				get_angel_handler(client_h, data, msg_size);
 				break;
 
 			case MsgId::RequestResurrectYes:
-				RequestResurrectPlayer(iClientH, true);
+				request_resurrect_player(client_h, true);
 				break;
 
 			case MsgId::RequestResurrectNo:
-				RequestResurrectPlayer(iClientH, false);
+				request_resurrect_player(client_h, false);
 				break;
 
 			case MsgId::RequestSellItemList:
-				m_pItemManager->RequestSellItemListHandler(iClientH, pData);
+				m_item_manager->request_sell_item_list_handler(client_h, data);
 				break;
 
 			case MsgId::RequestRestart:
-				RequestRestartHandler(iClientH);
+				request_restart_handler(client_h);
 				break;
 
 			case MsgId::RequestPanning:
-				iRequestPanningMapDataRequest(iClientH, pData);
+				request_panning_map_data_request(client_h, data);
 				break;
 
 			case MsgId::RequestNoticement:
-				//RequestNoticementHandler(iClientH, pData);
+				//request_noticement_handler(client_h, data);
 				break;
 
 			case MsgId::RequestSetItemPos:
-				m_pItemManager->_SetItemPos(iClientH, pData);
+				m_item_manager->set_item_pos(client_h, data);
 				break;
 
-			case MsgId::RequestFullObjectData:
-				RequestFullObjectData(iClientH, pData);
+			case MsgId::request_full_object_data:
+				request_full_object_data(client_h, data);
 				break;
 
 			case MsgId::RequestRetrieveItem:
-				m_pItemManager->RequestRetrieveItemHandler(iClientH, pData);
+				m_item_manager->request_retrieve_item_handler(client_h, data);
 				break;
 
 			case MsgId::RequestCivilRight:
-				RequestCivilRightHandler(iClientH, pData);
+				request_civil_right_handler(client_h, data);
 				break;
 
 			case MsgId::RequestTeleport:
-				RequestTeleportHandler(iClientH, pData);
+				request_teleport_handler(client_h, data);
 				break;
 
 			case MsgId::RequestInitPlayer:
-				RequestInitPlayerHandler(iClientH, pData, cKey);
+				request_init_player_handler(client_h, data, key);
 				break;
 
 			case MsgId::RequestInitData:
-				if (m_pClientList[iClientH] == nullptr) break;
-				if (m_pClientList[iClientH]->m_bIsClientConnected) {
-					hb::logger::error("Client '{}' connection closed, sniffer suspected", m_pClientList[iClientH]->m_cCharName);
-					m_pDelayEventManager->bRemoveFromDelayEventList(iClientH, hb::shared::owner_class::Player, 0);
-					g_login->LocalSavePlayerData(iClientH); //bSendMsgToLS(ServerMsgId::RequestSavePlayerDataLogout, iClientH, false);
-					if ((dwTime - m_dwGameTime2) > 3000) { // 3 segs
-						m_pClientList[iClientH]->m_bIsClientConnected = false;
-						DeleteClient(iClientH, true, true, true, true);
+				if (m_client_list[client_h] == nullptr) break;
+				if (m_client_list[client_h]->m_is_client_connected) {
+					hb::logger::error("Client '{}' connection closed, sniffer suspected", m_client_list[client_h]->m_char_name);
+					m_delay_event_manager->remove_from_delay_event_list(client_h, hb::shared::owner_class::Player, 0);
+					g_login->local_save_player_data(client_h); //send_msg_to_ls(ServerMsgId::RequestSavePlayerDataLogout, client_h, false);
+					if ((time - m_game_time_2) > 3000) { // 3 segs
+						m_client_list[client_h]->m_is_client_connected = false;
+						delete_client(client_h, true, true, true, true);
 					}
 					break;
 				}
 				else {
-					m_pClientList[iClientH]->m_bIsClientConnected = true;
-					RequestInitDataHandler(iClientH, pData, cKey, dwMsgSize);
+					m_client_list[client_h]->m_is_client_connected = true;
+					request_init_data_handler(client_h, data, key, msg_size);
 				}
 				break;
 
 			case MsgId::CommandCommon:
-				ClientCommonHandler(iClientH, pData);
+				client_common_handler(client_h, data);
 				break;
 
 			case MsgId::CommandMotion:
-				ClientMotionHandler(iClientH, pData);
+				client_motion_handler(client_h, data);
 				break;
 
 			case MsgId::CommandCheckConnection:
 				// Ping response already sent from I/O thread for accurate latency.
 				// Still run handler for speedhack detection (skip duplicate send).
-				CheckConnectionHandler(iClientH, pData, true);
+				check_connection_handler(client_h, data, true);
 				break;
 
 			case MsgId::CommandChatMsg:
-				ChatMsgHandler(iClientH, pData, dwMsgSize);
+				chat_msg_handler(client_h, data, msg_size);
 				break;
 
-			case MsgId::RequestCreateNewGuild:
-				m_pGuildManager->RequestCreateNewGuildHandler(iClientH, pData, dwMsgSize);
+			case MsgId::request_create_new_guild:
+				m_guild_manager->request_create_new_guild_handler(client_h, data, msg_size);
 				break;
 
-			case MsgId::RequestDisbandGuild:
-				m_pGuildManager->RequestDisbandGuildHandler(iClientH, pData, dwMsgSize);
+			case MsgId::request_disband_guild:
+				m_guild_manager->request_disband_guild_handler(client_h, data, msg_size);
 				break;
 
 			case MsgId::RequestFightZoneReserve:
-				m_pWarManager->FightzoneReserveHandler(iClientH, pData, dwMsgSize);
+				m_war_manager->fightzone_reserve_handler(client_h, data, msg_size);
 				break;
 
 			case MsgId::LevelUpSettings:
-				LevelUpSettingsHandler(iClientH, pData, dwMsgSize);
+				level_up_settings_handler(client_h, data, msg_size);
 				break;
 
 			case MsgId::StateChangePoint:
-				StateChangeHandler(iClientH, pData, dwMsgSize);
+				state_change_handler(client_h, data, msg_size);
 				break;
 
-			case ServerMsgId::RequestHeldenianTeleport:
-				m_pWarManager->RequestHeldenianTeleport(iClientH, pData, dwMsgSize);
+			case ServerMsgId::request_heldenian_teleport:
+				m_war_manager->request_heldenian_teleport(client_h, data, msg_size);
 				break;
 
 			case ServerMsgId::RequestCityHallTeleport:
-				if (memcmp(m_pClientList[iClientH]->m_cLocation, "aresden", 7) == 0) {
-					RequestTeleportHandler(iClientH, "2   ", "dglv2", 263, 258);
+				if (memcmp(m_client_list[client_h]->m_location, "aresden", 7) == 0) {
+					request_teleport_handler(client_h, "2   ", "dglv2", 263, 258);
 				}
-				else if (memcmp(m_pClientList[iClientH]->m_cLocation, "elvine", 6) == 0) {
-					RequestTeleportHandler(iClientH, "2   ", "dglv2", 209, 258);
+				else if (memcmp(m_client_list[client_h]->m_location, "elvine", 6) == 0) {
+					request_teleport_handler(client_h, "2   ", "dglv2", 209, 258);
 				}
 				break;
 
 			case MSGID_REQUEST_SHOP_CONTENTS:
-				RequestShopContentsHandler(iClientH, pData);
+				request_shop_contents_handler(client_h, data);
 				break;
 
 			case MsgId::RequestConfigData:
 			{
 				const auto* reqPkt = hb::net::PacketCast<hb::net::PacketRequestConfigData>(
-					pData, sizeof(hb::net::PacketRequestConfigData));
+					data, sizeof(hb::net::PacketRequestConfigData));
 				if (!reqPkt) break;
-				if (dwTime - m_pClientList[iClientH]->m_dwLastConfigRequestTime < 30000) break;
-				m_pClientList[iClientH]->m_dwLastConfigRequestTime = dwTime;
-				if (reqPkt->requestItems)  m_pItemManager->bSendClientItemConfigs(iClientH);
-				if (reqPkt->requestMagic)  m_pMagicManager->bSendClientMagicConfigs(iClientH);
-				if (reqPkt->requestSkills) m_pSkillManager->bSendClientSkillConfigs(iClientH);
-				if (reqPkt->requestNpcs)   bSendClientNpcConfigs(iClientH);
+				if (time - m_client_list[client_h]->m_last_config_request_time < 30000) break;
+				m_client_list[client_h]->m_last_config_request_time = time;
+				if (reqPkt->requestItems)  m_item_manager->send_client_item_configs(client_h);
+				if (reqPkt->requestMagic)  m_magic_manager->send_client_magic_configs(client_h);
+				if (reqPkt->requestSkills) m_skill_manager->send_client_skill_configs(client_h);
+				if (reqPkt->requestNpcs)   send_client_npc_configs(client_h);
 			}
 			break;
 
 			default:
-				if (m_pClientList[iClientH] != 0)  // Snoopy: Anti-crash check !
+				if (m_client_list[client_h] != 0)  // Snoopy: Anti-crash check !
 				{
 					std::snprintf(G_cTxt, sizeof(G_cTxt), "Unknown message received: (0x%.8X) PC(%s) - (Delayed). \tIP(%s)"
 						, header->msg_id
-						, m_pClientList[iClientH]->m_cCharName
-						, m_pClientList[iClientH]->m_cIPaddress);
-					//DelayedDeleteClient(iClientH, true, true, true, true);
+						, m_client_list[client_h]->m_char_name
+						, m_client_list[client_h]->m_ip_address);
+					//DelayedDeleteClient(client_h, true, true, true, true);
 				}
 				else
 				{
 				}
 				hb::logger::warn<log_channel::security>("Unknown message: 0x{:X} (no player)", header->msg_id);
-				hb::logger::warn<log_channel::security>("{}", m_pMsgBuffer);
+				hb::logger::warn<log_channel::security>("{}", m_msg_buffer);
 				break;
 			}
 			break;
@@ -5311,33 +5331,33 @@ void CGame::MsgProcess()
 
 		case Source::LogServer: {
 			const auto* header = hb::net::PacketCast<hb::net::PacketHeader>(
-				pData, sizeof(hb::net::PacketHeader));
+				data, sizeof(hb::net::PacketHeader));
 			if (!header) break;
 
 			switch (header->msg_id) {
 			case MsgId::RequestCreateNewAccount:
-				g_login->CreateNewAccount(iClientH, pData);
+				g_login->create_new_account(client_h, data);
 				break;
-			case MsgId::RequestLogin:
-				g_login->RequestLogin(iClientH, pData);
+			case MsgId::request_login:
+				g_login->request_login(client_h, data);
 				break;
 			case MsgId::RequestCreateNewCharacter: //message from client
-				g_login->ResponseCharacter(iClientH, pData);
+				g_login->response_character(client_h, data);
 				break;
 			case MsgId::RequestDeleteCharacter:
-				g_login->DeleteCharacter(iClientH, pData);
+				g_login->delete_character(client_h, data);
 				break;
 			case MsgId::RequestChangePassword:
-				g_login->ChangePassword(iClientH, pData);
+				g_login->change_password(client_h, data);
 				break;
-			case MsgId::RequestEnterGame:
-				g_login->RequestEnterGame(iClientH, pData);
+			case MsgId::request_enter_game:
+				g_login->request_enter_game(client_h, data);
 				break;
 			default:
 				hb::logger::log("Unknown login message: 0x{:X}, disconnecting client", header->msg_id);
 				break;
 			}
-			DeleteLoginClient(iClientH);
+			delete_login_client(client_h);
 		}
 								  break;
 		}
@@ -5345,279 +5365,279 @@ void CGame::MsgProcess()
 	}
 }
 
-bool CGame::bPutMsgQuene(char cFrom, char* pData, size_t dwMsgSize, int iIndex, char cKey)
+bool CGame::put_msg_queue(char cFrom, char* data, size_t msg_size, int index, char key)
 {
-	return m_msgQueue.Push(cFrom, pData, dwMsgSize, iIndex, cKey);
+	return m_msgQueue.push(cFrom, data, msg_size, index, key);
 }
 
-bool CGame::bGetMsgQuene(char* pFrom, char* pData, size_t* pMsgSize, int* pIndex, char* pKey)
+bool CGame::get_msg_queue(char* pFrom, char* data, size_t* msg_size, int* index, char* key)
 {
-	return m_msgQueue.Pop(pFrom, pData, pMsgSize, pIndex, pKey);
+	return m_msgQueue.pop(pFrom, data, msg_size, index, key);
 }
 
-void CGame::ClientCommonHandler(int iClientH, char* pData)
+void CGame::client_common_handler(int client_h, char* data)
 {
-	uint16_t wCommand;
+	uint16_t command;
 	short sX, sY;
-	int iV1, iV2, iV3, iV4;
-	char cDir;
-	const char* pString;
+	int v1, v2, v3, v4;
+	char dir;
+	const char* string;
 
-	if (m_pClientList[iClientH] == 0) return;
-	if (m_pClientList[iClientH]->m_bIsInitComplete == false) return;
-	if (m_pClientList[iClientH]->m_bIsKilled) return;
+	if (m_client_list[client_h] == 0) return;
+	if (m_client_list[client_h]->m_is_init_complete == false) return;
+	if (m_client_list[client_h]->m_is_killed) return;
 
 	const auto* req = hb::net::PacketCast<hb::net::PacketCommandCommonWithString>(
-		pData, sizeof(hb::net::PacketCommandCommonWithString));
+		data, sizeof(hb::net::PacketCommandCommonWithString));
 	if (!req) return;
-	wCommand = req->base.header.msg_type;
+	command = req->base.header.msg_type;
 	sX = req->base.x;
 	sY = req->base.y;
-	cDir = static_cast<char>(req->base.dir);
-	iV1 = req->v1;
-	iV2 = req->v2;
-	iV3 = req->v3;
-	pString = req->text;
-	iV4 = req->v4;
-	switch (wCommand) {
+	dir = static_cast<char>(req->base.dir);
+	v1 = req->v1;
+	v2 = req->v2;
+	v3 = req->v3;
+	string = req->text;
+	v4 = req->v4;
+	switch (command) {
 
 		//50Cent - Repair All
 	case CommonType::ReqRepairAll:
-		m_pItemManager->RequestRepairAllItemsHandler(iClientH);
+		m_item_manager->request_repair_all_items_handler(client_h);
 		break;
 	case CommonType::ReqRepairAllDelete:
-		m_pItemManager->RequestRepairAllItemsDeleteHandler(iClientH, iV1);
+		m_item_manager->request_repair_all_items_delete_handler(client_h, v1);
 		break;
 	case CommonType::ReqRepairAllConfirm:
-		m_pItemManager->RequestRepairAllItemsConfirmHandler(iClientH);
+		m_item_manager->request_repair_all_items_confirm_handler(client_h);
 		break;
 
 		// Crafting
 	case CommonType::CraftItem:
-		m_pCraftingManager->ReqCreateCraftingHandler(iClientH, pData);
+		m_crafting_manager->req_create_crafting_handler(client_h, data);
 		break;
 
 		// New 15/05/2004
 	case CommonType::ReqCreateSlate:
-		m_pItemManager->ReqCreateSlateHandler(iClientH, pData);
+		m_item_manager->req_create_slate_handler(client_h, data);
 		break;
 
 		// 2.06 - by KLKS
 	case CommonType::RequestHuntMode:
 		//DbgWnd->AddEventMsg("RECV -> Source::Client -> MsgId::CommandCommon -> MsgId::RequestCivilRight");
-		RequestChangePlayMode(iClientH);
+		request_change_play_mode(client_h);
 		break;
 
 	case CommonType::SetGuildTeleportLoc:
 		//DbgWnd->AddEventMsg("RECV -> Source::Client -> MsgId::CommandCommon -> CommonType::SetGuildTeleportLoc");
-		m_pWarManager->RequestSetGuildTeleportLocHandler(iClientH, iV1, iV2, m_pClientList[iClientH]->m_iGuildGUID, "middleland");
+		m_war_manager->request_set_guild_teleport_loc_handler(client_h, v1, v2, m_client_list[client_h]->m_guild_guid, "middleland");
 		break;
 
 	case CommonType::SetGuildConstructLoc:
 		//DbgWnd->AddEventMsg("RECV -> Source::Client -> MsgId::CommandCommon -> CommonType::SetGuildConstructLoc");
-		m_pWarManager->RequestSetGuildConstructLocHandler(iClientH, iV1, iV2, m_pClientList[iClientH]->m_iGuildGUID, pString);
+		m_war_manager->request_set_guild_construct_loc_handler(client_h, v1, v2, m_client_list[client_h]->m_guild_guid, string);
 		break;
 
 	case CommonType::GuildTeleport:
 		//DbgWnd->AddEventMsg("RECV -> Source::Client -> MsgId::CommandCommon -> CommonType::GuildTeleport");
-		m_pWarManager->RequestGuildTeleportHandler(iClientH);
+		m_war_manager->request_guild_teleport_handler(client_h);
 		break;
 
 	case CommonType::SummonWarUnit:
 		//DbgWnd->AddEventMsg("RECV -> Source::Client -> MsgId::CommandCommon -> CommonType::SummonWarUnit");
-		m_pWarManager->RequestSummonWarUnitHandler(iClientH, sX, sY, iV1, iV2, iV3);
+		m_war_manager->request_summon_war_unit_handler(client_h, sX, sY, v1, v2, v3);
 		break;
 
 	case CommonType::RequestHelp:
 		//DbgWnd->AddEventMsg("RECV -> Source::Client -> MsgId::CommandCommon -> CommonType::RequestHelp");
-		RequestHelpHandler(iClientH);
+		request_help_handler(client_h);
 		break;
 
 	case CommonType::RequestMapStatus:
 		//DbgWnd->AddEventMsg("RECV -> Source::Client -> MsgId::CommandCommon -> CommonType::RequestMapStatus");
-		m_pWarManager->MapStatusHandler(iClientH, iV1, pString);
+		m_war_manager->map_status_handler(client_h, v1, string);
 		break;
 
 	case CommonType::RequestSelectCrusadeDuty:
 		//DbgWnd->AddEventMsg("RECV -> Source::Client -> MsgId::CommandCommon -> CommonType::RequestSelectCrusadeDuty");
-		m_pWarManager->SelectCrusadeDutyHandler(iClientH, iV1);
+		m_war_manager->select_crusade_duty_handler(client_h, v1);
 		break;
 
 	case CommonType::RequestCancelQuest:
 		//DbgWnd->AddEventMsg("RECV -> Source::Client -> MsgId::CommandCommon -> CommonType::RequestCancelQuest");
-		m_pQuestManager->CancelQuestHandler(iClientH);
+		m_quest_manager->cancel_quest_handler(client_h);
 		break;
 
 	case CommonType::RequestActivateSpecAbility:
 		//DbgWnd->AddEventMsg("RECV -> Source::Client -> MsgId::CommandCommon -> CommonType::RequestActivateSpecAbility");
-		ActivateSpecialAbilityHandler(iClientH);
+		activate_special_ability_handler(client_h);
 		break;
 
 	case CommonType::RequestJoinParty:
 		//DbgWnd->AddEventMsg("RECV -> Source::Client -> MsgId::CommandCommon -> CommonType::RequestJoinParty");
-		JoinPartyHandler(iClientH, iV1, pString);
+		join_party_handler(client_h, v1, string);
 		break;
 
 	case CommonType::GetMagicAbility:
 		//DbgWnd->AddEventMsg("RECV -> Source::Client -> MsgId::CommandCommon -> CommonType::GetMagicAbility");
-		m_pMagicManager->GetMagicAbilityHandler(iClientH);
+		m_magic_manager->get_magic_ability_handler(client_h);
 		break;
 
 	case CommonType::BuildItem:
 		//DbgWnd->AddEventMsg("RECV -> Source::Client -> MsgId::CommandCommon -> CommonType::BuildItem");
-		m_pItemManager->BuildItemHandler(iClientH, pData);
+		m_item_manager->build_item_handler(client_h, data);
 		break;
 
 	case CommonType::QuestAccepted:
 		//DbgWnd->AddEventMsg("RECV -> Source::Client -> MsgId::CommandCommon -> CommonType::QuestAccepted");
-		m_pQuestManager->QuestAcceptedHandler(iClientH);
+		m_quest_manager->quest_accepted_handler(client_h);
 		break;
 
-	case CommonType::CancelExchangeItem:
-		//DbgWnd->AddEventMsg("RECV -> Source::Client -> MsgId::CommandCommon -> CommonType::CancelExchangeItem");
-		m_pItemManager->CancelExchangeItem(iClientH);
+	case CommonType::cancel_exchange_item:
+		//DbgWnd->AddEventMsg("RECV -> Source::Client -> MsgId::CommandCommon -> CommonType::cancel_exchange_item");
+		m_item_manager->cancel_exchange_item(client_h);
 		break;
 
-	case CommonType::ConfirmExchangeItem:
-		//DbgWnd->AddEventMsg("RECV -> Source::Client -> MsgId::CommandCommon -> CommonType::ConfirmExchangeItem");
-		m_pItemManager->ConfirmExchangeItem(iClientH);
+	case CommonType::confirm_exchange_item:
+		//DbgWnd->AddEventMsg("RECV -> Source::Client -> MsgId::CommandCommon -> CommonType::confirm_exchange_item");
+		m_item_manager->confirm_exchange_item(client_h);
 		break;
 
-	case CommonType::SetExchangeItem:
-		//DbgWnd->AddEventMsg("RECV -> Source::Client -> MsgId::CommandCommon -> CommonType::SetExchangeItem");
-		m_pItemManager->SetExchangeItem(iClientH, iV1, iV2);
+	case CommonType::set_exchange_item:
+		//DbgWnd->AddEventMsg("RECV -> Source::Client -> MsgId::CommandCommon -> CommonType::set_exchange_item");
+		m_item_manager->set_exchange_item(client_h, v1, v2);
 		break;
 
 	case CommonType::ReqGetHeroMantle:
 		//DbgWnd->AddEventMsg("RECV -> Source::Client -> MsgId::CommandCommon -> CommonType::ReqGetHeroMantle");
-		m_pItemManager->GetHeroMantleHandler(iClientH, iV1, pString);
+		m_item_manager->get_hero_mantle_handler(client_h, v1, string);
 		break;
 
 	case CommonType::ReqGetOccupyFlag:
 		//DbgWnd->AddEventMsg("RECV -> Source::Client -> MsgId::CommandCommon -> CommonType::ReqGetOccupyFlag");
-		m_pWarManager->GetOccupyFlagHandler(iClientH);
+		m_war_manager->get_occupy_flag_handler(client_h);
 		break;
 
 	case CommonType::ReqSetDownSkillIndex:
 		//DbgWnd->AddEventMsg("RECV -> Source::Client -> MsgId::CommandCommon -> CommonType::ReqSetDownSkillIndex");
-		m_pSkillManager->SetDownSkillIndexHandler(iClientH, iV1);
+		m_skill_manager->set_down_skill_index_handler(client_h, v1);
 		break;
 
 	case CommonType::TalkToNpc:
 		//DbgWnd->AddEventMsg("RECV -> Source::Client -> MsgId::CommandCommon -> CommonType::TalkToNpc");
 		// works for client, but for npc it returns middleland
-		// if ((m_pMapList[m_pNpcList[iV1]->m_cMapIndex]->m_cName) != (m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_cName)) break;
-		m_pQuestManager->NpcTalkHandler(iClientH, iV1);
+		// if ((m_map_list[m_npc_list[v1]->m_map_index]->m_name) != (m_map_list[m_client_list[client_h]->m_map_index]->m_name)) break;
+		m_quest_manager->npc_talk_handler(client_h, v1);
 		break;
 
 	case CommonType::ReqCreatePortion:
 		//DbgWnd->AddEventMsg("RECV -> Source::Client -> MsgId::CommandCommon -> CommonType::ReqCreatePortion");
-		m_pCraftingManager->ReqCreatePortionHandler(iClientH, pData);
+		m_crafting_manager->req_create_portion_handler(client_h, data);
 		break;
 
 	case CommonType::ReqGetFishThisTime:
 		//DbgWnd->AddEventMsg("RECV -> Source::Client -> MsgId::CommandCommon -> CommonType::ReqGetFishThisTime");
-		m_pFishingManager->ReqGetFishThisTimeHandler(iClientH);
+		m_fishing_manager->req_get_fish_this_time_handler(client_h);
 		break;
 
 	case CommonType::ReqRepairItemConfirm:
 		//DbgWnd->AddEventMsg("RECV -> Source::Client -> MsgId::CommandCommon -> CommonType::ReqRepairItemConfirm");
-		m_pItemManager->ReqRepairItemCofirmHandler(iClientH, iV1, pString);
+		m_item_manager->req_repair_item_cofirm_handler(client_h, v1, string);
 		break;
 
 	case CommonType::ReqRepairItem:
 		//DbgWnd->AddEventMsg("RECV -> Source::Client -> MsgId::CommandCommon -> CommonType::ReqRepairItem");
-		m_pItemManager->ReqRepairItemHandler(iClientH, iV1, iV2, pString);
+		m_item_manager->req_repair_item_handler(client_h, v1, v2, string);
 		break;
 
 	case CommonType::ReqSellItemConfirm:
 		//DbgWnd->AddEventMsg("RECV -> Source::Client -> MsgId::CommandCommon -> CommonType::ReqSellItemConfirm");
-		m_pItemManager->ReqSellItemConfirmHandler(iClientH, iV1, iV2, pString);
+		m_item_manager->req_sell_item_confirm_handler(client_h, v1, v2, string);
 		break;
 
 	case CommonType::ReqSellItem:
 		//DbgWnd->AddEventMsg("RECV -> Source::Client -> MsgId::CommandCommon -> CommonType::ReqSellItem");
-		m_pItemManager->ReqSellItemHandler(iClientH, iV1, iV2, iV3, pString);
+		m_item_manager->req_sell_item_handler(client_h, v1, v2, v3, string);
 		break;
 
 	case CommonType::ReqUseSkill:
 		//DbgWnd->AddEventMsg("RECV -> Source::Client -> MsgId::CommandCommon -> CommonType::ReqUseSkill");
-		m_pSkillManager->UseSkillHandler(iClientH, iV1, iV2, iV3);
+		m_skill_manager->use_skill_handler(client_h, v1, v2, v3);
 		break;
 
 	case CommonType::ReqUseItem:
 		//DbgWnd->AddEventMsg("RECV -> Source::Client -> MsgId::CommandCommon -> CommonType::ReqUseItem");
-		m_pItemManager->UseItemHandler(iClientH, iV1, iV2, iV3, iV4);
+		m_item_manager->use_item_handler(client_h, v1, v2, v3, v4);
 		break;
 
 	case CommonType::ReqGetRewardMoney:
 		//DbgWnd->AddEventMsg("RECV -> Source::Client -> MsgId::CommandCommon -> CommonType::ReqGetRewardMoney");
-		m_pLootManager->GetRewardMoneyHandler(iClientH);
+		m_loot_manager->get_reward_money_handler(client_h);
 		break;
 
 	case CommonType::ItemDrop:
 		//DbgWnd->AddEventMsg("RECV -> Source::Client -> MsgId::CommandCommon -> CommonType::ItemDrop");
-		m_pItemManager->DropItemHandler(iClientH, iV1, iV2, pString, true);
+		m_item_manager->drop_item_handler(client_h, v1, v2, string, true);
 		break;
 
-	case CommonType::EquipItem:
-		//DbgWnd->AddEventMsg("RECV -> Source::Client -> MsgId::CommandCommon -> CommonType::EquipItem");
-		m_pItemManager->bEquipItemHandler(iClientH, iV1);
+	case CommonType::equip_item:
+		//DbgWnd->AddEventMsg("RECV -> Source::Client -> MsgId::CommandCommon -> CommonType::equip_item");
+		m_item_manager->equip_item_handler(client_h, v1);
 		break;
 
 	case CommonType::ReqPurchaseItem:
 		//DbgWnd->AddEventMsg("RECV -> Source::Client -> MsgId::CommandCommon -> CommonType::ReqPurchaseItem");
-		m_pItemManager->RequestPurchaseItemHandler(iClientH, pString, iV1, iV2);
+		m_item_manager->request_purchase_item_handler(client_h, string, v1, v2);
 		break;
 
 	case CommonType::ReqStudyMagic:
 		//DbgWnd->AddEventMsg("RECV -> Source::Client -> MsgId::CommandCommon -> CommonType::ReqStudyMagic");
-		m_pMagicManager->RequestStudyMagicHandler(iClientH, pString);
+		m_magic_manager->request_study_magic_handler(client_h, string);
 		break;
 
 	case CommonType::ReqTrainSkill:
 		//DbgWnd->AddEventMsg("RECV -> Source::Client -> MsgId::CommandCommon -> CommonType::ReqTrainSkill");
-		//RequestTrainSkillHandler(iClientH, pString);
+		//RequestTrainSkillHandler(client_h, string);
 		break;
 
 	case CommonType::GiveItemToChar:
 		//DbgWnd->AddEventMsg("RECV -> Source::Client -> MsgId::CommandCommon -> CommonType::GiveItemToChar");
-		m_pItemManager->GiveItemHandler(iClientH, cDir, iV1, iV2, iV3, iV4, pString);
+		m_item_manager->give_item_handler(client_h, dir, v1, v2, v3, v4, string);
 		break;
 
 	case CommonType::ExchangeItemToChar:
 		//DbgWnd->AddEventMsg("RECV -> Source::Client -> MsgId::CommandCommon -> CommonType::ExchangeItemToChar");
-		m_pItemManager->ExchangeItemHandler(iClientH, cDir, iV1, iV2, iV3, iV4, pString);
+		m_item_manager->exchange_item_handler(client_h, dir, v1, v2, v3, v4, string);
 		break;
 
 	case CommonType::JoinGuildApprove:
 		//DbgWnd->AddEventMsg("RECV -> Source::Client -> MsgId::CommandCommon -> CommonType::JoinGuildApprove");
-		m_pGuildManager->JoinGuildApproveHandler(iClientH, pString);
+		m_guild_manager->join_guild_approve_handler(client_h, string);
 		break;
 
 	case CommonType::JoinGuildReject:
 		//DbgWnd->AddEventMsg("RECV -> Source::Client -> MsgId::CommandCommon -> CommonType::JoinGuildReject");
-		m_pGuildManager->JoinGuildRejectHandler(iClientH, pString);
+		m_guild_manager->join_guild_reject_handler(client_h, string);
 		break;
 
 	case CommonType::DismissGuildApprove:
 		//DbgWnd->AddEventMsg("RECV -> Source::Client -> MsgId::CommandCommon -> CommonType::DismissGuildApprove");
-		m_pGuildManager->DismissGuildApproveHandler(iClientH, pString);
+		m_guild_manager->dismiss_guild_approve_handler(client_h, string);
 		break;
 
 	case CommonType::DismissGuildReject:
 		//DbgWnd->AddEventMsg("RECV -> Source::Client -> MsgId::CommandCommon -> CommonType::DismissGuildReject");
-		m_pGuildManager->DismissGuildRejectHandler(iClientH, pString);
+		m_guild_manager->dismiss_guild_reject_handler(client_h, string);
 		break;
 
 	case CommonType::ReleaseItem:
 		//DbgWnd->AddEventMsg("RECV -> Source::Client -> MsgId::CommandCommon -> CommonType::ReleaseItem");
-		m_pItemManager->ReleaseItemHandler(iClientH, iV1, true);
+		m_item_manager->release_item_handler(client_h, v1, true);
 		break;
 
 	case CommonType::ToggleCombatMode:
 		//DbgWnd->AddEventMsg("RECV -> Source::Client -> MsgId::CommandCommon -> CommonType::ToggleCombatMode");
-		ToggleCombatModeHandler(iClientH);
+		toggle_combat_mode_handler(client_h);
 		break;
 
 	case CommonType::Magic:
@@ -5625,205 +5645,205 @@ void CGame::ClientCommonHandler(int iClientH, char* pData)
 		//DbgWnd->AddEventMsg("RECV -> Source::Client -> MsgId::CommandCommon -> CommonType::Magic");
 		// Parse as PacketCommandCommonWithTime to get target object ID from time_ms field
 		const auto* magicReq = hb::net::PacketCast<hb::net::PacketCommandCommonWithTime>(
-			pData, sizeof(hb::net::PacketCommandCommonWithTime));
+			data, sizeof(hb::net::PacketCommandCommonWithTime));
 		uint16_t targetObjectID = magicReq ? static_cast<uint16_t>(magicReq->time_ms) : 0;
-		m_pMagicManager->PlayerMagicHandler(iClientH, iV1, iV2, (iV3 - 100), false, 0, targetObjectID);
+		m_magic_manager->player_magic_handler(client_h, v1, v2, (v3 - 100), false, 0, targetObjectID);
 	}
 	break;
 
 	case CommonType::ToggleSafeAttackMode:
 		//DbgWnd->AddEventMsg("RECV -> Source::Client -> MsgId::CommandCommon -> CommonType::ToggleSafeAttackMode");
-		ToggleSafeAttackModeHandler(iClientH);
+		toggle_safe_attack_mode_handler(client_h);
 		break;
 
 	case CommonType::ReqGetOccupyFightZoneTicket:
 		//DbgWnd->AddEventMsg("RECV -> Source::Client -> MsgId::CommandCommon -> CommonType::ReqGetOccupyFightZoneTicket");
-		m_pWarManager->GetFightzoneTicketHandler(iClientH);
+		m_war_manager->get_fightzone_ticket_handler(client_h);
 		break;
 
 		// Upgrade Item
 	case CommonType::UpgradeItem:
 		//DbgWnd->AddEventMsg("RECV -> Source::Client -> MsgId::CommandCommon -> CommonType::UpgradeItem");
-		m_pItemManager->RequestItemUpgradeHandler(iClientH, iV1);
+		m_item_manager->request_item_upgrade_handler(client_h, v1);
 		break;
 
 	case CommonType::ReqGuildName:
 		//DbgWnd->AddEventMsg("RECV -> Source::Client -> MsgId::CommandCommon -> CommonType::ReqGuildName");
-		m_pGuildManager->RequestGuildNameHandler(iClientH, iV1, iV2);
+		m_guild_manager->request_guild_name_handler(client_h, v1, v2);
 		break;
 
 	case CommonType::RequestAcceptJoinParty:
 		//DbgWnd->AddEventMsg("RECV -> Source::Client -> MsgId::CommandCommon -> CommonType::RequestAcceptJoinParty");
-		RequestAcceptJoinPartyHandler(iClientH, iV1);
+		request_accept_join_party_handler(client_h, v1);
 		break;
 
 	default:
-		hb::logger::log("Unknown message: 0x{:X}", wCommand);
+		hb::logger::log("Unknown message: 0x{:X}", command);
 		break;
 	}
 }
 
 // New 07/05/2004
 
-//  int CGame::iClientMotion_GetItem_Handler(int iClientH, short sX, short sY, char cDir)
+//  int CGame::client_motion_get_item_handler(int client_h, short sX, short sY, char dir)
 //  description			:: check if player is dropping item or picking up item
 //  last updated		:: October 29, 2004; 7:12 PM; Hypnotoad
 //	return value		:: int
 
-void CGame::SendEventToNearClient_TypeB(uint32_t dwMsgID, uint16_t wMsgType, char cMapIndex, short sX, short sY, short sV1, short sV2, short sV3, short sV4)
+void CGame::send_event_to_near_client_type_b(uint32_t msg_id, uint16_t msg_type, char map_index, short sX, short sY, short v1, short v2, short v3, short v4)
 {
-	int iRet, iShortCutIndex;
-	bool bFlag;
+	int ret, short_cut_index;
+	bool flag;
 
 	// OPTIMIZATION FIX #2: Early exit if no clients online
-	if (m_iClientShortCut[0] == 0) return;
+	if (m_client_shortcut[0] == 0) return;
 
 	// OPTIMIZATION FIX #2: Pre-check if any clients are in range before building packet
-	bool bHasNearbyClients = false;
-	iShortCutIndex = 0;
-	while (m_iClientShortCut[iShortCutIndex] != 0) {
-		int i = m_iClientShortCut[iShortCutIndex];
-		if ((m_pClientList[i] != 0) &&
-			(m_pClientList[i]->m_cMapIndex == cMapIndex) &&
-			(m_pClientList[i]->m_sX >= sX - hb::shared::view::CenterX) &&
-			(m_pClientList[i]->m_sX <= sX + hb::shared::view::CenterX) &&
-			(m_pClientList[i]->m_sY >= sY - (hb::shared::view::CenterY + 1)) &&
-			(m_pClientList[i]->m_sY <= sY + (hb::shared::view::CenterY + 1))) {
-			bHasNearbyClients = true;
+	bool has_nearby_clients = false;
+	short_cut_index = 0;
+	while (m_client_shortcut[short_cut_index] != 0) {
+		int i = m_client_shortcut[short_cut_index];
+		if ((m_client_list[i] != 0) &&
+			(m_client_list[i]->m_map_index == map_index) &&
+			(m_client_list[i]->m_x >= sX - hb::shared::view::CenterX) &&
+			(m_client_list[i]->m_x <= sX + hb::shared::view::CenterX) &&
+			(m_client_list[i]->m_y >= sY - (hb::shared::view::CenterY + 1)) &&
+			(m_client_list[i]->m_y <= sY + (hb::shared::view::CenterY + 1))) {
+			has_nearby_clients = true;
 			break;
 		}
-		iShortCutIndex++;
+		short_cut_index++;
 	}
 
 	// TEMPORARILY DISABLED FOR TESTING - Early exit if no clients in range
-	if (false && !bHasNearbyClients) return;
+	if (false && !has_nearby_clients) return;
 
 	hb::net::PacketEventNearTypeBShort pkt{};
-	pkt.header.msg_id = dwMsgID;
-	pkt.header.msg_type = wMsgType;
+	pkt.header.msg_id = msg_id;
+	pkt.header.msg_type = msg_type;
 	pkt.x = sX;
 	pkt.y = sY;
-	pkt.v1 = sV1;
-	pkt.v2 = sV2;
-	pkt.v3 = sV3;
-	pkt.v4 = sV4;
+	pkt.v1 = v1;
+	pkt.v2 = v2;
+	pkt.v3 = v3;
+	pkt.v4 = v4;
 
 	//for(int i = 1; i < MaxClients; i++)
-	bFlag = true;
-	iShortCutIndex = 0;
-	while (bFlag) {
+	flag = true;
+	short_cut_index = 0;
+	while (flag) {
 		// MaxClients 
-		int i = m_iClientShortCut[iShortCutIndex];
-		iShortCutIndex++;
-		if (i == 0) bFlag = false;
+		int i = m_client_shortcut[short_cut_index];
+		short_cut_index++;
+		if (i == 0) flag = false;
 
-		if ((bFlag) && (m_pClientList[i] != 0)) {
-			if ((m_pClientList[i]->m_cMapIndex == cMapIndex) &&
-				(m_pClientList[i]->m_sX >= sX - hb::shared::view::CenterX) &&
-				(m_pClientList[i]->m_sX <= sX + hb::shared::view::CenterX) &&
-				(m_pClientList[i]->m_sY >= sY - (hb::shared::view::CenterY + 1)) &&
-				(m_pClientList[i]->m_sY <= sY + (hb::shared::view::CenterY + 1))) {
+		if ((flag) && (m_client_list[i] != 0)) {
+			if ((m_client_list[i]->m_map_index == map_index) &&
+				(m_client_list[i]->m_x >= sX - hb::shared::view::CenterX) &&
+				(m_client_list[i]->m_x <= sX + hb::shared::view::CenterX) &&
+				(m_client_list[i]->m_y >= sY - (hb::shared::view::CenterY + 1)) &&
+				(m_client_list[i]->m_y <= sY + (hb::shared::view::CenterY + 1))) {
 
-				iRet = m_pClientList[i]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+				ret = m_client_list[i]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 			}
 		}
 	}
 }
 
-void CGame::SendEventToNearClient_TypeB(uint32_t dwMsgID, uint16_t wMsgType, char cMapIndex, short sX, short sY, short sV1, short sV2, short sV3, uint32_t dwV4)
+void CGame::send_event_to_near_client_type_b(uint32_t msg_id, uint16_t msg_type, char map_index, short sX, short sY, short v1, short v2, short v3, uint32_t v4)
 {
-	int iRet, iShortCutIndex;
-	bool bFlag;
+	int ret, short_cut_index;
+	bool flag;
 
 	hb::net::PacketEventNearTypeBDword pkt{};
-	pkt.header.msg_id = dwMsgID;
-	pkt.header.msg_type = wMsgType;
+	pkt.header.msg_id = msg_id;
+	pkt.header.msg_type = msg_type;
 	pkt.x = sX;
 	pkt.y = sY;
-	pkt.v1 = sV1;
-	pkt.v2 = sV2;
-	pkt.v3 = sV3;
-	pkt.v4 = dwV4;
+	pkt.v1 = v1;
+	pkt.v2 = v2;
+	pkt.v3 = v3;
+	pkt.v4 = v4;
 
 	//for(int i = 1; i < MaxClients; i++)
-	bFlag = true;
-	iShortCutIndex = 0;
-	while (bFlag) {
+	flag = true;
+	short_cut_index = 0;
+	while (flag) {
 		// MaxClients 
-		int i = m_iClientShortCut[iShortCutIndex];
-		iShortCutIndex++;
-		if (i == 0) bFlag = false;
+		int i = m_client_shortcut[short_cut_index];
+		short_cut_index++;
+		if (i == 0) flag = false;
 
-		if ((bFlag) && (m_pClientList[i] != 0)) {
-			if ((m_pClientList[i]->m_cMapIndex == cMapIndex) &&
-				(m_pClientList[i]->m_sX >= sX - hb::shared::view::CenterX) &&
-				(m_pClientList[i]->m_sX <= sX + hb::shared::view::CenterX) &&
-				(m_pClientList[i]->m_sY >= sY - (hb::shared::view::CenterY + 1)) &&
-				(m_pClientList[i]->m_sY <= sY + (hb::shared::view::CenterY + 1))) {
+		if ((flag) && (m_client_list[i] != 0)) {
+			if ((m_client_list[i]->m_map_index == map_index) &&
+				(m_client_list[i]->m_x >= sX - hb::shared::view::CenterX) &&
+				(m_client_list[i]->m_x <= sX + hb::shared::view::CenterX) &&
+				(m_client_list[i]->m_y >= sY - (hb::shared::view::CenterY + 1)) &&
+				(m_client_list[i]->m_y <= sY + (hb::shared::view::CenterY + 1))) {
 
-				iRet = m_pClientList[i]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+				ret = m_client_list[i]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 			}
 		}
 	}
 }
 
-//  int CGame::iClientMotion_Stop_Handler(int iClientH, short sX, short sY, char cDir)
+//  int CGame::client_motion_stop_handler(int client_h, short sX, short sY, char dir)
 //  description			:: checks if player is stopped
 //  last updated		:: October 29, 2004; 6:46 PM; Hypnotoad
 //	return value		:: int
-int CGame::iClientMotion_Stop_Handler(int iClientH, short sX, short sY, char cDir)
+int CGame::client_motion_stop_handler(int client_h, short sX, short sY, char dir)
 {
-	int     iRet;
-	short   sOwnerH;
-	char    cOwnerType;
+	int     ret;
+	short   owner_h;
+	char    owner_type;
 
-	if (m_pClientList[iClientH] == 0) return 0;
-	if ((cDir <= 0) || (cDir > 8))       return 0;
-	if (m_pClientList[iClientH]->m_bIsKilled) return 0;
-	if (m_pClientList[iClientH]->m_bIsInitComplete == false) return 0;
+	if (m_client_list[client_h] == 0) return 0;
+	if ((dir <= 0) || (dir > 8))       return 0;
+	if (m_client_list[client_h]->m_is_killed) return 0;
+	if (m_client_list[client_h]->m_is_init_complete == false) return 0;
 
-	if ((sX != m_pClientList[iClientH]->m_sX) || (sY != m_pClientList[iClientH]->m_sY)) return 2;
+	if ((sX != m_client_list[client_h]->m_x) || (sY != m_client_list[client_h]->m_y)) return 2;
 
-	if (m_pClientList[iClientH]->m_bSkillUsingStatus[19]) {
-		m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->GetOwner(&sOwnerH, &cOwnerType, sX, sY);
-		if (sOwnerH != 0) {
-			DeleteClient(iClientH, true, true);
+	if (m_client_list[client_h]->m_skill_using_status[19]) {
+		m_map_list[m_client_list[client_h]->m_map_index]->get_owner(&owner_h, &owner_type, sX, sY);
+		if (owner_h != 0) {
+			delete_client(client_h, true, true);
 			return 0;
 		}
 	}
 
-	m_pSkillManager->ClearSkillUsingStatus(iClientH);
+	m_skill_manager->clear_skill_using_status(client_h);
 
-	int iStX, iStY;
-	if (m_pMapList[m_pClientList[iClientH]->m_cMapIndex] != 0) {
-		iStX = m_pClientList[iClientH]->m_sX / 20;
-		iStY = m_pClientList[iClientH]->m_sY / 20;
-		m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_stTempSectorInfo[iStX][iStY].iPlayerActivity++;
+	int st_x, st_y;
+	if (m_map_list[m_client_list[client_h]->m_map_index] != 0) {
+		st_x = m_client_list[client_h]->m_x / 20;
+		st_y = m_client_list[client_h]->m_y / 20;
+		m_map_list[m_client_list[client_h]->m_map_index]->m_temp_sector_info[st_x][st_y].player_activity++;
 
-		switch (m_pClientList[iClientH]->m_cSide) {
-		case 0: m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_stTempSectorInfo[iStX][iStY].iNeutralActivity++; break;
-		case 1: m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_stTempSectorInfo[iStX][iStY].iAresdenActivity++; break;
-		case 2: m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_stTempSectorInfo[iStX][iStY].iElvineActivity++;  break;
+		switch (m_client_list[client_h]->m_side) {
+		case 0: m_map_list[m_client_list[client_h]->m_map_index]->m_temp_sector_info[st_x][st_y].neutral_activity++; break;
+		case 1: m_map_list[m_client_list[client_h]->m_map_index]->m_temp_sector_info[st_x][st_y].aresden_activity++; break;
+		case 2: m_map_list[m_client_list[client_h]->m_map_index]->m_temp_sector_info[st_x][st_y].elvine_activity++;  break;
 		}
 	}
 
-	m_pClientList[iClientH]->m_cDir = cDir;
+	m_client_list[client_h]->m_dir = dir;
 
-	m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->ClearOwner(0, iClientH, hb::shared::owner_class::Player, sX, sY);
-	m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->SetOwner(iClientH, hb::shared::owner_class::Player, sX, sY);
+	m_map_list[m_client_list[client_h]->m_map_index]->clear_owner(0, client_h, hb::shared::owner_class::Player, sX, sY);
+	m_map_list[m_client_list[client_h]->m_map_index]->set_owner(client_h, hb::shared::owner_class::Player, sX, sY);
 
 	{
 		hb::net::PacketResponseMotionHeader pkt{};
 		pkt.header.msg_id = MsgId::ResponseMotion;
 		pkt.header.msg_type = Confirm::MotionConfirm;
-		iRet = m_pClientList[iClientH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+		ret = m_client_list[client_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 	}
-	switch (iRet) {
+	switch (ret) {
 	case sock::Event::QueueFull:
 	case sock::Event::SocketError:
 	case sock::Event::CriticalError:
 	case sock::Event::SocketClosed:
-		DeleteClient(iClientH, true, true);
+		delete_client(client_h, true, true);
 		return 0;
 	}
 
@@ -5832,34 +5852,34 @@ int CGame::iClientMotion_Stop_Handler(int iClientH, short sX, short sY, char cDi
 
 // 05/29/2004 - Hypnotoad - Purchase Dicount updated to take charisma into consideration
 
-void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1, uint32_t sV2, uint32_t sV3, const char* pString, uint32_t sV4, uint32_t sV5, uint32_t sV6, uint32_t sV7, uint32_t sV8, uint32_t sV9, const char* pString2)
+void CGame::send_notify_msg(int from_h, int to_h, uint16_t msg_type, uint32_t v1, uint32_t v2, uint32_t v3, const char* string, uint32_t v4, uint32_t v5, uint32_t v6, uint32_t v7, uint32_t v8, uint32_t v9, const char* string2)
 {
-	int iRet = 0;
+	int ret = 0;
 
-	if (m_pClientList[iToH] == 0) return;
+	if (m_client_list[to_h] == 0) return;
 
-	// !!! sV1, sV2, sV3 DWORD .
-	switch (wMsgType) {
+	// !!! v1, v2, v3 DWORD .
+	switch (msg_type) {
 	case Notify::CurLifeSpan:
 	{
 		hb::net::PacketNotifyCurLifeSpan pkt{};
 		pkt.header.msg_id = MsgId::Notify;
-		pkt.header.msg_type = wMsgType;
-		pkt.item_index = static_cast<int32_t>(sV1);
-		pkt.cur_lifespan = static_cast<int32_t>(sV2);
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+		pkt.header.msg_type = msg_type;
+		pkt.item_index = static_cast<int32_t>(v1);
+		pkt.cur_lifespan = static_cast<int32_t>(v2);
+		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 		break;
 	}
 	case Notify::HeldenianCount:
 	{
 		hb::net::PacketNotifyHeldenianCount pkt{};
 		pkt.header.msg_id = MsgId::Notify;
-		pkt.header.msg_type = wMsgType;
-		pkt.aresden_tower_left = static_cast<int16_t>(sV1);
-		pkt.elvine_tower_left = static_cast<int16_t>(sV2);
-		pkt.aresden_flags = static_cast<int16_t>(sV3);
-		pkt.elvine_flags = static_cast<int16_t>(sV4);
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+		pkt.header.msg_type = msg_type;
+		pkt.aresden_tower_left = static_cast<int16_t>(v1);
+		pkt.elvine_tower_left = static_cast<int16_t>(v2);
+		pkt.aresden_flags = static_cast<int16_t>(v3);
+		pkt.elvine_flags = static_cast<int16_t>(v4);
+		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 		break;
 	}
 
@@ -5869,8 +5889,8 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 	{
 		hb::net::PacketNotifyEmpty pkt{};
 		pkt.header.msg_id = MsgId::Notify;
-		pkt.header.msg_type = wMsgType;
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+		pkt.header.msg_type = msg_type;
+		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 	}
 	break;
 
@@ -5879,11 +5899,11 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 	{
 		hb::net::PacketNotifySpawnEvent pkt{};
 		pkt.header.msg_id = MsgId::Notify;
-		pkt.header.msg_type = wMsgType;
-		pkt.monster_id = static_cast<uint8_t>(sV3);
-		pkt.x = static_cast<int16_t>(sV1);
-		pkt.y = static_cast<int16_t>(sV2);
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+		pkt.header.msg_type = msg_type;
+		pkt.monster_id = static_cast<uint8_t>(v3);
+		pkt.x = static_cast<int16_t>(v1);
+		pkt.y = static_cast<int16_t>(v2);
+		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 		break;
 	}
 
@@ -5891,9 +5911,9 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 	{
 		hb::net::PacketNotifyQuestCounter pkt{};
 		pkt.header.msg_id = MsgId::Notify;
-		pkt.header.msg_type = wMsgType;
-		pkt.current_count = static_cast<int32_t>(sV1);
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+		pkt.header.msg_type = msg_type;
+		pkt.current_count = static_cast<int32_t>(v1);
+		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 		break;
 	}
 
@@ -5902,13 +5922,13 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 	{
 		hb::net::PacketNotifyApocGateOpen pkt{};
 		pkt.header.msg_id = MsgId::Notify;
-		pkt.header.msg_type = wMsgType;
-		pkt.gate_x = static_cast<int32_t>(sV1);
-		pkt.gate_y = static_cast<int32_t>(sV2);
-		if (pString != 0) {
-			memcpy(pkt.map_name, pString, sizeof(pkt.map_name));
+		pkt.header.msg_type = msg_type;
+		pkt.gate_x = static_cast<int32_t>(v1);
+		pkt.gate_y = static_cast<int32_t>(v2);
+		if (string != 0) {
+			memcpy(pkt.map_name, string, sizeof(pkt.map_name));
 		}
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 		break;
 	}
 
@@ -5916,9 +5936,9 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 	{
 		hb::net::PacketNotifyAbaddonKilled pkt{};
 		pkt.header.msg_id = MsgId::Notify;
-		pkt.header.msg_type = wMsgType;
-		memcpy(pkt.killer_name, m_pClientList[iFromH]->m_cCharName, sizeof(pkt.killer_name));
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+		pkt.header.msg_type = msg_type;
+		memcpy(pkt.killer_name, m_client_list[from_h]->m_char_name, sizeof(pkt.killer_name));
+		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 		break;
 	}
 
@@ -5929,8 +5949,8 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 	{
 		hb::net::PacketNotifyEmpty pkt{};
 		pkt.header.msg_id = MsgId::Notify;
-		pkt.header.msg_type = wMsgType;
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+		pkt.header.msg_type = msg_type;
+		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 	}
 	break;
 
@@ -5938,9 +5958,9 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 	{
 		hb::net::PacketNotifyForceRecallTime pkt{};
 		pkt.header.msg_id = MsgId::Notify;
-		pkt.header.msg_type = wMsgType;
-		pkt.seconds_left = static_cast<uint16_t>(sV1);
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+		pkt.header.msg_type = msg_type;
+		pkt.seconds_left = static_cast<uint16_t>(v1);
+		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 	}
 	break;
 
@@ -5948,19 +5968,19 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 	//0xB4E2, 0xBEB
 	case Notify::MonsterCount:
 	case Notify::SlateStatus:
-		if (wMsgType == Notify::MonsterCount) {
+		if (msg_type == Notify::MonsterCount) {
 			hb::net::PacketNotifyMonsterCount pkt{};
 			pkt.header.msg_id = MsgId::Notify;
-			pkt.header.msg_type = wMsgType;
-			pkt.count = static_cast<int16_t>(sV1);
-			iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+			pkt.header.msg_type = msg_type;
+			pkt.count = static_cast<int16_t>(v1);
+			ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 		}
 		else {
 			hb::net::PacketNotifySimpleShort pkt{};
 			pkt.header.msg_id = MsgId::Notify;
-			pkt.header.msg_type = wMsgType;
-			pkt.value = static_cast<int16_t>(sV1);
-			iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+			pkt.header.msg_type = msg_type;
+			pkt.value = static_cast<int16_t>(v1);
+			ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 		}
 		break;
 
@@ -5975,8 +5995,8 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 	{
 		hb::net::PacketNotifyEmpty pkt{};
 		pkt.header.msg_id = MsgId::Notify;
-		pkt.header.msg_type = wMsgType;
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+		pkt.header.msg_type = msg_type;
+		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 	}
 	break;
 
@@ -5984,8 +6004,8 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 	{
 		hb::net::PacketNotifyEmpty pkt{};
 		pkt.header.msg_id = MsgId::Notify;
-		pkt.header.msg_type = wMsgType;
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+		pkt.header.msg_type = msg_type;
+		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 	}
 	break;
 
@@ -5993,60 +6013,60 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 	{
 		hb::net::PacketNotifySimpleInt pkt{};
 		pkt.header.msg_id = MsgId::Notify;
-		pkt.header.msg_type = wMsgType;
-		pkt.value = static_cast<int32_t>(sV1);
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+		pkt.header.msg_type = msg_type;
+		pkt.value = static_cast<int32_t>(v1);
+		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 	}
 	break;
 
 	// New 07/05/2004
 	// Party Notify Msg's
 	case Notify::Party:
-		switch (sV1) {
+		switch (v1) {
 		case 4:
 		case 6:
 		{
 			hb::net::PacketNotifyPartyName pkt{};
 			pkt.header.msg_id = MsgId::Notify;
-			pkt.header.msg_type = wMsgType;
-			pkt.type = static_cast<int16_t>(sV1);
-			pkt.v2 = static_cast<int16_t>(sV2);
-			pkt.v3 = static_cast<int16_t>(sV3);
-			if (pString != 0) {
-				memcpy(pkt.name, pString, sizeof(pkt.name));
+			pkt.header.msg_type = msg_type;
+			pkt.type = static_cast<int16_t>(v1);
+			pkt.v2 = static_cast<int16_t>(v2);
+			pkt.v3 = static_cast<int16_t>(v3);
+			if (string != 0) {
+				memcpy(pkt.name, string, sizeof(pkt.name));
 			}
-			iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+			ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 			break;
 		}
 		case 5:
 		{
 			hb::net::PacketWriter writer;
-			writer.Reserve(sizeof(hb::net::PacketNotifyPartyList) + (sV3 * 11));
+			writer.Reserve(sizeof(hb::net::PacketNotifyPartyList) + (v3 * 11));
 
 			auto* pkt = writer.Append<hb::net::PacketNotifyPartyList>();
 			pkt->header.msg_id = MsgId::Notify;
-			pkt->header.msg_type = wMsgType;
-			pkt->type = static_cast<int16_t>(sV1);
-			pkt->v2 = static_cast<int16_t>(sV2);
-			pkt->count = static_cast<int16_t>(sV3);
+			pkt->header.msg_type = msg_type;
+			pkt->type = static_cast<int16_t>(v1);
+			pkt->v2 = static_cast<int16_t>(v2);
+			pkt->count = static_cast<int16_t>(v3);
 
-			if (pString != 0 && sV3 > 0) {
-				writer.AppendBytes(pString, sV3 * 11);
+			if (string != 0 && v3 > 0) {
+				writer.AppendBytes(string, v3 * 11);
 			}
 
-			iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(writer.Data(), static_cast<int>(writer.Size()));
+			ret = m_client_list[to_h]->m_socket->send_msg(writer.Data(), static_cast<int>(writer.size()));
 			break;
 		}
 		default:
 		{
 			hb::net::PacketNotifyPartyBasic pkt{};
 			pkt.header.msg_id = MsgId::Notify;
-			pkt.header.msg_type = wMsgType;
-			pkt.type = static_cast<int16_t>(sV1);
-			pkt.v2 = static_cast<int16_t>(sV2);
-			pkt.v3 = static_cast<int16_t>(sV3);
-			pkt.v4 = static_cast<int16_t>(sV4);
-			iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+			pkt.header.msg_type = msg_type;
+			pkt.type = static_cast<int16_t>(v1);
+			pkt.v2 = static_cast<int16_t>(v2);
+			pkt.v3 = static_cast<int16_t>(v3);
+			pkt.v4 = static_cast<int16_t>(v4);
+			ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 			break;
 		}
 		}
@@ -6056,13 +6076,13 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 	{
 		hb::net::PacketNotifyReqGuildNameAnswer pkt{};
 		pkt.header.msg_id = MsgId::Notify;
-		pkt.header.msg_type = wMsgType;
-		pkt.guild_rank = static_cast<int16_t>(sV1);
-		pkt.index = static_cast<int16_t>(sV2);
-		if (pString != 0) {
-			memcpy(pkt.guild_name, pString, sizeof(pkt.guild_name));
+		pkt.header.msg_type = msg_type;
+		pkt.guild_rank = static_cast<int16_t>(v1);
+		pkt.index = static_cast<int16_t>(v2);
+		if (string != 0) {
+			memcpy(pkt.guild_name, string, sizeof(pkt.guild_name));
 		}
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 	}
 	break;
 
@@ -6072,9 +6092,9 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 	{
 		hb::net::PacketNotifyItemUpgradeFail pkt{};
 		pkt.header.msg_id = MsgId::Notify;
-		pkt.header.msg_type = wMsgType;
-		pkt.reason = static_cast<int16_t>(sV1);
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+		pkt.header.msg_type = msg_type;
+		pkt.reason = static_cast<int16_t>(v1);
+		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 	}
 	break;
 
@@ -6083,12 +6103,12 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 	{
 		hb::net::PacketNotifyItemAttributeChange pkt{};
 		pkt.header.msg_id = MsgId::Notify;
-		pkt.header.msg_type = wMsgType;
-		pkt.item_index = static_cast<int16_t>(sV1);
-		pkt.attribute = sV2;
-		pkt.spec_value1 = sV3;
-		pkt.spec_value2 = sV4;
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+		pkt.header.msg_type = msg_type;
+		pkt.item_index = static_cast<int16_t>(v1);
+		pkt.attribute = v2;
+		pkt.spec_value1 = v3;
+		pkt.spec_value2 = v4;
+		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 	}
 	break;
 
@@ -6096,20 +6116,20 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 	{
 		hb::net::PacketNotifyGizonItemChange pkt{};
 		pkt.header.msg_id = MsgId::Notify;
-		pkt.header.msg_type = wMsgType;
-		pkt.item_index = static_cast<int16_t>(sV1);
-		pkt.item_type = static_cast<uint8_t>(sV2);
-		pkt.cur_lifespan = static_cast<int16_t>(sV3);
-		pkt.sprite = static_cast<int16_t>(sV4);
-		pkt.sprite_frame = static_cast<int16_t>(sV5);
-		pkt.item_color = static_cast<uint8_t>(sV6);
-		pkt.spec_value2 = static_cast<uint8_t>(sV7);
-		pkt.attribute = sV8;
-		pkt.item_id = static_cast<int16_t>(sV9);
-		if (pString != 0) {
-			memcpy(pkt.item_name, pString, sizeof(pkt.item_name));
+		pkt.header.msg_type = msg_type;
+		pkt.item_index = static_cast<int16_t>(v1);
+		pkt.item_type = static_cast<uint8_t>(v2);
+		pkt.cur_lifespan = static_cast<int16_t>(v3);
+		pkt.sprite = static_cast<int16_t>(v4);
+		pkt.sprite_frame = static_cast<int16_t>(v5);
+		pkt.item_color = static_cast<uint8_t>(v6);
+		pkt.spec_value2 = static_cast<uint8_t>(v7);
+		pkt.attribute = v8;
+		pkt.item_id = static_cast<int16_t>(v9);
+		if (string != 0) {
+			memcpy(pkt.item_name, string, sizeof(pkt.item_name));
 		}
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 	}
 	break;
 
@@ -6118,11 +6138,11 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 	{
 		hb::net::PacketNotifyChangePlayMode pkt{};
 		pkt.header.msg_id = MsgId::Notify;
-		pkt.header.msg_type = wMsgType;
-		if (pString != 0) {
-			memcpy(pkt.location, pString, sizeof(pkt.location));
+		pkt.header.msg_type = msg_type;
+		if (string != 0) {
+			memcpy(pkt.location, string, sizeof(pkt.location));
 		}
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 		break;
 	}
 
@@ -6130,78 +6150,78 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 	{
 		hb::net::PacketNotifyTCLoc pkt{};
 		pkt.header.msg_id = MsgId::Notify;
-		pkt.header.msg_type = wMsgType;
-		pkt.dest_x = static_cast<int16_t>(sV1);
-		pkt.dest_y = static_cast<int16_t>(sV2);
-		if (pString != 0) {
-			memcpy(pkt.teleport_map, pString, sizeof(pkt.teleport_map));
+		pkt.header.msg_type = msg_type;
+		pkt.dest_x = static_cast<int16_t>(v1);
+		pkt.dest_y = static_cast<int16_t>(v2);
+		if (string != 0) {
+			memcpy(pkt.teleport_map, string, sizeof(pkt.teleport_map));
 		}
-		pkt.construct_x = static_cast<int16_t>(sV4);
-		pkt.construct_y = static_cast<int16_t>(sV5);
-		if (pString2 != 0) {
-			memcpy(pkt.construct_map, pString2, sizeof(pkt.construct_map));
+		pkt.construct_x = static_cast<int16_t>(v4);
+		pkt.construct_y = static_cast<int16_t>(v5);
+		if (string2 != 0) {
+			memcpy(pkt.construct_map, string2, sizeof(pkt.construct_map));
 		}
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 	}
 	break;
 
 	//New 11/05/2004
-	case Notify::GrandMagicResult:
+	case Notify::grand_magic_result:
 	{
 		hb::net::PacketWriter writer;
-		writer.Reserve(sizeof(hb::net::PacketNotifyGrandMagicResultHeader) + (sV9 * 2));
+		writer.Reserve(sizeof(hb::net::PacketNotifyGrandMagicResultHeader) + (v9 * 2));
 
 		auto* pkt = writer.Append<hb::net::PacketNotifyGrandMagicResultHeader>();
 		pkt->header.msg_id = MsgId::Notify;
-		pkt->header.msg_type = wMsgType;
-		pkt->crashed_structures = static_cast<uint16_t>(sV1);
-		pkt->structure_damage = static_cast<uint16_t>(sV2);
-		pkt->casualities = static_cast<uint16_t>(sV3);
-		if (pString != 0) {
-			memcpy(pkt->map_name, pString, sizeof(pkt->map_name));
+		pkt->header.msg_type = msg_type;
+		pkt->crashed_structures = static_cast<uint16_t>(v1);
+		pkt->structure_damage = static_cast<uint16_t>(v2);
+		pkt->casualities = static_cast<uint16_t>(v3);
+		if (string != 0) {
+			memcpy(pkt->map_name, string, sizeof(pkt->map_name));
 		}
-		pkt->active_structure = static_cast<uint16_t>(sV4);
-		pkt->value_count = static_cast<uint16_t>(sV9);
+		pkt->active_structure = static_cast<uint16_t>(v4);
+		pkt->value_count = static_cast<uint16_t>(v9);
 
-		if (sV9 > 0 && pString2 != 0) {
-			writer.AppendBytes(pString2 + 2, sV9 * 2);
+		if (v9 > 0 && string2 != 0) {
+			writer.AppendBytes(string2 + 2, v9 * 2);
 		}
 
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(writer.Data(), static_cast<int>(writer.Size()));
+		ret = m_client_list[to_h]->m_socket->send_msg(writer.Data(), static_cast<int>(writer.size()));
 	}
 	break;
 
 	case Notify::MapStatusNext:
 	{
 		hb::net::PacketWriter writer;
-		writer.Reserve(sizeof(hb::net::PacketHeader) + sV1);
+		writer.Reserve(sizeof(hb::net::PacketHeader) + v1);
 
 		auto* pkt = writer.Append<hb::net::PacketHeader>();
 		pkt->msg_id = MsgId::Notify;
-		pkt->msg_type = wMsgType;
+		pkt->msg_type = msg_type;
 
-		if (pString != 0 && sV1 > 0) {
-			writer.AppendBytes(pString, sV1);
+		if (string != 0 && v1 > 0) {
+			writer.AppendBytes(string, v1);
 		}
 
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(writer.Data(), static_cast<int>(writer.Size()));
+		ret = m_client_list[to_h]->m_socket->send_msg(writer.Data(), static_cast<int>(writer.size()));
 	}
 	break;
 
 	case Notify::MapStatusLast:
 	{
 		hb::net::PacketWriter writer;
-		writer.Reserve(sizeof(hb::net::PacketHeader) + sV1);
+		writer.Reserve(sizeof(hb::net::PacketHeader) + v1);
 
 		auto* pkt = writer.Append<hb::net::PacketHeader>();
 		pkt->msg_id = MsgId::Notify;
-		pkt->msg_type = wMsgType;
+		pkt->msg_type = msg_type;
 
-		if (pString != 0 && sV1 > 0) {
-			writer.AppendBytes(pString, sV1);
+		if (string != 0 && v1 > 0) {
+			writer.AppendBytes(string, v1);
 		}
 
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(writer.Data(), static_cast<int>(writer.Size()));
+		ret = m_client_list[to_h]->m_socket->send_msg(writer.Data(), static_cast<int>(writer.size()));
 	}
 	break;
 
@@ -6209,12 +6229,12 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 	{
 		hb::net::PacketNotifyLockedMap pkt{};
 		pkt.header.msg_id = MsgId::Notify;
-		pkt.header.msg_type = wMsgType;
-		pkt.seconds_left = static_cast<int16_t>(sV1);
-		if (pString != 0) {
-			memcpy(pkt.map_name, pString, sizeof(pkt.map_name));
+		pkt.header.msg_type = msg_type;
+		pkt.seconds_left = static_cast<int16_t>(v1);
+		if (string != 0) {
+			memcpy(pkt.map_name, string, sizeof(pkt.map_name));
 		}
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 	}
 	break;
 
@@ -6223,15 +6243,15 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 	{
 		hb::net::PacketNotifyBuildItemResult pkt{};
 		pkt.header.msg_id = MsgId::Notify;
-		pkt.header.msg_type = wMsgType;
-		if (sV1 >= 0) {
-			pkt.item_id = static_cast<int16_t>(sV1);
+		pkt.header.msg_type = msg_type;
+		if (v1 >= 0) {
+			pkt.item_id = static_cast<int16_t>(v1);
 		}
 		else {
-			pkt.item_id = static_cast<int16_t>(sV1 + 10000);
+			pkt.item_id = static_cast<int16_t>(v1 + 10000);
 		}
-		pkt.item_count = static_cast<int16_t>(sV2);
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+		pkt.item_count = static_cast<int16_t>(v2);
+		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 	}
 	break;
 
@@ -6240,51 +6260,51 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 	{
 		hb::net::PacketNotifyQuestReward pkt{};
 		pkt.header.msg_id = MsgId::Notify;
-		pkt.header.msg_type = wMsgType;
-		pkt.who = static_cast<int16_t>(sV1);
-		pkt.flag = static_cast<int16_t>(sV2);
-		pkt.amount = static_cast<int32_t>(sV3);
-		if (pString != 0) {
-			memcpy(pkt.reward_name, pString, sizeof(pkt.reward_name));
+		pkt.header.msg_type = msg_type;
+		pkt.who = static_cast<int16_t>(v1);
+		pkt.flag = static_cast<int16_t>(v2);
+		pkt.amount = static_cast<int32_t>(v3);
+		if (string != 0) {
+			memcpy(pkt.reward_name, string, sizeof(pkt.reward_name));
 		}
-		pkt.contribution = static_cast<int32_t>(sV4);
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+		pkt.contribution = static_cast<int32_t>(v4);
+		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 	}
 	break;
 
-	case Notify::CannotConstruct:
+	case Notify::cannot_construct:
 	{
 		hb::net::PacketNotifyCannotConstruct pkt{};
 		pkt.header.msg_id = MsgId::Notify;
-		pkt.header.msg_type = wMsgType;
-		pkt.reason = static_cast<int16_t>(sV1);
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+		pkt.header.msg_type = msg_type;
+		pkt.reason = static_cast<int16_t>(v1);
+		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 		break;
 	}
-	case Notify::MeteorStrikeComing:
+	case Notify::meteor_strike_coming:
 	{
 		hb::net::PacketNotifyMeteorStrikeComing pkt{};
 		pkt.header.msg_id = MsgId::Notify;
-		pkt.header.msg_type = wMsgType;
-		pkt.phase = static_cast<int16_t>(sV1);
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+		pkt.header.msg_type = msg_type;
+		pkt.phase = static_cast<int16_t>(v1);
+		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 		break;
 	}
 	case Notify::ObserverMode:
 	{
 		hb::net::PacketNotifyObserverMode pkt{};
 		pkt.header.msg_id = MsgId::Notify;
-		pkt.header.msg_type = wMsgType;
-		pkt.enabled = static_cast<int16_t>(sV1);
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+		pkt.header.msg_type = msg_type;
+		pkt.enabled = static_cast<int16_t>(v1);
+		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 		break;
 	}
 	case Notify::SpellInterrupted:
 	{
 		hb::net::PacketNotifyEmpty pkt{};
 		pkt.header.msg_id = MsgId::Notify;
-		pkt.header.msg_type = wMsgType;
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+		pkt.header.msg_type = msg_type;
+		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 		break;
 	}
 	case Notify::MeteorStrikeHit:
@@ -6293,19 +6313,19 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 	case Notify::ForceDisconn:
 	case Notify::QuestCompleted:
 	case Notify::QuestAborted:
-		if (wMsgType == Notify::ForceDisconn) {
+		if (msg_type == Notify::ForceDisconn) {
 			hb::net::PacketNotifyForceDisconn pkt{};
 			pkt.header.msg_id = MsgId::Notify;
-			pkt.header.msg_type = wMsgType;
-			pkt.seconds = static_cast<uint16_t>(sV1);
-			iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+			pkt.header.msg_type = msg_type;
+			pkt.seconds = static_cast<uint16_t>(v1);
+			ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 		}
 		else {
 			hb::net::PacketNotifySimpleShort pkt{};
 			pkt.header.msg_id = MsgId::Notify;
-			pkt.header.msg_type = wMsgType;
-			pkt.value = static_cast<int16_t>(sV1);
-			iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+			pkt.header.msg_type = msg_type;
+			pkt.value = static_cast<int16_t>(v1);
+			ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 		}
 		break;
 
@@ -6313,20 +6333,20 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 	{
 		hb::net::PacketNotifyQuestContents pkt{};
 		pkt.header.msg_id = MsgId::Notify;
-		pkt.header.msg_type = wMsgType;
-		pkt.who = static_cast<int16_t>(sV1);
-		pkt.quest_type = static_cast<int16_t>(sV2);
-		pkt.contribution = static_cast<int16_t>(sV3);
-		pkt.target_type = static_cast<int16_t>(sV4);
-		pkt.target_count = static_cast<int16_t>(sV5);
-		pkt.x = static_cast<int16_t>(sV6);
-		pkt.y = static_cast<int16_t>(sV7);
-		pkt.range = static_cast<int16_t>(sV8);
-		pkt.is_completed = static_cast<int16_t>(sV9);
-		if (pString2 != 0) {
-			memcpy(pkt.target_name, pString2, sizeof(pkt.target_name));
+		pkt.header.msg_type = msg_type;
+		pkt.who = static_cast<int16_t>(v1);
+		pkt.quest_type = static_cast<int16_t>(v2);
+		pkt.contribution = static_cast<int16_t>(v3);
+		pkt.target_type = static_cast<int16_t>(v4);
+		pkt.target_count = static_cast<int16_t>(v5);
+		pkt.x = static_cast<int16_t>(v6);
+		pkt.y = static_cast<int16_t>(v7);
+		pkt.range = static_cast<int16_t>(v8);
+		pkt.is_completed = static_cast<int16_t>(v9);
+		if (string2 != 0) {
+			memcpy(pkt.target_name, string2, sizeof(pkt.target_name));
 		}
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 		break;
 	}
 
@@ -6334,54 +6354,54 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 	{
 		hb::net::PacketNotifyEnergySphereCreated pkt{};
 		pkt.header.msg_id = MsgId::Notify;
-		pkt.header.msg_type = wMsgType;
-		pkt.x = static_cast<int16_t>(sV1);
-		pkt.y = static_cast<int16_t>(sV2);
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+		pkt.header.msg_type = msg_type;
+		pkt.x = static_cast<int16_t>(v1);
+		pkt.y = static_cast<int16_t>(v2);
+		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 	}
 	break;
 	case Notify::ItemColorChange:
 	{
 		hb::net::PacketNotifyItemColorChange pkt{};
 		pkt.header.msg_id = MsgId::Notify;
-		pkt.header.msg_type = wMsgType;
-		pkt.item_index = static_cast<int16_t>(sV1);
-		pkt.item_color = static_cast<int16_t>(sV2);
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+		pkt.header.msg_type = msg_type;
+		pkt.item_index = static_cast<int16_t>(v1);
+		pkt.item_color = static_cast<int16_t>(v2);
+		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 		break;
 	}
 
 	case Notify::NoMoreCrusadeStructure:
 	case Notify::ExchangeItemComplete:
-	case Notify::CancelExchangeItem:
+	case Notify::cancel_exchange_item:
 	{
 		hb::net::PacketNotifyEmpty pkt{};
 		pkt.header.msg_id = MsgId::Notify;
-		pkt.header.msg_type = wMsgType;
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+		pkt.header.msg_type = msg_type;
+		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 	}
 	break;
 
-	case Notify::SetExchangeItem:
+	case Notify::set_exchange_item:
 	{
 		hb::net::PacketNotifyExchangeItem pkt{};
 		pkt.header.msg_id = MsgId::Notify;
-		pkt.header.msg_type = wMsgType;
-		pkt.dir = static_cast<int16_t>(sV1);
-		pkt.sprite = static_cast<int16_t>(sV2);
-		pkt.sprite_frame = static_cast<int16_t>(sV3);
-		pkt.amount = static_cast<int32_t>(sV4);
-		pkt.color = static_cast<uint8_t>(sV5);
-		pkt.cur_life = static_cast<int16_t>(sV6);
-		pkt.max_life = static_cast<int16_t>(sV7);
-		pkt.performance = static_cast<int16_t>(sV8);
-		if (pString != 0) {
-			memcpy(pkt.item_name, pString, sizeof(pkt.item_name));
+		pkt.header.msg_type = msg_type;
+		pkt.dir = static_cast<int16_t>(v1);
+		pkt.sprite = static_cast<int16_t>(v2);
+		pkt.sprite_frame = static_cast<int16_t>(v3);
+		pkt.amount = static_cast<int32_t>(v4);
+		pkt.color = static_cast<uint8_t>(v5);
+		pkt.cur_life = static_cast<int16_t>(v6);
+		pkt.max_life = static_cast<int16_t>(v7);
+		pkt.performance = static_cast<int16_t>(v8);
+		if (string != 0) {
+			memcpy(pkt.item_name, string, sizeof(pkt.item_name));
 		}
-		memcpy(pkt.char_name, m_pClientList[iFromH]->m_cCharName, sizeof(pkt.char_name));
-		pkt.attribute = static_cast<uint32_t>(sV9);
-		pkt.item_id = static_cast<int16_t>(reinterpret_cast<intptr_t>(pString2));
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+		memcpy(pkt.char_name, m_client_list[from_h]->m_char_name, sizeof(pkt.char_name));
+		pkt.attribute = static_cast<uint32_t>(v9);
+		pkt.item_id = static_cast<int16_t>(reinterpret_cast<intptr_t>(string2));
+		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 	}
 	break;
 
@@ -6389,22 +6409,22 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 	{
 		hb::net::PacketNotifyExchangeItem pkt{};
 		pkt.header.msg_id = MsgId::Notify;
-		pkt.header.msg_type = wMsgType;
-		pkt.dir = static_cast<int16_t>(sV1);
-		pkt.sprite = static_cast<int16_t>(sV2);
-		pkt.sprite_frame = static_cast<int16_t>(sV3);
-		pkt.amount = static_cast<int32_t>(sV4);
-		pkt.color = static_cast<uint8_t>(sV5);
-		pkt.cur_life = static_cast<int16_t>(sV6);
-		pkt.max_life = static_cast<int16_t>(sV7);
-		pkt.performance = static_cast<int16_t>(sV8);
-		if (pString != 0) {
-			memcpy(pkt.item_name, pString, sizeof(pkt.item_name));
+		pkt.header.msg_type = msg_type;
+		pkt.dir = static_cast<int16_t>(v1);
+		pkt.sprite = static_cast<int16_t>(v2);
+		pkt.sprite_frame = static_cast<int16_t>(v3);
+		pkt.amount = static_cast<int32_t>(v4);
+		pkt.color = static_cast<uint8_t>(v5);
+		pkt.cur_life = static_cast<int16_t>(v6);
+		pkt.max_life = static_cast<int16_t>(v7);
+		pkt.performance = static_cast<int16_t>(v8);
+		if (string != 0) {
+			memcpy(pkt.item_name, string, sizeof(pkt.item_name));
 		}
-		memcpy(pkt.char_name, m_pClientList[iFromH]->m_cCharName, sizeof(pkt.char_name));
-		pkt.attribute = static_cast<uint32_t>(sV9);
-		pkt.item_id = static_cast<int16_t>(reinterpret_cast<intptr_t>(pString2));
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+		memcpy(pkt.char_name, m_client_list[from_h]->m_char_name, sizeof(pkt.char_name));
+		pkt.attribute = static_cast<uint32_t>(v9);
+		pkt.item_id = static_cast<int16_t>(reinterpret_cast<intptr_t>(string2));
+		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 	}
 	break;
 
@@ -6412,8 +6432,8 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 	{
 		hb::net::PacketNotifyEmpty pkt{};
 		pkt.header.msg_id = MsgId::Notify;
-		pkt.header.msg_type = wMsgType;
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+		pkt.header.msg_type = msg_type;
+		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 	}
 	break;
 
@@ -6421,12 +6441,12 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 	{
 		hb::net::PacketNotifyItemPosList pkt{};
 		pkt.header.msg_id = MsgId::Notify;
-		pkt.header.msg_type = wMsgType;
+		pkt.header.msg_type = msg_type;
 		for(int i = 0; i < hb::shared::limits::MaxItems; i++) {
-			pkt.positions[i * 2] = static_cast<int16_t>(m_pClientList[iToH]->m_ItemPosList[i].x);
-			pkt.positions[i * 2 + 1] = static_cast<int16_t>(m_pClientList[iToH]->m_ItemPosList[i].y);
+			pkt.positions[i * 2] = static_cast<int16_t>(m_client_list[to_h]->m_item_pos_list[i].x);
+			pkt.positions[i * 2 + 1] = static_cast<int16_t>(m_client_list[to_h]->m_item_pos_list[i].y);
 		}
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 	}
 	break;
 
@@ -6434,9 +6454,9 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 	{
 		hb::net::PacketNotifyEnemyKills pkt{};
 		pkt.header.msg_id = MsgId::Notify;
-		pkt.header.msg_type = wMsgType;
-		pkt.count = static_cast<int32_t>(sV1);
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+		pkt.header.msg_type = msg_type;
+		pkt.count = static_cast<int32_t>(v1);
+		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 	}
 	break;
 
@@ -6444,12 +6464,12 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 	{
 		hb::net::PacketNotifyCrusade pkt{};
 		pkt.header.msg_id = MsgId::Notify;
-		pkt.header.msg_type = wMsgType;
-		pkt.crusade_mode = static_cast<int32_t>(sV1);
-		pkt.crusade_duty = static_cast<int32_t>(sV2);
-		pkt.v3 = static_cast<int32_t>(sV3);
-		pkt.v4 = static_cast<int32_t>(sV4);
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+		pkt.header.msg_type = msg_type;
+		pkt.crusade_mode = static_cast<int32_t>(v1);
+		pkt.crusade_duty = static_cast<int32_t>(v2);
+		pkt.v3 = static_cast<int32_t>(v3);
+		pkt.v4 = static_cast<int32_t>(v4);
+		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 	}
 	break;
 
@@ -6457,11 +6477,11 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 	{
 		hb::net::PacketNotifyConstructionPoint pkt{};
 		pkt.header.msg_id = MsgId::Notify;
-		pkt.header.msg_type = wMsgType;
-		pkt.construction_point = static_cast<int16_t>(sV1);
-		pkt.war_contribution = static_cast<int16_t>(sV2);
-		pkt.notify_type = static_cast<int16_t>(sV3);
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+		pkt.header.msg_type = msg_type;
+		pkt.construction_point = static_cast<int16_t>(v1);
+		pkt.war_contribution = static_cast<int16_t>(v2);
+		pkt.notify_type = static_cast<int16_t>(v3);
+		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 	}
 	break;
 
@@ -6469,11 +6489,11 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 	{
 		hb::net::PacketNotifySpecialAbilityStatus pkt{};
 		pkt.header.msg_id = MsgId::Notify;
-		pkt.header.msg_type = wMsgType;
-		pkt.status_type = static_cast<int16_t>(sV1);
-		pkt.ability_type = static_cast<int16_t>(sV2);
-		pkt.seconds_left = static_cast<int16_t>(sV3);
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+		pkt.header.msg_type = msg_type;
+		pkt.status_type = static_cast<int16_t>(v1);
+		pkt.ability_type = static_cast<int16_t>(v2);
+		pkt.seconds_left = static_cast<int16_t>(v3);
+		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 	}
 	break;
 
@@ -6481,29 +6501,29 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 	{
 		hb::net::PacketNotifyDamageMove pkt{};
 		pkt.header.msg_id = MsgId::Notify;
-		pkt.header.msg_type = wMsgType;
-		pkt.dir = static_cast<uint8_t>(sV1);
-		pkt.amount = static_cast<int16_t>(sV2);
-		pkt.weapon = static_cast<uint8_t>(sV3);
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+		pkt.header.msg_type = msg_type;
+		pkt.dir = static_cast<uint8_t>(v1);
+		pkt.amount = static_cast<int16_t>(v2);
+		pkt.weapon = static_cast<uint8_t>(v3);
+		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 	}
 	break;
 
 	case Notify::DownSkillIndexSet:
 	case Notify::ResponseCreateNewParty:
-		if (wMsgType == Notify::ResponseCreateNewParty) {
+		if (msg_type == Notify::ResponseCreateNewParty) {
 			hb::net::PacketNotifyResponseCreateNewParty pkt{};
 			pkt.header.msg_id = MsgId::Notify;
-			pkt.header.msg_type = wMsgType;
-			pkt.result = static_cast<int16_t>(sV1);
-			iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+			pkt.header.msg_type = msg_type;
+			pkt.result = static_cast<int16_t>(v1);
+			ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 		}
 		else {
 			hb::net::PacketNotifyDownSkillIndexSet pkt{};
 			pkt.header.msg_id = MsgId::Notify;
-			pkt.header.msg_type = wMsgType;
-			pkt.skill_index = static_cast<uint16_t>(sV1);
-			iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+			pkt.header.msg_type = msg_type;
+			pkt.skill_index = static_cast<uint16_t>(v1);
+			ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 		}
 		break;
 
@@ -6512,23 +6532,23 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 	{
 		hb::net::PacketNotifyNpcTalk pkt{};
 		pkt.header.msg_id = MsgId::Notify;
-		pkt.header.msg_type = wMsgType;
-		pkt.type = static_cast<int16_t>(sV1);
-		pkt.response = static_cast<int16_t>(sV2);
-		pkt.amount = static_cast<int16_t>(sV3);
-		pkt.contribution = static_cast<int16_t>(sV4);
-		pkt.target_type = static_cast<int16_t>(sV5);
-		pkt.target_count = static_cast<int16_t>(sV6);
-		pkt.x = static_cast<int16_t>(sV7);
-		pkt.y = static_cast<int16_t>(sV8);
-		pkt.range = static_cast<int16_t>(sV9);
-		if (pString != 0) {
-			memcpy(pkt.reward_name, pString, sizeof(pkt.reward_name));
+		pkt.header.msg_type = msg_type;
+		pkt.type = static_cast<int16_t>(v1);
+		pkt.response = static_cast<int16_t>(v2);
+		pkt.amount = static_cast<int16_t>(v3);
+		pkt.contribution = static_cast<int16_t>(v4);
+		pkt.target_type = static_cast<int16_t>(v5);
+		pkt.target_count = static_cast<int16_t>(v6);
+		pkt.x = static_cast<int16_t>(v7);
+		pkt.y = static_cast<int16_t>(v8);
+		pkt.range = static_cast<int16_t>(v9);
+		if (string != 0) {
+			memcpy(pkt.reward_name, string, sizeof(pkt.reward_name));
 		}
-		if (pString2 != 0) {
-			memcpy(pkt.target_name, pString2, sizeof(pkt.target_name));
+		if (string2 != 0) {
+			memcpy(pkt.target_name, string2, sizeof(pkt.target_name));
 		}
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 	}
 	break;
 
@@ -6537,9 +6557,9 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 	{
 		hb::net::PacketNotifyCraftingFail pkt{};
 		pkt.header.msg_id = MsgId::Notify;
-		pkt.header.msg_type = wMsgType;
-		pkt.reason = static_cast<int32_t>(sV1);
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+		pkt.header.msg_type = msg_type;
+		pkt.reason = static_cast<int32_t>(v1);
+		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 		break;
 	}
 
@@ -6551,8 +6571,8 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 	{
 		hb::net::PacketNotifyEmpty pkt{};
 		pkt.header.msg_id = MsgId::Notify;
-		pkt.header.msg_type = wMsgType;
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+		pkt.header.msg_type = msg_type;
+		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 	}
 	break;
 
@@ -6560,9 +6580,9 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 	{
 		hb::net::PacketNotifySuperAttackLeft pkt{};
 		pkt.header.msg_id = MsgId::Notify;
-		pkt.header.msg_type = wMsgType;
-		pkt.left = static_cast<int16_t>(m_pClientList[iToH]->m_iSuperAttackLeft);
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+		pkt.header.msg_type = msg_type;
+		pkt.left = static_cast<int16_t>(m_client_list[to_h]->m_super_attack_left);
+		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 	}
 	break;
 
@@ -6570,32 +6590,32 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 	{
 		hb::net::PacketNotifySafeAttackMode pkt{};
 		pkt.header.msg_id = MsgId::Notify;
-		pkt.header.msg_type = wMsgType;
-		pkt.enabled = m_pClientList[iToH]->m_bIsSafeAttackMode ? 1 : 0;
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+		pkt.header.msg_type = msg_type;
+		pkt.enabled = m_client_list[to_h]->m_is_safe_attack_mode ? 1 : 0;
+		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 	}
 	break;
 
 	case Notify::QueryJoinParty:
 	case Notify::IpAccountInfo:
-		if (wMsgType == Notify::QueryJoinParty) {
+		if (msg_type == Notify::QueryJoinParty) {
 			hb::net::PacketWriter writer;
 			writer.Reserve(sizeof(hb::net::PacketHeader) + 11);
 
 			auto* pkt = writer.Append<hb::net::PacketHeader>();
 			pkt->msg_id = MsgId::Notify;
-			pkt->msg_type = wMsgType;
+			pkt->msg_type = msg_type;
 
 			std::size_t name_len = 0;
-			if (pString != 0) {
-				name_len = std::strlen(pString);
+			if (string != 0) {
+				name_len = std::strlen(string);
 				if (name_len > 10) {
 					name_len = 10;
 				}
-				writer.AppendBytes(pString, name_len);
+				writer.AppendBytes(string, name_len);
 			}
 			writer.AppendBytes("", 1);
-			iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(writer.Data(), static_cast<int>(writer.Size()));
+			ret = m_client_list[to_h]->m_socket->send_msg(writer.Data(), static_cast<int>(writer.size()));
 		}
 		else {
 			hb::net::PacketWriter writer;
@@ -6603,18 +6623,18 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 
 			auto* pkt = writer.Append<hb::net::PacketHeader>();
 			pkt->msg_id = MsgId::Notify;
-			pkt->msg_type = wMsgType;
+			pkt->msg_type = msg_type;
 
 			std::size_t text_len = 0;
-			if (pString != 0) {
-				text_len = std::strlen(pString);
+			if (string != 0) {
+				text_len = std::strlen(string);
 				if (text_len >= 509) {
 					text_len = 509;
 				}
-				writer.AppendBytes(pString, text_len);
+				writer.AppendBytes(string, text_len);
 			}
 			writer.AppendBytes("", 1);
-			iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(writer.Data(), static_cast<int>(writer.Size()));
+			ret = m_client_list[to_h]->m_socket->send_msg(writer.Data(), static_cast<int>(writer.size()));
 		}
 		break;
 
@@ -6622,9 +6642,9 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 	{
 		hb::net::PacketNotifyRewardGold pkt{};
 		pkt.header.msg_id = MsgId::Notify;
-		pkt.header.msg_type = wMsgType;
-		pkt.gold = static_cast<uint32_t>(m_pClientList[iToH]->m_iRewardGold);
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+		pkt.header.msg_type = msg_type;
+		pkt.gold = static_cast<uint32_t>(m_client_list[to_h]->m_reward_gold);
+		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 	}
 	break;
 
@@ -6632,46 +6652,46 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 	{
 		hb::net::PacketNotifyServerShutdown pkt{};
 		pkt.header.msg_id = MsgId::Notify;
-		pkt.header.msg_type = wMsgType;
-		pkt.mode = static_cast<uint8_t>(sV1);
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+		pkt.header.msg_type = msg_type;
+		pkt.mode = static_cast<uint8_t>(v1);
+		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 	}
 	break;
 
 	case Notify::GlobalAttackMode:
 	case Notify::WhetherChange:
-		if (wMsgType == Notify::GlobalAttackMode) {
+		if (msg_type == Notify::GlobalAttackMode) {
 			hb::net::PacketNotifyGlobalAttackMode pkt{};
 			pkt.header.msg_id = MsgId::Notify;
-			pkt.header.msg_type = wMsgType;
-			pkt.mode = static_cast<uint8_t>(sV1);
-			iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+			pkt.header.msg_type = msg_type;
+			pkt.mode = static_cast<uint8_t>(v1);
+			ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 		}
 		else {
 			hb::net::PacketNotifyWhetherChange pkt{};
 			pkt.header.msg_id = MsgId::Notify;
-			pkt.header.msg_type = wMsgType;
-			pkt.status = static_cast<uint8_t>(sV1);
-			iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+			pkt.header.msg_type = msg_type;
+			pkt.status = static_cast<uint8_t>(v1);
+			ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 		}
 		break;
 
 	case Notify::FishCanceled:
 	case Notify::FishSuccess:
 	case Notify::FishFail:
-		if (wMsgType == Notify::FishCanceled) {
+		if (msg_type == Notify::FishCanceled) {
 			hb::net::PacketNotifyFishCanceled pkt{};
 			pkt.header.msg_id = MsgId::Notify;
-			pkt.header.msg_type = wMsgType;
-			pkt.reason = static_cast<uint16_t>(sV1);
-			iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+			pkt.header.msg_type = msg_type;
+			pkt.reason = static_cast<uint16_t>(v1);
+			ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 		}
 		else {
 			hb::net::PacketNotifySimpleShort pkt{};
 			pkt.header.msg_id = MsgId::Notify;
-			pkt.header.msg_type = wMsgType;
-			pkt.value = static_cast<int16_t>(sV1);
-			iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+			pkt.header.msg_type = msg_type;
+			pkt.value = static_cast<int16_t>(v1);
+			ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 		}
 		break;
 
@@ -6679,9 +6699,9 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 	{
 		hb::net::PacketNotifySimpleShort pkt{};
 		pkt.header.msg_id = MsgId::Notify;
-		pkt.header.msg_type = wMsgType;
-		pkt.value = static_cast<int16_t>(sV1);
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+		pkt.header.msg_type = msg_type;
+		pkt.value = static_cast<int16_t>(v1);
+		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 	}
 	break;
 
@@ -6689,37 +6709,37 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 	{
 		hb::net::PacketNotifyFishChance pkt{};
 		pkt.header.msg_id = MsgId::Notify;
-		pkt.header.msg_type = wMsgType;
-		pkt.chance = static_cast<uint16_t>(sV1);
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+		pkt.header.msg_type = msg_type;
+		pkt.chance = static_cast<uint16_t>(v1);
+		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 	}
 	break;
 
 	case Notify::EnergySphereGoalIn:
 	case Notify::EventFishMode:
-		if (wMsgType == Notify::EnergySphereGoalIn) {
+		if (msg_type == Notify::EnergySphereGoalIn) {
 			hb::net::PacketNotifyEnergySphereGoalIn pkt{};
 			pkt.header.msg_id = MsgId::Notify;
-			pkt.header.msg_type = wMsgType;
-			pkt.result = static_cast<int16_t>(sV1);
-			pkt.side = static_cast<int16_t>(sV2);
-			pkt.goal = static_cast<int16_t>(sV3);
-			if (pString != 0) {
-				memcpy(pkt.name, pString, sizeof(pkt.name));
+			pkt.header.msg_type = msg_type;
+			pkt.result = static_cast<int16_t>(v1);
+			pkt.side = static_cast<int16_t>(v2);
+			pkt.goal = static_cast<int16_t>(v3);
+			if (string != 0) {
+				memcpy(pkt.name, string, sizeof(pkt.name));
 			}
-			iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+			ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 		}
 		else {
 			hb::net::PacketNotifyEventFishMode pkt{};
 			pkt.header.msg_id = MsgId::Notify;
-			pkt.header.msg_type = wMsgType;
-			pkt.price = static_cast<uint16_t>(sV1);
-			pkt.sprite = static_cast<uint16_t>(sV2);
-			pkt.sprite_frame = static_cast<uint16_t>(sV3);
-			if (pString != 0) {
-				memcpy(pkt.name, pString, sizeof(pkt.name));
+			pkt.header.msg_type = msg_type;
+			pkt.price = static_cast<uint16_t>(v1);
+			pkt.sprite = static_cast<uint16_t>(v2);
+			pkt.sprite_frame = static_cast<uint16_t>(v3);
+			if (string != 0) {
+				memcpy(pkt.name, string, sizeof(pkt.name));
 			}
-			iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+			ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 		}
 		break;
 
@@ -6728,15 +6748,15 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 		char buf[sizeof(hb::net::PacketHeader) + 256]{};
 		auto* pkt = reinterpret_cast<hb::net::PacketNotifyNoticeMsg*>(buf);
 		pkt->header.msg_id = MsgId::Notify;
-		pkt->header.msg_type = wMsgType;
+		pkt->header.msg_type = msg_type;
 		std::size_t msg_len = 0;
-		if (pString != 0) {
-			msg_len = std::strlen(pString);
+		if (string != 0) {
+			msg_len = std::strlen(string);
 			if (msg_len > 255) msg_len = 255;
-			memcpy(pkt->text, pString, msg_len);
+			memcpy(pkt->text, string, msg_len);
 		}
 		pkt->text[msg_len] = '\0';
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(buf,
+		ret = m_client_list[to_h]->m_socket->send_msg(buf,
 			static_cast<int>(sizeof(hb::net::PacketHeader) + msg_len + 1));
 		break;
 	}
@@ -6745,12 +6765,12 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 	{
 		hb::net::PacketNotifyStatusText pkt{};
 		pkt.header.msg_id = MsgId::Notify;
-		pkt.header.msg_type = wMsgType;
-		if (pString != nullptr) {
-			strncpy(pkt.text, pString, sizeof(pkt.text) - 1);
+		pkt.header.msg_type = msg_type;
+		if (string != nullptr) {
+			strncpy(pkt.text, string, sizeof(pkt.text) - 1);
 			pkt.text[sizeof(pkt.text) - 1] = '\0';
 		}
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 		break;
 	}
 
@@ -6758,9 +6778,9 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 	{
 		hb::net::PacketNotifyCannotRating pkt{};
 		pkt.header.msg_id = MsgId::Notify;
-		pkt.header.msg_type = wMsgType;
-		pkt.time_left = static_cast<uint16_t>(sV1);
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+		pkt.header.msg_type = msg_type;
+		pkt.time_left = static_cast<uint16_t>(v1);
+		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 	}
 	break;
 
@@ -6768,13 +6788,13 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 	{
 		hb::net::PacketNotifyRatingPlayer pkt{};
 		pkt.header.msg_id = MsgId::Notify;
-		pkt.header.msg_type = wMsgType;
-		pkt.result = static_cast<uint8_t>(sV1);
-		if (pString != 0) {
-			memcpy(pkt.name, pString, sizeof(pkt.name));
+		pkt.header.msg_type = msg_type;
+		pkt.result = static_cast<uint8_t>(v1);
+		if (string != 0) {
+			memcpy(pkt.name, string, sizeof(pkt.name));
 		}
-		pkt.rating = m_pClientList[iToH]->m_iRating;
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+		pkt.rating = m_client_list[to_h]->m_rating;
+		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 	}
 	break;
 
@@ -6782,9 +6802,9 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 	{
 		hb::net::PacketNotifyTimeChange pkt{};
 		pkt.header.msg_id = MsgId::Notify;
-		pkt.header.msg_type = wMsgType;
-		pkt.sprite_alpha = static_cast<uint8_t>(sV1);
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+		pkt.header.msg_type = msg_type;
+		pkt.sprite_alpha = static_cast<uint8_t>(v1);
+		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 		break;
 	}
 
@@ -6792,8 +6812,8 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 	{
 		hb::net::PacketNotifyEmpty pkt{};
 		pkt.header.msg_id = MsgId::Notify;
-		pkt.header.msg_type = wMsgType;
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+		pkt.header.msg_type = msg_type;
+		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 	}
 	break;
 
@@ -6801,9 +6821,9 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 	{
 		hb::net::PacketNotifyHunger pkt{};
 		pkt.header.msg_id = MsgId::Notify;
-		pkt.header.msg_type = wMsgType;
-		pkt.hunger = static_cast<uint8_t>(sV1);
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+		pkt.header.msg_type = msg_type;
+		pkt.hunger = static_cast<uint8_t>(v1);
+		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 		break;
 	}
 
@@ -6811,10 +6831,10 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 	{
 		hb::net::PacketNotifyPlayerProfile pkt{};
 		pkt.header.msg_id = MsgId::Notify;
-		pkt.header.msg_type = wMsgType;
+		pkt.header.msg_type = msg_type;
 		std::size_t send_len = 0;
-		if (pString != 0) {
-			send_len = std::strlen(pString);
+		if (string != 0) {
+			send_len = std::strlen(string);
 			if (send_len >= sizeof(pkt.text)) {
 				send_len = sizeof(pkt.text) - 1;
 			}
@@ -6822,10 +6842,10 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 			if (copy_len > 100) {
 				copy_len = 100;
 			}
-			memcpy(pkt.text, pString, copy_len);
+			memcpy(pkt.text, string, copy_len);
 		}
 		pkt.text[send_len] = '\0';
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt),
+		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt),
 			static_cast<int>(sizeof(hb::net::PacketHeader) + send_len + 1));
 		break;
 	}
@@ -6837,12 +6857,12 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 	{
 		hb::net::PacketNotifyPlayerNotOnGame pkt{};
 		pkt.header.msg_id = MsgId::Notify;
-		pkt.header.msg_type = wMsgType;
-		if (pString != 0) {
-			memcpy(pkt.name, pString, sizeof(pkt.name));
+		pkt.header.msg_type = msg_type;
+		if (string != 0) {
+			memcpy(pkt.name, string, sizeof(pkt.name));
 		}
 		std::memset(pkt.filler, ' ', sizeof(pkt.filler));
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 	}
 	break;
 
@@ -6851,14 +6871,14 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 	{
 		hb::net::PacketNotifyPlayerOnGame pkt{};
 		pkt.header.msg_id = MsgId::Notify;
-		pkt.header.msg_type = wMsgType;
-		if (pString != 0) {
-			memcpy(pkt.name, pString, sizeof(pkt.name));
+		pkt.header.msg_type = msg_type;
+		if (string != 0) {
+			memcpy(pkt.name, string, sizeof(pkt.name));
 		}
-		if (pString != 0 && pString[0] != 0 && pString2 != 0) {
-			memcpy(pkt.map_name, pString2, sizeof(pkt.map_name));
+		if (string != 0 && string[0] != 0 && string2 != 0) {
+			memcpy(pkt.map_name, string2, sizeof(pkt.map_name));
 		}
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 	}
 	break;
 
@@ -6868,10 +6888,10 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 	{
 		hb::net::PacketNotifyItemRepaired pkt{};
 		pkt.header.msg_id = MsgId::Notify;
-		pkt.header.msg_type = wMsgType;
-		pkt.item_id = static_cast<uint32_t>(sV1);
-		pkt.life = static_cast<uint32_t>(sV2);
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+		pkt.header.msg_type = msg_type;
+		pkt.item_id = static_cast<uint32_t>(v1);
+		pkt.life = static_cast<uint32_t>(v2);
+		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 		break;
 	}
 
@@ -6879,58 +6899,58 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 	case Notify::RepairItemPrice:
 	case Notify::SellItemPrice:
 	{
-		if (wMsgType == Notify::RepairItemPrice) {
+		if (msg_type == Notify::RepairItemPrice) {
 			hb::net::PacketNotifyRepairItemPrice pkt{};
 			pkt.header.msg_id = MsgId::Notify;
-			pkt.header.msg_type = wMsgType;
-			pkt.v1 = static_cast<uint32_t>(sV1);
-			pkt.v2 = static_cast<uint32_t>(sV2);
-			pkt.v3 = static_cast<uint32_t>(sV3);
-			pkt.v4 = static_cast<uint32_t>(sV4);
-			if (pString != 0) {
-				memcpy(pkt.item_name, pString, sizeof(pkt.item_name));
+			pkt.header.msg_type = msg_type;
+			pkt.v1 = static_cast<uint32_t>(v1);
+			pkt.v2 = static_cast<uint32_t>(v2);
+			pkt.v3 = static_cast<uint32_t>(v3);
+			pkt.v4 = static_cast<uint32_t>(v4);
+			if (string != 0) {
+				memcpy(pkt.item_name, string, sizeof(pkt.item_name));
 			}
-			iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+			ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 		}
 		else {
 			hb::net::PacketNotifySellItemPrice pkt{};
 			pkt.header.msg_id = MsgId::Notify;
-			pkt.header.msg_type = wMsgType;
-			pkt.v1 = static_cast<uint32_t>(sV1);
-			pkt.v2 = static_cast<uint32_t>(sV2);
-			pkt.v3 = static_cast<uint32_t>(sV3);
-			pkt.v4 = static_cast<uint32_t>(sV4);
-			if (pString != 0) {
-				memcpy(pkt.item_name, pString, sizeof(pkt.item_name));
+			pkt.header.msg_type = msg_type;
+			pkt.v1 = static_cast<uint32_t>(v1);
+			pkt.v2 = static_cast<uint32_t>(v2);
+			pkt.v3 = static_cast<uint32_t>(v3);
+			pkt.v4 = static_cast<uint32_t>(v4);
+			if (string != 0) {
+				memcpy(pkt.item_name, string, sizeof(pkt.item_name));
 			}
-			iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+			ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 		}
 		break;
 	}
 
 	case Notify::CannotRepairItem:
 	case Notify::CannotSellItem:
-		if (wMsgType == Notify::CannotRepairItem) {
+		if (msg_type == Notify::CannotRepairItem) {
 			hb::net::PacketNotifyCannotRepairItem pkt{};
 			pkt.header.msg_id = MsgId::Notify;
-			pkt.header.msg_type = wMsgType;
-			pkt.item_index = static_cast<uint16_t>(sV1);
-			pkt.reason = static_cast<uint16_t>(sV2);
-			if (pString != 0) {
-				memcpy(pkt.name, pString, sizeof(pkt.name));
+			pkt.header.msg_type = msg_type;
+			pkt.item_index = static_cast<uint16_t>(v1);
+			pkt.reason = static_cast<uint16_t>(v2);
+			if (string != 0) {
+				memcpy(pkt.name, string, sizeof(pkt.name));
 			}
-			iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+			ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 		}
 		else {
 			hb::net::PacketNotifyCannotSellItem pkt{};
 			pkt.header.msg_id = MsgId::Notify;
-			pkt.header.msg_type = wMsgType;
-			pkt.item_index = static_cast<uint16_t>(sV1);
-			pkt.reason = static_cast<uint16_t>(sV2);
-			if (pString != 0) {
-				memcpy(pkt.name, pString, sizeof(pkt.name));
+			pkt.header.msg_type = msg_type;
+			pkt.item_index = static_cast<uint16_t>(v1);
+			pkt.reason = static_cast<uint16_t>(v2);
+			if (string != 0) {
+				memcpy(pkt.name, string, sizeof(pkt.name));
 			}
-			iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+			ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 		}
 		break;
 
@@ -6938,10 +6958,10 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 	{
 		hb::net::PacketNotifyShowMap pkt{};
 		pkt.header.msg_id = MsgId::Notify;
-		pkt.header.msg_type = wMsgType;
-		pkt.map_id = static_cast<uint16_t>(sV1);
-		pkt.map_type = static_cast<uint16_t>(sV2);
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+		pkt.header.msg_type = msg_type;
+		pkt.map_id = static_cast<uint16_t>(v1);
+		pkt.map_type = static_cast<uint16_t>(v2);
+		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 	}
 	break;
 
@@ -6949,9 +6969,9 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 	{
 		hb::net::PacketNotifySkillUsingEnd pkt{};
 		pkt.header.msg_id = MsgId::Notify;
-		pkt.header.msg_type = wMsgType;
-		pkt.result = static_cast<uint16_t>(sV1);
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+		pkt.header.msg_type = msg_type;
+		pkt.result = static_cast<uint16_t>(v1);
+		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 		break;
 	}
 
@@ -6959,9 +6979,9 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 	{
 		hb::net::PacketNotifyTotalUsers pkt{};
 		pkt.header.msg_id = MsgId::Notify;
-		pkt.header.msg_type = wMsgType;
-		pkt.total = static_cast<uint16_t>(m_iTotalGameServerClients);
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+		pkt.header.msg_type = msg_type;
+		pkt.total = static_cast<uint16_t>(m_total_game_server_clients);
+		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 		break;
 	}
 
@@ -6970,11 +6990,11 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 	{
 		hb::net::PacketNotifyMagicEffect pkt{};
 		pkt.header.msg_id = MsgId::Notify;
-		pkt.header.msg_type = wMsgType;
-		pkt.magic_type = static_cast<uint16_t>(sV1);
-		pkt.effect = static_cast<uint32_t>(sV2);
-		pkt.owner = static_cast<uint32_t>(sV3);
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+		pkt.header.msg_type = msg_type;
+		pkt.magic_type = static_cast<uint16_t>(v1);
+		pkt.effect = static_cast<uint32_t>(v2);
+		pkt.owner = static_cast<uint32_t>(v3);
+		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 	}
 	break;
 
@@ -6982,8 +7002,8 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 	{
 		hb::net::PacketNotifyEmpty pkt{};
 		pkt.header.msg_id = MsgId::Notify;
-		pkt.header.msg_type = wMsgType;
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+		pkt.header.msg_type = msg_type;
+		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 	}
 	break;
 
@@ -6991,11 +7011,11 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 	{
 		hb::net::PacketNotifyServerChange pkt{};
 		pkt.header.msg_id = MsgId::Notify;
-		pkt.header.msg_type = wMsgType;
-		memcpy(pkt.map_name, m_pClientList[iToH]->m_cMapName, sizeof(pkt.map_name));
-		memcpy(pkt.log_server_addr, m_cLoginListenIP, sizeof(pkt.log_server_addr));
-		pkt.log_server_port = m_iLoginListenPort;
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+		pkt.header.msg_type = msg_type;
+		memcpy(pkt.map_name, m_client_list[to_h]->m_map_name, sizeof(pkt.map_name));
+		memcpy(pkt.log_server_addr, m_login_listen_ip, sizeof(pkt.log_server_addr));
+		pkt.log_server_port = m_login_listen_port;
+		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 	}
 	break;
 
@@ -7003,22 +7023,22 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 	{
 		hb::net::PacketNotifySkill pkt{};
 		pkt.header.msg_id = MsgId::Notify;
-		pkt.header.msg_type = wMsgType;
-		pkt.skill_index = static_cast<uint16_t>(sV1);
-		pkt.skill_value = static_cast<uint16_t>(sV2);
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+		pkt.header.msg_type = msg_type;
+		pkt.skill_index = static_cast<uint16_t>(v1);
+		pkt.skill_value = static_cast<uint16_t>(v2);
+		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 		break;
 	}
 
-	case Notify::SetItemCount:
+	case Notify::set_item_count:
 	{
 		hb::net::PacketNotifySetItemCount pkt{};
 		pkt.header.msg_id = MsgId::Notify;
-		pkt.header.msg_type = wMsgType;
-		pkt.item_index = static_cast<uint16_t>(sV1);
-		pkt.count = static_cast<uint32_t>(sV2);
-		pkt.notify = static_cast<uint8_t>(sV3);
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+		pkt.header.msg_type = msg_type;
+		pkt.item_index = static_cast<uint16_t>(v1);
+		pkt.count = static_cast<uint32_t>(v2);
+		pkt.notify = static_cast<uint8_t>(v3);
+		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 	}
 	break;
 
@@ -7026,10 +7046,10 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 	{
 		hb::net::PacketNotifyItemDepletedEraseItem pkt{};
 		pkt.header.msg_id = MsgId::Notify;
-		pkt.header.msg_type = wMsgType;
-		pkt.item_index = static_cast<uint16_t>(sV1);
-		pkt.use_result = static_cast<uint16_t>(sV2);
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+		pkt.header.msg_type = msg_type;
+		pkt.item_index = static_cast<uint16_t>(v1);
+		pkt.use_result = static_cast<uint16_t>(v2);
+		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 		break;
 	}
 
@@ -7037,10 +7057,10 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 	{
 		hb::net::PacketNotifyDropItemFinCountChanged pkt{};
 		pkt.header.msg_id = MsgId::Notify;
-		pkt.header.msg_type = wMsgType;
-		pkt.item_index = static_cast<uint16_t>(sV1);
-		pkt.amount = static_cast<int32_t>(sV2);
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+		pkt.header.msg_type = msg_type;
+		pkt.item_index = static_cast<uint16_t>(v1);
+		pkt.amount = static_cast<int32_t>(v2);
+		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 		break;
 	}
 
@@ -7048,36 +7068,36 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 	{
 		hb::net::PacketNotifyDropItemFinEraseItem pkt{};
 		pkt.header.msg_id = MsgId::Notify;
-		pkt.header.msg_type = wMsgType;
-		pkt.item_index = static_cast<uint16_t>(sV1);
-		pkt.amount = static_cast<int32_t>(sV2);
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+		pkt.header.msg_type = msg_type;
+		pkt.item_index = static_cast<uint16_t>(v1);
+		pkt.amount = static_cast<int32_t>(v2);
+		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 		break;
 	}
 
 	case Notify::CannotGiveItem:
 	case Notify::GiveItemFinCountChanged:
-		if (wMsgType == Notify::GiveItemFinCountChanged) {
+		if (msg_type == Notify::GiveItemFinCountChanged) {
 			hb::net::PacketNotifyGiveItemFinCountChanged pkt{};
 			pkt.header.msg_id = MsgId::Notify;
-			pkt.header.msg_type = wMsgType;
-			pkt.item_index = static_cast<uint16_t>(sV1);
-			pkt.amount = static_cast<int32_t>(sV2);
-			if (pString != 0) {
-				memcpy(pkt.name, pString, sizeof(pkt.name));
+			pkt.header.msg_type = msg_type;
+			pkt.item_index = static_cast<uint16_t>(v1);
+			pkt.amount = static_cast<int32_t>(v2);
+			if (string != 0) {
+				memcpy(pkt.name, string, sizeof(pkt.name));
 			}
-			iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+			ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 		}
 		else {
 			hb::net::PacketNotifyCannotGiveItem pkt{};
 			pkt.header.msg_id = MsgId::Notify;
-			pkt.header.msg_type = wMsgType;
-			pkt.item_index = static_cast<uint16_t>(sV1);
-			pkt.amount = static_cast<int32_t>(sV2);
-			if (pString != 0) {
-				memcpy(pkt.name, pString, sizeof(pkt.name));
+			pkt.header.msg_type = msg_type;
+			pkt.item_index = static_cast<uint16_t>(v1);
+			pkt.amount = static_cast<int32_t>(v2);
+			if (string != 0) {
+				memcpy(pkt.name, string, sizeof(pkt.name));
 			}
-			iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+			ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 		}
 		break;
 
@@ -7085,13 +7105,13 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 	{
 		hb::net::PacketNotifyGiveItemFinEraseItem pkt{};
 		pkt.header.msg_id = MsgId::Notify;
-		pkt.header.msg_type = wMsgType;
-		pkt.item_index = static_cast<uint16_t>(sV1);
-		pkt.amount = static_cast<int32_t>(sV2);
-		if (pString != 0) {
-			memcpy(pkt.name, pString, sizeof(pkt.name));
+		pkt.header.msg_type = msg_type;
+		pkt.item_index = static_cast<uint16_t>(v1);
+		pkt.amount = static_cast<int32_t>(v2);
+		if (string != 0) {
+			memcpy(pkt.name, string, sizeof(pkt.name));
 		}
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 		break;
 	}
 
@@ -7099,14 +7119,14 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 	{
 		hb::net::PacketNotifyEnemyKillReward pkt{};
 		pkt.header.msg_id = MsgId::Notify;
-		pkt.header.msg_type = wMsgType;
-		pkt.exp = static_cast<uint32_t>(m_pClientList[iToH]->m_iExp);
-		pkt.kill_count = static_cast<uint32_t>(m_pClientList[iToH]->m_iEnemyKillCount);
-		memcpy(pkt.killer_name, m_pClientList[sV1]->m_cCharName, sizeof(pkt.killer_name));
-		memcpy(pkt.killer_guild, m_pClientList[sV1]->m_cGuildName, sizeof(pkt.killer_guild));
-		pkt.killer_rank = static_cast<int16_t>(m_pClientList[sV1]->m_iGuildRank);
-		pkt.war_contribution = static_cast<int16_t>(m_pClientList[iToH]->m_iWarContribution);
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+		pkt.header.msg_type = msg_type;
+		pkt.exp = static_cast<uint32_t>(m_client_list[to_h]->m_exp);
+		pkt.kill_count = static_cast<uint32_t>(m_client_list[to_h]->m_enemy_kill_count);
+		memcpy(pkt.killer_name, m_client_list[v1]->m_char_name, sizeof(pkt.killer_name));
+		memcpy(pkt.killer_guild, m_client_list[v1]->m_guild_name, sizeof(pkt.killer_guild));
+		pkt.killer_rank = static_cast<int16_t>(m_client_list[v1]->m_guild_rank);
+		pkt.war_contribution = static_cast<int16_t>(m_client_list[to_h]->m_war_contribution);
+		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 	}
 	break;
 
@@ -7114,15 +7134,15 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 	{
 		hb::net::PacketNotifyPKcaptured pkt{};
 		pkt.header.msg_id = MsgId::Notify;
-		pkt.header.msg_type = wMsgType;
-		pkt.pk_count = static_cast<uint16_t>(sV1);
-		pkt.victim_pk_count = static_cast<uint16_t>(sV2);
-		if (pString != 0) {
-			memcpy(pkt.victim_name, pString, sizeof(pkt.victim_name));
+		pkt.header.msg_type = msg_type;
+		pkt.pk_count = static_cast<uint16_t>(v1);
+		pkt.victim_pk_count = static_cast<uint16_t>(v2);
+		if (string != 0) {
+			memcpy(pkt.victim_name, string, sizeof(pkt.victim_name));
 		}
-		pkt.reward_gold = static_cast<uint32_t>(m_pClientList[iToH]->m_iRewardGold);
-		pkt.exp = static_cast<uint32_t>(m_pClientList[iToH]->m_iExp);
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+		pkt.reward_gold = static_cast<uint32_t>(m_client_list[to_h]->m_reward_gold);
+		pkt.exp = static_cast<uint32_t>(m_client_list[to_h]->m_exp);
+		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 	}
 	break;
 
@@ -7130,16 +7150,16 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 	{
 		hb::net::PacketNotifyPKpenalty pkt{};
 		pkt.header.msg_id = MsgId::Notify;
-		pkt.header.msg_type = wMsgType;
-		pkt.exp = static_cast<uint32_t>(m_pClientList[iToH]->m_iExp);
-		pkt.str = static_cast<uint32_t>(m_pClientList[iToH]->m_iStr);
-		pkt.vit = static_cast<uint32_t>(m_pClientList[iToH]->m_iVit);
-		pkt.dex = static_cast<uint32_t>(m_pClientList[iToH]->m_iDex);
-		pkt.intel = static_cast<uint32_t>(m_pClientList[iToH]->m_iInt);
-		pkt.mag = static_cast<uint32_t>(m_pClientList[iToH]->m_iMag);
-		pkt.chr = static_cast<uint32_t>(m_pClientList[iToH]->m_iCharisma);
-		pkt.pk_count = static_cast<uint32_t>(m_pClientList[iToH]->m_iPKCount);
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+		pkt.header.msg_type = msg_type;
+		pkt.exp = static_cast<uint32_t>(m_client_list[to_h]->m_exp);
+		pkt.str = static_cast<uint32_t>(m_client_list[to_h]->m_str);
+		pkt.vit = static_cast<uint32_t>(m_client_list[to_h]->m_vit);
+		pkt.dex = static_cast<uint32_t>(m_client_list[to_h]->m_dex);
+		pkt.intel = static_cast<uint32_t>(m_client_list[to_h]->m_int);
+		pkt.mag = static_cast<uint32_t>(m_client_list[to_h]->m_mag);
+		pkt.chr = static_cast<uint32_t>(m_client_list[to_h]->m_charisma);
+		pkt.pk_count = static_cast<uint32_t>(m_client_list[to_h]->m_player_kill_count);
+		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 	}
 	break;
 
@@ -7147,8 +7167,8 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 	{
 		hb::net::PacketNotifyRepairAllPricesHeader header{};
 		header.header.msg_id = MsgId::Notify;
-		header.header.msg_type = wMsgType;
-		int total = m_pClientList[iToH]->totalItemRepair;
+		header.header.msg_type = msg_type;
+		int total = m_client_list[to_h]->total_item_repair;
 		if (total < 0) total = 0;
 		header.total = static_cast<int16_t>(total);
 
@@ -7159,12 +7179,12 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 
 		for(int i = 0; i < total; i++) {
 			hb::net::PacketNotifyRepairAllPricesEntry entry{};
-			entry.index = static_cast<uint8_t>(m_pClientList[iToH]->m_stRepairAll[i].index);
-			entry.price = static_cast<int16_t>(m_pClientList[iToH]->m_stRepairAll[i].price);
+			entry.index = static_cast<uint8_t>(m_client_list[to_h]->m_repair_all[i].index);
+			entry.price = static_cast<int16_t>(m_client_list[to_h]->m_repair_all[i].price);
 			writer.AppendBytes(&entry, sizeof(entry));
 		}
 
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(writer.Data(), static_cast<int>(writer.Size()));
+		ret = m_client_list[to_h]->m_socket->send_msg(writer.Data(), static_cast<int>(writer.size()));
 	}
 	break;
 
@@ -7173,9 +7193,9 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 	{
 		hb::net::PacketNotifySimpleInt pkt{};
 		pkt.header.msg_id = MsgId::Notify;
-		pkt.header.msg_type = wMsgType;
-		pkt.value = static_cast<int32_t>(m_pClientList[iToH]->m_iExp);
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+		pkt.header.msg_type = msg_type;
+		pkt.value = static_cast<int32_t>(m_client_list[to_h]->m_exp);
+		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 		break;
 	}
 
@@ -7183,20 +7203,20 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 	{
 		hb::net::PacketNotifyItemReleased pkt{};
 		pkt.header.msg_id = MsgId::Notify;
-		pkt.header.msg_type = wMsgType;
-		pkt.equip_pos = static_cast<int16_t>(sV1);
-		pkt.item_index = static_cast<int16_t>(sV2);
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+		pkt.header.msg_type = msg_type;
+		pkt.equip_pos = static_cast<int16_t>(v1);
+		pkt.item_index = static_cast<int16_t>(v2);
+		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 		break;
 	}
 	case Notify::ItemLifeSpanEnd:
 	{
 		hb::net::PacketNotifyItemLifeSpanEnd pkt{};
 		pkt.header.msg_id = MsgId::Notify;
-		pkt.header.msg_type = wMsgType;
-		pkt.equip_pos = static_cast<int16_t>(sV1);
-		pkt.item_index = static_cast<int16_t>(sV2);
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+		pkt.header.msg_type = msg_type;
+		pkt.equip_pos = static_cast<int16_t>(v1);
+		pkt.item_index = static_cast<int16_t>(v2);
+		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 		break;
 	}
 
@@ -7204,11 +7224,11 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 	{
 		hb::net::PacketNotifyKilled pkt{};
 		pkt.header.msg_id = MsgId::Notify;
-		pkt.header.msg_type = wMsgType;
-		if (pString != 0) {
-			memcpy(pkt.attacker_name, pString, sizeof(pkt.attacker_name));
+		pkt.header.msg_type = msg_type;
+		if (string != 0) {
+			memcpy(pkt.attacker_name, string, sizeof(pkt.attacker_name));
 		}
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 	}
 	break;
 
@@ -7216,10 +7236,10 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 	{
 		hb::net::PacketNotifyExp pkt{};
 		pkt.header.msg_id = MsgId::Notify;
-		pkt.header.msg_type = wMsgType;
-		pkt.exp = static_cast<uint32_t>(m_pClientList[iToH]->m_iExp);
-		pkt.rating = static_cast<int32_t>(m_pClientList[iToH]->m_iRating);
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+		pkt.header.msg_type = msg_type;
+		pkt.exp = static_cast<uint32_t>(m_client_list[to_h]->m_exp);
+		pkt.rating = static_cast<int32_t>(m_client_list[to_h]->m_rating);
+		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 		break;
 	}
 
@@ -7227,10 +7247,10 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 	{
 		hb::net::PacketNotifyHP pkt{};
 		pkt.header.msg_id = MsgId::Notify;
-		pkt.header.msg_type = wMsgType;
-		pkt.hp = static_cast<uint32_t>(m_pClientList[iToH]->m_iHP);
-		pkt.hunger = static_cast<uint32_t>(m_pClientList[iToH]->m_iHungerStatus);
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+		pkt.header.msg_type = msg_type;
+		pkt.hp = static_cast<uint32_t>(m_client_list[to_h]->m_hp);
+		pkt.hunger = static_cast<uint32_t>(m_client_list[to_h]->m_hunger_status);
+		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 		break;
 	}
 
@@ -7238,9 +7258,9 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 	{
 		hb::net::PacketNotifyMP pkt{};
 		pkt.header.msg_id = MsgId::Notify;
-		pkt.header.msg_type = wMsgType;
-		pkt.mp = static_cast<uint32_t>(m_pClientList[iToH]->m_iMP);
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+		pkt.header.msg_type = msg_type;
+		pkt.mp = static_cast<uint32_t>(m_client_list[to_h]->m_mp);
+		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 		break;
 	}
 
@@ -7248,9 +7268,9 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 	{
 		hb::net::PacketNotifySP pkt{};
 		pkt.header.msg_id = MsgId::Notify;
-		pkt.header.msg_type = wMsgType;
-		pkt.sp = static_cast<uint32_t>(m_pClientList[iToH]->m_iSP);
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+		pkt.header.msg_type = msg_type;
+		pkt.sp = static_cast<uint32_t>(m_client_list[to_h]->m_sp);
+		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 		break;
 	}
 
@@ -7258,9 +7278,9 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 	{
 		hb::net::PacketNotifyCharisma pkt{};
 		pkt.header.msg_id = MsgId::Notify;
-		pkt.header.msg_type = wMsgType;
-		pkt.charisma = static_cast<uint32_t>(m_pClientList[iToH]->m_iCharisma);
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+		pkt.header.msg_type = msg_type;
+		pkt.charisma = static_cast<uint32_t>(m_client_list[to_h]->m_charisma);
+		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 	}
 	break;
 
@@ -7270,8 +7290,8 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 	{
 		hb::net::PacketNotifyEmpty pkt{};
 		pkt.header.msg_id = MsgId::Notify;
-		pkt.header.msg_type = wMsgType;
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+		pkt.header.msg_type = msg_type;
+		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 	}
 	break;
 
@@ -7280,17 +7300,17 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 		
 		hb::net::PacketNotifyStateChangeSuccess pkt{};
 		pkt.header.msg_id = MsgId::Notify;
-		pkt.header.msg_type = wMsgType;
+		pkt.header.msg_type = msg_type;
 
 		for(int i = 0; i < hb::shared::limits::MaxMagicType; i++) {
-			pkt.magic_mastery[i] = static_cast<uint8_t>(m_pClientList[iToH]->m_cMagicMastery[i]);
+			pkt.magic_mastery[i] = static_cast<uint8_t>(m_client_list[to_h]->m_magic_mastery[i]);
 		}
 
 		for(int i = 0; i < hb::shared::limits::MaxSkillType; i++) {
-			pkt.skill_mastery[i] = static_cast<uint8_t>(m_pClientList[iToH]->m_cSkillMastery[i]);
+			pkt.skill_mastery[i] = static_cast<uint8_t>(m_client_list[to_h]->m_skill_mastery[i]);
 		}
 
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 	}
 	break;
 
@@ -7299,16 +7319,16 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 	{
 		hb::net::PacketNotifyLevelUp pkt{};
 		pkt.header.msg_id = MsgId::Notify;
-		pkt.header.msg_type = wMsgType;
-		pkt.level = m_pClientList[iToH]->m_iLevel;
-		pkt.str = m_pClientList[iToH]->m_iStr;
-		pkt.vit = m_pClientList[iToH]->m_iVit;
-		pkt.dex = m_pClientList[iToH]->m_iDex;
-		pkt.intel = m_pClientList[iToH]->m_iInt;
-		pkt.mag = m_pClientList[iToH]->m_iMag;
-		pkt.chr = m_pClientList[iToH]->m_iCharisma;
-		pkt.attack_delay = m_pClientList[iToH]->m_status.iAttackDelay;
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+		pkt.header.msg_type = msg_type;
+		pkt.level = m_client_list[to_h]->m_level;
+		pkt.str = m_client_list[to_h]->m_str;
+		pkt.vit = m_client_list[to_h]->m_vit;
+		pkt.dex = m_client_list[to_h]->m_dex;
+		pkt.intel = m_client_list[to_h]->m_int;
+		pkt.mag = m_client_list[to_h]->m_mag;
+		pkt.chr = m_client_list[to_h]->m_charisma;
+		pkt.attack_delay = m_client_list[to_h]->m_status.attack_delay;
+		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 		break;
 	}
 
@@ -7316,9 +7336,9 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 	{
 		hb::net::PacketNotifyQueryDismissGuildPermission pkt{};
 		pkt.header.msg_id = MsgId::Notify;
-		pkt.header.msg_type = wMsgType;
-		memcpy(pkt.name, m_pClientList[iFromH]->m_cCharName, sizeof(pkt.name));
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+		pkt.header.msg_type = msg_type;
+		memcpy(pkt.name, m_client_list[from_h]->m_char_name, sizeof(pkt.name));
+		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 		break;
 	}
 
@@ -7326,9 +7346,9 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 	{
 		hb::net::PacketNotifyQueryJoinGuildPermission pkt{};
 		pkt.header.msg_id = MsgId::Notify;
-		pkt.header.msg_type = wMsgType;
-		memcpy(pkt.name, m_pClientList[iFromH]->m_cCharName, sizeof(pkt.name));
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+		pkt.header.msg_type = msg_type;
+		memcpy(pkt.name, m_client_list[from_h]->m_char_name, sizeof(pkt.name));
+		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 		break;
 	}
 
@@ -7336,9 +7356,9 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 	{
 		hb::net::PacketNotifyCannotJoinMoreGuildsMan pkt{};
 		pkt.header.msg_id = MsgId::Notify;
-		pkt.header.msg_type = wMsgType;
-		memcpy(pkt.name, m_pClientList[iFromH]->m_cCharName, sizeof(pkt.name));
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+		pkt.header.msg_type = msg_type;
+		memcpy(pkt.name, m_client_list[from_h]->m_char_name, sizeof(pkt.name));
+		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 		break;
 	}
 
@@ -7346,62 +7366,62 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 	{
 		hb::net::PacketNotifyJoinGuildApprove pkt{};
 		pkt.header.msg_id = MsgId::Notify;
-		pkt.header.msg_type = wMsgType;
-		if (m_pClientList[iFromH] != 0) {
-			memcpy(pkt.guild_name, m_pClientList[iFromH]->m_cGuildName, sizeof(pkt.guild_name));
+		pkt.header.msg_type = msg_type;
+		if (m_client_list[from_h] != 0) {
+			memcpy(pkt.guild_name, m_client_list[from_h]->m_guild_name, sizeof(pkt.guild_name));
 		}
 		else {
 			memcpy(pkt.guild_name, "?", 1);
 		}
-		pkt.rank = m_iStartingGuildRank;
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+		pkt.rank = m_starting_guild_rank;
+		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 	}
 	break;
 
 	case CommonType::JoinGuildReject:
 	case CommonType::DismissGuildApprove:
 	case CommonType::DismissGuildReject:
-		if (wMsgType == CommonType::JoinGuildReject) {
+		if (msg_type == CommonType::JoinGuildReject) {
 			hb::net::PacketNotifyJoinGuildReject pkt{};
 			pkt.header.msg_id = MsgId::Notify;
-			pkt.header.msg_type = wMsgType;
-			if (m_pClientList[iFromH] != 0) {
-				memcpy(pkt.guild_name, m_pClientList[iFromH]->m_cGuildName, sizeof(pkt.guild_name));
+			pkt.header.msg_type = msg_type;
+			if (m_client_list[from_h] != 0) {
+				memcpy(pkt.guild_name, m_client_list[from_h]->m_guild_name, sizeof(pkt.guild_name));
 			}
 			else {
 				memcpy(pkt.guild_name, "?", 1);
 			}
-			pkt.rank = m_iStartingGuildRank;
-			memcpy(pkt.location, m_pClientList[iToH]->m_cLocation, sizeof(pkt.location));
-			iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+			pkt.rank = m_starting_guild_rank;
+			memcpy(pkt.location, m_client_list[to_h]->m_location, sizeof(pkt.location));
+			ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 		}
-		else if (wMsgType == CommonType::DismissGuildApprove) {
+		else if (msg_type == CommonType::DismissGuildApprove) {
 			hb::net::PacketNotifyDismissGuildApprove pkt{};
 			pkt.header.msg_id = MsgId::Notify;
-			pkt.header.msg_type = wMsgType;
-			if (m_pClientList[iFromH] != 0) {
-				memcpy(pkt.guild_name, m_pClientList[iFromH]->m_cGuildName, sizeof(pkt.guild_name));
+			pkt.header.msg_type = msg_type;
+			if (m_client_list[from_h] != 0) {
+				memcpy(pkt.guild_name, m_client_list[from_h]->m_guild_name, sizeof(pkt.guild_name));
 			}
 			else {
 				memcpy(pkt.guild_name, "?", 1);
 			}
-			pkt.rank = m_iStartingGuildRank;
-			memcpy(pkt.location, m_pClientList[iToH]->m_cLocation, sizeof(pkt.location));
-			iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+			pkt.rank = m_starting_guild_rank;
+			memcpy(pkt.location, m_client_list[to_h]->m_location, sizeof(pkt.location));
+			ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 		}
 		else {
 			hb::net::PacketNotifyDismissGuildReject pkt{};
 			pkt.header.msg_id = MsgId::Notify;
-			pkt.header.msg_type = wMsgType;
-			if (m_pClientList[iFromH] != 0) {
-				memcpy(pkt.guild_name, m_pClientList[iFromH]->m_cGuildName, sizeof(pkt.guild_name));
+			pkt.header.msg_type = msg_type;
+			if (m_client_list[from_h] != 0) {
+				memcpy(pkt.guild_name, m_client_list[from_h]->m_guild_name, sizeof(pkt.guild_name));
 			}
 			else {
 				memcpy(pkt.guild_name, "?", 1);
 			}
-			pkt.rank = m_iStartingGuildRank;
-			memcpy(pkt.location, m_pClientList[iToH]->m_cLocation, sizeof(pkt.location));
-			iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+			pkt.rank = m_starting_guild_rank;
+			memcpy(pkt.location, m_client_list[to_h]->m_location, sizeof(pkt.location));
+			ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 		}
 		break;
 
@@ -7409,12 +7429,12 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 	{
 		hb::net::PacketNotifyGuildDisbanded pkt{};
 		pkt.header.msg_id = MsgId::Notify;
-		pkt.header.msg_type = wMsgType;
-		if (pString != 0) {
-			memcpy(pkt.guild_name, pString, sizeof(pkt.guild_name));
+		pkt.header.msg_type = msg_type;
+		if (string != 0) {
+			memcpy(pkt.guild_name, string, sizeof(pkt.guild_name));
 		}
-		memcpy(pkt.location, m_pClientList[iToH]->m_cLocation, sizeof(pkt.location));
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+		memcpy(pkt.location, m_client_list[to_h]->m_location, sizeof(pkt.location));
+		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 	}
 	break;
 
@@ -7422,9 +7442,9 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 	{
 		hb::net::PacketNotifyFightZoneReserve pkt{};
 		pkt.header.msg_id = MsgId::Notify;
-		pkt.header.msg_type = wMsgType;
-		pkt.result = static_cast<int32_t>(sV1);
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+		pkt.header.msg_type = msg_type;
+		pkt.result = static_cast<int32_t>(v1);
+		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 	}
 	break;
 
@@ -7432,8 +7452,8 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 	{
 		hb::net::PacketNotifyEmpty pkt{};
 		pkt.header.msg_id = MsgId::Notify;
-		pkt.header.msg_type = wMsgType;
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+		pkt.header.msg_type = msg_type;
+		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 	}
 	break;
 
@@ -7441,29 +7461,29 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 	{
 		hb::net::PacketNotifyEmpty pkt{};
 		pkt.header.msg_id = MsgId::Notify;
-		pkt.header.msg_type = wMsgType;
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+		pkt.header.msg_type = msg_type;
+		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 	}
 	break;
 	}
 
-	switch (iRet) {
+	switch (ret) {
 	case sock::Event::QueueFull:
 	case sock::Event::SocketError:
 	case sock::Event::CriticalError:
 	case sock::Event::SocketClosed:
 		// . Time Out  .
-		//DeleteClient(iToH, true, true);
+		//delete_client(to_h, true, true);
 		return;
 	}
 }
 
-int CGame::GetNpcConfigIdByName(const char* pNpcName) const
+int CGame::get_npc_config_id_by_name(const char* npc_name) const
 {
-	if (pNpcName == nullptr || pNpcName[0] == 0) return -1;
+	if (npc_name == nullptr || npc_name[0] == 0) return -1;
 	for (int i = 0; i < MaxNpcTypes; i++) {
-		if (m_pNpcConfigList[i] != 0) {
-			if (memcmp(pNpcName, m_pNpcConfigList[i]->m_cNpcName, hb::shared::limits::NpcNameLen - 1) == 0) {
+		if (m_npc_config_list[i] != 0) {
+			if (memcmp(npc_name, m_npc_config_list[i]->m_npc_name, hb::shared::limits::NpcNameLen - 1) == 0) {
 				return i;
 			}
 		}
@@ -7471,58 +7491,58 @@ int CGame::GetNpcConfigIdByName(const char* pNpcName) const
 	return -1;
 }
 
-bool CGame::_bInitNpcAttr(class CNpc* pNpc, int iNpcConfigId, short sClass, char cSA)
+bool CGame::init_npc_attr(class CNpc* npc, int npc_config_id, short sClass, char sa)
 {
-	int iTemp;
-	double dV1, dV2, dV3;
+	int temp;
+	double v1, v2, v3;
 
-	if (iNpcConfigId < 0 || iNpcConfigId >= MaxNpcTypes || m_pNpcConfigList[iNpcConfigId] == 0) {
+	if (npc_config_id < 0 || npc_config_id >= MaxNpcTypes || m_npc_config_list[npc_config_id] == 0) {
 		return false;
 	}
 
 	{
-		int iConfigIdx = iNpcConfigId;
-				pNpc->m_iNpcConfigId = static_cast<short>(iNpcConfigId);
+		int config_idx = npc_config_id;
+				npc->m_npc_config_id = static_cast<short>(npc_config_id);
 
-				std::memset(pNpc->m_cNpcName, 0, sizeof(pNpc->m_cNpcName));
-				memcpy(pNpc->m_cNpcName, m_pNpcConfigList[iConfigIdx]->m_cNpcName, hb::shared::limits::NpcNameLen - 1);
+				std::memset(npc->m_npc_name, 0, sizeof(npc->m_npc_name));
+				memcpy(npc->m_npc_name, m_npc_config_list[config_idx]->m_npc_name, hb::shared::limits::NpcNameLen - 1);
 
-				pNpc->m_sType = m_pNpcConfigList[iConfigIdx]->m_sType;
+				npc->m_type = m_npc_config_list[config_idx]->m_type;
 
 				// HitDice   .    .
-				if (m_pNpcConfigList[iConfigIdx]->m_iHitDice <= 5)
-					pNpc->m_iHP = (iDice(m_pNpcConfigList[iConfigIdx]->m_iHitDice, 4) + m_pNpcConfigList[iConfigIdx]->m_iHitDice);
-				else pNpc->m_iHP = ((m_pNpcConfigList[iConfigIdx]->m_iHitDice * 4) + m_pNpcConfigList[iConfigIdx]->m_iHitDice + iDice(1, m_pNpcConfigList[iConfigIdx]->m_iHitDice));
-				if (pNpc->m_iHP == 0) pNpc->m_iHP = 1;
+				if (m_npc_config_list[config_idx]->m_hit_dice <= 5)
+					npc->m_hp = (dice(m_npc_config_list[config_idx]->m_hit_dice, 4) + m_npc_config_list[config_idx]->m_hit_dice);
+				else npc->m_hp = ((m_npc_config_list[config_idx]->m_hit_dice * 4) + m_npc_config_list[config_idx]->m_hit_dice + dice(1, m_npc_config_list[config_idx]->m_hit_dice));
+				if (npc->m_hp == 0) npc->m_hp = 1;
 
 				//50Cent - HP Bar
-				pNpc->m_iMaxHP = pNpc->m_iHP;
+				npc->m_max_hp = npc->m_hp;
 
-				pNpc->m_iExpDiceMin = m_pNpcConfigList[iConfigIdx]->m_iExpDiceMin;
-				pNpc->m_iExpDiceMax = m_pNpcConfigList[iConfigIdx]->m_iExpDiceMax;
-				pNpc->m_iGoldDiceMin = m_pNpcConfigList[iConfigIdx]->m_iGoldDiceMin;
-				pNpc->m_iGoldDiceMax = m_pNpcConfigList[iConfigIdx]->m_iGoldDiceMax;
-				pNpc->m_iDropTableId = m_pNpcConfigList[iConfigIdx]->m_iDropTableId;
-				pNpc->m_iExp = (iDice(1, (m_pNpcConfigList[iConfigIdx]->m_iExpDiceMax - m_pNpcConfigList[iConfigIdx]->m_iExpDiceMin)) + m_pNpcConfigList[iConfigIdx]->m_iExpDiceMin);
+				npc->m_exp_dice_min = m_npc_config_list[config_idx]->m_exp_dice_min;
+				npc->m_exp_dice_max = m_npc_config_list[config_idx]->m_exp_dice_max;
+				npc->m_gold_dice_min = m_npc_config_list[config_idx]->m_gold_dice_min;
+				npc->m_gold_dice_max = m_npc_config_list[config_idx]->m_gold_dice_max;
+				npc->m_drop_table_id = m_npc_config_list[config_idx]->m_drop_table_id;
+				npc->m_exp = (dice(1, (m_npc_config_list[config_idx]->m_exp_dice_max - m_npc_config_list[config_idx]->m_exp_dice_min)) + m_npc_config_list[config_idx]->m_exp_dice_min);
 
-				pNpc->m_iHitDice = m_pNpcConfigList[iConfigIdx]->m_iHitDice;
-				pNpc->m_iDefenseRatio = m_pNpcConfigList[iConfigIdx]->m_iDefenseRatio;
-				pNpc->m_iHitRatio = m_pNpcConfigList[iConfigIdx]->m_iHitRatio;
-				pNpc->m_iMinBravery = m_pNpcConfigList[iConfigIdx]->m_iMinBravery;
-				pNpc->m_cAttackDiceThrow = m_pNpcConfigList[iConfigIdx]->m_cAttackDiceThrow;
-				pNpc->m_cAttackDiceRange = m_pNpcConfigList[iConfigIdx]->m_cAttackDiceRange;
-				pNpc->m_cSize = m_pNpcConfigList[iConfigIdx]->m_cSize;
-				pNpc->m_cSide = m_pNpcConfigList[iConfigIdx]->m_cSide;
-				pNpc->m_cActionLimit = m_pNpcConfigList[iConfigIdx]->m_cActionLimit;
-				pNpc->m_dwActionTime = m_pNpcConfigList[iConfigIdx]->m_dwActionTime;
-				pNpc->m_dwRegenTime = m_pNpcConfigList[iConfigIdx]->m_dwRegenTime;
-				pNpc->m_cResistMagic = m_pNpcConfigList[iConfigIdx]->m_cResistMagic;
-				pNpc->m_cMagicLevel = m_pNpcConfigList[iConfigIdx]->m_cMagicLevel;
-				pNpc->m_iMaxMana = m_pNpcConfigList[iConfigIdx]->m_iMaxMana; // v1.4
-				pNpc->m_iMana = m_pNpcConfigList[iConfigIdx]->m_iMaxMana;
-				pNpc->m_cChatMsgPresence = m_pNpcConfigList[iConfigIdx]->m_cChatMsgPresence;
-				pNpc->m_cDayOfWeekLimit = m_pNpcConfigList[iConfigIdx]->m_cDayOfWeekLimit;
-				pNpc->m_cTargetSearchRange = m_pNpcConfigList[iConfigIdx]->m_cTargetSearchRange;
+				npc->m_hit_dice = m_npc_config_list[config_idx]->m_hit_dice;
+				npc->m_defense_ratio = m_npc_config_list[config_idx]->m_defense_ratio;
+				npc->m_hit_ratio = m_npc_config_list[config_idx]->m_hit_ratio;
+				npc->m_min_bravery = m_npc_config_list[config_idx]->m_min_bravery;
+				npc->m_attack_dice_throw = m_npc_config_list[config_idx]->m_attack_dice_throw;
+				npc->m_attack_dice_range = m_npc_config_list[config_idx]->m_attack_dice_range;
+				npc->m_size = m_npc_config_list[config_idx]->m_size;
+				npc->m_side = m_npc_config_list[config_idx]->m_side;
+				npc->m_action_limit = m_npc_config_list[config_idx]->m_action_limit;
+				npc->m_action_time = m_npc_config_list[config_idx]->m_action_time;
+				npc->m_regen_time = m_npc_config_list[config_idx]->m_regen_time;
+				npc->m_resist_magic = m_npc_config_list[config_idx]->m_resist_magic;
+				npc->m_magic_level = m_npc_config_list[config_idx]->m_magic_level;
+				npc->m_max_mana = m_npc_config_list[config_idx]->m_max_mana; // v1.4
+				npc->m_mana = m_npc_config_list[config_idx]->m_max_mana;
+				npc->m_chat_msg_presence = m_npc_config_list[config_idx]->m_chat_msg_presence;
+				npc->m_day_of_week_limit = m_npc_config_list[config_idx]->m_day_of_week_limit;
+				npc->m_target_search_range = m_npc_config_list[config_idx]->m_target_search_range;
 
 				switch (sClass) {
 				case 43:
@@ -7530,219 +7550,219 @@ bool CGame::_bInitNpcAttr(class CNpc* pNpc, int iNpcConfigId, short sClass, char
 				case 45:
 				case 46:
 				case 47:
-					pNpc->m_iAttackStrategy = AttackAI::Normal;
+					npc->m_attack_strategy = AttackAI::Normal;
 					break;
 
 				default:
-					pNpc->m_iAttackStrategy = iDice(1, 10);
+					npc->m_attack_strategy = dice(1, 10);
 					break;
 				}
 
-				pNpc->m_iAILevel = iDice(1, 3);
-				pNpc->m_iAbsDamage = m_pNpcConfigList[iConfigIdx]->m_iAbsDamage;
-				pNpc->m_iMagicHitRatio = m_pNpcConfigList[iConfigIdx]->m_iMagicHitRatio;
-				pNpc->m_iAttackRange = m_pNpcConfigList[iConfigIdx]->m_iAttackRange;
-				pNpc->m_cSpecialAbility = cSA;
-				pNpc->m_iBuildCount = m_pNpcConfigList[iConfigIdx]->m_iMinBravery;
+				npc->m_ai_level = dice(1, 3);
+				npc->m_abs_damage = m_npc_config_list[config_idx]->m_abs_damage;
+				npc->m_magic_hit_ratio = m_npc_config_list[config_idx]->m_magic_hit_ratio;
+				npc->m_attack_range = m_npc_config_list[config_idx]->m_attack_range;
+				npc->m_special_ability = sa;
+				npc->m_build_count = m_npc_config_list[config_idx]->m_min_bravery;
 
-				switch (pNpc->m_cSpecialAbility) {
+				switch (npc->m_special_ability) {
 				case 1:
-					dV2 = (double)pNpc->m_iExp;
-					dV3 = 25.0f / 100.0f;
-					dV1 = dV2 * dV3;
-					pNpc->m_iExp += (uint32_t)dV1;
+					v2 = (double)npc->m_exp;
+					v3 = 25.0f / 100.0f;
+					v1 = v2 * v3;
+					npc->m_exp += (uint32_t)v1;
 					break;
 
 				case 2:
-					dV2 = (double)pNpc->m_iExp;
-					dV3 = 30.0f / 100.0f;
-					dV1 = dV2 * dV3;
-					pNpc->m_iExp += (uint32_t)dV1;
+					v2 = (double)npc->m_exp;
+					v3 = 30.0f / 100.0f;
+					v1 = v2 * v3;
+					npc->m_exp += (uint32_t)v1;
 					break;
 
 				case 3: // Absorbing Physical Damage
-					if (pNpc->m_iAbsDamage > 0) {
-						pNpc->m_cSpecialAbility = 0;
-						cSA = 0;
+					if (npc->m_abs_damage > 0) {
+						npc->m_special_ability = 0;
+						sa = 0;
 					}
 					else {
-						iTemp = 20 + iDice(1, 60);
-						pNpc->m_iAbsDamage -= iTemp;
-						if (pNpc->m_iAbsDamage < -90) pNpc->m_iAbsDamage = -90;
+						temp = 20 + dice(1, 60);
+						npc->m_abs_damage -= temp;
+						if (npc->m_abs_damage < -90) npc->m_abs_damage = -90;
 					}
 
-					dV2 = (double)pNpc->m_iExp;
-					dV3 = (double)abs(pNpc->m_iAbsDamage) / 100.0f;
-					dV1 = dV2 * dV3;
-					pNpc->m_iExp += (uint32_t)dV1;
+					v2 = (double)npc->m_exp;
+					v3 = (double)abs(npc->m_abs_damage) / 100.0f;
+					v1 = v2 * v3;
+					npc->m_exp += (uint32_t)v1;
 					break;
 
 				case 4: // Absorbing Magical Damage
-					if (pNpc->m_iAbsDamage < 0) {
-						pNpc->m_cSpecialAbility = 0;
-						cSA = 0;
+					if (npc->m_abs_damage < 0) {
+						npc->m_special_ability = 0;
+						sa = 0;
 					}
 					else {
-						iTemp = 20 + iDice(1, 60);
-						pNpc->m_iAbsDamage += iTemp;
-						if (pNpc->m_iAbsDamage > 90) pNpc->m_iAbsDamage = 90;
+						temp = 20 + dice(1, 60);
+						npc->m_abs_damage += temp;
+						if (npc->m_abs_damage > 90) npc->m_abs_damage = 90;
 					}
 
-					dV2 = (double)pNpc->m_iExp;
-					dV3 = (double)(pNpc->m_iAbsDamage) / 100.0f;
-					dV1 = dV2 * dV3;
-					pNpc->m_iExp += (uint32_t)dV1;
+					v2 = (double)npc->m_exp;
+					v3 = (double)(npc->m_abs_damage) / 100.0f;
+					v1 = v2 * v3;
+					npc->m_exp += (uint32_t)v1;
 					break;
 
 				case 5:
-					dV2 = (double)pNpc->m_iExp;
-					dV3 = 15.0f / 100.0f;
-					dV1 = dV2 * dV3;
-					pNpc->m_iExp += (uint32_t)dV1;
+					v2 = (double)npc->m_exp;
+					v3 = 15.0f / 100.0f;
+					v1 = v2 * v3;
+					npc->m_exp += (uint32_t)v1;
 					break;
 
 				case 6:
 				case 7:
-					dV2 = (double)pNpc->m_iExp;
-					dV3 = 20.0f / 100.0f;
-					dV1 = dV2 * dV3;
-					pNpc->m_iExp += (uint32_t)dV1;
+					v2 = (double)npc->m_exp;
+					v3 = 20.0f / 100.0f;
+					v1 = v2 * v3;
+					npc->m_exp += (uint32_t)v1;
 					break;
 
 				case 8:
-					dV2 = (double)pNpc->m_iExp;
-					dV3 = 25.0f / 100.0f;
-					dV1 = dV2 * dV3;
-					pNpc->m_iExp += (uint32_t)dV1;
+					v2 = (double)npc->m_exp;
+					v3 = 25.0f / 100.0f;
+					v1 = v2 * v3;
+					npc->m_exp += (uint32_t)v1;
 					break;
 				}
 
-				pNpc->m_iNoDieRemainExp = (pNpc->m_iExp) - (pNpc->m_iExp / 3);
+				npc->m_no_die_remain_exp = (npc->m_exp) - (npc->m_exp / 3);
 
-				pNpc->m_status.iAngelPercent = static_cast<uint8_t>(cSA);
+				npc->m_status.angel_percent = static_cast<uint8_t>(sa);
 
-				pNpc->m_status.iAttackDelay = static_cast<uint8_t>(sClass);
+				npc->m_status.attack_delay = static_cast<uint8_t>(sClass);
 
 		return true;
 	}
 }
 
 /*********************************************************************************************************************
-**  int CGame::iDice(int iThrow, int iRange)																		**
+**  int CGame::dice(int iThrow, int range)																		**
 **  description			:: produces a random number between the throw and range										**
 **  last updated		:: November 20, 2004; 10:24 PM; Hypnotoad													**
 **	return value		:: int																						**
 **********************************************************************************************************************/
-uint32_t CGame::iDice(uint32_t iThrow, uint32_t iRange)
+uint32_t CGame::dice(uint32_t iThrow, uint32_t range)
 {
-	uint32_t iRet;
+	uint32_t ret;
 
-	if (iRange <= 0) return 0;
-	iRet = 0;
+	if (range <= 0) return 0;
+	ret = 0;
 	for (uint32_t i = 1; i <= iThrow; i++) {
-		iRet += (rand() % iRange) + 1;
+		ret += (rand() % range) + 1;
 	}
-	return iRet;
+	return ret;
 }
 
-void CGame::TimeManaPointsUp(int iClientH)
+void CGame::time_mana_points_up(int client_h)
 {
-	int iMaxMP, iTotal;
-	double dV1, dV2, dV3;
+	int max_mp, total;
+	double v1, v2, v3;
 
-	if (m_pClientList[iClientH] == 0) return;
-	if (m_pClientList[iClientH]->m_bIsKilled) return;
-	if (m_pClientList[iClientH]->m_bIsInitComplete == false) return;
-	if (m_pClientList[iClientH]->m_iHungerStatus <= 0) return;
-	if (m_pClientList[iClientH]->m_bSkillUsingStatus[19]) return;
+	if (m_client_list[client_h] == 0) return;
+	if (m_client_list[client_h]->m_is_killed) return;
+	if (m_client_list[client_h]->m_is_init_complete == false) return;
+	if (m_client_list[client_h]->m_hunger_status <= 0) return;
+	if (m_client_list[client_h]->m_skill_using_status[19]) return;
 
-	iMaxMP = iGetMaxMP(iClientH); // v1.4
-	if (m_pClientList[iClientH]->m_iMP < iMaxMP) {
-		iTotal = iDice(1, (m_pClientList[iClientH]->m_iMag + m_pClientList[iClientH]->m_iAngelicMag));
-		if (m_pClientList[iClientH]->m_iAddMP != 0) {
-			dV2 = (double)iTotal;
-			dV3 = (double)m_pClientList[iClientH]->m_iAddMP;
-			dV1 = (dV3 / 100.0f) * dV2;
-			iTotal += (int)dV1;
+	max_mp = get_max_mp(client_h); // v1.4
+	if (m_client_list[client_h]->m_mp < max_mp) {
+		total = dice(1, (m_client_list[client_h]->m_mag + m_client_list[client_h]->m_angelic_mag));
+		if (m_client_list[client_h]->m_add_mp != 0) {
+			v2 = (double)total;
+			v3 = (double)m_client_list[client_h]->m_add_mp;
+			v1 = (v3 / 100.0f) * v2;
+			total += (int)v1;
 		}
 
-		m_pClientList[iClientH]->m_iMP += iTotal;
+		m_client_list[client_h]->m_mp += total;
 
-		if (m_pClientList[iClientH]->m_iMP > iMaxMP)
-			m_pClientList[iClientH]->m_iMP = iMaxMP;
+		if (m_client_list[client_h]->m_mp > max_mp)
+			m_client_list[client_h]->m_mp = max_mp;
 
-		SendNotifyMsg(0, iClientH, Notify::Mp, 0, 0, 0, 0);
+		send_notify_msg(0, client_h, Notify::Mp, 0, 0, 0, 0);
 	}
 }
 
 // 05/29/2004 - Hypnotoad - fixed infinite sp bug
-void CGame::TimeStaminarPointsUp(int iClientH)
+void CGame::time_stamina_points_up(int client_h)
 {
-	int iMaxSP, iTotal = 0;
-	double dV1, dV2, dV3;
+	int max_sp, total = 0;
+	double v1, v2, v3;
 
-	if (m_pClientList[iClientH] == 0) return;
-	if (m_pClientList[iClientH]->m_bIsKilled) return;
-	if (m_pClientList[iClientH]->m_bIsInitComplete == false) return;
-	if (m_pClientList[iClientH]->m_iHungerStatus <= 0) return;
-	if (m_pClientList[iClientH]->m_bSkillUsingStatus[19]) return;
+	if (m_client_list[client_h] == 0) return;
+	if (m_client_list[client_h]->m_is_killed) return;
+	if (m_client_list[client_h]->m_is_init_complete == false) return;
+	if (m_client_list[client_h]->m_hunger_status <= 0) return;
+	if (m_client_list[client_h]->m_skill_using_status[19]) return;
 
-	iMaxSP = iGetMaxSP(iClientH);
-	if (m_pClientList[iClientH]->m_iSP < iMaxSP) {
+	max_sp = get_max_sp(client_h);
+	if (m_client_list[client_h]->m_sp < max_sp) {
 
-		iTotal = iDice(1, (m_pClientList[iClientH]->m_iVit / 3)); // Staminar Point 10 1D(Vit/3) .
-		if (m_pClientList[iClientH]->m_iAddSP != 0) {
-			dV2 = (double)iTotal;
-			dV3 = (double)m_pClientList[iClientH]->m_iAddSP;
-			dV1 = (dV3 / 100.0f) * dV2;
-			iTotal += (int)dV1;
+		total = dice(1, (m_client_list[client_h]->m_vit / 3)); // Staminar Point 10 1D(Vit/3) .
+		if (m_client_list[client_h]->m_add_sp != 0) {
+			v2 = (double)total;
+			v3 = (double)m_client_list[client_h]->m_add_sp;
+			v1 = (v3 / 100.0f) * v2;
+			total += (int)v1;
 		}
 
-		if (m_pClientList[iClientH]->m_iLevel <= 20) {
-			iTotal += 15;
+		if (m_client_list[client_h]->m_level <= 20) {
+			total += 15;
 		}
-		else if (m_pClientList[iClientH]->m_iLevel <= 40) {
-			iTotal += 10;
+		else if (m_client_list[client_h]->m_level <= 40) {
+			total += 10;
 		}
-		else if (m_pClientList[iClientH]->m_iLevel <= 60) {
-			iTotal += 5;
+		else if (m_client_list[client_h]->m_level <= 60) {
+			total += 5;
 		}
 
-		m_pClientList[iClientH]->m_iSP += iTotal;
-		if (m_pClientList[iClientH]->m_iSP > iMaxSP)
-			m_pClientList[iClientH]->m_iSP = iMaxSP;
+		m_client_list[client_h]->m_sp += total;
+		if (m_client_list[client_h]->m_sp > max_sp)
+			m_client_list[client_h]->m_sp = max_sp;
 
-		SendNotifyMsg(0, iClientH, Notify::Sp, 0, 0, 0, 0);
+		send_notify_msg(0, client_h, Notify::Sp, 0, 0, 0, 0);
 	}
 }
 
-void CGame::ToggleCombatModeHandler(int iClientH)
+void CGame::toggle_combat_mode_handler(int client_h)
 {
-	if (m_pClientList[iClientH] == 0) return;
-	if (m_pClientList[iClientH]->m_bIsInitComplete == false) return;
-	if (m_pClientList[iClientH]->m_bIsKilled) return;
-	if (m_pClientList[iClientH]->m_bSkillUsingStatus[19]) return;
+	if (m_client_list[client_h] == 0) return;
+	if (m_client_list[client_h]->m_is_init_complete == false) return;
+	if (m_client_list[client_h]->m_is_killed) return;
+	if (m_client_list[client_h]->m_skill_using_status[19]) return;
 
-	m_pClientList[iClientH]->m_bIsAttackModeChange = true; // v2.172
+	m_client_list[client_h]->m_is_attack_mode_change = true; // v2.172
 
-	if (!m_pClientList[iClientH]->m_appearance.bIsWalking) {
-		m_pClientList[iClientH]->m_appearance.bIsWalking = true;
+	if (!m_client_list[client_h]->m_appearance.is_walking) {
+		m_client_list[client_h]->m_appearance.is_walking = true;
 	}
 	else {
-		m_pClientList[iClientH]->m_appearance.bIsWalking = false;
+		m_client_list[client_h]->m_appearance.is_walking = false;
 	}
 
-	SendEventToNearClient_TypeA(iClientH, hb::shared::owner_class::Player, MsgId::EventMotion, Type::NullAction, 0, 0, 0);
+	send_event_to_near_client_type_a(client_h, hb::shared::owner_class::Player, MsgId::EventMotion, Type::NullAction, 0, 0, 0);
 
 }
 
-//  int CGame::iClientMotion_Magic_Handler(int iClientH, short sX, short sY, char cDir)
+//  int CGame::client_motion_magic_handler(int client_h, short sX, short sY, char dir)
 //  description			:: checks if player is casting magic
 //  last updated		:: October 29, 2004; 6:51 PM; Hypnotoad
 //	return value		:: int
 
 /*********************************************************************************************************************
-**  void CGame::PlayerMagicHandler(int iClientH, int dX, int dY, short sType, bool bItemEffect, int iV1)			**
+**  void CGame::player_magic_handler(int client_h, int dX, int dY, short type, bool item_effect, int v1)			**
 **  description			:: handles all magic related items/spells													**
 **  last updated		:: November 22, 2004; 5:45 PM; Hypnotoad													**
 **	return value		:: void																						**
@@ -7751,263 +7771,263 @@ void CGame::ToggleCombatModeHandler(int iClientH)
 **							-	fixed bug causing spell to be cast when mana is below required amount				**
 **********************************************************************************************************************/
 
-void CGame::RequestTeleportHandler(int iClientH, const char* pData, const char* cMapName, int dX, int dY)
+void CGame::request_teleport_handler(int client_h, const char* data, const char* map_name, int dX, int dY)
 {
-	char cTempMapName[21];
-	char cDestMapName[11], cDir, cMapIndex, cQuestRemain;
-	short sX, sY, sSummonPoints;
-	int iRet, iSize, iDestX, iDestY, iExH, iMapSide;
-	bool    bRet, bIsLockedMapNotify;
+	char temp_map_name[21];
+	char dest_map_name[11], dir, map_index, quest_remain;
+	short sX, sY, summon_points;
+	int ret, size, dest_x, dest_y, ex_h, map_side;
+	bool    ret_ok, is_locked_map_notify;
 	hb::time::local_time SysTime{};
 
-	if (m_pClientList[iClientH] == 0) return;
-	if (m_pClientList[iClientH]->m_bIsInitComplete == false) return;
-	if (m_pClientList[iClientH]->m_bIsKilled) return;
-	if (m_pClientList[iClientH]->m_bIsOnWaitingProcess) return;
-	if ((m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_bIsRecallImpossible) &&
-		(m_pClientList[iClientH]->m_bIsKilled == false) && (m_bIsApocalypseMode) && (m_pClientList[iClientH]->m_iHP > 0)) {
-		SendNotifyMsg(0, iClientH, Notify::NoRecall, 0, 0, 0, 0);
+	if (m_client_list[client_h] == 0) return;
+	if (m_client_list[client_h]->m_is_init_complete == false) return;
+	if (m_client_list[client_h]->m_is_killed) return;
+	if (m_client_list[client_h]->m_is_on_waiting_process) return;
+	if ((m_map_list[m_client_list[client_h]->m_map_index]->m_is_recall_impossible) &&
+		(m_client_list[client_h]->m_is_killed == false) && (m_is_apocalypse_mode) && (m_client_list[client_h]->m_hp > 0)) {
+		send_notify_msg(0, client_h, Notify::NoRecall, 0, 0, 0, 0);
 		return;
 	}
-	if ((memcmp(m_pClientList[iClientH]->m_cLocation, "elvine", 6) == 0)
-		&& (m_pClientList[iClientH]->m_iTimeLeft_ForceRecall > 0)
-		&& (memcmp(m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_cLocationName, "aresden", 7) == 0)
-		&& ((pData[0] == '1') || (pData[0] == '3'))
-		&& (m_bIsCrusadeMode == false)) return;
+	if ((memcmp(m_client_list[client_h]->m_location, "elvine", 6) == 0)
+		&& (m_client_list[client_h]->m_time_left_force_recall > 0)
+		&& (memcmp(m_map_list[m_client_list[client_h]->m_map_index]->m_location_name, "aresden", 7) == 0)
+		&& ((data[0] == '1') || (data[0] == '3'))
+		&& (m_is_crusade_mode == false)) return;
 
-	if ((memcmp(m_pClientList[iClientH]->m_cLocation, "aresden", 7) == 0)
-		&& (m_pClientList[iClientH]->m_iTimeLeft_ForceRecall > 0)
-		&& (memcmp(m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_cLocationName, "elvine", 6) == 0)
-		&& ((pData[0] == '1') || (pData[0] == '3'))
-		&& (m_bIsCrusadeMode == false)) return;
+	if ((memcmp(m_client_list[client_h]->m_location, "aresden", 7) == 0)
+		&& (m_client_list[client_h]->m_time_left_force_recall > 0)
+		&& (memcmp(m_map_list[m_client_list[client_h]->m_map_index]->m_location_name, "elvine", 6) == 0)
+		&& ((data[0] == '1') || (data[0] == '3'))
+		&& (m_is_crusade_mode == false)) return;
 
-	bIsLockedMapNotify = false;
+	is_locked_map_notify = false;
 
-	if (m_pClientList[iClientH]->m_bIsExchangeMode) {
-		iExH = m_pClientList[iClientH]->m_iExchangeH;
-		m_pItemManager->_ClearExchangeStatus(iExH);
-		m_pItemManager->_ClearExchangeStatus(iClientH);
+	if (m_client_list[client_h]->m_is_exchange_mode) {
+		ex_h = m_client_list[client_h]->m_exchange_h;
+		m_item_manager->clear_exchange_status(ex_h);
+		m_item_manager->clear_exchange_status(client_h);
 	}
 
-	if ((memcmp(m_pClientList[iClientH]->m_cLocation, "NONE", 4) == 0) && (pData[0] == '1'))
+	if ((memcmp(m_client_list[client_h]->m_location, "NONE", 4) == 0) && (data[0] == '1'))
 		return;
 
-	m_pCombatManager->RemoveFromTarget(iClientH, hb::shared::owner_class::Player);
+	m_combat_manager->remove_from_target(client_h, hb::shared::owner_class::Player);
 
 	// Delete all summoned NPCs belonging to this player
 	for (int i = 0; i < MaxNpcs; i++)
-		if (m_pNpcList[i] != 0) {
-			if ((m_pNpcList[i]->m_bIsSummoned) &&
-				(m_pNpcList[i]->m_iFollowOwnerIndex == iClientH) &&
-				(m_pNpcList[i]->m_cFollowOwnerType == hb::shared::owner_class::Player)) {
-				m_pEntityManager->DeleteEntity(i);
+		if (m_npc_list[i] != 0) {
+			if ((m_npc_list[i]->m_is_summoned) &&
+				(m_npc_list[i]->m_follow_owner_index == client_h) &&
+				(m_npc_list[i]->m_follow_owner_type == hb::shared::owner_class::Player)) {
+				m_entity_manager->delete_entity(i);
 			}
 		}
 
-	m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->ClearOwner(13, iClientH, hb::shared::owner_class::Player,
-		m_pClientList[iClientH]->m_sX,
-		m_pClientList[iClientH]->m_sY);
+	m_map_list[m_client_list[client_h]->m_map_index]->clear_owner(13, client_h, hb::shared::owner_class::Player,
+		m_client_list[client_h]->m_x,
+		m_client_list[client_h]->m_y);
 
-	SendEventToNearClient_TypeA(iClientH, hb::shared::owner_class::Player, MsgId::EventLog, MsgType::Reject, 0, 0, 0);
+	send_event_to_near_client_type_a(client_h, hb::shared::owner_class::Player, MsgId::EventLog, MsgType::Reject, 0, 0, 0);
 
-	sX = m_pClientList[iClientH]->m_sX;
-	sY = m_pClientList[iClientH]->m_sY;
+	sX = m_client_list[client_h]->m_x;
+	sY = m_client_list[client_h]->m_y;
 
-	std::memset(cDestMapName, 0, sizeof(cDestMapName));
-	bRet = m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->bSearchTeleportDest(sX, sY, cDestMapName, &iDestX, &iDestY, &cDir);
+	std::memset(dest_map_name, 0, sizeof(dest_map_name));
+	ret_ok = m_map_list[m_client_list[client_h]->m_map_index]->search_teleport_dest(sX, sY, dest_map_name, &dest_x, &dest_y, &dir);
 
 	// Crusade
-	if ((strcmp(m_pClientList[iClientH]->m_cLockedMapName, "NONE") != 0) && (m_pClientList[iClientH]->m_iLockedMapTime > 0)) {
-		iMapSide = iGetMapLocationSide(cDestMapName);
-		if (iMapSide > 3) iMapSide -= 2; // New 18/05/2004
-		if ((iMapSide != 0) && (m_pClientList[iClientH]->m_cSide == iMapSide)) {
+	if ((strcmp(m_client_list[client_h]->m_locked_map_name, "NONE") != 0) && (m_client_list[client_h]->m_locked_map_time > 0)) {
+		map_side = get_map_location_side(dest_map_name);
+		if (map_side > 3) map_side -= 2; // New 18/05/2004
+		if ((map_side != 0) && (m_client_list[client_h]->m_side == map_side)) {
 		}
 		else {
-			iDestX = -1;
-			iDestY = -1;
-			bIsLockedMapNotify = true;
-			std::memset(cDestMapName, 0, sizeof(cDestMapName));
-			strcpy(cDestMapName, m_pClientList[iClientH]->m_cLockedMapName);
+			dest_x = -1;
+			dest_y = -1;
+			is_locked_map_notify = true;
+			std::memset(dest_map_name, 0, sizeof(dest_map_name));
+			strcpy(dest_map_name, m_client_list[client_h]->m_locked_map_name);
 		}
 	}
 
-	if ((bRet) && (cMapName == 0)) {
+	if ((ret_ok) && (map_name == 0)) {
 		for(int i = 0; i < MaxMaps; i++)
-			if (m_pMapList[i] != 0) {
-				if (memcmp(m_pMapList[i]->m_cName, cDestMapName, 10) == 0) {
-					m_pClientList[iClientH]->m_sX = iDestX;
-					m_pClientList[iClientH]->m_sY = iDestY;
-					m_pClientList[iClientH]->m_cDir = cDir;
-					m_pClientList[iClientH]->m_cMapIndex = i;
-					std::memset(m_pClientList[iClientH]->m_cMapName, 0, sizeof(m_pClientList[iClientH]->m_cMapName));
-					memcpy(m_pClientList[iClientH]->m_cMapName, m_pMapList[i]->m_cName, 10);
+			if (m_map_list[i] != 0) {
+				if (memcmp(m_map_list[i]->m_name, dest_map_name, 10) == 0) {
+					m_client_list[client_h]->m_x = dest_x;
+					m_client_list[client_h]->m_y = dest_y;
+					m_client_list[client_h]->m_dir = dir;
+					m_client_list[client_h]->m_map_index = i;
+					std::memset(m_client_list[client_h]->m_map_name, 0, sizeof(m_client_list[client_h]->m_map_name));
+					memcpy(m_client_list[client_h]->m_map_name, m_map_list[i]->m_name, 10);
 					goto RTH_NEXTSTEP;
 				}
 			}
 
-		m_pClientList[iClientH]->m_sX = iDestX;
-		m_pClientList[iClientH]->m_sY = iDestY;
-		m_pClientList[iClientH]->m_cDir = cDir;
-		std::memset(m_pClientList[iClientH]->m_cMapName, 0, sizeof(m_pClientList[iClientH]->m_cMapName));
-		memcpy(m_pClientList[iClientH]->m_cMapName, cDestMapName, 10);
+		m_client_list[client_h]->m_x = dest_x;
+		m_client_list[client_h]->m_y = dest_y;
+		m_client_list[client_h]->m_dir = dir;
+		std::memset(m_client_list[client_h]->m_map_name, 0, sizeof(m_client_list[client_h]->m_map_name));
+		memcpy(m_client_list[client_h]->m_map_name, dest_map_name, 10);
 
 		// New 18/05/2004
-		SendNotifyMsg(0, iClientH, Notify::MagicEffectOff, hb::shared::magic::Confuse,
-			m_pClientList[iClientH]->m_cMagicEffectStatus[hb::shared::magic::Confuse], 0, 0);
-		m_pItemManager->SetSlateFlag(iClientH, SlateClearNotify, false);
+		send_notify_msg(0, client_h, Notify::MagicEffectOff, hb::shared::magic::Confuse,
+			m_client_list[client_h]->m_magic_effect_status[hb::shared::magic::Confuse], 0, 0);
+		m_item_manager->set_slate_flag(client_h, SlateClearNotify, false);
 
-		// bSendMsgToLS(ServerMsgId::RequestSavePlayerDataReply, iClientH, false);  // !   .
-		m_pClientList[iClientH]->m_bIsOnServerChange = true;
-		m_pClientList[iClientH]->m_bIsOnWaitingProcess = true;
+		// send_msg_to_ls(ServerMsgId::RequestSavePlayerDataReply, client_h, false);  // !   .
+		m_client_list[client_h]->m_is_on_server_change = true;
+		m_client_list[client_h]->m_is_on_waiting_process = true;
 		return;
 	}
 	else {
-		switch (pData[0]) {
+		switch (data[0]) {
 		case '0':
 			// Forced Recall. 
-			std::memset(cTempMapName, 0, sizeof(cTempMapName));
-			if (memcmp(m_pClientList[iClientH]->m_cLocation, "NONE", 4) == 0) {
-				strcpy(cTempMapName, "default");
+			std::memset(temp_map_name, 0, sizeof(temp_map_name));
+			if (memcmp(m_client_list[client_h]->m_location, "NONE", 4) == 0) {
+				strcpy(temp_map_name, "default");
 			}
-			else if (memcmp(m_pClientList[iClientH]->m_cLocation, "arehunter", 9) == 0) {
-				strcpy(cTempMapName, "arefarm");
+			else if (memcmp(m_client_list[client_h]->m_location, "arehunter", 9) == 0) {
+				strcpy(temp_map_name, "arefarm");
 			}
-			else if (memcmp(m_pClientList[iClientH]->m_cLocation, "elvhunter", 9) == 0) {
-				strcpy(cTempMapName, "elvfarm");
+			else if (memcmp(m_client_list[client_h]->m_location, "elvhunter", 9) == 0) {
+				strcpy(temp_map_name, "elvfarm");
 			}
-			else strcpy(cTempMapName, m_pClientList[iClientH]->m_cLocation);
+			else strcpy(temp_map_name, m_client_list[client_h]->m_location);
 
 			// Crusade
-			if ((strcmp(m_pClientList[iClientH]->m_cLockedMapName, "NONE") != 0) && (m_pClientList[iClientH]->m_iLockedMapTime > 0)) {
-				bIsLockedMapNotify = true;
-				std::memset(cTempMapName, 0, sizeof(cTempMapName));
-				strcpy(cTempMapName, m_pClientList[iClientH]->m_cLockedMapName);
+			if ((strcmp(m_client_list[client_h]->m_locked_map_name, "NONE") != 0) && (m_client_list[client_h]->m_locked_map_time > 0)) {
+				is_locked_map_notify = true;
+				std::memset(temp_map_name, 0, sizeof(temp_map_name));
+				strcpy(temp_map_name, m_client_list[client_h]->m_locked_map_name);
 			}
 
 			for(int i = 0; i < MaxMaps; i++)
-				if (m_pMapList[i] != 0) {
-					if (memcmp(m_pMapList[i]->m_cName, cTempMapName, 10) == 0) {
-						GetMapInitialPoint(i, &m_pClientList[iClientH]->m_sX, &m_pClientList[iClientH]->m_sY, m_pClientList[iClientH]->m_cLocation);
+				if (m_map_list[i] != 0) {
+					if (memcmp(m_map_list[i]->m_name, temp_map_name, 10) == 0) {
+						get_map_initial_point(i, &m_client_list[client_h]->m_x, &m_client_list[client_h]->m_y, m_client_list[client_h]->m_location);
 
-						m_pClientList[iClientH]->m_cMapIndex = i;
-						std::memset(m_pClientList[iClientH]->m_cMapName, 0, sizeof(m_pClientList[iClientH]->m_cMapName));
-						memcpy(m_pClientList[iClientH]->m_cMapName, cTempMapName, 10);
+						m_client_list[client_h]->m_map_index = i;
+						std::memset(m_client_list[client_h]->m_map_name, 0, sizeof(m_client_list[client_h]->m_map_name));
+						memcpy(m_client_list[client_h]->m_map_name, temp_map_name, 10);
 						goto RTH_NEXTSTEP;
 					}
 				}
 
-			m_pClientList[iClientH]->m_sX = -1;
-			m_pClientList[iClientH]->m_sY = -1;	  // -1 InitialPoint .
+			m_client_list[client_h]->m_x = -1;
+			m_client_list[client_h]->m_y = -1;	  // -1 InitialPoint .
 
-			std::memset(m_pClientList[iClientH]->m_cMapName, 0, sizeof(m_pClientList[iClientH]->m_cMapName));
-			memcpy(m_pClientList[iClientH]->m_cMapName, cTempMapName, 10);
+			std::memset(m_client_list[client_h]->m_map_name, 0, sizeof(m_client_list[client_h]->m_map_name));
+			memcpy(m_client_list[client_h]->m_map_name, temp_map_name, 10);
 
 			// New 18/05/2004
-			SendNotifyMsg(0, iClientH, Notify::MagicEffectOff, hb::shared::magic::Confuse,
-				m_pClientList[iClientH]->m_cMagicEffectStatus[hb::shared::magic::Confuse], 0, 0);
-			m_pItemManager->SetSlateFlag(iClientH, SlateClearNotify, false);
+			send_notify_msg(0, client_h, Notify::MagicEffectOff, hb::shared::magic::Confuse,
+				m_client_list[client_h]->m_magic_effect_status[hb::shared::magic::Confuse], 0, 0);
+			m_item_manager->set_slate_flag(client_h, SlateClearNotify, false);
 
-			// bSendMsgToLS(ServerMsgId::RequestSavePlayerDataReply, iClientH, false); // !   .
+			// send_msg_to_ls(ServerMsgId::RequestSavePlayerDataReply, client_h, false); // !   .
 
-			m_pClientList[iClientH]->m_bIsOnServerChange = true;
-			m_pClientList[iClientH]->m_bIsOnWaitingProcess = true;
+			m_client_list[client_h]->m_is_on_server_change = true;
+			m_client_list[client_h]->m_is_on_waiting_process = true;
 			return;
 
 		case '1':
 			// Recall.     .
-			// if (memcmp(m_pMapList[ m_pClientList[iClientH]->m_cMapIndex ]->m_cName, "resurr", 6) == 0) return;
+			// if (memcmp(m_map_list[ m_client_list[client_h]->m_map_index ]->m_name, "resurr", 6) == 0) return;
 
-			std::memset(cTempMapName, 0, sizeof(cTempMapName));
-			if (memcmp(m_pClientList[iClientH]->m_cLocation, "NONE", 4) == 0) {
-				strcpy(cTempMapName, "default");
+			std::memset(temp_map_name, 0, sizeof(temp_map_name));
+			if (memcmp(m_client_list[client_h]->m_location, "NONE", 4) == 0) {
+				strcpy(temp_map_name, "default");
 			}
 			else {
-				if (m_pClientList[iClientH]->m_iLevel > 80)
-					if (memcmp(m_pClientList[iClientH]->m_cLocation, "are", 3) == 0)
-						strcpy(cTempMapName, "aresden");
-					else strcpy(cTempMapName, "elvine");
+				if (m_client_list[client_h]->m_level > 80)
+					if (memcmp(m_client_list[client_h]->m_location, "are", 3) == 0)
+						strcpy(temp_map_name, "aresden");
+					else strcpy(temp_map_name, "elvine");
 				else {
-					if (memcmp(m_pClientList[iClientH]->m_cLocation, "are", 3) == 0)
-						strcpy(cTempMapName, "arefarm");
-					else strcpy(cTempMapName, "elvfarm");
+					if (memcmp(m_client_list[client_h]->m_location, "are", 3) == 0)
+						strcpy(temp_map_name, "arefarm");
+					else strcpy(temp_map_name, "elvfarm");
 				}
 			}
 			// Crusade
-			if ((strcmp(m_pClientList[iClientH]->m_cLockedMapName, "NONE") != 0) && (m_pClientList[iClientH]->m_iLockedMapTime > 0)) {
-				bIsLockedMapNotify = true;
-				std::memset(cTempMapName, 0, sizeof(cTempMapName));
-				strcpy(cTempMapName, m_pClientList[iClientH]->m_cLockedMapName);
+			if ((strcmp(m_client_list[client_h]->m_locked_map_name, "NONE") != 0) && (m_client_list[client_h]->m_locked_map_time > 0)) {
+				is_locked_map_notify = true;
+				std::memset(temp_map_name, 0, sizeof(temp_map_name));
+				strcpy(temp_map_name, m_client_list[client_h]->m_locked_map_name);
 			}
 
 			for(int i = 0; i < MaxMaps; i++)
-				if (m_pMapList[i] != 0) {
-					if (memcmp(m_pMapList[i]->m_cName, cTempMapName, 10) == 0) {
+				if (m_map_list[i] != 0) {
+					if (memcmp(m_map_list[i]->m_name, temp_map_name, 10) == 0) {
 
-						GetMapInitialPoint(i, &m_pClientList[iClientH]->m_sX, &m_pClientList[iClientH]->m_sY, m_pClientList[iClientH]->m_cLocation);
+						get_map_initial_point(i, &m_client_list[client_h]->m_x, &m_client_list[client_h]->m_y, m_client_list[client_h]->m_location);
 
-						m_pClientList[iClientH]->m_cMapIndex = i;
-						std::memset(m_pClientList[iClientH]->m_cMapName, 0, sizeof(m_pClientList[iClientH]->m_cMapName));
-						memcpy(m_pClientList[iClientH]->m_cMapName, m_pMapList[i]->m_cName, 10);
+						m_client_list[client_h]->m_map_index = i;
+						std::memset(m_client_list[client_h]->m_map_name, 0, sizeof(m_client_list[client_h]->m_map_name));
+						memcpy(m_client_list[client_h]->m_map_name, m_map_list[i]->m_name, 10);
 						goto RTH_NEXTSTEP;
 					}
 				}
 
-			m_pClientList[iClientH]->m_sX = -1;
-			m_pClientList[iClientH]->m_sY = -1;	  // -1 InitialPoint .
+			m_client_list[client_h]->m_x = -1;
+			m_client_list[client_h]->m_y = -1;	  // -1 InitialPoint .
 
-			std::memset(m_pClientList[iClientH]->m_cMapName, 0, sizeof(m_pClientList[iClientH]->m_cMapName));
-			memcpy(m_pClientList[iClientH]->m_cMapName, cTempMapName, 10);
+			std::memset(m_client_list[client_h]->m_map_name, 0, sizeof(m_client_list[client_h]->m_map_name));
+			memcpy(m_client_list[client_h]->m_map_name, temp_map_name, 10);
 
 			// New 18/05/2004
-			SendNotifyMsg(0, iClientH, Notify::MagicEffectOff, hb::shared::magic::Confuse,
-				m_pClientList[iClientH]->m_cMagicEffectStatus[hb::shared::magic::Confuse], 0, 0);
-			m_pItemManager->SetSlateFlag(iClientH, SlateClearNotify, false);
+			send_notify_msg(0, client_h, Notify::MagicEffectOff, hb::shared::magic::Confuse,
+				m_client_list[client_h]->m_magic_effect_status[hb::shared::magic::Confuse], 0, 0);
+			m_item_manager->set_slate_flag(client_h, SlateClearNotify, false);
 
-			// bSendMsgToLS(ServerMsgId::RequestSavePlayerDataReply, iClientH, false); // !   .
-			m_pClientList[iClientH]->m_bIsOnServerChange = true;
-			m_pClientList[iClientH]->m_bIsOnWaitingProcess = true;
+			// send_msg_to_ls(ServerMsgId::RequestSavePlayerDataReply, client_h, false); // !   .
+			m_client_list[client_h]->m_is_on_server_change = true;
+			m_client_list[client_h]->m_is_on_waiting_process = true;
 			return;
 
 		case '2':
 
 			// Crusade
-			if ((strcmp(m_pClientList[iClientH]->m_cLockedMapName, "NONE") != 0) && (m_pClientList[iClientH]->m_iLockedMapTime > 0)) {
+			if ((strcmp(m_client_list[client_h]->m_locked_map_name, "NONE") != 0) && (m_client_list[client_h]->m_locked_map_time > 0)) {
 				dX = -1;
 				dY = -1;
-				bIsLockedMapNotify = true;
-				std::memset(cTempMapName, 0, sizeof(cTempMapName));
-				strcpy(cTempMapName, m_pClientList[iClientH]->m_cLockedMapName);
+				is_locked_map_notify = true;
+				std::memset(temp_map_name, 0, sizeof(temp_map_name));
+				strcpy(temp_map_name, m_client_list[client_h]->m_locked_map_name);
 			}
 			else {
-				std::memset(cTempMapName, 0, sizeof(cTempMapName));
-				strcpy(cTempMapName, cMapName);
+				std::memset(temp_map_name, 0, sizeof(temp_map_name));
+				strcpy(temp_map_name, map_name);
 			}
 
-			cMapIndex = iGetMapIndex(cTempMapName);
-			if (cMapIndex == -1) {
-				m_pClientList[iClientH]->m_sX = dX; // -1;	  //   .
-				m_pClientList[iClientH]->m_sY = dY; // -1;	  // -1 InitialPoint .
+			map_index = get_map_index(temp_map_name);
+			if (map_index == -1) {
+				m_client_list[client_h]->m_x = dX; // -1;	  //   .
+				m_client_list[client_h]->m_y = dY; // -1;	  // -1 InitialPoint .
 
-				std::memset(m_pClientList[iClientH]->m_cMapName, 0, sizeof(m_pClientList[iClientH]->m_cMapName));
-				memcpy(m_pClientList[iClientH]->m_cMapName, cTempMapName, 10);
+				std::memset(m_client_list[client_h]->m_map_name, 0, sizeof(m_client_list[client_h]->m_map_name));
+				memcpy(m_client_list[client_h]->m_map_name, temp_map_name, 10);
 
 				// New 18/05/2004
-				SendNotifyMsg(0, iClientH, Notify::MagicEffectOff, hb::shared::magic::Confuse,
-					m_pClientList[iClientH]->m_cMagicEffectStatus[hb::shared::magic::Confuse], 0, 0);
-				m_pItemManager->SetSlateFlag(iClientH, SlateClearNotify, false);
+				send_notify_msg(0, client_h, Notify::MagicEffectOff, hb::shared::magic::Confuse,
+					m_client_list[client_h]->m_magic_effect_status[hb::shared::magic::Confuse], 0, 0);
+				m_item_manager->set_slate_flag(client_h, SlateClearNotify, false);
 
-				// bSendMsgToLS(ServerMsgId::RequestSavePlayerDataReply, iClientH, false); // !   .
-				m_pClientList[iClientH]->m_bIsOnServerChange = true;
-				m_pClientList[iClientH]->m_bIsOnWaitingProcess = true;
+				// send_msg_to_ls(ServerMsgId::RequestSavePlayerDataReply, client_h, false); // !   .
+				m_client_list[client_h]->m_is_on_server_change = true;
+				m_client_list[client_h]->m_is_on_waiting_process = true;
 				return;
 			}
 
-			m_pClientList[iClientH]->m_sX = dX;
-			m_pClientList[iClientH]->m_sY = dY;
-			m_pClientList[iClientH]->m_cMapIndex = cMapIndex;
+			m_client_list[client_h]->m_x = dX;
+			m_client_list[client_h]->m_y = dY;
+			m_client_list[client_h]->m_map_index = map_index;
 
-			std::memset(m_pClientList[iClientH]->m_cMapName, 0, sizeof(m_pClientList[iClientH]->m_cMapName));
-			memcpy(m_pClientList[iClientH]->m_cMapName, m_pMapList[cMapIndex]->m_cName, 10);
+			std::memset(m_client_list[client_h]->m_map_name, 0, sizeof(m_client_list[client_h]->m_map_name));
+			memcpy(m_client_list[client_h]->m_map_name, m_map_list[map_index]->m_name, 10);
 			break;
 		}
 	}
@@ -8015,15 +8035,15 @@ void CGame::RequestTeleportHandler(int iClientH, const char* pData, const char* 
 RTH_NEXTSTEP:
 
 	// New 17/05/2004
-	SetPlayingStatus(iClientH);
+	set_playing_status(client_h);
 	// Set faction/identity status fields from player data
-	m_pClientList[iClientH]->m_status.bPK = (m_pClientList[iClientH]->m_iPKCount != 0) ? 1 : 0;
-	m_pClientList[iClientH]->m_status.bCitizen = (m_pClientList[iClientH]->m_cSide != 0) ? 1 : 0;
-	m_pClientList[iClientH]->m_status.bAresden = (m_pClientList[iClientH]->m_cSide == 1) ? 1 : 0;
-	m_pClientList[iClientH]->m_status.bHunter = m_pClientList[iClientH]->m_bIsPlayerCivil ? 1 : 0;
+	m_client_list[client_h]->m_status.pk = (m_client_list[client_h]->m_player_kill_count != 0) ? 1 : 0;
+	m_client_list[client_h]->m_status.citizen = (m_client_list[client_h]->m_side != 0) ? 1 : 0;
+	m_client_list[client_h]->m_status.aresden = (m_client_list[client_h]->m_side == 1) ? 1 : 0;
+	m_client_list[client_h]->m_status.hunter = m_client_list[client_h]->m_is_player_civil ? 1 : 0;
 
 	// Crusade
-	if (bIsLockedMapNotify) SendNotifyMsg(0, iClientH, Notify::LockedMap, m_pClientList[iClientH]->m_iLockedMapTime, 0, 0, m_pClientList[iClientH]->m_cLockedMapName);
+	if (is_locked_map_notify) send_notify_msg(0, client_h, Notify::LockedMap, m_client_list[client_h]->m_locked_map_time, 0, 0, m_client_list[client_h]->m_locked_map_name);
 
 	hb::net::PacketWriter writer;
 	char initMapData[hb::shared::limits::MsgBufferSize + 1];
@@ -8033,244 +8053,244 @@ RTH_NEXTSTEP:
 	init_header->header.msg_id = MsgId::ResponseInitData;
 	init_header->header.msg_type = MsgType::Confirm;
 
-	if (m_pClientList[iClientH]->m_bIsObserverMode == false)
-		bGetEmptyPosition(&m_pClientList[iClientH]->m_sX, &m_pClientList[iClientH]->m_sY, m_pClientList[iClientH]->m_cMapIndex);
-	else GetMapInitialPoint(m_pClientList[iClientH]->m_cMapIndex, &m_pClientList[iClientH]->m_sX, &m_pClientList[iClientH]->m_sY);
+	if (m_client_list[client_h]->m_is_observer_mode == false)
+		get_empty_position(&m_client_list[client_h]->m_x, &m_client_list[client_h]->m_y, m_client_list[client_h]->m_map_index);
+	else get_map_initial_point(m_client_list[client_h]->m_map_index, &m_client_list[client_h]->m_x, &m_client_list[client_h]->m_y);
 
-	init_header->player_object_id = static_cast<std::int16_t>(iClientH);
-	init_header->pivot_x = static_cast<std::int16_t>(m_pClientList[iClientH]->m_sX - hb::shared::view::PlayerPivotOffsetX);
-	init_header->pivot_y = static_cast<std::int16_t>(m_pClientList[iClientH]->m_sY - hb::shared::view::PlayerPivotOffsetY);
-	init_header->player_type = m_pClientList[iClientH]->m_sType;
-	init_header->appearance = m_pClientList[iClientH]->m_appearance;
-	init_header->status = m_pClientList[iClientH]->m_status;
-	std::memcpy(init_header->map_name, m_pClientList[iClientH]->m_cMapName, sizeof(init_header->map_name));
-	std::memcpy(init_header->cur_location, m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_cLocationName, sizeof(init_header->cur_location));
+	init_header->player_object_id = static_cast<std::int16_t>(client_h);
+	init_header->pivot_x = static_cast<std::int16_t>(m_client_list[client_h]->m_x - hb::shared::view::PlayerPivotOffsetX);
+	init_header->pivot_y = static_cast<std::int16_t>(m_client_list[client_h]->m_y - hb::shared::view::PlayerPivotOffsetY);
+	init_header->player_type = m_client_list[client_h]->m_type;
+	init_header->appearance = m_client_list[client_h]->m_appearance;
+	init_header->status = m_client_list[client_h]->m_status;
+	std::memcpy(init_header->map_name, m_client_list[client_h]->m_map_name, sizeof(init_header->map_name));
+	std::memcpy(init_header->cur_location, m_map_list[m_client_list[client_h]->m_map_index]->m_location_name, sizeof(init_header->cur_location));
 
-	if (m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_bIsFixedDayMode)
+	if (m_map_list[m_client_list[client_h]->m_map_index]->m_is_fixed_day_mode)
 		init_header->sprite_alpha = 1;
-	else init_header->sprite_alpha = m_cDayOrNight;
+	else init_header->sprite_alpha = m_day_or_night;
 
-	if (m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_bIsFixedDayMode)
+	if (m_map_list[m_client_list[client_h]->m_map_index]->m_is_fixed_day_mode)
 		init_header->weather_status = 0;
-	else init_header->weather_status = m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_cWhetherStatus;
+	else init_header->weather_status = m_map_list[m_client_list[client_h]->m_map_index]->m_weather_status;
 
-	init_header->contribution = m_pClientList[iClientH]->m_iContribution;
+	init_header->contribution = m_client_list[client_h]->m_contribution;
 
-	if (m_pClientList[iClientH]->m_bIsObserverMode == false) {
-		m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->SetOwner(iClientH,
+	if (m_client_list[client_h]->m_is_observer_mode == false) {
+		m_map_list[m_client_list[client_h]->m_map_index]->set_owner(client_h,
 			hb::shared::owner_class::Player,
-			m_pClientList[iClientH]->m_sX,
-			m_pClientList[iClientH]->m_sY);
+			m_client_list[client_h]->m_x,
+			m_client_list[client_h]->m_y);
 	}
 
-	init_header->observer_mode = static_cast<std::uint8_t>(m_pClientList[iClientH]->m_bIsObserverMode);
-	init_header->rating = m_pClientList[iClientH]->m_iRating;
-	init_header->hp = m_pClientList[iClientH]->m_iHP;
+	init_header->observer_mode = static_cast<std::uint8_t>(m_client_list[client_h]->m_is_observer_mode);
+	init_header->rating = m_client_list[client_h]->m_rating;
+	init_header->hp = m_client_list[client_h]->m_hp;
 	init_header->discount = 0;
 
-	iSize = iComposeInitMapData(m_pClientList[iClientH]->m_sX - hb::shared::view::CenterX, m_pClientList[iClientH]->m_sY - hb::shared::view::CenterY, iClientH, initMapData);
-	writer.AppendBytes(initMapData, static_cast<std::size_t>(iSize));
+	size = compose_init_map_data(m_client_list[client_h]->m_x - hb::shared::view::CenterX, m_client_list[client_h]->m_y - hb::shared::view::CenterY, client_h, initMapData);
+	writer.AppendBytes(initMapData, static_cast<std::size_t>(size));
 
-	iRet = m_pClientList[iClientH]->m_pXSock->iSendMsg(writer.Data(), static_cast<int>(writer.Size()));
-	switch (iRet) {
+	ret = m_client_list[client_h]->m_socket->send_msg(writer.Data(), static_cast<int>(writer.size()));
+	switch (ret) {
 	case sock::Event::QueueFull:
 	case sock::Event::SocketError:
 	case sock::Event::CriticalError:
 	case sock::Event::SocketClosed:
-		DeleteClient(iClientH, true, true);
+		delete_client(client_h, true, true);
 		return;
 	}
 
-	SendEventToNearClient_TypeA(iClientH, hb::shared::owner_class::Player, MsgId::EventLog, MsgType::Confirm, 0, 0, 0);
+	send_event_to_near_client_type_a(client_h, hb::shared::owner_class::Player, MsgId::EventLog, MsgType::Confirm, 0, 0, 0);
 
-	if ((memcmp(m_pClientList[iClientH]->m_cLocation, "are", 3) == 0) &&
-		(memcmp(m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_cLocationName, "elvine", 6) == 0)) {
+	if ((memcmp(m_client_list[client_h]->m_location, "are", 3) == 0) &&
+		(memcmp(m_map_list[m_client_list[client_h]->m_map_index]->m_location_name, "elvine", 6) == 0)) {
 
-		m_pClientList[iClientH]->m_dwWarBeginTime = GameClock::GetTimeMS();
-		m_pClientList[iClientH]->m_bIsWarLocation = true;
+		m_client_list[client_h]->m_war_begin_time = GameClock::GetTimeMS();
+		m_client_list[client_h]->m_is_war_location = true;
 		// New 17/05/2004
-		CheckForceRecallTime(iClientH);
+		check_force_recall_time(client_h);
 	}
-	else if ((memcmp(m_pClientList[iClientH]->m_cLocation, "elv", 3) == 0) &&
-		(memcmp(m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_cLocationName, "aresden", 7) == 0)) {
+	else if ((memcmp(m_client_list[client_h]->m_location, "elv", 3) == 0) &&
+		(memcmp(m_map_list[m_client_list[client_h]->m_map_index]->m_location_name, "aresden", 7) == 0)) {
 
-		m_pClientList[iClientH]->m_dwWarBeginTime = GameClock::GetTimeMS();
-		m_pClientList[iClientH]->m_bIsWarLocation = true;
+		m_client_list[client_h]->m_war_begin_time = GameClock::GetTimeMS();
+		m_client_list[client_h]->m_is_war_location = true;
 
 		// New 17/05/2004
-		CheckForceRecallTime(iClientH);
+		check_force_recall_time(client_h);
 	}
-	else if (m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_bIsFightZone) {
-		m_pClientList[iClientH]->m_dwWarBeginTime = GameClock::GetTimeMS();
-		m_pClientList[iClientH]->m_bIsWarLocation = true;
-		SetForceRecallTime(iClientH);
+	else if (m_map_list[m_client_list[client_h]->m_map_index]->m_is_fight_zone) {
+		m_client_list[client_h]->m_war_begin_time = GameClock::GetTimeMS();
+		m_client_list[client_h]->m_is_war_location = true;
+		set_force_recall_time(client_h);
 
 		SysTime = hb::time::local_time::now();
-		m_pClientList[iClientH]->m_iTimeLeft_ForceRecall = 2 * 20 * 60 - ((SysTime.hour % 2) * 20 * 60 + SysTime.minute * 20) - 2 * 20;
+		m_client_list[client_h]->m_time_left_force_recall = 2 * 20 * 60 - ((SysTime.hour % 2) * 20 * 60 + SysTime.minute * 20) - 2 * 20;
 
 	}
 	else {
-		m_pClientList[iClientH]->m_bIsWarLocation = false;
-		m_pClientList[iClientH]->m_iTimeLeft_ForceRecall = 0;
-		SetForceRecallTime(iClientH);
+		m_client_list[client_h]->m_is_war_location = false;
+		m_client_list[client_h]->m_time_left_force_recall = 0;
+		set_force_recall_time(client_h);
 	}
 
 	// No entering enemy shops
-	int iMapside, iMapside2;
+	int mapside, mapside2;
 
-	iMapside = iGetMapLocationSide(m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_cName);
-	if (iMapside > 3) iMapside2 = iMapside - 2;
-	else iMapside2 = iMapside;
-	m_pClientList[iClientH]->m_bIsInsideOwnTown = false;
-	if ((m_pClientList[iClientH]->m_cSide != iMapside2) && (iMapside != 0)) {
-		if ((iMapside <= 2)) {
-			if (m_pClientList[iClientH]->m_cSide != 0) {
-				m_pClientList[iClientH]->m_dwWarBeginTime = GameClock::GetTimeMS();
-				m_pClientList[iClientH]->m_bIsWarLocation = true;
-				m_pClientList[iClientH]->m_iTimeLeft_ForceRecall = 1;
-				m_pClientList[iClientH]->m_bIsInsideOwnTown = true;
+	mapside = get_map_location_side(m_map_list[m_client_list[client_h]->m_map_index]->m_name);
+	if (mapside > 3) mapside2 = mapside - 2;
+	else mapside2 = mapside;
+	m_client_list[client_h]->m_is_inside_own_town = false;
+	if ((m_client_list[client_h]->m_side != mapside2) && (mapside != 0)) {
+		if ((mapside <= 2)) {
+			if (m_client_list[client_h]->m_side != 0) {
+				m_client_list[client_h]->m_war_begin_time = GameClock::GetTimeMS();
+				m_client_list[client_h]->m_is_war_location = true;
+				m_client_list[client_h]->m_time_left_force_recall = 1;
+				m_client_list[client_h]->m_is_inside_own_town = true;
 			}
 		}
 	}
 	else {
-		if (m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_bIsFightZone &&
-			m_iFightzoneNoForceRecall == false) {
-			m_pClientList[iClientH]->m_dwWarBeginTime = GameClock::GetTimeMS();
-			m_pClientList[iClientH]->m_bIsWarLocation = true;
+		if (m_map_list[m_client_list[client_h]->m_map_index]->m_is_fight_zone &&
+			m_fightzone_no_force_recall == false) {
+			m_client_list[client_h]->m_war_begin_time = GameClock::GetTimeMS();
+			m_client_list[client_h]->m_is_war_location = true;
 			SysTime = hb::time::local_time::now();
-			m_pClientList[iClientH]->m_iTimeLeft_ForceRecall = 2 * 60 * 20 - ((SysTime.hour % 2) * 20 * 60 + SysTime.minute * 20) - 2 * 20;
+			m_client_list[client_h]->m_time_left_force_recall = 2 * 60 * 20 - ((SysTime.hour % 2) * 20 * 60 + SysTime.minute * 20) - 2 * 20;
 		}
 		else {
-			if (memcmp(m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_cLocationName, "arejail", 7) == 0 ||
-				memcmp(m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_cLocationName, "elvjail", 7) == 0) {
-				m_pClientList[iClientH]->m_bIsWarLocation = true;
-				m_pClientList[iClientH]->m_dwWarBeginTime = GameClock::GetTimeMS();
-				if (m_pClientList[iClientH]->m_iTimeLeft_ForceRecall == 0)
-					m_pClientList[iClientH]->m_iTimeLeft_ForceRecall = 100;
-				else if (m_pClientList[iClientH]->m_iTimeLeft_ForceRecall > 100)
-					m_pClientList[iClientH]->m_iTimeLeft_ForceRecall = 100;
+			if (memcmp(m_map_list[m_client_list[client_h]->m_map_index]->m_location_name, "arejail", 7) == 0 ||
+				memcmp(m_map_list[m_client_list[client_h]->m_map_index]->m_location_name, "elvjail", 7) == 0) {
+				m_client_list[client_h]->m_is_war_location = true;
+				m_client_list[client_h]->m_war_begin_time = GameClock::GetTimeMS();
+				if (m_client_list[client_h]->m_time_left_force_recall == 0)
+					m_client_list[client_h]->m_time_left_force_recall = 100;
+				else if (m_client_list[client_h]->m_time_left_force_recall > 100)
+					m_client_list[client_h]->m_time_left_force_recall = 100;
 			}
 		}
 	}
 
 	// . v1.1
-	SendNotifyMsg(0, iClientH, Notify::SafeAttackMode, 0, 0, 0, 0);
+	send_notify_msg(0, client_h, Notify::SafeAttackMode, 0, 0, 0, 0);
 	// v1.3
-	SendNotifyMsg(0, iClientH, Notify::DownSkillIndexSet, m_pClientList[iClientH]->m_iDownSkillIndex, 0, 0, 0);
+	send_notify_msg(0, client_h, Notify::DownSkillIndexSet, m_client_list[client_h]->m_down_skill_index, 0, 0, 0);
 	// V1.3
-	SendNotifyMsg(0, iClientH, Notify::ItemPosList, 0, 0, 0, 0);
+	send_notify_msg(0, client_h, Notify::ItemPosList, 0, 0, 0, 0);
 	// v1.4 
-	m_pQuestManager->_SendQuestContents(iClientH);
-	m_pQuestManager->_CheckQuestEnvironment(iClientH);
+	m_quest_manager->send_quest_contents(client_h);
+	m_quest_manager->check_quest_environment(client_h);
 
 	// v1.432
-	if (m_pClientList[iClientH]->m_iSpecialAbilityTime == 0)
-		SendNotifyMsg(0, iClientH, Notify::SpecialAbilityEnabled, 0, 0, 0, 0);
+	if (m_client_list[client_h]->m_special_ability_time == 0)
+		send_notify_msg(0, client_h, Notify::SpecialAbilityEnabled, 0, 0, 0, 0);
 
-	if (m_bIsCrusadeMode) {
-		if (m_pClientList[iClientH]->m_dwCrusadeGUID == 0) {
-			m_pClientList[iClientH]->m_iCrusadeDuty = 0;
-			m_pClientList[iClientH]->m_iConstructionPoint = 0;
-			m_pClientList[iClientH]->m_dwCrusadeGUID = m_dwCrusadeGUID;
+	if (m_is_crusade_mode) {
+		if (m_client_list[client_h]->m_crusade_guid == 0) {
+			m_client_list[client_h]->m_crusade_duty = 0;
+			m_client_list[client_h]->m_construction_point = 0;
+			m_client_list[client_h]->m_crusade_guid = m_crusade_guid;
 		}
-		else if (m_pClientList[iClientH]->m_dwCrusadeGUID != m_dwCrusadeGUID) {
-			m_pClientList[iClientH]->m_iCrusadeDuty = 0;
-			m_pClientList[iClientH]->m_iConstructionPoint = 0;
-			m_pClientList[iClientH]->m_iWarContribution = 0;
-			m_pClientList[iClientH]->m_dwCrusadeGUID = m_dwCrusadeGUID;
+		else if (m_client_list[client_h]->m_crusade_guid != m_crusade_guid) {
+			m_client_list[client_h]->m_crusade_duty = 0;
+			m_client_list[client_h]->m_construction_point = 0;
+			m_client_list[client_h]->m_war_contribution = 0;
+			m_client_list[client_h]->m_crusade_guid = m_crusade_guid;
 			// ? GUID .  .
-			SendNotifyMsg(0, iClientH, Notify::Crusade, (uint32_t)m_bIsCrusadeMode, 0, 0, 0, -1);
+			send_notify_msg(0, client_h, Notify::Crusade, (uint32_t)m_is_crusade_mode, 0, 0, 0, -1);
 		}
-		m_pClientList[iClientH]->m_cVar = 1;
-		SendNotifyMsg(0, iClientH, Notify::Crusade, (uint32_t)m_bIsCrusadeMode, m_pClientList[iClientH]->m_iCrusadeDuty, 0, 0);
+		m_client_list[client_h]->m_var = 1;
+		send_notify_msg(0, client_h, Notify::Crusade, (uint32_t)m_is_crusade_mode, m_client_list[client_h]->m_crusade_duty, 0, 0);
 	}
-	else if (m_bIsHeldenianMode) {
-		sSummonPoints = m_pClientList[iClientH]->m_iCharisma * 300;
-		if (sSummonPoints > m_iMaxSummonPoints) sSummonPoints = m_iMaxSummonPoints;
-		if (m_pClientList[iClientH]->m_dwHeldenianGUID == 0) {
-			m_pClientList[iClientH]->m_dwHeldenianGUID = m_dwHeldenianGUID;
-			m_pClientList[iClientH]->m_iConstructionPoint = sSummonPoints;
+	else if (m_is_heldenian_mode) {
+		summon_points = m_client_list[client_h]->m_charisma * 300;
+		if (summon_points > m_max_summon_points) summon_points = m_max_summon_points;
+		if (m_client_list[client_h]->m_heldenian_guid == 0) {
+			m_client_list[client_h]->m_heldenian_guid = m_heldenian_guid;
+			m_client_list[client_h]->m_construction_point = summon_points;
 		}
-		else if (m_pClientList[iClientH]->m_dwHeldenianGUID != m_dwHeldenianGUID) {
-			m_pClientList[iClientH]->m_iConstructionPoint = sSummonPoints;
-			m_pClientList[iClientH]->m_iWarContribution = 0;
-			m_pClientList[iClientH]->m_dwHeldenianGUID = m_dwHeldenianGUID;
+		else if (m_client_list[client_h]->m_heldenian_guid != m_heldenian_guid) {
+			m_client_list[client_h]->m_construction_point = summon_points;
+			m_client_list[client_h]->m_war_contribution = 0;
+			m_client_list[client_h]->m_heldenian_guid = m_heldenian_guid;
 		}
-		m_pClientList[iClientH]->m_cVar = 2;
-		if (m_bIsHeldenianMode) {
-			SendNotifyMsg(0, iClientH, Notify::HeldenianTeleport, 0, 0, 0, 0);
+		m_client_list[client_h]->m_var = 2;
+		if (m_is_heldenian_mode) {
+			send_notify_msg(0, client_h, Notify::HeldenianTeleport, 0, 0, 0, 0);
 		}
-		if (m_bHeldenianInitiated) {
-			SendNotifyMsg(0, iClientH, Notify::HeldenianStart, 0, 0, 0, 0);
+		if (m_heldenian_initiated) {
+			send_notify_msg(0, client_h, Notify::HeldenianStart, 0, 0, 0, 0);
 		}
-		SendNotifyMsg(0, iClientH, Notify::ConstructionPoint, m_pClientList[iClientH]->m_iConstructionPoint, m_pClientList[iClientH]->m_iWarContribution, 0, 0);
-		m_pWarManager->UpdateHeldenianStatus();
+		send_notify_msg(0, client_h, Notify::ConstructionPoint, m_client_list[client_h]->m_construction_point, m_client_list[client_h]->m_war_contribution, 0, 0);
+		m_war_manager->update_heldenian_status();
 	}
-	else if ((m_pClientList[iClientH]->m_cVar == 1) && (m_pClientList[iClientH]->m_dwCrusadeGUID == m_dwCrusadeGUID)) {
-		m_pClientList[iClientH]->m_iCrusadeDuty = 0;
-		m_pClientList[iClientH]->m_iConstructionPoint = 0;
+	else if ((m_client_list[client_h]->m_var == 1) && (m_client_list[client_h]->m_crusade_guid == m_crusade_guid)) {
+		m_client_list[client_h]->m_crusade_duty = 0;
+		m_client_list[client_h]->m_construction_point = 0;
 	}
 	else {
-		if (m_pClientList[iClientH]->m_dwCrusadeGUID == m_dwCrusadeGUID) {
-			if (m_pClientList[iClientH]->m_cVar == 1) {
-				SendNotifyMsg(0, iClientH, Notify::Crusade, (uint32_t)m_bIsCrusadeMode, 0, 0, 0, -1);
+		if (m_client_list[client_h]->m_crusade_guid == m_crusade_guid) {
+			if (m_client_list[client_h]->m_var == 1) {
+				send_notify_msg(0, client_h, Notify::Crusade, (uint32_t)m_is_crusade_mode, 0, 0, 0, -1);
 			}
 		}
 		else {
-			m_pClientList[iClientH]->m_dwCrusadeGUID = 0;
-			m_pClientList[iClientH]->m_iWarContribution = 0;
-			m_pClientList[iClientH]->m_dwCrusadeGUID = 0;
+			m_client_list[client_h]->m_crusade_guid = 0;
+			m_client_list[client_h]->m_war_contribution = 0;
+			m_client_list[client_h]->m_crusade_guid = 0;
 		}
 	}
 
 	// v1.42
 	// 2002-7-4
-	if (memcmp(m_pClientList[iClientH]->m_cMapName, "fight", 5) == 0) {
-		hb::logger::log<log_channel::log_events>("Player '{}' entered map '{}' (observer={})", m_pClientList[iClientH]->m_cCharName, m_pClientList[iClientH]->m_cMapName, m_pClientList[iClientH]->m_bIsObserverMode);
+	if (memcmp(m_client_list[client_h]->m_map_name, "fight", 5) == 0) {
+		hb::logger::log<log_channel::log_events>("Player '{}' entered map '{}' (observer={})", m_client_list[client_h]->m_char_name, m_client_list[client_h]->m_map_name, m_client_list[client_h]->m_is_observer_mode);
 	}
 
 	// Crusade
-	SendNotifyMsg(0, iClientH, Notify::ConstructionPoint, m_pClientList[iClientH]->m_iConstructionPoint, m_pClientList[iClientH]->m_iWarContribution, 1, 0);
+	send_notify_msg(0, client_h, Notify::ConstructionPoint, m_client_list[client_h]->m_construction_point, m_client_list[client_h]->m_war_contribution, 1, 0);
 
 	// v2.15
-	SendNotifyMsg(0, iClientH, Notify::GizonItemUpgradeLeft, m_pClientList[iClientH]->m_iGizonItemUpgradeLeft, 0, 0, 0);
+	send_notify_msg(0, client_h, Notify::GizonItemUpgradeLeft, m_client_list[client_h]->m_gizon_item_upgrade_left, 0, 0, 0);
 
-	if (m_bIsHeldenianMode) {
-		SendNotifyMsg(0, iClientH, Notify::HeldenianTeleport, 0, 0, 0, 0);
-		if (m_bHeldenianInitiated) {
-			SendNotifyMsg(0, iClientH, Notify::HeldenianStart, 0, 0, 0, 0);
+	if (m_is_heldenian_mode) {
+		send_notify_msg(0, client_h, Notify::HeldenianTeleport, 0, 0, 0, 0);
+		if (m_heldenian_initiated) {
+			send_notify_msg(0, client_h, Notify::HeldenianStart, 0, 0, 0, 0);
 		}
 		else {
-			m_pWarManager->UpdateHeldenianStatus();
+			m_war_manager->update_heldenian_status();
 		}
 	}
 
-	if (m_pClientList[iClientH]->m_iQuest != 0) {
-		cQuestRemain = (m_pQuestManager->m_pQuestConfigList[m_pClientList[iClientH]->m_iQuest]->m_iMaxCount - m_pClientList[iClientH]->m_iCurQuestCount);
-		SendNotifyMsg(0, iClientH, Notify::QuestCounter, cQuestRemain, 0, 0, 0);
-		m_pQuestManager->_bCheckIsQuestCompleted(iClientH);
+	if (m_client_list[client_h]->m_quest != 0) {
+		quest_remain = (m_quest_manager->m_quest_config_list[m_client_list[client_h]->m_quest]->m_max_count - m_client_list[client_h]->m_cur_quest_count);
+		send_notify_msg(0, client_h, Notify::QuestCounter, quest_remain, 0, 0, 0);
+		m_quest_manager->check_is_quest_completed(client_h);
 	}
 
-	SendNotifyMsg(0, iClientH, Notify::Hunger, m_pClientList[iClientH]->m_iHungerStatus, 0, 0, 0);
-	SendNotifyMsg(0, iClientH, Notify::SuperAttackLeft, 0, 0, 0, 0);
+	send_notify_msg(0, client_h, Notify::Hunger, m_client_list[client_h]->m_hunger_status, 0, 0, 0);
+	send_notify_msg(0, client_h, Notify::SuperAttackLeft, 0, 0, 0, 0);
 }
 
-void CGame::ReleaseFollowMode(short sOwnerH, char cOwnerType)
+void CGame::release_follow_mode(short owner_h, char owner_type)
 {
 	
 
 	for(int i = 0; i < MaxNpcs; i++)
-		if ((i != sOwnerH) && (m_pNpcList[i] != 0)) {
-			if ((m_pNpcList[i]->m_cMoveType == MoveType::Follow) &&
-				(m_pNpcList[i]->m_iFollowOwnerIndex == sOwnerH) &&
-				(m_pNpcList[i]->m_cFollowOwnerType == cOwnerType)) {
+		if ((i != owner_h) && (m_npc_list[i] != 0)) {
+			if ((m_npc_list[i]->m_move_type == MoveType::Follow) &&
+				(m_npc_list[i]->m_follow_owner_index == owner_h) &&
+				(m_npc_list[i]->m_follow_owner_type == owner_type)) {
 
-				m_pNpcList[i]->m_cMoveType = MoveType::RandomWaypoint;
+				m_npc_list[i]->m_move_type = MoveType::RandomWaypoint;
 			}
 		}
 }
 
-void CGame::Quit()
+void CGame::quit()
 {
 	
 
@@ -8279,47 +8299,47 @@ void CGame::Quit()
 	if (_lsock != 0) delete _lsock;
 
 	for(int i = 0; i < MaxClients; i++)
-		if (m_pClientList[i] != 0) delete m_pClientList[i];
+		if (m_client_list[i] != 0) delete m_client_list[i];
 
 	for(int i = 0; i < MaxNpcs; i++)
-		if (m_pNpcList[i] != 0) delete m_pNpcList[i];
+		if (m_npc_list[i] != 0) delete m_npc_list[i];
 
 	for(int i = 0; i < MaxMaps; i++)
-		if (m_pMapList[i] != 0) delete m_pMapList[i];
+		if (m_map_list[i] != 0) delete m_map_list[i];
 
 	for(int i = 0; i < MaxItemTypes; i++)
-		if (m_pItemConfigList[i] != 0) delete m_pItemConfigList[i];
+		if (m_item_config_list[i] != 0) delete m_item_config_list[i];
 
 	for(int i = 0; i < MaxNpcTypes; i++)
-		if (m_pNpcConfigList[i] != 0) delete m_pNpcConfigList[i];
+		if (m_npc_config_list[i] != 0) delete m_npc_config_list[i];
 
 	for(int i = 0; i < hb::shared::limits::MaxMagicType; i++)
-		if (m_pMagicConfigList[i] != 0) delete m_pMagicConfigList[i];
+		if (m_magic_config_list[i] != 0) delete m_magic_config_list[i];
 
 	for(int i = 0; i < hb::shared::limits::MaxSkillType; i++)
-		if (m_pSkillConfigList[i] != 0) delete m_pSkillConfigList[i];
+		if (m_skill_config_list[i] != 0) delete m_skill_config_list[i];
 
 	for(int i = 0; i < MaxNotifyMsgs; i++)
-		if (m_pNoticeMsgList[i] != 0) delete m_pNoticeMsgList[i];
+		if (m_notice_msg_list[i] != 0) delete m_notice_msg_list[i];
 
 	//	for(int i = 0; i < DEF_MAXTELEPORTTYPE; i++)
 	//	if (m_pTeleportConfigList[i] != 0) delete m_pTeleportConfigList[i];
 
 	for(int i = 0; i < hb::shared::limits::MaxBuildItems; i++)
-		if (m_pBuildItemList[i] != 0) delete m_pBuildItemList[i];
+		if (m_build_item_list[i] != 0) delete m_build_item_list[i];
 
-	if (m_pNoticementData != 0) delete m_pNoticementData;
+	if (m_notice_data != 0) delete m_notice_data;
 
 }
 
-uint32_t CGame::iGetLevelExp(int iLevel)
+uint32_t CGame::get_level_exp(int level)
 {
-	return hb::shared::calc::CalculateLevelExp(iLevel);
+	return hb::shared::calc::CalculateLevelExp(level);
 }
 
 /*****************************************************************
 **---------------------------FUNCTION---------------------------**
-**             void Game::CheckLevelUp(int iClientH)            **
+**             void Game::CheckLevelUp(int client_h)            **
 **-------------------------DESCRIPTION--------------------------**
 ** Level-Up                                                     **
 **  - Level +1                                                  **
@@ -8333,308 +8353,308 @@ uint32_t CGame::iGetLevelExp(int iLevel)
 **------------------------CREATION DATE-------------------------**
 **                January 30, 2007; 3:06 PM; Dax                **
 *****************************************************************/
-bool CGame::bCheckLevelUp(int iClientH)
+bool CGame::check_level_up(int client_h)
 {
 
-	if (m_pClientList[iClientH] == 0) return false;
+	if (m_client_list[client_h] == 0) return false;
 
-	while (m_pClientList[iClientH]->m_iExp >= m_pClientList[iClientH]->m_iNextLevelExp)
+	while (m_client_list[client_h]->m_exp >= m_client_list[client_h]->m_next_level_exp)
 	{
-		if (m_pClientList[iClientH]->m_iLevel < m_iMaxLevel)
+		if (m_client_list[client_h]->m_level < m_max_level)
 		{
-			m_pClientList[iClientH]->m_iLevel++;
-			m_pClientList[iClientH]->m_iLU_Pool += 3;
-//			if ( (m_pClientList[iClientH]->m_cLU_Str + m_pClientList[iClientH]->m_cLU_Vit + m_pClientList[iClientH]->m_cLU_Dex + 
-//	  		      m_pClientList[iClientH]->m_cLU_Int + m_pClientList[iClientH]->m_cLU_Mag + m_pClientList[iClientH]->m_cLU_Char) <= TotalLevelUpPoint) {
+			m_client_list[client_h]->m_level++;
+			m_client_list[client_h]->m_levelup_pool += 3;
+//			if ( (m_client_list[client_h]->m_cLU_Str + m_client_list[client_h]->m_cLU_Vit + m_client_list[client_h]->m_cLU_Dex + 
+//	  		      m_client_list[client_h]->m_cLU_Int + m_client_list[client_h]->m_cLU_Mag + m_client_list[client_h]->m_cLU_Char) <= TotalLevelUpPoint) {
 
-			if (m_pClientList[iClientH]->m_iStr > CharPointLimit)      m_pClientList[iClientH]->m_iStr = CharPointLimit;
-			if (m_pClientList[iClientH]->m_iDex > CharPointLimit)      m_pClientList[iClientH]->m_iDex = CharPointLimit;
-			if (m_pClientList[iClientH]->m_iVit > CharPointLimit)      m_pClientList[iClientH]->m_iVit = CharPointLimit;
-			if (m_pClientList[iClientH]->m_iInt > CharPointLimit)      m_pClientList[iClientH]->m_iInt = CharPointLimit;
-			if (m_pClientList[iClientH]->m_iMag > CharPointLimit)      m_pClientList[iClientH]->m_iMag = CharPointLimit;
-			if (m_pClientList[iClientH]->m_iCharisma > CharPointLimit) m_pClientList[iClientH]->m_iCharisma = CharPointLimit;
+			if (m_client_list[client_h]->m_str > CharPointLimit)      m_client_list[client_h]->m_str = CharPointLimit;
+			if (m_client_list[client_h]->m_dex > CharPointLimit)      m_client_list[client_h]->m_dex = CharPointLimit;
+			if (m_client_list[client_h]->m_vit > CharPointLimit)      m_client_list[client_h]->m_vit = CharPointLimit;
+			if (m_client_list[client_h]->m_int > CharPointLimit)      m_client_list[client_h]->m_int = CharPointLimit;
+			if (m_client_list[client_h]->m_mag > CharPointLimit)      m_client_list[client_h]->m_mag = CharPointLimit;
+			if (m_client_list[client_h]->m_charisma > CharPointLimit) m_client_list[client_h]->m_charisma = CharPointLimit;
 
 			// New 17/05/2004
-			if (m_pClientList[iClientH]->m_iLevel > 100)
-				if (m_pClientList[iClientH]->m_bIsPlayerCivil)
-					ForceChangePlayMode(iClientH, true);
+			if (m_client_list[client_h]->m_level > 100)
+				if (m_client_list[client_h]->m_is_player_civil)
+					force_change_play_mode(client_h, true);
 
-			SendNotifyMsg(0, iClientH, Notify::SuperAttackLeft, 0, 0, 0, 0);
-			SendNotifyMsg(0, iClientH, Notify::LevelUp, 0, 0, 0, 0);
+			send_notify_msg(0, client_h, Notify::SuperAttackLeft, 0, 0, 0, 0);
+			send_notify_msg(0, client_h, Notify::LevelUp, 0, 0, 0, 0);
 
-			m_pClientList[iClientH]->m_iNextLevelExp = m_iLevelExpTable[m_pClientList[iClientH]->m_iLevel + 1]; //iGetLevelExp(m_pClientList[iClientH]->m_iLevel + 1);
+			m_client_list[client_h]->m_next_level_exp = m_level_exp_table[m_client_list[client_h]->m_level + 1]; //get_level_exp(m_client_list[client_h]->m_level + 1);
 
-			m_pItemManager->CalcTotalItemEffect(iClientH, -1, false);
+			m_item_manager->calc_total_item_effect(client_h, -1, false);
 
-			//std::snprintf(G_cTxt, sizeof(G_cTxt), "(!) Level up: Player (%s) Level (%d) Experience(%d) Next Level Experience(%d)", m_pClientList[iClientH]->m_cCharName,m_pClientList[iClientH]->m_iLevel, m_pClientList[iClientH]->m_iExp, m_pClientList[iClientH]->m_iNextLevelExp);
+			//std::snprintf(G_cTxt, sizeof(G_cTxt), "(!) Level up: Player (%s) Level (%d) Experience(%d) Next Level Experience(%d)", m_client_list[client_h]->m_char_name,m_client_list[client_h]->m_level, m_client_list[client_h]->m_exp, m_client_list[client_h]->m_next_level_exp);
 			//PutLogFileList(G_cTxt);
 		}
 		else {
-			m_pClientList[iClientH]->m_iGizonItemUpgradeLeft++;
+			m_client_list[client_h]->m_gizon_item_upgrade_left++;
 
-			m_pClientList[iClientH]->m_iNextLevelExp = m_iLevelExpTable[m_iMaxLevel + 1];
-			m_pClientList[iClientH]->m_iExp = m_iLevelExpTable[m_iMaxLevel];
+			m_client_list[client_h]->m_next_level_exp = m_level_exp_table[m_max_level + 1];
+			m_client_list[client_h]->m_exp = m_level_exp_table[m_max_level];
 			//addon
-			SendNotifyMsg(0, iClientH, Notify::GizonItemUpgradeLeft, m_pClientList[iClientH]->m_iGizonItemUpgradeLeft, 1, 0, 0);
+			send_notify_msg(0, client_h, Notify::GizonItemUpgradeLeft, m_client_list[client_h]->m_gizon_item_upgrade_left, 1, 0, 0);
 		}
 
-		SendNotifyMsg(0, iClientH, Notify::Exp, 0, 0, 0, 0);
+		send_notify_msg(0, client_h, Notify::Exp, 0, 0, 0, 0);
 	}
 
 	return false;
 }
 // 2003-04-14      ...
-void CGame::StateChangeHandler(int iClientH, char* pData, size_t dwMsgSize)
+void CGame::state_change_handler(int client_h, char* data, size_t msg_size)
 {
-	if (m_pClientList[iClientH] == 0) return;
-	if (m_pClientList[iClientH]->m_bIsInitComplete == false) return;
-	if (m_pClientList[iClientH]->m_iGizonItemUpgradeLeft <= 0) return;
+	if (m_client_list[client_h] == 0) return;
+	if (m_client_list[client_h]->m_is_init_complete == false) return;
+	if (m_client_list[client_h]->m_gizon_item_upgrade_left <= 0) return;
 
 	const auto* pkt = hb::net::PacketCast<hb::net::PacketRequestStateChange>(
-		pData, sizeof(hb::net::PacketRequestStateChange));
+		data, sizeof(hb::net::PacketRequestStateChange));
 	if (!pkt) return;
 
-	int16_t cStr = pkt->str;
-	int16_t cVit = pkt->vit;
-	int16_t cDex = pkt->dex;
+	int16_t str = pkt->str;
+	int16_t vit = pkt->vit;
+	int16_t dex = pkt->dex;
 	int16_t cInt = pkt->intel;
-	int16_t cMag = pkt->mag;
+	int16_t mag = pkt->mag;
 	int16_t cChar = pkt->chr;
 
 	// All reduction values must be >= 0
-	if (cStr < 0 || cVit < 0 || cDex < 0 || cInt < 0 || cMag < 0 || cChar < 0)
+	if (str < 0 || vit < 0 || dex < 0 || cInt < 0 || mag < 0 || cChar < 0)
 	{
-		SendNotifyMsg(0, iClientH, Notify::StateChangeFailed, 0, 0, 0, 0);
+		send_notify_msg(0, client_h, Notify::StateChangeFailed, 0, 0, 0, 0);
 		return;
 	}
 
 	// Total must be a positive multiple of 3 (TotalLevelUpPoint per majestic point)
-	int iTotalReduction = cStr + cVit + cDex + cInt + cMag + cChar;
-	if (iTotalReduction <= 0 || (iTotalReduction % TotalLevelUpPoint) != 0)
+	int total_reduction = str + vit + dex + cInt + mag + cChar;
+	if (total_reduction <= 0 || (total_reduction % TotalLevelUpPoint) != 0)
 	{
-		SendNotifyMsg(0, iClientH, Notify::StateChangeFailed, 0, 0, 0, 0);
+		send_notify_msg(0, client_h, Notify::StateChangeFailed, 0, 0, 0, 0);
 		return;
 	}
 
-	int iMajesticCost = iTotalReduction / TotalLevelUpPoint;
-	if (iMajesticCost > m_pClientList[iClientH]->m_iGizonItemUpgradeLeft)
+	int majestic_cost = total_reduction / TotalLevelUpPoint;
+	if (majestic_cost > m_client_list[client_h]->m_gizon_item_upgrade_left)
 	{
-		SendNotifyMsg(0, iClientH, Notify::StateChangeFailed, 0, 0, 0, 0);
+		send_notify_msg(0, client_h, Notify::StateChangeFailed, 0, 0, 0, 0);
 		return;
 	}
 
 	// Stats must equal the max-level formula (all points fully allocated)
-	int iOldStr = m_pClientList[iClientH]->m_iStr;
-	int iOldVit = m_pClientList[iClientH]->m_iVit;
-	int iOldDex = m_pClientList[iClientH]->m_iDex;
-	int iOldInt = m_pClientList[iClientH]->m_iInt;
-	int iOldMag = m_pClientList[iClientH]->m_iMag;
-	int iOldChar = m_pClientList[iClientH]->m_iCharisma;
+	int old_str = m_client_list[client_h]->m_str;
+	int old_vit = m_client_list[client_h]->m_vit;
+	int old_dex = m_client_list[client_h]->m_dex;
+	int old_int = m_client_list[client_h]->m_int;
+	int old_mag = m_client_list[client_h]->m_mag;
+	int old_char = m_client_list[client_h]->m_charisma;
 
-	if (iOldStr + iOldVit + iOldDex + iOldInt + iOldMag + iOldChar != ((m_iMaxLevel - 1) * 3 + 70))
+	if (old_str + old_vit + old_dex + old_int + old_mag + old_char != ((m_max_level - 1) * 3 + 70))
 		return;
 
 	// Each stat must stay >= 10 and <= CharPointLimit after reduction
-	if ((iOldStr - cStr < 10) || (iOldStr - cStr > CharPointLimit)) { SendNotifyMsg(0, iClientH, Notify::StateChangeFailed, 0, 0, 0, 0); return; }
-	if ((iOldVit - cVit < 10) || (iOldVit - cVit > CharPointLimit)) { SendNotifyMsg(0, iClientH, Notify::StateChangeFailed, 0, 0, 0, 0); return; }
-	if ((iOldDex - cDex < 10) || (iOldDex - cDex > CharPointLimit)) { SendNotifyMsg(0, iClientH, Notify::StateChangeFailed, 0, 0, 0, 0); return; }
-	if ((iOldInt - cInt < 10) || (iOldInt - cInt > CharPointLimit)) { SendNotifyMsg(0, iClientH, Notify::StateChangeFailed, 0, 0, 0, 0); return; }
-	if ((iOldMag - cMag < 10) || (iOldMag - cMag > CharPointLimit)) { SendNotifyMsg(0, iClientH, Notify::StateChangeFailed, 0, 0, 0, 0); return; }
-	if ((iOldChar - cChar < 10) || (iOldChar - cChar > CharPointLimit)) { SendNotifyMsg(0, iClientH, Notify::StateChangeFailed, 0, 0, 0, 0); return; }
+	if ((old_str - str < 10) || (old_str - str > CharPointLimit)) { send_notify_msg(0, client_h, Notify::StateChangeFailed, 0, 0, 0, 0); return; }
+	if ((old_vit - vit < 10) || (old_vit - vit > CharPointLimit)) { send_notify_msg(0, client_h, Notify::StateChangeFailed, 0, 0, 0, 0); return; }
+	if ((old_dex - dex < 10) || (old_dex - dex > CharPointLimit)) { send_notify_msg(0, client_h, Notify::StateChangeFailed, 0, 0, 0, 0); return; }
+	if ((old_int - cInt < 10) || (old_int - cInt > CharPointLimit)) { send_notify_msg(0, client_h, Notify::StateChangeFailed, 0, 0, 0, 0); return; }
+	if ((old_mag - mag < 10) || (old_mag - mag > CharPointLimit)) { send_notify_msg(0, client_h, Notify::StateChangeFailed, 0, 0, 0, 0); return; }
+	if ((old_char - cChar < 10) || (old_char - cChar > CharPointLimit)) { send_notify_msg(0, client_h, Notify::StateChangeFailed, 0, 0, 0, 0); return; }
 
 	// Guild masters cannot reduce CHR below 20
-	if (m_pClientList[iClientH]->m_iGuildRank == 0)
+	if (m_client_list[client_h]->m_guild_rank == 0)
 	{
-		if (iOldChar - cChar < 20)
+		if (old_char - cChar < 20)
 		{
-			SendNotifyMsg(0, iClientH, Notify::StateChangeFailed, 0, 0, 0, 0);
+			send_notify_msg(0, client_h, Notify::StateChangeFailed, 0, 0, 0, 0);
 			return;
 		}
 	}
 
-	hb::logger::log("Majestic stat upgrade: player={} cost={} STR={} VIT={} DEX={} INT={} MAG={} CHR={}", m_pClientList[iClientH]->m_cCharName, iMajesticCost, cStr, cVit, cDex, cInt, cMag, cChar);
+	hb::logger::log("Majestic stat upgrade: player={} cost={} STR={} VIT={} DEX={} INT={} MAG={} CHR={}", m_client_list[client_h]->m_char_name, majestic_cost, str, vit, dex, cInt, mag, cChar);
 
 	// Apply reductions
-	m_pClientList[iClientH]->m_iGizonItemUpgradeLeft -= iMajesticCost;
-	m_pClientList[iClientH]->m_iLU_Pool += iTotalReduction;
+	m_client_list[client_h]->m_gizon_item_upgrade_left -= majestic_cost;
+	m_client_list[client_h]->m_levelup_pool += total_reduction;
 
-	m_pClientList[iClientH]->m_iStr -= cStr;
-	m_pClientList[iClientH]->m_iVit -= cVit;
-	m_pClientList[iClientH]->m_iDex -= cDex;
-	m_pClientList[iClientH]->m_iInt -= cInt;
-	if (cInt > 0) m_pMagicManager->bCheckMagicInt(iClientH);
-	m_pClientList[iClientH]->m_iMag -= cMag;
-	m_pClientList[iClientH]->m_iCharisma -= cChar;
+	m_client_list[client_h]->m_str -= str;
+	m_client_list[client_h]->m_vit -= vit;
+	m_client_list[client_h]->m_dex -= dex;
+	m_client_list[client_h]->m_int -= cInt;
+	if (cInt > 0) m_magic_manager->check_magic_int(client_h);
+	m_client_list[client_h]->m_mag -= mag;
+	m_client_list[client_h]->m_charisma -= cChar;
 
 	// Recalculate derived stats
-	m_pClientList[iClientH]->m_iHP = iGetMaxHP(iClientH);
-	m_pClientList[iClientH]->m_iMP = iGetMaxMP(iClientH);
-	m_pClientList[iClientH]->m_iSP = iGetMaxSP(iClientH);
+	m_client_list[client_h]->m_hp = get_max_hp(client_h);
+	m_client_list[client_h]->m_mp = get_max_mp(client_h);
+	m_client_list[client_h]->m_sp = get_max_sp(client_h);
 
-	SendNotifyMsg(0, iClientH, Notify::StateChangeSuccess, 0, 0, 0, 0);
+	send_notify_msg(0, client_h, Notify::StateChangeSuccess, 0, 0, 0, 0);
 }
 
 // 2003-04-21     ...
-//  bool CGame::bCheckMagicInt(int iClientH)  //another retarded korean function
+//  bool CGame::check_magic_int(int client_h)  //another retarded korean function
 // desc		 ::     ... ...
 // return value ::  true   // ....dumbass koreans
 //  date		 :: 2003-04-21
 
-void CGame::LevelUpSettingsHandler(int iClientH, char* pData, size_t dwMsgSize)
+void CGame::level_up_settings_handler(int client_h, char* data, size_t msg_size)
 {
-	int iTotalSetting = 0;
+	int total_setting = 0;
 
-	int16_t cStr, cVit, cDex, cInt, cMag, cChar;
+	int16_t str, vit, dex, cInt, mag, cChar;
 
-	if (m_pClientList[iClientH] == 0) return;
-	if (m_pClientList[iClientH]->m_bIsInitComplete == false) return;
-	if (m_pClientList[iClientH]->m_iLU_Pool <= 0)
+	if (m_client_list[client_h] == 0) return;
+	if (m_client_list[client_h]->m_is_init_complete == false) return;
+	if (m_client_list[client_h]->m_levelup_pool <= 0)
 	{
-		SendNotifyMsg(0, iClientH, Notify::SettingFailed, 0, 0, 0, 0);
+		send_notify_msg(0, client_h, Notify::SettingFailed, 0, 0, 0, 0);
 		return;
 	}
 
-	const auto* req = hb::net::PacketCast<hb::net::PacketRequestLevelUpSettings>(pData, sizeof(hb::net::PacketRequestLevelUpSettings));
+	const auto* req = hb::net::PacketCast<hb::net::PacketRequestLevelUpSettings>(data, sizeof(hb::net::PacketRequestLevelUpSettings));
 	if (!req) return;
 
-	cStr = req->str;
-	cVit = req->vit;
-	cDex = req->dex;
+	str = req->str;
+	vit = req->vit;
+	dex = req->dex;
 	cInt = req->intel;
-	cMag = req->mag;
+	mag = req->mag;
 	cChar = req->chr;
 
-	if ((cStr + cVit + cDex + cInt + cMag + cChar) > m_pClientList[iClientH]->m_iLU_Pool)
+	if ((str + vit + dex + cInt + mag + cChar) > m_client_list[client_h]->m_levelup_pool)
 	{
-		SendNotifyMsg(0, iClientH, Notify::SettingFailed, 0, 0, 0, 0);
+		send_notify_msg(0, client_h, Notify::SettingFailed, 0, 0, 0, 0);
 		return;
 	}
 
 	// Check if adding points would exceed the stat limit or be negative
-	if ((m_pClientList[iClientH]->m_iStr + cStr > CharPointLimit) || (cStr < 0))
+	if ((m_client_list[client_h]->m_str + str > CharPointLimit) || (str < 0))
 		return;
 
-	if ((m_pClientList[iClientH]->m_iDex + cDex > CharPointLimit) || (cDex < 0))
+	if ((m_client_list[client_h]->m_dex + dex > CharPointLimit) || (dex < 0))
 		return;
 
-	if ((m_pClientList[iClientH]->m_iInt + cInt > CharPointLimit) || (cInt < 0))
+	if ((m_client_list[client_h]->m_int + cInt > CharPointLimit) || (cInt < 0))
 		return;
 
-	if ((m_pClientList[iClientH]->m_iVit + cVit > CharPointLimit) || (cVit < 0))
+	if ((m_client_list[client_h]->m_vit + vit > CharPointLimit) || (vit < 0))
 		return;
 
-	if ((m_pClientList[iClientH]->m_iMag + cMag > CharPointLimit) || (cMag < 0))
+	if ((m_client_list[client_h]->m_mag + mag > CharPointLimit) || (mag < 0))
 		return;
 
-	if ((m_pClientList[iClientH]->m_iCharisma + cChar > CharPointLimit) || (cChar < 0))
+	if ((m_client_list[client_h]->m_charisma + cChar > CharPointLimit) || (cChar < 0))
 		return;
 
-	iTotalSetting = m_pClientList[iClientH]->m_iStr + m_pClientList[iClientH]->m_iDex + m_pClientList[iClientH]->m_iVit +
-		m_pClientList[iClientH]->m_iInt + m_pClientList[iClientH]->m_iMag + m_pClientList[iClientH]->m_iCharisma;
+	total_setting = m_client_list[client_h]->m_str + m_client_list[client_h]->m_dex + m_client_list[client_h]->m_vit +
+		m_client_list[client_h]->m_int + m_client_list[client_h]->m_mag + m_client_list[client_h]->m_charisma;
 
 	// (  +   >   ) ..  ..      ..
-	if (iTotalSetting + m_pClientList[iClientH]->m_iLU_Pool > ((m_pClientList[iClientH]->m_iLevel - 1) * 3 + 70))
+	if (total_setting + m_client_list[client_h]->m_levelup_pool > ((m_client_list[client_h]->m_level - 1) * 3 + 70))
 	{
-		m_pClientList[iClientH]->m_iLU_Pool = (m_pClientList[iClientH]->m_iLevel - 1) * 3 + 70 - iTotalSetting;
+		m_client_list[client_h]->m_levelup_pool = (m_client_list[client_h]->m_level - 1) * 3 + 70 - total_setting;
 
-		if (m_pClientList[iClientH]->m_iLU_Pool < 0)
-			m_pClientList[iClientH]->m_iLU_Pool = 0;
-		SendNotifyMsg(0, iClientH, Notify::SettingFailed, 0, 0, 0, 0);
+		if (m_client_list[client_h]->m_levelup_pool < 0)
+			m_client_list[client_h]->m_levelup_pool = 0;
+		send_notify_msg(0, client_h, Notify::SettingFailed, 0, 0, 0, 0);
 		return;
 	}
 
 	// (  +    D >   )  ..
-	if (iTotalSetting + (cStr + cVit + cDex + cInt + cMag + cChar) > ((m_pClientList[iClientH]->m_iLevel - 1) * 3 + 70))
+	if (total_setting + (str + vit + dex + cInt + mag + cChar) > ((m_client_list[client_h]->m_level - 1) * 3 + 70))
 	{
-		SendNotifyMsg(0, iClientH, Notify::SettingFailed, 0, 0, 0, 0);
+		send_notify_msg(0, client_h, Notify::SettingFailed, 0, 0, 0, 0);
 		return;
 	}
 
-	m_pClientList[iClientH]->m_iLU_Pool = m_pClientList[iClientH]->m_iLU_Pool - (cStr + cVit + cDex + cInt + cMag + cChar);
+	m_client_list[client_h]->m_levelup_pool = m_client_list[client_h]->m_levelup_pool - (str + vit + dex + cInt + mag + cChar);
 
-	m_pClientList[iClientH]->m_iStr += cStr;
-	m_pClientList[iClientH]->m_iVit += cVit;
-	m_pClientList[iClientH]->m_iDex += cDex;
-	m_pClientList[iClientH]->m_iInt += cInt;
-	m_pClientList[iClientH]->m_iMag += cMag;
-	m_pClientList[iClientH]->m_iCharisma += cChar;
+	m_client_list[client_h]->m_str += str;
+	m_client_list[client_h]->m_vit += vit;
+	m_client_list[client_h]->m_dex += dex;
+	m_client_list[client_h]->m_int += cInt;
+	m_client_list[client_h]->m_mag += mag;
+	m_client_list[client_h]->m_charisma += cChar;
 
 	// Recalculate item effects and weapon swing speed after stat changes
-	m_pItemManager->CalcTotalItemEffect(iClientH, -1, false);
+	m_item_manager->calc_total_item_effect(client_h, -1, false);
 
-	// Recalculate weapon swing speed (m_status.iAttackDelay)
-	short sWeaponIndex = m_pClientList[iClientH]->m_sItemEquipmentStatus[ToInt(EquipPos::RightHand)];
-	if (sWeaponIndex == -1)
-		sWeaponIndex = m_pClientList[iClientH]->m_sItemEquipmentStatus[ToInt(EquipPos::TwoHand)];
-	if (sWeaponIndex != -1 && m_pClientList[iClientH]->m_pItemList[sWeaponIndex] != nullptr)
+	// Recalculate weapon swing speed (m_status.attack_delay)
+	short weapon_index = m_client_list[client_h]->m_item_equipment_status[to_int(EquipPos::RightHand)];
+	if (weapon_index == -1)
+		weapon_index = m_client_list[client_h]->m_item_equipment_status[to_int(EquipPos::TwoHand)];
+	if (weapon_index != -1 && m_client_list[client_h]->m_item_list[weapon_index] != nullptr)
 	{
-		short sSpeed = m_pClientList[iClientH]->m_pItemList[sWeaponIndex]->m_cSpeed;
-		sSpeed -= ((m_pClientList[iClientH]->m_iStr + m_pClientList[iClientH]->m_iAngelicStr) / 13);
-		if (sSpeed < 0) sSpeed = 0;
-		m_pClientList[iClientH]->m_status.iAttackDelay = static_cast<uint8_t>(sSpeed);
+		short speed = m_client_list[client_h]->m_item_list[weapon_index]->m_speed;
+		speed -= ((m_client_list[client_h]->m_str + m_client_list[client_h]->m_angelic_str) / 13);
+		if (speed < 0) speed = 0;
+		m_client_list[client_h]->m_status.attack_delay = static_cast<uint8_t>(speed);
 	}
 
-	SendNotifyMsg(0, iClientH, Notify::SettingSuccess, 0, 0, 0, 0);
+	send_notify_msg(0, client_h, Notify::SettingSuccess, 0, 0, 0, 0);
 
 }
 
-bool CGame::bCheckLimitedUser(int iClientH)
+bool CGame::check_limited_user(int client_h)
 {
-	if (m_pClientList[iClientH] == 0) return false;
+	if (m_client_list[client_h] == 0) return false;
 
-	if ((memcmp(m_pClientList[iClientH]->m_cLocation, "NONE", 4) == 0) &&
-		(m_pClientList[iClientH]->m_iExp >= m_iLevelExp20)) {
+	if ((memcmp(m_client_list[client_h]->m_location, "NONE", 4) == 0) &&
+		(m_client_list[client_h]->m_exp >= m_level_exp_20)) {
 		// 20   19 .
 
-		m_pClientList[iClientH]->m_iExp = m_iLevelExp20 - 1;
-		SendNotifyMsg(0, iClientH, Notify::TravelerLimitedLevel, 0, 0, 0, 0);
+		m_client_list[client_h]->m_exp = m_level_exp_20 - 1;
+		send_notify_msg(0, client_h, Notify::TravelerLimitedLevel, 0, 0, 0, 0);
 		return true;
 	}
 
 	return false;
 }
 
-void CGame::RequestCivilRightHandler(int iClientH, char* pData)
+void CGame::request_civil_right_handler(int client_h, char* data)
 {
-	uint16_t wResult;
-	int  iRet;
+	uint16_t result;
+	int  ret;
 
-	if (m_pClientList[iClientH] == 0) return;
-	if (m_pClientList[iClientH]->m_bIsInitComplete == false) return;
+	if (m_client_list[client_h] == 0) return;
+	if (m_client_list[client_h]->m_is_init_complete == false) return;
 
-	if (memcmp(m_pClientList[iClientH]->m_cLocation, "NONE", 4) != 0) wResult = 0;
-	else wResult = 1;
+	if (memcmp(m_client_list[client_h]->m_location, "NONE", 4) != 0) result = 0;
+	else result = 1;
 
-	if (m_pClientList[iClientH]->m_iLevel < 5) wResult = 0;
+	if (m_client_list[client_h]->m_level < 5) result = 0;
 
-	if (wResult == 1) {
-		std::memset(m_pClientList[iClientH]->m_cLocation, 0, sizeof(m_pClientList[iClientH]->m_cLocation));
-		strcpy(m_pClientList[iClientH]->m_cLocation, m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_cLocationName);
+	if (result == 1) {
+		std::memset(m_client_list[client_h]->m_location, 0, sizeof(m_client_list[client_h]->m_location));
+		strcpy(m_client_list[client_h]->m_location, m_map_list[m_client_list[client_h]->m_map_index]->m_location_name);
 	}
 
 	// Side
-	if (memcmp(m_pClientList[iClientH]->m_cLocation, "are", 3) == 0)
-		m_pClientList[iClientH]->m_cSide = 1;
+	if (memcmp(m_client_list[client_h]->m_location, "are", 3) == 0)
+		m_client_list[client_h]->m_side = 1;
 
-	if (memcmp(m_pClientList[iClientH]->m_cLocation, "elv", 3) == 0)
-		m_pClientList[iClientH]->m_cSide = 2;
+	if (memcmp(m_client_list[client_h]->m_location, "elv", 3) == 0)
+		m_client_list[client_h]->m_side = 2;
 
 	hb::net::PacketResponseCivilRight pkt{};
 	pkt.header.msg_id = MsgId::ResponseCivilRight;
-	pkt.header.msg_type = wResult;
+	pkt.header.msg_type = result;
 	std::memset(pkt.location, 0, sizeof(pkt.location));
-	memcpy(pkt.location, m_pClientList[iClientH]->m_cLocation, sizeof(pkt.location));
+	memcpy(pkt.location, m_client_list[client_h]->m_location, sizeof(pkt.location));
 
-	iRet = m_pClientList[iClientH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
-	switch (iRet) {
+	ret = m_client_list[client_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+	switch (ret) {
 	case sock::Event::QueueFull:
 	case sock::Event::SocketError:
 	case sock::Event::CriticalError:
 	case sock::Event::SocketClosed:
-		DeleteClient(iClientH, true, true);
+		delete_client(client_h, true, true);
 		return;
 	}
-	SendEventToNearClient_TypeA(iClientH, hb::shared::owner_class::Player, MsgId::EventMotion, Type::NullAction, 0, 0, 0);
+	send_event_to_near_client_type_a(client_h, hb::shared::owner_class::Player, MsgId::EventMotion, Type::NullAction, 0, 0, 0);
 }
 
 // 05/21/2004 - Hypnotoad - send player to jail
@@ -8643,183 +8663,183 @@ void CGame::RequestCivilRightHandler(int iClientH, char* pData)
 // 05/22/2004 - Hypnotoad - register in pk log
 // 05/29/2004 - Hypnotoad - Limits some items from not dropping
 
-int CGame::_iCalcMaxLoad(int iClientH)
+int CGame::calc_max_load(int client_h)
 {
-	if (m_pClientList[iClientH] == 0) return 0;
+	if (m_client_list[client_h] == 0) return 0;
 
-	return ((m_pClientList[iClientH]->m_iStr + m_pClientList[iClientH]->m_iAngelicStr) * 500 + m_pClientList[iClientH]->m_iLevel * 500);
+	return ((m_client_list[client_h]->m_str + m_client_list[client_h]->m_angelic_str) * 500 + m_client_list[client_h]->m_level * 500);
 }
 
-void CGame::RequestFullObjectData(int iClientH, char* pData)
+void CGame::request_full_object_data(int client_h, char* data)
 {
-	uint16_t wObjectID;
-	int iRet;
-	uint32_t dwTime;
+	uint16_t object_id;
+	int ret;
+	uint32_t time;
 
-	if (m_pClientList[iClientH] == 0) return;
-	if (m_pClientList[iClientH]->m_bIsInitComplete == false) return;
+	if (m_client_list[client_h] == 0) return;
+	if (m_client_list[client_h]->m_is_init_complete == false) return;
 
-	const auto* header = hb::net::PacketCast<hb::net::PacketHeader>(pData, sizeof(hb::net::PacketHeader));
+	const auto* header = hb::net::PacketCast<hb::net::PacketHeader>(data, sizeof(hb::net::PacketHeader));
 	if (!header) return;
-	wObjectID = header->msg_type;
-	dwTime = GameClock::GetTimeMS();
+	object_id = header->msg_type;
+	time = GameClock::GetTimeMS();
 
-	if ((wObjectID != m_pClientList[iClientH]->m_dwLastFullObjectId) ||
-		(dwTime - m_pClientList[iClientH]->m_dwLastFullObjectTime) > 1000) {
-		m_pClientList[iClientH]->m_dwLastFullObjectId = wObjectID;
-		m_pClientList[iClientH]->m_dwLastFullObjectTime = dwTime;
+	if ((object_id != m_client_list[client_h]->m_last_full_object_id) ||
+		(time - m_client_list[client_h]->m_last_full_object_time) > 1000) {
+		m_client_list[client_h]->m_last_full_object_id = object_id;
+		m_client_list[client_h]->m_last_full_object_time = time;
 	}
 
-	if (hb::shared::object_id::IsPlayerID(wObjectID)) {
-		if ((wObjectID == 0) || (wObjectID >= MaxClients)) return;
-		if (m_pClientList[wObjectID] == 0) return;
+	if (hb::shared::object_id::is_player_id(object_id)) {
+		if ((object_id == 0) || (object_id >= MaxClients)) return;
+		if (m_client_list[object_id] == 0) return;
 
 		hb::net::PacketEventMotionPlayer pkt{};
 		pkt.header.msg_id = MsgId::EventMotion;
-		pkt.header.msg_type = Type::Stop;
-		pkt.object_id = wObjectID;
-		pkt.x = m_pClientList[wObjectID]->m_sX;
-		pkt.y = m_pClientList[wObjectID]->m_sY;
-		pkt.type = m_pClientList[wObjectID]->m_sType;
-		pkt.dir = static_cast<uint8_t>(m_pClientList[wObjectID]->m_cDir);
-		memcpy(pkt.name, m_pClientList[wObjectID]->m_cCharName, sizeof(pkt.name));
-		pkt.appearance = m_pClientList[wObjectID]->m_appearance;
+		pkt.header.msg_type = Type::stop;
+		pkt.object_id = object_id;
+		pkt.x = m_client_list[object_id]->m_x;
+		pkt.y = m_client_list[object_id]->m_y;
+		pkt.type = m_client_list[object_id]->m_type;
+		pkt.dir = static_cast<uint8_t>(m_client_list[object_id]->m_dir);
+		memcpy(pkt.name, m_client_list[object_id]->m_char_name, sizeof(pkt.name));
+		pkt.appearance = m_client_list[object_id]->m_appearance;
 
 		{
-			auto pktStatus = m_pClientList[wObjectID]->m_status;
-			pktStatus.bPK = (m_pClientList[wObjectID]->m_iPKCount != 0) ? 1 : 0;
-			pktStatus.bCitizen = (m_pClientList[wObjectID]->m_cSide != 0) ? 1 : 0;
-			pktStatus.bAresden = (m_pClientList[wObjectID]->m_cSide == 1) ? 1 : 0;
-			pktStatus.bHunter = m_pClientList[wObjectID]->m_bIsPlayerCivil ? 1 : 0;
-			pktStatus.iRelationship = m_pCombatManager->GetPlayerRelationship(wObjectID, iClientH);
+			auto pktStatus = m_client_list[object_id]->m_status;
+			pktStatus.pk = (m_client_list[object_id]->m_player_kill_count != 0) ? 1 : 0;
+			pktStatus.citizen = (m_client_list[object_id]->m_side != 0) ? 1 : 0;
+			pktStatus.aresden = (m_client_list[object_id]->m_side == 1) ? 1 : 0;
+			pktStatus.hunter = m_client_list[object_id]->m_is_player_civil ? 1 : 0;
+			pktStatus.relationship = m_combat_manager->get_player_relationship(object_id, client_h);
 			pkt.status = pktStatus;
 		}
-		pkt.loc = m_pClientList[wObjectID]->m_bIsKilled ? 1 : 0;
+		pkt.loc = m_client_list[object_id]->m_is_killed ? 1 : 0;
 
-		iRet = m_pClientList[iClientH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+		ret = m_client_list[client_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 	}
 	else {
-		uint16_t npcIdx = hb::shared::object_id::ToNpcIndex(wObjectID);
+		uint16_t npcIdx = hb::shared::object_id::ToNpcIndex(object_id);
 		if ((npcIdx == 0) || (npcIdx >= MaxNpcs)) return;
-		if (m_pNpcList[npcIdx] == 0) return;
+		if (m_npc_list[npcIdx] == 0) return;
 
-		const uint16_t objectId = wObjectID;
-		wObjectID = npcIdx;
+		const uint16_t objectId = object_id;
+		object_id = npcIdx;
 
 		hb::net::PacketEventMotionNpc pkt{};
 		pkt.header.msg_id = MsgId::EventMotion;
-		pkt.header.msg_type = Type::Stop;
+		pkt.header.msg_type = Type::stop;
 		pkt.object_id = objectId;
-		pkt.x = m_pNpcList[wObjectID]->m_sX;
-		pkt.y = m_pNpcList[wObjectID]->m_sY;
-		pkt.config_id = m_pNpcList[wObjectID]->m_iNpcConfigId;
-		pkt.dir = static_cast<uint8_t>(m_pNpcList[wObjectID]->m_cDir);
-		memcpy(pkt.name, m_pNpcList[wObjectID]->m_cName, sizeof(pkt.name));
-		pkt.appearance = m_pNpcList[wObjectID]->m_appearance;
+		pkt.x = m_npc_list[object_id]->m_x;
+		pkt.y = m_npc_list[object_id]->m_y;
+		pkt.config_id = m_npc_list[object_id]->m_npc_config_id;
+		pkt.dir = static_cast<uint8_t>(m_npc_list[object_id]->m_dir);
+		memcpy(pkt.name, m_npc_list[object_id]->m_name, sizeof(pkt.name));
+		pkt.appearance = m_npc_list[object_id]->m_appearance;
 
-		pkt.status = m_pNpcList[wObjectID]->m_status;
-		pkt.loc = m_pNpcList[wObjectID]->m_bIsKilled ? 1 : 0;
+		pkt.status = m_npc_list[object_id]->m_status;
+		pkt.loc = m_npc_list[object_id]->m_is_killed ? 1 : 0;
 
-		iRet = m_pClientList[iClientH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+		ret = m_client_list[client_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 	}
 
-	switch (iRet) {
+	switch (ret) {
 	case sock::Event::QueueFull:
 	case sock::Event::SocketError:
 	case sock::Event::CriticalError:
 	case sock::Event::SocketClosed:
-		DeleteClient(iClientH, true, true);
+		delete_client(client_h, true, true);
 		return;
 	}
 }
 
-int CGame::iGetFollowerNumber(short sOwnerH, char cOwnerType)
+int CGame::get_follower_number(short owner_h, char owner_type)
 {
-	int iTotal;
+	int total;
 
-	iTotal = 0;
+	total = 0;
 
 	for(int i = 1; i < MaxNpcs; i++)
-		if ((m_pNpcList[i] != 0) && (m_pNpcList[i]->m_cMoveType == MoveType::Follow)) {
+		if ((m_npc_list[i] != 0) && (m_npc_list[i]->m_move_type == MoveType::Follow)) {
 
-			if ((m_pNpcList[i]->m_iFollowOwnerIndex == sOwnerH) && (m_pNpcList[i]->m_cFollowOwnerType == cOwnerType))
-				iTotal++;
+			if ((m_npc_list[i]->m_follow_owner_index == owner_h) && (m_npc_list[i]->m_follow_owner_type == owner_type))
+				total++;
 		}
 
-	return iTotal;
+	return total;
 }
 
-void CGame::SendObjectMotionRejectMsg(int iClientH)
+void CGame::send_object_motion_reject_msg(int client_h)
 {
-	int     iRet;
+	int     ret;
 
-	m_pClientList[iClientH]->m_bIsMoveBlocked = true; // v2.171
+	m_client_list[client_h]->m_is_move_blocked = true; // v2.171
 
 	// Send motion reject response.
 	hb::net::PacketResponseMotionReject pkt{};
 	pkt.header.msg_id = MsgId::ResponseMotion;
 	pkt.header.msg_type = Confirm::MotionReject;
-	pkt.x = m_pClientList[iClientH]->m_sX;
-	pkt.y = m_pClientList[iClientH]->m_sY;
-	iRet = m_pClientList[iClientH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
-	switch (iRet) {
+	pkt.x = m_client_list[client_h]->m_x;
+	pkt.y = m_client_list[client_h]->m_y;
+	ret = m_client_list[client_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+	switch (ret) {
 	case sock::Event::QueueFull:
 	case sock::Event::SocketError:
 	case sock::Event::CriticalError:
 	case sock::Event::SocketClosed:
 		// Socket error while sending motion reject.
-		DeleteClient(iClientH, true, true);
+		delete_client(client_h, true, true);
 		return;
 	}
 	return;
 }
 
-int CGame::iCalcTotalWeight(int iClientH)
+int CGame::calc_total_weight(int client_h)
 {
-	int iWeight;
-	short sItemIndex;
+	int weight;
+	short item_index;
 
-	if (m_pClientList[iClientH] == 0) return 0;
+	if (m_client_list[client_h] == 0) return 0;
 
-	m_pClientList[iClientH]->m_iAlterItemDropIndex = -1;
-	for (sItemIndex = 0; sItemIndex < hb::shared::limits::MaxItems; sItemIndex++)
-		if (m_pClientList[iClientH]->m_pItemList[sItemIndex] != 0) {
-			switch (m_pClientList[iClientH]->m_pItemList[sItemIndex]->GetItemEffectType()) {
+	m_client_list[client_h]->m_alter_item_drop_index = -1;
+	for (item_index = 0; item_index < hb::shared::limits::MaxItems; item_index++)
+		if (m_client_list[client_h]->m_item_list[item_index] != 0) {
+			switch (m_client_list[client_h]->m_item_list[item_index]->get_item_effect_type()) {
 			case ItemEffectType::AlterItemDrop:
-				if (m_pClientList[iClientH]->m_pItemList[sItemIndex]->m_wCurLifeSpan > 0) {
-					m_pClientList[iClientH]->m_iAlterItemDropIndex = sItemIndex;
+				if (m_client_list[client_h]->m_item_list[item_index]->m_cur_life_span > 0) {
+					m_client_list[client_h]->m_alter_item_drop_index = item_index;
 				}
 				break;
 			}
 		}
 
-	iWeight = 0;
+	weight = 0;
 	for(int i = 0; i < hb::shared::limits::MaxItems; i++)
-		if (m_pClientList[iClientH]->m_pItemList[i] != 0) {
+		if (m_client_list[client_h]->m_item_list[i] != 0) {
 
-			iWeight += m_pItemManager->iGetItemWeight(m_pClientList[iClientH]->m_pItemList[i], m_pClientList[iClientH]->m_pItemList[i]->m_dwCount);
+			weight += m_item_manager->get_item_weight(m_client_list[client_h]->m_item_list[i], m_client_list[client_h]->m_item_list[i]->m_count);
 		}
 
-	m_pClientList[iClientH]->m_iCurWeightLoad = iWeight;
+	m_client_list[client_h]->m_cur_weight_load = weight;
 
-	return iWeight;
+	return weight;
 }
 
-void CGame::CheckAndNotifyPlayerConnection(int iClientH, char* pMsg, uint32_t dwSize)
+void CGame::check_and_notify_player_connection(int client_h, char* pMsg, uint32_t size)
 {
 	char   seps[] = "= \t\r\n";
-	char* token, cName[hb::shared::limits::CharNameLen], cBuff[256], cPlayerLocation[120];
+	char* token, name[hb::shared::limits::CharNameLen], buff[256], player_location[120];
 	
 
-	if (m_pClientList[iClientH] == 0) return;
-	if (dwSize <= 0) return;
+	if (m_client_list[client_h] == 0) return;
+	if (size <= 0) return;
 
-	std::memset(cPlayerLocation, 0, sizeof(cPlayerLocation));
-	std::memset(cName, 0, sizeof(cName));
-	std::memset(cBuff, 0, sizeof(cBuff));
-	memcpy(cBuff, pMsg, dwSize);
+	std::memset(player_location, 0, sizeof(player_location));
+	std::memset(name, 0, sizeof(name));
+	std::memset(buff, 0, sizeof(buff));
+	memcpy(buff, pMsg, size);
 
-	token = strtok(cBuff, seps);
+	token = strtok(buff, seps);
 	token = strtok(NULL, seps);
 
 	if (token == 0) {
@@ -8827,566 +8847,566 @@ void CGame::CheckAndNotifyPlayerConnection(int iClientH, char* pMsg, uint32_t dw
 	}
 
 	if (strlen(token) > hb::shared::limits::CharNameLen - 1)
-		memcpy(cName, token, hb::shared::limits::CharNameLen - 1);
-	else memcpy(cName, token, strlen(token));
+		memcpy(name, token, hb::shared::limits::CharNameLen - 1);
+	else memcpy(name, token, strlen(token));
 
-	// cName     .
+	// name     .
 	for(int i = 1; i < MaxClients; i++)
-		if ((m_pClientList[i] != 0) && (hb_strnicmp(cName, m_pClientList[i]->m_cCharName, hb::shared::limits::CharNameLen - 1) == 0)) {
-			SendNotifyMsg(0, iClientH, Notify::PlayerOnGame, 0, 0, 0, m_pClientList[i]->m_cCharName, 0, 0, 0, 0, 0, 0, cPlayerLocation);
+		if ((m_client_list[i] != 0) && (hb_strnicmp(name, m_client_list[i]->m_char_name, hb::shared::limits::CharNameLen - 1) == 0)) {
+			send_notify_msg(0, client_h, Notify::PlayerOnGame, 0, 0, 0, m_client_list[i]->m_char_name, 0, 0, 0, 0, 0, 0, player_location);
 
 			return;
 		}
 
 }
 
-void CGame::SetPlayerProfile(int iClientH, char* pMsg, size_t dwMsgSize)
+void CGame::set_player_profile(int client_h, char* pMsg, size_t msg_size)
 {
-	char cTemp[256];
+	char temp[256];
 	
 
-	if (m_pClientList[iClientH] == 0) return;
-	if ((dwMsgSize - 7) <= 0) return;
+	if (m_client_list[client_h] == 0) return;
+	if ((msg_size - 7) <= 0) return;
 
-	std::memset(cTemp, 0, sizeof(cTemp));
-	memcpy(cTemp, (pMsg + 7), dwMsgSize - 7);
+	std::memset(temp, 0, sizeof(temp));
+	memcpy(temp, (pMsg + 7), msg_size - 7);
 
 	for(int i = 0; i < 256; i++)
-		if (cTemp[i] == ' ') cTemp[i] = '_';
+		if (temp[i] == ' ') temp[i] = '_';
 
-	cTemp[255] = 0;
+	temp[255] = 0;
 
-	std::memset(m_pClientList[iClientH]->m_cProfile, 0, sizeof(m_pClientList[iClientH]->m_cProfile));
-	strcpy(m_pClientList[iClientH]->m_cProfile, cTemp);
+	std::memset(m_client_list[client_h]->m_profile, 0, sizeof(m_client_list[client_h]->m_profile));
+	strcpy(m_client_list[client_h]->m_profile, temp);
 }
 
-void CGame::GetPlayerProfile(int iClientH, char* pMsg, size_t dwMsgSize)
+void CGame::get_player_profile(int client_h, char* pMsg, size_t msg_size)
 {
 	char   seps[] = "= \t\r\n";
-	char* token, cName[hb::shared::limits::CharNameLen], cBuff[256], cBuff2[500];
+	char* token, name[hb::shared::limits::CharNameLen], buff[256], buff2[500];
 	
 
-	if (m_pClientList[iClientH] == 0) return;
-	if ((dwMsgSize) <= 0) return;
+	if (m_client_list[client_h] == 0) return;
+	if ((msg_size) <= 0) return;
 
-	std::memset(cName, 0, sizeof(cName));
-	std::memset(cBuff, 0, sizeof(cBuff));
-	memcpy(cBuff, pMsg, dwMsgSize);
+	std::memset(name, 0, sizeof(name));
+	std::memset(buff, 0, sizeof(buff));
+	memcpy(buff, pMsg, msg_size);
 
-	token = strtok(cBuff, seps);
+	token = strtok(buff, seps);
 	token = strtok(NULL, seps);
 
 	if (token != 0) {
 		// token
 		if (strlen(token) > hb::shared::limits::CharNameLen - 1)
-			memcpy(cName, token, hb::shared::limits::CharNameLen - 1);
-		else memcpy(cName, token, strlen(token));
+			memcpy(name, token, hb::shared::limits::CharNameLen - 1);
+		else memcpy(name, token, strlen(token));
 
 		for(int i = 1; i < MaxClients; i++)
-			if ((m_pClientList[i] != 0) && (hb_strnicmp(m_pClientList[i]->m_cCharName, cName, hb::shared::limits::CharNameLen - 1) == 0)) {
+			if ((m_client_list[i] != 0) && (hb_strnicmp(m_client_list[i]->m_char_name, name, hb::shared::limits::CharNameLen - 1) == 0)) {
 
-				std::memset(cBuff2, 0, sizeof(cBuff2));
-				std::snprintf(cBuff2, sizeof(cBuff2), "%s Profile: %s", cName, m_pClientList[i]->m_cProfile);
-				SendNotifyMsg(0, iClientH, Notify::PlayerProfile, 0, 0, 0, cBuff2);
+				std::memset(buff2, 0, sizeof(buff2));
+				std::snprintf(buff2, sizeof(buff2), "%s Profile: %s", name, m_client_list[i]->m_profile);
+				send_notify_msg(0, client_h, Notify::PlayerProfile, 0, 0, 0, buff2);
 
 				return;
 			}
-		SendNotifyMsg(0, iClientH, Notify::PlayerNotOnGame, 0, 0, 0, cName);
+		send_notify_msg(0, client_h, Notify::PlayerNotOnGame, 0, 0, 0, name);
 	}
 
 	return;
 }
 
-void CGame::___RestorePlayerCharacteristics(int iClientH)
+void CGame::restore_player_characteristics(int client_h)
 {
-	int iStr, iDex, iInt, iVit, iMag, iCharisma;
-	int iOriginalPoint, iCurPoint, iVerifyPoint, iToBeRestoredPoint;
-	int iMax, iA, iB;
-	bool bFlag;
+	int str, dex, iInt, vit, mag, charisma;
+	int original_point, cur_point, verify_point, to_be_restored_point;
+	int max, iA, iB;
+	bool flag;
 	return;
-	if (m_pClientList[iClientH] == 0) return;
+	if (m_client_list[client_h] == 0) return;
 
-	iStr = m_pClientList[iClientH]->m_iStr;
-	iDex = m_pClientList[iClientH]->m_iDex;
-	iInt = m_pClientList[iClientH]->m_iInt;
-	iVit = m_pClientList[iClientH]->m_iVit;
-	iMag = m_pClientList[iClientH]->m_iMag;
-	iCharisma = m_pClientList[iClientH]->m_iCharisma;
+	str = m_client_list[client_h]->m_str;
+	dex = m_client_list[client_h]->m_dex;
+	iInt = m_client_list[client_h]->m_int;
+	vit = m_client_list[client_h]->m_vit;
+	mag = m_client_list[client_h]->m_mag;
+	charisma = m_client_list[client_h]->m_charisma;
 
-	iCurPoint = m_pClientList[iClientH]->m_iStr + m_pClientList[iClientH]->m_iInt +
-		m_pClientList[iClientH]->m_iVit + m_pClientList[iClientH]->m_iDex +
-		m_pClientList[iClientH]->m_iMag + m_pClientList[iClientH]->m_iCharisma;
+	cur_point = m_client_list[client_h]->m_str + m_client_list[client_h]->m_int +
+		m_client_list[client_h]->m_vit + m_client_list[client_h]->m_dex +
+		m_client_list[client_h]->m_mag + m_client_list[client_h]->m_charisma;
 
-	iOriginalPoint = (m_pClientList[iClientH]->m_iLevel - 1) * 3 + 70;
+	original_point = (m_client_list[client_h]->m_level - 1) * 3 + 70;
 
-	iToBeRestoredPoint = iOriginalPoint - iCurPoint;
+	to_be_restored_point = original_point - cur_point;
 
-	if (iToBeRestoredPoint == 0) return;
+	if (to_be_restored_point == 0) return;
 
-	if (iToBeRestoredPoint > 0) {
-		// iToBeRestoredPoint   .
+	if (to_be_restored_point > 0) {
+		// to_be_restored_point   .
 		while (1) {
-			bFlag = false;
+			flag = false;
 
-			if ((iToBeRestoredPoint > 0) && (m_pClientList[iClientH]->m_iStr < 10)) {
-				m_pClientList[iClientH]->m_iStr++;
-				iToBeRestoredPoint--;
-				bFlag = true;
+			if ((to_be_restored_point > 0) && (m_client_list[client_h]->m_str < 10)) {
+				m_client_list[client_h]->m_str++;
+				to_be_restored_point--;
+				flag = true;
 			}
-			if ((iToBeRestoredPoint > 0) && (m_pClientList[iClientH]->m_iMag < 10)) {
-				m_pClientList[iClientH]->m_iMag++;
-				iToBeRestoredPoint--;
-				bFlag = true;
+			if ((to_be_restored_point > 0) && (m_client_list[client_h]->m_mag < 10)) {
+				m_client_list[client_h]->m_mag++;
+				to_be_restored_point--;
+				flag = true;
 			}
-			if ((iToBeRestoredPoint > 0) && (m_pClientList[iClientH]->m_iInt < 10)) {
-				m_pClientList[iClientH]->m_iInt++;
-				iToBeRestoredPoint--;
-				bFlag = true;
+			if ((to_be_restored_point > 0) && (m_client_list[client_h]->m_int < 10)) {
+				m_client_list[client_h]->m_int++;
+				to_be_restored_point--;
+				flag = true;
 			}
-			if ((iToBeRestoredPoint > 0) && (m_pClientList[iClientH]->m_iDex < 10)) {
-				m_pClientList[iClientH]->m_iDex++;
-				iToBeRestoredPoint--;
-				bFlag = true;
+			if ((to_be_restored_point > 0) && (m_client_list[client_h]->m_dex < 10)) {
+				m_client_list[client_h]->m_dex++;
+				to_be_restored_point--;
+				flag = true;
 			}
-			if ((iToBeRestoredPoint > 0) && (m_pClientList[iClientH]->m_iVit < 10)) {
-				m_pClientList[iClientH]->m_iVit++;
-				iToBeRestoredPoint--;
-				bFlag = true;
+			if ((to_be_restored_point > 0) && (m_client_list[client_h]->m_vit < 10)) {
+				m_client_list[client_h]->m_vit++;
+				to_be_restored_point--;
+				flag = true;
 			}
-			if ((iToBeRestoredPoint > 0) && (m_pClientList[iClientH]->m_iCharisma < 10)) {
-				m_pClientList[iClientH]->m_iCharisma++;
-				iToBeRestoredPoint--;
-				bFlag = true;
+			if ((to_be_restored_point > 0) && (m_client_list[client_h]->m_charisma < 10)) {
+				m_client_list[client_h]->m_charisma++;
+				to_be_restored_point--;
+				flag = true;
 			}
 
-			if (bFlag == false)          break;
-			if (iToBeRestoredPoint <= 0) break;
+			if (flag == false)          break;
+			if (to_be_restored_point <= 0) break;
 		}
 
-		// iMax, Str iMax/2   .
-		iMax = m_pClientList[iClientH]->m_cSkillMastery[5];
+		// max, Str max/2   .
+		max = m_client_list[client_h]->m_skill_mastery[5];
 
-		if (m_pClientList[iClientH]->m_iStr < (iMax / 2)) {
+		if (m_client_list[client_h]->m_str < (max / 2)) {
 
 			while (1) {
-				if ((iToBeRestoredPoint > 0) && (m_pClientList[iClientH]->m_iStr < (iMax / 2))) {
-					m_pClientList[iClientH]->m_iStr++;
-					iToBeRestoredPoint--;
+				if ((to_be_restored_point > 0) && (m_client_list[client_h]->m_str < (max / 2))) {
+					m_client_list[client_h]->m_str++;
+					to_be_restored_point--;
 				}
 
-				if (m_pClientList[iClientH]->m_iStr == (iMax / 2)) break;
-				if (iToBeRestoredPoint <= 0) break;
+				if (m_client_list[client_h]->m_str == (max / 2)) break;
+				if (to_be_restored_point <= 0) break;
 			}
 		}
 
-		// iMax, Dex iMax/2   .
-		iA = m_pClientList[iClientH]->m_cSkillMastery[7];
-		iB = m_pClientList[iClientH]->m_cSkillMastery[8];
+		// max, Dex max/2   .
+		iA = m_client_list[client_h]->m_skill_mastery[7];
+		iB = m_client_list[client_h]->m_skill_mastery[8];
 		if (iA > iB)
-			iMax = iA;
-		else iMax = iB;
-		iA = m_pClientList[iClientH]->m_cSkillMastery[9];
-		if (iA > iMax) iMax = iA;
-		iA = m_pClientList[iClientH]->m_cSkillMastery[6];
-		if (iA > iMax) iMax = iA;
+			max = iA;
+		else max = iB;
+		iA = m_client_list[client_h]->m_skill_mastery[9];
+		if (iA > max) max = iA;
+		iA = m_client_list[client_h]->m_skill_mastery[6];
+		if (iA > max) max = iA;
 
-		if (m_pClientList[iClientH]->m_iDex < (iMax / 2)) {
+		if (m_client_list[client_h]->m_dex < (max / 2)) {
 
 			while (1) {
-				if ((iToBeRestoredPoint > 0) && (m_pClientList[iClientH]->m_iDex < (iMax / 2))) {
-					m_pClientList[iClientH]->m_iDex++;
-					iToBeRestoredPoint--;
+				if ((to_be_restored_point > 0) && (m_client_list[client_h]->m_dex < (max / 2))) {
+					m_client_list[client_h]->m_dex++;
+					to_be_restored_point--;
 				}
 
-				if (m_pClientList[iClientH]->m_iDex == (iMax / 2)) break;
-				if (iToBeRestoredPoint <= 0) break;
+				if (m_client_list[client_h]->m_dex == (max / 2)) break;
+				if (to_be_restored_point <= 0) break;
 			}
 		}
 
-		// iMax, Int iMax/2   .
-		iMax = m_pClientList[iClientH]->m_cSkillMastery[19];
+		// max, Int max/2   .
+		max = m_client_list[client_h]->m_skill_mastery[19];
 
-		if (m_pClientList[iClientH]->m_iInt < (iMax / 2)) {
+		if (m_client_list[client_h]->m_int < (max / 2)) {
 
 			while (1) {
-				if ((iToBeRestoredPoint > 0) && (m_pClientList[iClientH]->m_iInt < (iMax / 2))) {
-					m_pClientList[iClientH]->m_iInt++;
-					iToBeRestoredPoint--;
+				if ((to_be_restored_point > 0) && (m_client_list[client_h]->m_int < (max / 2))) {
+					m_client_list[client_h]->m_int++;
+					to_be_restored_point--;
 				}
 
-				if (m_pClientList[iClientH]->m_iInt == (iMax / 2)) break;
-				if (iToBeRestoredPoint <= 0) break;
+				if (m_client_list[client_h]->m_int == (max / 2)) break;
+				if (to_be_restored_point <= 0) break;
 			}
 		}
 
-		// iMax, Mag iMax/2   .
-		iA = m_pClientList[iClientH]->m_cSkillMastery[3];
-		iB = m_pClientList[iClientH]->m_cSkillMastery[4];
+		// max, Mag max/2   .
+		iA = m_client_list[client_h]->m_skill_mastery[3];
+		iB = m_client_list[client_h]->m_skill_mastery[4];
 		if (iA > iB)
-			iMax = iA;
-		else iMax = iB;
+			max = iA;
+		else max = iB;
 
-		if (m_pClientList[iClientH]->m_iMag < (iMax / 2)) {
+		if (m_client_list[client_h]->m_mag < (max / 2)) {
 
 			while (1) {
-				if ((iToBeRestoredPoint > 0) && (m_pClientList[iClientH]->m_iMag < (iMax / 2))) {
-					m_pClientList[iClientH]->m_iMag++;
-					iToBeRestoredPoint--;
+				if ((to_be_restored_point > 0) && (m_client_list[client_h]->m_mag < (max / 2))) {
+					m_client_list[client_h]->m_mag++;
+					to_be_restored_point--;
 				}
 
-				if (m_pClientList[iClientH]->m_iMag == (iMax / 2)) break;
-				if (iToBeRestoredPoint <= 0) break;
+				if (m_client_list[client_h]->m_mag == (max / 2)) break;
+				if (to_be_restored_point <= 0) break;
 			}
 		}
 
-		while (iToBeRestoredPoint != 0) {
-			switch (iDice(1, 6)) {
+		while (to_be_restored_point != 0) {
+			switch (dice(1, 6)) {
 			case 1:
-				if (m_pClientList[iClientH]->m_iStr < CharPointLimit) {
-					m_pClientList[iClientH]->m_iStr++;
-					iToBeRestoredPoint--;
+				if (m_client_list[client_h]->m_str < CharPointLimit) {
+					m_client_list[client_h]->m_str++;
+					to_be_restored_point--;
 				}
 				break;
 			case 2:
-				if (m_pClientList[iClientH]->m_iVit < CharPointLimit) {
-					m_pClientList[iClientH]->m_iVit++;
-					iToBeRestoredPoint--;
+				if (m_client_list[client_h]->m_vit < CharPointLimit) {
+					m_client_list[client_h]->m_vit++;
+					to_be_restored_point--;
 				}
 				break;
 			case 3:
-				if (m_pClientList[iClientH]->m_iDex < CharPointLimit) {
-					m_pClientList[iClientH]->m_iDex++;
-					iToBeRestoredPoint--;
+				if (m_client_list[client_h]->m_dex < CharPointLimit) {
+					m_client_list[client_h]->m_dex++;
+					to_be_restored_point--;
 				}
 				break;
 			case 4:
-				if (m_pClientList[iClientH]->m_iMag < CharPointLimit) {
-					m_pClientList[iClientH]->m_iMag++;
-					iToBeRestoredPoint--;
+				if (m_client_list[client_h]->m_mag < CharPointLimit) {
+					m_client_list[client_h]->m_mag++;
+					to_be_restored_point--;
 				}
 				break;
 			case 5:
-				if (m_pClientList[iClientH]->m_iInt < CharPointLimit) {
-					m_pClientList[iClientH]->m_iInt++;
-					iToBeRestoredPoint--;
+				if (m_client_list[client_h]->m_int < CharPointLimit) {
+					m_client_list[client_h]->m_int++;
+					to_be_restored_point--;
 				}
 				break;
 			case 6:
-				if (m_pClientList[iClientH]->m_iCharisma < CharPointLimit) {
-					m_pClientList[iClientH]->m_iCharisma++;
-					iToBeRestoredPoint--;
+				if (m_client_list[client_h]->m_charisma < CharPointLimit) {
+					m_client_list[client_h]->m_charisma++;
+					to_be_restored_point--;
 				}
 				break;
 			}
 		}
 
-		iVerifyPoint = m_pClientList[iClientH]->m_iStr + m_pClientList[iClientH]->m_iInt +
-			m_pClientList[iClientH]->m_iVit + m_pClientList[iClientH]->m_iDex +
-			m_pClientList[iClientH]->m_iMag + m_pClientList[iClientH]->m_iCharisma;
+		verify_point = m_client_list[client_h]->m_str + m_client_list[client_h]->m_int +
+			m_client_list[client_h]->m_vit + m_client_list[client_h]->m_dex +
+			m_client_list[client_h]->m_mag + m_client_list[client_h]->m_charisma;
 
-		if (iVerifyPoint != iOriginalPoint) {
-			hb::logger::log("Stat restoration (minor) failed: player={} ({}/{})", m_pClientList[iClientH]->m_cCharName, iVerifyPoint, iOriginalPoint);
+		if (verify_point != original_point) {
+			hb::logger::log("Stat restoration (minor) failed: player={} ({}/{})", m_client_list[client_h]->m_char_name, verify_point, original_point);
 
-			m_pClientList[iClientH]->m_iStr = iStr;
-			m_pClientList[iClientH]->m_iDex = iDex;
-			m_pClientList[iClientH]->m_iInt = iInt;
-			m_pClientList[iClientH]->m_iVit = iVit;
-			m_pClientList[iClientH]->m_iMag = iMag;
-			m_pClientList[iClientH]->m_iCharisma = iCharisma;
+			m_client_list[client_h]->m_str = str;
+			m_client_list[client_h]->m_dex = dex;
+			m_client_list[client_h]->m_int = iInt;
+			m_client_list[client_h]->m_vit = vit;
+			m_client_list[client_h]->m_mag = mag;
+			m_client_list[client_h]->m_charisma = charisma;
 		}
 		else {
-			hb::logger::log("Stat restoration (minor) succeeded: player={} ({}/{})", m_pClientList[iClientH]->m_cCharName, iVerifyPoint, iOriginalPoint);
+			hb::logger::log("Stat restoration (minor) succeeded: player={} ({}/{})", m_client_list[client_h]->m_char_name, verify_point, original_point);
 		}
 	}
 	else {
-		// .   . iToBeRestoredPoint !
+		// .   . to_be_restored_point !
 
 		while (1) {
-			bFlag = false;
-			if (m_pClientList[iClientH]->m_iStr > CharPointLimit) {
-				bFlag = true;
-				m_pClientList[iClientH]->m_iStr--;
-				iToBeRestoredPoint++;
+			flag = false;
+			if (m_client_list[client_h]->m_str > CharPointLimit) {
+				flag = true;
+				m_client_list[client_h]->m_str--;
+				to_be_restored_point++;
 			}
 
-			if (m_pClientList[iClientH]->m_iDex > CharPointLimit) {
-				bFlag = true;
-				m_pClientList[iClientH]->m_iDex--;
-				iToBeRestoredPoint++;
+			if (m_client_list[client_h]->m_dex > CharPointLimit) {
+				flag = true;
+				m_client_list[client_h]->m_dex--;
+				to_be_restored_point++;
 			}
 
-			if (m_pClientList[iClientH]->m_iVit > CharPointLimit) {
-				bFlag = true;
-				m_pClientList[iClientH]->m_iVit--;
-				iToBeRestoredPoint++;
+			if (m_client_list[client_h]->m_vit > CharPointLimit) {
+				flag = true;
+				m_client_list[client_h]->m_vit--;
+				to_be_restored_point++;
 			}
 
-			if (m_pClientList[iClientH]->m_iInt > CharPointLimit) {
-				bFlag = true;
-				m_pClientList[iClientH]->m_iInt--;
-				iToBeRestoredPoint++;
+			if (m_client_list[client_h]->m_int > CharPointLimit) {
+				flag = true;
+				m_client_list[client_h]->m_int--;
+				to_be_restored_point++;
 			}
 
-			if (m_pClientList[iClientH]->m_iMag > CharPointLimit) {
-				bFlag = true;
-				m_pClientList[iClientH]->m_iMag--;
-				iToBeRestoredPoint++;
+			if (m_client_list[client_h]->m_mag > CharPointLimit) {
+				flag = true;
+				m_client_list[client_h]->m_mag--;
+				to_be_restored_point++;
 			}
 
-			if (m_pClientList[iClientH]->m_iCharisma > CharPointLimit) {
-				bFlag = true;
-				m_pClientList[iClientH]->m_iCharisma--;
-				iToBeRestoredPoint++;
+			if (m_client_list[client_h]->m_charisma > CharPointLimit) {
+				flag = true;
+				m_client_list[client_h]->m_charisma--;
+				to_be_restored_point++;
 			}
 
-			if (bFlag == false)	break;
-			if (iToBeRestoredPoint >= 0) break;
+			if (flag == false)	break;
+			if (to_be_restored_point >= 0) break;
 		}
 
-		if (iToBeRestoredPoint < 0) {
-			while (iToBeRestoredPoint != 0) {
-				switch (iDice(1, 6)) {
+		if (to_be_restored_point < 0) {
+			while (to_be_restored_point != 0) {
+				switch (dice(1, 6)) {
 				case 1:
-					if (m_pClientList[iClientH]->m_iStr > 10) {
-						m_pClientList[iClientH]->m_iStr--;
-						iToBeRestoredPoint++;
+					if (m_client_list[client_h]->m_str > 10) {
+						m_client_list[client_h]->m_str--;
+						to_be_restored_point++;
 					}
 					break;
 				case 2:
-					if (m_pClientList[iClientH]->m_iVit > 10) {
-						m_pClientList[iClientH]->m_iVit--;
-						iToBeRestoredPoint++;
+					if (m_client_list[client_h]->m_vit > 10) {
+						m_client_list[client_h]->m_vit--;
+						to_be_restored_point++;
 					}
 					break;
 				case 3:
-					if (m_pClientList[iClientH]->m_iDex > 10) {
-						m_pClientList[iClientH]->m_iDex--;
-						iToBeRestoredPoint++;
+					if (m_client_list[client_h]->m_dex > 10) {
+						m_client_list[client_h]->m_dex--;
+						to_be_restored_point++;
 					}
 					break;
 				case 4:
-					if (m_pClientList[iClientH]->m_iMag > 10) {
-						m_pClientList[iClientH]->m_iMag--;
-						iToBeRestoredPoint++;
+					if (m_client_list[client_h]->m_mag > 10) {
+						m_client_list[client_h]->m_mag--;
+						to_be_restored_point++;
 					}
 					break;
 				case 5:
-					if (m_pClientList[iClientH]->m_iInt > 10) {
-						m_pClientList[iClientH]->m_iInt--;
-						iToBeRestoredPoint++;
+					if (m_client_list[client_h]->m_int > 10) {
+						m_client_list[client_h]->m_int--;
+						to_be_restored_point++;
 					}
 					break;
 				case 6:
-					if (m_pClientList[iClientH]->m_iCharisma > 10) {
-						m_pClientList[iClientH]->m_iCharisma--;
-						iToBeRestoredPoint++;
+					if (m_client_list[client_h]->m_charisma > 10) {
+						m_client_list[client_h]->m_charisma--;
+						to_be_restored_point++;
 					}
 					break;
 				}
 			}
 		}
 		else {
-			while (iToBeRestoredPoint != 0) {
-				switch (iDice(1, 6)) {
+			while (to_be_restored_point != 0) {
+				switch (dice(1, 6)) {
 				case 1:
-					if (m_pClientList[iClientH]->m_iStr < CharPointLimit) {
-						m_pClientList[iClientH]->m_iStr++;
-						iToBeRestoredPoint--;
+					if (m_client_list[client_h]->m_str < CharPointLimit) {
+						m_client_list[client_h]->m_str++;
+						to_be_restored_point--;
 					}
 					break;
 				case 2:
-					if (m_pClientList[iClientH]->m_iVit < CharPointLimit) {
-						m_pClientList[iClientH]->m_iVit++;
-						iToBeRestoredPoint--;
+					if (m_client_list[client_h]->m_vit < CharPointLimit) {
+						m_client_list[client_h]->m_vit++;
+						to_be_restored_point--;
 					}
 					break;
 				case 3:
-					if (m_pClientList[iClientH]->m_iDex < CharPointLimit) {
-						m_pClientList[iClientH]->m_iDex++;
-						iToBeRestoredPoint--;
+					if (m_client_list[client_h]->m_dex < CharPointLimit) {
+						m_client_list[client_h]->m_dex++;
+						to_be_restored_point--;
 					}
 					break;
 				case 4:
-					if (m_pClientList[iClientH]->m_iMag < CharPointLimit) {
-						m_pClientList[iClientH]->m_iMag++;
-						iToBeRestoredPoint--;
+					if (m_client_list[client_h]->m_mag < CharPointLimit) {
+						m_client_list[client_h]->m_mag++;
+						to_be_restored_point--;
 					}
 					break;
 				case 5:
-					if (m_pClientList[iClientH]->m_iInt < CharPointLimit) {
-						m_pClientList[iClientH]->m_iInt++;
-						iToBeRestoredPoint--;
+					if (m_client_list[client_h]->m_int < CharPointLimit) {
+						m_client_list[client_h]->m_int++;
+						to_be_restored_point--;
 					}
 					break;
 				case 6:
-					if (m_pClientList[iClientH]->m_iCharisma < CharPointLimit) {
-						m_pClientList[iClientH]->m_iCharisma++;
-						iToBeRestoredPoint--;
+					if (m_client_list[client_h]->m_charisma < CharPointLimit) {
+						m_client_list[client_h]->m_charisma++;
+						to_be_restored_point--;
 					}
 					break;
 				}
 			}
 		}
 
-		iVerifyPoint = m_pClientList[iClientH]->m_iStr + m_pClientList[iClientH]->m_iInt +
-			m_pClientList[iClientH]->m_iVit + m_pClientList[iClientH]->m_iDex +
-			m_pClientList[iClientH]->m_iMag + m_pClientList[iClientH]->m_iCharisma;
+		verify_point = m_client_list[client_h]->m_str + m_client_list[client_h]->m_int +
+			m_client_list[client_h]->m_vit + m_client_list[client_h]->m_dex +
+			m_client_list[client_h]->m_mag + m_client_list[client_h]->m_charisma;
 
-		if (iVerifyPoint != iOriginalPoint) {
-			hb::logger::log("Stat restoration (overflow) failed: player={} ({}/{})", m_pClientList[iClientH]->m_cCharName, iVerifyPoint, iOriginalPoint);
+		if (verify_point != original_point) {
+			hb::logger::log("Stat restoration (overflow) failed: player={} ({}/{})", m_client_list[client_h]->m_char_name, verify_point, original_point);
 
 		}
 		else {
-			hb::logger::log("Stat restoration (overflow) succeeded: player={} ({}/{})", m_pClientList[iClientH]->m_cCharName, iVerifyPoint, iOriginalPoint);
+			hb::logger::log("Stat restoration (overflow) succeeded: player={} ({}/{})", m_client_list[client_h]->m_char_name, verify_point, original_point);
 		}
 	}
 }
 
-int CGame::_iGetPlayerNumberOnSpot(short dX, short dY, char cMapIndex, char cRange)
+int CGame::get_player_number_on_spot(short dX, short dY, char map_index, char range)
 {
-	int iSum = 0;
-	short sOwnerH;
-	char  cOwnerType;
+	int sum = 0;
+	short owner_h;
+	char  owner_type;
 
-	for(int ix = dX - cRange; ix <= dX + cRange; ix++)
-		for(int iy = dY - cRange; iy <= dY + cRange; iy++) {
-			m_pMapList[cMapIndex]->GetOwner(&sOwnerH, &cOwnerType, ix, iy);
-			if ((sOwnerH != 0) && (cOwnerType == hb::shared::owner_class::Player))
-				iSum++;
+	for(int ix = dX - range; ix <= dX + range; ix++)
+		for(int iy = dY - range; iy <= dY + range; iy++) {
+			m_map_list[map_index]->get_owner(&owner_h, &owner_type, ix, iy);
+			if ((owner_h != 0) && (owner_type == hb::shared::owner_class::Player))
+				sum++;
 		}
 
-	return iSum;
+	return sum;
 }
 
-void CGame::CheckDayOrNightMode()
+void CGame::check_day_or_night_mode()
 {
 	hb::time::local_time SysTime{};
-	char cPrevMode;
+	char prev_mode;
 
 	// DEBUG: Force night mode for testing light effects
 	// Set to 0 to use normal day/night cycle, 1 for forced day, 2 for forced night
 	constexpr int DEBUG_FORCE_TIME = 0;
 
-	cPrevMode = m_cDayOrNight;
+	prev_mode = m_day_or_night;
 
 	SysTime = hb::time::local_time::now();
-	if (SysTime.minute >= m_iNighttimeDuration)
-		m_cDayOrNight = 2;
-	else m_cDayOrNight = 1;
+	if (SysTime.minute >= m_nighttime_duration)
+		m_day_or_night = 2;
+	else m_day_or_night = 1;
 
-	if (cPrevMode != m_cDayOrNight) {
+	if (prev_mode != m_day_or_night) {
 		for(int i = 1; i < MaxClients; i++)
-			if ((m_pClientList[i] != 0) && (m_pClientList[i]->m_bIsInitComplete)) {
-				if ((m_pClientList[i]->m_cMapIndex >= 0) &&
-					(m_pMapList[m_pClientList[i]->m_cMapIndex] != 0) &&
-					(m_pMapList[m_pClientList[i]->m_cMapIndex]->m_bIsFixedDayMode == false))
-					SendNotifyMsg(0, i, Notify::TimeChange, m_cDayOrNight, 0, 0, 0);
+			if ((m_client_list[i] != 0) && (m_client_list[i]->m_is_init_complete)) {
+				if ((m_client_list[i]->m_map_index >= 0) &&
+					(m_map_list[m_client_list[i]->m_map_index] != 0) &&
+					(m_map_list[m_client_list[i]->m_map_index]->m_is_fixed_day_mode == false))
+					send_notify_msg(0, i, Notify::TimeChange, m_day_or_night, 0, 0, 0);
 			}
 	}
 }
 
-void CGame::SetPlayerReputation(int iClientH, char* pMsg, char cValue, size_t dwMsgSize)
+void CGame::set_player_reputation(int client_h, char* pMsg, char value, size_t msg_size)
 {
 	char   seps[] = "= \t\r\n";
-	char* token, cName[hb::shared::limits::CharNameLen], cBuff[256];
+	char* token, name[hb::shared::limits::CharNameLen], buff[256];
 	
 
-	if (m_pClientList[iClientH] == 0) return;
-	if ((dwMsgSize) <= 0) return;
-	if (m_pClientList[iClientH]->m_iLevel < 40) return;
+	if (m_client_list[client_h] == 0) return;
+	if ((msg_size) <= 0) return;
+	if (m_client_list[client_h]->m_level < 40) return;
 
-	if ((m_pClientList[iClientH]->m_iTimeLeft_Rating != 0) || (m_pClientList[iClientH]->m_iPKCount != 0)) {
-		SendNotifyMsg(0, iClientH, Notify::CannotRating, m_pClientList[iClientH]->m_iTimeLeft_Rating, 0, 0, 0);
+	if ((m_client_list[client_h]->m_time_left_rating != 0) || (m_client_list[client_h]->m_player_kill_count != 0)) {
+		send_notify_msg(0, client_h, Notify::CannotRating, m_client_list[client_h]->m_time_left_rating, 0, 0, 0);
 		return;
 	}
-	else if (memcmp(m_pClientList[iClientH]->m_cLocation, "NONE", 4) == 0) {
-		SendNotifyMsg(0, iClientH, Notify::CannotRating, 0, 0, 0, 0);
+	else if (memcmp(m_client_list[client_h]->m_location, "NONE", 4) == 0) {
+		send_notify_msg(0, client_h, Notify::CannotRating, 0, 0, 0, 0);
 		return;
 	}
 
-	std::memset(cName, 0, sizeof(cName));
-	std::memset(cBuff, 0, sizeof(cBuff));
-	memcpy(cBuff, pMsg, dwMsgSize);
+	std::memset(name, 0, sizeof(name));
+	std::memset(buff, 0, sizeof(buff));
+	memcpy(buff, pMsg, msg_size);
 
-	token = strtok(cBuff, seps);
+	token = strtok(buff, seps);
 	token = strtok(NULL, seps);
 
 	if (token != 0) {
 		// token
 		if (strlen(token) > hb::shared::limits::CharNameLen - 1)
-			memcpy(cName, token, hb::shared::limits::CharNameLen - 1);
-		else memcpy(cName, token, strlen(token));
+			memcpy(name, token, hb::shared::limits::CharNameLen - 1);
+		else memcpy(name, token, strlen(token));
 
 		for(int i = 1; i < MaxClients; i++)
-			if ((m_pClientList[i] != 0) && (hb_strnicmp(m_pClientList[i]->m_cCharName, cName, hb::shared::limits::CharNameLen - 1) == 0)) {
+			if ((m_client_list[i] != 0) && (hb_strnicmp(m_client_list[i]->m_char_name, name, hb::shared::limits::CharNameLen - 1) == 0)) {
 
-				if (i != iClientH) {
-					if (cValue == 0)
-						m_pClientList[i]->m_iRating--;
-					else if (cValue == 1)
-						m_pClientList[i]->m_iRating++;
+				if (i != client_h) {
+					if (value == 0)
+						m_client_list[i]->m_rating--;
+					else if (value == 1)
+						m_client_list[i]->m_rating++;
 
-					if (m_pClientList[i]->m_iRating > 500)  m_pClientList[i]->m_iRating = 500;
-					if (m_pClientList[i]->m_iRating < -500) m_pClientList[i]->m_iRating = -500;
-					m_pClientList[iClientH]->m_iTimeLeft_Rating = 20 * 60;
+					if (m_client_list[i]->m_rating > 500)  m_client_list[i]->m_rating = 500;
+					if (m_client_list[i]->m_rating < -500) m_client_list[i]->m_rating = -500;
+					m_client_list[client_h]->m_time_left_rating = 20 * 60;
 
-					SendNotifyMsg(0, i, Notify::RatingPlayer, cValue, 0, 0, cName);
-					SendNotifyMsg(0, iClientH, Notify::RatingPlayer, cValue, 0, 0, cName);
+					send_notify_msg(0, i, Notify::RatingPlayer, value, 0, 0, name);
+					send_notify_msg(0, client_h, Notify::RatingPlayer, value, 0, 0, name);
 
 					return;
 				}
 			}
-		SendNotifyMsg(0, iClientH, Notify::PlayerNotOnGame, 0, 0, 0, cName);
+		send_notify_msg(0, client_h, Notify::PlayerNotOnGame, 0, 0, 0, name);
 	}
 
 	return;
 }
 
-bool CGame::bReadNotifyMsgListFile(const char* cFn)
+bool CGame::read_notify_msg_list_file(const char* fn)
 {
-	FILE* pFile;
-	uint32_t  dwFileSize;
-	char* cp, * token, cReadMode;
+	FILE* file;
+	uint32_t  file_size;
+	char* cp, * token, read_mode;
 	char seps[] = "=\t\n;";
 
-	cReadMode = 0;
-	m_iTotalNoticeMsg = 0;
+	read_mode = 0;
+	m_total_notice_msg = 0;
 
 	std::error_code ec;
-	auto fsize = std::filesystem::file_size(cFn, ec);
-	dwFileSize = ec ? 0 : static_cast<uint32_t>(fsize);
+	auto fsize = std::filesystem::file_size(fn, ec);
+	file_size = ec ? 0 : static_cast<uint32_t>(fsize);
 
-	pFile = fopen(cFn, "rt");
-	if (pFile == 0) {
+	file = fopen(fn, "rt");
+	if (file == 0) {
 		hb::logger::log("Notify message list file not found");
 		return false;
 	}
 	else {
 		hb::logger::log("Reading notify message list file");
-		cp = new char[dwFileSize + 2];
-		std::memset(cp, 0, dwFileSize + 2);
-		fread(cp, dwFileSize, 1, pFile);
+		cp = new char[file_size + 2];
+		std::memset(cp, 0, file_size + 2);
+		fread(cp, file_size, 1, file);
 
 		token = strtok(cp, seps);
 		while (token != 0) {
 
-			if (cReadMode != 0) {
-				switch (cReadMode) {
+			if (read_mode != 0) {
+				switch (read_mode) {
 				case 1:
 					for(int i = 0; i < MaxNotifyMsgs; i++)
-						if (m_pNoticeMsgList[i] == 0) {
-							m_pNoticeMsgList[i] = new class CMsg;
-							m_pNoticeMsgList[i]->bPut(0, token, strlen(token), 0, 0);
-							m_iTotalNoticeMsg++;
+						if (m_notice_msg_list[i] == 0) {
+							m_notice_msg_list[i] = new class CMsg;
+							m_notice_msg_list[i]->put(0, token, strlen(token), 0, 0);
+							m_total_notice_msg++;
 							goto LNML_NEXTSTEP1;
 						}
 				LNML_NEXTSTEP1:
-					cReadMode = 0;
+					read_mode = 0;
 					break;
 				}
 			}
 			else {
-				if (memcmp(token, "notify_msg", 10) == 0) cReadMode = 1;
+				if (memcmp(token, "notify_msg", 10) == 0) read_mode = 1;
 			}
 
 			token = strtok(NULL, seps);
@@ -9394,278 +9414,278 @@ bool CGame::bReadNotifyMsgListFile(const char* cFn)
 
 		delete cp;
 	}
-	if (pFile != 0) fclose(pFile);
+	if (file != 0) fclose(file);
 
 	return true;
 }
-void CGame::NoticeHandler()
+void CGame::notice_handler()
 {
-	char  cTemp, cBuffer[1000], cKey;
-	size_t dwSize = 0;
-	uint32_t dwTime = GameClock::GetTimeMS();
-	int iMsgIndex, iTemp;
+	char  temp, buffer[1000], key;
+	size_t size = 0;
+	uint32_t time = GameClock::GetTimeMS();
+	int msg_index, temp_int;
 
-	if (m_iTotalNoticeMsg <= 1) return;
+	if (m_total_notice_msg <= 1) return;
 
-	if ((dwTime - m_dwNoticeTime) > NoticeTime) {
-		m_dwNoticeTime = dwTime;
+	if ((time - m_notice_time) > NoticeTime) {
+		m_notice_time = time;
 		do {
-			iMsgIndex = iDice(1, m_iTotalNoticeMsg) - 1;
-		} while (iMsgIndex == m_iPrevSendNoticeMsg);
+			msg_index = dice(1, m_total_notice_msg) - 1;
+		} while (msg_index == m_prev_send_notice_msg);
 
-		m_iPrevSendNoticeMsg = iMsgIndex;
+		m_prev_send_notice_msg = msg_index;
 
-		std::memset(cBuffer, 0, sizeof(cBuffer));
-		if (m_pNoticeMsgList[iMsgIndex] != 0) {
-			m_pNoticeMsgList[iMsgIndex]->Get(&cTemp, cBuffer, &dwSize, &iTemp, &cKey);
+		std::memset(buffer, 0, sizeof(buffer));
+		if (m_notice_msg_list[msg_index] != 0) {
+			m_notice_msg_list[msg_index]->get(&temp, buffer, &size, &temp_int, &key);
 		}
 
 		for(int i = 1; i < MaxClients; i++)
-			if (m_pClientList[i] != 0) {
-				SendNotifyMsg(0, i, Notify::NoticeMsg, 0, 0, 0, cBuffer);
+			if (m_client_list[i] != 0) {
+				send_notify_msg(0, i, Notify::NoticeMsg, 0, 0, 0, buffer);
 			}
 	}
 }
 
-void CGame::ResponseSavePlayerDataReplyHandler(char* pData, size_t dwMsgSize)
+void CGame::response_save_player_data_reply_handler(char* data, size_t msg_size)
 {
-	char* cp, cCharName[hb::shared::limits::CharNameLen];
+	char* cp, char_name[hb::shared::limits::CharNameLen];
 
-	std::memset(cCharName, 0, sizeof(cCharName));
+	std::memset(char_name, 0, sizeof(char_name));
 
-	const auto* header = hb::net::PacketCast<hb::net::PacketHeader>(pData, sizeof(hb::net::PacketHeader));
+	const auto* header = hb::net::PacketCast<hb::net::PacketHeader>(data, sizeof(hb::net::PacketHeader));
 	if (!header) return;
-	cp = (char*)(pData + sizeof(hb::net::PacketHeader));
-	memcpy(cCharName, cp, hb::shared::limits::CharNameLen - 1);
+	cp = (char*)(data + sizeof(hb::net::PacketHeader));
+	memcpy(char_name, cp, hb::shared::limits::CharNameLen - 1);
 
 	for(int i = 0; i < MaxClients; i++)
-		if (m_pClientList[i] != 0) {
-			if (hb_strnicmp(m_pClientList[i]->m_cCharName, cCharName, hb::shared::limits::CharNameLen - 1) == 0) {
-				SendNotifyMsg(0, i, Notify::ServerChange, 0, 0, 0, 0);
+		if (m_client_list[i] != 0) {
+			if (hb_strnicmp(m_client_list[i]->m_char_name, char_name, hb::shared::limits::CharNameLen - 1) == 0) {
+				send_notify_msg(0, i, Notify::ServerChange, 0, 0, 0, 0);
 			}
 		}
 }
 
-void CGame::CalcExpStock(int iClientH)
+void CGame::calc_exp_stock(int client_h)
 {
-	bool bIsLevelUp;
-	CItem* pItem;
+	bool is_level_up;
+	CItem* item;
 
-	if (m_pClientList[iClientH] == 0) return;
-	if (m_pClientList[iClientH]->m_bIsInitComplete == false) return;
-	if (m_pClientList[iClientH]->m_iExpStock <= 0) return;
-	//if ((m_pClientList[iClientH]->m_iLevel >= m_iMaxLevel) && (m_pClientList[iClientH]->m_iExp >= m_iLevelExpTable[m_iMaxLevel])) return;
+	if (m_client_list[client_h] == 0) return;
+	if (m_client_list[client_h]->m_is_init_complete == false) return;
+	if (m_client_list[client_h]->m_exp_stock <= 0) return;
+	//if ((m_client_list[client_h]->m_level >= m_max_level) && (m_client_list[client_h]->m_exp >= m_level_exp_table[m_max_level])) return;
 
-	if (m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_cType == smap::MapType::NoPenaltyNoReward) {
-		m_pClientList[iClientH]->m_iExpStock = 0;
+	if (m_map_list[m_client_list[client_h]->m_map_index]->m_type == smap::MapType::NoPenaltyNoReward) {
+		m_client_list[client_h]->m_exp_stock = 0;
 		return;
 	}
 
-	m_pClientList[iClientH]->m_iExp += m_pClientList[iClientH]->m_iExpStock;
-	m_pClientList[iClientH]->m_iAutoExpAmount += m_pClientList[iClientH]->m_iExpStock;
-	m_pClientList[iClientH]->m_iExpStock = 0;
+	m_client_list[client_h]->m_exp += m_client_list[client_h]->m_exp_stock;
+	m_client_list[client_h]->m_auto_exp_amount += m_client_list[client_h]->m_exp_stock;
+	m_client_list[client_h]->m_exp_stock = 0;
 
-	if (bCheckLimitedUser(iClientH) == false) {
-		SendNotifyMsg(0, iClientH, Notify::Exp, 0, 0, 0, 0);
+	if (check_limited_user(client_h) == false) {
+		send_notify_msg(0, client_h, Notify::Exp, 0, 0, 0, 0);
 	}
-	bIsLevelUp = bCheckLevelUp(iClientH);
+	is_level_up = check_level_up(client_h);
 
-	if ((bIsLevelUp) && (m_pClientList[iClientH]->m_iLevel <= 5)) {
+	if ((is_level_up) && (m_client_list[client_h]->m_level <= 5)) {
 		// Gold .  1~5 100 Gold .
-		pItem = new CItem;
-		if (m_pItemManager->_bInitItemAttr(pItem, hb::shared::item::ItemId::Gold) == false) {
-			delete pItem;
+		item = new CItem;
+		if (m_item_manager->init_item_attr(item, hb::shared::item::ItemId::Gold) == false) {
+			delete item;
 			return;
 		}
-		else pItem->m_dwCount = (uint32_t)100000;
-		m_pItemManager->bAddItem(iClientH, pItem, 0);
+		else item->m_count = (uint32_t)100000;
+		m_item_manager->add_item(client_h, item, 0);
 	}
 
-	if ((bIsLevelUp) && (m_pClientList[iClientH]->m_iLevel > 5) && (m_pClientList[iClientH]->m_iLevel <= 20)) {
+	if ((is_level_up) && (m_client_list[client_h]->m_level > 5) && (m_client_list[client_h]->m_level <= 20)) {
 		// Gold .  5~20 300 Gold .
-		pItem = new CItem;
-		if (m_pItemManager->_bInitItemAttr(pItem, hb::shared::item::ItemId::Gold) == false) {
-			delete pItem;
+		item = new CItem;
+		if (m_item_manager->init_item_attr(item, hb::shared::item::ItemId::Gold) == false) {
+			delete item;
 			return;
 		}
-		else pItem->m_dwCount = (uint32_t)100000;
-		m_pItemManager->bAddItem(iClientH, pItem, 0);
+		else item->m_count = (uint32_t)100000;
+		m_item_manager->add_item(client_h, item, 0);
 	}
 }
 
-void CGame::___RestorePlayerRating(int iClientH)
+void CGame::restore_player_rating(int client_h)
 {
-	if (m_pClientList[iClientH] == 0) return;
+	if (m_client_list[client_h] == 0) return;
 
-	if (m_pClientList[iClientH]->m_iRating < -10000) m_pClientList[iClientH]->m_iRating = 0;
-	if (m_pClientList[iClientH]->m_iRating > 10000) m_pClientList[iClientH]->m_iRating = 0;
+	if (m_client_list[client_h]->m_rating < -10000) m_client_list[client_h]->m_rating = 0;
+	if (m_client_list[client_h]->m_rating > 10000) m_client_list[client_h]->m_rating = 0;
 }
 
-int CGame::iGetExpLevel(uint32_t iExp)
+int CGame::get_exp_level(uint32_t exp)
 {
 	
 
 	for(int i = 1; i < 1000; i++)
-		if ((m_iLevelExpTable[i] <= iExp) && (m_iLevelExpTable[i + 1] > iExp)) return i;
+		if ((m_level_exp_table[i] <= exp) && (m_level_exp_table[i + 1] > exp)) return i;
 
 	return 0;
 }
 
-int CGame::_iCalcPlayerNum(char cMapIndex, short dX, short dY, char cRadius)
+int CGame::calc_player_num(char map_index, short dX, short dY, char radius)
 {
-	int iRet;
-	class CTile* pTile;
+	int ret;
+	class CTile* tile;
 
-	if ((cMapIndex < 0) || (cMapIndex > MaxMaps)) return 0;
-	if (m_pMapList[cMapIndex] == 0) return 0;
+	if ((map_index < 0) || (map_index > MaxMaps)) return 0;
+	if (m_map_list[map_index] == 0) return 0;
 
-	iRet = 0;
-	for(int ix = dX - cRadius; ix <= dX + cRadius; ix++)
-		for(int iy = dY - cRadius; iy <= dY + cRadius; iy++) {
-			if ((ix < 0) || (ix >= m_pMapList[cMapIndex]->m_sSizeX) ||
-				(iy < 0) || (iy >= m_pMapList[cMapIndex]->m_sSizeY)) {
+	ret = 0;
+	for(int ix = dX - radius; ix <= dX + radius; ix++)
+		for(int iy = dY - radius; iy <= dY + radius; iy++) {
+			if ((ix < 0) || (ix >= m_map_list[map_index]->m_size_x) ||
+				(iy < 0) || (iy >= m_map_list[map_index]->m_size_y)) {
 			}
 			else {
-				pTile = (class CTile*)(m_pMapList[cMapIndex]->m_pTile + ix + iy * m_pMapList[cMapIndex]->m_sSizeY);
-				if ((pTile->m_sOwner != 0) && (pTile->m_cOwnerClass == hb::shared::owner_class::Player))
-					iRet++;
+				tile = (class CTile*)(m_map_list[map_index]->m_tile + ix + iy * m_map_list[map_index]->m_size_y);
+				if ((tile->m_owner != 0) && (tile->m_owner_class == hb::shared::owner_class::Player))
+					ret++;
 			}
 		}
 
-	return iRet;
+	return ret;
 }
 
-void CGame::WhetherProcessor()
+void CGame::weather_processor()
 {
-	char cPrevMode;
+	char prev_mode;
 	int j;
-	uint32_t dwTime;
+	uint32_t time;
 
-	dwTime = GameClock::GetTimeMS();
+	time = GameClock::GetTimeMS();
 
 	for(int i = 0; i < MaxMaps; i++) {
-		if ((m_pMapList[i] != 0) && (m_pMapList[i]->m_bIsFixedDayMode == false)) {
-			cPrevMode = m_pMapList[i]->m_cWhetherStatus;
-			if (m_pMapList[i]->m_cWhetherStatus != 0) {
-				if ((dwTime - m_pMapList[i]->m_dwWhetherStartTime) > m_pMapList[i]->m_dwWhetherLastTime)
-					m_pMapList[i]->m_cWhetherStatus = 0;
+		if ((m_map_list[i] != 0) && (m_map_list[i]->m_is_fixed_day_mode == false)) {
+			prev_mode = m_map_list[i]->m_weather_status;
+			if (m_map_list[i]->m_weather_status != 0) {
+				if ((time - m_map_list[i]->m_weather_start_time) > m_map_list[i]->m_weather_duration)
+					m_map_list[i]->m_weather_status = 0;
 			}
 			else {
-				if (iDice(1, 300) == 13) {
-					m_pMapList[i]->m_cWhetherStatus = static_cast<char>(iDice(1, 3)); //This looks better or else we only get snow :(
-					//m_pMapList[i]->m_cWhetherStatus = iDice(1,3)+3; <- This original code looks fucked
-					m_pMapList[i]->m_dwWhetherStartTime = dwTime;
-					m_pMapList[i]->m_dwWhetherLastTime = 60000 * 3 + 60000 * iDice(1, 7);
+				if (dice(1, 300) == 13) {
+					m_map_list[i]->m_weather_status = static_cast<char>(dice(1, 3)); //This looks better or else we only get snow :(
+					//m_map_list[i]->m_weather_status = dice(1,3)+3; <- This original code looks fucked
+					m_map_list[i]->m_weather_start_time = time;
+					m_map_list[i]->m_weather_duration = 60000 * 3 + 60000 * dice(1, 7);
 				}
 			}
 
-			if (m_pMapList[i]->m_bIsSnowEnabled) {
-				m_pMapList[i]->m_cWhetherStatus = static_cast<char>(iDice(1, 3) + 3);
-				m_pMapList[i]->m_dwWhetherStartTime = dwTime;
-				m_pMapList[i]->m_dwWhetherLastTime = 60000 * 3 + 60000 * iDice(1, 7);
+			if (m_map_list[i]->m_is_snow_enabled) {
+				m_map_list[i]->m_weather_status = static_cast<char>(dice(1, 3) + 3);
+				m_map_list[i]->m_weather_start_time = time;
+				m_map_list[i]->m_weather_duration = 60000 * 3 + 60000 * dice(1, 7);
 			}
 
-			if (cPrevMode != m_pMapList[i]->m_cWhetherStatus) {
+			if (prev_mode != m_map_list[i]->m_weather_status) {
 				for (j = 1; j < MaxClients; j++)
-					if ((m_pClientList[j] != 0) && (m_pClientList[j]->m_bIsInitComplete) && (m_pClientList[j]->m_cMapIndex == i))
-						SendNotifyMsg(0, j, Notify::WhetherChange, m_pMapList[i]->m_cWhetherStatus, 0, 0, 0);
+					if ((m_client_list[j] != 0) && (m_client_list[j]->m_is_init_complete) && (m_client_list[j]->m_map_index == i))
+						send_notify_msg(0, j, Notify::WhetherChange, m_map_list[i]->m_weather_status, 0, 0, 0);
 			}
 		}
 	} //for Loop
 }
 
 /*********************************************************************************************************************
-**  int CGame::iGetWhetherMagicBonusEffect(short sType, char cWheatherStatus)										**
+**  int CGame::get_weather_magic_bonus_effect(short type, char wheather_status)										**
 **  description			:: checks for a weather bonus when magic is cast											**
 **  last updated		:: November 20, 2004; 10:34 PM; Hypnotoad													**
 **	return value		:: int																						**
 *********************************************************************************************************************/
 
-int CGame::iGetMapIndex(char* pMapName)
+int CGame::get_map_index(char* map_name)
 {
-	int iMapIndex;
-	char cTmpName[256];
+	int map_index;
+	char tmp_name[256];
 
-	std::memset(cTmpName, 0, sizeof(cTmpName));
-	strcpy(cTmpName, pMapName);
+	std::memset(tmp_name, 0, sizeof(tmp_name));
+	strcpy(tmp_name, map_name);
 
-	iMapIndex = -1;
+	map_index = -1;
 	for(int i = 0; i < MaxMaps; i++)
-		if (m_pMapList[i] != 0) {
-			if (memcmp(m_pMapList[i]->m_cName, pMapName, 10) == 0)
-				iMapIndex = i;
+		if (m_map_list[i] != 0) {
+			if (memcmp(m_map_list[i]->m_name, map_name, 10) == 0)
+				map_index = i;
 		}
 
-	return iMapIndex;
+	return map_index;
 }
 
-int CGame::_iForcePlayerDisconect(int iNum)
+int CGame::force_player_disconnect(int num)
 {
-	int iCnt;
+	int cnt;
 
-	iCnt = 0;
+	cnt = 0;
 	for(int i = 1; i < MaxClients; i++)
-		if (m_pClientList[i] != 0) {
-			if (m_pClientList[i]->m_bIsInitComplete)
-				DeleteClient(i, true, true);
-			else DeleteClient(i, false, false);
-			iCnt++;
-			if (iCnt >= iNum) break;
+		if (m_client_list[i] != 0) {
+			if (m_client_list[i]->m_is_init_complete)
+				delete_client(i, true, true);
+			else delete_client(i, false, false);
+			cnt++;
+			if (cnt >= num) break;
 		}
 
-	return iCnt;
+	return cnt;
 }
 
-void CGame::SpecialEventHandler()
+void CGame::special_event_handler()
 {
-	uint32_t dwTime;
+	uint32_t time;
 
-	dwTime = GameClock::GetTimeMS();
+	time = GameClock::GetTimeMS();
 
-	if ((dwTime - m_dwSpecialEventTime) < SpecialEventTime) return; // SpecialEventTime
-	m_dwSpecialEventTime = dwTime;
-	m_bIsSpecialEventTime = true;
+	if ((time - m_special_event_time) < SpecialEventTime) return; // SpecialEventTime
+	m_special_event_time = time;
+	m_is_special_event_time = true;
 
-	switch (iDice(1, 180)) {
-	case 98: m_cSpecialEventType = 2; break; // 30 1 1/30
-	default: m_cSpecialEventType = 1; break;
+	switch (dice(1, 180)) {
+	case 98: m_special_event_type = 2; break; // 30 1 1/30
+	default: m_special_event_type = 1; break;
 	}
 }
 
-void CGame::ToggleSafeAttackModeHandler(int iClientH) //v1.1
+void CGame::toggle_safe_attack_mode_handler(int client_h) //v1.1
 {
-	if (m_pClientList[iClientH] == 0) return;
-	if (m_pClientList[iClientH]->m_bIsInitComplete == false) return;
-	if (m_pClientList[iClientH]->m_bIsKilled) return;
+	if (m_client_list[client_h] == 0) return;
+	if (m_client_list[client_h]->m_is_init_complete == false) return;
+	if (m_client_list[client_h]->m_is_killed) return;
 
-	if (m_pClientList[iClientH]->m_bIsSafeAttackMode)
-		m_pClientList[iClientH]->m_bIsSafeAttackMode = false;
-	else m_pClientList[iClientH]->m_bIsSafeAttackMode = true;
+	if (m_client_list[client_h]->m_is_safe_attack_mode)
+		m_client_list[client_h]->m_is_safe_attack_mode = false;
+	else m_client_list[client_h]->m_is_safe_attack_mode = true;
 
-	SendNotifyMsg(0, iClientH, Notify::SafeAttackMode, 0, 0, 0, 0);
+	send_notify_msg(0, client_h, Notify::SafeAttackMode, 0, 0, 0, 0);
 }
 
-void CGame::ForceDisconnectAccount(char* pAccountName, uint16_t wCount)
+void CGame::force_disconnect_account(char* account_name, uint16_t count)
 {
 	
 
 	for(int i = 1; i < MaxClients; i++)
-		if ((m_pClientList[i] != 0) && (hb_strnicmp(m_pClientList[i]->m_cAccountName, pAccountName, hb::shared::limits::AccountNameLen - 1) == 0)) {
-			hb::logger::log("Client {}: force disconnect char={} account={} count={}", i, m_pClientList[i]->m_cCharName, m_pClientList[i]->m_cAccountName, wCount);
+		if ((m_client_list[i] != 0) && (hb_strnicmp(m_client_list[i]->m_account_name, account_name, hb::shared::limits::AccountNameLen - 1) == 0)) {
+			hb::logger::log("Client {}: force disconnect char={} account={} count={}", i, m_client_list[i]->m_char_name, m_client_list[i]->m_account_name, count);
 
-			//DeleteClient(i, true, true);
+			//delete_client(i, true, true);
 
 			//v1.4312
-			SendNotifyMsg(0, i, Notify::ForceDisconn, wCount, 0, 0, 0);
+			send_notify_msg(0, i, Notify::ForceDisconn, count, 0, 0, 0);
 		}
 }
 
-bool CGame::bOnClose()
+bool CGame::on_close()
 {
-	if (m_bIsServerShutdowned == false)
+	if (m_is_server_shutdown == false)
 	{
 #ifdef _WIN32
-		if (MessageBox(0, "Player data not saved! Shutdown server now?", m_cRealmName, MB_ICONEXCLAMATION | MB_YESNO) == IDYES) return true;
+		if (MessageBox(0, "Player data not saved! shutdown server now?", m_realm_name, MB_ICONEXCLAMATION | MB_YESNO) == IDYES) return true;
 		return false;
 #else
 		return false;
@@ -9682,101 +9702,101 @@ bool CGame::bOnClose()
 
 // New 14/05/2004
 
-int CGame::iGetMaxHP(int iClientH)
+int CGame::get_max_hp(int client_h)
 {
-	if (m_pClientList[iClientH] == 0) return 0;
+	if (m_client_list[client_h] == 0) return 0;
 
-	int iRet = hb::shared::calc::CalculateMaxHP(
-		m_pClientList[iClientH]->m_iVit,
-		m_pClientList[iClientH]->m_iLevel,
-		m_pClientList[iClientH]->m_iStr,
-		m_pClientList[iClientH]->m_iAngelicStr);
+	int ret = hb::shared::calc::CalculateMaxHP(
+		m_client_list[client_h]->m_vit,
+		m_client_list[client_h]->m_level,
+		m_client_list[client_h]->m_str,
+		m_client_list[client_h]->m_angelic_str);
 
 	// Apply side effect reduction if active
-	if (m_pClientList[iClientH]->m_iSideEffect_MaxHPdown != 0)
-		iRet = iRet - (iRet / m_pClientList[iClientH]->m_iSideEffect_MaxHPdown);
+	if (m_client_list[client_h]->m_side_effect_max_hp_down != 0)
+		ret = ret - (ret / m_client_list[client_h]->m_side_effect_max_hp_down);
 
-	return iRet;
+	return ret;
 }
 
-int CGame::iGetMaxMP(int iClientH)
+int CGame::get_max_mp(int client_h)
 {
-	if (m_pClientList[iClientH] == 0) return 0;
+	if (m_client_list[client_h] == 0) return 0;
 
 	return hb::shared::calc::CalculateMaxMP(
-		m_pClientList[iClientH]->m_iMag,
-		m_pClientList[iClientH]->m_iAngelicMag,
-		m_pClientList[iClientH]->m_iLevel,
-		m_pClientList[iClientH]->m_iInt,
-		m_pClientList[iClientH]->m_iAngelicInt);
+		m_client_list[client_h]->m_mag,
+		m_client_list[client_h]->m_angelic_mag,
+		m_client_list[client_h]->m_level,
+		m_client_list[client_h]->m_int,
+		m_client_list[client_h]->m_angelic_int);
 }
 
-int CGame::iGetMaxSP(int iClientH)
+int CGame::get_max_sp(int client_h)
 {
-	if (m_pClientList[iClientH] == 0) return 0;
+	if (m_client_list[client_h] == 0) return 0;
 
 	return hb::shared::calc::CalculateMaxSP(
-		m_pClientList[iClientH]->m_iStr,
-		m_pClientList[iClientH]->m_iAngelicStr,
-		m_pClientList[iClientH]->m_iLevel);
+		m_client_list[client_h]->m_str,
+		m_client_list[client_h]->m_angelic_str,
+		m_client_list[client_h]->m_level);
 }
 
-void CGame::GetMapInitialPoint(int iMapIndex, short* pX, short* pY, char* pPlayerLocation)
+void CGame::get_map_initial_point(int map_index, short* pX, short* pY, char* player_location)
 {
-	int iTotalPoint = 0;
+	int total_point = 0;
 
-	hb::shared::geometry::GamePoint pList[smap::MaxInitialPoint];
+	hb::shared::geometry::GamePoint list[smap::MaxInitialPoint];
 
-	if (m_pMapList[iMapIndex] == 0)
+	if (m_map_list[map_index] == 0)
 		return;
 	for (int i = 0; i < smap::MaxInitialPoint; i++)
-		if (m_pMapList[iMapIndex]->m_pInitialPoint[i].x != -1) {
-			pList[iTotalPoint].x = m_pMapList[iMapIndex]->m_pInitialPoint[i].x;
-			pList[iTotalPoint].y = m_pMapList[iMapIndex]->m_pInitialPoint[i].y;
-			iTotalPoint++;
+		if (m_map_list[map_index]->m_initial_point[i].x != -1) {
+			list[total_point].x = m_map_list[map_index]->m_initial_point[i].x;
+			list[total_point].y = m_map_list[map_index]->m_initial_point[i].y;
+			total_point++;
 		}
-	if (iTotalPoint == 0) return;
-	int iIndex = 0;
-	if ((pPlayerLocation != 0) && (memcmp(pPlayerLocation, "NONE", 4) != 0))
-		iIndex = iDice(1, iTotalPoint) - 1;
+	if (total_point == 0) return;
+	int index = 0;
+	if ((player_location != 0) && (memcmp(player_location, "NONE", 4) != 0))
+		index = dice(1, total_point) - 1;
 
-	*pX = static_cast<short>(pList[iIndex].x);
-	*pY = static_cast<short>(pList[iIndex].y);
+	*pX = static_cast<short>(list[index].x);
+	*pY = static_cast<short>(list[index].y);
 }
 
 // MODERNIZED: New function that polls login client socket instead of handling window messages
-void CGame::OnLoginClientSocketEvent(int iLoginClientH)
+void CGame::on_login_client_socket_event(int login_client_h)
 {
-	int iRet;
+	int ret;
 
-	if (iLoginClientH < 0 || iLoginClientH >= MaxClientLoginSock) return;
+	if (login_client_h < 0 || login_client_h >= MaxClientLoginSock) return;
 
-	auto p = _lclients[iLoginClientH];
+	auto p = _lclients[login_client_h];
 	if (p == 0) return;
 
-	iRet = p->_sock->Poll();
+	ret = p->sock->Poll();
 
-	switch (iRet) {
+	switch (ret) {
 	case sock::Event::UnsentDataSendComplete:
 		break;
 	case sock::Event::ConnectionEstablish:
 		break;
 
 	case sock::Event::ReadComplete:
-		OnClientLoginRead(iLoginClientH);
+		on_client_login_read(login_client_h);
 		break;
 
 	case sock::Event::Block:
 		break;
 
 	case sock::Event::ConfirmCodeNotMatch:
-		hb::logger::log("Client {}: login confirm code mismatch", iLoginClientH);
-		DeleteLoginClient(iLoginClientH);
+		hb::logger::log("Client {}: login confirm code mismatch", login_client_h);
+		delete_login_client(login_client_h);
 		break;
 	case sock::Event::MsgSizeTooLarge:
 	case sock::Event::SocketError:
 	case sock::Event::SocketClosed:
-		DeleteLoginClient(iLoginClientH);
+		delete_login_client(login_client_h);
 		break;
 	}
 }
@@ -9784,187 +9804,187 @@ void CGame::OnLoginClientSocketEvent(int iLoginClientH)
 
 LoginClient::~LoginClient()
 {
-	if (_sock)
-		delete _sock;
+	if (sock)
+		delete sock;
 }
 
-void CGame::OnClientLoginRead(int h)
+void CGame::on_client_login_read(int h)
 {
-	char* pData, cKey;
-	size_t  dwMsgSize;
+	char* data, key;
+	size_t  msg_size;
 
 	if (_lclients[h] == 0) return;
 
-	pData = _lclients[h]->_sock->pGetRcvDataPointer(&dwMsgSize, &cKey);
+	data = _lclients[h]->sock->get_rcv_data_pointer(&msg_size, &key);
 
-	if (bPutMsgQuene(Source::LogServer, pData, dwMsgSize, h, cKey) == false) {
+	if (put_msg_queue(Source::LogServer, data, msg_size, h, key) == false) {
 		hb::logger::error("Critical error in message queue");
 	}
 }
 
-void CGame::DeleteLoginClient(int h)
+void CGame::delete_login_client(int h)
 {
 	if (!_lclients[h])
 		return;
 
-	_lclients[h]->_timeout_tm = GameClock::GetTimeMS();
+	_lclients[h]->timeout_tm = GameClock::GetTimeMS();
 	_lclients_disconn.push_back(_lclients[h]);
 	//delete _lclients[h];
 	_lclients[h] = nullptr;
 }
 
 // 3.51 - 05/17/2004 - Hypnotoad/[KLKS] - Monster Special Abilities
-char CGame::_cGetSpecialAbility(int iKindSA)
+char CGame::get_special_ability(int kind_sa)
 {
-	char cSA;
+	char sa;
 
-	switch (iKindSA) {
+	switch (kind_sa) {
 	case 1:
 		// Slime, Orc, Orge, WereWolf, YB-, Rabbit, Mountain-Giant, Stalker, Hellclaw, 
 		// Wyvern, Fire-Wyvern, Barlog, Tentocle, Centaurus, Giant-Lizard, Minotaurus,
 		// Abaddon, Claw-Turtle, Giant-Cray-Fish, Giant-Plant, MasterMage-Orc, Nizie,
 		// Tigerworm
-		switch (iDice(1, 2)) {
-		case 1: cSA = 3; break; // Anti-Physical Damage
-		case 2: cSA = 4; break; // Anti-Magic Damage
+		switch (dice(1, 2)) {
+		case 1: sa = 3; break; // Anti-Physical Damage
+		case 2: sa = 4; break; // Anti-Magic Damage
 		}
 		break;
 
 	case 2:
 		// Giant-Ant, Cat, Giant-Frog, 
-		switch (iDice(1, 3)) {
-		case 1: cSA = 3; break; // Anti-Physical Damage
-		case 2: cSA = 4; break; // Anti-Magic Damage
-		case 3: cSA = 5; break; // Poisonous
+		switch (dice(1, 3)) {
+		case 1: sa = 3; break; // Anti-Physical Damage
+		case 2: sa = 4; break; // Anti-Magic Damage
+		case 3: sa = 5; break; // Poisonous
 		}
 		break;
 
 	case 3:
 		// Zombie, Scorpion, Amphis, Troll, Dark-Elf
-		switch (iDice(1, 4)) {
-		case 1: cSA = 3; break; // Anti-Physical Damage
-		case 2: cSA = 4; break; // Anti-Magic Damage
-		case 3: cSA = 5; break; // Poisonous
-		case 4: cSA = 6; break; // Critical Poisonous
+		switch (dice(1, 4)) {
+		case 1: sa = 3; break; // Anti-Physical Damage
+		case 2: sa = 4; break; // Anti-Magic Damage
+		case 3: sa = 5; break; // Poisonous
+		case 4: sa = 6; break; // Critical Poisonous
 		}
 		break;
 
 	case 4:
 		// no linked Npc
-		switch (iDice(1, 3)) {
-		case 1: cSA = 3; break; // Anti-Physical Damage
-		case 2: cSA = 4; break; // Anti-Magic Damage
-		case 3: cSA = 7; break; // Explosive
+		switch (dice(1, 3)) {
+		case 1: sa = 3; break; // Anti-Physical Damage
+		case 2: sa = 4; break; // Anti-Magic Damage
+		case 3: sa = 7; break; // Explosive
 		}
 		break;
 
 	case 5:
 		// Stone-Golem, Clay-Golem, Beholder, Cannibal-Plant, Rudolph, DireBoar
-		switch (iDice(1, 4)) {
-		case 1: cSA = 3; break; // Anti-Physical Damage
-		case 2: cSA = 4; break; // Anti-Magic Damage
-		case 3: cSA = 7; break; // Explosive
-		case 4: cSA = 8; break; // Critical-Explosive
+		switch (dice(1, 4)) {
+		case 1: sa = 3; break; // Anti-Physical Damage
+		case 2: sa = 4; break; // Anti-Magic Damage
+		case 3: sa = 7; break; // Explosive
+		case 4: sa = 8; break; // Critical-Explosive
 		}
 		break;
 
 	case 6:
 		// no linked Npc
-		switch (iDice(1, 3)) {
-		case 1: cSA = 3; break; // Anti-Physical Damage
-		case 2: cSA = 4; break; // Anti-Magic Damage
-		case 3: cSA = 5; break; // Poisonous
+		switch (dice(1, 3)) {
+		case 1: sa = 3; break; // Anti-Physical Damage
+		case 2: sa = 4; break; // Anti-Magic Damage
+		case 3: sa = 5; break; // Poisonous
 		}
 		break;
 
 	case 7:
 		// Orc-Mage, Unicorn
-		switch (iDice(1, 3)) {
-		case 1: cSA = 1; break; // Clairvoyant
-		case 2: cSA = 2; break; // Distruction of Magic Protection
-		case 3: cSA = 4; break; // Anti-Magic Damage
+		switch (dice(1, 3)) {
+		case 1: sa = 1; break; // Clairvoyant
+		case 2: sa = 2; break; // Distruction of Magic Protection
+		case 3: sa = 4; break; // Anti-Magic Damage
 		}
 		break;
 
 	case 8:
 		// Frost, Ice-Golem, Ettin, Gagoyle, Demon, Liche, Hellbound, Cyclops, 
 		// Skeleton
-		switch (iDice(1, 5)) {
-		case 1: cSA = 1; break; // Clairvoyant
-		case 2: cSA = 2; break; // Distruction of Magic Protection
-		case 3: cSA = 4; break; // Anti-Magic Damage
-		case 4: cSA = 3; break; // Anti-Physical Damage
-		case 5: cSA = 8; break; // Critical-Explosive
+		switch (dice(1, 5)) {
+		case 1: sa = 1; break; // Clairvoyant
+		case 2: sa = 2; break; // Distruction of Magic Protection
+		case 3: sa = 4; break; // Anti-Magic Damage
+		case 4: sa = 3; break; // Anti-Physical Damage
+		case 5: sa = 8; break; // Critical-Explosive
 		}
 		break;
 
 	case 9:
 		// no linked Npc
-		cSA = static_cast<char>(iDice(1, 8)); // All abilities available
+		sa = static_cast<char>(dice(1, 8)); // All abilities available
 		break;
 	}
 
-	return cSA;
+	return sa;
 }
 
-void CGame::CheckSpecialEvent(int iClientH)
+void CGame::check_special_event(int client_h)
 {
-	CItem* pItem;
-	char  cItemName[hb::shared::limits::ItemNameLen];
-	int   iEraseReq;
+	CItem* item;
+	char  item_name[hb::shared::limits::ItemNameLen];
+	int   erase_req;
 
-	if (m_pClientList[iClientH] == 0) return;
+	if (m_client_list[client_h] == 0) return;
 
-	if (m_pClientList[iClientH]->m_iSpecialEventID == 200081) {
+	if (m_client_list[client_h]->m_special_event_id == 200081) {
 
-		if (m_pClientList[iClientH]->m_iLevel < 11) {
-			m_pClientList[iClientH]->m_iSpecialEventID = 0;
+		if (m_client_list[client_h]->m_level < 11) {
+			m_client_list[client_h]->m_special_event_id = 0;
 			return;
 		}
 
-		std::memset(cItemName, 0, sizeof(cItemName));
-		strcpy(cItemName, "MemorialRing");
+		std::memset(item_name, 0, sizeof(item_name));
+		strcpy(item_name, "MemorialRing");
 
-		pItem = new CItem;
-		if (m_pItemManager->_bInitItemAttr(pItem, cItemName) == false) {
-			delete pItem;
+		item = new CItem;
+		if (m_item_manager->init_item_attr(item, item_name) == false) {
+			delete item;
 		}
 		else {
-			if (m_pItemManager->_bAddClientItemList(iClientH, pItem, &iEraseReq)) {
-				if (m_pClientList[iClientH]->m_iCurWeightLoad < 0) m_pClientList[iClientH]->m_iCurWeightLoad = 0;
+			if (m_item_manager->add_client_item_list(client_h, item, &erase_req)) {
+				if (m_client_list[client_h]->m_cur_weight_load < 0) m_client_list[client_h]->m_cur_weight_load = 0;
 
 				// testcode  .
-				hb::logger::log<log_channel::events>("Get MemorialRing : Char({})", m_pClientList[iClientH]->m_cCharName);
+				hb::logger::log<log_channel::events>("get MemorialRing : Char({})", m_client_list[client_h]->m_char_name);
 
-				pItem->SetTouchEffectType(TouchEffectType::UniqueOwner);
-				pItem->m_sTouchEffectValue1 = m_pClientList[iClientH]->m_sCharIDnum1;
-				pItem->m_sTouchEffectValue2 = m_pClientList[iClientH]->m_sCharIDnum2;
-				pItem->m_sTouchEffectValue3 = m_pClientList[iClientH]->m_sCharIDnum3;
-				pItem->m_cItemColor = 9;
+				item->set_touch_effect_type(TouchEffectType::UniqueOwner);
+				item->m_touch_effect_value1 = m_client_list[client_h]->m_char_id_num1;
+				item->m_touch_effect_value2 = m_client_list[client_h]->m_char_id_num2;
+				item->m_touch_effect_value3 = m_client_list[client_h]->m_char_id_num3;
+				item->m_item_color = 9;
 
-				m_pClientList[iClientH]->m_iSpecialEventID = 0;
+				m_client_list[client_h]->m_special_event_id = 0;
 			}
 		}
 	}
 }
 
-void CGame::RequestNoticementHandler(int iClientH, char* pData)
+void CGame::request_noticement_handler(int client_h, char* data)
 {
 	char* cp;
-	int iRet, iClientSize;
+	int ret, client_size;
 
-	if (m_pClientList[iClientH] == 0) return;
-	if (m_dwNoticementDataSize < 10) return;
+	if (m_client_list[client_h] == 0) return;
+	if (m_notice_data_size < 10) return;
 
 	const auto* pkt = hb::net::PacketCast<hb::net::PacketRequestNoticement>(
-		pData, sizeof(hb::net::PacketRequestNoticement));
+		data, sizeof(hb::net::PacketRequestNoticement));
 	if (!pkt) return;
-	iClientSize = pkt->value;
+	client_size = pkt->value;
 
-	if (iClientSize != m_dwNoticementDataSize) {
-		cp = new char[m_dwNoticementDataSize + 2 + sizeof(hb::net::PacketHeader)];
-		std::memset(cp, 0, m_dwNoticementDataSize + 2 + sizeof(hb::net::PacketHeader));
-		memcpy((cp + sizeof(hb::net::PacketHeader)), m_pNoticementData, m_dwNoticementDataSize);
+	if (client_size != m_notice_data_size) {
+		cp = new char[m_notice_data_size + 2 + sizeof(hb::net::PacketHeader)];
+		std::memset(cp, 0, m_notice_data_size + 2 + sizeof(hb::net::PacketHeader));
+		memcpy((cp + sizeof(hb::net::PacketHeader)), m_notice_data, m_notice_data_size);
 
 		{
 			auto* header = reinterpret_cast<hb::net::PacketResponseNoticementHeader*>(cp);
@@ -9972,7 +9992,7 @@ void CGame::RequestNoticementHandler(int iClientH, char* pData)
 			header->header.msg_type = MsgType::Reject;
 		}
 
-		iRet = m_pClientList[iClientH]->m_pXSock->iSendMsg(cp, m_dwNoticementDataSize + 2 + sizeof(hb::net::PacketHeader));
+		ret = m_client_list[client_h]->m_socket->send_msg(cp, m_notice_data_size + 2 + sizeof(hb::net::PacketHeader));
 
 		delete cp;
 	}
@@ -9980,24 +10000,24 @@ void CGame::RequestNoticementHandler(int iClientH, char* pData)
 		hb::net::PacketResponseNoticementHeader pkt{};
 		pkt.header.msg_id = MsgId::ResponseNoticement;
 		pkt.header.msg_type = MsgType::Confirm;
-		iRet = m_pClientList[iClientH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+		ret = m_client_list[client_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 	}
 }
 
-void CGame::RequestNoticementHandler(int iClientH)
+void CGame::request_noticement_handler(int client_h)
 {
-	if (m_pClientList[iClientH] == 0) return;
+	if (m_client_list[client_h] == 0) return;
 
-	FILE* pNotiFile = fopen("gameconfigs/noticement.txt", "rb");
-	if (!pNotiFile) return;
-	fseek(pNotiFile, 0, SEEK_END);
-	uint32_t dwFileSize = static_cast<uint32_t>(ftell(pNotiFile));
-	fseek(pNotiFile, 0, SEEK_SET);
+	FILE* noti_file = fopen("gameconfigs/noticement.txt", "rb");
+	if (!noti_file) return;
+	fseek(noti_file, 0, SEEK_END);
+	uint32_t file_size = static_cast<uint32_t>(ftell(noti_file));
+	fseek(noti_file, 0, SEEK_SET);
 
 	std::memset(G_cData50000, 0, sizeof(G_cData50000));
 
-	fread(G_cData50000 + sizeof(hb::net::PacketHeader), 1, dwFileSize, pNotiFile);
-	fclose(pNotiFile);
+	fread(G_cData50000 + sizeof(hb::net::PacketHeader), 1, file_size, noti_file);
+	fclose(noti_file);
 
 	{
 		auto* header = reinterpret_cast<hb::net::PacketResponseNoticementHeader*>(G_cData50000);
@@ -10005,9 +10025,9 @@ void CGame::RequestNoticementHandler(int iClientH)
 		header->header.msg_type = MsgType::Confirm;
 	}
 
-	int iRet = m_pClientList[iClientH]->m_pXSock->iSendMsg(G_cData50000, dwFileSize + 2 + sizeof(hb::net::PacketHeader));
+	int ret = m_client_list[client_h]->m_socket->send_msg(G_cData50000, file_size + 2 + sizeof(hb::net::PacketHeader));
 
-	switch (iRet) {
+	switch (ret) {
 	case sock::Event::QueueFull:
 	case sock::Event::SocketError:
 	case sock::Event::CriticalError:
@@ -10016,193 +10036,193 @@ void CGame::RequestNoticementHandler(int iClientH)
 	}
 }
 
-void CGame::RequestCheckAccountPasswordHandler(char* pData, size_t dwMsgSize)
+void CGame::request_check_account_password_handler(char* data, size_t msg_size)
 {
-	int iLevel;
-	char cAccountName[11], cAccountPassword[hb::shared::limits::AccountPassLen];
+	int level;
+	char account_name[11], account_password[hb::shared::limits::AccountPassLen];
 
-	const auto* header = hb::net::PacketCast<hb::net::PacketHeader>(pData, sizeof(hb::net::PacketHeader));
+	const auto* header = hb::net::PacketCast<hb::net::PacketHeader>(data, sizeof(hb::net::PacketHeader));
 	if (!header) return;
 
-	const auto& payload = *reinterpret_cast<const hb::net::TestLogPayload*>(pData + sizeof(hb::net::PacketHeader));
+	const auto& payload = *reinterpret_cast<const hb::net::TestLogPayload*>(data + sizeof(hb::net::PacketHeader));
 
-	std::memset(cAccountName, 0, sizeof(cAccountName));
-	std::memset(cAccountPassword, 0, sizeof(cAccountPassword));
+	std::memset(account_name, 0, sizeof(account_name));
+	std::memset(account_password, 0, sizeof(account_password));
 
-	std::memcpy(cAccountName, payload.account_name, hb::shared::limits::AccountNameLen - 1);
-	std::memcpy(cAccountPassword, payload.account_password, hb::shared::limits::AccountPassLen - 1);
-	iLevel = payload.level;
+	std::memcpy(account_name, payload.account_name, hb::shared::limits::AccountNameLen - 1);
+	std::memcpy(account_password, payload.account_password, hb::shared::limits::AccountPassLen - 1);
+	level = payload.level;
 
 	for(int i = 0; i < MaxClients; i++)
-		if ((m_pClientList[i] != 0) && (hb_stricmp(m_pClientList[i]->m_cAccountName, cAccountName) == 0)) {
-			if ((strcmp(m_pClientList[i]->m_cAccountPassword, cAccountPassword) != 0) || (m_pClientList[i]->m_iLevel != iLevel)) {
-				hb::logger::log("Account '{}' level {}: password or level mismatch, disconnecting", cAccountName, iLevel);
-				DeleteClient(i, false, true);
+		if ((m_client_list[i] != 0) && (hb_stricmp(m_client_list[i]->m_account_name, account_name) == 0)) {
+			if ((strcmp(m_client_list[i]->m_account_password, account_password) != 0) || (m_client_list[i]->m_level != level)) {
+				hb::logger::log("Account '{}' level {}: password or level mismatch, disconnecting", account_name, level);
+				delete_client(i, false, true);
 				return;
 			}
 		}
 }
 
-int CGame::iRequestPanningMapDataRequest(int iClientH, char* pData)
+int CGame::request_panning_map_data_request(int client_h, char* data)
 {
-	char cDir, mapData[3000];
+	char dir, mapData[3000];
 	short dX, dY;
-	int   iRet, iSize;
+	int   ret, size;
 
-	if (m_pClientList[iClientH] == 0) return 0;
-	if (m_pClientList[iClientH]->m_bIsObserverMode == false) return 0;
-	if (m_pClientList[iClientH]->m_bIsKilled) return 0;
-	if (m_pClientList[iClientH]->m_bIsInitComplete == false) return 0;
+	if (m_client_list[client_h] == 0) return 0;
+	if (m_client_list[client_h]->m_is_observer_mode == false) return 0;
+	if (m_client_list[client_h]->m_is_killed) return 0;
+	if (m_client_list[client_h]->m_is_init_complete == false) return 0;
 
-	dX = m_pClientList[iClientH]->m_sX;
-	dY = m_pClientList[iClientH]->m_sY;
+	dX = m_client_list[client_h]->m_x;
+	dY = m_client_list[client_h]->m_y;
 
-	const auto* req = hb::net::PacketCast<hb::net::PacketRequestPanning>(pData, sizeof(hb::net::PacketRequestPanning));
+	const auto* req = hb::net::PacketCast<hb::net::PacketRequestPanning>(data, sizeof(hb::net::PacketRequestPanning));
 	if (!req) return 0;
-	cDir = static_cast<char>(req->dir);
-	if ((cDir <= 0) || (cDir > 8)) return 0;
+	dir = static_cast<char>(req->dir);
+	if ((dir <= 0) || (dir > 8)) return 0;
 
-	hb::shared::direction::ApplyOffset(cDir, dX, dY);
+	hb::shared::direction::ApplyOffset(dir, dX, dY);
 
-	m_pClientList[iClientH]->m_sX = dX;
-	m_pClientList[iClientH]->m_sY = dY;
-	m_pClientList[iClientH]->m_cDir = cDir;
+	m_client_list[client_h]->m_x = dX;
+	m_client_list[client_h]->m_y = dY;
+	m_client_list[client_h]->m_dir = dir;
 
-	iSize = iComposeMoveMapData((short)(dX - hb::shared::view::CenterX), (short)(dY - hb::shared::view::CenterY), iClientH, cDir, mapData);
+	size = compose_move_map_data((short)(dX - hb::shared::view::CenterX), (short)(dY - hb::shared::view::CenterY), client_h, dir, mapData);
 
 	hb::net::PacketWriter writer;
-	writer.Reserve(sizeof(hb::net::PacketResponsePanningHeader) + iSize);
+	writer.Reserve(sizeof(hb::net::PacketResponsePanningHeader) + size);
 
 	auto* pkt = writer.Append<hb::net::PacketResponsePanningHeader>();
 	pkt->header.msg_id = MsgId::ResponsePanning;
 	pkt->header.msg_type = Confirm::MoveConfirm;
 	pkt->x = static_cast<int16_t>(dX - hb::shared::view::CenterX);
 	pkt->y = static_cast<int16_t>(dY - hb::shared::view::CenterY);
-	pkt->dir = static_cast<uint8_t>(cDir);
+	pkt->dir = static_cast<uint8_t>(dir);
 
-	writer.AppendBytes(mapData, iSize);
+	writer.AppendBytes(mapData, size);
 
-	iRet = m_pClientList[iClientH]->m_pXSock->iSendMsg(writer.Data(), static_cast<int>(writer.Size()));
-	switch (iRet) {
+	ret = m_client_list[client_h]->m_socket->send_msg(writer.Data(), static_cast<int>(writer.size()));
+	switch (ret) {
 	case sock::Event::QueueFull:
 	case sock::Event::SocketError:
 	case sock::Event::CriticalError:
 	case sock::Event::SocketClosed:
-		DeleteClient(iClientH, true, true);
+		delete_client(client_h, true, true);
 		return 0;
 	}
 
 	return 1;
 }
 
-void CGame::RequestRestartHandler(int iClientH)
+void CGame::request_restart_handler(int client_h)
 {
-	char  cTmpMap[32];
+	char  tmp_map[32];
 
-	if (m_pClientList[iClientH] == 0) return;
+	if (m_client_list[client_h] == 0) return;
 
-	if (m_pClientList[iClientH]->m_bIsKilled) {
+	if (m_client_list[client_h]->m_is_killed) {
 
-		strcpy(cTmpMap, m_pClientList[iClientH]->m_cMapName);
-		std::memset(m_pClientList[iClientH]->m_cMapName, 0, sizeof(m_pClientList[iClientH]->m_cMapName));
+		strcpy(tmp_map, m_client_list[client_h]->m_map_name);
+		std::memset(m_client_list[client_h]->m_map_name, 0, sizeof(m_client_list[client_h]->m_map_name));
 
-		if (strcmp(m_pClientList[iClientH]->m_cLocation, "NONE") == 0) {
+		if (strcmp(m_client_list[client_h]->m_location, "NONE") == 0) {
 			// default .
-			strcpy(m_pClientList[iClientH]->m_cMapName, "default");
+			strcpy(m_client_list[client_h]->m_map_name, "default");
 		}
 		else {
-			if ((strcmp(m_pClientList[iClientH]->m_cLocation, "aresden") == 0) || (strcmp(m_pClientList[iClientH]->m_cLocation, "arehunter") == 0)) {
-				if (m_bIsCrusadeMode) {
-					if (m_pClientList[iClientH]->m_iDeadPenaltyTime > 0) {
-						std::memset(m_pClientList[iClientH]->m_cLockedMapName, 0, sizeof(m_pClientList[iClientH]->m_cLockedMapName));
-						strcpy(m_pClientList[iClientH]->m_cLockedMapName, "aresden");
-						m_pClientList[iClientH]->m_iLockedMapTime = 60 * 5;
-						m_pClientList[iClientH]->m_iDeadPenaltyTime = 60 * 10; // v2.04
+			if ((strcmp(m_client_list[client_h]->m_location, "aresden") == 0) || (strcmp(m_client_list[client_h]->m_location, "arehunter") == 0)) {
+				if (m_is_crusade_mode) {
+					if (m_client_list[client_h]->m_dead_penalty_time > 0) {
+						std::memset(m_client_list[client_h]->m_locked_map_name, 0, sizeof(m_client_list[client_h]->m_locked_map_name));
+						strcpy(m_client_list[client_h]->m_locked_map_name, "aresden");
+						m_client_list[client_h]->m_locked_map_time = 60 * 5;
+						m_client_list[client_h]->m_dead_penalty_time = 60 * 10; // v2.04
 					}
 					else {
-						memcpy(m_pClientList[iClientH]->m_cMapName, "resurr1", 7);
-						m_pClientList[iClientH]->m_iDeadPenaltyTime = 60 * 10;
+						memcpy(m_client_list[client_h]->m_map_name, "resurr1", 7);
+						m_client_list[client_h]->m_dead_penalty_time = 60 * 10;
 					}
 				}
 				// v2.16 2002-5-31
-				if (strcmp(cTmpMap, "elvine") == 0) {
-					memcpy(m_pClientList[iClientH]->m_cMapName, "elvjail", 7);
-					strcpy(m_pClientList[iClientH]->m_cLockedMapName, "elvjail");
-					m_pClientList[iClientH]->m_iLockedMapTime = 60 * 3;
+				if (strcmp(tmp_map, "elvine") == 0) {
+					memcpy(m_client_list[client_h]->m_map_name, "elvjail", 7);
+					strcpy(m_client_list[client_h]->m_locked_map_name, "elvjail");
+					m_client_list[client_h]->m_locked_map_time = 60 * 3;
 				}
-				else if (m_pClientList[iClientH]->m_iLevel > 80)
-					memcpy(m_pClientList[iClientH]->m_cMapName, "resurr1", 7);
-				else memcpy(m_pClientList[iClientH]->m_cMapName, "arefarm", 7);
+				else if (m_client_list[client_h]->m_level > 80)
+					memcpy(m_client_list[client_h]->m_map_name, "resurr1", 7);
+				else memcpy(m_client_list[client_h]->m_map_name, "arefarm", 7);
 			}
 			else {
-				if (m_bIsCrusadeMode) {
-					if (m_pClientList[iClientH]->m_iDeadPenaltyTime > 0) {
-						std::memset(m_pClientList[iClientH]->m_cLockedMapName, 0, sizeof(m_pClientList[iClientH]->m_cLockedMapName));
-						strcpy(m_pClientList[iClientH]->m_cLockedMapName, "elvine");
-						m_pClientList[iClientH]->m_iLockedMapTime = 60 * 5;
-						m_pClientList[iClientH]->m_iDeadPenaltyTime = 60 * 10; // v2.04
+				if (m_is_crusade_mode) {
+					if (m_client_list[client_h]->m_dead_penalty_time > 0) {
+						std::memset(m_client_list[client_h]->m_locked_map_name, 0, sizeof(m_client_list[client_h]->m_locked_map_name));
+						strcpy(m_client_list[client_h]->m_locked_map_name, "elvine");
+						m_client_list[client_h]->m_locked_map_time = 60 * 5;
+						m_client_list[client_h]->m_dead_penalty_time = 60 * 10; // v2.04
 					}
 					else {
-						memcpy(m_pClientList[iClientH]->m_cMapName, "resurr2", 7);
-						m_pClientList[iClientH]->m_iDeadPenaltyTime = 60 * 10;
+						memcpy(m_client_list[client_h]->m_map_name, "resurr2", 7);
+						m_client_list[client_h]->m_dead_penalty_time = 60 * 10;
 					}
 				}
-				if (strcmp(cTmpMap, "aresden") == 0) {
-					memcpy(m_pClientList[iClientH]->m_cMapName, "arejail", 7);
-					strcpy(m_pClientList[iClientH]->m_cLockedMapName, "arejail");
-					m_pClientList[iClientH]->m_iLockedMapTime = 60 * 3;
+				if (strcmp(tmp_map, "aresden") == 0) {
+					memcpy(m_client_list[client_h]->m_map_name, "arejail", 7);
+					strcpy(m_client_list[client_h]->m_locked_map_name, "arejail");
+					m_client_list[client_h]->m_locked_map_time = 60 * 3;
 
 				}
-				else if (m_pClientList[iClientH]->m_iLevel > 80)
-					memcpy(m_pClientList[iClientH]->m_cMapName, "resurr2", 7);
-				else memcpy(m_pClientList[iClientH]->m_cMapName, "elvfarm", 7);
+				else if (m_client_list[client_h]->m_level > 80)
+					memcpy(m_client_list[client_h]->m_map_name, "resurr2", 7);
+				else memcpy(m_client_list[client_h]->m_map_name, "elvfarm", 7);
 			}
 		}
 
-		m_pClientList[iClientH]->m_bIsKilled = false;
-		m_pClientList[iClientH]->m_iHP = iGetMaxHP(iClientH);
-		m_pClientList[iClientH]->m_iHungerStatus = 100;
+		m_client_list[client_h]->m_is_killed = false;
+		m_client_list[client_h]->m_hp = get_max_hp(client_h);
+		m_client_list[client_h]->m_hunger_status = 100;
 
-		std::memset(cTmpMap, 0, sizeof(cTmpMap));
-		strcpy(cTmpMap, m_pClientList[iClientH]->m_cMapName);
-		// !!! RequestTeleportHandler m_cMapName
-		RequestTeleportHandler(iClientH, "2   ", cTmpMap, -1, -1);
+		std::memset(tmp_map, 0, sizeof(tmp_map));
+		strcpy(tmp_map, m_client_list[client_h]->m_map_name);
+		// !!! request_teleport_handler m_map_name
+		request_teleport_handler(client_h, "2   ", tmp_map, -1, -1);
 	}
 }
 
-void CGame::RequestShopContentsHandler(int iClientH, char* pData)
+void CGame::request_shop_contents_handler(int client_h, char* data)
 {
-	if (m_pClientList[iClientH] == 0) return;
-	if (!m_bIsShopDataAvailable) {
+	if (m_client_list[client_h] == 0) return;
+	if (!m_is_shop_data_available) {
 		// No shop data configured
 		return;
 	}
 
-	const auto* req = hb::net::PacketCast<hb::net::PacketShopRequest>(pData, sizeof(hb::net::PacketShopRequest));
+	const auto* req = hb::net::PacketCast<hb::net::PacketShopRequest>(data, sizeof(hb::net::PacketShopRequest));
 	if (!req) return;
 
-	int16_t npcType = req->npcType;
+	int16_t npc_type = req->npcType;
 
 	// Look up shop ID for this NPC type
-	auto mappingIt = m_NpcShopMappings.find(static_cast<int>(npcType));
-	if (mappingIt == m_NpcShopMappings.end()) {
+	auto mappingIt = m_npc_shop_mappings.find(static_cast<int>(npc_type));
+	if (mappingIt == m_npc_shop_mappings.end()) {
 		// No shop configured for this NPC type
-		hb::logger::log("Shop request for NPC type {} - no shop mapping found", npcType);
+		hb::logger::log("Shop request for NPC type {} - no shop mapping found", npc_type);
 		return;
 	}
 
-	int shopId = mappingIt->second;
+	int shop_id = mappingIt->second;
 
-	// Get shop data
-	auto shopIt = m_ShopData.find(shopId);
-	if (shopIt == m_ShopData.end() || shopIt->second.itemIds.empty()) {
+	// get shop data
+	auto shopIt = m_shop_data.find(shop_id);
+	if (shopIt == m_shop_data.end() || shopIt->second.item_ids.empty()) {
 		// Shop exists in mapping but has no items
-		hb::logger::log("Shop request for NPC type {}, shop {} - no items found", npcType, shopId);
+		hb::logger::log("Shop request for NPC type {}, shop {} - no items found", npc_type, shop_id);
 		return;
 	}
 
 	const ShopData& shop = shopIt->second;
-	uint16_t itemCount = static_cast<uint16_t>(shop.itemIds.size());
+	uint16_t itemCount = static_cast<uint16_t>(shop.item_ids.size());
 	if (itemCount > hb::net::MAX_SHOP_ITEMS) {
 		itemCount = hb::net::MAX_SHOP_ITEMS;
 	}
@@ -10210,512 +10230,512 @@ void CGame::RequestShopContentsHandler(int iClientH, char* pData)
 	// Build response packet
 	// Header + array of int16_t item IDs
 	size_t packetSize = sizeof(hb::net::PacketShopResponseHeader) + (itemCount * sizeof(int16_t));
-	char* cData = new char[packetSize];
-	std::memset(cData, 0, packetSize);
+	char* resp_data = new char[packetSize];
+	std::memset(resp_data, 0, packetSize);
 
-	auto* resp = reinterpret_cast<hb::net::PacketShopResponseHeader*>(cData);
+	auto* resp = reinterpret_cast<hb::net::PacketShopResponseHeader*>(resp_data);
 	resp->header.msg_id = MSGID_RESPONSE_SHOP_CONTENTS;
 	resp->header.msg_type = MsgType::Confirm;
-	resp->npcType = npcType;
-	resp->shopId = static_cast<int16_t>(shopId);
+	resp->npcType = npc_type;
+	resp->shopId = static_cast<int16_t>(shop_id);
 	resp->itemCount = itemCount;
 
 	// Copy item IDs after header
-	int16_t* itemIds = reinterpret_cast<int16_t*>(cData + sizeof(hb::net::PacketShopResponseHeader));
+	int16_t* item_ids = reinterpret_cast<int16_t*>(resp_data + sizeof(hb::net::PacketShopResponseHeader));
 	for (uint16_t i = 0; i < itemCount; i++) {
-		itemIds[i] = shop.itemIds[i];
+		item_ids[i] = shop.item_ids[i];
 	}
 
 	// Send to client
-	m_pClientList[iClientH]->m_pXSock->iSendMsg(cData, static_cast<uint32_t>(packetSize));
+	m_client_list[client_h]->m_socket->send_msg(resp_data, static_cast<uint32_t>(packetSize));
 
-	hb::logger::log("Sent shop contents: NPC type {}, shop {}, {} items", npcType, shopId, itemCount);
+	hb::logger::log("Sent shop contents: NPC type {}, shop {}, {} items", npc_type, shop_id, itemCount);
 
-	delete[] cData;
+	delete[] resp_data;
 }
 
-void CGame::JoinPartyHandler(int iClientH, int iV1, const char* pMemberName)
+void CGame::join_party_handler(int client_h, int v1, const char* member_name)
 {
-	char cData[120]{};
+	char data[120]{};
 
-	if (m_pClientList[iClientH] == 0) return;
+	if (m_client_list[client_h] == 0) return;
 
-	switch (iV1) {
+	switch (v1) {
 	case 0:
-		RequestDeletePartyHandler(iClientH);
+		request_delete_party_handler(client_h);
 		break;
 
 	case 1:
 		//testcode
-		hb::logger::log("Party join request: player={}({}) party={} status={} target={} name={}", m_pClientList[iClientH]->m_cCharName, iClientH, m_pClientList[iClientH]->m_iPartyID, m_pClientList[iClientH]->m_iPartyStatus, m_pClientList[iClientH]->m_iReqJoinPartyClientH, m_pClientList[iClientH]->m_cReqJoinPartyName);
+		hb::logger::log("Party join request: player={}({}) party={} status={} target={} name={}", m_client_list[client_h]->m_char_name, client_h, m_client_list[client_h]->m_party_id, m_client_list[client_h]->m_party_status, m_client_list[client_h]->m_req_join_party_client_h, m_client_list[client_h]->m_req_join_party_name);
 
-		if ((m_pClientList[iClientH]->m_iPartyID != 0) || (m_pClientList[iClientH]->m_iPartyStatus != PartyStatus::Null)) {
-			SendNotifyMsg(0, iClientH, Notify::Party, 7, 0, 0, 0);
-			m_pClientList[iClientH]->m_iReqJoinPartyClientH = 0;
-			std::memset(m_pClientList[iClientH]->m_cReqJoinPartyName, 0, sizeof(m_pClientList[iClientH]->m_cReqJoinPartyName));
-			m_pClientList[iClientH]->m_iPartyStatus = PartyStatus::Null;
+		if ((m_client_list[client_h]->m_party_id != 0) || (m_client_list[client_h]->m_party_status != PartyStatus::Null)) {
+			send_notify_msg(0, client_h, Notify::Party, 7, 0, 0, 0);
+			m_client_list[client_h]->m_req_join_party_client_h = 0;
+			std::memset(m_client_list[client_h]->m_req_join_party_name, 0, sizeof(m_client_list[client_h]->m_req_join_party_name));
+			m_client_list[client_h]->m_party_status = PartyStatus::Null;
 			//testcode
 			hb::logger::log("Party join rejected (reason 1)");
 			return;
 		}
 
 		for(int i = 1; i < MaxClients; i++)
-			if ((m_pClientList[i] != 0) && (hb_stricmp(m_pClientList[i]->m_cCharName, pMemberName) == 0)) {
-				if (m_pClientList[i]->m_appearance.bIsWalking) {
-					SendNotifyMsg(0, iClientH, Notify::Party, 7, 0, 0, 0);
+			if ((m_client_list[i] != 0) && (hb_stricmp(m_client_list[i]->m_char_name, member_name) == 0)) {
+				if (m_client_list[i]->m_appearance.is_walking) {
+					send_notify_msg(0, client_h, Notify::Party, 7, 0, 0, 0);
 					//testcode
 					hb::logger::log("Party join rejected (reason 2)");
 				}
-				else if (m_pClientList[i]->m_cSide != m_pClientList[iClientH]->m_cSide) {
-					SendNotifyMsg(0, iClientH, Notify::Party, 7, 0, 0, 0);
+				else if (m_client_list[i]->m_side != m_client_list[client_h]->m_side) {
+					send_notify_msg(0, client_h, Notify::Party, 7, 0, 0, 0);
 					//testcode
 					hb::logger::log("Party join rejected (reason 3)");
 				}
-				else if (m_pClientList[i]->m_iPartyStatus == PartyStatus::Processing) {
-					SendNotifyMsg(0, iClientH, Notify::Party, 7, 0, 0, 0);
+				else if (m_client_list[i]->m_party_status == PartyStatus::Processing) {
+					send_notify_msg(0, client_h, Notify::Party, 7, 0, 0, 0);
 					//testcode
 					hb::logger::log("Party join rejected (reason 4)");
 					//testcode
-					hb::logger::log("Party join rejected: client={} party={} name={}", i, m_pClientList[i]->m_iPartyID, m_pClientList[i]->m_cReqJoinPartyName);
+					hb::logger::log("Party join rejected: client={} party={} name={}", i, m_client_list[i]->m_party_id, m_client_list[i]->m_req_join_party_name);
 
-					m_pClientList[iClientH]->m_iReqJoinPartyClientH = 0;
-					std::memset(m_pClientList[iClientH]->m_cReqJoinPartyName, 0, sizeof(m_pClientList[iClientH]->m_cReqJoinPartyName));
-					m_pClientList[iClientH]->m_iPartyStatus = PartyStatus::Null;
+					m_client_list[client_h]->m_req_join_party_client_h = 0;
+					std::memset(m_client_list[client_h]->m_req_join_party_name, 0, sizeof(m_client_list[client_h]->m_req_join_party_name));
+					m_client_list[client_h]->m_party_status = PartyStatus::Null;
 				}
 				else {
-					m_pClientList[i]->m_iReqJoinPartyClientH = iClientH;
-					std::memset(m_pClientList[i]->m_cReqJoinPartyName, 0, sizeof(m_pClientList[i]->m_cReqJoinPartyName));
-					strcpy(m_pClientList[i]->m_cReqJoinPartyName, m_pClientList[iClientH]->m_cCharName);
-					SendNotifyMsg(0, i, Notify::QueryJoinParty, 0, 0, 0, m_pClientList[iClientH]->m_cCharName);
+					m_client_list[i]->m_req_join_party_client_h = client_h;
+					std::memset(m_client_list[i]->m_req_join_party_name, 0, sizeof(m_client_list[i]->m_req_join_party_name));
+					strcpy(m_client_list[i]->m_req_join_party_name, m_client_list[client_h]->m_char_name);
+					send_notify_msg(0, i, Notify::QueryJoinParty, 0, 0, 0, m_client_list[client_h]->m_char_name);
 
-					m_pClientList[iClientH]->m_iReqJoinPartyClientH = i;
-					std::memset(m_pClientList[iClientH]->m_cReqJoinPartyName, 0, sizeof(m_pClientList[iClientH]->m_cReqJoinPartyName));
-					strcpy(m_pClientList[iClientH]->m_cReqJoinPartyName, m_pClientList[i]->m_cCharName);
-					m_pClientList[iClientH]->m_iPartyStatus = PartyStatus::Processing;
+					m_client_list[client_h]->m_req_join_party_client_h = i;
+					std::memset(m_client_list[client_h]->m_req_join_party_name, 0, sizeof(m_client_list[client_h]->m_req_join_party_name));
+					strcpy(m_client_list[client_h]->m_req_join_party_name, m_client_list[i]->m_char_name);
+					m_client_list[client_h]->m_party_status = PartyStatus::Processing;
 				}
 				return;
 			}
 		break;
 
 	case 2:
-		if (m_pClientList[iClientH]->m_iPartyStatus == PartyStatus::Confirm) {
-			std::memset(cData, 0, sizeof(cData));
+		if (m_client_list[client_h]->m_party_status == PartyStatus::Confirm) {
+			std::memset(data, 0, sizeof(data));
 			hb::net::PartyOpPayloadWithId partyOp{};
-			partyOp.msg_id = ServerMsgId::PartyOperation;
+			partyOp.msg_id = ServerMsgId::party_operation;
 			partyOp.op_type = 6;
-			partyOp.client_h = static_cast<uint16_t>(iClientH);
-			std::memcpy(partyOp.name, m_pClientList[iClientH]->m_cCharName, sizeof(partyOp.name));
-			partyOp.party_id = static_cast<uint16_t>(m_pClientList[iClientH]->m_iPartyID);
-			std::memcpy(cData, &partyOp, sizeof(partyOp));
-			PartyOperation(cData);
+			partyOp.client_h = static_cast<uint16_t>(client_h);
+			std::memcpy(partyOp.name, m_client_list[client_h]->m_char_name, sizeof(partyOp.name));
+			partyOp.party_id = static_cast<uint16_t>(m_client_list[client_h]->m_party_id);
+			std::memcpy(data, &partyOp, sizeof(partyOp));
+			party_operation(data);
 		}
 		break;
 	}
 }
 
-void CGame::ActivateSpecialAbilityHandler(int iClientH)
+void CGame::activate_special_ability_handler(int client_h)
 {
-	uint32_t dwTime = GameClock::GetTimeMS();
+	uint32_t time = GameClock::GetTimeMS();
 
-	if (m_pClientList[iClientH] == 0) return;
-	if (m_pClientList[iClientH]->m_iSpecialAbilityTime != 0) return;
-	if (m_pClientList[iClientH]->m_iSpecialAbilityType == 0) return;
-	if (m_pClientList[iClientH]->m_bIsSpecialAbilityEnabled) return;
+	if (m_client_list[client_h] == 0) return;
+	if (m_client_list[client_h]->m_special_ability_time != 0) return;
+	if (m_client_list[client_h]->m_special_ability_type == 0) return;
+	if (m_client_list[client_h]->m_is_special_ability_enabled) return;
 
-	m_pClientList[iClientH]->m_bIsSpecialAbilityEnabled = true;
-	m_pClientList[iClientH]->m_dwSpecialAbilityStartTime = dwTime;
+	m_client_list[client_h]->m_is_special_ability_enabled = true;
+	m_client_list[client_h]->m_special_ability_start_time = time;
 
-	m_pClientList[iClientH]->m_iSpecialAbilityTime = SpecialAbilityTimeSec;
+	m_client_list[client_h]->m_special_ability_time = SpecialAbilityTimeSec;
 
-	switch (m_pClientList[iClientH]->m_iSpecialAbilityType) {
+	switch (m_client_list[client_h]->m_special_ability_type) {
 	case 1:
 	case 2:
 	case 3:
 	case 4:
 	case 5:
-		m_pClientList[iClientH]->m_appearance.iEffectType = 1;
+		m_client_list[client_h]->m_appearance.effect_type = 1;
 		break;
 	case 50:
 	case 51:
 	case 52:
 	case 53:
 	case 54:
-		m_pClientList[iClientH]->m_appearance.iEffectType = 2;
+		m_client_list[client_h]->m_appearance.effect_type = 2;
 		break;
 	}
 
-	SendNotifyMsg(0, iClientH, Notify::SpecialAbilityStatus, 1, m_pClientList[iClientH]->m_iSpecialAbilityType, m_pClientList[iClientH]->m_iSpecialAbilityLastSec, 0);
-	SendEventToNearClient_TypeA(iClientH, hb::shared::owner_class::Player, MsgId::EventMotion, Type::NullAction, 0, 0, 0);
+	send_notify_msg(0, client_h, Notify::SpecialAbilityStatus, 1, m_client_list[client_h]->m_special_ability_type, m_client_list[client_h]->m_special_ability_last_sec, 0);
+	send_event_to_near_client_type_a(client_h, hb::shared::owner_class::Player, MsgId::EventMotion, Type::NullAction, 0, 0, 0);
 }
 
-void CGame::UpdateMapSectorInfo()
+void CGame::update_map_sector_info()
 {
-	int iMaxNeutralActivity, iMaxAresdenActivity, iMaxElvineActivity, iMaxMonsterActivity, iMaxPlayerActivity;
+	int max_neutral_activity, max_aresden_activity, max_elvine_activity, max_monster_activity, max_player_activity;
 
 	for(int i = 0; i < MaxMaps; i++)
-		if (m_pMapList[i] != 0) {
+		if (m_map_list[i] != 0) {
 
-			iMaxNeutralActivity = iMaxAresdenActivity = iMaxElvineActivity = iMaxMonsterActivity = iMaxPlayerActivity = 0;
-			m_pMapList[i]->m_iMaxNx = m_pMapList[i]->m_iMaxNy = m_pMapList[i]->m_iMaxAx = m_pMapList[i]->m_iMaxAy = 0;
-			m_pMapList[i]->m_iMaxEx = m_pMapList[i]->m_iMaxEy = m_pMapList[i]->m_iMaxMx = m_pMapList[i]->m_iMaxMy = 0;
-			m_pMapList[i]->m_iMaxPx = m_pMapList[i]->m_iMaxPy = 0;
+			max_neutral_activity = max_aresden_activity = max_elvine_activity = max_monster_activity = max_player_activity = 0;
+			m_map_list[i]->m_top_neutral_sector_x = m_map_list[i]->m_top_neutral_sector_y = m_map_list[i]->m_top_aresden_sector_x = m_map_list[i]->m_top_aresden_sector_y = 0;
+			m_map_list[i]->m_top_elvine_sector_x = m_map_list[i]->m_top_elvine_sector_y = m_map_list[i]->m_top_monster_sector_x = m_map_list[i]->m_top_monster_sector_y = 0;
+			m_map_list[i]->m_top_player_sector_x = m_map_list[i]->m_top_player_sector_y = 0;
 
 			// TempSectorInfo   SectorInfo   TempSectorInfo .
 			for(int ix = 0; ix < smap::MaxSectors; ix++)
 				for(int iy = 0; iy < smap::MaxSectors; iy++) {
-					if (m_pMapList[i]->m_stTempSectorInfo[ix][iy].iNeutralActivity > iMaxNeutralActivity) {
-						iMaxNeutralActivity = m_pMapList[i]->m_stTempSectorInfo[ix][iy].iNeutralActivity;
-						m_pMapList[i]->m_iMaxNx = ix;
-						m_pMapList[i]->m_iMaxNy = iy;
+					if (m_map_list[i]->m_temp_sector_info[ix][iy].neutral_activity > max_neutral_activity) {
+						max_neutral_activity = m_map_list[i]->m_temp_sector_info[ix][iy].neutral_activity;
+						m_map_list[i]->m_top_neutral_sector_x = ix;
+						m_map_list[i]->m_top_neutral_sector_y = iy;
 					}
 
-					if (m_pMapList[i]->m_stTempSectorInfo[ix][iy].iAresdenActivity > iMaxAresdenActivity) {
-						iMaxAresdenActivity = m_pMapList[i]->m_stTempSectorInfo[ix][iy].iAresdenActivity;
-						m_pMapList[i]->m_iMaxAx = ix;
-						m_pMapList[i]->m_iMaxAy = iy;
+					if (m_map_list[i]->m_temp_sector_info[ix][iy].aresden_activity > max_aresden_activity) {
+						max_aresden_activity = m_map_list[i]->m_temp_sector_info[ix][iy].aresden_activity;
+						m_map_list[i]->m_top_aresden_sector_x = ix;
+						m_map_list[i]->m_top_aresden_sector_y = iy;
 					}
 
-					if (m_pMapList[i]->m_stTempSectorInfo[ix][iy].iElvineActivity > iMaxElvineActivity) {
-						iMaxElvineActivity = m_pMapList[i]->m_stTempSectorInfo[ix][iy].iElvineActivity;
-						m_pMapList[i]->m_iMaxEx = ix;
-						m_pMapList[i]->m_iMaxEy = iy;
+					if (m_map_list[i]->m_temp_sector_info[ix][iy].elvine_activity > max_elvine_activity) {
+						max_elvine_activity = m_map_list[i]->m_temp_sector_info[ix][iy].elvine_activity;
+						m_map_list[i]->m_top_elvine_sector_x = ix;
+						m_map_list[i]->m_top_elvine_sector_y = iy;
 					}
 
-					if (m_pMapList[i]->m_stTempSectorInfo[ix][iy].iMonsterActivity > iMaxMonsterActivity) {
-						iMaxMonsterActivity = m_pMapList[i]->m_stTempSectorInfo[ix][iy].iMonsterActivity;
-						m_pMapList[i]->m_iMaxMx = ix;
-						m_pMapList[i]->m_iMaxMy = iy;
+					if (m_map_list[i]->m_temp_sector_info[ix][iy].monster_activity > max_monster_activity) {
+						max_monster_activity = m_map_list[i]->m_temp_sector_info[ix][iy].monster_activity;
+						m_map_list[i]->m_top_monster_sector_x = ix;
+						m_map_list[i]->m_top_monster_sector_y = iy;
 					}
 
-					if (m_pMapList[i]->m_stTempSectorInfo[ix][iy].iPlayerActivity > iMaxPlayerActivity) {
-						iMaxPlayerActivity = m_pMapList[i]->m_stTempSectorInfo[ix][iy].iPlayerActivity;
-						m_pMapList[i]->m_iMaxPx = ix;
-						m_pMapList[i]->m_iMaxPy = iy;
+					if (m_map_list[i]->m_temp_sector_info[ix][iy].player_activity > max_player_activity) {
+						max_player_activity = m_map_list[i]->m_temp_sector_info[ix][iy].player_activity;
+						m_map_list[i]->m_top_player_sector_x = ix;
+						m_map_list[i]->m_top_player_sector_y = iy;
 					}
 				}
 
 			// TempSectorInfo .
-			m_pMapList[i]->ClearTempSectorInfo();
+			m_map_list[i]->clear_temp_sector_info();
 
 			// Sector Info
-			if (m_pMapList[i]->m_iMaxNx > 0) m_pMapList[i]->m_stSectorInfo[m_pMapList[i]->m_iMaxNx][m_pMapList[i]->m_iMaxNy].iNeutralActivity++;
-			if (m_pMapList[i]->m_iMaxAx > 0) m_pMapList[i]->m_stSectorInfo[m_pMapList[i]->m_iMaxAx][m_pMapList[i]->m_iMaxAy].iAresdenActivity++;
-			if (m_pMapList[i]->m_iMaxEx > 0) m_pMapList[i]->m_stSectorInfo[m_pMapList[i]->m_iMaxEx][m_pMapList[i]->m_iMaxEy].iElvineActivity++;
-			if (m_pMapList[i]->m_iMaxMx > 0) m_pMapList[i]->m_stSectorInfo[m_pMapList[i]->m_iMaxMx][m_pMapList[i]->m_iMaxMy].iMonsterActivity++;
-			if (m_pMapList[i]->m_iMaxPx > 0) m_pMapList[i]->m_stSectorInfo[m_pMapList[i]->m_iMaxPx][m_pMapList[i]->m_iMaxPy].iPlayerActivity++;
+			if (m_map_list[i]->m_top_neutral_sector_x > 0) m_map_list[i]->m_sector_info[m_map_list[i]->m_top_neutral_sector_x][m_map_list[i]->m_top_neutral_sector_y].neutral_activity++;
+			if (m_map_list[i]->m_top_aresden_sector_x > 0) m_map_list[i]->m_sector_info[m_map_list[i]->m_top_aresden_sector_x][m_map_list[i]->m_top_aresden_sector_y].aresden_activity++;
+			if (m_map_list[i]->m_top_elvine_sector_x > 0) m_map_list[i]->m_sector_info[m_map_list[i]->m_top_elvine_sector_x][m_map_list[i]->m_top_elvine_sector_y].elvine_activity++;
+			if (m_map_list[i]->m_top_monster_sector_x > 0) m_map_list[i]->m_sector_info[m_map_list[i]->m_top_monster_sector_x][m_map_list[i]->m_top_monster_sector_y].monster_activity++;
+			if (m_map_list[i]->m_top_player_sector_x > 0) m_map_list[i]->m_sector_info[m_map_list[i]->m_top_player_sector_x][m_map_list[i]->m_top_player_sector_y].player_activity++;
 		}
 }
 
-void CGame::AgingMapSectorInfo()
+void CGame::aging_map_sector_info()
 {
 	for(int i = 0; i < MaxMaps; i++)
-		if (m_pMapList[i] != 0) {
+		if (m_map_list[i] != 0) {
 			for(int ix = 0; ix < smap::MaxSectors; ix++)
 				for(int iy = 0; iy < smap::MaxSectors; iy++) {
-					m_pMapList[i]->m_stSectorInfo[ix][iy].iNeutralActivity--;
-					m_pMapList[i]->m_stSectorInfo[ix][iy].iAresdenActivity--;
-					m_pMapList[i]->m_stSectorInfo[ix][iy].iElvineActivity--;
-					m_pMapList[i]->m_stSectorInfo[ix][iy].iMonsterActivity--;
-					m_pMapList[i]->m_stSectorInfo[ix][iy].iPlayerActivity--;
+					m_map_list[i]->m_sector_info[ix][iy].neutral_activity--;
+					m_map_list[i]->m_sector_info[ix][iy].aresden_activity--;
+					m_map_list[i]->m_sector_info[ix][iy].elvine_activity--;
+					m_map_list[i]->m_sector_info[ix][iy].monster_activity--;
+					m_map_list[i]->m_sector_info[ix][iy].player_activity--;
 
-					if (m_pMapList[i]->m_stSectorInfo[ix][iy].iNeutralActivity < 0) m_pMapList[i]->m_stSectorInfo[ix][iy].iNeutralActivity = 0;
-					if (m_pMapList[i]->m_stSectorInfo[ix][iy].iAresdenActivity < 0) m_pMapList[i]->m_stSectorInfo[ix][iy].iAresdenActivity = 0;
-					if (m_pMapList[i]->m_stSectorInfo[ix][iy].iElvineActivity < 0) m_pMapList[i]->m_stSectorInfo[ix][iy].iElvineActivity = 0;
-					if (m_pMapList[i]->m_stSectorInfo[ix][iy].iMonsterActivity < 0) m_pMapList[i]->m_stSectorInfo[ix][iy].iMonsterActivity = 0;
-					if (m_pMapList[i]->m_stSectorInfo[ix][iy].iPlayerActivity < 0) m_pMapList[i]->m_stSectorInfo[ix][iy].iPlayerActivity = 0;
+					if (m_map_list[i]->m_sector_info[ix][iy].neutral_activity < 0) m_map_list[i]->m_sector_info[ix][iy].neutral_activity = 0;
+					if (m_map_list[i]->m_sector_info[ix][iy].aresden_activity < 0) m_map_list[i]->m_sector_info[ix][iy].aresden_activity = 0;
+					if (m_map_list[i]->m_sector_info[ix][iy].elvine_activity < 0) m_map_list[i]->m_sector_info[ix][iy].elvine_activity = 0;
+					if (m_map_list[i]->m_sector_info[ix][iy].monster_activity < 0) m_map_list[i]->m_sector_info[ix][iy].monster_activity = 0;
+					if (m_map_list[i]->m_sector_info[ix][iy].player_activity < 0) m_map_list[i]->m_sector_info[ix][iy].player_activity = 0;
 				}
 		}
 }
 
 // New 14/05/2004 Changed
 
-void CGame::CheckConnectionHandler(int iClientH, char* pData, bool bAlreadyResponded)
+void CGame::check_connection_handler(int client_h, char* data, bool already_responded)
 {
-	uint32_t dwTimeRcv, dwTime, dwTimeGapClient, dwTimeGapServer;
+	uint32_t time_rcv, time, time_gap_client, time_gap_server;
 
-	if (m_pClientList[iClientH] == 0) return;
+	if (m_client_list[client_h] == 0) return;
 
-	dwTime = GameClock::GetTimeMS();
-	const auto* req = hb::net::PacketCast<hb::net::PacketCommandCheckConnection>(pData, sizeof(hb::net::PacketCommandCheckConnection));
+	time = GameClock::GetTimeMS();
+	const auto* req = hb::net::PacketCast<hb::net::PacketCommandCheckConnection>(data, sizeof(hb::net::PacketCommandCheckConnection));
 	if (!req) return;
-	dwTimeRcv = req->time_ms;
+	time_rcv = req->time_ms;
 
-	if (m_pClientList[iClientH]->m_dwInitCCTimeRcv == 0) {
-		m_pClientList[iClientH]->m_dwInitCCTimeRcv = dwTimeRcv;
-		m_pClientList[iClientH]->m_dwInitCCTime = dwTime;
+	if (m_client_list[client_h]->m_initial_check_time_received == 0) {
+		m_client_list[client_h]->m_initial_check_time_received = time_rcv;
+		m_client_list[client_h]->m_initial_check_time = time;
 	}
 	else {
-		dwTimeGapClient = (dwTimeRcv - m_pClientList[iClientH]->m_dwInitCCTimeRcv);
-		dwTimeGapServer = (dwTime - m_pClientList[iClientH]->m_dwInitCCTime);
+		time_gap_client = (time_rcv - m_client_list[client_h]->m_initial_check_time_received);
+		time_gap_server = (time - m_client_list[client_h]->m_initial_check_time);
 
-		if (dwTimeGapClient < dwTimeGapServer) return;
-		if ((dwTimeGapClient - dwTimeGapServer) >= (uint32_t)m_iClientTimeout) {
-			DeleteClient(iClientH, true, true);
+		if (time_gap_client < time_gap_server) return;
+		if ((time_gap_client - time_gap_server) >= (uint32_t)m_client_timeout) {
+			delete_client(client_h, true, true);
 			return;
 		}
 	}
 
-	if (!bAlreadyResponded) {
+	if (!already_responded) {
 		hb::net::PacketCommandCheckConnection resp{};
 		resp.header.msg_id = MsgId::CommandCheckConnection;
 		resp.header.msg_type = MsgType::Confirm;
-		resp.time_ms = dwTimeRcv;
-		m_pClientList[iClientH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&resp), sizeof(resp));
+		resp.time_ms = time_rcv;
+		m_client_list[client_h]->m_socket->send_msg(reinterpret_cast<char*>(&resp), sizeof(resp));
 	}
 }
 
-void CGame::RequestHelpHandler(int iClientH)
+void CGame::request_help_handler(int client_h)
 {
 	
 
-	if (m_pClientList[iClientH] == 0) return;
-	if (m_pClientList[iClientH]->m_iGuildRank == -1) return;
-	if (m_pClientList[iClientH]->m_iCrusadeDuty != 1) return;
+	if (m_client_list[client_h] == 0) return;
+	if (m_client_list[client_h]->m_guild_rank == -1) return;
+	if (m_client_list[client_h]->m_crusade_duty != 1) return;
 
 	for(int i = 1; i < MaxClients; i++)
-		if ((m_pClientList[i] != 0) && (m_pClientList[i]->m_iGuildRank == 0) &&
-			(m_pClientList[i]->m_iCrusadeDuty == 3) && (m_pClientList[i]->m_iGuildGUID == m_pClientList[iClientH]->m_iGuildGUID)) {
-			SendNotifyMsg(0, i, Notify::Help, m_pClientList[iClientH]->m_sX, m_pClientList[iClientH]->m_sY, m_pClientList[iClientH]->m_iHP, m_pClientList[iClientH]->m_cCharName);
+		if ((m_client_list[i] != 0) && (m_client_list[i]->m_guild_rank == 0) &&
+			(m_client_list[i]->m_crusade_duty == 3) && (m_client_list[i]->m_guild_guid == m_client_list[client_h]->m_guild_guid)) {
+			send_notify_msg(0, i, Notify::Help, m_client_list[client_h]->m_x, m_client_list[client_h]->m_y, m_client_list[client_h]->m_hp, m_client_list[client_h]->m_char_name);
 			return;
 		}
 
-	SendNotifyMsg(0, iClientH, Notify::HelpFailed, 0, 0, 0, 0);
+	send_notify_msg(0, client_h, Notify::HelpFailed, 0, 0, 0, 0);
 }
 
-bool CGame::bAddClientShortCut(int iClientH)
+bool CGame::add_client_short_cut(int client_h)
 {
 	
 
 	for(int i = 0; i < MaxClients; i++)
-		if (m_iClientShortCut[i] == iClientH) return false;
+		if (m_client_shortcut[i] == client_h) return false;
 
 	for(int i = 0; i < MaxClients; i++)
-		if (m_iClientShortCut[i] == 0) {
-			m_iClientShortCut[i] = iClientH;
+		if (m_client_shortcut[i] == 0) {
+			m_client_shortcut[i] = client_h;
 			return true;
 		}
 
 	return false;
 }
 
-void CGame::RemoveClientShortCut(int iClientH)
+void CGame::remove_client_short_cut(int client_h)
 {
 	
 
 	for(int i = 0; i < MaxClients + 1; i++)
-		if (m_iClientShortCut[i] == iClientH) {
-			m_iClientShortCut[i] = 0;
+		if (m_client_shortcut[i] == client_h) {
+			m_client_shortcut[i] = 0;
 			goto RCSC_LOOPBREAK;
 		}
 
 RCSC_LOOPBREAK:
 
-	//m_iClientShortCut[i] = m_iClientShortCut[m_iTotalClients+1];
-	//m_iClientShortCut[m_iTotalClients+1] = 0;
+	//m_client_shortcut[i] = m_client_shortcut[m_total_clients+1];
+	//m_client_shortcut[m_total_clients+1] = 0;
 	for(int i = 0; i < MaxClients; i++)
-		if ((m_iClientShortCut[i] == 0) && (m_iClientShortCut[i + 1] != 0)) {
-			m_iClientShortCut[i] = m_iClientShortCut[i + 1];
-			m_iClientShortCut[i + 1] = 0;
+		if ((m_client_shortcut[i] == 0) && (m_client_shortcut[i + 1] != 0)) {
+			m_client_shortcut[i] = m_client_shortcut[i + 1];
+			m_client_shortcut[i + 1] = 0;
 		}
 }
 
-int CGame::iGetMapLocationSide(char* pMapName)
+int CGame::get_map_location_side(char* map_name)
 {
 
-	if (strcmp(pMapName, "aresden") == 0) return 3;
-	if (strcmp(pMapName, "elvine") == 0) return 4;
-	if (strcmp(pMapName, "arebrk11") == 0) return 3;
-	if (strcmp(pMapName, "elvbrk11") == 0) return 4;
+	if (strcmp(map_name, "aresden") == 0) return 3;
+	if (strcmp(map_name, "elvine") == 0) return 4;
+	if (strcmp(map_name, "arebrk11") == 0) return 3;
+	if (strcmp(map_name, "elvbrk11") == 0) return 4;
 
-	if (strcmp(pMapName, "cityhall_1") == 0) return 1;
-	if (strcmp(pMapName, "cityhall_2") == 0) return 2;
-	if (strcmp(pMapName, "cath_1") == 0) return 1;
-	if (strcmp(pMapName, "cath_2") == 0) return 2;
-	if (strcmp(pMapName, "gshop_1") == 0) return 1;
-	if (strcmp(pMapName, "gshop_2") == 0) return 2;
-	if (strcmp(pMapName, "bsmith_1") == 0) return 1;
-	if (strcmp(pMapName, "bsmith_2") == 0) return 2;
-	if (strcmp(pMapName, "wrhus_1") == 0) return 1;
-	if (strcmp(pMapName, "wrhus_2") == 0) return 2;
-	if (strcmp(pMapName, "gldhall_1") == 0) return 1;
-	if (strcmp(pMapName, "gldhall_2") == 0) return 2;
-	if (strcmp(pMapName, "wzdtwr_1") == 0) return 1;
-	if (strcmp(pMapName, "wzdtwr_2") == 0) return 2;
-	if (strcmp(pMapName, "arefarm") == 0) return 1;
-	if (strcmp(pMapName, "elvfarm") == 0) return 2;
-	if (strcmp(pMapName, "arewrhus") == 0) return 1;
-	if (strcmp(pMapName, "elvwrhus") == 0) return 2;
-	if (strcmp(pMapName, "cmdhall_1") == 0) return 1;
-	if (strcmp(pMapName, "Cmdhall_2") == 0) return 2;
+	if (strcmp(map_name, "cityhall_1") == 0) return 1;
+	if (strcmp(map_name, "cityhall_2") == 0) return 2;
+	if (strcmp(map_name, "cath_1") == 0) return 1;
+	if (strcmp(map_name, "cath_2") == 0) return 2;
+	if (strcmp(map_name, "gshop_1") == 0) return 1;
+	if (strcmp(map_name, "gshop_2") == 0) return 2;
+	if (strcmp(map_name, "bsmith_1") == 0) return 1;
+	if (strcmp(map_name, "bsmith_2") == 0) return 2;
+	if (strcmp(map_name, "wrhus_1") == 0) return 1;
+	if (strcmp(map_name, "wrhus_2") == 0) return 2;
+	if (strcmp(map_name, "gldhall_1") == 0) return 1;
+	if (strcmp(map_name, "gldhall_2") == 0) return 2;
+	if (strcmp(map_name, "wzdtwr_1") == 0) return 1;
+	if (strcmp(map_name, "wzdtwr_2") == 0) return 2;
+	if (strcmp(map_name, "arefarm") == 0) return 1;
+	if (strcmp(map_name, "elvfarm") == 0) return 2;
+	if (strcmp(map_name, "arewrhus") == 0) return 1;
+	if (strcmp(map_name, "elvwrhus") == 0) return 2;
+	if (strcmp(map_name, "cmdhall_1") == 0) return 1;
+	if (strcmp(map_name, "Cmdhall_2") == 0) return 2;
 
 	return 0;
 }
 
 //ArchAngel Function
 
-void CGame::RequestChangePlayMode(int iClientH)
+void CGame::request_change_play_mode(int client_h)
 {
 
-	if (m_pClientList[iClientH] == 0) return;
-	if (m_pClientList[iClientH]->m_iPKCount > 0) return;
-	if (m_pClientList[iClientH]->m_bIsInitComplete == false) return;
+	if (m_client_list[client_h] == 0) return;
+	if (m_client_list[client_h]->m_player_kill_count > 0) return;
+	if (m_client_list[client_h]->m_is_init_complete == false) return;
 
-	if (memcmp(m_pClientList[iClientH]->m_cMapName, "cityhall", 8) != 0) return;
+	if (memcmp(m_client_list[client_h]->m_map_name, "cityhall", 8) != 0) return;
 
-	if (m_pClientList[iClientH]->m_iLevel < 100 ||
-		m_pClientList[iClientH]->m_bIsPlayerCivil) {
-		if (memcmp(m_pClientList[iClientH]->m_cLocation, "aresden", 7) == 0) strcpy(m_pClientList[iClientH]->m_cLocation, "arehunter");
-		else if (memcmp(m_pClientList[iClientH]->m_cLocation, "elvine", 6) == 0) strcpy(m_pClientList[iClientH]->m_cLocation, "elvhunter");
-		else if (memcmp(m_pClientList[iClientH]->m_cLocation, "arehunter", 9) == 0) strcpy(m_pClientList[iClientH]->m_cLocation, "aresden");
-		else if (memcmp(m_pClientList[iClientH]->m_cLocation, "elvhunter", 9) == 0) strcpy(m_pClientList[iClientH]->m_cLocation, "elvine");
+	if (m_client_list[client_h]->m_level < 100 ||
+		m_client_list[client_h]->m_is_player_civil) {
+		if (memcmp(m_client_list[client_h]->m_location, "aresden", 7) == 0) strcpy(m_client_list[client_h]->m_location, "arehunter");
+		else if (memcmp(m_client_list[client_h]->m_location, "elvine", 6) == 0) strcpy(m_client_list[client_h]->m_location, "elvhunter");
+		else if (memcmp(m_client_list[client_h]->m_location, "arehunter", 9) == 0) strcpy(m_client_list[client_h]->m_location, "aresden");
+		else if (memcmp(m_client_list[client_h]->m_location, "elvhunter", 9) == 0) strcpy(m_client_list[client_h]->m_location, "elvine");
 
-		if (m_pClientList[iClientH]->m_bIsPlayerCivil)
-			m_pClientList[iClientH]->m_bIsPlayerCivil = false;
-		else m_pClientList[iClientH]->m_bIsPlayerCivil = true;
+		if (m_client_list[client_h]->m_is_player_civil)
+			m_client_list[client_h]->m_is_player_civil = false;
+		else m_client_list[client_h]->m_is_player_civil = true;
 
-		SendNotifyMsg(0, iClientH, Notify::ChangePlayMode, 0, 0, 0, m_pClientList[iClientH]->m_cLocation);
-		SendEventToNearClient_TypeA(iClientH, hb::shared::owner_class::Player, MsgId::EventMotion, 100, 0, 0, 0);
+		send_notify_msg(0, client_h, Notify::ChangePlayMode, 0, 0, 0, m_client_list[client_h]->m_location);
+		send_event_to_near_client_type_a(client_h, hb::shared::owner_class::Player, MsgId::EventMotion, 100, 0, 0, 0);
 	}
 
-	g_login->LocalSavePlayerData(iClientH);
+	g_login->local_save_player_data(client_h);
 }
 
 /*********************************************************************************************************************
-**  void CGame::SetInvisibilityFlag(short sOwnerH, char cOwnerType, bool bStatus)									**
+**  void CGame::set_invisibility_flag(short owner_h, char owner_type, bool status)									**
 **  description			:: changes the status of the player to show invisibility aura								**
 **  last updated		:: November 20, 2004; 9:30 PM; Hypnotoad													**
 **	return value		:: void																						**
 *********************************************************************************************************************/
 
 /*********************************************************************************************************************
-**  void CGame::SetInhibitionCastingFlag(short sOwnerH, char cOwnerType, bool bStatus)								**
+**  void CGame::set_inhibition_casting_flag(short owner_h, char owner_type, bool status)								**
 **  description			:: changes the status of the player to show inhibit casting aura							**
 **  last updated		:: November 20, 2004; 9:33 PM; Hypnotoad													**
 **	return value		:: void																						**
 *********************************************************************************************************************/
 
 /*********************************************************************************************************************
-**  void void CGame::SetBerserkFlag(short sOwnerH, char cOwnerType, bool bStatus)									**
+**  void void CGame::set_berserk_flag(short owner_h, char owner_type, bool status)									**
 **  description			:: changes the status of the player to show berserk aura									**
 **  last updated		:: November 20, 2004; 9:35 PM; Hypnotoad													**
 **	return value		:: void																						**
 *********************************************************************************************************************/
 
 /*********************************************************************************************************************
-**  void void CGame::SetIceFlag(short sOwnerH, char cOwnerType, bool bStatus)										**
+**  void void CGame::set_ice_flag(short owner_h, char owner_type, bool status)										**
 **  description			:: changes the status of the player to show frozen aura										**
 **  last updated		:: November 20, 2004; 9:35 PM; Hypnotoad													**
 **	return value		:: void																						**
 *********************************************************************************************************************/
 
 /*********************************************************************************************************************
-**  void void CGame::SetPoisonFlag(short sOwnerH, char cOwnerType, bool bStatus)									**
+**  void void CGame::set_poison_flag(short owner_h, char owner_type, bool status)									**
 **  description			:: changes the status of the player to show poison aura										**
 **  last updated		:: November 20, 2004; 9:36 PM; Hypnotoad													**
 **	return value		:: void																						**
 *********************************************************************************************************************/
 
 /*********************************************************************************************************************
-**  void void CGame::SetIllusionFlag(short sOwnerH, char cOwnerType, bool bStatus)									**
+**  void void CGame::set_illusion_flag(short owner_h, char owner_type, bool status)									**
 **  description			:: changes the status of the player to show illusion aura									**
 **  last updated		:: November 20, 2004; 9:36 PM; Hypnotoad													**
 **	return value		:: void																						**
 *********************************************************************************************************************/
 
 /*********************************************************************************************************************
-**  void void CGame::SetHeroFlag(short sOwnerH, char cOwnerType, bool bStatus)										**
+**  void void CGame::set_hero_flag(short owner_h, char owner_type, bool status)										**
 **  description			:: changes the status of the player to show hero item aura									**
 **  last updated		:: November 20, 2004; 9:37 PM; Hypnotoad													**
 **	return value		:: void																						**
 *********************************************************************************************************************/
-int CGame::FindAdminByAccount(const char* accountName)
+int CGame::find_admin_by_account(const char* account_name)
 {
-	if (accountName == nullptr) return -1;
-	for (int i = 0; i < m_iAdminCount; i++) {
-		if (hb_stricmp(m_stAdminList[i].m_cAccountName, accountName) == 0)
+	if (account_name == nullptr) return -1;
+	for (int i = 0; i < m_admin_count; i++) {
+		if (hb_stricmp(m_admin_list[i].m_account_name, account_name) == 0)
 			return i;
 	}
 	return -1;
 }
 
-int CGame::FindAdminByCharName(const char* charName)
+int CGame::find_admin_by_char_name(const char* charName)
 {
 	if (charName == nullptr) return -1;
-	for (int i = 0; i < m_iAdminCount; i++) {
-		if (hb_stricmp(m_stAdminList[i].m_cCharName, charName) == 0)
+	for (int i = 0; i < m_admin_count; i++) {
+		if (hb_stricmp(m_admin_list[i].m_char_name, charName) == 0)
 			return i;
 	}
 	return -1;
 }
 
-bool CGame::IsClientAdmin(int iClientH)
+bool CGame::is_client_admin(int client_h)
 {
-	if (iClientH <= 0 || iClientH >= MaxClients) return false;
-	if (m_pClientList[iClientH] == nullptr) return false;
-	return m_pClientList[iClientH]->m_iAdminIndex != -1;
+	if (client_h <= 0 || client_h >= MaxClients) return false;
+	if (m_client_list[client_h] == nullptr) return false;
+	return m_client_list[client_h]->m_admin_index != -1;
 }
 
-int CGame::GetCommandRequiredLevel(const char* cmdName) const
+int CGame::get_command_required_level(const char* cmdName) const
 {
 	if (cmdName == nullptr) return hb::shared::admin::Administrator;
-	auto it = m_commandPermissions.find(cmdName);
-	if (it != m_commandPermissions.end())
-		return it->second.iAdminLevel;
+	auto it = m_command_permissions.find(cmdName);
+	if (it != m_command_permissions.end())
+		return it->second.admin_level;
 	return hb::shared::admin::Administrator;
 }
 
-int CGame::FindClientByName(const char* pName) const
+int CGame::find_client_by_name(const char* name) const
 {
-	if (pName == nullptr) return 0;
+	if (name == nullptr) return 0;
 	for (int i = 1; i < MaxClients; i++)
 	{
-		if (m_pClientList[i] != nullptr && m_pClientList[i]->m_bIsInitComplete)
+		if (m_client_list[i] != nullptr && m_client_list[i]->m_is_init_complete)
 		{
-			if (hb_strnicmp(m_pClientList[i]->m_cCharName, pName, hb::shared::limits::CharNameLen - 1) == 0)
+			if (hb_strnicmp(m_client_list[i]->m_char_name, name, hb::shared::limits::CharNameLen - 1) == 0)
 				return i;
 		}
 	}
 	return 0;
 }
 
-bool CGame::GMTeleportTo(int iClientH, const char* cDestMap, short sDestX, short sDestY)
+bool CGame::gm_teleport_to(int client_h, const char* dest_map, short dest_x, short dest_y)
 {
-	if (m_pClientList[iClientH] == nullptr) return false;
-	if (cDestMap == nullptr) return false;
+	if (m_client_list[client_h] == nullptr) return false;
+	if (dest_map == nullptr) return false;
 
 	// Find destination map index
-	int iDestMapIndex = -1;
+	int dest_map_index = -1;
 	for (int i = 0; i < MaxMaps; i++)
 	{
-		if (m_pMapList[i] != nullptr && memcmp(m_pMapList[i]->m_cName, cDestMap, 10) == 0)
+		if (m_map_list[i] != nullptr && memcmp(m_map_list[i]->m_name, dest_map, 10) == 0)
 		{
-			iDestMapIndex = i;
+			dest_map_index = i;
 			break;
 		}
 	}
-	if (iDestMapIndex == -1) return false;
+	if (dest_map_index == -1) return false;
 
 	// Remove from current location
-	m_pCombatManager->RemoveFromTarget(iClientH, hb::shared::owner_class::Player);
-	m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->ClearOwner(13, iClientH, hb::shared::owner_class::Player,
-		m_pClientList[iClientH]->m_sX, m_pClientList[iClientH]->m_sY);
-	SendEventToNearClient_TypeA(iClientH, hb::shared::owner_class::Player, MsgId::EventLog, MsgType::Reject, 0, 0, 0);
+	m_combat_manager->remove_from_target(client_h, hb::shared::owner_class::Player);
+	m_map_list[m_client_list[client_h]->m_map_index]->clear_owner(13, client_h, hb::shared::owner_class::Player,
+		m_client_list[client_h]->m_x, m_client_list[client_h]->m_y);
+	send_event_to_near_client_type_a(client_h, hb::shared::owner_class::Player, MsgId::EventLog, MsgType::Reject, 0, 0, 0);
 
 	// Update position and map
-	m_pClientList[iClientH]->m_sX = sDestX;
-	m_pClientList[iClientH]->m_sY = sDestY;
-	m_pClientList[iClientH]->m_cMapIndex = static_cast<char>(iDestMapIndex);
-	std::memset(m_pClientList[iClientH]->m_cMapName, 0, sizeof(m_pClientList[iClientH]->m_cMapName));
-	memcpy(m_pClientList[iClientH]->m_cMapName, m_pMapList[iDestMapIndex]->m_cName, 10);
+	m_client_list[client_h]->m_x = dest_x;
+	m_client_list[client_h]->m_y = dest_y;
+	m_client_list[client_h]->m_map_index = static_cast<char>(dest_map_index);
+	std::memset(m_client_list[client_h]->m_map_name, 0, sizeof(m_client_list[client_h]->m_map_name));
+	memcpy(m_client_list[client_h]->m_map_name, m_map_list[dest_map_index]->m_name, 10);
 
-	// Always send full INITDATA — same pattern as RequestTeleportHandler RTH_NEXTSTEP.
+	// Always send full INITDATA — same pattern as request_teleport_handler RTH_NEXTSTEP.
 	// Even same-map teleports need INITDATA so the client reinitializes its view.
-	SetPlayingStatus(iClientH);
+	set_playing_status(client_h);
 	// Set faction/identity status fields from player data
-	m_pClientList[iClientH]->m_status.bPK = (m_pClientList[iClientH]->m_iPKCount != 0) ? 1 : 0;
-	m_pClientList[iClientH]->m_status.bCitizen = (m_pClientList[iClientH]->m_cSide != 0) ? 1 : 0;
-	m_pClientList[iClientH]->m_status.bAresden = (m_pClientList[iClientH]->m_cSide == 1) ? 1 : 0;
-	m_pClientList[iClientH]->m_status.bHunter = m_pClientList[iClientH]->m_bIsPlayerCivil ? 1 : 0;
+	m_client_list[client_h]->m_status.pk = (m_client_list[client_h]->m_player_kill_count != 0) ? 1 : 0;
+	m_client_list[client_h]->m_status.citizen = (m_client_list[client_h]->m_side != 0) ? 1 : 0;
+	m_client_list[client_h]->m_status.aresden = (m_client_list[client_h]->m_side == 1) ? 1 : 0;
+	m_client_list[client_h]->m_status.hunter = m_client_list[client_h]->m_is_player_civil ? 1 : 0;
 
 	hb::net::PacketWriter writer;
 	char initMapData[hb::shared::limits::MsgBufferSize + 1];
@@ -10725,76 +10745,76 @@ bool CGame::GMTeleportTo(int iClientH, const char* cDestMap, short sDestX, short
 	init_header->header.msg_id = MsgId::ResponseInitData;
 	init_header->header.msg_type = MsgType::Confirm;
 
-	bGetEmptyPosition(&m_pClientList[iClientH]->m_sX, &m_pClientList[iClientH]->m_sY, m_pClientList[iClientH]->m_cMapIndex);
+	get_empty_position(&m_client_list[client_h]->m_x, &m_client_list[client_h]->m_y, m_client_list[client_h]->m_map_index);
 
-	init_header->player_object_id = static_cast<std::int16_t>(iClientH);
-	init_header->pivot_x = static_cast<std::int16_t>(m_pClientList[iClientH]->m_sX - hb::shared::view::PlayerPivotOffsetX);
-	init_header->pivot_y = static_cast<std::int16_t>(m_pClientList[iClientH]->m_sY - hb::shared::view::PlayerPivotOffsetY);
-	init_header->player_type = m_pClientList[iClientH]->m_sType;
-	init_header->appearance = m_pClientList[iClientH]->m_appearance;
-	init_header->status = m_pClientList[iClientH]->m_status;
-	std::memcpy(init_header->map_name, m_pClientList[iClientH]->m_cMapName, sizeof(init_header->map_name));
-	std::memcpy(init_header->cur_location, m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_cLocationName, sizeof(init_header->cur_location));
+	init_header->player_object_id = static_cast<std::int16_t>(client_h);
+	init_header->pivot_x = static_cast<std::int16_t>(m_client_list[client_h]->m_x - hb::shared::view::PlayerPivotOffsetX);
+	init_header->pivot_y = static_cast<std::int16_t>(m_client_list[client_h]->m_y - hb::shared::view::PlayerPivotOffsetY);
+	init_header->player_type = m_client_list[client_h]->m_type;
+	init_header->appearance = m_client_list[client_h]->m_appearance;
+	init_header->status = m_client_list[client_h]->m_status;
+	std::memcpy(init_header->map_name, m_client_list[client_h]->m_map_name, sizeof(init_header->map_name));
+	std::memcpy(init_header->cur_location, m_map_list[m_client_list[client_h]->m_map_index]->m_location_name, sizeof(init_header->cur_location));
 
-	if (m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_bIsFixedDayMode)
+	if (m_map_list[m_client_list[client_h]->m_map_index]->m_is_fixed_day_mode)
 		init_header->sprite_alpha = 1;
-	else init_header->sprite_alpha = m_cDayOrNight;
+	else init_header->sprite_alpha = m_day_or_night;
 
-	if (m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_bIsFixedDayMode)
+	if (m_map_list[m_client_list[client_h]->m_map_index]->m_is_fixed_day_mode)
 		init_header->weather_status = 0;
-	else init_header->weather_status = m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_cWhetherStatus;
+	else init_header->weather_status = m_map_list[m_client_list[client_h]->m_map_index]->m_weather_status;
 
-	init_header->contribution = m_pClientList[iClientH]->m_iContribution;
+	init_header->contribution = m_client_list[client_h]->m_contribution;
 
-	m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->SetOwner(iClientH,
+	m_map_list[m_client_list[client_h]->m_map_index]->set_owner(client_h,
 		hb::shared::owner_class::Player,
-		m_pClientList[iClientH]->m_sX,
-		m_pClientList[iClientH]->m_sY);
+		m_client_list[client_h]->m_x,
+		m_client_list[client_h]->m_y);
 
-	init_header->observer_mode = static_cast<std::uint8_t>(m_pClientList[iClientH]->m_bIsObserverMode);
-	init_header->rating = m_pClientList[iClientH]->m_iRating;
-	init_header->hp = m_pClientList[iClientH]->m_iHP;
+	init_header->observer_mode = static_cast<std::uint8_t>(m_client_list[client_h]->m_is_observer_mode);
+	init_header->rating = m_client_list[client_h]->m_rating;
+	init_header->hp = m_client_list[client_h]->m_hp;
 	init_header->discount = 0;
 
-	int iSize = iComposeInitMapData(m_pClientList[iClientH]->m_sX - hb::shared::view::CenterX, m_pClientList[iClientH]->m_sY - hb::shared::view::CenterY, iClientH, initMapData);
-	writer.AppendBytes(initMapData, static_cast<std::size_t>(iSize));
+	int size = compose_init_map_data(m_client_list[client_h]->m_x - hb::shared::view::CenterX, m_client_list[client_h]->m_y - hb::shared::view::CenterY, client_h, initMapData);
+	writer.AppendBytes(initMapData, static_cast<std::size_t>(size));
 
-	int iRet = m_pClientList[iClientH]->m_pXSock->iSendMsg(writer.Data(), static_cast<int>(writer.Size()));
-	if (iRet == sock::Event::QueueFull || iRet == sock::Event::SocketError ||
-		iRet == sock::Event::CriticalError || iRet == sock::Event::SocketClosed)
+	int ret = m_client_list[client_h]->m_socket->send_msg(writer.Data(), static_cast<int>(writer.size()));
+	if (ret == sock::Event::QueueFull || ret == sock::Event::SocketError ||
+		ret == sock::Event::CriticalError || ret == sock::Event::SocketClosed)
 	{
-		DeleteClient(iClientH, true, true);
+		delete_client(client_h, true, true);
 		return false;
 	}
 
-	SendEventToNearClient_TypeA(iClientH, hb::shared::owner_class::Player, MsgId::EventLog, MsgType::Confirm, 0, 0, 0);
+	send_event_to_near_client_type_a(client_h, hb::shared::owner_class::Player, MsgId::EventLog, MsgType::Confirm, 0, 0, 0);
 
 	return true;
 }
 
 /*********************************************************************************************************************
-**  void void CGame::SetDefenseShieldFlag(short sOwnerH, char cOwnerType, bool bStatus)								**
+**  void void CGame::set_defense_shield_flag(short owner_h, char owner_type, bool status)								**
 **  description			:: changes the status of the player to show defense aura									**
 **  last updated		:: November 20, 2004; 9:37 PM; Hypnotoad													**
 **	return value		:: void																						**
 *********************************************************************************************************************/
 
 /*********************************************************************************************************************
-**  void void CGame::SetMagicProtectionFlag(short sOwnerH, char cOwnerType, bool bStatus)							**
+**  void void CGame::set_magic_protection_flag(short owner_h, char owner_type, bool status)							**
 **  description			:: changes the status of the player to show magic protect aura								**
 **  last updated		:: November 20, 2004; 9:38 PM; Hypnotoad													**
 **	return value		:: void																						**
 *********************************************************************************************************************/
 
 /*********************************************************************************************************************
-**  void void CGame::SetProtectionFromArrowFlag(short sOwnerH, char cOwnerType, bool bStatus)						**
+**  void void CGame::set_protection_from_arrow_flag(short owner_h, char owner_type, bool status)						**
 **  description			:: changes the status of the player to show arrow protect aura								**
 **  last updated		:: November 20, 2004; 9:39 PM; Hypnotoad													**
 **	return value		:: void																						**
 *********************************************************************************************************************/
 
 /*********************************************************************************************************************
-**  void void CGame::SetIllusionMovementFlag(short sOwnerH, char cOwnerType, bool bStatus)							**
+**  void void CGame::set_illusion_movement_flag(short owner_h, char owner_type, bool status)							**
 **  description			:: changes the status of the player to show illusion movement aura							**
 **  last updated		:: November 20, 2004; 9:39 PM; Hypnotoad													**
 **	return value		:: void																						**
@@ -10803,84 +10823,84 @@ bool CGame::GMTeleportTo(int iClientH, const char* cDestMap, short sDestX, short
 // New 07/05/2004
 // Item Logging
 
-void CGame::GetExp(int iClientH, uint32_t iExp, bool bIsAttackerOwn)
+void CGame::get_exp(int client_h, uint32_t exp, bool is_attacker_own)
 {
-	double dV1, dV2, dV3;
+	double v1, v2, v3;
 	int iH;
-	uint32_t dwTime = GameClock::GetTimeMS(), iUnitValue;
-	int iTotalPartyMembers;
+	uint32_t time = GameClock::GetTimeMS(), unit_value;
+	int total_party_members;
 
-	if (m_pClientList[iClientH] == 0) return;
-	if (iExp <= 0) return;
+	if (m_client_list[client_h] == 0) return;
+	if (exp <= 0) return;
 
-	if (m_pClientList[iClientH]->m_iLevel <= 80) {
-		dV1 = (double)(80 - m_pClientList[iClientH]->m_iLevel);
-		dV2 = dV1 * 0.025f;
-		dV3 = (double)iExp;
-		dV1 = (dV2 + 1.025f) * dV3;
-		iExp = (uint32_t)dV1;
+	if (m_client_list[client_h]->m_level <= 80) {
+		v1 = (double)(80 - m_client_list[client_h]->m_level);
+		v2 = v1 * 0.025f;
+		v3 = (double)exp;
+		v1 = (v2 + 1.025f) * v3;
+		exp = (uint32_t)v1;
 	}
 	else { //Lower exp
-		if ((m_pClientList[iClientH]->m_iLevel >= 80) && ((strcmp(m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_cName, "aresdend1") == 0) || (strcmp(m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_cName, "elvined1") == 0))) {
-			iExp = (iExp / 10);
+		if ((m_client_list[client_h]->m_level >= 80) && ((strcmp(m_map_list[m_client_list[client_h]->m_map_index]->m_name, "aresdend1") == 0) || (strcmp(m_map_list[m_client_list[client_h]->m_map_index]->m_name, "elvined1") == 0))) {
+			exp = (exp / 10);
 		}
-		else if ((strcmp(m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_cName, "aresdend1") == 0) || (strcmp(m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_cName, "elvined1") == 0)) {
-			iExp = (iExp * 1 / 4);
+		else if ((strcmp(m_map_list[m_client_list[client_h]->m_map_index]->m_name, "aresdend1") == 0) || (strcmp(m_map_list[m_client_list[client_h]->m_map_index]->m_name, "elvined1") == 0)) {
+			exp = (exp * 1 / 4);
 		}
 	}
 
 	//Check for party status, else give exp to player
-	if ((m_pClientList[iClientH]->m_iPartyID != 0) && (m_pClientList[iClientH]->m_iPartyStatus == PartyStatus::Confirm)) {
+	if ((m_client_list[client_h]->m_party_id != 0) && (m_client_list[client_h]->m_party_status == PartyStatus::Confirm)) {
 		//Only divide exp if >= 1 person 
-		if (m_stPartyInfo[m_pClientList[iClientH]->m_iPartyID].iTotalMembers > 0) {
+		if (m_party_info[m_client_list[client_h]->m_party_id].total_members > 0) {
 
 			//Calc total ppl in party
-			iTotalPartyMembers = 0;
-			for(int i = 0; i < m_stPartyInfo[m_pClientList[iClientH]->m_iPartyID].iTotalMembers; i++) {
-				iH = m_stPartyInfo[m_pClientList[iClientH]->m_iPartyID].iIndex[i];
-				if ((m_pClientList[iH] != 0) && (m_pClientList[iH]->m_iHP > 0)) {
+			total_party_members = 0;
+			for(int i = 0; i < m_party_info[m_client_list[client_h]->m_party_id].total_members; i++) {
+				iH = m_party_info[m_client_list[client_h]->m_party_id].index[i];
+				if ((m_client_list[iH] != 0) && (m_client_list[iH]->m_hp > 0)) {
 					//Newly added, Only players on same map get exp :}
-					if ((strlen(m_pMapList[m_pClientList[iH]->m_cMapIndex]->m_cName)) == (strlen(m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_cName))) {
-						if (memcmp(m_pMapList[m_pClientList[iH]->m_cMapIndex]->m_cName, m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_cName, strlen(m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_cName)) == 0) {
-							iTotalPartyMembers++;
+					if ((strlen(m_map_list[m_client_list[iH]->m_map_index]->m_name)) == (strlen(m_map_list[m_client_list[client_h]->m_map_index]->m_name))) {
+						if (memcmp(m_map_list[m_client_list[iH]->m_map_index]->m_name, m_map_list[m_client_list[client_h]->m_map_index]->m_name, strlen(m_map_list[m_client_list[client_h]->m_map_index]->m_name)) == 0) {
+							total_party_members++;
 						}
 					}
 				}
 			}
 
 			//Check for party bug
-			if (iTotalPartyMembers > hb::shared::limits::MaxPartyMembers) {
-				hb::logger::error<log_channel::events>("Party bug: member count {} exceeds limit", iTotalPartyMembers);
-				iTotalPartyMembers = hb::shared::limits::MaxPartyMembers;
+			if (total_party_members > hb::shared::limits::MaxPartyMembers) {
+				hb::logger::error<log_channel::events>("Party bug: member count {} exceeds limit", total_party_members);
+				total_party_members = hb::shared::limits::MaxPartyMembers;
 			}
 
 			//Figure out how much exp a player gets
-			dV1 = (double)iExp;
-			dV2 = dV1;
+			v1 = (double)exp;
+			v2 = v1;
 
-			if (iTotalPartyMembers > 1)
+			if (total_party_members > 1)
 			{
-				dV2 = (dV1 + (dV1 * (double)(iTotalPartyMembers / hb::shared::limits::MaxPartyMembers))) / (double)iTotalPartyMembers;
+				v2 = (v1 + (v1 * (double)(total_party_members / hb::shared::limits::MaxPartyMembers))) / (double)total_party_members;
 			}
 
-			dV3 = dV2 + 5.0e-1;
-			iUnitValue = (uint32_t)dV3;
+			v3 = v2 + 5.0e-1;
+			unit_value = (uint32_t)v3;
 
 			//Divide exp among party members
-			for(int i = 0; i < iTotalPartyMembers; i++) {
+			for(int i = 0; i < total_party_members; i++) {
 
-				iH = m_stPartyInfo[m_pClientList[iClientH]->m_iPartyID].iIndex[i];
-				if ((m_pClientList[iH] != 0) && (m_pClientList[iH]->m_bSkillUsingStatus[19] != 1) && (m_pClientList[iH]->m_iHP > 0)) { // Is player alive ??
-					if (m_pClientList[iH]->m_status.bSlateExp)  iUnitValue *= 3;
-					m_pClientList[iH]->m_iExpStock += iUnitValue;
+				iH = m_party_info[m_client_list[client_h]->m_party_id].index[i];
+				if ((m_client_list[iH] != 0) && (m_client_list[iH]->m_skill_using_status[19] != 1) && (m_client_list[iH]->m_hp > 0)) { // Is player alive ??
+					if (m_client_list[iH]->m_status.slate_exp)  unit_value *= 3;
+					m_client_list[iH]->m_exp_stock += unit_value;
 				}
 			}
 		}
 	}
 	else {
-		if ((m_pClientList[iClientH] != 0) && (m_pClientList[iClientH]->m_bSkillUsingStatus[19] != 1) && (m_pClientList[iClientH]->m_iHP > 0)) { // Is player alive ??
-			if (m_pClientList[iClientH]->m_status.bSlateExp)  iExp *= 3;
-			m_pClientList[iClientH]->m_iExpStock += iExp;
+		if ((m_client_list[client_h] != 0) && (m_client_list[client_h]->m_skill_using_status[19] != 1) && (m_client_list[client_h]->m_hp > 0)) { // Is player alive ??
+			if (m_client_list[client_h]->m_status.slate_exp)  exp *= 3;
+			m_client_list[client_h]->m_exp_stock += exp;
 		}
 	}
 }
@@ -10890,115 +10910,115 @@ void CGame::GetExp(int iClientH, uint32_t iExp, bool bIsAttackerOwn)
 // New 16/05/2004
 
 // New 18/05/2004
-void CGame::SetPlayingStatus(int iClientH)
+void CGame::set_playing_status(int client_h)
 {
-	char cMapName[11], cLocation[11];
+	char map_name[11], location[11];
 
-	if (m_pClientList[iClientH] == 0) return;
+	if (m_client_list[client_h] == 0) return;
 
-	std::memset(cMapName, 0, sizeof(cMapName));
-	std::memset(cLocation, 0, sizeof(cLocation));
+	std::memset(map_name, 0, sizeof(map_name));
+	std::memset(location, 0, sizeof(location));
 
-	strcpy(cLocation, m_pClientList[iClientH]->m_cLocation);
-	strcpy(cMapName, m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_cName);
+	strcpy(location, m_client_list[client_h]->m_location);
+	strcpy(map_name, m_map_list[m_client_list[client_h]->m_map_index]->m_name);
 
-	m_pClientList[iClientH]->m_cSide = 0;
-	m_pClientList[iClientH]->m_bIsOwnLocation = false;
-	m_pClientList[iClientH]->m_bIsPlayerCivil = false;
+	m_client_list[client_h]->m_side = 0;
+	m_client_list[client_h]->m_is_own_location = false;
+	m_client_list[client_h]->m_is_player_civil = false;
 
-	if (memcmp(cLocation, cMapName, 3) == 0) {
-		m_pClientList[iClientH]->m_bIsOwnLocation = true;
+	if (memcmp(location, map_name, 3) == 0) {
+		m_client_list[client_h]->m_is_own_location = true;
 	}
 
-	if (memcmp(cLocation, "are", 3) == 0)
-		m_pClientList[iClientH]->m_cSide = 1;
-	else if (memcmp(cLocation, "elv", 3) == 0)
-		m_pClientList[iClientH]->m_cSide = 2;
+	if (memcmp(location, "are", 3) == 0)
+		m_client_list[client_h]->m_side = 1;
+	else if (memcmp(location, "elv", 3) == 0)
+		m_client_list[client_h]->m_side = 2;
 	else {
-		if (strcmp(cMapName, "elvine") == 0 || strcmp(cMapName, "aresden") == 0) {
-			m_pClientList[iClientH]->m_bIsOwnLocation = true;
+		if (strcmp(map_name, "elvine") == 0 || strcmp(map_name, "aresden") == 0) {
+			m_client_list[client_h]->m_is_own_location = true;
 		}
-		m_pClientList[iClientH]->m_bIsNeutral = true;
+		m_client_list[client_h]->m_is_neutral = true;
 	}
 
-	if (memcmp(cLocation, "arehunter", 9) == 0 || memcmp(cLocation, "elvhunter", 9) == 0) {
-		m_pClientList[iClientH]->m_bIsPlayerCivil = true;
+	if (memcmp(location, "arehunter", 9) == 0 || memcmp(location, "elvhunter", 9) == 0) {
+		m_client_list[client_h]->m_is_player_civil = true;
 	}
 
-	if (memcmp(m_pClientList[iClientH]->m_cMapName, "bisle", 5) == 0) {
-		m_pClientList[iClientH]->m_bIsPlayerCivil = false;
+	if (memcmp(m_client_list[client_h]->m_map_name, "bisle", 5) == 0) {
+		m_client_list[client_h]->m_is_player_civil = false;
 	}
 
-	if (memcmp(m_pClientList[iClientH]->m_cMapName, "bsmith", 6) == 0 ||
-		memcmp(m_pClientList[iClientH]->m_cMapName, "gldhall", 7) == 0 ||
-		memcmp(m_pClientList[iClientH]->m_cMapName, "gshop", 5) == 0)
-		m_pClientList[iClientH]->m_pIsProcessingAllowed = true;
+	if (memcmp(m_client_list[client_h]->m_map_name, "bsmith", 6) == 0 ||
+		memcmp(m_client_list[client_h]->m_map_name, "gldhall", 7) == 0 ||
+		memcmp(m_client_list[client_h]->m_map_name, "gshop", 5) == 0)
+		m_client_list[client_h]->m_is_processing_allowed = true;
 	else
-		m_pClientList[iClientH]->m_pIsProcessingAllowed = false;
+		m_client_list[client_h]->m_is_processing_allowed = false;
 
-	if (memcmp(m_pClientList[iClientH]->m_cMapName, "wrhus", 5) == 0 ||
-		memcmp(m_pClientList[iClientH]->m_cMapName, "arewrhus", 8) == 0 ||
-		memcmp(m_pClientList[iClientH]->m_cMapName, "elvwrhus", 8) == 0)
-		m_pClientList[iClientH]->m_bIsInsideWarehouse = true;
+	if (memcmp(m_client_list[client_h]->m_map_name, "wrhus", 5) == 0 ||
+		memcmp(m_client_list[client_h]->m_map_name, "arewrhus", 8) == 0 ||
+		memcmp(m_client_list[client_h]->m_map_name, "elvwrhus", 8) == 0)
+		m_client_list[client_h]->m_is_inside_warehouse = true;
 	else
-		m_pClientList[iClientH]->m_bIsInsideWarehouse = false;
+		m_client_list[client_h]->m_is_inside_warehouse = false;
 
-	if (memcmp(m_pClientList[iClientH]->m_cMapName, "wzdtwr", 6) == 0)
-		m_pClientList[iClientH]->m_bIsInsideWizardTower = true;
+	if (memcmp(m_client_list[client_h]->m_map_name, "wzdtwr", 6) == 0)
+		m_client_list[client_h]->m_is_inside_wizard_tower = true;
 	else
-		m_pClientList[iClientH]->m_bIsInsideWizardTower = false;
+		m_client_list[client_h]->m_is_inside_wizard_tower = false;
 }
 
-void CGame::ForceChangePlayMode(int iClientH, bool bNotify)
+void CGame::force_change_play_mode(int client_h, bool notify)
 {
-	if (m_pClientList[iClientH] == 0) return;
+	if (m_client_list[client_h] == 0) return;
 
-	if (memcmp(m_pClientList[iClientH]->m_cLocation, "arehunter", 9) == 0)
-		strcpy(m_pClientList[iClientH]->m_cLocation, "aresden");
-	else if (memcmp(m_pClientList[iClientH]->m_cLocation, "elvhunter", 9) == 0)
-		strcpy(m_pClientList[iClientH]->m_cLocation, "elvine");
+	if (memcmp(m_client_list[client_h]->m_location, "arehunter", 9) == 0)
+		strcpy(m_client_list[client_h]->m_location, "aresden");
+	else if (memcmp(m_client_list[client_h]->m_location, "elvhunter", 9) == 0)
+		strcpy(m_client_list[client_h]->m_location, "elvine");
 
-	if (m_pClientList[iClientH]->m_bIsPlayerCivil)
-		m_pClientList[iClientH]->m_bIsPlayerCivil = false;
+	if (m_client_list[client_h]->m_is_player_civil)
+		m_client_list[client_h]->m_is_player_civil = false;
 
-	if (bNotify) {
-		SendNotifyMsg(0, iClientH, Notify::ChangePlayMode, 0, 0, 0, m_pClientList[iClientH]->m_cLocation);
-		SendEventToNearClient_TypeA(iClientH, hb::shared::owner_class::Player, MsgId::EventMotion, Type::NullAction, 0, 0, 0);
+	if (notify) {
+		send_notify_msg(0, client_h, Notify::ChangePlayMode, 0, 0, 0, m_client_list[client_h]->m_location);
+		send_event_to_near_client_type_a(client_h, hb::shared::owner_class::Player, MsgId::EventMotion, Type::NullAction, 0, 0, 0);
 	}
 }
 
-void CGame::ShowVersion(int iClientH)
+void CGame::show_version(int client_h)
 {
-	char cVerMessage[256];
+	char ver_message[256];
 
-	std::memset(cVerMessage, 0, sizeof(cVerMessage));
-	std::snprintf(cVerMessage, sizeof(cVerMessage), "Helbreath Sources %s.%s - www.xtremehb.com", hb::server::version::Upper, hb::server::version::Lower);
-	ShowClientMsg(iClientH, cVerMessage);
+	std::memset(ver_message, 0, sizeof(ver_message));
+	std::snprintf(ver_message, sizeof(ver_message), "Helbreath Sources %s.%s - www.xtremehb.com", hb::server::version::Upper, hb::server::version::Lower);
+	show_client_msg(client_h, ver_message);
 
 }
 
 // v2.14 05/22/2004 - Hypnotoad - adds pk log
-void CGame::RequestResurrectPlayer(int iClientH, bool bResurrect)
+void CGame::request_resurrect_player(int client_h, bool resurrect)
 {
 	short sX, sY;
 	char buff[100];
 
-	if (m_pClientList[iClientH] == 0) return;
+	if (m_client_list[client_h] == 0) return;
 
-	sX = m_pClientList[iClientH]->m_sX;
-	sY = m_pClientList[iClientH]->m_sY;
+	sX = m_client_list[client_h]->m_x;
+	sY = m_client_list[client_h]->m_y;
 
-	if (bResurrect == false) {
-		m_pClientList[iClientH]->m_bIsBeingResurrected = false;
+	if (resurrect == false) {
+		m_client_list[client_h]->m_is_being_resurrected = false;
 		return;
 	}
 
-	if (m_pClientList[iClientH]->m_bIsBeingResurrected == false) {
+	if (m_client_list[client_h]->m_is_being_resurrected == false) {
 		try
 		{
-			std::snprintf(buff, sizeof(buff), "(!!!) Player(%s) Tried To Use Resurrection Hack", m_pClientList[iClientH]->m_cCharName);
+			std::snprintf(buff, sizeof(buff), "(!!!) Player(%s) Tried To Use Resurrection Hack", m_client_list[client_h]->m_char_name);
 			hb::logger::warn<log_channel::security>("{}", G_cTxt);
-			DeleteClient(iClientH, true, true, true, true);
+			delete_client(client_h, true, true, true, true);
 		}
 		catch (...)
 		{
@@ -11006,53 +11026,53 @@ void CGame::RequestResurrectPlayer(int iClientH, bool bResurrect)
 		return;
 	}
 
-	hb::logger::log("Resurrect Player! {}", m_pClientList[iClientH]->m_cCharName);
+	hb::logger::log("Resurrect Player! {}", m_client_list[client_h]->m_char_name);
 
-	m_pClientList[iClientH]->m_bIsKilled = false;
+	m_client_list[client_h]->m_is_killed = false;
 	// Player's HP becomes half of the Max HP. 
-	m_pClientList[iClientH]->m_iHP = iGetMaxHP(iClientH) / 2;
+	m_client_list[client_h]->m_hp = get_max_hp(client_h) / 2;
 	// Player's MP
-	m_pClientList[iClientH]->m_iMP = iGetMaxMP(iClientH);
+	m_client_list[client_h]->m_mp = get_max_mp(client_h);
 	// Player's SP
-	m_pClientList[iClientH]->m_iSP = iGetMaxSP(iClientH);
+	m_client_list[client_h]->m_sp = get_max_sp(client_h);
 	// Player's Hunger
-	m_pClientList[iClientH]->m_iHungerStatus = 100;
+	m_client_list[client_h]->m_hunger_status = 100;
 
-	m_pClientList[iClientH]->m_bIsBeingResurrected = false;
+	m_client_list[client_h]->m_is_being_resurrected = false;
 
-	// !!! RequestTeleportHandler m_cMapName
-	RequestTeleportHandler(iClientH, "2   ", m_pClientList[iClientH]->m_cMapName, m_pClientList[iClientH]->m_sX, m_pClientList[iClientH]->m_sY);
+	// !!! request_teleport_handler m_map_name
+	request_teleport_handler(client_h, "2   ", m_client_list[client_h]->m_map_name, m_client_list[client_h]->m_x, m_client_list[client_h]->m_y);
 }
 
-bool CGame::bCheckClientMoveFrequency(int iClientH, uint32_t dwClientTime)
+bool CGame::check_client_move_frequency(int client_h, uint32_t client_time)
 {
-	uint32_t dwTimeGap;
+	uint32_t time_gap;
 
-	if (m_pClientList[iClientH] == 0) return false;
+	if (m_client_list[client_h] == 0) return false;
 
-	if (m_pClientList[iClientH]->m_dwMoveFreqTime == 0)
-		m_pClientList[iClientH]->m_dwMoveFreqTime = dwClientTime;
+	if (m_client_list[client_h]->m_move_freq_time == 0)
+		m_client_list[client_h]->m_move_freq_time = client_time;
 	else {
-		if (m_pClientList[iClientH]->m_bIsMoveBlocked) {
-			m_pClientList[iClientH]->m_dwMoveFreqTime = 0;
-			m_pClientList[iClientH]->m_bIsMoveBlocked = false;
+		if (m_client_list[client_h]->m_is_move_blocked) {
+			m_client_list[client_h]->m_move_freq_time = 0;
+			m_client_list[client_h]->m_is_move_blocked = false;
 			return false;
 		}
 
-		if (m_pClientList[iClientH]->m_bIsAttackModeChange) {
-			m_pClientList[iClientH]->m_dwMoveFreqTime = 0;
-			m_pClientList[iClientH]->m_bIsAttackModeChange = false;
+		if (m_client_list[client_h]->m_is_attack_mode_change) {
+			m_client_list[client_h]->m_move_freq_time = 0;
+			m_client_list[client_h]->m_is_attack_mode_change = false;
 			return false;
 		}
 
-		dwTimeGap = dwClientTime - m_pClientList[iClientH]->m_dwMoveFreqTime;
-		m_pClientList[iClientH]->m_dwMoveFreqTime = dwClientTime;
+		time_gap = client_time - m_client_list[client_h]->m_move_freq_time;
+		m_client_list[client_h]->m_move_freq_time = client_time;
 
-		if ((dwTimeGap < 200) && (dwTimeGap >= 0)) {
+		if ((time_gap < 200) && (time_gap >= 0)) {
 			try
 			{
-				hb::logger::warn<log_channel::security>("Speed hack: IP={} player={}, running too fast", m_pClientList[iClientH]->m_cIPaddress, m_pClientList[iClientH]->m_cCharName);
-				DeleteClient(iClientH, true, true);
+				hb::logger::warn<log_channel::security>("Speed hack: IP={} player={}, running too fast", m_client_list[client_h]->m_ip_address, m_client_list[client_h]->m_char_name);
+				delete_client(client_h, true, true);
 			}
 			catch (...)
 			{
@@ -11061,123 +11081,123 @@ bool CGame::bCheckClientMoveFrequency(int iClientH, uint32_t dwClientTime)
 		}
 
 		// testcode
-		// std::snprintf(G_cTxt, sizeof(G_cTxt), "Move: %d", dwTimeGap);
+		// std::snprintf(G_cTxt, sizeof(G_cTxt), "Move: %d", time_gap);
 		// PutLogList(G_cTxt);
 	}
 
 	return false;
 }
 
-void CGame::OnTimer(char cType)
+void CGame::on_timer(char type)
 {
-	uint32_t dwTime;
+	uint32_t time;
 
-	dwTime = GameClock::GetTimeMS();
+	time = GameClock::GetTimeMS();
 
-	// MODERNIZED: GameProcess moved to EventLoop to prevent blocking socket polling
-	// OnTimer now only handles periodic events (CheckClientResponseTime, weather, etc.)
-	// GameProcess() is called directly in EventLoop every 300ms
+	// MODERNIZED: game_process moved to EventLoop to prevent blocking socket polling
+	// on_timer now only handles periodic events (check_client_response_time, weather, etc.)
+	// game_process() is called directly in EventLoop every 300ms
 
-	if ((dwTime - m_dwGameTime2) > 1000) {
-		CheckClientResponseTime();
-		CheckDayOrNightMode();
-		m_dwGameTime2 = dwTime;
+	if ((time - m_game_time_2) > 1000) {
+		check_client_response_time();
+		check_day_or_night_mode();
+		m_game_time_2 = time;
 		// v1.41 
 
 		// v1.41
-		if (m_bIsGameStarted == false) {
+		if (m_is_game_started == false) {
 			hb::logger::log("Sending start message");
-			OnStartGameSignal();
-			m_bIsGameStarted = true;
+			on_start_game_signal();
+			m_is_game_started = true;
 
-			// Initialize EntityManager now that maps are loaded
-			if (m_pEntityManager != NULL) {
+			// initialize EntityManager now that maps are loaded
+			if (m_entity_manager != NULL) {
 				// EntityManager owns the entity array now, just set maps and game reference
-				m_pEntityManager->SetMapList(m_pMapList, MaxMaps);
-				m_pEntityManager->SetGame(this);
+				m_entity_manager->set_map_list(m_map_list, MaxMaps);
+				m_entity_manager->set_game(this);
 
-	// Initialize Gathering Managers
-	m_pFishingManager = new FishingManager();
-	m_pFishingManager->SetGame(this);
-	m_pMiningManager = new MiningManager();
-	m_pMiningManager->SetGame(this);
-	m_pCraftingManager = new CraftingManager();
-	m_pCraftingManager->SetGame(this);
-	m_pQuestManager = new QuestManager();
-	m_pQuestManager->SetGame(this);
-	m_pGuildManager = new GuildManager();
-	m_pGuildManager->SetGame(this);
-	m_pDelayEventManager = new DelayEventManager();
-	m_pDelayEventManager->SetGame(this);
-	m_pDelayEventManager->InitArrays();
-	m_pDynamicObjectManager = new DynamicObjectManager();
-	m_pDynamicObjectManager->SetGame(this);
-	m_pDynamicObjectManager->InitArrays();
-	m_pLootManager = new LootManager();
-	m_pLootManager->SetGame(this);
-	m_pCombatManager = new CombatManager();
-	m_pItemManager = new ItemManager();
-	m_pMagicManager = new MagicManager();
-	m_pSkillManager = new SkillManager();
-	m_pWarManager = new WarManager();
-	m_pStatusEffectManager = new StatusEffectManager();
-	m_pCombatManager->SetGame(this);
-	m_pItemManager->SetGame(this);
-	m_pMagicManager->SetGame(this);
-	m_pSkillManager->SetGame(this);
-	m_pWarManager->SetGame(this);
-	m_pStatusEffectManager->SetGame(this);
+	// initialize Gathering Managers
+	m_fishing_manager = new FishingManager();
+	m_fishing_manager->set_game(this);
+	m_mining_manager = new MiningManager();
+	m_mining_manager->set_game(this);
+	m_crafting_manager = new CraftingManager();
+	m_crafting_manager->set_game(this);
+	m_quest_manager = new QuestManager();
+	m_quest_manager->set_game(this);
+	m_guild_manager = new GuildManager();
+	m_guild_manager->set_game(this);
+	m_delay_event_manager = new DelayEventManager();
+	m_delay_event_manager->set_game(this);
+	m_delay_event_manager->init_arrays();
+	m_dynamic_object_manager = new DynamicObjectManager();
+	m_dynamic_object_manager->set_game(this);
+	m_dynamic_object_manager->init_arrays();
+	m_loot_manager = new LootManager();
+	m_loot_manager->set_game(this);
+	m_combat_manager = new CombatManager();
+	m_item_manager = new ItemManager();
+	m_magic_manager = new MagicManager();
+	m_skill_manager = new SkillManager();
+	m_war_manager = new WarManager();
+	m_status_effect_manager = new StatusEffectManager();
+	m_combat_manager->set_game(this);
+	m_item_manager->set_game(this);
+	m_magic_manager->set_game(this);
+	m_skill_manager->set_game(this);
+	m_war_manager->set_game(this);
+	m_status_effect_manager->set_game(this);
 				hb::logger::log("EntityManager initialized");
 			}
 
-			// Initialize Gathering Managers
-			if (m_pFishingManager != nullptr) {
-				m_pFishingManager->SetGame(this);
+			// initialize Gathering Managers
+			if (m_fishing_manager != nullptr) {
+				m_fishing_manager->set_game(this);
 			}
-			if (m_pMiningManager != nullptr) {
-				m_pMiningManager->SetGame(this);
+			if (m_mining_manager != nullptr) {
+				m_mining_manager->set_game(this);
 			}
-			if (m_pCraftingManager != nullptr) {
-				m_pCraftingManager->SetGame(this);
+			if (m_crafting_manager != nullptr) {
+				m_crafting_manager->set_game(this);
 			}
-			if (m_pQuestManager != nullptr) {
-				m_pQuestManager->SetGame(this);
+			if (m_quest_manager != nullptr) {
+				m_quest_manager->set_game(this);
 			}
-			if (m_pGuildManager != nullptr) {
-				m_pGuildManager->SetGame(this);
+			if (m_guild_manager != nullptr) {
+				m_guild_manager->set_game(this);
 			}
-			if (m_pDelayEventManager != nullptr) {
-				m_pDelayEventManager->SetGame(this);
-				m_pDelayEventManager->CleanupArrays();
-				m_pDelayEventManager->InitArrays();
+			if (m_delay_event_manager != nullptr) {
+				m_delay_event_manager->set_game(this);
+				m_delay_event_manager->cleanup_arrays();
+				m_delay_event_manager->init_arrays();
 			}
-			if (m_pDynamicObjectManager != nullptr) {
-				m_pDynamicObjectManager->SetGame(this);
-				m_pDynamicObjectManager->CleanupArrays();
-				m_pDynamicObjectManager->InitArrays();
+			if (m_dynamic_object_manager != nullptr) {
+				m_dynamic_object_manager->set_game(this);
+				m_dynamic_object_manager->cleanup_arrays();
+				m_dynamic_object_manager->init_arrays();
 			}
-			if (m_pLootManager != nullptr) {
-				m_pLootManager->SetGame(this);
+			if (m_loot_manager != nullptr) {
+				m_loot_manager->set_game(this);
 			}
-			if (m_pCombatManager != nullptr) {
-				m_pCombatManager->SetGame(this);
-	m_pItemManager->SetGame(this);
-	m_pMagicManager->SetGame(this);
-	m_pSkillManager->SetGame(this);
-	m_pWarManager->SetGame(this);
-	m_pStatusEffectManager->SetGame(this);
+			if (m_combat_manager != nullptr) {
+				m_combat_manager->set_game(this);
+	m_item_manager->set_game(this);
+	m_magic_manager->set_game(this);
+	m_skill_manager->set_game(this);
+	m_war_manager->set_game(this);
+	m_status_effect_manager->set_game(this);
 			}
 		}
 	}
-	if ((dwTime - m_dwGameTime6) > 1000) {
-		m_pDelayEventManager->DelayEventProcessor();
-		m_dwGameTime6 = dwTime;
+	if ((time - m_game_time_6) > 1000) {
+		m_delay_event_manager->delay_event_processor();
+		m_game_time_6 = time;
 
 		// v2.05
-		if (m_iFinalShutdownCount != 0) {
-			m_iFinalShutdownCount--;
-			hb::logger::log("Final shutdown countdown: {}", m_iFinalShutdownCount);
-			if (m_iFinalShutdownCount <= 1) {
+		if (m_final_shutdown_count != 0) {
+			m_final_shutdown_count--;
+			hb::logger::log("Final shutdown countdown: {}", m_final_shutdown_count);
+			if (m_final_shutdown_count <= 1) {
 				G_bRunning = false;
 				return;
 
@@ -11185,86 +11205,86 @@ void CGame::OnTimer(char cType)
 		}
 	}
 
-	if ((dwTime - m_dwGameTime3) > 1000) {
-		m_pWarManager->SyncMiddlelandMapInfo();
-		m_pDynamicObjectManager->CheckDynamicObjectList();
-		m_pDynamicObjectManager->DynamicObjectEffectProcessor();
-		NoticeHandler();
-		SpecialEventHandler();
-		m_pWarManager->EnergySphereProcessor();
-		m_dwGameTime3 = dwTime;
+	if ((time - m_game_time_3) > 1000) {
+		m_war_manager->sync_middleland_map_info();
+		m_dynamic_object_manager->check_dynamic_object_list();
+		m_dynamic_object_manager->dynamic_object_effect_processor();
+		notice_handler();
+		special_event_handler();
+		m_war_manager->energy_sphere_processor();
+		m_game_time_3 = time;
 	}
 
-	if ((dwTime - m_dwGameTime4) > 600) {
+	if ((time - m_game_time_4) > 600) {
 		// Use EntityManager for spawn generation
-		if (m_pEntityManager != NULL)
-			m_pEntityManager->ProcessSpawns();
+		if (m_entity_manager != NULL)
+			m_entity_manager->process_spawns();
 
-		m_dwGameTime4 = dwTime;
+		m_game_time_4 = time;
 	}
 
-	if ((dwTime - m_dwGameTime5) > 1000 * 60 * 3) {
+	if ((time - m_game_time_5) > 1000 * 60 * 3) {
 
-		m_dwGameTime5 = dwTime;
+		m_game_time_5 = time;
 
-		srand((unsigned)time(0));
+		srand((unsigned)std::time(0));
 	}
 
-	if ((dwTime - m_pFishingManager->m_dwFishTime) > 5000) {
-		m_pFishingManager->FishProcessor();
-		m_pFishingManager->FishGenerator();
-		m_pWarManager->SendCollectedMana();
-		m_pWarManager->CrusadeWarStarter();
+	if ((time - m_fishing_manager->m_fish_time) > 5000) {
+		m_fishing_manager->fish_processor();
+		m_fishing_manager->fish_generator();
+		m_war_manager->send_collected_mana();
+		m_war_manager->crusade_war_starter();
 		//ApocalypseStarter();
-		m_pWarManager->ApocalypseEnder();
-		m_pFishingManager->m_dwFishTime = dwTime;
+		m_war_manager->apocalypse_ender();
+		m_fishing_manager->m_fish_time = time;
 	}
 
-	if ((dwTime - m_dwWhetherTime) > 1000 * 20) {
-		WhetherProcessor();
-		m_dwWhetherTime = dwTime;
+	if ((time - m_weather_time) > 1000 * 20) {
+		weather_processor();
+		m_weather_time = time;
 	}
 
-	if ((m_bHeldenianRunning) && (m_bIsHeldenianMode)) {
-		m_pWarManager->SetHeldenianMode();
+	if ((m_heldenian_running) && (m_is_heldenian_mode)) {
+		m_war_manager->set_heldenian_mode();
 	}
-	if ((dwTime - m_dwCanFightzoneReserveTime) > 7200000) {
-		m_pWarManager->FightzoneReserveProcessor();
-		m_dwCanFightzoneReserveTime = dwTime;
+	if ((time - m_can_fightzone_reserve_time) > 7200000) {
+		m_war_manager->fightzone_reserve_processor();
+		m_can_fightzone_reserve_time = time;
 	}
 
-	if ((m_bIsServerShutdowned == false) && (m_bOnExitProcess) && ((dwTime - m_dwExitProcessTime) > 1000 * 2)) {
-		if (_iForcePlayerDisconect(15) == 0) {
+	if ((m_is_server_shutdown == false) && (m_on_exit_process) && ((time - m_exit_process_time) > 1000 * 2)) {
+		if (force_player_disconnect(15) == 0) {
 			hb::logger::log("Server shutdown complete, all players disconnected");
-			m_bIsServerShutdowned = true;
+			m_is_server_shutdown = true;
 
-			if ((m_cShutDownCode == 3) || (m_cShutDownCode == 4)) {
+			if ((m_shutdown_code == 3) || (m_shutdown_code == 4)) {
 				hb::logger::error<log_channel::events>("Auto-rebooting server");
-				bInit();
-				m_iAutoRebootingCount++;
+				init();
+				m_auto_rebooting_count++;
 			}
 			else {
-				if (m_iFinalShutdownCount == 0)	m_iFinalShutdownCount = 20;
+				if (m_final_shutdown_count == 0)	m_final_shutdown_count = 20;
 			}
 		}
-		m_dwExitProcessTime = dwTime;
+		m_exit_process_time = time;
 	}
 
-	if ((dwTime - m_dwMapSectorInfoTime) > 1000 * 10) {
-		m_dwMapSectorInfoTime = dwTime;
-		UpdateMapSectorInfo();
+	if ((time - m_map_sector_info_time) > 1000 * 10) {
+		m_map_sector_info_time = time;
+		update_map_sector_info();
 
-		m_pMiningManager->MineralGenerator();
+		m_mining_manager->mineral_generator();
 
-		m_iMapSectorInfoUpdateCount++;
-		if (m_iMapSectorInfoUpdateCount >= 5) {
-			AgingMapSectorInfo();
-			m_iMapSectorInfoUpdateCount = 0;
+		m_map_sector_info_update_count++;
+		if (m_map_sector_info_update_count >= 5) {
+			aging_map_sector_info();
+			m_map_sector_info_update_count = 0;
 		}
 	}
 }
 
-void CGame::OnStartGameSignal()
+void CGame::on_start_game_signal()
 {
 	// Load map configurations from mapinfo.db
 	sqlite3* mapInfoDb = nullptr;
@@ -11279,19 +11299,19 @@ void CGame::OnStartGameSignal()
 		int mapsLoaded = 0;
 		for(int i = 0; i < MaxMaps; i++)
 		{
-			if (m_pMapList[i] != 0)
+			if (m_map_list[i] != 0)
 			{
-				if (memcmp(m_pMapList[i]->m_cName, "fightzone", 9) == 0)
-					m_pMapList[i]->m_bIsFightZone = true;
-				if (memcmp(m_pMapList[i]->m_cName, "icebound", 8) == 0)
-					m_pMapList[i]->m_bIsSnowEnabled = true;
+				if (memcmp(m_map_list[i]->m_name, "fightzone", 9) == 0)
+					m_map_list[i]->m_is_fight_zone = true;
+				if (memcmp(m_map_list[i]->m_name, "icebound", 8) == 0)
+					m_map_list[i]->m_is_snow_enabled = true;
 
-				if (LoadMapConfig(mapInfoDb, m_pMapList[i]->m_cName, m_pMapList[i])) {
+				if (LoadMapConfig(mapInfoDb, m_map_list[i]->m_name, m_map_list[i])) {
 					mapsLoaded++;
-					SpawnMapNpcsFromDatabase(mapInfoDb, i);
+					spawn_map_npcs_from_database(mapInfoDb, i);
 				}
 				else {
-					hb::logger::log("WARNING: Failed to load map config for: {}", m_pMapList[i]->m_cName);
+					hb::logger::log("WARNING: Failed to load map config for: {}", m_map_list[i]->m_name);
 				}
 			}
 		}
@@ -11318,15 +11338,15 @@ void CGame::OnStartGameSignal()
 		hb::logger::error("Crusade/schedule configs missing in gameconfigs.db");
 	}
 
-	m_pWarManager->_LinkStrikePointMapIndex();
+	m_war_manager->link_strike_point_map_index();
 
 	if (configDb != nullptr) {
 		CloseGameConfigDatabase(configDb);
 	}
 
-	m_pWarManager->bReadCrusadeGUIDFile("GameData/CrusadeGUID.txt");
-	m_pWarManager->bReadApocalypseGUIDFile("GameData/ApocalypseGUID.txt");
-	m_pWarManager->bReadHeldenianGUIDFile("GameData/HeldenianGUID.txt");
+	m_war_manager->read_crusade_guid_file("GameData/CrusadeGUID.txt");
+	m_war_manager->read_apocalypse_guid_file("GameData/ApocalypseGUID.txt");
+	m_war_manager->read_heldenian_guid_file("GameData/HeldenianGUID.txt");
 
 	hb::logger::log("Game server activated");
 
@@ -11338,108 +11358,108 @@ void CGame::OnStartGameSignal()
 
 //HBest force recall code
 
-void CGame::SetForceRecallTime(int iClientH)
+void CGame::set_force_recall_time(int client_h)
 {
 	int iTL_ = 0;
 	hb::time::local_time SysTime{};
 
-	if (m_pClientList[iClientH] == 0) return;
+	if (m_client_list[client_h] == 0) return;
 
-	if (m_pClientList[iClientH]->m_iTimeLeft_ForceRecall == 0) {
-		// iWarPeriod .
+	if (m_client_list[client_h]->m_time_left_force_recall == 0) {
+		// war_period .
 
-		if (m_sForceRecallTime > 0) {
-			m_pClientList[iClientH]->m_iTimeLeft_ForceRecall = 20 * m_sForceRecallTime;
+		if (m_force_recall_time > 0) {
+			m_client_list[client_h]->m_time_left_force_recall = 20 * m_force_recall_time;
 		}
 		else {
 			SysTime = hb::time::local_time::now();
 			switch (SysTime.day_of_week) {
-			case 1:	m_pClientList[iClientH]->m_iTimeLeft_ForceRecall = 20 * m_sRaidTimeMonday; break;  // 3 2002-09-10 #1
-			case 2:	m_pClientList[iClientH]->m_iTimeLeft_ForceRecall = 20 * m_sRaidTimeTuesday; break;
-			case 3:	m_pClientList[iClientH]->m_iTimeLeft_ForceRecall = 20 * m_sRaidTimeWednesday; break;
-			case 4:	m_pClientList[iClientH]->m_iTimeLeft_ForceRecall = 20 * m_sRaidTimeThursday; break;
-			case 5:	m_pClientList[iClientH]->m_iTimeLeft_ForceRecall = 20 * m_sRaidTimeFriday; break;
-			case 6:	m_pClientList[iClientH]->m_iTimeLeft_ForceRecall = 20 * m_sRaidTimeSaturday; break;
-			case 0:	m_pClientList[iClientH]->m_iTimeLeft_ForceRecall = 20 * m_sRaidTimeSunday; break;
+			case 1:	m_client_list[client_h]->m_time_left_force_recall = 20 * m_raid_time_monday; break;  // 3 2002-09-10 #1
+			case 2:	m_client_list[client_h]->m_time_left_force_recall = 20 * m_raid_time_tuesday; break;
+			case 3:	m_client_list[client_h]->m_time_left_force_recall = 20 * m_raid_time_wednesday; break;
+			case 4:	m_client_list[client_h]->m_time_left_force_recall = 20 * m_raid_time_thursday; break;
+			case 5:	m_client_list[client_h]->m_time_left_force_recall = 20 * m_raid_time_friday; break;
+			case 6:	m_client_list[client_h]->m_time_left_force_recall = 20 * m_raid_time_saturday; break;
+			case 0:	m_client_list[client_h]->m_time_left_force_recall = 20 * m_raid_time_sunday; break;
 			}
 		}
 	}
-	else { // if (m_pClientList[iClientH]->m_iTimeLeft_ForceRecall == 0) 
-		if (m_sForceRecallTime > 0) {
-			iTL_ = 20 * m_sForceRecallTime;
+	else { // if (m_client_list[client_h]->m_time_left_force_recall == 0) 
+		if (m_force_recall_time > 0) {
+			iTL_ = 20 * m_force_recall_time;
 		}
 		else {
 
 			SysTime = hb::time::local_time::now();
 			switch (SysTime.day_of_week) {
-			case 1:	iTL_ = 20 * m_sRaidTimeMonday; break;  // 3 2002-09-10 #1
-			case 2:	iTL_ = 20 * m_sRaidTimeTuesday; break;
-			case 3:	iTL_ = 20 * m_sRaidTimeWednesday; break;
-			case 4:	iTL_ = 20 * m_sRaidTimeThursday; break;
-			case 5:	iTL_ = 20 * m_sRaidTimeFriday; break;
-			case 6:	iTL_ = 20 * m_sRaidTimeSaturday; break;
-			case 0:	iTL_ = 20 * m_sRaidTimeSunday; break;
+			case 1:	iTL_ = 20 * m_raid_time_monday; break;  // 3 2002-09-10 #1
+			case 2:	iTL_ = 20 * m_raid_time_tuesday; break;
+			case 3:	iTL_ = 20 * m_raid_time_wednesday; break;
+			case 4:	iTL_ = 20 * m_raid_time_thursday; break;
+			case 5:	iTL_ = 20 * m_raid_time_friday; break;
+			case 6:	iTL_ = 20 * m_raid_time_saturday; break;
+			case 0:	iTL_ = 20 * m_raid_time_sunday; break;
 			}
 		}
 
-		if (m_pClientList[iClientH]->m_iTimeLeft_ForceRecall > iTL_)
-			m_pClientList[iClientH]->m_iTimeLeft_ForceRecall = 1;
+		if (m_client_list[client_h]->m_time_left_force_recall > iTL_)
+			m_client_list[client_h]->m_time_left_force_recall = 1;
 
 	}
 
-	m_pClientList[iClientH]->m_bIsWarLocation = true;
+	m_client_list[client_h]->m_is_war_location = true;
 	return;
 }
 
-void CGame::CheckForceRecallTime(int iClientH)
+void CGame::check_force_recall_time(int client_h)
 {
 	hb::time::local_time SysTime{};
 	int iTL_;
 
-	if (m_pClientList[iClientH] == 0) return;
+	if (m_client_list[client_h] == 0) return;
 
-	if (m_pClientList[iClientH]->m_iTimeLeft_ForceRecall == 0) {
+	if (m_client_list[client_h]->m_time_left_force_recall == 0) {
 		// has admin set a recall time ??
-		if (m_sForceRecallTime > 0) {
-			m_pClientList[iClientH]->m_iTimeLeft_ForceRecall = m_sForceRecallTime * 20;
+		if (m_force_recall_time > 0) {
+			m_client_list[client_h]->m_time_left_force_recall = m_force_recall_time * 20;
 		}
 		// use standard recall time calculations
 		else {
 			SysTime = hb::time::local_time::now();
 			switch (SysTime.day_of_week) {
-			case 1:	m_pClientList[iClientH]->m_iTimeLeft_ForceRecall = 20 * m_sRaidTimeMonday; break;  // 3 2002-09-10 #1
-			case 2:	m_pClientList[iClientH]->m_iTimeLeft_ForceRecall = 20 * m_sRaidTimeTuesday; break;
-			case 3:	m_pClientList[iClientH]->m_iTimeLeft_ForceRecall = 20 * m_sRaidTimeWednesday; break;
-			case 4:	m_pClientList[iClientH]->m_iTimeLeft_ForceRecall = 20 * m_sRaidTimeThursday; break;
-			case 5:	m_pClientList[iClientH]->m_iTimeLeft_ForceRecall = 20 * m_sRaidTimeFriday; break;
-			case 6:	m_pClientList[iClientH]->m_iTimeLeft_ForceRecall = 20 * m_sRaidTimeSaturday; break;
-			case 0:	m_pClientList[iClientH]->m_iTimeLeft_ForceRecall = 20 * m_sRaidTimeSunday; break;
+			case 1:	m_client_list[client_h]->m_time_left_force_recall = 20 * m_raid_time_monday; break;  // 3 2002-09-10 #1
+			case 2:	m_client_list[client_h]->m_time_left_force_recall = 20 * m_raid_time_tuesday; break;
+			case 3:	m_client_list[client_h]->m_time_left_force_recall = 20 * m_raid_time_wednesday; break;
+			case 4:	m_client_list[client_h]->m_time_left_force_recall = 20 * m_raid_time_thursday; break;
+			case 5:	m_client_list[client_h]->m_time_left_force_recall = 20 * m_raid_time_friday; break;
+			case 6:	m_client_list[client_h]->m_time_left_force_recall = 20 * m_raid_time_saturday; break;
+			case 0:	m_client_list[client_h]->m_time_left_force_recall = 20 * m_raid_time_sunday; break;
 			}
 		}
 	}
 	else {
 		// has admin set a recall time ??
-		if (m_sForceRecallTime > 0) {
-			iTL_ = m_sForceRecallTime * 20;
+		if (m_force_recall_time > 0) {
+			iTL_ = m_force_recall_time * 20;
 		}
 		// use standard recall time calculations
 		else {
 			SysTime = hb::time::local_time::now();
 			switch (SysTime.day_of_week) {
-			case 1:	iTL_ = 20 * m_sRaidTimeMonday; break;  // 3 2002-09-10 #1
-			case 2:	iTL_ = 20 * m_sRaidTimeTuesday; break;
-			case 3:	iTL_ = 20 * m_sRaidTimeWednesday; break;
-			case 4:	iTL_ = 20 * m_sRaidTimeThursday; break;
-			case 5:	iTL_ = 20 * m_sRaidTimeFriday; break;
-			case 6:	iTL_ = 20 * m_sRaidTimeSaturday; break;
-			case 0:	iTL_ = 20 * m_sRaidTimeSunday; break;
+			case 1:	iTL_ = 20 * m_raid_time_monday; break;  // 3 2002-09-10 #1
+			case 2:	iTL_ = 20 * m_raid_time_tuesday; break;
+			case 3:	iTL_ = 20 * m_raid_time_wednesday; break;
+			case 4:	iTL_ = 20 * m_raid_time_thursday; break;
+			case 5:	iTL_ = 20 * m_raid_time_friday; break;
+			case 6:	iTL_ = 20 * m_raid_time_saturday; break;
+			case 0:	iTL_ = 20 * m_raid_time_sunday; break;
 			}
 		}
-		if (m_pClientList[iClientH]->m_iTimeLeft_ForceRecall > iTL_)
-			m_pClientList[iClientH]->m_iTimeLeft_ForceRecall = iTL_;
+		if (m_client_list[client_h]->m_time_left_force_recall > iTL_)
+			m_client_list[client_h]->m_time_left_force_recall = iTL_;
 	}
 
-	m_pClientList[iClientH]->m_bIsWarLocation = true;
+	m_client_list[client_h]->m_is_war_location = true;
 	return;
 
 }
@@ -11475,58 +11495,58 @@ int ITEMSPREAD_FIEXD_COORD[25][2] =
 
 //New Changed 11/05/2004
 
-bool CGame::_bRegisterMap(char* pName)
+bool CGame::register_map(char* name)
 {
 	
-	char cTmpName[11];
+	char tmp_name[11];
 
-	std::memset(cTmpName, 0, sizeof(cTmpName));
-	strcpy(cTmpName, pName);
+	std::memset(tmp_name, 0, sizeof(tmp_name));
+	strcpy(tmp_name, name);
 	for(int i = 0; i < MaxMaps; i++)
-		if ((m_pMapList[i] != 0) && (memcmp(m_pMapList[i]->m_cName, cTmpName, 10) == 0)) {
-			hb::logger::error("Map already installed: {}", cTmpName);
+		if ((m_map_list[i] != 0) && (memcmp(m_map_list[i]->m_name, tmp_name, 10) == 0)) {
+			hb::logger::error("Map already installed: {}", tmp_name);
 			return false;
 		}
 
 	for(int i = 0; i < MaxMaps; i++)
-		if (m_pMapList[i] == 0) {
-			m_pMapList[i] = new class CMap(this);
-			if (m_pMapList[i]->bInit(pName) == false) {
-				hb::logger::error("Map data load failed: {}", pName);
+		if (m_map_list[i] == 0) {
+			m_map_list[i] = new class CMap(this);
+			if (m_map_list[i]->init(name) == false) {
+				hb::logger::error("Map data load failed: {}", name);
 				return false;
 			};
 
-			if ((m_iMiddlelandMapIndex == -1) && (strcmp("middleland", pName) == 0))
-				m_iMiddlelandMapIndex = i;
+			if ((m_middleland_map_index == -1) && (strcmp("middleland", name) == 0))
+				m_middleland_map_index = i;
 
-			if ((m_iAresdenMapIndex == -1) && (strcmp("aresden", pName) == 0))
-				m_iAresdenMapIndex = i;
+			if ((m_aresden_map_index == -1) && (strcmp("aresden", name) == 0))
+				m_aresden_map_index = i;
 
-			if ((m_iElvineMapIndex == -1) && (strcmp("elvine", pName) == 0))
-				m_iElvineMapIndex = i;
+			if ((m_elvine_map_index == -1) && (strcmp("elvine", name) == 0))
+				m_elvine_map_index = i;
 
-			if ((m_iBTFieldMapIndex == -1) && (strcmp("btfield", pName) == 0))
-				m_iBTFieldMapIndex = i;
+			if ((m_bt_field_map_index == -1) && (strcmp("btfield", name) == 0))
+				m_bt_field_map_index = i;
 
-			if ((m_iGodHMapIndex == -1) && (strcmp("godh", pName) == 0))
-				m_iGodHMapIndex = i;
+			if ((m_godh_map_index == -1) && (strcmp("godh", name) == 0))
+				m_godh_map_index = i;
 
-			m_iTotalMaps++;
+			m_total_maps++;
 			return true;
 		}
 
-	hb::logger::error("Map cannot be added (no space): {}", pName);
+	hb::logger::error("Map cannot be added (no space): {}", name);
 	return false;
 }
 
 //New Changed 11/05/2004
 
-void CGame::ShowClientMsg(int iClientH, char* pMsg)
+void CGame::show_client_msg(int client_h, char* pMsg)
 {
-	char cTemp[256];
-	std::memset(cTemp, 0, sizeof(cTemp));
+	char temp[256];
+	std::memset(temp, 0, sizeof(temp));
 
-	auto& chatPkt = *reinterpret_cast<hb::net::PacketChatMsg*>(cTemp);
+	auto& chatPkt = *reinterpret_cast<hb::net::PacketChatMsg*>(temp);
 	chatPkt.header.msg_id = MsgId::CommandChatMsg;
 	chatPkt.header.msg_type = 0;
 	chatPkt.reserved1 = 0;
@@ -11534,34 +11554,34 @@ void CGame::ShowClientMsg(int iClientH, char* pMsg)
 	std::memcpy(chatPkt.name, "HGServer", 8);
 	chatPkt.chat_type = 10;
 
-	size_t dwMsgSize = strlen(pMsg);
-	if (dwMsgSize > 50) dwMsgSize = 50;
-	memcpy(cTemp + sizeof(hb::net::PacketChatMsg), pMsg, dwMsgSize);
+	size_t msg_size = strlen(pMsg);
+	if (msg_size > 50) msg_size = 50;
+	memcpy(temp + sizeof(hb::net::PacketChatMsg), pMsg, msg_size);
 
-	m_pClientList[iClientH]->m_pXSock->iSendMsg(cTemp, dwMsgSize + sizeof(hb::net::PacketChatMsg));
+	m_client_list[client_h]->m_socket->send_msg(temp, msg_size + sizeof(hb::net::PacketChatMsg));
 }
 
-void CGame::Command_YellowBall(int iClientH, char* pData, size_t dwMsgSize)
+void CGame::command_yellow_ball(int client_h, char* data, size_t msg_size)
 {
 	char   seps[] = "= \t\r\n";
-	char* token, cBuff[256], cPlayerName[11], cMapName[32];
-	int iSoxH, iSoX;
+	char* token, buff[256], player_name[11], map_name[32];
+	int sox_h, so_x;
 
-	if (m_pClientList[iClientH] == 0) return;
-	if ((dwMsgSize) <= 0) return;
+	if (m_client_list[client_h] == 0) return;
+	if ((msg_size) <= 0) return;
 
-	iSoX = 0;
+	so_x = 0;
 	for(int i = 0; i < hb::shared::limits::MaxItems; i++)
-		if (m_pClientList[iClientH]->m_pItemList[i] != 0) {
-			switch (m_pClientList[iClientH]->m_pItemList[i]->m_sIDnum) {
-			case 653: iSoX++; iSoxH = i; break;
+		if (m_client_list[client_h]->m_item_list[i] != 0) {
+			switch (m_client_list[client_h]->m_item_list[i]->m_id_num) {
+			case 653: so_x++; sox_h = i; break;
 			}
 		}
-	if (iSoX > 0) {
+	if (so_x > 0) {
 
-		std::memset(cPlayerName, 0, sizeof(cPlayerName));
-		std::memset(cBuff, 0, sizeof(cBuff));
-		memcpy(cBuff, pData, dwMsgSize);
+		std::memset(player_name, 0, sizeof(player_name));
+		std::memset(buff, 0, sizeof(buff));
+		memcpy(buff, data, msg_size);
 
 		token = strtok(NULL, seps);
 
@@ -11571,23 +11591,23 @@ void CGame::Command_YellowBall(int iClientH, char* pData, size_t dwMsgSize)
 		}
 
 		if (strlen(token) > hb::shared::limits::CharNameLen - 1) {
-			memcpy(cPlayerName, token, hb::shared::limits::CharNameLen - 1);
+			memcpy(player_name, token, hb::shared::limits::CharNameLen - 1);
 		}
 		else {
-			memcpy(cPlayerName, token, strlen(token));
+			memcpy(player_name, token, strlen(token));
 		}
 
 		for(int i = 1; i < MaxClients; i++) {
-			if (m_pClientList[i] != 0) {
-				if (hb_strnicmp(cPlayerName, m_pClientList[i]->m_cCharName, hb::shared::limits::CharNameLen - 1) == 0) {
-					if (strcmp(m_pClientList[iClientH]->m_cLocation, m_pClientList[i]->m_cLocation) != 0)
+			if (m_client_list[i] != 0) {
+				if (hb_strnicmp(player_name, m_client_list[i]->m_char_name, hb::shared::limits::CharNameLen - 1) == 0) {
+					if (strcmp(m_client_list[client_h]->m_location, m_client_list[i]->m_location) != 0)
 						return;
 
-					std::memset(cMapName, 0, sizeof(cMapName));
-					strcpy(cMapName, m_pClientList[i]->m_cMapName);
-					hb::logger::log<log_channel::items_misc>("{} IP({}) {} (null) at {}({},{})", m_pClientList[i]->m_cCharName, m_pClientList[i]->m_cIPaddress, "YellowBall", m_pClientList[i]->m_cMapName, m_pClientList[i]->m_sX, m_pClientList[i]->m_sY);
-					m_pItemManager->ItemDepleteHandler(iClientH, iSoxH, true);
-					RequestTeleportHandler(iClientH, "2   ", cMapName, m_pClientList[i]->m_sX, m_pClientList[i]->m_sY);
+					std::memset(map_name, 0, sizeof(map_name));
+					strcpy(map_name, m_client_list[i]->m_map_name);
+					hb::logger::log<log_channel::items_misc>("{} IP({}) {} (null) at {}({},{})", m_client_list[i]->m_char_name, m_client_list[i]->m_ip_address, "YellowBall", m_client_list[i]->m_map_name, m_client_list[i]->m_x, m_client_list[i]->m_y);
+					m_item_manager->item_deplete_handler(client_h, sox_h, true);
+					request_teleport_handler(client_h, "2   ", map_name, m_client_list[i]->m_x, m_client_list[i]->m_y);
 					return;
 				}
 			}
@@ -11595,176 +11615,176 @@ void CGame::Command_YellowBall(int iClientH, char* pData, size_t dwMsgSize)
 	}
 }
 
-void CGame::Command_RedBall(int iClientH, char* pData, size_t dwMsgSize)
+void CGame::command_red_ball(int client_h, char* data, size_t msg_size)
 {
-	char seps[] = "= \t\r\n", cName[hb::shared::limits::NpcNameLen], cNpcName[hb::shared::limits::NpcNameLen], cNpcWaypoint[11];
-	int iNamingValue, tX, tY, x, iNpcID;
-	int iSoxH, iSoX;
+	char seps[] = "= \t\r\n", name[hb::shared::limits::NpcNameLen], npc_name[hb::shared::limits::NpcNameLen], npc_waypoint[11];
+	int naming_value, tX, tY, x, npc_id;
+	int sox_h, so_x;
 
-	if (m_pClientList[iClientH] == 0) return;
-	if ((memcmp(m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_cName, "huntzone1", 9) != 0) &&
-		(memcmp(m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_cName, "huntzone2", 9) != 0) &&
-		(memcmp(m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_cName, "huntzone3", 9) != 0) &&
-		(memcmp(m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_cName, "huntzone4", 9) != 0)) return;
+	if (m_client_list[client_h] == 0) return;
+	if ((memcmp(m_map_list[m_client_list[client_h]->m_map_index]->m_name, "huntzone1", 9) != 0) &&
+		(memcmp(m_map_list[m_client_list[client_h]->m_map_index]->m_name, "huntzone2", 9) != 0) &&
+		(memcmp(m_map_list[m_client_list[client_h]->m_map_index]->m_name, "huntzone3", 9) != 0) &&
+		(memcmp(m_map_list[m_client_list[client_h]->m_map_index]->m_name, "huntzone4", 9) != 0)) return;
 
-	iSoX = 0;
+	so_x = 0;
 	for(int i = 0; i < hb::shared::limits::MaxItems; i++)
-		if (m_pClientList[iClientH]->m_pItemList[i] != 0) {
-			switch (m_pClientList[iClientH]->m_pItemList[i]->m_sIDnum) {
-			case 652: iSoX++; iSoxH = i; break;
+		if (m_client_list[client_h]->m_item_list[i] != 0) {
+			switch (m_client_list[client_h]->m_item_list[i]->m_id_num) {
+			case 652: so_x++; sox_h = i; break;
 			}
 		}
-	if (iSoX > 0) {
-		iNamingValue = m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->iGetEmptyNamingValue();
-		if (iNamingValue == -1) {
+	if (so_x > 0) {
+		naming_value = m_map_list[m_client_list[client_h]->m_map_index]->get_empty_naming_value();
+		if (naming_value == -1) {
 
 		}
 		else {
 
-			std::memset(cNpcName, 0, sizeof(cNpcName));
-			switch (iDice(1, 5)) {
-			case 1: strcpy(cNpcName, "Wyvern"); iNpcID = 66; break;
-			case 2: strcpy(cNpcName, "Hellclaw"); iNpcID = 49; break;
-			case 3: strcpy(cNpcName, "Fire-Wyvern"); iNpcID = 73; break;
-			case 4: strcpy(cNpcName, "Tigerworm"); iNpcID = 50; break;
-			case 5: strcpy(cNpcName, "Gagoyle"); iNpcID = 52; break;
+			std::memset(npc_name, 0, sizeof(npc_name));
+			switch (dice(1, 5)) {
+			case 1: strcpy(npc_name, "Wyvern"); npc_id = 66; break;
+			case 2: strcpy(npc_name, "Hellclaw"); npc_id = 49; break;
+			case 3: strcpy(npc_name, "Fire-Wyvern"); npc_id = 73; break;
+			case 4: strcpy(npc_name, "Tigerworm"); npc_id = 50; break;
+			case 5: strcpy(npc_name, "Gagoyle"); npc_id = 52; break;
 			}
-			std::memset(cName, 0, sizeof(cName));
-			std::snprintf(cName, sizeof(cName), "XX%d", iNamingValue);
-			cName[0] = '_';
-			cName[1] = m_pClientList[iClientH]->m_cMapIndex + 65;
+			std::memset(name, 0, sizeof(name));
+			std::snprintf(name, sizeof(name), "XX%d", naming_value);
+			name[0] = '_';
+			name[1] = m_client_list[client_h]->m_map_index + 65;
 
-			std::memset(cNpcWaypoint, 0, sizeof(cNpcWaypoint));
+			std::memset(npc_waypoint, 0, sizeof(npc_waypoint));
 
-			tX = (int)m_pClientList[iClientH]->m_sX;
-			tY = (int)m_pClientList[iClientH]->m_sY;
-			int iNpcConfigId = GetNpcConfigIdByName(cNpcName);
-			if (bCreateNewNpc(iNpcConfigId, cName, m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_cName, 0, (rand() % 9),
-				MoveType::Random, &tX, &tY, cNpcWaypoint, 0, 0, -1, false, false) == false) {
-				m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->SetNamingValueEmpty(iNamingValue);
+			tX = (int)m_client_list[client_h]->m_x;
+			tY = (int)m_client_list[client_h]->m_y;
+			int npc_config_id = get_npc_config_id_by_name(npc_name);
+			if (create_new_npc(npc_config_id, name, m_map_list[m_client_list[client_h]->m_map_index]->m_name, 0, (rand() % 9),
+				MoveType::Random, &tX, &tY, npc_waypoint, 0, 0, -1, false, false) == false) {
+				m_map_list[m_client_list[client_h]->m_map_index]->set_naming_value_empty(naming_value);
 			}
 			else {
-				hb::logger::log<log_channel::items_misc>("{} IP({}) {} (null) at {}({},{})", m_pClientList[iClientH]->m_cCharName, m_pClientList[iClientH]->m_cIPaddress, "RedBall", m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_cName, tX, tY);
+				hb::logger::log<log_channel::items_misc>("{} IP({}) {} (null) at {}({},{})", m_client_list[client_h]->m_char_name, m_client_list[client_h]->m_ip_address, "RedBall", m_map_list[m_client_list[client_h]->m_map_index]->m_name, tX, tY);
 			}
 		}
 
 		for (x = 1; x < MaxClients; x++)
-			if ((m_pClientList[x] != 0) && (m_pClientList[x]->m_bIsInitComplete)) {
-				SendNotifyMsg(0, x, Notify::SpawnEvent, tX, tY, iNpcID, 0, 0, 0);
+			if ((m_client_list[x] != 0) && (m_client_list[x]->m_is_init_complete)) {
+				send_notify_msg(0, x, Notify::SpawnEvent, tX, tY, npc_id, 0, 0, 0);
 			}
-		m_pItemManager->ItemDepleteHandler(iClientH, iSoxH, true);
+		m_item_manager->item_deplete_handler(client_h, sox_h, true);
 	}
 }
 
-void CGame::Command_BlueBall(int iClientH, char* pData, size_t dwMsgSize)
+void CGame::command_blue_ball(int client_h, char* data, size_t msg_size)
 
 {
 	char seps[] = "= \t\r\n";
-	char   cName_Master[10], cName_Slave[10], cNpcName[hb::shared::limits::NpcNameLen], cWaypoint[11], cSA;
-	int    pX, pY, j, iNum, iNamingValue, iNpcID;
+	char   cName_Master[10], cName_Slave[10], npc_name[hb::shared::limits::NpcNameLen], waypoint[11], sa;
+	int    pX, pY, j, num, naming_value, npc_id;
 	int x;
-	bool   bMaster;
-	int iSoxH, iSoX;
+	bool   master;
+	int sox_h, so_x;
 
-	if (m_pClientList[iClientH] == 0) return;
-	if ((memcmp(m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_cName, "huntzone1", 9) != 0) &&
-		(memcmp(m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_cName, "huntzone2", 9) != 0) &&
-		(memcmp(m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_cName, "huntzone3", 9) != 0) &&
-		(memcmp(m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_cName, "huntzone4", 9) != 0)) return;
+	if (m_client_list[client_h] == 0) return;
+	if ((memcmp(m_map_list[m_client_list[client_h]->m_map_index]->m_name, "huntzone1", 9) != 0) &&
+		(memcmp(m_map_list[m_client_list[client_h]->m_map_index]->m_name, "huntzone2", 9) != 0) &&
+		(memcmp(m_map_list[m_client_list[client_h]->m_map_index]->m_name, "huntzone3", 9) != 0) &&
+		(memcmp(m_map_list[m_client_list[client_h]->m_map_index]->m_name, "huntzone4", 9) != 0)) return;
 
-	iSoX = 0;
+	so_x = 0;
 	for(int i = 0; i < hb::shared::limits::MaxItems; i++)
-		if (m_pClientList[iClientH]->m_pItemList[i] != 0) {
-			switch (m_pClientList[iClientH]->m_pItemList[i]->m_sIDnum) {
-			case 654: iSoX++; iSoxH = i; break;
+		if (m_client_list[client_h]->m_item_list[i] != 0) {
+			switch (m_client_list[client_h]->m_item_list[i]->m_id_num) {
+			case 654: so_x++; sox_h = i; break;
 			}
 		}
-	if (iSoX > 0) {
-		iNamingValue = m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->iGetEmptyNamingValue();
-		if (iNamingValue == -1) {
+	if (so_x > 0) {
+		naming_value = m_map_list[m_client_list[client_h]->m_map_index]->get_empty_naming_value();
+		if (naming_value == -1) {
 
 		}
 		else {
 
-			std::memset(cNpcName, 0, sizeof(cNpcName));
+			std::memset(npc_name, 0, sizeof(npc_name));
 
-			switch (iDice(1, 38)) {
-			case 1: strcpy(cNpcName, "Slime");			iNpcID = 10; break;
-			case 2: strcpy(cNpcName, "Giant-Ant");		iNpcID = 15; break;
-			case 3: strcpy(cNpcName, "Zombie");			iNpcID = 17; break;
-			case 4: strcpy(cNpcName, "Scorpion");		iNpcID = 16; break;
-			case 5: strcpy(cNpcName, "Skeleton");		iNpcID = 11; break;
-			case 6: strcpy(cNpcName, "Orc-Mage");		iNpcID = 14; break;
-			case 7: strcpy(cNpcName, "Clay-Golem");		iNpcID = 23; break;
-			case 8: strcpy(cNpcName, "Stone-Golem");	iNpcID = 12; break;
-			case 9: strcpy(cNpcName, "Hellbound");		iNpcID = 27; break;
-			case 10: strcpy(cNpcName, "Giant-Frog");	iNpcID = 57; break;
-			case 11: strcpy(cNpcName, "Troll");			iNpcID = 28; break;
-			case 12: strcpy(cNpcName, "Cyclops");		iNpcID = 13; break;
-			case 13: strcpy(cNpcName, "Ice-Golem");		iNpcID = 65; break;
-			case 14: strcpy(cNpcName, "Beholder");		iNpcID = 53; break;
-			case 15: strcpy(cNpcName, "Cannibal-Plant"); iNpcID = 60; break;
-			case 16: strcpy(cNpcName, "Orge");			iNpcID = 29; break;
-			case 17: strcpy(cNpcName, "Mountain-Giant"); iNpcID = 58; break;
-			case 18: strcpy(cNpcName, "DireBoar");		iNpcID = 62; break;
-			case 19: strcpy(cNpcName, "Liche");			iNpcID = 30; break;
-			case 20: strcpy(cNpcName, "Stalker");		iNpcID = 48; break;
-			case 21: strcpy(cNpcName, "WereWolf");		iNpcID = 33; break;
-			case 22: strcpy(cNpcName, "Dark-Elf");		iNpcID = 54; break;
-			case 23: strcpy(cNpcName, "Frost");			iNpcID = 63; break;
-			case 24: strcpy(cNpcName, "Orc");			iNpcID = 14; break;
-			case 25: strcpy(cNpcName, "Ettin");			iNpcID = 59; break;
-			case 26: strcpy(cNpcName, "Tentocle");		iNpcID = 80; break;
-			case 27: strcpy(cNpcName, "Giant-Crayfish"); iNpcID = 74; break;
-			case 28: strcpy(cNpcName, "Giant-Plant");	iNpcID = 76; break;
-			case 29: strcpy(cNpcName, "Rudolph");		iNpcID = 61; break;
-			case 30: strcpy(cNpcName, "Claw-Turtle");	iNpcID = 72; break;
-			case 31: strcpy(cNpcName, "Centaurus");		iNpcID = 71; break;
-			case 32: strcpy(cNpcName, "Barlog");		iNpcID = 70; break;
-			case 33: strcpy(cNpcName, "Giant-Lizard");	iNpcID = 75; break;
-			case 34: strcpy(cNpcName, "MasterMage-Orc"); iNpcID = 77; break;
-			case 35: strcpy(cNpcName, "Minotaurs");		iNpcID = 78; break;
-			case 36: strcpy(cNpcName, "Unicorn");		iNpcID = 32; break;
-			case 37: strcpy(cNpcName, "Nizie");			iNpcID = 79; break;
+			switch (dice(1, 38)) {
+			case 1: strcpy(npc_name, "Slime");			npc_id = 10; break;
+			case 2: strcpy(npc_name, "Giant-Ant");		npc_id = 15; break;
+			case 3: strcpy(npc_name, "Zombie");			npc_id = 17; break;
+			case 4: strcpy(npc_name, "Scorpion");		npc_id = 16; break;
+			case 5: strcpy(npc_name, "Skeleton");		npc_id = 11; break;
+			case 6: strcpy(npc_name, "Orc-Mage");		npc_id = 14; break;
+			case 7: strcpy(npc_name, "Clay-Golem");		npc_id = 23; break;
+			case 8: strcpy(npc_name, "Stone-Golem");	npc_id = 12; break;
+			case 9: strcpy(npc_name, "Hellbound");		npc_id = 27; break;
+			case 10: strcpy(npc_name, "Giant-Frog");	npc_id = 57; break;
+			case 11: strcpy(npc_name, "Troll");			npc_id = 28; break;
+			case 12: strcpy(npc_name, "Cyclops");		npc_id = 13; break;
+			case 13: strcpy(npc_name, "Ice-Golem");		npc_id = 65; break;
+			case 14: strcpy(npc_name, "Beholder");		npc_id = 53; break;
+			case 15: strcpy(npc_name, "Cannibal-Plant"); npc_id = 60; break;
+			case 16: strcpy(npc_name, "Orge");			npc_id = 29; break;
+			case 17: strcpy(npc_name, "Mountain-Giant"); npc_id = 58; break;
+			case 18: strcpy(npc_name, "DireBoar");		npc_id = 62; break;
+			case 19: strcpy(npc_name, "Liche");			npc_id = 30; break;
+			case 20: strcpy(npc_name, "Stalker");		npc_id = 48; break;
+			case 21: strcpy(npc_name, "WereWolf");		npc_id = 33; break;
+			case 22: strcpy(npc_name, "Dark-Elf");		npc_id = 54; break;
+			case 23: strcpy(npc_name, "Frost");			npc_id = 63; break;
+			case 24: strcpy(npc_name, "Orc");			npc_id = 14; break;
+			case 25: strcpy(npc_name, "Ettin");			npc_id = 59; break;
+			case 26: strcpy(npc_name, "Tentocle");		npc_id = 80; break;
+			case 27: strcpy(npc_name, "Giant-Crayfish"); npc_id = 74; break;
+			case 28: strcpy(npc_name, "Giant-Plant");	npc_id = 76; break;
+			case 29: strcpy(npc_name, "Rudolph");		npc_id = 61; break;
+			case 30: strcpy(npc_name, "Claw-Turtle");	npc_id = 72; break;
+			case 31: strcpy(npc_name, "Centaurus");		npc_id = 71; break;
+			case 32: strcpy(npc_name, "Barlog");		npc_id = 70; break;
+			case 33: strcpy(npc_name, "Giant-Lizard");	npc_id = 75; break;
+			case 34: strcpy(npc_name, "MasterMage-Orc"); npc_id = 77; break;
+			case 35: strcpy(npc_name, "Minotaurs");		npc_id = 78; break;
+			case 36: strcpy(npc_name, "Unicorn");		npc_id = 32; break;
+			case 37: strcpy(npc_name, "Nizie");			npc_id = 79; break;
 			}
 
-			iNum = 10;
-			cSA = 0;
-			pX = m_pClientList[iClientH]->m_sX;
-			pY = m_pClientList[iClientH]->m_sY;
+			num = 10;
+			sa = 0;
+			pX = m_client_list[client_h]->m_x;
+			pY = m_client_list[client_h]->m_y;
 
-			hb::logger::log("BlueBall event: summoning '{}' x{}", cNpcName, iNum);
+			hb::logger::log("BlueBall event: summoning '{}' x{}", npc_name, num);
 
-			int iNpcConfigId = GetNpcConfigIdByName(cNpcName);
-			iNamingValue = m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->iGetEmptyNamingValue();
-			if (iNamingValue != -1) {
+			int npc_config_id = get_npc_config_id_by_name(npc_name);
+			naming_value = m_map_list[m_client_list[client_h]->m_map_index]->get_empty_naming_value();
+			if (naming_value != -1) {
 
 				std::memset(cName_Master, 0, sizeof(cName_Master));
-				std::snprintf(cName_Master, sizeof(cName_Master), "XX%d", iNamingValue);
+				std::snprintf(cName_Master, sizeof(cName_Master), "XX%d", naming_value);
 				cName_Master[0] = '_';
-				cName_Master[1] = m_pClientList[iClientH]->m_cMapIndex + 65;
-				if ((bMaster = bCreateNewNpc(iNpcConfigId, cName_Master, m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_cName, (rand() % 3), cSA, MoveType::Random, &pX, &pY, cWaypoint, 0, 0, -1, false, false, false, true)) == false) {
+				cName_Master[1] = m_client_list[client_h]->m_map_index + 65;
+				if ((master = create_new_npc(npc_config_id, cName_Master, m_map_list[m_client_list[client_h]->m_map_index]->m_name, (rand() % 3), sa, MoveType::Random, &pX, &pY, waypoint, 0, 0, -1, false, false, false, true)) == false) {
 
-					m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->SetNamingValueEmpty(iNamingValue);
+					m_map_list[m_client_list[client_h]->m_map_index]->set_naming_value_empty(naming_value);
 				}
 			}
 
-			for (j = 0; j < (iNum - 1); j++) {
-				iNamingValue = m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->iGetEmptyNamingValue();
-				if (iNamingValue != -1) {
+			for (j = 0; j < (num - 1); j++) {
+				naming_value = m_map_list[m_client_list[client_h]->m_map_index]->get_empty_naming_value();
+				if (naming_value != -1) {
 					// Slave Mob
 					std::memset(cName_Slave, 0, sizeof(cName_Slave));
-					std::snprintf(cName_Slave, sizeof(cName_Slave), "XX%d", iNamingValue);
+					std::snprintf(cName_Slave, sizeof(cName_Slave), "XX%d", naming_value);
 					cName_Slave[0] = '_';
-					cName_Slave[1] = m_pClientList[iClientH]->m_cMapIndex + 65;
+					cName_Slave[1] = m_client_list[client_h]->m_map_index + 65;
 
-					if (bCreateNewNpc(iNpcConfigId, cName_Slave, m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_cName, (rand() % 3), cSA, MoveType::Random, &pX, &pY, cWaypoint, 0, 0, -1, false, false, false) == false) {
+					if (create_new_npc(npc_config_id, cName_Slave, m_map_list[m_client_list[client_h]->m_map_index]->m_name, (rand() % 3), sa, MoveType::Random, &pX, &pY, waypoint, 0, 0, -1, false, false, false) == false) {
 
-						m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->SetNamingValueEmpty(iNamingValue);
+						m_map_list[m_client_list[client_h]->m_map_index]->set_naming_value_empty(naming_value);
 					}
 					else {
 						// Slave
-						if (m_pEntityManager != 0) m_pEntityManager->bSetNpcFollowMode(cName_Slave, cName_Master, hb::shared::owner_class::Npc);
+						if (m_entity_manager != 0) m_entity_manager->set_npc_follow_mode(cName_Slave, cName_Master, hb::shared::owner_class::Npc);
 					}
 				}
 			}
@@ -11773,10 +11793,10 @@ void CGame::Command_BlueBall(int iClientH, char* pData, size_t dwMsgSize)
 	}
 
 	for (x = 1; x < MaxClients; x++)
-		if ((m_pClientList[x] != 0) && (m_pClientList[x]->m_bIsInitComplete)) {
-			SendNotifyMsg(0, x, Notify::SpawnEvent, pX, pY, iNpcID, 0, 0, 0);
+		if ((m_client_list[x] != 0) && (m_client_list[x]->m_is_init_complete)) {
+			send_notify_msg(0, x, Notify::SpawnEvent, pX, pY, npc_id, 0, 0, 0);
 		}
-	m_pItemManager->ItemDepleteHandler(iClientH, iSoxH, true);
+	m_item_manager->item_deplete_handler(client_h, sox_h, true);
 }
 
 /*
@@ -11791,20 +11811,20 @@ delete client and log him, if the true switch
 //[KLKS] - [Pretty Good Coders] says:
 //or else they wont see it
 
-/*void CGame::OpenApocalypseGate(int iClientH)
+/*void CGame::OpenApocalypseGate(int client_h)
 {
-	if (m_pClientList[iClientH] == 0) return;
+	if (m_client_list[client_h] == 0) return;
 
-	//m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_iTotalAliveObject;
-	SendNotifyMsg(0, iClientH, Notify::ApocGateOpen, 95, 31, 0, m_pClientList[iClientH]->m_cMapName);
+	//m_map_list[m_client_list[client_h]->m_map_index]->m_total_alive_object;
+	send_notify_msg(0, client_h, Notify::ApocGateOpen, 95, 31, 0, m_client_list[client_h]->m_map_name);
 }*/
 
-void CGame::GlobalUpdateConfigs(char cConfigType)
+void CGame::global_update_configs(char config_type)
 {
-	LocalUpdateConfigs(cConfigType);
+	local_update_configs(config_type);
 }
 
-void CGame::LocalUpdateConfigs(char cConfigType)
+void CGame::local_update_configs(char config_type)
 {
 	sqlite3* configDb = nullptr;
 	std::string configDbPath;
@@ -11815,12 +11835,12 @@ void CGame::LocalUpdateConfigs(char cConfigType)
 	}
 
 	bool ok = false;
-	if (cConfigType == 1) {
+	if (config_type == 1) {
 		ok = HasGameConfigRows(configDb, "settings") && LoadSettingsConfig(configDb, this);
 		if (ok) hb::logger::log("Settings updated successfully!");
 		else hb::logger::error("Settings reload failed!");
 	}
-	if (cConfigType == 3) {
+	if (config_type == 3) {
 		ok = LoadBannedListConfig(configDb, this);
 		if (ok) hb::logger::log("BannedList updated successfully!");
 		else hb::logger::error("BannedList reload failed!");
@@ -11828,7 +11848,7 @@ void CGame::LocalUpdateConfigs(char cConfigType)
 	CloseGameConfigDatabase(configDb);
 }
 
-void CGame::ReloadNpcConfigs()
+void CGame::reload_npc_configs()
 {
 	sqlite3* configDb = nullptr;
 	std::string configDbPath;
@@ -11841,10 +11861,10 @@ void CGame::ReloadNpcConfigs()
 
 	for(int i = 0; i < MaxNpcTypes; i++)
 	{
-		if (m_pNpcConfigList[i] != 0)
+		if (m_npc_config_list[i] != 0)
 		{
-			delete m_pNpcConfigList[i];
-			m_pNpcConfigList[i] = 0;
+			delete m_npc_config_list[i];
+			m_npc_config_list[i] = 0;
 		}
 	}
 
@@ -11856,43 +11876,43 @@ void CGame::ReloadNpcConfigs()
 	}
 
 	CloseGameConfigDatabase(configDb);
-	ComputeConfigHashes();
+	compute_config_hashes();
 	hb::logger::log("NPC configs reloaded successfully");
 }
 
-void CGame::SendConfigReloadNotification(bool bItems, bool bMagic, bool bSkills, bool bNpcs)
+void CGame::send_config_reload_notification(bool items, bool magic, bool skills, bool npcs)
 {
 	hb::net::PacketNotifyConfigReload pkt{};
 	pkt.header.msg_id = MsgId::NotifyConfigReload;
 	pkt.header.msg_type = MsgType::Confirm;
-	pkt.reloadItems = bItems ? 1 : 0;
-	pkt.reloadMagic = bMagic ? 1 : 0;
-	pkt.reloadSkills = bSkills ? 1 : 0;
-	pkt.reloadNpcs = bNpcs ? 1 : 0;
+	pkt.reloadItems = items ? 1 : 0;
+	pkt.reloadMagic = magic ? 1 : 0;
+	pkt.reloadSkills = skills ? 1 : 0;
+	pkt.reloadNpcs = npcs ? 1 : 0;
 
 	for(int i = 1; i < MaxClients; i++)
 	{
-		if (m_pClientList[i] != 0 && m_pClientList[i]->m_bIsInitComplete)
-			m_pClientList[i]->m_pXSock->iSendMsg((char*)&pkt, sizeof(pkt));
+		if (m_client_list[i] != 0 && m_client_list[i]->m_is_init_complete)
+			m_client_list[i]->m_socket->send_msg((char*)&pkt, sizeof(pkt));
 	}
 }
 
-void CGame::PushConfigReloadToClients(bool bItems, bool bMagic, bool bSkills, bool bNpcs)
+void CGame::push_config_reload_to_clients(bool items, bool magic, bool skills, bool npcs)
 {
-	int iCount = 0;
+	int count = 0;
 	for(int i = 1; i < MaxClients; i++)
 	{
-		if (m_pClientList[i] != 0 && m_pClientList[i]->m_bIsInitComplete)
+		if (m_client_list[i] != 0 && m_client_list[i]->m_is_init_complete)
 		{
-			if (bItems)  m_pItemManager->bSendClientItemConfigs(i);
-			if (bMagic)  m_pMagicManager->bSendClientMagicConfigs(i);
-			if (bSkills) m_pSkillManager->bSendClientSkillConfigs(i);
-			if (bNpcs)   bSendClientNpcConfigs(i);
-			iCount++;
+			if (items)  m_item_manager->send_client_item_configs(i);
+			if (magic)  m_magic_manager->send_client_magic_configs(i);
+			if (skills) m_skill_manager->send_client_skill_configs(i);
+			if (npcs)   send_client_npc_configs(i);
+			count++;
 		}
 	}
 
-	hb::logger::log("Config reload pushed to {} client(s)", iCount);
+	hb::logger::log("Config reload pushed to {} client(s)", count);
 }
 
 /*void CGame::ApocalypseStarter()
@@ -11900,15 +11920,15 @@ void CGame::PushConfigReloadToClients(bool bItems, bool bMagic, bool bSkills, bo
  hb::time::local_time SysTime{};
  
 
-	if (m_bIsApocalypseMode ) return;
-	if (m_bIsApocalypseStarter == false) return;
+	if (m_is_apocalypse_mode ) return;
+	if (m_is_apocalypse_starter == false) return;
 
 	SysTime = hb::time::local_time::now();
 
 	for(int i = 0; i < MaxApocalypse; i++)
-	if	((m_stApocalypseScheduleStart[i].iDay == SysTime.day_of_week) &&
-		(m_stApocalypseScheduleStart[i].iHour == SysTime.hour) &&
-		(m_stApocalypseScheduleStart[i].iMinute == SysTime.minute)) {
+	if	((m_apocalypse_schedule_start[i].day == SysTime.day_of_week) &&
+		(m_apocalypse_schedule_start[i].hour == SysTime.hour) &&
+		(m_apocalypse_schedule_start[i].minute == SysTime.minute)) {
 			PutLogList("(!) Automated apocalypse is initiated!");
 			GlobalStartApocalypseMode();
 			return;
@@ -11917,520 +11937,520 @@ void CGame::PushConfigReloadToClients(bool bItems, bool bMagic, bool bSkills, bo
 
 // New 06/05/2004
 // Party Code
-void CGame::RequestCreatePartyHandler(int iClientH)
+void CGame::request_create_party_handler(int client_h)
 {
-	char cData[120]{};
+	char data[120]{};
 
-	if (m_pClientList[iClientH] == 0) return;
-	if (m_pClientList[iClientH]->m_bIsInitComplete == false) return;
+	if (m_client_list[client_h] == 0) return;
+	if (m_client_list[client_h]->m_is_init_complete == false) return;
 
-	if (m_pClientList[iClientH]->m_iPartyStatus != PartyStatus::Null) {
+	if (m_client_list[client_h]->m_party_status != PartyStatus::Null) {
 		return;
 	}
 
-	m_pClientList[iClientH]->m_iPartyStatus = PartyStatus::Processing;
+	m_client_list[client_h]->m_party_status = PartyStatus::Processing;
 
 	hb::net::PartyOpCreateRequest req{};
 	req.op_type = 1;
-	req.client_h = static_cast<uint16_t>(iClientH);
-	std::memcpy(req.name, m_pClientList[iClientH]->m_cCharName, sizeof(req.name));
-	std::memcpy(cData, &req, sizeof(req));
+	req.client_h = static_cast<uint16_t>(client_h);
+	std::memcpy(req.name, m_client_list[client_h]->m_char_name, sizeof(req.name));
+	std::memcpy(data, &req, sizeof(req));
 
-	PartyOperation(cData);
+	party_operation(data);
 
-	hb::logger::log("Party create request: client={}", iClientH);
+	hb::logger::log("Party create request: client={}", client_h);
 }
 
 // Last Updated October 28, 2004 - 3.51 translation
-void CGame::PartyOperationResultHandler(char* pData)
+void CGame::party_operation_result_handler(char* data)
 {
-	char cName[12];
-	int iClientH, iPartyID, iTotal;
+	char name[12];
+	int client_h, party_id, total;
 
-	uint16_t opType = *reinterpret_cast<uint16_t*>(pData);
+	uint16_t opType = *reinterpret_cast<uint16_t*>(data);
 
 	switch (opType) {
 	case 1: {
-		const auto& res = *reinterpret_cast<const hb::net::PartyOpResultWithStatus*>(pData);
-		iClientH = static_cast<int>(res.client_h);
-		std::memset(cName, 0, sizeof(cName));
-		std::memcpy(cName, res.name, sizeof(res.name));
-		iPartyID = static_cast<int>(res.party_id);
+		const auto& res = *reinterpret_cast<const hb::net::PartyOpResultWithStatus*>(data);
+		client_h = static_cast<int>(res.client_h);
+		std::memset(name, 0, sizeof(name));
+		std::memcpy(name, res.name, sizeof(res.name));
+		party_id = static_cast<int>(res.party_id);
 
-		PartyOperationResult_Create(iClientH, cName, res.result, iPartyID);
+		party_operation_result_create(client_h, name, res.result, party_id);
 
-		hb::logger::log("Party created: client={} party={}", iClientH, iPartyID);
+		hb::logger::log("Party created: client={} party={}", client_h, party_id);
 		break;
 	}
 
 	case 2: {
-		const auto& res = *reinterpret_cast<const hb::net::PartyOpResultDelete*>(pData);
-		iPartyID = static_cast<int>(res.party_id);
+		const auto& res = *reinterpret_cast<const hb::net::PartyOpResultDelete*>(data);
+		party_id = static_cast<int>(res.party_id);
 
-		PartyOperationResult_Delete(iPartyID);
+		party_operation_result_delete(party_id);
 
-		hb::logger::log("Party deleted: party={}", iPartyID);
+		hb::logger::log("Party deleted: party={}", party_id);
 		break;
 	}
 
 	case 3: {
-		const auto& res = *reinterpret_cast<const hb::net::PartyOpCreateRequest*>(pData);
-		iClientH = static_cast<int>(res.client_h);
-		std::memset(cName, 0, sizeof(cName));
-		std::memcpy(cName, res.name, sizeof(res.name));
+		const auto& res = *reinterpret_cast<const hb::net::PartyOpCreateRequest*>(data);
+		client_h = static_cast<int>(res.client_h);
+		std::memset(name, 0, sizeof(name));
+		std::memcpy(name, res.name, sizeof(res.name));
 
-		if ((iClientH < 0) && (iClientH > MaxClients)) return;
-		if (m_pClientList[iClientH] == 0) return;
-		if (hb_stricmp(m_pClientList[iClientH]->m_cCharName, cName) != 0) return;
+		if ((client_h < 0) && (client_h > MaxClients)) return;
+		if (m_client_list[client_h] == 0) return;
+		if (hb_stricmp(m_client_list[client_h]->m_char_name, name) != 0) return;
 
 		for (int i = 0; i < hb::shared::limits::MaxPartyMembers; i++)
-			if (m_stPartyInfo[m_pClientList[iClientH]->m_iPartyID].iIndex[i] == iClientH) {
-				m_stPartyInfo[m_pClientList[iClientH]->m_iPartyID].iIndex[i] = 0;
-				m_stPartyInfo[m_pClientList[iClientH]->m_iPartyID].iTotalMembers--;
+			if (m_party_info[m_client_list[client_h]->m_party_id].index[i] == client_h) {
+				m_party_info[m_client_list[client_h]->m_party_id].index[i] = 0;
+				m_party_info[m_client_list[client_h]->m_party_id].total_members--;
 
-				hb::logger::log("Party {}: member {} left, total={}", m_pClientList[iClientH]->m_iPartyID, iClientH, m_stPartyInfo[m_pClientList[iClientH]->m_iPartyID].iTotalMembers);
+				hb::logger::log("Party {}: member {} left, total={}", m_client_list[client_h]->m_party_id, client_h, m_party_info[m_client_list[client_h]->m_party_id].total_members);
 				goto PORH_LOOPBREAK1;
 			}
 	PORH_LOOPBREAK1:
 
 		for (int i = 0; i < hb::shared::limits::MaxPartyMembers - 1; i++)
-			if ((m_stPartyInfo[m_pClientList[iClientH]->m_iPartyID].iIndex[i] == 0) && (m_stPartyInfo[m_pClientList[iClientH]->m_iPartyID].iIndex[i + 1] != 0)) {
-				m_stPartyInfo[m_pClientList[iClientH]->m_iPartyID].iIndex[i] = m_stPartyInfo[m_pClientList[iClientH]->m_iPartyID].iIndex[i + 1];
-				m_stPartyInfo[m_pClientList[iClientH]->m_iPartyID].iIndex[i + 1] = 0;
+			if ((m_party_info[m_client_list[client_h]->m_party_id].index[i] == 0) && (m_party_info[m_client_list[client_h]->m_party_id].index[i + 1] != 0)) {
+				m_party_info[m_client_list[client_h]->m_party_id].index[i] = m_party_info[m_client_list[client_h]->m_party_id].index[i + 1];
+				m_party_info[m_client_list[client_h]->m_party_id].index[i + 1] = 0;
 			}
 
-		m_pClientList[iClientH]->m_iPartyID = 0;
-		m_pClientList[iClientH]->m_iPartyStatus = PartyStatus::Null;
+		m_client_list[client_h]->m_party_id = 0;
+		m_client_list[client_h]->m_party_status = PartyStatus::Null;
 
-		hb::logger::log("Party status 0: {}", m_pClientList[iClientH]->m_cCharName);
+		hb::logger::log("Party status 0: {}", m_client_list[client_h]->m_char_name);
 
-		SendNotifyMsg(0, iClientH, Notify::Party, 8, 0, 0, 0);
+		send_notify_msg(0, client_h, Notify::Party, 8, 0, 0, 0);
 		break;
 	}
 
 	case 4: {
-		const auto& res = *reinterpret_cast<const hb::net::PartyOpResultWithStatus*>(pData);
-		iClientH = static_cast<int>(res.client_h);
-		std::memset(cName, 0, sizeof(cName));
-		std::memcpy(cName, res.name, sizeof(res.name));
-		iPartyID = static_cast<int>(res.party_id);
+		const auto& res = *reinterpret_cast<const hb::net::PartyOpResultWithStatus*>(data);
+		client_h = static_cast<int>(res.client_h);
+		std::memset(name, 0, sizeof(name));
+		std::memcpy(name, res.name, sizeof(res.name));
+		party_id = static_cast<int>(res.party_id);
 
-		PartyOperationResult_Join(iClientH, cName, res.result, iPartyID);
+		party_operation_result_join(client_h, name, res.result, party_id);
 
-		hb::logger::log("Party joined: client={} party={}", iClientH, iPartyID);
+		hb::logger::log("Party joined: client={} party={}", client_h, party_id);
 		break;
 	}
 
 	case 5: {
-		const auto& res = *reinterpret_cast<const hb::net::PartyOpResultInfoHeader*>(pData);
-		iClientH = static_cast<int>(res.client_h);
-		std::memset(cName, 0, sizeof(cName));
-		std::memcpy(cName, res.name, sizeof(res.name));
-		iTotal = static_cast<int>(res.total);
+		const auto& res = *reinterpret_cast<const hb::net::PartyOpResultInfoHeader*>(data);
+		client_h = static_cast<int>(res.client_h);
+		std::memset(name, 0, sizeof(name));
+		std::memcpy(name, res.name, sizeof(res.name));
+		total = static_cast<int>(res.total);
 
-		char* memberList = pData + sizeof(hb::net::PartyOpResultInfoHeader);
-		PartyOperationResult_Info(iClientH, cName, iTotal, memberList);
+		char* memberList = data + sizeof(hb::net::PartyOpResultInfoHeader);
+		party_operation_result_info(client_h, name, total, memberList);
 
-		hb::logger::log("Party info: client={} total={}", iClientH, iTotal);
+		hb::logger::log("Party info: client={} total={}", client_h, total);
 		break;
 	}
 
 	case 6: {
-		const auto& res = *reinterpret_cast<const hb::net::PartyOpResultWithStatus*>(pData);
-		iClientH = static_cast<int>(res.client_h);
-		std::memset(cName, 0, sizeof(cName));
-		std::memcpy(cName, res.name, sizeof(res.name));
-		iPartyID = static_cast<int>(res.party_id);
+		const auto& res = *reinterpret_cast<const hb::net::PartyOpResultWithStatus*>(data);
+		client_h = static_cast<int>(res.client_h);
+		std::memset(name, 0, sizeof(name));
+		std::memcpy(name, res.name, sizeof(res.name));
+		party_id = static_cast<int>(res.party_id);
 
-		PartyOperationResult_Dismiss(iClientH, cName, res.result, iPartyID);
+		party_operation_result_dismiss(client_h, name, res.result, party_id);
 
-		hb::logger::log("Party dismissed: client={} party={}", iClientH, iPartyID);
+		hb::logger::log("Party dismissed: client={} party={}", client_h, party_id);
 		break;
 	}
 	}
 }
 
-void CGame::PartyOperationResult_Create(int iClientH, char* pName, int iResult, int iPartyID)
+void CGame::party_operation_result_create(int client_h, char* name, int result, int party_id)
 {
-	char cData[120];
+	char data[120];
 	
 
-	if (m_pClientList[iClientH] == 0) return;
-	if (hb_stricmp(m_pClientList[iClientH]->m_cCharName, pName) != 0) return;
+	if (m_client_list[client_h] == 0) return;
+	if (hb_stricmp(m_client_list[client_h]->m_char_name, name) != 0) return;
 
-	switch (iResult) {
+	switch (result) {
 	case 0:
-		if (m_pClientList[iClientH]->m_iPartyStatus != PartyStatus::Processing) return;
-		if (hb_stricmp(m_pClientList[iClientH]->m_cCharName, pName) != 0) return;
+		if (m_client_list[client_h]->m_party_status != PartyStatus::Processing) return;
+		if (hb_stricmp(m_client_list[client_h]->m_char_name, name) != 0) return;
 
-		m_pClientList[iClientH]->m_iPartyID = 0;
-		m_pClientList[iClientH]->m_iPartyStatus = PartyStatus::Null;
-		m_pClientList[iClientH]->m_iReqJoinPartyClientH = 0;
-		SendNotifyMsg(0, iClientH, Notify::Party, 1, 0, 0, 0);
+		m_client_list[client_h]->m_party_id = 0;
+		m_client_list[client_h]->m_party_status = PartyStatus::Null;
+		m_client_list[client_h]->m_req_join_party_client_h = 0;
+		send_notify_msg(0, client_h, Notify::Party, 1, 0, 0, 0);
 		break;
 
 	case 1:
-		if (m_pClientList[iClientH]->m_iPartyStatus != PartyStatus::Processing) return;
-		if (hb_stricmp(m_pClientList[iClientH]->m_cCharName, pName) != 0) return;
+		if (m_client_list[client_h]->m_party_status != PartyStatus::Processing) return;
+		if (hb_stricmp(m_client_list[client_h]->m_char_name, name) != 0) return;
 
-		m_pClientList[iClientH]->m_iPartyID = iPartyID;
-		m_pClientList[iClientH]->m_iPartyStatus = PartyStatus::Confirm;
-		SendNotifyMsg(0, iClientH, Notify::Party, 1, 1, 0, 0);
+		m_client_list[client_h]->m_party_id = party_id;
+		m_client_list[client_h]->m_party_status = PartyStatus::Confirm;
+		send_notify_msg(0, client_h, Notify::Party, 1, 1, 0, 0);
 
 		for(int i = 0; i < hb::shared::limits::MaxPartyMembers; i++)
-			if (m_stPartyInfo[m_pClientList[iClientH]->m_iPartyID].iIndex[i] == 0) {
-				m_stPartyInfo[m_pClientList[iClientH]->m_iPartyID].iIndex[i] = iClientH;
-				m_stPartyInfo[m_pClientList[iClientH]->m_iPartyID].iTotalMembers++;
+			if (m_party_info[m_client_list[client_h]->m_party_id].index[i] == 0) {
+				m_party_info[m_client_list[client_h]->m_party_id].index[i] = client_h;
+				m_party_info[m_client_list[client_h]->m_party_id].total_members++;
 				//testcode
-				hb::logger::log("Party {}: member {} added, total={}", m_pClientList[iClientH]->m_iPartyID, iClientH, m_stPartyInfo[m_pClientList[iClientH]->m_iPartyID].iTotalMembers);
+				hb::logger::log("Party {}: member {} added, total={}", m_client_list[client_h]->m_party_id, client_h, m_party_info[m_client_list[client_h]->m_party_id].total_members);
 				goto PORC_LOOPBREAK1;
 			}
 	PORC_LOOPBREAK1:
 
-		if ((m_pClientList[iClientH]->m_iReqJoinPartyClientH != 0) && (strlen(m_pClientList[iClientH]->m_cReqJoinPartyName) != 0)) {
-			std::memset(cData, 0, sizeof(cData));
+		if ((m_client_list[client_h]->m_req_join_party_client_h != 0) && (strlen(m_client_list[client_h]->m_req_join_party_name) != 0)) {
+			std::memset(data, 0, sizeof(data));
 			hb::net::PartyOpPayload partyOp{};
 			partyOp.op_type = 3;
-			partyOp.client_h = static_cast<uint16_t>(m_pClientList[iClientH]->m_iReqJoinPartyClientH);
-			std::memcpy(partyOp.name, m_pClientList[iClientH]->m_cReqJoinPartyName, sizeof(partyOp.name));
-			partyOp.party_id = static_cast<uint16_t>(m_pClientList[iClientH]->m_iPartyID);
-			std::memcpy(cData, &partyOp, sizeof(partyOp));
-			PartyOperation(cData);
-			m_pClientList[iClientH]->m_iReqJoinPartyClientH = 0;
-			std::memset(m_pClientList[iClientH]->m_cReqJoinPartyName, 0, sizeof(m_pClientList[iClientH]->m_cReqJoinPartyName));
+			partyOp.client_h = static_cast<uint16_t>(m_client_list[client_h]->m_req_join_party_client_h);
+			std::memcpy(partyOp.name, m_client_list[client_h]->m_req_join_party_name, sizeof(partyOp.name));
+			partyOp.party_id = static_cast<uint16_t>(m_client_list[client_h]->m_party_id);
+			std::memcpy(data, &partyOp, sizeof(partyOp));
+			party_operation(data);
+			m_client_list[client_h]->m_req_join_party_client_h = 0;
+			std::memset(m_client_list[client_h]->m_req_join_party_name, 0, sizeof(m_client_list[client_h]->m_req_join_party_name));
 		}
 		break;
 	}
 }
 
 // Last Updated October 28, 2004 - 3.51 translation
-void CGame::PartyOperationResult_Join(int iClientH, char* pName, int iResult, int iPartyID)
+void CGame::party_operation_result_join(int client_h, char* name, int result, int party_id)
 {
 	
 
-	if (m_pClientList[iClientH] == 0) return;
+	if (m_client_list[client_h] == 0) return;
 
-	switch (iResult) {
+	switch (result) {
 	case 0:
-		if (m_pClientList[iClientH]->m_iPartyStatus != PartyStatus::Processing) return;
-		if (hb_stricmp(m_pClientList[iClientH]->m_cCharName, pName) != 0) return;
+		if (m_client_list[client_h]->m_party_status != PartyStatus::Processing) return;
+		if (hb_stricmp(m_client_list[client_h]->m_char_name, name) != 0) return;
 
-		m_pClientList[iClientH]->m_iPartyID = 0;
-		m_pClientList[iClientH]->m_iPartyStatus = PartyStatus::Null;
-		SendNotifyMsg(0, iClientH, Notify::Party, 4, 0, 0, pName);
+		m_client_list[client_h]->m_party_id = 0;
+		m_client_list[client_h]->m_party_status = PartyStatus::Null;
+		send_notify_msg(0, client_h, Notify::Party, 4, 0, 0, name);
 
-		m_pClientList[iClientH]->m_iReqJoinPartyClientH = 0;
-		std::memset(m_pClientList[iClientH]->m_cReqJoinPartyName, 0, sizeof(m_pClientList[iClientH]->m_cReqJoinPartyName));
+		m_client_list[client_h]->m_req_join_party_client_h = 0;
+		std::memset(m_client_list[client_h]->m_req_join_party_name, 0, sizeof(m_client_list[client_h]->m_req_join_party_name));
 		break;
 
 	case 1:
-		if (m_pClientList[iClientH]->m_iPartyStatus != PartyStatus::Processing) return;
-		if (hb_stricmp(m_pClientList[iClientH]->m_cCharName, pName) != 0) return;
+		if (m_client_list[client_h]->m_party_status != PartyStatus::Processing) return;
+		if (hb_stricmp(m_client_list[client_h]->m_char_name, name) != 0) return;
 
-		m_pClientList[iClientH]->m_iPartyID = iPartyID;
-		m_pClientList[iClientH]->m_iPartyStatus = PartyStatus::Confirm;
-		SendNotifyMsg(0, iClientH, Notify::Party, 4, 1, 0, pName);
+		m_client_list[client_h]->m_party_id = party_id;
+		m_client_list[client_h]->m_party_status = PartyStatus::Confirm;
+		send_notify_msg(0, client_h, Notify::Party, 4, 1, 0, name);
 
-		m_pClientList[iClientH]->m_iReqJoinPartyClientH = 0;
-		std::memset(m_pClientList[iClientH]->m_cReqJoinPartyName, 0, sizeof(m_pClientList[iClientH]->m_cReqJoinPartyName));
+		m_client_list[client_h]->m_req_join_party_client_h = 0;
+		std::memset(m_client_list[client_h]->m_req_join_party_name, 0, sizeof(m_client_list[client_h]->m_req_join_party_name));
 
 		for(int i = 0; i < hb::shared::limits::MaxPartyMembers; i++)
-			if (m_stPartyInfo[m_pClientList[iClientH]->m_iPartyID].iIndex[i] == 0) {
-				m_stPartyInfo[m_pClientList[iClientH]->m_iPartyID].iIndex[i] = iClientH;
-				m_stPartyInfo[m_pClientList[iClientH]->m_iPartyID].iTotalMembers++;
+			if (m_party_info[m_client_list[client_h]->m_party_id].index[i] == 0) {
+				m_party_info[m_client_list[client_h]->m_party_id].index[i] = client_h;
+				m_party_info[m_client_list[client_h]->m_party_id].total_members++;
 
-				hb::logger::log("PartyID:{} member:{} In(Join) Total:{}", m_pClientList[iClientH]->m_iPartyID, iClientH, m_stPartyInfo[m_pClientList[iClientH]->m_iPartyID].iTotalMembers);
+				hb::logger::log("PartyID:{} member:{} In(Join) Total:{}", m_client_list[client_h]->m_party_id, client_h, m_party_info[m_client_list[client_h]->m_party_id].total_members);
 				goto PORC_LOOPBREAK1;
 			}
 	PORC_LOOPBREAK1:
 
 		for(int i = 1; i < MaxClients; i++)
-			if ((i != iClientH) && (m_pClientList[i] != 0) && (m_pClientList[i]->m_iPartyID != 0) && (m_pClientList[i]->m_iPartyID == iPartyID)) {
-				SendNotifyMsg(0, i, Notify::Party, 4, 1, 0, pName);
+			if ((i != client_h) && (m_client_list[i] != 0) && (m_client_list[i]->m_party_id != 0) && (m_client_list[i]->m_party_id == party_id)) {
+				send_notify_msg(0, i, Notify::Party, 4, 1, 0, name);
 			}
 		break;
 	}
 }
 
-void CGame::PartyOperationResult_Dismiss(int iClientH, char* pName, int iResult, int iPartyID)
+void CGame::party_operation_result_dismiss(int client_h, char* name, int result, int party_id)
 {
 	
-	// iClientH     .
+	// client_h     .
 
-	switch (iResult) {
+	switch (result) {
 	case 0:
 		break;
 
 	case 1:
-		if (iClientH == 0) {
-			// iClientH  NULL        .
+		if (client_h == 0) {
+			// client_h  NULL        .
 			for(int i = 1; i < MaxClients; i++)
-				if ((m_pClientList[i] != 0) && (hb_stricmp(m_pClientList[i]->m_cCharName, pName) == 0)) {
-					iClientH = i;
+				if ((m_client_list[i] != 0) && (hb_stricmp(m_client_list[i]->m_char_name, name) == 0)) {
+					client_h = i;
 					goto PORD_LOOPBREAK;
 				}
 		PORD_LOOPBREAK:
 
 			for(int i = 0; i < hb::shared::limits::MaxPartyMembers; i++)
-				if (m_stPartyInfo[iPartyID].iIndex[i] == iClientH) {
-					m_stPartyInfo[iPartyID].iIndex[i] = 0;
-					m_stPartyInfo[iPartyID].iTotalMembers--;
+				if (m_party_info[party_id].index[i] == client_h) {
+					m_party_info[party_id].index[i] = 0;
+					m_party_info[party_id].total_members--;
 					//testcode
-					hb::logger::log("PartyID:{} member:{} Out Total:{}", iPartyID, iClientH, m_stPartyInfo[iPartyID].iTotalMembers);
+					hb::logger::log("PartyID:{} member:{} Out Total:{}", party_id, client_h, m_party_info[party_id].total_members);
 					goto PORC_LOOPBREAK1;
 				}
 		PORC_LOOPBREAK1:
 			for(int i = 0; i < hb::shared::limits::MaxPartyMembers - 1; i++)
-				if ((m_stPartyInfo[iPartyID].iIndex[i] == 0) && (m_stPartyInfo[iPartyID].iIndex[i + 1] != 0)) {
-					m_stPartyInfo[iPartyID].iIndex[i] = m_stPartyInfo[iPartyID].iIndex[i + 1];
-					m_stPartyInfo[iPartyID].iIndex[i + 1] = 0;
+				if ((m_party_info[party_id].index[i] == 0) && (m_party_info[party_id].index[i + 1] != 0)) {
+					m_party_info[party_id].index[i] = m_party_info[party_id].index[i + 1];
+					m_party_info[party_id].index[i + 1] = 0;
 				}
 
-			if (m_pClientList[iClientH] != 0) {
-				m_pClientList[iClientH]->m_iPartyID = 0;
-				m_pClientList[iClientH]->m_iPartyStatus = PartyStatus::Null;
-				m_pClientList[iClientH]->m_iReqJoinPartyClientH = 0;
+			if (m_client_list[client_h] != 0) {
+				m_client_list[client_h]->m_party_id = 0;
+				m_client_list[client_h]->m_party_status = PartyStatus::Null;
+				m_client_list[client_h]->m_req_join_party_client_h = 0;
 			}
 
 			for(int i = 1; i < MaxClients; i++)
-				if ((m_pClientList[i] != 0) && (m_pClientList[i]->m_iPartyID != 0) && (m_pClientList[i]->m_iPartyID == iPartyID)) {
-					SendNotifyMsg(0, i, Notify::Party, 6, 1, 0, pName);
+				if ((m_client_list[i] != 0) && (m_client_list[i]->m_party_id != 0) && (m_client_list[i]->m_party_id == party_id)) {
+					send_notify_msg(0, i, Notify::Party, 6, 1, 0, name);
 				}
 			return;
 		}
 
-		if ((m_pClientList[iClientH] != 0) && (m_pClientList[iClientH]->m_iPartyStatus != PartyStatus::Processing)) return;
-		if ((m_pClientList[iClientH] != 0) && (hb_stricmp(m_pClientList[iClientH]->m_cCharName, pName) != 0)) return;
+		if ((m_client_list[client_h] != 0) && (m_client_list[client_h]->m_party_status != PartyStatus::Processing)) return;
+		if ((m_client_list[client_h] != 0) && (hb_stricmp(m_client_list[client_h]->m_char_name, name) != 0)) return;
 
 		for(int i = 1; i < MaxClients; i++)
-			if ((m_pClientList[i] != 0) && (m_pClientList[i]->m_iPartyID != 0) && (m_pClientList[i]->m_iPartyID == iPartyID)) {
-				SendNotifyMsg(0, i, Notify::Party, 6, 1, 0, pName);
+			if ((m_client_list[i] != 0) && (m_client_list[i]->m_party_id != 0) && (m_client_list[i]->m_party_id == party_id)) {
+				send_notify_msg(0, i, Notify::Party, 6, 1, 0, name);
 			}
 
 		for(int i = 0; i < hb::shared::limits::MaxPartyMembers; i++)
-			if (m_stPartyInfo[iPartyID].iIndex[i] == iClientH) {
-				m_stPartyInfo[iPartyID].iIndex[i] = 0;
-				m_stPartyInfo[iPartyID].iTotalMembers--;
+			if (m_party_info[party_id].index[i] == client_h) {
+				m_party_info[party_id].index[i] = 0;
+				m_party_info[party_id].total_members--;
 				//testcode
-				hb::logger::log("PartyID:{} member:{} Out Total:{}", iPartyID, iClientH, m_stPartyInfo[iPartyID].iTotalMembers);
+				hb::logger::log("PartyID:{} member:{} Out Total:{}", party_id, client_h, m_party_info[party_id].total_members);
 				goto PORC_LOOPBREAK2;
 			}
 	PORC_LOOPBREAK2:
 		for(int i = 0; i < hb::shared::limits::MaxPartyMembers - 1; i++)
-			if ((m_stPartyInfo[iPartyID].iIndex[i] == 0) && (m_stPartyInfo[iPartyID].iIndex[i + 1] != 0)) {
-				m_stPartyInfo[iPartyID].iIndex[i] = m_stPartyInfo[iPartyID].iIndex[i + 1];
-				m_stPartyInfo[iPartyID].iIndex[i + 1] = 0;
+			if ((m_party_info[party_id].index[i] == 0) && (m_party_info[party_id].index[i + 1] != 0)) {
+				m_party_info[party_id].index[i] = m_party_info[party_id].index[i + 1];
+				m_party_info[party_id].index[i + 1] = 0;
 			}
 
-		if (m_pClientList[iClientH] != 0) {
-			m_pClientList[iClientH]->m_iPartyID = 0;
-			m_pClientList[iClientH]->m_iPartyStatus = PartyStatus::Null;
-			m_pClientList[iClientH]->m_iReqJoinPartyClientH = 0;
+		if (m_client_list[client_h] != 0) {
+			m_client_list[client_h]->m_party_id = 0;
+			m_client_list[client_h]->m_party_status = PartyStatus::Null;
+			m_client_list[client_h]->m_req_join_party_client_h = 0;
 		}
 		break;
 	}
 }
 
-void CGame::PartyOperationResult_Delete(int iPartyID)
+void CGame::party_operation_result_delete(int party_id)
 {
 	
 
 	for(int i = 0; i < hb::shared::limits::MaxPartyMembers; i++)
 	{
-		m_stPartyInfo[iPartyID].iIndex[i] = 0;
-		m_stPartyInfo[iPartyID].iTotalMembers = 0;
+		m_party_info[party_id].index[i] = 0;
+		m_party_info[party_id].total_members = 0;
 	}
 
 	for(int i = 1; i < MaxClients; i++)
-		if ((m_pClientList[i] != 0) && (m_pClientList[i]->m_iPartyID == iPartyID)) {
-			SendNotifyMsg(0, i, Notify::Party, 2, 0, 0, 0);
-			m_pClientList[i]->m_iPartyID = 0;
-			m_pClientList[i]->m_iPartyStatus = PartyStatus::Null;
-			m_pClientList[i]->m_iReqJoinPartyClientH = 0;
+		if ((m_client_list[i] != 0) && (m_client_list[i]->m_party_id == party_id)) {
+			send_notify_msg(0, i, Notify::Party, 2, 0, 0, 0);
+			m_client_list[i]->m_party_id = 0;
+			m_client_list[i]->m_party_status = PartyStatus::Null;
+			m_client_list[i]->m_req_join_party_client_h = 0;
 			//testcode
 			hb::logger::log("Notify delete party: {}", i);
 		}
 }
 
-void CGame::RequestJoinPartyHandler(int iClientH, char* pData, size_t dwMsgSize)
+void CGame::request_join_party_handler(int client_h, char* data, size_t msg_size)
 {
 	char   seps[] = "= \t\r\n";
-	char* token, cBuff[256], cData[120], cName[12];
+	char* token, buff[256], msg_data[120], name[12];
 
-	if (m_pClientList[iClientH] == 0) return;
-	if (m_pClientList[iClientH]->m_iPartyStatus != PartyStatus::Null) return;
-	if ((dwMsgSize) <= 0) return;
+	if (m_client_list[client_h] == 0) return;
+	if (m_client_list[client_h]->m_party_status != PartyStatus::Null) return;
+	if ((msg_size) <= 0) return;
 
-	std::memset(cBuff, 0, sizeof(cBuff));
-	memcpy(cBuff, pData, dwMsgSize);
+	std::memset(buff, 0, sizeof(buff));
+	memcpy(buff, data, msg_size);
 
-	token = strtok(cBuff, seps);
+	token = strtok(buff, seps);
 
 	token = strtok(NULL, seps);
 	if (token != 0) {
-		std::memset(cName, 0, sizeof(cName));
-		strcpy(cName, token);
+		std::memset(name, 0, sizeof(name));
+		strcpy(name, token);
 	}
 	else return;
 
 	for (int i = 1; i < MaxClients; i++)
-		if ((m_pClientList[i] != 0) && (hb_stricmp(m_pClientList[i]->m_cCharName, cName) == 0)) {
-			if ((m_pClientList[i]->m_iPartyID == 0) || (m_pClientList[i]->m_iPartyStatus != PartyStatus::Confirm)) {
+		if ((m_client_list[i] != 0) && (hb_stricmp(m_client_list[i]->m_char_name, name) == 0)) {
+			if ((m_client_list[i]->m_party_id == 0) || (m_client_list[i]->m_party_status != PartyStatus::Confirm)) {
 				return;
 			}
 
-			std::memset(cData, 0, sizeof(cData));
+			std::memset(msg_data, 0, sizeof(msg_data));
 			hb::net::PartyOpPayload partyOp{};
 			partyOp.op_type = 3;
-			partyOp.client_h = static_cast<uint16_t>(iClientH);
-			std::memcpy(partyOp.name, m_pClientList[iClientH]->m_cCharName, sizeof(partyOp.name));
-			partyOp.party_id = static_cast<uint16_t>(m_pClientList[i]->m_iPartyID);
-			std::memcpy(cData, &partyOp, sizeof(partyOp));
-			PartyOperation(cData);
+			partyOp.client_h = static_cast<uint16_t>(client_h);
+			std::memcpy(partyOp.name, m_client_list[client_h]->m_char_name, sizeof(partyOp.name));
+			partyOp.party_id = static_cast<uint16_t>(m_client_list[i]->m_party_id);
+			std::memcpy(msg_data, &partyOp, sizeof(partyOp));
+			party_operation(msg_data);
 			return;
 		}
 
-	SendNotifyMsg(0, iClientH, Notify::PlayerNotOnGame, 0, 0, 0, cName);
+	send_notify_msg(0, client_h, Notify::PlayerNotOnGame, 0, 0, 0, name);
 }
 
-void CGame::RequestDismissPartyHandler(int iClientH)
+void CGame::request_dismiss_party_handler(int client_h)
 {
-	char cData[120]{};
+	char data[120]{};
 
-	if (m_pClientList[iClientH] == 0) return;
-	if (m_pClientList[iClientH]->m_iPartyStatus != PartyStatus::Confirm) return;
+	if (m_client_list[client_h] == 0) return;
+	if (m_client_list[client_h]->m_party_status != PartyStatus::Confirm) return;
 
 	hb::net::PartyOpPayload partyOp{};
 	partyOp.op_type = 4;
-	partyOp.client_h = static_cast<uint16_t>(iClientH);
-	std::memcpy(partyOp.name, m_pClientList[iClientH]->m_cCharName, sizeof(partyOp.name));
-	partyOp.party_id = static_cast<uint16_t>(m_pClientList[iClientH]->m_iPartyID);
-	std::memcpy(cData, &partyOp, sizeof(partyOp));
-	PartyOperation(cData);
+	partyOp.client_h = static_cast<uint16_t>(client_h);
+	std::memcpy(partyOp.name, m_client_list[client_h]->m_char_name, sizeof(partyOp.name));
+	partyOp.party_id = static_cast<uint16_t>(m_client_list[client_h]->m_party_id);
+	std::memcpy(data, &partyOp, sizeof(partyOp));
+	party_operation(data);
 
-	m_pClientList[iClientH]->m_iPartyStatus = PartyStatus::Processing;
+	m_client_list[client_h]->m_party_status = PartyStatus::Processing;
 }
 
-void CGame::GetPartyInfoHandler(int iClientH)
+void CGame::get_party_info_handler(int client_h)
 {
-	char cData[120]{};
+	char data[120]{};
 
-	if (m_pClientList[iClientH] == 0) return;
-	if (m_pClientList[iClientH]->m_iPartyStatus != PartyStatus::Confirm) return;
+	if (m_client_list[client_h] == 0) return;
+	if (m_client_list[client_h]->m_party_status != PartyStatus::Confirm) return;
 
 	hb::net::PartyOpPayload partyOp{};
 	partyOp.op_type = 5;
-	partyOp.client_h = static_cast<uint16_t>(iClientH);
-	std::memcpy(partyOp.name, m_pClientList[iClientH]->m_cCharName, sizeof(partyOp.name));
-	partyOp.party_id = static_cast<uint16_t>(m_pClientList[iClientH]->m_iPartyID);
-	std::memcpy(cData, &partyOp, sizeof(partyOp));
-	PartyOperation(cData);
+	partyOp.client_h = static_cast<uint16_t>(client_h);
+	std::memcpy(partyOp.name, m_client_list[client_h]->m_char_name, sizeof(partyOp.name));
+	partyOp.party_id = static_cast<uint16_t>(m_client_list[client_h]->m_party_id);
+	std::memcpy(data, &partyOp, sizeof(partyOp));
+	party_operation(data);
 }
 
-void CGame::PartyOperationResult_Info(int iClientH, char* pName, int iTotal, char* pNameList)
+void CGame::party_operation_result_info(int client_h, char* name, int total, char* name_list)
 {
-	if (m_pClientList[iClientH] == 0) return;
-	if (hb_stricmp(m_pClientList[iClientH]->m_cCharName, pName) != 0) return;
-	if (m_pClientList[iClientH]->m_iPartyStatus != PartyStatus::Confirm) return;
+	if (m_client_list[client_h] == 0) return;
+	if (hb_stricmp(m_client_list[client_h]->m_char_name, name) != 0) return;
+	if (m_client_list[client_h]->m_party_status != PartyStatus::Confirm) return;
 
-	SendNotifyMsg(0, iClientH, Notify::Party, 5, 1, iTotal, pNameList);
+	send_notify_msg(0, client_h, Notify::Party, 5, 1, total, name_list);
 }
 
-void CGame::RequestDeletePartyHandler(int iClientH)
+void CGame::request_delete_party_handler(int client_h)
 {
-	char cData[120]{};
+	char data[120]{};
 
-	if (m_pClientList[iClientH] == 0) return;
-	if (m_pClientList[iClientH]->m_iPartyID != 0) {
+	if (m_client_list[client_h] == 0) return;
+	if (m_client_list[client_h]->m_party_id != 0) {
 		hb::net::PartyOpPayload partyOp{};
 		partyOp.op_type = 4;
-		partyOp.client_h = static_cast<uint16_t>(iClientH);
-		std::memcpy(partyOp.name, m_pClientList[iClientH]->m_cCharName, sizeof(partyOp.name));
-		partyOp.party_id = static_cast<uint16_t>(m_pClientList[iClientH]->m_iPartyID);
-		std::memcpy(cData, &partyOp, sizeof(partyOp));
-		PartyOperation(cData);
-		m_pClientList[iClientH]->m_iPartyStatus = PartyStatus::Processing;
+		partyOp.client_h = static_cast<uint16_t>(client_h);
+		std::memcpy(partyOp.name, m_client_list[client_h]->m_char_name, sizeof(partyOp.name));
+		partyOp.party_id = static_cast<uint16_t>(m_client_list[client_h]->m_party_id);
+		std::memcpy(data, &partyOp, sizeof(partyOp));
+		party_operation(data);
+		m_client_list[client_h]->m_party_status = PartyStatus::Processing;
 	}
 }
 
-void CGame::RequestAcceptJoinPartyHandler(int iClientH, int iResult)
+void CGame::request_accept_join_party_handler(int client_h, int result)
 {
-	char cData[120]{};
+	char data[120]{};
 	int iH;
 
-	if (m_pClientList[iClientH] == 0) return;
+	if (m_client_list[client_h] == 0) return;
 
-	switch (iResult) {
+	switch (result) {
 	case 0:
-		iH = m_pClientList[iClientH]->m_iReqJoinPartyClientH;
-		if (m_pClientList[iH] == 0) {
+		iH = m_client_list[client_h]->m_req_join_party_client_h;
+		if (m_client_list[iH] == 0) {
 			return;
 		}
-		if (hb_stricmp(m_pClientList[iH]->m_cCharName, m_pClientList[iClientH]->m_cReqJoinPartyName) != 0) {
+		if (hb_stricmp(m_client_list[iH]->m_char_name, m_client_list[client_h]->m_req_join_party_name) != 0) {
 			return;
 		}
-		if (m_pClientList[iH]->m_iPartyStatus != PartyStatus::Processing) {
+		if (m_client_list[iH]->m_party_status != PartyStatus::Processing) {
 			return;
 		}
-		if ((m_pClientList[iH]->m_iReqJoinPartyClientH != iClientH) || (hb_stricmp(m_pClientList[iH]->m_cReqJoinPartyName, m_pClientList[iClientH]->m_cCharName) != 0)) {
+		if ((m_client_list[iH]->m_req_join_party_client_h != client_h) || (hb_stricmp(m_client_list[iH]->m_req_join_party_name, m_client_list[client_h]->m_char_name) != 0)) {
 			return;
 		}
 
-		SendNotifyMsg(0, iH, Notify::Party, 7, 0, 0, 0);
+		send_notify_msg(0, iH, Notify::Party, 7, 0, 0, 0);
 		//testcode
-		hb::logger::log("Party join reject(3) ClientH:{} ID:{}", iH, m_pClientList[iH]->m_iPartyID);
+		hb::logger::log("Party join reject(3) ClientH:{} ID:{}", iH, m_client_list[iH]->m_party_id);
 
-		m_pClientList[iH]->m_iPartyID = 0;
-		m_pClientList[iH]->m_iPartyStatus = PartyStatus::Null;
-		m_pClientList[iH]->m_iReqJoinPartyClientH = 0;
-		std::memset(m_pClientList[iH]->m_cReqJoinPartyName, 0, sizeof(m_pClientList[iH]->m_cReqJoinPartyName));
+		m_client_list[iH]->m_party_id = 0;
+		m_client_list[iH]->m_party_status = PartyStatus::Null;
+		m_client_list[iH]->m_req_join_party_client_h = 0;
+		std::memset(m_client_list[iH]->m_req_join_party_name, 0, sizeof(m_client_list[iH]->m_req_join_party_name));
 
-		m_pClientList[iClientH]->m_iReqJoinPartyClientH = 0;
-		std::memset(m_pClientList[iClientH]->m_cReqJoinPartyName, 0, sizeof(m_pClientList[iClientH]->m_cReqJoinPartyName));
+		m_client_list[client_h]->m_req_join_party_client_h = 0;
+		std::memset(m_client_list[client_h]->m_req_join_party_name, 0, sizeof(m_client_list[client_h]->m_req_join_party_name));
 		break;
 
 	case 1:
-		if ((m_pClientList[iClientH]->m_iPartyStatus == PartyStatus::Confirm) && (m_pClientList[iClientH]->m_iPartyID != 0)) {
-			iH = m_pClientList[iClientH]->m_iReqJoinPartyClientH;
-			if (m_pClientList[iH] == 0) {
+		if ((m_client_list[client_h]->m_party_status == PartyStatus::Confirm) && (m_client_list[client_h]->m_party_id != 0)) {
+			iH = m_client_list[client_h]->m_req_join_party_client_h;
+			if (m_client_list[iH] == 0) {
 				return;
 			}
-			if (hb_stricmp(m_pClientList[iH]->m_cCharName, m_pClientList[iClientH]->m_cReqJoinPartyName) != 0) {
+			if (hb_stricmp(m_client_list[iH]->m_char_name, m_client_list[client_h]->m_req_join_party_name) != 0) {
 				return;
 			}
-			if (m_pClientList[iH]->m_iPartyStatus != PartyStatus::Processing) {
+			if (m_client_list[iH]->m_party_status != PartyStatus::Processing) {
 				return;
 			}
-			if ((m_pClientList[iH]->m_iReqJoinPartyClientH != iClientH) || (hb_stricmp(m_pClientList[iH]->m_cReqJoinPartyName, m_pClientList[iClientH]->m_cCharName) != 0)) {
+			if ((m_client_list[iH]->m_req_join_party_client_h != client_h) || (hb_stricmp(m_client_list[iH]->m_req_join_party_name, m_client_list[client_h]->m_char_name) != 0)) {
 				return;
 			}
 
-			std::memset(cData, 0, sizeof(cData));
+			std::memset(data, 0, sizeof(data));
 			hb::net::PartyOpPayload partyOp{};
 			partyOp.op_type = 3;
-			partyOp.client_h = static_cast<uint16_t>(m_pClientList[iClientH]->m_iReqJoinPartyClientH);
-			std::memcpy(partyOp.name, m_pClientList[iClientH]->m_cReqJoinPartyName, sizeof(partyOp.name));
-			partyOp.party_id = static_cast<uint16_t>(m_pClientList[iClientH]->m_iPartyID);
-			std::memcpy(cData, &partyOp, sizeof(partyOp));
-			PartyOperation(cData);
+			partyOp.client_h = static_cast<uint16_t>(m_client_list[client_h]->m_req_join_party_client_h);
+			std::memcpy(partyOp.name, m_client_list[client_h]->m_req_join_party_name, sizeof(partyOp.name));
+			partyOp.party_id = static_cast<uint16_t>(m_client_list[client_h]->m_party_id);
+			std::memcpy(data, &partyOp, sizeof(partyOp));
+			party_operation(data);
 		}
 		else {
-			iH = m_pClientList[iClientH]->m_iReqJoinPartyClientH;
-			if (m_pClientList[iH] == 0) {
+			iH = m_client_list[client_h]->m_req_join_party_client_h;
+			if (m_client_list[iH] == 0) {
 				return;
 			}
-			if (hb_stricmp(m_pClientList[iH]->m_cCharName, m_pClientList[iClientH]->m_cReqJoinPartyName) != 0) {
+			if (hb_stricmp(m_client_list[iH]->m_char_name, m_client_list[client_h]->m_req_join_party_name) != 0) {
 				return;
 			}
-			if (m_pClientList[iH]->m_iPartyStatus != PartyStatus::Processing) {
+			if (m_client_list[iH]->m_party_status != PartyStatus::Processing) {
 				return;
 			}
-			if ((m_pClientList[iH]->m_iReqJoinPartyClientH != iClientH) || (hb_stricmp(m_pClientList[iH]->m_cReqJoinPartyName, m_pClientList[iClientH]->m_cCharName) != 0)) {
+			if ((m_client_list[iH]->m_req_join_party_client_h != client_h) || (hb_stricmp(m_client_list[iH]->m_req_join_party_name, m_client_list[client_h]->m_char_name) != 0)) {
 				return;
 			}
 
-			if (m_pClientList[iClientH]->m_iPartyStatus == PartyStatus::Null) {
-				RequestCreatePartyHandler(iClientH);
+			if (m_client_list[client_h]->m_party_status == PartyStatus::Null) {
+				request_create_party_handler(client_h);
 			}
 			else {
 			}
@@ -12438,55 +12458,55 @@ void CGame::RequestAcceptJoinPartyHandler(int iClientH, int iResult)
 		break;
 
 	case 2:
-		if ((m_pClientList[iClientH]->m_iPartyID != 0) && (m_pClientList[iClientH]->m_iPartyStatus == PartyStatus::Confirm)) {
-			RequestDismissPartyHandler(iClientH);
+		if ((m_client_list[client_h]->m_party_id != 0) && (m_client_list[client_h]->m_party_status == PartyStatus::Confirm)) {
+			request_dismiss_party_handler(client_h);
 		}
 		else {
-			iH = m_pClientList[iClientH]->m_iReqJoinPartyClientH;
+			iH = m_client_list[client_h]->m_req_join_party_client_h;
 
 			// NULL  .
-			if ((m_pClientList[iH] != 0) && (m_pClientList[iH]->m_iReqJoinPartyClientH == iClientH) &&
-				(hb_stricmp(m_pClientList[iH]->m_cReqJoinPartyName, m_pClientList[iClientH]->m_cCharName) == 0)) {
-				m_pClientList[iH]->m_iReqJoinPartyClientH = 0;
-				std::memset(m_pClientList[iH]->m_cReqJoinPartyName, 0, sizeof(m_pClientList[iH]->m_cReqJoinPartyName));
+			if ((m_client_list[iH] != 0) && (m_client_list[iH]->m_req_join_party_client_h == client_h) &&
+				(hb_stricmp(m_client_list[iH]->m_req_join_party_name, m_client_list[client_h]->m_char_name) == 0)) {
+				m_client_list[iH]->m_req_join_party_client_h = 0;
+				std::memset(m_client_list[iH]->m_req_join_party_name, 0, sizeof(m_client_list[iH]->m_req_join_party_name));
 			}
 
-			m_pClientList[iClientH]->m_iPartyID = 0;
-			m_pClientList[iClientH]->m_iPartyStatus = PartyStatus::Null;
-			m_pClientList[iClientH]->m_iReqJoinPartyClientH = 0;
-			std::memset(m_pClientList[iClientH]->m_cReqJoinPartyName, 0, sizeof(m_pClientList[iClientH]->m_cReqJoinPartyName));
+			m_client_list[client_h]->m_party_id = 0;
+			m_client_list[client_h]->m_party_status = PartyStatus::Null;
+			m_client_list[client_h]->m_req_join_party_client_h = 0;
+			std::memset(m_client_list[client_h]->m_req_join_party_name, 0, sizeof(m_client_list[client_h]->m_req_join_party_name));
 		}
 		break;
 	}
 }
 
-void CGame::PartyOperation(char* pData)
+void CGame::party_operation(char* data)
 {
-	char cName[12], cData[120]{};
+	char name[12], msg_data[120]{};
 
 	// Read the incoming payload as PartyOpPayload (superset of all request types)
-	const auto& req = *reinterpret_cast<const hb::net::PartyOpPayload*>(pData);
-	uint16_t wRequestType = req.op_type;
-	int iGSCH = static_cast<int>(req.client_h);
-	std::memset(cName, 0, sizeof(cName));
-	std::memcpy(cName, req.name, sizeof(req.name));
-	int iPartyID = static_cast<int>(req.party_id);
+	const auto& req = *reinterpret_cast<const hb::net::PartyOpPayload*>(data);
+	uint16_t request_type = req.op_type;
+	int gsch = static_cast<int>(req.client_h);
+	std::memset(name, 0, sizeof(name));
+	std::memcpy(name, req.name, sizeof(req.name));
+	int party_id = static_cast<int>(req.party_id);
 
-	hb::logger::log("Party Operation Type: {} Name: {} PartyID:{}", wRequestType, cName, iPartyID);
+	hb::logger::log("Party Operation Type: {} Name: {} PartyID:{}", request_type, name, party_id);
 
-	switch (wRequestType) {
+	switch (request_type) {
 	case 1: {
-		iPartyID = m_pPartyManager->iCreateNewParty(cName);
+		party_id = m_party_manager->create_new_party_id(name);
 
 		hb::net::PartyOpResultWithStatus result{};
 		result.op_type = 1;
-		result.result = static_cast<uint8_t>(iPartyID != 0 ? 1 : 0);
-		result.client_h = static_cast<uint16_t>(iGSCH);
-		std::memcpy(result.name, cName, sizeof(result.name));
-		result.party_id = static_cast<uint16_t>(iPartyID);
-		std::memcpy(cData, &result, sizeof(result));
+		result.result = static_cast<uint8_t>(party_id != 0 ? 1 : 0);
+		result.client_h = static_cast<uint16_t>(gsch);
+		std::memcpy(result.name, name, sizeof(result.name));
+		result.party_id = static_cast<uint16_t>(party_id);
+		std::memcpy(msg_data, &result, sizeof(result));
 
-		PartyOperationResultHandler(cData);
+		party_operation_result_handler(msg_data);
 		break;
 	}
 
@@ -12494,201 +12514,201 @@ void CGame::PartyOperation(char* pData)
 		break;
 
 	case 3: {
-		int bRet = m_pPartyManager->bAddMember(iPartyID, cName);
+		int ret = m_party_manager->add_member(party_id, name);
 
 		hb::net::PartyOpResultWithStatus result{};
 		result.op_type = 4;
-		result.result = static_cast<uint8_t>(bRet);
-		result.client_h = static_cast<uint16_t>(iGSCH);
-		std::memcpy(result.name, cName, sizeof(result.name));
-		result.party_id = static_cast<uint16_t>(iPartyID);
-		std::memcpy(cData, &result, sizeof(result));
+		result.result = static_cast<uint8_t>(ret);
+		result.client_h = static_cast<uint16_t>(gsch);
+		std::memcpy(result.name, name, sizeof(result.name));
+		result.party_id = static_cast<uint16_t>(party_id);
+		std::memcpy(msg_data, &result, sizeof(result));
 
-		PartyOperationResultHandler(cData);
+		party_operation_result_handler(msg_data);
 		break;
 	}
 
 	case 4: {
-		int bRet = m_pPartyManager->bRemoveMember(iPartyID, cName);
+		int ret = m_party_manager->remove_member(party_id, name);
 
 		hb::net::PartyOpResultWithStatus result{};
 		result.op_type = 6;
-		result.result = static_cast<uint8_t>(bRet);
-		result.client_h = static_cast<uint16_t>(iGSCH);
-		std::memcpy(result.name, cName, sizeof(result.name));
-		result.party_id = static_cast<uint16_t>(iPartyID);
-		std::memcpy(cData, &result, sizeof(result));
+		result.result = static_cast<uint8_t>(ret);
+		result.client_h = static_cast<uint16_t>(gsch);
+		std::memcpy(result.name, name, sizeof(result.name));
+		result.party_id = static_cast<uint16_t>(party_id);
+		std::memcpy(msg_data, &result, sizeof(result));
 
-		PartyOperationResultHandler(cData);
+		party_operation_result_handler(msg_data);
 		break;
 	}
 
 	case 5:
-		m_pPartyManager->bCheckPartyMember(iGSCH, iPartyID, cName);
+		m_party_manager->check_party_member(gsch, party_id, name);
 		break;
 
 	case 6:
-		m_pPartyManager->bGetPartyInfo(iGSCH, cName, iPartyID);
+		m_party_manager->get_party_info(gsch, name, party_id);
 		break;
 
 	case 7:
-		m_pPartyManager->SetServerChangeStatus(cName, iPartyID);
+		m_party_manager->set_server_change_status(name, party_id);
 		break;
 	}
 }
 
-void CGame::TimeHitPointsUp(int iClientH)
+void CGame::time_hit_points_up(int client_h)
 {
-	int iMaxHP, iTemp, iTotal;
-	double dV1, dV2, dV3;
+	int max_hp, temp, total;
+	double v1, v2, v3;
 
-	if (m_pClientList[iClientH] == 0) return;
+	if (m_client_list[client_h] == 0) return;
 
-	if (m_pClientList[iClientH]->m_bIsInitComplete == false) return;
+	if (m_client_list[client_h]->m_is_init_complete == false) return;
 
-	if (m_pClientList[iClientH]->m_iHungerStatus <= 0) return;
+	if (m_client_list[client_h]->m_hunger_status <= 0) return;
 
-	if (m_pClientList[iClientH]->m_bIsKilled) return;
+	if (m_client_list[client_h]->m_is_killed) return;
 
-	if (m_pClientList[iClientH]->m_bSkillUsingStatus[19]) return;
+	if (m_client_list[client_h]->m_skill_using_status[19]) return;
 
-	iMaxHP = iGetMaxHP(iClientH);
+	max_hp = get_max_hp(client_h);
 
-	if (m_pClientList[iClientH]->m_iHP < iMaxHP) {
+	if (m_client_list[client_h]->m_hp < max_hp) {
 
-		iTemp = iDice(1, (m_pClientList[iClientH]->m_iVit));
+		temp = dice(1, (m_client_list[client_h]->m_vit));
 
-		if (iTemp < (m_pClientList[iClientH]->m_iVit / 2)) iTemp = (m_pClientList[iClientH]->m_iVit / 2);
+		if (temp < (m_client_list[client_h]->m_vit / 2)) temp = (m_client_list[client_h]->m_vit / 2);
 
-		if (m_pClientList[iClientH]->m_iSideEffect_MaxHPdown != 0)
+		if (m_client_list[client_h]->m_side_effect_max_hp_down != 0)
 
-			iTemp -= (iTemp / m_pClientList[iClientH]->m_iSideEffect_MaxHPdown);
+			temp -= (temp / m_client_list[client_h]->m_side_effect_max_hp_down);
 
-		iTotal = iTemp + m_pClientList[iClientH]->m_iHPstock;
+		total = temp + m_client_list[client_h]->m_hp_stock;
 
-		if (m_pClientList[iClientH]->m_iAddHP != 0) {
-			dV2 = (double)iTotal;
-			dV3 = (double)m_pClientList[iClientH]->m_iAddHP;
-			dV1 = (dV3 / 100.0f) * dV2;
-			iTotal += (int)dV1;
+		if (m_client_list[client_h]->m_add_hp != 0) {
+			v2 = (double)total;
+			v3 = (double)m_client_list[client_h]->m_add_hp;
+			v1 = (v3 / 100.0f) * v2;
+			total += (int)v1;
 		}
 
-		m_pClientList[iClientH]->m_iHP += iTotal;
+		m_client_list[client_h]->m_hp += total;
 
-		if (m_pClientList[iClientH]->m_iHP > iMaxHP) m_pClientList[iClientH]->m_iHP = iMaxHP;
+		if (m_client_list[client_h]->m_hp > max_hp) m_client_list[client_h]->m_hp = max_hp;
 
-		if (m_pClientList[iClientH]->m_iHP <= 0) m_pClientList[iClientH]->m_iHP = 0;
-		SendNotifyMsg(0, iClientH, Notify::Hp, 0, 0, 0, 0);
+		if (m_client_list[client_h]->m_hp <= 0) m_client_list[client_h]->m_hp = 0;
+		send_notify_msg(0, client_h, Notify::Hp, 0, 0, 0, 0);
 	}
-	m_pClientList[iClientH]->m_iHPstock = 0;
+	m_client_list[client_h]->m_hp_stock = 0;
 }
 
-/*void CGame::CalculateEnduranceDecrement(short sTargetH, short sAttackerH, char cTargetType, int iArmorType)
+/*void CGame::CalculateEnduranceDecrement(short target_h, short attacker_h, char target_type, int armor_type)
 {
- short sItemIndex;
- int iDownValue = 1, iHammerChance = 100;
+ short item_index;
+ int down_value = 1, hammer_chance = 100;
 
-	if (m_pClientList[sTargetH] == 0) return;
+	if (m_client_list[target_h] == 0) return;
 
-	if ((cTargetType == hb::shared::owner_class::Player) && (m_pClientList[sAttackerH] != 0 )) {
-		if ((cTargetType == hb::shared::owner_class::Player) && (m_pClientList[sTargetH]->m_cSide != m_pClientList[sAttackerH]->m_cSide)) {
-			switch (m_pClientList[sAttackerH]->m_sUsingWeaponSkill) {
+	if ((target_type == hb::shared::owner_class::Player) && (m_client_list[attacker_h] != 0 )) {
+		if ((target_type == hb::shared::owner_class::Player) && (m_client_list[target_h]->m_side != m_client_list[attacker_h]->m_side)) {
+			switch (m_client_list[attacker_h]->m_using_weapon_skill) {
 				case 14:
-					if ((31 == m_pClientList[sAttackerH]->m_appearance.iWeaponType) || (32 == m_pClientList[sAttackerH]->m_appearance.iWeaponType)) {
-						sItemIndex = m_pClientList[sAttackerH]->m_sItemEquipmentStatus[ToInt(EquipPos::TwoHand)];
-						if ((sItemIndex != -1) && (m_pClientList[sAttackerH]->m_pItemList[sItemIndex] != 0)) {
-							if (m_pClientList[sAttackerH]->m_pItemList[sItemIndex]->m_sIDnum == 761) { // BattleHammer
-								iDownValue = 30;
+					if ((31 == m_client_list[attacker_h]->m_appearance.weapon_type) || (32 == m_client_list[attacker_h]->m_appearance.weapon_type)) {
+						item_index = m_client_list[attacker_h]->m_item_equipment_status[to_int(EquipPos::TwoHand)];
+						if ((item_index != -1) && (m_client_list[attacker_h]->m_item_list[item_index] != 0)) {
+							if (m_client_list[attacker_h]->m_item_list[item_index]->m_id_num == 761) { // BattleHammer
+								down_value = 30;
 								break;
 							}
-							if (m_pClientList[sAttackerH]->m_pItemList[sItemIndex]->m_sIDnum == 762) { // GiantBattleHammer
-								iDownValue = 35;
+							if (m_client_list[attacker_h]->m_item_list[item_index]->m_id_num == 762) { // GiantBattleHammer
+								down_value = 35;
 								break;
 							}
-							if (m_pClientList[sAttackerH]->m_pItemList[sItemIndex]->m_sIDnum == 843) { // BarbarianHammer
-								iDownValue = 30;
+							if (m_client_list[attacker_h]->m_item_list[item_index]->m_id_num == 843) { // BarbarianHammer
+								down_value = 30;
 								break;
 							}
-							if (m_pClientList[sAttackerH]->m_pItemList[sItemIndex]->m_sIDnum == 745) { // BarbarianHammer
-								iDownValue = 30;
+							if (m_client_list[attacker_h]->m_item_list[item_index]->m_id_num == 745) { // BarbarianHammer
+								down_value = 30;
 								break;
 							}
 						}
 					}
 					else {
-						iDownValue = 20; break;
+						down_value = 20; break;
 					}
-				case 10: iDownValue = 3; break;
-				default: iDownValue = 1; break;
+				case 10: down_value = 3; break;
+				default: down_value = 1; break;
 				}
 
-				if (m_pClientList[sTargetH]->m_bIsSpecialAbilityEnabled ) {
-					switch (m_pClientList[sTargetH]->m_iSpecialAbilityType)
-						case 52: iDownValue = 0; iHammerChance = 0;
+				if (m_client_list[target_h]->m_is_special_ability_enabled ) {
+					switch (m_client_list[target_h]->m_special_ability_type)
+						case 52: down_value = 0; hammer_chance = 0;
 				}
 			}
 		}
 
-		if ((m_pClientList[sTargetH]->m_cSide != 0) && (m_pClientList[sTargetH]->m_pItemList[iArmorType]->m_wCurLifeSpan > 0)) {
-				m_pClientList[sTargetH]->m_pItemList[iArmorType]->m_wCurLifeSpan -= iDownValue;
+		if ((m_client_list[target_h]->m_side != 0) && (m_client_list[target_h]->m_item_list[armor_type]->m_cur_life_span > 0)) {
+				m_client_list[target_h]->m_item_list[armor_type]->m_cur_life_span -= down_value;
 		}
 
-		if ((m_pClientList[sTargetH]->m_pItemList[iArmorType]->m_wCurLifeSpan <= 0) || (m_pClientList[sTargetH]->m_pItemList[iArmorType]->m_wCurLifeSpan > 64000)) {
-			m_pClientList[sTargetH]->m_pItemList[iArmorType]->m_wCurLifeSpan = 0;
-			SendNotifyMsg(0, sTargetH, Notify::ItemLifeSpanEnd, m_pClientList[sTargetH]->m_pItemList[iArmorType]->m_cEquipPos, iArmorType, 0, 0);
-			m_pItemManager->ReleaseItemHandler(sTargetH, iArmorType, true);
+		if ((m_client_list[target_h]->m_item_list[armor_type]->m_cur_life_span <= 0) || (m_client_list[target_h]->m_item_list[armor_type]->m_cur_life_span > 64000)) {
+			m_client_list[target_h]->m_item_list[armor_type]->m_cur_life_span = 0;
+			send_notify_msg(0, target_h, Notify::ItemLifeSpanEnd, m_client_list[target_h]->m_item_list[armor_type]->m_equip_pos, armor_type, 0, 0);
+			m_item_manager->release_item_handler(target_h, armor_type, true);
 			return;
 		}
 
 	/*try
 	{
-		if (m_pClientList[sAttackerH] != 0) {
-			if (cTargetType == hb::shared::owner_class::Player) {
-				sItemIndex = m_pClientList[sAttackerH]->m_sItemEquipmentStatus[ToInt(EquipPos::TwoHand)];
-				if ((sItemIndex != -1) && (m_pClientList[sAttackerH]->m_pItemList[sItemIndex] != 0)) {
-					if ((m_pClientList[sAttackerH]->m_pItemList[sItemIndex]->m_sIDnum == 617) || (m_pClientList[sAttackerH]->m_pItemList[sItemIndex]->m_sIDnum == 618) || (m_pClientList[sAttackerH]->m_pItemList[sItemIndex]->m_sIDnum == 619) || (m_pClientList[sAttackerH]->m_pItemList[sItemIndex]->m_sIDnum == 873) || (m_pClientList[sAttackerH]->m_pItemList[sItemIndex]->m_sIDnum == 874) || (m_pClientList[sAttackerH]->m_pItemList[sItemIndex]->m_sIDnum == 75) || (m_pClientList[sAttackerH]->m_pItemList[sItemIndex]->m_sIDnum == 76)) {
-						m_pClientList[sAttackerH]->m_sUsingWeaponSkill = 6;
+		if (m_client_list[attacker_h] != 0) {
+			if (target_type == hb::shared::owner_class::Player) {
+				item_index = m_client_list[attacker_h]->m_item_equipment_status[to_int(EquipPos::TwoHand)];
+				if ((item_index != -1) && (m_client_list[attacker_h]->m_item_list[item_index] != 0)) {
+					if ((m_client_list[attacker_h]->m_item_list[item_index]->m_id_num == 617) || (m_client_list[attacker_h]->m_item_list[item_index]->m_id_num == 618) || (m_client_list[attacker_h]->m_item_list[item_index]->m_id_num == 619) || (m_client_list[attacker_h]->m_item_list[item_index]->m_id_num == 873) || (m_client_list[attacker_h]->m_item_list[item_index]->m_id_num == 874) || (m_client_list[attacker_h]->m_item_list[item_index]->m_id_num == 75) || (m_client_list[attacker_h]->m_item_list[item_index]->m_id_num == 76)) {
+						m_client_list[attacker_h]->m_using_weapon_skill = 6;
 						return;
 					}
 				}
 			}
 		}*/
 
-		/*if (m_pClientList[sAttackerH] != 0) {
-		if (cTargetType == hb::shared::owner_class::Player) {
-		if ((m_pClientList[sAttackerH]->m_sUsingWeaponSkill == 14) && (iHammerChance == 100)) {
-			if (m_pClientList[sTargetH]->m_pItemList[iArmorType]->m_wMaxLifeSpan < 2000) {
-				iHammerChance = iDice(6, (m_pClientList[sTargetH]->m_pItemList[iArmorType]->m_wMaxLifeSpan - m_pClientList[sTargetH]->m_pItemList[iArmorType]->m_wCurLifeSpan));
+		/*if (m_client_list[attacker_h] != 0) {
+		if (target_type == hb::shared::owner_class::Player) {
+		if ((m_client_list[attacker_h]->m_using_weapon_skill == 14) && (hammer_chance == 100)) {
+			if (m_client_list[target_h]->m_item_list[armor_type]->m_max_life_span < 2000) {
+				hammer_chance = dice(6, (m_client_list[target_h]->m_item_list[armor_type]->m_max_life_span - m_client_list[target_h]->m_item_list[armor_type]->m_cur_life_span));
 			}
 			else {
-				iHammerChance = iDice(4, (m_pClientList[sTargetH]->m_pItemList[iArmorType]->m_wMaxLifeSpan - m_pClientList[sTargetH]->m_pItemList[iArmorType]->m_wCurLifeSpan));
+				hammer_chance = dice(4, (m_client_list[target_h]->m_item_list[armor_type]->m_max_life_span - m_client_list[target_h]->m_item_list[armor_type]->m_cur_life_span));
 			}
 
-			if ((31 == m_pClientList[sAttackerH]->m_appearance.iWeaponType) || (32 == m_pClientList[sAttackerH]->m_appearance.iWeaponType)) {
-				sItemIndex = m_pClientList[sAttackerH]->m_sItemEquipmentStatus[ToInt(EquipPos::TwoHand)];
-				if ((sItemIndex != -1) && (m_pClientList[sAttackerH]->m_pItemList[sItemIndex] != 0)) {
-					if (m_pClientList[sAttackerH]->m_pItemList[sItemIndex]->m_sIDnum == 761) { // BattleHammer
-						iHammerChance = iHammerChance/2;
+			if ((31 == m_client_list[attacker_h]->m_appearance.weapon_type) || (32 == m_client_list[attacker_h]->m_appearance.weapon_type)) {
+				item_index = m_client_list[attacker_h]->m_item_equipment_status[to_int(EquipPos::TwoHand)];
+				if ((item_index != -1) && (m_client_list[attacker_h]->m_item_list[item_index] != 0)) {
+					if (m_client_list[attacker_h]->m_item_list[item_index]->m_id_num == 761) { // BattleHammer
+						hammer_chance = hammer_chance/2;
 					}
-					if (m_pClientList[sAttackerH]->m_pItemList[sItemIndex]->m_sIDnum == 762) { // GiantBattleHammer
-						iHammerChance = ((iHammerChance*10)/9);
+					if (m_client_list[attacker_h]->m_item_list[item_index]->m_id_num == 762) { // GiantBattleHammer
+						hammer_chance = ((hammer_chance*10)/9);
 					}
-					if (m_pClientList[sAttackerH]->m_pItemList[sItemIndex]->m_sIDnum == 843) { // GiantBattleHammer
-						iHammerChance = ((iHammerChance*10)/9);
+					if (m_client_list[attacker_h]->m_item_list[item_index]->m_id_num == 843) { // GiantBattleHammer
+						hammer_chance = ((hammer_chance*10)/9);
 					}
-					if (m_pClientList[sAttackerH]->m_pItemList[sItemIndex]->m_sIDnum == 745) { // GiantBattleHammer
-						iHammerChance = ((iHammerChance*10)/9);
+					if (m_client_list[attacker_h]->m_item_list[item_index]->m_id_num == 745) { // GiantBattleHammer
+						hammer_chance = ((hammer_chance*10)/9);
 					}
 				}
 			}
-			if ((m_pClientList[sTargetH]->m_pItemList[iArmorType]->m_sIDnum == 622) || (m_pClientList[sTargetH]->m_pItemList[iArmorType]->m_sIDnum == 621)) {
-				iHammerChance = 0;
+			if ((m_client_list[target_h]->m_item_list[armor_type]->m_id_num == 622) || (m_client_list[target_h]->m_item_list[armor_type]->m_id_num == 621)) {
+				hammer_chance = 0;
 			}
-			if (m_pClientList[sTargetH]->m_pItemList[iArmorType]->m_wCurLifeSpan < iHammerChance) {
-				std::snprintf(G_cTxt, sizeof(G_cTxt), "(iHammerChance (%d), target armor endurance (%d)!", iHammerChance, m_pClientList[sTargetH]->m_pItemList[iArmorType]->m_wCurLifeSpan);
+			if (m_client_list[target_h]->m_item_list[armor_type]->m_cur_life_span < hammer_chance) {
+				std::snprintf(G_cTxt, sizeof(G_cTxt), "(hammer_chance (%d), target armor endurance (%d)!", hammer_chance, m_client_list[target_h]->m_item_list[armor_type]->m_cur_life_span);
 				PutLogList(G_cTxt);
-				m_pItemManager->ReleaseItemHandler(sTargetH, iArmorType, true);
-				SendNotifyMsg(0, sTargetH, Notify::ItemReleased, m_pClientList[sTargetH]->m_pItemList[iArmorType]->m_cEquipPos, iArmorType, 0, 0);
+				m_item_manager->release_item_handler(target_h, armor_type, true);
+				send_notify_msg(0, target_h, Notify::ItemReleased, m_client_list[target_h]->m_item_list[armor_type]->m_equip_pos, armor_type, 0, 0);
 				return;
 			}
 		}
@@ -12713,89 +12733,89 @@ void CGame::TimeHitPointsUp(int iClientH)
 // October 19,2004 - 3.51 translated
 
 /*
-void CGame::StormBringer(int iClientH, short dX, short dY)
+void CGame::StormBringer(int client_h, short dX, short dY)
 {
-	char cOwnerType;
-	short sOwner, sAppr2, sAttackerWeapon;
-	int  iDamage, iTemp, iV1, iV2, iV3;
+	char owner_type;
+	short owner, appr2, attacker_weapon;
+	int  damage, temp, v1, v2, v3;
 
 	//ArchAngel Fix
 
-	if (m_pClientList[iClientH]->m_sItemEquipmentStatus[ToInt(EquipPos::RightHand)] != -1) {
-		m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->GetOwner(&sOwner, &cOwnerType, dX, dY);
+	if (m_client_list[client_h]->m_item_equipment_status[to_int(EquipPos::RightHand)] != -1) {
+		m_map_list[m_client_list[client_h]->m_map_index]->get_owner(&owner, &owner_type, dX, dY);
 
-		iTemp = m_pClientList[iClientH]->m_sItemEquipmentStatus[ToInt(EquipPos::RightHand)];
-		sAppr2 = (short)((m_pClientList[iClientH]->m_appearance.bIsWalking) >> 12);
+		temp = m_client_list[client_h]->m_item_equipment_status[to_int(EquipPos::RightHand)];
+		appr2 = (short)((m_client_list[client_h]->m_appearance.is_walking) >> 12);
 
-		if (m_pClientList[iClientH]->m_pItemList[iTemp]->m_sIDnum == hb::shared::item::ItemId::StormBringer){
+		if (m_client_list[client_h]->m_item_list[temp]->m_id_num == hb::shared::item::ItemId::StormBringer){
 
-			switch (cOwnerType) {
+			switch (owner_type) {
 			case hb::shared::owner_class::Player:
-				if (sAppr2 != 0) {
-					iV1 = m_pClientList[iClientH]->m_cAttackDiceThrow_L;
-					iV2 = m_pClientList[iClientH]->m_cAttackDiceRange_L;
-					iV3 = m_pClientList[iClientH]->m_cAttackBonus_L;
+				if (appr2 != 0) {
+					v1 = m_client_list[client_h]->m_attack_dice_throw_l;
+					v2 = m_client_list[client_h]->m_attack_dice_range_l;
+					v3 = m_client_list[client_h]->m_attack_bonus_l;
 
-					if (m_pClientList[iClientH]->m_cMagicEffectStatus[ hb::shared::magic::Berserk ] != 0){
-						iDamage = iDice(iV1*2,iV2*2)+iV3;
+					if (m_client_list[client_h]->m_magic_effect_status[ hb::shared::magic::Berserk ] != 0){
+						damage = dice(v1*2,v2*2)+v3;
 					}
 					else{
-						iDamage = iDice(iV1,iV2)+iV3;
+						damage = dice(v1,v2)+v3;
 					}
 
-					m_pClientList[sOwner]->m_iHP -= iDamage;
-					if (m_pClientList[sOwner]->m_iHP <= 0){
-						sAttackerWeapon = 1;
-						m_pClientList[sOwner]->m_iHP = 0;
+					m_client_list[owner]->m_hp -= damage;
+					if (m_client_list[owner]->m_hp <= 0){
+						attacker_weapon = 1;
+						m_client_list[owner]->m_hp = 0;
 
-						m_pClientList[sOwner]->m_bIsKilled = true;
-						m_pClientList[sOwner]->m_iLastDamage = iDamage;
-						SendNotifyMsg(0, sOwner, Notify::Hp, 0, 0, 0, 0);
-						SendEventToNearClient_TypeA(sOwner, hb::shared::owner_class::Player, MsgId::EventMotion, Type::Dying, iDamage, sAttackerWeapon, 0);
-						m_pMapList[m_pClientList[sOwner]->m_cMapIndex]->ClearOwner(14, sOwner, hb::shared::owner_class::Player, m_pClientList[sOwner]->m_sX, m_pClientList[sOwner]->m_sY);
-						m_pMapList[m_pClientList[sOwner]->m_cMapIndex]->SetDeadOwner(sOwner, hb::shared::owner_class::Player, m_pClientList[sOwner]->m_sX, m_pClientList[sOwner]->m_sY);
+						m_client_list[owner]->m_is_killed = true;
+						m_client_list[owner]->m_last_damage = damage;
+						send_notify_msg(0, owner, Notify::Hp, 0, 0, 0, 0);
+						send_event_to_near_client_type_a(owner, hb::shared::owner_class::Player, MsgId::EventMotion, Type::Dying, damage, attacker_weapon, 0);
+						m_map_list[m_client_list[owner]->m_map_index]->clear_owner(14, owner, hb::shared::owner_class::Player, m_client_list[owner]->m_x, m_client_list[owner]->m_y);
+						m_map_list[m_client_list[owner]->m_map_index]->set_dead_owner(owner, hb::shared::owner_class::Player, m_client_list[owner]->m_x, m_client_list[owner]->m_y);
 					}
 					else{
-						SendNotifyMsg(0, sOwner, Notify::Hp, 0, 0, 0, 0);
-						SendEventToNearClient_TypeA(sOwner, hb::shared::owner_class::Player, MsgId::EventMotion, Type::Damage, iDamage, 0, 0);
+						send_notify_msg(0, owner, Notify::Hp, 0, 0, 0, 0);
+						send_event_to_near_client_type_a(owner, hb::shared::owner_class::Player, MsgId::EventMotion, Type::Damage, damage, 0, 0);
 					}
 				}
 				break;
 
 			case hb::shared::owner_class::Npc:
-				if (sAppr2 != 0) {
-					if (m_pNpcList[sOwner]->m_cSize == 0){
-						iV1 = m_pClientList[iClientH]->m_cAttackDiceThrow_SM;
-						iV2 = m_pClientList[iClientH]->m_cAttackDiceRange_SM;
-						iV3 = m_pClientList[iClientH]->m_cAttackBonus_SM;
+				if (appr2 != 0) {
+					if (m_npc_list[owner]->m_size == 0){
+						v1 = m_client_list[client_h]->m_attack_dice_throw_sm;
+						v2 = m_client_list[client_h]->m_attack_dice_range_sm;
+						v3 = m_client_list[client_h]->m_attack_bonus_sm;
 					}
-					else if (m_pNpcList[sOwner]->m_cSize == 1){
-						iV1 = m_pClientList[iClientH]->m_cAttackDiceThrow_L;
-						iV2 = m_pClientList[iClientH]->m_cAttackDiceRange_L;
-						iV3 = m_pClientList[iClientH]->m_cAttackBonus_L;
+					else if (m_npc_list[owner]->m_size == 1){
+						v1 = m_client_list[client_h]->m_attack_dice_throw_l;
+						v2 = m_client_list[client_h]->m_attack_dice_range_l;
+						v3 = m_client_list[client_h]->m_attack_bonus_l;
 					}
 
-					if (m_pClientList[iClientH]->m_cMagicEffectStatus[ hb::shared::magic::Berserk ] != 0){
-						iDamage = iDice(iV1*2,iV2*2)+iV3;
+					if (m_client_list[client_h]->m_magic_effect_status[ hb::shared::magic::Berserk ] != 0){
+						damage = dice(v1*2,v2*2)+v3;
 					}
 					else{
-						iDamage = iDice(iV1,iV2)+iV3;
+						damage = dice(v1,v2)+v3;
 					}
 
-					m_pNpcList[sOwner]->m_iHP -= iDamage;
-					if (m_pNpcList[sOwner]->m_iHP <= 0){
-						sAttackerWeapon = 1;
-						m_pNpcList[sOwner]->m_iHP = 0;
+					m_npc_list[owner]->m_hp -= damage;
+					if (m_npc_list[owner]->m_hp <= 0){
+						attacker_weapon = 1;
+						m_npc_list[owner]->m_hp = 0;
 
-						m_pNpcList[sOwner]->m_sBehaviorTurnCount = 0;
-						m_pNpcList[sOwner]->m_cBehavior = Behavior::Dead;
-						m_pNpcList[sOwner]->m_dwDeadTime = GameClock::GetTimeMS();
-						SendEventToNearClient_TypeA(sOwner, hb::shared::owner_class::Npc, MsgId::EventMotion, Type::Dying, iDamage, sAttackerWeapon, 0);
-						m_pMapList[m_pNpcList[sOwner]->m_cMapIndex]->ClearOwner(10, sOwner, hb::shared::owner_class::Npc, m_pNpcList[sOwner]->m_sX, m_pNpcList[sOwner]->m_sY);
-						m_pMapList[m_pNpcList[sOwner]->m_cMapIndex]->SetDeadOwner(sOwner, hb::shared::owner_class::Npc, m_pNpcList[sOwner]->m_sX, m_pNpcList[sOwner]->m_sY);
+						m_npc_list[owner]->m_behavior_turn_count = 0;
+						m_npc_list[owner]->m_behavior = Behavior::Dead;
+						m_npc_list[owner]->m_dead_time = GameClock::GetTimeMS();
+						send_event_to_near_client_type_a(owner, hb::shared::owner_class::Npc, MsgId::EventMotion, Type::Dying, damage, attacker_weapon, 0);
+						m_map_list[m_npc_list[owner]->m_map_index]->clear_owner(10, owner, hb::shared::owner_class::Npc, m_npc_list[owner]->m_x, m_npc_list[owner]->m_y);
+						m_map_list[m_npc_list[owner]->m_map_index]->set_dead_owner(owner, hb::shared::owner_class::Npc, m_npc_list[owner]->m_x, m_npc_list[owner]->m_y);
 					}
 					else{
-						SendEventToNearClient_TypeA(sOwner, hb::shared::owner_class::Npc, MsgId::EventMotion, Type::Damage, iDamage, 0, 0);
+						send_event_to_near_client_type_a(owner, hb::shared::owner_class::Npc, MsgId::EventMotion, Type::Damage, damage, 0, 0);
 					}
 				}
 				break;
@@ -12804,15 +12824,15 @@ void CGame::StormBringer(int iClientH, short dX, short dY)
 	}
 }*/
 
-bool CGame::_bCheckCharacterData(int iClientH)
+bool CGame::check_character_data(int client_h)
 {
 	
 
-	if ((m_pClientList[iClientH]->m_iStr > CharPointLimit) || (m_pClientList[iClientH]->m_iVit > CharPointLimit) || (m_pClientList[iClientH]->m_iDex > CharPointLimit) ||
-		(m_pClientList[iClientH]->m_iMag > CharPointLimit) || (m_pClientList[iClientH]->m_iInt > CharPointLimit) || (m_pClientList[iClientH]->m_iCharisma > CharPointLimit)) {
+	if ((m_client_list[client_h]->m_str > CharPointLimit) || (m_client_list[client_h]->m_vit > CharPointLimit) || (m_client_list[client_h]->m_dex > CharPointLimit) ||
+		(m_client_list[client_h]->m_mag > CharPointLimit) || (m_client_list[client_h]->m_int > CharPointLimit) || (m_client_list[client_h]->m_charisma > CharPointLimit)) {
 		try
 		{
-			hb::logger::warn<log_channel::security>("Packet Editing: ({}) Player: ({}) stat points are greater then server accepts.", m_pClientList[iClientH]->m_cIPaddress, m_pClientList[iClientH]->m_cCharName);
+			hb::logger::warn<log_channel::security>("Packet Editing: ({}) Player: ({}) stat points are greater then server accepts.", m_client_list[client_h]->m_ip_address, m_client_list[client_h]->m_char_name);
 			return false;
 		}
 		catch (...)
@@ -12821,10 +12841,10 @@ bool CGame::_bCheckCharacterData(int iClientH)
 		}
 	}
 
-	if ((m_pClientList[iClientH]->m_iLevel > m_iMaxLevel) ) {
+	if ((m_client_list[client_h]->m_level > m_max_level) ) {
 		try
 		{
-			hb::logger::warn<log_channel::security>("Packet Editing: ({}) Player: ({}) level above max server level.", m_pClientList[iClientH]->m_cIPaddress, m_pClientList[iClientH]->m_cCharName);
+			hb::logger::warn<log_channel::security>("Packet Editing: ({}) Player: ({}) level above max server level.", m_client_list[client_h]->m_ip_address, m_client_list[client_h]->m_char_name);
 			return false;
 		}
 		catch (...)
@@ -12833,10 +12853,10 @@ bool CGame::_bCheckCharacterData(int iClientH)
 		}
 	}
 
-	if (m_pClientList[iClientH]->m_iExp < 0) {
+	if (m_client_list[client_h]->m_exp < 0) {
 		try
 		{
-			hb::logger::warn<log_channel::security>("Packet Editing: ({}) Player: ({}) experience is below 0 - (Exp:{}).", m_pClientList[iClientH]->m_cIPaddress, m_pClientList[iClientH]->m_cCharName, m_pClientList[iClientH]->m_iExp);
+			hb::logger::warn<log_channel::security>("Packet Editing: ({}) Player: ({}) experience is below 0 - (Exp:{}).", m_client_list[client_h]->m_ip_address, m_client_list[client_h]->m_char_name, m_client_list[client_h]->m_exp);
 			return false;
 		}
 		catch (...)
@@ -12845,25 +12865,25 @@ bool CGame::_bCheckCharacterData(int iClientH)
 		}
 	}
 
-	if ((m_pClientList[iClientH]->m_iHP > iGetMaxHP(iClientH)) ) {
+	if ((m_client_list[client_h]->m_hp > get_max_hp(client_h)) ) {
 		try
 		{
-			if (m_pClientList[iClientH]->m_pItemList[(m_pClientList[iClientH]->m_sItemEquipmentStatus[ToInt(EquipPos::RightHand)])] != 0) {
-				if ((m_pClientList[iClientH]->m_pItemList[(m_pClientList[iClientH]->m_sItemEquipmentStatus[ToInt(EquipPos::RightHand)])]->m_sIDnum == 492) || (m_pClientList[iClientH]->m_pItemList[(m_pClientList[iClientH]->m_sItemEquipmentStatus[ToInt(EquipPos::RightHand)])]->m_sIDnum == 491)) {
-					if (m_pClientList[iClientH]->m_iHP > (4 * (iGetMaxHP(iClientH) / 5))) {
+			if (m_client_list[client_h]->m_item_list[(m_client_list[client_h]->m_item_equipment_status[to_int(EquipPos::RightHand)])] != 0) {
+				if ((m_client_list[client_h]->m_item_list[(m_client_list[client_h]->m_item_equipment_status[to_int(EquipPos::RightHand)])]->m_id_num == 492) || (m_client_list[client_h]->m_item_list[(m_client_list[client_h]->m_item_equipment_status[to_int(EquipPos::RightHand)])]->m_id_num == 491)) {
+					if (m_client_list[client_h]->m_hp > (4 * (get_max_hp(client_h) / 5))) {
 
 					}
 				}
 			}
-			else if (m_pClientList[iClientH]->m_pItemList[(m_pClientList[iClientH]->m_sItemEquipmentStatus[ToInt(EquipPos::TwoHand)])] != 0) {
-				if ((m_pClientList[iClientH]->m_pItemList[(m_pClientList[iClientH]->m_sItemEquipmentStatus[ToInt(EquipPos::TwoHand)])]->m_sIDnum == 490)) {
-					if (m_pClientList[iClientH]->m_iHP > (4 * (iGetMaxHP(iClientH) / 5))) {
+			else if (m_client_list[client_h]->m_item_list[(m_client_list[client_h]->m_item_equipment_status[to_int(EquipPos::TwoHand)])] != 0) {
+				if ((m_client_list[client_h]->m_item_list[(m_client_list[client_h]->m_item_equipment_status[to_int(EquipPos::TwoHand)])]->m_id_num == 490)) {
+					if (m_client_list[client_h]->m_hp > (4 * (get_max_hp(client_h) / 5))) {
 
 					}
 				}
 			}
 			else {
-				hb::logger::warn<log_channel::security>("Packet Editing: ({}) Player: ({}) HP: current/maximum ({}/{}).", m_pClientList[iClientH]->m_cIPaddress, m_pClientList[iClientH]->m_cCharName, m_pClientList[iClientH]->m_iHP, iGetMaxHP(iClientH));
+				hb::logger::warn<log_channel::security>("Packet Editing: ({}) Player: ({}) HP: current/maximum ({}/{}).", m_client_list[client_h]->m_ip_address, m_client_list[client_h]->m_char_name, m_client_list[client_h]->m_hp, get_max_hp(client_h));
 				return false;
 			}
 		}
@@ -12873,10 +12893,10 @@ bool CGame::_bCheckCharacterData(int iClientH)
 		}
 	}
 
-	if ((m_pClientList[iClientH]->m_iMP > iGetMaxMP(iClientH)) ) {
+	if ((m_client_list[client_h]->m_mp > get_max_mp(client_h)) ) {
 		try
 		{
-			hb::logger::warn<log_channel::security>("Packet Editing: ({}) Player: ({}) MP: current/maximum ({}/{}).", m_pClientList[iClientH]->m_cIPaddress, m_pClientList[iClientH]->m_cCharName, m_pClientList[iClientH]->m_iMP, iGetMaxMP(iClientH));
+			hb::logger::warn<log_channel::security>("Packet Editing: ({}) Player: ({}) MP: current/maximum ({}/{}).", m_client_list[client_h]->m_ip_address, m_client_list[client_h]->m_char_name, m_client_list[client_h]->m_mp, get_max_mp(client_h));
 			return false;
 		}
 		catch (...)
@@ -12885,10 +12905,10 @@ bool CGame::_bCheckCharacterData(int iClientH)
 		}
 	}
 
-	if ((m_pClientList[iClientH]->m_iSP > iGetMaxSP(iClientH)) ) {
+	if ((m_client_list[client_h]->m_sp > get_max_sp(client_h)) ) {
 		try
 		{
-			hb::logger::warn<log_channel::security>("Packet Editing: ({}) Player: ({}) SP: current/maximum ({}/{}).", m_pClientList[iClientH]->m_cIPaddress, m_pClientList[iClientH]->m_cCharName, m_pClientList[iClientH]->m_iSP, iGetMaxSP(iClientH));
+			hb::logger::warn<log_channel::security>("Packet Editing: ({}) Player: ({}) SP: current/maximum ({}/{}).", m_client_list[client_h]->m_ip_address, m_client_list[client_h]->m_char_name, m_client_list[client_h]->m_sp, get_max_sp(client_h));
 			return false;
 		}
 		catch (...)
@@ -12900,10 +12920,10 @@ bool CGame::_bCheckCharacterData(int iClientH)
 	try
 	{
 		for(int i = 0; i < MaxBanned; i++) {
-			if (strlen(m_stBannedList[i].m_cBannedIPaddress) == 0) break; //No more GM's on list
-			if ((strlen(m_stBannedList[i].m_cBannedIPaddress)) == (strlen(m_pClientList[iClientH]->m_cIPaddress))) {
-				if (memcmp(m_stBannedList[i].m_cBannedIPaddress, m_pClientList[iClientH]->m_cIPaddress, strlen(m_pClientList[iClientH]->m_cIPaddress)) == 0) {
-					hb::logger::log("Client Rejected: Banned: ({})", m_pClientList[iClientH]->m_cIPaddress);
+			if (strlen(m_banned_list[i].banned_ip_address) == 0) break; //No more GM's on list
+			if ((strlen(m_banned_list[i].banned_ip_address)) == (strlen(m_client_list[client_h]->m_ip_address))) {
+				if (memcmp(m_banned_list[i].banned_ip_address, m_client_list[client_h]->m_ip_address, strlen(m_client_list[client_h]->m_ip_address)) == 0) {
+					hb::logger::log("Client Rejected: Banned: ({})", m_client_list[client_h]->m_ip_address);
 					return false;
 				}
 				else {
@@ -12920,53 +12940,53 @@ bool CGame::_bCheckCharacterData(int iClientH)
 	return true;
 }
 
-void CGame::ForceRecallProcess() {
+void CGame::force_recall_process() {
 	
-	int iMapSide = 0;
+	int map_side = 0;
 
-	uint32_t dwTime;
+	uint32_t time;
 
-	dwTime = GameClock::GetTimeMS();
+	time = GameClock::GetTimeMS();
 
 	for(int i = 1; i < MaxClients; i++) {
-		if (m_pClientList[i] != 0) {
-			if (m_pClientList[i]->m_bIsInitComplete) {
+		if (m_client_list[i] != 0) {
+			if (m_client_list[i]->m_is_init_complete) {
 				//force recall in enemy buidlings at crusade
-				iMapSide = iGetMapLocationSide(m_pMapList[m_pClientList[i]->m_cMapIndex]->m_cName);
-				if ((memcmp(m_pClientList[i]->m_cLocation, "are", 3) == 0) && (iMapSide == 2) && (m_bIsCrusadeMode)) {
-					RequestTeleportHandler(i, "2   ", "aresden", -1, -1);
+				map_side = get_map_location_side(m_map_list[m_client_list[i]->m_map_index]->m_name);
+				if ((memcmp(m_client_list[i]->m_location, "are", 3) == 0) && (map_side == 2) && (m_is_crusade_mode)) {
+					request_teleport_handler(i, "2   ", "aresden", -1, -1);
 				}
-				if ((memcmp(m_pClientList[i]->m_cLocation, "elv", 3) == 0) && (iMapSide == 1) && (m_bIsCrusadeMode)) {
-					RequestTeleportHandler(i, "2   ", "elvine", -1, -1);
+				if ((memcmp(m_client_list[i]->m_location, "elv", 3) == 0) && (map_side == 1) && (m_is_crusade_mode)) {
+					request_teleport_handler(i, "2   ", "elvine", -1, -1);
 				}
 
 				//remove mim in building
-				if ((memcmp(m_pMapList[m_pClientList[i]->m_cMapIndex]->m_cName, "wrhus", 5) == 0)
-					|| (strcmp(m_pMapList[m_pClientList[i]->m_cMapIndex]->m_cName, "gshop_1") == 0)
-					|| (strcmp(m_pMapList[m_pClientList[i]->m_cMapIndex]->m_cName, "bsmith_1") == 0)
-					|| (strcmp(m_pMapList[m_pClientList[i]->m_cMapIndex]->m_cName, "cath_1") == 0)
-					|| (strcmp(m_pMapList[m_pClientList[i]->m_cMapIndex]->m_cName, "cmdhall_1") == 0)
-					|| (strcmp(m_pMapList[m_pClientList[i]->m_cMapIndex]->m_cName, "cityhall_1") == 0)
-					|| (strcmp(m_pMapList[m_pClientList[i]->m_cMapIndex]->m_cName, "gshop_2") == 0)
-					|| (strcmp(m_pMapList[m_pClientList[i]->m_cMapIndex]->m_cName, "bsmith_2") == 0)
-					|| (strcmp(m_pMapList[m_pClientList[i]->m_cMapIndex]->m_cName, "cath_2") == 0)
-					|| (strcmp(m_pMapList[m_pClientList[i]->m_cMapIndex]->m_cName, "cmdhall_2") == 0)
-					|| (strcmp(m_pMapList[m_pClientList[i]->m_cMapIndex]->m_cName, "cityhall_2") == 0)
-					|| (memcmp(m_pMapList[m_pClientList[i]->m_cMapIndex]->m_cName, "wzdtwr", 6) == 0)
-					|| (memcmp(m_pMapList[m_pClientList[i]->m_cMapIndex]->m_cName, "gldhall", 7) == 0))
+				if ((memcmp(m_map_list[m_client_list[i]->m_map_index]->m_name, "wrhus", 5) == 0)
+					|| (strcmp(m_map_list[m_client_list[i]->m_map_index]->m_name, "gshop_1") == 0)
+					|| (strcmp(m_map_list[m_client_list[i]->m_map_index]->m_name, "bsmith_1") == 0)
+					|| (strcmp(m_map_list[m_client_list[i]->m_map_index]->m_name, "cath_1") == 0)
+					|| (strcmp(m_map_list[m_client_list[i]->m_map_index]->m_name, "cmdhall_1") == 0)
+					|| (strcmp(m_map_list[m_client_list[i]->m_map_index]->m_name, "cityhall_1") == 0)
+					|| (strcmp(m_map_list[m_client_list[i]->m_map_index]->m_name, "gshop_2") == 0)
+					|| (strcmp(m_map_list[m_client_list[i]->m_map_index]->m_name, "bsmith_2") == 0)
+					|| (strcmp(m_map_list[m_client_list[i]->m_map_index]->m_name, "cath_2") == 0)
+					|| (strcmp(m_map_list[m_client_list[i]->m_map_index]->m_name, "cmdhall_2") == 0)
+					|| (strcmp(m_map_list[m_client_list[i]->m_map_index]->m_name, "cityhall_2") == 0)
+					|| (memcmp(m_map_list[m_client_list[i]->m_map_index]->m_name, "wzdtwr", 6) == 0)
+					|| (memcmp(m_map_list[m_client_list[i]->m_map_index]->m_name, "gldhall", 7) == 0))
 				{
-					//m_pStatusEffectManager->SetIllusionFlag(i, hb::shared::owner_class::Player, false);
-					if (m_pClientList[i]->m_status.bIllusionMovement) {
-						m_pStatusEffectManager->SetIllusionMovementFlag(i, hb::shared::owner_class::Player, false);
-						m_pDelayEventManager->bRemoveFromDelayEventList(i, hb::shared::owner_class::Player, hb::shared::magic::Confuse);
-						m_pDelayEventManager->bRegisterDelayEvent(sdelay::Type::MagicRelease, hb::shared::magic::Confuse, dwTime + 2, i, hb::shared::owner_class::Player, 0, 0, 0, 4, 0, 0);
+					//m_status_effect_manager->set_illusion_flag(i, hb::shared::owner_class::Player, false);
+					if (m_client_list[i]->m_status.illusion_movement) {
+						m_status_effect_manager->set_illusion_movement_flag(i, hb::shared::owner_class::Player, false);
+						m_delay_event_manager->remove_from_delay_event_list(i, hb::shared::owner_class::Player, hb::shared::magic::Confuse);
+						m_delay_event_manager->register_delay_event(sdelay::Type::MagicRelease, hb::shared::magic::Confuse, time + 2, i, hb::shared::owner_class::Player, 0, 0, 0, 4, 0, 0);
 					}
 				}
 			}
 			//check gizon errors
-			if (m_pClientList[i]->m_iLevel < 180) {
-				if (m_pClientList[i]->m_iGizonItemUpgradeLeft > 0) {
-					m_pClientList[i]->m_iGizonItemUpgradeLeft = 0;
+			if (m_client_list[i]->m_level < 180) {
+				if (m_client_list[i]->m_gizon_item_upgrade_left > 0) {
+					m_client_list[i]->m_gizon_item_upgrade_left = 0;
 				}
 			}
 		}
@@ -12975,97 +12995,97 @@ void CGame::ForceRecallProcess() {
 
 //in stat change, check skillpoints
 
-bool CGame::IsEnemyZone(int i) {
-	if (memcmp(m_pClientList[i]->m_cLocation, "elv", 3) == 0) {
-		if ((strcmp(m_pMapList[m_pClientList[i]->m_cMapIndex]->m_cLocationName, "aresden") == 0) || (strcmp(m_pMapList[m_pClientList[i]->m_cMapIndex]->m_cLocationName, "aresdend1") == 0) || (strcmp(m_pMapList[m_pClientList[i]->m_cMapIndex]->m_cLocationName, "areuni") == 0) || (strcmp(m_pMapList[m_pClientList[i]->m_cMapIndex]->m_cLocationName, "huntzone2") == 0) || (strcmp(m_pMapList[m_pClientList[i]->m_cMapIndex]->m_cLocationName, "huntzone4") == 0)) {
+bool CGame::is_enemy_zone(int i) {
+	if (memcmp(m_client_list[i]->m_location, "elv", 3) == 0) {
+		if ((strcmp(m_map_list[m_client_list[i]->m_map_index]->m_location_name, "aresden") == 0) || (strcmp(m_map_list[m_client_list[i]->m_map_index]->m_location_name, "aresdend1") == 0) || (strcmp(m_map_list[m_client_list[i]->m_map_index]->m_location_name, "areuni") == 0) || (strcmp(m_map_list[m_client_list[i]->m_map_index]->m_location_name, "huntzone2") == 0) || (strcmp(m_map_list[m_client_list[i]->m_map_index]->m_location_name, "huntzone4") == 0)) {
 			return true;
 		}
 	}
-	else if (memcmp(m_pClientList[i]->m_cLocation, "are", 3) == 0) {
-		if ((strcmp(m_pMapList[m_pClientList[i]->m_cMapIndex]->m_cLocationName, "elvine") == 0) || (strcmp(m_pMapList[m_pClientList[i]->m_cMapIndex]->m_cLocationName, "elvined1") == 0) || (strcmp(m_pMapList[m_pClientList[i]->m_cMapIndex]->m_cLocationName, "elvuni") == 0) || (strcmp(m_pMapList[m_pClientList[i]->m_cMapIndex]->m_cLocationName, "huntzone1") == 0) || (strcmp(m_pMapList[m_pClientList[i]->m_cMapIndex]->m_cLocationName, "huntzone3") == 0)) {
+	else if (memcmp(m_client_list[i]->m_location, "are", 3) == 0) {
+		if ((strcmp(m_map_list[m_client_list[i]->m_map_index]->m_location_name, "elvine") == 0) || (strcmp(m_map_list[m_client_list[i]->m_map_index]->m_location_name, "elvined1") == 0) || (strcmp(m_map_list[m_client_list[i]->m_map_index]->m_location_name, "elvuni") == 0) || (strcmp(m_map_list[m_client_list[i]->m_map_index]->m_location_name, "huntzone1") == 0) || (strcmp(m_map_list[m_client_list[i]->m_map_index]->m_location_name, "huntzone3") == 0)) {
 			return true;
 		}
 	}
 	return false;
 }
 
-void CGame::LoteryHandler(int iClientH)
+void CGame::lotery_handler(int client_h)
 {
-	CItem* pItem;
-	int     iItemID;
-	if (m_pClientList[iClientH] == 0) return;
-	switch (iDice(1, 22)) {
-	case 1:iItemID = 656; break; // XelimaStone
-	case 2:iItemID = 657; break; // MerienStone
-	case 3:iItemID = 650; break; // ZemstoneOfSacrifice
-	case 4:iItemID = 652; break; // RedBall
-	case 5:iItemID = 654; break; // BlueBall
-	case 6:iItemID = 881; break; // ArmorDye(Indigo)
-	case 7:iItemID = 882; break; // ArmorDye(CrimsonRed)
-	case 8:iItemID = 883; break; // ArmorDye(Gold)
-	case 9:iItemID = 884; break; // ArmorDye(Aqua)
-	case 10:iItemID = 885; break; // ArmorDye(Pink)
-	case 11:iItemID = 886; break; // ArmorDye(Violet)
-	case 12:iItemID = 887; break; // ArmorDye(Blue) 
-	case 13:iItemID = 888; break; // ArmorDye(Khaki) 
-	case 14:iItemID = 889; break; // ArmorDye(Yellow) 
-	case 15:iItemID = 890; break; // ArmorDye(Red) 
-	case 16:iItemID = 971; break; // ArmorDye(Green)
-	case 17:iItemID = 972; break; // ArmorDye(Black) 
-	case 18:iItemID = 973; break; // ArmorDye(Knight) 
-	case 19:iItemID = 970; break; // CritCandy
-	case 20:iItemID = 651; break; // GreenBall
-	case 21:iItemID = 653; break; // YellowBall
-	case 22:iItemID = 655; break; // PearlBall
+	CItem* item;
+	int     item_id;
+	if (m_client_list[client_h] == 0) return;
+	switch (dice(1, 22)) {
+	case 1:item_id = 656; break; // XelimaStone
+	case 2:item_id = 657; break; // MerienStone
+	case 3:item_id = 650; break; // ZemstoneOfSacrifice
+	case 4:item_id = 652; break; // RedBall
+	case 5:item_id = 654; break; // BlueBall
+	case 6:item_id = 881; break; // ArmorDye(Indigo)
+	case 7:item_id = 882; break; // ArmorDye(CrimsonRed)
+	case 8:item_id = 883; break; // ArmorDye(Gold)
+	case 9:item_id = 884; break; // ArmorDye(Aqua)
+	case 10:item_id = 885; break; // ArmorDye(Pink)
+	case 11:item_id = 886; break; // ArmorDye(Violet)
+	case 12:item_id = 887; break; // ArmorDye(Blue) 
+	case 13:item_id = 888; break; // ArmorDye(Khaki) 
+	case 14:item_id = 889; break; // ArmorDye(Yellow) 
+	case 15:item_id = 890; break; // ArmorDye(Red) 
+	case 16:item_id = 971; break; // ArmorDye(Green)
+	case 17:item_id = 972; break; // ArmorDye(Black) 
+	case 18:item_id = 973; break; // ArmorDye(Knight) 
+	case 19:item_id = 970; break; // CritCandy
+	case 20:item_id = 651; break; // GreenBall
+	case 21:item_id = 653; break; // YellowBall
+	case 22:item_id = 655; break; // PearlBall
 	}
 
 	//chance
-	if (iDice(1, 120) <= 3) iItemID = 650;//ZemstoneOfSacrifice
+	if (dice(1, 120) <= 3) item_id = 650;//ZemstoneOfSacrifice
 	//chance
 
-	pItem = new CItem;
-	if (m_pItemManager->_bInitItemAttr(pItem, iItemID) == false) {
-		delete pItem;
+	item = new CItem;
+	if (m_item_manager->init_item_attr(item, item_id) == false) {
+		delete item;
 	}
 	else {
-		m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->bSetItem(m_pClientList[iClientH]->m_sX,
-			m_pClientList[iClientH]->m_sY, pItem);
-		SendEventToNearClient_TypeB(MsgId::EventCommon, CommonType::ItemDrop, m_pClientList[iClientH]->m_cMapIndex,
-			m_pClientList[iClientH]->m_sX, m_pClientList[iClientH]->m_sY,
-			pItem->m_sIDnum, 0, pItem->m_cItemColor, pItem->m_dwAttribute);
+		m_map_list[m_client_list[client_h]->m_map_index]->set_item(m_client_list[client_h]->m_x,
+			m_client_list[client_h]->m_y, item);
+		send_event_to_near_client_type_b(MsgId::EventCommon, CommonType::ItemDrop, m_client_list[client_h]->m_map_index,
+			m_client_list[client_h]->m_x, m_client_list[client_h]->m_y,
+			item->m_id_num, 0, item->m_item_color, item->m_attribute);
 	}
 
 }
 
 //Angel Code By SlammeR(I dont know if it works)
-/*void CGame::GetAngelMantleHandler(int iClientH,int iItemID,char * pString)
+/*void CGame::GetAngelMantleHandler(int client_h,int item_id,char * string)
 {
- int   i, iNum, iRet, iEraseReq;
- char  * cp, cData[256], cItemName[hb::shared::limits::ItemNameLen];
- CItem * pItem;
+ int   i, num, ret, erase_req;
+ char  * cp, data[256], item_name[hb::shared::limits::ItemNameLen];
+ CItem * item;
  uint32_t * dwp;
  short * sp;
  uint16_t  * wp;
 
-	if (m_pClientList[iClientH] == 0) return;
-	if (m_pClientList[iClientH]->m_iGizonItemUpgradeLeft < 5) return;
-	if (m_pClientList[iClientH]->m_cSide == 0) return;
-	if (m_pItemManager->_iGetItemSpaceLeft(iClientH) == 0) {
-		m_pItemManager->SendItemNotifyMsg(iClientH,	Notify::CannotCarryMoreItem, 0, 0);
+	if (m_client_list[client_h] == 0) return;
+	if (m_client_list[client_h]->m_gizon_item_upgrade_left < 5) return;
+	if (m_client_list[client_h]->m_side == 0) return;
+	if (m_item_manager->get_item_space_left(client_h) == 0) {
+		m_item_manager->send_item_notify_msg(client_h,	Notify::CannotCarryMoreItem, 0, 0);
 		return;
 	}
 
 	//Prevents a crash if item dosent exist
-	if (m_pItemConfigList[iItemID] == 0)  return;
+	if (m_item_config_list[item_id] == 0)  return;
 
-	switch(iItemID) {
+	switch(item_id) {
 	//Angels
 	case 908: //AngelicPandent(STR)
 	case 909: //AngelicPandent(DEX)
 		case 910: //AngelicPandent(INT)
 		case 911: //AngelicPandent(MAG)
-		if(m_pClientList[iClientH]->m_iGizonItemUpgradeLeft<5) return;
-		m_pClientList[iClientH]->m_iGizonItemUpgradeLeft -= 5;
+		if(m_client_list[client_h]->m_gizon_item_upgrade_left<5) return;
+		m_client_list[client_h]->m_gizon_item_upgrade_left -= 5;
 		break;
 
   default:
@@ -13073,62 +13093,62 @@ void CGame::LoteryHandler(int iClientH)
 	 break;
   }
 
-  std::memset(cItemName, 0, sizeof(cItemName));
-  memcpy(cItemName,m_pItemConfigList[iItemID]->m_cName, hb::shared::limits::ItemNameLen - 1);
+  std::memset(item_name, 0, sizeof(item_name));
+  memcpy(item_name,m_item_config_list[item_id]->m_name, hb::shared::limits::ItemNameLen - 1);
 
-  iNum = 1;
-  for(int i = 1; i <= iNum; i++)
+  num = 1;
+  for(int i = 1; i <= num; i++)
   {
-	 pItem = new CItem;
-	 if (m_pItemManager->_bInitItemAttr(pItem, cItemName) == false)
+	 item = new CItem;
+	 if (m_item_manager->init_item_attr(item, item_name) == false)
 	 {
-		delete pItem;
+		delete item;
 	 }
 	 else {
 
-		if (m_pItemManager->_bAddClientItemList(iClientH, pItem, &iEraseReq) ) {
-		   if (m_pClientList[iClientH]->m_iCurWeightLoad < 0) m_pClientList[iClientH]->m_iCurWeightLoad = 0;
+		if (m_item_manager->add_client_item_list(client_h, item, &erase_req) ) {
+		   if (m_client_list[client_h]->m_cur_weight_load < 0) m_client_list[client_h]->m_cur_weight_load = 0;
 
-		   std::snprintf(G_cTxt, sizeof(G_cTxt), "(*) Get Angel : Char(%s) Player-Majestic-Points(%d) Angel Obtained(%s)", m_pClientList[iClientH]->m_cCharName, m_pClientList[iClientH]->m_iGizonItemUpgradeLeft, cItemName);
+		   std::snprintf(G_cTxt, sizeof(G_cTxt), "(*) get Angel : Char(%s) Player-Majestic-Points(%d) Angel Obtained(%s)", m_client_list[client_h]->m_char_name, m_client_list[client_h]->m_gizon_item_upgrade_left, item_name);
 		   PutLogFileList(G_cTxt);
 
-		   pItem->SetTouchEffectType(TouchEffectType::UniqueOwner);
-		   pItem->m_sTouchEffectValue1 = m_pClientList[iClientH]->m_sCharIDnum1;
-		   pItem->m_sTouchEffectValue2 = m_pClientList[iClientH]->m_sCharIDnum2;
-		   pItem->m_sTouchEffectValue3 = m_pClientList[iClientH]->m_sCharIDnum3;
+		   item->set_touch_effect_type(TouchEffectType::UniqueOwner);
+		   item->m_touch_effect_value1 = m_client_list[client_h]->m_char_id_num1;
+		   item->m_touch_effect_value2 = m_client_list[client_h]->m_char_id_num2;
+		   item->m_touch_effect_value3 = m_client_list[client_h]->m_char_id_num3;
 
-		   iRet = m_pItemManager->SendItemNotifyMsg(iClientH, Notify::ItemObtained, pItem, 0);
+		   ret = m_item_manager->send_item_notify_msg(client_h, Notify::ItemObtained, item, 0);
 
-		   if (iEraseReq == 1) delete pItem;
+		   if (erase_req == 1) delete item;
 
-		   iCalcTotalWeight(iClientH);
+		   calc_total_weight(client_h);
 
-		   switch (iRet) {
+		   switch (ret) {
 		   case sock::Event::QueueFull:
 		   case sock::Event::SocketError:
 		   case sock::Event::CriticalError:
 		   case sock::Event::SocketClosed:
-			  DeleteClient(iClientH, true, true);
+			  delete_client(client_h, true, true);
 			  return;
 		   }
 
-		   SendNotifyMsg(0, iClientH, Notify::GizonItemUpgradeLeft, m_pClientList[iClientH]->m_iGizonItemUpgradeLeft, 0, 0, 0);
+		   send_notify_msg(0, client_h, Notify::GizonItemUpgradeLeft, m_client_list[client_h]->m_gizon_item_upgrade_left, 0, 0, 0);
 		}
 		else
 		{
-		   delete pItem;
+		   delete item;
 
-		   iCalcTotalWeight(iClientH);
+		   calc_total_weight(client_h);
 
-	   iRet = m_pItemManager->SendItemNotifyMsg(iClientH, Notify::CannotCarryMoreItem, 0, 0);
+	   ret = m_item_manager->send_item_notify_msg(client_h, Notify::CannotCarryMoreItem, 0, 0);
 
-		   switch (iRet) {
+		   switch (ret) {
 		   case sock::Event::QueueFull:
 		   case sock::Event::SocketError:
 		   case sock::Event::CriticalError:
 		   case sock::Event::SocketClosed:
 
-			  DeleteClient(iClientH, true, true);
+			  delete_client(client_h, true, true);
 			  return;
 		   }
 		}
@@ -13136,19 +13156,19 @@ void CGame::LoteryHandler(int iClientH)
    }
 }*/
 
-/*int CGame::iAngelEquip(int iClientH)
+/*int CGame::angel_equip(int client_h)
 {
- int iTemp;
- CItem * cAngelTemp;
-	iTemp = m_pClientList[iClientH]->m_sItemEquipmentStatus[ToInt(EquipPos::LeftFinger)];
-	cAngelTemp = m_pClientList[iClientH]->m_pItemList[iTemp];
-	if ((iTemp != -1) && (cAngelTemp != 0)) {
-		if(cAngelTemp->m_sIDnum >= 908){ //AngelicPandent(STR)
-				if(cAngelTemp->m_sIDnum >= 909){ //AngelicPandent(DEX)
-				if(cAngelTemp->m_sIDnum >= 910){ //AngelicPandent(INT)
-				if(cAngelTemp->m_sIDnum >= 911){ //AngelicPandent(MAG)
+ int temp;
+ CItem * angel_temp;
+	temp = m_client_list[client_h]->m_item_equipment_status[to_int(EquipPos::LeftFinger)];
+	angel_temp = m_client_list[client_h]->m_item_list[temp];
+	if ((temp != -1) && (angel_temp != 0)) {
+		if(angel_temp->m_id_num >= 908){ //AngelicPandent(STR)
+				if(angel_temp->m_id_num >= 909){ //AngelicPandent(DEX)
+				if(angel_temp->m_id_num >= 910){ //AngelicPandent(INT)
+				if(angel_temp->m_id_num >= 911){ //AngelicPandent(MAG)
 
-				return cAngelTemp->m_sIDnum;
+				return angel_temp->m_id_num;
 			} else {
 				return 0;
 				}
@@ -13158,110 +13178,110 @@ void CGame::LoteryHandler(int iClientH)
 	}
 }*/
 
-/*void CGame::CheckAngelUnequip(int iClientH,int iAngelID)
+/*void CGame::CheckAngelUnequip(int client_h,int angel_id)
 {
- int iTemp;
- CItem * cAngelTemp;
+ int temp;
+ CItem * angel_temp;
 
-	iTemp = m_pClientList[iClientH]->m_sItemEquipmentStatus[ToInt(EquipPos::LeftFinger)];
-	cAngelTemp = m_pClientList[iClientH]->m_pItemList[iTemp];
-	if ((iTemp != -1) && (cAngelTemp->m_sIDnum != iAngelID)) {
-		cAngelTemp->m_sIDnum = iAngelID;
+	temp = m_client_list[client_h]->m_item_equipment_status[to_int(EquipPos::LeftFinger)];
+	angel_temp = m_client_list[client_h]->m_item_list[temp];
+	if ((temp != -1) && (angel_temp->m_id_num != angel_id)) {
+		angel_temp->m_id_num = angel_id;
 	}
 
 }*/
 
 /*********************************************************************************************************************
-**  bool CGame::SetAngelFlag(short sOwnerH, char cOwnerType, int iStatus, iTemp)		Snoopy			**
+**  bool CGame::set_angel_flag(short owner_h, char owner_type, int status, temp)		Snoopy			**
 ** description	  :: Sets the staus to send or not Angels to every client							**
 *********************************************************************************************************************/
 
 /*********************************************************************************************************************
-**  bool CGame::GetAngelHandler(int iClientH, char * pData, size_t dwMsgSize)										**
+**  bool CGame::get_angel_handler(int client_h, char * data, size_t msg_size)										**
 ** description	  :: Reversed and coded by Snoopy																	**
 *********************************************************************************************************************/
-void CGame::GetAngelHandler(int iClientH, char* pData, size_t dwMsgSize)
+void CGame::get_angel_handler(int client_h, char* data, size_t msg_size)
 {
-	int   iAngel, iItemID;
-	CItem* pItem;
-	int   iRet, iEraseReq;
-	if (m_pClientList[iClientH] == 0)					 return;
-	if (m_pClientList[iClientH]->m_bIsInitComplete == false) return;
-	if (m_pItemManager->_iGetItemSpaceLeft(iClientH) == 0)
+	int   angel, item_id;
+	CItem* item;
+	int   ret, erase_req;
+	if (m_client_list[client_h] == 0)					 return;
+	if (m_client_list[client_h]->m_is_init_complete == false) return;
+	if (m_item_manager->get_item_space_left(client_h) == 0)
 	{
-		m_pItemManager->SendItemNotifyMsg(iClientH, Notify::CannotCarryMoreItem, 0, 0);
+		m_item_manager->send_item_notify_msg(client_h, Notify::CannotCarryMoreItem, 0, 0);
 		return;
 	}
-	const auto* req = hb::net::PacketCast<hb::net::PacketRequestAngel>(pData, sizeof(hb::net::PacketRequestAngel));
+	const auto* req = hb::net::PacketCast<hb::net::PacketRequestAngel>(data, sizeof(hb::net::PacketRequestAngel));
 	if (!req) return;
-	iAngel = req->angel_id;
+	angel = req->angel_id;
 
-	if (m_pClientList[iClientH]->m_iGizonItemUpgradeLeft < 5) return;
+	if (m_client_list[client_h]->m_gizon_item_upgrade_left < 5) return;
 
-	switch (iAngel) {
-	case 1: iItemID = hb::shared::item::ItemId::AngelicPandentSTR; break;
-	case 2: iItemID = hb::shared::item::ItemId::AngelicPandentDEX; break;
-	case 3: iItemID = hb::shared::item::ItemId::AngelicPandentINT; break;
-	case 4: iItemID = hb::shared::item::ItemId::AngelicPandentMAG; break;
+	switch (angel) {
+	case 1: item_id = hb::shared::item::ItemId::AngelicPandentSTR; break;
+	case 2: item_id = hb::shared::item::ItemId::AngelicPandentDEX; break;
+	case 3: item_id = hb::shared::item::ItemId::AngelicPandentINT; break;
+	case 4: item_id = hb::shared::item::ItemId::AngelicPandentMAG; break;
 	default:
 		hb::logger::log("NPC craft request for invalid item");
 		return;
 	}
 
-	hb::logger::log("PC({}) requesting Angel ({}, ItemID:{}). {}({} {})", m_pClientList[iClientH]->m_cCharName, iAngel, iItemID, m_pClientList[iClientH]->m_cMapName, m_pClientList[iClientH]->m_sX, m_pClientList[iClientH]->m_sY);
+	hb::logger::log("PC({}) requesting Angel ({}, ItemID:{}). {}({} {})", m_client_list[client_h]->m_char_name, angel, item_id, m_client_list[client_h]->m_map_name, m_client_list[client_h]->m_x, m_client_list[client_h]->m_y);
 
-	pItem = new CItem;
-	if ((m_pItemManager->_bInitItemAttr(pItem, iItemID)))
+	item = new CItem;
+	if ((m_item_manager->init_item_attr(item, item_id)))
 	{
-		m_pClientList[iClientH]->m_iGizonItemUpgradeLeft -= 5;
+		m_client_list[client_h]->m_gizon_item_upgrade_left -= 5;
 
-		pItem->SetTouchEffectType(TouchEffectType::UniqueOwner);
-		pItem->m_sTouchEffectValue1 = m_pClientList[iClientH]->m_sCharIDnum1;
-		pItem->m_sTouchEffectValue2 = m_pClientList[iClientH]->m_sCharIDnum2;
-		pItem->m_sTouchEffectValue3 = m_pClientList[iClientH]->m_sCharIDnum3;
-		if (m_pItemManager->_bAddClientItemList(iClientH, pItem, &iEraseReq))
+		item->set_touch_effect_type(TouchEffectType::UniqueOwner);
+		item->m_touch_effect_value1 = m_client_list[client_h]->m_char_id_num1;
+		item->m_touch_effect_value2 = m_client_list[client_h]->m_char_id_num2;
+		item->m_touch_effect_value3 = m_client_list[client_h]->m_char_id_num3;
+		if (m_item_manager->add_client_item_list(client_h, item, &erase_req))
 		{
-			if (m_pClientList[iClientH]->m_iCurWeightLoad < 0) m_pClientList[iClientH]->m_iCurWeightLoad = 0;
+			if (m_client_list[client_h]->m_cur_weight_load < 0) m_client_list[client_h]->m_cur_weight_load = 0;
 
-			hb::logger::log<log_channel::events>("Get Angel : Char({}) Player-Majestic-Points({}) Angel Obtained(ID:{})", m_pClientList[iClientH]->m_cCharName, m_pClientList[iClientH]->m_iGizonItemUpgradeLeft, iItemID);
+			hb::logger::log<log_channel::events>("get Angel : Char({}) Player-Majestic-Points({}) Angel Obtained(ID:{})", m_client_list[client_h]->m_char_name, m_client_list[client_h]->m_gizon_item_upgrade_left, item_id);
 
-			iRet = m_pItemManager->SendItemNotifyMsg(iClientH, Notify::ItemObtained, pItem, 0);
+			ret = m_item_manager->send_item_notify_msg(client_h, Notify::ItemObtained, item, 0);
 
-			iCalcTotalWeight(iClientH);
+			calc_total_weight(client_h);
 
-			switch (iRet) {
+			switch (ret) {
 			case sock::Event::QueueFull:
 			case sock::Event::SocketError:
 			case sock::Event::CriticalError:
 			case sock::Event::SocketClosed:
-				DeleteClient(iClientH, true, true);
+				delete_client(client_h, true, true);
 				return;
 			}
 
-			SendNotifyMsg(0, iClientH, Notify::GizonItemUpgradeLeft, m_pClientList[iClientH]->m_iGizonItemUpgradeLeft, 0, 0, 0);
+			send_notify_msg(0, client_h, Notify::GizonItemUpgradeLeft, m_client_list[client_h]->m_gizon_item_upgrade_left, 0, 0, 0);
 		}
 		else
 		{
-			delete pItem;
+			delete item;
 
-			iCalcTotalWeight(iClientH);
+			calc_total_weight(client_h);
 
-			iRet = m_pItemManager->SendItemNotifyMsg(iClientH, Notify::CannotCarryMoreItem, 0, 0);
+			ret = m_item_manager->send_item_notify_msg(client_h, Notify::CannotCarryMoreItem, 0, 0);
 
-			switch (iRet) {
+			switch (ret) {
 			case sock::Event::QueueFull:
 			case sock::Event::SocketError:
 			case sock::Event::CriticalError:
 			case sock::Event::SocketClosed:
-				DeleteClient(iClientH, true, true);
+				delete_client(client_h, true, true);
 				return;
 			}
 		}
 	}
 	else
 	{
-		hb::logger::log("GetAngelHandler: _bInitItemAttr failed for ItemID {}. Item not found in config.", iItemID);
-		delete pItem;
+		hb::logger::log("get_angel_handler: init_item_attr failed for ItemID {}. Item not found in config.", item_id);
+		delete item;
 	}
 }
 

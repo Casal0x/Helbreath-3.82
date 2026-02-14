@@ -5,139 +5,139 @@
 #include <string>
 using namespace hb::client::sprite_id;
 
-DialogBox_Quest::DialogBox_Quest(CGame* pGame)
-	: IDialogBox(DialogBoxId::Quest, pGame)
+DialogBox_Quest::DialogBox_Quest(CGame* game)
+	: IDialogBox(DialogBoxId::Quest, game)
 {
-	SetDefaultRect(0 , 0 , 258, 339);
+	set_default_rect(0 , 0 , 258, 339);
 }
 
-void DialogBox_Quest::OnDraw(short msX, short msY, short msZ, char cLB)
+void DialogBox_Quest::on_draw(short mouse_x, short mouse_y, short z, char lb)
 {
-	short sX = Info().sX;
-	short sY = Info().sY;
-	short szX = Info().sSizeX;
-	std::string cTxt;
+	short sX = Info().m_x;
+	short sY = Info().m_y;
+	short size_x = Info().m_size_x;
+	std::string txt;
 
-	char cTemp[21];
+	char temp[21];
 
-	m_pGame->DrawNewDialogBox(InterfaceNdGame2, sX, sY, 2);
-	m_pGame->DrawNewDialogBox(InterfaceNdText, sX, sY, 4);
+	m_game->draw_new_dialog_box(InterfaceNdGame2, sX, sY, 2);
+	m_game->draw_new_dialog_box(InterfaceNdText, sX, sY, 4);
 
-	switch (Info().cMode) {
+	switch (Info().m_mode) {
 	case 1:
-		switch (m_pGame->m_stQuest.sQuestType) {
+		switch (m_game->m_quest.quest_type) {
 		case 0:
-			PutAlignedString(sX, sX + szX, sY + 50 + 115 - 30, DRAW_DIALOGBOX_QUEST1, GameColors::UILabel);
+			put_aligned_string(sX, sX + size_x, sY + 50 + 115 - 30, DRAW_DIALOGBOX_QUEST1, GameColors::UILabel);
 			break;
 
 		case 1: // Hunt
-			if (m_pGame->m_stQuest.bIsQuestCompleted == false)
-				PutAlignedString(sX, sX + szX, sY + 50, DRAW_DIALOGBOX_QUEST2, GameColors::UILabel);
+			if (m_game->m_quest.is_quest_completed == false)
+				put_aligned_string(sX, sX + size_x, sY + 50, DRAW_DIALOGBOX_QUEST2, GameColors::UILabel);
 			else
-				PutAlignedString(sX, sX + szX, sY + 50, DRAW_DIALOGBOX_QUEST3, GameColors::UILabel);
+				put_aligned_string(sX, sX + size_x, sY + 50, DRAW_DIALOGBOX_QUEST3, GameColors::UILabel);
 
-			cTxt = std::format("Rest Monster : {}", m_pGame->m_stQuest.sCurrentCount);
-			PutAlignedString(sX, sX + szX, sY + 50 + 20, cTxt.c_str(), GameColors::UILabel);
+			txt = std::format("Rest Monster : {}", m_game->m_quest.current_count);
+			put_aligned_string(sX, sX + size_x, sY + 50 + 20, txt.c_str(), GameColors::UILabel);
 
-			std::memset(cTemp, 0, sizeof(cTemp));
-			switch (m_pGame->m_stQuest.sWho) {
+			std::memset(temp, 0, sizeof(temp));
+			switch (m_game->m_quest.who) {
 			case 1:
 			case 2:
 			case 3: break;
-			case 4: std::snprintf(cTemp, sizeof(cTemp), "%s", m_pGame->GetNpcConfigName(hb::shared::owner::William)); break;
+			case 4: std::snprintf(temp, sizeof(temp), "%s", m_game->get_npc_config_name(hb::shared::owner::William)); break;
 			case 5:
 			case 6:
 			case 7: break;
 			}
-			cTxt = std::format(DRAW_DIALOGBOX_QUEST5, cTemp);
-			PutAlignedString(sX, sX + szX, sY + 50 + 45, cTxt.c_str(), GameColors::UILabel);
+			txt = std::format(DRAW_DIALOGBOX_QUEST5, temp);
+			put_aligned_string(sX, sX + size_x, sY + 50 + 45, txt.c_str(), GameColors::UILabel);
 
-			std::snprintf(cTemp, sizeof(cTemp), "%s", m_pGame->GetNpcConfigName(m_pGame->m_stQuest.sTargetType));
-			cTxt = std::format(NPC_TALK_HANDLER16, m_pGame->m_stQuest.sTargetCount, cTemp);
-			PutAlignedString(sX, sX + szX, sY + 50 + 60, cTxt.c_str(), GameColors::UILabel);
+			std::snprintf(temp, sizeof(temp), "%s", m_game->get_npc_config_name(m_game->m_quest.target_type));
+			txt = std::format(NPC_TALK_HANDLER16, m_game->m_quest.target_count, temp);
+			put_aligned_string(sX, sX + size_x, sY + 50 + 60, txt.c_str(), GameColors::UILabel);
 
-			if (m_pGame->m_stQuest.cTargetName.starts_with("NONE")) {
-				cTxt = DRAW_DIALOGBOX_QUEST31;
-				PutAlignedString(sX, sX + szX, sY + 50 + 75, cTxt.c_str(), GameColors::UILabel);
+			if (m_game->m_quest.target_name.starts_with("NONE")) {
+				txt = DRAW_DIALOGBOX_QUEST31;
+				put_aligned_string(sX, sX + size_x, sY + 50 + 75, txt.c_str(), GameColors::UILabel);
 			}
 			else {
-				std::memset(cTemp, 0, sizeof(cTemp));
-				m_pGame->GetOfficialMapName(m_pGame->m_stQuest.cTargetName.c_str(), cTemp);
-				cTxt = std::format(DRAW_DIALOGBOX_QUEST32, cTemp);
-				PutAlignedString(sX, sX + szX, sY + 50 + 75, cTxt.c_str(), GameColors::UILabel);
+				std::memset(temp, 0, sizeof(temp));
+				m_game->get_official_map_name(m_game->m_quest.target_name.c_str(), temp);
+				txt = std::format(DRAW_DIALOGBOX_QUEST32, temp);
+				put_aligned_string(sX, sX + size_x, sY + 50 + 75, txt.c_str(), GameColors::UILabel);
 
-				if (m_pGame->m_stQuest.sX != 0) {
-					cTxt = std::format(DRAW_DIALOGBOX_QUEST33, m_pGame->m_stQuest.sX, m_pGame->m_stQuest.sY, m_pGame->m_stQuest.sRange);
-					PutAlignedString(sX, sX + szX, sY + 50 + 90, cTxt.c_str(), GameColors::UILabel);
+				if (m_game->m_quest.x != 0) {
+					txt = std::format(DRAW_DIALOGBOX_QUEST33, m_game->m_quest.x, m_game->m_quest.y, m_game->m_quest.range);
+					put_aligned_string(sX, sX + size_x, sY + 50 + 90, txt.c_str(), GameColors::UILabel);
 				}
 			}
 
-			cTxt = std::format(DRAW_DIALOGBOX_QUEST34, m_pGame->m_stQuest.sContribution);
-			PutAlignedString(sX, sX + szX, sY + 50 + 105, cTxt.c_str(), GameColors::UILabel);
+			txt = std::format(DRAW_DIALOGBOX_QUEST34, m_game->m_quest.contribution);
+			put_aligned_string(sX, sX + size_x, sY + 50 + 105, txt.c_str(), GameColors::UILabel);
 			break;
 
 		case 7:
-			if (m_pGame->m_stQuest.bIsQuestCompleted == false)
-				PutAlignedString(sX, sX + szX, sY + 50, DRAW_DIALOGBOX_QUEST26, GameColors::UILabel);
+			if (m_game->m_quest.is_quest_completed == false)
+				put_aligned_string(sX, sX + size_x, sY + 50, DRAW_DIALOGBOX_QUEST26, GameColors::UILabel);
 			else
-				PutAlignedString(sX, sX + szX, sY + 50, DRAW_DIALOGBOX_QUEST27, GameColors::UILabel);
+				put_aligned_string(sX, sX + size_x, sY + 50, DRAW_DIALOGBOX_QUEST27, GameColors::UILabel);
 
-			std::memset(cTemp, 0, sizeof(cTemp));
-			switch (m_pGame->m_stQuest.sWho) {
+			std::memset(temp, 0, sizeof(temp));
+			switch (m_game->m_quest.who) {
 			case 1:
 			case 2:
 			case 3: break;
-			case 4: std::snprintf(cTemp, sizeof(cTemp), "%s", m_pGame->GetNpcConfigName(hb::shared::owner::William)); break;
+			case 4: std::snprintf(temp, sizeof(temp), "%s", m_game->get_npc_config_name(hb::shared::owner::William)); break;
 			case 5:
 			case 6:
 			case 7: break;
 			}
-			cTxt = std::format(DRAW_DIALOGBOX_QUEST29, cTemp);
-			PutAlignedString(sX, sX + szX, sY + 50 + 45, cTxt.c_str(), GameColors::UILabel);
+			txt = std::format(DRAW_DIALOGBOX_QUEST29, temp);
+			put_aligned_string(sX, sX + size_x, sY + 50 + 45, txt.c_str(), GameColors::UILabel);
 
-			PutAlignedString(sX, sX + szX, sY + 50 + 60, DRAW_DIALOGBOX_QUEST30, GameColors::UILabel);
+			put_aligned_string(sX, sX + size_x, sY + 50 + 60, DRAW_DIALOGBOX_QUEST30, GameColors::UILabel);
 
-			if (m_pGame->m_stQuest.cTargetName.starts_with("NONE")) {
-				cTxt = DRAW_DIALOGBOX_QUEST31;
-				PutAlignedString(sX, sX + szX, sY + 50 + 75, cTxt.c_str(), GameColors::UILabel);
+			if (m_game->m_quest.target_name.starts_with("NONE")) {
+				txt = DRAW_DIALOGBOX_QUEST31;
+				put_aligned_string(sX, sX + size_x, sY + 50 + 75, txt.c_str(), GameColors::UILabel);
 			}
 			else {
-				std::memset(cTemp, 0, sizeof(cTemp));
-				m_pGame->GetOfficialMapName(m_pGame->m_stQuest.cTargetName.c_str(), cTemp);
-				cTxt = std::format(DRAW_DIALOGBOX_QUEST32, cTemp);
-				PutAlignedString(sX, sX + szX, sY + 50 + 75, cTxt.c_str(), GameColors::UILabel);
+				std::memset(temp, 0, sizeof(temp));
+				m_game->get_official_map_name(m_game->m_quest.target_name.c_str(), temp);
+				txt = std::format(DRAW_DIALOGBOX_QUEST32, temp);
+				put_aligned_string(sX, sX + size_x, sY + 50 + 75, txt.c_str(), GameColors::UILabel);
 
-				if (m_pGame->m_stQuest.sX != 0) {
-					cTxt = std::format(DRAW_DIALOGBOX_QUEST33, m_pGame->m_stQuest.sX, m_pGame->m_stQuest.sY, m_pGame->m_stQuest.sRange);
-					PutAlignedString(sX, sX + szX, sY + 50 + 90, cTxt.c_str(), GameColors::UILabel);
+				if (m_game->m_quest.x != 0) {
+					txt = std::format(DRAW_DIALOGBOX_QUEST33, m_game->m_quest.x, m_game->m_quest.y, m_game->m_quest.range);
+					put_aligned_string(sX, sX + size_x, sY + 50 + 90, txt.c_str(), GameColors::UILabel);
 				}
 			}
 
-			cTxt = std::format(DRAW_DIALOGBOX_QUEST34, m_pGame->m_stQuest.sContribution);
-			PutAlignedString(sX, sX + szX, sY + 50 + 105, cTxt.c_str(), GameColors::UILabel);
+			txt = std::format(DRAW_DIALOGBOX_QUEST34, m_game->m_quest.contribution);
+			put_aligned_string(sX, sX + size_x, sY + 50 + 105, txt.c_str(), GameColors::UILabel);
 			break;
 		}
 		break;
 
 	case 2:
-		PutAlignedString(sX, sX + szX, sY + 50 + 115 - 30, DRAW_DIALOGBOX_QUEST35, GameColors::UILabel);
+		put_aligned_string(sX, sX + size_x, sY + 50 + 115 - 30, DRAW_DIALOGBOX_QUEST35, GameColors::UILabel);
 		break;
 	}
 
-	if ((msX >= sX + ui_layout::right_btn_x) && (msX <= sX + ui_layout::right_btn_x + ui_layout::btn_size_x) && (msY > sY + ui_layout::btn_y) && (msY < sY + ui_layout::btn_y + ui_layout::btn_size_y))
-		m_pGame->DrawNewDialogBox(InterfaceNdButton, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 1);
+	if ((mouse_x >= sX + ui_layout::right_btn_x) && (mouse_x <= sX + ui_layout::right_btn_x + ui_layout::btn_size_x) && (mouse_y > sY + ui_layout::btn_y) && (mouse_y < sY + ui_layout::btn_y + ui_layout::btn_size_y))
+		m_game->draw_new_dialog_box(InterfaceNdButton, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 1);
 	else
-		m_pGame->DrawNewDialogBox(InterfaceNdButton, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 0);
+		m_game->draw_new_dialog_box(InterfaceNdButton, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 0);
 }
 
-bool DialogBox_Quest::OnClick(short msX, short msY)
+bool DialogBox_Quest::on_click(short mouse_x, short mouse_y)
 {
-	short sX = Info().sX;
-	short sY = Info().sY;
+	short sX = Info().m_x;
+	short sY = Info().m_y;
 
-	if ((msX >= sX + ui_layout::right_btn_x) && (msX <= sX + ui_layout::right_btn_x + ui_layout::btn_size_x) && (msY > sY + ui_layout::btn_y) && (msY < sY + ui_layout::btn_y + ui_layout::btn_size_y)) {
-		m_pGame->m_dialogBoxManager.DisableDialogBox(DialogBoxId::Quest);
-		PlaySoundEffect('E', 14, 5);
+	if ((mouse_x >= sX + ui_layout::right_btn_x) && (mouse_x <= sX + ui_layout::right_btn_x + ui_layout::btn_size_x) && (mouse_y > sY + ui_layout::btn_y) && (mouse_y < sY + ui_layout::btn_y + ui_layout::btn_size_y)) {
+		m_game->m_dialog_box_manager.disable_dialog_box(DialogBoxId::Quest);
+		play_sound_effect('E', 14, 5);
 		return true;
 	}
 

@@ -16,7 +16,7 @@ static const int AUDIO_MAX_EFFECT_SOUNDS = 55;      // E1-E53
 static const int AUDIO_MAX_ACTIVE_SOUNDS = 32;
 
 // Sound types matching existing categories
-enum class SoundType
+enum class sound_type
 {
 	Character,  // Combat sounds (C1-C24)
 	Monster,    // Magic/Monster sounds (M1-M156)
@@ -24,9 +24,9 @@ enum class SoundType
 };
 
 // Decoded sound data stored in our own memory (bypasses miniaudio resource manager)
-struct DecodedSound
+struct decoded_sound
 {
-	void* pData = nullptr;
+	void* data = nullptr;
 	ma_uint64 frameCount = 0;
 	ma_format format = ma_format_f32;
 	ma_uint32 channels = 0;
@@ -34,146 +34,146 @@ struct DecodedSound
 	bool loaded = false;
 };
 
-class AudioManager
+class audio_manager
 {
 public:
-	static AudioManager& Get();
+	static audio_manager& get();
 
 	// Lifecycle
-	bool Initialize();
-	void Shutdown();
+	bool initialize();
+	void shutdown();
 
 	// Sound loading - pre-loads all sounds into memory
-	void LoadSounds();
-	void UnloadSounds();
-	void CleanupFinishedSounds();
+	void load_sounds();
+	void unload_sounds();
+	void cleanup_finished_sounds();
 
 	// Sound effect playback
-	void PlayGameSound(SoundType type, int index, int distance = 0, int pan = 0);
-	void PlaySoundLoop(SoundType type, int index);
-	void StopSound(SoundType type, int index);
-	void StopAllSounds();
+	void play_game_sound(sound_type type, int index, int distance = 0, int pan = 0);
+	void play_sound_loop(sound_type type, int index);
+	void stop_sound(sound_type type, int index);
+	void stop_all_sounds();
 
 	// Background music
-	void PlayMusic(const char* trackName);
-	void StopMusic();
-	bool IsMusicPlaying() const;
-	const std::string& GetCurrentMusicTrack() const { return m_currentMusicTrack; }
+	void play_music(const char* trackName);
+	void stop_music();
+	bool is_music_playing() const;
+	const std::string& get_current_music_track() const { return m_current_music_track; }
 
 	// Volume control (0-100 scale)
-	void SetMasterVolume(int volume);
-	void SetSoundVolume(int volume);
-	void SetMusicVolume(int volume);
-	void SetAmbientVolume(int volume);
-	void SetUIVolume(int volume);
-	int GetMasterVolume() const { return m_masterVolume; }
-	int GetSoundVolume() const { return m_soundVolume; }
-	int GetMusicVolume() const { return m_musicVolume; }
-	int GetAmbientVolume() const { return m_ambientVolume; }
-	int GetUIVolume() const { return m_uiVolume; }
+	void set_master_volume(int volume);
+	void set_sound_volume(int volume);
+	void set_music_volume(int volume);
+	void set_ambient_volume(int volume);
+	void set_ui_volume(int volume);
+	int get_master_volume() const { return m_master_volume; }
+	int get_sound_volume() const { return m_sound_volume; }
+	int get_music_volume() const { return m_music_volume; }
+	int get_ambient_volume() const { return m_ambient_volume; }
+	int get_ui_volume() const { return m_ui_volume; }
 
-	// Enable/disable
-	void SetMasterEnabled(bool enabled);
-	void SetSoundEnabled(bool enabled);
-	void SetMusicEnabled(bool enabled);
-	void SetAmbientEnabled(bool enabled);
-	void SetUIEnabled(bool enabled);
-	bool IsMasterEnabled() const { return m_bMasterEnabled; }
-	bool IsSoundEnabled() const { return m_bSoundEnabled; }
-	bool IsMusicEnabled() const { return m_bMusicEnabled; }
-	bool IsAmbientEnabled() const { return m_bAmbientEnabled; }
-	bool IsUIEnabled() const { return m_bUIEnabled; }
+	// enable/disable
+	void set_master_enabled(bool enabled);
+	void set_sound_enabled(bool enabled);
+	void set_music_enabled(bool enabled);
+	void set_ambient_enabled(bool enabled);
+	void set_ui_enabled(bool enabled);
+	bool is_master_enabled() const { return m_master_enabled; }
+	bool is_sound_enabled() const { return m_sound_enabled; }
+	bool is_music_enabled() const { return m_music_enabled; }
+	bool is_ambient_enabled() const { return m_ambient_enabled; }
+	bool is_ui_enabled() const { return m_ui_enabled; }
 
 	// Hardware availability
-	bool IsSoundAvailable() const { return m_bSoundAvailable; }
+	bool is_sound_available() const { return m_sound_available; }
 
 	// Listener position (for positional audio)
-	void SetListenerPosition(int worldX, int worldY);
-	int GetListenerX() const { return m_listenerX; }
-	int GetListenerY() const { return m_listenerY; }
+	void set_listener_position(int worldX, int worldY);
+	int get_listener_x() const { return m_listener_x; }
+	int get_listener_y() const { return m_listener_y; }
 
 	// Per-frame update
-	void Update();
+	void update();
 
 private:
-	AudioManager() = default;
-	~AudioManager() = default;
-	AudioManager(const AudioManager&) = delete;
-	AudioManager& operator=(const AudioManager&) = delete;
+	audio_manager() = default;
+	~audio_manager() = default;
+	audio_manager(const audio_manager&) = delete;
+	audio_manager& operator=(const audio_manager&) = delete;
 
-	// Decode a WAV file into a DecodedSound buffer (bypasses resource manager)
-	bool DecodeFile(const char* filePath, DecodedSound& out);
-	void FreeDecodedSound(DecodedSound& sound);
+	// Decode a WAV file into a decoded_sound buffer (bypasses resource manager)
+	bool decode_file(const char* filePath, decoded_sound& out);
+	void free_decoded_sound(decoded_sound& sound);
 
 	// Convert 0-100 volume to 0.0-1.0
-	float VolumeToFloat(int volume) const;
+	float volume_to_float(int volume) const;
 
-	// Get decoded sound data for a type/index
-	DecodedSound* GetDecodedSound(SoundType type, int index);
+	// get decoded sound data for a type/index
+	decoded_sound* get_decoded_sound(sound_type type, int index);
 
-	// Get the appropriate sound group for a given sound type/index
-	ma_sound_group* GetGroupForSound(SoundType type, int index);
+	// get the appropriate sound group for a given sound type/index
+	ma_sound_group* get_group_for_sound(sound_type type, int index);
 
 	// Check if the appropriate category is enabled for a given sound
-	bool IsCategoryEnabled(SoundType type, int index) const;
+	bool is_category_enabled(sound_type type, int index) const;
 
 	// miniaudio engine
 	ma_engine m_engine;
-	bool m_bSoundAvailable = false;
-	bool m_bInitialized = false;
+	bool m_sound_available = false;
+	bool m_initialized = false;
 
 	// Sound effect groups (for separate volume control per category)
-	ma_sound_group m_sfxGroup;
-	bool m_bSfxGroupInitialized = false;
+	ma_sound_group m_sfx_group;
+	bool m_sfx_group_initialized = false;
 
-	ma_sound_group m_ambientGroup;
-	bool m_bAmbientGroupInitialized = false;
+	ma_sound_group m_ambient_group;
+	bool m_ambient_group_initialized = false;
 
-	ma_sound_group m_uiGroup;
-	bool m_bUIGroupInitialized = false;
+	ma_sound_group m_ui_group;
+	bool m_ui_group_initialized = false;
 
 	// Pre-decoded sound data (our own memory, no resource manager)
-	std::array<DecodedSound, AUDIO_MAX_CHARACTER_SOUNDS> m_characterSounds = {};
-	std::array<DecodedSound, AUDIO_MAX_MONSTER_SOUNDS> m_monsterSounds = {};
-	std::array<DecodedSound, AUDIO_MAX_EFFECT_SOUNDS> m_effectSounds = {};
+	std::array<decoded_sound, AUDIO_MAX_CHARACTER_SOUNDS> m_character_sounds = {};
+	std::array<decoded_sound, AUDIO_MAX_MONSTER_SOUNDS> m_monster_sounds = {};
+	std::array<decoded_sound, AUDIO_MAX_EFFECT_SOUNDS> m_effect_sounds = {};
 
 	// Active sound pool for concurrent playback
 	static const int MAX_INSTANCES_PER_SOUND = 2;
 
-	struct ActiveSound {
+	struct active_sound {
 		ma_audio_buffer_ref bufferRef;
 		ma_sound sound;
-		SoundType type = SoundType::Character;
+		sound_type type = sound_type::Character;
 		int index = 0;
 		uint32_t startOrder = 0;
 		bool inUse = false;
 		bool soundInitialized = false;
 	};
-	std::array<ActiveSound, AUDIO_MAX_ACTIVE_SOUNDS> m_activeSounds;
-	uint32_t m_dwSoundOrder = 0;
+	std::array<active_sound, AUDIO_MAX_ACTIVE_SOUNDS> m_active_sounds;
+	uint32_t m_sound_order = 0;
 
 	// Background music sound (still uses resource manager - single file, streamed)
-	ma_sound m_bgmSound;
-	bool m_bBgmLoaded = false;
+	ma_sound m_bgm_sound;
+	bool m_bgm_loaded = false;
 
 	// Current music track name
-	std::string m_currentMusicTrack;
+	std::string m_current_music_track;
 
 	// Volume (0-100)
-	int m_masterVolume = 100;
-	int m_soundVolume = 100;
-	int m_musicVolume = 100;
-	int m_ambientVolume = 100;
-	int m_uiVolume = 100;
+	int m_master_volume = 100;
+	int m_sound_volume = 100;
+	int m_music_volume = 100;
+	int m_ambient_volume = 100;
+	int m_ui_volume = 100;
 
-	// Enable flags
-	bool m_bMasterEnabled = true;
-	bool m_bSoundEnabled = true;
-	bool m_bMusicEnabled = true;
-	bool m_bAmbientEnabled = true;
-	bool m_bUIEnabled = true;
+	// enable flags
+	bool m_master_enabled = true;
+	bool m_sound_enabled = true;
+	bool m_music_enabled = true;
+	bool m_ambient_enabled = true;
+	bool m_ui_enabled = true;
 
 	// Listener position (for positional audio)
-	int m_listenerX = 0;
-	int m_listenerY = 0;
+	int m_listener_x = 0;
+	int m_listener_y = 0;
 };

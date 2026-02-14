@@ -14,7 +14,7 @@ class Screen_Loading : public IGameScreen
 public:
     SCREEN_TYPE(Screen_Loading)
 
-    explicit Screen_Loading(CGame* pGame);
+    explicit Screen_Loading(CGame* game);
     ~Screen_Loading() override = default;
 
     void on_initialize() override;
@@ -22,8 +22,8 @@ public:
     void on_update() override;
     void on_render() override;
 
-    // Get loading progress (0-100)
-    int GetProgress() const { return m_iLoadingStage; }
+    // get loading progress (0-100)
+    int get_progress() const { return m_iLoadingStage; }
 
 private:
     // Loading stages - each stage loads a batch of resources
@@ -55,9 +55,9 @@ private:
     void LoadStage_Effects();        // Stage 100: Effects, sounds, finish
 
     // Sprite loading helpers
-    void MakeSprite(const char* FileName, short sStart, short sCount, bool bAlphaEffect);
-    void MakeTileSpr(const char* FileName, short sStart, short sCount, bool bAlphaEffect);
-    void MakeEffectSpr(const char* FileName, short sStart, short sCount, bool bAlphaEffect);
+    void make_sprite(const char* FileName, short start, short count, bool alpha_effect);
+    void make_tile_spr(const char* FileName, short start, short count, bool alpha_effect);
+    void make_effect_spr(const char* FileName, short start, short count, bool alpha_effect);
 
     int m_iLoadingStage = 0;
 };

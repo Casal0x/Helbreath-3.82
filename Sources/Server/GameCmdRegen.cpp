@@ -4,47 +4,47 @@
 #include <cstdio>
 
 using namespace hb::shared::net;
-bool GameCmdRegen::Execute(CGame* pGame, int iClientH, const char* pArgs)
+bool GameCmdRegen::execute(CGame* game, int client_h, const char* args)
 {
-	if (pGame->m_pClientList[iClientH] == nullptr)
+	if (game->m_client_list[client_h] == nullptr)
 		return true;
 
-	int iTargetH = iClientH;
+	int target_h = client_h;
 
-	if (pArgs != nullptr && pArgs[0] != '\0')
+	if (args != nullptr && args[0] != '\0')
 	{
-		iTargetH = pGame->FindClientByName(pArgs);
-		if (iTargetH == 0)
+		target_h = game->find_client_by_name(args);
+		if (target_h == 0)
 		{
-			pGame->SendNotifyMsg(0, iClientH, Notify::NoticeMsg, 0, 0, 0, "Player not found.");
+			game->send_notify_msg(0, client_h, Notify::NoticeMsg, 0, 0, 0, "Player not found.");
 			return true;
 		}
 	}
 
-	if (pGame->m_pClientList[iTargetH] == nullptr)
+	if (game->m_client_list[target_h] == nullptr)
 		return true;
 
-	pGame->m_pClientList[iTargetH]->m_iHP = pGame->iGetMaxHP(iTargetH);
-	pGame->m_pClientList[iTargetH]->m_iMP = pGame->iGetMaxMP(iTargetH);
-	pGame->m_pClientList[iTargetH]->m_iSP = pGame->iGetMaxSP(iTargetH);
-	pGame->m_pClientList[iTargetH]->m_iHungerStatus = 100;
+	game->m_client_list[target_h]->m_hp = game->get_max_hp(target_h);
+	game->m_client_list[target_h]->m_mp = game->get_max_mp(target_h);
+	game->m_client_list[target_h]->m_sp = game->get_max_sp(target_h);
+	game->m_client_list[target_h]->m_hunger_status = 100;
 
-	pGame->SendNotifyMsg(0, iTargetH, Notify::Hp, 0, 0, 0, 0);
-	pGame->SendNotifyMsg(0, iTargetH, Notify::Mp, 0, 0, 0, 0);
-	pGame->SendNotifyMsg(0, iTargetH, Notify::Sp, 0, 0, 0, 0);
-	pGame->SendNotifyMsg(0, iTargetH, Notify::Hunger, pGame->m_pClientList[iTargetH]->m_iHungerStatus, 0, 0, 0);
+	game->send_notify_msg(0, target_h, Notify::Hp, 0, 0, 0, 0);
+	game->send_notify_msg(0, target_h, Notify::Mp, 0, 0, 0, 0);
+	game->send_notify_msg(0, target_h, Notify::Sp, 0, 0, 0, 0);
+	game->send_notify_msg(0, target_h, Notify::Hunger, game->m_client_list[target_h]->m_hunger_status, 0, 0, 0);
 
-	if (iTargetH != iClientH)
+	if (target_h != client_h)
 	{
-		pGame->SendNotifyMsg(0, iTargetH, Notify::NoticeMsg, 0, 0, 0, "Your health has been fully restored by a GM.");
+		game->send_notify_msg(0, target_h, Notify::NoticeMsg, 0, 0, 0, "Your health has been fully restored by a GM.");
 
 		char buf[80];
-		std::snprintf(buf, sizeof(buf), "Restored %s's HP/MP/SP/Hunger to full.", pGame->m_pClientList[iTargetH]->m_cCharName);
-		pGame->SendNotifyMsg(0, iClientH, Notify::NoticeMsg, 0, 0, 0, buf);
+		std::snprintf(buf, sizeof(buf), "Restored %s's HP/MP/SP/Hunger to full.", game->m_client_list[target_h]->m_char_name);
+		game->send_notify_msg(0, client_h, Notify::NoticeMsg, 0, 0, 0, buf);
 	}
 	else
 	{
-		pGame->SendNotifyMsg(0, iClientH, Notify::NoticeMsg, 0, 0, 0, "HP/MP/SP/Hunger restored to full.");
+		game->send_notify_msg(0, client_h, Notify::NoticeMsg, 0, 0, 0, "HP/MP/SP/Hunger restored to full.");
 	}
 
 	return true;

@@ -10,21 +10,21 @@
 #include "StringCompat.h"
 using namespace hb::server::config;
 
-void CmdSetAdmin::Execute(CGame* pGame, const char* pArgs)
+void CmdSetAdmin::execute(CGame* game, const char* args)
 {
-	if (pArgs == nullptr || pArgs[0] == '\0')
+	if (args == nullptr || args[0] == '\0')
 	{
 		hb::logger::log("Usage: setadmin <charname> [resetip]");
 		return;
 	}
 
 	// Parse character name (first word)
-	char cCharName[hb::shared::limits::CharNameLen] = {};
-	const char* p = pArgs;
+	char char_name[hb::shared::limits::CharNameLen] = {};
+	const char* p = args;
 	int ci = 0;
 	while (*p != '\0' && *p != ' ' && *p != '\t' && ci < 10)
 	{
-		cCharName[ci++] = *p++;
+		char_name[ci++] = *p++;
 	}
 
 	// Skip whitespace to check for subcommand
@@ -34,33 +34,33 @@ void CmdSetAdmin::Execute(CGame* pGame, const char* pArgs)
 	// Check for "resetip" subcommand
 	if (hb_stricmp(p, "resetip") == 0)
 	{
-		int idx = pGame->FindAdminByCharName(cCharName);
+		int idx = game->find_admin_by_char_name(char_name);
 		if (idx == -1)
 		{
-			hb::logger::log("Admin entry not found for character: {}", cCharName);
+			hb::logger::log("Admin entry not found for character: {}", char_name);
 			return;
 		}
 
-		strcpy(pGame->m_stAdminList[idx].m_cApprovedIP, "0.0.0.0");
+		strcpy(game->m_admin_list[idx].approved_ip, "0.0.0.0");
 
 		sqlite3* configDb = nullptr;
 		std::string dbPath;
 		if (EnsureGameConfigDatabase(&configDb, dbPath, nullptr))
 		{
-			SaveAdminConfig(configDb, pGame);
+			SaveAdminConfig(configDb, game);
 			CloseGameConfigDatabase(configDb);
 		}
 
-		hb::logger::log("Admin IP reset for character: {}", cCharName);
+		hb::logger::log("Admin IP reset for character: {}", char_name);
 		return;
 	}
 
 	// Parse optional admin level (default: GameMaster = 1)
-	int iAdminLevel = hb::shared::admin::GameMaster;
+	int admin_level = hb::shared::admin::GameMaster;
 	if (*p != '\0')
 	{
-		iAdminLevel = std::atoi(p);
-		if (iAdminLevel < 1)
+		admin_level = std::atoi(p);
+		if (admin_level < 1)
 		{
 			hb::logger::log("Admin level must be >= 1. Use level 0 is Player (non-admin).");
 			return;
@@ -68,50 +68,50 @@ void CmdSetAdmin::Execute(CGame* pGame, const char* pArgs)
 	}
 
 	// Adding a new admin - find the account name
-	char cAccountName[11] = {};
-	bool bFound = false;
+	char account_name[11] = {};
+	bool found = false;
 
 	// First check online clients
 	for (int i = 1; i < MaxClients; i++)
 	{
-		if (pGame->m_pClientList[i] != nullptr &&
-			hb_stricmp(pGame->m_pClientList[i]->m_cCharName, cCharName) == 0)
+		if (game->m_client_list[i] != nullptr &&
+			hb_stricmp(game->m_client_list[i]->m_char_name, char_name) == 0)
 		{
-			strncpy(cAccountName, pGame->m_pClientList[i]->m_cAccountName, 10);
-			cAccountName[10] = '\0';
-			bFound = true;
+			strncpy(account_name, game->m_client_list[i]->m_account_name, 10);
+			account_name[10] = '\0';
+			found = true;
 			break;
 		}
 	}
 
 	// If not found online, search account DB files
-	if (!bFound)
+	if (!found)
 	{
-		if (ResolveCharacterToAccount(cCharName, cAccountName, sizeof(cAccountName)))
+		if (ResolveCharacterToAccount(char_name, account_name, sizeof(account_name)))
 		{
-			bFound = true;
+			found = true;
 		}
 	}
 
-	if (!bFound)
+	if (!found)
 	{
-		hb::logger::log("Player not found: {}", cCharName);
+		hb::logger::log("Player not found: {}", char_name);
 		return;
 	}
 
 	// Check if already an admin - if so, update their level
-	int existingAdminIdx = pGame->FindAdminByAccount(cAccountName);
+	int existingAdminIdx = game->find_admin_by_account(account_name);
 	if (existingAdminIdx != -1)
 	{
-		pGame->m_stAdminList[existingAdminIdx].m_iAdminLevel = iAdminLevel;
+		game->m_admin_list[existingAdminIdx].m_admin_level = admin_level;
 
 		// Update online player's level
 		for (int i = 1; i < MaxClients; i++)
 		{
-			if (pGame->m_pClientList[i] != nullptr &&
-				hb_stricmp(pGame->m_pClientList[i]->m_cAccountName, cAccountName) == 0)
+			if (game->m_client_list[i] != nullptr &&
+				hb_stricmp(game->m_client_list[i]->m_account_name, account_name) == 0)
 			{
-				pGame->m_pClientList[i]->m_iAdminLevel = iAdminLevel;
+				game->m_client_list[i]->m_admin_level = admin_level;
 				break;
 			}
 		}
@@ -120,39 +120,39 @@ void CmdSetAdmin::Execute(CGame* pGame, const char* pArgs)
 		std::string dbPath;
 		if (EnsureGameConfigDatabase(&configDb, dbPath, nullptr))
 		{
-			SaveAdminConfig(configDb, pGame);
+			SaveAdminConfig(configDb, game);
 			CloseGameConfigDatabase(configDb);
 		}
 
-		hb::logger::log("Admin level updated: {} (account: {}) -> level {}", cCharName, cAccountName, iAdminLevel);
+		hb::logger::log("Admin level updated: {} (account: {}) -> level {}", char_name, account_name, admin_level);
 		return;
 	}
 
 	// Check capacity
-	if (pGame->m_iAdminCount >= MaxAdmins)
+	if (game->m_admin_count >= MaxAdmins)
 	{
 		hb::logger::log("Admin list is full");
 		return;
 	}
 
 	// Add new admin entry
-	int idx = pGame->m_iAdminCount;
-	std::memset(&pGame->m_stAdminList[idx], 0, sizeof(AdminEntry));
-	strncpy(pGame->m_stAdminList[idx].m_cAccountName, cAccountName, 10);
-	strncpy(pGame->m_stAdminList[idx].m_cCharName, cCharName, 10);
-	strcpy(pGame->m_stAdminList[idx].m_cApprovedIP, "0.0.0.0");
-	pGame->m_stAdminList[idx].m_iAdminLevel = iAdminLevel;
-	pGame->m_iAdminCount++;
+	int idx = game->m_admin_count;
+	std::memset(&game->m_admin_list[idx], 0, sizeof(AdminEntry));
+	strncpy(game->m_admin_list[idx].m_account_name, account_name, 10);
+	strncpy(game->m_admin_list[idx].m_char_name, char_name, 10);
+	strcpy(game->m_admin_list[idx].approved_ip, "0.0.0.0");
+	game->m_admin_list[idx].m_admin_level = admin_level;
+	game->m_admin_count++;
 
 	// If the player is currently online, set their admin index and level
 	for (int i = 1; i < MaxClients; i++)
 	{
-		if (pGame->m_pClientList[i] != nullptr &&
-			hb_stricmp(pGame->m_pClientList[i]->m_cAccountName, cAccountName) == 0 &&
-			hb_stricmp(pGame->m_pClientList[i]->m_cCharName, cCharName) == 0)
+		if (game->m_client_list[i] != nullptr &&
+			hb_stricmp(game->m_client_list[i]->m_account_name, account_name) == 0 &&
+			hb_stricmp(game->m_client_list[i]->m_char_name, char_name) == 0)
 		{
-			pGame->m_pClientList[i]->m_iAdminIndex = idx;
-			pGame->m_pClientList[i]->m_iAdminLevel = iAdminLevel;
+			game->m_client_list[i]->m_admin_index = idx;
+			game->m_client_list[i]->m_admin_level = admin_level;
 			break;
 		}
 	}
@@ -162,9 +162,9 @@ void CmdSetAdmin::Execute(CGame* pGame, const char* pArgs)
 	std::string dbPath;
 	if (EnsureGameConfigDatabase(&configDb, dbPath, nullptr))
 	{
-		SaveAdminConfig(configDb, pGame);
+		SaveAdminConfig(configDb, game);
 		CloseGameConfigDatabase(configDb);
 	}
 
-	hb::logger::log("Admin added: {} (account: {}, level: {})", cCharName, cAccountName, iAdminLevel);
+	hb::logger::log("Admin added: {} (account: {}, level: {})", char_name, account_name, admin_level);
 }

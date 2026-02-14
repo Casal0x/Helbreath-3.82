@@ -43,14 +43,14 @@ void DrainAcceptQueues()
 {
 	if (G_pGame == nullptr) return;
 
-	asio::ip::tcp::socket peer(G_pIOPool->GetContext());
-	while (G_gameAcceptQueue.Pop(peer)) {
-		G_pGame->bAcceptFromAsync(std::move(peer));
+	asio::ip::tcp::socket peer(G_pIOPool->get_context());
+	while (G_gameAcceptQueue.pop(peer)) {
+		G_pGame->accept_from_async(std::move(peer));
 	}
 
-	asio::ip::tcp::socket loginPeer(G_pIOPool->GetContext());
-	while (G_loginAcceptQueue.Pop(loginPeer)) {
-		G_pGame->bAcceptLoginFromAsync(std::move(loginPeer));
+	asio::ip::tcp::socket loginPeer(G_pIOPool->get_context());
+	while (G_loginAcceptQueue.pop(loginPeer)) {
+		G_pGame->accept_login_from_async(std::move(loginPeer));
 	}
 }
 
@@ -59,17 +59,17 @@ void DrainErrorQueue()
 	if (G_pGame == nullptr) return;
 
 	hb::shared::net::SocketErrorEvent evt;
-	while (G_errorQueue.Pop(evt)) {
-		if (evt.iSocketIndex > 0 && evt.iSocketIndex < MaxClients) {
-			if (G_pGame->m_pClientList[evt.iSocketIndex] != nullptr) {
-				hb::logger::log("Client {}: disconnected, async error={} ({}) char={}", evt.iSocketIndex, evt.iErrorCode, G_pGame->m_pClientList[evt.iSocketIndex]->m_cIPaddress, G_pGame->m_pClientList[evt.iSocketIndex]->m_cCharName);
-				G_pGame->DeleteClient(evt.iSocketIndex, true, true);
+	while (G_errorQueue.pop(evt)) {
+		if (evt.socket_index > 0 && evt.socket_index < MaxClients) {
+			if (G_pGame->m_client_list[evt.socket_index] != nullptr) {
+				hb::logger::log("Client {}: disconnected, async error={} ({}) char={}", evt.socket_index, evt.error_code, G_pGame->m_client_list[evt.socket_index]->m_ip_address, G_pGame->m_client_list[evt.socket_index]->m_char_name);
+				G_pGame->delete_client(evt.socket_index, true, true);
 			}
 		}
-		else if (evt.iSocketIndex < 0) {
-			int loginH = -(evt.iSocketIndex + 1);
+		else if (evt.socket_index < 0) {
+			int loginH = -(evt.socket_index + 1);
 			if (loginH >= 0 && loginH < MaxClientLoginSock) {
-				G_pGame->DeleteLoginClient(loginH);
+				G_pGame->delete_login_client(loginH);
 			}
 		}
 	}
@@ -80,8 +80,8 @@ void PollLoginClients()
 	if (G_pGame == nullptr) return;
 
 	for (int i = 0; i < MaxClientLoginSock; i++) {
-		if (G_pGame->_lclients[i] != nullptr && G_pGame->_lclients[i]->_sock != nullptr) {
-			G_pGame->OnLoginClientSocketEvent(i);
+		if (G_pGame->_lclients[i] != nullptr && G_pGame->_lclients[i]->sock != nullptr) {
+			G_pGame->on_login_client_socket_event(i);
 		}
 	}
 }
@@ -120,7 +120,7 @@ int main()
 	printf("=======================================================================\n\n");
 	printf("Initializing server...\n\n");
 
-	// Initialize logger
+	// initialize logger
 	hb::logger::initialize("gamelogs/");
 
 	// Create I/O service pool
@@ -128,7 +128,7 @@ int main()
 
 	// Create and initialize game
 	G_pGame = new CGame();
-	if (!G_pGame->bInit()) {
+	if (!G_pGame->init()) {
 		hb::logger::error("Server initialization failed");
 		hb::logger::shutdown();
 		delete G_pGame;
@@ -136,28 +136,28 @@ int main()
 		return 1;
 	}
 
-	ServerCommandManager::Get().Initialize(G_pGame);
-	GameChatCommandManager::Get().Initialize(G_pGame);
+	ServerCommandManager::get().initialize(G_pGame);
+	GameChatCommandManager::get().initialize(G_pGame);
 
-	GetServerConsole().Init();
+	GetServerConsole().init();
 
-	// Start listen sockets
-	G_pListenSock = new hb::shared::net::ASIOSocket(G_pIOPool->GetContext(), ServerSocketBlockLimit);
-	G_pListenSock->bListen(G_pGame->m_cGameListenIP, G_pGame->m_iGameListenPort);
+	// start listen sockets
+	G_pListenSock = new hb::shared::net::ASIOSocket(G_pIOPool->get_context(), ServerSocketBlockLimit);
+	G_pListenSock->listen(G_pGame->m_game_listen_ip, G_pGame->m_game_listen_port);
 
-	G_pLoginSock = new hb::shared::net::ASIOSocket(G_pIOPool->GetContext(), ServerSocketBlockLimit);
-	G_pLoginSock->bListen(G_pGame->m_cLoginListenIP, G_pGame->m_iLoginListenPort);
+	G_pLoginSock = new hb::shared::net::ASIOSocket(G_pIOPool->get_context(), ServerSocketBlockLimit);
+	G_pLoginSock->listen(G_pGame->m_login_listen_ip, G_pGame->m_login_listen_port);
 
-	// Start async accept
-	G_pListenSock->StartAsyncAccept([](asio::ip::tcp::socket peer) {
-		G_gameAcceptQueue.Push(std::move(peer));
+	// start async accept
+	G_pListenSock->start_async_accept([](asio::ip::tcp::socket peer) {
+		G_gameAcceptQueue.push(std::move(peer));
 	});
-	G_pLoginSock->StartAsyncAccept([](asio::ip::tcp::socket peer) {
-		G_loginAcceptQueue.Push(std::move(peer));
+	G_pLoginSock->start_async_accept([](asio::ip::tcp::socket peer) {
+		G_loginAcceptQueue.push(std::move(peer));
 	});
 
-	// Start I/O thread pool
-	G_pIOPool->Start();
+	// start I/O thread pool
+	G_pIOPool->start();
 
 	// --- Main loop ---
 	constexpr uint32_t tick_interval = 300 / GameTickMultiplier;
@@ -167,8 +167,8 @@ int main()
 		uint32_t now_ms = GameClock::GetTimeMS();
 
 		if (now_ms - last_tick >= tick_interval) {
-			G_pGame->OnTimer(0);
-			G_pGame->GameProcess();
+			G_pGame->on_timer(0);
+			G_pGame->game_process();
 			last_tick = now_ms;
 		}
 
@@ -176,16 +176,16 @@ int main()
 		DrainErrorQueue();
 		PollLoginClients();
 
-		char szCmd[256];
-		if (GetServerConsole().PollInput(szCmd, sizeof(szCmd))) {
-			ServerCommandManager::Get().ProcessCommand(szCmd);
+		char cmd[256];
+		if (GetServerConsole().poll_input(cmd, sizeof(cmd))) {
+			ServerCommandManager::get().process_command(cmd);
 		}
 
 		std::this_thread::sleep_for(std::chrono::milliseconds(1));
 	}
 
-	// --- Shutdown ---
-	G_pIOPool->Stop();
+	// --- shutdown ---
+	G_pIOPool->stop();
 
 	delete G_pListenSock;
 	G_pListenSock = nullptr;
@@ -196,7 +196,7 @@ int main()
 	delete G_pLoginSock;
 	G_pLoginSock = nullptr;
 
-	G_pGame->Quit();
+	G_pGame->quit();
 	delete G_pGame;
 	G_pGame = nullptr;
 

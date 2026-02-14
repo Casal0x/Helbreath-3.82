@@ -10,207 +10,207 @@
 
 using namespace hb::shared::net;
 using namespace hb::client::sprite_id;
-DialogBox_MagicShop::DialogBox_MagicShop(CGame* pGame)
-	: IDialogBox(DialogBoxId::MagicShop, pGame)
+DialogBox_MagicShop::DialogBox_MagicShop(CGame* game)
+	: IDialogBox(DialogBoxId::MagicShop, game)
 {
-	SetDefaultRect(30 , 30 , 304, 328);
+	set_default_rect(30 , 30 , 304, 328);
 }
 
-void DialogBox_MagicShop::OnDraw(short msX, short msY, short msZ, char cLB)
+void DialogBox_MagicShop::on_draw(short mouse_x, short mouse_y, short z, char lb)
 {
-	short sX = m_pGame->m_dialogBoxManager.Info(DialogBoxId::MagicShop).sX;
-	short sY = m_pGame->m_dialogBoxManager.Info(DialogBoxId::MagicShop).sY;
+	short sX = m_game->m_dialog_box_manager.Info(DialogBoxId::MagicShop).m_x;
+	short sY = m_game->m_dialog_box_manager.Info(DialogBoxId::MagicShop).m_y;
 
-	m_pGame->DrawNewDialogBox(InterfaceNdGame4, sX, sY, 1);
-	m_pGame->DrawNewDialogBox(InterfaceNdText, sX, sY, 14);
+	m_game->draw_new_dialog_box(InterfaceNdGame4, sX, sY, 1);
+	m_game->draw_new_dialog_box(InterfaceNdText, sX, sY, 14);
 
 	// Mouse wheel scrolling - read and consume input directly
-	if (m_pGame->m_dialogBoxManager.iGetTopDialogBoxIndex() == DialogBoxId::MagicShop)
+	if (m_game->m_dialog_box_manager.get_top_dialog_box_index() == DialogBoxId::MagicShop)
 	{
-		short sWheelDelta = hb::shared::input::get_mouse_wheel_delta();
-		if (sWheelDelta != 0)
+		short wheel_delta = hb::shared::input::get_mouse_wheel_delta();
+		if (wheel_delta != 0)
 		{
-			if (sWheelDelta > 0)
-				m_pGame->m_dialogBoxManager.Info(DialogBoxId::MagicShop).sView--;
-			if (sWheelDelta < 0)
-				m_pGame->m_dialogBoxManager.Info(DialogBoxId::MagicShop).sView++;
+			if (wheel_delta > 0)
+				m_game->m_dialog_box_manager.Info(DialogBoxId::MagicShop).m_view--;
+			if (wheel_delta < 0)
+				m_game->m_dialog_box_manager.Info(DialogBoxId::MagicShop).m_view++;
 			// Consume the input
 		}
 	}
 
-	// Clamp view (pages 0-9)
-	if (m_pGame->m_dialogBoxManager.Info(DialogBoxId::MagicShop).sView < 0)
-		m_pGame->m_dialogBoxManager.Info(DialogBoxId::MagicShop).sView = 9;
-	if (m_pGame->m_dialogBoxManager.Info(DialogBoxId::MagicShop).sView > 9)
-		m_pGame->m_dialogBoxManager.Info(DialogBoxId::MagicShop).sView = 0;
+	// clamp view (pages 0-9)
+	if (m_game->m_dialog_box_manager.Info(DialogBoxId::MagicShop).m_view < 0)
+		m_game->m_dialog_box_manager.Info(DialogBoxId::MagicShop).m_view = 9;
+	if (m_game->m_dialog_box_manager.Info(DialogBoxId::MagicShop).m_view > 9)
+		m_game->m_dialog_box_manager.Info(DialogBoxId::MagicShop).m_view = 0;
 
 	// Column headers
-	hb::shared::text::DrawText(GameFont::Default, sX - 20 + 60 - 17, sY - 35 + 90, DRAW_DIALOGBOX_MAGICSHOP11, hb::shared::text::TextStyle::Color(GameColors::UILabel)); // "Spell Name"
-	hb::shared::text::DrawText(GameFont::Default, sX - 20 + 232 - 20, sY - 35 + 90, DRAW_DIALOGBOX_MAGICSHOP12, hb::shared::text::TextStyle::Color(GameColors::UILabel)); // "Req.Int"
-	hb::shared::text::DrawText(GameFont::Default, sX - 20 + 270, sY - 35 + 90, DRAW_DIALOGBOX_MAGICSHOP13, hb::shared::text::TextStyle::Color(GameColors::UILabel)); // "Cost"
+	hb::shared::text::draw_text(GameFont::Default, sX - 20 + 60 - 17, sY - 35 + 90, DRAW_DIALOGBOX_MAGICSHOP11, hb::shared::text::TextStyle::from_color(GameColors::UILabel)); // "Spell Name"
+	hb::shared::text::draw_text(GameFont::Default, sX - 20 + 232 - 20, sY - 35 + 90, DRAW_DIALOGBOX_MAGICSHOP12, hb::shared::text::TextStyle::from_color(GameColors::UILabel)); // "Req.Int"
+	hb::shared::text::draw_text(GameFont::Default, sX - 20 + 270, sY - 35 + 90, DRAW_DIALOGBOX_MAGICSHOP13, hb::shared::text::TextStyle::from_color(GameColors::UILabel)); // "Cost"
 
-	DrawSpellList(sX, sY, msX, msY);
-	DrawPageIndicator(sX, sY);
+	draw_spell_list(sX, sY, mouse_x, mouse_y);
+	draw_page_indicator(sX, sY);
 
-	hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 275, sX + m_pGame->m_dialogBoxManager.Info(DialogBoxId::MagicShop).sSizeX - sX, 15, DRAW_DIALOGBOX_MAGICSHOP14, hb::shared::text::TextStyle::Color(GameColors::UILabel), hb::shared::text::Align::TopCenter);
+	hb::shared::text::draw_text_aligned(GameFont::Default, sX, sY + 275, sX + m_game->m_dialog_box_manager.Info(DialogBoxId::MagicShop).m_size_x - sX, 15, DRAW_DIALOGBOX_MAGICSHOP14, hb::shared::text::TextStyle::from_color(GameColors::UILabel), hb::shared::text::Align::TopCenter);
 }
 
-void DialogBox_MagicShop::DrawSpellList(short sX, short sY, short msX, short msY)
+void DialogBox_MagicShop::draw_spell_list(short sX, short sY, short mouse_x, short mouse_y)
 {
-	int iCPivot = m_pGame->m_dialogBoxManager.Info(DialogBoxId::MagicShop).sView * 10;
-	int iYloc = 0;
-	std::string cMana;
+	int c_pivot = m_game->m_dialog_box_manager.Info(DialogBoxId::MagicShop).m_view * 10;
+	int yloc = 0;
+	std::string mana;
 
-	char cTxt[120];
+	char txt[120];
 
 	for (int i = 0; i < 9; i++)
 	{
-		if ((m_pGame->m_pMagicCfgList[iCPivot + i] != nullptr) &&
-			(m_pGame->m_pMagicCfgList[iCPivot + i]->m_bIsVisible))
+		if ((m_game->m_magic_cfg_list[c_pivot + i] != nullptr) &&
+			(m_game->m_magic_cfg_list[c_pivot + i]->m_is_visible))
 		{
-			std::snprintf(cTxt, sizeof(cTxt), "%s", m_pGame->m_pMagicCfgList[iCPivot + i]->m_cName.c_str());
-			CMisc::ReplaceString(cTxt, '-', ' ');
+			std::snprintf(txt, sizeof(txt), "%s", m_game->m_magic_cfg_list[c_pivot + i]->m_name.c_str());
+			CMisc::replace_string(txt, '-', ' ');
 
-			if (m_pGame->m_pPlayer->m_iMagicMastery[iCPivot + i] != 0)
+			if (m_game->m_player->m_magic_mastery[c_pivot + i] != 0)
 			{
 				// Already mastered - purple color
-				hb::shared::text::DrawText(GameFont::Bitmap1, sX + 24, sY + 70 + iYloc, cTxt, hb::shared::text::TextStyle::WithHighlight(GameColors::UIMagicPurple));
-				cMana = std::format("{:3}", m_pGame->m_pMagicCfgList[iCPivot + i]->m_sValue2);
-				hb::shared::text::DrawText(GameFont::Bitmap1, sX + 200, sY + 70 + iYloc, cMana.c_str(), hb::shared::text::TextStyle::WithHighlight(GameColors::UIMagicPurple));
-				cMana = std::format("{:3}", m_pGame->m_pMagicCfgList[iCPivot + i]->m_sValue3);
-				hb::shared::text::DrawText(GameFont::Bitmap1, sX + 241, sY + 70 + iYloc, cMana.c_str(), hb::shared::text::TextStyle::WithHighlight(GameColors::UIMagicPurple));
+				hb::shared::text::draw_text(GameFont::Bitmap1, sX + 24, sY + 70 + yloc, txt, hb::shared::text::TextStyle::with_highlight(GameColors::UIMagicPurple));
+				mana = std::format("{:3}", m_game->m_magic_cfg_list[c_pivot + i]->m_value_2);
+				hb::shared::text::draw_text(GameFont::Bitmap1, sX + 200, sY + 70 + yloc, mana.c_str(), hb::shared::text::TextStyle::with_highlight(GameColors::UIMagicPurple));
+				mana = std::format("{:3}", m_game->m_magic_cfg_list[c_pivot + i]->m_value_3);
+				hb::shared::text::draw_text(GameFont::Bitmap1, sX + 241, sY + 70 + yloc, mana.c_str(), hb::shared::text::TextStyle::with_highlight(GameColors::UIMagicPurple));
 			}
-			else if ((msX >= sX + 24) && (msX <= sX + 24 + 135) &&
-				(msY >= sY + 70 + iYloc) && (msY <= sY + 70 + 14 + iYloc))
+			else if ((mouse_x >= sX + 24) && (mouse_x <= sX + 24 + 135) &&
+				(mouse_y >= sY + 70 + yloc) && (mouse_y <= sY + 70 + 14 + yloc))
 			{
 				// Hovering - white color
-				hb::shared::text::DrawText(GameFont::Bitmap1, sX - 20 + 44, sY + 70 + iYloc, cTxt, hb::shared::text::TextStyle::WithHighlight(GameColors::UINearWhite));
-				cMana = std::format("{:3}", m_pGame->m_pMagicCfgList[iCPivot + i]->m_sValue2);
-				hb::shared::text::DrawText(GameFont::Bitmap1, sX - 20 + 220, sY + 70 + iYloc, cMana.c_str(), hb::shared::text::TextStyle::WithHighlight(GameColors::UINearWhite));
-				cMana = std::format("{:3}", m_pGame->m_pMagicCfgList[iCPivot + i]->m_sValue3);
-				hb::shared::text::DrawText(GameFont::Bitmap1, sX - 20 + 261, sY + 70 + iYloc, cMana.c_str(), hb::shared::text::TextStyle::WithHighlight(GameColors::UINearWhite));
+				hb::shared::text::draw_text(GameFont::Bitmap1, sX - 20 + 44, sY + 70 + yloc, txt, hb::shared::text::TextStyle::with_highlight(GameColors::UINearWhite));
+				mana = std::format("{:3}", m_game->m_magic_cfg_list[c_pivot + i]->m_value_2);
+				hb::shared::text::draw_text(GameFont::Bitmap1, sX - 20 + 220, sY + 70 + yloc, mana.c_str(), hb::shared::text::TextStyle::with_highlight(GameColors::UINearWhite));
+				mana = std::format("{:3}", m_game->m_magic_cfg_list[c_pivot + i]->m_value_3);
+				hb::shared::text::draw_text(GameFont::Bitmap1, sX - 20 + 261, sY + 70 + yloc, mana.c_str(), hb::shared::text::TextStyle::with_highlight(GameColors::UINearWhite));
 			}
 			else
 			{
-				hb::shared::text::DrawText(GameFont::Bitmap1, sX - 20 + 44, sY + 70 + iYloc, cTxt, hb::shared::text::TextStyle::WithHighlight(GameColors::UIMagicBlue));
-				cMana = std::format("{:3}", m_pGame->m_pMagicCfgList[iCPivot + i]->m_sValue2);
-				hb::shared::text::DrawText(GameFont::Bitmap1, sX - 20 + 220, sY + 70 + iYloc, cMana.c_str(), hb::shared::text::TextStyle::WithHighlight(GameColors::UIMagicBlue));
-				cMana = std::format("{:3}", m_pGame->m_pMagicCfgList[iCPivot + i]->m_sValue3);
-				hb::shared::text::DrawText(GameFont::Bitmap1, sX - 20 + 261, sY + 70 + iYloc, cMana.c_str(), hb::shared::text::TextStyle::WithHighlight(GameColors::UIMagicBlue));
+				hb::shared::text::draw_text(GameFont::Bitmap1, sX - 20 + 44, sY + 70 + yloc, txt, hb::shared::text::TextStyle::with_highlight(GameColors::UIMagicBlue));
+				mana = std::format("{:3}", m_game->m_magic_cfg_list[c_pivot + i]->m_value_2);
+				hb::shared::text::draw_text(GameFont::Bitmap1, sX - 20 + 220, sY + 70 + yloc, mana.c_str(), hb::shared::text::TextStyle::with_highlight(GameColors::UIMagicBlue));
+				mana = std::format("{:3}", m_game->m_magic_cfg_list[c_pivot + i]->m_value_3);
+				hb::shared::text::draw_text(GameFont::Bitmap1, sX - 20 + 261, sY + 70 + yloc, mana.c_str(), hb::shared::text::TextStyle::with_highlight(GameColors::UIMagicBlue));
 			}
-			iYloc += 18;
+			yloc += 18;
 		}
 	}
 }
 
-void DialogBox_MagicShop::DrawPageIndicator(short sX, short sY)
+void DialogBox_MagicShop::draw_page_indicator(short sX, short sY)
 {
-	uint32_t dwTime = m_pGame->m_dwCurTime;
+	uint32_t time = m_game->m_cur_time;
 
-	// Draw page number strip
-	m_pGame->m_pSprite[InterfaceSprFonts]->Draw(sX + 55, sY + 250, 19);
+	// draw page number strip
+	m_game->m_sprite[InterfaceSprFonts]->draw(sX + 55, sY + 250, 19);
 
 	// Highlight current page
-	short sView = m_pGame->m_dialogBoxManager.Info(DialogBoxId::MagicShop).sView;
-	switch (sView)
+	short view = m_game->m_dialog_box_manager.Info(DialogBoxId::MagicShop).m_view;
+	switch (view)
 	{
-	case 0: m_pGame->m_pSprite[InterfaceSprFonts]->Draw(sX - 20 + 44 + 31, sY + 250, 20); break;
-	case 1: m_pGame->m_pSprite[InterfaceSprFonts]->Draw(sX - 20 + 57 + 31, sY + 250, 21); break;
-	case 2: m_pGame->m_pSprite[InterfaceSprFonts]->Draw(sX - 20 + 75 + 31, sY + 250, 22); break;
-	case 3: m_pGame->m_pSprite[InterfaceSprFonts]->Draw(sX - 20 + 100 + 31, sY + 250, 23); break;
-	case 4: m_pGame->m_pSprite[InterfaceSprFonts]->Draw(sX - 20 + 120 + 31, sY + 250, 24); break;
-	case 5: m_pGame->m_pSprite[InterfaceSprFonts]->Draw(sX - 20 + 135 + 31, sY + 250, 25); break;
-	case 6: m_pGame->m_pSprite[InterfaceSprFonts]->Draw(sX - 20 + 156 + 31, sY + 250, 26); break;
-	case 7: m_pGame->m_pSprite[InterfaceSprFonts]->Draw(sX - 20 + 183 + 31, sY + 250, 27); break;
-	case 8: m_pGame->m_pSprite[InterfaceSprFonts]->Draw(sX - 20 + 216 + 31, sY + 250, 28); break;
-	case 9: m_pGame->m_pSprite[InterfaceSprFonts]->Draw(sX - 20 + 236 + 31, sY + 250, 29); break;
+	case 0: m_game->m_sprite[InterfaceSprFonts]->draw(sX - 20 + 44 + 31, sY + 250, 20); break;
+	case 1: m_game->m_sprite[InterfaceSprFonts]->draw(sX - 20 + 57 + 31, sY + 250, 21); break;
+	case 2: m_game->m_sprite[InterfaceSprFonts]->draw(sX - 20 + 75 + 31, sY + 250, 22); break;
+	case 3: m_game->m_sprite[InterfaceSprFonts]->draw(sX - 20 + 100 + 31, sY + 250, 23); break;
+	case 4: m_game->m_sprite[InterfaceSprFonts]->draw(sX - 20 + 120 + 31, sY + 250, 24); break;
+	case 5: m_game->m_sprite[InterfaceSprFonts]->draw(sX - 20 + 135 + 31, sY + 250, 25); break;
+	case 6: m_game->m_sprite[InterfaceSprFonts]->draw(sX - 20 + 156 + 31, sY + 250, 26); break;
+	case 7: m_game->m_sprite[InterfaceSprFonts]->draw(sX - 20 + 183 + 31, sY + 250, 27); break;
+	case 8: m_game->m_sprite[InterfaceSprFonts]->draw(sX - 20 + 216 + 31, sY + 250, 28); break;
+	case 9: m_game->m_sprite[InterfaceSprFonts]->draw(sX - 20 + 236 + 31, sY + 250, 29); break;
 	}
 }
 
-bool DialogBox_MagicShop::OnClick(short msX, short msY)
+bool DialogBox_MagicShop::on_click(short mouse_x, short mouse_y)
 {
-	short sX = m_pGame->m_dialogBoxManager.Info(DialogBoxId::MagicShop).sX;
-	short sY = m_pGame->m_dialogBoxManager.Info(DialogBoxId::MagicShop).sY;
+	short sX = m_game->m_dialog_box_manager.Info(DialogBoxId::MagicShop).m_x;
+	short sY = m_game->m_dialog_box_manager.Info(DialogBoxId::MagicShop).m_y;
 
-	if (HandleSpellClick(sX, sY, msX, msY))
+	if (handle_spell_click(sX, sY, mouse_x, mouse_y))
 		return true;
 
-	HandlePageClick(sX, sY, msX, msY);
+	handle_page_click(sX, sY, mouse_x, mouse_y);
 	return false;
 }
 
-bool DialogBox_MagicShop::HandleSpellClick(short sX, short sY, short msX, short msY)
+bool DialogBox_MagicShop::handle_spell_click(short sX, short sY, short mouse_x, short mouse_y)
 {
-	int iAdjX = -20;
-	int iAdjY = -35;
-	int iCPivot = m_pGame->m_dialogBoxManager.Info(DialogBoxId::MagicShop).sView * 10;
-	int iYloc = 0;
+	int adj_x = -20;
+	int adj_y = -35;
+	int c_pivot = m_game->m_dialog_box_manager.Info(DialogBoxId::MagicShop).m_view * 10;
+	int yloc = 0;
 
 	for (int i = 0; i < 9; i++)
 	{
-		if ((m_pGame->m_pMagicCfgList[iCPivot + i] != nullptr) &&
-			(m_pGame->m_pMagicCfgList[iCPivot + i]->m_bIsVisible))
+		if ((m_game->m_magic_cfg_list[c_pivot + i] != nullptr) &&
+			(m_game->m_magic_cfg_list[c_pivot + i]->m_is_visible))
 		{
-			if ((msX >= sX + iAdjX + 44) && (msX <= sX + iAdjX + 135 + 44) &&
-				(msY >= sY + iAdjY + 70 + iYloc + 35) && (msY <= sY + iAdjY + 70 + 14 + iYloc + 35))
+			if ((mouse_x >= sX + adj_x + 44) && (mouse_x <= sX + adj_x + 135 + 44) &&
+				(mouse_y >= sY + adj_y + 70 + yloc + 35) && (mouse_y <= sY + adj_y + 70 + 14 + yloc + 35))
 			{
-				if (m_pGame->m_pPlayer->m_iMagicMastery[iCPivot + i] == 0)
+				if (m_game->m_player->m_magic_mastery[c_pivot + i] == 0)
 				{
-					m_pGame->bSendCommand(MsgId::CommandCommon, CommonType::ReqStudyMagic, 0, 0, 0, 0,
-						m_pGame->m_pMagicCfgList[iCPivot + i]->m_cName.c_str());
-					m_pGame->PlayGameSound('E', 14, 5);
+					m_game->send_command(MsgId::CommandCommon, CommonType::ReqStudyMagic, 0, 0, 0, 0,
+						m_game->m_magic_cfg_list[c_pivot + i]->m_name.c_str());
+					m_game->play_game_sound('E', 14, 5);
 				}
 				return true;
 			}
-			iYloc += 18;
+			yloc += 18;
 		}
 	}
 	return false;
 }
 
-void DialogBox_MagicShop::HandlePageClick(short sX, short sY, short msX, short msY)
+void DialogBox_MagicShop::handle_page_click(short sX, short sY, short mouse_x, short mouse_y)
 {
-	int iAdjX = -20;
-	int iAdjY = -35;
+	int adj_x = -20;
+	int adj_y = -35;
 
-	if ((msX >= sX + iAdjX + 42 + 31) && (msX <= sX + iAdjX + 50 + 31) &&
-		(msY >= sY + iAdjY + 248 + 35) && (msY <= sY + iAdjY + 260 + 35))
-		m_pGame->m_dialogBoxManager.Info(DialogBoxId::MagicShop).sView = 0;
+	if ((mouse_x >= sX + adj_x + 42 + 31) && (mouse_x <= sX + adj_x + 50 + 31) &&
+		(mouse_y >= sY + adj_y + 248 + 35) && (mouse_y <= sY + adj_y + 260 + 35))
+		m_game->m_dialog_box_manager.Info(DialogBoxId::MagicShop).m_view = 0;
 
-	if ((msX >= sX + iAdjX + 55 + 31) && (msX <= sX + iAdjX + 68 + 31) &&
-		(msY >= sY + iAdjY + 248 + 35) && (msY <= sY + iAdjY + 260 + 35))
-		m_pGame->m_dialogBoxManager.Info(DialogBoxId::MagicShop).sView = 1;
+	if ((mouse_x >= sX + adj_x + 55 + 31) && (mouse_x <= sX + adj_x + 68 + 31) &&
+		(mouse_y >= sY + adj_y + 248 + 35) && (mouse_y <= sY + adj_y + 260 + 35))
+		m_game->m_dialog_box_manager.Info(DialogBoxId::MagicShop).m_view = 1;
 
-	if ((msX >= sX + iAdjX + 73 + 31) && (msX <= sX + iAdjX + 93 + 31) &&
-		(msY >= sY + iAdjY + 248 + 35) && (msY <= sY + iAdjY + 260 + 35))
-		m_pGame->m_dialogBoxManager.Info(DialogBoxId::MagicShop).sView = 2;
+	if ((mouse_x >= sX + adj_x + 73 + 31) && (mouse_x <= sX + adj_x + 93 + 31) &&
+		(mouse_y >= sY + adj_y + 248 + 35) && (mouse_y <= sY + adj_y + 260 + 35))
+		m_game->m_dialog_box_manager.Info(DialogBoxId::MagicShop).m_view = 2;
 
-	if ((msX >= sX + iAdjX + 98 + 31) && (msX <= sX + iAdjX + 113 + 31) &&
-		(msY >= sY + iAdjY + 248 + 35) && (msY <= sY + iAdjY + 260 + 35))
-		m_pGame->m_dialogBoxManager.Info(DialogBoxId::MagicShop).sView = 3;
+	if ((mouse_x >= sX + adj_x + 98 + 31) && (mouse_x <= sX + adj_x + 113 + 31) &&
+		(mouse_y >= sY + adj_y + 248 + 35) && (mouse_y <= sY + adj_y + 260 + 35))
+		m_game->m_dialog_box_manager.Info(DialogBoxId::MagicShop).m_view = 3;
 
-	if ((msX >= sX + iAdjX + 118 + 31) && (msX <= sX + iAdjX + 129 + 31) &&
-		(msY >= sY + iAdjY + 248 + 35) && (msY <= sY + iAdjY + 260 + 35))
-		m_pGame->m_dialogBoxManager.Info(DialogBoxId::MagicShop).sView = 4;
+	if ((mouse_x >= sX + adj_x + 118 + 31) && (mouse_x <= sX + adj_x + 129 + 31) &&
+		(mouse_y >= sY + adj_y + 248 + 35) && (mouse_y <= sY + adj_y + 260 + 35))
+		m_game->m_dialog_box_manager.Info(DialogBoxId::MagicShop).m_view = 4;
 
-	if ((msX >= sX + iAdjX + 133 + 31) && (msX <= sX + iAdjX + 150 + 31) &&
-		(msY >= sY + iAdjY + 248 + 35) && (msY <= sY + iAdjY + 260 + 35))
-		m_pGame->m_dialogBoxManager.Info(DialogBoxId::MagicShop).sView = 5;
+	if ((mouse_x >= sX + adj_x + 133 + 31) && (mouse_x <= sX + adj_x + 150 + 31) &&
+		(mouse_y >= sY + adj_y + 248 + 35) && (mouse_y <= sY + adj_y + 260 + 35))
+		m_game->m_dialog_box_manager.Info(DialogBoxId::MagicShop).m_view = 5;
 
-	if ((msX >= sX + iAdjX + 154 + 31) && (msX <= sX + iAdjX + 177 + 31) &&
-		(msY >= sY + iAdjY + 248 + 35) && (msY <= sY + iAdjY + 260 + 35))
-		m_pGame->m_dialogBoxManager.Info(DialogBoxId::MagicShop).sView = 6;
+	if ((mouse_x >= sX + adj_x + 154 + 31) && (mouse_x <= sX + adj_x + 177 + 31) &&
+		(mouse_y >= sY + adj_y + 248 + 35) && (mouse_y <= sY + adj_y + 260 + 35))
+		m_game->m_dialog_box_manager.Info(DialogBoxId::MagicShop).m_view = 6;
 
-	if ((msX >= sX + iAdjX + 181 + 31) && (msX <= sX + iAdjX + 210 + 31) &&
-		(msY >= sY + iAdjY + 248 + 35) && (msY <= sY + iAdjY + 260 + 35))
-		m_pGame->m_dialogBoxManager.Info(DialogBoxId::MagicShop).sView = 7;
+	if ((mouse_x >= sX + adj_x + 181 + 31) && (mouse_x <= sX + adj_x + 210 + 31) &&
+		(mouse_y >= sY + adj_y + 248 + 35) && (mouse_y <= sY + adj_y + 260 + 35))
+		m_game->m_dialog_box_manager.Info(DialogBoxId::MagicShop).m_view = 7;
 
-	if ((msX >= sX + iAdjX + 214 + 31) && (msX <= sX + iAdjX + 230 + 31) &&
-		(msY >= sY + iAdjY + 248 + 35) && (msY <= sY + iAdjY + 260 + 35))
-		m_pGame->m_dialogBoxManager.Info(DialogBoxId::MagicShop).sView = 8;
+	if ((mouse_x >= sX + adj_x + 214 + 31) && (mouse_x <= sX + adj_x + 230 + 31) &&
+		(mouse_y >= sY + adj_y + 248 + 35) && (mouse_y <= sY + adj_y + 260 + 35))
+		m_game->m_dialog_box_manager.Info(DialogBoxId::MagicShop).m_view = 8;
 
-	if ((msX >= sX + iAdjX + 234 + 31) && (msX <= sX + iAdjX + 245 + 31) &&
-		(msY >= sY + iAdjY + 248 + 35) && (msY <= sY + iAdjY + 260 + 35))
-		m_pGame->m_dialogBoxManager.Info(DialogBoxId::MagicShop).sView = 9;
+	if ((mouse_x >= sX + adj_x + 234 + 31) && (mouse_x <= sX + adj_x + 245 + 31) &&
+		(mouse_y >= sY + adj_y + 248 + 35) && (mouse_y <= sY + adj_y + 260 + 35))
+		m_game->m_dialog_box_manager.Info(DialogBoxId::MagicShop).m_view = 9;
 }
 

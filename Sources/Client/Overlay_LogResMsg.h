@@ -15,12 +15,12 @@ public:
     SCREEN_TYPE(Overlay_LogResMsg)
 
     // Parameters are read from CGame in on_initialize():
-    //   m_pGame->m_cMsg[0]: Where to go when dismissed
+    //   m_game->m_msg[0]: Where to go when dismissed
     //     '0' = CreateNewAccount, '1' = MainMenu, '2' = CreateNewCharacter
     //     '3'/'4' = SelectCharacter, '5' = MainMenu, '6' = context-dependent
     //     '7'/'8' = MainMenu
-    //   m_pGame->m_cMsg[1]: Message type to display ('1'-'9', 'A'-'M', 'U', 'X'-'Z')
-    explicit Overlay_LogResMsg(CGame* pGame);
+    //   m_game->m_msg[1]: Message type to display ('1'-'9', 'A'-'M', 'U', 'X'-'Z')
+    explicit Overlay_LogResMsg(CGame* game);
     ~Overlay_LogResMsg() override = default;
 
     void on_initialize() override;
@@ -29,8 +29,8 @@ public:
     void on_render() override;
 
 private:
-    void HandleDismiss();
-    void RenderMessage(int dlgX, int dlgY);
+    void handle_dismiss();
+    void render_message(int dlgX, int dlgY);
 
     char m_cReturnDest;
     char m_cMsgCode;

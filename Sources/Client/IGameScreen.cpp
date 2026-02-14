@@ -12,87 +12,87 @@
 #include "GlobalDef.h"
 #include "SpriteID.h"
 
-IGameScreen::IGameScreen(CGame* pGame)
-    : m_pGame(pGame)
+IGameScreen::IGameScreen(CGame* game)
+    : m_game(game)
 {
 }
 
 // ============== Drawing Helpers ==============
 
-void IGameScreen::DrawNewDialogBox(char cType, int sX, int sY, int iFrame,
-                                    bool bIsNoColorKey, bool bIsTrans)
+void IGameScreen::draw_new_dialog_box(char type, int sX, int sY, int frame,
+                                    bool is_no_color_key, bool is_trans)
 {
-    m_pGame->DrawNewDialogBox(cType, sX, sY, iFrame, bIsNoColorKey, bIsTrans);
+    m_game->draw_new_dialog_box(type, sX, sY, frame, is_no_color_key, is_trans);
 }
 
-void IGameScreen::GetCenteredDialogPos(char cType, int iFrame, int& outX, int& outY)
+void IGameScreen::get_centered_dialog_pos(char type, int frame, int& outX, int& outY)
 {
-    auto rect = m_pGame->m_pSprite[cType]->GetFrameRect(iFrame);
+    auto rect = m_game->m_sprite[type]->GetFrameRect(frame);
     outX = (LOGICAL_WIDTH() - rect.width) / 2;
     outY = (LOGICAL_HEIGHT() - rect.height) / 2;
 }
 
-void IGameScreen::PutString(int iX, int iY, const char* pString, const hb::shared::render::Color& color)
+void IGameScreen::put_string(int iX, int iY, const char* string, const hb::shared::render::Color& color)
 {
-    hb::shared::text::DrawText(GameFont::Default, iX, iY, pString, hb::shared::text::TextStyle::Color(color));
+    hb::shared::text::draw_text(GameFont::Default, iX, iY, string, hb::shared::text::TextStyle::from_color(color));
 }
 
-void IGameScreen::PutAlignedString(int iX1, int iX2, int iY, const char* pString,
+void IGameScreen::put_aligned_string(int x1, int x2, int iY, const char* string,
                                     const hb::shared::render::Color& color)
 {
-    hb::shared::text::DrawTextAligned(GameFont::Default, iX1, iY, iX2 - iX1, 15, pString,
-                             hb::shared::text::TextStyle::Color(color), hb::shared::text::Align::TopCenter);
+    hb::shared::text::draw_text_aligned(GameFont::Default, x1, iY, x2 - x1, 15, string,
+                             hb::shared::text::TextStyle::from_color(color), hb::shared::text::Align::TopCenter);
 }
 
-void IGameScreen::PutString_SprFont(int iX, int iY, const char* pStr, uint8_t r, uint8_t g, uint8_t b)
+void IGameScreen::put_string_spr_font(int iX, int iY, const char* str, uint8_t r, uint8_t g, uint8_t b)
 {
-    hb::shared::text::DrawText(GameFont::Bitmap1, iX, iY, pStr, hb::shared::text::TextStyle::WithHighlight(hb::shared::render::Color(r, g, b)));
+    hb::shared::text::draw_text(GameFont::Bitmap1, iX, iY, str, hb::shared::text::TextStyle::with_highlight(hb::shared::render::Color(r, g, b)));
 }
 
-void IGameScreen::DrawVersion()
+void IGameScreen::draw_version()
 {
-    m_pGame->DrawVersion();
+    m_game->draw_version();
 }
 
 // ============== Audio Helpers ==============
 
-void IGameScreen::PlayGameSound(char cType, int iNum, int iDist, long lPan)
+void IGameScreen::play_game_sound(char type, int num, int dist, long lPan)
 {
-    m_pGame->PlayGameSound(cType, iNum, iDist, lPan);
+    m_game->play_game_sound(type, num, dist, lPan);
 }
 
 // ============== Event/Message Helpers ==============
 
-void IGameScreen::AddEventList(const char* pTxt, char cColor, bool bDupAllow)
+void IGameScreen::add_event_list(const char* txt, char color, bool dup_allow)
 {
-    EventListManager::Get().AddEvent(pTxt, cColor, bDupAllow);
+    event_list_manager::get().add_event(txt, color, dup_allow);
 }
 
 // ============== Input String Helpers ==============
 
-void IGameScreen::StartInputString(int sX, int sY, unsigned char iLen, std::string& buffer, bool bIsHide)
+void IGameScreen::start_input_string(int sX, int sY, unsigned char len, std::string& buffer, bool is_hide)
 {
-    TextInputManager::Get().StartInput(sX, sY, iLen, buffer, bIsHide);
+    text_input_manager::get().start_input(sX, sY, len, buffer, is_hide);
 }
 
-void IGameScreen::EndInputString()
+void IGameScreen::end_input_string()
 {
-    TextInputManager::Get().EndInput();
+    text_input_manager::get().end_input();
 }
 
-void IGameScreen::ClearInputString()
+void IGameScreen::clear_input_string()
 {
-    TextInputManager::Get().ClearInput();
+    text_input_manager::get().clear_input();
 }
 
-void IGameScreen::ShowReceivedString()
+void IGameScreen::show_received_string()
 {
-    TextInputManager::Get().ShowInput();
+    text_input_manager::get().show_input();
 }
 
 // ============== Timing Helper ==============
 
 uint32_t IGameScreen::get_elapsed_ms() const
 {
-    return GameClock::GetTimeMS() - GameModeManager::GetModeStartTime();
+    return GameClock::get_time_ms() - GameModeManager::get_mode_start_time();
 }

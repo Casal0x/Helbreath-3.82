@@ -10,6 +10,7 @@
 #include "ASIOSocket.h"
 #include <cstdio>
 #include <algorithm>
+#include "Log.h"
 
 namespace hb::shared::net {
 
@@ -20,39 +21,39 @@ using asio::ip::tcp;
 // Construction/Destruction
 //////////////////////////////////////////////////////////////////////
 
-ASIOSocket::ASIOSocket(asio::io_context& ctx, int iBlockLimit)
+ASIOSocket::ASIOSocket(asio::io_context& ctx, int block_limit)
 	: m_ioContext(ctx)
 	, m_socket(ctx)
 	, m_acceptor(ctx)
 	, m_strand(ctx)
-	, m_iBlockLimit(iBlockLimit)
+	, m_block_limit(block_limit)
 {
 }
 
 ASIOSocket::~ASIOSocket()
 {
-	CancelAsync();
-	CloseConnection();
+	cancel_async();
+	close_connection();
 }
 
-bool ASIOSocket::bInitBufferSize(size_t dwBufferSize)
+bool ASIOSocket::init_buffer_size(size_t buffer_size)
 {
-	m_rcvBuffer.assign(dwBufferSize + 8, 0);
-	m_sndBuffer.assign(dwBufferSize + 8, 0);
-	m_dwBufferSize = dwBufferSize;
+	m_rcvBuffer.assign(buffer_size + 8, 0);
+	m_sndBuffer.assign(buffer_size + 8, 0);
+	m_buffer_size = buffer_size;
 	// Async read buffer: header (3 bytes) + max body
-	m_asyncRcvBuffer.assign(dwBufferSize + 8, 0);
+	m_asyncRcvBuffer.assign(buffer_size + 8, 0);
 	return true;
 }
 
 //////////////////////////////////////////////////////////////////////
-// Poll - non-blocking event check (replaces WSAEventSelect + iOnSocketEvent)
+// Poll - non-blocking event check (replaces WSAEventSelect + on_socket_event)
 // Still used by client (manual poll mode) and for connect completion
 //////////////////////////////////////////////////////////////////////
 
 int ASIOSocket::Poll()
 {
-	if (m_cType == 0) return sock::Event::NotInitialized;
+	if (m_type == 0) return sock::Event::NotInitialized;
 
 	// Process any pending async operations (connect completion)
 	m_ioContext.poll();
@@ -64,14 +65,14 @@ int ASIOSocket::Poll()
 		m_connectPending = false;
 
 		if (!m_connectError) {
-			m_bIsAvailable = true;
-			m_bIsWriteEnabled = true;
+			m_is_available = true;
+			m_is_write_enabled = true;
 			return sock::Event::ConnectionEstablish;
 		}
 		else {
 			m_WSAErr = m_connectError.value();
 			// Retry connection (same as legacy behavior)
-			if (bConnect(m_pAddr, m_iPortNum) == false) {
+			if (connect(m_addr, m_port_num) == false) {
 				return sock::Event::SocketError;
 			}
 			return sock::Event::RetryingConnection;
@@ -82,7 +83,7 @@ int ASIOSocket::Poll()
 	if (m_connectPending) return 0;
 
 	// --- Listen socket: probe for pending accept ---
-	if (m_cType == sock::Type::Listen) {
+	if (m_type == sock::Type::Listen) {
 		if (m_pendingAcceptSocket.has_value()) {
 			// Already have a pending accept from a previous poll
 			return sock::Event::ConnectionEstablish;
@@ -100,9 +101,9 @@ int ASIOSocket::Poll()
 	}
 
 	// --- Normal socket: check for data and handle writes ---
-	if (m_cType != sock::Type::Normal) return sock::Event::SocketMismatch;
+	if (m_type != sock::Type::Normal) return sock::Event::SocketMismatch;
 
-	int iResult = 0;
+	int result = 0;
 
 	// Check if socket has been closed by peer
 	asio::error_code ec;
@@ -110,7 +111,7 @@ int ASIOSocket::Poll()
 	if (ec) {
 		if (ec == asio::error::eof || ec == asio::error::connection_reset ||
 			ec == asio::error::connection_aborted) {
-			m_cType = sock::Type::Shutdown;
+			m_type = sock::Type::shutdown;
 			return sock::Event::SocketClosed;
 		}
 		m_WSAErr = ec.value();
@@ -118,35 +119,35 @@ int ASIOSocket::Poll()
 	}
 
 	// Read available data.
-	// NOTE: If _iOnRead() completes a packet (READCOMPLETE), the data sits
-	// in m_rcvBuffer. Callers that also use DrainToQueue() MUST check for
-	// READCOMPLETE and queue the packet themselves before calling DrainToQueue(),
-	// otherwise DrainToQueue() will overwrite m_rcvBuffer and lose the packet.
+	// NOTE: If on_read() completes a packet (READCOMPLETE), the data sits
+	// in m_rcvBuffer. Callers that also use drain_to_queue() MUST check for
+	// READCOMPLETE and queue the packet themselves before calling drain_to_queue(),
+	// otherwise drain_to_queue() will overwrite m_rcvBuffer and lose the packet.
 	if (avail > 0) {
-		int readResult = _iOnRead();
+		int readResult = on_read();
 		if (readResult != sock::Event::OnRead) {
-			iResult = readResult;
+			result = readResult;
 		}
 	}
 
 	// Try to drain unsent data queue
-	if (!m_unsentQueue.empty() && m_bIsWriteEnabled) {
-		int writeResult = _iSendUnsentData();
-		if (writeResult != sock::Event::UnsentDataSendComplete && iResult == 0) {
-			iResult = writeResult;
+	if (!m_unsentQueue.empty() && m_is_write_enabled) {
+		int writeResult = send_unsent_data();
+		if (writeResult != sock::Event::UnsentDataSendComplete && result == 0) {
+			result = writeResult;
 		}
 	}
 
-	return iResult;
+	return result;
 }
 
 //////////////////////////////////////////////////////////////////////
 // Connect - async non-blocking connect
 //////////////////////////////////////////////////////////////////////
 
-bool ASIOSocket::bConnect(const char* pAddr, int iPort)
+bool ASIOSocket::connect(const char* addr, int port)
 {
-	if (m_cType == sock::Type::Listen) return false;
+	if (m_type == sock::Type::Listen) return false;
 
 	// Close existing socket if open
 	asio::error_code ec;
@@ -157,7 +158,7 @@ bool ASIOSocket::bConnect(const char* pAddr, int iPort)
 	m_socket = tcp::socket(m_ioContext);
 	m_socket.open(tcp::v4(), ec);
 	if (ec) {
-		printf("[ERROR] ASIOSocket::bConnect - open() failed: %s\n", ec.message().c_str());
+		hb::logger::debug("[ERROR] ASIOSocket::connect - open() failed: {}\n", ec.message().c_str());
 		return false;
 	}
 
@@ -171,13 +172,13 @@ bool ASIOSocket::bConnect(const char* pAddr, int iPort)
 	m_socket.set_option(tcp::no_delay(true), ec);
 
 	// Store connection info for reconnect
-	std::snprintf(m_pAddr, sizeof(m_pAddr), "%s", (pAddr != nullptr) ? pAddr : "");
-	m_iPortNum = iPort;
+	std::snprintf(m_addr, sizeof(m_addr), "%s", (addr != nullptr) ? addr : "");
+	m_port_num = port;
 
-	// Start async connect
-	tcp::endpoint endpoint(asio::ip::make_address(pAddr, ec), static_cast<unsigned short>(iPort));
+	// start async connect
+	tcp::endpoint endpoint(asio::ip::make_address(addr, ec), static_cast<unsigned short>(port));
 	if (ec) {
-		printf("[ERROR] ASIOSocket::bConnect - invalid address '%s': %s\n", pAddr, ec.message().c_str());
+		hb::logger::debug("[ERROR] ASIOSocket::connect - invalid address '{}': {}\n", addr, ec.message().c_str());
 		return false;
 	}
 
@@ -190,7 +191,7 @@ bool ASIOSocket::bConnect(const char* pAddr, int iPort)
 		m_connectResultReady = true;
 	});
 
-	m_cType = sock::Type::Normal;
+	m_type = sock::Type::Normal;
 	return true;
 }
 
@@ -198,9 +199,9 @@ bool ASIOSocket::bConnect(const char* pAddr, int iPort)
 // BlockConnect - blocking connect with hostname resolution
 //////////////////////////////////////////////////////////////////////
 
-bool ASIOSocket::bBlockConnect(char* pAddr, int iPort)
+bool ASIOSocket::block_connect(char* addr, int port)
 {
-	if (m_cType == sock::Type::Listen) return false;
+	if (m_type == sock::Type::Listen) return false;
 
 	asio::error_code ec;
 	if (m_socket.is_open()) {
@@ -209,7 +210,7 @@ bool ASIOSocket::bBlockConnect(char* pAddr, int iPort)
 
 	// Resolve hostname
 	tcp::resolver resolver(m_ioContext);
-	auto results = resolver.resolve(pAddr, std::to_string(iPort), ec);
+	auto results = resolver.resolve(addr, std::to_string(port), ec);
 	if (ec || results.empty()) {
 		return false;
 	}
@@ -232,12 +233,12 @@ bool ASIOSocket::bBlockConnect(char* pAddr, int iPort)
 	// Set non-blocking after connect completes
 	m_socket.non_blocking(true, ec);
 
-	std::snprintf(m_pAddr, sizeof(m_pAddr), "%s", (pAddr != nullptr) ? pAddr : "");
-	m_iPortNum = iPort;
+	std::snprintf(m_addr, sizeof(m_addr), "%s", (addr != nullptr) ? addr : "");
+	m_port_num = port;
 
-	m_cType = sock::Type::Normal;
-	m_bIsAvailable = true;
-	m_bIsWriteEnabled = true;
+	m_type = sock::Type::Normal;
+	m_is_available = true;
+	m_is_write_enabled = true;
 	return true;
 }
 
@@ -245,13 +246,13 @@ bool ASIOSocket::bBlockConnect(char* pAddr, int iPort)
 // Listen - set up listening acceptor
 //////////////////////////////////////////////////////////////////////
 
-bool ASIOSocket::bListen(char* pAddr, int iPort)
+bool ASIOSocket::listen(char* addr, int port)
 {
-	if (m_cType != 0) return false;
+	if (m_type != 0) return false;
 
 	asio::error_code ec;
 
-	tcp::endpoint endpoint(asio::ip::make_address(pAddr, ec), static_cast<unsigned short>(iPort));
+	tcp::endpoint endpoint(asio::ip::make_address(addr, ec), static_cast<unsigned short>(port));
 	if (ec) return false;
 
 	m_acceptor.open(tcp::v4(), ec);
@@ -274,7 +275,7 @@ bool ASIOSocket::bListen(char* pAddr, int iPort)
 	// Set non-blocking so Poll() can probe for accepts
 	m_acceptor.non_blocking(true, ec);
 
-	m_cType = sock::Type::Listen;
+	m_type = sock::Type::Listen;
 	return true;
 }
 
@@ -282,49 +283,49 @@ bool ASIOSocket::bListen(char* pAddr, int iPort)
 // Accept - accept pending connection into target socket (polling mode)
 //////////////////////////////////////////////////////////////////////
 
-bool ASIOSocket::bAccept(ASIOSocket* pSock)
+bool ASIOSocket::accept(ASIOSocket* sock)
 {
-	if (m_cType != sock::Type::Listen) return false;
-	if (pSock == nullptr) return false;
+	if (m_type != sock::Type::Listen) return false;
+	if (sock == nullptr) return false;
 
 	asio::error_code ec;
 
 	// Use pending socket from Poll() if available
 	if (m_pendingAcceptSocket.has_value()) {
-		if (pSock->m_socket.is_open()) {
-			pSock->m_socket.close(ec);
+		if (sock->m_socket.is_open()) {
+			sock->m_socket.close(ec);
 		}
-		pSock->m_socket = std::move(m_pendingAcceptSocket.value());
+		sock->m_socket = std::move(m_pendingAcceptSocket.value());
 		m_pendingAcceptSocket.reset();
 	}
 	else {
 		// Try direct non-blocking accept
-		if (pSock->m_socket.is_open()) {
-			pSock->m_socket.close(ec);
+		if (sock->m_socket.is_open()) {
+			sock->m_socket.close(ec);
 		}
-		pSock->m_socket = tcp::socket(m_ioContext);
-		m_acceptor.accept(pSock->m_socket, ec);
+		sock->m_socket = tcp::socket(m_ioContext);
+		m_acceptor.accept(sock->m_socket, ec);
 		if (ec) return false;
 	}
 
 	// Configure accepted socket
-	pSock->m_socket.non_blocking(true, ec);
+	sock->m_socket.non_blocking(true, ec);
 
 	uint32_t bufSize = hb::shared::limits::MsgBufferSize * 2;
-	pSock->m_socket.set_option(asio::socket_base::receive_buffer_size(bufSize), ec);
-	pSock->m_socket.set_option(asio::socket_base::send_buffer_size(bufSize), ec);
-	pSock->m_socket.set_option(tcp::no_delay(true), ec);
+	sock->m_socket.set_option(asio::socket_base::receive_buffer_size(bufSize), ec);
+	sock->m_socket.set_option(asio::socket_base::send_buffer_size(bufSize), ec);
+	sock->m_socket.set_option(tcp::no_delay(true), ec);
 
-	pSock->m_cType = sock::Type::Normal;
-	pSock->m_bIsWriteEnabled = true;
+	sock->m_type = sock::Type::Normal;
+	sock->m_is_write_enabled = true;
 	return true;
 }
 
 //////////////////////////////////////////////////////////////////////
-// bAcceptFromSocket - accept a pre-connected socket (async accept path)
+// accept_from_socket - accept a pre-connected socket (async accept path)
 //////////////////////////////////////////////////////////////////////
 
-bool ASIOSocket::bAcceptFromSocket(asio::ip::tcp::socket&& peer)
+bool ASIOSocket::accept_from_socket(asio::ip::tcp::socket&& peer)
 {
 	asio::error_code ec;
 
@@ -342,78 +343,78 @@ bool ASIOSocket::bAcceptFromSocket(asio::ip::tcp::socket&& peer)
 	m_socket.set_option(asio::socket_base::send_buffer_size(bufSize), ec);
 	m_socket.set_option(tcp::no_delay(true), ec);
 
-	m_cType = sock::Type::Normal;
-	m_bIsWriteEnabled = true;
-	m_bIsAvailable = true;
+	m_type = sock::Type::Normal;
+	m_is_write_enabled = true;
+	m_is_available = true;
 	return true;
 }
 
 //////////////////////////////////////////////////////////////////////
-// _iOnRead - read state machine (header then body) - polling mode
+// on_read - read state machine (header then body) - polling mode
 //////////////////////////////////////////////////////////////////////
 
-int ASIOSocket::_iOnRead()
+int ASIOSocket::on_read()
 {
 	asio::error_code ec;
 
-	if (m_cStatus == sock::Status::ReadingHeader) {
+	if (m_status == sock::Status::ReadingHeader) {
 		size_t n = m_socket.read_some(
-			asio::buffer(m_rcvBuffer.data() + m_dwTotalReadSize, m_dwReadSize), ec);
+			asio::buffer(m_rcvBuffer.data() + m_total_read_size, m_read_size), ec);
 
 		if (ec == asio::error::would_block) return sock::Event::Block;
 		if (ec || n == 0) {
 			if (ec == asio::error::eof || ec == asio::error::connection_reset || n == 0) {
-				m_cType = sock::Type::Shutdown;
+				m_type = sock::Type::shutdown;
 				return sock::Event::SocketClosed;
 			}
 			m_WSAErr = ec.value();
 			return sock::Event::SocketError;
 		}
 
-		m_dwReadSize -= static_cast<uint32_t>(n);
-		m_dwTotalReadSize += static_cast<uint32_t>(n);
+		m_read_size -= static_cast<uint32_t>(n);
+		m_total_read_size += static_cast<uint32_t>(n);
 
-		if (m_dwReadSize == 0) {
-			m_cStatus = sock::Status::ReadingBody;
+		if (m_read_size == 0) {
+			m_status = sock::Status::ReadingBody;
 			uint16_t* wp = reinterpret_cast<uint16_t*>(m_rcvBuffer.data() + 1);
-			m_dwReadSize = static_cast<uint32_t>(*wp - 3);
+			m_read_size = static_cast<uint32_t>(*wp - 3);
 
-			if (m_dwReadSize == 0) {
-				m_cStatus = sock::Status::ReadingHeader;
-				m_dwReadSize = 3;
-				m_dwTotalReadSize = 0;
+			if (m_read_size == 0) {
+				m_status = sock::Status::ReadingHeader;
+				m_read_size = 3;
+				m_total_read_size = 0;
 				return sock::Event::ReadComplete;
 			}
-			else if (m_dwReadSize > m_dwBufferSize) {
-				m_cStatus = sock::Status::ReadingHeader;
-				m_dwReadSize = 3;
-				m_dwTotalReadSize = 0;
+			else if (m_read_size > m_buffer_size) {
+				m_status = sock::Status::ReadingHeader;
+				m_read_size = 3;
+				m_total_read_size = 0;
 				return sock::Event::MsgSizeTooLarge;
 			}
 		}
 		return sock::Event::OnRead;
 	}
-	else if (m_cStatus == sock::Status::ReadingBody) {
+	else if (m_status == sock::Status::ReadingBody) {
 		size_t n = m_socket.read_some(
-			asio::buffer(m_rcvBuffer.data() + m_dwTotalReadSize, m_dwReadSize), ec);
+			asio::buffer(m_rcvBuffer.data() + m_total_read_size, m_read_size), ec);
 
 		if (ec == asio::error::would_block) return sock::Event::Block;
 		if (ec || n == 0) {
 			if (ec == asio::error::eof || ec == asio::error::connection_reset || n == 0) {
-				m_cType = sock::Type::Shutdown;
+				m_type = sock::Type::shutdown;
 				return sock::Event::SocketClosed;
 			}
 			m_WSAErr = ec.value();
 			return sock::Event::SocketError;
 		}
 
-		m_dwReadSize -= static_cast<uint32_t>(n);
-		m_dwTotalReadSize += static_cast<uint32_t>(n);
+		m_read_size -= static_cast<uint32_t>(n);
+		m_total_read_size += static_cast<uint32_t>(n);
 
-		if (m_dwReadSize == 0) {
-			m_cStatus = sock::Status::ReadingHeader;
-			m_dwReadSize = 3;
-			m_dwTotalReadSize = 0;
+		if (m_read_size == 0) {
+			m_status = sock::Status::ReadingHeader;
+			m_read_size = 3;
+			m_total_read_size = 0;
 		}
 		else {
 			return sock::Event::OnRead;
@@ -424,15 +425,15 @@ int ASIOSocket::_iOnRead()
 }
 
 //////////////////////////////////////////////////////////////////////
-// _iSend - send with unsent queue fallback (polling mode)
+// send - send with unsent queue fallback (polling mode)
 //////////////////////////////////////////////////////////////////////
 
-int ASIOSocket::_iSend(const char* cData, size_t iSize, bool bSaveFlag)
+int ASIOSocket::send(const char* data, size_t size, bool save_flag)
 {
 	// If there's queued data, queue this too to preserve ordering
 	if (!m_unsentQueue.empty()) {
-		if (bSaveFlag) {
-			if (!_iRegisterUnsentData(cData, iSize)) {
+		if (save_flag) {
+			if (!register_unsent_data(data, size)) {
 				return sock::Event::QueueFull;
 			}
 			return sock::Event::Block;
@@ -442,17 +443,17 @@ int ASIOSocket::_iSend(const char* cData, size_t iSize, bool bSaveFlag)
 		}
 	}
 
-	int iOutLen = 0;
-	while (iOutLen < iSize) {
+	int out_len = 0;
+	while (out_len < size) {
 		asio::error_code ec;
 		size_t n = m_socket.write_some(
-			asio::buffer(cData + iOutLen, iSize - iOutLen), ec);
+			asio::buffer(data + out_len, size - out_len), ec);
 
 		if (ec) {
 			if (ec == asio::error::would_block) {
-				m_bIsWriteEnabled = false;
-				if (bSaveFlag) {
-					if (!_iRegisterUnsentData(cData + iOutLen, iSize - iOutLen)) {
+				m_is_write_enabled = false;
+				if (save_flag) {
+					if (!register_unsent_data(data + out_len, size - out_len)) {
 						return sock::Event::QueueFull;
 					}
 				}
@@ -461,75 +462,75 @@ int ASIOSocket::_iSend(const char* cData, size_t iSize, bool bSaveFlag)
 			m_WSAErr = ec.value();
 			return sock::Event::SocketError;
 		}
-		iOutLen += static_cast<int>(n);
+		out_len += static_cast<int>(n);
 	}
 
-	return iOutLen;
+	return out_len;
 }
 
 //////////////////////////////////////////////////////////////////////
-// _iSend_ForInternalUse - send without queueing (for draining unsent queue)
+// send_for_internal_use - send without queueing (for draining unsent queue)
 //////////////////////////////////////////////////////////////////////
 
-int ASIOSocket::_iSend_ForInternalUse(const char* cData, size_t iSize)
+int ASIOSocket::send_for_internal_use(const char* data, size_t size)
 {
-	int iOutLen = 0;
-	while (iOutLen < iSize) {
+	int out_len = 0;
+	while (out_len < size) {
 		asio::error_code ec;
 		size_t n = m_socket.write_some(
-			asio::buffer(cData + iOutLen, iSize - iOutLen), ec);
+			asio::buffer(data + out_len, size - out_len), ec);
 
 		if (ec) {
 			if (ec == asio::error::would_block) {
-				return iOutLen;
+				return out_len;
 			}
 			m_WSAErr = ec.value();
 			return sock::Event::SocketError;
 		}
-		iOutLen += static_cast<int>(n);
+		out_len += static_cast<int>(n);
 	}
-	return iOutLen;
+	return out_len;
 }
 
 //////////////////////////////////////////////////////////////////////
-// _iRegisterUnsentData - queue data for later sending
+// register_unsent_data - queue data for later sending
 //////////////////////////////////////////////////////////////////////
 
-bool ASIOSocket::_iRegisterUnsentData(const char* cData, size_t iSize)
+bool ASIOSocket::register_unsent_data(const char* data, size_t size)
 {
-	if (static_cast<int>(m_unsentQueue.size()) >= m_iBlockLimit) {
-		printf("[ASIO] Queue full! Dropped packet. Queue size: %d, limit: %d\n",
-			static_cast<int>(m_unsentQueue.size()), m_iBlockLimit);
+	if (static_cast<int>(m_unsentQueue.size()) >= m_block_limit) {
+		hb::logger::debug("[ASIO] Queue full! Dropped packet. Queue size: {}, limit: {}\n",
+			static_cast<int>(m_unsentQueue.size()), m_block_limit);
 		return false;
 	}
 
-	m_unsentQueue.emplace_back(cData, iSize);
+	m_unsentQueue.emplace_back(data, size);
 	return true;
 }
 
 //////////////////////////////////////////////////////////////////////
-// _iSendUnsentData - drain the unsent queue
+// send_unsent_data - drain the unsent queue
 //////////////////////////////////////////////////////////////////////
 
-int ASIOSocket::_iSendUnsentData()
+int ASIOSocket::send_unsent_data()
 {
 	while (!m_unsentQueue.empty()) {
 		auto& block = m_unsentQueue.front();
-		int iRet = _iSend_ForInternalUse(block.remaining(), block.remainingSize());
+		int ret = send_for_internal_use(block.remaining(), block.remainingSize());
 
-		if (iRet == block.remainingSize()) {
+		if (ret == block.remainingSize()) {
 			// Entire block sent
 			m_unsentQueue.pop_front();
 		}
-		else if (iRet >= 0) {
+		else if (ret >= 0) {
 			// Partial send - advance offset, wait for next writable
-			block.offset += iRet;
-			m_bIsWriteEnabled = false;
+			block.offset += ret;
+			m_is_write_enabled = false;
 			return sock::Event::UnsentDataSendBlock;
 		}
 		else {
 			// Error
-			return iRet;
+			return ret;
 		}
 	}
 
@@ -537,76 +538,76 @@ int ASIOSocket::_iSendUnsentData()
 }
 
 //////////////////////////////////////////////////////////////////////
-// iSendMsg - send message with protocol header and optional encryption
+// send_msg - send message with protocol header and optional encryption
 // (synchronous polling mode - used by client and polling server path)
 //////////////////////////////////////////////////////////////////////
 
-int ASIOSocket::iSendMsg(char* cData, size_t dwSize, char cKey)
+int ASIOSocket::send_msg(char* data, size_t size, char key)
 {
-	if (dwSize > m_dwBufferSize) return sock::Event::MsgSizeTooLarge;
-	if (m_cType != sock::Type::Normal) return sock::Event::SocketMismatch;
-	if (m_cType == 0) return sock::Event::NotInitialized;
+	if (size > m_buffer_size) return sock::Event::MsgSizeTooLarge;
+	if (m_type != sock::Type::Normal) return sock::Event::SocketMismatch;
+	if (m_type == 0) return sock::Event::NotInitialized;
 
 	// If async mode is active, delegate to async path
-	if (m_bAsyncMode.load(std::memory_order_relaxed)) {
-		return iSendMsgAsync(cData, dwSize, cKey);
+	if (m_async_mode.load(std::memory_order_relaxed)) {
+		return send_msg_async(data, size, key);
 	}
 
 	// Build protocol message: [key:1][size:2][payload:N]
-	m_sndBuffer[0] = cKey;
+	m_sndBuffer[0] = key;
 
 	uint16_t* wp = reinterpret_cast<uint16_t*>(m_sndBuffer.data() + 1);
-	*wp = static_cast<uint16_t>(dwSize + 3);
+	*wp = static_cast<uint16_t>(size + 3);
 
-	std::memcpy(m_sndBuffer.data() + 3, cData, dwSize);
+	std::memcpy(m_sndBuffer.data() + 3, data, size);
 
 	// Encrypt payload if key is set
-	if (cKey != 0) {
-		for (uint32_t i = 0; i < dwSize; i++) {
-			m_sndBuffer[3 + i] += static_cast<char>(i ^ cKey);
-			m_sndBuffer[3 + i] = static_cast<char>(m_sndBuffer[3 + i] ^ (cKey ^ static_cast<char>(dwSize - i)));
+	if (key != 0) {
+		for (uint32_t i = 0; i < size; i++) {
+			m_sndBuffer[3 + i] += static_cast<char>(i ^ key);
+			m_sndBuffer[3 + i] = static_cast<char>(m_sndBuffer[3 + i] ^ (key ^ static_cast<char>(size - i)));
 		}
 	}
 
-	int iRet;
-	if (m_bIsWriteEnabled == false) {
-		if (!_iRegisterUnsentData(m_sndBuffer.data(), dwSize + 3)) {
+	int ret;
+	if (m_is_write_enabled == false) {
+		if (!register_unsent_data(m_sndBuffer.data(), size + 3)) {
 			return sock::Event::QueueFull;
 		}
-		iRet = static_cast<int>(dwSize + 3);
+		ret = static_cast<int>(size + 3);
 	}
 	else {
-		iRet = _iSend(m_sndBuffer.data(), dwSize + 3, true);
+		ret = send(m_sndBuffer.data(), size + 3, true);
 	}
 
-	if (iRet < 0) return iRet;
-	else return (iRet - 3);
+	if (ret < 0) return ret;
+	else return (ret - 3);
 }
 
 //////////////////////////////////////////////////////////////////////
-// iSendMsgAsync - async send (posts to strand, builds frame per-message)
+// send_msg_async - async send (posts to strand, builds frame per-message)
 // Called from game thread. Errors come via error callback.
 //////////////////////////////////////////////////////////////////////
 
-int ASIOSocket::iSendMsgAsync(char* cData, size_t dwSize, char cKey)
+int ASIOSocket::send_msg_async(char* data, size_t size, char key)
 {
-	if (dwSize > m_dwBufferSize) return sock::Event::MsgSizeTooLarge;
-	if (m_cType != sock::Type::Normal) return sock::Event::SocketMismatch;
+	if (size > m_buffer_size) return sock::Event::MsgSizeTooLarge;
+	if (m_type != sock::Type::Normal) return sock::Event::SocketMismatch;
 
 	// Build frame into a per-message vector
-	std::vector<char> frame(dwSize + 3);
-	frame[0] = cKey;
+	std::vector<char> frame(size + 3);
+	frame[0] = key;
 
 	uint16_t* wp = reinterpret_cast<uint16_t*>(frame.data() + 1);
-	*wp = static_cast<uint16_t>(dwSize + 3);
+	*wp = static_cast<uint16_t>(size + 3);
 
-	std::memcpy(frame.data() + 3, cData, dwSize);
+	std::memcpy(frame.data() + 3, data, size);
 
 	// Encrypt payload if key is set
-	if (cKey != 0) {
-		for (uint32_t i = 0; i < dwSize; i++) {
-			frame[3 + i] += static_cast<char>(i ^ cKey);
-			frame[3 + i] = static_cast<char>(frame[3 + i] ^ (cKey ^ static_cast<char>(dwSize - i)));
+	if (key != 0) {
+		for (uint32_t i = 0; i < size; i++) {
+			frame[3 + i] += static_cast<char>(i ^ key);
+			frame[3 + i] = static_cast<char>(frame[3 + i] ^ (key ^ static_cast<char>(size - i)));
 		}
 	}
 
@@ -616,54 +617,54 @@ int ASIOSocket::iSendMsgAsync(char* cData, size_t dwSize, char cKey)
 		if (m_asyncWriteQueue.size() >= MAX_ASYNC_WRITE_QUEUE) {
 			// Queue full - invoke error callback
 			if (m_onError) {
-				m_onError(m_iSocketIndex, sock::Event::QueueFull);
+				m_onError(m_socket_index, sock::Event::QueueFull);
 			}
 			return;
 		}
 		m_asyncWriteQueue.push_back(std::move(buf));
-		if (wasEmpty && !m_bAsyncWriteInProgress) {
-			_DoAsyncWrite();
+		if (wasEmpty && !m_async_write_in_progress) {
+			do_async_write();
 		}
 	});
 
 	// Return optimistic success
-	return static_cast<int>(dwSize);
+	return static_cast<int>(size);
 }
 
 //////////////////////////////////////////////////////////////////////
-// _DoAsyncWrite - drain async write queue (runs on strand)
+// do_async_write - drain async write queue (runs on strand)
 //////////////////////////////////////////////////////////////////////
 
-void ASIOSocket::_DoAsyncWrite()
+void ASIOSocket::do_async_write()
 {
 	if (m_asyncWriteQueue.empty()) {
-		m_bAsyncWriteInProgress = false;
+		m_async_write_in_progress = false;
 		return;
 	}
 
-	m_bAsyncWriteInProgress = true;
+	m_async_write_in_progress = true;
 	auto& front = m_asyncWriteQueue.front();
 
 	asio::async_write(m_socket, asio::buffer(front.data(), front.size()),
 		asio::bind_executor(m_strand,
 			[this](const asio::error_code& ec, std::size_t /*bytesWritten*/) {
 				if (ec) {
-					m_bAsyncWriteInProgress = false;
+					m_async_write_in_progress = false;
 					if (m_onError) {
-						m_onError(m_iSocketIndex, sock::Event::SocketError);
+						m_onError(m_socket_index, sock::Event::SocketError);
 					}
 					return;
 				}
 				m_asyncWriteQueue.pop_front();
-				_DoAsyncWrite();
+				do_async_write();
 			}));
 }
 
 //////////////////////////////////////////////////////////////////////
-// iSendMsgBlockingMode - blocking send for shutdown phase
+// send_msg_blocking_mode - blocking send for shutdown phase
 //////////////////////////////////////////////////////////////////////
 
-int ASIOSocket::iSendMsgBlockingMode(char* buf, int nbytes)
+int ASIOSocket::send_msg_blocking_mode(char* buf, int nbytes)
 {
 	int nleft = nbytes;
 	while (nleft > 0) {
@@ -682,59 +683,59 @@ int ASIOSocket::iSendMsgBlockingMode(char* buf, int nbytes)
 }
 
 //////////////////////////////////////////////////////////////////////
-// pGetRcvDataPointer - get received message with decryption (polling mode)
+// get_rcv_data_pointer - get received message with decryption (polling mode)
 //////////////////////////////////////////////////////////////////////
 
-char* ASIOSocket::pGetRcvDataPointer(size_t* pMsgSize, char* pKey)
+char* ASIOSocket::get_rcv_data_pointer(size_t* msg_size, char* key)
 {
-	char cKey = m_rcvBuffer[0];
-	if (pKey != nullptr) *pKey = cKey;
+	char key_val = m_rcvBuffer[0];
+	if (key != nullptr) *key = key_val;
 
 	uint16_t* wp = reinterpret_cast<uint16_t*>(m_rcvBuffer.data() + 1);
-	*pMsgSize = (*wp) - 3;
-	size_t dwSize = (*wp) - 3;
+	*msg_size = (*wp) - 3;
+	size_t size = (*wp) - 3;
 
-	if (dwSize > hb::shared::limits::MsgBufferSize) dwSize = hb::shared::limits::MsgBufferSize;
+	if (size > hb::shared::limits::MsgBufferSize) size = hb::shared::limits::MsgBufferSize;
 
 	// Decrypt payload if key is set
-	if (cKey != 0) {
-		for (size_t i = 0; i < dwSize; i++) {
-			m_rcvBuffer[3 + i] = static_cast<char>(m_rcvBuffer[3 + i] ^ (cKey ^ static_cast<char>(dwSize - i)));
-			m_rcvBuffer[3 + i] -= static_cast<char>(i ^ cKey);
+	if (key_val != 0) {
+		for (size_t i = 0; i < size; i++) {
+			m_rcvBuffer[3 + i] = static_cast<char>(m_rcvBuffer[3 + i] ^ (key_val ^ static_cast<char>(size - i)));
+			m_rcvBuffer[3 + i] -= static_cast<char>(i ^ key_val);
 		}
 	}
 	return (m_rcvBuffer.data() + 3);
 }
 
 //////////////////////////////////////////////////////////////////////
-// DrainToQueue - read all available packets into the receive queue
+// drain_to_queue - read all available packets into the receive queue
 //////////////////////////////////////////////////////////////////////
 
-int ASIOSocket::DrainToQueue()
+int ASIOSocket::drain_to_queue()
 {
-	int iPacketsQueued = 0;
+	int packets_queued = 0;
 	constexpr int MAX_DRAIN_PER_CALL = 300;
 
-	while (iPacketsQueued < MAX_DRAIN_PER_CALL &&
-		m_RecvQueue.size() < MAX_QUEUE_SIZE)
+	while (packets_queued < MAX_DRAIN_PER_CALL &&
+		m_recv_queue.size() < MAX_QUEUE_SIZE)
 	{
-		int iRet = _iOnRead();
+		int ret = on_read();
 
-		switch (iRet) {
+		switch (ret) {
 		case sock::Event::ReadComplete:
 		{
-			size_t dwSize = 0;
-			char* pData = pGetRcvDataPointer(&dwSize);
+			size_t size = 0;
+			char* data = get_rcv_data_pointer(&size);
 
-			if (pData != nullptr && dwSize > 0) {
-				m_RecvQueue.emplace_back(pData, dwSize);
-				iPacketsQueued++;
+			if (data != nullptr && size > 0) {
+				m_recv_queue.emplace_back(data, size);
+				packets_queued++;
 			}
 		}
 		break;
 
 		case sock::Event::Block:
-			return iPacketsQueued;
+			return packets_queued;
 
 		case sock::Event::SocketError:
 		case sock::Event::SocketClosed:
@@ -749,20 +750,20 @@ int ASIOSocket::DrainToQueue()
 		}
 	}
 
-	return iPacketsQueued;
+	return packets_queued;
 }
 
-bool ASIOSocket::PeekPacket(NetworkPacket& outPacket) const
+bool ASIOSocket::peek_packet(NetworkPacket& outPacket) const
 {
-	if (m_RecvQueue.empty()) return false;
-	outPacket = m_RecvQueue.front();
+	if (m_recv_queue.empty()) return false;
+	outPacket = m_recv_queue.front();
 	return true;
 }
 
-bool ASIOSocket::PopPacket()
+bool ASIOSocket::pop_packet()
 {
-	if (m_RecvQueue.empty()) return false;
-	m_RecvQueue.pop_front();
+	if (m_recv_queue.empty()) return false;
+	m_recv_queue.pop_front();
 	return true;
 }
 
@@ -770,28 +771,28 @@ bool ASIOSocket::PopPacket()
 // Connection info
 //////////////////////////////////////////////////////////////////////
 
-int ASIOSocket::iGetPeerAddress(char* pAddrString)
+int ASIOSocket::get_peer_address(char* addr_string)
 {
 	asio::error_code ec;
 	auto ep = m_socket.remote_endpoint(ec);
 	if (!ec) {
 		std::string addr = ep.address().to_string();
-		std::snprintf(pAddrString, 46, "%s", addr.c_str()); // 46 = INET6_ADDRSTRLEN
+		std::snprintf(addr_string, 46, "%s", addr.c_str()); // 46 = INET6_ADDRSTRLEN
 		return 0;
 	}
 	return -1;
 }
 
-NativeSocketHandle ASIOSocket::iGetSocket()
+NativeSocketHandle ASIOSocket::get_socket()
 {
 	return m_socket.native_handle();
 }
 
 //////////////////////////////////////////////////////////////////////
-// CloseConnection - graceful shutdown and close
+// close_connection - graceful shutdown and close
 //////////////////////////////////////////////////////////////////////
 
-void ASIOSocket::CloseConnection()
+void ASIOSocket::close_connection()
 {
 	asio::error_code ec;
 
@@ -801,27 +802,27 @@ void ASIOSocket::CloseConnection()
 
 	if (!m_socket.is_open()) return;
 
-	// Shutdown send side
+	// shutdown send side
 	m_socket.shutdown(tcp::socket::shutdown_send, ec);
 
 	// Drain receive buffer
-	char cTmp[100];
+	char tmp[100];
 	for (;;) {
-		size_t n = m_socket.read_some(asio::buffer(cTmp, sizeof(cTmp)), ec);
+		size_t n = m_socket.read_some(asio::buffer(tmp, sizeof(tmp)), ec);
 		if (ec || n == 0) break;
 	}
 
 	m_socket.close(ec);
-	m_cType = sock::Type::Shutdown;
+	m_type = sock::Type::shutdown;
 }
 
 //////////////////////////////////////////////////////////////////////
-// CancelAsync - cancel all pending async operations
+// cancel_async - cancel all pending async operations
 //////////////////////////////////////////////////////////////////////
 
-void ASIOSocket::CancelAsync()
+void ASIOSocket::cancel_async()
 {
-	m_bAsyncMode.store(false, std::memory_order_relaxed);
+	m_async_mode.store(false, std::memory_order_relaxed);
 
 	asio::error_code ec;
 	if (m_socket.is_open()) {
@@ -833,26 +834,26 @@ void ASIOSocket::CancelAsync()
 }
 
 //////////////////////////////////////////////////////////////////////
-// SetCallbacks - set async message and error callbacks
+// set_callbacks - set async message and error callbacks
 //////////////////////////////////////////////////////////////////////
 
-void ASIOSocket::SetCallbacks(MessageCallback onMessage, ErrorCallback onError)
+void ASIOSocket::set_callbacks(MessageCallback onMessage, ErrorCallback onError)
 {
 	m_onMessage = std::move(onMessage);
 	m_onError = std::move(onError);
 }
 
 //////////////////////////////////////////////////////////////////////
-// StartAsyncRead - begin async read chain (header -> body -> callback -> repeat)
+// start_async_read - begin async read chain (header -> body -> callback -> repeat)
 //////////////////////////////////////////////////////////////////////
 
-void ASIOSocket::StartAsyncRead()
+void ASIOSocket::start_async_read()
 {
-	m_bAsyncMode.store(true, std::memory_order_relaxed);
-	_DoAsyncReadHeader();
+	m_async_mode.store(true, std::memory_order_relaxed);
+	do_async_read_header();
 }
 
-void ASIOSocket::_DoAsyncReadHeader()
+void ASIOSocket::do_async_read_header()
 {
 	// Read exactly 3 bytes: [key:1][size:2]
 	asio::async_read(m_socket, asio::buffer(m_asyncRcvBuffer.data(), 3),
@@ -865,7 +866,7 @@ void ASIOSocket::_DoAsyncReadHeader()
 							ec == asio::error::connection_aborted || ec == asio::error::operation_aborted) {
 							errCode = sock::Event::SocketClosed;
 						}
-						m_onError(m_iSocketIndex, errCode);
+						m_onError(m_socket_index, errCode);
 					}
 					return;
 				}
@@ -876,28 +877,28 @@ void ASIOSocket::_DoAsyncReadHeader()
 
 				if (totalSize <= 3) {
 					// Header-only message (no body)
-					char cKey = m_asyncRcvBuffer[0];
+					char key = m_asyncRcvBuffer[0];
 					if (m_onMessage) {
-						m_onMessage(m_iSocketIndex, nullptr, 0, cKey);
+						m_onMessage(m_socket_index, nullptr, 0, key);
 					}
-					_DoAsyncReadHeader();
+					do_async_read_header();
 					return;
 				}
 
 				size_t bodySize = totalSize - 3;
-				if (bodySize > m_dwBufferSize) {
+				if (bodySize > m_buffer_size) {
 					// Message too large
 					if (m_onError) {
-						m_onError(m_iSocketIndex, sock::Event::MsgSizeTooLarge);
+						m_onError(m_socket_index, sock::Event::MsgSizeTooLarge);
 					}
 					return;
 				}
 
-				_DoAsyncReadBody(bodySize);
+				do_async_read_body(bodySize);
 			}));
 }
 
-void ASIOSocket::_DoAsyncReadBody(size_t bodySize)
+void ASIOSocket::do_async_read_body(size_t bodySize)
 {
 	// Read body into buffer starting at offset 3 (after header)
 	asio::async_read(m_socket, asio::buffer(m_asyncRcvBuffer.data() + 3, bodySize),
@@ -910,43 +911,43 @@ void ASIOSocket::_DoAsyncReadBody(size_t bodySize)
 							ec == asio::error::connection_aborted || ec == asio::error::operation_aborted) {
 							errCode = sock::Event::SocketClosed;
 						}
-						m_onError(m_iSocketIndex, errCode);
+						m_onError(m_socket_index, errCode);
 					}
 					return;
 				}
 
 				// Decrypt payload
-				char cKey = m_asyncRcvBuffer[0];
-				if (cKey != 0) {
+				char key = m_asyncRcvBuffer[0];
+				if (key != 0) {
 					for (uint32_t i = 0; i < bodySize; i++) {
 						m_asyncRcvBuffer[3 + i] = static_cast<char>(
-							m_asyncRcvBuffer[3 + i] ^ (cKey ^ static_cast<char>(bodySize - i)));
-						m_asyncRcvBuffer[3 + i] -= static_cast<char>(i ^ cKey);
+							m_asyncRcvBuffer[3 + i] ^ (key ^ static_cast<char>(bodySize - i)));
+						m_asyncRcvBuffer[3 + i] -= static_cast<char>(i ^ key);
 					}
 				}
 
 				// Deliver message via callback
 				if (m_onMessage) {
-					m_onMessage(m_iSocketIndex, m_asyncRcvBuffer.data() + 3, bodySize, cKey);
+					m_onMessage(m_socket_index, m_asyncRcvBuffer.data() + 3, bodySize, key);
 				}
 
 				// Chain to next header read
-				_DoAsyncReadHeader();
+				do_async_read_header();
 			}));
 }
 
 //////////////////////////////////////////////////////////////////////
-// StartAsyncAccept - begin async accept loop on listen socket
+// start_async_accept - begin async accept loop on listen socket
 //////////////////////////////////////////////////////////////////////
 
-void ASIOSocket::StartAsyncAccept(AcceptCallback callback)
+void ASIOSocket::start_async_accept(AcceptCallback callback)
 {
-	if (m_cType != sock::Type::Listen) return;
+	if (m_type != sock::Type::Listen) return;
 
 	m_onAccept = std::move(callback);
-	m_bAsyncMode.store(true, std::memory_order_relaxed);
+	m_async_mode.store(true, std::memory_order_relaxed);
 
-	// Start the accept loop
+	// start the accept loop
 	auto doAccept = [this]() {
 		m_acceptor.async_accept(
 			[this](const asio::error_code& ec, tcp::socket peer) {
@@ -959,8 +960,8 @@ void ASIOSocket::StartAsyncAccept(AcceptCallback callback)
 					return; // Shutting down
 				}
 				// Continue accepting (even after errors like too many open files)
-				if (m_bAsyncMode.load(std::memory_order_relaxed)) {
-					StartAsyncAccept(m_onAccept);
+				if (m_async_mode.load(std::memory_order_relaxed)) {
+					start_async_accept(m_onAccept);
 				}
 			});
 	};

@@ -19,14 +19,14 @@ public:
 	{
 	}
 
-	std::string m_cName;
-	int  m_sValue1 = 0, m_sValue2 = 0, m_sValue3 = 0;
+	std::string m_name;
+	int  m_value_1 = 0, m_value_2 = 0, m_value_3 = 0;
 	// CLEROTH
-	int m_sValue4 = 0;
-	bool m_bIsVisible = false;
-	int m_sType = 0;          // DEF_MAGICTYPE_*
-	int m_sAoERadiusX = 0;    // AoE X radius in tiles (server m_sValue2)
-	int m_sAoERadiusY = 0;    // AoE Y radius in tiles (server m_sValue3)
-	int m_sDynamicPattern = 0; // Wall=1, Field=2 (server m_sValue11)
-	int m_sDynamicRadius = 0;  // Wall length / field radius (server m_sValue12)
+	int m_value_4 = 0;
+	bool m_is_visible = false;
+	int m_type = 0;          // DEF_MAGICTYPE_*
+	int m_aoe_radius_x = 0;    // AoE X radius in tiles (server m_value_2)
+	int m_aoe_radius_y = 0;    // AoE Y radius in tiles (server m_value_3)
+	int m_dynamic_pattern = 0; // Wall=1, Field=2 (server m_sValue11)
+	int m_dynamic_radius = 0;  // Wall length / field radius (server m_sValue12)
 };

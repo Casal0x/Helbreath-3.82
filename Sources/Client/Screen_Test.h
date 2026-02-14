@@ -1,7 +1,7 @@
 // Screen_Test.h: Text Rendering Test Screen
 //
-// Side-by-side comparison of legacy PutString* methods (left)
-// and new hb::shared::text::DrawText methods (right) for visual validation.
+// Side-by-side comparison of legacy put_string* methods (left)
+// and new hb::shared::text::draw_text methods (right) for visual validation.
 //
 // Press ESC to exit the game.
 // Press UP/DOWN to scroll through test cases.
@@ -18,7 +18,7 @@ class Screen_Test : public IGameScreen
 public:
 	SCREEN_TYPE(Screen_Test)
 
-	explicit Screen_Test(CGame* pGame);
+	explicit Screen_Test(CGame* game);
 	~Screen_Test() override = default;
 
 	void on_initialize() override;
@@ -27,14 +27,14 @@ public:
 	void on_render() override;
 
 private:
-	// Load bitmap fonts for testing (normally done in Screen_Loading)
-	void LoadBitmapFonts();
+	// load bitmap fonts for testing (normally done in Screen_Loading)
+	void load_bitmap_fonts();
 
-	// Render the header with instructions
-	void RenderHeader();
+	// render the header with instructions
+	void render_header();
 
-	// Render a single test row with legacy on left, new on right
-	void RenderTestRow(int row, const char* testName,
+	// render a single test row with legacy on left, new on right
+	void render_test_row(int row, const char* testName,
 	                   void (Screen_Test::*legacyFunc)(int x, int y),
 	                   void (Screen_Test::*newFunc)(int x, int y));
 
@@ -61,8 +61,8 @@ private:
 	void New_DrawText_Numbers(int x, int y);
 
 	// ============== Alignment Showcase ==============
-	void RenderAlignmentShowcase();
-	void DrawRectOutline(int x, int y, int width, int height, uint8_t r, uint8_t g, uint8_t b);
+	void render_alignment_showcase();
+	void draw_rect_outline(int x, int y, int width, int height, uint8_t r, uint8_t g, uint8_t b);
 
 	int m_scrollOffset = 0;
 	static constexpr int ROW_HEIGHT = 40;

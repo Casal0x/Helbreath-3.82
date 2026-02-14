@@ -106,197 +106,193 @@ using namespace hb::client::sprite_id;
 // Construction/Destruction
 //////////////////////////////////////////////////////////////////////
 
-void CGame::ReadSettings()
+void CGame::read_settings()
 {
-	// Initialize and load settings from JSON file via ConfigManager
-	ConfigManager::Get().Initialize();
-	ConfigManager::Get().Load();
+	// initialize and load settings from JSON file via config_manager
+	config_manager::get().initialize();
+	config_manager::get().load();
 
 	// Copy values to CGame member variables
-	m_sMagicShortCut = ConfigManager::Get().GetMagicShortcut();
-	m_sRecentShortCut = ConfigManager::Get().GetRecentShortcut();
+	m_magic_short_cut = config_manager::get().get_magic_shortcut();
+	m_recent_short_cut = config_manager::get().get_recent_shortcut();
 	for (int i = 0; i < 5; i++)
 	{
-		m_sShortCut[i] = ConfigManager::Get().GetShortcut(i);
+		m_short_cut[i] = config_manager::get().get_shortcut(i);
 	}
-	m_sShortCut[5] = -1; // 6th slot unused
+	m_short_cut[5] = -1; // 6th slot unused
 
-	// Audio settings loaded into AudioManager
-	AudioManager::Get().SetMasterVolume(ConfigManager::Get().GetMasterVolume());
-	AudioManager::Get().SetSoundVolume(ConfigManager::Get().GetSoundVolume());
-	AudioManager::Get().SetMusicVolume(ConfigManager::Get().GetMusicVolume());
-	AudioManager::Get().SetAmbientVolume(ConfigManager::Get().GetAmbientVolume());
-	AudioManager::Get().SetUIVolume(ConfigManager::Get().GetUIVolume());
-	AudioManager::Get().SetMasterEnabled(ConfigManager::Get().IsMasterEnabled());
-	AudioManager::Get().SetSoundEnabled(ConfigManager::Get().IsSoundEnabled());
-	AudioManager::Get().SetMusicEnabled(ConfigManager::Get().IsMusicEnabled());
-	AudioManager::Get().SetAmbientEnabled(ConfigManager::Get().IsAmbientEnabled());
-	AudioManager::Get().SetUIEnabled(ConfigManager::Get().IsUIEnabled());
+	// Audio settings loaded into audio_manager
+	audio_manager::get().set_master_volume(config_manager::get().get_master_volume());
+	audio_manager::get().set_sound_volume(config_manager::get().get_sound_volume());
+	audio_manager::get().set_music_volume(config_manager::get().get_music_volume());
+	audio_manager::get().set_ambient_volume(config_manager::get().get_ambient_volume());
+	audio_manager::get().set_ui_volume(config_manager::get().get_ui_volume());
+	audio_manager::get().set_master_enabled(config_manager::get().is_master_enabled());
+	audio_manager::get().set_sound_enabled(config_manager::get().is_sound_enabled());
+	audio_manager::get().set_music_enabled(config_manager::get().is_music_enabled());
+	audio_manager::get().set_ambient_enabled(config_manager::get().is_ambient_enabled());
+	audio_manager::get().set_ui_enabled(config_manager::get().is_ui_enabled());
 }
 
-void CGame::WriteSettings()
+void CGame::write_settings()
 {
-	// Copy CGame member variables to ConfigManager
-	ConfigManager::Get().SetMagicShortcut(m_sMagicShortCut);
+	// Copy CGame member variables to config_manager
+	config_manager::get().set_magic_shortcut(m_magic_short_cut);
 	for (int i = 0; i < 5; i++)
 	{
-		ConfigManager::Get().SetShortcut(i, m_sShortCut[i]);
+		config_manager::get().set_shortcut(i, m_short_cut[i]);
 	}
 
-	// Audio settings from AudioManager
-	ConfigManager::Get().SetMasterVolume(AudioManager::Get().GetMasterVolume());
-	ConfigManager::Get().SetSoundVolume(AudioManager::Get().GetSoundVolume());
-	ConfigManager::Get().SetMusicVolume(AudioManager::Get().GetMusicVolume());
-	ConfigManager::Get().SetAmbientVolume(AudioManager::Get().GetAmbientVolume());
-	ConfigManager::Get().SetUIVolume(AudioManager::Get().GetUIVolume());
-	ConfigManager::Get().SetMasterEnabled(AudioManager::Get().IsMasterEnabled());
-	ConfigManager::Get().SetSoundEnabled(AudioManager::Get().IsSoundEnabled());
-	ConfigManager::Get().SetMusicEnabled(AudioManager::Get().IsMusicEnabled());
-	ConfigManager::Get().SetAmbientEnabled(AudioManager::Get().IsAmbientEnabled());
-	ConfigManager::Get().SetUIEnabled(AudioManager::Get().IsUIEnabled());
+	// Audio settings from audio_manager
+	config_manager::get().set_master_volume(audio_manager::get().get_master_volume());
+	config_manager::get().set_sound_volume(audio_manager::get().get_sound_volume());
+	config_manager::get().set_music_volume(audio_manager::get().get_music_volume());
+	config_manager::get().set_ambient_volume(audio_manager::get().get_ambient_volume());
+	config_manager::get().set_ui_volume(audio_manager::get().get_ui_volume());
+	config_manager::get().set_master_enabled(audio_manager::get().is_master_enabled());
+	config_manager::get().set_sound_enabled(audio_manager::get().is_sound_enabled());
+	config_manager::get().set_music_enabled(audio_manager::get().is_music_enabled());
+	config_manager::get().set_ambient_enabled(audio_manager::get().is_ambient_enabled());
+	config_manager::get().set_ui_enabled(audio_manager::get().is_ui_enabled());
 
-	// Save to JSON file
-	ConfigManager::Get().Save();
+	// save to JSON file
+	config_manager::get().save();
 }
 
 CGame::CGame(hb::shared::types::NativeInstance native_instance, int icon_resource_id)
 	: m_native_instance(native_instance)
 	, m_icon_resource_id(icon_resource_id)
-	, m_playerRenderer(*this)
-	, m_npcRenderer(*this)
+	, m_player_renderer(*this)
+	, m_npc_renderer(*this)
 {
-	m_pIOPool = std::make_unique<hb::shared::net::IOServicePool>(0);  // 0 threads = manual poll mode
+	m_io_pool = std::make_unique<hb::shared::net::IOServicePool>(0);  // 0 threads = manual poll mode
 	m_Renderer = nullptr;
-	m_dialogBoxManager.Initialize(this);
-	m_dialogBoxManager.InitializeDialogBoxes();
-	ReadSettings();
-	RegisterHotkeys();
+	m_dialog_box_manager.initialize(this);
+	m_dialog_box_manager.initialize_dialog_boxes();
+	read_settings();
+	register_hotkeys();
 
-	iMaxStats = 0;
-	iMaxLevel = hb::shared::limits::PlayerMaxLevel;
-	iMaxBankItems = 200; // Default soft cap, server overrides
-	m_cLoading = 0;
-	m_bIsFirstConn = true;
-	m_iItemDropCnt = 0;
-	std::fill(std::begin(m_sItemDropID), std::end(m_sItemDropID), short{0});
-	m_bItemDrop = false;
+	m_max_stats = 0;
+	m_max_level = hb::shared::limits::PlayerMaxLevel;
+	m_max_bank_items = 200; // Default soft cap, server overrides
+	m_loading = 0;
+	m_is_first_conn = true;
+	m_item_drop_cnt = 0;
+	std::fill(std::begin(m_item_drop_id), std::end(m_item_drop_id), short{0});
+	m_item_drop = false;
 
-	// Initialize CPlayer first since it's used below
-	m_pPlayer = std::make_unique<CPlayer>();
-	CombatSystem::Get().SetPlayer(*m_pPlayer);
-	InventoryManager::Get().SetGame(this);
-	MagicCastingSystem::Get().SetGame(this);
-	BuildItemManager::Get().SetGame(this);
-	ShopManager::Get().SetGame(this);
-	TeleportManager::Get().SetGame(this);
-	EventListManager::Get().SetGame(this);
-	m_pPlayer->m_sPlayerX = 0;
-	m_pPlayer->m_sPlayerY = 0;
-	m_pPlayer->m_Controller.ResetCommandCount();
-	m_pPlayer->m_Controller.SetCommandTime(0); //v2.15 SpeedHack
-	// Camera is initialized via its default constructor (calls Reset())
-	m_sVDL_X = 0;
-	m_sVDL_Y = 0;
-	m_wCommObjectID = 0;
-	m_wLastAttackTargetID = 0;
-	m_wEnterGameType = 0;
-	m_pPlayer->m_Controller.SetCommand(Type::Stop);
-	m_bIsObserverMode = false;
+	// initialize CPlayer first since it's used below
+	m_player = std::make_unique<CPlayer>();
+	combat_system::get().set_player(*m_player);
+	inventory_manager::get().set_game(this);
+	magic_casting_system::get().set_game(this);
+	build_item_manager::get().set_game(this);
+	shop_manager::get().set_game(this);
+	teleport_manager::get().set_game(this);
+	event_list_manager::get().set_game(this);
+	m_player->m_player_x = 0;
+	m_player->m_player_y = 0;
+	m_player->m_Controller.reset_command_count();
+	m_player->m_Controller.set_command_time(0); //v2.15 SpeedHack
+	// Camera is initialized via its default constructor (calls reset())
+	m_vdl_x = 0;
+	m_vdl_y = 0;
+	m_comm_object_id = 0;
+	m_last_attack_target_id = 0;
+	m_enter_game_type = 0;
+	m_player->m_Controller.set_command(Type::stop);
+	m_is_observer_mode = false;
 
-	// Initialize Managers (Networking v4) - using make_unique
-	m_pEffectManager = std::make_unique<EffectManager>(this);
-	m_pNetworkMessageManager = std::make_unique<NetworkMessageManager>(this);
-	m_fishingManager.SetGame(this);
-	m_craftingManager.SetGame(this);
-	m_questManager.SetGame(this);
-	m_guildManager.SetGame(this);
+	// initialize Managers (Networking v4) - using make_unique
+	m_effect_manager = std::make_unique<effect_manager>(this);
+	m_network_message_manager = std::make_unique<NetworkMessageManager>(this);
+	m_fishing_manager.set_game(this);
+	m_crafting_manager.set_game(this);
+	m_quest_manager.set_game(this);
+	m_guild_manager.set_game(this);
 
 	// All pointer arrays (std::array<std::unique_ptr<T>, N>) default to nullptr
 	// Dialog box order initialization
-	for (int i = 0; i < 61; i++) m_dialogBoxManager.SetOrderAt(i, 0);
+	for (int i = 0; i < 61; i++) m_dialog_box_manager.set_order_at(i, 0);
 
 	// Previous cursor status tracking removed
-	CursorTarget::ResetSelectionClickTime();
+	CursorTarget::reset_selection_click_time();
 
 	// m_pItemForSaleList defaults to nullptr (std::array<std::unique_ptr<T>, N>)
 
-	// Dialog boxes now self-initialize via SetDefaultRect() in their constructors
-	// Dialogs without classes (GiveItem) are initialized in DialogBoxManager::InitDefaults()
+	// Dialog boxes now self-initialize via set_default_rect() in their constructors
+	// Dialogs without classes (GiveItem) are initialized in DialogBoxManager::init_defaults()
 
-	m_iTimeLeftSecAccount = 0;
-	m_iTimeLeftSecIP = 0;
+	m_time_left_sec_account = 0;
+	m_time_left_sec_ip = 0;
 
-	// Initialize char arrays that were previously zero-initialized by HEAP_ZERO_MEMORY
-	std::memset(m_cMsg, 0, sizeof(m_cMsg));
-	// m_cChatMsg and m_cAmountString are std::string (auto-initialized)
+	// initialize char arrays that were previously zero-initialized by HEAP_ZERO_MEMORY
+	std::memset(m_msg, 0, sizeof(m_msg));
+	// m_chat_msg and m_amount_string are std::string (auto-initialized)
 }
 
-CGame::~CGame()
-{
-	hb::shared::render::Renderer::Destroy();
-	m_Renderer = nullptr;
-}
+CGame::~CGame() = default;
 
 // on_initialize: Pre-realize initialization (config, window params, data loading)
 // Called by application::initialize() BEFORE the OS window exists.
 bool CGame::on_initialize()
 {
-	// Load config (was in Wmain.cpp before)
-	ConfigManager::Get().Initialize();
-	ConfigManager::Get().Load();
+	// load config (was in Wmain.cpp before)
+	config_manager::get().initialize();
+	config_manager::get().load();
 
 	hb::logger::initialize("logs");
 
-	hb::shared::render::ResolutionConfig::Initialize(
-		ConfigManager::Get().GetWindowWidth(),
-		ConfigManager::Get().GetWindowHeight()
+	hb::shared::render::ResolutionConfig::initialize(
+		config_manager::get().get_window_width(),
+		config_manager::get().get_window_height()
 	);
 
 	// Configure window params via staged setters (no OS window yet)
 	auto* window = get_window();
 	window->set_title("Helbreath");
-	window->set_size(ConfigManager::Get().GetWindowWidth(),
-	                 ConfigManager::Get().GetWindowHeight());
-	window->set_borderless(ConfigManager::Get().IsBorderlessEnabled());
-	window->set_mouse_capture_enabled(ConfigManager::Get().IsMouseCaptureEnabled());
+	window->set_size(config_manager::get().get_window_width(),
+	                 config_manager::get().get_window_height());
+	window->set_borderless(config_manager::get().is_borderless_enabled());
+	window->set_mouse_capture_enabled(config_manager::get().is_mouse_capture_enabled());
 	window->set_native_instance(m_native_instance);
 	window->set_icon_resource_id(m_icon_resource_id);
 
-	// Initialize game systems that don't need the OS window
-	m_pPlayer->m_Controller.SetCommandAvailable(true);
-	m_dwTime = GameClock::GetTimeMS();
+	// initialize game systems that don't need the OS window
+	m_player->m_Controller.set_command_available(true);
+	m_time = GameClock::get_time_ms();
 
-	AudioManager::Get().Initialize();
-	ChatCommandManager::Get().Initialize(this);
-	GameModeManager::Initialize(this);
+	audio_manager::get().initialize();
+	ChatCommandManager::get().initialize(this);
+	GameModeManager::initialize(this);
 	GameModeManager::set_screen<Screen_Splash>();
-	m_bHideLocalCursor = false;
+	m_hide_local_cursor = false;
 
-	m_cLogServerAddr = DEF_SERVER_IP;
-	m_iLogServerPort = DEF_SERVER_PORT;
-	m_iGameServerPort = DEF_GSERVER_PORT;
+	m_log_server_addr = DEF_SERVER_IP;
+	m_log_server_port = DEF_SERVER_PORT;
+	m_game_server_port = DEF_GSERVER_PORT;
 
-	m_pMapData = std::make_unique<CMapData>(this);
-	m_pPlayer->m_cPlayerName.clear();
-	m_pPlayer->m_cAccountName.clear();
-	m_pPlayer->m_cAccountPassword.clear();
+	m_map_data = std::make_unique<CMapData>(this);
+	m_player->m_player_name.clear();
+	m_player->m_account_name.clear();
+	m_player->m_account_password.clear();
 
-	m_pPlayer->m_sPlayerType = 2;
-	m_pPlayer->m_Controller.SetPlayerTurn(0);
-	m_dialogBoxManager.SetOrderAt(60, DialogBoxId::HudPanel);
-	m_dialogBoxManager.SetOrderAt(59, DialogBoxId::HudPanel);
+	m_player->m_player_type = 2;
+	m_player->m_Controller.set_player_turn(0);
+	m_dialog_box_manager.set_order_at(60, DialogBoxId::HudPanel);
+	m_dialog_box_manager.set_order_at(59, DialogBoxId::HudPanel);
 
-	m_cMenuDir = 4;
-	m_cMenuDirCnt = 0;
-	m_cMenuFrame = 0;
+	m_menu_dir = 4;
+	m_menu_dir_cnt = 0;
+	m_menu_frame = 0;
 
-	_LoadGameMsgTextContents();
-	m_cWorldServerName = NAME_WORLDNAME1;
+	load_game_msg_text_contents();
+	m_world_server_name = NAME_WORLDNAME1;
 
-	WeatherManager::Get().Initialize();
-	ChatManager::Get().Initialize();
-	ItemNameFormatter::Get().SetItemConfigs(m_pItemConfigList);
-	LocalCacheManager::Get().Initialize();
+	weather_manager::get().initialize();
+	ChatManager::get().initialize();
+	item_name_formatter::get().set_item_configs(m_item_config_list);
+	LocalCacheManager::get().initialize();
 
 	return true;
 }
@@ -305,7 +301,7 @@ bool CGame::on_initialize()
 // Called by application::run() AFTER the OS window is created.
 bool CGame::on_start()
 {
-	FrameTiming::Initialize();
+	FrameTiming::initialize();
 
 	// Create and initialize the renderer
 	if (!hb::shared::render::Renderer::Set(hb::shared::render::RendererType::SFML))
@@ -314,8 +310,8 @@ bool CGame::on_start()
 		return false;
 	}
 
-	m_Renderer = hb::shared::render::Renderer::Get();
-	if (m_Renderer->Init(hb::shared::render::Window::get_handle()) == false)
+	m_Renderer = hb::shared::render::Renderer::get();
+	if (m_Renderer->init(hb::shared::render::Window::get_handle()) == false)
 	{
 		hb::shared::render::Window::show_error("ERROR", "Failed to init renderer!");
 		return false;
@@ -326,23 +322,23 @@ bool CGame::on_start()
 	{
 		if (!hb::shared::text::GetTextRenderer()->LoadFontFromFile("fonts/default.ttf"))
 		{
-			printf("[FONT] Failed to load default.ttf font file!\n");
+			// Font load failed — game will use fallback rendering
 		}
 	}
 
-	// Initialize sprite factory and register it globally
-	m_pSpriteFactory.reset(hb::shared::render::CreateSpriteFactory(m_Renderer));
-	hb::shared::sprite::Sprites::SetFactory(m_pSpriteFactory.get());
+	// initialize sprite factory and register it globally
+	m_sprite_factory.reset(hb::shared::render::CreateSpriteFactory(m_Renderer));
+	hb::shared::sprite::Sprites::set_factory(m_sprite_factory.get());
 
-	// Push display settings from ConfigManager to engine
-	hb::shared::render::Window::get()->set_vsync_enabled(ConfigManager::Get().IsVSyncEnabled());
-	hb::shared::render::Window::get()->set_framerate_limit(ConfigManager::Get().GetFpsLimit());
-	hb::shared::render::Window::get()->set_fullscreen_stretch(ConfigManager::Get().IsFullscreenStretchEnabled());
-	if (hb::shared::render::Renderer::Get())
-		hb::shared::render::Renderer::Get()->SetFullscreenStretch(ConfigManager::Get().IsFullscreenStretchEnabled());
+	// push display settings from config_manager to engine
+	hb::shared::render::Window::get()->set_vsync_enabled(config_manager::get().is_vsync_enabled());
+	hb::shared::render::Window::get()->set_framerate_limit(config_manager::get().get_fps_limit());
+	hb::shared::render::Window::get()->set_fullscreen_stretch(config_manager::get().is_fullscreen_stretch_enabled());
+	if (hb::shared::render::Renderer::get())
+		hb::shared::render::Renderer::get()->set_fullscreen_stretch(config_manager::get().is_fullscreen_stretch_enabled());
 
 #ifdef _DEBUG
-	FrameTiming::SetProfilingEnabled(true);
+	FrameTiming::set_profiling_enabled(true);
 #endif
 
 	return true;
@@ -354,56 +350,59 @@ void CGame::on_run()
 {
 	on_update();
 
-	FrameTiming::BeginFrame();
+	FrameTiming::begin_frame();
 	on_render();
-	FrameTiming::EndFrame();
+	FrameTiming::end_frame();
 }
 
 void CGame::on_uninitialize()
 {
-	WriteSettings();
-	ChangeGameMode(GameMode::Null);
+	write_settings();
+	change_game_mode(GameMode::Null);
 
-	// Shutdown manager singletons
-	WeatherManager::Get().Shutdown();
-	ChatManager::Get().Shutdown();
-	AudioManager::Get().Shutdown();
-	ConfigManager::Get().Shutdown();
+	// shutdown manager singletons
+	weather_manager::get().shutdown();
+	ChatManager::get().shutdown();
+	audio_manager::get().shutdown();
+	config_manager::get().shutdown();
 
-	// Clear all unique_ptr arrays using range-based for loops
-	for (auto& item : m_pItemConfigList) item.reset();
+	// clear all unique_ptr arrays using range-based for loops
+	for (auto& item : m_item_config_list) item.reset();
 
-	m_pSprite.clear();
-	m_pTileSpr.clear();
-	m_pEffectSpr.clear();
+	m_sprite.clear();
+	m_tile_spr.clear();
+	m_effect_sprites.clear();
 
 	// Clean up sprite factory
-	hb::shared::sprite::Sprites::SetFactory(nullptr);
-	if (m_pSpriteFactory) {
-		m_pSpriteFactory.reset();
+	hb::shared::sprite::Sprites::set_factory(nullptr);
+	if (m_sprite_factory) {
+		m_sprite_factory.reset();
 	}
 
-	// Sound cleanup handled by AudioManager::Shutdown()
-	// Effects now managed by EffectManager (cleaned up in destructor)
-
-	for (auto& ch : m_pCharList) ch.reset();
-	for (auto& item : m_pItemList) item.reset();
-	for (auto& item : m_pBankList) item.reset();
-	m_floatingText.ClearAll();
-	for (auto& magic : m_pMagicCfgList) magic.reset();
-	for (auto& skill : m_pSkillCfgList) skill.reset();
-	for (auto& msg : m_pMsgTextList) msg.reset();
-	for (auto& msg : m_pMsgTextList2) msg.reset();
-	for (auto& msg : m_pAgreeMsgTextList) msg.reset();
-	m_pExID.reset();
-	for (auto& msg : m_pGameMsgList) msg.reset();
+	for (auto& ch : m_char_list) ch.reset();
+	for (auto& item : m_item_list) item.reset();
+	for (auto& item : m_bank_list) item.reset();
+	m_floating_text.clear_all();
+	for (auto& magic : m_magic_cfg_list) magic.reset();
+	for (auto& skill : m_skill_cfg_list) skill.reset();
+	for (auto& msg : m_msg_text_list) msg.reset();
+	for (auto& msg : m_msg_text_list2) msg.reset();
+	for (auto& msg : m_agree_msg_text_list) msg.reset();
+	m_ex_id.reset();
+	for (auto& msg : m_game_msg_list) msg.reset();
 
 	// Clean up single pointers (unique_ptr handles null checks automatically)
-	m_pMapData.reset();
-	m_pGSock.reset();
-	m_pLSock.reset();
-	m_pEffectManager.reset();
-	m_pNetworkMessageManager.reset();
+	m_map_data.reset();
+	m_g_sock.reset();
+	m_l_sock.reset();
+	m_effect_manager.reset();
+	m_network_message_manager.reset();
+
+	// Destroy renderer BEFORE Window::destroy() runs in application::run().
+	// The renderer holds SFML resources that reference the RenderWindow —
+	// destroying it after the window is gone causes a crash on close.
+	hb::shared::render::Renderer::Destroy();
+	m_Renderer = nullptr;
 }
 
 // on_event: Discrete event handler — window lifecycle events routed by application base class
@@ -413,7 +412,7 @@ void CGame::on_event(const hb::shared::render::event& e)
 	{
 	case hb::shared::render::event_id::closed:
 		// Window close requested (user clicked X or Alt+F4)
-		if ((GameModeManager::GetMode() == GameMode::MainGame) && (m_bForceDisconn == false))
+		if ((GameModeManager::get_mode() == GameMode::MainGame) && (m_force_disconn == false))
 		{
 			// In main game, start logout countdown instead of closing immediately
 #ifdef _DEBUG
@@ -424,9 +423,9 @@ void CGame::on_event(const hb::shared::render::event& e)
 				m_logout_count = 11;
 #endif
 		}
-		else if (GameModeManager::GetMode() == GameMode::MainMenu)
+		else if (GameModeManager::get_mode() == GameMode::MainMenu)
 		{
-			ChangeGameMode(GameMode::Quit);
+			change_game_mode(GameMode::Quit);
 		}
 		else
 		{
@@ -437,7 +436,7 @@ void CGame::on_event(const hb::shared::render::event& e)
 	case hb::shared::render::event_id::focus_gained:
 		if (hb::shared::input::get())
 			hb::shared::input::get()->set_window_active(true);
-		// Note: ChangeDisplayMode removed — SFML handles OpenGL context
+		// Note: change_display_mode removed — SFML handles OpenGL context
 		// reactivation automatically on FocusGained (see SFMLWindow::process_messages).
 		// The old DirectDraw renderer needed surface restoration here, but SFML does not.
 		break;
@@ -453,7 +452,10 @@ void CGame::on_event(const hb::shared::render::event& e)
 }
 
 // on_key_event: Game-specific key handling hook (called by application alongside IInput routing)
-// Filters out modifier keys and routes to OnKeyDown/OnKeyUp
+// Filters out modifier keys and routes to handle_key_down/handle_key_up
+// NOTE: These are named handle_key_down/up (not on_key_down/up) to avoid
+// overriding the virtual application::on_key_down/up from IWindowEventHandler,
+// which routes key events to the IInput edge-detect system.
 void CGame::on_key_event(KeyCode key, bool pressed)
 {
 	// Skip modifier keys — handled purely through IInput polling
@@ -465,15 +467,15 @@ void CGame::on_key_event(KeyCode key, bool pressed)
 
 	if (pressed)
 	{
-		// Enter and Escape are handled in OnKeyUp, not OnKeyDown
+		// Enter and Escape are handled in handle_key_up, not handle_key_down
 		if (key != KeyCode::Enter && key != KeyCode::Escape)
-			OnKeyDown(key);
+			handle_key_down(key);
 	}
 	else
 	{
-		// Enter is handled purely through IInput, not OnKeyUp
+		// Enter is handled purely through IInput, not handle_key_up
 		if (key != KeyCode::Enter)
-			OnKeyUp(key);
+			handle_key_up(key);
 	}
 }
 
@@ -514,64 +516,64 @@ bool CGame::on_native_message(uint32_t message, uintptr_t wparam, intptr_t lpara
 bool CGame::on_text_input(hb::shared::types::NativeWindowHandle hwnd,
                            uint32_t message, uintptr_t wparam, intptr_t lparam)
 {
-	return TextInputManager::Get().HandleChar(hwnd, message, wparam, lparam) != 0;
+	return text_input_manager::get().handle_char(hwnd, message, wparam, lparam) != 0;
 }
 
 // UpdateScreen and DrawScreen removed - all modes now handled by Screen/Overlay system via GameModeManager
 
-// DrawCursor: Centralized cursor drawing at end of frame
+// draw_cursor: Centralized cursor drawing at end of frame
 // Called at the end of DrawScreen() to ensure cursor is always on top
-void CGame::DrawCursor()
+void CGame::draw_cursor()
 {
 	// Check if cursor should be hidden
-	if (m_bHideLocalCursor)
+	if (m_hide_local_cursor)
 		return;
 
-	// Get mouse position
-	int msX = hb::shared::input::get_mouse_x();
-	int msY = hb::shared::input::get_mouse_y();
+	// get mouse position
+	int mouse_x = hb::shared::input::get_mouse_x();
+	int mouse_y = hb::shared::input::get_mouse_y();
 
 	// Track mouse initialization — (0,0) is valid in windowed mode
-	if (!m_bMouseInitialized)
+	if (!m_mouse_initialized)
 	{
-		if (msX == 0 && msY == 0) return;
-		m_bMouseInitialized = true;
+		if (mouse_x == 0 && mouse_y == 0) return;
+		m_mouse_initialized = true;
 	}
 
 	// Determine cursor frame based on game mode from manager (source of truth)
-	int iCursorFrame = 0;  // Default arrow cursor
+	int cursor_frame = 0;  // Default arrow cursor
 
-	switch (GameModeManager::GetMode()) {
+	switch (GameModeManager::get_mode()) {
 	case GameMode::MainGame:
 		// In-game uses context-sensitive cursor from CursorTarget
-		if (m_bIsObserverMode) {
+		if (m_is_observer_mode) {
 			// Observer mode shows a small crosshair instead of cursor sprite
-			m_Renderer->DrawPixel(msX, msY, hb::shared::render::Color::White());
-			m_Renderer->DrawPixel(msX + 1, msY, hb::shared::render::Color::White());
-			m_Renderer->DrawPixel(msX - 1, msY, hb::shared::render::Color::White());
-			m_Renderer->DrawPixel(msX, msY + 1, hb::shared::render::Color::White());
-			m_Renderer->DrawPixel(msX, msY - 1, hb::shared::render::Color::White());
+			m_Renderer->draw_pixel(mouse_x, mouse_y, hb::shared::render::Color::White());
+			m_Renderer->draw_pixel(mouse_x + 1, mouse_y, hb::shared::render::Color::White());
+			m_Renderer->draw_pixel(mouse_x - 1, mouse_y, hb::shared::render::Color::White());
+			m_Renderer->draw_pixel(mouse_x, mouse_y + 1, hb::shared::render::Color::White());
+			m_Renderer->draw_pixel(mouse_x, mouse_y - 1, hb::shared::render::Color::White());
 			return;
 		}
-		iCursorFrame = CursorTarget::GetCursorFrame();
+		cursor_frame = CursorTarget::get_cursor_frame();
 		break;
 
 	case GameMode::Connecting:
 	case GameMode::WaitingResponse:
 	case GameMode::WaitingInitData:
 		// Waiting/connecting states use hourglass cursor (frame 8)
-		iCursorFrame = 8;
+		cursor_frame = 8;
 		break;
 
 	default:
 		// All other modes use default arrow cursor (frame 0)
-		iCursorFrame = 0;
+		cursor_frame = 0;
 		break;
 	}
 
-	// Draw the cursor sprite
-	if (m_pSprite[MouseCursor])
-		m_pSprite[MouseCursor]->Draw(msX, msY, iCursorFrame);
+	// draw the cursor sprite
+	if (m_sprite[MouseCursor])
+		m_sprite[MouseCursor]->draw(mouse_x, mouse_y, cursor_frame);
 }
 
 
@@ -580,159 +582,159 @@ void CGame::DrawCursor()
 // Handles: audio, timers, network, game state transitions
 void CGame::on_update()
 {
-	AudioManager::Get().Update();
+	audio_manager::get().update();
 
 	// Process timer and network events (must happen before any update logic)
 	if (m_game_timer.check_and_reset()) {
-		OnTimer();
+		on_timer();
 	}
-	OnGameSocketEvent();
-	OnLogSocketEvent();
+	on_game_socket_event();
+	on_log_socket_event();
 
-	// Update game mode transition state (fade in/out progress)
-	GameModeManager::Update();
+	// update game mode transition state (fade in/out progress)
+	GameModeManager::update();
 
-	// Update game screens/overlays
-	FrameTiming::BeginProfile(ProfileStage::Update);
-	GameModeManager::UpdateScreens();
-	FrameTiming::EndProfile(ProfileStage::Update);
+	// update game screens/overlays
+	FrameTiming::begin_profile(ProfileStage::update);
+	GameModeManager::update_screens();
+	FrameTiming::end_profile(ProfileStage::update);
 
 }
 
-// on_render: Render only — gated by engine frame limiting
+// on_render: render only — gated by engine frame limiting
 // Handles: clear backbuffer -> draw -> fade overlay -> cursor -> flip
 void CGame::on_render()
 {
-	// ============== Render Phase ==============
-	FrameTiming::BeginProfile(ProfileStage::ClearBuffer);
-	m_Renderer->BeginFrame();
-	FrameTiming::EndProfile(ProfileStage::ClearBuffer);
+	// ============== render Phase ==============
+	FrameTiming::begin_profile(ProfileStage::ClearBuffer);
+	m_Renderer->begin_frame();
+	FrameTiming::end_profile(ProfileStage::ClearBuffer);
 
 	// Engine frame limiter decided to skip this frame — return early
 	// Prevents wasted draw calls and keeps behavior identical across all screens
-	if (!m_Renderer->WasFramePresented())
+	if (!m_Renderer->was_frame_presented())
 		return;
 
 	// Mark frame as rendered so FrameTiming only accumulates profiling for real frames
-	FrameTiming::SetFrameRendered(true);
+	FrameTiming::set_frame_rendered(true);
 
-	// Render screens/overlays (skipped during Switching phase)
-	if (GameModeManager::GetTransitionState() != TransitionState::Switching)
+	// render screens/overlays (skipped during Switching phase)
+	if (GameModeManager::get_transition_state() != TransitionState::Switching)
 	{
-		GameModeManager::Render();
+		GameModeManager::render();
 	}
 
-	// Draw fade overlay if transitioning between game modes
-	if (GameModeManager::IsTransitioning())
+	// draw fade overlay if transitioning between game modes
+	if (GameModeManager::is_transitioning())
 	{
-		float alpha = GameModeManager::GetFadeAlpha();
-		m_Renderer->DrawRectFilled(0, 0, m_Renderer->GetWidth(), m_Renderer->GetHeight(), hb::shared::render::Color::Black(static_cast<uint8_t>(alpha * 255.0f)));
+		float alpha = GameModeManager::get_fade_alpha();
+		m_Renderer->draw_rect_filled(0, 0, m_Renderer->get_width(), m_Renderer->get_height(), hb::shared::render::Color::Black(static_cast<uint8_t>(alpha * 255.0f)));
 	}
 
 	// HUD metrics — drawn on all screens, on top of fade overlay
 	{
 		std::string G_cTxt;
-		int iDisplayY = 100;
+		int display_y = 100;
 
 		// FPS (engine-tracked, counted at actual present)
-		if (ConfigManager::Get().IsShowFpsEnabled())
+		if (config_manager::get().is_show_fps_enabled())
 		{
-			G_cTxt = std::format("fps : {}", m_Renderer->GetFPS());
-			hb::shared::text::DrawText(GameFont::Default, 10, iDisplayY, G_cTxt.c_str(), hb::shared::text::TextStyle::Color(GameColors::UIWhite));
-			iDisplayY += 14;
+			G_cTxt = std::format("fps : {}", m_Renderer->get_fps());
+			hb::shared::text::draw_text(GameFont::Default, 10, display_y, G_cTxt.c_str(), hb::shared::text::TextStyle::from_color(GameColors::UIWhite));
+			display_y += 14;
 		}
 
 		// Latency
-		if (ConfigManager::Get().IsShowLatencyEnabled())
+		if (config_manager::get().is_show_latency_enabled())
 		{
-			if (m_iLatencyMs >= 0)
-				G_cTxt = std::format("latency : {} ms", m_iLatencyMs);
+			if (m_latency_ms >= 0)
+				G_cTxt = std::format("latency : {} ms", m_latency_ms);
 			else
 				G_cTxt = "latency : -- ms";
-			hb::shared::text::DrawText(GameFont::Default, 10, iDisplayY, G_cTxt.c_str(), hb::shared::text::TextStyle::Color(GameColors::UIWhite));
-			iDisplayY += 14;
+			hb::shared::text::draw_text(GameFont::Default, 10, display_y, G_cTxt.c_str(), hb::shared::text::TextStyle::from_color(GameColors::UIWhite));
+			display_y += 14;
 		}
 
 		// Profiling stage breakdown
-		if (FrameTiming::IsProfilingEnabled())
+		if (FrameTiming::is_profiling_enabled())
 		{
-			iDisplayY += 4;
-			hb::shared::text::DrawText(GameFont::Default, 10, iDisplayY, "--- Profile (avg ms) ---", hb::shared::text::TextStyle::Color(GameColors::UIProfileYellow));
-			iDisplayY += 14;
+			display_y += 4;
+			hb::shared::text::draw_text(GameFont::Default, 10, display_y, "--- Profile (avg ms) ---", hb::shared::text::TextStyle::from_color(GameColors::UIProfileYellow));
+			display_y += 14;
 
 			for (int i = 0; i < static_cast<int>(ProfileStage::COUNT); i++)
 			{
 				ProfileStage stage = static_cast<ProfileStage>(i);
-				double avgMs = FrameTiming::GetProfileAvgTimeMS(stage);
+				double avgMs = FrameTiming::get_profile_avg_time_ms(stage);
 				int wholePart = static_cast<int>(avgMs);
 				int fracPart = static_cast<int>((avgMs - wholePart) * 100);
-				G_cTxt = std::format("{:<12}: {:3}.{:02}", FrameTiming::GetStageName(stage), wholePart, fracPart);
-				hb::shared::text::DrawText(GameFont::Default, 10, iDisplayY, G_cTxt.c_str(), hb::shared::text::TextStyle::Color(GameColors::UINearWhite));
-				iDisplayY += 12;
+				G_cTxt = std::format("{:<12}: {:3}.{:02}", FrameTiming::get_stage_name(stage), wholePart, fracPart);
+				hb::shared::text::draw_text(GameFont::Default, 10, display_y, G_cTxt.c_str(), hb::shared::text::TextStyle::from_color(GameColors::UINearWhite));
+				display_y += 12;
 			}
 		}
 	}
 
 	// Cursor always on top - drawn LAST after everything including fade overlay
-	DrawCursor();
+	draw_cursor();
 
 	// Flip to show the drawn content
-	FrameTiming::BeginProfile(ProfileStage::Flip);
-	if (m_Renderer->EndFrameCheckLostSurface())
-		RestoreSprites();
-	FrameTiming::EndProfile(ProfileStage::Flip);
+	FrameTiming::begin_profile(ProfileStage::Flip);
+	if (m_Renderer->end_frame_check_lost_surface())
+		restore_sprites();
+	FrameTiming::end_profile(ProfileStage::Flip);
 
-	// Reset scroll delta now that dialogs have consumed it this frame
+	// reset scroll delta now that dialogs have consumed it this frame
 	// (scroll accumulates across skip frames until a rendered frame processes it)
 	hb::shared::input::reset_mouse_wheel_delta();
 }
 
 
 // MODERNIZED: v4 Networking Architecture (Drain -> Queue -> Process)
-void CGame::OnGameSocketEvent()
+void CGame::on_game_socket_event()
 {
-    if (m_pGSock == 0) return;
+    if (m_g_sock == 0) return;
 
     // 1. Check for socket state changes (Connect, Close, Error)
-    int iRet = m_pGSock->Poll();
+    int ret = m_g_sock->Poll();
 
-    switch (iRet) {
+    switch (ret) {
     case sock::Event::SocketClosed:
-        ChangeGameMode(GameMode::ConnectionLost);
-        m_pGSock.reset();
+        change_game_mode(GameMode::ConnectionLost);
+        m_g_sock.reset();
         return;
     case sock::Event::SocketError:
         printf("[ERROR] Game socket error\n");
-        ChangeGameMode(GameMode::ConnectionLost);
-        m_pGSock.reset();
+        change_game_mode(GameMode::ConnectionLost);
+        m_g_sock.reset();
         return;
 
     case sock::Event::ConnectionEstablish:
-        ConnectionEstablishHandler(static_cast<int>(ServerType::Game));
+        connection_establish_handler(static_cast<int>(ServerType::Game));
         break;
     }
 
     // 2. Drain all available data from TCP buffer to the Queue
-    // Only drain if socket is connected (m_bIsAvailable is set on FD_CONNECT)
-    if (!m_pGSock->m_bIsAvailable) {
+    // Only drain if socket is connected (m_is_available is set on FD_CONNECT)
+    if (!m_g_sock->m_is_available) {
         return; // Still connecting, don't try to read yet
     }
 
-    // If Poll() completed a packet, queue it before DrainToQueue() overwrites the buffer
-    if (iRet == sock::Event::ReadComplete) {
-        size_t dwSize = 0;
-        char* pData = m_pGSock->pGetRcvDataPointer(&dwSize);
-        if (pData != nullptr && dwSize > 0) {
-            m_pGSock->QueueCompletedPacket(pData, dwSize);
+    // If Poll() completed a packet, queue it before drain_to_queue() overwrites the buffer
+    if (ret == sock::Event::ReadComplete) {
+        size_t size = 0;
+        char* data = m_g_sock->get_rcv_data_pointer(&size);
+        if (data != nullptr && size > 0) {
+            m_g_sock->queue_completed_packet(data, size);
         }
     }
 
-    int iDrained = m_pGSock->DrainToQueue();
+    int drained = m_g_sock->drain_to_queue();
 
-    if (iDrained < 0) {
-        printf("[ERROR] Game socket DrainToQueue failed: %d\n", iDrained);
-        ChangeGameMode(GameMode::ConnectionLost);
-        m_pGSock.reset();
+    if (drained < 0) {
+        printf("[ERROR] Game socket drain_to_queue failed: %d\n", drained);
+        change_game_mode(GameMode::ConnectionLost);
+        m_g_sock.reset();
         return;
     }
 
@@ -741,55 +743,56 @@ void CGame::OnGameSocketEvent()
     constexpr int MAX_PACKETS_PER_FRAME = 120; // Safety limit
     constexpr uint32_t MAX_TIME_MS = 3;        // 3ms budget for network processing
 
-    uint32_t dwStartTime = GameClock::GetTimeMS();
-    int iProcessed = 0;
+    uint32_t start_time = GameClock::get_time_ms();
+    int processed = 0;
 
     hb::shared::net::NetworkPacket packet;
-    while (iProcessed < MAX_PACKETS_PER_FRAME) {
+    while (processed < MAX_PACKETS_PER_FRAME) {
 
         // Check budget
-        if (GameClock::GetTimeMS() - dwStartTime > MAX_TIME_MS) {
+        if (GameClock::get_time_ms() - start_time > MAX_TIME_MS) {
             break;
         }
 
         // Peek next packet
-        if (!m_pGSock->PeekPacket(packet)) {
+        if (!m_g_sock->peek_packet(packet)) {
             break; // Queue empty
         }
 
-        // Update functionality timestamps (legacy requirement)
-        m_dwLastNetRecvTime = GameClock::GetTimeMS();
-        m_dwTime = GameClock::GetTimeMS();
+        // update functionality timestamps (legacy requirement)
+        m_last_net_recv_time = GameClock::get_time_ms();
+        m_time = GameClock::get_time_ms();
 
         // Process (using the pointer directly from the packet vector)
         if (!packet.empty()) {
-             GameRecvMsgHandler(static_cast<uint32_t>(packet.size()), 
+             game_recv_msg_handler(static_cast<uint32_t>(packet.size()), 
                                 const_cast<char*>(packet.ptr()));
         }
 
         // CRITICAL FIX: The handler might have closed/deleted the socket!
-        if (m_pGSock == nullptr) return;
+        if (m_g_sock == nullptr) return;
 
-        // Pop logic (remove from queue)
-        m_pGSock->PopPacket();
-        iProcessed++;
+        // pop logic (remove from queue)
+        m_g_sock->pop_packet();
+        processed++;
     }
 }
 
-void CGame::RestoreSprites()
+
+void CGame::restore_sprites()
 {
-	for (auto& [idx, spr] : m_pSprite)
+	for (auto& [idx, spr] : m_sprite)
 	{
 		spr->Restore();
 	}
 }
 
-bool CGame::bSendCommand(uint32_t message_id, uint16_t command, char direction, int value1, int value2, int value3, const char* text, int value4)
+bool CGame::send_command(uint32_t message_id, uint16_t command, char direction, int value1, int value2, int value3, const char* text, int value4)
 {
 	int result = 0;
 
-	if ((m_pGSock == 0) && (m_pLSock == 0)) return false;
-	uint32_t current_time = GameClock::GetTimeMS();
+	if ((m_g_sock == 0) && (m_l_sock == 0)) return false;
+	uint32_t current_time = GameClock::get_time_ms();
 	uint8_t key = static_cast<uint8_t>(rand() % 255) + 1;
 
 	switch (message_id) {
@@ -805,7 +808,7 @@ bool CGame::bSendCommand(uint32_t message_id, uint16_t command, char direction, 
 			std::memcpy(req.name, text, name_len);
 		}
 		req.angel_id = value1;
-		result = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), key);
+		result = m_g_sock->send_msg(reinterpret_cast<char*>(&req), sizeof(req), key);
 	}
 	break;
 
@@ -815,7 +818,7 @@ bool CGame::bSendCommand(uint32_t message_id, uint16_t command, char direction, 
 		hb::net::PacketRequestHeaderOnly req{};
 		req.header.msg_id = message_id;
 		req.header.msg_type = 0;
-		result = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), key);
+		result = m_g_sock->send_msg(reinterpret_cast<char*>(&req), sizeof(req), key);
 	}
 	break;
 
@@ -830,7 +833,7 @@ bool CGame::bSendCommand(uint32_t message_id, uint16_t command, char direction, 
 			std::memcpy(req.name, text, name_len);
 		}
 		req.item_id = command;
-		result = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), key);
+		result = m_g_sock->send_msg(reinterpret_cast<char*>(&req), sizeof(req), key);
 	}
 	break;
 
@@ -840,7 +843,7 @@ bool CGame::bSendCommand(uint32_t message_id, uint16_t command, char direction, 
 		req.header.msg_id = message_id;
 		req.header.msg_type = 0;
 		std::snprintf(req.name, sizeof(req.name), "%s", "William");
-		result = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), key);
+		result = m_g_sock->send_msg(reinterpret_cast<char*>(&req), sizeof(req), key);
 	}
 	break;
 
@@ -850,7 +853,7 @@ bool CGame::bSendCommand(uint32_t message_id, uint16_t command, char direction, 
 		req.header.msg_id = message_id;
 		req.header.msg_type = 0;
 		std::snprintf(req.name, sizeof(req.name), "%s", "Gail");
-		result = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), key);
+		result = m_g_sock->send_msg(reinterpret_cast<char*>(&req), sizeof(req), key);
 	}
 	break;
 
@@ -861,7 +864,7 @@ bool CGame::bSendCommand(uint32_t message_id, uint16_t command, char direction, 
 		req.header.msg_id = message_id;
 		req.header.msg_type = 0;
 		req.teleport_id = value1;
-		result = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), key);
+		result = m_g_sock->send_msg(reinterpret_cast<char*>(&req), sizeof(req), key);
 	}
 	break;
 
@@ -871,10 +874,10 @@ bool CGame::bSendCommand(uint32_t message_id, uint16_t command, char direction, 
 		req.header.msg_id = message_id;
 		req.header.msg_type = 0;
 		for (int i = 0; i < game_limits::max_sell_list; i++) {
-			req.entries[i].index = static_cast<uint8_t>(m_stSellItemList[i].iIndex);
-			req.entries[i].amount = m_stSellItemList[i].iAmount;
+			req.entries[i].index = static_cast<uint8_t>(m_sell_item_list[i].index);
+			req.entries[i].amount = m_sell_item_list[i].amount;
 		}
-		result = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), key);
+		result = m_g_sock->send_msg(reinterpret_cast<char*>(&req), sizeof(req), key);
 	}
 	break;
 
@@ -883,7 +886,7 @@ bool CGame::bSendCommand(uint32_t message_id, uint16_t command, char direction, 
 		hb::net::PacketRequestHeaderOnly req{};
 		req.header.msg_id = message_id;
 		req.header.msg_type = 0;
-		result = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), key);
+		result = m_g_sock->send_msg(reinterpret_cast<char*>(&req), sizeof(req), key);
 	}
 	break;
 
@@ -893,22 +896,22 @@ bool CGame::bSendCommand(uint32_t message_id, uint16_t command, char direction, 
 		req.header.msg_id = message_id;
 		req.header.msg_type = 0;
 		req.dir = static_cast<uint8_t>(direction);
-		result = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), key);
+		result = m_g_sock->send_msg(reinterpret_cast<char*>(&req), sizeof(req), key);
 	}
 	break;
 
 
 	case ClientMsgId::GetMinimumLoadGateway:
-	case MsgId::RequestLogin:
+	case MsgId::request_login:
 		// to Log Server
 	{
 		hb::net::LoginRequest req{};
 		req.header.msg_id = message_id;
 		req.header.msg_type = 0;
-		std::snprintf(req.account_name, sizeof(req.account_name), "%s", m_pPlayer->m_cAccountName.c_str());
-		std::snprintf(req.password, sizeof(req.password), "%s", m_pPlayer->m_cAccountPassword.c_str());
-		std::snprintf(req.world_name, sizeof(req.world_name), "%s", m_cWorldServerName.c_str());
-		result = m_pLSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), key);
+		std::snprintf(req.account_name, sizeof(req.account_name), "%s", m_player->m_account_name.c_str());
+		std::snprintf(req.password, sizeof(req.password), "%s", m_player->m_account_password.c_str());
+		std::snprintf(req.world_name, sizeof(req.world_name), "%s", m_world_server_name.c_str());
+		result = m_l_sock->send_msg(reinterpret_cast<char*>(&req), sizeof(req), key);
 	}
 
 	break;
@@ -919,38 +922,38 @@ bool CGame::bSendCommand(uint32_t message_id, uint16_t command, char direction, 
 		hb::net::CreateCharacterRequest req{};
 		req.header.msg_id = message_id;
 		req.header.msg_type = 0;
-		std::snprintf(req.character_name, sizeof(req.character_name), "%s", m_pPlayer->m_cPlayerName.c_str());
-		std::snprintf(req.account_name, sizeof(req.account_name), "%s", m_pPlayer->m_cAccountName.c_str());
-		std::snprintf(req.password, sizeof(req.password), "%s", m_pPlayer->m_cAccountPassword.c_str());
-		std::snprintf(req.world_name, sizeof(req.world_name), "%s", m_cWorldServerName.c_str());
-		req.gender = static_cast<uint8_t>(m_pPlayer->m_iGender);
-		req.skin = static_cast<uint8_t>(m_pPlayer->m_iSkinCol);
-		req.hairstyle = static_cast<uint8_t>(m_pPlayer->m_iHairStyle);
-		req.haircolor = static_cast<uint8_t>(m_pPlayer->m_iHairCol);
-		req.underware = static_cast<uint8_t>(m_pPlayer->m_iUnderCol);
-		req.str = static_cast<uint8_t>(m_pPlayer->m_iStatModStr);
-		req.vit = static_cast<uint8_t>(m_pPlayer->m_iStatModVit);
-		req.dex = static_cast<uint8_t>(m_pPlayer->m_iStatModDex);
-		req.intl = static_cast<uint8_t>(m_pPlayer->m_iStatModInt);
-		req.mag = static_cast<uint8_t>(m_pPlayer->m_iStatModMag);
-		req.chr = static_cast<uint8_t>(m_pPlayer->m_iStatModChr);
-		result = m_pLSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), key);
+		std::snprintf(req.character_name, sizeof(req.character_name), "%s", m_player->m_player_name.c_str());
+		std::snprintf(req.account_name, sizeof(req.account_name), "%s", m_player->m_account_name.c_str());
+		std::snprintf(req.password, sizeof(req.password), "%s", m_player->m_account_password.c_str());
+		std::snprintf(req.world_name, sizeof(req.world_name), "%s", m_world_server_name.c_str());
+		req.gender = static_cast<uint8_t>(m_player->m_gender);
+		req.skin = static_cast<uint8_t>(m_player->m_skin_col);
+		req.hairstyle = static_cast<uint8_t>(m_player->m_hair_style);
+		req.haircolor = static_cast<uint8_t>(m_player->m_hair_col);
+		req.underware = static_cast<uint8_t>(m_player->m_under_col);
+		req.str = static_cast<uint8_t>(m_player->m_stat_mod_str);
+		req.vit = static_cast<uint8_t>(m_player->m_stat_mod_vit);
+		req.dex = static_cast<uint8_t>(m_player->m_stat_mod_dex);
+		req.intl = static_cast<uint8_t>(m_player->m_stat_mod_int);
+		req.mag = static_cast<uint8_t>(m_player->m_stat_mod_mag);
+		req.chr = static_cast<uint8_t>(m_player->m_stat_mod_chr);
+		result = m_l_sock->send_msg(reinterpret_cast<char*>(&req), sizeof(req), key);
 	}
 	break;
 
-	case MsgId::RequestEnterGame:
+	case MsgId::request_enter_game:
 		// to Log Server
 	{
 		hb::net::EnterGameRequestFull req{};
 		req.header.msg_id = message_id;
-		req.header.msg_type = static_cast<uint16_t>(m_wEnterGameType);
-		std::snprintf(req.character_name, sizeof(req.character_name), "%s", m_pPlayer->m_cPlayerName.c_str());
-		std::snprintf(req.map_name, sizeof(req.map_name), "%s", m_cMapName.c_str());
-		std::snprintf(req.account_name, sizeof(req.account_name), "%s", m_pPlayer->m_cAccountName.c_str());
-		std::snprintf(req.password, sizeof(req.password), "%s", m_pPlayer->m_cAccountPassword.c_str());
-		req.level = m_pPlayer->m_iLevel;
-		std::snprintf(req.world_name, sizeof(req.world_name), "%s", m_cWorldServerName.c_str());
-		result = m_pLSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), key);
+		req.header.msg_type = static_cast<uint16_t>(m_enter_game_type);
+		std::snprintf(req.character_name, sizeof(req.character_name), "%s", m_player->m_player_name.c_str());
+		std::snprintf(req.map_name, sizeof(req.map_name), "%s", m_map_name.c_str());
+		std::snprintf(req.account_name, sizeof(req.account_name), "%s", m_player->m_account_name.c_str());
+		std::snprintf(req.password, sizeof(req.password), "%s", m_player->m_account_password.c_str());
+		req.level = m_player->m_level;
+		std::snprintf(req.world_name, sizeof(req.world_name), "%s", m_world_server_name.c_str());
+		result = m_l_sock->send_msg(reinterpret_cast<char*>(&req), sizeof(req), key);
 	}
 	break;
 
@@ -959,12 +962,12 @@ bool CGame::bSendCommand(uint32_t message_id, uint16_t command, char direction, 
 	{
 		hb::net::DeleteCharacterRequest req{};
 		req.header.msg_id = message_id;
-		req.header.msg_type = static_cast<uint16_t>(m_wEnterGameType);
-		std::snprintf(req.character_name, sizeof(req.character_name), "%s", m_pCharList[m_wEnterGameType - 1]->m_cName.c_str());
-		std::snprintf(req.account_name, sizeof(req.account_name), "%s", m_pPlayer->m_cAccountName.c_str());
-		std::snprintf(req.password, sizeof(req.password), "%s", m_pPlayer->m_cAccountPassword.c_str());
-		std::snprintf(req.world_name, sizeof(req.world_name), "%s", m_cWorldServerName.c_str());
-		result = m_pLSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), key);
+		req.header.msg_type = static_cast<uint16_t>(m_enter_game_type);
+		std::snprintf(req.character_name, sizeof(req.character_name), "%s", m_char_list[m_enter_game_type - 1]->m_name.c_str());
+		std::snprintf(req.account_name, sizeof(req.account_name), "%s", m_player->m_account_name.c_str());
+		std::snprintf(req.password, sizeof(req.password), "%s", m_player->m_account_password.c_str());
+		std::snprintf(req.world_name, sizeof(req.world_name), "%s", m_world_server_name.c_str());
+		result = m_l_sock->send_msg(reinterpret_cast<char*>(&req), sizeof(req), key);
 	}
 	break;
 
@@ -977,7 +980,7 @@ bool CGame::bSendCommand(uint32_t message_id, uint16_t command, char direction, 
 		req.dir = static_cast<uint8_t>(direction);
 		req.x = static_cast<int16_t>(value1);
 		req.y = static_cast<int16_t>(value2);
-		result = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req));
+		result = m_g_sock->send_msg(reinterpret_cast<char*>(&req), sizeof(req));
 	}
 	break;
 
@@ -987,7 +990,7 @@ bool CGame::bSendCommand(uint32_t message_id, uint16_t command, char direction, 
 		req.header.msg_id = message_id;
 		req.header.msg_type = 0;
 		req.time_ms = current_time;
-		result = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), key);
+		result = m_g_sock->send_msg(reinterpret_cast<char*>(&req), sizeof(req), key);
 	}
 
 	break;
@@ -997,17 +1000,17 @@ bool CGame::bSendCommand(uint32_t message_id, uint16_t command, char direction, 
 		hb::net::PacketRequestInitDataEx req{};
 		req.header.msg_id = message_id;
 		req.header.msg_type = 0;
-		std::snprintf(req.player, sizeof(req.player), "%s", m_pPlayer->m_cPlayerName.c_str());
-		std::snprintf(req.account, sizeof(req.account), "%s", m_pPlayer->m_cAccountName.c_str());
-		std::snprintf(req.password, sizeof(req.password), "%s", m_pPlayer->m_cAccountPassword.c_str());
-		req.is_observer = static_cast<uint8_t>(m_bIsObserverMode);
-		std::snprintf(req.server, sizeof(req.server), "%s", m_cGameServerName.c_str());
+		std::snprintf(req.player, sizeof(req.player), "%s", m_player->m_player_name.c_str());
+		std::snprintf(req.account, sizeof(req.account), "%s", m_player->m_account_name.c_str());
+		std::snprintf(req.password, sizeof(req.password), "%s", m_player->m_account_password.c_str());
+		req.is_observer = static_cast<uint8_t>(m_is_observer_mode);
+		std::snprintf(req.server, sizeof(req.server), "%s", m_game_server_name.c_str());
 		req.padding = 0;
-		req.itemConfigHash = LocalCacheManager::Get().GetHash(ConfigCacheType::Items);
-		req.magicConfigHash = LocalCacheManager::Get().GetHash(ConfigCacheType::Magic);
-		req.skillConfigHash = LocalCacheManager::Get().GetHash(ConfigCacheType::Skills);
-		req.npcConfigHash = LocalCacheManager::Get().GetHash(ConfigCacheType::Npcs);
-		result = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), key);
+		req.itemConfigHash = LocalCacheManager::get().get_hash(ConfigCacheType::Items);
+		req.magicConfigHash = LocalCacheManager::get().get_hash(ConfigCacheType::Magic);
+		req.skillConfigHash = LocalCacheManager::get().get_hash(ConfigCacheType::Skills);
+		req.npcConfigHash = LocalCacheManager::get().get_hash(ConfigCacheType::Npcs);
+		result = m_g_sock->send_msg(reinterpret_cast<char*>(&req), sizeof(req), key);
 	}
 	break;
 
@@ -1016,13 +1019,13 @@ bool CGame::bSendCommand(uint32_t message_id, uint16_t command, char direction, 
 		hb::net::PacketRequestInitPlayer req{};
 		req.header.msg_id = message_id;
 		req.header.msg_type = 0;
-		std::snprintf(req.player, sizeof(req.player), "%s", m_pPlayer->m_cPlayerName.c_str());
-		std::snprintf(req.account, sizeof(req.account), "%s", m_pPlayer->m_cAccountName.c_str());
-		std::snprintf(req.password, sizeof(req.password), "%s", m_pPlayer->m_cAccountPassword.c_str());
-		req.is_observer = static_cast<uint8_t>(m_bIsObserverMode);
-		std::snprintf(req.server, sizeof(req.server), "%s", m_cGameServerName.c_str());
+		std::snprintf(req.player, sizeof(req.player), "%s", m_player->m_player_name.c_str());
+		std::snprintf(req.account, sizeof(req.account), "%s", m_player->m_account_name.c_str());
+		std::snprintf(req.password, sizeof(req.password), "%s", m_player->m_account_password.c_str());
+		req.is_observer = static_cast<uint8_t>(m_is_observer_mode);
+		std::snprintf(req.server, sizeof(req.server), "%s", m_game_server_name.c_str());
 		req.padding = 0;
-		result = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), key);
+		result = m_g_sock->send_msg(reinterpret_cast<char*>(&req), sizeof(req), key);
 	}
 	break;
 	case MsgId::LevelUpSettings:
@@ -1030,18 +1033,18 @@ bool CGame::bSendCommand(uint32_t message_id, uint16_t command, char direction, 
 		hb::net::PacketRequestLevelUpSettings req{};
 		req.header.msg_id = message_id;
 		req.header.msg_type = 0;
-		req.str = m_pPlayer->m_wLU_Str;
-		req.vit = m_pPlayer->m_wLU_Vit;
-		req.dex = m_pPlayer->m_wLU_Dex;
-		req.intel = m_pPlayer->m_wLU_Int;
-		req.mag = m_pPlayer->m_wLU_Mag;
-		req.chr = m_pPlayer->m_wLU_Char;
-		result = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), key);
+		req.str = m_player->m_lu_str;
+		req.vit = m_player->m_lu_vit;
+		req.dex = m_player->m_lu_dex;
+		req.intel = m_player->m_lu_int;
+		req.mag = m_player->m_lu_mag;
+		req.chr = m_player->m_lu_char;
+		result = m_g_sock->send_msg(reinterpret_cast<char*>(&req), sizeof(req), key);
 	}
 	break;
 
 	case MsgId::CommandChatMsg:
-		if (TeleportManager::Get().IsRequested()) return false;
+		if (teleport_manager::get().is_requested()) return false;
 		if (text == 0) return false;
 
 		// to Game Server
@@ -1049,43 +1052,43 @@ bool CGame::bSendCommand(uint32_t message_id, uint16_t command, char direction, 
 			hb::net::PacketCommandChatMsgHeader req{};
 			req.header.msg_id = message_id;
 			req.header.msg_type = 0;
-			req.x = m_pPlayer->m_sPlayerX;
-			req.y = m_pPlayer->m_sPlayerY;
-			std::snprintf(req.name, sizeof(req.name), "%s", m_pPlayer->m_cPlayerName.c_str());
+			req.x = m_player->m_player_x;
+			req.y = m_player->m_player_y;
+			std::snprintf(req.name, sizeof(req.name), "%s", m_player->m_player_name.c_str());
 			req.chat_type = static_cast<uint8_t>(value1);
-			if (bCheckLocalChatCommand(text) == true) return false;
+			if (check_local_chat_command(text) == true) return false;
 			std::size_t text_len = std::strlen(text);
 			char message[300]{};
 			std::memset(message, 0, sizeof(message));
 			std::memcpy(message, &req, sizeof(req));
 			std::memcpy(message + sizeof(req), text, text_len + 1);
-			result = m_pGSock->iSendMsg(message, static_cast<int>(sizeof(req) + text_len + 1));
+			result = m_g_sock->send_msg(message, static_cast<int>(sizeof(req) + text_len + 1));
 		}
 		break;
 
 	case MsgId::CommandCommon:
-		if (TeleportManager::Get().IsRequested()) return false;
+		if (teleport_manager::get().is_requested()) return false;
 		switch (command) {
 		case CommonType::BuildItem:
 		{
 			hb::net::PacketCommandCommonBuild req{};
 			req.base.header.msg_id = message_id;
 			req.base.header.msg_type = command;
-			req.base.x = m_pPlayer->m_sPlayerX;
-			req.base.y = m_pPlayer->m_sPlayerY;
+			req.base.x = m_player->m_player_x;
+			req.base.y = m_player->m_player_y;
 			req.base.dir = static_cast<uint8_t>(direction);
 			if (text != 0) {
 				std::size_t name_len = std::strlen(text);
 				if (name_len > sizeof(req.name)) name_len = sizeof(req.name);
 				std::memcpy(req.name, text, name_len);
 			}
-			req.item_ids[0] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV1);
-			req.item_ids[1] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV2);
-			req.item_ids[2] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV3);
-			req.item_ids[3] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV4);
-			req.item_ids[4] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV5);
-			req.item_ids[5] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV6);
-			result = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req));
+			req.item_ids[0] = static_cast<uint8_t>(m_dialog_box_manager.Info(DialogBoxId::Manufacture).m_v1);
+			req.item_ids[1] = static_cast<uint8_t>(m_dialog_box_manager.Info(DialogBoxId::Manufacture).m_v2);
+			req.item_ids[2] = static_cast<uint8_t>(m_dialog_box_manager.Info(DialogBoxId::Manufacture).m_v3);
+			req.item_ids[3] = static_cast<uint8_t>(m_dialog_box_manager.Info(DialogBoxId::Manufacture).m_v4);
+			req.item_ids[4] = static_cast<uint8_t>(m_dialog_box_manager.Info(DialogBoxId::Manufacture).m_v5);
+			req.item_ids[5] = static_cast<uint8_t>(m_dialog_box_manager.Info(DialogBoxId::Manufacture).m_v6);
+			result = m_g_sock->send_msg(reinterpret_cast<char*>(&req), sizeof(req));
 		}
 		break;
 
@@ -1094,17 +1097,17 @@ bool CGame::bSendCommand(uint32_t message_id, uint16_t command, char direction, 
 			hb::net::PacketCommandCommonItems req{};
 			req.base.header.msg_id = message_id;
 			req.base.header.msg_type = command;
-			req.base.x = m_pPlayer->m_sPlayerX;
-			req.base.y = m_pPlayer->m_sPlayerY;
+			req.base.x = m_player->m_player_x;
+			req.base.y = m_player->m_player_y;
 			req.base.dir = static_cast<uint8_t>(direction);
-			req.item_ids[0] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV1);
-			req.item_ids[1] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV2);
-			req.item_ids[2] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV3);
-			req.item_ids[3] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV4);
-			req.item_ids[4] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV5);
-			req.item_ids[5] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV6);
+			req.item_ids[0] = static_cast<uint8_t>(m_dialog_box_manager.Info(DialogBoxId::Manufacture).m_v1);
+			req.item_ids[1] = static_cast<uint8_t>(m_dialog_box_manager.Info(DialogBoxId::Manufacture).m_v2);
+			req.item_ids[2] = static_cast<uint8_t>(m_dialog_box_manager.Info(DialogBoxId::Manufacture).m_v3);
+			req.item_ids[3] = static_cast<uint8_t>(m_dialog_box_manager.Info(DialogBoxId::Manufacture).m_v4);
+			req.item_ids[4] = static_cast<uint8_t>(m_dialog_box_manager.Info(DialogBoxId::Manufacture).m_v5);
+			req.item_ids[5] = static_cast<uint8_t>(m_dialog_box_manager.Info(DialogBoxId::Manufacture).m_v6);
 			req.padding = 0;
-			result = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req));
+			result = m_g_sock->send_msg(reinterpret_cast<char*>(&req), sizeof(req));
 		}
 		break;
 
@@ -1114,17 +1117,17 @@ bool CGame::bSendCommand(uint32_t message_id, uint16_t command, char direction, 
 			hb::net::PacketCommandCommonBuild req{};
 			req.base.header.msg_id = message_id;
 			req.base.header.msg_type = command;
-			req.base.x = m_pPlayer->m_sPlayerX;
-			req.base.y = m_pPlayer->m_sPlayerY;
+			req.base.x = m_player->m_player_x;
+			req.base.y = m_player->m_player_y;
 			req.base.dir = static_cast<uint8_t>(direction);
 			std::memset(req.name, ' ', sizeof(req.name));
-			req.item_ids[0] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV1);
-			req.item_ids[1] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV2);
-			req.item_ids[2] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV3);
-			req.item_ids[3] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV4);
-			req.item_ids[4] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV5);
-			req.item_ids[5] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV6);
-			result = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req));
+			req.item_ids[0] = static_cast<uint8_t>(m_dialog_box_manager.Info(DialogBoxId::Manufacture).m_v1);
+			req.item_ids[1] = static_cast<uint8_t>(m_dialog_box_manager.Info(DialogBoxId::Manufacture).m_v2);
+			req.item_ids[2] = static_cast<uint8_t>(m_dialog_box_manager.Info(DialogBoxId::Manufacture).m_v3);
+			req.item_ids[3] = static_cast<uint8_t>(m_dialog_box_manager.Info(DialogBoxId::Manufacture).m_v4);
+			req.item_ids[4] = static_cast<uint8_t>(m_dialog_box_manager.Info(DialogBoxId::Manufacture).m_v5);
+			req.item_ids[5] = static_cast<uint8_t>(m_dialog_box_manager.Info(DialogBoxId::Manufacture).m_v6);
+			result = m_g_sock->send_msg(reinterpret_cast<char*>(&req), sizeof(req));
 		}
 		break;
 
@@ -1134,17 +1137,17 @@ bool CGame::bSendCommand(uint32_t message_id, uint16_t command, char direction, 
 			hb::net::PacketCommandCommonItems req{};
 			req.base.header.msg_id = message_id;
 			req.base.header.msg_type = command;
-			req.base.x = m_pPlayer->m_sPlayerX;
-			req.base.y = m_pPlayer->m_sPlayerY;
+			req.base.x = m_player->m_player_x;
+			req.base.y = m_player->m_player_y;
 			req.base.dir = static_cast<uint8_t>(direction);
-			req.item_ids[0] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Slates).sV1);
-			req.item_ids[1] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Slates).sV2);
-			req.item_ids[2] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Slates).sV3);
-			req.item_ids[3] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Slates).sV4);
-			req.item_ids[4] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Slates).sV5);
-			req.item_ids[5] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Slates).sV6);
+			req.item_ids[0] = static_cast<uint8_t>(m_dialog_box_manager.Info(DialogBoxId::Slates).m_v1);
+			req.item_ids[1] = static_cast<uint8_t>(m_dialog_box_manager.Info(DialogBoxId::Slates).m_v2);
+			req.item_ids[2] = static_cast<uint8_t>(m_dialog_box_manager.Info(DialogBoxId::Slates).m_v3);
+			req.item_ids[3] = static_cast<uint8_t>(m_dialog_box_manager.Info(DialogBoxId::Slates).m_v4);
+			req.item_ids[4] = static_cast<uint8_t>(m_dialog_box_manager.Info(DialogBoxId::Slates).m_v5);
+			req.item_ids[5] = static_cast<uint8_t>(m_dialog_box_manager.Info(DialogBoxId::Slates).m_v6);
 			req.padding = 0;
-			result = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req));
+			result = m_g_sock->send_msg(reinterpret_cast<char*>(&req), sizeof(req));
 		}
 		break;
 
@@ -1154,14 +1157,14 @@ bool CGame::bSendCommand(uint32_t message_id, uint16_t command, char direction, 
 			hb::net::PacketCommandCommonWithTime req{};
 			req.base.header.msg_id = message_id;
 			req.base.header.msg_type = command;
-			req.base.x = m_pPlayer->m_sPlayerX;
-			req.base.y = m_pPlayer->m_sPlayerY;
+			req.base.x = m_player->m_player_x;
+			req.base.y = m_player->m_player_y;
 			req.base.dir = static_cast<uint8_t>(direction);
 			req.v1 = value1;  // target X
 			req.v2 = value2;  // target Y
 			req.v3 = value3;  // magic type (100-199)
 			req.time_ms = static_cast<uint32_t>(value4);  // target object ID (0 = tile-based, >0 = entity tracking)
-			result = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req));
+			result = m_g_sock->send_msg(reinterpret_cast<char*>(&req), sizeof(req));
 		}
 		break;
 
@@ -1171,22 +1174,22 @@ bool CGame::bSendCommand(uint32_t message_id, uint16_t command, char direction, 
 				hb::net::PacketCommandCommonWithTime req{};
 				req.base.header.msg_id = message_id;
 				req.base.header.msg_type = command;
-				req.base.x = m_pPlayer->m_sPlayerX;
-				req.base.y = m_pPlayer->m_sPlayerY;
+				req.base.x = m_player->m_player_x;
+				req.base.y = m_player->m_player_y;
 				req.base.dir = static_cast<uint8_t>(direction);
 				req.v1 = value1;
 				req.v2 = value2;
 				req.v3 = value3;
 				req.time_ms = current_time;
-				result = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req));
+				result = m_g_sock->send_msg(reinterpret_cast<char*>(&req), sizeof(req));
 			}
 			else
 			{
 				hb::net::PacketCommandCommonWithString req{};
 				req.base.header.msg_id = message_id;
 				req.base.header.msg_type = command;
-				req.base.x = m_pPlayer->m_sPlayerX;
-				req.base.y = m_pPlayer->m_sPlayerY;
+				req.base.x = m_player->m_player_x;
+				req.base.y = m_player->m_player_y;
 				req.base.dir = static_cast<uint8_t>(direction);
 				req.v1 = value1;
 				req.v2 = value2;
@@ -1196,26 +1199,26 @@ bool CGame::bSendCommand(uint32_t message_id, uint16_t command, char direction, 
 				if (text_len > sizeof(req.text)) text_len = sizeof(req.text);
 				std::memcpy(req.text, text, text_len);
 				req.v4 = value4;
-				result = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req));
+				result = m_g_sock->send_msg(reinterpret_cast<char*>(&req), sizeof(req));
 			}
 			break;
 		}
 
 		break;
 
-	case MsgId::RequestCreateNewGuild:
-	case MsgId::RequestDisbandGuild:
+	case MsgId::request_create_new_guild:
+	case MsgId::request_disband_guild:
 		// to Game Server
 	{
 		hb::net::PacketRequestGuildAction req{};
 		req.header.msg_id = message_id;
 		req.header.msg_type = MsgType::Confirm;
-		std::snprintf(req.player, sizeof(req.player), "%s", m_pPlayer->m_cPlayerName.c_str());
-		std::snprintf(req.account, sizeof(req.account), "%s", m_pPlayer->m_cAccountName.c_str());
-		std::snprintf(req.password, sizeof(req.password), "%s", m_pPlayer->m_cAccountPassword.c_str());
-		std::snprintf(req.guild, sizeof(req.guild), "%s", m_pPlayer->m_cGuildName.c_str());
-		CMisc::ReplaceString(req.guild, ' ', '_');
-		result = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), key);
+		std::snprintf(req.player, sizeof(req.player), "%s", m_player->m_player_name.c_str());
+		std::snprintf(req.account, sizeof(req.account), "%s", m_player->m_account_name.c_str());
+		std::snprintf(req.password, sizeof(req.password), "%s", m_player->m_account_password.c_str());
+		std::snprintf(req.guild, sizeof(req.guild), "%s", m_player->m_guild_name.c_str());
+		CMisc::replace_string(req.guild, ' ', '_');
+		result = m_g_sock->send_msg(reinterpret_cast<char*>(&req), sizeof(req), key);
 	}
 	break;
 
@@ -1224,10 +1227,10 @@ bool CGame::bSendCommand(uint32_t message_id, uint16_t command, char direction, 
 		hb::net::PacketRequestHeaderOnly req{};
 		req.header.msg_id = message_id;
 		req.header.msg_type = MsgType::Confirm;
-		result = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req));
+		result = m_g_sock->send_msg(reinterpret_cast<char*>(&req), sizeof(req));
 	}
 
-	TeleportManager::Get().SetRequested(true);
+	teleport_manager::get().set_requested(true);
 	break;
 
 	case MsgId::RequestCivilRight:
@@ -1235,7 +1238,7 @@ bool CGame::bSendCommand(uint32_t message_id, uint16_t command, char direction, 
 		hb::net::PacketRequestHeaderOnly req{};
 		req.header.msg_id = message_id;
 		req.header.msg_type = MsgType::Confirm;
-		result = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req));
+		result = m_g_sock->send_msg(reinterpret_cast<char*>(&req), sizeof(req));
 	}
 	break;
 
@@ -1245,7 +1248,7 @@ bool CGame::bSendCommand(uint32_t message_id, uint16_t command, char direction, 
 		req.header.msg_id = message_id;
 		req.header.msg_type = MsgType::Confirm;
 		req.item_slot = static_cast<uint8_t>(value1);
-		result = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req));
+		result = m_g_sock->send_msg(reinterpret_cast<char*>(&req), sizeof(req));
 	}
 	break;
 
@@ -1255,7 +1258,7 @@ bool CGame::bSendCommand(uint32_t message_id, uint16_t command, char direction, 
 		req.header.msg_id = message_id;
 		req.header.msg_type = 0;
 		req.value = value1;
-		result = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), key);
+		result = m_g_sock->send_msg(reinterpret_cast<char*>(&req), sizeof(req), key);
 	}
 	break;
 
@@ -1265,7 +1268,7 @@ bool CGame::bSendCommand(uint32_t message_id, uint16_t command, char direction, 
 		req.header.msg_id = message_id;
 		req.header.msg_type = 0;
 		req.fightzone = value1;
-		result = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req));
+		result = m_g_sock->send_msg(reinterpret_cast<char*>(&req), sizeof(req));
 	}
 	break;
 
@@ -1274,66 +1277,60 @@ bool CGame::bSendCommand(uint32_t message_id, uint16_t command, char direction, 
 		hb::net::PacketRequestStateChange req{};
 		req.header.msg_id = message_id;
 		req.header.msg_type = 0;
-		req.str = static_cast<int16_t>(-m_pPlayer->m_wLU_Str);
-		req.vit = static_cast<int16_t>(-m_pPlayer->m_wLU_Vit);
-		req.dex = static_cast<int16_t>(-m_pPlayer->m_wLU_Dex);
-		req.intel = static_cast<int16_t>(-m_pPlayer->m_wLU_Int);
-		req.mag = static_cast<int16_t>(-m_pPlayer->m_wLU_Mag);
-		req.chr = static_cast<int16_t>(-m_pPlayer->m_wLU_Char);
-		result = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req));
+		req.str = static_cast<int16_t>(-m_player->m_lu_str);
+		req.vit = static_cast<int16_t>(-m_player->m_lu_vit);
+		req.dex = static_cast<int16_t>(-m_player->m_lu_dex);
+		req.intel = static_cast<int16_t>(-m_player->m_lu_int);
+		req.mag = static_cast<int16_t>(-m_player->m_lu_mag);
+		req.chr = static_cast<int16_t>(-m_player->m_lu_char);
+		result = m_g_sock->send_msg(reinterpret_cast<char*>(&req), sizeof(req));
 	}
 	break;
 
 	default:
-		if (TeleportManager::Get().IsRequested()) return false;
+		if (teleport_manager::get().is_requested()) return false;
 		if ((command == Type::Attack) || (command == Type::AttackMove))
 		{
 			hb::net::PacketCommandMotionAttack req{};
 			req.base.header.msg_id = message_id;
 			req.base.header.msg_type = command;
-			req.base.x = m_pPlayer->m_sPlayerX;
-			req.base.y = m_pPlayer->m_sPlayerY;
+			req.base.x = m_player->m_player_x;
+			req.base.y = m_player->m_player_y;
 			req.base.dir = static_cast<uint8_t>(direction);
 			req.base.dx = static_cast<int16_t>(value1);
 			req.base.dy = static_cast<int16_t>(value2);
 			req.base.type = static_cast<int16_t>(value3);
 			req.target_id = static_cast<uint16_t>(value4);
 			req.time_ms = current_time;
-			result = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req));
+			result = m_g_sock->send_msg(reinterpret_cast<char*>(&req), sizeof(req));
 		}
 		else
 		{
 			hb::net::PacketCommandMotionSimple req{};
 			req.base.header.msg_id = message_id;
 			req.base.header.msg_type = command;
-			req.base.x = m_pPlayer->m_sPlayerX;
-			req.base.y = m_pPlayer->m_sPlayerY;
+			req.base.x = m_player->m_player_x;
+			req.base.y = m_player->m_player_y;
 			req.base.dir = static_cast<uint8_t>(direction);
 			req.base.dx = static_cast<int16_t>(value1);
 			req.base.dy = static_cast<int16_t>(value2);
 			req.base.type = static_cast<int16_t>(value3);
 			req.time_ms = current_time;
-			result = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req)); //v2.171
+			result = m_g_sock->send_msg(reinterpret_cast<char*>(&req), sizeof(req)); //v2.171
 		}
-		m_pPlayer->m_Controller.IncrementCommandCount();
+		m_player->m_Controller.increment_command_count();
 		break;
 	}
 	switch (result) {
 	case sock::Event::SocketClosed:
 	case sock::Event::SocketError:
 	case sock::Event::QueueFull:
-		printf("[ERROR] bSendCommand failed: ret=%d msgid=0x%X cmd=0x%X\n", result, message_id, command);
-		ChangeGameMode(GameMode::ConnectionLost);
-	m_pGSock.reset();
+		change_game_mode(GameMode::ConnectionLost);
+	m_g_sock.reset();
 	break;
 
 	case sock::Event::CriticalError:
-	{
-		std::string cDbg;
-		cDbg = std::format("[NETWARN] bSendCommand: CRITICAL ret={} msgid=0x{:X} cmd=0x{:X}\n", result, message_id, command);
-		printf("%s", cDbg.c_str());
-	}
-	m_pGSock.reset();
+	m_g_sock.reset();
 	hb::shared::render::Window::close();
 	break;
 	}
@@ -1341,27 +1338,27 @@ bool CGame::bSendCommand(uint32_t message_id, uint16_t command, char direction, 
 }
 
 
-bool CGame::_bDecodeItemConfigFileContents(char* pData, uint32_t dwMsgSize)
+bool CGame::decode_item_config_file_contents(char* data, uint32_t msg_size)
 {
-	LocalCacheManager::Get().AccumulatePacket(ConfigCacheType::Items, pData, dwMsgSize);
+	LocalCacheManager::get().accumulate_packet(ConfigCacheType::Items, data, msg_size);
 
 	// Parse binary item config packet
 	constexpr size_t headerSize = sizeof(hb::net::PacketItemConfigHeader);
 	constexpr size_t entrySize = sizeof(hb::net::PacketItemConfigEntry);
 
-	if (dwMsgSize < headerSize) {
+	if (msg_size < headerSize) {
 		return false;
 	}
 
-	const auto* pktHeader = reinterpret_cast<const hb::net::PacketItemConfigHeader*>(pData);
+	const auto* pktHeader = reinterpret_cast<const hb::net::PacketItemConfigHeader*>(data);
 	uint16_t itemCount = pktHeader->itemCount;
 	uint16_t totalItems = pktHeader->totalItems;
 
-	if (dwMsgSize < headerSize + (itemCount * entrySize)) {
+	if (msg_size < headerSize + (itemCount * entrySize)) {
 		return false;
 	}
 
-	const auto* entries = reinterpret_cast<const hb::net::PacketItemConfigEntry*>(pData + headerSize);
+	const auto* entries = reinterpret_cast<const hb::net::PacketItemConfigEntry*>(data + headerSize);
 
 	for (uint16_t i = 0; i < itemCount; i++) {
 		const auto& entry = entries[i];
@@ -1372,49 +1369,49 @@ bool CGame::_bDecodeItemConfigFileContents(char* pData, uint32_t dwMsgSize)
 		}
 
 		// Delete existing item if present (shouldn't happen, but be safe)
-		if (m_pItemConfigList[itemId] != 0) {
-			m_pItemConfigList[itemId].reset();
+		if (m_item_config_list[itemId] != 0) {
+			m_item_config_list[itemId].reset();
 		}
 
-		m_pItemConfigList[itemId] = std::make_unique<CItem>();
-		CItem* pItem = m_pItemConfigList[itemId].get();
+		m_item_config_list[itemId] = std::make_unique<CItem>();
+		CItem* item = m_item_config_list[itemId].get();
 
-		pItem->m_sIDnum = entry.itemId;
-		std::snprintf(pItem->m_cName, sizeof(pItem->m_cName), "%s", entry.name);
-		pItem->m_cItemType = entry.itemType;
-		pItem->m_cEquipPos = entry.equipPos;
-		pItem->m_sItemEffectType = entry.effectType;
-		pItem->m_sItemEffectValue1 = entry.effectValue1;
-		pItem->m_sItemEffectValue2 = entry.effectValue2;
-		pItem->m_sItemEffectValue3 = entry.effectValue3;
-		pItem->m_sItemEffectValue4 = entry.effectValue4;
-		pItem->m_sItemEffectValue5 = entry.effectValue5;
-		pItem->m_sItemEffectValue6 = entry.effectValue6;
-		pItem->m_wMaxLifeSpan = entry.maxLifeSpan;
-		pItem->m_sSpecialEffect = entry.specialEffect;
-		pItem->m_sSprite = entry.sprite;
-		pItem->m_sSpriteFrame = entry.spriteFrame;
-		pItem->m_bIsForSale = (entry.price >= 0);
-		pItem->m_wPrice = static_cast<uint32_t>(entry.price >= 0 ? entry.price : -entry.price);
-		pItem->m_wWeight = entry.weight;
-		pItem->m_cApprValue = entry.apprValue;
-		pItem->m_cSpeed = entry.speed;
-		pItem->m_sLevelLimit = entry.levelLimit;
-		pItem->m_cGenderLimit = entry.genderLimit;
-		pItem->m_sSpecialEffectValue1 = entry.specialEffectValue1;
-		pItem->m_sSpecialEffectValue2 = entry.specialEffectValue2;
-		pItem->m_sRelatedSkill = entry.relatedSkill;
-		pItem->m_cCategory = entry.category;
-		pItem->m_cItemColor = entry.itemColor;
+		item->m_id_num = entry.itemId;
+		std::snprintf(item->m_name, sizeof(item->m_name), "%s", entry.name);
+		item->m_item_type = entry.itemType;
+		item->m_equip_pos = entry.equipPos;
+		item->m_item_effect_type = entry.effectType;
+		item->m_item_effect_value1 = entry.effectValue1;
+		item->m_item_effect_value2 = entry.effectValue2;
+		item->m_item_effect_value3 = entry.effectValue3;
+		item->m_item_effect_value4 = entry.effectValue4;
+		item->m_item_effect_value5 = entry.effectValue5;
+		item->m_item_effect_value6 = entry.effectValue6;
+		item->m_max_life_span = entry.maxLifeSpan;
+		item->m_special_effect = entry.specialEffect;
+		item->m_sprite = entry.sprite;
+		item->m_sprite_frame = entry.spriteFrame;
+		item->m_is_for_sale = (entry.price >= 0);
+		item->m_price = static_cast<uint32_t>(entry.price >= 0 ? entry.price : -entry.price);
+		item->m_weight = entry.weight;
+		item->m_appearance_value = entry.apprValue;
+		item->m_speed = entry.speed;
+		item->m_level_limit = entry.levelLimit;
+		item->m_gender_limit = entry.genderLimit;
+		item->m_special_effect_value1 = entry.specialEffectValue1;
+		item->m_special_effect_value2 = entry.specialEffectValue2;
+		item->m_related_skill = entry.relatedSkill;
+		item->m_category = entry.category;
+		item->m_item_color = entry.itemColor;
 	}
 
 	// Log total count on last packet
 	int totalLoaded = 0;
 	for (int j = 0; j < 5000; j++) {
-		if (m_pItemConfigList[j] != 0) totalLoaded++;
+		if (m_item_config_list[j] != 0) totalLoaded++;
 	}
-	if (totalLoaded >= totalItems && !LocalCacheManager::Get().IsReplaying()) {
-		if (LocalCacheManager::Get().FinalizeAndSave(ConfigCacheType::Items)) {
+	if (totalLoaded >= totalItems && !LocalCacheManager::get().is_replaying()) {
+		if (LocalCacheManager::get().finalize_and_save(ConfigCacheType::Items)) {
 		} else {
 		}
 	}
@@ -1422,26 +1419,26 @@ bool CGame::_bDecodeItemConfigFileContents(char* pData, uint32_t dwMsgSize)
 	return true;
 }
 
-bool CGame::_bDecodeMagicConfigFileContents(char* pData, uint32_t dwMsgSize)
+bool CGame::decode_magic_config_file_contents(char* data, uint32_t msg_size)
 {
-	LocalCacheManager::Get().AccumulatePacket(ConfigCacheType::Magic, pData, dwMsgSize);
+	LocalCacheManager::get().accumulate_packet(ConfigCacheType::Magic, data, msg_size);
 
 	constexpr size_t headerSize = sizeof(hb::net::PacketMagicConfigHeader);
 	constexpr size_t entrySize = sizeof(hb::net::PacketMagicConfigEntry);
 
-	if (dwMsgSize < headerSize) {
+	if (msg_size < headerSize) {
 		return false;
 	}
 
-	const auto* pktHeader = reinterpret_cast<const hb::net::PacketMagicConfigHeader*>(pData);
+	const auto* pktHeader = reinterpret_cast<const hb::net::PacketMagicConfigHeader*>(data);
 	uint16_t magicCount = pktHeader->magicCount;
 	uint16_t totalMagics = pktHeader->totalMagics;
 
-	if (dwMsgSize < headerSize + (magicCount * entrySize)) {
+	if (msg_size < headerSize + (magicCount * entrySize)) {
 		return false;
 	}
 
-	const auto* entries = reinterpret_cast<const hb::net::PacketMagicConfigEntry*>(pData + headerSize);
+	const auto* entries = reinterpret_cast<const hb::net::PacketMagicConfigEntry*>(data + headerSize);
 
 	for (uint16_t i = 0; i < magicCount; i++) {
 		const auto& entry = entries[i];
@@ -1451,31 +1448,31 @@ bool CGame::_bDecodeMagicConfigFileContents(char* pData, uint32_t dwMsgSize)
 			continue;
 		}
 
-		if (m_pMagicCfgList[magicId] != 0) {
-			m_pMagicCfgList[magicId].reset();
+		if (m_magic_cfg_list[magicId] != 0) {
+			m_magic_cfg_list[magicId].reset();
 		}
 
-		m_pMagicCfgList[magicId] = std::make_unique<CMagic>();
-		CMagic* pMagic = m_pMagicCfgList[magicId].get();
-		pMagic->m_cName = entry.name;
-		pMagic->m_sValue1 = entry.manaCost;
-		pMagic->m_sValue2 = entry.intLimit;
-		pMagic->m_sValue3 = (entry.goldCost >= 0) ? entry.goldCost : -entry.goldCost;
-		pMagic->m_bIsVisible = (entry.isVisible != 0);
-		pMagic->m_sType = entry.magicType;
-		pMagic->m_sAoERadiusX = entry.aoeRadiusX;
-		pMagic->m_sAoERadiusY = entry.aoeRadiusY;
-		pMagic->m_sDynamicPattern = entry.dynamicPattern;
-		pMagic->m_sDynamicRadius = entry.dynamicRadius;
+		m_magic_cfg_list[magicId] = std::make_unique<CMagic>();
+		CMagic* magic = m_magic_cfg_list[magicId].get();
+		magic->m_name = entry.name;
+		magic->m_value_1 = entry.manaCost;
+		magic->m_value_2 = entry.intLimit;
+		magic->m_value_3 = (entry.goldCost >= 0) ? entry.goldCost : -entry.goldCost;
+		magic->m_is_visible = (entry.visible != 0);
+		magic->m_type = entry.magicType;
+		magic->m_aoe_radius_x = entry.aoeRadiusX;
+		magic->m_aoe_radius_y = entry.aoeRadiusY;
+		magic->m_dynamic_pattern = entry.dynamicPattern;
+		magic->m_dynamic_radius = entry.dynamicRadius;
 	}
 
 	// Log total count on last packet
 	int totalLoaded = 0;
 	for (int j = 0; j < hb::shared::limits::MaxMagicType; j++) {
-		if (m_pMagicCfgList[j] != 0) totalLoaded++;
+		if (m_magic_cfg_list[j] != 0) totalLoaded++;
 	}
-	if (totalLoaded >= totalMagics && !LocalCacheManager::Get().IsReplaying()) {
-		if (LocalCacheManager::Get().FinalizeAndSave(ConfigCacheType::Magic)) {
+	if (totalLoaded >= totalMagics && !LocalCacheManager::get().is_replaying()) {
+		if (LocalCacheManager::get().finalize_and_save(ConfigCacheType::Magic)) {
 		} else {
 		}
 	}
@@ -1483,26 +1480,26 @@ bool CGame::_bDecodeMagicConfigFileContents(char* pData, uint32_t dwMsgSize)
 	return true;
 }
 
-bool CGame::_bDecodeSkillConfigFileContents(char* pData, uint32_t dwMsgSize)
+bool CGame::decode_skill_config_file_contents(char* data, uint32_t msg_size)
 {
-	LocalCacheManager::Get().AccumulatePacket(ConfigCacheType::Skills, pData, dwMsgSize);
+	LocalCacheManager::get().accumulate_packet(ConfigCacheType::Skills, data, msg_size);
 
 	constexpr size_t headerSize = sizeof(hb::net::PacketSkillConfigHeader);
 	constexpr size_t entrySize = sizeof(hb::net::PacketSkillConfigEntry);
 
-	if (dwMsgSize < headerSize) {
+	if (msg_size < headerSize) {
 		return false;
 	}
 
-	const auto* pktHeader = reinterpret_cast<const hb::net::PacketSkillConfigHeader*>(pData);
+	const auto* pktHeader = reinterpret_cast<const hb::net::PacketSkillConfigHeader*>(data);
 	uint16_t skillCount = pktHeader->skillCount;
 	uint16_t totalSkills = pktHeader->totalSkills;
 
-	if (dwMsgSize < headerSize + (skillCount * entrySize)) {
+	if (msg_size < headerSize + (skillCount * entrySize)) {
 		return false;
 	}
 
-	const auto* entries = reinterpret_cast<const hb::net::PacketSkillConfigEntry*>(pData + headerSize);
+	const auto* entries = reinterpret_cast<const hb::net::PacketSkillConfigEntry*>(data + headerSize);
 
 	for (uint16_t i = 0; i < skillCount; i++) {
 		const auto& entry = entries[i];
@@ -1512,26 +1509,26 @@ bool CGame::_bDecodeSkillConfigFileContents(char* pData, uint32_t dwMsgSize)
 			continue;
 		}
 
-		if (m_pSkillCfgList[skillId] != 0) {
-			m_pSkillCfgList[skillId].reset();
+		if (m_skill_cfg_list[skillId] != 0) {
+			m_skill_cfg_list[skillId].reset();
 		}
 
-		m_pSkillCfgList[skillId] = std::make_unique<CSkill>();
-		CSkill* pSkill = m_pSkillCfgList[skillId].get();
-		pSkill->m_cName = entry.name;
-		pSkill->m_bIsUseable = (entry.isUseable != 0);
-		pSkill->m_cUseMethod = entry.useMethod;
-		// Apply mastery level if already received from InitItemList
-		pSkill->m_iLevel = static_cast<int>(m_pPlayer->m_iSkillMastery[skillId]);
+		m_skill_cfg_list[skillId] = std::make_unique<CSkill>();
+		CSkill* skill = m_skill_cfg_list[skillId].get();
+		skill->m_name = entry.name;
+		skill->m_is_useable = (entry.useable != 0);
+		skill->m_use_method = entry.useMethod;
+		// Apply mastery level if already received from init_item_list
+		skill->m_level = static_cast<int>(m_player->m_skill_mastery[skillId]);
 	}
 
 	// Log total count on last packet
 	int totalLoaded = 0;
 	for (int j = 0; j < hb::shared::limits::MaxSkillType; j++) {
-		if (m_pSkillCfgList[j] != 0) totalLoaded++;
+		if (m_skill_cfg_list[j] != 0) totalLoaded++;
 	}
-	if (totalLoaded >= totalSkills && !LocalCacheManager::Get().IsReplaying()) {
-		if (LocalCacheManager::Get().FinalizeAndSave(ConfigCacheType::Skills)) {
+	if (totalLoaded >= totalSkills && !LocalCacheManager::get().is_replaying()) {
+		if (LocalCacheManager::get().finalize_and_save(ConfigCacheType::Skills)) {
 		} else {
 		}
 	}
@@ -1539,26 +1536,26 @@ bool CGame::_bDecodeSkillConfigFileContents(char* pData, uint32_t dwMsgSize)
 	return true;
 }
 
-bool CGame::_bDecodeNpcConfigFileContents(char* pData, uint32_t dwMsgSize)
+bool CGame::decode_npc_config_file_contents(char* data, uint32_t msg_size)
 {
-	LocalCacheManager::Get().AccumulatePacket(ConfigCacheType::Npcs, pData, dwMsgSize);
+	LocalCacheManager::get().accumulate_packet(ConfigCacheType::Npcs, data, msg_size);
 
 	constexpr size_t headerSize = sizeof(hb::net::PacketNpcConfigHeader);
 	constexpr size_t entrySize = sizeof(hb::net::PacketNpcConfigEntry);
 
-	if (dwMsgSize < headerSize) {
+	if (msg_size < headerSize) {
 		return false;
 	}
 
-	const auto* pktHeader = reinterpret_cast<const hb::net::PacketNpcConfigHeader*>(pData);
+	const auto* pktHeader = reinterpret_cast<const hb::net::PacketNpcConfigHeader*>(data);
 	uint16_t npcCount = pktHeader->npcCount;
 	uint16_t totalNpcs = pktHeader->totalNpcs;
 
-	if (dwMsgSize < headerSize + (npcCount * entrySize)) {
+	if (msg_size < headerSize + (npcCount * entrySize)) {
 		return false;
 	}
 
-	const auto* entries = reinterpret_cast<const hb::net::PacketNpcConfigEntry*>(pData + headerSize);
+	const auto* entries = reinterpret_cast<const hb::net::PacketNpcConfigEntry*>(data + headerSize);
 
 	for (uint16_t i = 0; i < npcCount; i++) {
 		const auto& entry = entries[i];
@@ -1567,23 +1564,23 @@ bool CGame::_bDecodeNpcConfigFileContents(char* pData, uint32_t dwMsgSize)
 
 		// Store by npc_id (primary key)
 		if (npcId >= 0 && npcId < hb::shared::limits::MaxNpcConfigs) {
-			m_npcConfigList[npcId].npcType = static_cast<short>(npcType);
-			m_npcConfigList[npcId].name = entry.name;
-			m_npcConfigList[npcId].valid = true;
+			m_npc_config_list[npcId].npcType = static_cast<short>(npcType);
+			m_npc_config_list[npcId].name = entry.name;
+			m_npc_config_list[npcId].valid = true;
 		}
 
-		// Update type->name reverse map (last config per type wins)
+		// update type->name reverse map (last config per type wins)
 		if (npcType >= 0 && npcType < 120) {
-			m_cNpcNameByType[npcType] = entry.name;
+			m_npc_name_by_type[npcType] = entry.name;
 		}
 	}
 
 	// Track raw entries received across packets
-	if (pktHeader->packetIndex == 0) m_iNpcConfigsReceived = 0;
-	m_iNpcConfigsReceived += npcCount;
+	if (pktHeader->packetIndex == 0) m_npc_configs_received = 0;
+	m_npc_configs_received += npcCount;
 
-	if (m_iNpcConfigsReceived >= totalNpcs && !LocalCacheManager::Get().IsReplaying()) {
-		if (LocalCacheManager::Get().FinalizeAndSave(ConfigCacheType::Npcs)) {
+	if (m_npc_configs_received >= totalNpcs && !LocalCacheManager::get().is_replaying()) {
+		if (LocalCacheManager::get().finalize_and_save(ConfigCacheType::Npcs)) {
 		} else {
 		}
 	}
@@ -1591,150 +1588,150 @@ bool CGame::_bDecodeNpcConfigFileContents(char* pData, uint32_t dwMsgSize)
 	return true;
 }
 
-const char* CGame::GetNpcConfigName(short sType) const
+const char* CGame::get_npc_config_name(short type) const
 {
-	if (sType >= 0 && sType < 120 && !m_cNpcNameByType[sType].empty()) {
-		return m_cNpcNameByType[sType].c_str();
+	if (type >= 0 && type < 120 && !m_npc_name_by_type[type].empty()) {
+		return m_npc_name_by_type[type].c_str();
 	}
 	return "Unknown";
 }
 
-const char* CGame::GetNpcConfigNameById(short npcConfigId) const
+const char* CGame::get_npc_config_name_by_id(short npcConfigId) const
 {
-	if (npcConfigId >= 0 && npcConfigId < hb::shared::limits::MaxNpcConfigs && m_npcConfigList[npcConfigId].valid) {
-		return m_npcConfigList[npcConfigId].name.c_str();
+	if (npcConfigId >= 0 && npcConfigId < hb::shared::limits::MaxNpcConfigs && m_npc_config_list[npcConfigId].valid) {
+		return m_npc_config_list[npcConfigId].name.c_str();
 	}
 	return "Unknown";
 }
 
-short CGame::ResolveNpcType(short npcConfigId) const
+short CGame::resolve_npc_type(short npcConfigId) const
 {
-	if (npcConfigId >= 0 && npcConfigId < hb::shared::limits::MaxNpcConfigs && m_npcConfigList[npcConfigId].valid)
-		return m_npcConfigList[npcConfigId].npcType;
+	if (npcConfigId >= 0 && npcConfigId < hb::shared::limits::MaxNpcConfigs && m_npc_config_list[npcConfigId].valid)
+		return m_npc_config_list[npcConfigId].npcType;
 	return 0;
 }
 
-void CGame::GameRecvMsgHandler(uint32_t dwMsgSize, char* pData)
+void CGame::game_recv_msg_handler(uint32_t msg_size, char* data)
 {
-	const auto* header = hb::net::PacketCast<hb::net::PacketHeader>(pData, sizeof(hb::net::PacketHeader));
+	const auto* header = hb::net::PacketCast<hb::net::PacketHeader>(data, sizeof(hb::net::PacketHeader));
 	if (!header) return;
-	m_dwLastNetMsgId = header->msg_id;
-	m_dwLastNetMsgTime = GameClock::GetTimeMS();
-	m_dwLastNetMsgSize = dwMsgSize;
+	m_last_net_msg_id = header->msg_id;
+	m_last_net_msg_time = GameClock::get_time_ms();
+	m_last_net_msg_size = msg_size;
 	switch (header->msg_id) {
 	case MSGID_RESPONSE_CONFIGCACHESTATUS:
 	{
 		const auto* cachePkt = hb::net::PacketCast<hb::net::PacketResponseConfigCacheStatus>(
-			pData, sizeof(hb::net::PacketResponseConfigCacheStatus));
+			data, sizeof(hb::net::PacketResponseConfigCacheStatus));
 		if (!cachePkt) break;
 
 		struct ReplayCtx { CGame* game; };
 		ReplayCtx ctx{ this };
-		bool bNeedItems = false, bNeedMagic = false, bNeedSkills = false, bNeedNpcs = false;
+		bool need_items = false, need_magic = false, need_skills = false, need_npcs = false;
 
-		// Clear config arrays before replay so verification is accurate
+		// clear config arrays before replay so verification is accurate
 		// (stale entries from previous login would cause false positives)
-		for (auto& item : m_pItemConfigList) item.reset();
-		for (auto& magic : m_pMagicCfgList) magic.reset();
-		for (auto& skill : m_pSkillCfgList) skill.reset();
+		for (auto& item : m_item_config_list) item.reset();
+		for (auto& magic : m_magic_cfg_list) magic.reset();
+		for (auto& skill : m_skill_cfg_list) skill.reset();
 
 		if (cachePkt->itemCacheValid) {
-			bool bReplayOk = LocalCacheManager::Get().ReplayFromCache(ConfigCacheType::Items,
+			bool replay_ok = LocalCacheManager::get().replay_from_cache(ConfigCacheType::Items,
 				[](char* p, uint32_t s, void* c) -> bool {
-					return static_cast<ReplayCtx*>(c)->game->_bDecodeItemConfigFileContents(p, s);
+					return static_cast<ReplayCtx*>(c)->game->decode_item_config_file_contents(p, s);
 				}, &ctx);
 			// Verify items actually loaded
-			bool bHasItems = false;
-			if (bReplayOk) {
-				for (int i = 1; i < 5000; i++) { if (m_pItemConfigList[i]) { bHasItems = true; break; } }
+			bool has_items = false;
+			if (replay_ok) {
+				for (int i = 1; i < 5000; i++) { if (m_item_config_list[i]) { has_items = true; break; } }
 			}
-			if (bReplayOk && bHasItems) {
-				m_eConfigRetry[0] = ConfigRetryLevel::None;
+			if (replay_ok && has_items) {
+				m_config_retry[0] = ConfigRetryLevel::None;
 			} else {
-				LocalCacheManager::Get().ResetAccumulator(ConfigCacheType::Items);
-				m_eConfigRetry[0] = ConfigRetryLevel::ServerRequested;
-				bNeedItems = true;
+				LocalCacheManager::get().reset_accumulator(ConfigCacheType::Items);
+				m_config_retry[0] = ConfigRetryLevel::ServerRequested;
+				need_items = true;
 			}
 		} else {
-			LocalCacheManager::Get().ResetAccumulator(ConfigCacheType::Items);
-			m_eConfigRetry[0] = ConfigRetryLevel::ServerRequested;
-			bNeedItems = true;
+			LocalCacheManager::get().reset_accumulator(ConfigCacheType::Items);
+			m_config_retry[0] = ConfigRetryLevel::ServerRequested;
+			need_items = true;
 		}
 
 		if (cachePkt->magicCacheValid) {
-			bool bReplayOk = LocalCacheManager::Get().ReplayFromCache(ConfigCacheType::Magic,
+			bool replay_ok = LocalCacheManager::get().replay_from_cache(ConfigCacheType::Magic,
 				[](char* p, uint32_t s, void* c) -> bool {
-					return static_cast<ReplayCtx*>(c)->game->_bDecodeMagicConfigFileContents(p, s);
+					return static_cast<ReplayCtx*>(c)->game->decode_magic_config_file_contents(p, s);
 				}, &ctx);
-			bool bHasMagic = false;
-			if (bReplayOk) {
-				for (int i = 0; i < hb::shared::limits::MaxMagicType; i++) { if (m_pMagicCfgList[i]) { bHasMagic = true; break; } }
+			bool has_magic = false;
+			if (replay_ok) {
+				for (int i = 0; i < hb::shared::limits::MaxMagicType; i++) { if (m_magic_cfg_list[i]) { has_magic = true; break; } }
 			}
-			if (bReplayOk && bHasMagic) {
-				m_eConfigRetry[1] = ConfigRetryLevel::None;
+			if (replay_ok && has_magic) {
+				m_config_retry[1] = ConfigRetryLevel::None;
 			} else {
-				LocalCacheManager::Get().ResetAccumulator(ConfigCacheType::Magic);
-				m_eConfigRetry[1] = ConfigRetryLevel::ServerRequested;
-				bNeedMagic = true;
+				LocalCacheManager::get().reset_accumulator(ConfigCacheType::Magic);
+				m_config_retry[1] = ConfigRetryLevel::ServerRequested;
+				need_magic = true;
 			}
 		} else {
-			LocalCacheManager::Get().ResetAccumulator(ConfigCacheType::Magic);
-			m_eConfigRetry[1] = ConfigRetryLevel::ServerRequested;
-			bNeedMagic = true;
+			LocalCacheManager::get().reset_accumulator(ConfigCacheType::Magic);
+			m_config_retry[1] = ConfigRetryLevel::ServerRequested;
+			need_magic = true;
 		}
 
 		if (cachePkt->skillCacheValid) {
-			bool bReplayOk = LocalCacheManager::Get().ReplayFromCache(ConfigCacheType::Skills,
+			bool replay_ok = LocalCacheManager::get().replay_from_cache(ConfigCacheType::Skills,
 				[](char* p, uint32_t s, void* c) -> bool {
-					return static_cast<ReplayCtx*>(c)->game->_bDecodeSkillConfigFileContents(p, s);
+					return static_cast<ReplayCtx*>(c)->game->decode_skill_config_file_contents(p, s);
 				}, &ctx);
-			bool bHasSkills = false;
-			if (bReplayOk) {
-				for (int i = 0; i < hb::shared::limits::MaxSkillType; i++) { if (m_pSkillCfgList[i]) { bHasSkills = true; break; } }
+			bool has_skills = false;
+			if (replay_ok) {
+				for (int i = 0; i < hb::shared::limits::MaxSkillType; i++) { if (m_skill_cfg_list[i]) { has_skills = true; break; } }
 			}
-			if (bReplayOk && bHasSkills) {
-				m_eConfigRetry[2] = ConfigRetryLevel::None;
+			if (replay_ok && has_skills) {
+				m_config_retry[2] = ConfigRetryLevel::None;
 			} else {
-				LocalCacheManager::Get().ResetAccumulator(ConfigCacheType::Skills);
-				m_eConfigRetry[2] = ConfigRetryLevel::ServerRequested;
-				bNeedSkills = true;
+				LocalCacheManager::get().reset_accumulator(ConfigCacheType::Skills);
+				m_config_retry[2] = ConfigRetryLevel::ServerRequested;
+				need_skills = true;
 			}
 		} else {
-			LocalCacheManager::Get().ResetAccumulator(ConfigCacheType::Skills);
-			m_eConfigRetry[2] = ConfigRetryLevel::ServerRequested;
-			bNeedSkills = true;
+			LocalCacheManager::get().reset_accumulator(ConfigCacheType::Skills);
+			m_config_retry[2] = ConfigRetryLevel::ServerRequested;
+			need_skills = true;
 		}
 
 		if (cachePkt->npcCacheValid) {
-			bool bReplayOk = LocalCacheManager::Get().ReplayFromCache(ConfigCacheType::Npcs,
+			bool replay_ok = LocalCacheManager::get().replay_from_cache(ConfigCacheType::Npcs,
 				[](char* p, uint32_t s, void* c) -> bool {
-					return static_cast<ReplayCtx*>(c)->game->_bDecodeNpcConfigFileContents(p, s);
+					return static_cast<ReplayCtx*>(c)->game->decode_npc_config_file_contents(p, s);
 				}, &ctx);
-			bool bHasNpcs = false;
-			if (bReplayOk) {
-				for (int i = 0; i < hb::shared::limits::MaxNpcConfigs; i++) { if (m_npcConfigList[i].valid) { bHasNpcs = true; break; } }
+			bool has_npcs = false;
+			if (replay_ok) {
+				for (int i = 0; i < hb::shared::limits::MaxNpcConfigs; i++) { if (m_npc_config_list[i].valid) { has_npcs = true; break; } }
 			}
-			if (bReplayOk && bHasNpcs) {
-				m_eConfigRetry[3] = ConfigRetryLevel::None;
+			if (replay_ok && has_npcs) {
+				m_config_retry[3] = ConfigRetryLevel::None;
 			} else {
-				LocalCacheManager::Get().ResetAccumulator(ConfigCacheType::Npcs);
-				m_eConfigRetry[3] = ConfigRetryLevel::ServerRequested;
-				bNeedNpcs = true;
+				LocalCacheManager::get().reset_accumulator(ConfigCacheType::Npcs);
+				m_config_retry[3] = ConfigRetryLevel::ServerRequested;
+				need_npcs = true;
 			}
 		} else {
-			LocalCacheManager::Get().ResetAccumulator(ConfigCacheType::Npcs);
-			m_eConfigRetry[3] = ConfigRetryLevel::ServerRequested;
-			bNeedNpcs = true;
+			LocalCacheManager::get().reset_accumulator(ConfigCacheType::Npcs);
+			m_config_retry[3] = ConfigRetryLevel::ServerRequested;
+			need_npcs = true;
 		}
 
-		if (bNeedItems || bNeedMagic || bNeedSkills || bNeedNpcs) {
-			_RequestConfigsFromServer(bNeedItems, bNeedMagic, bNeedSkills, bNeedNpcs);
-			m_dwConfigRequestTime = GameClock::GetTimeMS();
+		if (need_items || need_magic || need_skills || need_npcs) {
+			request_configs_from_server(need_items, need_magic, need_skills, need_npcs);
+			m_config_request_time = GameClock::get_time_ms();
 		} else {
-			m_bConfigsReady = true;
-			if (m_bInitDataReady) {
+			m_configs_ready = true;
+			if (m_init_data_ready) {
 				GameModeManager::set_screen<Screen_OnGame>();
-				m_bInitDataReady = false;
+				m_init_data_ready = false;
 			}
 		}
 	}
@@ -1743,294 +1740,290 @@ void CGame::GameRecvMsgHandler(uint32_t dwMsgSize, char* pData)
 	case MsgId::NotifyConfigReload:
 	{
 		const auto* reloadPkt = hb::net::PacketCast<hb::net::PacketNotifyConfigReload>(
-			pData, sizeof(hb::net::PacketNotifyConfigReload));
+			data, sizeof(hb::net::PacketNotifyConfigReload));
 		if (!reloadPkt) break;
 
 		if (reloadPkt->reloadItems)
-			LocalCacheManager::Get().ResetAccumulator(ConfigCacheType::Items);
+			LocalCacheManager::get().reset_accumulator(ConfigCacheType::Items);
 		if (reloadPkt->reloadMagic)
-			LocalCacheManager::Get().ResetAccumulator(ConfigCacheType::Magic);
+			LocalCacheManager::get().reset_accumulator(ConfigCacheType::Magic);
 		if (reloadPkt->reloadSkills)
-			LocalCacheManager::Get().ResetAccumulator(ConfigCacheType::Skills);
+			LocalCacheManager::get().reset_accumulator(ConfigCacheType::Skills);
 		if (reloadPkt->reloadNpcs) {
-			LocalCacheManager::Get().ResetAccumulator(ConfigCacheType::Npcs);
-			m_npcConfigList.fill({});
-			m_iNpcConfigsReceived = 0;
+			LocalCacheManager::get().reset_accumulator(ConfigCacheType::Npcs);
+			m_npc_config_list.fill({});
+			m_npc_configs_received = 0;
 		}
 
-		SetTopMsg((char*)"Administration kicked off a config reload, some lag may occur.", 5);
+		set_top_msg((char*)"Administration kicked off a config reload, some lag may occur.", 5);
 	}
 	break;
 
 	case MsgId::ItemConfigContents:
-		_bDecodeItemConfigFileContents(pData, dwMsgSize);
-		m_eConfigRetry[0] = ConfigRetryLevel::None;
-		_CheckConfigsReadyAndEnterGame();
+		decode_item_config_file_contents(data, msg_size);
+		m_config_retry[0] = ConfigRetryLevel::None;
+		check_configs_ready_and_enter_game();
 		break;
 	case MsgId::MagicConfigContents:
-		_bDecodeMagicConfigFileContents(pData, dwMsgSize);
-		m_eConfigRetry[1] = ConfigRetryLevel::None;
-		_CheckConfigsReadyAndEnterGame();
+		decode_magic_config_file_contents(data, msg_size);
+		m_config_retry[1] = ConfigRetryLevel::None;
+		check_configs_ready_and_enter_game();
 		break;
 	case MsgId::SkillConfigContents:
-		_bDecodeSkillConfigFileContents(pData, dwMsgSize);
-		m_eConfigRetry[2] = ConfigRetryLevel::None;
-		_CheckConfigsReadyAndEnterGame();
+		decode_skill_config_file_contents(data, msg_size);
+		m_config_retry[2] = ConfigRetryLevel::None;
+		check_configs_ready_and_enter_game();
 		break;
 	case MsgId::NpcConfigContents:
-		_bDecodeNpcConfigFileContents(pData, dwMsgSize);
-		m_eConfigRetry[3] = ConfigRetryLevel::None;
-		_CheckConfigsReadyAndEnterGame();
+		decode_npc_config_file_contents(data, msg_size);
+		m_config_retry[3] = ConfigRetryLevel::None;
+		check_configs_ready_and_enter_game();
 		break;
 	case ClientMsgId::ResponseChargedTeleport:
-		TeleportManager::Get().HandleChargedTeleport(pData);
+		teleport_manager::get().handle_charged_teleport(data);
 		break;
 
 	case ClientMsgId::ResponseTeleportList:
-		TeleportManager::Get().HandleTeleportList(pData);
+		teleport_manager::get().handle_teleport_list(data);
 		break;
 
 	case ClientMsgId::ResponseHeldenianTpList: // Snoopy Heldenian TP
-		TeleportManager::Get().HandleHeldenianTeleportList(pData);
+		teleport_manager::get().handle_heldenian_teleport_list(data);
 		break;
 
 	case MsgId::ResponseNoticement:
-		NoticementHandler(pData);
+		noticement_handler(data);
 		break;
 
 	case MsgId::DynamicObject:
-		DynamicObjectHandler(pData);
+		dynamic_object_handler(data);
 		break;
 
 	case MsgId::ResponseInitPlayer:
-		InitPlayerResponseHandler(pData);
+		init_player_response_handler(data);
 		break;
 
 	case MsgId::ResponseInitData:
-		InitDataResponseHandler(pData);
+		init_data_response_handler(data);
 		break;
 
 	case MsgId::ResponseMotion:
-		MotionResponseHandler(pData);
+		motion_response_handler(data);
 		break;
 
 	case MsgId::EventCommon:
-		CommonEventHandler(pData);
+		common_event_handler(data);
 		break;
 
 	case MsgId::EventMotion:
-		MotionEventHandler(pData);
+		motion_event_handler(data);
 		break;
 
 	case MsgId::EventLog:
-		LogEventHandler(pData);
+		log_event_handler(data);
 		break;
 
 	case MsgId::CommandChatMsg:
-		ChatMsgHandler(pData);
+		chat_msg_handler(data);
 		break;
 
 	case MsgId::PlayerItemListContents:
-		InitItemList(pData);
+		init_item_list(data);
 		break;
 
 	case MsgId::Notify:
-		if (m_pNetworkMessageManager) {
+		if (m_network_message_manager) {
 
-			m_pNetworkMessageManager->ProcessMessage(MsgId::Notify, pData, dwMsgSize);
+			m_network_message_manager->process_message(MsgId::Notify, data, msg_size);
 		}
 		break;
 
 	case MsgId::ResponseCreateNewGuild:
-		CreateNewGuildResponseHandler(pData);
+		create_new_guild_response_handler(data);
 		break;
 
 	case MsgId::ResponseDisbandGuild:
-		DisbandGuildResponseHandler(pData);
+		disband_guild_response_handler(data);
 		break;
 
 	case MsgId::PlayerCharacterContents:
-		InitPlayerCharacteristics(pData);
+		init_player_characteristics(data);
 		break;
 
 	case MsgId::ResponseCivilRight:
-		CivilRightAdmissionHandler(pData);
+		civil_right_admission_handler(data);
 		break;
 
 	case MsgId::ResponseRetrieveItem:
-		RetrieveItemHandler(pData);
+		retrieve_item_handler(data);
 		break;
 
 	case MsgId::ResponsePanning:
-		ResponsePanningHandler(pData);
+		response_panning_handler(data);
 		break;
 
 	case MsgId::ResponseFightZoneReserve:
-		ReserveFightzoneResponseHandler(pData);
+		reserve_fightzone_response_handler(data);
 		break;
 
 	case MSGID_RESPONSE_SHOP_CONTENTS:
-		ShopManager::Get().HandleResponse(pData);
+		shop_manager::get().handle_response(data);
 		break;
 
 	case MsgId::CommandCheckConnection:
 	{
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketCommandCheckConnection>(
-			pData, sizeof(hb::net::PacketCommandCheckConnection));
+			data, sizeof(hb::net::PacketCommandCheckConnection));
 		if (!pkt) return;
-		uint32_t dwRecvTime = m_dwLastNetRecvTime;
-		if (dwRecvTime == 0) dwRecvTime = GameClock::GetTimeMS();
-		if (dwRecvTime >= pkt->time_ms)
+		uint32_t recv_time = m_last_net_recv_time;
+		if (recv_time == 0) recv_time = GameClock::get_time_ms();
+		if (recv_time >= pkt->time_ms)
 		{
-			m_iLatencyMs = static_cast<int>(dwRecvTime - pkt->time_ms);
+			m_latency_ms = static_cast<int>(recv_time - pkt->time_ms);
 		}
 	}
 	break;
 	}
 }
 
-void CGame::ConnectionEstablishHandler(char cWhere)
+void CGame::connection_establish_handler(char where)
 {
-	ChangeGameMode(GameMode::WaitingResponse);
+	change_game_mode(GameMode::WaitingResponse);
 
-	switch (cWhere) {
+	switch (where) {
 	case static_cast<int>(ServerType::Game):
-		bSendCommand(MsgId::RequestInitPlayer, 0, 0, 0, 0, 0, 0);
+		send_command(MsgId::RequestInitPlayer, 0, 0, 0, 0, 0, 0);
 		break;
 
 	case static_cast<int>(ServerType::Log):
-		switch (m_dwConnectMode) {
-		case MsgId::RequestLogin:
-			if (m_cWorldServerName.size() == 0) {
-				printf("[ERROR] Login failed - m_cWorldServerName is empty\n");
-			}
-			bSendCommand(MsgId::RequestLogin, 0, 0, 0, 0, 0, 0);
+		switch (m_connect_mode) {
+		case MsgId::request_login:
+			send_command(MsgId::request_login, 0, 0, 0, 0, 0, 0);
 			break;
 		case MsgId::RequestCreateNewCharacter:
-			bSendCommand(MsgId::RequestCreateNewCharacter, 0, 0, 0, 0, 0, 0);
+			send_command(MsgId::RequestCreateNewCharacter, 0, 0, 0, 0, 0, 0);
 			break;
-		case MsgId::RequestEnterGame:
-			bSendCommand(MsgId::RequestEnterGame, 0, 0, 0, 0, 0, 0);
+		case MsgId::request_enter_game:
+			send_command(MsgId::request_enter_game, 0, 0, 0, 0, 0, 0);
 			break;
 		case MsgId::RequestDeleteCharacter:
-			bSendCommand(MsgId::RequestDeleteCharacter, 0, 0, 0, 0, 0, 0);
+			send_command(MsgId::RequestDeleteCharacter, 0, 0, 0, 0, 0, 0);
 			break;
 		case MsgId::RequestInputKeyCode:
-			bSendCommand(MsgId::RequestInputKeyCode, 0, 0, 0, 0, 0, 0);
+			send_command(MsgId::RequestInputKeyCode, 0, 0, 0, 0, 0, 0);
 			break;
 		}
 
 		// Send any pending packet built directly by a screen/overlay
-		if (!m_pendingLoginPacket.empty()) {
-			char cKey = static_cast<char>(rand() % 255) + 1;
-			m_pLSock->iSendMsg(m_pendingLoginPacket.data(), static_cast<uint32_t>(m_pendingLoginPacket.size()), cKey);
-			m_pendingLoginPacket.clear();
+		if (!m_pending_login_packet.empty()) {
+			char key = static_cast<char>(rand() % 255) + 1;
+			m_l_sock->send_msg(m_pending_login_packet.data(), static_cast<uint32_t>(m_pending_login_packet.size()), key);
+			m_pending_login_packet.clear();
 		}
 		break;
 	}
 }
 
-void CGame::InitPlayerResponseHandler(char* pData)
+void CGame::init_player_response_handler(char* data)
 {
 	const auto* header = hb::net::PacketCast<hb::net::PacketHeader>(
-		pData, sizeof(hb::net::PacketHeader));
+		data, sizeof(hb::net::PacketHeader));
 	if (!header) return;
 	switch (header->msg_type) {
 	case MsgType::Confirm:
-		bSendCommand(MsgId::RequestInitData, 0, 0, 0, 0, 0, 0);
-		ChangeGameMode(GameMode::WaitingInitData);
+		send_command(MsgId::RequestInitData, 0, 0, 0, 0, 0, 0);
+		change_game_mode(GameMode::WaitingInitData);
 		break;
 
 	case MsgType::Reject:
-		std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "3J");
-		ChangeGameMode(GameMode::LogResMsg);
+		std::snprintf(m_msg, sizeof(m_msg), "%s", "3J");
+		change_game_mode(GameMode::LogResMsg);
 		break;
 	}
 }
 
-void CGame::OnTimer()
+void CGame::on_timer()
 {
-	if (GameModeManager::GetModeValue() < 0) return;
-	uint32_t dwTime = GameClock::GetTimeMS();
+	if (GameModeManager::get_mode_value() < 0) return;
+	uint32_t time = GameClock::get_time_ms();
 
-	if (GameModeManager::GetMode() != GameMode::Loading) {
-		if ((dwTime - m_dwCheckSprTime) > 8000)
+	if (GameModeManager::get_mode() != GameMode::Loading) {
+		if ((time - m_check_spr_time) > 8000)
 		{
-			m_dwCheckSprTime = dwTime;
-			ReleaseUnusedSprites();
+			m_check_spr_time = time;
+			release_unused_sprites();
 		}
-		if ((dwTime - m_dwCheckConnectionTime) > 1000)
+		if ((time - m_check_connection_time) > 1000)
 		{
-			m_dwCheckConnectionTime = dwTime;
-			if ((m_pGSock != 0) && (m_pGSock->m_bIsAvailable == true))
-				bSendCommand(MsgId::CommandCheckConnection, MsgType::Confirm, 0, 0, 0, 0, 0);
+			m_check_connection_time = time;
+			if ((m_g_sock != 0) && (m_g_sock->m_is_available == true))
+				send_command(MsgId::CommandCheckConnection, MsgType::Confirm, 0, 0, 0, 0, 0);
 		}
 	}
 
-	if (GameModeManager::GetMode() == GameMode::MainGame)
+	if (GameModeManager::get_mode() == GameMode::MainGame)
 	{
-		if ((dwTime - m_dwCheckConnTime) > 5000)
+		if ((time - m_check_conn_time) > 5000)
 		{
-			m_dwCheckConnTime = dwTime;
-			if ((m_bIsCrusadeMode) && (m_pPlayer->m_iCrusadeDuty == 0)) m_dialogBoxManager.EnableDialogBox(DialogBoxId::CrusadeJob, 1, 0, 0);
+			m_check_conn_time = time;
+			if ((m_is_crusade_mode) && (m_player->m_crusade_duty == 0)) m_dialog_box_manager.enable_dialog_box(DialogBoxId::CrusadeJob, 1, 0, 0);
 		}
 
-		if ((dwTime - m_dwCheckChatTime) > 2000)
+		if ((time - m_check_chat_time) > 2000)
 		{
-			m_dwCheckChatTime = dwTime;
-			m_floatingText.ReleaseExpired(dwTime);
-			if (m_pPlayer->m_Controller.GetCommandCount() >= 6)
+			m_check_chat_time = time;
+			m_floating_text.release_expired(time);
+			if (m_player->m_Controller.get_command_count() >= 6)
 			{
-				m_iNetLagCount++;
-				if (m_iNetLagCount >= 7)
+				m_net_lag_count++;
+				if (m_net_lag_count >= 7)
 				{
-					printf("[ERROR] NetLag threshold reached, disconnecting\n");
-					ChangeGameMode(GameMode::ConnectionLost);
-					m_pGSock.reset();
+					change_game_mode(GameMode::ConnectionLost);
+					m_g_sock.reset();
 					return;
 				}
 			}
-			else m_iNetLagCount = 0;
+			else m_net_lag_count = 0;
 		}
 	}
 }
 
-void CGame::bItemDrop_ExternalScreen(char item_id, short mouse_x, short mouse_y)
+void CGame::item_drop_external_screen(char item_id, short mouse_x, short mouse_y)
 {
 	std::string name;
 	short owner_type, dialog_x, dialog_y;
 	hb::shared::entity::PlayerStatus status;
 
-	if (InventoryManager::Get().CheckItemOperationEnabled(item_id) == false) return;
+	if (inventory_manager::get().check_item_operation_enabled(item_id) == false) return;
 
-	if ((m_sMCX != 0) && (m_sMCY != 0) && (abs(m_pPlayer->m_sPlayerX - m_sMCX) <= 8) && (abs(m_pPlayer->m_sPlayerY - m_sMCY) <= 8))
+	if ((m_mcx != 0) && (m_mcy != 0) && (abs(m_player->m_player_x - m_mcx) <= 8) && (abs(m_player->m_player_y - m_mcy) <= 8))
 	{
 		name.clear();
-		m_pMapData->bGetOwner(m_sMCX, m_sMCY, name, &owner_type, &status, &m_wCommObjectID);
-		if (m_pPlayer->m_cPlayerName == name)
+		m_map_data->get_owner(m_mcx, m_mcy, name, &owner_type, &status, &m_comm_object_id);
+		if (m_player->m_player_name == name)
 		{
 		}
 		else
 		{
-			CItem* pCfg = GetItemConfig(m_pItemList[item_id]->m_sIDnum);
-			if (pCfg && ((pCfg->GetItemType() == ItemType::Consume) || (pCfg->GetItemType() == ItemType::Arrow))
-				&& (m_pItemList[item_id]->m_dwCount > 1))
+			CItem* cfg = get_item_config(m_item_list[item_id]->m_id_num);
+			if (cfg && ((cfg->get_item_type() == ItemType::Consume) || (cfg->get_item_type() == ItemType::Arrow))
+				&& (m_item_list[item_id]->m_count > 1))
 			{
-				m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sX = mouse_x - 140;
-				m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sY = mouse_y - 70;
-				if (m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sY < 0) m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sY = 0;
-				m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV1 = m_sMCX;
-				m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV2 = m_sMCY;
-				m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV3 = owner_type;
-				m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV4 = m_wCommObjectID;
-				std::memset(m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).cStr, 0, sizeof(m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).cStr));
+				m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_x = mouse_x - 140;
+				m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_y = mouse_y - 70;
+				if (m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_y < 0) m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_y = 0;
+				m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_v1 = m_mcx;
+				m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_v2 = m_mcy;
+				m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_v3 = owner_type;
+				m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_v4 = m_comm_object_id;
+				std::memset(m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_str, 0, sizeof(m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_str));
 				if (owner_type < 10)
-					std::snprintf(m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).cStr, sizeof(m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).cStr), "%s", name.c_str());
+					std::snprintf(m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_str, sizeof(m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_str), "%s", name.c_str());
 				else
 				{
-					std::snprintf(m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).cStr, sizeof(m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).cStr), "%s", GetNpcConfigName(owner_type));
+					std::snprintf(m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_str, sizeof(m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_str), "%s", get_npc_config_name(owner_type));
 				}
-				m_dialogBoxManager.EnableDialogBox(DialogBoxId::ItemDropExternal, item_id, m_pItemList[item_id]->m_dwCount, 0);
+				m_dialog_box_manager.enable_dialog_box(DialogBoxId::ItemDropExternal, item_id, m_item_list[item_id]->m_count, 0);
 			}
 			else
 			{
@@ -2041,11 +2034,11 @@ void CGame::bItemDrop_ExternalScreen(char item_id, short mouse_x, short mouse_y)
 				case 4:
 				case 5:
 				case 6:
-					m_dialogBoxManager.EnableDialogBox(DialogBoxId::NpcActionQuery, 1, item_id, owner_type);
-					m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV3 = 1;
-					m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV4 = m_wCommObjectID;
-					m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV5 = m_sMCX;
-					m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV6 = m_sMCY;
+					m_dialog_box_manager.enable_dialog_box(DialogBoxId::NpcActionQuery, 1, item_id, owner_type);
+					m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_v3 = 1;
+					m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_v4 = m_comm_object_id;
+					m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_v5 = m_mcx;
+					m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_v6 = m_mcy;
 
 					dialog_x = mouse_x - 117;
 					dialog_y = mouse_y - 50;
@@ -2053,19 +2046,19 @@ void CGame::bItemDrop_ExternalScreen(char item_id, short mouse_x, short mouse_y)
 					if ((dialog_x + 235) > LOGICAL_MAX_X()) dialog_x = LOGICAL_MAX_X() - 235;
 					if (dialog_y < 0) dialog_y = 0;
 					if ((dialog_y + 100) > LOGICAL_MAX_Y()) dialog_y = LOGICAL_MAX_Y() - 100;
-					m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sX = dialog_x;
-					m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sY = dialog_y;
+					m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_x = dialog_x;
+					m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_y = dialog_y;
 
-					std::snprintf(m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cStr, sizeof(m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cStr), "%s", name.c_str());
-					//bSendCommand(MsgId::CommandCommon, CommonType::GiveItemToChar, cItemID, 1, m_sMCX, m_sMCY, m_pItemList[cItemID]->m_cName); //v1.4
+					std::snprintf(m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_str, sizeof(m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_str), "%s", name.c_str());
+					//send_command(MsgId::CommandCommon, CommonType::GiveItemToChar, item_id, 1, m_mcx, m_mcy, m_item_list[item_id]->m_name); //v1.4
 					break;
 
 				case hb::shared::owner::Howard: // Howard
-					m_dialogBoxManager.EnableDialogBox(DialogBoxId::NpcActionQuery, 3, item_id, owner_type);
-					m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV3 = 1;
-					m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV4 = m_wCommObjectID; // v1.4
-					m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV5 = m_sMCX;
-					m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV6 = m_sMCY;
+					m_dialog_box_manager.enable_dialog_box(DialogBoxId::NpcActionQuery, 3, item_id, owner_type);
+					m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_v3 = 1;
+					m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_v4 = m_comm_object_id; // v1.4
+					m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_v5 = m_mcx;
+					m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_v6 = m_mcy;
 
 					dialog_x = mouse_x - 117;
 					dialog_y = mouse_y - 50;
@@ -2073,19 +2066,19 @@ void CGame::bItemDrop_ExternalScreen(char item_id, short mouse_x, short mouse_y)
 					if ((dialog_x + 235) > LOGICAL_MAX_X()) dialog_x = LOGICAL_MAX_X() - 235;
 					if (dialog_y < 0) dialog_y = 0;
 					if ((dialog_y + 100) > LOGICAL_MAX_Y()) dialog_y = LOGICAL_MAX_Y() - 100;
-					m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sX = dialog_x;
-					m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sY = dialog_y;
+					m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_x = dialog_x;
+					m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_y = dialog_y;
 
-					std::snprintf(m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cStr, hb::shared::limits::NpcNameLen, "%s", GetNpcConfigName(owner_type));
+					std::snprintf(m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_str, hb::shared::limits::NpcNameLen, "%s", get_npc_config_name(owner_type));
 					break;
 
 				case hb::shared::owner::ShopKeeper: // ShopKeeper-W
 				case hb::shared::owner::Tom: // Tom
-					m_dialogBoxManager.EnableDialogBox(DialogBoxId::NpcActionQuery, 2, item_id, owner_type);
-					m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV3 = 1;
-					m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV4 = m_wCommObjectID; // v1.4
-					m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV5 = m_sMCX;
-					m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV6 = m_sMCY;
+					m_dialog_box_manager.enable_dialog_box(DialogBoxId::NpcActionQuery, 2, item_id, owner_type);
+					m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_v3 = 1;
+					m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_v4 = m_comm_object_id; // v1.4
+					m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_v5 = m_mcx;
+					m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_v6 = m_mcy;
 
 					dialog_x = mouse_x - 117;
 					dialog_y = mouse_y - 50;
@@ -2093,486 +2086,486 @@ void CGame::bItemDrop_ExternalScreen(char item_id, short mouse_x, short mouse_y)
 					if ((dialog_x + 235) > LOGICAL_MAX_X()) dialog_x = LOGICAL_MAX_X() - 235;
 					if (dialog_y < 0) dialog_y = 0;
 					if ((dialog_y + 100) > LOGICAL_MAX_Y()) dialog_y = LOGICAL_MAX_Y() - 100;
-					m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sX = dialog_x;
-					m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sY = dialog_y;
+					m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_x = dialog_x;
+					m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_y = dialog_y;
 
-					std::snprintf(m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cStr, hb::shared::limits::NpcNameLen, "%s", GetNpcConfigName(owner_type));
+					std::snprintf(m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_str, hb::shared::limits::NpcNameLen, "%s", get_npc_config_name(owner_type));
 					break;
 
 				default:
-					if (pCfg) bSendCommand(MsgId::CommandCommon, CommonType::GiveItemToChar, item_id, 1, m_sMCX, m_sMCY, pCfg->m_cName);
+					if (cfg) send_command(MsgId::CommandCommon, CommonType::GiveItemToChar, item_id, 1, m_mcx, m_mcy, cfg->m_name);
 					break;
 				}
 			}
-			m_bIsItemDisabled[item_id] = true;
+			m_is_item_disabled[item_id] = true;
 		}
 	}
 	else
 	{
-		CItem* pCfg2 = GetItemConfig(m_pItemList[item_id]->m_sIDnum);
-		if (pCfg2 && ((pCfg2->GetItemType() == ItemType::Consume) || (pCfg2->GetItemType() == ItemType::Arrow))
-			&& (m_pItemList[item_id]->m_dwCount > 1))
+		CItem* cfg2 = get_item_config(m_item_list[item_id]->m_id_num);
+		if (cfg2 && ((cfg2->get_item_type() == ItemType::Consume) || (cfg2->get_item_type() == ItemType::Arrow))
+			&& (m_item_list[item_id]->m_count > 1))
 		{
-			m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sX = mouse_x - 140;
-			m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sY = mouse_y - 70;
-			if (m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sY < 0)		m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sY = 0;
-			m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV1 = 0;
-			m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV2 = 0;
-			m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV3 = 0;
-			m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV4 = 0;
-			std::memset(m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).cStr, 0, sizeof(m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).cStr));
-			m_dialogBoxManager.EnableDialogBox(DialogBoxId::ItemDropExternal, item_id, m_pItemList[item_id]->m_dwCount, 0);
+			m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_x = mouse_x - 140;
+			m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_y = mouse_y - 70;
+			if (m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_y < 0)		m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_y = 0;
+			m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_v1 = 0;
+			m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_v2 = 0;
+			m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_v3 = 0;
+			m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_v4 = 0;
+			std::memset(m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_str, 0, sizeof(m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_str));
+			m_dialog_box_manager.enable_dialog_box(DialogBoxId::ItemDropExternal, item_id, m_item_list[item_id]->m_count, 0);
 		}
 		else
 		{
-			if (_ItemDropHistory(m_pItemList[item_id]->m_sIDnum))
+			if (item_drop_history(m_item_list[item_id]->m_id_num))
 			{
-				m_dialogBoxManager.Info(DialogBoxId::ItemDropConfirm).sX = mouse_x - 140;
-				m_dialogBoxManager.Info(DialogBoxId::ItemDropConfirm).sY = mouse_y - 70;
-				if (m_dialogBoxManager.Info(DialogBoxId::ItemDropConfirm).sY < 0)	m_dialogBoxManager.Info(DialogBoxId::ItemDropConfirm).sY = 0;
-				m_dialogBoxManager.Info(DialogBoxId::ItemDropConfirm).sV1 = 0;
-				m_dialogBoxManager.Info(DialogBoxId::ItemDropConfirm).sV2 = 0;
-				m_dialogBoxManager.Info(DialogBoxId::ItemDropConfirm).sV3 = 1;
-				m_dialogBoxManager.Info(DialogBoxId::ItemDropConfirm).sV4 = 0;
-				m_dialogBoxManager.Info(DialogBoxId::ItemDropConfirm).sV5 = item_id;
-				std::memset(m_dialogBoxManager.Info(DialogBoxId::ItemDropConfirm).cStr, 0, sizeof(m_dialogBoxManager.Info(DialogBoxId::ItemDropConfirm).cStr));
-				m_dialogBoxManager.EnableDialogBox(DialogBoxId::ItemDropConfirm, item_id, m_pItemList[item_id]->m_dwCount, 0);
+				m_dialog_box_manager.Info(DialogBoxId::ItemDropConfirm).m_x = mouse_x - 140;
+				m_dialog_box_manager.Info(DialogBoxId::ItemDropConfirm).m_y = mouse_y - 70;
+				if (m_dialog_box_manager.Info(DialogBoxId::ItemDropConfirm).m_y < 0)	m_dialog_box_manager.Info(DialogBoxId::ItemDropConfirm).m_y = 0;
+				m_dialog_box_manager.Info(DialogBoxId::ItemDropConfirm).m_v1 = 0;
+				m_dialog_box_manager.Info(DialogBoxId::ItemDropConfirm).m_v2 = 0;
+				m_dialog_box_manager.Info(DialogBoxId::ItemDropConfirm).m_v3 = 1;
+				m_dialog_box_manager.Info(DialogBoxId::ItemDropConfirm).m_v4 = 0;
+				m_dialog_box_manager.Info(DialogBoxId::ItemDropConfirm).m_v5 = item_id;
+				std::memset(m_dialog_box_manager.Info(DialogBoxId::ItemDropConfirm).m_str, 0, sizeof(m_dialog_box_manager.Info(DialogBoxId::ItemDropConfirm).m_str));
+				m_dialog_box_manager.enable_dialog_box(DialogBoxId::ItemDropConfirm, item_id, m_item_list[item_id]->m_count, 0);
 			}
 			else
 			{
-				if (pCfg2) bSendCommand(MsgId::CommandCommon, CommonType::ItemDrop, 0, item_id, 1, 0, pCfg2->m_cName);
+				if (cfg2) send_command(MsgId::CommandCommon, CommonType::ItemDrop, 0, item_id, 1, 0, cfg2->m_name);
 			}
 		}
-		m_bIsItemDisabled[item_id] = true;
+		m_is_item_disabled[item_id] = true;
 	}
 }
 
-void CGame::CommonEventHandler(char* pData)
+void CGame::common_event_handler(char* data)
 {
-	WORD wEventType;
-	short sX, sY, sV1, sV2, sV3, sV4;
-	uint32_t dwV4;
+	WORD event_type;
+	short sX, sY, v1, v2, v3;
+	uint32_t dw_v4;
 
-	const auto* base = hb::net::PacketCast<hb::net::PacketEventCommonBase>(pData, sizeof(hb::net::PacketEventCommonBase));
+	const auto* base = hb::net::PacketCast<hb::net::PacketEventCommonBase>(data, sizeof(hb::net::PacketEventCommonBase));
 	if (!base) return;
-	wEventType = base->header.msg_type;
+	event_type = base->header.msg_type;
 	sX = base->x;
 	sY = base->y;
-	sV1 = base->v1;
-	sV2 = base->v2;
-	sV3 = base->v3;
+	v1 = base->v1;
+	v2 = base->v2;
+	v3 = base->v3;
 
-	switch (wEventType) {
+	switch (event_type) {
 	case CommonType::ItemDrop:
 	{
-		const auto* pkt = hb::net::PacketCast<hb::net::PacketEventCommonItem>(pData, sizeof(hb::net::PacketEventCommonItem));
+		const auto* pkt = hb::net::PacketCast<hb::net::PacketEventCommonItem>(data, sizeof(hb::net::PacketEventCommonItem));
 		if (!pkt) return;
-		dwV4 = pkt->v4;
+		dw_v4 = pkt->v4;
 	}
-	if ((sV1 == 6) && (sV2 == 0)) {
-		m_pEffectManager->AddEffect(EffectType::GOLD_DROP, sX, sY, 0, 0, 0);
+	if ((v1 == 6) && (v2 == 0)) {
+		m_effect_manager->add_effect(EffectType::GOLD_DROP, sX, sY, 0, 0, 0);
 	}
-	m_pMapData->bSetItem(sX, sY, sV1, static_cast<char>(sV3), dwV4);
+	m_map_data->set_item(sX, sY, v1, static_cast<char>(v3), dw_v4);
 	break;
 
 	case CommonType::SetItem:
 	{
-		const auto* pkt = hb::net::PacketCast<hb::net::PacketEventCommonItem>(pData, sizeof(hb::net::PacketEventCommonItem));
+		const auto* pkt = hb::net::PacketCast<hb::net::PacketEventCommonItem>(data, sizeof(hb::net::PacketEventCommonItem));
 		if (!pkt) return;
-		dwV4 = pkt->v4;
+		dw_v4 = pkt->v4;
 	}
-	m_pMapData->bSetItem(sX, sY, sV1, static_cast<char>(sV3), dwV4, false); // v1.4 color
+	m_map_data->set_item(sX, sY, v1, static_cast<char>(v3), dw_v4, false); // v1.4 color
 	break;
 
 	case CommonType::Magic:
 	{
-		const auto* pkt = hb::net::PacketCast<hb::net::PacketEventCommonMagic>(pData, sizeof(hb::net::PacketEventCommonMagic));
+		const auto* pkt = hb::net::PacketCast<hb::net::PacketEventCommonMagic>(data, sizeof(hb::net::PacketEventCommonMagic));
 		if (!pkt) return;
-		sV4 = pkt->v4;
+		dw_v4 = pkt->v4;
 	}
-	m_pEffectManager->AddEffect(static_cast<EffectType>(sV3), sX, sY, sV1, sV2, 0, sV4);
+	m_effect_manager->add_effect(static_cast<EffectType>(v3), sX, sY, v1, v2, 0, dw_v4);
 	break;
 
 	case CommonType::ClearGuildName:
-		ClearGuildNameList();
+		clear_guild_name_list();
 		break;
 	}
 }
 
-void CGame::ClearGuildNameList()
+void CGame::clear_guild_name_list()
 {
 	for (int i = 0; i < game_limits::max_guild_names; i++) {
-		m_stGuildName[i].dwRefTime = 0;
-		m_stGuildName[i].iGuildRank = -1;
+		m_guild_name_cache[i].ref_time = 0;
+		m_guild_name_cache[i].guild_rank = -1;
 	}
 }
 
-void CGame::InitGameSettings()
+void CGame::init_game_settings()
 {
 
-	m_pPlayer->m_bForceAttack = false;
-	m_pPlayer->m_Controller.SetCommandTime(0);
-	m_dwCheckConnectionTime = 0;
+	m_player->m_force_attack = false;
+	m_player->m_Controller.set_command_time(0);
+	m_check_connection_time = 0;
 
 
-	m_Camera.SetShake(0);
+	m_Camera.set_shake(0);
 
-	m_pPlayer->m_Controller.SetCommand(Type::Stop);
-	m_pPlayer->m_Controller.ResetCommandCount();
+	m_player->m_Controller.set_command(Type::stop);
+	m_player->m_Controller.reset_command_count();
 
-	m_bIsGetPointingMode = false;
-	m_bWaitForNewClick = false;
-	m_dwMagicCastTime = 0;
-	m_iPointCommandType = -1; //v2.15 0 -> -1
+	m_is_get_pointing_mode = false;
+	m_wait_for_new_click = false;
+	m_magic_cast_time = 0;
+	m_point_command_type = -1; //v2.15 0 -> -1
 
-	for (int r = 0; r < 4; r++) m_eConfigRetry[r] = ConfigRetryLevel::None;
-	m_dwConfigRequestTime = 0;
-	m_bInitDataReady = false;
-	m_bConfigsReady = false;
+	for (int r = 0; r < 4; r++) m_config_retry[r] = ConfigRetryLevel::None;
+	m_config_request_time = 0;
+	m_init_data_ready = false;
+	m_configs_ready = false;
 
-	m_pPlayer->m_bIsCombatMode = false;
+	m_player->m_is_combat_mode = false;
 
 	// Previous cursor status tracking removed
-	CursorTarget::ResetSelectionClickTime();
+	CursorTarget::reset_selection_click_time();
 
-	m_bSkillUsingStatus = false;
-	m_bItemUsingStatus = false;
-	m_bUsingSlate = false;
+	m_skill_using_status = false;
+	m_item_using_status = false;
+	m_using_slate = false;
 
 
-	m_iDownSkillIndex = -1;
-	m_dialogBoxManager.Info(DialogBoxId::Skill).bFlag = false;
+	m_down_skill_index = -1;
+	m_dialog_box_manager.Info(DialogBoxId::Skill).m_flag = false;
 
-	m_pPlayer->m_bIsConfusion = false;
+	m_player->m_is_confusion = false;
 
-	m_iIlusionOwnerH = 0;
-	m_cIlusionOwnerType = 0;
+	m_ilusion_owner_h = 0;
+	m_ilusion_owner_type = 0;
 
-	m_iDrawFlag = 0;
-	m_bIsCrusadeMode = false;
-	m_pPlayer->m_iCrusadeDuty = 0;
+	m_draw_flag = 0;
+	m_is_crusade_mode = false;
+	m_player->m_crusade_duty = 0;
 
-	m_iNetLagCount = 0;
-	m_iLatencyMs = -1;
-	m_dwLastNetMsgId = 0;
-	m_dwLastNetMsgTime = 0;
-	m_dwLastNetMsgSize = 0;
-	m_dwLastNetRecvTime = 0;
-	m_dwLastNpcEventTime = 0;
+	m_net_lag_count = 0;
+	m_latency_ms = -1;
+	m_last_net_msg_id = 0;
+	m_last_net_msg_time = 0;
+	m_last_net_msg_size = 0;
+	m_last_net_recv_time = 0;
+	m_last_npc_event_time = 0;
 
-	m_dwEnvEffectTime = GameClock::GetTimeMS();
+	m_env_effect_time = GameClock::get_time_ms();
 
 	for (int i = 0; i < game_limits::max_guild_names; i++) {
-		m_stGuildName[i].dwRefTime = 0;
-		m_stGuildName[i].iGuildRank = -1;
+		m_guild_name_cache[i].ref_time = 0;
+		m_guild_name_cache[i].guild_rank = -1;
 	}
 	//Snoopy: 61
 	for (int i = 0; i < 61; i++)
-		m_dialogBoxManager.SetEnabled(i, false);
+		m_dialog_box_manager.set_enabled(i, false);
 
 	//Snoopy: 58 because 2 last ones alreaddy defined
 	for (int i = 0; i < 58; i++)
-		m_dialogBoxManager.SetOrderAt(i, 0);
-	m_dialogBoxManager.SetOrderAt(60, DialogBoxId::HudPanel);
-	m_dialogBoxManager.SetOrderAt(59, DialogBoxId::HudPanel);
-	m_dialogBoxManager.SetEnabled(DialogBoxId::HudPanel, true);
+		m_dialog_box_manager.set_order_at(i, 0);
+	m_dialog_box_manager.set_order_at(60, DialogBoxId::HudPanel);
+	m_dialog_box_manager.set_order_at(59, DialogBoxId::HudPanel);
+	m_dialog_box_manager.set_enabled(DialogBoxId::HudPanel, true);
 
-	if (m_pEffectManager) m_pEffectManager->ClearAllEffects();
+	if (m_effect_manager) m_effect_manager->clear_all_effects();
 
-	m_floatingText.ClearAll();
+	m_floating_text.clear_all();
 
-	ChatManager::Get().ClearMessages();
+	ChatManager::get().clear_messages();
 
-	ChatManager::Get().ClearWhispers();
+	ChatManager::get().clear_whispers();
 
 
-	m_pPlayer->m_iGuildRank = -1;
+	m_player->m_guild_rank = -1;
 
 	for (int i = 0; i < 100; i++) {
-		m_stGuildOpList[i].cOpMode = 0;
+		m_guild_op_list[i].op_mode = 0;
 	}
 
 
 
 	for (int i = 0; i < 41; i++) {
-		m_dialogBoxManager.Info(i).bFlag = false;
-		m_dialogBoxManager.Info(i).sView = 0;
-		m_dialogBoxManager.Info(i).bIsScrollSelected = false;
+		m_dialog_box_manager.Info(i).m_flag = false;
+		m_dialog_box_manager.Info(i).m_view = 0;
+		m_dialog_box_manager.Info(i).m_is_scroll_selected = false;
 	}
 
 	for (int i = 0; i < hb::shared::limits::MaxItems; i++)
-		if (m_pItemList[i] != 0) {
-			m_pItemList[i].reset();
+		if (m_item_list[i] != 0) {
+			m_item_list[i].reset();
 		}
 
 	for (int i = 0; i < game_limits::max_sell_list; i++) {
-		m_stSellItemList[i].iIndex = -1;
-		m_stSellItemList[i].iAmount = 0;
+		m_sell_item_list[i].index = -1;
+		m_sell_item_list[i].amount = 0;
 	}
 
 	for (int i = 0; i < hb::shared::limits::MaxBankItems; i++)
-		if (m_pBankList[i] != 0) {
-			m_pBankList[i].reset();
+		if (m_bank_list[i] != 0) {
+			m_bank_list[i].reset();
 		}
 
 	for (int i = 0; i < hb::shared::limits::MaxMagicType; i++)
-		m_pPlayer->m_iMagicMastery[i] = 0;
+		m_player->m_magic_mastery[i] = 0;
 
 	for (int i = 0; i < hb::shared::limits::MaxSkillType; i++)
-		m_pPlayer->m_iSkillMastery[i] = 0;
+		m_player->m_skill_mastery[i] = 0;
 
 	for (int i = 0; i < game_limits::max_text_dlg_lines; i++) {
-		if (m_pMsgTextList[i] != 0)
-			m_pMsgTextList[i].reset();
+		if (m_msg_text_list[i] != 0)
+			m_msg_text_list[i].reset();
 
-		if (m_pMsgTextList2[i] != 0)
-			m_pMsgTextList2[i].reset();
+		if (m_msg_text_list2[i] != 0)
+			m_msg_text_list2[i].reset();
 
-		if (m_pAgreeMsgTextList[i] != 0)
-			m_pAgreeMsgTextList[i].reset();
+		if (m_agree_msg_text_list[i] != 0)
+			m_agree_msg_text_list[i].reset();
 	}
 
 	for (int i = 0; i < hb::shared::limits::MaxPartyMembers; i++) {
-		m_stPartyMember[i].cStatus = 0;
+		m_party_member[i].status = 0;
 	}
 
-	m_pPlayer->m_iLU_Point = 0;
-	m_pPlayer->m_wLU_Str = m_pPlayer->m_wLU_Vit = m_pPlayer->m_wLU_Dex = m_pPlayer->m_wLU_Int = m_pPlayer->m_wLU_Mag = m_pPlayer->m_wLU_Char = 0;
+	m_player->m_lu_point = 0;
+	m_player->m_lu_str = m_player->m_lu_vit = m_player->m_lu_dex = m_player->m_lu_int = m_player->m_lu_mag = m_player->m_lu_char = 0;
 	m_logout_count = -1;
 	m_logout_count_time = 0;
-	m_pPlayer->m_iSuperAttackLeft = 0;
-	m_pPlayer->m_bSuperAttackMode = false;
-	m_iFightzoneNumber = 0;
-	m_stQuest.sWho = 0;
-	m_stQuest.sQuestType = 0;
-	m_stQuest.sContribution = 0;
-	m_stQuest.sTargetType = 0;
-	m_stQuest.sTargetCount = 0;
-	m_stQuest.sCurrentCount = 0;
-	m_stQuest.sX = 0;
-	m_stQuest.sY = 0;
-	m_stQuest.sRange = 0;
-	m_stQuest.bIsQuestCompleted = false;
-	m_bIsObserverMode = false;
-	m_bIsObserverCommanded = false;
-	m_pPlayer->m_bIsPoisoned = false;
-	m_pPlayer->m_Controller.SetPrevMoveBlocked(false);
-	m_pPlayer->m_Controller.SetPrevMove(-1, -1);
-	m_pPlayer->m_sDamageMove = 0;
-	m_pPlayer->m_sDamageMoveAmount = 0;
-	m_bForceDisconn = false;
-	m_pPlayer->m_bIsSpecialAbilityEnabled = false;
-	m_pPlayer->m_iSpecialAbilityType = 0;
-	m_dwSpecialAbilitySettingTime = 0;
-	m_pPlayer->m_iSpecialAbilityTimeLeftSec = 0;
-	CursorTarget::ClearSelection();
-	m_bIsF1HelpWindowEnabled = false;
+	m_player->m_super_attack_left = 0;
+	m_player->m_super_attack_mode = false;
+	m_fightzone_number = 0;
+	m_quest.who = 0;
+	m_quest.quest_type = 0;
+	m_quest.contribution = 0;
+	m_quest.target_type = 0;
+	m_quest.target_count = 0;
+	m_quest.current_count = 0;
+	m_quest.x = 0;
+	m_quest.y = 0;
+	m_quest.range = 0;
+	m_quest.is_quest_completed = false;
+	m_is_observer_mode = false;
+	m_is_observer_commanded = false;
+	m_player->m_is_poisoned = false;
+	m_player->m_Controller.set_prev_move_blocked(false);
+	m_player->m_Controller.set_prev_move(-1, -1);
+	m_player->m_damage_move = 0;
+	m_player->m_damage_move_amount = 0;
+	m_force_disconn = false;
+	m_player->m_is_special_ability_enabled = false;
+	m_player->m_special_ability_type = 0;
+	m_special_ability_setting_time = 0;
+	m_player->m_special_ability_time_left_sec = 0;
+	CursorTarget::clear_selection();
+	m_is_f1_help_window_enabled = false;
 	for (int i = 0; i < hb::shared::limits::MaxCrusadeStructures; i++)
 	{
-		m_stCrusadeStructureInfo[i].cType = 0;
-		m_stCrusadeStructureInfo[i].cSide = 0;
-		m_stCrusadeStructureInfo[i].sX = 0;
-		m_stCrusadeStructureInfo[i].sY = 0;
+		m_crusade_structure_info[i].type = 0;
+		m_crusade_structure_info[i].side = 0;
+		m_crusade_structure_info[i].x = 0;
+		m_crusade_structure_info[i].y = 0;
 	}
-	m_dwCommanderCommandRequestedTime = 0;
-	m_iTopMsgLastSec = 0;
-	m_dwTopMsgTime = 0;
-	m_pPlayer->m_iConstructionPoint = 0;
-	m_pPlayer->m_iWarContribution = 0;
-	TeleportManager::Get().Reset();
-	m_pPlayer->m_iConstructLocX = m_pPlayer->m_iConstructLocY = -1;
+	m_commander_command_requested_time = 0;
+	m_top_msg_last_sec = 0;
+	m_top_msg_time = 0;
+	m_player->m_construction_point = 0;
+	m_player->m_war_contribution = 0;
+	teleport_manager::get().reset();
+	m_player->m_construct_loc_x = m_player->m_construct_loc_y = -1;
 
 	//Snoopy: Apocalypse Gate
-	m_iGatePositX = m_iGatePositY = -1;
-	m_iHeldenianAresdenLeftTower = -1;
-	m_iHeldenianElvineLeftTower = -1;
-	m_iHeldenianAresdenFlags = -1;
-	m_iHeldenianElvineFlags = -1;
-	m_bIsXmas = false;
-	m_iTotalPartyMember = 0;
-	m_iPartyStatus = 0;
-	m_iGizonItemUpgradeLeft = 0;
-	m_dialogBoxManager.EnableDialogBox(DialogBoxId::GuideMap, 0, 0, 0);
+	m_gate_posit_x = m_gate_posit_y = -1;
+	m_heldenian_aresden_left_tower = -1;
+	m_heldenian_elvine_left_tower = -1;
+	m_heldenian_aresden_flags = -1;
+	m_heldenian_elvine_flags = -1;
+	m_is_xmas = false;
+	m_total_party_member = 0;
+	m_party_status = 0;
+	m_gizon_item_upgrade_left = 0;
+	m_dialog_box_manager.enable_dialog_box(DialogBoxId::GuideMap, 0, 0, 0);
 }
 
-void CGame::CreateNewGuildResponseHandler(char* pData)
+void CGame::create_new_guild_response_handler(char* data)
 {
 	const auto* header = hb::net::PacketCast<hb::net::PacketHeader>(
-		pData, sizeof(hb::net::PacketHeader));
+		data, sizeof(hb::net::PacketHeader));
 	if (!header) return;
 	switch (header->msg_type) {
 	case MsgType::Confirm:
-		m_pPlayer->m_iGuildRank = 0;
-		m_dialogBoxManager.Info(DialogBoxId::GuildMenu).cMode = 3;
+		m_player->m_guild_rank = 0;
+		m_dialog_box_manager.Info(DialogBoxId::GuildMenu).m_mode = 3;
 		break;
 	case MsgType::Reject:
-		m_pPlayer->m_iGuildRank = -1;
-		m_dialogBoxManager.Info(DialogBoxId::GuildMenu).cMode = 4;
+		m_player->m_guild_rank = -1;
+		m_dialog_box_manager.Info(DialogBoxId::GuildMenu).m_mode = 4;
 		break;
 	}
 }
 
-void CGame::InitPlayerCharacteristics(char* pData)
+void CGame::init_player_characteristics(char* data)
 {
 	// Snoopy: Angels
-	m_pPlayer->m_iAngelicStr = 0;
-	m_pPlayer->m_iAngelicDex = 0;
-	m_pPlayer->m_iAngelicInt = 0;
-	m_pPlayer->m_iAngelicMag = 0;
+	m_player->m_angelic_str = 0;
+	m_player->m_angelic_dex = 0;
+	m_player->m_angelic_int = 0;
+	m_player->m_angelic_mag = 0;
 
 	const auto* pkt = hb::net::PacketCast<hb::net::PacketResponsePlayerCharacterContents>(
-		pData, sizeof(hb::net::PacketResponsePlayerCharacterContents));
+		data, sizeof(hb::net::PacketResponsePlayerCharacterContents));
 	if (!pkt) return;
 
-	m_pPlayer->m_iHP = pkt->hp;
-	m_pPlayer->m_iMP = pkt->mp;
-	m_pPlayer->m_iSP = pkt->sp;
-	m_pPlayer->m_iAC = pkt->ac;		//? m_iDefenseRatio
-	m_pPlayer->m_iTHAC0 = pkt->thac0;    //? m_iHitRatio
-	m_pPlayer->m_iLevel = pkt->level;
-	m_pPlayer->m_iStr = pkt->str;
-	m_pPlayer->m_iInt = pkt->intel;
-	m_pPlayer->m_iVit = pkt->vit;
-	m_pPlayer->m_iDex = pkt->dex;
-	m_pPlayer->m_iMag = pkt->mag;
-	m_pPlayer->m_iCharisma = pkt->chr;
+	m_player->m_hp = pkt->hp;
+	m_player->m_mp = pkt->mp;
+	m_player->m_sp = pkt->sp;
+	m_player->m_ac = pkt->ac;		//? m_iDefenseRatio
+	m_player->m_thac0 = pkt->thac0;    //? m_iHitRatio
+	m_player->m_level = pkt->level;
+	m_player->m_str = pkt->str;
+	m_player->m_int = pkt->intel;
+	m_player->m_vit = pkt->vit;
+	m_player->m_dex = pkt->dex;
+	m_player->m_mag = pkt->mag;
+	m_player->m_charisma = pkt->chr;
 
 	// CLEROTH - LU
-	m_pPlayer->m_iLU_Point = pkt->lu_point;
+	m_player->m_lu_point = pkt->lu_point;
 
-	m_pPlayer->m_iExp = pkt->exp;
-	m_pPlayer->m_iEnemyKillCount = pkt->enemy_kills;
-	m_pPlayer->m_iPKCount = pkt->pk_count;
-	m_pPlayer->m_iRewardGold = pkt->reward_gold;
+	m_player->m_exp = pkt->exp;
+	m_player->m_enemy_kill_count = pkt->enemy_kills;
+	m_player->m_pk_count = pkt->pk_count;
+	m_player->m_reward_gold = pkt->reward_gold;
 
-	m_cLocation.assign(pkt->location, strnlen(pkt->location, sizeof(pkt->location)));
-	if (m_cLocation.starts_with("aresden"))
+	m_location.assign(pkt->location, strnlen(pkt->location, sizeof(pkt->location)));
+	if (m_location.starts_with("aresden"))
 	{
-		m_pPlayer->m_bAresden = true;
-		m_pPlayer->m_bCitizen = true;
-		m_pPlayer->m_bHunter = false;
+		m_player->m_aresden = true;
+		m_player->m_citizen = true;
+		m_player->m_hunter = false;
 	}
-	else if (m_cLocation.starts_with("arehunter"))
+	else if (m_location.starts_with("arehunter"))
 	{
-		m_pPlayer->m_bAresden = true;
-		m_pPlayer->m_bCitizen = true;
-		m_pPlayer->m_bHunter = true;
+		m_player->m_aresden = true;
+		m_player->m_citizen = true;
+		m_player->m_hunter = true;
 	}
-	else if (m_cLocation.starts_with("elvine"))
+	else if (m_location.starts_with("elvine"))
 	{
-		m_pPlayer->m_bAresden = false;
-		m_pPlayer->m_bCitizen = true;
-		m_pPlayer->m_bHunter = false;
+		m_player->m_aresden = false;
+		m_player->m_citizen = true;
+		m_player->m_hunter = false;
 	}
-	else if (m_cLocation.starts_with("elvhunter"))
+	else if (m_location.starts_with("elvhunter"))
 	{
-		m_pPlayer->m_bAresden = false;
-		m_pPlayer->m_bCitizen = true;
-		m_pPlayer->m_bHunter = true;
+		m_player->m_aresden = false;
+		m_player->m_citizen = true;
+		m_player->m_hunter = true;
 	}
 	else
 	{
-		m_pPlayer->m_bAresden = true;
-		m_pPlayer->m_bCitizen = false;
-		m_pPlayer->m_bHunter = true;
+		m_player->m_aresden = true;
+		m_player->m_citizen = false;
+		m_player->m_hunter = true;
 	}
 
-	m_pPlayer->m_cGuildName.assign(pkt->guild_name, strnlen(pkt->guild_name, sizeof(pkt->guild_name)));
+	m_player->m_guild_name.assign(pkt->guild_name, strnlen(pkt->guild_name, sizeof(pkt->guild_name)));
 
-	if (m_pPlayer->m_cGuildName == "NONE")
+	if (m_player->m_guild_name == "NONE")
 
-	std::replace(m_pPlayer->m_cGuildName.begin(), m_pPlayer->m_cGuildName.end(), '_', ' ');
-	m_pPlayer->m_iGuildRank = pkt->guild_rank;
-	m_pPlayer->m_iSuperAttackLeft = pkt->super_attack_left;
-	m_iFightzoneNumber = pkt->fightzone_number;
-	iMaxStats = pkt->max_stats;
-	iMaxLevel = pkt->max_level;
-	iMaxBankItems = pkt->max_bank_items;
+	std::replace(m_player->m_guild_name.begin(), m_player->m_guild_name.end(), '_', ' ');
+	m_player->m_guild_rank = pkt->guild_rank;
+	m_player->m_super_attack_left = pkt->super_attack_left;
+	m_fightzone_number = pkt->fightzone_number;
+	m_max_stats = pkt->max_stats;
+	m_max_level = pkt->max_level;
+	m_max_bank_items = pkt->max_bank_items;
 }
 
-void CGame::DisbandGuildResponseHandler(char* pData)
+void CGame::disband_guild_response_handler(char* data)
 {
 	const auto* header = hb::net::PacketCast<hb::net::PacketHeader>(
-		pData, sizeof(hb::net::PacketHeader));
+		data, sizeof(hb::net::PacketHeader));
 	if (!header) return;
 	switch (header->msg_type) {
 	case MsgType::Confirm:
-		m_pPlayer->m_iGuildRank = -1;
-		m_dialogBoxManager.Info(DialogBoxId::GuildMenu).cMode = 7;
+		m_player->m_guild_rank = -1;
+		m_dialog_box_manager.Info(DialogBoxId::GuildMenu).m_mode = 7;
 		break;
 	case MsgType::Reject:
-		m_dialogBoxManager.Info(DialogBoxId::GuildMenu).cMode = 8;
+		m_dialog_box_manager.Info(DialogBoxId::GuildMenu).m_mode = 8;
 		break;
 	}
 }
 
-void CGame::_PutGuildOperationList(char* pName, char cOpMode)
+void CGame::put_guild_operation_list(char* name, char op_mode)
 {
 	int i;
 	for (i = 0; i < 100; i++)
-		if (m_stGuildOpList[i].cOpMode == 0)
+		if (m_guild_op_list[i].op_mode == 0)
 		{
-			m_stGuildOpList[i].cOpMode = cOpMode;
-			m_stGuildOpList[i].cName.assign(pName, strnlen(pName, 20));
+			m_guild_op_list[i].op_mode = op_mode;
+			m_guild_op_list[i].name.assign(name, strnlen(name, 20));
 			return;
 		}
 }
 
-void CGame::_ShiftGuildOperationList()
+void CGame::shift_guild_operation_list()
 {
 	int i;
-	m_stGuildOpList[0].cOpMode = 0;
+	m_guild_op_list[0].op_mode = 0;
 
 	for (i = 1; i < 100; i++)
-		if ((m_stGuildOpList[i - 1].cOpMode == 0) && (m_stGuildOpList[i].cOpMode != 0)) {
-			m_stGuildOpList[i - 1].cOpMode = m_stGuildOpList[i].cOpMode;
-			m_stGuildOpList[i - 1].cName = m_stGuildOpList[i].cName;
+		if ((m_guild_op_list[i - 1].op_mode == 0) && (m_guild_op_list[i].op_mode != 0)) {
+			m_guild_op_list[i - 1].op_mode = m_guild_op_list[i].op_mode;
+			m_guild_op_list[i - 1].name = m_guild_op_list[i].name;
 
-			m_stGuildOpList[i].cOpMode = 0;
+			m_guild_op_list[i].op_mode = 0;
 		}
 }
 
-void CGame::EnableDialogBox(int iBoxID, int cType, int sV1, int sV2, char* pString)
+void CGame::enable_dialog_box(int box_id, int type, int v1, int v2, char* string)
 {
-	m_dialogBoxManager.EnableDialogBox(iBoxID, cType, sV1, sV2, pString);
+	m_dialog_box_manager.enable_dialog_box(box_id, type, v1, v2, string);
 }
 
-void CGame::DisableDialogBox(int iBoxID)
+void CGame::disable_dialog_box(int box_id)
 {
-	m_dialogBoxManager.DisableDialogBox(iBoxID);
+	m_dialog_box_manager.disable_dialog_box(box_id);
 }
 
-void CGame::AddEventList(const char* pTxt, char cColor, bool bDupAllow)
+void CGame::add_event_list(const char* txt, char color, bool dup_allow)
 {
-	EventListManager::Get().AddEvent(pTxt, cColor, bDupAllow);
+	event_list_manager::get().add_event(txt, color, dup_allow);
 }
 
-void CGame::RequestFullObjectData(uint16_t wObjectID)
+void CGame::request_full_object_data(uint16_t object_id)
 {
-	int     iRet;
+	int     ret;
 	hb::net::PacketHeader header{};
-	header.msg_id = MsgId::RequestFullObjectData;
-	header.msg_type = wObjectID;
+	header.msg_id = MsgId::request_full_object_data;
+	header.msg_type = object_id;
 
-	iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&header), sizeof(header));
+	ret = m_g_sock->send_msg(reinterpret_cast<char*>(&header), sizeof(header));
 
-	switch (iRet) {
+	switch (ret) {
 	case sock::Event::SocketClosed:
 	case sock::Event::SocketError:
 	case sock::Event::QueueFull:
-		ChangeGameMode(GameMode::ConnectionLost);
-		m_pGSock.reset();
+		change_game_mode(GameMode::ConnectionLost);
+		m_g_sock.reset();
 		break;
 
 	case sock::Event::CriticalError:
-		m_pGSock.reset();
+		m_g_sock.reset();
 		hb::shared::render::Window::close();
 		break;
 	}
 }
 
 
-void CGame::_ReadMapData(short pivot_x, short pivot_y, const char* packet_data)
+void CGame::read_map_data(short pivot_x, short pivot_y, const char* packet_data)
 {
 	char header_byte = 0, direction = 0, item_color = 0;
 	std::string name;
@@ -2586,8 +2579,8 @@ void CGame::_ReadMapData(short pivot_x, short pivot_y, const char* packet_data)
 	uint32_t item_attr = 0;
 
 	const char* cursor = packet_data;
-	m_sVDL_X = pivot_x; // Valid Data Loc-X
-	m_sVDL_Y = pivot_y;
+	m_vdl_x = pivot_x; // Valid Data Loc-X
+	m_vdl_y = pivot_y;
 
 	const auto* mapHeader = hb::net::PacketCast<hb::net::PacketMapDataHeader>(cursor, sizeof(hb::net::PacketMapDataHeader));
 	if (!mapHeader) return;
@@ -2605,7 +2598,7 @@ void CGame::_ReadMapData(short pivot_x, short pivot_y, const char* packet_data)
 		{
 			const auto* objBase = hb::net::PacketCast<hb::net::PacketMapDataObjectBase>(cursor, sizeof(hb::net::PacketMapDataObjectBase));
 			if (!objBase) return;
-			if (hb::shared::object_id::IsPlayerID(objBase->object_id))
+			if (hb::shared::object_id::is_player_id(objBase->object_id))
 			{
 				const auto* obj = hb::net::PacketCast<hb::net::PacketMapDataObjectPlayer>(cursor, sizeof(hb::net::PacketMapDataObjectPlayer));
 				if (!obj) return;
@@ -2624,7 +2617,7 @@ void CGame::_ReadMapData(short pivot_x, short pivot_y, const char* packet_data)
 				if (!obj) return;
 				object_id = obj->base.object_id;
 				npc_config_id = obj->config_id;
-				owner_type = ResolveNpcType(npc_config_id);
+				owner_type = resolve_npc_type(npc_config_id);
 				direction = static_cast<char>(obj->dir);
 				appearance.SetFromNpcAppearance(obj->appearance);
 				status.SetFromEntityStatus(obj->status);
@@ -2632,13 +2625,13 @@ void CGame::_ReadMapData(short pivot_x, short pivot_y, const char* packet_data)
 				name.assign(obj->name, strnlen(obj->name, sizeof(obj->name)));
 				cursor += sizeof(hb::net::PacketMapDataObjectNpc);
 			}
-			{ m_pMapData->bSetOwner(object_id, pivot_x + map_x, pivot_y + map_y, owner_type, direction, appearance, status, name, Type::Stop, 0, 0, 0, 0, 0, npc_config_id); }
+			{ m_map_data->set_owner(object_id, pivot_x + map_x, pivot_y + map_y, owner_type, direction, appearance, status, name, Type::stop, 0, 0, 0, 0, 0, npc_config_id); }
 		}
 		if (header_byte & 0x02) // object ID
 		{
 			const auto* objBase = hb::net::PacketCast<hb::net::PacketMapDataObjectBase>(cursor, sizeof(hb::net::PacketMapDataObjectBase));
 			if (!objBase) return;
-			if (hb::shared::object_id::IsPlayerID(objBase->object_id))
+			if (hb::shared::object_id::is_player_id(objBase->object_id))
 			{
 				const auto* obj = hb::net::PacketCast<hb::net::PacketMapDataObjectPlayer>(cursor, sizeof(hb::net::PacketMapDataObjectPlayer));
 				if (!obj) return;
@@ -2657,7 +2650,7 @@ void CGame::_ReadMapData(short pivot_x, short pivot_y, const char* packet_data)
 				if (!obj) return;
 				object_id = obj->base.object_id;
 				npc_config_id = obj->config_id;
-				owner_type = ResolveNpcType(npc_config_id);
+				owner_type = resolve_npc_type(npc_config_id);
 				direction = static_cast<char>(obj->dir);
 				appearance.SetFromNpcAppearance(obj->appearance);
 				status.SetFromEntityStatus(obj->status);
@@ -2665,7 +2658,7 @@ void CGame::_ReadMapData(short pivot_x, short pivot_y, const char* packet_data)
 				name.assign(obj->name, strnlen(obj->name, sizeof(obj->name)));
 				cursor += sizeof(hb::net::PacketMapDataObjectNpc);
 			}
-			{ m_pMapData->bSetDeadOwner(object_id, pivot_x + map_x, pivot_y + map_y, owner_type, direction, appearance, status, name, npc_config_id); }
+			{ m_map_data->set_dead_owner(object_id, pivot_x + map_x, pivot_y + map_y, owner_type, direction, appearance, status, name, npc_config_id); }
 		}
 		if (header_byte & 0x04)
 		{
@@ -2675,7 +2668,7 @@ void CGame::_ReadMapData(short pivot_x, short pivot_y, const char* packet_data)
 			item_color = static_cast<char>(item->color);
 			item_attr = item->attribute;
 			cursor += sizeof(hb::net::PacketMapDataItem);
-			m_pMapData->bSetItem(pivot_x + map_x, pivot_y + map_y, item_id, item_color, item_attr, false);
+			m_map_data->set_item(pivot_x + map_x, pivot_y + map_y, item_id, item_color, item_attr, false);
 		}
 		if (header_byte & 0x08) // Dynamic object
 		{
@@ -2684,118 +2677,118 @@ void CGame::_ReadMapData(short pivot_x, short pivot_y, const char* packet_data)
 			dynamic_object_id = dyn->object_id;
 			dynamic_type = dyn->type;
 			cursor += sizeof(hb::net::PacketMapDataDynamicObject);
-			m_pMapData->bSetDynamicObject(pivot_x + map_x, pivot_y + map_y, dynamic_object_id, dynamic_type, false);
+			m_map_data->set_dynamic_object(pivot_x + map_x, pivot_y + map_y, dynamic_object_id, dynamic_type, false);
 		}
 	}
 }
 
-void CGame::LogEventHandler(char* pData)
+void CGame::log_event_handler(char* data)
 {
-	WORD wEventType, wObjectID;
-	short sX, sY, sType;
+	WORD event_type, object_id;
+	short sX, sY, type;
 	short npcConfigId = -1;
-	hb::shared::entity::PlayerStatus iStatus;
-	char cDir;
-	std::string cName;
+	hb::shared::entity::PlayerStatus status;
+	char dir;
+	std::string name;
 	hb::shared::entity::PlayerAppearance playerAppearance;
 
-	const auto* base = hb::net::PacketCast<hb::net::PacketEventLogBase>(pData, sizeof(hb::net::PacketEventLogBase));
+	const auto* base = hb::net::PacketCast<hb::net::PacketEventLogBase>(data, sizeof(hb::net::PacketEventLogBase));
 	if (!base) return;
-	wEventType = base->header.msg_type;
-	wObjectID = base->object_id;
+	event_type = base->header.msg_type;
+	object_id = base->object_id;
 	sX = base->x;
 	sY = base->y;
-	cName.clear();
-	if (hb::shared::object_id::IsPlayerID(wObjectID))
+	name.clear();
+	if (hb::shared::object_id::is_player_id(object_id))
 	{
-		const auto* pkt = hb::net::PacketCast<hb::net::PacketEventLogPlayer>(pData, sizeof(hb::net::PacketEventLogPlayer));
+		const auto* pkt = hb::net::PacketCast<hb::net::PacketEventLogPlayer>(data, sizeof(hb::net::PacketEventLogPlayer));
 		if (!pkt) return;
-		sType = pkt->type;
-		cDir = static_cast<char>(pkt->dir);
-		cName.assign(pkt->name, strnlen(pkt->name, sizeof(pkt->name)));
+		type = pkt->type;
+		dir = static_cast<char>(pkt->dir);
+		name.assign(pkt->name, strnlen(pkt->name, sizeof(pkt->name)));
 		playerAppearance = pkt->appearance;
-		iStatus = pkt->status;
+		status = pkt->status;
 	}
 	else 	// NPC
 	{
-		const auto* pkt = hb::net::PacketCast<hb::net::PacketEventLogNpc>(pData, sizeof(hb::net::PacketEventLogNpc));
+		const auto* pkt = hb::net::PacketCast<hb::net::PacketEventLogNpc>(data, sizeof(hb::net::PacketEventLogNpc));
 		if (!pkt) return;
 		npcConfigId = pkt->config_id;
-		sType = ResolveNpcType(npcConfigId);
-		cDir = static_cast<char>(pkt->dir);
-		cName.assign(pkt->name, strnlen(pkt->name, sizeof(pkt->name)));
+		type = resolve_npc_type(npcConfigId);
+		dir = static_cast<char>(pkt->dir);
+		name.assign(pkt->name, strnlen(pkt->name, sizeof(pkt->name)));
 		playerAppearance.SetFromNpcAppearance(pkt->appearance);
-		iStatus.SetFromEntityStatus(pkt->status);
+		status.SetFromEntityStatus(pkt->status);
 	}
 
-	switch (wEventType) {
+	switch (event_type) {
 	case MsgType::Confirm:
-		{ m_pMapData->bSetOwner(wObjectID, sX, sY, sType, cDir, playerAppearance, iStatus, cName, Type::Stop, 0, 0, 0, 0, 0, npcConfigId); }
-		switch (sType) {
+		{ m_map_data->set_owner(object_id, sX, sY, type, dir, playerAppearance, status, name, Type::stop, 0, 0, 0, 0, 0, npcConfigId); }
+		switch (type) {
 		case hb::shared::owner::LightWarBeetle: // LWB
 		case hb::shared::owner::GodsHandKnight: // GHK
 		case hb::shared::owner::GodsHandKnightCK: // GHKABS
 		case hb::shared::owner::TempleKnight: // TK
 		case hb::shared::owner::BattleGolem: // BG
-			m_pEffectManager->AddEffect(EffectType::WHITE_HALO, (sX) * 32, (sY) * 32, 0, 0, 0);
+			m_effect_manager->add_effect(EffectType::WHITE_HALO, (sX) * 32, (sY) * 32, 0, 0, 0);
 			break;
 		}
 		break;
 
 	case MsgType::Reject:
-		{ m_pMapData->bSetOwner(wObjectID, -1, -1, sType, cDir, playerAppearance, iStatus, cName, Type::Stop, 0, 0, 0, 0, 0, npcConfigId); }
+		{ m_map_data->set_owner(object_id, -1, -1, type, dir, playerAppearance, status, name, Type::stop, 0, 0, 0, 0, 0, npcConfigId); }
 		break;
 	}
 
-	m_floatingText.RemoveByObjectID(wObjectID);
+	m_floating_text.remove_by_object_id(object_id);
 }
 
 // MODERNIZED: No longer a window message handler - polls socket directly
 // MODERNIZED: v4 Networking Architecture (Drain -> Queue -> Process) for Login Socket
-void CGame::OnLogSocketEvent()
+void CGame::on_log_socket_event()
 {
-    if (m_pLSock == 0) return;
+    if (m_l_sock == 0) return;
 
     // 1. Check for socket state changes (Connect, Close, Error)
-    int iRet = m_pLSock->Poll();
+    int ret = m_l_sock->Poll();
 
-    switch (iRet) {
+    switch (ret) {
     case sock::Event::SocketClosed:
-        ChangeGameMode(GameMode::ConnectionLost);
-        m_pLSock.reset();
+        change_game_mode(GameMode::ConnectionLost);
+        m_l_sock.reset();
         return;
     case sock::Event::SocketError:
         printf("[ERROR] Login socket error\n");
-        ChangeGameMode(GameMode::ConnectionLost);
-        m_pLSock.reset();
+        change_game_mode(GameMode::ConnectionLost);
+        m_l_sock.reset();
         return;
 
     case sock::Event::ConnectionEstablish:
-        ConnectionEstablishHandler(static_cast<int>(ServerType::Log));
+        connection_establish_handler(static_cast<int>(ServerType::Log));
         break;
     }
 
     // 2. Drain all available data from TCP buffer to the Queue
-    // Only drain if socket is connected (m_bIsAvailable is set on FD_CONNECT)
-    if (!m_pLSock->m_bIsAvailable) {
+    // Only drain if socket is connected (m_is_available is set on FD_CONNECT)
+    if (!m_l_sock->m_is_available) {
         return; // Still connecting, don't try to read yet
     }
 
-    // If Poll() completed a packet, queue it before DrainToQueue() overwrites the buffer
-    if (iRet == sock::Event::ReadComplete) {
-        size_t dwSize = 0;
-        char* pData = m_pLSock->pGetRcvDataPointer(&dwSize);
-        if (pData != nullptr && dwSize > 0) {
-            m_pLSock->QueueCompletedPacket(pData, dwSize);
+    // If Poll() completed a packet, queue it before drain_to_queue() overwrites the buffer
+    if (ret == sock::Event::ReadComplete) {
+        size_t size = 0;
+        char* data = m_l_sock->get_rcv_data_pointer(&size);
+        if (data != nullptr && size > 0) {
+            m_l_sock->queue_completed_packet(data, size);
         }
     }
 
-    int iDrained = m_pLSock->DrainToQueue();
+    int drained = m_l_sock->drain_to_queue();
 
-    if (iDrained < 0) {
-        printf("[ERROR] Login socket DrainToQueue failed: %d\n", iDrained);
-        ChangeGameMode(GameMode::ConnectionLost);
-        m_pLSock.reset();
+    if (drained < 0) {
+        printf("[ERROR] Login socket drain_to_queue failed: %d\n", drained);
+        change_game_mode(GameMode::ConnectionLost);
+        m_l_sock.reset();
         return;
     }
 
@@ -2803,58 +2796,53 @@ void CGame::OnLogSocketEvent()
     constexpr int MAX_PACKETS_PER_FRAME = 120; // Safety limit
     constexpr uint32_t MAX_TIME_MS = 3;        // 3ms budget for network processing
 
-    uint32_t dwStartTime = GameClock::GetTimeMS();
-    int iProcessed = 0;
+    uint32_t start_time = GameClock::get_time_ms();
+    int processed = 0;
 
     hb::shared::net::NetworkPacket packet;
-    while (iProcessed < MAX_PACKETS_PER_FRAME) {
+    while (processed < MAX_PACKETS_PER_FRAME) {
 
         // Check budget
-        if (GameClock::GetTimeMS() - dwStartTime > MAX_TIME_MS) {
+        if (GameClock::get_time_ms() - start_time > MAX_TIME_MS) {
             break;
         }
 
         // Peek next packet
-        if (!m_pLSock->PeekPacket(packet)) {
+        if (!m_l_sock->peek_packet(packet)) {
             break; // Queue empty
         }
 
-        // Update timestamps
-        m_dwLastNetRecvTime = GameClock::GetTimeMS();
+        // update timestamps
+        m_last_net_recv_time = GameClock::get_time_ms();
 
         // Process (using the pointer directly from the packet vector)
         if (!packet.empty()) {
-             LogRecvMsgHandler(const_cast<char*>(packet.ptr()));
+             log_recv_msg_handler(const_cast<char*>(packet.ptr()));
         }
 
         // CRITICAL FIX: The handler might have closed/deleted the socket!
-        if (m_pLSock == nullptr) return;
+        if (m_l_sock == nullptr) return;
 
-        // Pop logic (remove from queue)
-        m_pLSock->PopPacket();
-        iProcessed++;
+        // pop logic (remove from queue)
+        m_l_sock->pop_packet();
+        processed++;
     }
 }
 
-void CGame::LogResponseHandler(char* packet_data)
+void CGame::log_response_handler(char* packet_data)
 {
 	WORD response = 0;
 	char char_name[12]{};
 
 	const auto* header = hb::net::PacketCast<hb::net::PacketHeader>(packet_data, sizeof(hb::net::PacketHeader));
-	if (!header) {
-		printf("[ERROR] LogResponseHandler - invalid packet header\n");
-		return;
-	}
+	if (!header) return;
 	response = header->msg_type;
 
 	// Route to the active screen first — if it handles the response, we're done.
-	IGameScreen* pScreen = GameModeManager::GetActiveScreen();
-	if (pScreen && pScreen->on_net_response(response, packet_data)) {
-		printf("[LogResponseHandler] Response 0x%04X handled by screen on_net_response\n", response);
+	IGameScreen* screen = GameModeManager::get_active_screen();
+	if (screen && screen->on_net_response(response, packet_data)) {
 		return;
 	}
-	printf("[LogResponseHandler] Response 0x%04X using legacy handler\n", response);
 
 	switch (response) {
 	case LogResMsg::CharacterDeleted:
@@ -2862,29 +2850,29 @@ void CGame::LogResponseHandler(char* packet_data)
 		const auto* list = hb::net::PacketCast<hb::net::PacketLogCharacterListHeader>(
 			packet_data, sizeof(hb::net::PacketLogCharacterListHeader));
 		if (!list) return;
-		m_iTotalChar = std::min(static_cast<int>(list->total_chars), 4);
+		m_total_char = std::min(static_cast<int>(list->total_chars), 4);
 		for (int i = 0; i < 4; i++)
-			if (m_pCharList[i] != 0)
+			if (m_char_list[i] != 0)
 			{
-				m_pCharList[i].reset();
+				m_char_list[i].reset();
 			}
 
 		const auto* entries = reinterpret_cast<const hb::net::PacketLogCharacterEntry*>(
 			packet_data + sizeof(hb::net::PacketLogCharacterListHeader));
-		for (int i = 0; i < m_iTotalChar; i++) {
+		for (int i = 0; i < m_total_char; i++) {
 			const auto& entry = entries[i];
-			m_pCharList[i] = std::make_unique<CCharInfo>();
-			m_pCharList[i]->m_cName.assign(entry.name, strnlen(entry.name, sizeof(entry.name)));
-			m_pCharList[i]->m_appearance = entry.appearance;
-			m_pCharList[i]->m_sSex = entry.sex;
-			m_pCharList[i]->m_sSkinCol = entry.skin;
-			m_pCharList[i]->m_sLevel = entry.level;
-			m_pCharList[i]->m_iExp = entry.exp;
+			m_char_list[i] = std::make_unique<CCharInfo>();
+			m_char_list[i]->m_name.assign(entry.name, strnlen(entry.name, sizeof(entry.name)));
+			m_char_list[i]->m_appearance = entry.appearance;
+			m_char_list[i]->m_sex = entry.sex;
+			m_char_list[i]->m_skin_color = entry.skin;
+			m_char_list[i]->m_level = entry.level;
+			m_char_list[i]->m_exp = entry.exp;
 
-			m_pCharList[i]->m_cMapName.assign(entry.map_name, strnlen(entry.map_name, sizeof(entry.map_name)));
+			m_char_list[i]->m_map_name.assign(entry.map_name, strnlen(entry.map_name, sizeof(entry.map_name)));
 		}
-		std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "3A");
-		ChangeGameMode(GameMode::LogResMsg);
+		std::snprintf(m_msg, sizeof(m_msg), "%s", "3A");
+		change_game_mode(GameMode::LogResMsg);
 	}
 	break;
 
@@ -2892,39 +2880,36 @@ void CGame::LogResponseHandler(char* packet_data)
 	{
 		const auto* list = hb::net::PacketCast<hb::net::PacketLogCharacterListHeader>(
 			packet_data, sizeof(hb::net::PacketLogCharacterListHeader));
-		if (!list) {
-			printf("[ERROR] LogResponseHandler - CONFIRM packet too small\n");
-			return;
-		}
-		m_iAccntYear = 0;
-		m_iAccntMonth = 0;
-		m_iAccntDay = 0;
-		m_iIpYear = 0;
-		m_iIpMonth = 0;
-		m_iIpDay = 0;
-		m_iTotalChar = std::min(static_cast<int>(list->total_chars), 4);
+		if (!list) return;
+		m_accnt_year = 0;
+		m_accnt_month = 0;
+		m_accnt_day = 0;
+		m_ip_year = 0;
+		m_ip_month = 0;
+		m_ip_day = 0;
+		m_total_char = std::min(static_cast<int>(list->total_chars), 4);
 		for (int i = 0; i < 4; i++)
-			if (m_pCharList[i] != 0)
+			if (m_char_list[i] != 0)
 			{
-				m_pCharList[i].reset();
+				m_char_list[i].reset();
 			}
 
 		const auto* entries = reinterpret_cast<const hb::net::PacketLogCharacterEntry*>(
 			packet_data + sizeof(hb::net::PacketLogCharacterListHeader));
-		for (int i = 0; i < m_iTotalChar; i++)
+		for (int i = 0; i < m_total_char; i++)
 		{
 			const auto& entry = entries[i];
-			m_pCharList[i] = std::make_unique<CCharInfo>();
-			m_pCharList[i]->m_cName.assign(entry.name, strnlen(entry.name, sizeof(entry.name)));
-			m_pCharList[i]->m_appearance = entry.appearance;
-			m_pCharList[i]->m_sSex = entry.sex;
-			m_pCharList[i]->m_sSkinCol = entry.skin;
-			m_pCharList[i]->m_sLevel = entry.level;
-			m_pCharList[i]->m_iExp = entry.exp;
+			m_char_list[i] = std::make_unique<CCharInfo>();
+			m_char_list[i]->m_name.assign(entry.name, strnlen(entry.name, sizeof(entry.name)));
+			m_char_list[i]->m_appearance = entry.appearance;
+			m_char_list[i]->m_sex = entry.sex;
+			m_char_list[i]->m_skin_color = entry.skin;
+			m_char_list[i]->m_level = entry.level;
+			m_char_list[i]->m_exp = entry.exp;
 
-			m_pCharList[i]->m_cMapName.assign(entry.map_name, strnlen(entry.map_name, sizeof(entry.map_name)));
+			m_char_list[i]->m_map_name.assign(entry.map_name, strnlen(entry.map_name, sizeof(entry.map_name)));
 		}
-		ChangeGameMode(GameMode::SelectCharacter);
+		change_game_mode(GameMode::SelectCharacter);
 	}
 	break;
 
@@ -2932,68 +2917,68 @@ void CGame::LogResponseHandler(char* packet_data)
 	{
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketLogResponseReject>(packet_data, sizeof(hb::net::PacketLogResponseReject));
 		if (!pkt) return;
-		m_iBlockYear = pkt->block_year;
-		m_iBlockMonth = pkt->block_month;
-		m_iBlockDay = pkt->block_day;
+		m_block_year = pkt->block_year;
+		m_block_month = pkt->block_month;
+		m_block_day = pkt->block_day;
 
-		std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "7H");
-		ChangeGameMode(GameMode::LogResMsg);
+		std::snprintf(m_msg, sizeof(m_msg), "%s", "7H");
+		change_game_mode(GameMode::LogResMsg);
 	}
 	break;
 
 	case LogResMsg::NotEnoughPoint:
-		std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "7I");
-		ChangeGameMode(GameMode::LogResMsg);
+		std::snprintf(m_msg, sizeof(m_msg), "%s", "7I");
+		change_game_mode(GameMode::LogResMsg);
 		break;
 
 	case LogResMsg::AccountLocked:
-		std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "7K");
-		ChangeGameMode(GameMode::LogResMsg);
+		std::snprintf(m_msg, sizeof(m_msg), "%s", "7K");
+		change_game_mode(GameMode::LogResMsg);
 		break;
 
 	case LogResMsg::ServiceNotAvailable:
-		std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "7L");
-		ChangeGameMode(GameMode::LogResMsg);
+		std::snprintf(m_msg, sizeof(m_msg), "%s", "7L");
+		change_game_mode(GameMode::LogResMsg);
 		break;
 
 	case LogResMsg::PasswordChangeSuccess:
-		std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "6B");
-		ChangeGameMode(GameMode::LogResMsg);
+		std::snprintf(m_msg, sizeof(m_msg), "%s", "6B");
+		change_game_mode(GameMode::LogResMsg);
 		break;
 
 	case LogResMsg::PasswordChangeFail:
-		std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "6C");
-		ChangeGameMode(GameMode::LogResMsg);
+		std::snprintf(m_msg, sizeof(m_msg), "%s", "6C");
+		change_game_mode(GameMode::LogResMsg);
 		break;
 
 	case LogResMsg::PasswordMismatch:
-		std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "11");
-		ChangeGameMode(GameMode::LogResMsg);
+		std::snprintf(m_msg, sizeof(m_msg), "%s", "11");
+		change_game_mode(GameMode::LogResMsg);
 		break;
 
 	case LogResMsg::NotExistingAccount:
-		std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "12");
-		ChangeGameMode(GameMode::LogResMsg);
+		std::snprintf(m_msg, sizeof(m_msg), "%s", "12");
+		change_game_mode(GameMode::LogResMsg);
 		break;
 
 	case LogResMsg::NewAccountCreated:
-		std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "54");
-		ChangeGameMode(GameMode::LogResMsg);
+		std::snprintf(m_msg, sizeof(m_msg), "%s", "54");
+		change_game_mode(GameMode::LogResMsg);
 		break;
 
 	case LogResMsg::NewAccountFailed:
-		std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "05");
-		ChangeGameMode(GameMode::LogResMsg);
+		std::snprintf(m_msg, sizeof(m_msg), "%s", "05");
+		change_game_mode(GameMode::LogResMsg);
 		break;
 
 	case LogResMsg::AlreadyExistingAccount:
-		std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "06");
-		ChangeGameMode(GameMode::LogResMsg);
+		std::snprintf(m_msg, sizeof(m_msg), "%s", "06");
+		change_game_mode(GameMode::LogResMsg);
 		break;
 
 	case LogResMsg::NotExistingCharacter:
-		std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "Not existing character!");
-		ChangeGameMode(GameMode::Msg);
+		std::snprintf(m_msg, sizeof(m_msg), "%s", "Not existing character!");
+		change_game_mode(GameMode::Msg);
 		break;
 
 	case LogResMsg::NewCharacterCreated:
@@ -3003,41 +2988,41 @@ void CGame::LogResponseHandler(char* packet_data)
 		if (!list) return;
 		memcpy(char_name, list->character_name, sizeof(list->character_name));
 
-		m_iTotalChar = std::min(static_cast<int>(list->total_chars), 4);
+		m_total_char = std::min(static_cast<int>(list->total_chars), 4);
 		for (int i = 0; i < 4; i++)
-			if (m_pCharList[i] != 0) m_pCharList[i].reset();
+			if (m_char_list[i] != 0) m_char_list[i].reset();
 
 		const auto* entries = reinterpret_cast<const hb::net::PacketLogCharacterEntry*>(
 			packet_data + sizeof(hb::net::PacketLogNewCharacterCreatedHeader));
-		for (int i = 0; i < m_iTotalChar; i++) {
+		for (int i = 0; i < m_total_char; i++) {
 			const auto& entry = entries[i];
-			m_pCharList[i] = std::make_unique<CCharInfo>();
-			m_pCharList[i]->m_cName.assign(entry.name, strnlen(entry.name, sizeof(entry.name)));
-			m_pCharList[i]->m_appearance = entry.appearance;
-			m_pCharList[i]->m_sSex = entry.sex;
-			m_pCharList[i]->m_sSkinCol = entry.skin;
-			m_pCharList[i]->m_sLevel = entry.level;
-			m_pCharList[i]->m_iExp = entry.exp;
+			m_char_list[i] = std::make_unique<CCharInfo>();
+			m_char_list[i]->m_name.assign(entry.name, strnlen(entry.name, sizeof(entry.name)));
+			m_char_list[i]->m_appearance = entry.appearance;
+			m_char_list[i]->m_sex = entry.sex;
+			m_char_list[i]->m_skin_color = entry.skin;
+			m_char_list[i]->m_level = entry.level;
+			m_char_list[i]->m_exp = entry.exp;
 	
-			m_pCharList[i]->m_cMapName.assign(entry.map_name, strnlen(entry.map_name, sizeof(entry.map_name)));
+			m_char_list[i]->m_map_name.assign(entry.map_name, strnlen(entry.map_name, sizeof(entry.map_name)));
 		}
-		std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "47");
-		ChangeGameMode(GameMode::LogResMsg);
+		std::snprintf(m_msg, sizeof(m_msg), "%s", "47");
+		change_game_mode(GameMode::LogResMsg);
 	}
 	break;
 
 	case LogResMsg::NewCharacterFailed:
-		std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "28");
-		ChangeGameMode(GameMode::LogResMsg);
+		std::snprintf(m_msg, sizeof(m_msg), "%s", "28");
+		change_game_mode(GameMode::LogResMsg);
 		break;
 
 	case LogResMsg::AlreadyExistingCharacter:
-		std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "29");
-		ChangeGameMode(GameMode::LogResMsg);
+		std::snprintf(m_msg, sizeof(m_msg), "%s", "29");
+		change_game_mode(GameMode::LogResMsg);
 		break;
 
 	case EnterGameRes::Playing:
-		ChangeGameMode(GameMode::QueryForceLogin);
+		change_game_mode(GameMode::QueryForceLogin);
 		break;
 
 	case EnterGameRes::Confirm:
@@ -3045,15 +3030,15 @@ void CGame::LogResponseHandler(char* packet_data)
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketLogEnterGameConfirm>(
 			packet_data, sizeof(hb::net::PacketLogEnterGameConfirm));
 		if (!pkt) return;
-		int iGameServerPort = pkt->game_server_port;
-		char cGameServerAddr[16]{};
-		memcpy(cGameServerAddr, pkt->game_server_addr, sizeof(pkt->game_server_addr));
-		m_cGameServerName.assign(pkt->game_server_name, strnlen(pkt->game_server_name, sizeof(pkt->game_server_name)));
-		(void)iGameServerPort;
+		int game_server_port = pkt->game_server_port;
+		char game_server_addr[16]{};
+		memcpy(game_server_addr, pkt->game_server_addr, sizeof(pkt->game_server_addr));
+		m_game_server_name.assign(pkt->game_server_name, strnlen(pkt->game_server_name, sizeof(pkt->game_server_name)));
+		(void)game_server_port;
 
-		m_pGSock = std::make_unique<hb::shared::net::ASIOSocket>(m_pIOPool->GetContext(), game_limits::socket_block_limit);
-		m_pGSock->bConnect(m_cLogServerAddr.c_str(), m_iGameServerPort);
-		m_pGSock->bInitBufferSize(hb::shared::limits::MsgBufferSize);
+		m_g_sock = std::make_unique<hb::shared::net::ASIOSocket>(m_io_pool->get_context(), game_limits::socket_block_limit);
+		m_g_sock->connect(m_log_server_addr.c_str(), m_game_server_port);
+		m_g_sock->init_buffer_size(hb::shared::limits::MsgBufferSize);
 	}
 	break;
 
@@ -3061,70 +3046,70 @@ void CGame::LogResponseHandler(char* packet_data)
 	{
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketLogResponseCode>(packet_data, sizeof(hb::net::PacketLogResponseCode));
 		if (!pkt) return;
-		std::memset(m_cMsg, 0, sizeof(m_cMsg));
+		std::memset(m_msg, 0, sizeof(m_msg));
 		switch (pkt->code) {
-		case 1:	std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "3E"); break;
-		case 2:	std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "3F"); break;
-		case 3:	std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "33"); break;
-		case 4: std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "3D"); break;
-		case 5: std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "3G"); break;
-		case 6: std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "3Z"); break;
-		case 7: std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "3J"); break;
+		case 1:	std::snprintf(m_msg, sizeof(m_msg), "%s", "3E"); break;
+		case 2:	std::snprintf(m_msg, sizeof(m_msg), "%s", "3F"); break;
+		case 3:	std::snprintf(m_msg, sizeof(m_msg), "%s", "33"); break;
+		case 4: std::snprintf(m_msg, sizeof(m_msg), "%s", "3D"); break;
+		case 5: std::snprintf(m_msg, sizeof(m_msg), "%s", "3G"); break;
+		case 6: std::snprintf(m_msg, sizeof(m_msg), "%s", "3Z"); break;
+		case 7: std::snprintf(m_msg, sizeof(m_msg), "%s", "3J"); break;
 		}
-		ChangeGameMode(GameMode::LogResMsg);
+		change_game_mode(GameMode::LogResMsg);
 	}
 	break;
 
 	case EnterGameRes::ForceDisconn:
-		std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "3X");
-		ChangeGameMode(GameMode::LogResMsg);
+		std::snprintf(m_msg, sizeof(m_msg), "%s", "3X");
+		change_game_mode(GameMode::LogResMsg);
 		break;
 
 	case LogResMsg::NotExistingWorldServer:
-		std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "1Y");
-		ChangeGameMode(GameMode::LogResMsg);
+		std::snprintf(m_msg, sizeof(m_msg), "%s", "1Y");
+		change_game_mode(GameMode::LogResMsg);
 		break;
 
 	case LogResMsg::InputKeyCode:
 	{
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketLogResponseCode>(packet_data, sizeof(hb::net::PacketLogResponseCode));
 		if (!pkt) return;
-		std::memset(m_cMsg, 0, sizeof(m_cMsg));
+		std::memset(m_msg, 0, sizeof(m_msg));
 		switch (pkt->code) {
-		case 1:	std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "8U"); break; //MainMenu, Keycode registration success
-		case 2:	std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "82"); break; //MainMenu, Not existing Account
-		case 3:	std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "81"); break; //MainMenu, Password wrong
-		case 4: std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "8V"); break; //MainMenu, Invalid Keycode
-		case 5: std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "8W"); break; //MainMenu, Already Used Keycode
+		case 1:	std::snprintf(m_msg, sizeof(m_msg), "%s", "8U"); break; //MainMenu, Keycode registration success
+		case 2:	std::snprintf(m_msg, sizeof(m_msg), "%s", "82"); break; //MainMenu, Not existing Account
+		case 3:	std::snprintf(m_msg, sizeof(m_msg), "%s", "81"); break; //MainMenu, Password wrong
+		case 4: std::snprintf(m_msg, sizeof(m_msg), "%s", "8V"); break; //MainMenu, Invalid Keycode
+		case 5: std::snprintf(m_msg, sizeof(m_msg), "%s", "8W"); break; //MainMenu, Already Used Keycode
 		}
-		ChangeGameMode(GameMode::LogResMsg);
+		change_game_mode(GameMode::LogResMsg);
 	}
 	break;
 
 	case LogResMsg::ForceChangePassword:
-		std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "6M");
-		ChangeGameMode(GameMode::LogResMsg);
+		std::snprintf(m_msg, sizeof(m_msg), "%s", "6M");
+		change_game_mode(GameMode::LogResMsg);
 		break;
 
 	case LogResMsg::InvalidKoreanSsn:
-		std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "1a");
-		ChangeGameMode(GameMode::LogResMsg);
+		std::snprintf(m_msg, sizeof(m_msg), "%s", "1a");
+		change_game_mode(GameMode::LogResMsg);
 		break;
 
 	case LogResMsg::LessThenFifteen:
-		std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "1b");
-		ChangeGameMode(GameMode::LogResMsg);
+		std::snprintf(m_msg, sizeof(m_msg), "%s", "1b");
+		change_game_mode(GameMode::LogResMsg);
 		break;
 	}
-	m_pLSock.reset();
+	m_l_sock.reset();
 }
 
-void CGame::LogRecvMsgHandler(char* pData)
+void CGame::log_recv_msg_handler(char* data)
 {
-	LogResponseHandler(pData);
+	log_response_handler(data);
 }
 
-void CGame::ChangeGameMode(GameMode mode)
+void CGame::change_game_mode(GameMode mode)
 {
 	// Determine if this mode change should be instant (no fade-out)
 	// Instant transitions are used for:
@@ -3149,7 +3134,7 @@ void CGame::ChangeGameMode(GameMode mode)
 	// Use manager's current mode as source of truth
 	if (!instant)
 	{
-		switch (GameModeManager::GetMode())
+		switch (GameModeManager::get_mode())
 		{
 		case GameMode::Loading:         // Loading screen - no fade needed
 		case GameMode::Connecting:      // Waiting screen - no fade needed
@@ -3225,7 +3210,7 @@ void CGame::ChangeGameMode(GameMode mode)
 
 	case GameMode::Null:
 		// Null mode signals application exit
-		GameModeManager::SetCurrentMode(GameMode::Null);
+		GameModeManager::set_current_mode(GameMode::Null);
 		request_quit();
 		break;
 
@@ -3235,38 +3220,38 @@ void CGame::ChangeGameMode(GameMode mode)
 	}
 }
 
-void CGame::ReleaseUnusedSprites()
+void CGame::release_unused_sprites()
 {
-	for (auto& [idx, spr] : m_pSprite)
+	for (auto& [idx, spr] : m_sprite)
 	{
 		if (spr->IsLoaded() && !spr->IsInUse())
 		{
-			if (GameClock::GetTimeMS() - spr->GetLastAccessTime() > 60000)
+			if (GameClock::get_time_ms() - spr->GetLastAccessTime() > 60000)
 				spr->Unload();
 		}
 	}
-	for(auto& [idx, spr] : m_pTileSpr)
+	for(auto& [idx, spr] : m_tile_spr)
 	{
 		if (spr->IsLoaded() && !spr->IsInUse())
 		{
-			if (GameClock::GetTimeMS() - spr->GetLastAccessTime() > 60000)
+			if (GameClock::get_time_ms() - spr->GetLastAccessTime() > 60000)
 				spr->Unload();
 		}
 	}
-	for (auto& [idx, spr] : m_pEffectSpr)
+	for (auto& [idx, spr] : m_effect_sprites)
 	{
 		if (spr->IsLoaded() && !spr->IsInUse())
 		{
-			if (GameClock::GetTimeMS() - spr->GetLastAccessTime() > 60000)
+			if (GameClock::get_time_ms() - spr->GetLastAccessTime() > 60000)
 				spr->Unload();
 		}
 	}
 
-	// Stale sound buffer release is now handled by AudioManager::Update()
-	AudioManager::Get().Update();
+	// Stale sound buffer release is now handled by audio_manager::update()
+	audio_manager::get().update();
 }
 
-void CGame::ChatMsgHandler(char* packet_data)
+void CGame::chat_msg_handler(char* packet_data)
 {
 	int object_id = 0, location = 0;
 	short map_x = 0, map_y = 0;
@@ -3274,7 +3259,7 @@ void CGame::ChatMsgHandler(char* packet_data)
 
 	char msg_type = 0, temp[100]{}, message[100]{}, text1[100]{};
 	std::string name;
-	uint32_t current_time = m_dwCurTime;
+	uint32_t current_time = m_cur_time;
 	bool is_done = false;
 
 	std::string head_msg;
@@ -3292,35 +3277,35 @@ void CGame::ChatMsgHandler(char* packet_data)
 	name.assign(pkt->name, strnlen(pkt->name, sizeof(pkt->name)));
 	msg_type = static_cast<char>(pkt->chat_type);
 
-	if (bCheckExID(name.c_str()) == true) return;
+	if (check_ex_id(name.c_str()) == true) return;
 
 	std::snprintf(temp, sizeof(temp), "%s", packet_data + sizeof(hb::net::PacketCommandChatMsgHeader));
 
 	if ((msg_type == 0) || (msg_type == 2) || (msg_type == 3))
 	{
 	}
-	if (!ChatManager::Get().IsWhisperEnabled())
+	if (!ChatManager::get().is_whisper_enabled())
 	{
 		if (msg_type == 20) return;
 	}
-	if (!ChatManager::Get().IsShoutEnabled())
+	if (!ChatManager::get().is_shout_enabled())
 	{
 		if (msg_type == 2 || msg_type == 3) return;
 	}
 
 	std::snprintf(message, sizeof(message), "%s: %s", name.c_str(), temp);
-	m_Renderer->BeginTextBatch();
+	m_Renderer->begin_text_batch();
 	is_done = false;
 	short check_byte = 0;
 	while (is_done == false)
 	{
 		int msgLen = static_cast<int>(strlen(message));
-		location = m_Renderer->GetTextLength(message, 305);
+		location = m_Renderer->get_text_length(message, 305);
 
-		// GetTextLength returns how many chars fit; if all fit, no wrapping needed
+		// get_text_length returns how many chars fit; if all fit, no wrapping needed
 		if (location >= msgLen)
 		{
-			ChatManager::Get().AddMessage(message, msg_type);
+			ChatManager::get().add_message(message, msg_type);
 			is_done = true;
 		}
 		else if (location > 0)
@@ -3332,7 +3317,7 @@ void CGame::ChatMsgHandler(char* packet_data)
 			{
 				std::memset(temp, 0, sizeof(temp));
 				memcpy(temp, message, location);
-				ChatManager::Get().AddMessage(temp, msg_type);
+				ChatManager::get().add_message(temp, msg_type);
 				std::snprintf(temp, sizeof(temp), "%s", message + location);
 				std::snprintf(message, sizeof(message), " %s", temp);
 			}
@@ -3340,7 +3325,7 @@ void CGame::ChatMsgHandler(char* packet_data)
 			{
 				std::memset(temp, 0, sizeof(temp));
 				memcpy(temp, message, location + 1);
-				ChatManager::Get().AddMessage(temp, msg_type);
+				ChatManager::get().add_message(temp, msg_type);
 				std::snprintf(temp, sizeof(temp), "%s", message + location + 1);
 				std::snprintf(message, sizeof(message), " %s", temp);
 			}
@@ -3348,33 +3333,33 @@ void CGame::ChatMsgHandler(char* packet_data)
 		else
 		{
 			// Edge case: even a single char doesn't fit, add anyway to avoid infinite loop
-			ChatManager::Get().AddMessage(message, msg_type);
+			ChatManager::get().add_message(message, msg_type);
 			is_done = true;
 		}
 	}
 
-	m_Renderer->EndTextBatch();
+	m_Renderer->end_text_batch();
 
-	m_floatingText.RemoveByObjectID(object_id);
+	m_floating_text.remove_by_object_id(object_id);
 
 	const char* cp = packet_data + sizeof(hb::net::PacketCommandChatMsgHeader);
-	int iChatSlot = m_floatingText.AddChatText(cp, current_time, object_id, m_pMapData.get(), map_x, map_y);
-	if (iChatSlot != 0 || msg_type == 20) {
-			if ((msg_type != 0) && (m_dialogBoxManager.IsEnabled(DialogBoxId::ChatHistory) != true)) {
+	int chat_slot = m_floating_text.add_chat_text(cp, current_time, object_id, m_map_data.get(), map_x, map_y);
+	if (chat_slot != 0 || msg_type == 20 || msg_type == 10) {
+			if ((msg_type != 0) && (m_dialog_box_manager.is_enabled(DialogBoxId::ChatHistory) != true)) {
 				head_msg = std::format("{}:{}", name, cp);
 				if (msg_type == 10) {
-					EventListManager::Get().AddEventTop(head_msg.c_str(), msg_type);
+					event_list_manager::get().add_event_top(head_msg.c_str(), msg_type);
 				} else {
-					AddEventList(head_msg.c_str(), msg_type);
+					add_event_list(head_msg.c_str(), msg_type);
 				}
 			}
 			return;
 		}
 }
 
-void CGame::DrawBackground(short sDivX, short sModX, short sDivY, short sModY)
+void CGame::draw_background(short div_x, short mod_x, short div_y, short mod_y)
 {
-	if (sDivX < 0 || sDivY < 0) return;
+	if (div_x < 0 || div_y < 0) return;
 
 	// Tile-based loop constants
 	constexpr int TILE_SIZE = 32;
@@ -3382,50 +3367,50 @@ void CGame::DrawBackground(short sDivX, short sModX, short sDivY, short sModY)
 	const int visibleTilesY = (LOGICAL_HEIGHT() / TILE_SIZE) + 2;
 
 	// Map pivot for tile array access
-	const short pivotX = m_pMapData->m_sPivotX;
-	const short pivotY = m_pMapData->m_sPivotY;
+	const short pivotX = m_map_data->m_pivot_x;
+	const short pivotY = m_map_data->m_pivot_y;
 
-	// Draw tiles directly to backbuffer (no caching)
+	// draw tiles directly to backbuffer (no caching)
 	for (int tileY = 0; tileY < visibleTilesY; tileY++)
 	{
-		int indexY = sDivY + pivotY + tileY;
-		int iy = tileY * TILE_SIZE - sModY;
+		int indexY = div_y + pivotY + tileY;
+		int iy = tileY * TILE_SIZE - mod_y;
 
 		for (int tileX = 0; tileX < visibleTilesX; tileX++)
 		{
-			int indexX = sDivX + pivotX + tileX;
-			int ix = tileX * TILE_SIZE - sModX;
+			int indexX = div_x + pivotX + tileX;
+			int ix = tileX * TILE_SIZE - mod_x;
 
 			// Bounds check for tile array (752x752)
 			if (indexX >= 0 && indexX < 752 && indexY >= 0 && indexY < 752)
 			{
-				short sSpr = m_pMapData->m_tile[indexX][indexY].m_sTileSprite;
-				short sSprFrame = m_pMapData->m_tile[indexX][indexY].m_sTileSpriteFrame;
-				m_pTileSpr[sSpr]->Draw(ix - 16, iy - 16, sSprFrame, hb::shared::sprite::DrawParams::NoColorKey());
+				short spr = m_map_data->m_tile[indexX][indexY].m_sTileSprite;
+				short spr_frame = m_map_data->m_tile[indexX][indexY].m_sTileSpriteFrame;
+				m_tile_spr[spr]->draw(ix - 16, iy - 16, spr_frame, hb::shared::sprite::DrawParams::no_color_key());
 			}
 		}
 	}
 
-	if (m_bIsCrusadeMode)
+	if (m_is_crusade_mode)
 	{
-		if (m_pPlayer->m_iConstructLocX != -1) DrawNewDialogBox(InterfaceNdCrusade, m_pPlayer->m_iConstructLocX * 32 - m_Camera.GetX(), m_pPlayer->m_iConstructLocY * 32 - m_Camera.GetY(), 41);
-		if (TeleportManager::Get().GetLocX() != -1) DrawNewDialogBox(InterfaceNdCrusade, TeleportManager::Get().GetLocX() * 32 - m_Camera.GetX(), TeleportManager::Get().GetLocY() * 32 - m_Camera.GetY(), 42);
+		if (m_player->m_construct_loc_x != -1) draw_new_dialog_box(InterfaceNdCrusade, m_player->m_construct_loc_x * 32 - m_Camera.get_x(), m_player->m_construct_loc_y * 32 - m_Camera.get_y(), 41);
+		if (teleport_manager::get().get_loc_x() != -1) draw_new_dialog_box(InterfaceNdCrusade, teleport_manager::get().get_loc_x() * 32 - m_Camera.get_x(), teleport_manager::get().get_loc_y() * 32 - m_Camera.get_y(), 42);
 	}
 }
 
-void CGame::InitItemList(char* packet_data)
+void CGame::init_item_list(char* packet_data)
 {
 	int angel_value = 0;
 	uint16_t total_items = 0;
 
 	for (int i = 0; i < hb::shared::limits::MaxItems; i++)
-		m_cItemOrder[i] = -1;
+		m_item_order[i] = -1;
 
 	for (int i = 0; i < DEF_MAXITEMEQUIPPOS; i++)
-		m_sItemEquipmentStatus[i] = -1;
+		m_item_equipment_status[i] = -1;
 
 	for (int i = 0; i < hb::shared::limits::MaxItems; i++)
-		m_bIsItemDisabled[i] = false;
+		m_is_item_disabled[i] = false;
 
 	const auto* header = hb::net::PacketCast<hb::net::PacketResponseItemListHeader>(
 		packet_data, sizeof(hb::net::PacketResponseItemListHeader));
@@ -3433,52 +3418,52 @@ void CGame::InitItemList(char* packet_data)
 	total_items = header->item_count;
 
 	for (int i = 0; i < hb::shared::limits::MaxItems; i++)
-		if (m_pItemList[i] != 0)
+		if (m_item_list[i] != 0)
 		{
-			m_pItemList[i].reset();
+			m_item_list[i].reset();
 		}
 
 	for (int i = 0; i < hb::shared::limits::MaxBankItems; i++)
-		if (m_pBankList[i] != 0)
+		if (m_bank_list[i] != 0)
 		{
-			m_pBankList[i].reset();
+			m_bank_list[i].reset();
 		}
 
 	const auto* itemEntries = reinterpret_cast<const hb::net::PacketResponseItemListEntry*>(header + 1);
 	for (int i = 0; i < total_items; i++)
 	{
 		const auto& entry = itemEntries[i];
-		m_pItemList[i] = std::make_unique<CItem>();
-		m_pItemList[i]->m_sIDnum = entry.item_id;
-		m_pItemList[i]->m_dwCount = entry.count;
-		m_pItemList[i]->m_sX = 40;
-		m_pItemList[i]->m_sY = 30;
-		if (entry.is_equipped == 0) m_bIsItemEquipped[i] = false;
-		else m_bIsItemEquipped[i] = true;
-		CItem* pCfg = GetItemConfig(entry.item_id);
-		if (m_bIsItemEquipped[i] == true && pCfg)
+		m_item_list[i] = std::make_unique<CItem>();
+		m_item_list[i]->m_id_num = entry.item_id;
+		m_item_list[i]->m_count = entry.count;
+		m_item_list[i]->m_x = 40;
+		m_item_list[i]->m_y = 30;
+		if (entry.is_equipped == 0) m_is_item_equipped[i] = false;
+		else m_is_item_equipped[i] = true;
+		CItem* cfg = get_item_config(entry.item_id);
+		if (m_is_item_equipped[i] == true && cfg)
 		{
-			m_sItemEquipmentStatus[pCfg->m_cEquipPos] = i;
+			m_item_equipment_status[cfg->m_equip_pos] = i;
 		}
-		m_pItemList[i]->m_wCurLifeSpan = entry.cur_lifespan;
-		m_pItemList[i]->m_cItemColor = entry.item_color;
-		m_pItemList[i]->m_sItemSpecEffectValue2 = static_cast<short>(entry.spec_value2); // v1.41
-		m_pItemList[i]->m_dwAttribute = entry.attribute;
-		m_cItemOrder[i] = i;
+		m_item_list[i]->m_cur_life_span = entry.cur_lifespan;
+		m_item_list[i]->m_item_color = entry.item_color;
+		m_item_list[i]->m_item_special_effect_value2 = static_cast<short>(entry.spec_value2); // v1.41
+		m_item_list[i]->m_attribute = entry.attribute;
+		m_item_order[i] = i;
 		// Snoopy: Add Angelic Stats
-		if (pCfg && (pCfg->GetItemType() == ItemType::Equip)
-			&& (m_bIsItemEquipped[i] == true)
-			&& (pCfg->m_cEquipPos >= 11))
+		if (cfg && (cfg->get_item_type() == ItemType::Equip)
+			&& (m_is_item_equipped[i] == true)
+			&& (cfg->m_equip_pos >= 11))
 		{
-			angel_value = (m_pItemList[i]->m_dwAttribute & 0xF0000000) >> 28;
-			if (m_pItemList[i]->m_sIDnum == hb::shared::item::ItemId::AngelicPandentSTR)
-				m_pPlayer->m_iAngelicStr = 1 + angel_value;
-			else if (m_pItemList[i]->m_sIDnum == hb::shared::item::ItemId::AngelicPandentDEX)
-				m_pPlayer->m_iAngelicDex = 1 + angel_value;
-			else if (m_pItemList[i]->m_sIDnum == hb::shared::item::ItemId::AngelicPandentINT)
-				m_pPlayer->m_iAngelicInt = 1 + angel_value;
-			else if (m_pItemList[i]->m_sIDnum == hb::shared::item::ItemId::AngelicPandentMAG)
-				m_pPlayer->m_iAngelicMag = 1 + angel_value;
+			angel_value = (m_item_list[i]->m_attribute & 0xF0000000) >> 28;
+			if (m_item_list[i]->m_id_num == hb::shared::item::ItemId::AngelicPandentSTR)
+				m_player->m_angelic_str = 1 + angel_value;
+			else if (m_item_list[i]->m_id_num == hb::shared::item::ItemId::AngelicPandentDEX)
+				m_player->m_angelic_dex = 1 + angel_value;
+			else if (m_item_list[i]->m_id_num == hb::shared::item::ItemId::AngelicPandentINT)
+				m_player->m_angelic_int = 1 + angel_value;
+			else if (m_item_list[i]->m_id_num == hb::shared::item::ItemId::AngelicPandentMAG)
+				m_player->m_angelic_mag = 1 + angel_value;
 		}
 	}
 
@@ -3486,233 +3471,233 @@ void CGame::InitItemList(char* packet_data)
 	total_items = bank_header->bank_item_count;
 
 	for (int i = 0; i < hb::shared::limits::MaxBankItems; i++)
-		if (m_pBankList[i] != 0)
+		if (m_bank_list[i] != 0)
 		{
-			m_pBankList[i].reset();
+			m_bank_list[i].reset();
 		}
 
 	const auto* bankEntries = reinterpret_cast<const hb::net::PacketResponseBankItemEntry*>(bank_header + 1);
 	for (int i = 0; i < total_items; i++)
 	{
 		const auto& entry = bankEntries[i];
-		m_pBankList[i] = std::make_unique<CItem>();
-		m_pBankList[i]->m_sIDnum = entry.item_id;
-		m_pBankList[i]->m_dwCount = entry.count;
-		m_pBankList[i]->m_sX = 40;
-		m_pBankList[i]->m_sY = 30;
-		m_pBankList[i]->m_wCurLifeSpan = entry.cur_lifespan;
-		m_pBankList[i]->m_cItemColor = entry.item_color;
-		m_pBankList[i]->m_sItemSpecEffectValue2 = static_cast<short>(entry.spec_value2); // v1.41
-		m_pBankList[i]->m_dwAttribute = entry.attribute;
+		m_bank_list[i] = std::make_unique<CItem>();
+		m_bank_list[i]->m_id_num = entry.item_id;
+		m_bank_list[i]->m_count = entry.count;
+		m_bank_list[i]->m_x = 40;
+		m_bank_list[i]->m_y = 30;
+		m_bank_list[i]->m_cur_life_span = entry.cur_lifespan;
+		m_bank_list[i]->m_item_color = entry.item_color;
+		m_bank_list[i]->m_item_special_effect_value2 = static_cast<short>(entry.spec_value2); // v1.41
+		m_bank_list[i]->m_attribute = entry.attribute;
 	}
 
 	const auto* mastery = reinterpret_cast<const hb::net::PacketResponseMasteryData*>(bankEntries + total_items);
 
 	for (int i = 0; i < hb::shared::limits::MaxMagicType; i++)
-		m_pPlayer->m_iMagicMastery[i] = mastery->magic_mastery[i];
+		m_player->m_magic_mastery[i] = mastery->magic_mastery[i];
 
 	for (int i = 0; i < hb::shared::limits::MaxSkillType; i++)
 	{
-		m_pPlayer->m_iSkillMastery[i] = static_cast<unsigned char>(mastery->skill_mastery[i]);
-		if (m_pSkillCfgList[i] != 0)
-			m_pSkillCfgList[i]->m_iLevel = static_cast<int>(mastery->skill_mastery[i]);
+		m_player->m_skill_mastery[i] = static_cast<unsigned char>(mastery->skill_mastery[i]);
+		if (m_skill_cfg_list[i] != 0)
+			m_skill_cfg_list[i]->m_level = static_cast<int>(mastery->skill_mastery[i]);
 	}
 
 	// Diagnostic: count what was loaded
 	int nItems = 0, nBank = 0, nMagic = 0, nSkills = 0;
-	for (int i = 0; i < hb::shared::limits::MaxItems; i++) if (m_pItemList[i]) nItems++;
-	for (int i = 0; i < hb::shared::limits::MaxBankItems; i++) if (m_pBankList[i]) nBank++;
-	for (int i = 0; i < hb::shared::limits::MaxMagicType; i++) if (m_pPlayer->m_iMagicMastery[i] != 0) nMagic++;
-	for (int i = 0; i < hb::shared::limits::MaxSkillType; i++) if (m_pPlayer->m_iSkillMastery[i] != 0) nSkills++;
+	for (int i = 0; i < hb::shared::limits::MaxItems; i++) if (m_item_list[i]) nItems++;
+	for (int i = 0; i < hb::shared::limits::MaxBankItems; i++) if (m_bank_list[i]) nBank++;
+	for (int i = 0; i < hb::shared::limits::MaxMagicType; i++) if (m_player->m_magic_mastery[i] != 0) nMagic++;
+	for (int i = 0; i < hb::shared::limits::MaxSkillType; i++) if (m_player->m_skill_mastery[i] != 0) nSkills++;
 }
 
-void CGame::DrawDialogBoxs(short mouse_x, short mouse_y, short mouse_z, char left_button)
+void CGame::draw_dialog_boxs(short mouse_x, short mouse_y, short mouse_z, char left_button)
 {
-	if (m_bIsObserverMode == true) return;
+	if (m_is_observer_mode == true) return;
 	// Note: Dialogs that handle scroll should read hb::shared::input::get_mouse_wheel_delta() and clear it after processing
 	//Snoopy: 41->61
 	bool icon_panel_drawn = false;
 	for (int i = 0; i < 61; i++)
-		if (m_dialogBoxManager.OrderAt(i) != 0)
+		if (m_dialog_box_manager.order_at(i) != 0)
 		{
-			switch (m_dialogBoxManager.OrderAt(i)) {
+			switch (m_dialog_box_manager.order_at(i)) {
 			case DialogBoxId::CharacterInfo:
-				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::CharacterInfo))
-					pDlg->OnDraw(mouse_x, mouse_y, mouse_z, left_button);
+				if (auto* dlg = m_dialog_box_manager.get_dialog_box(DialogBoxId::CharacterInfo))
+					dlg->on_draw(mouse_x, mouse_y, mouse_z, left_button);
 				break;
 			case DialogBoxId::Inventory:
-				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::Inventory))
-					pDlg->OnDraw(mouse_x, mouse_y, mouse_z, left_button);
+				if (auto* dlg = m_dialog_box_manager.get_dialog_box(DialogBoxId::Inventory))
+					dlg->on_draw(mouse_x, mouse_y, mouse_z, left_button);
 				break;
 			case DialogBoxId::Magic:
-				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::Magic))
-					pDlg->OnDraw(mouse_x, mouse_y, mouse_z, left_button);
+				if (auto* dlg = m_dialog_box_manager.get_dialog_box(DialogBoxId::Magic))
+					dlg->on_draw(mouse_x, mouse_y, mouse_z, left_button);
 				break;
 			case DialogBoxId::ItemDropConfirm:
-				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::ItemDropConfirm))
-					pDlg->OnDraw(mouse_x, mouse_y, mouse_z, left_button);
+				if (auto* dlg = m_dialog_box_manager.get_dialog_box(DialogBoxId::ItemDropConfirm))
+					dlg->on_draw(mouse_x, mouse_y, mouse_z, left_button);
 				break;
 			case DialogBoxId::WarningBattleArea:
-				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::WarningBattleArea))
-					pDlg->OnDraw(mouse_x, mouse_y, mouse_z, left_button);
+				if (auto* dlg = m_dialog_box_manager.get_dialog_box(DialogBoxId::WarningBattleArea))
+					dlg->on_draw(mouse_x, mouse_y, mouse_z, left_button);
 				break;
 			case DialogBoxId::GuildMenu:
-				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::GuildMenu))
-					pDlg->OnDraw(mouse_x, mouse_y, mouse_z, left_button);
+				if (auto* dlg = m_dialog_box_manager.get_dialog_box(DialogBoxId::GuildMenu))
+					dlg->on_draw(mouse_x, mouse_y, mouse_z, left_button);
 				break;
 			case DialogBoxId::GuildOperation:
-				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::GuildOperation))
-					pDlg->OnDraw(mouse_x, mouse_y, mouse_z, left_button);
+				if (auto* dlg = m_dialog_box_manager.get_dialog_box(DialogBoxId::GuildOperation))
+					dlg->on_draw(mouse_x, mouse_y, mouse_z, left_button);
 				break;
 			case DialogBoxId::GuideMap:
-				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::GuideMap))
-					pDlg->OnDraw(mouse_x, mouse_y, mouse_z, left_button);
+				if (auto* dlg = m_dialog_box_manager.get_dialog_box(DialogBoxId::GuideMap))
+					dlg->on_draw(mouse_x, mouse_y, mouse_z, left_button);
 				break;
 			case DialogBoxId::ChatHistory:
-				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::ChatHistory))
-					pDlg->OnDraw(mouse_x, mouse_y, mouse_z, left_button);
+				if (auto* dlg = m_dialog_box_manager.get_dialog_box(DialogBoxId::ChatHistory))
+					dlg->on_draw(mouse_x, mouse_y, mouse_z, left_button);
 				break;
 			case DialogBoxId::SaleMenu:
-				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::SaleMenu))
-					pDlg->OnDraw(mouse_x, mouse_y, mouse_z, left_button);
+				if (auto* dlg = m_dialog_box_manager.get_dialog_box(DialogBoxId::SaleMenu))
+					dlg->on_draw(mouse_x, mouse_y, mouse_z, left_button);
 				break;
 			case DialogBoxId::LevelUpSetting:
-				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::LevelUpSetting))
-					pDlg->OnDraw(mouse_x, mouse_y, mouse_z, left_button);
+				if (auto* dlg = m_dialog_box_manager.get_dialog_box(DialogBoxId::LevelUpSetting))
+					dlg->on_draw(mouse_x, mouse_y, mouse_z, left_button);
 				break;
 			case DialogBoxId::CityHallMenu:
-				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::CityHallMenu))
-					pDlg->OnDraw(mouse_x, mouse_y, mouse_z, left_button);
+				if (auto* dlg = m_dialog_box_manager.get_dialog_box(DialogBoxId::CityHallMenu))
+					dlg->on_draw(mouse_x, mouse_y, mouse_z, left_button);
 				break;
 			case DialogBoxId::Bank:
-				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::Bank))
-					pDlg->OnDraw(mouse_x, mouse_y, mouse_z, left_button);
+				if (auto* dlg = m_dialog_box_manager.get_dialog_box(DialogBoxId::Bank))
+					dlg->on_draw(mouse_x, mouse_y, mouse_z, left_button);
 				break;
 			case DialogBoxId::Skill:
-				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::Skill))
-					pDlg->OnDraw(mouse_x, mouse_y, mouse_z, left_button);
+				if (auto* dlg = m_dialog_box_manager.get_dialog_box(DialogBoxId::Skill))
+					dlg->on_draw(mouse_x, mouse_y, mouse_z, left_button);
 				break;
 			case DialogBoxId::MagicShop:
-				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::MagicShop))
-					pDlg->OnDraw(mouse_x, mouse_y, mouse_z, left_button);
+				if (auto* dlg = m_dialog_box_manager.get_dialog_box(DialogBoxId::MagicShop))
+					dlg->on_draw(mouse_x, mouse_y, mouse_z, left_button);
 				break;
 			case DialogBoxId::ItemDropExternal:
-				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::ItemDropExternal))
-					pDlg->OnDraw(mouse_x, mouse_y, mouse_z, left_button);
+				if (auto* dlg = m_dialog_box_manager.get_dialog_box(DialogBoxId::ItemDropExternal))
+					dlg->on_draw(mouse_x, mouse_y, mouse_z, left_button);
 				break;
 			case DialogBoxId::Text:
-				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::Text))
-					pDlg->OnDraw(mouse_x, mouse_y, mouse_z, left_button);
+				if (auto* dlg = m_dialog_box_manager.get_dialog_box(DialogBoxId::Text))
+					dlg->on_draw(mouse_x, mouse_y, mouse_z, left_button);
 				break;
 			case DialogBoxId::SystemMenu:
-				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::SystemMenu))
-					pDlg->OnDraw(mouse_x, mouse_y, mouse_z, left_button);
+				if (auto* dlg = m_dialog_box_manager.get_dialog_box(DialogBoxId::SystemMenu))
+					dlg->on_draw(mouse_x, mouse_y, mouse_z, left_button);
 				break;
 			case DialogBoxId::NpcActionQuery:
-				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::NpcActionQuery))
-					pDlg->OnDraw(mouse_x, mouse_y, mouse_z, left_button);
+				if (auto* dlg = m_dialog_box_manager.get_dialog_box(DialogBoxId::NpcActionQuery))
+					dlg->on_draw(mouse_x, mouse_y, mouse_z, left_button);
 				break;
 			case DialogBoxId::NpcTalk:
-				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::NpcTalk))
-					pDlg->OnDraw(mouse_x, mouse_y, mouse_z, left_button);
+				if (auto* dlg = m_dialog_box_manager.get_dialog_box(DialogBoxId::NpcTalk))
+					dlg->on_draw(mouse_x, mouse_y, mouse_z, left_button);
 				break;
 			case DialogBoxId::Map:
-				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::Map))
-					pDlg->OnDraw(mouse_x, mouse_y, mouse_z, left_button);
+				if (auto* dlg = m_dialog_box_manager.get_dialog_box(DialogBoxId::Map))
+					dlg->on_draw(mouse_x, mouse_y, mouse_z, left_button);
 				break;
 			case DialogBoxId::SellOrRepair:
-				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::SellOrRepair))
-					pDlg->OnDraw(mouse_x, mouse_y, mouse_z, left_button);
+				if (auto* dlg = m_dialog_box_manager.get_dialog_box(DialogBoxId::SellOrRepair))
+					dlg->on_draw(mouse_x, mouse_y, mouse_z, left_button);
 				break;
 			case DialogBoxId::Fishing:
-				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::Fishing))
-					pDlg->OnDraw(mouse_x, mouse_y, mouse_z, left_button);
+				if (auto* dlg = m_dialog_box_manager.get_dialog_box(DialogBoxId::Fishing))
+					dlg->on_draw(mouse_x, mouse_y, mouse_z, left_button);
 				break;
 			case DialogBoxId::Noticement:
-				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::Noticement))
-					pDlg->OnDraw(mouse_x, mouse_y, mouse_z, left_button);
+				if (auto* dlg = m_dialog_box_manager.get_dialog_box(DialogBoxId::Noticement))
+					dlg->on_draw(mouse_x, mouse_y, mouse_z, left_button);
 				break;
 			case DialogBoxId::Manufacture:
-				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::Manufacture))
-					pDlg->OnDraw(mouse_x, mouse_y, mouse_z, left_button);
+				if (auto* dlg = m_dialog_box_manager.get_dialog_box(DialogBoxId::Manufacture))
+					dlg->on_draw(mouse_x, mouse_y, mouse_z, left_button);
 				break;
 			case DialogBoxId::Exchange:
-				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::Exchange))
-					pDlg->OnDraw(mouse_x, mouse_y, mouse_z, left_button);
+				if (auto* dlg = m_dialog_box_manager.get_dialog_box(DialogBoxId::Exchange))
+					dlg->on_draw(mouse_x, mouse_y, mouse_z, left_button);
 				break;
 			case DialogBoxId::Quest:
-				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::Quest))
-					pDlg->OnDraw(mouse_x, mouse_y, mouse_z, left_button);
+				if (auto* dlg = m_dialog_box_manager.get_dialog_box(DialogBoxId::Quest))
+					dlg->on_draw(mouse_x, mouse_y, mouse_z, left_button);
 				break;
 			case DialogBoxId::HudPanel:
-				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::HudPanel))
-					pDlg->OnDraw(mouse_x, mouse_y, mouse_z, left_button);
+				if (auto* dlg = m_dialog_box_manager.get_dialog_box(DialogBoxId::HudPanel))
+					dlg->on_draw(mouse_x, mouse_y, mouse_z, left_button);
 				icon_panel_drawn = true;
 				break;
 			case DialogBoxId::SellList:
-				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::SellList))
-					pDlg->OnDraw(mouse_x, mouse_y, mouse_z, left_button);
+				if (auto* dlg = m_dialog_box_manager.get_dialog_box(DialogBoxId::SellList))
+					dlg->on_draw(mouse_x, mouse_y, mouse_z, left_button);
 				break;
 			case DialogBoxId::Party:
-				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::Party))
-					pDlg->OnDraw(mouse_x, mouse_y, mouse_z, left_button);
+				if (auto* dlg = m_dialog_box_manager.get_dialog_box(DialogBoxId::Party))
+					dlg->on_draw(mouse_x, mouse_y, mouse_z, left_button);
 				break;
 			case DialogBoxId::CrusadeJob:
-				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::CrusadeJob))
-					pDlg->OnDraw(mouse_x, mouse_y, mouse_z, left_button);
+				if (auto* dlg = m_dialog_box_manager.get_dialog_box(DialogBoxId::CrusadeJob))
+					dlg->on_draw(mouse_x, mouse_y, mouse_z, left_button);
 				break;
 			case DialogBoxId::ItemUpgrade:
-				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::ItemUpgrade))
-					pDlg->OnDraw(mouse_x, mouse_y, mouse_z, left_button);
+				if (auto* dlg = m_dialog_box_manager.get_dialog_box(DialogBoxId::ItemUpgrade))
+					dlg->on_draw(mouse_x, mouse_y, mouse_z, left_button);
 				break;
 			case DialogBoxId::Help:
-				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::Help))
-					pDlg->OnDraw(mouse_x, mouse_y, mouse_z, left_button);
+				if (auto* dlg = m_dialog_box_manager.get_dialog_box(DialogBoxId::Help))
+					dlg->on_draw(mouse_x, mouse_y, mouse_z, left_button);
 				break;
 			case DialogBoxId::CrusadeCommander:
-				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::CrusadeCommander))
-					pDlg->OnDraw(mouse_x, mouse_y, mouse_z, left_button);
+				if (auto* dlg = m_dialog_box_manager.get_dialog_box(DialogBoxId::CrusadeCommander))
+					dlg->on_draw(mouse_x, mouse_y, mouse_z, left_button);
 				break;
 			case DialogBoxId::CrusadeConstructor:
-				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::CrusadeConstructor))
-					pDlg->OnDraw(mouse_x, mouse_y, mouse_z, left_button);
+				if (auto* dlg = m_dialog_box_manager.get_dialog_box(DialogBoxId::CrusadeConstructor))
+					dlg->on_draw(mouse_x, mouse_y, mouse_z, left_button);
 				break;
 			case DialogBoxId::CrusadeSoldier:
-				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::CrusadeSoldier))
-					pDlg->OnDraw(mouse_x, mouse_y, mouse_z, left_button);
+				if (auto* dlg = m_dialog_box_manager.get_dialog_box(DialogBoxId::CrusadeSoldier))
+					dlg->on_draw(mouse_x, mouse_y, mouse_z, left_button);
 				break;
 			case DialogBoxId::Slates:
-				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::Slates))
-					pDlg->OnDraw(mouse_x, mouse_y, mouse_z, left_button);
+				if (auto* dlg = m_dialog_box_manager.get_dialog_box(DialogBoxId::Slates))
+					dlg->on_draw(mouse_x, mouse_y, mouse_z, left_button);
 				break;
 			case DialogBoxId::ConfirmExchange:	//Snoopy: Confirmation Exchange
-				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::ConfirmExchange))
-					pDlg->OnDraw(mouse_x, mouse_y, mouse_z, left_button);
+				if (auto* dlg = m_dialog_box_manager.get_dialog_box(DialogBoxId::ConfirmExchange))
+					dlg->on_draw(mouse_x, mouse_y, mouse_z, left_button);
 				break;
 			case DialogBoxId::ChangeStatsMajestic:
-				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::ChangeStatsMajestic))
-					pDlg->OnDraw(mouse_x, mouse_y, mouse_z, left_button);
+				if (auto* dlg = m_dialog_box_manager.get_dialog_box(DialogBoxId::ChangeStatsMajestic))
+					dlg->on_draw(mouse_x, mouse_y, mouse_z, left_button);
 				break;
 			case DialogBoxId::Resurrect: // Snoopy: Resurection?
-				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::Resurrect))
-					pDlg->OnDraw(mouse_x, mouse_y, mouse_z, left_button);
+				if (auto* dlg = m_dialog_box_manager.get_dialog_box(DialogBoxId::Resurrect))
+					dlg->on_draw(mouse_x, mouse_y, mouse_z, left_button);
 				break;
 			case DialogBoxId::GuildHallMenu: // Gail
-				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::GuildHallMenu))
-					pDlg->OnDraw(mouse_x, mouse_y, mouse_z, left_button);
+				if (auto* dlg = m_dialog_box_manager.get_dialog_box(DialogBoxId::GuildHallMenu))
+					dlg->on_draw(mouse_x, mouse_y, mouse_z, left_button);
 				break;
 			case DialogBoxId::RepairAll: //50Cent - Repair All
-				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::RepairAll))
-					pDlg->OnDraw(mouse_x, mouse_y, mouse_z, left_button);
+				if (auto* dlg = m_dialog_box_manager.get_dialog_box(DialogBoxId::RepairAll))
+					dlg->on_draw(mouse_x, mouse_y, mouse_z, left_button);
 				break;
 			}
 		}
 	if (icon_panel_drawn == false)
 	{
-		if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::HudPanel))
-			pDlg->OnDraw(mouse_x, mouse_y, mouse_z, left_button);
+		if (auto* dlg = m_dialog_box_manager.get_dialog_box(DialogBoxId::HudPanel))
+			dlg->on_draw(mouse_x, mouse_y, mouse_z, left_button);
 	}
-	if (m_pPlayer->m_iSuperAttackLeft > 0)
+	if (m_player->m_super_attack_left > 0)
 	{
 		std::string G_cTxt;
 		int resx = (LOGICAL_WIDTH() - 640) / 2;
@@ -3726,111 +3711,111 @@ void CGame::DrawDialogBoxs(short mouse_x, short mouse_y, short mouse_z, char lef
 		int btnW = 42;
 		int btnH = 41;
 
-		bool bMastered = (m_pPlayer->m_iSkillMastery[CombatSystem::Get().GetWeaponSkillType()] == 100);
+		bool mastered = (m_player->m_skill_mastery[combat_system::get().get_weapon_skill_type()] == 100);
 
-		// Draw additive overlay sprite at combat icon position only when ALT is held
-		if (hb::shared::input::is_alt_down() && bMastered)
-			m_pSprite[InterfaceNdIconPanel]->Draw(iconX, iconY, 3, hb::shared::sprite::DrawParams::Additive(0.7f));
+		// draw additive overlay sprite at combat icon position only when ALT is held
+		if (hb::shared::input::is_alt_down() && mastered)
+			m_sprite[InterfaceNdIconPanel]->draw(iconX, iconY, 3, hb::shared::sprite::DrawParams::additive(0.7f));
 
-		// Draw super attack count text at bottom-right of combat button area
-		G_cTxt = std::format("{}", m_pPlayer->m_iSuperAttackLeft);
-		if (bMastered)
-			hb::shared::text::DrawTextAligned(GameFont::Bitmap1, btnX, btnY, btnW, btnH, G_cTxt.c_str(), hb::shared::text::TextStyle::WithIntegratedShadow(hb::shared::render::Color(255, 255, 255)), hb::shared::text::Align::BottomRight);
+		// draw super attack count text at bottom-right of combat button area
+		G_cTxt = std::format("{}", m_player->m_super_attack_left);
+		if (mastered)
+			hb::shared::text::draw_text_aligned(GameFont::Bitmap1, btnX, btnY, btnW, btnH, G_cTxt.c_str(), hb::shared::text::TextStyle::with_integrated_shadow(hb::shared::render::Color(255, 255, 255)), hb::shared::text::Align::BottomRight);
 		else
-			hb::shared::text::DrawTextAligned(GameFont::Bitmap1, btnX, btnY, btnW, btnH, G_cTxt.c_str(), hb::shared::text::TextStyle::WithHighlight(GameColors::BmpBtnActive), hb::shared::text::Align::BottomRight);
+			hb::shared::text::draw_text_aligned(GameFont::Bitmap1, btnX, btnY, btnW, btnH, G_cTxt.c_str(), hb::shared::text::TextStyle::with_highlight(GameColors::BmpBtnActive), hb::shared::text::Align::BottomRight);
 	}
 }
 
-void CGame::_Draw_CharacterBody(short sX, short sY, short sType)
+void CGame::draw_character_body(short sX, short sY, short type)
 {
-	uint32_t dwTime = m_dwCurTime;
+	uint32_t time = m_cur_time;
 
-	if (sType <= 3)
+	if (type <= 3)
 	{
-		m_pSprite[ItemEquipPivotPoint + 0]->Draw(sX, sY, sType - 1);
-		const auto& hcM = GameColors::Hair[m_entityState.m_appearance.iHairColor];
-		m_pSprite[ItemEquipPivotPoint + 18]->Draw(sX, sY, m_entityState.m_appearance.iHairStyle, hb::shared::sprite::DrawParams::Tint(hcM.r, hcM.g, hcM.b));
+		m_sprite[ItemEquipPivotPoint + 0]->draw(sX, sY, type - 1);
+		const auto& hcM = GameColors::Hair[m_entity_state.m_appearance.hair_color];
+		m_sprite[ItemEquipPivotPoint + 18]->draw(sX, sY, m_entity_state.m_appearance.hair_style, hb::shared::sprite::DrawParams::tint(hcM.r, hcM.g, hcM.b));
 
-		m_pSprite[ItemEquipPivotPoint + 19]->Draw(sX, sY, m_entityState.m_appearance.iUnderwearType);
+		m_sprite[ItemEquipPivotPoint + 19]->draw(sX, sY, m_entity_state.m_appearance.underwear_type);
 	}
 	else
 	{
-		m_pSprite[ItemEquipPivotPoint + 40]->Draw(sX, sY, sType - 4);
-		const auto& hcF = GameColors::Hair[m_entityState.m_appearance.iHairColor];
-		m_pSprite[ItemEquipPivotPoint + 18 + 40]->Draw(sX, sY, m_entityState.m_appearance.iHairStyle, hb::shared::sprite::DrawParams::Tint(hcF.r, hcF.g, hcF.b));
-		m_pSprite[ItemEquipPivotPoint + 19 + 40]->Draw(sX, sY, m_entityState.m_appearance.iUnderwearType);
+		m_sprite[ItemEquipPivotPoint + 40]->draw(sX, sY, type - 4);
+		const auto& hcF = GameColors::Hair[m_entity_state.m_appearance.hair_color];
+		m_sprite[ItemEquipPivotPoint + 18 + 40]->draw(sX, sY, m_entity_state.m_appearance.hair_style, hb::shared::sprite::DrawParams::tint(hcF.r, hcF.g, hcF.b));
+		m_sprite[ItemEquipPivotPoint + 19 + 40]->draw(sX, sY, m_entity_state.m_appearance.underwear_type);
 	}
 }
 
-int CGame::iGetTopDialogBoxIndex()
+int CGame::get_top_dialog_box_index()
 {
 	int i;
 	//Snoopy: 38->58
 	for (i = 58; i >= 0; i--)
-		if (m_dialogBoxManager.OrderAt(i) != 0)
-			return m_dialogBoxManager.OrderAt(i);
+		if (m_dialog_box_manager.order_at(i) != 0)
+			return m_dialog_box_manager.order_at(i);
 
 	return 0;
 }
 
 
-void CGame::_LoadTextDlgContents(int cType)
+void CGame::load_text_dlg_contents(int type)
 {
 	for (int i = 0; i < game_limits::max_text_dlg_lines; i++)
 	{
-		if (m_pMsgTextList[i] != 0)
-			m_pMsgTextList[i].reset();
+		if (m_msg_text_list[i] != 0)
+			m_msg_text_list[i].reset();
 	}
 
-	std::string fileName = std::format("contents\\\\contents{}.txt", cType);
+	std::string fileName = std::format("contents\\\\contents{}.txt", type);
 
 	std::ifstream file(fileName);
 	if (!file) return;
 
 	std::string line;
-	int iIndex = 0;
-	while (std::getline(file, line) && iIndex < game_limits::max_text_dlg_lines)
+	int index = 0;
+	while (std::getline(file, line) && index < game_limits::max_text_dlg_lines)
 	{
 		if (!line.empty())
 		{
-			m_pMsgTextList[iIndex] = std::make_unique<CMsg>(0, line.c_str(), 0);
-			iIndex++;
+			m_msg_text_list[index] = std::make_unique<CMsg>(0, line.c_str(), 0);
+			index++;
 		}
 	}
 }
 
-int CGame::_iLoadTextDlgContents2(int iType)
+int CGame::load_text_dlg_contents2(int type)
 {
 	for (int i = 0; i < game_limits::max_text_dlg_lines; i++)
 	{
-		if (m_pMsgTextList2[i] != 0)
-			m_pMsgTextList2[i].reset();
+		if (m_msg_text_list2[i] != 0)
+			m_msg_text_list2[i].reset();
 	}
 
-	std::string fileName = std::format("contents\\\\contents{}.txt", iType);
+	std::string fileName = std::format("contents\\\\contents{}.txt", type);
 
 	std::ifstream file(fileName);
 	if (!file) return -1;
 
 	std::string line;
-	int iIndex = 0;
-	while (std::getline(file, line) && iIndex < game_limits::max_text_dlg_lines)
+	int index = 0;
+	while (std::getline(file, line) && index < game_limits::max_text_dlg_lines)
 	{
 		if (!line.empty())
 		{
-			m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, line.c_str(), 0);
-			iIndex++;
+			m_msg_text_list2[index] = std::make_unique<CMsg>(0, line.c_str(), 0);
+			index++;
 		}
 	}
-	return iIndex;
+	return index;
 }
 
-void CGame::_LoadGameMsgTextContents()
+void CGame::load_game_msg_text_contents()
 {
 	for (int i = 0; i < game_limits::max_game_msgs; i++)
 	{
-		if (m_pGameMsgList[i] != 0)
-			m_pGameMsgList[i].reset();
+		if (m_game_msg_list[i] != 0)
+			m_game_msg_list[i].reset();
 	}
 
 	std::ifstream file("contents\\\\gamemsglist.txt");
@@ -3838,166 +3823,166 @@ void CGame::_LoadGameMsgTextContents()
 
 	std::string content((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
 
-	int iIndex = 0;
+	int index = 0;
 	size_t start = 0;
 	size_t end = 0;
-	while ((end = content.find_first_of(";\n", start)) != std::string::npos && iIndex < game_limits::max_game_msgs)
+	while ((end = content.find_first_of(";\n", start)) != std::string::npos && index < game_limits::max_game_msgs)
 	{
 		if (end > start)
 		{
 			std::string token = content.substr(start, end - start);
-			m_pGameMsgList[iIndex] = std::make_unique<CMsg>(0, token.c_str(), 0);
-			iIndex++;
+			m_game_msg_list[index] = std::make_unique<CMsg>(0, token.c_str(), 0);
+			index++;
 		}
 		start = end + 1;
 	}
-	if (start < content.size() && iIndex < game_limits::max_game_msgs)
+	if (start < content.size() && index < game_limits::max_game_msgs)
 	{
 		std::string token = content.substr(start);
 		if (!token.empty())
 		{
-			m_pGameMsgList[iIndex] = std::make_unique<CMsg>(0, token.c_str(), 0);
+			m_game_msg_list[index] = std::make_unique<CMsg>(0, token.c_str(), 0);
 		}
 	}
 }
 
-void CGame::_RequestMapStatus(const char* pMapName, int iMode)
+void CGame::request_map_status(const char* map_name, int mode)
 {
-	bSendCommand(MsgId::CommandCommon, CommonType::RequestMapStatus, 0, iMode, 0, 0, pMapName);
+	send_command(MsgId::CommandCommon, CommonType::RequestMapStatus, 0, mode, 0, 0, map_name);
 }
 
-void CGame::AddMapStatusInfo(const char* pData, bool bIsLastData)
+void CGame::add_map_status_info(const char* data, bool is_last_data)
 {
-	char cTotal;
-	short sIndex;
+	char total;
+	short index;
 	int i;
 
 
 	const auto* header = hb::net::PacketCast<hb::net::PacketNotifyMapStatusHeader>(
-		pData, sizeof(hb::net::PacketNotifyMapStatusHeader));
+		data, sizeof(hb::net::PacketNotifyMapStatusHeader));
 	if (!header) return;
-	m_cStatusMapName.assign(header->map_name, strnlen(header->map_name, sizeof(header->map_name)));
-	sIndex = header->index;
-	cTotal = header->total;
+	m_status_map_name.assign(header->map_name, strnlen(header->map_name, sizeof(header->map_name)));
+	index = header->index;
+	total = header->total;
 
 	const auto* entries = reinterpret_cast<const hb::net::PacketNotifyMapStatusEntry*>(header + 1);
 
-	for (i = 1; i <= cTotal; i++) {
-		m_stCrusadeStructureInfo[sIndex].cType = entries->type;
-		m_stCrusadeStructureInfo[sIndex].sX = entries->x;
-		m_stCrusadeStructureInfo[sIndex].sY = entries->y;
-		m_stCrusadeStructureInfo[sIndex].cSide = entries->side;
+	for (i = 1; i <= total; i++) {
+		m_crusade_structure_info[index].type = entries->type;
+		m_crusade_structure_info[index].x = entries->x;
+		m_crusade_structure_info[index].y = entries->y;
+		m_crusade_structure_info[index].side = entries->side;
 		entries++;
 
-		sIndex++;
+		index++;
 	}
 
-	if (bIsLastData == true) {
-		while (sIndex < hb::shared::limits::MaxCrusadeStructures) {
-			m_stCrusadeStructureInfo[sIndex].cType = 0;
-			m_stCrusadeStructureInfo[sIndex].sX = 0;
-			m_stCrusadeStructureInfo[sIndex].sY = 0;
-			m_stCrusadeStructureInfo[sIndex].cSide = 0;
-			sIndex++;
+	if (is_last_data == true) {
+		while (index < hb::shared::limits::MaxCrusadeStructures) {
+			m_crusade_structure_info[index].type = 0;
+			m_crusade_structure_info[index].x = 0;
+			m_crusade_structure_info[index].y = 0;
+			m_crusade_structure_info[index].side = 0;
+			index++;
 		}
 	}
 }
 
-void CGame::DrawNewDialogBox(char cType, int sX, int sY, int iFrame, bool bIsNoColorKey, bool bIsTrans)
+void CGame::draw_new_dialog_box(char type, int sX, int sY, int frame, bool is_no_color_key, bool is_trans)
 {
-	if (m_pSprite[cType] == 0) return;
-	if (bIsNoColorKey == false)
+	if (m_sprite[type] == 0) return;
+	if (is_no_color_key == false)
 	{
-		if (bIsTrans == true)
-			m_pSprite[cType]->Draw(sX, sY, iFrame, hb::shared::sprite::DrawParams::Alpha(0.25f));
-		else m_pSprite[cType]->Draw(sX, sY, iFrame);
+		if (is_trans == true)
+			m_sprite[type]->draw(sX, sY, frame, hb::shared::sprite::DrawParams::alpha_blend(0.25f));
+		else m_sprite[type]->draw(sX, sY, frame);
 	}
-	else m_pSprite[cType]->Draw(sX, sY, iFrame, hb::shared::sprite::DrawParams::NoColorKey());
+	else m_sprite[type]->draw(sX, sY, frame, hb::shared::sprite::DrawParams::no_color_key());
 }
 
-void CGame::SetCameraShakingEffect(short sDist, int iMul)
+void CGame::set_camera_shaking_effect(short dist, int mul)
 {
-	int iDegree = 5 - sDist;
-	if (iDegree <= 0) iDegree = 0;
-	iDegree *= 2;
+	int degree = 5 - dist;
+	if (degree <= 0) degree = 0;
+	degree *= 2;
 
-	if (iMul != 0) iDegree *= iMul;
+	if (mul != 0) degree *= mul;
 
-	if (iDegree <= 2) return;
+	if (degree <= 2) return;
 
-	m_Camera.SetShake(iDegree);
+	m_Camera.set_shake(degree);
 }
 
-void CGame::MeteorStrikeComing(int iCode)
+void CGame::meteor_strike_coming(int code)
 {
-	switch (iCode) {
+	switch (code) {
 	case 1: //
-		SetTopMsg(m_pGameMsgList[0]->m_pMsg, 5);
+		set_top_msg(m_game_msg_list[0]->m_pMsg, 5);
 		break;
 	case 2: //
-		SetTopMsg(m_pGameMsgList[10]->m_pMsg, 10);
+		set_top_msg(m_game_msg_list[10]->m_pMsg, 10);
 		break;
 	case 3: //
-		SetTopMsg(m_pGameMsgList[91]->m_pMsg, 5);
+		set_top_msg(m_game_msg_list[91]->m_pMsg, 5);
 		break;
 	case 4: //
-		SetTopMsg(m_pGameMsgList[11]->m_pMsg, 10);
+		set_top_msg(m_game_msg_list[11]->m_pMsg, 10);
 		break;
 	}
 }
 
-void CGame::DrawObjectFOE(int ix, int iy, int iFrame)
+void CGame::draw_object_foe(int ix, int iy, int frame)
 {
-	if (IsHostile(m_entityState.m_status.iRelationship)) // red crusade circle
+	if (IsHostile(m_entity_state.m_status.relationship)) // red crusade circle
 	{
-		if (iFrame <= 4) m_pEffectSpr[38]->Draw(ix, iy, iFrame, hb::shared::sprite::DrawParams::Alpha(0.5f));
+		if (frame <= 4) m_effect_sprites[38]->draw(ix, iy, frame, hb::shared::sprite::DrawParams::alpha_blend(0.5f));
 	}
 }
 
-void CGame::SetTopMsg(const char* pString, unsigned char iLastSec)
+void CGame::set_top_msg(const char* string, unsigned char last_sec)
 {
-	m_cTopMsg = pString;
+	m_top_msg = string;
 
-	m_iTopMsgLastSec = iLastSec;
-	m_dwTopMsgTime = GameClock::GetTimeMS();
+	m_top_msg_last_sec = last_sec;
+	m_top_msg_time = GameClock::get_time_ms();
 }
 
-void CGame::DrawTopMsg()
+void CGame::draw_top_msg()
 {
-	if (m_cTopMsg.size() == 0) return;
-	m_Renderer->DrawRectFilled(0, 0, LOGICAL_MAX_X(), 30, hb::shared::render::Color::Black(128));
+	if (m_top_msg.size() == 0) return;
+	m_Renderer->draw_rect_filled(0, 0, LOGICAL_MAX_X(), 30, hb::shared::render::Color::Black(128));
 
-	if ((((GameClock::GetTimeMS() - m_dwTopMsgTime) / 250) % 2) == 0)
-		hb::shared::text::DrawTextAligned(GameFont::Default, 0, 10, LOGICAL_MAX_X(), 15, m_cTopMsg.c_str(), hb::shared::text::TextStyle::Color(GameColors::UITopMsgYellow), hb::shared::text::Align::TopCenter);
+	if ((((GameClock::get_time_ms() - m_top_msg_time) / 250) % 2) == 0)
+		hb::shared::text::draw_text_aligned(GameFont::Default, 0, 10, LOGICAL_MAX_X(), 15, m_top_msg.c_str(), hb::shared::text::TextStyle::from_color(GameColors::UITopMsgYellow), hb::shared::text::Align::TopCenter);
 
-	if (GameClock::GetTimeMS() > (m_iTopMsgLastSec * 1000 + m_dwTopMsgTime)) {
+	if (GameClock::get_time_ms() > (m_top_msg_last_sec * 1000 + m_top_msg_time)) {
 	}
 }
 
-void CGame::CannotConstruct(int iCode)
+void CGame::cannot_construct(int code)
 {
 	std::string G_cTxt;
-	switch (iCode) {
+	switch (code) {
 	case 1: //
-		SetTopMsg(m_pGameMsgList[18]->m_pMsg, 5);
+		set_top_msg(m_game_msg_list[18]->m_pMsg, 5);
 		break;
 
 	case 2: //
-		G_cTxt = std::format("{} XY({}, {})", m_pGameMsgList[19]->m_pMsg, m_pPlayer->m_iConstructLocX, m_pPlayer->m_iConstructLocY);
-		SetTopMsg(G_cTxt.c_str(), 5);
+		G_cTxt = std::format("{} XY({}, {})", m_game_msg_list[19]->m_pMsg, m_player->m_construct_loc_x, m_player->m_construct_loc_y);
+		set_top_msg(G_cTxt.c_str(), 5);
 		break;
 
 	case 3: //
-		SetTopMsg(m_pGameMsgList[20]->m_pMsg, 5);
+		set_top_msg(m_game_msg_list[20]->m_pMsg, 5);
 		break;
 	case 4: //
-		SetTopMsg(m_pGameMsgList[20]->m_pMsg, 5);
+		set_top_msg(m_game_msg_list[20]->m_pMsg, 5);
 		break;
 
 	}
 }
 
-std::string CGame::FormatCommaNumber(uint32_t value)
+std::string CGame::format_comma_number(uint32_t value)
 {
 	auto numStr = std::format("{}", value);
 #ifdef DEF_COMMA_GOLD
@@ -4016,438 +4001,438 @@ std::string CGame::FormatCommaNumber(uint32_t value)
 }
 
 
-void CGame::CrusadeContributionResult(int war_contribution)
+void CGame::crusade_contribution_result(int war_contribution)
 {
 	char temp[120]{};
-	m_dialogBoxManager.DisableDialogBox(DialogBoxId::Text);
+	m_dialog_box_manager.disable_dialog_box(DialogBoxId::Text);
 	for (int i = 0; i < game_limits::max_text_dlg_lines; i++)
 	{
-		if (m_pMsgTextList[i] != 0)
-			m_pMsgTextList[i].reset();
+		if (m_msg_text_list[i] != 0)
+			m_msg_text_list[i].reset();
 	}
 	if (war_contribution > 0)
 	{
-		PlayGameSound('E', 23, 0, 0);
-		PlayGameSound('C', 21, 0, 0);
-		PlayGameSound('C', 22, 0, 0);
-		m_pMsgTextList[0] = std::make_unique<CMsg>(0, m_pGameMsgList[22]->m_pMsg, 0); // Congratulations! Your nation
-		m_pMsgTextList[1] = std::make_unique<CMsg>(0, m_pGameMsgList[23]->m_pMsg, 0); // was victory in the battle!
-		m_pMsgTextList[2] = std::make_unique<CMsg>(0, " ", 0);
-		m_pMsgTextList[3] = std::make_unique<CMsg>(0, m_pGameMsgList[24]->m_pMsg, 0); // As a victorious citizen
-		m_pMsgTextList[4] = std::make_unique<CMsg>(0, m_pGameMsgList[25]->m_pMsg, 0); // You will receive
-		m_pMsgTextList[5] = std::make_unique<CMsg>(0, m_pGameMsgList[26]->m_pMsg, 0); // a prize
-		m_pMsgTextList[6] = std::make_unique<CMsg>(0, " ", 0);
-		m_pMsgTextList[7] = std::make_unique<CMsg>(0, m_pGameMsgList[27]->m_pMsg, 0); // Experience point of the battle contribution:
-		std::snprintf(temp, sizeof(temp), "+%dExp Points!", war_contribution);
-		m_pMsgTextList[8] = std::make_unique<CMsg>(0, temp, 0);
+		play_game_sound('E', 23, 0, 0);
+		play_game_sound('C', 21, 0, 0);
+		play_game_sound('C', 22, 0, 0);
+		m_msg_text_list[0] = std::make_unique<CMsg>(0, m_game_msg_list[22]->m_pMsg, 0); // Congratulations! Your nation
+		m_msg_text_list[1] = std::make_unique<CMsg>(0, m_game_msg_list[23]->m_pMsg, 0); // was victory in the battle!
+		m_msg_text_list[2] = std::make_unique<CMsg>(0, " ", 0);
+		m_msg_text_list[3] = std::make_unique<CMsg>(0, m_game_msg_list[24]->m_pMsg, 0); // As a victorious citizen
+		m_msg_text_list[4] = std::make_unique<CMsg>(0, m_game_msg_list[25]->m_pMsg, 0); // You will receive
+		m_msg_text_list[5] = std::make_unique<CMsg>(0, m_game_msg_list[26]->m_pMsg, 0); // a prize
+		m_msg_text_list[6] = std::make_unique<CMsg>(0, " ", 0);
+		m_msg_text_list[7] = std::make_unique<CMsg>(0, m_game_msg_list[27]->m_pMsg, 0); // Experience point of the battle contribution:
+		std::snprintf(temp, sizeof(temp), "+%d exp Points!", war_contribution);
+		m_msg_text_list[8] = std::make_unique<CMsg>(0, temp, 0);
 		for (int i = 9; i < 18; i++)
-			m_pMsgTextList[i] = std::make_unique<CMsg>(0, " ", 0);
+			m_msg_text_list[i] = std::make_unique<CMsg>(0, " ", 0);
 
 	}
 	else if (war_contribution < 0)
 	{
-		PlayGameSound('E', 24, 0, 0);
-		PlayGameSound('C', 12, 0, 0);
-		PlayGameSound('C', 13, 0, 0);
-		m_pMsgTextList[0] = std::make_unique<CMsg>(0, m_pGameMsgList[28]->m_pMsg, 0); // Unfortunately! Your country
-		m_pMsgTextList[1] = std::make_unique<CMsg>(0, m_pGameMsgList[29]->m_pMsg, 0); // have lost the all out war.
-		m_pMsgTextList[2] = std::make_unique<CMsg>(0, " ", 0);
-		m_pMsgTextList[3] = std::make_unique<CMsg>(0, m_pGameMsgList[30]->m_pMsg, 0); // As a losser citizen;
-		m_pMsgTextList[4] = std::make_unique<CMsg>(0, m_pGameMsgList[31]->m_pMsg, 0); // the prize that accomplishes
-		m_pMsgTextList[5] = std::make_unique<CMsg>(0, m_pGameMsgList[32]->m_pMsg, 0); // will not be given.
-		m_pMsgTextList[6] = std::make_unique<CMsg>(0, " ", 0);
-		m_pMsgTextList[7] = std::make_unique<CMsg>(0, m_pGameMsgList[33]->m_pMsg, 0); // I hope you to win
-		m_pMsgTextList[8] = std::make_unique<CMsg>(0, m_pGameMsgList[34]->m_pMsg, 0); // in the next battle
+		play_game_sound('E', 24, 0, 0);
+		play_game_sound('C', 12, 0, 0);
+		play_game_sound('C', 13, 0, 0);
+		m_msg_text_list[0] = std::make_unique<CMsg>(0, m_game_msg_list[28]->m_pMsg, 0); // Unfortunately! Your country
+		m_msg_text_list[1] = std::make_unique<CMsg>(0, m_game_msg_list[29]->m_pMsg, 0); // have lost the all out war.
+		m_msg_text_list[2] = std::make_unique<CMsg>(0, " ", 0);
+		m_msg_text_list[3] = std::make_unique<CMsg>(0, m_game_msg_list[30]->m_pMsg, 0); // As a losser citizen;
+		m_msg_text_list[4] = std::make_unique<CMsg>(0, m_game_msg_list[31]->m_pMsg, 0); // the prize that accomplishes
+		m_msg_text_list[5] = std::make_unique<CMsg>(0, m_game_msg_list[32]->m_pMsg, 0); // will not be given.
+		m_msg_text_list[6] = std::make_unique<CMsg>(0, " ", 0);
+		m_msg_text_list[7] = std::make_unique<CMsg>(0, m_game_msg_list[33]->m_pMsg, 0); // I hope you to win
+		m_msg_text_list[8] = std::make_unique<CMsg>(0, m_game_msg_list[34]->m_pMsg, 0); // in the next battle
 		for (int i = 9; i < 18; i++)
-			m_pMsgTextList[i] = std::make_unique<CMsg>(0, " ", 0);
+			m_msg_text_list[i] = std::make_unique<CMsg>(0, " ", 0);
 	}
 	else if (war_contribution == 0)
 	{
-		PlayGameSound('E', 25, 0, 0);
-		m_pMsgTextList[0] = std::make_unique<CMsg>(0, m_pGameMsgList[50]->m_pMsg, 0); // The battle that you have participated
-		m_pMsgTextList[1] = std::make_unique<CMsg>(0, m_pGameMsgList[51]->m_pMsg, 0); // is already finished;
-		m_pMsgTextList[2] = std::make_unique<CMsg>(0, m_pGameMsgList[52]->m_pMsg, 0); //
-		m_pMsgTextList[3] = std::make_unique<CMsg>(0, " ", 0);
-		m_pMsgTextList[4] = std::make_unique<CMsg>(0, m_pGameMsgList[53]->m_pMsg, 0); // You must connect after finishing
-		m_pMsgTextList[5] = std::make_unique<CMsg>(0, m_pGameMsgList[54]->m_pMsg, 0); // the previous and before starting
-		m_pMsgTextList[6] = std::make_unique<CMsg>(0, m_pGameMsgList[55]->m_pMsg, 0); // the next battle so you can receive
-		m_pMsgTextList[7] = std::make_unique<CMsg>(0, m_pGameMsgList[56]->m_pMsg, 0); // the prize
+		play_game_sound('E', 25, 0, 0);
+		m_msg_text_list[0] = std::make_unique<CMsg>(0, m_game_msg_list[50]->m_pMsg, 0); // The battle that you have participated
+		m_msg_text_list[1] = std::make_unique<CMsg>(0, m_game_msg_list[51]->m_pMsg, 0); // is already finished;
+		m_msg_text_list[2] = std::make_unique<CMsg>(0, m_game_msg_list[52]->m_pMsg, 0); //
+		m_msg_text_list[3] = std::make_unique<CMsg>(0, " ", 0);
+		m_msg_text_list[4] = std::make_unique<CMsg>(0, m_game_msg_list[53]->m_pMsg, 0); // You must connect after finishing
+		m_msg_text_list[5] = std::make_unique<CMsg>(0, m_game_msg_list[54]->m_pMsg, 0); // the previous and before starting
+		m_msg_text_list[6] = std::make_unique<CMsg>(0, m_game_msg_list[55]->m_pMsg, 0); // the next battle so you can receive
+		m_msg_text_list[7] = std::make_unique<CMsg>(0, m_game_msg_list[56]->m_pMsg, 0); // the prize
 		for (int i = 8; i < 18; i++)
-			m_pMsgTextList[i] = std::make_unique<CMsg>(0, " ", 0);
+			m_msg_text_list[i] = std::make_unique<CMsg>(0, " ", 0);
 	}
-	m_dialogBoxManager.EnableDialogBox(DialogBoxId::Text, 0, 0, 0);
+	m_dialog_box_manager.enable_dialog_box(DialogBoxId::Text, 0, 0, 0);
 }
 
-void CGame::CrusadeWarResult(int winner_side)
+void CGame::crusade_war_result(int winner_side)
 {
 	int player_side = 0;
-	m_dialogBoxManager.DisableDialogBox(DialogBoxId::Text);
+	m_dialog_box_manager.disable_dialog_box(DialogBoxId::Text);
 	for (int i = 0; i < game_limits::max_text_dlg_lines; i++)
 	{
-		if (m_pMsgTextList[i] != 0)
-			m_pMsgTextList[i].reset();
+		if (m_msg_text_list[i] != 0)
+			m_msg_text_list[i].reset();
 	}
-	if (m_pPlayer->m_bCitizen == false) player_side = 0;
-	else if (m_pPlayer->m_bAresden == true) player_side = 1;
-	else if (m_pPlayer->m_bAresden == false) player_side = 2;
+	if (m_player->m_citizen == false) player_side = 0;
+	else if (m_player->m_aresden == true) player_side = 1;
+	else if (m_player->m_aresden == false) player_side = 2;
 	if (player_side == 0)
 	{
 		switch (winner_side) {
 		case 0:
-			PlayGameSound('E', 25, 0, 0);
-			m_pMsgTextList[0] = std::make_unique<CMsg>(0, m_pGameMsgList[35]->m_pMsg, 0); // All out war finished!
-			m_pMsgTextList[1] = std::make_unique<CMsg>(0, m_pGameMsgList[36]->m_pMsg, 0); // There was a draw in the
-			m_pMsgTextList[2] = std::make_unique<CMsg>(0, m_pGameMsgList[37]->m_pMsg, 0); // battle
-			m_pMsgTextList[3] = std::make_unique<CMsg>(0, " ", 0);
+			play_game_sound('E', 25, 0, 0);
+			m_msg_text_list[0] = std::make_unique<CMsg>(0, m_game_msg_list[35]->m_pMsg, 0); // All out war finished!
+			m_msg_text_list[1] = std::make_unique<CMsg>(0, m_game_msg_list[36]->m_pMsg, 0); // There was a draw in the
+			m_msg_text_list[2] = std::make_unique<CMsg>(0, m_game_msg_list[37]->m_pMsg, 0); // battle
+			m_msg_text_list[3] = std::make_unique<CMsg>(0, " ", 0);
 			break;
 		case 1:
-			PlayGameSound('E', 25, 0, 0);
-			m_pMsgTextList[0] = std::make_unique<CMsg>(0, m_pGameMsgList[35]->m_pMsg, 0); // All out war finished!
-			m_pMsgTextList[1] = std::make_unique<CMsg>(0, m_pGameMsgList[38]->m_pMsg, 0); // Aresden was victorious
-			m_pMsgTextList[2] = std::make_unique<CMsg>(0, m_pGameMsgList[39]->m_pMsg, 0); // and put an end to the war
-			m_pMsgTextList[3] = std::make_unique<CMsg>(0, " ", 0);
+			play_game_sound('E', 25, 0, 0);
+			m_msg_text_list[0] = std::make_unique<CMsg>(0, m_game_msg_list[35]->m_pMsg, 0); // All out war finished!
+			m_msg_text_list[1] = std::make_unique<CMsg>(0, m_game_msg_list[38]->m_pMsg, 0); // Aresden was victorious
+			m_msg_text_list[2] = std::make_unique<CMsg>(0, m_game_msg_list[39]->m_pMsg, 0); // and put an end to the war
+			m_msg_text_list[3] = std::make_unique<CMsg>(0, " ", 0);
 			break;
 		case 2:
-			PlayGameSound('E', 25, 0, 0);
-			m_pMsgTextList[0] = std::make_unique<CMsg>(0, m_pGameMsgList[35]->m_pMsg, 0); // All out war finished!
-			m_pMsgTextList[1] = std::make_unique<CMsg>(0, m_pGameMsgList[40]->m_pMsg, 0); // Elvine was victorious
-			m_pMsgTextList[2] = std::make_unique<CMsg>(0, m_pGameMsgList[41]->m_pMsg, 0); // and put an end to the war
-			m_pMsgTextList[3] = std::make_unique<CMsg>(0, " ", 0);
+			play_game_sound('E', 25, 0, 0);
+			m_msg_text_list[0] = std::make_unique<CMsg>(0, m_game_msg_list[35]->m_pMsg, 0); // All out war finished!
+			m_msg_text_list[1] = std::make_unique<CMsg>(0, m_game_msg_list[40]->m_pMsg, 0); // Elvine was victorious
+			m_msg_text_list[2] = std::make_unique<CMsg>(0, m_game_msg_list[41]->m_pMsg, 0); // and put an end to the war
+			m_msg_text_list[3] = std::make_unique<CMsg>(0, " ", 0);
 			break;
 		}
 		for (int i = 4; i < 18; i++)
-			m_pMsgTextList[i] = std::make_unique<CMsg>(0, " ", 0);
+			m_msg_text_list[i] = std::make_unique<CMsg>(0, " ", 0);
 	}
 	else
 	{
 		if (winner_side == 0)
 		{
-			PlayGameSound('E', 25, 0, 0);
-			m_pMsgTextList[0] = std::make_unique<CMsg>(0, m_pGameMsgList[35]->m_pMsg, 0); // All out war finished!
-			m_pMsgTextList[1] = std::make_unique<CMsg>(0, m_pGameMsgList[36]->m_pMsg, 0); // There was a draw in the
-			m_pMsgTextList[2] = std::make_unique<CMsg>(0, m_pGameMsgList[37]->m_pMsg, 0); // battle
-			m_pMsgTextList[3] = std::make_unique<CMsg>(0, " ", 0);
+			play_game_sound('E', 25, 0, 0);
+			m_msg_text_list[0] = std::make_unique<CMsg>(0, m_game_msg_list[35]->m_pMsg, 0); // All out war finished!
+			m_msg_text_list[1] = std::make_unique<CMsg>(0, m_game_msg_list[36]->m_pMsg, 0); // There was a draw in the
+			m_msg_text_list[2] = std::make_unique<CMsg>(0, m_game_msg_list[37]->m_pMsg, 0); // battle
+			m_msg_text_list[3] = std::make_unique<CMsg>(0, " ", 0);
 			for (int i = 4; i < 18; i++)
-				m_pMsgTextList[i] = std::make_unique<CMsg>(0, " ", 0);
+				m_msg_text_list[i] = std::make_unique<CMsg>(0, " ", 0);
 		}
 		else
 		{
 			if (winner_side == player_side)
 			{
-				PlayGameSound('E', 23, 0, 0);
-				PlayGameSound('C', 21, 0, 0);
-				PlayGameSound('C', 22, 0, 0);
+				play_game_sound('E', 23, 0, 0);
+				play_game_sound('C', 21, 0, 0);
+				play_game_sound('C', 22, 0, 0);
 				switch (winner_side) {
 				case 1:
-					m_pMsgTextList[0] = std::make_unique<CMsg>(0, m_pGameMsgList[35]->m_pMsg, 0); // All out war finished!;
-					m_pMsgTextList[1] = std::make_unique<CMsg>(0, m_pGameMsgList[38]->m_pMsg, 0); // Aresden was victorious;
-					m_pMsgTextList[2] = std::make_unique<CMsg>(0, m_pGameMsgList[39]->m_pMsg, 0); // and put an end to the war
-					m_pMsgTextList[3] = std::make_unique<CMsg>(0, " ", 0);
-					m_pMsgTextList[4] = std::make_unique<CMsg>(0, m_pGameMsgList[42]->m_pMsg, 0); // Congratulations!
-					m_pMsgTextList[5] = std::make_unique<CMsg>(0, m_pGameMsgList[43]->m_pMsg, 0); // As a victorious citizen
-					m_pMsgTextList[6] = std::make_unique<CMsg>(0, m_pGameMsgList[44]->m_pMsg, 0); // You will receive
-					m_pMsgTextList[7] = std::make_unique<CMsg>(0, m_pGameMsgList[45]->m_pMsg, 0); // a prize
+					m_msg_text_list[0] = std::make_unique<CMsg>(0, m_game_msg_list[35]->m_pMsg, 0); // All out war finished!;
+					m_msg_text_list[1] = std::make_unique<CMsg>(0, m_game_msg_list[38]->m_pMsg, 0); // Aresden was victorious;
+					m_msg_text_list[2] = std::make_unique<CMsg>(0, m_game_msg_list[39]->m_pMsg, 0); // and put an end to the war
+					m_msg_text_list[3] = std::make_unique<CMsg>(0, " ", 0);
+					m_msg_text_list[4] = std::make_unique<CMsg>(0, m_game_msg_list[42]->m_pMsg, 0); // Congratulations!
+					m_msg_text_list[5] = std::make_unique<CMsg>(0, m_game_msg_list[43]->m_pMsg, 0); // As a victorious citizen
+					m_msg_text_list[6] = std::make_unique<CMsg>(0, m_game_msg_list[44]->m_pMsg, 0); // You will receive
+					m_msg_text_list[7] = std::make_unique<CMsg>(0, m_game_msg_list[45]->m_pMsg, 0); // a prize
 					break;
 				case 2:
-					m_pMsgTextList[0] = std::make_unique<CMsg>(0, m_pGameMsgList[35]->m_pMsg, 0); // All out war finished!
-					m_pMsgTextList[1] = std::make_unique<CMsg>(0, m_pGameMsgList[40]->m_pMsg, 0); // Elvine was victorious
-					m_pMsgTextList[2] = std::make_unique<CMsg>(0, m_pGameMsgList[41]->m_pMsg, 0); // and put an end to the war
-					m_pMsgTextList[3] = std::make_unique<CMsg>(0, " ", 0);
-					m_pMsgTextList[4] = std::make_unique<CMsg>(0, m_pGameMsgList[42]->m_pMsg, 0); // Congratulations!
-					m_pMsgTextList[5] = std::make_unique<CMsg>(0, m_pGameMsgList[43]->m_pMsg, 0); // As a victorious citizen
-					m_pMsgTextList[6] = std::make_unique<CMsg>(0, m_pGameMsgList[44]->m_pMsg, 0); // You will receive
-					m_pMsgTextList[7] = std::make_unique<CMsg>(0, m_pGameMsgList[45]->m_pMsg, 0); // a prize
+					m_msg_text_list[0] = std::make_unique<CMsg>(0, m_game_msg_list[35]->m_pMsg, 0); // All out war finished!
+					m_msg_text_list[1] = std::make_unique<CMsg>(0, m_game_msg_list[40]->m_pMsg, 0); // Elvine was victorious
+					m_msg_text_list[2] = std::make_unique<CMsg>(0, m_game_msg_list[41]->m_pMsg, 0); // and put an end to the war
+					m_msg_text_list[3] = std::make_unique<CMsg>(0, " ", 0);
+					m_msg_text_list[4] = std::make_unique<CMsg>(0, m_game_msg_list[42]->m_pMsg, 0); // Congratulations!
+					m_msg_text_list[5] = std::make_unique<CMsg>(0, m_game_msg_list[43]->m_pMsg, 0); // As a victorious citizen
+					m_msg_text_list[6] = std::make_unique<CMsg>(0, m_game_msg_list[44]->m_pMsg, 0); // You will receive
+					m_msg_text_list[7] = std::make_unique<CMsg>(0, m_game_msg_list[45]->m_pMsg, 0); // a prize
 					break;
 				}
 				for (int i = 8; i < 18; i++)
-					m_pMsgTextList[i] = std::make_unique<CMsg>(0, " ", 0);
+					m_msg_text_list[i] = std::make_unique<CMsg>(0, " ", 0);
 			}
 			else if (winner_side != player_side)
 			{
-				PlayGameSound('E', 24, 0, 0);
-				PlayGameSound('C', 12, 0, 0);
-				PlayGameSound('C', 13, 0, 0);
+				play_game_sound('E', 24, 0, 0);
+				play_game_sound('C', 12, 0, 0);
+				play_game_sound('C', 13, 0, 0);
 				switch (winner_side) {
 				case 1:
-					m_pMsgTextList[0] = std::make_unique<CMsg>(0, m_pGameMsgList[35]->m_pMsg, 0); // All out war finished!
-					m_pMsgTextList[1] = std::make_unique<CMsg>(0, m_pGameMsgList[38]->m_pMsg, 0); // Aresden was victorious;
-					m_pMsgTextList[2] = std::make_unique<CMsg>(0, m_pGameMsgList[39]->m_pMsg, 0); // and put an end to the war
-					m_pMsgTextList[3] = std::make_unique<CMsg>(0, " ", 0);
-					m_pMsgTextList[4] = std::make_unique<CMsg>(0, m_pGameMsgList[46]->m_pMsg, 0); // Unfortunately,
-					m_pMsgTextList[5] = std::make_unique<CMsg>(0, m_pGameMsgList[47]->m_pMsg, 0); // As a losser citizen
-					m_pMsgTextList[6] = std::make_unique<CMsg>(0, m_pGameMsgList[48]->m_pMsg, 0); // the prize that accomplishes
-					m_pMsgTextList[7] = std::make_unique<CMsg>(0, m_pGameMsgList[49]->m_pMsg, 0); // will not be given.
+					m_msg_text_list[0] = std::make_unique<CMsg>(0, m_game_msg_list[35]->m_pMsg, 0); // All out war finished!
+					m_msg_text_list[1] = std::make_unique<CMsg>(0, m_game_msg_list[38]->m_pMsg, 0); // Aresden was victorious;
+					m_msg_text_list[2] = std::make_unique<CMsg>(0, m_game_msg_list[39]->m_pMsg, 0); // and put an end to the war
+					m_msg_text_list[3] = std::make_unique<CMsg>(0, " ", 0);
+					m_msg_text_list[4] = std::make_unique<CMsg>(0, m_game_msg_list[46]->m_pMsg, 0); // Unfortunately,
+					m_msg_text_list[5] = std::make_unique<CMsg>(0, m_game_msg_list[47]->m_pMsg, 0); // As a losser citizen
+					m_msg_text_list[6] = std::make_unique<CMsg>(0, m_game_msg_list[48]->m_pMsg, 0); // the prize that accomplishes
+					m_msg_text_list[7] = std::make_unique<CMsg>(0, m_game_msg_list[49]->m_pMsg, 0); // will not be given.
 					break;
 				case 2:
-					m_pMsgTextList[0] = std::make_unique<CMsg>(0, m_pGameMsgList[35]->m_pMsg, 0); // All out war finished!
-					m_pMsgTextList[1] = std::make_unique<CMsg>(0, m_pGameMsgList[40]->m_pMsg, 0); // Elvine was victorious
-					m_pMsgTextList[2] = std::make_unique<CMsg>(0, m_pGameMsgList[41]->m_pMsg, 0); // and put an end to the war
-					m_pMsgTextList[3] = std::make_unique<CMsg>(0, " ", 0);
-					m_pMsgTextList[4] = std::make_unique<CMsg>(0, m_pGameMsgList[46]->m_pMsg, 0); // Unfortunately,
-					m_pMsgTextList[5] = std::make_unique<CMsg>(0, m_pGameMsgList[47]->m_pMsg, 0); // As a losser citizen
-					m_pMsgTextList[6] = std::make_unique<CMsg>(0, m_pGameMsgList[48]->m_pMsg, 0); // the prize that accomplishes
-					m_pMsgTextList[7] = std::make_unique<CMsg>(0, m_pGameMsgList[49]->m_pMsg, 0); // will not be given.
+					m_msg_text_list[0] = std::make_unique<CMsg>(0, m_game_msg_list[35]->m_pMsg, 0); // All out war finished!
+					m_msg_text_list[1] = std::make_unique<CMsg>(0, m_game_msg_list[40]->m_pMsg, 0); // Elvine was victorious
+					m_msg_text_list[2] = std::make_unique<CMsg>(0, m_game_msg_list[41]->m_pMsg, 0); // and put an end to the war
+					m_msg_text_list[3] = std::make_unique<CMsg>(0, " ", 0);
+					m_msg_text_list[4] = std::make_unique<CMsg>(0, m_game_msg_list[46]->m_pMsg, 0); // Unfortunately,
+					m_msg_text_list[5] = std::make_unique<CMsg>(0, m_game_msg_list[47]->m_pMsg, 0); // As a losser citizen
+					m_msg_text_list[6] = std::make_unique<CMsg>(0, m_game_msg_list[48]->m_pMsg, 0); // the prize that accomplishes
+					m_msg_text_list[7] = std::make_unique<CMsg>(0, m_game_msg_list[49]->m_pMsg, 0); // will not be given.
 					break;
 				}
 				for (int i = 8; i < 18; i++)
-					m_pMsgTextList[i] = std::make_unique<CMsg>(0, " ", 0);
+					m_msg_text_list[i] = std::make_unique<CMsg>(0, " ", 0);
 			}
 		}
 	}
-	m_dialogBoxManager.EnableDialogBox(DialogBoxId::Text, 0, 0, 0);
-	m_dialogBoxManager.DisableDialogBox(DialogBoxId::CrusadeCommander);
-	m_dialogBoxManager.DisableDialogBox(DialogBoxId::CrusadeConstructor);
-	m_dialogBoxManager.DisableDialogBox(DialogBoxId::CrusadeSoldier);
+	m_dialog_box_manager.enable_dialog_box(DialogBoxId::Text, 0, 0, 0);
+	m_dialog_box_manager.disable_dialog_box(DialogBoxId::CrusadeCommander);
+	m_dialog_box_manager.disable_dialog_box(DialogBoxId::CrusadeConstructor);
+	m_dialog_box_manager.disable_dialog_box(DialogBoxId::CrusadeSoldier);
 }
 
 
 // _Draw_UpdateScreen_OnCreateNewAccount removed - migrated to Screen_CreateAccount
 
-void CGame::CivilRightAdmissionHandler(char* pData)
+void CGame::civil_right_admission_handler(char* data)
 {
-	uint16_t wResult;
+	uint16_t result;
 	const auto* header = hb::net::PacketCast<hb::net::PacketHeader>(
-		pData, sizeof(hb::net::PacketHeader));
+		data, sizeof(hb::net::PacketHeader));
 	if (!header) return;
-	wResult = header->msg_type;
+	result = header->msg_type;
 
-	switch (wResult) {
+	switch (result) {
 	case 0:
-		m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).cMode = 4;
+		m_dialog_box_manager.Info(DialogBoxId::CityHallMenu).m_mode = 4;
 		break;
 
 	case 1:
-		m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).cMode = 3;
+		m_dialog_box_manager.Info(DialogBoxId::CityHallMenu).m_mode = 3;
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketResponseCivilRight>(
-			pData, sizeof(hb::net::PacketResponseCivilRight));
+			data, sizeof(hb::net::PacketResponseCivilRight));
 		if (!pkt) return;
-		m_cLocation.assign(pkt->location, strnlen(pkt->location, 10));
-		if (m_cLocation.starts_with("aresden"))
+		m_location.assign(pkt->location, strnlen(pkt->location, 10));
+		if (m_location.starts_with("aresden"))
 		{
-			m_pPlayer->m_bAresden = true;
-			m_pPlayer->m_bCitizen = true;
-			m_pPlayer->m_bHunter = false;
+			m_player->m_aresden = true;
+			m_player->m_citizen = true;
+			m_player->m_hunter = false;
 		}
-		else if (m_cLocation.starts_with("arehunter"))
+		else if (m_location.starts_with("arehunter"))
 		{
-			m_pPlayer->m_bAresden = true;
-			m_pPlayer->m_bCitizen = true;
-			m_pPlayer->m_bHunter = true;
+			m_player->m_aresden = true;
+			m_player->m_citizen = true;
+			m_player->m_hunter = true;
 		}
-		else if (m_cLocation.starts_with("elvine"))
+		else if (m_location.starts_with("elvine"))
 		{
-			m_pPlayer->m_bAresden = false;
-			m_pPlayer->m_bCitizen = true;
-			m_pPlayer->m_bHunter = false;
+			m_player->m_aresden = false;
+			m_player->m_citizen = true;
+			m_player->m_hunter = false;
 		}
-		else if (m_cLocation.starts_with("elvhunter"))
+		else if (m_location.starts_with("elvhunter"))
 		{
-			m_pPlayer->m_bAresden = false;
-			m_pPlayer->m_bCitizen = true;
-			m_pPlayer->m_bHunter = true;
+			m_player->m_aresden = false;
+			m_player->m_citizen = true;
+			m_player->m_hunter = true;
 		}
 		else
 		{
-			m_pPlayer->m_bAresden = true;
-			m_pPlayer->m_bCitizen = false;
-			m_pPlayer->m_bHunter = true;
+			m_player->m_aresden = true;
+			m_player->m_citizen = false;
+			m_player->m_hunter = true;
 		}
 		break;
 	}
 }
 
-void CGame::PlayGameSound(char cType, int iNum, int iDist, long lPan)
+void CGame::play_game_sound(char type, int num, int dist, long lPan)
 {
-	// Forward to AudioManager
-	SoundType type;
-	switch (cType)
+	// Forward to audio_manager
+	sound_type snd_type;
+	switch (type)
 	{
 	case 'C':
-		type = SoundType::Character;
+		snd_type = sound_type::Character;
 		break;
 	case 'M':
-		type = SoundType::Monster;
+		snd_type = sound_type::Monster;
 		break;
 	case 'E':
-		type = SoundType::Effect;
+		snd_type = sound_type::Effect;
 		break;
 	default:
 		return;
 	}
-	AudioManager::Get().PlayGameSound(type, iNum, iDist, static_cast<int>(lPan));
+	audio_manager::get().play_game_sound(snd_type, num, dist, static_cast<int>(lPan));
 }
 
-bool CGame::_bCheckItemByType(ItemType type)
+bool CGame::check_item_by_type(ItemType type)
 {
 	int i;
 
 	for (i = 0; i < hb::shared::limits::MaxItems; i++)
-		if (m_pItemList[i] != 0) {
-			CItem* pCfg = GetItemConfig(m_pItemList[i]->m_sIDnum);
-			if (pCfg && pCfg->GetItemType() == type) return true;
+		if (m_item_list[i] != 0) {
+			CItem* cfg = get_item_config(m_item_list[i]->m_id_num);
+			if (cfg && cfg->get_item_type() == type) return true;
 		}
 
 	return false;
 }
 
-void CGame::DynamicObjectHandler(char* pData)
+void CGame::dynamic_object_handler(char* data)
 {
-	short sX, sY, sV1, sV2, sV3;
+	short sX, sY, v1, v2, v3;
 	const auto* pkt = hb::net::PacketCast<hb::net::PacketResponseDynamicObject>(
-		pData, sizeof(hb::net::PacketResponseDynamicObject));
+		data, sizeof(hb::net::PacketResponseDynamicObject));
 	if (!pkt) return;
 	sX = pkt->x;
 	sY = pkt->y;
-	sV1 = pkt->v1;
-	sV2 = pkt->v2;
-	sV3 = pkt->v3;
+	v1 = pkt->v1;
+	v2 = pkt->v2;
+	v3 = pkt->v3;
 
 	switch (pkt->header.msg_type) {
 	case MsgType::Confirm:// Dynamic Object
-		m_pMapData->bSetDynamicObject(sX, sY, sV2, sV1, true);
+		m_map_data->set_dynamic_object(sX, sY, v2, v1, true);
 		break;
 
 	case MsgType::Reject:// Dynamic object
-		m_pMapData->bSetDynamicObject(sX, sY, sV2, 0, true);
+		m_map_data->set_dynamic_object(sX, sY, v2, 0, true);
 		break;
 	}
 }
 
-bool CGame::_bIsItemOnHand() // Snoopy: Fixed to remove ShieldCast
+bool CGame::is_item_on_hand() // Snoopy: Fixed to remove ShieldCast
 {
 	int i;
-	uint16_t wWeaponType;
+	uint16_t weapon_type;
 	for (i = 0; i < hb::shared::limits::MaxItems; i++)
-		if ((m_pItemList[i] != 0) && (m_bIsItemEquipped[i] == true))
+		if ((m_item_list[i] != 0) && (m_is_item_equipped[i] == true))
 		{
-			CItem* pCfg = GetItemConfig(m_pItemList[i]->m_sIDnum);
-			if (pCfg && ((pCfg->GetEquipPos() == EquipPos::LeftHand)
-				|| (pCfg->GetEquipPos() == EquipPos::TwoHand)))
+			CItem* cfg = get_item_config(m_item_list[i]->m_id_num);
+			if (cfg && ((cfg->get_equip_pos() == EquipPos::LeftHand)
+				|| (cfg->get_equip_pos() == EquipPos::TwoHand)))
 				return true;
 		}
 	for (i = 0; i < hb::shared::limits::MaxItems; i++)
-		if ((m_pItemList[i] != 0) && (m_bIsItemEquipped[i] == true))
+		if ((m_item_list[i] != 0) && (m_is_item_equipped[i] == true))
 		{
-			CItem* pCfg = GetItemConfig(m_pItemList[i]->m_sIDnum);
-			if (pCfg && pCfg->GetEquipPos() == EquipPos::RightHand)
+			CItem* cfg = get_item_config(m_item_list[i]->m_id_num);
+			if (cfg && cfg->get_equip_pos() == EquipPos::RightHand)
 			{
-				wWeaponType = m_pPlayer->m_playerAppearance.iWeaponType;
+				weapon_type = m_player->m_playerAppearance.weapon_type;
 				// Snoopy 34 for all wands.
-				if ((wWeaponType >= 34) && (wWeaponType < 40)) return false;
+				if ((weapon_type >= 34) && (weapon_type < 40)) return false;
 				else return true;
 			}
 		}
 	return false;
 }
 
-uint32_t CGame::iGetLevelExp(int iLevel)
+uint32_t CGame::get_level_exp(int level)
 {
-	return hb::shared::calc::CalculateLevelExp(iLevel);
+	return hb::shared::calc::CalculateLevelExp(level);
 }
 
-bool CGame::bCheckExID(const char* pName)
+bool CGame::check_ex_id(const char* name)
 {
-	if (m_pExID == 0) return false;
-	if (m_pPlayer->m_cPlayerName == pName) return false;
-	std::string cTxt;
-	cTxt = m_pExID->m_pMsg;
-	if (memcmp(cTxt.c_str(), pName, 10) == 0) return true;
+	if (m_ex_id == 0) return false;
+	if (m_player->m_player_name == name) return false;
+	std::string txt;
+	txt = m_ex_id->m_pMsg;
+	if (memcmp(txt.c_str(), name, 10) == 0) return true;
 	else return false;
 }
 
-bool CGame::_ItemDropHistory(short sItemID)
+bool CGame::item_drop_history(short item_id)
 {
-	bool bFlag = false;
-	if (m_iItemDropCnt == 0)
+	bool flag = false;
+	if (m_item_drop_cnt == 0)
 	{
-		m_sItemDropID[m_iItemDropCnt] = sItemID;
-		m_iItemDropCnt++;
+		m_item_drop_id[m_item_drop_cnt] = item_id;
+		m_item_drop_cnt++;
 		return true;
 	}
-	if ((1 <= m_iItemDropCnt) && (20 >= m_iItemDropCnt))
+	if ((1 <= m_item_drop_cnt) && (20 >= m_item_drop_cnt))
 	{
-		for (int i = 0; i < m_iItemDropCnt; i++)
+		for (int i = 0; i < m_item_drop_cnt; i++)
 		{
-			if (m_sItemDropID[i] == sItemID)
+			if (m_item_drop_id[i] == item_id)
 			{
-				bFlag = true;
+				flag = true;
 				break;
 			}
 		}
-		if (bFlag)
+		if (flag)
 		{
-			if (m_bItemDrop)
+			if (m_item_drop)
 				return false;
 			else
 				return true;
 		}
 
-		if (20 < m_iItemDropCnt)
+		if (20 < m_item_drop_cnt)
 		{
-			for (int i = 0; i < m_iItemDropCnt; i++)
-				m_sItemDropID[i - 1] = sItemID;
-			m_sItemDropID[20] = sItemID;
-			m_iItemDropCnt = 21;
+			for (int i = 0; i < m_item_drop_cnt; i++)
+				m_item_drop_id[i - 1] = item_id;
+			m_item_drop_id[20] = item_id;
+			m_item_drop_cnt = 21;
 		}
 		else
 		{
-			m_sItemDropID[m_iItemDropCnt] = sItemID;
-			m_iItemDropCnt++;
+			m_item_drop_id[m_item_drop_cnt] = item_id;
+			m_item_drop_cnt++;
 		}
 	}
 	return true;
 }
 
-CItem* CGame::GetItemConfig(int iItemID) const
+CItem* CGame::get_item_config(int item_id) const
 {
-	if (iItemID <= 0 || iItemID >= 5000) return nullptr;
-	return m_pItemConfigList[iItemID].get();
+	if (item_id <= 0 || item_id >= 5000) return nullptr;
+	return m_item_config_list[item_id].get();
 }
 
-bool CGame::_EnsureConfigLoaded(int type)
+bool CGame::ensure_config_loaded(int type)
 {
 	// Fast path: check if a representative config entry exists
-	bool bLoaded = false;
+	bool loaded = false;
 	switch (type) {
 	case 0: // Items
-		for (int i = 1; i < 5000; i++) { if (m_pItemConfigList[i]) { bLoaded = true; break; } }
+		for (int i = 1; i < 5000; i++) { if (m_item_config_list[i]) { loaded = true; break; } }
 		break;
 	case 1: // Magic
-		for (int i = 0; i < hb::shared::limits::MaxMagicType; i++) { if (m_pMagicCfgList[i]) { bLoaded = true; break; } }
+		for (int i = 0; i < hb::shared::limits::MaxMagicType; i++) { if (m_magic_cfg_list[i]) { loaded = true; break; } }
 		break;
 	case 2: // Skills
-		for (int i = 0; i < hb::shared::limits::MaxSkillType; i++) { if (m_pSkillCfgList[i]) { bLoaded = true; break; } }
+		for (int i = 0; i < hb::shared::limits::MaxSkillType; i++) { if (m_skill_cfg_list[i]) { loaded = true; break; } }
 		break;
 	case 3: // Npcs
-		for (int i = 0; i < hb::shared::limits::MaxNpcConfigs; i++) { if (m_npcConfigList[i].valid) { bLoaded = true; break; } }
+		for (int i = 0; i < hb::shared::limits::MaxNpcConfigs; i++) { if (m_npc_config_list[i].valid) { loaded = true; break; } }
 		break;
 	}
 
-	if (bLoaded) {
-		m_eConfigRetry[type] = ConfigRetryLevel::None;
+	if (loaded) {
+		m_config_retry[type] = ConfigRetryLevel::None;
 		return true;
 	}
 
 	const char* configNames[] = { "ITEMCFG", "MAGICCFG", "SKILLCFG", "NPCCFG" };
 
-	switch (m_eConfigRetry[type]) {
+	switch (m_config_retry[type]) {
 	case ConfigRetryLevel::None:
-		if (_TryReplayCacheForConfig(type)) {
+		if (try_replay_cache_for_config(type)) {
 			return true;
 		}
-		m_eConfigRetry[type] = ConfigRetryLevel::CacheTried;
+		m_config_retry[type] = ConfigRetryLevel::CacheTried;
 		return false;
 
 	case ConfigRetryLevel::CacheTried:
-		_RequestConfigsFromServer(type == 0, type == 1, type == 2, type == 3);
-		m_eConfigRetry[type] = ConfigRetryLevel::ServerRequested;
-		m_dwConfigRequestTime = GameClock::GetTimeMS();
+		request_configs_from_server(type == 0, type == 1, type == 2, type == 3);
+		m_config_retry[type] = ConfigRetryLevel::ServerRequested;
+		m_config_request_time = GameClock::get_time_ms();
 		return false;
 
 	case ConfigRetryLevel::ServerRequested:
-		if (GameClock::GetTimeMS() - m_dwConfigRequestTime > CONFIG_REQUEST_TIMEOUT_MS) {
-			m_eConfigRetry[type] = ConfigRetryLevel::Failed;
-			ChangeGameMode(GameMode::ConnectionLost);
+		if (GameClock::get_time_ms() - m_config_request_time > CONFIG_REQUEST_TIMEOUT_MS) {
+			m_config_retry[type] = ConfigRetryLevel::Failed;
+			change_game_mode(GameMode::ConnectionLost);
 		}
 		return false;
 
@@ -4457,7 +4442,7 @@ bool CGame::_EnsureConfigLoaded(int type)
 	return false;
 }
 
-bool CGame::_TryReplayCacheForConfig(int type)
+bool CGame::try_replay_cache_for_config(int type)
 {
 	struct ReplayCtx { CGame* game; };
 	ReplayCtx ctx{ this };
@@ -4466,147 +4451,147 @@ bool CGame::_TryReplayCacheForConfig(int type)
 
 	switch (type) {
 	case 0:
-		return LocalCacheManager::Get().ReplayFromCache(cacheType,
+		return LocalCacheManager::get().replay_from_cache(cacheType,
 			[](char* p, uint32_t s, void* c) -> bool {
-				return static_cast<ReplayCtx*>(c)->game->_bDecodeItemConfigFileContents(p, s);
+				return static_cast<ReplayCtx*>(c)->game->decode_item_config_file_contents(p, s);
 			}, &ctx);
 	case 1:
-		return LocalCacheManager::Get().ReplayFromCache(cacheType,
+		return LocalCacheManager::get().replay_from_cache(cacheType,
 			[](char* p, uint32_t s, void* c) -> bool {
-				return static_cast<ReplayCtx*>(c)->game->_bDecodeMagicConfigFileContents(p, s);
+				return static_cast<ReplayCtx*>(c)->game->decode_magic_config_file_contents(p, s);
 			}, &ctx);
 	case 2:
-		return LocalCacheManager::Get().ReplayFromCache(cacheType,
+		return LocalCacheManager::get().replay_from_cache(cacheType,
 			[](char* p, uint32_t s, void* c) -> bool {
-				return static_cast<ReplayCtx*>(c)->game->_bDecodeSkillConfigFileContents(p, s);
+				return static_cast<ReplayCtx*>(c)->game->decode_skill_config_file_contents(p, s);
 			}, &ctx);
 	case 3:
-		return LocalCacheManager::Get().ReplayFromCache(cacheType,
+		return LocalCacheManager::get().replay_from_cache(cacheType,
 			[](char* p, uint32_t s, void* c) -> bool {
-				return static_cast<ReplayCtx*>(c)->game->_bDecodeNpcConfigFileContents(p, s);
+				return static_cast<ReplayCtx*>(c)->game->decode_npc_config_file_contents(p, s);
 			}, &ctx);
 	}
 	return false;
 }
 
-void CGame::_RequestConfigsFromServer(bool bItems, bool bMagic, bool bSkills, bool bNpcs)
+void CGame::request_configs_from_server(bool items, bool magic, bool skills, bool npcs)
 {
-	if (!m_pGSock) return;
+	if (!m_g_sock) return;
 	hb::net::PacketRequestConfigData pkt{};
 	pkt.header.msg_id = MsgId::RequestConfigData;
 	pkt.header.msg_type = 0;
-	pkt.requestItems = bItems ? 1 : 0;
-	pkt.requestMagic = bMagic ? 1 : 0;
-	pkt.requestSkills = bSkills ? 1 : 0;
-	pkt.requestNpcs = bNpcs ? 1 : 0;
-	m_pGSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+	pkt.requestItems = items ? 1 : 0;
+	pkt.requestMagic = magic ? 1 : 0;
+	pkt.requestSkills = skills ? 1 : 0;
+	pkt.requestNpcs = npcs ? 1 : 0;
+	m_g_sock->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 }
 
-void CGame::_CheckConfigsReadyAndEnterGame()
+void CGame::check_configs_ready_and_enter_game()
 {
-	if (m_bConfigsReady) return;
+	if (m_configs_ready) return;
 
 	// Check if all four config types have at least one entry loaded
-	bool bHasItems = false, bHasMagic = false, bHasSkills = false, bHasNpcs = false;
-	for (int i = 1; i < 5000; i++) { if (m_pItemConfigList[i]) { bHasItems = true; break; } }
-	for (int i = 0; i < hb::shared::limits::MaxMagicType; i++) { if (m_pMagicCfgList[i]) { bHasMagic = true; break; } }
-	for (int i = 0; i < hb::shared::limits::MaxSkillType; i++) { if (m_pSkillCfgList[i]) { bHasSkills = true; break; } }
-	for (int i = 0; i < hb::shared::limits::MaxNpcConfigs; i++) { if (m_npcConfigList[i].valid) { bHasNpcs = true; break; } }
+	bool has_items = false, has_magic = false, has_skills = false, has_npcs = false;
+	for (int i = 1; i < 5000; i++) { if (m_item_config_list[i]) { has_items = true; break; } }
+	for (int i = 0; i < hb::shared::limits::MaxMagicType; i++) { if (m_magic_cfg_list[i]) { has_magic = true; break; } }
+	for (int i = 0; i < hb::shared::limits::MaxSkillType; i++) { if (m_skill_cfg_list[i]) { has_skills = true; break; } }
+	for (int i = 0; i < hb::shared::limits::MaxNpcConfigs; i++) { if (m_npc_config_list[i].valid) { has_npcs = true; break; } }
 
-	if (bHasItems && bHasMagic && bHasSkills && bHasNpcs) {
-		m_bConfigsReady = true;
-		if (m_bInitDataReady) {
+	if (has_items && has_magic && has_skills && has_npcs) {
+		m_configs_ready = true;
+		if (m_init_data_ready) {
 			GameModeManager::set_screen<Screen_OnGame>();
-			m_bInitDataReady = false;
+			m_init_data_ready = false;
 		}
 	}
 }
 
-short CGame::FindItemIdByName(const char* cItemName)
+short CGame::find_item_id_by_name(const char* item_name)
 {
-	if (cItemName == nullptr) return 0;
+	if (item_name == nullptr) return 0;
 	for (int i = 1; i < 5000; i++) {
-		if (m_pItemConfigList[i] != nullptr &&
-			memcmp(m_pItemConfigList[i]->m_cName, cItemName, hb::shared::limits::ItemNameLen - 1) == 0) {
+		if (m_item_config_list[i] != nullptr &&
+			memcmp(m_item_config_list[i]->m_name, item_name, hb::shared::limits::ItemNameLen - 1) == 0) {
 			return static_cast<short>(i);
 		}
 	}
 	return 0; // Not found
 }
 
-void CGame::NoticementHandler(char* pData)
+void CGame::noticement_handler(char* data)
 {
 	const auto* header = hb::net::PacketCast<hb::net::PacketHeader>(
-		pData, sizeof(hb::net::PacketHeader));
+		data, sizeof(hb::net::PacketHeader));
 	if (!header) return;
 	switch (header->msg_type) {
 	case MsgType::Confirm:
 	case MsgType::Reject:
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketResponseNoticementText>(
-			pData, sizeof(hb::net::PacketResponseNoticementText));
+			data, sizeof(hb::net::PacketResponseNoticementText));
 		if (!pkt) return;
 		{
 			std::ofstream file("contents\\contents1000.txt");
 			if (!file) return;
 			file << pkt->text;
 		}
-		m_dialogBoxManager.Info(DialogBoxId::Text).sX = 20;
-		m_dialogBoxManager.Info(DialogBoxId::Text).sY = 65;
-		m_dialogBoxManager.EnableDialogBox(DialogBoxId::Text, 1000, 0, 0);
+		m_dialog_box_manager.Info(DialogBoxId::Text).m_x = 20;
+		m_dialog_box_manager.Info(DialogBoxId::Text).m_y = 65;
+		m_dialog_box_manager.enable_dialog_box(DialogBoxId::Text, 1000, 0, 0);
 		break;
 	}
-	AddEventList("Press F1 for news and help.", 10);
-	m_dialogBoxManager.EnableDialogBox(DialogBoxId::Help, 0, 0, 0);
+	add_event_list("Press F1 for news and help.", 10);
+	m_dialog_box_manager.enable_dialog_box(DialogBoxId::Help, 0, 0, 0);
 }
 
-void CGame::_SetIlusionEffect(int iOwnerH)
+void CGame::set_ilusion_effect(int owner_h)
 {
-	char cDir;
+	char dir;
 
-	m_iIlusionOwnerH = iOwnerH;
+	m_ilusion_owner_h = owner_h;
 
 	std::string nameBuf_IE;
-	m_pMapData->GetOwnerStatusByObjectID(iOwnerH, &m_cIlusionOwnerType, &cDir, &m_pPlayer->m_illusionAppearance, &m_pPlayer->m_illusionStatus, nameBuf_IE);
-	m_cName_IE = nameBuf_IE;
+	m_map_data->get_owner_status_by_object_id(owner_h, &m_ilusion_owner_type, &dir, &m_player->m_illusionAppearance, &m_player->m_illusionStatus, nameBuf_IE);
+	m_name_ie = nameBuf_IE;
 }
 
-void CGame::ResponsePanningHandler(char* pData)
+void CGame::response_panning_handler(char* data)
 {
-	char cDir;
+	char dir;
 	short sX, sY;
 	const auto* pkt = hb::net::PacketCast<hb::net::PacketResponsePanningHeader>(
-		pData, sizeof(hb::net::PacketResponsePanningHeader));
+		data, sizeof(hb::net::PacketResponsePanningHeader));
 	if (!pkt) return;
 	sX = pkt->x;
 	sY = pkt->y;
-	cDir = static_cast<char>(pkt->dir);
+	dir = static_cast<char>(pkt->dir);
 
-	switch (cDir) {
-	case 1: m_Camera.MoveDestination(0, -32); m_pPlayer->m_sPlayerY--; break;
-	case 2: m_Camera.MoveDestination(32, -32); m_pPlayer->m_sPlayerY--; m_pPlayer->m_sPlayerX++; break;
-	case 3: m_Camera.MoveDestination(32, 0); m_pPlayer->m_sPlayerX++; break;
-	case 4: m_Camera.MoveDestination(32, 32); m_pPlayer->m_sPlayerY++; m_pPlayer->m_sPlayerX++; break;
-	case 5: m_Camera.MoveDestination(0, 32); m_pPlayer->m_sPlayerY++; break;
-	case 6: m_Camera.MoveDestination(-32, 32); m_pPlayer->m_sPlayerY++; m_pPlayer->m_sPlayerX--; break;
-	case 7: m_Camera.MoveDestination(-32, 0); m_pPlayer->m_sPlayerX--; break;
-	case 8: m_Camera.MoveDestination(-32, -32); m_pPlayer->m_sPlayerY--; m_pPlayer->m_sPlayerX--; break;
+	switch (dir) {
+	case 1: m_Camera.move_destination(0, -32); m_player->m_player_y--; break;
+	case 2: m_Camera.move_destination(32, -32); m_player->m_player_y--; m_player->m_player_x++; break;
+	case 3: m_Camera.move_destination(32, 0); m_player->m_player_x++; break;
+	case 4: m_Camera.move_destination(32, 32); m_player->m_player_y++; m_player->m_player_x++; break;
+	case 5: m_Camera.move_destination(0, 32); m_player->m_player_y++; break;
+	case 6: m_Camera.move_destination(-32, 32); m_player->m_player_y++; m_player->m_player_x--; break;
+	case 7: m_Camera.move_destination(-32, 0); m_player->m_player_x--; break;
+	case 8: m_Camera.move_destination(-32, -32); m_player->m_player_y--; m_player->m_player_x--; break;
 	}
 
-	m_pMapData->ShiftMapData(cDir);
-	const char* mapData = reinterpret_cast<const char*>(pData) + sizeof(hb::net::PacketResponsePanningHeader);
-	_ReadMapData(sX, sY, mapData);
+	m_map_data->shift_map_data(dir);
+	const char* mapData = reinterpret_cast<const char*>(data) + sizeof(hb::net::PacketResponsePanningHeader);
+	read_map_data(sX, sY, mapData);
 
-	m_bIsObserverCommanded = false;
+	m_is_observer_commanded = false;
 }
 
 /*********************************************************************************************************************
-** void CGame::CreateScreenShot()										(snoopy)									**
+** void CGame::create_screen_shot()										(snoopy)									**
 **  description			:: Fixed Screen Shots																		**
 **********************************************************************************************************************/
-void CGame::CreateScreenShot()
+void CGame::create_screen_shot()
 {
 	char longMapName[128] = {};
-	GetOfficialMapName(m_cMapName.c_str(), longMapName);
+	get_official_map_name(m_map_name.c_str(), longMapName);
 
 	auto now = std::chrono::system_clock::now();
 	auto time = std::chrono::system_clock::to_time_t(now);
@@ -4615,8 +4600,8 @@ void CGame::CreateScreenShot()
 
 	std::string timeStr = std::format("{:02d}:{:02d} - {:02d}:{:02d}:{:02d}",
 		tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
-	hb::shared::text::DrawTextAligned(GameFont::Default, 500, 30, 150, 15, timeStr.c_str(),
-		hb::shared::text::TextStyle::Color(GameColors::UIWhite),
+	hb::shared::text::draw_text_aligned(GameFont::Default, 500, 30, 150, 15, timeStr.c_str(),
+		hb::shared::text::TextStyle::from_color(GameColors::UIWhite),
 		hb::shared::text::Align::TopCenter);
 
 	std::filesystem::create_directory("save");
@@ -4630,126 +4615,126 @@ void CGame::CreateScreenShot()
 
 		if (!std::filesystem::exists(fileName))
 		{
-			m_Renderer->Screenshot(fileName.c_str());
-			AddEventList(std::format(NOTIFYMSG_CREATE_SCREENSHOT1, fileName).c_str(), 10);
+			m_Renderer->screenshot(fileName.c_str());
+			add_event_list(std::format(NOTIFYMSG_CREATE_SCREENSHOT1, fileName).c_str(), 10);
 			return;
 		}
 	}
-	AddEventList(NOTIFYMSG_CREATE_SCREENSHOT2, 10);
+	add_event_list(NOTIFYMSG_CREATE_SCREENSHOT2, 10);
 }
 
 
-void CGame::OnKeyUp(KeyCode _key)
+void CGame::handle_key_up(KeyCode _key)
 {
-	if (HotkeyManager::Get().HandleKeyUp(_key)) {
+	if (HotkeyManager::get().handle_key_up(_key)) {
 		return;
 	}
 
 	// When an overlay is active, only allow certain hotkeys (like screenshot)
 	// Block most hotkeys to prevent interaction with base screen
-	if (GameModeManager::GetActiveOverlay() != nullptr)
+	if (GameModeManager::get_active_overlay() != nullptr)
 	{
 		// Only allow screenshot hotkey when overlay is visible
 		if (_key == KeyCode::F11) {
-			Hotkey_Simple_Screenshot();
+			hotkey_simple_screenshot();
 		}
 		return;
 	}
 
 	switch (_key) {
 	case KeyCode::NumpadAdd:      // Numpad +
-		Hotkey_Simple_ZoomIn();
+		hotkey_simple_zoom_in();
 		break;
 	case KeyCode::NumpadSubtract: // Numpad -
-		Hotkey_Simple_ZoomOut();
+		hotkey_simple_zoom_out();
 		break;
 
 	case KeyCode::F2:
-		Hotkey_Simple_UseShortcut2();
+		hotkey_simple_use_shortcut2();
 		break;
 
 	case KeyCode::F3:
-		Hotkey_Simple_UseShortcut3();
+		hotkey_simple_use_shortcut3();
 		break;
 
 	case KeyCode::Insert:
-		Hotkey_Simple_UseHealthPotion();
+		hotkey_simple_use_health_potion();
 		break;
 
 	case KeyCode::Delete:
-		Hotkey_Simple_UseManaPotion();
+		hotkey_simple_use_mana_potion();
 		break;
 
 	case KeyCode::End:
-		Hotkey_Simple_LoadBackupChat();
+		hotkey_simple_load_backup_chat();
 		break;
 
 	case KeyCode::F4:
-		Hotkey_Simple_UseMagicShortcut();
+		hotkey_simple_use_magic_shortcut();
 		break;
 
 	case KeyCode::F5:
-		Hotkey_Simple_ToggleCharacterInfo();
+		hotkey_simple_toggle_character_info();
 		break;
 
 	case KeyCode::F6:
-		Hotkey_Simple_ToggleInventory();
+		hotkey_simple_toggle_inventory();
 		break;
 
 	case KeyCode::F7:
-		Hotkey_Simple_ToggleMagic();
+		hotkey_simple_toggle_magic();
 		break;
 
 	case KeyCode::F8:
-		Hotkey_Simple_ToggleSkill();
+		hotkey_simple_toggle_skill();
 		break;
 
 	case KeyCode::F9:
-		Hotkey_Simple_ToggleChatHistory();
+		hotkey_simple_toggle_chat_history();
 		break;
 
 	case KeyCode::F12:
-		Hotkey_Simple_ToggleSystemMenu();
+		hotkey_simple_toggle_system_menu();
 		break;
 
 	case KeyCode::F1:
-		Hotkey_Simple_UseShortcut1();
+		hotkey_simple_use_shortcut1();
 		break;
 
 	case KeyCode::Up:
-		Hotkey_Simple_WhisperCycleUp();
+		hotkey_simple_whisper_cycle_up();
 		break;
 
 	case KeyCode::Right:
-		Hotkey_Simple_ArrowRight();
+		hotkey_simple_arrow_right();
 		break;
 
 	case KeyCode::Down:
-		Hotkey_Simple_WhisperCycleDown();
+		hotkey_simple_whisper_cycle_down();
 		break;
 
 	case KeyCode::Left:
-		Hotkey_Simple_ArrowLeft();
+		hotkey_simple_arrow_left();
 		break;
 
 	case KeyCode::Tab:
-		Hotkey_Simple_TabToggleCombat();
+		hotkey_simple_tab_toggle_combat();
 		break;
 
 	case KeyCode::Home:
-		Hotkey_Simple_ToggleSafeAttack();
+		hotkey_simple_toggle_safe_attack();
 		break;
 
 	case KeyCode::Escape:
-		Hotkey_Simple_Escape();
+		hotkey_simple_escape();
 		break;
 
 	case KeyCode::PageUp:
-		Hotkey_Simple_SpecialAbility();
+		hotkey_simple_special_ability();
 		break;
 
 	case KeyCode::F11:
-		Hotkey_Simple_Screenshot();
+		hotkey_simple_screenshot();
 		break;
 
 	default:
@@ -4757,18 +4742,18 @@ void CGame::OnKeyUp(KeyCode _key)
 	}
 }
 
-void CGame::OnKeyDown(KeyCode _key)
+void CGame::handle_key_down(KeyCode _key)
 {
 
-	// When an overlay is active, block all OnKeyDown actions
+	// When an overlay is active, block all on_key_down actions
 	// Overlays handle their own input in on_update()
-	if (GameModeManager::GetActiveOverlay() != nullptr)
+	if (GameModeManager::get_active_overlay() != nullptr)
 	{
 		return;
 	}
 
-	// Filter out keys that should not trigger any action in OnKeyDown
-	// These are handled in OnKeyUp or elsewhere
+	// Filter out keys that should not trigger any action in on_key_down
+	// These are handled in on_key_up or elsewhere
 	switch (_key) {
 	case KeyCode::Insert:
 	case KeyCode::Delete:
@@ -4805,64 +4790,64 @@ void CGame::OnKeyDown(KeyCode _key)
 		break;
 	}
 
-	if (GameModeManager::GetMode() == GameMode::MainGame)
+	if (GameModeManager::get_mode() == GameMode::MainGame)
 	{
 		if (hb::shared::input::is_ctrl_down())
 		{
 			// Ctrl+0-9 for magic views
 			switch (_key) {
-			case KeyCode::Num0: m_dialogBoxManager.EnableDialogBox(DialogBoxId::Magic, 0, 0, 0); m_dialogBoxManager.Info(DialogBoxId::Magic).sView = 9; break;
-			case KeyCode::Num1: m_dialogBoxManager.EnableDialogBox(DialogBoxId::Magic, 0, 0, 0); m_dialogBoxManager.Info(DialogBoxId::Magic).sView = 0; break;
-			case KeyCode::Num2: m_dialogBoxManager.EnableDialogBox(DialogBoxId::Magic, 0, 0, 0); m_dialogBoxManager.Info(DialogBoxId::Magic).sView = 1; break;
-			case KeyCode::Num3: m_dialogBoxManager.EnableDialogBox(DialogBoxId::Magic, 0, 0, 0); m_dialogBoxManager.Info(DialogBoxId::Magic).sView = 2; break;
-			case KeyCode::Num4: m_dialogBoxManager.EnableDialogBox(DialogBoxId::Magic, 0, 0, 0); m_dialogBoxManager.Info(DialogBoxId::Magic).sView = 3; break;
-			case KeyCode::Num5: m_dialogBoxManager.EnableDialogBox(DialogBoxId::Magic, 0, 0, 0); m_dialogBoxManager.Info(DialogBoxId::Magic).sView = 4; break;
-			case KeyCode::Num6: m_dialogBoxManager.EnableDialogBox(DialogBoxId::Magic, 0, 0, 0); m_dialogBoxManager.Info(DialogBoxId::Magic).sView = 5; break;
-			case KeyCode::Num7: m_dialogBoxManager.EnableDialogBox(DialogBoxId::Magic, 0, 0, 0); m_dialogBoxManager.Info(DialogBoxId::Magic).sView = 6; break;
-			case KeyCode::Num8: m_dialogBoxManager.EnableDialogBox(DialogBoxId::Magic, 0, 0, 0); m_dialogBoxManager.Info(DialogBoxId::Magic).sView = 7; break;
-			case KeyCode::Num9: m_dialogBoxManager.EnableDialogBox(DialogBoxId::Magic, 0, 0, 0); m_dialogBoxManager.Info(DialogBoxId::Magic).sView = 8; break;
+			case KeyCode::Num0: m_dialog_box_manager.enable_dialog_box(DialogBoxId::Magic, 0, 0, 0); m_dialog_box_manager.Info(DialogBoxId::Magic).m_view = 9; break;
+			case KeyCode::Num1: m_dialog_box_manager.enable_dialog_box(DialogBoxId::Magic, 0, 0, 0); m_dialog_box_manager.Info(DialogBoxId::Magic).m_view = 0; break;
+			case KeyCode::Num2: m_dialog_box_manager.enable_dialog_box(DialogBoxId::Magic, 0, 0, 0); m_dialog_box_manager.Info(DialogBoxId::Magic).m_view = 1; break;
+			case KeyCode::Num3: m_dialog_box_manager.enable_dialog_box(DialogBoxId::Magic, 0, 0, 0); m_dialog_box_manager.Info(DialogBoxId::Magic).m_view = 2; break;
+			case KeyCode::Num4: m_dialog_box_manager.enable_dialog_box(DialogBoxId::Magic, 0, 0, 0); m_dialog_box_manager.Info(DialogBoxId::Magic).m_view = 3; break;
+			case KeyCode::Num5: m_dialog_box_manager.enable_dialog_box(DialogBoxId::Magic, 0, 0, 0); m_dialog_box_manager.Info(DialogBoxId::Magic).m_view = 4; break;
+			case KeyCode::Num6: m_dialog_box_manager.enable_dialog_box(DialogBoxId::Magic, 0, 0, 0); m_dialog_box_manager.Info(DialogBoxId::Magic).m_view = 5; break;
+			case KeyCode::Num7: m_dialog_box_manager.enable_dialog_box(DialogBoxId::Magic, 0, 0, 0); m_dialog_box_manager.Info(DialogBoxId::Magic).m_view = 6; break;
+			case KeyCode::Num8: m_dialog_box_manager.enable_dialog_box(DialogBoxId::Magic, 0, 0, 0); m_dialog_box_manager.Info(DialogBoxId::Magic).m_view = 7; break;
+			case KeyCode::Num9: m_dialog_box_manager.enable_dialog_box(DialogBoxId::Magic, 0, 0, 0); m_dialog_box_manager.Info(DialogBoxId::Magic).m_view = 8; break;
 			default: break;
 			}
 		}
 		// Only Enter key activates chat input - not every key press
-		else if (_key == KeyCode::Enter && (TextInputManager::Get().IsActive() == false) && (!hb::shared::input::is_alt_down()))
+		else if (_key == KeyCode::Enter && (text_input_manager::get().is_active() == false) && (!hb::shared::input::is_alt_down()))
 		{
-			TextInputManager::Get().StartInput(CHAT_INPUT_X(), CHAT_INPUT_Y(), ChatMsgMaxLen, m_cChatMsg);
-			TextInputManager::Get().ClearInput();
+			text_input_manager::get().start_input(CHAT_INPUT_X(), CHAT_INPUT_Y(), ChatMsgMaxLen, m_chat_msg);
+			text_input_manager::get().clear_input();
 		}
 	}
 }
 
-void CGame::ReserveFightzoneResponseHandler(char* pData)
+void CGame::reserve_fightzone_response_handler(char* data)
 {
 	const auto* pkt = hb::net::PacketCast<hb::net::PacketResponseFightzoneReserve>(
-		pData, sizeof(hb::net::PacketResponseFightzoneReserve));
+		data, sizeof(hb::net::PacketResponseFightzoneReserve));
 	if (!pkt) return;
 	switch (pkt->header.msg_type) {
 	case MsgType::Confirm:
-		AddEventList(RESERVE_FIGHTZONE_RESPONSE_HANDLER1, 10);
-		m_dialogBoxManager.Info(DialogBoxId::GuildMenu).cMode = 14;
-		m_iFightzoneNumber = m_iFightzoneNumberTemp;
+		add_event_list(RESERVE_FIGHTZONE_RESPONSE_HANDLER1, 10);
+		m_dialog_box_manager.Info(DialogBoxId::GuildMenu).m_mode = 14;
+		m_fightzone_number = m_fightzone_number_temp;
 		break;
 
 	case MsgType::Reject:
-		AddEventList(RESERVE_FIGHTZONE_RESPONSE_HANDLER2, 10);
-		m_iFightzoneNumberTemp = 0;
+		add_event_list(RESERVE_FIGHTZONE_RESPONSE_HANDLER2, 10);
+		m_fightzone_number_temp = 0;
 
 		if (pkt->result == 0) {
-			m_dialogBoxManager.Info(DialogBoxId::GuildMenu).cMode = 15;
+			m_dialog_box_manager.Info(DialogBoxId::GuildMenu).m_mode = 15;
 		}
 		else if (pkt->result == -1) {
-			m_dialogBoxManager.Info(DialogBoxId::GuildMenu).cMode = 16;
+			m_dialog_box_manager.Info(DialogBoxId::GuildMenu).m_mode = 16;
 		}
 		else if (pkt->result == -2) {
-			m_dialogBoxManager.Info(DialogBoxId::GuildMenu).cMode = 17;
+			m_dialog_box_manager.Info(DialogBoxId::GuildMenu).m_mode = 17;
 		}
 		else if (pkt->result == -3) {
-			m_dialogBoxManager.Info(DialogBoxId::GuildMenu).cMode = 21;
+			m_dialog_box_manager.Info(DialogBoxId::GuildMenu).m_mode = 21;
 		}
 		else if (pkt->result == -4) {
-			m_dialogBoxManager.Info(DialogBoxId::GuildMenu).cMode = 22;
+			m_dialog_box_manager.Info(DialogBoxId::GuildMenu).m_mode = 22;
 		}
 		break;
 	}
@@ -4871,89 +4856,89 @@ void CGame::ReserveFightzoneResponseHandler(char* pData)
 
 // UpdateScreen_OnLogResMsg removed - replaced by Overlay_LogResMsg
 
-void CGame::RetrieveItemHandler(char* pData)
+void CGame::retrieve_item_handler(char* data)
 {
-	std::string cTxt;
+	std::string txt;
 
-	char cBankItemIndex, cItemIndex;
+	char bank_item_index, item_index;
 	int j;
 	const auto* header = hb::net::PacketCast<hb::net::PacketHeader>(
-		pData, sizeof(hb::net::PacketHeader));
+		data, sizeof(hb::net::PacketHeader));
 	if (!header) return;
 	if (header->msg_type != MsgType::Reject)
 	{
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketResponseRetrieveItem>(
-			pData, sizeof(hb::net::PacketResponseRetrieveItem));
+			data, sizeof(hb::net::PacketResponseRetrieveItem));
 		if (!pkt) return;
-		cBankItemIndex = static_cast<char>(pkt->bank_index);
-		cItemIndex = static_cast<char>(pkt->item_index);
+		bank_item_index = static_cast<char>(pkt->bank_index);
+		item_index = static_cast<char>(pkt->item_index);
 
-		if (m_pBankList[cBankItemIndex] != 0) {
+		if (m_bank_list[bank_item_index] != 0) {
 			// v1.42
-			auto itemInfo = ItemNameFormatter::Get().Format(m_pBankList[cBankItemIndex].get());
+			auto itemInfo = item_name_formatter::get().format(m_bank_list[bank_item_index].get());
 
-			cTxt = std::format(RETIEVE_ITEM_HANDLER4, itemInfo.name.c_str());//""You took out %s."
-			AddEventList(cTxt.c_str(), 10);
+			txt = std::format(RETIEVE_ITEM_HANDLER4, itemInfo.name.c_str());//""You took out %s."
+			add_event_list(txt.c_str(), 10);
 
-			CItem* pCfgBank = GetItemConfig(m_pBankList[cBankItemIndex]->m_sIDnum);
-			bool bStackable = pCfgBank && ((pCfgBank->GetItemType() == ItemType::Consume) ||
-				(pCfgBank->GetItemType() == ItemType::Arrow));
+			CItem* cfg_bank = get_item_config(m_bank_list[bank_item_index]->m_id_num);
+			bool stackable = cfg_bank && ((cfg_bank->get_item_type() == ItemType::Consume) ||
+				(cfg_bank->get_item_type() == ItemType::Arrow));
 
-			if (bStackable && m_pItemList[cItemIndex] != 0)
+			if (stackable && m_item_list[item_index] != 0)
 			{
 				// Stackable item with occupied inventory slot: just remove from bank
-				m_pBankList[cBankItemIndex].reset();
+				m_bank_list[bank_item_index].reset();
 			}
 			else
 			{
 				// Non-stackable or empty inventory slot: place item into inventory
-				if (m_pItemList[cItemIndex] != 0) return;
+				if (m_item_list[item_index] != 0) return;
 				short nX = 40;
 				short nY = 30;
 				for (j = 0; j < hb::shared::limits::MaxItems; j++)
 				{
-					if ((m_pItemList[j] != 0) && (m_pItemList[j]->m_sIDnum == m_pBankList[cBankItemIndex]->m_sIDnum))
+					if ((m_item_list[j] != 0) && (m_item_list[j]->m_id_num == m_bank_list[bank_item_index]->m_id_num))
 					{
-						nX = m_pItemList[j]->m_sX + 1;
-						nY = m_pItemList[j]->m_sY + 1;
+						nX = m_item_list[j]->m_x + 1;
+						nY = m_item_list[j]->m_y + 1;
 						break;
 					}
 				}
-				m_pItemList[cItemIndex] = std::move(m_pBankList[cBankItemIndex]);
-				m_pItemList[cItemIndex]->m_sX = nX;
-				m_pItemList[cItemIndex]->m_sY = nY;
-				bSendCommand(MsgId::RequestSetItemPos, 0, cItemIndex, nX, nY, 0, 0);
+				m_item_list[item_index] = std::move(m_bank_list[bank_item_index]);
+				m_item_list[item_index]->m_x = nX;
+				m_item_list[item_index]->m_y = nY;
+				send_command(MsgId::RequestSetItemPos, 0, item_index, nX, nY, 0, 0);
 
 				for (j = 0; j < hb::shared::limits::MaxItems; j++)
-					if (m_cItemOrder[j] == -1)
+					if (m_item_order[j] == -1)
 					{
-						m_cItemOrder[j] = cItemIndex;
+						m_item_order[j] = item_index;
 						break;
 					}
-				m_bIsItemEquipped[cItemIndex] = false;
-				m_bIsItemDisabled[cItemIndex] = false;
+				m_is_item_equipped[item_index] = false;
+				m_is_item_disabled[item_index] = false;
 			}
 			// Compact bank list
 			for (j = 0; j <= hb::shared::limits::MaxBankItems - 2; j++)
 			{
-				if ((m_pBankList[j + 1] != 0) && (m_pBankList[j] == 0))
+				if ((m_bank_list[j + 1] != 0) && (m_bank_list[j] == 0))
 				{
-					m_pBankList[j] = std::move(m_pBankList[j + 1]);
+					m_bank_list[j] = std::move(m_bank_list[j + 1]);
 				}
 			}
 		}
 	}
-	m_dialogBoxManager.Info(DialogBoxId::Bank).cMode = 0;
+	m_dialog_box_manager.Info(DialogBoxId::Bank).m_mode = 0;
 }
 
-void CGame::DrawNpcName(short screen_x, short screen_y, short owner_type, const hb::shared::entity::PlayerStatus& status, short npc_config_id)
+void CGame::draw_npc_name(short screen_x, short screen_y, short owner_type, const hb::shared::entity::PlayerStatus& status, short npc_config_id)
 {
 	std::string text, text2;
 
 	// Name lookup: prefer config_id (direct), fall back to type-based lookup
 	auto npcName = [&]() -> const char* {
-		if (npc_config_id >= 0) return GetNpcConfigNameById(npc_config_id);
-		return GetNpcConfigName(owner_type);
+		if (npc_config_id >= 0) return get_npc_config_name_by_id(npc_config_id);
+		return get_npc_config_name(owner_type);
 	};
 
 	// Crop subtypes override the base "Crop" name from config
@@ -4963,7 +4948,7 @@ void CGame::DrawNpcName(short screen_x, short screen_y, short owner_type, const 
 			"Radish", "Corn", "Chinese Bell Flower", "Melone", "Tomato",
 			"Grapes", "Blue Grape", "Mushroom", "Ginseng"
 		};
-		int sub = m_entityState.m_appearance.iSubType;
+		int sub = m_entity_state.m_appearance.sub_type;
 		if (sub >= 1 && sub <= 14)
 			text = cropNames[sub];
 		else
@@ -4972,31 +4957,31 @@ void CGame::DrawNpcName(short screen_x, short screen_y, short owner_type, const 
 	// Crusade structure kit suffix
 	else if ((owner_type == hb::shared::owner::ArrowGuardTower || owner_type == hb::shared::owner::CannonGuardTower ||
 			  owner_type == hb::shared::owner::ManaCollector || owner_type == hb::shared::owner::Detector) &&
-			 m_entityState.m_appearance.HasNpcSpecialState()) {
+			 m_entity_state.m_appearance.HasNpcSpecialState()) {
 		text = std::format("{} Kit", npcName());
 	}
 	else {
 		text = npcName();
 	}
-	if (status.bBerserk) text += DRAW_OBJECT_NAME50;//" Berserk"
-	if (status.bFrozen) text += DRAW_OBJECT_NAME51;//" Frozen"
-	hb::shared::text::DrawText(GameFont::Default, screen_x, screen_y, text.c_str(), hb::shared::text::TextStyle::WithShadow(GameColors::UIWhite));
-	if (m_bIsObserverMode == true) hb::shared::text::DrawText(GameFont::Default, screen_x, screen_y + 14, text.c_str(), hb::shared::text::TextStyle::WithShadow(GameColors::NeutralNamePlate));
-	else if (m_pPlayer->m_bIsConfusion || (m_iIlusionOwnerH != 0))
+	if (status.berserk) text += DRAW_OBJECT_NAME50;//" Berserk"
+	if (status.frozen) text += DRAW_OBJECT_NAME51;//" Frozen"
+	hb::shared::text::draw_text(GameFont::Default, screen_x, screen_y, text.c_str(), hb::shared::text::TextStyle::with_shadow(GameColors::UIWhite));
+	if (m_is_observer_mode == true) hb::shared::text::draw_text(GameFont::Default, screen_x, screen_y + 14, text.c_str(), hb::shared::text::TextStyle::with_shadow(GameColors::NeutralNamePlate));
+	else if (m_player->m_is_confusion || (m_ilusion_owner_h != 0))
 	{
 		text = DRAW_OBJECT_NAME87;//"(Unknown)"
-		hb::shared::text::DrawText(GameFont::Default, screen_x, screen_y + 14, text.c_str(), hb::shared::text::TextStyle::WithShadow(GameColors::UIDisabled)); // v2.171
+		hb::shared::text::draw_text(GameFont::Default, screen_x, screen_y + 14, text.c_str(), hb::shared::text::TextStyle::with_shadow(GameColors::UIDisabled)); // v2.171
 	}
 	else
 	{
-		if (IsHostile(status.iRelationship))
-			hb::shared::text::DrawText(GameFont::Default, screen_x, screen_y + 14, DRAW_OBJECT_NAME90, hb::shared::text::TextStyle::WithShadow(GameColors::UIRed)); // "(Enemy)"
-		else if (IsFriendly(status.iRelationship))
-			hb::shared::text::DrawText(GameFont::Default, screen_x, screen_y + 14, DRAW_OBJECT_NAME89, hb::shared::text::TextStyle::WithShadow(GameColors::FriendlyNamePlate)); // "(Friendly)"
+		if (IsHostile(status.relationship))
+			hb::shared::text::draw_text(GameFont::Default, screen_x, screen_y + 14, DRAW_OBJECT_NAME90, hb::shared::text::TextStyle::with_shadow(GameColors::UIRed)); // "(Enemy)"
+		else if (IsFriendly(status.relationship))
+			hb::shared::text::draw_text(GameFont::Default, screen_x, screen_y + 14, DRAW_OBJECT_NAME89, hb::shared::text::TextStyle::with_shadow(GameColors::FriendlyNamePlate)); // "(Friendly)"
 		else
-			hb::shared::text::DrawText(GameFont::Default, screen_x, screen_y + 14, DRAW_OBJECT_NAME88, hb::shared::text::TextStyle::WithShadow(GameColors::NeutralNamePlate)); // "(Neutral)"
+			hb::shared::text::draw_text(GameFont::Default, screen_x, screen_y + 14, DRAW_OBJECT_NAME88, hb::shared::text::TextStyle::with_shadow(GameColors::NeutralNamePlate)); // "(Neutral)"
 	}
-	switch (status.iAngelPercent) {
+	switch (status.angel_percent) {
 	case 0: break;
 	case 1: text2 = DRAW_OBJECT_NAME52; break;//"Clairvoyant"
 	case 2: text2 = DRAW_OBJECT_NAME53; break;//"Destruction of Magic Protection"
@@ -5007,7 +4992,7 @@ void CGame::DrawNpcName(short screen_x, short screen_y, short owner_type, const 
 	case 7: text2 = DRAW_OBJECT_NAME58; break;//"Explosive"
 	case 8: text2 = DRAW_OBJECT_NAME59; break;//"Critical Explosive"
 	}
-	hb::shared::text::DrawText(GameFont::Default, screen_x, screen_y + 28, text2.c_str(), hb::shared::text::TextStyle::WithShadow(GameColors::MonsterStatusEffect));
+	hb::shared::text::draw_text(GameFont::Default, screen_x, screen_y + 28, text2.c_str(), hb::shared::text::TextStyle::with_shadow(GameColors::MonsterStatusEffect));
 
 	// centu: no muestra la barra de hp de algunos npc
 	switch (owner_type) {
@@ -5025,7 +5010,7 @@ void CGame::DrawNpcName(short screen_x, short screen_y, short owner_type, const 
 	case hb::shared::owner::Devlin:
 	case hb::shared::owner::Crops:
 	{
-		switch (m_entityState.m_appearance.iSubType) {
+		switch (m_entity_state.m_appearance.sub_type) {
 		case 1:
 		case 2:
 		case 3:
@@ -5051,14 +5036,14 @@ void CGame::DrawNpcName(short screen_x, short screen_y, short owner_type, const 
 	}
 }
 
-void CGame::DrawObjectName(short screen_x, short screen_y, const char* name, const hb::shared::entity::PlayerStatus& status, uint16_t object_id)
+void CGame::draw_object_name(short screen_x, short screen_y, const char* name, const hb::shared::entity::PlayerStatus& status, uint16_t object_id)
 {
 	std::string guild_text;
 	std::string text, text2;
 	uint8_t red = 0, green = 0, blue = 0;
 	int guild_index = 0, y_offset = 0;
 	bool is_pk = false, is_citizen = false, is_aresden = false, is_hunter = false;
-	auto relationship = status.iRelationship;
+	auto relationship = status.relationship;
 	if (IsHostile(relationship))
 	{
 		red = 255; green = 0; blue = 0;
@@ -5072,23 +5057,23 @@ void CGame::DrawObjectName(short screen_x, short screen_y, const char* name, con
 		red = 50; green = 50; blue = 255;
 	}
 
-	if (m_iIlusionOwnerH == 0)
+	if (m_ilusion_owner_h == 0)
 	{
-		if (m_bIsCrusadeMode == false) text = name;
+		if (m_is_crusade_mode == false) text = name;
 		else
 		{
-			if (!hb::shared::object_id::IsPlayerID(m_entityState.m_wObjectID)) text = GetNpcConfigName(hb::shared::owner::Barbarian);
+			if (!hb::shared::object_id::is_player_id(m_entity_state.m_object_id)) text = get_npc_config_name(hb::shared::owner::Barbarian);
 			else
 			{
-				if (relationship == EntityRelationship::Enemy) text = std::format("{}", m_entityState.m_wObjectID);
+				if (relationship == EntityRelationship::Enemy) text = std::format("{}", m_entity_state.m_object_id);
 				else text = name;
 			}
 		}
-		if (m_iPartyStatus != 0)
+		if (m_party_status != 0)
 		{
 			for (int i = 0; i < hb::shared::limits::MaxPartyMembers; i++)
 			{
-				if (m_stPartyMemberNameList[i].cName == name)
+				if (m_party_member_name_list[i].name == name)
 				{
 					text += BGET_NPC_NAME23; // ", Party Member"
 					break;
@@ -5098,26 +5083,26 @@ void CGame::DrawObjectName(short screen_x, short screen_y, const char* name, con
 	}
 	else text = "?????";
 
-	if (status.bBerserk) text += DRAW_OBJECT_NAME50;//" Berserk"
-	if (status.bFrozen) text += DRAW_OBJECT_NAME51;//" Frozen"
+	if (status.berserk) text += DRAW_OBJECT_NAME50;//" Berserk"
+	if (status.frozen) text += DRAW_OBJECT_NAME51;//" Frozen"
 
-	hb::shared::text::DrawText(GameFont::Default, screen_x, screen_y, text.c_str(), hb::shared::text::TextStyle::WithShadow(GameColors::UIWhite));
+	hb::shared::text::draw_text(GameFont::Default, screen_x, screen_y, text.c_str(), hb::shared::text::TextStyle::with_shadow(GameColors::UIWhite));
 
-	if (object_id == m_pPlayer->m_sPlayerObjectID)
+	if (object_id == m_player->m_player_object_id)
 	{
-		if (m_pPlayer->m_iGuildRank == 0)
+		if (m_player->m_guild_rank == 0)
 		{
-			guild_text = std::format(DEF_MSG_GUILDMASTER, m_pPlayer->m_cGuildName);//" Guildmaster)"
-			hb::shared::text::DrawText(GameFont::Default, screen_x, screen_y + 14, guild_text.c_str(), hb::shared::text::TextStyle::WithShadow(GameColors::InfoGrayLight));
+			guild_text = std::format(DEF_MSG_GUILDMASTER, m_player->m_guild_name);//" Guildmaster)"
+			hb::shared::text::draw_text(GameFont::Default, screen_x, screen_y + 14, guild_text.c_str(), hb::shared::text::TextStyle::with_shadow(GameColors::InfoGrayLight));
 			y_offset = 14;
 		}
-		if (m_pPlayer->m_iGuildRank > 0)
+		if (m_player->m_guild_rank > 0)
 		{
-			guild_text = std::format(DEF_MSG_GUILDSMAN, m_pPlayer->m_cGuildName);//" Guildsman)"
-			hb::shared::text::DrawText(GameFont::Default, screen_x, screen_y + 14, guild_text.c_str(), hb::shared::text::TextStyle::WithShadow(GameColors::InfoGrayLight));
+			guild_text = std::format(DEF_MSG_GUILDSMAN, m_player->m_guild_name);//" Guildsman)"
+			hb::shared::text::draw_text(GameFont::Default, screen_x, screen_y + 14, guild_text.c_str(), hb::shared::text::TextStyle::with_shadow(GameColors::InfoGrayLight));
 			y_offset = 14;
 		}
-		if (m_pPlayer->m_iPKCount != 0)
+		if (m_player->m_pk_count != 0)
 		{
 			is_pk = true;
 			red = 255; green = 0; blue = 0;
@@ -5127,46 +5112,46 @@ void CGame::DrawObjectName(short screen_x, short screen_y, const char* name, con
 			is_pk = false;
 			red = 30; green = 200; blue = 30;
 		}
-		is_citizen = m_pPlayer->m_bCitizen;
-		is_aresden = m_pPlayer->m_bAresden;
-		is_hunter = m_pPlayer->m_bHunter;
+		is_citizen = m_player->m_citizen;
+		is_aresden = m_player->m_aresden;
+		is_hunter = m_player->m_hunter;
 	}
 	else
 	{	// CLEROTH - CRASH BUG ( STATUS )
-		is_pk = status.bPK;
-		is_citizen = status.bCitizen;
-		is_aresden = status.bAresden;
-		is_hunter = status.bHunter;
-		if (m_bIsCrusadeMode == false || !IsHostile(relationship))
+		is_pk = status.pk;
+		is_citizen = status.citizen;
+		is_aresden = status.aresden;
+		is_hunter = status.hunter;
+		if (m_is_crusade_mode == false || !IsHostile(relationship))
 		{
-			if (FindGuildName(name, &guild_index) == true)
+			if (find_guild_name(name, &guild_index) == true)
 			{
-				if (!m_stGuildName[guild_index].cGuildName.empty())
+				if (!m_guild_name_cache[guild_index].guild_name.empty())
 				{
-					if (m_stGuildName[guild_index].cGuildName != "NONE")
+					if (m_guild_name_cache[guild_index].guild_name != "NONE")
 					{
-						if (m_stGuildName[guild_index].iGuildRank == 0)
+						if (m_guild_name_cache[guild_index].guild_rank == 0)
 						{
-							guild_text = std::format(DEF_MSG_GUILDMASTER, m_stGuildName[guild_index].cGuildName);//
-							hb::shared::text::DrawText(GameFont::Default, screen_x, screen_y + 14, guild_text.c_str(), hb::shared::text::TextStyle::WithShadow(GameColors::InfoGrayLight));
-							m_stGuildName[guild_index].dwRefTime = m_dwCurTime;
+							guild_text = std::format(DEF_MSG_GUILDMASTER, m_guild_name_cache[guild_index].guild_name);//
+							hb::shared::text::draw_text(GameFont::Default, screen_x, screen_y + 14, guild_text.c_str(), hb::shared::text::TextStyle::with_shadow(GameColors::InfoGrayLight));
+							m_guild_name_cache[guild_index].ref_time = m_cur_time;
 							y_offset = 14;
 						}
-						else if (m_stGuildName[guild_index].iGuildRank > 0)
+						else if (m_guild_name_cache[guild_index].guild_rank > 0)
 						{
-							guild_text = std::format(DEF_MSG_GUILDSMAN, m_stGuildName[guild_index].cGuildName);//"
-							hb::shared::text::DrawText(GameFont::Default, screen_x, screen_y + 14, guild_text.c_str(), hb::shared::text::TextStyle::WithShadow(GameColors::InfoGrayLight));
-							m_stGuildName[guild_index].dwRefTime = m_dwCurTime;
+							guild_text = std::format(DEF_MSG_GUILDSMAN, m_guild_name_cache[guild_index].guild_name);//"
+							hb::shared::text::draw_text(GameFont::Default, screen_x, screen_y + 14, guild_text.c_str(), hb::shared::text::TextStyle::with_shadow(GameColors::InfoGrayLight));
+							m_guild_name_cache[guild_index].ref_time = m_cur_time;
 							y_offset = 14;
 						}
 					}
 					else
 					{
-						m_stGuildName[guild_index].dwRefTime = 0;
+						m_guild_name_cache[guild_index].ref_time = 0;
 					}
 				}
 			}
-			else bSendCommand(MsgId::CommandCommon, CommonType::ReqGuildName, 0, m_entityState.m_wObjectID, guild_index, 0, 0);
+			else send_command(MsgId::CommandCommon, CommonType::ReqGuildName, 0, m_entity_state.m_object_id, guild_index, 0, 0);
 		}
 	}
 
@@ -5193,439 +5178,439 @@ void CGame::DrawObjectName(short screen_x, short screen_y, const char* name, con
 			else text = DEF_MSG_ELVPK;  // "Elvine Criminal"
 		}
 	}
-	hb::shared::text::DrawText(GameFont::Default, screen_x, screen_y + 14 + y_offset, text.c_str(), hb::shared::text::TextStyle::WithShadow(hb::shared::render::Color(red, green, blue)));
+	hb::shared::text::draw_text(GameFont::Default, screen_x, screen_y + 14 + y_offset, text.c_str(), hb::shared::text::TextStyle::with_shadow(hb::shared::render::Color(red, green, blue)));
 }
 
-bool CGame::FindGuildName(const char* pName, int* ipIndex)
+bool CGame::find_guild_name(const char* name, int* ipIndex)
 {
-	int i, iRet = 0;
-	uint32_t dwTmpTime;
+	int i, ret = 0;
+	uint32_t tmp_time;
 	for (i = 0; i < game_limits::max_guild_names; i++)
 	{
-		if (memcmp(m_stGuildName[i].cCharName.c_str(), pName, 10) == 0)
+		if (memcmp(m_guild_name_cache[i].char_name.c_str(), name, 10) == 0)
 		{
-			m_stGuildName[i].dwRefTime = m_dwCurTime;
+			m_guild_name_cache[i].ref_time = m_cur_time;
 			*ipIndex = i;
 			return true;
 		}
 	}
-	dwTmpTime = m_stGuildName[0].dwRefTime;
+	tmp_time = m_guild_name_cache[0].ref_time;
 	for (i = 0; i < game_limits::max_guild_names; i++)
 	{
-		if (m_stGuildName[i].dwRefTime < dwTmpTime)
+		if (m_guild_name_cache[i].ref_time < tmp_time)
 		{
-			iRet = i;
-			dwTmpTime = m_stGuildName[i].dwRefTime;
+			ret = i;
+			tmp_time = m_guild_name_cache[i].ref_time;
 		}
 	}
-	m_stGuildName[iRet].cCharName.assign(pName, strnlen(pName, 10));
-	m_stGuildName[iRet].dwRefTime = m_dwCurTime;
-	m_stGuildName[iRet].iGuildRank = -1;
-	*ipIndex = iRet;
+	m_guild_name_cache[ret].char_name.assign(name, strnlen(name, 10));
+	m_guild_name_cache[ret].ref_time = m_cur_time;
+	m_guild_name_cache[ret].guild_rank = -1;
+	*ipIndex = ret;
 	return false;
 }
 
-void CGame::DrawVersion()
+void CGame::draw_version()
 {
 	std::string G_cTxt;
-	G_cTxt = std::format("Ver: {}", hb::version::GetDisplayString());
-	hb::shared::text::DrawText(GameFont::Default, 12 , (LOGICAL_HEIGHT() - 12 - 14) , G_cTxt.c_str(), hb::shared::text::TextStyle::WithShadow(GameColors::UIDisabled));
+	G_cTxt = std::format("Ver: {}", hb::version::get_display_string());
+	hb::shared::text::draw_text(GameFont::Default, 12 , (LOGICAL_HEIGHT() - 12 - 14) , G_cTxt.c_str(), hb::shared::text::TextStyle::with_shadow(GameColors::UIDisabled));
 }
 
-char CGame::GetOfficialMapName(const char* pMapName, char* pName)
+char CGame::get_official_map_name(const char* map_name, char* name)
 {	// MapIndex
-	if (strcmp(pMapName, "middleland") == 0)
+	if (strcmp(map_name, "middleland") == 0)
 	{
-		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME28);	// Middleland
+		std::snprintf(name, 21, "%s", GET_OFFICIAL_MAP_NAME28);	// Middleland
 		return 4;
 	}
-	else if (strcmp(pMapName, "huntzone3") == 0)
+	else if (strcmp(map_name, "huntzone3") == 0)
 	{
-		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME31);	// Death Valley
+		std::snprintf(name, 21, "%s", GET_OFFICIAL_MAP_NAME31);	// Death Valley
 		return 0;
 	}
-	else if (strcmp(pMapName, "huntzone1") == 0)
+	else if (strcmp(map_name, "huntzone1") == 0)
 	{
-		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME29);	// Rocky Highland
+		std::snprintf(name, 21, "%s", GET_OFFICIAL_MAP_NAME29);	// Rocky Highland
 		return 1;
 	}
-	else if (strcmp(pMapName, "elvuni") == 0)
+	else if (strcmp(map_name, "elvuni") == 0)
 	{
-		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME57);	// Eldiniel Garden
+		std::snprintf(name, 21, "%s", GET_OFFICIAL_MAP_NAME57);	// Eldiniel Garden
 		return 2;
 	}
-	else if (strcmp(pMapName, "elvine") == 0)
+	else if (strcmp(map_name, "elvine") == 0)
 	{
-		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME24);	// Elvine City
+		std::snprintf(name, 21, "%s", GET_OFFICIAL_MAP_NAME24);	// Elvine City
 		return 3;
 	}
-	else if (strcmp(pMapName, "elvfarm") == 0)
+	else if (strcmp(map_name, "elvfarm") == 0)
 	{
-		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME2);	// Elvine Farm
+		std::snprintf(name, 21, "%s", GET_OFFICIAL_MAP_NAME2);	// Elvine Farm
 		return 5;
 	}
-	else if (strcmp(pMapName, "arefarm") == 0)
+	else if (strcmp(map_name, "arefarm") == 0)
 	{
-		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME1);	// Aresden Farm
+		std::snprintf(name, 21, "%s", GET_OFFICIAL_MAP_NAME1);	// Aresden Farm
 		return 6;
 	}
-	else if (strcmp(pMapName, "default") == 0)
+	else if (strcmp(map_name, "default") == 0)
 	{
-		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME3);	// Beginner Zone
+		std::snprintf(name, 21, "%s", GET_OFFICIAL_MAP_NAME3);	// Beginner Zone
 		return 7;
 	}
-	else if (strcmp(pMapName, "huntzone4") == 0)
+	else if (strcmp(map_name, "huntzone4") == 0)
 	{
-		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME32);	// Silent Wood
+		std::snprintf(name, 21, "%s", GET_OFFICIAL_MAP_NAME32);	// Silent Wood
 		return 8;
 	}
-	else if (strcmp(pMapName, "huntzone2") == 0)
+	else if (strcmp(map_name, "huntzone2") == 0)
 	{
-		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME30);	// Eternal Field
+		std::snprintf(name, 21, "%s", GET_OFFICIAL_MAP_NAME30);	// Eternal Field
 		return 9;
 	}
-	else if (strcmp(pMapName, "areuni") == 0)
+	else if (strcmp(map_name, "areuni") == 0)
 	{
-		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME56);	// Aresien Garden
+		std::snprintf(name, 21, "%s", GET_OFFICIAL_MAP_NAME56);	// Aresien Garden
 		return 10;
 	}
-	else if (strcmp(pMapName, "aresden") == 0)
+	else if (strcmp(map_name, "aresden") == 0)
 	{
-		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME22);	// Aresden City
+		std::snprintf(name, 21, "%s", GET_OFFICIAL_MAP_NAME22);	// Aresden City
 		return 11;
 	}
-	else if (strcmp(pMapName, "dglv2") == 0)
+	else if (strcmp(map_name, "dglv2") == 0)
 	{
-		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME25);	// Dungeon L2
+		std::snprintf(name, 21, "%s", GET_OFFICIAL_MAP_NAME25);	// Dungeon L2
 		return 12;
 	}
-	else if (strcmp(pMapName, "dglv3") == 0)
+	else if (strcmp(map_name, "dglv3") == 0)
 	{
-		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME26);	// Dungeon L3
+		std::snprintf(name, 21, "%s", GET_OFFICIAL_MAP_NAME26);	// Dungeon L3
 		return 13;
 	}
-	else if (strcmp(pMapName, "dglv4") == 0)
+	else if (strcmp(map_name, "dglv4") == 0)
 	{
-		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME53);	// Dungeon L4
+		std::snprintf(name, 21, "%s", GET_OFFICIAL_MAP_NAME53);	// Dungeon L4
 		return 14;
 	}
-	else if (strcmp(pMapName, "elvined1") == 0)
+	else if (strcmp(map_name, "elvined1") == 0)
 	{
-		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME23);	// Elvine Dungeon
+		std::snprintf(name, 21, "%s", GET_OFFICIAL_MAP_NAME23);	// Elvine Dungeon
 		return 15;
 	}
-	else if (strcmp(pMapName, "aresdend1") == 0)
+	else if (strcmp(map_name, "aresdend1") == 0)
 	{
-		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME21);	// Aresden Dungeon
+		std::snprintf(name, 21, "%s", GET_OFFICIAL_MAP_NAME21);	// Aresden Dungeon
 		return 16;
 	}
-	else if (strcmp(pMapName, "bisle") == 0) {
-		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME27);	// Bleeding Island
+	else if (strcmp(map_name, "bisle") == 0) {
+		std::snprintf(name, 21, "%s", GET_OFFICIAL_MAP_NAME27);	// Bleeding Island
 		return 17;
 	}
-	else if (strcmp(pMapName, "toh1") == 0) {
-		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME60);	// Tower of Hell 1
+	else if (strcmp(map_name, "toh1") == 0) {
+		std::snprintf(name, 21, "%s", GET_OFFICIAL_MAP_NAME60);	// Tower of Hell 1
 		return 18;
 	}
-	else if (strcmp(pMapName, "toh2") == 0)
+	else if (strcmp(map_name, "toh2") == 0)
 	{
-		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME61);	// Tower of Hell 2
+		std::snprintf(name, 21, "%s", GET_OFFICIAL_MAP_NAME61);	// Tower of Hell 2
 		return 19;
 	}
-	else if (strcmp(pMapName, "toh3") == 0)
+	else if (strcmp(map_name, "toh3") == 0)
 	{
-		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME62);	// Tower of Hell 3
+		std::snprintf(name, 21, "%s", GET_OFFICIAL_MAP_NAME62);	// Tower of Hell 3
 		return 20;
 	}
-	else if (strcmp(pMapName, "middled1x") == 0)
+	else if (strcmp(map_name, "middled1x") == 0)
 	{
-		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME58);	// Middleland Mine
+		std::snprintf(name, 21, "%s", GET_OFFICIAL_MAP_NAME58);	// Middleland Mine
 		return 21;
 	}
-	else if (strcmp(pMapName, "middled1n") == 0)
+	else if (strcmp(map_name, "middled1n") == 0)
 	{
-		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME59);	// Middleland Dungeon
+		std::snprintf(name, 21, "%s", GET_OFFICIAL_MAP_NAME59);	// Middleland Dungeon
 		return 22;
 	}
-	else if (strcmp(pMapName, "2ndmiddle") == 0)
+	else if (strcmp(map_name, "2ndmiddle") == 0)
 	{
-		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME65);	// Promiseland
+		std::snprintf(name, 21, "%s", GET_OFFICIAL_MAP_NAME65);	// Promiseland
 		return 23;
 	}
-	else if (strcmp(pMapName, "icebound") == 0)
+	else if (strcmp(map_name, "icebound") == 0)
 	{
-		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME66);	// Ice Map
+		std::snprintf(name, 21, "%s", GET_OFFICIAL_MAP_NAME66);	// Ice Map
 		return 24;
 		// Snoopy:
 	}
-	else if (strcmp(pMapName, "druncncity") == 0) // Snoopy: Apocalypse maps
+	else if (strcmp(map_name, "druncncity") == 0) // Snoopy: Apocalypse maps
 	{
-		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME70);
+		std::snprintf(name, 21, "%s", GET_OFFICIAL_MAP_NAME70);
 		return 25;
 	}
-	else if (strcmp(pMapName, "inferniaA") == 0)
+	else if (strcmp(map_name, "inferniaA") == 0)
 	{
-		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME71);
+		std::snprintf(name, 21, "%s", GET_OFFICIAL_MAP_NAME71);
 		return 26;
 	}
-	else if (strcmp(pMapName, "inferniaB") == 0)
+	else if (strcmp(map_name, "inferniaB") == 0)
 	{
-		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME72);
+		std::snprintf(name, 21, "%s", GET_OFFICIAL_MAP_NAME72);
 		return 27;
 	}
-	else if (strcmp(pMapName, "maze") == 0)
+	else if (strcmp(map_name, "maze") == 0)
 	{
-		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME73);
+		std::snprintf(name, 21, "%s", GET_OFFICIAL_MAP_NAME73);
 		return 28;
 	}
-	else if (strcmp(pMapName, "procella") == 0)
+	else if (strcmp(map_name, "procella") == 0)
 	{
-		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME74);
+		std::snprintf(name, 21, "%s", GET_OFFICIAL_MAP_NAME74);
 		return 29;
 	}
-	else if (strcmp(pMapName, "abaddon") == 0)
+	else if (strcmp(map_name, "abaddon") == 0)
 	{
-		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME75);
+		std::snprintf(name, 21, "%s", GET_OFFICIAL_MAP_NAME75);
 		return 30;
 	}
-	else if (strcmp(pMapName, "BtField") == 0)
+	else if (strcmp(map_name, "BtField") == 0)
 	{
-		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME76);
+		std::snprintf(name, 21, "%s", GET_OFFICIAL_MAP_NAME76);
 		return 35;
 	}
-	else if (strcmp(pMapName, "GodH") == 0)
+	else if (strcmp(map_name, "GodH") == 0)
 	{
-		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME77);
+		std::snprintf(name, 21, "%s", GET_OFFICIAL_MAP_NAME77);
 		return 36;
 	}
-	else if (strcmp(pMapName, "HRampart") == 0)
+	else if (strcmp(map_name, "HRampart") == 0)
 	{
-		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME78);
+		std::snprintf(name, 21, "%s", GET_OFFICIAL_MAP_NAME78);
 		return 37;
 	}
-	else if (strcmp(pMapName, "cityhall_1") == 0)
+	else if (strcmp(map_name, "cityhall_1") == 0)
 	{
-		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME35);	// Aresden Cityhall
+		std::snprintf(name, 21, "%s", GET_OFFICIAL_MAP_NAME35);	// Aresden Cityhall
 		return -1;
 	}
-	else if (strcmp(pMapName, "cityhall_2") == 0)
+	else if (strcmp(map_name, "cityhall_2") == 0)
 	{
-		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME36);	// Elvine Cityhall
+		std::snprintf(name, 21, "%s", GET_OFFICIAL_MAP_NAME36);	// Elvine Cityhall
 		return -1;
 	}
-	else if (strcmp(pMapName, "gldhall_1") == 0)
+	else if (strcmp(map_name, "gldhall_1") == 0)
 	{
-		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME37);	// Aresden Guildhall
+		std::snprintf(name, 21, "%s", GET_OFFICIAL_MAP_NAME37);	// Aresden Guildhall
 		return -1;
 	}
-	else if (strcmp(pMapName, "gldhall_2") == 0)
+	else if (strcmp(map_name, "gldhall_2") == 0)
 	{
-		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME38);	// Elvine Guildhall
+		std::snprintf(name, 21, "%s", GET_OFFICIAL_MAP_NAME38);	// Elvine Guildhall
 		return -1;
 	}
-	else if (strcmp(pMapName, "bsmith_1") == 0)
+	else if (strcmp(map_name, "bsmith_1") == 0)
 	{
-		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME33);	// Aresden Blacksmith
+		std::snprintf(name, 21, "%s", GET_OFFICIAL_MAP_NAME33);	// Aresden Blacksmith
 		return -1;
 	}
-	else if (strcmp(pMapName, "bsmith_2") == 0)
+	else if (strcmp(map_name, "bsmith_2") == 0)
 	{
-		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME34);	// Elvine Blacksmith
+		std::snprintf(name, 21, "%s", GET_OFFICIAL_MAP_NAME34);	// Elvine Blacksmith
 		return -1;
 	}
-	else if (strcmp(pMapName, "gshop_1") == 0)
+	else if (strcmp(map_name, "gshop_1") == 0)
 	{
-		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME39);	// Aresden Shop
+		std::snprintf(name, 21, "%s", GET_OFFICIAL_MAP_NAME39);	// Aresden Shop
 		return -1;
 	}
-	else if (strcmp(pMapName, "gshop_2") == 0)
+	else if (strcmp(map_name, "gshop_2") == 0)
 	{
-		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME40);	// Elvine Shop
+		std::snprintf(name, 21, "%s", GET_OFFICIAL_MAP_NAME40);	// Elvine Shop
 		return -1;
 	}
-	else if (strcmp(pMapName, "wrhus_1") == 0)
+	else if (strcmp(map_name, "wrhus_1") == 0)
 	{
-		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME43);	// Aresden Warehouse
+		std::snprintf(name, 21, "%s", GET_OFFICIAL_MAP_NAME43);	// Aresden Warehouse
 		return -1;
 	}
-	else if (strcmp(pMapName, "wrhus_2") == 0)
+	else if (strcmp(map_name, "wrhus_2") == 0)
 	{
-		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME44);	// Elvine Warehouse
+		std::snprintf(name, 21, "%s", GET_OFFICIAL_MAP_NAME44);	// Elvine Warehouse
 		return -1;
 	}
-	else if (strcmp(pMapName, "arewrhus") == 0)
+	else if (strcmp(map_name, "arewrhus") == 0)
 	{
-		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME45);	// Aresden Warehouse
+		std::snprintf(name, 21, "%s", GET_OFFICIAL_MAP_NAME45);	// Aresden Warehouse
 		return -1;
 	}
-	else if (strcmp(pMapName, "elvwrhus") == 0)
+	else if (strcmp(map_name, "elvwrhus") == 0)
 	{
-		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME46);	// Elvine Warehouse
+		std::snprintf(name, 21, "%s", GET_OFFICIAL_MAP_NAME46);	// Elvine Warehouse
 		return -1;
 	}
-	else if (strcmp(pMapName, "wzdtwr_1") == 0)
+	else if (strcmp(map_name, "wzdtwr_1") == 0)
 	{
-		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME41);	// Magic Tower
+		std::snprintf(name, 21, "%s", GET_OFFICIAL_MAP_NAME41);	// Magic Tower
 		return -1;
 	}
-	else if (strcmp(pMapName, "wzdtwr_2") == 0)
+	else if (strcmp(map_name, "wzdtwr_2") == 0)
 	{
-		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME42);	// Magic Tower
+		std::snprintf(name, 21, "%s", GET_OFFICIAL_MAP_NAME42);	// Magic Tower
 		return -1;
 	}
-	else if (strcmp(pMapName, "cath_1") == 0)
+	else if (strcmp(map_name, "cath_1") == 0)
 	{
-		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME47);	// Aresien Church
+		std::snprintf(name, 21, "%s", GET_OFFICIAL_MAP_NAME47);	// Aresien Church
 		return -1;
 	}
-	else if (strcmp(pMapName, "cath_2") == 0)
+	else if (strcmp(map_name, "cath_2") == 0)
 	{
-		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME48);	// Eldiniel Church
+		std::snprintf(name, 21, "%s", GET_OFFICIAL_MAP_NAME48);	// Eldiniel Church
 		return -1;
 	}
-	else if (strcmp(pMapName, "resurr1") == 0)
+	else if (strcmp(map_name, "resurr1") == 0)
 	{
-		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME54);	// Revival Zone
+		std::snprintf(name, 21, "%s", GET_OFFICIAL_MAP_NAME54);	// Revival Zone
 		return -1;
 	}
-	else if (strcmp(pMapName, "resurr2") == 0)
+	else if (strcmp(map_name, "resurr2") == 0)
 	{
-		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME55);	// Revival Zone
+		std::snprintf(name, 21, "%s", GET_OFFICIAL_MAP_NAME55);	// Revival Zone
 		return -1;
 	}
-	else if (strcmp(pMapName, "arebrk11") == 0)
+	else if (strcmp(map_name, "arebrk11") == 0)
 	{
-		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME4);	// Aresden Barrack 1
+		std::snprintf(name, 21, "%s", GET_OFFICIAL_MAP_NAME4);	// Aresden Barrack 1
 		return -1;
 	}
-	else if (strcmp(pMapName, "arebrk12") == 0)
+	else if (strcmp(map_name, "arebrk12") == 0)
 	{
-		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME5);	// Aresden Barrack 1
+		std::snprintf(name, 21, "%s", GET_OFFICIAL_MAP_NAME5);	// Aresden Barrack 1
 		return -1;
 	}
-	else if (strcmp(pMapName, "arebrk21") == 0)
+	else if (strcmp(map_name, "arebrk21") == 0)
 	{
-		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME6);	// Aresden Barrack 2
+		std::snprintf(name, 21, "%s", GET_OFFICIAL_MAP_NAME6);	// Aresden Barrack 2
 		return -1;
 	}
-	else if (strcmp(pMapName, "arebrk22") == 0)
+	else if (strcmp(map_name, "arebrk22") == 0)
 	{
-		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME7);	// Aresden Barrack 2
+		std::snprintf(name, 21, "%s", GET_OFFICIAL_MAP_NAME7);	// Aresden Barrack 2
 		return -1;
 	}
-	else if (strcmp(pMapName, "elvbrk11") == 0)
+	else if (strcmp(map_name, "elvbrk11") == 0)
 	{
-		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME8);	// Elvine Barrack 1
+		std::snprintf(name, 21, "%s", GET_OFFICIAL_MAP_NAME8);	// Elvine Barrack 1
 		return -1;
 	}
-	else if (strcmp(pMapName, "elvbrk12") == 0)
+	else if (strcmp(map_name, "elvbrk12") == 0)
 	{
-		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME9);	// Elvine Barrack 1
+		std::snprintf(name, 21, "%s", GET_OFFICIAL_MAP_NAME9);	// Elvine Barrack 1
 		return -1;
 	}
-	else if (strcmp(pMapName, "elvbrk21") == 0)
+	else if (strcmp(map_name, "elvbrk21") == 0)
 	{
-		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME10);	// Elvine Barrack 2
+		std::snprintf(name, 21, "%s", GET_OFFICIAL_MAP_NAME10);	// Elvine Barrack 2
 		return -1;
 	}
-	else if (strcmp(pMapName, "elvbrk22") == 0)
+	else if (strcmp(map_name, "elvbrk22") == 0)
 	{
-		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME11);	// Elvine Barrack 2
+		std::snprintf(name, 21, "%s", GET_OFFICIAL_MAP_NAME11);	// Elvine Barrack 2
 		return -1;
 	}
-	else if (strcmp(pMapName, "fightzone1") == 0)
+	else if (strcmp(map_name, "fightzone1") == 0)
 	{
-		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME12);	// Arena 1
+		std::snprintf(name, 21, "%s", GET_OFFICIAL_MAP_NAME12);	// Arena 1
 		return -1;
 	}
-	else if (strcmp(pMapName, "fightzone2") == 0)
+	else if (strcmp(map_name, "fightzone2") == 0)
 	{
-		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME13);	// Arena 2
+		std::snprintf(name, 21, "%s", GET_OFFICIAL_MAP_NAME13);	// Arena 2
 		return -1;
 	}
-	else if (strcmp(pMapName, "fightzone3") == 0)
+	else if (strcmp(map_name, "fightzone3") == 0)
 	{
-		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME14);	// Arena 3
+		std::snprintf(name, 21, "%s", GET_OFFICIAL_MAP_NAME14);	// Arena 3
 		return -1;
 	}
-	else if (strcmp(pMapName, "fightzone4") == 0)
+	else if (strcmp(map_name, "fightzone4") == 0)
 	{
-		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME15);	// Arena 4
+		std::snprintf(name, 21, "%s", GET_OFFICIAL_MAP_NAME15);	// Arena 4
 		return -1;
 	}
-	else if (strcmp(pMapName, "fightzone5") == 0)
+	else if (strcmp(map_name, "fightzone5") == 0)
 	{
-		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME16);	// Arena 5
+		std::snprintf(name, 21, "%s", GET_OFFICIAL_MAP_NAME16);	// Arena 5
 		return -1;
 	}
-	else if (strcmp(pMapName, "fightzone6") == 0)
+	else if (strcmp(map_name, "fightzone6") == 0)
 	{
-		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME17);	// Arena 6
+		std::snprintf(name, 21, "%s", GET_OFFICIAL_MAP_NAME17);	// Arena 6
 		return -1;
 	}
-	else if (strcmp(pMapName, "fightzone7") == 0)
+	else if (strcmp(map_name, "fightzone7") == 0)
 	{
-		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME18);	// Arena 7
+		std::snprintf(name, 21, "%s", GET_OFFICIAL_MAP_NAME18);	// Arena 7
 		return -1;
 	}
-	else if (strcmp(pMapName, "fightzone8") == 0)
+	else if (strcmp(map_name, "fightzone8") == 0)
 	{
-		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME19);	// Arena 8
+		std::snprintf(name, 21, "%s", GET_OFFICIAL_MAP_NAME19);	// Arena 8
 		return -1;
 	}
-	else if (strcmp(pMapName, "fightzone9") == 0)
+	else if (strcmp(map_name, "fightzone9") == 0)
 	{
-		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME20);	// Arena 9
+		std::snprintf(name, 21, "%s", GET_OFFICIAL_MAP_NAME20);	// Arena 9
 		return -1;
 	}
-	else if (strcmp(pMapName, "arejail") == 0)
+	else if (strcmp(map_name, "arejail") == 0)
 	{
-		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME63);	// Aresden Jail
+		std::snprintf(name, 21, "%s", GET_OFFICIAL_MAP_NAME63);	// Aresden Jail
 		return -1;
 	}
-	else if (strcmp(pMapName, "elvjail") == 0)
+	else if (strcmp(map_name, "elvjail") == 0)
 	{
-		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME64);	// Elvine Jail
+		std::snprintf(name, 21, "%s", GET_OFFICIAL_MAP_NAME64);	// Elvine Jail
 		return -1;
 	}
-	else if (strcmp(pMapName, "CmdHall_1") == 0) // Snoopy: Commander Halls
+	else if (strcmp(map_name, "CmdHall_1") == 0) // Snoopy: Commander Halls
 	{
-		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME79);
+		std::snprintf(name, 21, "%s", GET_OFFICIAL_MAP_NAME79);
 		return -1;
 	}
-	else if (strcmp(pMapName, "CmdHall_2") == 0)
+	else if (strcmp(map_name, "CmdHall_2") == 0)
 	{
-		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME79);
+		std::snprintf(name, 21, "%s", GET_OFFICIAL_MAP_NAME79);
 		return -1;
 	}
 	else
 	{
-		std::snprintf(pName, 21, "%s", pMapName);
+		std::snprintf(name, 21, "%s", map_name);
 		return -1;
 	}
 }
 
-bool CGame::bCheckLocalChatCommand(const char* pMsg)
+bool CGame::check_local_chat_command(const char* pMsg)
 {
-	return ChatCommandManager::Get().ProcessCommand(pMsg);
+	return ChatCommandManager::get().process_command(pMsg);
 }
 
-void CGame::ClearSkillUsingStatus()
+void CGame::clear_skill_using_status()
 {
-	if (m_bSkillUsingStatus == true)
+	if (m_skill_using_status == true)
 	{
-		AddEventList(CLEAR_SKILL_USING_STATUS1, 10);//"
-		m_dialogBoxManager.DisableDialogBox(DialogBoxId::Fishing);
-		m_dialogBoxManager.DisableDialogBox(DialogBoxId::Manufacture);
-		if ((m_pPlayer->m_sPlayerType >= 1) && (m_pPlayer->m_sPlayerType <= 6)/* && (!m_pPlayer->m_playerAppearance.bIsWalking)*/) {
-			m_pPlayer->m_Controller.SetCommand(Type::Stop);
-			m_pPlayer->m_Controller.SetDestination(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY);
+		add_event_list(CLEAR_SKILL_USING_STATUS1, 10);//"
+		m_dialog_box_manager.disable_dialog_box(DialogBoxId::Fishing);
+		m_dialog_box_manager.disable_dialog_box(DialogBoxId::Manufacture);
+		if ((m_player->m_player_type >= 1) && (m_player->m_player_type <= 6)/* && (!m_player->m_playerAppearance.is_walking)*/) {
+			m_player->m_Controller.set_command(Type::stop);
+			m_player->m_Controller.set_destination(m_player->m_player_x, m_player->m_player_y);
 		}
 	}
-	m_bSkillUsingStatus = false;
+	m_skill_using_status = false;
 }
 
-void CGame::NpcTalkHandler(char* packet_data)
+void CGame::npc_talk_handler(char* packet_data)
 {
 	std::string text;
 
@@ -5653,109 +5638,109 @@ void CGame::NpcTalkHandler(char* packet_data)
 	memcpy(reward_name, pkt->reward_name, hb::shared::limits::ItemNameLen - 1);
 	memcpy(target_name, pkt->target_name, 20);
 
-	m_dialogBoxManager.EnableDialogBox(DialogBoxId::NpcTalk, response, npc_type, 0);
+	m_dialog_box_manager.enable_dialog_box(DialogBoxId::NpcTalk, response, npc_type, 0);
 
 	if ((npc_type >= 1) && (npc_type <= 100))
 	{
-		index = m_dialogBoxManager.Info(DialogBoxId::NpcTalk).sV1;
-		m_pMsgTextList2[index] = std::make_unique<CMsg>(0, "  ", 0);
+		index = m_dialog_box_manager.Info(DialogBoxId::NpcTalk).m_v1;
+		m_msg_text_list2[index] = std::make_unique<CMsg>(0, "  ", 0);
 		index++;
 		question_type = 0;
 		switch (npc_type) {
 		case 1: //Monster Hunt
-			std::snprintf(temp, hb::shared::limits::NpcNameLen, "%s", GetNpcConfigName(target_type));
+			std::snprintf(temp, hb::shared::limits::NpcNameLen, "%s", get_npc_config_name(target_type));
 			text = std::format(NPC_TALK_HANDLER16, target_count, temp);
-			m_pMsgTextList2[index] = std::make_unique<CMsg>(0, text.c_str(), 0);
+			m_msg_text_list2[index] = std::make_unique<CMsg>(0, text.c_str(), 0);
 			index++;
 
 			if (memcmp(target_name, "NONE", 4) == 0) {
 				text = NPC_TALK_HANDLER17;//"
-				m_pMsgTextList2[index] = std::make_unique<CMsg>(0, text.c_str(), 0);
+				m_msg_text_list2[index] = std::make_unique<CMsg>(0, text.c_str(), 0);
 				index++;
 			}
 			else {
 				std::memset(temp, 0, sizeof(temp));
-				GetOfficialMapName(target_name, temp);
+				get_official_map_name(target_name, temp);
 				text = std::format(NPC_TALK_HANDLER18, temp);//"Map : %s"
-				m_pMsgTextList2[index] = std::make_unique<CMsg>(0, text.c_str(), 0);
+				m_msg_text_list2[index] = std::make_unique<CMsg>(0, text.c_str(), 0);
 				index++;
 
 				if (target_x != 0) {
 					text = std::format(NPC_TALK_HANDLER19, target_x, target_y, target_range);//"Position: %d,%d within %d blocks"
-					m_pMsgTextList2[index] = std::make_unique<CMsg>(0, text.c_str(), 0);
+					m_msg_text_list2[index] = std::make_unique<CMsg>(0, text.c_str(), 0);
 					index++;
 				}
 
 				text = std::format(NPC_TALK_HANDLER20, contribution);//"
-				m_pMsgTextList2[index] = std::make_unique<CMsg>(0, text.c_str(), 0);
+				m_msg_text_list2[index] = std::make_unique<CMsg>(0, text.c_str(), 0);
 				index++;
 			}
 			question_type = 1;
 			break;
 
 		case 7: //
-			m_pMsgTextList2[index] = std::make_unique<CMsg>(0, NPC_TALK_HANDLER21, 0);
+			m_msg_text_list2[index] = std::make_unique<CMsg>(0, NPC_TALK_HANDLER21, 0);
 			index++;
 
 			if (memcmp(target_name, "NONE", 4) == 0) {
 				text = NPC_TALK_HANDLER22;
-				m_pMsgTextList2[index] = std::make_unique<CMsg>(0, text.c_str(), 0);
+				m_msg_text_list2[index] = std::make_unique<CMsg>(0, text.c_str(), 0);
 				index++;
 			}
 			else {
 				std::memset(temp, 0, sizeof(temp));
-				GetOfficialMapName(target_name, temp);
+				get_official_map_name(target_name, temp);
 				text = std::format(NPC_TALK_HANDLER23, temp);
-				m_pMsgTextList2[index] = std::make_unique<CMsg>(0, text.c_str(), 0);
+				m_msg_text_list2[index] = std::make_unique<CMsg>(0, text.c_str(), 0);
 				index++;
 
 				if (target_x != 0) {
 					text = std::format(NPC_TALK_HANDLER24, target_x, target_y, target_range);
-					m_pMsgTextList2[index] = std::make_unique<CMsg>(0, text.c_str(), 0);
+					m_msg_text_list2[index] = std::make_unique<CMsg>(0, text.c_str(), 0);
 					index++;
 				}
 
 				text = std::format(NPC_TALK_HANDLER25, contribution);
-				m_pMsgTextList2[index] = std::make_unique<CMsg>(0, text.c_str(), 0);
+				m_msg_text_list2[index] = std::make_unique<CMsg>(0, text.c_str(), 0);
 				index++;
 			}
 			question_type = 1;
 			break;
 
 		case hb::shared::owner::Slime: // Crusade
-			m_pMsgTextList2[index] = std::make_unique<CMsg>(0, NPC_TALK_HANDLER26, 0);
+			m_msg_text_list2[index] = std::make_unique<CMsg>(0, NPC_TALK_HANDLER26, 0);
 			index++;
 
 			text = NPC_TALK_HANDLER27;//"
-			m_pMsgTextList2[index] = std::make_unique<CMsg>(0, text.c_str(), 0);
+			m_msg_text_list2[index] = std::make_unique<CMsg>(0, text.c_str(), 0);
 			index++;
 
 			text = NPC_TALK_HANDLER28;//"
-			m_pMsgTextList2[index] = std::make_unique<CMsg>(0, text.c_str(), 0);
+			m_msg_text_list2[index] = std::make_unique<CMsg>(0, text.c_str(), 0);
 			index++;
 
 			text = NPC_TALK_HANDLER29;//"
-			m_pMsgTextList2[index] = std::make_unique<CMsg>(0, text.c_str(), 0);
+			m_msg_text_list2[index] = std::make_unique<CMsg>(0, text.c_str(), 0);
 			index++;
 
 			text = NPC_TALK_HANDLER30;//"
-			m_pMsgTextList2[index] = std::make_unique<CMsg>(0, text.c_str(), 0);
+			m_msg_text_list2[index] = std::make_unique<CMsg>(0, text.c_str(), 0);
 			index++;
 
 			text = " ";
-			m_pMsgTextList2[index] = std::make_unique<CMsg>(0, text.c_str(), 0);
+			m_msg_text_list2[index] = std::make_unique<CMsg>(0, text.c_str(), 0);
 			index++;
 
 			if (memcmp(target_name, "NONE", 4) == 0) {
 				text = NPC_TALK_HANDLER31;//"
-				m_pMsgTextList2[index] = std::make_unique<CMsg>(0, text.c_str(), 0);
+				m_msg_text_list2[index] = std::make_unique<CMsg>(0, text.c_str(), 0);
 				index++;
 			}
 			else {
 				std::memset(temp, 0, sizeof(temp));
-				GetOfficialMapName(target_name, temp);
+				get_official_map_name(target_name, temp);
 				text = std::format(NPC_TALK_HANDLER32, temp);//"
-				m_pMsgTextList2[index] = std::make_unique<CMsg>(0, text.c_str(), 0);
+				m_msg_text_list2[index] = std::make_unique<CMsg>(0, text.c_str(), 0);
 				index++;
 			}
 			question_type = 2;
@@ -5764,22 +5749,22 @@ void CGame::NpcTalkHandler(char* packet_data)
 
 		switch (question_type) {
 		case 1:
-			m_pMsgTextList2[index] = std::make_unique<CMsg>(0, "  ", 0);
+			m_msg_text_list2[index] = std::make_unique<CMsg>(0, "  ", 0);
 			index++;
-			m_pMsgTextList2[index] = std::make_unique<CMsg>(0, NPC_TALK_HANDLER33, 0);//"
+			m_msg_text_list2[index] = std::make_unique<CMsg>(0, NPC_TALK_HANDLER33, 0);//"
 			index++;
-			m_pMsgTextList2[index] = std::make_unique<CMsg>(0, NPC_TALK_HANDLER34, 0);//"
+			m_msg_text_list2[index] = std::make_unique<CMsg>(0, NPC_TALK_HANDLER34, 0);//"
 			index++;
-			m_pMsgTextList2[index] = std::make_unique<CMsg>(0, "  ", 0);
+			m_msg_text_list2[index] = std::make_unique<CMsg>(0, "  ", 0);
 			index++;
 			break;
 
 		case 2:
-			m_pMsgTextList2[index] = std::make_unique<CMsg>(0, "  ", 0);
+			m_msg_text_list2[index] = std::make_unique<CMsg>(0, "  ", 0);
 			index++;
-			m_pMsgTextList2[index] = std::make_unique<CMsg>(0, NPC_TALK_HANDLER35, 0);//"
+			m_msg_text_list2[index] = std::make_unique<CMsg>(0, NPC_TALK_HANDLER35, 0);//"
 			index++;
-			m_pMsgTextList2[index] = std::make_unique<CMsg>(0, "  ", 0);
+			m_msg_text_list2[index] = std::make_unique<CMsg>(0, "  ", 0);
 			index++;
 			break;
 
@@ -5788,104 +5773,104 @@ void CGame::NpcTalkHandler(char* packet_data)
 	}
 }
 
-void CGame::PointCommandHandler(int indexX, int indexY, char cItemID)
+void CGame::point_command_handler(int indexX, int indexY, char item_id)
 {
-	char cTemp[31];
-	if ((m_iPointCommandType >= 100) && (m_iPointCommandType < 200))
+	char temp[31];
+	if ((m_point_command_type >= 100) && (m_point_command_type < 200))
 	{
-		// Get target object ID for auto-aim (lag compensation)
+		// get target object ID for auto-aim (lag compensation)
 		// If player clicked on an entity, send its ID so server can track its current position
 		int targetObjectID = 0;
 		const FocusedObject& focused = CursorTarget::GetFocusedObject();
-		if (focused.valid && (focused.type == FocusedObjectType::Player || focused.type == FocusedObjectType::NPC))
+		if (focused.m_valid && (focused.m_type == FocusedObjectType::Player || focused.m_type == FocusedObjectType::NPC))
 		{
-			targetObjectID = focused.objectID;
+			targetObjectID = focused.m_object_id;
 		}
-		bSendCommand(MsgId::CommandCommon, CommonType::Magic, 0, indexX, indexY, m_iPointCommandType, nullptr, targetObjectID);
+		send_command(MsgId::CommandCommon, CommonType::Magic, 0, indexX, indexY, m_point_command_type, nullptr, targetObjectID);
 	}
-	else if ((m_iPointCommandType >= 0) && (m_iPointCommandType < 50))
+	else if ((m_point_command_type >= 0) && (m_point_command_type < 50))
 	{
-		bSendCommand(MsgId::CommandCommon, CommonType::ReqUseItem, 0, m_iPointCommandType, indexX, indexY, cTemp, cItemID); // v1.4
+		send_command(MsgId::CommandCommon, CommonType::ReqUseItem, 0, m_point_command_type, indexX, indexY, temp, item_id); // v1.4
 
-		CItem* pCfgPt = GetItemConfig(m_pItemList[m_iPointCommandType]->m_sIDnum);
-		if (pCfgPt && pCfgPt->GetItemType() == ItemType::UseSkill)
-			m_bSkillUsingStatus = true;
+		CItem* cfg_pt = get_item_config(m_item_list[m_point_command_type]->m_id_num);
+		if (cfg_pt && cfg_pt->get_item_type() == ItemType::UseSkill)
+			m_skill_using_status = true;
 	}
-	else if (m_iPointCommandType == 200) // Normal Hand
+	else if (m_point_command_type == 200) // Normal Hand
 	{
-		if ((m_cMCName.size() == 0) || (m_cMCName == m_pPlayer->m_cPlayerName) || (m_cMCName[0] == '_'))
+		if ((m_mc_name.size() == 0) || (m_mc_name == m_player->m_player_name) || (m_mc_name[0] == '_'))
 		{
-			m_dialogBoxManager.Info(DialogBoxId::Party).cMode = 0;
-			PlayGameSound('E', 14, 5);
-			AddEventList(POINT_COMMAND_HANDLER1, 10);
+			m_dialog_box_manager.Info(DialogBoxId::Party).m_mode = 0;
+			play_game_sound('E', 14, 5);
+			add_event_list(POINT_COMMAND_HANDLER1, 10);
 		}
 		else
 		{
-			m_dialogBoxManager.Info(DialogBoxId::Party).cMode = 3;
-			PlayGameSound('E', 14, 5);
-			std::snprintf(m_dialogBoxManager.Info(DialogBoxId::Party).cStr, sizeof(m_dialogBoxManager.Info(DialogBoxId::Party).cStr), "%s", m_cMCName.c_str());
-			bSendCommand(MsgId::CommandCommon, CommonType::RequestJoinParty, 0, 1, 0, 0, m_cMCName.c_str());
+			m_dialog_box_manager.Info(DialogBoxId::Party).m_mode = 3;
+			play_game_sound('E', 14, 5);
+			std::snprintf(m_dialog_box_manager.Info(DialogBoxId::Party).m_str, sizeof(m_dialog_box_manager.Info(DialogBoxId::Party).m_str), "%s", m_mc_name.c_str());
+			send_command(MsgId::CommandCommon, CommonType::RequestJoinParty, 0, 1, 0, 0, m_mc_name.c_str());
 			return;
 		}
 	}
 }
 
 
-void CGame::StartBGM()
+void CGame::start_bgm()
 {
 	// Determine track name based on current location
 	const char* trackName = "maintm";
 
-	if ((m_bIsXmas == true) && (WeatherManager::Get().IsSnowing()))
+	if ((m_is_xmas == true) && (weather_manager::get().is_snowing()))
 	{
 		trackName = "carol";
 	}
-	else if (m_cCurLocation.starts_with("aresden"))
+	else if (m_cur_location.starts_with("aresden"))
 	{
 		trackName = "aresden";
 	}
-	else if (m_cCurLocation.starts_with("elvine"))
+	else if (m_cur_location.starts_with("elvine"))
 	{
 		trackName = "elvine";
 	}
-	else if (m_cCurLocation.starts_with("dglv"))
+	else if (m_cur_location.starts_with("dglv"))
 	{
 		trackName = "dungeon";
 	}
-	else if (m_cCurLocation.starts_with("middled1"))
+	else if (m_cur_location.starts_with("middled1"))
 	{
 		trackName = "dungeon";
 	}
-	else if (m_cCurLocation.starts_with("middleland"))
+	else if (m_cur_location.starts_with("middleland"))
 	{
 		trackName = "middleland";
 	}
-	else if (m_cCurLocation.starts_with("druncncity"))
+	else if (m_cur_location.starts_with("druncncity"))
 	{
 		trackName = "druncncity";
 	}
-	else if (m_cCurLocation.starts_with("inferniaA"))
+	else if (m_cur_location.starts_with("inferniaA"))
 	{
 		trackName = "middleland";
 	}
-	else if (m_cCurLocation.starts_with("inferniaB"))
+	else if (m_cur_location.starts_with("inferniaB"))
 	{
 		trackName = "middleland";
 	}
-	else if (m_cCurLocation.starts_with("maze"))
+	else if (m_cur_location.starts_with("maze"))
 	{
 		trackName = "dungeon";
 	}
-	else if (m_cCurLocation.starts_with("abaddon"))
+	else if (m_cur_location.starts_with("abaddon"))
 	{
 		trackName = "abaddon";
 	}
 
-	// Forward to AudioManager
-	AudioManager::Get().PlayMusic(trackName);
+	// Forward to audio_manager
+	audio_manager::get().play_music(trackName);
 }
 
-void CGame::MotionResponseHandler(char* packet_data)
+void CGame::motion_response_handler(char* packet_data)
 {
 	WORD response = 0;
 	short map_x = 0, map_y = 0;
@@ -5901,33 +5886,33 @@ void CGame::MotionResponseHandler(char* packet_data)
 
 	switch (response) {
 	case Confirm::MotionConfirm:
-		m_pPlayer->m_Controller.DecrementCommandCount();
+		m_player->m_Controller.decrement_command_count();
 		break;
 
 	case Confirm::MotionAttackConfirm:
-		m_pPlayer->m_Controller.DecrementCommandCount();
+		m_player->m_Controller.decrement_command_count();
 		break;
 
 	case Confirm::MotionReject:
-		if (m_pPlayer->m_iHP <= 0) return;
+		if (m_player->m_hp <= 0) return;
 		{
 			const auto* pkt = hb::net::PacketCast<hb::net::PacketResponseMotionReject>(
 				packet_data, sizeof(hb::net::PacketResponseMotionReject));
 			if (!pkt) return;
-			m_pPlayer->m_sPlayerX = pkt->x;
-			m_pPlayer->m_sPlayerY = pkt->y;
+			m_player->m_player_x = pkt->x;
+			m_player->m_player_y = pkt->y;
 		}
 
-		m_pPlayer->m_Controller.SetCommand(Type::Stop);
-		m_pPlayer->m_Controller.SetDestination(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY);
+		m_player->m_Controller.set_command(Type::stop);
+		m_player->m_Controller.set_destination(m_player->m_player_x, m_player->m_player_y);
 
-		m_pMapData->bSetOwner(m_pPlayer->m_sPlayerObjectID, m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pPlayer->m_sPlayerType, m_pPlayer->m_iPlayerDir,
-			m_pPlayer->m_playerAppearance,
-			m_pPlayer->m_playerStatus, m_pPlayer->m_cPlayerName,
-			Type::Stop, 0, 0, 0);
-		m_pPlayer->m_Controller.ResetCommandCount();
-		m_bIsGetPointingMode = false;
-		m_Camera.SnapTo((m_pPlayer->m_sPlayerX - VIEW_CENTER_TILE_X()) * 32 - 16, (m_pPlayer->m_sPlayerY - VIEW_CENTER_TILE_Y()) * 32 - 16);
+		m_map_data->set_owner(m_player->m_player_object_id, m_player->m_player_x, m_player->m_player_y, m_player->m_player_type, m_player->m_player_dir,
+			m_player->m_playerAppearance,
+			m_player->m_playerStatus, m_player->m_player_name,
+			Type::stop, 0, 0, 0);
+		m_player->m_Controller.reset_command_count();
+		m_is_get_pointing_mode = false;
+		m_Camera.snap_to((m_player->m_player_x - VIEW_CENTER_TILE_X()) * 32 - 16, (m_player->m_player_y - VIEW_CENTER_TILE_Y()) * 32 - 16);
 		break;
 
 	case Confirm::MoveConfirm:
@@ -5938,154 +5923,154 @@ void CGame::MotionResponseHandler(char* packet_data)
 		map_x = pkt->x;
 		map_y = pkt->y;
 		direction = static_cast<char>(pkt->dir);
-		m_pPlayer->m_iSP = m_pPlayer->m_iSP - pkt->stamina_cost;
-		if (m_pPlayer->m_iSP < 0) m_pPlayer->m_iSP = 0;
-		previous_hp = m_pPlayer->m_iHP;
-		m_pPlayer->m_iHP = pkt->hp;
+		m_player->m_sp = m_player->m_sp - pkt->stamina_cost;
+		if (m_player->m_sp < 0) m_player->m_sp = 0;
+		previous_hp = m_player->m_hp;
+		m_player->m_hp = pkt->hp;
 
-		if (m_pPlayer->m_iHP != previous_hp)
+		if (m_player->m_hp != previous_hp)
 		{
 			std::string G_cTxt;
-			if (m_pPlayer->m_iHP < previous_hp)
+			if (m_player->m_hp < previous_hp)
 			{
-				G_cTxt = std::format(NOTIFYMSG_HP_DOWN, previous_hp - m_pPlayer->m_iHP);
-				AddEventList(G_cTxt.c_str(), 10);
-				m_dwDamagedTime = GameClock::GetTimeMS();
-				if ((m_logout_count > 0) && (m_bForceDisconn == false))
+				G_cTxt = std::format(NOTIFYMSG_HP_DOWN, previous_hp - m_player->m_hp);
+				add_event_list(G_cTxt.c_str(), 10);
+				m_damaged_time = GameClock::get_time_ms();
+				if ((m_logout_count > 0) && (m_force_disconn == false))
 				{
 					m_logout_count = -1;
-					AddEventList(MOTION_RESPONSE_HANDLER2, 10);
+					add_event_list(MOTION_RESPONSE_HANDLER2, 10);
 				}
 			}
 			else
 			{
-				G_cTxt = std::format(NOTIFYMSG_HP_UP, m_pPlayer->m_iHP - previous_hp);
-				AddEventList(G_cTxt.c_str(), 10);
+				G_cTxt = std::format(NOTIFYMSG_HP_UP, m_player->m_hp - previous_hp);
+				add_event_list(G_cTxt.c_str(), 10);
 			}
 		}
-		m_pMapData->ShiftMapData(direction);
+		m_map_data->shift_map_data(direction);
 		const char* mapData = reinterpret_cast<const char*>(packet_data) + sizeof(hb::net::PacketResponseMotionMoveConfirm);
-		_ReadMapData(map_x, map_y, mapData);
-		m_pPlayer->m_Controller.DecrementCommandCount();
+		read_map_data(map_x, map_y, mapData);
+		m_player->m_Controller.decrement_command_count();
 	}
 	break;
 
 	case Confirm::MoveReject:
-		if (m_pPlayer->m_iHP <= 0) return;
+		if (m_player->m_hp <= 0) return;
 		{
 			const auto* pkt = hb::net::PacketCast<hb::net::PacketResponseMotionMoveReject>(
 				packet_data, sizeof(hb::net::PacketResponseMotionMoveReject));
 			if (!pkt) return;
-			if (m_pPlayer->m_sPlayerObjectID != pkt->object_id) return;
-			m_pPlayer->m_sPlayerX = pkt->x;
-			m_pPlayer->m_sPlayerY = pkt->y;
-			m_pPlayer->m_sPlayerType = pkt->type;
-			m_pPlayer->m_iPlayerDir = static_cast<char>(pkt->dir);
-			m_pPlayer->m_playerAppearance = pkt->appearance;
-			m_pPlayer->m_playerStatus = pkt->status;
-			m_pPlayer->m_bIsGMMode = m_pPlayer->m_playerStatus.bGMMode;
+			if (m_player->m_player_object_id != pkt->object_id) return;
+			m_player->m_player_x = pkt->x;
+			m_player->m_player_y = pkt->y;
+			m_player->m_player_type = pkt->type;
+			m_player->m_player_dir = static_cast<char>(pkt->dir);
+			m_player->m_playerAppearance = pkt->appearance;
+			m_player->m_playerStatus = pkt->status;
+			m_player->m_is_gm_mode = m_player->m_playerStatus.gm_mode;
 		}
-		m_pPlayer->m_Controller.SetCommand(Type::Stop);
-		m_pPlayer->m_Controller.SetDestination(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY);
-		m_pMapData->bSetOwner(m_pPlayer->m_sPlayerObjectID, m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pPlayer->m_sPlayerType, m_pPlayer->m_iPlayerDir,
-			m_pPlayer->m_playerAppearance, // v1.4
-			m_pPlayer->m_playerStatus, m_pPlayer->m_cPlayerName,
-			Type::Stop, 0, 0, 0,
+		m_player->m_Controller.set_command(Type::stop);
+		m_player->m_Controller.set_destination(m_player->m_player_x, m_player->m_player_y);
+		m_map_data->set_owner(m_player->m_player_object_id, m_player->m_player_x, m_player->m_player_y, m_player->m_player_type, m_player->m_player_dir,
+			m_player->m_playerAppearance, // v1.4
+			m_player->m_playerStatus, m_player->m_player_name,
+			Type::stop, 0, 0, 0,
 			0, 7);
-		m_pPlayer->m_Controller.ResetCommandCount();
-		m_bIsGetPointingMode = false;
-		m_Camera.SnapTo((m_pPlayer->m_sPlayerX - VIEW_CENTER_TILE_X()) * 32 - 16, (m_pPlayer->m_sPlayerY - VIEW_CENTER_TILE_Y()) * 32 - 16);
-		m_pPlayer->m_Controller.SetPrevMoveBlocked(true);
-		switch (m_pPlayer->m_sPlayerType) {
+		m_player->m_Controller.reset_command_count();
+		m_is_get_pointing_mode = false;
+		m_Camera.snap_to((m_player->m_player_x - VIEW_CENTER_TILE_X()) * 32 - 16, (m_player->m_player_y - VIEW_CENTER_TILE_Y()) * 32 - 16);
+		m_player->m_Controller.set_prev_move_blocked(true);
+		switch (m_player->m_player_type) {
 		case 1:
 		case 2:
 		case 3:
-			PlayGameSound('C', 12, 0);
+			play_game_sound('C', 12, 0);
 			break;
 		case 4:
 		case 5:
 		case 6:
-			PlayGameSound('C', 13, 0);
+			play_game_sound('C', 13, 0);
 			break;
 		}
 		break;
 	}
 }
 
-void CGame::CommandProcessor(short mouse_x, short mouse_y, short tile_x, short tile_y, char left_button, char right_button)
+void CGame::command_processor(short mouse_x, short mouse_y, short tile_x, short tile_y, char left_button, char right_button)
 {
-	uint32_t current_time = GameClock::GetTimeMS();
+	uint32_t current_time = GameClock::get_time_ms();
 	uint16_t action_type = 0;
 	int result = 0;
 	short dialog_x = 0, dialog_y = 0;
 	char direction = 0;
 
 	// Fixed by Snoopy
-	if ((m_bIsObserverCommanded == false) && (m_bIsObserverMode == true))
+	if ((m_is_observer_commanded == false) && (m_is_observer_mode == true))
 	{
-		if ((mouse_x == 0) && (mouse_y == 0) && (m_Camera.GetDestinationX() > 32 * VIEW_TILE_WIDTH()) && (m_Camera.GetDestinationY() > 32 * VIEW_TILE_HEIGHT()))
-			bSendCommand(MsgId::RequestPanning, 0, 8, 0, 0, 0, 0);
-		else if ((mouse_x == LOGICAL_MAX_X()) && (mouse_y == 0) && (m_Camera.GetDestinationX() < 32 * m_pMapData->m_sMapSizeX - 32 * VIEW_TILE_WIDTH()) && (m_Camera.GetDestinationY() > 32 * VIEW_TILE_HEIGHT()))
-			bSendCommand(MsgId::RequestPanning, 0, 2, 0, 0, 0, 0);
-		else if ((mouse_x == LOGICAL_MAX_X()) && (mouse_y == LOGICAL_MAX_Y()) && (m_Camera.GetDestinationX() < 32 * m_pMapData->m_sMapSizeX - 32 * VIEW_TILE_WIDTH()) && (m_Camera.GetDestinationY() < 32 * m_pMapData->m_sMapSizeY - 32 * VIEW_TILE_HEIGHT()))
-			bSendCommand(MsgId::RequestPanning, 0, 4, 0, 0, 0, 0);
+		if ((mouse_x == 0) && (mouse_y == 0) && (m_Camera.get_destination_x() > 32 * VIEW_TILE_WIDTH()) && (m_Camera.get_destination_y() > 32 * VIEW_TILE_HEIGHT()))
+			send_command(MsgId::RequestPanning, 0, 8, 0, 0, 0, 0);
+		else if ((mouse_x == LOGICAL_MAX_X()) && (mouse_y == 0) && (m_Camera.get_destination_x() < 32 * m_map_data->m_map_size_x - 32 * VIEW_TILE_WIDTH()) && (m_Camera.get_destination_y() > 32 * VIEW_TILE_HEIGHT()))
+			send_command(MsgId::RequestPanning, 0, 2, 0, 0, 0, 0);
+		else if ((mouse_x == LOGICAL_MAX_X()) && (mouse_y == LOGICAL_MAX_Y()) && (m_Camera.get_destination_x() < 32 * m_map_data->m_map_size_x - 32 * VIEW_TILE_WIDTH()) && (m_Camera.get_destination_y() < 32 * m_map_data->m_map_size_y - 32 * VIEW_TILE_HEIGHT()))
+			send_command(MsgId::RequestPanning, 0, 4, 0, 0, 0, 0);
 		else if ((mouse_x == 0) && (mouse_y == LOGICAL_MAX_Y()))
-			bSendCommand(MsgId::RequestPanning, 0, 6, 0, 0, 0, 0);
-		else if ((mouse_x == 0) && (m_Camera.GetDestinationX() > 32 * VIEW_TILE_WIDTH()))
-			bSendCommand(MsgId::RequestPanning, 0, 7, 0, 0, 0, 0);
-		else if ((mouse_x == LOGICAL_MAX_X()) && (m_Camera.GetDestinationX() < 32 * m_pMapData->m_sMapSizeX - 32 * VIEW_TILE_WIDTH()))
-			bSendCommand(MsgId::RequestPanning, 0, 3, 0, 0, 0, 0);
-		else if ((mouse_y == 0) && (m_Camera.GetDestinationY() > 32 * VIEW_TILE_HEIGHT()))
-			bSendCommand(MsgId::RequestPanning, 0, 1, 0, 0, 0, 0);
-		else if ((mouse_y == LOGICAL_MAX_Y()) && (m_Camera.GetDestinationY() < 32 * m_pMapData->m_sMapSizeY - 32 * VIEW_TILE_HEIGHT()))
-			bSendCommand(MsgId::RequestPanning, 0, 5, 0, 0, 0, 0);
+			send_command(MsgId::RequestPanning, 0, 6, 0, 0, 0, 0);
+		else if ((mouse_x == 0) && (m_Camera.get_destination_x() > 32 * VIEW_TILE_WIDTH()))
+			send_command(MsgId::RequestPanning, 0, 7, 0, 0, 0, 0);
+		else if ((mouse_x == LOGICAL_MAX_X()) && (m_Camera.get_destination_x() < 32 * m_map_data->m_map_size_x - 32 * VIEW_TILE_WIDTH()))
+			send_command(MsgId::RequestPanning, 0, 3, 0, 0, 0, 0);
+		else if ((mouse_y == 0) && (m_Camera.get_destination_y() > 32 * VIEW_TILE_HEIGHT()))
+			send_command(MsgId::RequestPanning, 0, 1, 0, 0, 0, 0);
+		else if ((mouse_y == LOGICAL_MAX_Y()) && (m_Camera.get_destination_y() < 32 * m_map_data->m_map_size_y - 32 * VIEW_TILE_HEIGHT()))
+			send_command(MsgId::RequestPanning, 0, 5, 0, 0, 0, 0);
 		else return;
 
-		m_bIsObserverCommanded = true;
-		m_cArrowPressed = 0;
+		m_is_observer_commanded = true;
+		m_arrow_pressed = 0;
 		return;
 	}
 
-	if (m_bIsObserverMode == true) return;
+	if (m_is_observer_mode == true) return;
 
 	if (hb::shared::input::is_alt_down()) // [ALT]
-		m_pPlayer->m_bSuperAttackMode = true;
-	else m_pPlayer->m_bSuperAttackMode = false;
+		m_player->m_super_attack_mode = true;
+	else m_player->m_super_attack_mode = false;
 
 	switch (CursorTarget::GetCursorStatus()) {
 	case CursorStatus::Null:
 		if (left_button != 0)
 		{
-			result = m_dialogBoxManager.HandleMouseDown(mouse_x, mouse_y);
+			result = m_dialog_box_manager.handle_mouse_down(mouse_x, mouse_y);
 			if (result == 1)
 			{
-				CursorTarget::SetCursorStatus(CursorStatus::Selected);
+				CursorTarget::set_cursor_status(CursorStatus::Selected);
 				return;
 			}
 			else if (result == 0)
 			{
-				CursorTarget::SetCursorStatus(CursorStatus::Pressed);
+				CursorTarget::set_cursor_status(CursorStatus::Pressed);
 				// Snoopy: Added Golden LevelUp
 				if ((mouse_x > LEVELUP_TEXT_X()) && (mouse_x < (LEVELUP_TEXT_X())+75) && (mouse_y > LEVELUP_TEXT_Y()) && (mouse_y < (LEVELUP_TEXT_Y())+21))
 				{
-					if (m_pPlayer->m_iHP > 0)
+					if (m_player->m_hp > 0)
 					{
-						if ((m_dialogBoxManager.IsEnabled(DialogBoxId::LevelUpSetting) != true) && (m_pPlayer->m_iLU_Point > 0))
+						if ((m_dialog_box_manager.is_enabled(DialogBoxId::LevelUpSetting) != true) && (m_player->m_lu_point > 0))
 						{
-							m_dialogBoxManager.EnableDialogBox(DialogBoxId::LevelUpSetting, 0, 0, 0);
-							PlayGameSound('E', 14, 5);
+							m_dialog_box_manager.enable_dialog_box(DialogBoxId::LevelUpSetting, 0, 0, 0);
+							play_game_sound('E', 14, 5);
 						}
 					}
 					else // Centuu : restart
 					{
-						if (m_cRestartCount == -1)
+						if (m_restart_count == -1)
 						{
 							std::string G_cTxt;
-							m_cRestartCount = 5;
-							m_dwRestartCountTime = GameClock::GetTimeMS();
-							G_cTxt = std::format(DLGBOX_CLICK_SYSMENU1, m_cRestartCount); // "Restarting game....%d"
-							AddEventList(G_cTxt.c_str(), 10);
-							PlayGameSound('E', 14, 5);
+							m_restart_count = 5;
+							m_restart_count_time = GameClock::get_time_ms();
+							G_cTxt = std::format(DLGBOX_CLICK_SYSMENU1, m_restart_count); // "Restarting game....%d"
+							add_event_list(G_cTxt.c_str(), 10);
+							play_game_sound('E', 14, 5);
 
 						}
 					}
@@ -6095,166 +6080,166 @@ void CGame::CommandProcessor(short mouse_x, short mouse_y, short tile_x, short t
 			else if (result == -1)
 			{
 				// Scroll/slider claimed - set status to prevent re-processing
-				CursorTarget::SetCursorStatus(CursorStatus::Selected);
+				CursorTarget::set_cursor_status(CursorStatus::Selected);
 				return;
 			}
 		}
 		else if (right_button != 0)
 		{
-			if (m_dialogBoxManager.HandleRightClick(mouse_x, mouse_y, current_time)) return;
+			if (m_dialog_box_manager.handle_right_click(mouse_x, mouse_y, current_time)) return;
 		}
 		break;
 	case CursorStatus::Pressed:
 		if (left_button == 0) // Normal Click
 		{
-			CursorTarget::SetCursorStatus(CursorStatus::Null);
+			CursorTarget::set_cursor_status(CursorStatus::Null);
 		}
 		break;
 		case CursorStatus::Selected:
 		if (left_button == 0)
 		{
-			CursorTarget::SetCursorStatus(CursorStatus::Null);
-			bool bDoubleClickConsumed = false;
+			CursorTarget::set_cursor_status(CursorStatus::Null);
+			bool double_click_consumed = false;
 			//ZeroEoyPnk - Bye delay...
-			if (((m_dialogBoxManager.IsEnabled(DialogBoxId::LevelUpSetting) != true) || (CursorTarget::GetSelectedID() != 12))
-				&& ((m_dialogBoxManager.IsEnabled(DialogBoxId::ChangeStatsMajestic) != true) || (CursorTarget::GetSelectedID() != 42)))
+			if (((m_dialog_box_manager.is_enabled(DialogBoxId::LevelUpSetting) != true) || (CursorTarget::get_selected_id() != 12))
+				&& ((m_dialog_box_manager.is_enabled(DialogBoxId::ChangeStatsMajestic) != true) || (CursorTarget::get_selected_id() != 42)))
 			{
-				if (((current_time - CursorTarget::GetSelectionClickTime()) < input_config::double_click_time_ms) 	// Double Click
-					&& (abs(mouse_x - CursorTarget::GetSelectionClickX()) <= input_config::double_click_tolerance)
-					&& (abs(mouse_y - CursorTarget::GetSelectionClickY()) <= input_config::double_click_tolerance))
+				if (((current_time - CursorTarget::get_selection_click_time()) < input_config::double_click_time_ms) 	// Double Click
+					&& (abs(mouse_x - CursorTarget::get_selection_click_x()) <= input_config::double_click_tolerance)
+					&& (abs(mouse_y - CursorTarget::get_selection_click_y()) <= input_config::double_click_tolerance))
 				{
-					CursorTarget::ResetSelectionClickTime(); // Reset to prevent triple-click
-					bDoubleClickConsumed = m_dialogBoxManager.HandleDoubleClick(mouse_x, mouse_y);
+					CursorTarget::reset_selection_click_time(); // reset to prevent triple-click
+					double_click_consumed = m_dialog_box_manager.handle_double_click(mouse_x, mouse_y);
 				}
 				else // Click
 				{
-					m_dialogBoxManager.HandleClick(mouse_x, mouse_y);
+					m_dialog_box_manager.handle_click(mouse_x, mouse_y);
 				}
 			}
 			else
 			{
-				m_dialogBoxManager.HandleClick(mouse_x, mouse_y);
+				m_dialog_box_manager.handle_click(mouse_x, mouse_y);
 			}
-			CursorTarget::RecordSelectionClick(mouse_x, mouse_y, current_time);
-			if (!bDoubleClickConsumed && CursorTarget::GetSelectedType() == SelectedObjectType::Item)
+			CursorTarget::record_selection_click(mouse_x, mouse_y, current_time);
+			if (!double_click_consumed && CursorTarget::GetSelectedType() == SelectedObjectType::Item)
 			{
-				if (!m_dialogBoxManager.HandleDraggingItemRelease(mouse_x, mouse_y))
+				if (!m_dialog_box_manager.handle_dragging_item_release(mouse_x, mouse_y))
 				{
-					bItemDrop_ExternalScreen(static_cast<char>(CursorTarget::GetSelectedID()), mouse_x, mouse_y);
+					item_drop_external_screen(static_cast<char>(CursorTarget::get_selected_id()), mouse_x, mouse_y);
 				}
 			}
 			// Always clear selection after click-release to prevent stale state
-			CursorTarget::ClearSelection();
+			CursorTarget::clear_selection();
 			return;
 		}
 		else 			// v2.05 01-11-30
 		{
-			if ((m_pMapData->bIsTeleportLoc(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY) == true) && (m_pPlayer->m_Controller.GetCommandCount() == 0)) break;
+			if ((m_map_data->is_teleport_loc(m_player->m_player_x, m_player->m_player_y) == true) && (m_player->m_Controller.get_command_count() == 0)) break;
 
-			if ((CursorTarget::GetPrevX() != mouse_x) || (CursorTarget::GetPrevY() != mouse_y))
+			if ((CursorTarget::get_prev_x() != mouse_x) || (CursorTarget::get_prev_y() != mouse_y))
 			{
-				CursorTarget::SetCursorStatus(CursorStatus::Dragging);
-				CursorTarget::SetPrevPosition(mouse_x, mouse_y);
+				CursorTarget::set_cursor_status(CursorStatus::Dragging);
+				CursorTarget::set_prev_position(mouse_x, mouse_y);
 				if ((CursorTarget::GetSelectedType() == SelectedObjectType::DialogBox) &&
-					(CursorTarget::GetSelectedID() == 30))
+					(CursorTarget::get_selected_id() == 30))
 				{
 				}
 
 				if ((CursorTarget::GetSelectedType() == SelectedObjectType::DialogBox) &&
-					(CursorTarget::GetSelectedID() == 7) && (m_dialogBoxManager.Info(DialogBoxId::GuildMenu).cMode == 1))
+					(CursorTarget::get_selected_id() == 7) && (m_dialog_box_manager.Info(DialogBoxId::GuildMenu).m_mode == 1))
 				{
-					TextInputManager::Get().EndInput();
-					m_dialogBoxManager.Info(DialogBoxId::GuildMenu).cMode = 20;
+					text_input_manager::get().end_input();
+					m_dialog_box_manager.Info(DialogBoxId::GuildMenu).m_mode = 20;
 				}
 				// Query Drop Item Amount
 				if ((CursorTarget::GetSelectedType() == SelectedObjectType::DialogBox) &&
-					(CursorTarget::GetSelectedID() == 17) && (m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).cMode == 1))
+					(CursorTarget::get_selected_id() == 17) && (m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_mode == 1))
 				{
-					TextInputManager::Get().EndInput();
-					m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).cMode = 20;
+					text_input_manager::get().end_input();
+					m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_mode = 20;
 				}
 				return;
 			}
-			if ((m_pPlayer->m_Controller.GetCommand() == Type::Move) || (m_pPlayer->m_Controller.GetCommand() == Type::Run)) { ProcessMotionCommands(action_type); return; }
+			if ((m_player->m_Controller.get_command() == Type::Move) || (m_player->m_Controller.get_command() == Type::Run)) { process_motion_commands(action_type); return; }
 			return;
 		}
 		break;
 	case CursorStatus::Dragging:
 		if (left_button != 0)
 		{
-			if ((m_pMapData->bIsTeleportLoc(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY) == true) && (m_pPlayer->m_Controller.GetCommandCount() == 0)) break;
+			if ((m_map_data->is_teleport_loc(m_player->m_player_x, m_player->m_player_y) == true) && (m_player->m_Controller.get_command_count() == 0)) break;
 			if (CursorTarget::GetSelectedType() == SelectedObjectType::DialogBox)
 			{
 				// HudPanel is fixed and cannot be moved
-				if (CursorTarget::GetSelectedID() != DialogBoxId::HudPanel)
+				if (CursorTarget::get_selected_id() != DialogBoxId::HudPanel)
 				{
-					m_dialogBoxManager.Info(CursorTarget::GetSelectedID()).sX = mouse_x - CursorTarget::GetDragDistX();
-					m_dialogBoxManager.Info(CursorTarget::GetSelectedID()).sY = mouse_y - CursorTarget::GetDragDistY();
+					m_dialog_box_manager.Info(CursorTarget::get_selected_id()).m_x = mouse_x - CursorTarget::get_drag_dist_x();
+					m_dialog_box_manager.Info(CursorTarget::get_selected_id()).m_y = mouse_y - CursorTarget::get_drag_dist_y();
 				}
 			}
-			CursorTarget::SetPrevPosition(mouse_x, mouse_y);
+			CursorTarget::set_prev_position(mouse_x, mouse_y);
 
-			if ((m_pPlayer->m_Controller.GetCommand() == Type::Move) || (m_pPlayer->m_Controller.GetCommand() == Type::Run)) { ProcessMotionCommands(action_type); return; }
+			if ((m_player->m_Controller.get_command() == Type::Move) || (m_player->m_Controller.get_command() == Type::Run)) { process_motion_commands(action_type); return; }
 			return;
 		}
 		if (left_button == 0) {
-			CursorTarget::SetCursorStatus(CursorStatus::Null);
+			CursorTarget::set_cursor_status(CursorStatus::Null);
 			switch (CursorTarget::GetSelectedType()) {
 			case SelectedObjectType::DialogBox:
 				if ((CursorTarget::GetSelectedType() == SelectedObjectType::DialogBox) &&
-					(CursorTarget::GetSelectedID() == 7) && (m_dialogBoxManager.Info(DialogBoxId::GuildMenu).cMode == 20))
+					(CursorTarget::get_selected_id() == 7) && (m_dialog_box_manager.Info(DialogBoxId::GuildMenu).m_mode == 20))
 				{
-					dialog_x = m_dialogBoxManager.Info(DialogBoxId::GuildMenu).sX;
-					dialog_y = m_dialogBoxManager.Info(DialogBoxId::GuildMenu).sY;
-					TextInputManager::Get().StartInput(dialog_x + 75, dialog_y + 140, 21, m_pPlayer->m_cGuildName);
-					m_dialogBoxManager.Info(DialogBoxId::GuildMenu).cMode = 1;
+					dialog_x = m_dialog_box_manager.Info(DialogBoxId::GuildMenu).m_x;
+					dialog_y = m_dialog_box_manager.Info(DialogBoxId::GuildMenu).m_y;
+					text_input_manager::get().start_input(dialog_x + 75, dialog_y + 140, 21, m_player->m_guild_name);
+					m_dialog_box_manager.Info(DialogBoxId::GuildMenu).m_mode = 1;
 				}
 
 				if ((CursorTarget::GetSelectedType() == SelectedObjectType::DialogBox) &&
-					(CursorTarget::GetSelectedID() == 17) && (m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).cMode == 20))
+					(CursorTarget::get_selected_id() == 17) && (m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_mode == 20))
 				{	// Query Drop Item Amount
-					dialog_x = m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sX;
-					dialog_y = m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sY;
-					TextInputManager::Get().StartInput(dialog_x + 40, dialog_y + 57, AmountStringMaxLen, m_cAmountString);
-					m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).cMode = 1;
+					dialog_x = m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_x;
+					dialog_y = m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_y;
+					text_input_manager::get().start_input(dialog_x + 40, dialog_y + 57, AmountStringMaxLen, m_amount_string);
+					m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_mode = 1;
 				}
 
-				if (CursorTarget::GetSelectedID() == 9)
+				if (CursorTarget::get_selected_id() == 9)
 				{
 					{
 						if (mouse_x < 400) //LifeX Fix Map
 						{
-							m_dialogBoxManager.Info(DialogBoxId::GuideMap).sX = 0;
+							m_dialog_box_manager.Info(DialogBoxId::GuideMap).m_x = 0;
 						}
 						else
 						{
-							m_dialogBoxManager.Info(DialogBoxId::GuideMap).sX = LOGICAL_MAX_X() - m_dialogBoxManager.Info(DialogBoxId::GuideMap).sSizeX;
+							m_dialog_box_manager.Info(DialogBoxId::GuideMap).m_x = LOGICAL_MAX_X() - m_dialog_box_manager.Info(DialogBoxId::GuideMap).m_size_x;
 						}
 
 						if (mouse_y < 273)
 						{
-							m_dialogBoxManager.Info(DialogBoxId::GuideMap).sY = 0;
+							m_dialog_box_manager.Info(DialogBoxId::GuideMap).m_y = 0;
 						}
 						else
 						{
-							m_dialogBoxManager.Info(DialogBoxId::GuideMap).sY = 547 - m_dialogBoxManager.Info(DialogBoxId::GuideMap).sSizeY;
+							m_dialog_box_manager.Info(DialogBoxId::GuideMap).m_y = 547 - m_dialog_box_manager.Info(DialogBoxId::GuideMap).m_size_y;
 						}
 					}
 				}
 
-				CursorTarget::ClearSelection();
+				CursorTarget::clear_selection();
 				break;
 
 			case SelectedObjectType::Item:
-				if (!m_dialogBoxManager.HandleDraggingItemRelease(mouse_x, mouse_y))
+				if (!m_dialog_box_manager.handle_dragging_item_release(mouse_x, mouse_y))
 				{
-					bItemDrop_ExternalScreen(static_cast<char>(CursorTarget::GetSelectedID()), mouse_x, mouse_y);
+					item_drop_external_screen(static_cast<char>(CursorTarget::get_selected_id()), mouse_x, mouse_y);
 				}
-				CursorTarget::ClearSelection();
+				CursorTarget::clear_selection();
 				break;
 
 			default:
-				CursorTarget::ClearSelection();
+				CursorTarget::clear_selection();
 				break;
 			}
 			return;
@@ -6263,413 +6248,413 @@ void CGame::CommandProcessor(short mouse_x, short mouse_y, short tile_x, short t
 	}
 
 	// Allow clicks to be responsive even if command not yet available
-	if (m_pPlayer->m_Controller.IsCommandAvailable() == false)
+	if (m_player->m_Controller.is_command_available() == false)
 	{
-		char cmd = m_pPlayer->m_Controller.GetCommand();
-		if (ConfigManager::Get().IsQuickActionsEnabled() && (cmd == Type::Move || cmd == Type::Run))
+		char cmd = m_player->m_Controller.get_command();
+		if (config_manager::get().is_quick_actions_enabled() && (cmd == Type::Move || cmd == Type::Run))
 		{
 			if (left_button != 0)
 			{
 				// Click on self while moving = pickup (interrupt movement)
-				if (m_cMCName == m_pPlayer->m_cPlayerName)
+				if (m_mc_name == m_player->m_player_name)
 				{
-					if ((m_pPlayer->m_sPlayerType >= 1) && (m_pPlayer->m_sPlayerType <= 6))
+					if ((m_player->m_player_type >= 1) && (m_player->m_player_type <= 6))
 					{
-						m_pPlayer->m_Controller.SetCommand(Type::GetItem);
-						m_pPlayer->m_Controller.SetDestination(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY);
+						m_player->m_Controller.set_command(Type::GetItem);
+						m_player->m_Controller.set_destination(m_player->m_player_x, m_player->m_player_y);
 						return;
 					}
 				}
 				// Left click while moving: update destination immediately
-				m_pPlayer->m_Controller.SetDestination(tile_x, tile_y);
+				m_player->m_Controller.set_destination(tile_x, tile_y);
 			}
 			else if (right_button != 0)
 			{
 				// Right click on self while moving = pickup (interrupt movement)
-				if (m_cMCName == m_pPlayer->m_cPlayerName)
+				if (m_mc_name == m_player->m_player_name)
 				{
-					if ((m_pPlayer->m_sPlayerType >= 1) && (m_pPlayer->m_sPlayerType <= 6))
+					if ((m_player->m_player_type >= 1) && (m_player->m_player_type <= 6))
 					{
-						m_pPlayer->m_Controller.SetCommand(Type::GetItem);
-						m_pPlayer->m_Controller.SetDestination(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY);
+						m_player->m_Controller.set_command(Type::GetItem);
+						m_player->m_Controller.set_destination(m_player->m_player_x, m_player->m_player_y);
 						return;
 					}
 				}
 				// Right click while moving: stop after current step and face click direction
-				m_pPlayer->m_Controller.SetDestination(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY);
-				// Save pending direction to apply when movement stops
-				char pendingDir = CMisc::cGetNextMoveDir(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, tile_x, tile_y);
-				if (pendingDir != 0) m_pPlayer->m_Controller.SetPendingStopDir(pendingDir);
+				m_player->m_Controller.set_destination(m_player->m_player_x, m_player->m_player_y);
+				// save pending direction to apply when movement stops
+				char pendingDir = CMisc::get_next_move_dir(m_player->m_player_x, m_player->m_player_y, tile_x, tile_y);
+				if (pendingDir != 0) m_player->m_Controller.set_pending_stop_dir(pendingDir);
 			}
 		}
-		else if (ConfigManager::Get().IsQuickActionsEnabled() && right_button != 0 && cmd == Type::Stop && !m_bIsGetPointingMode)
+		else if (config_manager::get().is_quick_actions_enabled() && right_button != 0 && cmd == Type::stop && !m_is_get_pointing_mode)
 		{
 			// Right click while stopped (and not casting): process turn immediately
 			// But don't interrupt attack/magic animations — the controller command is STOP
 			// after dispatch, but the tile animation may still be playing
-			int dXc = m_pPlayer->m_sPlayerX - m_pMapData->m_sPivotX;
-			int dYc = m_pPlayer->m_sPlayerY - m_pMapData->m_sPivotY;
-			if (dXc >= 0 && dXc < MapDataSizeX && dYc >= 0 && dYc < MapDataSizeY) {
-				int8_t animAction = m_pMapData->m_pData[dXc][dYc].m_animation.cAction;
+			int xc = m_player->m_player_x - m_map_data->m_pivot_x;
+			int yc = m_player->m_player_y - m_map_data->m_pivot_y;
+			if (xc >= 0 && xc < MapDataSizeX && yc >= 0 && yc < MapDataSizeY) {
+				int8_t animAction = m_map_data->m_data[xc][yc].m_animation.m_action;
 				if (animAction == Type::Attack || animAction == Type::AttackMove || animAction == Type::Magic)
 					return;
 			}
-			direction = CMisc::cGetNextMoveDir(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, tile_x, tile_y);
-			if (direction != 0 && m_pPlayer->m_iPlayerDir != direction)
+			direction = CMisc::get_next_move_dir(m_player->m_player_x, m_player->m_player_y, tile_x, tile_y);
+			if (direction != 0 && m_player->m_player_dir != direction)
 			{
-				m_pPlayer->m_iPlayerDir = direction;
-				bSendCommand(MsgId::CommandMotion, Type::Stop, direction, 0, 0, 0, 0);
-				m_pMapData->bSetOwner(m_pPlayer->m_sPlayerObjectID, m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY,
-					m_pPlayer->m_sPlayerType, direction, m_pPlayer->m_playerAppearance,
-					m_pPlayer->m_playerStatus, m_pPlayer->m_cPlayerName, Type::Stop, 0, 0, 0, 0, 10);
-				m_pPlayer->m_Controller.SetCommandTime(current_time);
+				m_player->m_player_dir = direction;
+				send_command(MsgId::CommandMotion, Type::stop, direction, 0, 0, 0, 0);
+				m_map_data->set_owner(m_player->m_player_object_id, m_player->m_player_x, m_player->m_player_y,
+					m_player->m_player_type, direction, m_player->m_playerAppearance,
+					m_player->m_playerStatus, m_player->m_player_name, Type::stop, 0, 0, 0, 0, 10);
+				m_player->m_Controller.set_command_time(current_time);
 			}
 		}
 		return;
 	}
-	if ((current_time - m_pPlayer->m_Controller.GetCommandTime()) < 300)
+	if ((current_time - m_player->m_Controller.get_command_time()) < 300)
 	{
-		m_pGSock.reset();
-		PlayGameSound('E', 14, 5);
-		AudioManager::Get().StopSound(SoundType::Effect, 38);
-		AudioManager::Get().StopMusic();
-		ChangeGameMode(GameMode::MainMenu);
+		m_g_sock.reset();
+		play_game_sound('E', 14, 5);
+		audio_manager::get().stop_sound(sound_type::Effect, 38);
+		audio_manager::get().stop_music();
+		change_game_mode(GameMode::MainMenu);
 		return;
 	}
-	if (m_pPlayer->m_iHP <= 0) return;
+	if (m_player->m_hp <= 0) return;
 
-	if (m_pPlayer->m_sDamageMove != 0)
+	if (m_player->m_damage_move != 0)
 	{
-		m_pPlayer->m_Controller.SetCommand(Type::DamageMove);
-		ProcessMotionCommands(action_type); return;
+		m_player->m_Controller.set_command(Type::DamageMove);
+		process_motion_commands(action_type); return;
 	}
 
-	if ((m_pMapData->bIsTeleportLoc(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY) == true) && (m_pPlayer->m_Controller.GetCommandCount() == 0))
-		RequestTeleportAndWaitData();
+	if ((m_map_data->is_teleport_loc(m_player->m_player_x, m_player->m_player_y) == true) && (m_player->m_Controller.get_command_count() == 0))
+		request_teleport_and_wait_data();
 
 	// indexX, indexY
 
 	if (left_button != 0)
 	{
-		if (ProcessLeftClick(mouse_x, mouse_y, tile_x, tile_y, current_time, action_type)) return;
+		if (process_left_click(mouse_x, mouse_y, tile_x, tile_y, current_time, action_type)) return;
 	}
 	else if (right_button != 0)
 	{
-		if (ProcessRightClick(mouse_x, mouse_y, tile_x, tile_y, current_time, action_type)) return;
+		if (process_right_click(mouse_x, mouse_y, tile_x, tile_y, current_time, action_type)) return;
 	}
 
-	ProcessMotionCommands(action_type);
+	process_motion_commands(action_type);
 }
 
-bool CGame::ProcessLeftClick(short mouse_x, short mouse_y, short tile_x, short tile_y, uint32_t current_time, uint16_t& action_type)
+bool CGame::process_left_click(short mouse_x, short mouse_y, short tile_x, short tile_y, uint32_t current_time, uint16_t& action_type)
 {
 	std::string name;
 	short object_type = 0, dialog_x = 0, dialog_y = 0;
 	hb::shared::entity::PlayerStatus object_status;
 	char abs_x = 0, abs_y = 0;
 
-		if (m_bIsGetPointingMode == true)
+		if (m_is_get_pointing_mode == true)
 		{
-			if ((m_sMCX != 0) || (m_sMCY != 0))
-				PointCommandHandler(m_sMCX, m_sMCY);
-			else PointCommandHandler(tile_x, tile_y);
+			if ((m_mcx != 0) || (m_mcy != 0))
+				point_command_handler(m_mcx, m_mcy);
+			else point_command_handler(tile_x, tile_y);
 
-			m_pPlayer->m_Controller.SetCommandAvailable(false);
-			m_pPlayer->m_Controller.SetCommandTime(GameClock::GetTimeMS());
-			m_bIsGetPointingMode = false;
-			m_dwMagicCastTime = current_time;  // Track when magic was cast
+			m_player->m_Controller.set_command_available(false);
+			m_player->m_Controller.set_command_time(GameClock::get_time_ms());
+			m_is_get_pointing_mode = false;
+			m_magic_cast_time = current_time;  // Track when magic was cast
 			return true;
 		}
 
 		// Delay after magic cast before allowing held-click actions
-		if (m_dwMagicCastTime > 0 && (current_time - m_dwMagicCastTime) < 750) return true;
+		if (m_magic_cast_time > 0 && (current_time - m_magic_cast_time) < 750) return true;
 
-		m_pMapData->bGetOwner(m_sMCX, m_sMCY - 1, name, &object_type, &object_status, &m_wCommObjectID); // v1.4
-		if (m_cMCName == m_pPlayer->m_cPlayerName && (object_type <= 6 || (m_pMapData->m_pData[m_pPlayer->m_sPlayerX - m_pMapData->m_sPivotX][m_pPlayer->m_sPlayerY - m_pMapData->m_sPivotY].m_sItemID != 0 && m_pItemConfigList[m_pMapData->m_pData[m_pPlayer->m_sPlayerX - m_pMapData->m_sPivotX][m_pPlayer->m_sPlayerY - m_pMapData->m_sPivotY].m_sItemID]->m_sSprite != 0)))
+		m_map_data->get_owner(m_mcx, m_mcy - 1, name, &object_type, &object_status, &m_comm_object_id); // v1.4
+		if (m_mc_name == m_player->m_player_name && (object_type <= 6 || (m_map_data->m_data[m_player->m_player_x - m_map_data->m_pivot_x][m_player->m_player_y - m_map_data->m_pivot_y].m_item_id != 0 && m_item_config_list[m_map_data->m_data[m_player->m_player_x - m_map_data->m_pivot_x][m_player->m_player_y - m_map_data->m_pivot_y].m_item_id]->m_sprite != 0)))
 		{
-			if ((m_pPlayer->m_sPlayerType >= 1) && (m_pPlayer->m_sPlayerType <= 6)/* && (!m_pPlayer->m_playerAppearance.bIsWalking)*/)
+			if ((m_player->m_player_type >= 1) && (m_player->m_player_type <= 6)/* && (!m_player->m_playerAppearance.is_walking)*/)
 			{
-				m_pPlayer->m_Controller.SetCommand(Type::GetItem);
-				m_pPlayer->m_Controller.SetDestination(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY);
+				m_player->m_Controller.set_command(Type::GetItem);
+				m_player->m_Controller.set_destination(m_player->m_player_x, m_player->m_player_y);
 			}
 		}
 		else
 		{
-			if (m_cMCName == m_pPlayer->m_cPlayerName) m_sMCY -= 1;
-			if ((m_sMCX != 0) && (m_sMCY != 0)) // m_sMCX, m_sMCY
+			if (m_mc_name == m_player->m_player_name) m_mcy -= 1;
+			if ((m_mcx != 0) && (m_mcy != 0)) // m_mcx, m_mcy
 			{
 				if (hb::shared::input::is_ctrl_down() == true)
 				{
-					m_pMapData->bGetOwner(m_sMCX, m_sMCY, name, &object_type, &object_status, &m_wCommObjectID);
-					if (object_status.bInvisibility) return true;
+					m_map_data->get_owner(m_mcx, m_mcy, name, &object_type, &object_status, &m_comm_object_id);
+					if (object_status.invisibility) return true;
 					if ((object_type == 15) || (object_type == 20) || (object_type == 24)) return true;
-					abs_x = abs(m_pPlayer->m_sPlayerX - m_sMCX);
-					abs_y = abs(m_pPlayer->m_sPlayerY - m_sMCY);
+					abs_x = abs(m_player->m_player_x - m_mcx);
+					abs_y = abs(m_player->m_player_y - m_mcy);
 					if ((abs_x <= 1) && (abs_y <= 1))
 					{
-						action_type = CombatSystem::Get().GetAttackType();
-						m_pPlayer->m_Controller.SetCommand(Type::Attack);
-						m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
+						action_type = combat_system::get().get_attack_type();
+						m_player->m_Controller.set_command(Type::Attack);
+						m_player->m_Controller.set_destination(m_mcx, m_mcy);
 					}
 					else if ((abs_x <= 2) && (abs_y <= 2) // strike on Big mobs & gate from a range
 						&& ((object_type == 66) || (object_type == 73) || (object_type == 81) || (object_type == 91)))
 					{
-						action_type = CombatSystem::Get().GetAttackType();
-						m_pPlayer->m_Controller.SetCommand(Type::Attack);
-						m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
+						action_type = combat_system::get().get_attack_type();
+						m_player->m_Controller.set_command(Type::Attack);
+						m_player->m_Controller.set_destination(m_mcx, m_mcy);
 					}
 					else // Pas au corp � corp
 					{
-						switch (CombatSystem::Get().GetWeaponSkillType()) {
+						switch (combat_system::get().get_weapon_skill_type()) {
 						case 6: // Bow
-							m_pPlayer->m_Controller.SetCommand(Type::Attack);
-							m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
-							action_type = CombatSystem::Get().GetAttackType();
+							m_player->m_Controller.set_command(Type::Attack);
+							m_player->m_Controller.set_destination(m_mcx, m_mcy);
+							action_type = combat_system::get().get_attack_type();
 							break;
 
 						case 5: // OpenHand
 						case 7: // SS
 							if (((abs_x == 2) && (abs_y == 2)) || ((abs_x == 0) && (abs_y == 2)) || ((abs_x == 2) && (abs_y == 0)))
 							{
-								if ((hb::shared::input::is_shift_down() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0))
+								if ((hb::shared::input::is_shift_down() || config_manager::get().is_running_mode_enabled()) && (m_player->m_sp > 0))
 								{
-									if (m_pPlayer->m_iSkillMastery[CombatSystem::Get().GetWeaponSkillType()] == 100)
+									if (m_player->m_skill_mastery[combat_system::get().get_weapon_skill_type()] == 100)
 									{
-										m_pPlayer->m_Controller.SetCommand(Type::AttackMove);
-										action_type = CombatSystem::Get().GetAttackType();
+										m_player->m_Controller.set_command(Type::AttackMove);
+										action_type = combat_system::get().get_attack_type();
 									}
 									else
 									{
-										m_pPlayer->m_Controller.SetCommand(Type::Run);
-										m_pPlayer->m_Controller.CalculatePlayerTurn(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pMapData.get());
+										m_player->m_Controller.set_command(Type::Run);
+										m_player->m_Controller.calculate_player_turn(m_player->m_player_x, m_player->m_player_y, m_map_data.get());
 									}
-									m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
+									m_player->m_Controller.set_destination(m_mcx, m_mcy);
 								}
 								else
 								{
-									m_pPlayer->m_Controller.SetCommand(Type::Move);
-									m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
-									m_pPlayer->m_Controller.CalculatePlayerTurn(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pMapData.get());
+									m_player->m_Controller.set_command(Type::Move);
+									m_player->m_Controller.set_destination(m_mcx, m_mcy);
+									m_player->m_Controller.calculate_player_turn(m_player->m_player_x, m_player->m_player_y, m_map_data.get());
 								}
 							}
 							else
 							{
-								if ((hb::shared::input::is_shift_down() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0)
-									&& (m_pPlayer->m_sPlayerType >= 1) && (m_pPlayer->m_sPlayerType <= 6))
-									m_pPlayer->m_Controller.SetCommand(Type::Run);	// Staminar
-								else m_pPlayer->m_Controller.SetCommand(Type::Move);
-								m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
-								m_pPlayer->m_Controller.CalculatePlayerTurn(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pMapData.get());
+								if ((hb::shared::input::is_shift_down() || config_manager::get().is_running_mode_enabled()) && (m_player->m_sp > 0)
+									&& (m_player->m_player_type >= 1) && (m_player->m_player_type <= 6))
+									m_player->m_Controller.set_command(Type::Run);	// Staminar
+								else m_player->m_Controller.set_command(Type::Move);
+								m_player->m_Controller.set_destination(m_mcx, m_mcy);
+								m_player->m_Controller.calculate_player_turn(m_player->m_player_x, m_player->m_player_y, m_map_data.get());
 							}
 							break;
 
 						case 8: // LS
-							if ((abs_x <= 3) && (abs_y <= 3) && CombatSystem::Get().CanSuperAttack()
-								&& (CombatSystem::Get().GetAttackType() != 30)) // Crit without StormBlade
+							if ((abs_x <= 3) && (abs_y <= 3) && combat_system::get().can_super_attack()
+								&& (combat_system::get().get_attack_type() != 30)) // Crit without StormBlade
 							{
-								action_type = CombatSystem::Get().GetAttackType();
-								m_pPlayer->m_Controller.SetCommand(Type::Attack);
-								m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
+								action_type = combat_system::get().get_attack_type();
+								m_player->m_Controller.set_command(Type::Attack);
+								m_player->m_Controller.set_destination(m_mcx, m_mcy);
 							}
-							else if ((abs_x <= 5) && (abs_y <= 5) && CombatSystem::Get().CanSuperAttack()
-								&& (CombatSystem::Get().GetAttackType() == 30))  // Crit with StormBlade (by Snoopy)
+							else if ((abs_x <= 5) && (abs_y <= 5) && combat_system::get().can_super_attack()
+								&& (combat_system::get().get_attack_type() == 30))  // Crit with StormBlade (by Snoopy)
 							{
-								action_type = CombatSystem::Get().GetAttackType();
-								m_pPlayer->m_Controller.SetCommand(Type::Attack);
-								m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
+								action_type = combat_system::get().get_attack_type();
+								m_player->m_Controller.set_command(Type::Attack);
+								m_player->m_Controller.set_destination(m_mcx, m_mcy);
 							}
 							else if ((abs_x <= 3) && (abs_y <= 3)
-								&& (CombatSystem::Get().GetAttackType() == 5))  // Normal hit with StormBlade (by Snoopy)
+								&& (combat_system::get().get_attack_type() == 5))  // Normal hit with StormBlade (by Snoopy)
 							{
-								action_type = CombatSystem::Get().GetAttackType();
-								m_pPlayer->m_Controller.SetCommand(Type::Attack);
-								m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
+								action_type = combat_system::get().get_attack_type();
+								m_player->m_Controller.set_command(Type::Attack);
+								m_player->m_Controller.set_destination(m_mcx, m_mcy);
 							}
 							else // Swing
 							{
 								if (((abs_x == 2) && (abs_y == 2)) || ((abs_x == 0) && (abs_y == 2)) || ((abs_x == 2) && (abs_y == 0))
-									&& (CombatSystem::Get().GetAttackType() != 5)) // no Dash possible with StormBlade
+									&& (combat_system::get().get_attack_type() != 5)) // no Dash possible with StormBlade
 								{
-									if ((hb::shared::input::is_shift_down() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0))
+									if ((hb::shared::input::is_shift_down() || config_manager::get().is_running_mode_enabled()) && (m_player->m_sp > 0))
 									{
-										if (m_pPlayer->m_iSkillMastery[CombatSystem::Get().GetWeaponSkillType()] == 100)
+										if (m_player->m_skill_mastery[combat_system::get().get_weapon_skill_type()] == 100)
 										{
-											m_pPlayer->m_Controller.SetCommand(Type::AttackMove);
-											action_type = CombatSystem::Get().GetAttackType();
+											m_player->m_Controller.set_command(Type::AttackMove);
+											action_type = combat_system::get().get_attack_type();
 										}
 										else
 										{
-											m_pPlayer->m_Controller.SetCommand(Type::Run);
-											m_pPlayer->m_Controller.CalculatePlayerTurn(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pMapData.get());
+											m_player->m_Controller.set_command(Type::Run);
+											m_player->m_Controller.calculate_player_turn(m_player->m_player_x, m_player->m_player_y, m_map_data.get());
 										}
-										m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
+										m_player->m_Controller.set_destination(m_mcx, m_mcy);
 									}
 									else
 									{
-										m_pPlayer->m_Controller.SetCommand(Type::Move);
-										m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
-										m_pPlayer->m_Controller.CalculatePlayerTurn(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pMapData.get());
+										m_player->m_Controller.set_command(Type::Move);
+										m_player->m_Controller.set_destination(m_mcx, m_mcy);
+										m_player->m_Controller.calculate_player_turn(m_player->m_player_x, m_player->m_player_y, m_map_data.get());
 									}
 								}
 								else
 								{
-									if ((hb::shared::input::is_shift_down() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0)
-										&& (m_pPlayer->m_sPlayerType >= 1) && (m_pPlayer->m_sPlayerType <= 6))
-										m_pPlayer->m_Controller.SetCommand(Type::Run);
-									else m_pPlayer->m_Controller.SetCommand(Type::Move);
-									m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
-									m_pPlayer->m_Controller.CalculatePlayerTurn(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pMapData.get());
+									if ((hb::shared::input::is_shift_down() || config_manager::get().is_running_mode_enabled()) && (m_player->m_sp > 0)
+										&& (m_player->m_player_type >= 1) && (m_player->m_player_type <= 6))
+										m_player->m_Controller.set_command(Type::Run);
+									else m_player->m_Controller.set_command(Type::Move);
+									m_player->m_Controller.set_destination(m_mcx, m_mcy);
+									m_player->m_Controller.calculate_player_turn(m_player->m_player_x, m_player->m_player_y, m_map_data.get());
 								}
 							}
 							break;
 
 						case 9: // Fencing
-							if ((abs_x <= 4) && (abs_y <= 4) && CombatSystem::Get().CanSuperAttack())
+							if ((abs_x <= 4) && (abs_y <= 4) && combat_system::get().can_super_attack())
 							{
-								m_pPlayer->m_Controller.SetCommand(Type::Attack);
-								m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
-								action_type = CombatSystem::Get().GetAttackType();
+								m_player->m_Controller.set_command(Type::Attack);
+								m_player->m_Controller.set_destination(m_mcx, m_mcy);
+								action_type = combat_system::get().get_attack_type();
 							}
 							else {
 								if (((abs_x == 2) && (abs_y == 2)) || ((abs_x == 0) && (abs_y == 2)) || ((abs_x == 2) && (abs_y == 0))) {
-									if ((hb::shared::input::is_shift_down() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0)) {
-										if (m_pPlayer->m_iSkillMastery[CombatSystem::Get().GetWeaponSkillType()] == 100) {
-											m_pPlayer->m_Controller.SetCommand(Type::AttackMove);
-											action_type = CombatSystem::Get().GetAttackType();
+									if ((hb::shared::input::is_shift_down() || config_manager::get().is_running_mode_enabled()) && (m_player->m_sp > 0)) {
+										if (m_player->m_skill_mastery[combat_system::get().get_weapon_skill_type()] == 100) {
+											m_player->m_Controller.set_command(Type::AttackMove);
+											action_type = combat_system::get().get_attack_type();
 										}
 										else {
-											m_pPlayer->m_Controller.SetCommand(Type::Run);
-											m_pPlayer->m_Controller.CalculatePlayerTurn(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pMapData.get());
+											m_player->m_Controller.set_command(Type::Run);
+											m_player->m_Controller.calculate_player_turn(m_player->m_player_x, m_player->m_player_y, m_map_data.get());
 										}
-										m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
+										m_player->m_Controller.set_destination(m_mcx, m_mcy);
 									}
 									else {
-										m_pPlayer->m_Controller.SetCommand(Type::Move);
-										m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
-										m_pPlayer->m_Controller.CalculatePlayerTurn(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pMapData.get());
+										m_player->m_Controller.set_command(Type::Move);
+										m_player->m_Controller.set_destination(m_mcx, m_mcy);
+										m_player->m_Controller.calculate_player_turn(m_player->m_player_x, m_player->m_player_y, m_map_data.get());
 									}
 								}
 								else {
-									if ((hb::shared::input::is_shift_down() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0) &&
-										(m_pPlayer->m_sPlayerType >= 1) && (m_pPlayer->m_sPlayerType <= 6))
-										m_pPlayer->m_Controller.SetCommand(Type::Run);
-									else m_pPlayer->m_Controller.SetCommand(Type::Move);
-									m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
-									m_pPlayer->m_Controller.CalculatePlayerTurn(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pMapData.get());
+									if ((hb::shared::input::is_shift_down() || config_manager::get().is_running_mode_enabled()) && (m_player->m_sp > 0) &&
+										(m_player->m_player_type >= 1) && (m_player->m_player_type <= 6))
+										m_player->m_Controller.set_command(Type::Run);
+									else m_player->m_Controller.set_command(Type::Move);
+									m_player->m_Controller.set_destination(m_mcx, m_mcy);
+									m_player->m_Controller.calculate_player_turn(m_player->m_player_x, m_player->m_player_y, m_map_data.get());
 								}
 							}
 							break;
 
 						case hb::shared::owner::Slime: // Axe
-							if ((abs_x <= 2) && (abs_y <= 2) && CombatSystem::Get().CanSuperAttack())
+							if ((abs_x <= 2) && (abs_y <= 2) && combat_system::get().can_super_attack())
 							{
-								m_pPlayer->m_Controller.SetCommand(Type::Attack);
-								m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
-								action_type = CombatSystem::Get().GetAttackType();
+								m_player->m_Controller.set_command(Type::Attack);
+								m_player->m_Controller.set_destination(m_mcx, m_mcy);
+								action_type = combat_system::get().get_attack_type();
 							}
 							else
 							{
 								if (((abs_x == 2) && (abs_y == 2)) || ((abs_x == 0) && (abs_y == 2)) || ((abs_x == 2) && (abs_y == 0)))
 								{
-									if ((hb::shared::input::is_shift_down() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0))
+									if ((hb::shared::input::is_shift_down() || config_manager::get().is_running_mode_enabled()) && (m_player->m_sp > 0))
 									{
-										if (m_pPlayer->m_iSkillMastery[CombatSystem::Get().GetWeaponSkillType()] == 100)
+										if (m_player->m_skill_mastery[combat_system::get().get_weapon_skill_type()] == 100)
 										{
-											m_pPlayer->m_Controller.SetCommand(Type::AttackMove);
-											action_type = CombatSystem::Get().GetAttackType();
+											m_player->m_Controller.set_command(Type::AttackMove);
+											action_type = combat_system::get().get_attack_type();
 										}
 										else
 										{
-											m_pPlayer->m_Controller.SetCommand(Type::Run);
-											m_pPlayer->m_Controller.CalculatePlayerTurn(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pMapData.get());
+											m_player->m_Controller.set_command(Type::Run);
+											m_player->m_Controller.calculate_player_turn(m_player->m_player_x, m_player->m_player_y, m_map_data.get());
 										}
-										m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
+										m_player->m_Controller.set_destination(m_mcx, m_mcy);
 									}
 									else
 									{
-										m_pPlayer->m_Controller.SetCommand(Type::Move);
-										m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
-										m_pPlayer->m_Controller.CalculatePlayerTurn(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pMapData.get());
+										m_player->m_Controller.set_command(Type::Move);
+										m_player->m_Controller.set_destination(m_mcx, m_mcy);
+										m_player->m_Controller.calculate_player_turn(m_player->m_player_x, m_player->m_player_y, m_map_data.get());
 									}
 								}
 								else
 								{
-									if ((hb::shared::input::is_shift_down() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0) &&
-										(m_pPlayer->m_sPlayerType >= 1) && (m_pPlayer->m_sPlayerType <= 6))
-										m_pPlayer->m_Controller.SetCommand(Type::Run);
-									else m_pPlayer->m_Controller.SetCommand(Type::Move);
-									m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
-									m_pPlayer->m_Controller.CalculatePlayerTurn(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pMapData.get());
+									if ((hb::shared::input::is_shift_down() || config_manager::get().is_running_mode_enabled()) && (m_player->m_sp > 0) &&
+										(m_player->m_player_type >= 1) && (m_player->m_player_type <= 6))
+										m_player->m_Controller.set_command(Type::Run);
+									else m_player->m_Controller.set_command(Type::Move);
+									m_player->m_Controller.set_destination(m_mcx, m_mcy);
+									m_player->m_Controller.calculate_player_turn(m_player->m_player_x, m_player->m_player_y, m_map_data.get());
 								}
 							}
 							break;
 						case hb::shared::owner::OrcMage: // Hammer
-							if ((abs_x <= 2) && (abs_y <= 2) && CombatSystem::Get().CanSuperAttack()) {
-								m_pPlayer->m_Controller.SetCommand(Type::Attack);
-								m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
-								action_type = CombatSystem::Get().GetAttackType();
+							if ((abs_x <= 2) && (abs_y <= 2) && combat_system::get().can_super_attack()) {
+								m_player->m_Controller.set_command(Type::Attack);
+								m_player->m_Controller.set_destination(m_mcx, m_mcy);
+								action_type = combat_system::get().get_attack_type();
 							}
 							else {
 								if (((abs_x == 2) && (abs_y == 2)) || ((abs_x == 0) && (abs_y == 2)) || ((abs_x == 2) && (abs_y == 0))) {
-									if ((hb::shared::input::is_shift_down() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0)) {
-										if (m_pPlayer->m_iSkillMastery[CombatSystem::Get().GetWeaponSkillType()] == 100) {
-											m_pPlayer->m_Controller.SetCommand(Type::AttackMove);
-											action_type = CombatSystem::Get().GetAttackType();
+									if ((hb::shared::input::is_shift_down() || config_manager::get().is_running_mode_enabled()) && (m_player->m_sp > 0)) {
+										if (m_player->m_skill_mastery[combat_system::get().get_weapon_skill_type()] == 100) {
+											m_player->m_Controller.set_command(Type::AttackMove);
+											action_type = combat_system::get().get_attack_type();
 										}
 										else {
-											m_pPlayer->m_Controller.SetCommand(Type::Run);
-											m_pPlayer->m_Controller.CalculatePlayerTurn(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pMapData.get());
+											m_player->m_Controller.set_command(Type::Run);
+											m_player->m_Controller.calculate_player_turn(m_player->m_player_x, m_player->m_player_y, m_map_data.get());
 										}
-										m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
+										m_player->m_Controller.set_destination(m_mcx, m_mcy);
 									}
 									else {
-										m_pPlayer->m_Controller.SetCommand(Type::Move);
-										m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
-										m_pPlayer->m_Controller.CalculatePlayerTurn(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pMapData.get());
+										m_player->m_Controller.set_command(Type::Move);
+										m_player->m_Controller.set_destination(m_mcx, m_mcy);
+										m_player->m_Controller.calculate_player_turn(m_player->m_player_x, m_player->m_player_y, m_map_data.get());
 									}
 								}
 								else {
-									if ((hb::shared::input::is_shift_down() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0) &&
-										(m_pPlayer->m_sPlayerType >= 1) && (m_pPlayer->m_sPlayerType <= 6))
-										m_pPlayer->m_Controller.SetCommand(Type::Run);
-									else m_pPlayer->m_Controller.SetCommand(Type::Move);
-									m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
-									m_pPlayer->m_Controller.CalculatePlayerTurn(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pMapData.get());
+									if ((hb::shared::input::is_shift_down() || config_manager::get().is_running_mode_enabled()) && (m_player->m_sp > 0) &&
+										(m_player->m_player_type >= 1) && (m_player->m_player_type <= 6))
+										m_player->m_Controller.set_command(Type::Run);
+									else m_player->m_Controller.set_command(Type::Move);
+									m_player->m_Controller.set_destination(m_mcx, m_mcy);
+									m_player->m_Controller.calculate_player_turn(m_player->m_player_x, m_player->m_player_y, m_map_data.get());
 								}
 							}
 							break;
 						case hb::shared::owner::Guard: // Wand
-							if ((abs_x <= 2) && (abs_y <= 2) && CombatSystem::Get().CanSuperAttack()) {
-								m_pPlayer->m_Controller.SetCommand(Type::Attack);
-								m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
-								action_type = CombatSystem::Get().GetAttackType();
+							if ((abs_x <= 2) && (abs_y <= 2) && combat_system::get().can_super_attack()) {
+								m_player->m_Controller.set_command(Type::Attack);
+								m_player->m_Controller.set_destination(m_mcx, m_mcy);
+								action_type = combat_system::get().get_attack_type();
 							}
 							else {
 								if (((abs_x == 2) && (abs_y == 2)) || ((abs_x == 0) && (abs_y == 2)) || ((abs_x == 2) && (abs_y == 0))) {
-									if ((hb::shared::input::is_shift_down() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0)) {
-										if (m_pPlayer->m_iSkillMastery[CombatSystem::Get().GetWeaponSkillType()] == 100) {
-											m_pPlayer->m_Controller.SetCommand(Type::AttackMove);
-											action_type = CombatSystem::Get().GetAttackType();
+									if ((hb::shared::input::is_shift_down() || config_manager::get().is_running_mode_enabled()) && (m_player->m_sp > 0)) {
+										if (m_player->m_skill_mastery[combat_system::get().get_weapon_skill_type()] == 100) {
+											m_player->m_Controller.set_command(Type::AttackMove);
+											action_type = combat_system::get().get_attack_type();
 										}
 										else {
-											m_pPlayer->m_Controller.SetCommand(Type::Run);
-											m_pPlayer->m_Controller.CalculatePlayerTurn(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pMapData.get());
+											m_player->m_Controller.set_command(Type::Run);
+											m_player->m_Controller.calculate_player_turn(m_player->m_player_x, m_player->m_player_y, m_map_data.get());
 										}
-										m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
+										m_player->m_Controller.set_destination(m_mcx, m_mcy);
 									}
 									else {
-										m_pPlayer->m_Controller.SetCommand(Type::Move);
-										m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
-										m_pPlayer->m_Controller.CalculatePlayerTurn(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pMapData.get());
+										m_player->m_Controller.set_command(Type::Move);
+										m_player->m_Controller.set_destination(m_mcx, m_mcy);
+										m_player->m_Controller.calculate_player_turn(m_player->m_player_x, m_player->m_player_y, m_map_data.get());
 									}
 								}
 								else {
-									if ((hb::shared::input::is_shift_down() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0) &&
-										(m_pPlayer->m_sPlayerType >= 1) && (m_pPlayer->m_sPlayerType <= 6))
-										m_pPlayer->m_Controller.SetCommand(Type::Run);
-									else m_pPlayer->m_Controller.SetCommand(Type::Move);
-									m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
-									m_pPlayer->m_Controller.CalculatePlayerTurn(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pMapData.get());
+									if ((hb::shared::input::is_shift_down() || config_manager::get().is_running_mode_enabled()) && (m_player->m_sp > 0) &&
+										(m_player->m_player_type >= 1) && (m_player->m_player_type <= 6))
+										m_player->m_Controller.set_command(Type::Run);
+									else m_player->m_Controller.set_command(Type::Move);
+									m_player->m_Controller.set_destination(m_mcx, m_mcy);
+									m_player->m_Controller.calculate_player_turn(m_player->m_player_x, m_player->m_player_y, m_map_data.get());
 								}
 							}
 							break;
@@ -6678,301 +6663,301 @@ bool CGame::ProcessLeftClick(short mouse_x, short mouse_y, short tile_x, short t
 				}
 				else // CTRL not pressed
 				{
-					m_pMapData->bGetOwner(m_sMCX, m_sMCY, name, &object_type, &object_status, &m_wCommObjectID);
+					m_map_data->get_owner(m_mcx, m_mcy, name, &object_type, &object_status, &m_comm_object_id);
 					if (object_type >= 10 || ((object_type >= 1) && (object_type <= 6)))
 					{
 						switch (object_type) { 	// CLEROTH - NPC TALK
 						case hb::shared::owner::ShopKeeper: // ShopKeeper-W�
-							m_dialogBoxManager.EnableDialogBox(DialogBoxId::NpcActionQuery, 5, 11, 1);
+							m_dialog_box_manager.enable_dialog_box(DialogBoxId::NpcActionQuery, 5, 11, 1);
 							dialog_x = mouse_x - 117;
 							dialog_y = mouse_y - 50;
 							if (dialog_x < 0) dialog_x = 0;
 							if ((dialog_x + 235) > LOGICAL_MAX_X()) dialog_x = LOGICAL_MAX_X() - 235;
 							if (dialog_y < 0) dialog_y = 0;
 							if ((dialog_y + 100) > LOGICAL_MAX_Y()) dialog_y = LOGICAL_MAX_Y() - 100;
-							m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sX = dialog_x;
-							m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sY = dialog_y;
-							m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV3 = 15;
+							m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_x = dialog_x;
+							m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_y = dialog_y;
+							m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_v3 = 15;
 							break;
 
 						case hb::shared::owner::Gandalf: // Gandlf
-							m_dialogBoxManager.EnableDialogBox(DialogBoxId::NpcActionQuery, 0, 16, 0);
+							m_dialog_box_manager.enable_dialog_box(DialogBoxId::NpcActionQuery, 0, 16, 0);
 							dialog_x = mouse_x - 117;
 							dialog_y = mouse_y - 50;
 							if (dialog_x < 0) dialog_x = 0;
 							if ((dialog_x + 235) > LOGICAL_MAX_X()) dialog_x = LOGICAL_MAX_X() - 235;
 							if (dialog_y < 0) dialog_y = 0;
 							if ((dialog_y + 100) > LOGICAL_MAX_Y()) dialog_y = LOGICAL_MAX_Y() - 100;
-							m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sX = dialog_x;
-							m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sY = dialog_y;
-							m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV3 = 19;
+							m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_x = dialog_x;
+							m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_y = dialog_y;
+							m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_v3 = 19;
 							break;
 
 						case hb::shared::owner::Howard: // Howard
-							m_dialogBoxManager.EnableDialogBox(DialogBoxId::NpcActionQuery, 0, 14, 0);
+							m_dialog_box_manager.enable_dialog_box(DialogBoxId::NpcActionQuery, 0, 14, 0);
 							dialog_x = mouse_x - 117;
 							dialog_y = mouse_y - 50;
 							if (dialog_x < 0) dialog_x = 0;
 							if ((dialog_x + 235) > LOGICAL_MAX_X()) dialog_x = LOGICAL_MAX_X() - 235;
 							if (dialog_y < 0) dialog_y = 0;
 							if ((dialog_y + 100) > LOGICAL_MAX_Y()) dialog_y = LOGICAL_MAX_Y() - 100;
-							m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sX = dialog_x;
-							m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sY = dialog_y;
-							m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV3 = 20;
-							m_dialogBoxManager.Info(DialogBoxId::GiveItem).sV3 = 20;
-							m_dialogBoxManager.Info(DialogBoxId::GiveItem).sV4 = m_wCommObjectID;
-							m_dialogBoxManager.Info(DialogBoxId::GiveItem).sV5 = m_sMCX;
-							m_dialogBoxManager.Info(DialogBoxId::GiveItem).sV6 = m_sMCY;
+							m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_x = dialog_x;
+							m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_y = dialog_y;
+							m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_v3 = 20;
+							m_dialog_box_manager.Info(DialogBoxId::GiveItem).m_v3 = 20;
+							m_dialog_box_manager.Info(DialogBoxId::GiveItem).m_v4 = m_comm_object_id;
+							m_dialog_box_manager.Info(DialogBoxId::GiveItem).m_v5 = m_mcx;
+							m_dialog_box_manager.Info(DialogBoxId::GiveItem).m_v6 = m_mcy;
 							break;
 
 						case hb::shared::owner::Tom: // Tom
-							m_dialogBoxManager.EnableDialogBox(DialogBoxId::NpcActionQuery, 5, 11, 2);
+							m_dialog_box_manager.enable_dialog_box(DialogBoxId::NpcActionQuery, 5, 11, 2);
 							dialog_x = mouse_x - 117;
 							dialog_y = mouse_y - 50;
 							if (dialog_x < 0) dialog_x = 0;
 							if ((dialog_x + 235) > LOGICAL_MAX_X()) dialog_x = LOGICAL_MAX_X() - 235;
 							if (dialog_y < 0) dialog_y = 0;
 							if ((dialog_y + 100) > LOGICAL_MAX_Y()) dialog_y = LOGICAL_MAX_Y() - 100;
-							m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sX = dialog_x;
-							m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sY = dialog_y;
-							m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV3 = 24;
-							m_dialogBoxManager.Info(DialogBoxId::GiveItem).sV3 = 24;
-							m_dialogBoxManager.Info(DialogBoxId::GiveItem).sV4 = m_wCommObjectID;
-							m_dialogBoxManager.Info(DialogBoxId::GiveItem).sV5 = m_sMCX;
-							m_dialogBoxManager.Info(DialogBoxId::GiveItem).sV6 = m_sMCY;
+							m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_x = dialog_x;
+							m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_y = dialog_y;
+							m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_v3 = 24;
+							m_dialog_box_manager.Info(DialogBoxId::GiveItem).m_v3 = 24;
+							m_dialog_box_manager.Info(DialogBoxId::GiveItem).m_v4 = m_comm_object_id;
+							m_dialog_box_manager.Info(DialogBoxId::GiveItem).m_v5 = m_mcx;
+							m_dialog_box_manager.Info(DialogBoxId::GiveItem).m_v6 = m_mcy;
 							break;
 
 						case hb::shared::owner::William: // William
-							m_dialogBoxManager.EnableDialogBox(DialogBoxId::NpcActionQuery, 0, 13, 0);
+							m_dialog_box_manager.enable_dialog_box(DialogBoxId::NpcActionQuery, 0, 13, 0);
 							dialog_x = mouse_x - 117;
 							dialog_y = mouse_y - 50;
 							if (dialog_x < 0) dialog_x = 0;
 							if ((dialog_x + 235) > LOGICAL_MAX_X()) dialog_x = LOGICAL_MAX_X() - 235;
 							if (dialog_y < 0) dialog_y = 0;
 							if ((dialog_y + 100) > LOGICAL_MAX_Y()) dialog_y = LOGICAL_MAX_Y() - 100;
-							m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sX = dialog_x;
-							m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sY = dialog_y;
-							m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV3 = 25;
+							m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_x = dialog_x;
+							m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_y = dialog_y;
+							m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_v3 = 25;
 							break;
 
 						case hb::shared::owner::Kennedy: // Kennedy
-							m_dialogBoxManager.EnableDialogBox(DialogBoxId::NpcActionQuery, 0, 7, 0);
+							m_dialog_box_manager.enable_dialog_box(DialogBoxId::NpcActionQuery, 0, 7, 0);
 							dialog_x = mouse_x - 117;
 							dialog_y = mouse_y - 50;
 							if (dialog_x < 0) dialog_x = 0;
 							if ((dialog_x + 235) > LOGICAL_MAX_X()) dialog_x = LOGICAL_MAX_X() - 235;
 							if (dialog_y < 0) dialog_y = 0;
 							if ((dialog_y + 100) > LOGICAL_MAX_Y()) dialog_y = LOGICAL_MAX_Y() - 100;
-							m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sX = dialog_x;
-							m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sY = dialog_y;
-							m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV3 = 26;
+							m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_x = dialog_x;
+							m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_y = dialog_y;
+							m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_v3 = 26;
 							break;
 
 						case hb::shared::owner::Guard: // Guard
-							if (!IsHostile(object_status.iRelationship) && (!m_pPlayer->m_bIsCombatMode))
+							if (!IsHostile(object_status.relationship) && (!m_player->m_is_combat_mode))
 							{
-								m_dialogBoxManager.EnableDialogBox(DialogBoxId::NpcActionQuery, 4, 0, 0);
+								m_dialog_box_manager.enable_dialog_box(DialogBoxId::NpcActionQuery, 4, 0, 0);
 								dialog_x = mouse_x - 117;
 								dialog_y = mouse_y - 50;
 								if (dialog_x < 0) dialog_x = 0;
 								if ((dialog_x + 235) > LOGICAL_MAX_X()) dialog_x = LOGICAL_MAX_X() - 235;
 								if (dialog_y < 0) dialog_y = 0;
 								if ((dialog_y + 100) > LOGICAL_MAX_Y()) dialog_y = LOGICAL_MAX_Y() - 100;
-								m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sX = dialog_x;
-								m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sY = dialog_y;
-								m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV3 = 21;
+								m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_x = dialog_x;
+								m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_y = dialog_y;
+								m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_v3 = 21;
 							}
 							break;
 						case hb::shared::owner::McGaffin: // McGaffin
 						case hb::shared::owner::Perry: // Perry
 						case hb::shared::owner::Devlin: // Devlin
-							if (!m_pPlayer->m_bIsCombatMode)
+							if (!m_player->m_is_combat_mode)
 							{
-								m_dialogBoxManager.EnableDialogBox(DialogBoxId::NpcActionQuery, 4, 0, 0);
+								m_dialog_box_manager.enable_dialog_box(DialogBoxId::NpcActionQuery, 4, 0, 0);
 								dialog_x = mouse_x - 117;
 								dialog_y = mouse_y - 50;
 								if (dialog_x < 0) dialog_x = 0;
 								if ((dialog_x + 235) > LOGICAL_MAX_X()) dialog_x = LOGICAL_MAX_X() - 235;
 								if (dialog_y < 0) dialog_y = 0;
 								if ((dialog_y + 100) > LOGICAL_MAX_Y()) dialog_y = LOGICAL_MAX_Y() - 100;
-								m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sX = dialog_x;
-								m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sY = dialog_y;
-								m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV3 = object_type;
+								m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_x = dialog_x;
+								m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_y = dialog_y;
+								m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_v3 = object_type;
 							}
 							break;
 
 						case hb::shared::owner::Unicorn: // Unicorn
-							if (!m_pPlayer->m_bIsCombatMode)
+							if (!m_player->m_is_combat_mode)
 							{
-								m_dialogBoxManager.EnableDialogBox(DialogBoxId::NpcActionQuery, 4, 0, 0);
+								m_dialog_box_manager.enable_dialog_box(DialogBoxId::NpcActionQuery, 4, 0, 0);
 								dialog_x = mouse_x - 117;
 								dialog_y = mouse_y - 50;
 								if (dialog_x < 0) dialog_x = 0;
 								if ((dialog_x + 235) > LOGICAL_MAX_X()) dialog_x = LOGICAL_MAX_X() - 235;
 								if (dialog_y < 0) dialog_y = 0;
 								if ((dialog_y + 100) > LOGICAL_MAX_Y()) dialog_y = LOGICAL_MAX_Y() - 100;
-								m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sX = dialog_x;
-								m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sY = dialog_y;
-								m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV3 = 32;
+								m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_x = dialog_x;
+								m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_y = dialog_y;
+								m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_v3 = 32;
 							}
 							break;
 
 						case hb::shared::owner::Gail: // Snoopy: Gail
-							m_dialogBoxManager.EnableDialogBox(DialogBoxId::NpcActionQuery, 6, 0, 0);
+							m_dialog_box_manager.enable_dialog_box(DialogBoxId::NpcActionQuery, 6, 0, 0);
 							dialog_x = mouse_x - 117;
 							dialog_y = mouse_y - 50;
 							if (dialog_x < 0) dialog_x = 0;
 							if ((dialog_x + 235) > LOGICAL_MAX_X()) dialog_x = LOGICAL_MAX_X() - 235;
 							if (dialog_y < 0) dialog_y = 0;
 							if ((dialog_y + 100) > LOGICAL_MAX_Y()) dialog_y = LOGICAL_MAX_Y() - 100;
-							m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sX = dialog_x;
-							m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sY = dialog_y;
-							m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV3 = 90;
+							m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_x = dialog_x;
+							m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_y = dialog_y;
+							m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_v3 = 90;
 							break;
 
 						default: // Other mobs
-							if (!IsHostile(object_status.iRelationship)) break;
-							if ((object_type >= 1) && (object_type <= 6) && (m_pPlayer->m_bForceAttack == false)) break;
-							abs_x = abs(m_pPlayer->m_sPlayerX - m_sMCX);
-							abs_y = abs(m_pPlayer->m_sPlayerY - m_sMCY);
+							if (!IsHostile(object_status.relationship)) break;
+							if ((object_type >= 1) && (object_type <= 6) && (m_player->m_force_attack == false)) break;
+							abs_x = abs(m_player->m_player_x - m_mcx);
+							abs_y = abs(m_player->m_player_y - m_mcy);
 							if ((abs_x <= 1) && (abs_y <= 1))
 							{
-								action_type = CombatSystem::Get().GetAttackType();
-								m_pPlayer->m_Controller.SetCommand(Type::Attack);
-								m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
+								action_type = combat_system::get().get_attack_type();
+								m_player->m_Controller.set_command(Type::Attack);
+								m_player->m_Controller.set_destination(m_mcx, m_mcy);
 							}
 							else if ((abs_x <= 2) && (abs_y <= 2) // strike on Big mobs & gate from a range
 								&& ((object_type == 66) || (object_type == 73) || (object_type == 81) || (object_type == 91)))
 							{
-								action_type = CombatSystem::Get().GetAttackType();
-								m_pPlayer->m_Controller.SetCommand(Type::Attack);
-								m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
+								action_type = combat_system::get().get_attack_type();
+								m_player->m_Controller.set_command(Type::Attack);
+								m_player->m_Controller.set_destination(m_mcx, m_mcy);
 							}
 							else // Normal hit from a range.
 							{
-								switch (CombatSystem::Get().GetWeaponSkillType()) {
+								switch (combat_system::get().get_weapon_skill_type()) {
 								case 6: // Bow
-									m_pPlayer->m_Controller.SetCommand(Type::Attack);
-									m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
-									action_type = CombatSystem::Get().GetAttackType();
+									m_player->m_Controller.set_command(Type::Attack);
+									m_player->m_Controller.set_destination(m_mcx, m_mcy);
+									action_type = combat_system::get().get_attack_type();
 									break;
 
 								case 5: // Boxe
 								case 7: // SS
-									if ((hb::shared::input::is_shift_down() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0)
-										&& (m_pPlayer->m_sPlayerType >= 1) && (m_pPlayer->m_sPlayerType <= 6))
-										m_pPlayer->m_Controller.SetCommand(Type::Run);
-									else m_pPlayer->m_Controller.SetCommand(Type::Move);
-									m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
-									m_pPlayer->m_Controller.CalculatePlayerTurn(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pMapData.get());
+									if ((hb::shared::input::is_shift_down() || config_manager::get().is_running_mode_enabled()) && (m_player->m_sp > 0)
+										&& (m_player->m_player_type >= 1) && (m_player->m_player_type <= 6))
+										m_player->m_Controller.set_command(Type::Run);
+									else m_player->m_Controller.set_command(Type::Move);
+									m_player->m_Controller.set_destination(m_mcx, m_mcy);
+									m_player->m_Controller.calculate_player_turn(m_player->m_player_x, m_player->m_player_y, m_map_data.get());
 									break;
 
 								case 8: // LS
-									if ((abs_x <= 3) && (abs_y <= 3) && CombatSystem::Get().CanSuperAttack()
-										&& (CombatSystem::Get().GetAttackType() != 30)) // Crit without StormBlade by Snoopy
+									if ((abs_x <= 3) && (abs_y <= 3) && combat_system::get().can_super_attack()
+										&& (combat_system::get().get_attack_type() != 30)) // Crit without StormBlade by Snoopy
 									{
-										if ((abs_x <= 1) && (abs_y <= 1) && (hb::shared::input::is_shift_down() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0))
-											m_pPlayer->m_Controller.SetCommand(Type::AttackMove);
-										else m_pPlayer->m_Controller.SetCommand(Type::Attack);
-										m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
-										action_type = CombatSystem::Get().GetAttackType();
+										if ((abs_x <= 1) && (abs_y <= 1) && (hb::shared::input::is_shift_down() || config_manager::get().is_running_mode_enabled()) && (m_player->m_sp > 0))
+											m_player->m_Controller.set_command(Type::AttackMove);
+										else m_player->m_Controller.set_command(Type::Attack);
+										m_player->m_Controller.set_destination(m_mcx, m_mcy);
+										action_type = combat_system::get().get_attack_type();
 									}
-									else if ((abs_x <= 5) && (abs_y <= 5) && CombatSystem::Get().CanSuperAttack()
-										&& (CombatSystem::Get().GetAttackType() == 30)) // Crit with StormBlade by Snoopy
+									else if ((abs_x <= 5) && (abs_y <= 5) && combat_system::get().can_super_attack()
+										&& (combat_system::get().get_attack_type() == 30)) // Crit with StormBlade by Snoopy
 									{
-										if ((abs_x <= 1) && (abs_y <= 1) && (hb::shared::input::is_shift_down() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0))
-											m_pPlayer->m_Controller.SetCommand(Type::AttackMove);
-										else m_pPlayer->m_Controller.SetCommand(Type::Attack);
-										m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
-										action_type = CombatSystem::Get().GetAttackType();
+										if ((abs_x <= 1) && (abs_y <= 1) && (hb::shared::input::is_shift_down() || config_manager::get().is_running_mode_enabled()) && (m_player->m_sp > 0))
+											m_player->m_Controller.set_command(Type::AttackMove);
+										else m_player->m_Controller.set_command(Type::Attack);
+										m_player->m_Controller.set_destination(m_mcx, m_mcy);
+										action_type = combat_system::get().get_attack_type();
 									}
 									else if ((abs_x <= 3) && (abs_y <= 3)
-										&& (CombatSystem::Get().GetAttackType() == 5)) // Normal hit with StormBlade by Snoopy
+										&& (combat_system::get().get_attack_type() == 5)) // Normal hit with StormBlade by Snoopy
 									{
-										m_pPlayer->m_Controller.SetCommand(Type::Attack);
-										m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
-										action_type = CombatSystem::Get().GetAttackType();
+										m_player->m_Controller.set_command(Type::Attack);
+										m_player->m_Controller.set_destination(m_mcx, m_mcy);
+										action_type = combat_system::get().get_attack_type();
 									}
 									else
 									{
-										if ((hb::shared::input::is_shift_down() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0) &&
-											(m_pPlayer->m_sPlayerType >= 1) && (m_pPlayer->m_sPlayerType <= 6))
-											m_pPlayer->m_Controller.SetCommand(Type::Run);
-										else m_pPlayer->m_Controller.SetCommand(Type::Move);
-										m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
-										m_pPlayer->m_Controller.CalculatePlayerTurn(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pMapData.get());
+										if ((hb::shared::input::is_shift_down() || config_manager::get().is_running_mode_enabled()) && (m_player->m_sp > 0) &&
+											(m_player->m_player_type >= 1) && (m_player->m_player_type <= 6))
+											m_player->m_Controller.set_command(Type::Run);
+										else m_player->m_Controller.set_command(Type::Move);
+										m_player->m_Controller.set_destination(m_mcx, m_mcy);
+										m_player->m_Controller.calculate_player_turn(m_player->m_player_x, m_player->m_player_y, m_map_data.get());
 									}
 									break;
 
 								case 9: // Fencing
-									if ((abs_x <= 4) && (abs_y <= 4) && CombatSystem::Get().CanSuperAttack())
+									if ((abs_x <= 4) && (abs_y <= 4) && combat_system::get().can_super_attack())
 									{
-										if ((abs_x <= 1) && (abs_y <= 1) && (hb::shared::input::is_shift_down() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0))
-											m_pPlayer->m_Controller.SetCommand(Type::AttackMove);
-										else m_pPlayer->m_Controller.SetCommand(Type::Attack);
-										m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
-										action_type = CombatSystem::Get().GetAttackType();
+										if ((abs_x <= 1) && (abs_y <= 1) && (hb::shared::input::is_shift_down() || config_manager::get().is_running_mode_enabled()) && (m_player->m_sp > 0))
+											m_player->m_Controller.set_command(Type::AttackMove);
+										else m_player->m_Controller.set_command(Type::Attack);
+										m_player->m_Controller.set_destination(m_mcx, m_mcy);
+										action_type = combat_system::get().get_attack_type();
 									}
 									else
 									{
-										if ((hb::shared::input::is_shift_down() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0) &&
-											(m_pPlayer->m_sPlayerType >= 1) && (m_pPlayer->m_sPlayerType <= 6))
-											m_pPlayer->m_Controller.SetCommand(Type::Run);
-										else m_pPlayer->m_Controller.SetCommand(Type::Move);
-										m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
-										m_pPlayer->m_Controller.CalculatePlayerTurn(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pMapData.get());
+										if ((hb::shared::input::is_shift_down() || config_manager::get().is_running_mode_enabled()) && (m_player->m_sp > 0) &&
+											(m_player->m_player_type >= 1) && (m_player->m_player_type <= 6))
+											m_player->m_Controller.set_command(Type::Run);
+										else m_player->m_Controller.set_command(Type::Move);
+										m_player->m_Controller.set_destination(m_mcx, m_mcy);
+										m_player->m_Controller.calculate_player_turn(m_player->m_player_x, m_player->m_player_y, m_map_data.get());
 									}
 									break;
 
 								case hb::shared::owner::Slime: //
-									if ((abs_x <= 2) && (abs_y <= 2) && CombatSystem::Get().CanSuperAttack()) {
-										if ((abs_x <= 1) && (abs_y <= 1) && (hb::shared::input::is_shift_down() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0))
-											m_pPlayer->m_Controller.SetCommand(Type::AttackMove);
-										else m_pPlayer->m_Controller.SetCommand(Type::Attack);
-										m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
-										action_type = CombatSystem::Get().GetAttackType();
+									if ((abs_x <= 2) && (abs_y <= 2) && combat_system::get().can_super_attack()) {
+										if ((abs_x <= 1) && (abs_y <= 1) && (hb::shared::input::is_shift_down() || config_manager::get().is_running_mode_enabled()) && (m_player->m_sp > 0))
+											m_player->m_Controller.set_command(Type::AttackMove);
+										else m_player->m_Controller.set_command(Type::Attack);
+										m_player->m_Controller.set_destination(m_mcx, m_mcy);
+										action_type = combat_system::get().get_attack_type();
 									}
 									else {
-										if ((hb::shared::input::is_shift_down() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0) &&
-											(m_pPlayer->m_sPlayerType >= 1) && (m_pPlayer->m_sPlayerType <= 6))
-											m_pPlayer->m_Controller.SetCommand(Type::Run);
-										else m_pPlayer->m_Controller.SetCommand(Type::Move);
-										m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
-										m_pPlayer->m_Controller.CalculatePlayerTurn(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pMapData.get());
+										if ((hb::shared::input::is_shift_down() || config_manager::get().is_running_mode_enabled()) && (m_player->m_sp > 0) &&
+											(m_player->m_player_type >= 1) && (m_player->m_player_type <= 6))
+											m_player->m_Controller.set_command(Type::Run);
+										else m_player->m_Controller.set_command(Type::Move);
+										m_player->m_Controller.set_destination(m_mcx, m_mcy);
+										m_player->m_Controller.calculate_player_turn(m_player->m_player_x, m_player->m_player_y, m_map_data.get());
 									}
 									break;
 								case hb::shared::owner::OrcMage: //
-									if ((abs_x <= 2) && (abs_y <= 2) && CombatSystem::Get().CanSuperAttack()) {
-										if ((abs_x <= 1) && (abs_y <= 1) && (hb::shared::input::is_shift_down() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0))
-											m_pPlayer->m_Controller.SetCommand(Type::AttackMove);
-										else m_pPlayer->m_Controller.SetCommand(Type::Attack);
-										m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
-										action_type = CombatSystem::Get().GetAttackType();
+									if ((abs_x <= 2) && (abs_y <= 2) && combat_system::get().can_super_attack()) {
+										if ((abs_x <= 1) && (abs_y <= 1) && (hb::shared::input::is_shift_down() || config_manager::get().is_running_mode_enabled()) && (m_player->m_sp > 0))
+											m_player->m_Controller.set_command(Type::AttackMove);
+										else m_player->m_Controller.set_command(Type::Attack);
+										m_player->m_Controller.set_destination(m_mcx, m_mcy);
+										action_type = combat_system::get().get_attack_type();
 									}
 									else {
-										if ((hb::shared::input::is_shift_down() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0) &&
-											(m_pPlayer->m_sPlayerType >= 1) && (m_pPlayer->m_sPlayerType <= 6))
-											m_pPlayer->m_Controller.SetCommand(Type::Run);
-										else m_pPlayer->m_Controller.SetCommand(Type::Move);
-										m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
-										m_pPlayer->m_Controller.CalculatePlayerTurn(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pMapData.get());
+										if ((hb::shared::input::is_shift_down() || config_manager::get().is_running_mode_enabled()) && (m_player->m_sp > 0) &&
+											(m_player->m_player_type >= 1) && (m_player->m_player_type <= 6))
+											m_player->m_Controller.set_command(Type::Run);
+										else m_player->m_Controller.set_command(Type::Move);
+										m_player->m_Controller.set_destination(m_mcx, m_mcy);
+										m_player->m_Controller.calculate_player_turn(m_player->m_player_x, m_player->m_player_y, m_map_data.get());
 									}
 									break;
 								case hb::shared::owner::Guard: //
-									if ((abs_x <= 2) && (abs_y <= 2) && CombatSystem::Get().CanSuperAttack()) {
-										if ((abs_x <= 1) && (abs_y <= 1) && (hb::shared::input::is_shift_down() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0))
-											m_pPlayer->m_Controller.SetCommand(Type::AttackMove);
-										else m_pPlayer->m_Controller.SetCommand(Type::Attack);
-										m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
-										action_type = CombatSystem::Get().GetAttackType();
+									if ((abs_x <= 2) && (abs_y <= 2) && combat_system::get().can_super_attack()) {
+										if ((abs_x <= 1) && (abs_y <= 1) && (hb::shared::input::is_shift_down() || config_manager::get().is_running_mode_enabled()) && (m_player->m_sp > 0))
+											m_player->m_Controller.set_command(Type::AttackMove);
+										else m_player->m_Controller.set_command(Type::Attack);
+										m_player->m_Controller.set_destination(m_mcx, m_mcy);
+										action_type = combat_system::get().get_attack_type();
 									}
 									else {
-										if ((hb::shared::input::is_shift_down() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0) &&
-											(m_pPlayer->m_sPlayerType >= 1) && (m_pPlayer->m_sPlayerType <= 6))
-											m_pPlayer->m_Controller.SetCommand(Type::Run);
-										else m_pPlayer->m_Controller.SetCommand(Type::Move);
-										m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
-										m_pPlayer->m_Controller.CalculatePlayerTurn(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pMapData.get());
+										if ((hb::shared::input::is_shift_down() || config_manager::get().is_running_mode_enabled()) && (m_player->m_sp > 0) &&
+											(m_player->m_player_type >= 1) && (m_player->m_player_type <= 6))
+											m_player->m_Controller.set_command(Type::Run);
+										else m_player->m_Controller.set_command(Type::Move);
+										m_player->m_Controller.set_destination(m_mcx, m_mcy);
+										m_player->m_Controller.calculate_player_turn(m_player->m_player_x, m_player->m_player_y, m_map_data.get());
 									}
 									break;
 								}
@@ -6981,29 +6966,29 @@ bool CGame::ProcessLeftClick(short mouse_x, short mouse_y, short tile_x, short t
 						}
 					}
 					else {
-						if ((hb::shared::input::is_shift_down() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0) &&
-							(m_pPlayer->m_sPlayerType >= 1) && (m_pPlayer->m_sPlayerType <= 6))
-							m_pPlayer->m_Controller.SetCommand(Type::Run);
-						else m_pPlayer->m_Controller.SetCommand(Type::Move);
-						m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
-						m_pPlayer->m_Controller.CalculatePlayerTurn(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pMapData.get());
+						if ((hb::shared::input::is_shift_down() || config_manager::get().is_running_mode_enabled()) && (m_player->m_sp > 0) &&
+							(m_player->m_player_type >= 1) && (m_player->m_player_type <= 6))
+							m_player->m_Controller.set_command(Type::Run);
+						else m_player->m_Controller.set_command(Type::Move);
+						m_player->m_Controller.set_destination(m_mcx, m_mcy);
+						m_player->m_Controller.calculate_player_turn(m_player->m_player_x, m_player->m_player_y, m_map_data.get());
 					}
 				}
 			}
 			else
 			{
-				if ((hb::shared::input::is_shift_down() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0) &&
-					(m_pPlayer->m_sPlayerType >= 1) && (m_pPlayer->m_sPlayerType <= 6))
-					m_pPlayer->m_Controller.SetCommand(Type::Run);
-				else m_pPlayer->m_Controller.SetCommand(Type::Move);
-				m_pPlayer->m_Controller.SetDestination(tile_x, tile_y);
-				m_pPlayer->m_Controller.CalculatePlayerTurn(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pMapData.get());
+				if ((hb::shared::input::is_shift_down() || config_manager::get().is_running_mode_enabled()) && (m_player->m_sp > 0) &&
+					(m_player->m_player_type >= 1) && (m_player->m_player_type <= 6))
+					m_player->m_Controller.set_command(Type::Run);
+				else m_player->m_Controller.set_command(Type::Move);
+				m_player->m_Controller.set_destination(tile_x, tile_y);
+				m_player->m_Controller.calculate_player_turn(m_player->m_player_x, m_player->m_player_y, m_map_data.get());
 			}
 		}
 	return false;
 }
 
-bool CGame::ProcessRightClick(short mouse_x, short mouse_y, short tile_x, short tile_y, uint32_t current_time, uint16_t& action_type)
+bool CGame::process_right_click(short mouse_x, short mouse_y, short tile_x, short tile_y, uint32_t current_time, uint16_t& action_type)
 {
 	std::string name;
 	short object_type = 0;
@@ -7011,58 +6996,58 @@ bool CGame::ProcessRightClick(short mouse_x, short mouse_y, short tile_x, short 
 	char direction = 0, abs_x = 0, abs_y = 0;
 
 		// Right click on self = pickup (Quick Actions feature)
-		if (ConfigManager::Get().IsQuickActionsEnabled() &&
-			m_cMCName == m_pPlayer->m_cPlayerName &&
-			(m_pPlayer->m_sPlayerType >= 1) && (m_pPlayer->m_sPlayerType <= 6))
+		if (config_manager::get().is_quick_actions_enabled() &&
+			m_mc_name == m_player->m_player_name &&
+			(m_player->m_player_type >= 1) && (m_player->m_player_type <= 6))
 		{
-			m_pPlayer->m_Controller.SetCommand(Type::GetItem);
-			m_pPlayer->m_Controller.SetDestination(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY);
+			m_player->m_Controller.set_command(Type::GetItem);
+			m_player->m_Controller.set_destination(m_player->m_player_x, m_player->m_player_y);
 			return false;
 		}
 		else
 		{
 			// Original right click behavior (stop, turn, attack, etc.)
-			m_pPlayer->m_Controller.SetCommand(Type::Stop);
-			if (m_bIsGetPointingMode == true)
+			m_player->m_Controller.set_command(Type::stop);
+			if (m_is_get_pointing_mode == true)
 			{
-				m_bIsGetPointingMode = false;
-				AddEventList(COMMAND_PROCESSOR1, 10);
+				m_is_get_pointing_mode = false;
+				add_event_list(COMMAND_PROCESSOR1, 10);
 			}
-			if (m_pPlayer->m_Controller.IsCommandAvailable() == false) return true;
-			if (m_pPlayer->m_Controller.GetCommandCount() >= 6) return true;
+			if (m_player->m_Controller.is_command_available() == false) return true;
+			if (m_player->m_Controller.get_command_count() >= 6) return true;
 
-			if ((m_sMCX != 0) && (m_sMCY != 0))
+			if ((m_mcx != 0) && (m_mcy != 0))
 			{
-				abs_x = abs(m_pPlayer->m_sPlayerX - m_sMCX);
-				abs_y = abs(m_pPlayer->m_sPlayerY - m_sMCY);
+				abs_x = abs(m_player->m_player_x - m_mcx);
+				abs_y = abs(m_player->m_player_y - m_mcy);
 				if (abs_x == 0 && abs_y == 0) return true;
 
 			if (hb::shared::input::is_ctrl_down() == true)
 			{
-				m_pMapData->bGetOwner(m_sMCX, m_sMCY, name, &object_type, &object_status, &m_wCommObjectID);
-				if (object_status.bInvisibility) return true;
+				m_map_data->get_owner(m_mcx, m_mcy, name, &object_type, &object_status, &m_comm_object_id);
+				if (object_status.invisibility) return true;
 				if ((object_type == 15) || (object_type == 20) || (object_type == 24)) return true;
 
 				if ((abs_x <= 1) && (abs_y <= 1))
 				{
-					action_type = CombatSystem::Get().GetAttackType();
-					m_pPlayer->m_Controller.SetCommand(Type::Attack);
-					m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
+					action_type = combat_system::get().get_attack_type();
+					m_player->m_Controller.set_command(Type::Attack);
+					m_player->m_Controller.set_destination(m_mcx, m_mcy);
 				}
 				else if ((abs_x <= 2) && (abs_y <= 2) // strike on Big mobs & gate from a range
 					&& ((object_type == 66) || (object_type == 73) || (object_type == 81) || (object_type == 91)))
 				{
-					action_type = CombatSystem::Get().GetAttackType();
-					m_pPlayer->m_Controller.SetCommand(Type::Attack);
-					m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
+					action_type = combat_system::get().get_attack_type();
+					m_player->m_Controller.set_command(Type::Attack);
+					m_player->m_Controller.set_destination(m_mcx, m_mcy);
 				}
 				else
 				{
-					switch (CombatSystem::Get().GetWeaponSkillType()) {
+					switch (combat_system::get().get_weapon_skill_type()) {
 					case 6: // Bow
-						m_pPlayer->m_Controller.SetCommand(Type::Attack);
-						m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
-						action_type = CombatSystem::Get().GetAttackType();
+						m_player->m_Controller.set_command(Type::Attack);
+						m_player->m_Controller.set_destination(m_mcx, m_mcy);
+						action_type = combat_system::get().get_attack_type();
 						break;
 
 					case 5: // Boxe
@@ -7070,57 +7055,57 @@ bool CGame::ProcessRightClick(short mouse_x, short mouse_y, short tile_x, short 
 						break;
 
 					case 8: // LS
-						if ((abs_x <= 3) && (abs_y <= 3) && CombatSystem::Get().CanSuperAttack()
-							&& (CombatSystem::Get().GetAttackType() != 30)) // without StormBlade by Snoopy
+						if ((abs_x <= 3) && (abs_y <= 3) && combat_system::get().can_super_attack()
+							&& (combat_system::get().get_attack_type() != 30)) // without StormBlade by Snoopy
 						{
-							action_type = CombatSystem::Get().GetAttackType();
-							m_pPlayer->m_Controller.SetCommand(Type::Attack);
-							m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
+							action_type = combat_system::get().get_attack_type();
+							m_player->m_Controller.set_command(Type::Attack);
+							m_player->m_Controller.set_destination(m_mcx, m_mcy);
 						}
-						else if ((abs_x <= 5) && (abs_y <= 5) && CombatSystem::Get().CanSuperAttack()
-							&& (CombatSystem::Get().GetAttackType() == 30)) // with stormBlade crit by Snoopy
+						else if ((abs_x <= 5) && (abs_y <= 5) && combat_system::get().can_super_attack()
+							&& (combat_system::get().get_attack_type() == 30)) // with stormBlade crit by Snoopy
 						{
-							action_type = CombatSystem::Get().GetAttackType();
-							m_pPlayer->m_Controller.SetCommand(Type::Attack);
-							m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
+							action_type = combat_system::get().get_attack_type();
+							m_player->m_Controller.set_command(Type::Attack);
+							m_player->m_Controller.set_destination(m_mcx, m_mcy);
 						}
 						else if ((abs_x <= 3) && (abs_y <= 3)
-							&& (CombatSystem::Get().GetAttackType() == 5)) // with stormBlade no crit by Snoopy
+							&& (combat_system::get().get_attack_type() == 5)) // with stormBlade no crit by Snoopy
 						{
-							action_type = CombatSystem::Get().GetAttackType();
-							m_pPlayer->m_Controller.SetCommand(Type::Attack);
-							m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
+							action_type = combat_system::get().get_attack_type();
+							m_player->m_Controller.set_command(Type::Attack);
+							m_player->m_Controller.set_destination(m_mcx, m_mcy);
 						}
 						break;
 
 					case 9: // Fencing
-						if ((abs_x <= 4) && (abs_y <= 4) && CombatSystem::Get().CanSuperAttack()) {
-							m_pPlayer->m_Controller.SetCommand(Type::Attack);
-							m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
-							action_type = CombatSystem::Get().GetAttackType();
+						if ((abs_x <= 4) && (abs_y <= 4) && combat_system::get().can_super_attack()) {
+							m_player->m_Controller.set_command(Type::Attack);
+							m_player->m_Controller.set_destination(m_mcx, m_mcy);
+							action_type = combat_system::get().get_attack_type();
 						}
 						break;
 
 					case hb::shared::owner::Slime: //
-						if ((abs_x <= 2) && (abs_y <= 2) && CombatSystem::Get().CanSuperAttack()) {
-							m_pPlayer->m_Controller.SetCommand(Type::Attack);
-							m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
-							action_type = CombatSystem::Get().GetAttackType();
+						if ((abs_x <= 2) && (abs_y <= 2) && combat_system::get().can_super_attack()) {
+							m_player->m_Controller.set_command(Type::Attack);
+							m_player->m_Controller.set_destination(m_mcx, m_mcy);
+							action_type = combat_system::get().get_attack_type();
 						}
 						break;
 
 					case hb::shared::owner::OrcMage: //
-						if ((abs_x <= 2) && (abs_y <= 2) && CombatSystem::Get().CanSuperAttack()) {
-							m_pPlayer->m_Controller.SetCommand(Type::Attack);
-							m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
-							action_type = CombatSystem::Get().GetAttackType();
+						if ((abs_x <= 2) && (abs_y <= 2) && combat_system::get().can_super_attack()) {
+							m_player->m_Controller.set_command(Type::Attack);
+							m_player->m_Controller.set_destination(m_mcx, m_mcy);
+							action_type = combat_system::get().get_attack_type();
 						}
 						break;
 					case hb::shared::owner::Guard: //
-						if ((abs_x <= 2) && (abs_y <= 2) && CombatSystem::Get().CanSuperAttack()) {
-							m_pPlayer->m_Controller.SetCommand(Type::Attack);
-							m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
-							action_type = CombatSystem::Get().GetAttackType();
+						if ((abs_x <= 2) && (abs_y <= 2) && combat_system::get().can_super_attack()) {
+							m_player->m_Controller.set_command(Type::Attack);
+							m_player->m_Controller.set_destination(m_mcx, m_mcy);
+							action_type = combat_system::get().get_attack_type();
 						}
 						break;
 					}
@@ -7128,9 +7113,9 @@ bool CGame::ProcessRightClick(short mouse_x, short mouse_y, short tile_x, short 
 			}
 			else // CTRL not pressed
 			{
-				abs_x = abs(m_pPlayer->m_sPlayerX - m_sMCX);
-				abs_y = abs(m_pPlayer->m_sPlayerY - m_sMCY);
-				m_pMapData->bGetOwner(m_sMCX, m_sMCY, name, &object_type, &object_status, &m_wCommObjectID);
+				abs_x = abs(m_player->m_player_x - m_mcx);
+				abs_y = abs(m_player->m_player_y - m_mcy);
+				m_map_data->get_owner(m_mcx, m_mcy, name, &object_type, &object_status, &m_comm_object_id);
 				if (object_type >= 10 || ((object_type >= 1) && (object_type <= 6))) {
 					switch (object_type) {
 					case hb::shared::owner::ShopKeeper:
@@ -7142,28 +7127,28 @@ bool CGame::ProcessRightClick(short mouse_x, short mouse_y, short tile_x, short 
 						break;
 
 					default: // All "normal mobs"
-						if (!IsHostile(object_status.iRelationship)) break;
-						if ((object_type >= 1) && (object_type <= 6) && (m_pPlayer->m_bForceAttack == false)) break;
+						if (!IsHostile(object_status.relationship)) break;
+						if ((object_type >= 1) && (object_type <= 6) && (m_player->m_force_attack == false)) break;
 						if ((abs_x <= 1) && (abs_y <= 1))
 						{
-							action_type = CombatSystem::Get().GetAttackType();
-							m_pPlayer->m_Controller.SetCommand(Type::Attack);
-							m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
+							action_type = combat_system::get().get_attack_type();
+							m_player->m_Controller.set_command(Type::Attack);
+							m_player->m_Controller.set_destination(m_mcx, m_mcy);
 						}
 						else if ((abs_x <= 2) && (abs_y <= 2) // strike on Big mobs & gate from a range
 							&& ((object_type == 66) || (object_type == 73) || (object_type == 81) || (object_type == 91)))
 						{
-							action_type = CombatSystem::Get().GetAttackType();
-							m_pPlayer->m_Controller.SetCommand(Type::Attack);
-							m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
+							action_type = combat_system::get().get_attack_type();
+							m_player->m_Controller.set_command(Type::Attack);
+							m_player->m_Controller.set_destination(m_mcx, m_mcy);
 						}
 						else //
 						{
-							switch (CombatSystem::Get().GetWeaponSkillType()) {
+							switch (combat_system::get().get_weapon_skill_type()) {
 							case 6: // Bow
-								m_pPlayer->m_Controller.SetCommand(Type::Attack);
-								m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
-								action_type = CombatSystem::Get().GetAttackType();
+								m_player->m_Controller.set_command(Type::Attack);
+								m_player->m_Controller.set_destination(m_mcx, m_mcy);
+								action_type = combat_system::get().get_attack_type();
 								break;
 
 							case 5: // Boxe
@@ -7171,56 +7156,56 @@ bool CGame::ProcessRightClick(short mouse_x, short mouse_y, short tile_x, short 
 								break;
 
 							case 8: // LS
-								if ((abs_x <= 3) && (abs_y <= 3) && CombatSystem::Get().CanSuperAttack()
-									&& (CombatSystem::Get().GetAttackType() != 30)) // crit without StormBlade by Snoopy
+								if ((abs_x <= 3) && (abs_y <= 3) && combat_system::get().can_super_attack()
+									&& (combat_system::get().get_attack_type() != 30)) // crit without StormBlade by Snoopy
 								{
-									action_type = CombatSystem::Get().GetAttackType();
-									m_pPlayer->m_Controller.SetCommand(Type::Attack);
-									m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
+									action_type = combat_system::get().get_attack_type();
+									m_player->m_Controller.set_command(Type::Attack);
+									m_player->m_Controller.set_destination(m_mcx, m_mcy);
 								}
-								else if ((abs_x <= 5) && (abs_y <= 5) && CombatSystem::Get().CanSuperAttack()
-									&& (CombatSystem::Get().GetAttackType() == 30)) // with stormBlade crit by Snoopy
+								else if ((abs_x <= 5) && (abs_y <= 5) && combat_system::get().can_super_attack()
+									&& (combat_system::get().get_attack_type() == 30)) // with stormBlade crit by Snoopy
 								{
-									action_type = CombatSystem::Get().GetAttackType();
-									m_pPlayer->m_Controller.SetCommand(Type::Attack);
-									m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
+									action_type = combat_system::get().get_attack_type();
+									m_player->m_Controller.set_command(Type::Attack);
+									m_player->m_Controller.set_destination(m_mcx, m_mcy);
 								}
 								else if ((abs_x <= 3) && (abs_y <= 3)
-									&& (CombatSystem::Get().GetAttackType() == 5)) // with stormBlade no crit by Snoopy
+									&& (combat_system::get().get_attack_type() == 5)) // with stormBlade no crit by Snoopy
 								{
-									action_type = CombatSystem::Get().GetAttackType();
-									m_pPlayer->m_Controller.SetCommand(Type::Attack);
-									m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
+									action_type = combat_system::get().get_attack_type();
+									m_player->m_Controller.set_command(Type::Attack);
+									m_player->m_Controller.set_destination(m_mcx, m_mcy);
 								}
 								break;
 
 							case 9: // fencing
-								if ((abs_x <= 4) && (abs_y <= 4) && CombatSystem::Get().CanSuperAttack()) {
-									m_pPlayer->m_Controller.SetCommand(Type::Attack);
-									m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
-									action_type = CombatSystem::Get().GetAttackType();
+								if ((abs_x <= 4) && (abs_y <= 4) && combat_system::get().can_super_attack()) {
+									m_player->m_Controller.set_command(Type::Attack);
+									m_player->m_Controller.set_destination(m_mcx, m_mcy);
+									action_type = combat_system::get().get_attack_type();
 								}
 								break;
 
 							case hb::shared::owner::Slime: //
-								if ((abs_x <= 2) && (abs_y <= 2) && CombatSystem::Get().CanSuperAttack()) {
-									m_pPlayer->m_Controller.SetCommand(Type::Attack);
-									m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
-									action_type = CombatSystem::Get().GetAttackType();
+								if ((abs_x <= 2) && (abs_y <= 2) && combat_system::get().can_super_attack()) {
+									m_player->m_Controller.set_command(Type::Attack);
+									m_player->m_Controller.set_destination(m_mcx, m_mcy);
+									action_type = combat_system::get().get_attack_type();
 								}
 								break;
 							case hb::shared::owner::OrcMage: // hammer
-								if ((abs_x <= 2) && (abs_y <= 2) && CombatSystem::Get().CanSuperAttack()) {
-									m_pPlayer->m_Controller.SetCommand(Type::Attack);
-									m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
-									action_type = CombatSystem::Get().GetAttackType();
+								if ((abs_x <= 2) && (abs_y <= 2) && combat_system::get().can_super_attack()) {
+									m_player->m_Controller.set_command(Type::Attack);
+									m_player->m_Controller.set_destination(m_mcx, m_mcy);
+									action_type = combat_system::get().get_attack_type();
 								}
 								break;
 							case hb::shared::owner::Guard: // wand
-								if ((abs_x <= 2) && (abs_y <= 2) && CombatSystem::Get().CanSuperAttack()) {
-									m_pPlayer->m_Controller.SetCommand(Type::Attack);
-									m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
-									action_type = CombatSystem::Get().GetAttackType();
+								if ((abs_x <= 2) && (abs_y <= 2) && combat_system::get().can_super_attack()) {
+									m_player->m_Controller.set_command(Type::Attack);
+									m_player->m_Controller.set_destination(m_mcx, m_mcy);
+									action_type = combat_system::get().get_attack_type();
 								}
 								break;
 							}
@@ -7232,28 +7217,28 @@ bool CGame::ProcessRightClick(short mouse_x, short mouse_y, short tile_x, short 
 		}
 		else
 		{
-			direction = CMisc::cGetNextMoveDir(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, tile_x, tile_y);
-			if (m_pPlayer->m_iHP <= 0) return true;
+			direction = CMisc::get_next_move_dir(m_player->m_player_x, m_player->m_player_y, tile_x, tile_y);
+			if (m_player->m_hp <= 0) return true;
 			if (direction == 0) return true;
-			if (m_pPlayer->m_iPlayerDir == direction) return true;
-			ClearSkillUsingStatus();
-			m_pPlayer->m_iPlayerDir = direction;
-			bSendCommand(MsgId::CommandMotion, Type::Stop, m_pPlayer->m_iPlayerDir, 0, 0, 0, 0);
+			if (m_player->m_player_dir == direction) return true;
+			clear_skill_using_status();
+			m_player->m_player_dir = direction;
+			send_command(MsgId::CommandMotion, Type::stop, m_player->m_player_dir, 0, 0, 0, 0);
 
-			m_pMapData->bSetOwner(m_pPlayer->m_sPlayerObjectID, m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pPlayer->m_sPlayerType, m_pPlayer->m_iPlayerDir,
-				m_pPlayer->m_playerAppearance,
-				m_pPlayer->m_playerStatus, m_pPlayer->m_cPlayerName,
-				m_pPlayer->m_Controller.GetCommand(), 0, 0, 0, 0,
+			m_map_data->set_owner(m_player->m_player_object_id, m_player->m_player_x, m_player->m_player_y, m_player->m_player_type, m_player->m_player_dir,
+				m_player->m_playerAppearance,
+				m_player->m_playerStatus, m_player->m_player_name,
+				m_player->m_Controller.get_command(), 0, 0, 0, 0,
 				10);
-			m_pPlayer->m_Controller.SetCommandAvailable(false);
-			m_pPlayer->m_Controller.SetCommandTime(GameClock::GetTimeMS());
+			m_player->m_Controller.set_command_available(false);
+			m_player->m_Controller.set_command_time(GameClock::get_time_ms());
 			return true;
 		}
 		} // close else block for "not clicking on self"
 	return false;
 }
 
-void CGame::ProcessMotionCommands(uint16_t action_type)
+void CGame::process_motion_commands(uint16_t action_type)
 {
 	char direction = 0;
 	std::string dest_name;
@@ -7263,157 +7248,157 @@ void CGame::ProcessMotionCommands(uint16_t action_type)
 	std::string text;
 
 
-	if (m_pPlayer->m_Controller.GetCommand() != Type::Stop)
+	if (m_player->m_Controller.get_command() != Type::stop)
 	{
-		if (m_pPlayer->m_iHP <= 0) return;
-		if (m_pPlayer->m_Controller.GetCommandCount() == 5) AddEventList(COMMAND_PROCESSOR2, 10, false);
-		if (m_pPlayer->m_Controller.IsCommandAvailable() == false) return;
-		if (m_pPlayer->m_Controller.GetCommandCount() >= 6) return;
+		if (m_player->m_hp <= 0) return;
+		if (m_player->m_Controller.get_command_count() == 5) add_event_list(COMMAND_PROCESSOR2, 10, false);
+		if (m_player->m_Controller.is_command_available() == false) return;
+		if (m_player->m_Controller.get_command_count() >= 6) return;
 
-		if ((m_pPlayer->m_sPlayerType >= 0) && (m_pPlayer->m_sPlayerType > 6))
+		if ((m_player->m_player_type >= 0) && (m_player->m_player_type > 6))
 		{
-			switch (m_pPlayer->m_Controller.GetCommand()) {
+			switch (m_player->m_Controller.get_command()) {
 			case Type::Run:
 			case Type::Magic:
 			case Type::GetItem:
-				m_pPlayer->m_Controller.SetCommand(Type::Stop);
+				m_player->m_Controller.set_command(Type::stop);
 				break;
 			}
 		}
 
-		ClearSkillUsingStatus();
+		clear_skill_using_status();
 
-		if ((m_pPlayer->m_sDamageMove != 0) || (m_pPlayer->m_sDamageMoveAmount != 0))
+		if ((m_player->m_damage_move != 0) || (m_player->m_damage_move_amount != 0))
 		{
-			if (m_pPlayer->m_sDamageMove != 0)
+			if (m_player->m_damage_move != 0)
 			{
-				m_pPlayer->m_Controller.SetCommand(Type::DamageMove);
-				m_pPlayer->m_Controller.SetDestination(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY);
+				m_player->m_Controller.set_command(Type::DamageMove);
+				m_player->m_Controller.set_destination(m_player->m_player_x, m_player->m_player_y);
 
 				// mim crit fixed by kaozures tocado para ande bien by cloud :P
-				if (m_bIllusionMVT == true) {
-					switch (m_pPlayer->m_sDamageMove) {
-					case 1: m_pPlayer->m_Controller.MoveDestination(0, 1); break;
-					case 2: m_pPlayer->m_Controller.MoveDestination(-1, 1); break;
-					case 3: m_pPlayer->m_Controller.MoveDestination(-1, 0); break;
-					case 4: m_pPlayer->m_Controller.MoveDestination(-1, -1); break;
-					case 5: m_pPlayer->m_Controller.MoveDestination(0, -1); break;
-					case 6: m_pPlayer->m_Controller.MoveDestination(1, -1); break;
-					case 7: m_pPlayer->m_Controller.MoveDestination(1, 0); break;
-					case 8: m_pPlayer->m_Controller.MoveDestination(1, 1); break;
+				if (m_illusion_mvt == true) {
+					switch (m_player->m_damage_move) {
+					case 1: m_player->m_Controller.move_destination(0, 1); break;
+					case 2: m_player->m_Controller.move_destination(-1, 1); break;
+					case 3: m_player->m_Controller.move_destination(-1, 0); break;
+					case 4: m_player->m_Controller.move_destination(-1, -1); break;
+					case 5: m_player->m_Controller.move_destination(0, -1); break;
+					case 6: m_player->m_Controller.move_destination(1, -1); break;
+					case 7: m_player->m_Controller.move_destination(1, 0); break;
+					case 8: m_player->m_Controller.move_destination(1, 1); break;
 					}
 				}
 				else {
-					switch (m_pPlayer->m_sDamageMove) {
-					case 1: m_pPlayer->m_Controller.MoveDestination(0, -1); break;
-					case 2: m_pPlayer->m_Controller.MoveDestination(1, -1); break;
-					case 3: m_pPlayer->m_Controller.MoveDestination(1, 0); break;
-					case 4: m_pPlayer->m_Controller.MoveDestination(1, 1); break;
-					case 5: m_pPlayer->m_Controller.MoveDestination(0, 1); break;
-					case 6: m_pPlayer->m_Controller.MoveDestination(-1, 1); break;
-					case 7: m_pPlayer->m_Controller.MoveDestination(-1, 0); break;
-					case 8: m_pPlayer->m_Controller.MoveDestination(-1, -1); break;
+					switch (m_player->m_damage_move) {
+					case 1: m_player->m_Controller.move_destination(0, -1); break;
+					case 2: m_player->m_Controller.move_destination(1, -1); break;
+					case 3: m_player->m_Controller.move_destination(1, 0); break;
+					case 4: m_player->m_Controller.move_destination(1, 1); break;
+					case 5: m_player->m_Controller.move_destination(0, 1); break;
+					case 6: m_player->m_Controller.move_destination(-1, 1); break;
+					case 7: m_player->m_Controller.move_destination(-1, 0); break;
+					case 8: m_player->m_Controller.move_destination(-1, -1); break;
 					}
 				}
 			}
 
-			m_floatingText.AddDamageFromValue(m_pPlayer->m_sDamageMoveAmount, false, m_dwCurTime,
-					m_pPlayer->m_sPlayerObjectID, m_pMapData.get());
-			m_pPlayer->m_sDamageMove = 0;
-			m_pPlayer->m_sDamageMoveAmount = 0;
+			m_floating_text.add_damage_from_value(m_player->m_damage_move_amount, false, m_cur_time,
+					m_player->m_player_object_id, m_map_data.get());
+			m_player->m_damage_move = 0;
+			m_player->m_damage_move_amount = 0;
 		}
 
-		switch (m_pPlayer->m_Controller.GetCommand()) {
+		switch (m_player->m_Controller.get_command()) {
 		case Type::Run:
 		case Type::Move:
 		case Type::DamageMove: // v1.43
 
-			if (m_pPlayer->m_bParalyze) return;
-			has_owner = m_pMapData->bGetOwner(m_pPlayer->m_Controller.GetDestinationX(), m_pPlayer->m_Controller.GetDestinationY(), dest_name, &dest_owner_type, &dest_owner_status, &m_wCommObjectID); // v1.4
+			if (m_player->m_paralyze) return;
+			has_owner = m_map_data->get_owner(m_player->m_Controller.get_destination_x(), m_player->m_Controller.get_destination_y(), dest_name, &dest_owner_type, &dest_owner_status, &m_comm_object_id); // v1.4
 
-			if ((m_pPlayer->m_sPlayerX == m_pPlayer->m_Controller.GetDestinationX()) && (m_pPlayer->m_sPlayerY == m_pPlayer->m_Controller.GetDestinationY()))
+			if ((m_player->m_player_x == m_player->m_Controller.get_destination_x()) && (m_player->m_player_y == m_player->m_Controller.get_destination_y()))
 			{
-				m_pPlayer->m_Controller.SetCommand(Type::Stop);
+				m_player->m_Controller.set_command(Type::stop);
 				// Apply pending stop direction if set (from right-click while moving)
-				char pendingDir = m_pPlayer->m_Controller.GetPendingStopDir();
+				char pendingDir = m_player->m_Controller.get_pending_stop_dir();
 				if (pendingDir != 0)
 				{
-					m_pPlayer->m_iPlayerDir = pendingDir;
-					bSendCommand(MsgId::CommandMotion, Type::Stop, pendingDir, 0, 0, 0, 0);
-					m_pMapData->bSetOwner(m_pPlayer->m_sPlayerObjectID, m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY,
-						m_pPlayer->m_sPlayerType, pendingDir, m_pPlayer->m_playerAppearance,
-						m_pPlayer->m_playerStatus, m_pPlayer->m_cPlayerName, Type::Stop, 0, 0, 0, 0, 10);
-					m_pPlayer->m_Controller.ClearPendingStopDir();
+					m_player->m_player_dir = pendingDir;
+					send_command(MsgId::CommandMotion, Type::stop, pendingDir, 0, 0, 0, 0);
+					m_map_data->set_owner(m_player->m_player_object_id, m_player->m_player_x, m_player->m_player_y,
+						m_player->m_player_type, pendingDir, m_player->m_playerAppearance,
+						m_player->m_playerStatus, m_player->m_player_name, Type::stop, 0, 0, 0, 0, 10);
+					m_player->m_Controller.clear_pending_stop_dir();
 				}
 			}
-			else if ((abs(m_pPlayer->m_sPlayerX - m_pPlayer->m_Controller.GetDestinationX()) <= 1) && (abs(m_pPlayer->m_sPlayerY - m_pPlayer->m_Controller.GetDestinationY()) <= 1) &&
+			else if ((abs(m_player->m_player_x - m_player->m_Controller.get_destination_x()) <= 1) && (abs(m_player->m_player_y - m_player->m_Controller.get_destination_y()) <= 1) &&
 				(has_owner == true) && (dest_owner_type != 0))
-				m_pPlayer->m_Controller.SetCommand(Type::Stop);
-			else if ((abs(m_pPlayer->m_sPlayerX - m_pPlayer->m_Controller.GetDestinationX()) <= 2) && (abs(m_pPlayer->m_sPlayerY - m_pPlayer->m_Controller.GetDestinationY()) <= 2) &&
-				(m_pMapData->m_tile[m_pPlayer->m_Controller.GetDestinationX()][m_pPlayer->m_Controller.GetDestinationY()].m_bIsMoveAllowed == false))
-				m_pPlayer->m_Controller.SetCommand(Type::Stop);
+				m_player->m_Controller.set_command(Type::stop);
+			else if ((abs(m_player->m_player_x - m_player->m_Controller.get_destination_x()) <= 2) && (abs(m_player->m_player_y - m_player->m_Controller.get_destination_y()) <= 2) &&
+				(m_map_data->m_tile[m_player->m_Controller.get_destination_x()][m_player->m_Controller.get_destination_y()].m_bIsMoveAllowed == false))
+				m_player->m_Controller.set_command(Type::stop);
 			else
 			{
-				if (m_pPlayer->m_Controller.GetCommand() == Type::Move)
+				if (m_player->m_Controller.get_command() == Type::Move)
 				{
-					if (ConfigManager::Get().IsRunningModeEnabled() || hb::shared::input::is_shift_down()) m_pPlayer->m_Controller.SetCommand(Type::Run);
+					if (config_manager::get().is_running_mode_enabled() || hb::shared::input::is_shift_down()) m_player->m_Controller.set_command(Type::Run);
 				}
-				if (m_pPlayer->m_Controller.GetCommand() == Type::Run)
+				if (m_player->m_Controller.get_command() == Type::Run)
 				{
-					if ((ConfigManager::Get().IsRunningModeEnabled() == false) && (hb::shared::input::is_shift_down() == false)) m_pPlayer->m_Controller.SetCommand(Type::Move);
-					if (m_pPlayer->m_iSP < 1) m_pPlayer->m_Controller.SetCommand(Type::Move);
+					if ((config_manager::get().is_running_mode_enabled() == false) && (hb::shared::input::is_shift_down() == false)) m_player->m_Controller.set_command(Type::Move);
+					if (m_player->m_sp < 1) m_player->m_Controller.set_command(Type::Move);
 				}
 
-				direction = m_pPlayer->m_Controller.GetNextMoveDir(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pPlayer->m_Controller.GetDestinationX(), m_pPlayer->m_Controller.GetDestinationY(), m_pMapData.get(), true);
+				direction = m_player->m_Controller.get_next_move_dir(m_player->m_player_x, m_player->m_player_y, m_player->m_Controller.get_destination_x(), m_player->m_Controller.get_destination_y(), m_map_data.get(), true);
 				// Snoopy: Illusion Movement
-				if ((m_bIllusionMVT == true) && (m_pPlayer->m_Controller.GetCommand() != Type::DamageMove))
+				if ((m_illusion_mvt == true) && (m_player->m_Controller.get_command() != Type::DamageMove))
 				{
-					direction = m_pPlayer->m_Controller.GetNextMoveDir(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pPlayer->m_Controller.GetDestinationX(), m_pPlayer->m_Controller.GetDestinationY(), m_pMapData.get(), true, true);
+					direction = m_player->m_Controller.get_next_move_dir(m_player->m_player_x, m_player->m_player_y, m_player->m_Controller.get_destination_x(), m_player->m_Controller.get_destination_y(), m_map_data.get(), true, true);
 				}
 				if (direction != 0)
 				{
 					// Cancel logout countdown on movement
-					if ((m_logout_count > 0) && (m_bForceDisconn == false))
+					if ((m_logout_count > 0) && (m_force_disconn == false))
 					{
 						m_logout_count = -1;
-						AddEventList(DLGBOX_CLICK_SYSMENU2, 10);
+						add_event_list(DLGBOX_CLICK_SYSMENU2, 10);
 					}
 
-					m_pPlayer->m_iPlayerDir = direction;
-					bSendCommand(MsgId::CommandMotion, m_pPlayer->m_Controller.GetCommand(), direction, 0, 0, 0, 0);
+					m_player->m_player_dir = direction;
+					send_command(MsgId::CommandMotion, m_player->m_Controller.get_command(), direction, 0, 0, 0, 0);
 					switch (direction) {
-					case 1:	m_pPlayer->m_sPlayerY--; break;
-					case 2:	m_pPlayer->m_sPlayerY--; m_pPlayer->m_sPlayerX++;	break;
-					case 3:	m_pPlayer->m_sPlayerX++; break;
-					case 4:	m_pPlayer->m_sPlayerX++; m_pPlayer->m_sPlayerY++;	break;
-					case 5:	m_pPlayer->m_sPlayerY++; break;
-					case 6:	m_pPlayer->m_sPlayerX--; m_pPlayer->m_sPlayerY++;	break;
-					case 7:	m_pPlayer->m_sPlayerX--; break;
-					case 8:	m_pPlayer->m_sPlayerX--; m_pPlayer->m_sPlayerY--;	break;
+					case 1:	m_player->m_player_y--; break;
+					case 2:	m_player->m_player_y--; m_player->m_player_x++;	break;
+					case 3:	m_player->m_player_x++; break;
+					case 4:	m_player->m_player_x++; m_player->m_player_y++;	break;
+					case 5:	m_player->m_player_y++; break;
+					case 6:	m_player->m_player_x--; m_player->m_player_y++;	break;
+					case 7:	m_player->m_player_x--; break;
+					case 8:	m_player->m_player_x--; m_player->m_player_y--;	break;
 					}
-					m_pMapData->bSetOwner(m_pPlayer->m_sPlayerObjectID, m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pPlayer->m_sPlayerType, m_pPlayer->m_iPlayerDir,
-						m_pPlayer->m_playerAppearance, // v1.4
-						m_pPlayer->m_playerStatus, m_pPlayer->m_cPlayerName,
-						m_pPlayer->m_Controller.GetCommand(), 0, 0, 0);
-					m_pPlayer->m_Controller.SetCommandAvailable(false);
-					m_pPlayer->m_Controller.SetCommandTime(GameClock::GetTimeMS());
-					m_pPlayer->m_Controller.SetPrevMove(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY);
+					m_map_data->set_owner(m_player->m_player_object_id, m_player->m_player_x, m_player->m_player_y, m_player->m_player_type, m_player->m_player_dir,
+						m_player->m_playerAppearance, // v1.4
+						m_player->m_playerStatus, m_player->m_player_name,
+						m_player->m_Controller.get_command(), 0, 0, 0);
+					m_player->m_Controller.set_command_available(false);
+					m_player->m_Controller.set_command_time(GameClock::get_time_ms());
+					m_player->m_Controller.set_prev_move(m_player->m_player_x, m_player->m_player_y);
 				}
 			}
 
-			if (m_pPlayer->m_Controller.GetCommand() == Type::DamageMove)
+			if (m_player->m_Controller.get_command() == Type::DamageMove)
 			{
-				m_bIsGetPointingMode = false;
-				m_iPointCommandType = -1;
-				ClearSkillUsingStatus();
-				m_pPlayer->m_Controller.SetCommand(Type::Stop);
+				m_is_get_pointing_mode = false;
+				m_point_command_type = -1;
+				clear_skill_using_status();
+				m_player->m_Controller.set_command(Type::stop);
 			}
 			break;
 
 		case Type::Attack:
-			direction = CMisc::cGetNextMoveDir(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pPlayer->m_Controller.GetDestinationX(), m_pPlayer->m_Controller.GetDestinationY());
+			direction = CMisc::get_next_move_dir(m_player->m_player_x, m_player->m_player_y, m_player->m_Controller.get_destination_x(), m_player->m_Controller.get_destination_y());
 			// Snoopy: Illusion movement
-			if (m_bIllusionMVT == true)
+			if (m_illusion_mvt == true)
 			{
 				direction += 4;
 				if (direction > 8) direction -= 8;
@@ -7421,145 +7406,145 @@ void CGame::ProcessMotionCommands(uint16_t action_type)
 			if (direction != 0)
 			{
 				// Cancel logout countdown on attack
-				if ((m_logout_count > 0) && (m_bForceDisconn == false))
+				if ((m_logout_count > 0) && (m_force_disconn == false))
 				{
 					m_logout_count = -1;
-					AddEventList(DLGBOX_CLICK_SYSMENU2, 10);
+					add_event_list(DLGBOX_CLICK_SYSMENU2, 10);
 				}
 
 				if ((action_type == 2) || (action_type == 25))
 				{
-					if (_bCheckItemByType(ItemType::Arrow) == false)
+					if (check_item_by_type(ItemType::Arrow) == false)
 						action_type = 0;
 				}
-					m_pPlayer->m_iPlayerDir = direction;
-				m_wLastAttackTargetID = m_wCommObjectID;
-				bSendCommand(MsgId::CommandMotion, Type::Attack, direction, m_pPlayer->m_Controller.GetDestinationX(), m_pPlayer->m_Controller.GetDestinationY(), action_type, 0, m_wCommObjectID);
-				m_pMapData->bSetOwner(m_pPlayer->m_sPlayerObjectID, m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pPlayer->m_sPlayerType, m_pPlayer->m_iPlayerDir,
-					m_pPlayer->m_playerAppearance,
-					m_pPlayer->m_playerStatus, m_pPlayer->m_cPlayerName,
+					m_player->m_player_dir = direction;
+				m_last_attack_target_id = m_comm_object_id;
+				send_command(MsgId::CommandMotion, Type::Attack, direction, m_player->m_Controller.get_destination_x(), m_player->m_Controller.get_destination_y(), action_type, 0, m_comm_object_id);
+				m_map_data->set_owner(m_player->m_player_object_id, m_player->m_player_x, m_player->m_player_y, m_player->m_player_type, m_player->m_player_dir,
+					m_player->m_playerAppearance,
+					m_player->m_playerStatus, m_player->m_player_name,
 					Type::Attack,
-					m_pPlayer->m_Controller.GetDestinationX() - m_pPlayer->m_sPlayerX, m_pPlayer->m_Controller.GetDestinationY() - m_pPlayer->m_sPlayerY, action_type);
-				m_pPlayer->m_Controller.SetCommandAvailable(false);
-				m_pPlayer->m_Controller.SetCommandTime(GameClock::GetTimeMS());
+					m_player->m_Controller.get_destination_x() - m_player->m_player_x, m_player->m_Controller.get_destination_y() - m_player->m_player_y, action_type);
+				m_player->m_Controller.set_command_available(false);
+				m_player->m_Controller.set_command_time(GameClock::get_time_ms());
 				// Compute expected swing duration (must match server's bCheckClientAttackFrequency formula)
 				{
 					constexpr int ATTACK_FRAME_DURATIONS = 8;
-					int baseFrameTime = PlayerAnim::Attack.sFrameTime; // 78
-					int delay = m_pPlayer->m_playerStatus.iAttackDelay * 12;
-					if (m_pPlayer->m_playerStatus.bFrozen) delay += baseFrameTime >> 2;
-					if (m_pPlayer->m_playerStatus.bHaste)
-						delay -= static_cast<int>(PlayerAnim::Run.sFrameTime / 2.3);
+					int baseFrameTime = PlayerAnim::Attack.m_frame_time; // 78
+					int delay = m_player->m_playerStatus.attack_delay * 12;
+					if (m_player->m_playerStatus.frozen) delay += baseFrameTime >> 2;
+					if (m_player->m_playerStatus.haste)
+						delay -= static_cast<int>(PlayerAnim::Run.m_frame_time / 2.3);
 					int expectedSwingTime = ATTACK_FRAME_DURATIONS * (baseFrameTime + delay);
-					m_pPlayer->m_Controller.SetAttackEndTime(GameClock::GetTimeMS() + expectedSwingTime);
+					m_player->m_Controller.set_attack_end_time(GameClock::get_time_ms() + expectedSwingTime);
 				}
 			}
-			m_pPlayer->m_Controller.SetCommand(Type::Stop);
+			m_player->m_Controller.set_command(Type::stop);
 			break;
 
 		case Type::AttackMove:
-			if (m_pPlayer->m_bParalyze) return;
-			has_owner = m_pMapData->bGetOwner(m_pPlayer->m_Controller.GetDestinationX(), m_pPlayer->m_Controller.GetDestinationY(), dest_name, &dest_owner_type, &dest_owner_status, &m_wCommObjectID);
-			if ((m_pPlayer->m_sPlayerX == m_pPlayer->m_Controller.GetDestinationX()) && (m_pPlayer->m_sPlayerY == m_pPlayer->m_Controller.GetDestinationY()))
-				m_pPlayer->m_Controller.SetCommand(Type::Stop);
-			else if ((abs(m_pPlayer->m_sPlayerX - m_pPlayer->m_Controller.GetDestinationX()) <= 1) && (abs(m_pPlayer->m_sPlayerY - m_pPlayer->m_Controller.GetDestinationY()) <= 1) &&
+			if (m_player->m_paralyze) return;
+			has_owner = m_map_data->get_owner(m_player->m_Controller.get_destination_x(), m_player->m_Controller.get_destination_y(), dest_name, &dest_owner_type, &dest_owner_status, &m_comm_object_id);
+			if ((m_player->m_player_x == m_player->m_Controller.get_destination_x()) && (m_player->m_player_y == m_player->m_Controller.get_destination_y()))
+				m_player->m_Controller.set_command(Type::stop);
+			else if ((abs(m_player->m_player_x - m_player->m_Controller.get_destination_x()) <= 1) && (abs(m_player->m_player_y - m_player->m_Controller.get_destination_y()) <= 1) &&
 				(has_owner == true) && (dest_owner_type != 0))
-				m_pPlayer->m_Controller.SetCommand(Type::Stop);
+				m_player->m_Controller.set_command(Type::stop);
 			else
 			{
-				direction = m_pPlayer->m_Controller.GetNextMoveDir(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pPlayer->m_Controller.GetDestinationX(), m_pPlayer->m_Controller.GetDestinationY(), m_pMapData.get(), true);
+				direction = m_player->m_Controller.get_next_move_dir(m_player->m_player_x, m_player->m_player_y, m_player->m_Controller.get_destination_x(), m_player->m_Controller.get_destination_y(), m_map_data.get(), true);
 				// Snoopy: Illusion mvt
-				if (m_bIllusionMVT == true)
+				if (m_illusion_mvt == true)
 				{
-					direction = m_pPlayer->m_Controller.GetNextMoveDir(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pPlayer->m_Controller.GetDestinationX(), m_pPlayer->m_Controller.GetDestinationY(), m_pMapData.get(), true, true);
+					direction = m_player->m_Controller.get_next_move_dir(m_player->m_player_x, m_player->m_player_y, m_player->m_Controller.get_destination_x(), m_player->m_Controller.get_destination_y(), m_map_data.get(), true, true);
 				}
 				if (direction != 0)
 				{
 					// Cancel logout countdown on attack-move
-					if ((m_logout_count > 0) && (m_bForceDisconn == false))
+					if ((m_logout_count > 0) && (m_force_disconn == false))
 					{
 						m_logout_count = -1;
-						AddEventList(DLGBOX_CLICK_SYSMENU2, 10);
+						add_event_list(DLGBOX_CLICK_SYSMENU2, 10);
 					}
 
-					m_pPlayer->m_iPlayerDir = direction;
-					m_wLastAttackTargetID = m_wCommObjectID;
-					bSendCommand(MsgId::CommandMotion, Type::AttackMove, direction, m_pPlayer->m_Controller.GetDestinationX(), m_pPlayer->m_Controller.GetDestinationY(), action_type, 0, m_wCommObjectID);
+					m_player->m_player_dir = direction;
+					m_last_attack_target_id = m_comm_object_id;
+					send_command(MsgId::CommandMotion, Type::AttackMove, direction, m_player->m_Controller.get_destination_x(), m_player->m_Controller.get_destination_y(), action_type, 0, m_comm_object_id);
 					switch (direction) {
-					case 1:	m_pPlayer->m_sPlayerY--; break;
-					case 2:	m_pPlayer->m_sPlayerY--; m_pPlayer->m_sPlayerX++;	break;
-					case 3:	m_pPlayer->m_sPlayerX++; break;
-					case 4:	m_pPlayer->m_sPlayerX++; m_pPlayer->m_sPlayerY++;	break;
-					case 5:	m_pPlayer->m_sPlayerY++; break;
-					case 6:	m_pPlayer->m_sPlayerX--; m_pPlayer->m_sPlayerY++;	break;
-					case 7:	m_pPlayer->m_sPlayerX--; break;
-					case 8:	m_pPlayer->m_sPlayerX--; m_pPlayer->m_sPlayerY--;	break;
+					case 1:	m_player->m_player_y--; break;
+					case 2:	m_player->m_player_y--; m_player->m_player_x++;	break;
+					case 3:	m_player->m_player_x++; break;
+					case 4:	m_player->m_player_x++; m_player->m_player_y++;	break;
+					case 5:	m_player->m_player_y++; break;
+					case 6:	m_player->m_player_x--; m_player->m_player_y++;	break;
+					case 7:	m_player->m_player_x--; break;
+					case 8:	m_player->m_player_x--; m_player->m_player_y--;	break;
 					}
 
-					m_pMapData->bSetOwner(m_pPlayer->m_sPlayerObjectID, m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pPlayer->m_sPlayerType, m_pPlayer->m_iPlayerDir,
-						m_pPlayer->m_playerAppearance,
-						m_pPlayer->m_playerStatus, m_pPlayer->m_cPlayerName,
-						m_pPlayer->m_Controller.GetCommand(), m_pPlayer->m_Controller.GetDestinationX() - m_pPlayer->m_sPlayerX, m_pPlayer->m_Controller.GetDestinationY() - m_pPlayer->m_sPlayerY, action_type);
-					m_pPlayer->m_Controller.SetCommandAvailable(false);
-					m_pPlayer->m_Controller.SetCommandTime(GameClock::GetTimeMS());
+					m_map_data->set_owner(m_player->m_player_object_id, m_player->m_player_x, m_player->m_player_y, m_player->m_player_type, m_player->m_player_dir,
+						m_player->m_playerAppearance,
+						m_player->m_playerStatus, m_player->m_player_name,
+						m_player->m_Controller.get_command(), m_player->m_Controller.get_destination_x() - m_player->m_player_x, m_player->m_Controller.get_destination_y() - m_player->m_player_y, action_type);
+					m_player->m_Controller.set_command_available(false);
+					m_player->m_Controller.set_command_time(GameClock::get_time_ms());
 					// Compute expected swing duration (must match server's bCheckClientAttackFrequency formula)
 					{
 						constexpr int ATTACK_FRAME_DURATIONS = 8;
-						int baseFrameTime = PlayerAnim::Attack.sFrameTime; // 78
-						int delay = m_pPlayer->m_playerStatus.iAttackDelay * 12;
-						if (m_pPlayer->m_playerStatus.bFrozen) delay += baseFrameTime >> 2;
-						if (m_pPlayer->m_playerStatus.bHaste)
-							delay -= static_cast<int>(PlayerAnim::Run.sFrameTime / 2.3);
+						int baseFrameTime = PlayerAnim::Attack.m_frame_time; // 78
+						int delay = m_player->m_playerStatus.attack_delay * 12;
+						if (m_player->m_playerStatus.frozen) delay += baseFrameTime >> 2;
+						if (m_player->m_playerStatus.haste)
+							delay -= static_cast<int>(PlayerAnim::Run.m_frame_time / 2.3);
 						int expectedSwingTime = ATTACK_FRAME_DURATIONS * (baseFrameTime + delay);
-						m_pPlayer->m_Controller.SetAttackEndTime(GameClock::GetTimeMS() + expectedSwingTime);
+						m_player->m_Controller.set_attack_end_time(GameClock::get_time_ms() + expectedSwingTime);
 					}
-					m_pPlayer->m_Controller.SetPrevMove(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY);
+					m_player->m_Controller.set_prev_move(m_player->m_player_x, m_player->m_player_y);
 				}
 			}
-			m_pPlayer->m_Controller.SetCommand(Type::Stop);
+			m_player->m_Controller.set_command(Type::stop);
 			break;
 
 		case Type::GetItem:
 			// Cancel logout countdown on get item
-			if ((m_logout_count > 0) && (m_bForceDisconn == false))
+			if ((m_logout_count > 0) && (m_force_disconn == false))
 			{
 				m_logout_count = -1;
-				AddEventList(DLGBOX_CLICK_SYSMENU2, 10);
+				add_event_list(DLGBOX_CLICK_SYSMENU2, 10);
 			}
 
-			bSendCommand(MsgId::CommandMotion, Type::GetItem, m_pPlayer->m_iPlayerDir, 0, 0, 0, 0);
-			m_pMapData->bSetOwner(m_pPlayer->m_sPlayerObjectID, m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pPlayer->m_sPlayerType, m_pPlayer->m_iPlayerDir,
-				m_pPlayer->m_playerAppearance,
-				m_pPlayer->m_playerStatus, m_pPlayer->m_cPlayerName,
+			send_command(MsgId::CommandMotion, Type::GetItem, m_player->m_player_dir, 0, 0, 0, 0);
+			m_map_data->set_owner(m_player->m_player_object_id, m_player->m_player_x, m_player->m_player_y, m_player->m_player_type, m_player->m_player_dir,
+				m_player->m_playerAppearance,
+				m_player->m_playerStatus, m_player->m_player_name,
 				Type::GetItem, 0, 0, 0);
-			m_pPlayer->m_Controller.SetCommandAvailable(false);
-			m_pPlayer->m_Controller.SetCommand(Type::Stop);
+			m_player->m_Controller.set_command_available(false);
+			m_player->m_Controller.set_command(Type::stop);
 			break;
 
 		case Type::Magic:
 			// Cancel logout countdown on magic cast
-			if ((m_logout_count > 0) && (m_bForceDisconn == false))
+			if ((m_logout_count > 0) && (m_force_disconn == false))
 			{
 				m_logout_count = -1;
-				AddEventList(DLGBOX_CLICK_SYSMENU2, 10);
+				add_event_list(DLGBOX_CLICK_SYSMENU2, 10);
 			}
 
-			bSendCommand(MsgId::CommandMotion, Type::Magic, m_pPlayer->m_iPlayerDir, m_iCastingMagicType, 0, 0, 0);
-			m_pMapData->bSetOwner(m_pPlayer->m_sPlayerObjectID, m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pPlayer->m_sPlayerType, m_pPlayer->m_iPlayerDir,
-				m_pPlayer->m_playerAppearance,
-				m_pPlayer->m_playerStatus, m_pPlayer->m_cPlayerName,
-				Type::Magic, m_iCastingMagicType, 0, 0);
-			m_pPlayer->m_Controller.SetCommandAvailable(false);
-			m_pPlayer->m_Controller.SetCommandTime(GameClock::GetTimeMS());
+			send_command(MsgId::CommandMotion, Type::Magic, m_player->m_player_dir, m_casting_magic_type, 0, 0, 0);
+			m_map_data->set_owner(m_player->m_player_object_id, m_player->m_player_x, m_player->m_player_y, m_player->m_player_type, m_player->m_player_dir,
+				m_player->m_playerAppearance,
+				m_player->m_playerStatus, m_player->m_player_name,
+				Type::Magic, m_casting_magic_type, 0, 0);
+			m_player->m_Controller.set_command_available(false);
+			m_player->m_Controller.set_command_time(GameClock::get_time_ms());
 			// Only enter targeting mode if the cast wasn't interrupted by damage
-			if (m_iPointCommandType >= 100 && m_iPointCommandType < 200)
-				m_bIsGetPointingMode = true;
-			m_pPlayer->m_Controller.SetCommand(Type::Stop);
-			m_floatingText.RemoveByObjectID(m_pPlayer->m_sPlayerObjectID);
+			if (m_point_command_type >= 100 && m_point_command_type < 200)
+				m_is_get_pointing_mode = true;
+			m_player->m_Controller.set_command(Type::stop);
+			m_floating_text.remove_by_object_id(m_player->m_player_object_id);
 			{
-				text = std::format("{}!", m_pMagicCfgList[m_iCastingMagicType]->m_cName);
-				m_floatingText.AddNotifyText(NotifyTextType::MagicCastName, text.c_str(), GameClock::GetTimeMS(),
-					m_pPlayer->m_sPlayerObjectID, m_pMapData.get());
+				text = std::format("{}!", m_magic_cfg_list[m_casting_magic_type]->m_name);
+				m_floating_text.add_notify_text(notify_text_type::magic_cast_name, text.c_str(), GameClock::get_time_ms(),
+					m_player->m_player_object_id, m_map_data.get());
 			}
 			return;
 
@@ -7571,15 +7556,15 @@ void CGame::ProcessMotionCommands(uint16_t action_type)
 
 // _Draw_OnLogin removed - migrated to Screen_Login
 
-void CGame::RequestTeleportAndWaitData()
+void CGame::request_teleport_and_wait_data()
 {
-	if (TeleportManager::Get().IsRequested()) return;
+	if (teleport_manager::get().is_requested()) return;
 
-	bSendCommand(MsgId::RequestTeleport, 0, 0, 0, 0, 0, 0);
-	ChangeGameMode(GameMode::WaitingInitData);
+	send_command(MsgId::RequestTeleport, 0, 0, 0, 0, 0, 0);
+	change_game_mode(GameMode::WaitingInitData);
 }
 
-void CGame::InitDataResponseHandler(char* packet_data)
+void CGame::init_data_response_handler(char* packet_data)
 {
 	short pivot_x = 0, pivot_y = 0;
 	std::string text, prev_location;
@@ -7589,124 +7574,124 @@ void CGame::InitDataResponseHandler(char* packet_data)
 	HANDLE file_handle = INVALID_HANDLE_VALUE;
 	uint32_t file_size = 0;
 
-	m_pPlayer->m_bParalyze = false;
-	m_pMapData->Init();
+	m_player->m_paralyze = false;
+	m_map_data->init();
 
-	m_sMonsterID = 0;
-	m_dwMonsterEventTime = 0;
+	m_monster_id = 0;
+	m_monster_event_time = 0;
 
-	m_dialogBoxManager.DisableDialogBox(DialogBoxId::GuildMenu);
-	m_dialogBoxManager.DisableDialogBox(DialogBoxId::SaleMenu);
-	m_dialogBoxManager.DisableDialogBox(DialogBoxId::CityHallMenu);
-	m_dialogBoxManager.DisableDialogBox(DialogBoxId::Bank);
-	m_dialogBoxManager.DisableDialogBox(DialogBoxId::MagicShop);
-	m_dialogBoxManager.DisableDialogBox(DialogBoxId::Map);
-	m_dialogBoxManager.DisableDialogBox(DialogBoxId::NpcActionQuery);
-	m_dialogBoxManager.DisableDialogBox(DialogBoxId::NpcTalk);
-	m_dialogBoxManager.DisableDialogBox(DialogBoxId::SellOrRepair);
-	m_dialogBoxManager.DisableDialogBox(DialogBoxId::GuildHallMenu); // Gail's diag
+	m_dialog_box_manager.disable_dialog_box(DialogBoxId::GuildMenu);
+	m_dialog_box_manager.disable_dialog_box(DialogBoxId::SaleMenu);
+	m_dialog_box_manager.disable_dialog_box(DialogBoxId::CityHallMenu);
+	m_dialog_box_manager.disable_dialog_box(DialogBoxId::Bank);
+	m_dialog_box_manager.disable_dialog_box(DialogBoxId::MagicShop);
+	m_dialog_box_manager.disable_dialog_box(DialogBoxId::Map);
+	m_dialog_box_manager.disable_dialog_box(DialogBoxId::NpcActionQuery);
+	m_dialog_box_manager.disable_dialog_box(DialogBoxId::NpcTalk);
+	m_dialog_box_manager.disable_dialog_box(DialogBoxId::SellOrRepair);
+	m_dialog_box_manager.disable_dialog_box(DialogBoxId::GuildHallMenu); // Gail's diag
 
-	m_pPlayer->m_Controller.SetCommand(Type::Stop);
-	m_pPlayer->m_Controller.ResetCommandCount();
-	m_bIsGetPointingMode = false;
-	m_iPointCommandType = -1;
-	m_iIlusionOwnerH = 0;
-	m_cIlusionOwnerType = 0;
-	TeleportManager::Get().SetRequested(false);
-	m_pPlayer->m_bIsConfusion = false;
-	m_bSkillUsingStatus = false;
+	m_player->m_Controller.set_command(Type::stop);
+	m_player->m_Controller.reset_command_count();
+	m_is_get_pointing_mode = false;
+	m_point_command_type = -1;
+	m_ilusion_owner_h = 0;
+	m_ilusion_owner_type = 0;
+	teleport_manager::get().set_requested(false);
+	m_player->m_is_confusion = false;
+	m_skill_using_status = false;
 
-	m_bItemUsingStatus = false;
+	m_item_using_status = false;
 
-	m_cRestartCount = -1;
-	m_dwRestartCountTime = 0;
+	m_restart_count = -1;
+	m_restart_count_time = 0;
 
-	if (m_pEffectManager) m_pEffectManager->ClearAllEffects();
+	if (m_effect_manager) m_effect_manager->clear_all_effects();
 
-	WeatherManager::Get().ResetParticles();
+	weather_manager::get().reset_particles();
 
 	for (int i = 0; i < game_limits::max_guild_names; i++)
 	{
-		m_stGuildName[i].dwRefTime = 0;
-		m_stGuildName[i].iGuildRank = -1;
+		m_guild_name_cache[i].ref_time = 0;
+		m_guild_name_cache[i].guild_rank = -1;
 	}
 
-	m_floatingText.ClearAll();
+	m_floating_text.clear_all();
 
 	const auto* pkt = hb::net::PacketCast<hb::net::PacketResponseInitDataHeader>(
 		packet_data, sizeof(hb::net::PacketResponseInitDataHeader));
 	if (!pkt) return;
-	m_pPlayer->m_sPlayerObjectID = pkt->player_object_id;
+	m_player->m_player_object_id = pkt->player_object_id;
 	pivot_x = pkt->pivot_x;
 	pivot_y = pkt->pivot_y;
-	m_pPlayer->m_sPlayerType = pkt->player_type;
-	m_pPlayer->m_playerAppearance = pkt->appearance;
-	m_pPlayer->m_playerStatus = pkt->status;
+	m_player->m_player_type = pkt->player_type;
+	m_player->m_playerAppearance = pkt->appearance;
+	m_player->m_playerStatus = pkt->status;
 
 	//Snoopy MIM fix
-	if (m_pPlayer->m_playerStatus.bIllusionMovement)
+	if (m_player->m_playerStatus.illusion_movement)
 	{
-		m_bIllusionMVT = true;
+		m_illusion_mvt = true;
 	}
 	else
 	{
-		m_bIllusionMVT = false;
+		m_illusion_mvt = false;
 	}
 
 	// GM mode detection
-	m_pPlayer->m_bIsGMMode = m_pPlayer->m_playerStatus.bGMMode;
-	m_cMapName.assign(pkt->map_name, strnlen(pkt->map_name, sizeof(pkt->map_name)));
+	m_player->m_is_gm_mode = m_player->m_playerStatus.gm_mode;
+	m_map_name.assign(pkt->map_name, strnlen(pkt->map_name, sizeof(pkt->map_name)));
 	char mapMsgBuf[32]{};
-	m_cMapIndex = GetOfficialMapName(m_cMapName.c_str(), mapMsgBuf);
-	m_cMapMessage = mapMsgBuf;
-	if (m_cMapIndex < 0)
+	m_map_index = get_official_map_name(m_map_name.c_str(), mapMsgBuf);
+	m_map_message = mapMsgBuf;
+	if (m_map_index < 0)
 	{
-		m_dialogBoxManager.Info(DialogBoxId::GuideMap).sSizeX = -1;
-		m_dialogBoxManager.Info(DialogBoxId::GuideMap).sSizeY = -1;
+		m_dialog_box_manager.Info(DialogBoxId::GuideMap).m_size_x = -1;
+		m_dialog_box_manager.Info(DialogBoxId::GuideMap).m_size_y = -1;
 	}
 	else
 	{
-		m_dialogBoxManager.Info(DialogBoxId::GuideMap).sSizeX = 128;
-		m_dialogBoxManager.Info(DialogBoxId::GuideMap).sSizeY = 128;
+		m_dialog_box_manager.Info(DialogBoxId::GuideMap).m_size_x = 128;
+		m_dialog_box_manager.Info(DialogBoxId::GuideMap).m_size_y = 128;
 	}
 
-	prev_location = m_cCurLocation;
-	m_cCurLocation.assign(pkt->cur_location, strnlen(pkt->cur_location, sizeof(pkt->cur_location)));
+	prev_location = m_cur_location;
+	m_cur_location.assign(pkt->cur_location, strnlen(pkt->cur_location, sizeof(pkt->cur_location)));
 
-	WeatherManager::Get().SetAmbientLight(static_cast<char>(pkt->sprite_alpha));
+	weather_manager::get().set_ambient_light(static_cast<char>(pkt->sprite_alpha));
 
-	WeatherManager::Get().SetWeatherStatus(static_cast<char>(pkt->weather_status));
-	switch (WeatherManager::Get().GetAmbientLight()) { // Xmas bulbs
+	weather_manager::get().set_weather_status(static_cast<char>(pkt->weather_status));
+	switch (weather_manager::get().get_ambient_light()) { // Xmas bulbs
 		// Will be sent by server if DayTime is 3 (and a snowy weather)
-	case 1:	m_bIsXmas = false; break;
-	case 2: m_bIsXmas = false; break;
+	case 1:	m_is_xmas = false; break;
+	case 2: m_is_xmas = false; break;
 	case 3: // Snoopy Special night with chrismas bulbs
-		if (WeatherManager::Get().GetWeatherStatus() > 3) m_bIsXmas = true;
-		else m_bIsXmas = false;
-		WeatherManager::Get().SetXmas(m_bIsXmas);
-		WeatherManager::Get().SetAmbientLight(2);
+		if (weather_manager::get().get_weather_status() > 3) m_is_xmas = true;
+		else m_is_xmas = false;
+		weather_manager::get().set_xmas(m_is_xmas);
+		weather_manager::get().set_ambient_light(2);
 		break;
 	}
-	m_pPlayer->m_iContribution = pkt->contribution;
+	m_player->m_contribution = pkt->contribution;
 	is_observer = pkt->observer_mode != 0;
-	m_pPlayer->m_iHP = pkt->hp;
-	m_cDiscount = static_cast<char>(pkt->discount);
+	m_player->m_hp = pkt->hp;
+	m_discount = static_cast<char>(pkt->discount);
 
 	const char* cursor = reinterpret_cast<const char*>(packet_data) + sizeof(hb::net::PacketResponseInitDataHeader);
 
 	{
-		char ws = WeatherManager::Get().GetWeatherStatus();
+		char ws = weather_manager::get().get_weather_status();
 		if (ws != 0)
 		{
-			WeatherManager::Get().SetWeather(true, ws);
-			if (ws >= 4 && ws <= 6 && AudioManager::Get().IsMusicEnabled())
-				StartBGM();
+			weather_manager::get().set_weather(true, ws);
+			if (ws >= 4 && ws <= 6 && audio_manager::get().is_music_enabled())
+				start_bgm();
 		}
-		else WeatherManager::Get().SetWeather(false, 0);
+		else weather_manager::get().set_weather(false, 0);
 	}
 
 	// Lowercase map name for case-sensitive filesystem compatibility
-	std::string lower_map_name = m_cMapName;
+	std::string lower_map_name = m_map_name;
 	std::transform(lower_map_name.begin(), lower_map_name.end(), lower_map_name.begin(),
 		[](unsigned char c) { return static_cast<char>(std::tolower(c)); });
 
@@ -7723,56 +7708,56 @@ void CGame::InitDataResponseHandler(char* packet_data)
 	}
 
 	std::snprintf(map_filename + strlen(map_filename), sizeof(map_filename) - strlen(map_filename), "%s", ".amd");
-	m_pMapData->OpenMapDataFile(map_filename);
+	m_map_data->open_map_data_file(map_filename);
 
-	m_pMapData->m_sPivotX = pivot_x;
-	m_pMapData->m_sPivotY = pivot_y;
+	m_map_data->m_pivot_x = pivot_x;
+	m_map_data->m_pivot_y = pivot_y;
 
-	m_pPlayer->m_sPlayerX = pivot_x + hb::shared::view::PlayerPivotOffsetX;
-	m_pPlayer->m_sPlayerY = pivot_y + hb::shared::view::PlayerPivotOffsetY;
+	m_player->m_player_x = pivot_x + hb::shared::view::PlayerPivotOffsetX;
+	m_player->m_player_y = pivot_y + hb::shared::view::PlayerPivotOffsetY;
 
-	m_pPlayer->m_iPlayerDir = 5;
+	m_player->m_player_dir = 5;
 
 	if (is_observer == false)
 	{
-		m_pMapData->bSetOwner(m_pPlayer->m_sPlayerObjectID, m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pPlayer->m_sPlayerType, m_pPlayer->m_iPlayerDir,
-			m_pPlayer->m_playerAppearance, // v1.4
-			m_pPlayer->m_playerStatus, m_pPlayer->m_cPlayerName,
-			Type::Stop, 0, 0, 0);
+		m_map_data->set_owner(m_player->m_player_object_id, m_player->m_player_x, m_player->m_player_y, m_player->m_player_type, m_player->m_player_dir,
+			m_player->m_playerAppearance, // v1.4
+			m_player->m_playerStatus, m_player->m_player_name,
+			Type::stop, 0, 0, 0);
 	}
 
-	m_Camera.SnapTo((m_pPlayer->m_sPlayerX - VIEW_CENTER_TILE_X()) * 32 - 16, (m_pPlayer->m_sPlayerY - VIEW_CENTER_TILE_Y()) * 32 - 16);
-	_ReadMapData(pivot_x + hb::shared::view::MapDataBufferX, pivot_y + hb::shared::view::MapDataBufferY, cursor);
+	m_Camera.snap_to((m_player->m_player_x - VIEW_CENTER_TILE_X()) * 32 - 16, (m_player->m_player_y - VIEW_CENTER_TILE_Y()) * 32 - 16);
+	read_map_data(pivot_x + hb::shared::view::MapDataBufferX, pivot_y + hb::shared::view::MapDataBufferY, cursor);
 	// ------------------------------------------------------------------------+
-	text = std::format(INITDATA_RESPONSE_HANDLER1, m_cMapMessage);
-	AddEventList(text.c_str(), 10);
+	text = std::format(INITDATA_RESPONSE_HANDLER1, m_map_message);
+	add_event_list(text.c_str(), 10);
 
-	m_dialogBoxManager.Info(DialogBoxId::WarningBattleArea).sX = 150;
-	m_dialogBoxManager.Info(DialogBoxId::WarningBattleArea).sY = 130;
+	m_dialog_box_manager.Info(DialogBoxId::WarningBattleArea).m_x = 150;
+	m_dialog_box_manager.Info(DialogBoxId::WarningBattleArea).m_y = 130;
 
-	if ((m_cCurLocation.starts_with("middleland"))
-		|| (m_cCurLocation.starts_with("dglv2"))
-		|| (m_cCurLocation.starts_with("middled1n")))
-		m_dialogBoxManager.EnableDialogBox(DialogBoxId::WarningBattleArea, 0, 0, 0);
+	if ((m_cur_location.starts_with("middleland"))
+		|| (m_cur_location.starts_with("dglv2"))
+		|| (m_cur_location.starts_with("middled1n")))
+		m_dialog_box_manager.enable_dialog_box(DialogBoxId::WarningBattleArea, 0, 0, 0);
 
-	m_bIsServerChanging = false;
+	m_is_server_changing = false;
 
 	// Wait for configs before entering the game world
-	m_bInitDataReady = true;
-	if (m_bConfigsReady) {
+	m_init_data_ready = true;
+	if (m_configs_ready) {
 		GameModeManager::set_screen<Screen_OnGame>();
-		m_bInitDataReady = false;
+		m_init_data_ready = false;
 	}
 
 	//v1.41
-	if (m_pPlayer->m_playerAppearance.bIsWalking)
-		m_pPlayer->m_bIsCombatMode = true;
-	else m_pPlayer->m_bIsCombatMode = false;
+	if (m_player->m_playerAppearance.is_walking)
+		m_player->m_is_combat_mode = true;
+	else m_player->m_is_combat_mode = false;
 
 	//v1.42
-	if (m_bIsFirstConn == true)
+	if (m_is_first_conn == true)
 	{
-		m_bIsFirstConn = false;
+		m_is_first_conn = false;
 		file_handle = CreateFile("contents\\contents1000.txt", GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
 		if (file_handle == INVALID_HANDLE_VALUE)
 			file_size = 0;
@@ -7781,11 +7766,11 @@ void CGame::InitDataResponseHandler(char* packet_data)
 			file_size = GetFileSize(file_handle, 0);
 			CloseHandle(file_handle);
 		}
-		bSendCommand(MsgId::RequestNoticement, 0, 0, static_cast<int>(file_size), 0, 0, 0);
+		send_command(MsgId::RequestNoticement, 0, 0, static_cast<int>(file_size), 0, 0, 0);
 	}
 }
 
-void CGame::MotionEventHandler(char* packet_data)
+void CGame::motion_event_handler(char* packet_data)
 {
 	WORD event_type = 0, object_id = 0;
 	short map_x = -1, map_y = -1, owner_type = 0, value1 = 0, value2 = 0, value3 = 0;
@@ -7807,12 +7792,12 @@ void CGame::MotionEventHandler(char* packet_data)
 	object_id = baseId->object_id;
 
 	if (hb::shared::object_id::IsNpcID(object_id)) {
-		m_dwLastNpcEventTime = GameClock::GetTimeMS();
+		m_last_npc_event_time = GameClock::get_time_ms();
 	}
 
 	if (!hb::shared::object_id::IsNearbyOffset(object_id))
 	{
-		if (hb::shared::object_id::IsPlayerID(object_id)) 	// Player
+		if (hb::shared::object_id::is_player_id(object_id)) 	// Player
 		{
 			const auto* pkt = hb::net::PacketCast<hb::net::PacketEventMotionPlayer>(packet_data, sizeof(hb::net::PacketEventMotionPlayer));
 			if (!pkt) return;
@@ -7832,7 +7817,7 @@ void CGame::MotionEventHandler(char* packet_data)
 			map_x = pkt->x;
 			map_y = pkt->y;
 			npc_config_id = pkt->config_id;
-			owner_type = ResolveNpcType(npc_config_id);
+			owner_type = resolve_npc_type(npc_config_id);
 			direction = static_cast<char>(pkt->dir);
 			name.assign(pkt->name, strnlen(pkt->name, sizeof(pkt->name)));
 			appearance.SetFromNpcAppearance(pkt->appearance);
@@ -7902,432 +7887,432 @@ void CGame::MotionEventHandler(char* packet_data)
 		}
 	}
 
-	if ((event_type == Type::NullAction) && (name == m_pPlayer->m_cPlayerName))
+	if ((event_type == Type::NullAction) && (name == m_player->m_player_name))
 	{
-		m_pPlayer->m_sPlayerType = owner_type;
-		prev_combat_mode = m_pPlayer->m_playerAppearance.bIsWalking;
-		m_pPlayer->m_playerAppearance = appearance;
-		m_pPlayer->m_playerStatus = status;
-		m_pPlayer->m_bIsGMMode = m_pPlayer->m_playerStatus.bGMMode;
+		m_player->m_player_type = owner_type;
+		prev_combat_mode = m_player->m_playerAppearance.is_walking;
+		m_player->m_playerAppearance = appearance;
+		m_player->m_playerStatus = status;
+		m_player->m_is_gm_mode = m_player->m_playerStatus.gm_mode;
 		if (!prev_combat_mode)
 		{
-			if (appearance.bIsWalking)
+			if (appearance.is_walking)
 			{
-				AddEventList(MOTION_EVENT_HANDLER1, 10);
-				m_pPlayer->m_bIsCombatMode = true;
+				add_event_list(MOTION_EVENT_HANDLER1, 10);
+				m_player->m_is_combat_mode = true;
 			}
 		}
 		else
 		{
-			if (!appearance.bIsWalking)
+			if (!appearance.is_walking)
 			{
-				AddEventList(MOTION_EVENT_HANDLER2, 10);
-				m_pPlayer->m_bIsCombatMode = false;
+				add_event_list(MOTION_EVENT_HANDLER2, 10);
+				m_player->m_is_combat_mode = false;
 			}
 		}
-		if (m_pPlayer->m_Controller.GetCommand() != Type::Run && m_pPlayer->m_Controller.GetCommand() != Type::Move) { m_pMapData->bSetOwner(object_id, map_x, map_y, owner_type, direction, appearance, status, name, (char)event_type, value1, value2, value3, location, 0, npc_config_id); }
+		if (m_player->m_Controller.get_command() != Type::Run && m_player->m_Controller.get_command() != Type::Move) { m_map_data->set_owner(object_id, map_x, map_y, owner_type, direction, appearance, status, name, (char)event_type, value1, value2, value3, location, 0, npc_config_id); }
 	}
-	else { m_pMapData->bSetOwner(object_id, map_x, map_y, owner_type, direction, appearance, status, name, (char)event_type, value1, value2, value3, location, 0, npc_config_id); }
+	else { m_map_data->set_owner(object_id, map_x, map_y, owner_type, direction, appearance, status, name, (char)event_type, value1, value2, value3, location, 0, npc_config_id); }
 
 	switch (event_type) {
 	case Type::Magic: // Casting
-		m_floatingText.RemoveByObjectID(hb::shared::object_id::ToRealID(object_id));
+		m_floating_text.remove_by_object_id(hb::shared::object_id::ToRealID(object_id));
 		{
-			text = std::format("{}!", m_pMagicCfgList[value1]->m_cName);
-			m_floatingText.AddNotifyText(NotifyTextType::MagicCastName, text.c_str(), m_dwCurTime,
-				hb::shared::object_id::ToRealID(object_id), m_pMapData.get());
+			text = std::format("{}!", m_magic_cfg_list[value1]->m_name);
+			m_floating_text.add_notify_text(notify_text_type::magic_cast_name, text.c_str(), m_cur_time,
+				hb::shared::object_id::ToRealID(object_id), m_map_data.get());
 		}
 		break;
 
 	case Type::Dying:
-		m_floatingText.RemoveByObjectID(hb::shared::object_id::ToRealID(object_id));
-		m_floatingText.AddDamageFromValue(value1, true, m_dwCurTime,
-			hb::shared::object_id::ToRealID(object_id), m_pMapData.get());
+		m_floating_text.remove_by_object_id(hb::shared::object_id::ToRealID(object_id));
+		m_floating_text.add_damage_from_value(value1, true, m_cur_time,
+			hb::shared::object_id::ToRealID(object_id), m_map_data.get());
 		break;
 
 	case Type::Damage:
 	case Type::DamageMove:
-		if (name == m_pPlayer->m_cPlayerName)
+		if (name == m_player->m_player_name)
 		{
 			// Cancel spell casting if in the animation phase (Type::Magic)
-			if (m_pPlayer->m_Controller.GetCommand() == Type::Magic)
-				m_pPlayer->m_Controller.SetCommand(Type::Stop);
-			m_bIsGetPointingMode = false;
-			m_iPointCommandType = -1;
-			ClearSkillUsingStatus();
+			if (m_player->m_Controller.get_command() == Type::Magic)
+				m_player->m_Controller.set_command(Type::stop);
+			m_is_get_pointing_mode = false;
+			m_point_command_type = -1;
+			clear_skill_using_status();
 			// Lock the controller until the damage animation finishes.
 			// Without this, quick actions allows immediate movement after being hit.
-			m_pPlayer->m_Controller.SetCommand(Type::Stop);
-			m_pPlayer->m_Controller.SetCommandAvailable(false);
-			m_pPlayer->m_Controller.SetCommandTime(GameClock::GetTimeMS());
+			m_player->m_Controller.set_command(Type::stop);
+			m_player->m_Controller.set_command_available(false);
+			m_player->m_Controller.set_command_time(GameClock::get_time_ms());
 		}
-		m_floatingText.RemoveByObjectID(hb::shared::object_id::ToRealID(object_id));
-		m_floatingText.AddDamageFromValue(value1, false, m_dwCurTime,
-			hb::shared::object_id::ToRealID(object_id), m_pMapData.get());
+		m_floating_text.remove_by_object_id(hb::shared::object_id::ToRealID(object_id));
+		m_floating_text.add_damage_from_value(value1, false, m_cur_time,
+			hb::shared::object_id::ToRealID(object_id), m_map_data.get());
 		break;
 
 	case Type::Attack:
 	case Type::AttackMove:
-		if (object_id == m_pPlayer->m_sPlayerObjectID + hb::shared::object_id::NearbyOffset)
+		if (object_id == m_player->m_player_object_id + hb::shared::object_id::NearbyOffset)
 		{
-			if (m_pMagicCfgList[value3] != 0)
+			if (m_magic_cfg_list[value3] != 0)
 			{
-				text = m_pMagicCfgList[value3]->m_cName;
-				AddEventList(text.c_str(), 10);
+				text = m_magic_cfg_list[value3]->m_name;
+				add_event_list(text.c_str(), 10);
 			}
 		}
 		break;
 	}
 }
 
-void CGame::GrandMagicResult(const char* map_name, int ares_crusade_points, int elv_crusade_points, int ares_industry_points, int elv_industry_points, int ares_crusade_casualties, int ares_industry_casualties, int elv_crusade_casualties, int elv_industry_casualties)
+void CGame::grand_magic_result(const char* map_name, int ares_crusade_points, int elv_crusade_points, int ares_industry_points, int elv_industry_points, int ares_crusade_casualties, int ares_industry_casualties, int elv_crusade_casualties, int elv_industry_casualties)
 {
 	int text_index = 0;
 	char temp[120]{};
 
 	for (int i = 0; i < game_limits::max_text_dlg_lines; i++)
 	{
-		if (m_pMsgTextList[i] != 0)
-			m_pMsgTextList[i].reset();
+		if (m_msg_text_list[i] != 0)
+			m_msg_text_list[i].reset();
 	}
 
 	for (int i = 0; i < 92; i++)
-		if (m_pGameMsgList[i] == 0) return;
+		if (m_game_msg_list[i] == 0) return;
 
 	if (strcmp(map_name, "aresden") == 0)
 	{
-		m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[2]->m_pMsg, 0);
-		m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[3]->m_pMsg, 0);
-		m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, " ", 0);
+		m_msg_text_list[text_index++] = std::make_unique<CMsg>(0, m_game_msg_list[2]->m_pMsg, 0);
+		m_msg_text_list[text_index++] = std::make_unique<CMsg>(0, m_game_msg_list[3]->m_pMsg, 0);
+		m_msg_text_list[text_index++] = std::make_unique<CMsg>(0, " ", 0);
 
-		std::snprintf(temp, sizeof(temp), "%s %d", m_pGameMsgList[4]->m_pMsg, ares_crusade_points);
-		m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, temp, 0);
+		std::snprintf(temp, sizeof(temp), "%s %d", m_game_msg_list[4]->m_pMsg, ares_crusade_points);
+		m_msg_text_list[text_index++] = std::make_unique<CMsg>(0, temp, 0);
 
-		std::snprintf(temp, sizeof(temp), "%s %d", m_pGameMsgList[5]->m_pMsg, elv_crusade_points);
-		m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, temp, 0);
+		std::snprintf(temp, sizeof(temp), "%s %d", m_game_msg_list[5]->m_pMsg, elv_crusade_points);
+		m_msg_text_list[text_index++] = std::make_unique<CMsg>(0, temp, 0);
 
-		std::snprintf(temp, sizeof(temp), "%s %d", m_pGameMsgList[6]->m_pMsg, ares_industry_points);
-		m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, temp, 0);
+		std::snprintf(temp, sizeof(temp), "%s %d", m_game_msg_list[6]->m_pMsg, ares_industry_points);
+		m_msg_text_list[text_index++] = std::make_unique<CMsg>(0, temp, 0);
 
-		std::snprintf(temp, sizeof(temp), "%s %d", m_pGameMsgList[58]->m_pMsg, elv_industry_points);
-		m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, temp, 0);
-		m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, " ", 0);
+		std::snprintf(temp, sizeof(temp), "%s %d", m_game_msg_list[58]->m_pMsg, elv_industry_points);
+		m_msg_text_list[text_index++] = std::make_unique<CMsg>(0, temp, 0);
+		m_msg_text_list[text_index++] = std::make_unique<CMsg>(0, " ", 0);
 
 		std::snprintf(temp, sizeof(temp), "%s %d %d %d %d", NOTIFY_MSG_STRUCTURE_HP, ares_crusade_casualties, ares_industry_casualties, elv_crusade_casualties, elv_industry_casualties);
-		m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, temp, 0);
-		m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, " ", 0);
+		m_msg_text_list[text_index++] = std::make_unique<CMsg>(0, temp, 0);
+		m_msg_text_list[text_index++] = std::make_unique<CMsg>(0, " ", 0);
 
 		if (elv_crusade_points == 0) {
-			if ((m_pPlayer->m_bCitizen == true) && (m_pPlayer->m_bAresden == false))
+			if ((m_player->m_citizen == true) && (m_player->m_aresden == false))
 			{
-				PlayGameSound('E', 25, 0, 0);
-				m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[59]->m_pMsg, 0);
-				m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[60]->m_pMsg, 0);
-				m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[61]->m_pMsg, 0);
-				m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[62]->m_pMsg, 0);
-				for (int i = text_index; i < 18; i++) m_pMsgTextList[i] = std::make_unique<CMsg>(0, " ", 0);
+				play_game_sound('E', 25, 0, 0);
+				m_msg_text_list[text_index++] = std::make_unique<CMsg>(0, m_game_msg_list[59]->m_pMsg, 0);
+				m_msg_text_list[text_index++] = std::make_unique<CMsg>(0, m_game_msg_list[60]->m_pMsg, 0);
+				m_msg_text_list[text_index++] = std::make_unique<CMsg>(0, m_game_msg_list[61]->m_pMsg, 0);
+				m_msg_text_list[text_index++] = std::make_unique<CMsg>(0, m_game_msg_list[62]->m_pMsg, 0);
+				for (int i = text_index; i < 18; i++) m_msg_text_list[i] = std::make_unique<CMsg>(0, " ", 0);
 			}
-			else if ((m_pPlayer->m_bCitizen == true) && (m_pPlayer->m_bAresden == true))
+			else if ((m_player->m_citizen == true) && (m_player->m_aresden == true))
 			{
-				PlayGameSound('E', 25, 0, 0);
-				m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[69]->m_pMsg, 0);
-				m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[70]->m_pMsg, 0);
-				m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[71]->m_pMsg, 0);
-				m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[72]->m_pMsg, 0);
-				m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[73]->m_pMsg, 0);
-				m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[74]->m_pMsg, 0);
-				for (int i = text_index; i < 18; i++) m_pMsgTextList[i] = std::make_unique<CMsg>(0, " ", 0);
+				play_game_sound('E', 25, 0, 0);
+				m_msg_text_list[text_index++] = std::make_unique<CMsg>(0, m_game_msg_list[69]->m_pMsg, 0);
+				m_msg_text_list[text_index++] = std::make_unique<CMsg>(0, m_game_msg_list[70]->m_pMsg, 0);
+				m_msg_text_list[text_index++] = std::make_unique<CMsg>(0, m_game_msg_list[71]->m_pMsg, 0);
+				m_msg_text_list[text_index++] = std::make_unique<CMsg>(0, m_game_msg_list[72]->m_pMsg, 0);
+				m_msg_text_list[text_index++] = std::make_unique<CMsg>(0, m_game_msg_list[73]->m_pMsg, 0);
+				m_msg_text_list[text_index++] = std::make_unique<CMsg>(0, m_game_msg_list[74]->m_pMsg, 0);
+				for (int i = text_index; i < 18; i++) m_msg_text_list[i] = std::make_unique<CMsg>(0, " ", 0);
 			}
-			else PlayGameSound('E', 25, 0, 0);
+			else play_game_sound('E', 25, 0, 0);
 		}
 		else
 		{
 			if (ares_crusade_points != 0)
 			{
-				if ((m_pPlayer->m_bCitizen == true) && (m_pPlayer->m_bAresden == false))
+				if ((m_player->m_citizen == true) && (m_player->m_aresden == false))
 				{
-					PlayGameSound('E', 23, 0, 0);
-					PlayGameSound('C', 21, 0, 0);
-					PlayGameSound('C', 22, 0, 0);
-					m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[63]->m_pMsg, 0);
-					m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[64]->m_pMsg, 0);
-					m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[65]->m_pMsg, 0);
-					for (int i = text_index; i < 18; i++) m_pMsgTextList[i] = std::make_unique<CMsg>(0, " ", 0);
+					play_game_sound('E', 23, 0, 0);
+					play_game_sound('C', 21, 0, 0);
+					play_game_sound('C', 22, 0, 0);
+					m_msg_text_list[text_index++] = std::make_unique<CMsg>(0, m_game_msg_list[63]->m_pMsg, 0);
+					m_msg_text_list[text_index++] = std::make_unique<CMsg>(0, m_game_msg_list[64]->m_pMsg, 0);
+					m_msg_text_list[text_index++] = std::make_unique<CMsg>(0, m_game_msg_list[65]->m_pMsg, 0);
+					for (int i = text_index; i < 18; i++) m_msg_text_list[i] = std::make_unique<CMsg>(0, " ", 0);
 				}
-				else if ((m_pPlayer->m_bCitizen == true) && (m_pPlayer->m_bAresden == true))
+				else if ((m_player->m_citizen == true) && (m_player->m_aresden == true))
 				{
-					PlayGameSound('E', 24, 0, 0);
-					PlayGameSound('C', 12, 0, 0);
-					PlayGameSound('C', 13, 0, 0);
-					m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[75]->m_pMsg, 0);
-					m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[76]->m_pMsg, 0);
-					m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[77]->m_pMsg, 0);
-					m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[78]->m_pMsg, 0);
-					m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[79]->m_pMsg, 0);
-					m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[80]->m_pMsg, 0);
-					m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[81]->m_pMsg, 0);
-					m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[82]->m_pMsg, 0);
-					for (int i = text_index; i < 18; i++) m_pMsgTextList[i] = std::make_unique<CMsg>(0, " ", 0);
+					play_game_sound('E', 24, 0, 0);
+					play_game_sound('C', 12, 0, 0);
+					play_game_sound('C', 13, 0, 0);
+					m_msg_text_list[text_index++] = std::make_unique<CMsg>(0, m_game_msg_list[75]->m_pMsg, 0);
+					m_msg_text_list[text_index++] = std::make_unique<CMsg>(0, m_game_msg_list[76]->m_pMsg, 0);
+					m_msg_text_list[text_index++] = std::make_unique<CMsg>(0, m_game_msg_list[77]->m_pMsg, 0);
+					m_msg_text_list[text_index++] = std::make_unique<CMsg>(0, m_game_msg_list[78]->m_pMsg, 0);
+					m_msg_text_list[text_index++] = std::make_unique<CMsg>(0, m_game_msg_list[79]->m_pMsg, 0);
+					m_msg_text_list[text_index++] = std::make_unique<CMsg>(0, m_game_msg_list[80]->m_pMsg, 0);
+					m_msg_text_list[text_index++] = std::make_unique<CMsg>(0, m_game_msg_list[81]->m_pMsg, 0);
+					m_msg_text_list[text_index++] = std::make_unique<CMsg>(0, m_game_msg_list[82]->m_pMsg, 0);
+					for (int i = text_index; i < 18; i++) m_msg_text_list[i] = std::make_unique<CMsg>(0, " ", 0);
 				}
-				else PlayGameSound('E', 25, 0, 0);
+				else play_game_sound('E', 25, 0, 0);
 			}
 			else
 			{
-				if ((m_pPlayer->m_bCitizen == true) && (m_pPlayer->m_bAresden == false))
+				if ((m_player->m_citizen == true) && (m_player->m_aresden == false))
 				{
-					PlayGameSound('E', 23, 0, 0);
-					m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[66]->m_pMsg, 0);
-					m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[67]->m_pMsg, 0);
-					m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[68]->m_pMsg, 0);
-					for (int i = text_index; i < 18; i++) m_pMsgTextList[i] = std::make_unique<CMsg>(0, " ", 0);
+					play_game_sound('E', 23, 0, 0);
+					m_msg_text_list[text_index++] = std::make_unique<CMsg>(0, m_game_msg_list[66]->m_pMsg, 0);
+					m_msg_text_list[text_index++] = std::make_unique<CMsg>(0, m_game_msg_list[67]->m_pMsg, 0);
+					m_msg_text_list[text_index++] = std::make_unique<CMsg>(0, m_game_msg_list[68]->m_pMsg, 0);
+					for (int i = text_index; i < 18; i++) m_msg_text_list[i] = std::make_unique<CMsg>(0, " ", 0);
 				}
-				else if ((m_pPlayer->m_bCitizen == true) && (m_pPlayer->m_bAresden == true))
+				else if ((m_player->m_citizen == true) && (m_player->m_aresden == true))
 				{
-					PlayGameSound('E', 24, 0, 0);
-					m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[83]->m_pMsg, 0);
-					m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[84]->m_pMsg, 0);
-					m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[85]->m_pMsg, 0);
-					m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[86]->m_pMsg, 0);
-					m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[87]->m_pMsg, 0);
-					m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[88]->m_pMsg, 0);
-					m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[89]->m_pMsg, 0);
-					m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[90]->m_pMsg, 0);
-					for (int i = text_index; i < 18; i++) m_pMsgTextList[i] = std::make_unique<CMsg>(0, " ", 0);
+					play_game_sound('E', 24, 0, 0);
+					m_msg_text_list[text_index++] = std::make_unique<CMsg>(0, m_game_msg_list[83]->m_pMsg, 0);
+					m_msg_text_list[text_index++] = std::make_unique<CMsg>(0, m_game_msg_list[84]->m_pMsg, 0);
+					m_msg_text_list[text_index++] = std::make_unique<CMsg>(0, m_game_msg_list[85]->m_pMsg, 0);
+					m_msg_text_list[text_index++] = std::make_unique<CMsg>(0, m_game_msg_list[86]->m_pMsg, 0);
+					m_msg_text_list[text_index++] = std::make_unique<CMsg>(0, m_game_msg_list[87]->m_pMsg, 0);
+					m_msg_text_list[text_index++] = std::make_unique<CMsg>(0, m_game_msg_list[88]->m_pMsg, 0);
+					m_msg_text_list[text_index++] = std::make_unique<CMsg>(0, m_game_msg_list[89]->m_pMsg, 0);
+					m_msg_text_list[text_index++] = std::make_unique<CMsg>(0, m_game_msg_list[90]->m_pMsg, 0);
+					for (int i = text_index; i < 18; i++) m_msg_text_list[i] = std::make_unique<CMsg>(0, " ", 0);
 				}
-				else PlayGameSound('E', 25, 0, 0);
+				else play_game_sound('E', 25, 0, 0);
 			}
 		}
 	}
 	else if (strcmp(map_name, "elvine") == 0)
 	{
-		m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[7]->m_pMsg, 0);
-		m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[8]->m_pMsg, 0);
-		m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, " ", 0);
+		m_msg_text_list[text_index++] = std::make_unique<CMsg>(0, m_game_msg_list[7]->m_pMsg, 0);
+		m_msg_text_list[text_index++] = std::make_unique<CMsg>(0, m_game_msg_list[8]->m_pMsg, 0);
+		m_msg_text_list[text_index++] = std::make_unique<CMsg>(0, " ", 0);
 
-		std::snprintf(temp, sizeof(temp), "%s %d", m_pGameMsgList[4]->m_pMsg, ares_crusade_points);
-		m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, temp, 0);
+		std::snprintf(temp, sizeof(temp), "%s %d", m_game_msg_list[4]->m_pMsg, ares_crusade_points);
+		m_msg_text_list[text_index++] = std::make_unique<CMsg>(0, temp, 0);
 
-		std::snprintf(temp, sizeof(temp), "%s %d", m_pGameMsgList[5]->m_pMsg, elv_crusade_points);
-		m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, temp, 0);
+		std::snprintf(temp, sizeof(temp), "%s %d", m_game_msg_list[5]->m_pMsg, elv_crusade_points);
+		m_msg_text_list[text_index++] = std::make_unique<CMsg>(0, temp, 0);
 
-		std::snprintf(temp, sizeof(temp), "%s %d", m_pGameMsgList[6]->m_pMsg, ares_industry_points);
-		m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, temp, 0);
+		std::snprintf(temp, sizeof(temp), "%s %d", m_game_msg_list[6]->m_pMsg, ares_industry_points);
+		m_msg_text_list[text_index++] = std::make_unique<CMsg>(0, temp, 0);
 
-		std::snprintf(temp, sizeof(temp), "%s %d", m_pGameMsgList[58]->m_pMsg, elv_industry_points);
-		m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, temp, 0);
-		m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, " ", 0);
+		std::snprintf(temp, sizeof(temp), "%s %d", m_game_msg_list[58]->m_pMsg, elv_industry_points);
+		m_msg_text_list[text_index++] = std::make_unique<CMsg>(0, temp, 0);
+		m_msg_text_list[text_index++] = std::make_unique<CMsg>(0, " ", 0);
 
 		std::snprintf(temp, sizeof(temp), "%s %d %d %d %d", NOTIFY_MSG_STRUCTURE_HP, ares_crusade_casualties, ares_industry_casualties, elv_crusade_casualties, elv_industry_casualties);
-		m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, temp, 0);
-		m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, " ", 0);
+		m_msg_text_list[text_index++] = std::make_unique<CMsg>(0, temp, 0);
+		m_msg_text_list[text_index++] = std::make_unique<CMsg>(0, " ", 0);
 
 		if (elv_crusade_points == 0) {
-			if ((m_pPlayer->m_bCitizen == true) && (m_pPlayer->m_bAresden == true))
+			if ((m_player->m_citizen == true) && (m_player->m_aresden == true))
 			{
-				PlayGameSound('E', 25, 0, 0);
-				m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[59]->m_pMsg, 0);
-				m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[60]->m_pMsg, 0);
-				m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[61]->m_pMsg, 0);
-				m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[62]->m_pMsg, 0);
-				for (int i = text_index; i < 18; i++) m_pMsgTextList[i] = std::make_unique<CMsg>(0, " ", 0);
+				play_game_sound('E', 25, 0, 0);
+				m_msg_text_list[text_index++] = std::make_unique<CMsg>(0, m_game_msg_list[59]->m_pMsg, 0);
+				m_msg_text_list[text_index++] = std::make_unique<CMsg>(0, m_game_msg_list[60]->m_pMsg, 0);
+				m_msg_text_list[text_index++] = std::make_unique<CMsg>(0, m_game_msg_list[61]->m_pMsg, 0);
+				m_msg_text_list[text_index++] = std::make_unique<CMsg>(0, m_game_msg_list[62]->m_pMsg, 0);
+				for (int i = text_index; i < 18; i++) m_msg_text_list[i] = std::make_unique<CMsg>(0, " ", 0);
 			}
-			else if ((m_pPlayer->m_bCitizen == true) && (m_pPlayer->m_bAresden == false))
+			else if ((m_player->m_citizen == true) && (m_player->m_aresden == false))
 			{
-				PlayGameSound('E', 25, 0, 0);
-				m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[69]->m_pMsg, 0);
-				m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[70]->m_pMsg, 0);
-				m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[71]->m_pMsg, 0);
-				m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[72]->m_pMsg, 0);
-				m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[73]->m_pMsg, 0);
-				m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[74]->m_pMsg, 0);
-				for (int i = text_index; i < 18; i++) m_pMsgTextList[i] = std::make_unique<CMsg>(0, " ", 0);
+				play_game_sound('E', 25, 0, 0);
+				m_msg_text_list[text_index++] = std::make_unique<CMsg>(0, m_game_msg_list[69]->m_pMsg, 0);
+				m_msg_text_list[text_index++] = std::make_unique<CMsg>(0, m_game_msg_list[70]->m_pMsg, 0);
+				m_msg_text_list[text_index++] = std::make_unique<CMsg>(0, m_game_msg_list[71]->m_pMsg, 0);
+				m_msg_text_list[text_index++] = std::make_unique<CMsg>(0, m_game_msg_list[72]->m_pMsg, 0);
+				m_msg_text_list[text_index++] = std::make_unique<CMsg>(0, m_game_msg_list[73]->m_pMsg, 0);
+				m_msg_text_list[text_index++] = std::make_unique<CMsg>(0, m_game_msg_list[74]->m_pMsg, 0);
+				for (int i = text_index; i < 18; i++) m_msg_text_list[i] = std::make_unique<CMsg>(0, " ", 0);
 			}
-			else PlayGameSound('E', 25, 0, 0);
+			else play_game_sound('E', 25, 0, 0);
 		}
 		else
 		{
 			if (ares_crusade_points != 0) {
-				if ((m_pPlayer->m_bCitizen == true) && (m_pPlayer->m_bAresden == true))
+				if ((m_player->m_citizen == true) && (m_player->m_aresden == true))
 				{
-					PlayGameSound('E', 23, 0, 0);
-					PlayGameSound('C', 21, 0, 0);
-					PlayGameSound('C', 22, 0, 0);
-					m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[63]->m_pMsg, 0);
-					m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[64]->m_pMsg, 0);
-					m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[65]->m_pMsg, 0);
-					for (int i = text_index; i < 18; i++) m_pMsgTextList[i] = std::make_unique<CMsg>(0, " ", 0);
+					play_game_sound('E', 23, 0, 0);
+					play_game_sound('C', 21, 0, 0);
+					play_game_sound('C', 22, 0, 0);
+					m_msg_text_list[text_index++] = std::make_unique<CMsg>(0, m_game_msg_list[63]->m_pMsg, 0);
+					m_msg_text_list[text_index++] = std::make_unique<CMsg>(0, m_game_msg_list[64]->m_pMsg, 0);
+					m_msg_text_list[text_index++] = std::make_unique<CMsg>(0, m_game_msg_list[65]->m_pMsg, 0);
+					for (int i = text_index; i < 18; i++) m_msg_text_list[i] = std::make_unique<CMsg>(0, " ", 0);
 				}
-				else if ((m_pPlayer->m_bCitizen == true) && (m_pPlayer->m_bAresden == false))
+				else if ((m_player->m_citizen == true) && (m_player->m_aresden == false))
 				{
-					PlayGameSound('E', 24, 0, 0);
-					PlayGameSound('C', 12, 0, 0);
-					PlayGameSound('C', 13, 0, 0);
-					m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[75]->m_pMsg, 0);
-					m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[76]->m_pMsg, 0);
-					m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[77]->m_pMsg, 0);
-					m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[78]->m_pMsg, 0);
-					m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[79]->m_pMsg, 0);
-					m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[80]->m_pMsg, 0);
-					m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[81]->m_pMsg, 0);
-					m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[82]->m_pMsg, 0);
-					for (int i = text_index; i < 18; i++) m_pMsgTextList[i] = std::make_unique<CMsg>(0, " ", 0);
+					play_game_sound('E', 24, 0, 0);
+					play_game_sound('C', 12, 0, 0);
+					play_game_sound('C', 13, 0, 0);
+					m_msg_text_list[text_index++] = std::make_unique<CMsg>(0, m_game_msg_list[75]->m_pMsg, 0);
+					m_msg_text_list[text_index++] = std::make_unique<CMsg>(0, m_game_msg_list[76]->m_pMsg, 0);
+					m_msg_text_list[text_index++] = std::make_unique<CMsg>(0, m_game_msg_list[77]->m_pMsg, 0);
+					m_msg_text_list[text_index++] = std::make_unique<CMsg>(0, m_game_msg_list[78]->m_pMsg, 0);
+					m_msg_text_list[text_index++] = std::make_unique<CMsg>(0, m_game_msg_list[79]->m_pMsg, 0);
+					m_msg_text_list[text_index++] = std::make_unique<CMsg>(0, m_game_msg_list[80]->m_pMsg, 0);
+					m_msg_text_list[text_index++] = std::make_unique<CMsg>(0, m_game_msg_list[81]->m_pMsg, 0);
+					m_msg_text_list[text_index++] = std::make_unique<CMsg>(0, m_game_msg_list[82]->m_pMsg, 0);
+					for (int i = text_index; i < 18; i++) m_msg_text_list[i] = std::make_unique<CMsg>(0, " ", 0);
 				}
-				else PlayGameSound('E', 25, 0, 0);
+				else play_game_sound('E', 25, 0, 0);
 			}
 			else
 			{
-				if ((m_pPlayer->m_bCitizen == true) && (m_pPlayer->m_bAresden == true))
+				if ((m_player->m_citizen == true) && (m_player->m_aresden == true))
 				{
-					PlayGameSound('E', 23, 0, 0);
-					m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[66]->m_pMsg, 0);
-					m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[67]->m_pMsg, 0);
-					m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[68]->m_pMsg, 0);
-					for (int i = text_index; i < 18; i++) m_pMsgTextList[i] = std::make_unique<CMsg>(0, " ", 0);
+					play_game_sound('E', 23, 0, 0);
+					m_msg_text_list[text_index++] = std::make_unique<CMsg>(0, m_game_msg_list[66]->m_pMsg, 0);
+					m_msg_text_list[text_index++] = std::make_unique<CMsg>(0, m_game_msg_list[67]->m_pMsg, 0);
+					m_msg_text_list[text_index++] = std::make_unique<CMsg>(0, m_game_msg_list[68]->m_pMsg, 0);
+					for (int i = text_index; i < 18; i++) m_msg_text_list[i] = std::make_unique<CMsg>(0, " ", 0);
 				}
-				else if ((m_pPlayer->m_bCitizen == true) && (m_pPlayer->m_bAresden == false))
+				else if ((m_player->m_citizen == true) && (m_player->m_aresden == false))
 				{
-					PlayGameSound('E', 24, 0, 0);
-					m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[83]->m_pMsg, 0);
-					m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[84]->m_pMsg, 0);
-					m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[85]->m_pMsg, 0);
-					m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[86]->m_pMsg, 0);
-					m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[87]->m_pMsg, 0);
-					m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[88]->m_pMsg, 0);
-					m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[89]->m_pMsg, 0);
-					m_pMsgTextList[text_index++] = std::make_unique<CMsg>(0, m_pGameMsgList[90]->m_pMsg, 0);
-					for (int i = text_index; i < 18; i++) m_pMsgTextList[i] = std::make_unique<CMsg>(0, " ", 0);
+					play_game_sound('E', 24, 0, 0);
+					m_msg_text_list[text_index++] = std::make_unique<CMsg>(0, m_game_msg_list[83]->m_pMsg, 0);
+					m_msg_text_list[text_index++] = std::make_unique<CMsg>(0, m_game_msg_list[84]->m_pMsg, 0);
+					m_msg_text_list[text_index++] = std::make_unique<CMsg>(0, m_game_msg_list[85]->m_pMsg, 0);
+					m_msg_text_list[text_index++] = std::make_unique<CMsg>(0, m_game_msg_list[86]->m_pMsg, 0);
+					m_msg_text_list[text_index++] = std::make_unique<CMsg>(0, m_game_msg_list[87]->m_pMsg, 0);
+					m_msg_text_list[text_index++] = std::make_unique<CMsg>(0, m_game_msg_list[88]->m_pMsg, 0);
+					m_msg_text_list[text_index++] = std::make_unique<CMsg>(0, m_game_msg_list[89]->m_pMsg, 0);
+					m_msg_text_list[text_index++] = std::make_unique<CMsg>(0, m_game_msg_list[90]->m_pMsg, 0);
+					for (int i = text_index; i < 18; i++) m_msg_text_list[i] = std::make_unique<CMsg>(0, " ", 0);
 				}
-				else PlayGameSound('E', 25, 0, 0);
+				else play_game_sound('E', 25, 0, 0);
 			}
 		}
 	}
 
-	m_dialogBoxManager.EnableDialogBox(DialogBoxId::Text, 0, 0, 0);
+	m_dialog_box_manager.enable_dialog_box(DialogBoxId::Text, 0, 0, 0);
 }
 
 // num : 1 - F2, 2 - F3
-void CGame::UseShortCut(int num)
+void CGame::use_shortcut(int num)
 {
 	std::string G_cTxt;
 	int index;
 	if (num < 4) index = num;
 	else index = num + 7;
-	if (GameModeManager::GetMode() != GameMode::MainGame) return;
+	if (GameModeManager::get_mode() != GameMode::MainGame) return;
 	if (hb::shared::input::is_ctrl_down() == true)
 	{
-		if (m_sRecentShortCut == -1)
+		if (m_recent_short_cut == -1)
 		{
-			AddEventList(MSG_SHORTCUT1, 10);
+			add_event_list(MSG_SHORTCUT1, 10);
 			G_cTxt = std::format(MSG_SHORTCUT2, index);// [F%d]
-			AddEventList(G_cTxt.c_str(), 10);
+			add_event_list(G_cTxt.c_str(), 10);
 			G_cTxt = std::format(MSG_SHORTCUT3, index);// [Control]-[F%d]
-			AddEventList(G_cTxt.c_str(), 10);
+			add_event_list(G_cTxt.c_str(), 10);
 		}
 		else
 		{
-			m_sShortCut[num] = m_sRecentShortCut;
-			if (m_sShortCut[num] < 100)
+			m_short_cut[num] = m_recent_short_cut;
+			if (m_short_cut[num] < 100)
 			{
-				if (m_pItemList[m_sShortCut[num]] == 0)
+				if (m_item_list[m_short_cut[num]] == 0)
 				{
-					m_sShortCut[num] = -1;
-					m_sRecentShortCut = -1;
+					m_short_cut[num] = -1;
+					m_recent_short_cut = -1;
 					return;
 				}
 
-				auto itemInfo2 = ItemNameFormatter::Get().Format(m_pItemList[m_sShortCut[num]].get());
+				auto itemInfo2 = item_name_formatter::get().format(m_item_list[m_short_cut[num]].get());
 				G_cTxt = std::format(MSG_SHORTCUT4, itemInfo2.name.c_str(), itemInfo2.effect.c_str(), itemInfo2.extra.c_str(), index);// (%s %s %s) [F%d]
-				AddEventList(G_cTxt.c_str(), 10);
+				add_event_list(G_cTxt.c_str(), 10);
 			}
-			else if (m_sShortCut[num] >= 100)
+			else if (m_short_cut[num] >= 100)
 			{
-				if (m_pMagicCfgList[m_sShortCut[num] - 100] == 0)
+				if (m_magic_cfg_list[m_short_cut[num] - 100] == 0)
 				{
-					m_sShortCut[num] = -1;
-					m_sRecentShortCut = -1;
+					m_short_cut[num] = -1;
+					m_recent_short_cut = -1;
 					return;
 				}
-				G_cTxt = std::format(MSG_SHORTCUT5, m_pMagicCfgList[m_sShortCut[num] - 100]->m_cName, index);// %s) [F%d])
-				AddEventList(G_cTxt.c_str(), 10);
+				G_cTxt = std::format(MSG_SHORTCUT5, m_magic_cfg_list[m_short_cut[num] - 100]->m_name, index);// %s) [F%d])
+				add_event_list(G_cTxt.c_str(), 10);
 			}
 		}
 	}
 	else
 	{
-		if (m_sShortCut[num] == -1)
+		if (m_short_cut[num] == -1)
 		{
-			AddEventList(MSG_SHORTCUT1, 10);
+			add_event_list(MSG_SHORTCUT1, 10);
 			G_cTxt = std::format(MSG_SHORTCUT2, index);// [F%d]
-			AddEventList(G_cTxt.c_str(), 10);
+			add_event_list(G_cTxt.c_str(), 10);
 			G_cTxt = std::format(MSG_SHORTCUT3, index);// [Control]-[F%d]
-			AddEventList(G_cTxt.c_str(), 10);
+			add_event_list(G_cTxt.c_str(), 10);
 		}
-		else if (m_sShortCut[num] < 100)
+		else if (m_short_cut[num] < 100)
 		{
-			InventoryManager::Get().EquipItem(static_cast<char>(m_sShortCut[num]));
+			inventory_manager::get().equip_item(static_cast<char>(m_short_cut[num]));
 		}
-		else if (m_sShortCut[num] >= 100) MagicCastingSystem::Get().BeginCast(m_sShortCut[num] - 100);
+		else if (m_short_cut[num] >= 100) magic_casting_system::get().begin_cast(m_short_cut[num] - 100);
 	}
 }
 
 /*********************************************************************************************************************
-**  void CheckActiveAura(short sX, short sY, DWORD dwTime, short sOwnerType)( initially Cleroth fixed by Snoopy )	**
+**  void check_active_aura(short sX, short sY, DWORD time, short owner_type)( initially Cleroth fixed by Snoopy )	**
 **  description			: Generates special auras around players													**
 **						: v351 implements this in each drawn function,beter to regroup in single function.			**
 **********************************************************************************************************************/
-void CGame::CheckActiveAura(short sX, short sY, uint32_t dwTime, short sOwnerType)
+void CGame::check_active_aura(short sX, short sY, uint32_t time, short owner_type)
 {	// Used at the beginning of character drawing
 	// DefenseShield
-	if (m_entityState.m_status.bDefenseShield)
-		m_pEffectSpr[80]->Draw(sX + 75, sY + 107, m_entityState.m_iEffectFrame % 17, hb::shared::sprite::DrawParams::Alpha(0.5f));
+	if (m_entity_state.m_status.defense_shield)
+		m_effect_sprites[80]->draw(sX + 75, sY + 107, m_entity_state.m_effect_frame % 17, hb::shared::sprite::DrawParams::alpha_blend(0.5f));
 
 	// Protection From Magic
-	if (m_entityState.m_status.bMagicProtection)
-		m_pEffectSpr[79]->Draw(sX + 101, sY + 135, m_entityState.m_iEffectFrame % 15, hb::shared::sprite::DrawParams::Alpha(0.7f));
+	if (m_entity_state.m_status.magic_protection)
+		m_effect_sprites[79]->draw(sX + 101, sY + 135, m_entity_state.m_effect_frame % 15, hb::shared::sprite::DrawParams::alpha_blend(0.7f));
 
 	// Protection From Arrow
-	if (m_entityState.m_status.bProtectionFromArrow)
-		m_pEffectSpr[72]->Draw(sX, sY + 35, m_entityState.m_iEffectFrame % 30, hb::shared::sprite::DrawParams::Alpha(0.7f));
+	if (m_entity_state.m_status.protection_from_arrow)
+		m_effect_sprites[72]->draw(sX, sY + 35, m_entity_state.m_effect_frame % 30, hb::shared::sprite::DrawParams::alpha_blend(0.7f));
 
 	// Illusion
-	if (m_entityState.m_status.bIllusion)
-		m_pEffectSpr[73]->Draw(sX + 125, sY + 130 - entity_visual::attacker_height[sOwnerType], m_entityState.m_iEffectFrame % 24, hb::shared::sprite::DrawParams::Alpha(0.7f));
+	if (m_entity_state.m_status.illusion)
+		m_effect_sprites[73]->draw(sX + 125, sY + 130 - entity_visual::attacker_height[owner_type], m_entity_state.m_effect_frame % 24, hb::shared::sprite::DrawParams::alpha_blend(0.7f));
 
 	// Illusion movement
-	if ((m_entityState.m_status.bIllusionMovement) != 0)
-		m_pEffectSpr[151]->Draw(sX + 90, sY + 90 - entity_visual::attacker_height[sOwnerType], m_entityState.m_iEffectFrame % 24, hb::shared::sprite::DrawParams::Alpha(0.7f));
+	if ((m_entity_state.m_status.illusion_movement) != 0)
+		m_effect_sprites[151]->draw(sX + 90, sY + 90 - entity_visual::attacker_height[owner_type], m_entity_state.m_effect_frame % 24, hb::shared::sprite::DrawParams::alpha_blend(0.7f));
 
 	// Slate red (HP)
-	if (m_entityState.m_status.bSlateInvincible)
-		m_pEffectSpr[149]->Draw(sX + 90, sY + 120, m_entityState.m_iEffectFrame % 15, hb::shared::sprite::DrawParams::Alpha(0.7f));
+	if (m_entity_state.m_status.slate_invincible)
+		m_effect_sprites[149]->draw(sX + 90, sY + 120, m_entity_state.m_effect_frame % 15, hb::shared::sprite::DrawParams::alpha_blend(0.7f));
 
 	// Slate Blue (Mana)
-	if (m_entityState.m_status.bSlateMana)
-		m_pEffectSpr[150]->Draw(sX + 1, sY + 26, m_entityState.m_iEffectFrame % 15, hb::shared::sprite::DrawParams::Alpha(0.7f));
+	if (m_entity_state.m_status.slate_mana)
+		m_effect_sprites[150]->draw(sX + 1, sY + 26, m_entity_state.m_effect_frame % 15, hb::shared::sprite::DrawParams::alpha_blend(0.7f));
 
 	// Slate Green (XP)
-	if (m_entityState.m_status.bSlateExp)
-		m_pEffectSpr[148]->Draw(sX, sY + 32, m_entityState.m_iEffectFrame % 23, hb::shared::sprite::DrawParams::Alpha(0.7f));
+	if (m_entity_state.m_status.slate_exp)
+		m_effect_sprites[148]->draw(sX, sY + 32, m_entity_state.m_effect_frame % 23, hb::shared::sprite::DrawParams::alpha_blend(0.7f));
 
 	// Hero Flag (Heldenian)
-	if (m_entityState.m_status.bHero)
-		m_pEffectSpr[87]->Draw(sX + 53, sY + 54, m_entityState.m_iEffectFrame % 29, hb::shared::sprite::DrawParams::Alpha(0.7f));
+	if (m_entity_state.m_status.hero)
+		m_effect_sprites[87]->draw(sX + 53, sY + 54, m_entity_state.m_effect_frame % 29, hb::shared::sprite::DrawParams::alpha_blend(0.7f));
 }
 
 /*********************************************************************************************************************
-**  void CheckActiveAura2(short sX, short sY, DWORD dwTime,  m_entityState.m_sOwnerType) ( initially Cleroth fixed by Snoopy )	**
+**  void check_active_aura2(short sX, short sY, DWORD time,  m_entity_state.m_owner_type) ( initially Cleroth fixed by Snoopy )	**
 **  description			: Generates poison aura around players. This one should be use later...						**
 **						: v351 implements this in each drawn function,beter to regroup in single function.			**
 **********************************************************************************************************************/
-void CGame::CheckActiveAura2(short sX, short sY, uint32_t dwTime, short sOwnerType)
+void CGame::check_active_aura2(short sX, short sY, uint32_t time, short owner_type)
 {	// Poison
-	if (m_entityState.m_status.bPoisoned)
-		m_pEffectSpr[81]->Draw(sX + 115, sY + 120 - entity_visual::attacker_height[sOwnerType], m_entityState.m_iEffectFrame % 21, hb::shared::sprite::DrawParams::Alpha(0.7f));
+	if (m_entity_state.m_status.poisoned)
+		m_effect_sprites[81]->draw(sX + 115, sY + 120 - entity_visual::attacker_height[owner_type], m_entity_state.m_effect_frame % 21, hb::shared::sprite::DrawParams::alpha_blend(0.7f));
 }
 
-void CGame::DrawAngel(int iSprite, short sX, short sY, char cFrame, uint32_t dwTime)
+void CGame::draw_angel(int sprite, short sX, short sY, char frame, uint32_t time)
 {
-	switch (m_entityState.m_iDir)
+	switch (m_entity_state.m_dir)
 	{
 	case 1:
 	case 2:
@@ -8336,201 +8321,201 @@ void CGame::DrawAngel(int iSprite, short sX, short sY, char cFrame, uint32_t dwT
 		sX -= 30;
 		break;
 	}
-	if (m_entityState.m_status.bInvisibility)
+	if (m_entity_state.m_status.invisibility)
 	{
-		if (m_entityState.m_status.bAngelSTR)
-			m_pSprite[TutelaryAngelsPivotPoint + iSprite]->Draw(sX, sY, cFrame, hb::shared::sprite::DrawParams::Alpha(0.5f));  //AngelicPendant(STR)
-		else if (m_entityState.m_status.bAngelDEX)
-			m_pSprite[TutelaryAngelsPivotPoint + (50 * 1) + iSprite]->Draw(sX, sY, cFrame, hb::shared::sprite::DrawParams::Alpha(0.5f)); //AngelicPendant(DEX)
-		else if (m_entityState.m_status.bAngelINT)
-			m_pSprite[TutelaryAngelsPivotPoint + (50 * 2) + iSprite]->Draw(sX, sY - 15, cFrame, hb::shared::sprite::DrawParams::Alpha(0.5f));//AngelicPendant(INT)
-		else if (m_entityState.m_status.bAngelMAG)
-			m_pSprite[TutelaryAngelsPivotPoint + (50 * 3) + iSprite]->Draw(sX, sY - 15, cFrame, hb::shared::sprite::DrawParams::Alpha(0.5f));//AngelicPendant(MAG)
+		if (m_entity_state.m_status.angel_str)
+			m_sprite[TutelaryAngelsPivotPoint + sprite]->draw(sX, sY, frame, hb::shared::sprite::DrawParams::alpha_blend(0.5f));  //AngelicPendant(STR)
+		else if (m_entity_state.m_status.angel_dex)
+			m_sprite[TutelaryAngelsPivotPoint + (50 * 1) + sprite]->draw(sX, sY, frame, hb::shared::sprite::DrawParams::alpha_blend(0.5f)); //AngelicPendant(DEX)
+		else if (m_entity_state.m_status.angel_int)
+			m_sprite[TutelaryAngelsPivotPoint + (50 * 2) + sprite]->draw(sX, sY - 15, frame, hb::shared::sprite::DrawParams::alpha_blend(0.5f));//AngelicPendant(INT)
+		else if (m_entity_state.m_status.angel_mag)
+			m_sprite[TutelaryAngelsPivotPoint + (50 * 3) + sprite]->draw(sX, sY - 15, frame, hb::shared::sprite::DrawParams::alpha_blend(0.5f));//AngelicPendant(MAG)
 	}
 	else
 	{
-		if (m_entityState.m_status.bAngelSTR)
-			m_pSprite[TutelaryAngelsPivotPoint + iSprite]->Draw(sX, sY, cFrame);  //AngelicPendant(STR)
-		else if (m_entityState.m_status.bAngelDEX)
-			m_pSprite[TutelaryAngelsPivotPoint + (50 * 1) + iSprite]->Draw(sX, sY, cFrame); //AngelicPendant(DEX)
-		else if (m_entityState.m_status.bAngelINT)
-			m_pSprite[TutelaryAngelsPivotPoint + (50 * 2) + iSprite]->Draw(sX, sY - 15, cFrame);//AngelicPendant(INT)
-		else if (m_entityState.m_status.bAngelMAG)
-			m_pSprite[TutelaryAngelsPivotPoint + (50 * 3) + iSprite]->Draw(sX, sY - 15, cFrame);//AngelicPendant(MAG)
+		if (m_entity_state.m_status.angel_str)
+			m_sprite[TutelaryAngelsPivotPoint + sprite]->draw(sX, sY, frame);  //AngelicPendant(STR)
+		else if (m_entity_state.m_status.angel_dex)
+			m_sprite[TutelaryAngelsPivotPoint + (50 * 1) + sprite]->draw(sX, sY, frame); //AngelicPendant(DEX)
+		else if (m_entity_state.m_status.angel_int)
+			m_sprite[TutelaryAngelsPivotPoint + (50 * 2) + sprite]->draw(sX, sY - 15, frame);//AngelicPendant(INT)
+		else if (m_entity_state.m_status.angel_mag)
+			m_sprite[TutelaryAngelsPivotPoint + (50 * 3) + sprite]->draw(sX, sY - 15, frame);//AngelicPendant(MAG)
 	}
 
 }
 /*********************************************************************************************************************
-**  int CGame::bHasHeroSet( short m_sAppr3, short m_sAppr3, char OwnerType)		( Snoopy )							**
+**  int CGame::has_hero_set( short m_sAppr3, short m_sAppr3, char OwnerType)		( Snoopy )							**
 **  description			:: check weather the object (is character) is using a hero set (1:war, 2:mage)				**
 **********************************************************************************************************************/
-int CGame::bHasHeroSet(const hb::shared::entity::PlayerAppearance& appr, short OwnerType)
+int CGame::has_hero_set(const hb::shared::entity::PlayerAppearance& appr, short OwnerType)
 {
-	char cArmor, cLeg, cBerk, cHat;
-	cArmor = appr.iArmorType;
-	cLeg = appr.iPantsType;
-	cHat = appr.iHelmType;
-	cBerk = appr.iArmArmorType;
+	char armor, leg, berk, hat;
+	armor = appr.armor_type;
+	leg = appr.pants_type;
+	hat = appr.helm_type;
+	berk = appr.arm_armor_type;
 	switch (OwnerType) {
 	case 1:
 	case 2:
 	case 3:
-		if ((cArmor == 8) && (cLeg == 5) && (cHat == 9) && (cBerk == 3)) return (1); // Warr elv M
-		if ((cArmor == 9) && (cLeg == 6) && (cHat == 10) && (cBerk == 4)) return (1); // Warr ares M
-		if ((cArmor == 10) && (cLeg == 5) && (cHat == 11) && (cBerk == 3)) return (2); // Mage elv M
-		if ((cArmor == 11) && (cLeg == 6) && (cHat == 12) && (cBerk == 4)) return (2); // Mage ares M
+		if ((armor == 8) && (leg == 5) && (hat == 9) && (berk == 3)) return (1); // Warr elv M
+		if ((armor == 9) && (leg == 6) && (hat == 10) && (berk == 4)) return (1); // Warr ares M
+		if ((armor == 10) && (leg == 5) && (hat == 11) && (berk == 3)) return (2); // Mage elv M
+		if ((armor == 11) && (leg == 6) && (hat == 12) && (berk == 4)) return (2); // Mage ares M
 		break;
 	case 4:
 	case 5:
 	case 6: // fixed
-		if ((cArmor == 9) && (cLeg == 6) && (cHat == 9) && (cBerk == 4)) return (1); //warr elv W
-		if ((cArmor == 10) && (cLeg == 7) && (cHat == 10) && (cBerk == 5)) return (1); //warr ares W
-		if ((cArmor == 11) && (cLeg == 6) && (cHat == 11) && (cBerk == 4)) return (2); //mage elv W
-		if ((cArmor == 12) && (cLeg == 7) && (cHat == 12) && (cBerk == 5)) return (2); //mage ares W
+		if ((armor == 9) && (leg == 6) && (hat == 9) && (berk == 4)) return (1); //warr elv W
+		if ((armor == 10) && (leg == 7) && (hat == 10) && (berk == 5)) return (1); //warr ares W
+		if ((armor == 11) && (leg == 6) && (hat == 11) && (berk == 4)) return (2); //mage elv W
+		if ((armor == 12) && (leg == 7) && (hat == 12) && (berk == 5)) return (2); //mage ares W
 		break;
 	}
 	return 0;
 }
 /*********************************************************************************************************************
-**  void ShowHeldenianVictory( short sSide)				( Snoopy )													**
+**  void show_heldenian_victory( short side)				( Snoopy )													**
 **  description			: Shows the Heldenian's End window															**
 **********************************************************************************************************************/
-void CGame::ShowHeldenianVictory(short side)
+void CGame::show_heldenian_victory(short side)
 {
 	int player_side = 0;
-	m_dialogBoxManager.DisableDialogBox(DialogBoxId::Text);
+	m_dialog_box_manager.disable_dialog_box(DialogBoxId::Text);
 	for (int i = 0; i < game_limits::max_text_dlg_lines; i++)
 	{
-		if (m_pMsgTextList[i] != 0)
-			m_pMsgTextList[i].reset();
+		if (m_msg_text_list[i] != 0)
+			m_msg_text_list[i].reset();
 	}
-	if (m_pPlayer->m_bCitizen == false) player_side = 0;
-	else if (m_pPlayer->m_bAresden == true) player_side = 1;
-	else if (m_pPlayer->m_bAresden == false) player_side = 2;
+	if (m_player->m_citizen == false) player_side = 0;
+	else if (m_player->m_aresden == true) player_side = 1;
+	else if (m_player->m_aresden == false) player_side = 2;
 	switch (side) {
 	case 0:
-		PlayGameSound('E', 25, 0, 0);
-		m_pMsgTextList[0] = std::make_unique<CMsg>(0, "Heldenian holy war has been closed!", 0);
-		m_pMsgTextList[1] = std::make_unique<CMsg>(0, " ", 0);
-		m_pMsgTextList[2] = std::make_unique<CMsg>(0, "Heldenian Holy war ended", 0);
-		m_pMsgTextList[3] = std::make_unique<CMsg>(0, "in a tie.", 0);
+		play_game_sound('E', 25, 0, 0);
+		m_msg_text_list[0] = std::make_unique<CMsg>(0, "Heldenian holy war has been closed!", 0);
+		m_msg_text_list[1] = std::make_unique<CMsg>(0, " ", 0);
+		m_msg_text_list[2] = std::make_unique<CMsg>(0, "Heldenian Holy war ended", 0);
+		m_msg_text_list[3] = std::make_unique<CMsg>(0, "in a tie.", 0);
 		break;
 	case 1:
-		PlayGameSound('E', 25, 0, 0);
-		m_pMsgTextList[0] = std::make_unique<CMsg>(0, "Heldenian holy war has been closed!", 0);
-		m_pMsgTextList[1] = std::make_unique<CMsg>(0, " ", 0);
-		m_pMsgTextList[2] = std::make_unique<CMsg>(0, "Heldenian Holy war ended", 0);
-		m_pMsgTextList[3] = std::make_unique<CMsg>(0, "in favor of Aresden.", 0);
+		play_game_sound('E', 25, 0, 0);
+		m_msg_text_list[0] = std::make_unique<CMsg>(0, "Heldenian holy war has been closed!", 0);
+		m_msg_text_list[1] = std::make_unique<CMsg>(0, " ", 0);
+		m_msg_text_list[2] = std::make_unique<CMsg>(0, "Heldenian Holy war ended", 0);
+		m_msg_text_list[3] = std::make_unique<CMsg>(0, "in favor of Aresden.", 0);
 		break;
 	case 2:
-		PlayGameSound('E', 25, 0, 0);
-		m_pMsgTextList[0] = std::make_unique<CMsg>(0, "Heldenian holy war has been closed!", 0);
-		m_pMsgTextList[1] = std::make_unique<CMsg>(0, " ", 0);
-		m_pMsgTextList[2] = std::make_unique<CMsg>(0, "Heldenian Holy war ended", 0);
-		m_pMsgTextList[3] = std::make_unique<CMsg>(0, "in favor of Elvine.", 0);
+		play_game_sound('E', 25, 0, 0);
+		m_msg_text_list[0] = std::make_unique<CMsg>(0, "Heldenian holy war has been closed!", 0);
+		m_msg_text_list[1] = std::make_unique<CMsg>(0, " ", 0);
+		m_msg_text_list[2] = std::make_unique<CMsg>(0, "Heldenian Holy war ended", 0);
+		m_msg_text_list[3] = std::make_unique<CMsg>(0, "in favor of Elvine.", 0);
 		break;
 	}
-	m_pMsgTextList[4] = std::make_unique<CMsg>(0, " ", 0);
+	m_msg_text_list[4] = std::make_unique<CMsg>(0, " ", 0);
 
 	if (((player_side != 1) && (player_side != 2))   // Player not a normal citizen
 		|| (side == 0))								// or no winner
 	{
-		PlayGameSound('E', 25, 0, 0);
-		m_pMsgTextList[5] = std::make_unique<CMsg>(0, " ", 0);
-		m_pMsgTextList[6] = std::make_unique<CMsg>(0, " ", 0);
-		m_pMsgTextList[7] = std::make_unique<CMsg>(0, " ", 0);
-		m_pMsgTextList[8] = std::make_unique<CMsg>(0, " ", 0);
+		play_game_sound('E', 25, 0, 0);
+		m_msg_text_list[5] = std::make_unique<CMsg>(0, " ", 0);
+		m_msg_text_list[6] = std::make_unique<CMsg>(0, " ", 0);
+		m_msg_text_list[7] = std::make_unique<CMsg>(0, " ", 0);
+		m_msg_text_list[8] = std::make_unique<CMsg>(0, " ", 0);
 	}
 	else
 	{
 		if (side == player_side)
 		{
-			PlayGameSound('E', 23, 0, 0);
-			PlayGameSound('C', 21, 0, 0);
-			PlayGameSound('C', 22, 0, 0);
-			m_pMsgTextList[5] = std::make_unique<CMsg>(0, "Congratulation.", 0);
-			m_pMsgTextList[6] = std::make_unique<CMsg>(0, "As cityzen of victory,", 0);
-			m_pMsgTextList[7] = std::make_unique<CMsg>(0, "You will recieve a reward.", 0);
-			m_pMsgTextList[8] = std::make_unique<CMsg>(0, "      ", 0);
+			play_game_sound('E', 23, 0, 0);
+			play_game_sound('C', 21, 0, 0);
+			play_game_sound('C', 22, 0, 0);
+			m_msg_text_list[5] = std::make_unique<CMsg>(0, "Congratulation.", 0);
+			m_msg_text_list[6] = std::make_unique<CMsg>(0, "As cityzen of victory,", 0);
+			m_msg_text_list[7] = std::make_unique<CMsg>(0, "You will recieve a reward.", 0);
+			m_msg_text_list[8] = std::make_unique<CMsg>(0, "      ", 0);
 		}
 		else
 		{
-			PlayGameSound('E', 24, 0, 0);
-			PlayGameSound('C', 12, 0, 0);
-			PlayGameSound('C', 13, 0, 0);
-			m_pMsgTextList[5] = std::make_unique<CMsg>(0, "To our regret", 0);
-			m_pMsgTextList[6] = std::make_unique<CMsg>(0, "As cityzen of defeat,", 0);
-			m_pMsgTextList[7] = std::make_unique<CMsg>(0, "You cannot recieve any reward.", 0);
-			m_pMsgTextList[8] = std::make_unique<CMsg>(0, "     ", 0);
+			play_game_sound('E', 24, 0, 0);
+			play_game_sound('C', 12, 0, 0);
+			play_game_sound('C', 13, 0, 0);
+			m_msg_text_list[5] = std::make_unique<CMsg>(0, "To our regret", 0);
+			m_msg_text_list[6] = std::make_unique<CMsg>(0, "As cityzen of defeat,", 0);
+			m_msg_text_list[7] = std::make_unique<CMsg>(0, "You cannot recieve any reward.", 0);
+			m_msg_text_list[8] = std::make_unique<CMsg>(0, "     ", 0);
 		}
 	}
 	for (int i = 9; i < 18; i++)
-		m_pMsgTextList[i] = std::make_unique<CMsg>(0, " ", 0);
-	m_dialogBoxManager.EnableDialogBox(DialogBoxId::Text, 0, 0, 0);
-	m_dialogBoxManager.DisableDialogBox(DialogBoxId::CrusadeCommander);
-	m_dialogBoxManager.DisableDialogBox(DialogBoxId::CrusadeConstructor);
-	m_dialogBoxManager.DisableDialogBox(DialogBoxId::CrusadeSoldier);
+		m_msg_text_list[i] = std::make_unique<CMsg>(0, " ", 0);
+	m_dialog_box_manager.enable_dialog_box(DialogBoxId::Text, 0, 0, 0);
+	m_dialog_box_manager.disable_dialog_box(DialogBoxId::CrusadeCommander);
+	m_dialog_box_manager.disable_dialog_box(DialogBoxId::CrusadeConstructor);
+	m_dialog_box_manager.disable_dialog_box(DialogBoxId::CrusadeSoldier);
 }
 
 /*********************************************************************************************************************
-**  void 	ResponseHeldenianTeleportList(char *pData)									(  Snoopy )					**
+**  void 	ResponseHeldenianTeleportList(char *data)									(  Snoopy )					**
 **  description			: Gail's TP																					**
 **********************************************************************************************************************/
 /*********************************************************************************************************************
-**  bool DKGlare(int iWeaponIndex, int iWeaponIndex, int *iWeaponGlare)	( Snoopy )									**
+**  bool dk_glare(int weapon_index, int weapon_index, int *weapon_glare)	( Snoopy )									**
 **  description			: test glowing condition for DK set															**
 **********************************************************************************************************************/
-void CGame::DKGlare(int iWeaponColor, int iWeaponIndex, int* iWeaponGlare)
+void CGame::dk_glare(int weapon_color, int weapon_index, int* weapon_glare)
 {
-	if (iWeaponColor != 9) return;
-	if (((iWeaponIndex >= WeaponM + 64 * 14) && (iWeaponIndex < WeaponM + 64 * 14 + 56)) //msw3
-		|| ((iWeaponIndex >= WeaponW + 64 * 14) && (iWeaponIndex < WeaponW + 64 * 14 + 56))) //wsw3
+	if (weapon_color != 9) return;
+	if (((weapon_index >= WeaponM + 64 * 14) && (weapon_index < WeaponM + 64 * 14 + 56)) //msw3
+		|| ((weapon_index >= WeaponW + 64 * 14) && (weapon_index < WeaponW + 64 * 14 + 56))) //wsw3
 	{
-		*iWeaponGlare = 3;
+		*weapon_glare = 3;
 	}
-	else if (((iWeaponIndex >= WeaponM + 64 * 37) && (iWeaponIndex < WeaponM + 64 * 37 + 56)) //MStaff3
-		|| ((iWeaponIndex >= WeaponW + 64 * 37) && (iWeaponIndex < WeaponW + 64 * 37 + 56)))//WStaff3
+	else if (((weapon_index >= WeaponM + 64 * 37) && (weapon_index < WeaponM + 64 * 37 + 56)) //MStaff3
+		|| ((weapon_index >= WeaponW + 64 * 37) && (weapon_index < WeaponW + 64 * 37 + 56)))//WStaff3
 	{
-		*iWeaponGlare = 2;
+		*weapon_glare = 2;
 	}
 }
 /*********************************************************************************************************************
-**  void CGame::Abaddon_corpse(int sX, int sY);		( Snoopy )														**
+**  void CGame::abaddon_corpse(int sX, int sY);		( Snoopy )														**
 **  description			: Placeholder for abaddon's death lightnings												**
 **********************************************************************************************************************/
-void CGame::Abaddon_corpse(int sX, int sY)
+void CGame::abaddon_corpse(int sX, int sY)
 {
 	int ir = (rand() % 20) - 10;
-	WeatherManager::Get().DrawThunderEffect(sX + 30, 0, sX + 30, sY - 10, ir, ir, 1);
-	WeatherManager::Get().DrawThunderEffect(sX + 30, 0, sX + 30, sY - 10, ir + 2, ir, 2);
-	WeatherManager::Get().DrawThunderEffect(sX + 30, 0, sX + 30, sY - 10, ir - 2, ir, 2);
+	weather_manager::get().draw_thunder_effect(sX + 30, 0, sX + 30, sY - 10, ir, ir, 1);
+	weather_manager::get().draw_thunder_effect(sX + 30, 0, sX + 30, sY - 10, ir + 2, ir, 2);
+	weather_manager::get().draw_thunder_effect(sX + 30, 0, sX + 30, sY - 10, ir - 2, ir, 2);
 	ir = (rand() % 20) - 10;
-	WeatherManager::Get().DrawThunderEffect(sX - 20, 0, sX - 20, sY - 35, ir, ir, 1);
-	WeatherManager::Get().DrawThunderEffect(sX - 20, 0, sX - 20, sY - 35, ir + 2, ir, 2);
-	WeatherManager::Get().DrawThunderEffect(sX - 20, 0, sX - 20, sY - 35, ir - 2, ir, 2);
+	weather_manager::get().draw_thunder_effect(sX - 20, 0, sX - 20, sY - 35, ir, ir, 1);
+	weather_manager::get().draw_thunder_effect(sX - 20, 0, sX - 20, sY - 35, ir + 2, ir, 2);
+	weather_manager::get().draw_thunder_effect(sX - 20, 0, sX - 20, sY - 35, ir - 2, ir, 2);
 	ir = (rand() % 20) - 10;
-	WeatherManager::Get().DrawThunderEffect(sX - 10, 0, sX - 10, sY + 30, ir, ir, 1);
-	WeatherManager::Get().DrawThunderEffect(sX - 10, 0, sX - 10, sY + 30, ir + 2, ir + 2, 2);
-	WeatherManager::Get().DrawThunderEffect(sX - 10, 0, sX - 10, sY + 30, ir - 2, ir + 2, 2);
+	weather_manager::get().draw_thunder_effect(sX - 10, 0, sX - 10, sY + 30, ir, ir, 1);
+	weather_manager::get().draw_thunder_effect(sX - 10, 0, sX - 10, sY + 30, ir + 2, ir + 2, 2);
+	weather_manager::get().draw_thunder_effect(sX - 10, 0, sX - 10, sY + 30, ir - 2, ir + 2, 2);
 	ir = (rand() % 20) - 10;
-	WeatherManager::Get().DrawThunderEffect(sX + 50, 0, sX + 50, sY + 35, ir, ir, 1);
-	WeatherManager::Get().DrawThunderEffect(sX + 50, 0, sX + 50, sY + 35, ir + 2, ir + 2, 2);
-	WeatherManager::Get().DrawThunderEffect(sX + 50, 0, sX + 50, sY + 35, ir - 2, ir + 2, 2);
+	weather_manager::get().draw_thunder_effect(sX + 50, 0, sX + 50, sY + 35, ir, ir, 1);
+	weather_manager::get().draw_thunder_effect(sX + 50, 0, sX + 50, sY + 35, ir + 2, ir + 2, 2);
+	weather_manager::get().draw_thunder_effect(sX + 50, 0, sX + 50, sY + 35, ir - 2, ir + 2, 2);
 	ir = (rand() % 20) - 10;
-	WeatherManager::Get().DrawThunderEffect(sX + 65, 0, sX + 65, sY - 5, ir, ir, 1);
-	WeatherManager::Get().DrawThunderEffect(sX + 65, 0, sX + 65, sY - 5, ir + 2, ir + 2, 2);
-	WeatherManager::Get().DrawThunderEffect(sX + 65, 0, sX + 65, sY - 5, ir - 2, ir + 2, 2);
+	weather_manager::get().draw_thunder_effect(sX + 65, 0, sX + 65, sY - 5, ir, ir, 1);
+	weather_manager::get().draw_thunder_effect(sX + 65, 0, sX + 65, sY - 5, ir + 2, ir + 2, 2);
+	weather_manager::get().draw_thunder_effect(sX + 65, 0, sX + 65, sY - 5, ir - 2, ir + 2, 2);
 	ir = (rand() % 20) - 10;
-	WeatherManager::Get().DrawThunderEffect(sX + 45, 0, sX + 45, sY - 50, ir, ir, 1);
-	WeatherManager::Get().DrawThunderEffect(sX + 45, 0, sX + 45, sY - 50, ir + 2, ir + 2, 2);
-	WeatherManager::Get().DrawThunderEffect(sX + 45, 0, sX + 45, sY - 50, ir - 2, ir + 2, 2);
+	weather_manager::get().draw_thunder_effect(sX + 45, 0, sX + 45, sY - 50, ir, ir, 1);
+	weather_manager::get().draw_thunder_effect(sX + 45, 0, sX + 45, sY - 50, ir + 2, ir + 2, 2);
+	weather_manager::get().draw_thunder_effect(sX + 45, 0, sX + 45, sY - 50, ir - 2, ir + 2, 2);
 
 	for (int x = sX - 50; x <= sX + 100; x += rand() % 35)
 	{
 		for (int y = sY - 30; y <= sY + 50; y += rand() % 45)
 		{
 			ir = (rand() % 20) - 10;
-			WeatherManager::Get().DrawThunderEffect(x, 0, x, y, ir, ir, 2);
+			weather_manager::get().draw_thunder_effect(x, 0, x, y, ir, ir, 2);
 		}
 	}
 }

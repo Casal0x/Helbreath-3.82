@@ -1,7 +1,9 @@
-﻿#include "RenderHelpers.h"
+﻿#define NOMINMAX
+#include "RenderHelpers.h"
 #include "Game.h"
 #include "CommonTypes.h"
 #include "ConfigManager.h"
+#include <algorithm>
 
 // -----------------------------------------------------------------------
 // Drawing order arrays (moved from Game.cpp file scope)
@@ -14,9 +16,9 @@ namespace RenderHelpers
 // -----------------------------------------------------------------------
 // Helper: should this mob type skip shadow rendering?
 // -----------------------------------------------------------------------
-static bool ShouldSkipShadow(short sOwnerType)
+static bool ShouldSkipShadow(short owner_type)
 {
-	switch (sOwnerType) {
+	switch (owner_type) {
 	case hb::shared::owner::Slime:
 	case hb::shared::owner::EnergySphere:
 	case hb::shared::owner::TigerWorm:
@@ -32,132 +34,140 @@ static bool ShouldSkipShadow(short sOwnerType)
 }
 
 // -----------------------------------------------------------------------
-void DrawEquipLayer(CGame& game, int spriteIndex, int sX, int sY, int frame,
-                    bool bInv, int colorIndex)
+void draw_equip_layer(CGame& game, int spriteIndex, int sX, int sY, int frame,
+                    bool inv, int colorIndex)
 {
 	if (spriteIndex == -1) return;
 
-	if (bInv)
+	if (inv)
 	{
-		game.m_pSprite[spriteIndex]->Draw(sX, sY, frame, hb::shared::sprite::DrawParams::Alpha(0.25f));
+		game.m_sprite[spriteIndex]->draw(sX, sY, frame, hb::shared::sprite::DrawParams::alpha_blend(0.25f));
 	}
 	else if (colorIndex == 0)
 	{
-		game.m_pSprite[spriteIndex]->Draw(sX, sY, frame);
+		game.m_sprite[spriteIndex]->draw(sX, sY, frame);
 	}
 	else
 	{
 		auto c = GameColors::Items[colorIndex];
-		game.m_pSprite[spriteIndex]->Draw(sX, sY, frame,
-			hb::shared::sprite::DrawParams::Tint(c.r, c.g, c.b));
+		game.m_sprite[spriteIndex]->draw(sX, sY, frame,
+			hb::shared::sprite::DrawParams::tint(c.r, c.g, c.b));
 	}
 }
 
 // -----------------------------------------------------------------------
-void DrawWeapon(CGame& game, const EquipmentIndices& eq, int sX, int sY,
-                int weaponFrame, bool bInv)
+void draw_weapon(CGame& game, const EquipmentIndices& eq, int sX, int sY,
+                int weaponFrame, bool inv)
 {
-	if (eq.iWeaponIndex == -1) return;
+	if (eq.m_weapon_index == -1) return;
 
-	if (bInv)
+	if (inv)
 	{
-		game.m_pSprite[eq.iWeaponIndex]->Draw(sX, sY, weaponFrame, hb::shared::sprite::DrawParams::Alpha(0.25f));
+		game.m_sprite[eq.m_weapon_index]->draw(sX, sY, weaponFrame, hb::shared::sprite::DrawParams::alpha_blend(0.25f));
 	}
-	else if (eq.iWeaponColor == 0)
+	else if (eq.m_weapon_color == 0)
 	{
-		game.m_pSprite[eq.iWeaponIndex]->Draw(sX, sY, weaponFrame);
+		game.m_sprite[eq.m_weapon_index]->draw(sX, sY, weaponFrame);
 	}
 	else
 	{
-		auto c = GameColors::Weapons[eq.iWeaponColor];
-		game.m_pSprite[eq.iWeaponIndex]->Draw(sX, sY, weaponFrame,
-			hb::shared::sprite::DrawParams::Tint(c.r, c.g, c.b));
+		auto c = GameColors::Weapons[eq.m_weapon_color];
+		game.m_sprite[eq.m_weapon_index]->draw(sX, sY, weaponFrame,
+			hb::shared::sprite::DrawParams::tint(c.r, c.g, c.b));
 	}
 
-	// DK set glare
-	int weaponGlare = eq.iWeaponGlare;
-	game.DKGlare(eq.iWeaponColor, eq.iWeaponIndex, &weaponGlare);
-	switch (weaponGlare) {
-	case 0: break;
-	case 1: game.m_pSprite[eq.iWeaponIndex]->Draw(sX, sY, weaponFrame, hb::shared::sprite::DrawParams::AdditiveColored(game.m_iDrawFlag, 0, 0)); break;
-	case 2: game.m_pSprite[eq.iWeaponIndex]->Draw(sX, sY, weaponFrame, hb::shared::sprite::DrawParams::AdditiveColored(0, game.m_iDrawFlag, 0)); break;
-	case 3: game.m_pSprite[eq.iWeaponIndex]->Draw(sX, sY, weaponFrame, hb::shared::sprite::DrawParams::AdditiveColored(0, 0, game.m_iDrawFlag)); break;
+	// DK set glare — single-pass shader rendering matching DDraw PutTransSpriteRGB.
+	// Shader adds a flat color offset to every pixel before additive blending:
+	//   dest += clamp(src + (r, g, b))
+	int weaponGlare = eq.m_weapon_glare;
+	game.dk_glare(eq.m_weapon_color, eq.m_weapon_index, &weaponGlare);
+	if (weaponGlare != 0)
+	{
+		int f = game.m_draw_flag;
+		switch (weaponGlare) {
+		case 1: game.m_sprite[eq.m_weapon_index]->draw(sX, sY, weaponFrame, hb::shared::sprite::DrawParams::additive_tinted(f, 0, 0)); break;
+		case 2: game.m_sprite[eq.m_weapon_index]->draw(sX, sY, weaponFrame, hb::shared::sprite::DrawParams::additive_tinted(0, f, 0)); break;
+		case 3: game.m_sprite[eq.m_weapon_index]->draw(sX, sY, weaponFrame, hb::shared::sprite::DrawParams::additive_tinted(0, 0, f)); break;
+		}
 	}
 }
 
 // -----------------------------------------------------------------------
-void DrawShield(CGame& game, const EquipmentIndices& eq, int sX, int sY,
-                int frame, bool bInv)
+void draw_shield(CGame& game, const EquipmentIndices& eq, int sX, int sY,
+                int frame, bool inv)
 {
-	if (eq.iShieldIndex == -1) return;
+	if (eq.m_shield_index == -1) return;
 
-	if (bInv)
+	if (inv)
 	{
-		game.m_pSprite[eq.iShieldIndex]->Draw(sX, sY, frame, hb::shared::sprite::DrawParams::Alpha(0.25f));
+		game.m_sprite[eq.m_shield_index]->draw(sX, sY, frame, hb::shared::sprite::DrawParams::alpha_blend(0.25f));
 	}
-	else if (eq.iShieldColor == 0)
+	else if (eq.m_shield_color == 0)
 	{
-		game.m_pSprite[eq.iShieldIndex]->Draw(sX, sY, frame);
+		game.m_sprite[eq.m_shield_index]->draw(sX, sY, frame);
 	}
 	else
 	{
-		auto c = GameColors::Items[eq.iShieldColor];
-		game.m_pSprite[eq.iShieldIndex]->Draw(sX, sY, frame,
-			hb::shared::sprite::DrawParams::Tint(c.r, c.g, c.b));
+		auto c = GameColors::Items[eq.m_shield_color];
+		game.m_sprite[eq.m_shield_index]->draw(sX, sY, frame,
+			hb::shared::sprite::DrawParams::tint(c.r, c.g, c.b));
 	}
 
-	// Shield glare
-	switch (eq.iShieldGlare) {
-	case 0: break;
-	case 1:
-		// GM sprite (m_pEffectSpr[45]) is only drawn by DrawGMEffect when bGMMode is true
-		// fallthrough to case 2 for green-tinted additive shield overlay
-	case 2: game.m_pSprite[eq.iShieldIndex]->Draw(sX, sY, frame, hb::shared::sprite::DrawParams::AdditiveColored(0, game.m_iDrawFlag, 0)); break;
-	case 3: game.m_pSprite[eq.iShieldIndex]->Draw(sX, sY, frame, hb::shared::sprite::DrawParams::AdditiveColored(0, 0, game.m_iDrawFlag)); break;
+	// Shield glare — single-pass shader matching DDraw PutTransSpriteRGB
+	if (eq.m_shield_glare != 0)
+	{
+		int sf = game.m_draw_flag;
+		switch (eq.m_shield_glare) {
+		case 1:
+			// GM sprite (m_effect_sprites[45]) is only drawn by draw_gm_effect when gm_mode is true
+			// fallthrough to case 2 for green offset shield glare
+		case 2: game.m_sprite[eq.m_shield_index]->draw(sX, sY, frame, hb::shared::sprite::DrawParams::additive_tinted(0, sf, 0)); break;
+		case 3: game.m_sprite[eq.m_shield_index]->draw(sX, sY, frame, hb::shared::sprite::DrawParams::additive_tinted(0, 0, sf)); break;
+		}
 	}
 }
 
 // -----------------------------------------------------------------------
-void DrawShadow(CGame& game, int iBodyDirIndex, int sX, int sY, int frame,
-                bool bInv, short sOwnerType)
+void draw_shadow(CGame& game, int body_dir_index, int sX, int sY, int frame,
+                bool inv, short owner_type)
 {
-	if (ShouldSkipShadow(sOwnerType)) return;
-	if (ConfigManager::Get().GetDetailLevel() == 0) return;
-	if (bInv) return;
+	if (ShouldSkipShadow(owner_type)) return;
+	if (config_manager::get().get_detail_level() == 0) return;
+	if (inv) return;
 
-	game.m_pSprite[iBodyDirIndex]->Draw(sX, sY, frame, hb::shared::sprite::DrawParams::Shadow());
+	game.m_sprite[body_dir_index]->draw(sX, sY, frame, hb::shared::sprite::DrawParams::shadow());
 }
 
 // -----------------------------------------------------------------------
-void DrawBody(CGame& game, int iBodyDirIndex, int sX, int sY, int frame,
-              bool bInv, short sOwnerType, bool bFrozen, bool bAdminInvis)
+void draw_body(CGame& game, int body_dir_index, int sX, int sY, int frame,
+              bool inv, short owner_type, bool frozen, bool admin_invis)
 {
-	if (sOwnerType == hb::shared::owner::Abaddon)
+	if (owner_type == hb::shared::owner::Abaddon)
 	{
-		game.m_pSprite[iBodyDirIndex]->Draw(sX, sY, frame, hb::shared::sprite::DrawParams::Alpha(0.5f));
+		game.m_sprite[body_dir_index]->draw(sX, sY, frame, hb::shared::sprite::DrawParams::alpha_blend(0.5f));
 	}
-	else if (bAdminInvis)
+	else if (admin_invis)
 	{
-		game.m_pSprite[iBodyDirIndex]->Draw(sX, sY, frame,
-			hb::shared::sprite::DrawParams::TintedAlpha(255, 132, 132, 0.5f));
+		game.m_sprite[body_dir_index]->draw(sX, sY, frame,
+			hb::shared::sprite::DrawParams::tinted_alpha(255, 132, 132, 0.5f));
 	}
-	else if (bInv)
+	else if (inv)
 	{
-		game.m_pSprite[iBodyDirIndex]->Draw(sX, sY, frame, hb::shared::sprite::DrawParams::Alpha(0.5f));
+		game.m_sprite[body_dir_index]->draw(sX, sY, frame, hb::shared::sprite::DrawParams::alpha_blend(0.5f));
 	}
-	else if (bFrozen)
+	else if (frozen)
 	{
-		game.m_pSprite[iBodyDirIndex]->Draw(sX, sY, frame,
-			hb::shared::sprite::DrawParams::Tint(94, 160, 208));
+		game.m_sprite[body_dir_index]->draw(sX, sY, frame,
+			hb::shared::sprite::DrawParams::tint(94, 160, 208));
 	}
 	else
 	{
-		game.m_pSprite[iBodyDirIndex]->Draw(sX, sY, frame);
+		game.m_sprite[body_dir_index]->draw(sX, sY, frame);
 	}
 
 	// Capture body bounding rect
-	auto br = game.m_pSprite[iBodyDirIndex]->GetBoundRect();
-	game.m_rcBodyRect = hb::shared::geometry::GameRectangle(br.left, br.top, br.right - br.left, br.bottom - br.top);
+	auto br = game.m_sprite[body_dir_index]->GetBoundRect();
+	game.m_body_rect = hb::shared::geometry::GameRectangle(br.left, br.top, br.right - br.left, br.bottom - br.top);
 }
 
 // -----------------------------------------------------------------------
@@ -165,187 +175,187 @@ void DrawBody(CGame& game, int iBodyDirIndex, int sX, int sY, int frame,
 // -----------------------------------------------------------------------
 static void DrawEquipmentStack(CGame& game, const EquipmentIndices& eq,
                                const CEntityRenderState& state, int sX, int sY,
-                               bool bInv, const char* mantleOrder, int equipFrameMul = 8)
+                               bool inv, const char* mantleOrder, int equipFrameMul = 8)
 {
-	int dir = state.m_iDir;
-	int frame = state.m_iFrame;
+	int dir = state.m_dir;
+	int frame = state.m_frame;
 	int dirFrame = (dir - 1) * equipFrameMul + frame;
 
 	// Mantle behind body (order 0)
-	if (eq.iMantleIndex != -1 && mantleOrder[dir] == 0)
-		DrawEquipLayer(game, eq.iMantleIndex, sX, sY, dirFrame, bInv, eq.iMantleColor);
+	if (eq.m_mantle_index != -1 && mantleOrder[dir] == 0)
+		draw_equip_layer(game, eq.m_mantle_index, sX, sY, dirFrame, inv, eq.m_mantle_color);
 
 	// Undies
-	DrawEquipLayer(game, eq.iUndiesIndex, sX, sY, dirFrame, bInv, 0);
+	draw_equip_layer(game, eq.m_undies_index, sX, sY, dirFrame, inv, 0);
 
 	// Hair (only if no helm)
-	if (eq.iHairIndex != -1 && eq.iHelmIndex == -1)
+	if (eq.m_hair_index != -1 && eq.m_helm_index == -1)
 	{
-		const auto& hc = GameColors::Hair[state.m_appearance.iHairColor];
-		game.m_pSprite[eq.iHairIndex]->Draw(sX, sY, dirFrame, hb::shared::sprite::DrawParams::Tint(hc.r, hc.g, hc.b));
+		const auto& hc = GameColors::Hair[state.m_appearance.hair_color];
+		game.m_sprite[eq.m_hair_index]->draw(sX, sY, dirFrame, hb::shared::sprite::DrawParams::tint(hc.r, hc.g, hc.b));
 	}
 
 	// Boots before pants if wearing skirt
-	if (eq.iSkirtDraw == 1)
-		DrawEquipLayer(game, eq.iBootsIndex, sX, sY, dirFrame, bInv, eq.iBootsColor);
+	if (eq.m_skirt_draw == 1)
+		draw_equip_layer(game, eq.m_boots_index, sX, sY, dirFrame, inv, eq.m_boots_color);
 
 	// Pants
-	DrawEquipLayer(game, eq.iPantsIndex, sX, sY, dirFrame, bInv, eq.iPantsColor);
+	draw_equip_layer(game, eq.m_pants_index, sX, sY, dirFrame, inv, eq.m_pants_color);
 
 	// Arm armor
-	DrawEquipLayer(game, eq.iArmArmorIndex, sX, sY, dirFrame, bInv, eq.iArmColor);
+	draw_equip_layer(game, eq.m_arm_armor_index, sX, sY, dirFrame, inv, eq.m_arm_color);
 
 	// Boots after pants if not wearing skirt
-	if (eq.iSkirtDraw == 0)
-		DrawEquipLayer(game, eq.iBootsIndex, sX, sY, dirFrame, bInv, eq.iBootsColor);
+	if (eq.m_skirt_draw == 0)
+		draw_equip_layer(game, eq.m_boots_index, sX, sY, dirFrame, inv, eq.m_boots_color);
 
 	// Body armor
-	DrawEquipLayer(game, eq.iBodyArmorIndex, sX, sY, dirFrame, bInv, eq.iArmorColor);
+	draw_equip_layer(game, eq.m_body_armor_index, sX, sY, dirFrame, inv, eq.m_armor_color);
 
 	// Helm
-	DrawEquipLayer(game, eq.iHelmIndex, sX, sY, dirFrame, bInv, eq.iHelmColor);
+	draw_equip_layer(game, eq.m_helm_index, sX, sY, dirFrame, inv, eq.m_helm_color);
 
 	// Mantle over armor (order 2)
-	if (eq.iMantleIndex != -1 && mantleOrder[dir] == 2)
-		DrawEquipLayer(game, eq.iMantleIndex, sX, sY, dirFrame, bInv, eq.iMantleColor);
+	if (eq.m_mantle_index != -1 && mantleOrder[dir] == 2)
+		draw_equip_layer(game, eq.m_mantle_index, sX, sY, dirFrame, inv, eq.m_mantle_color);
 
 	// Shield + glare
-	DrawShield(game, eq, sX, sY, dirFrame, bInv);
+	draw_shield(game, eq, sX, sY, dirFrame, inv);
 
 	// Mantle in front (order 1)
-	if (eq.iMantleIndex != -1 && mantleOrder[dir] == 1)
-		DrawEquipLayer(game, eq.iMantleIndex, sX, sY, dirFrame, bInv, eq.iMantleColor);
+	if (eq.m_mantle_index != -1 && mantleOrder[dir] == 1)
+		draw_equip_layer(game, eq.m_mantle_index, sX, sY, dirFrame, inv, eq.m_mantle_color);
 }
 
 // -----------------------------------------------------------------------
-void DrawPlayerLayers(CGame& game, const EquipmentIndices& eq,
+void draw_player_layers(CGame& game, const EquipmentIndices& eq,
                       const CEntityRenderState& state, int sX, int sY,
-                      bool bInv, const char* mantleOrder, int equipFrameMul,
-                      bool bAdminInvis)
+                      bool inv, const char* mantleOrder, int equipFrameMul,
+                      bool admin_invis)
 {
-	int dir = state.m_iDir;
-	int frame = state.m_iFrame;
-	int bodyDirIndex = eq.iBodyIndex + (dir - 1);
+	int dir = state.m_dir;
+	int frame = state.m_frame;
+	int bodyDirIndex = eq.m_body_index + (dir - 1);
 
 	if (weapon_draw_order[dir] == 1)
 	{
 		// Weapon before body
-		DrawWeapon(game, eq, sX, sY, frame, bInv);
-		DrawShadow(game, bodyDirIndex, sX, sY, frame, bInv, state.m_sOwnerType);
+		draw_weapon(game, eq, sX, sY, frame, inv);
+		draw_shadow(game, bodyDirIndex, sX, sY, frame, inv, state.m_owner_type);
 
 		// Energy sphere light
-		if (state.m_sOwnerType == hb::shared::owner::EnergySphere)
-			game.m_pEffectSpr[0]->Draw(sX, sY, 1, hb::shared::sprite::DrawParams::Alpha(0.5f));
+		if (state.m_owner_type == hb::shared::owner::EnergySphere)
+			game.m_effect_sprites[0]->draw(sX, sY, 1, hb::shared::sprite::DrawParams::alpha_blend(0.5f));
 
-		DrawBody(game, bodyDirIndex, sX, sY, frame, bInv, state.m_sOwnerType, state.m_status.bFrozen, bAdminInvis);
-		DrawEquipmentStack(game, eq, state, sX, sY, bInv, mantleOrder, equipFrameMul);
+		draw_body(game, bodyDirIndex, sX, sY, frame, inv, state.m_owner_type, state.m_status.frozen, admin_invis);
+		DrawEquipmentStack(game, eq, state, sX, sY, inv, mantleOrder, equipFrameMul);
 	}
 	else
 	{
 		// Body before weapon
-		DrawShadow(game, bodyDirIndex, sX, sY, frame, bInv, state.m_sOwnerType);
+		draw_shadow(game, bodyDirIndex, sX, sY, frame, inv, state.m_owner_type);
 
-		if (state.m_sOwnerType == hb::shared::owner::EnergySphere)
-			game.m_pEffectSpr[0]->Draw(sX, sY, 1, hb::shared::sprite::DrawParams::Alpha(0.5f));
+		if (state.m_owner_type == hb::shared::owner::EnergySphere)
+			game.m_effect_sprites[0]->draw(sX, sY, 1, hb::shared::sprite::DrawParams::alpha_blend(0.5f));
 
-		DrawBody(game, bodyDirIndex, sX, sY, frame, bInv, state.m_sOwnerType, state.m_status.bFrozen, bAdminInvis);
-		DrawEquipmentStack(game, eq, state, sX, sY, bInv, mantleOrder, equipFrameMul);
-		DrawWeapon(game, eq, sX, sY, frame, bInv);
+		draw_body(game, bodyDirIndex, sX, sY, frame, inv, state.m_owner_type, state.m_status.frozen, admin_invis);
+		DrawEquipmentStack(game, eq, state, sX, sY, inv, mantleOrder, equipFrameMul);
+		draw_weapon(game, eq, sX, sY, frame, inv);
 	}
 }
 
 // -----------------------------------------------------------------------
-void DrawNpcLayers(CGame& game, const EquipmentIndices& eq,
+void draw_npc_layers(CGame& game, const EquipmentIndices& eq,
                    const CEntityRenderState& state, int sX, int sY,
-                   bool bInv)
+                   bool inv)
 {
-	int dir = state.m_iDir;
-	int frame = state.m_iFrame;
-	int bodyDirIndex = eq.iBodyIndex + (dir - 1);
+	int dir = state.m_dir;
+	int frame = state.m_frame;
+	int bodyDirIndex = eq.m_body_index + (dir - 1);
 
-	DrawShadow(game, bodyDirIndex, sX, sY, frame, bInv, state.m_sOwnerType);
+	draw_shadow(game, bodyDirIndex, sX, sY, frame, inv, state.m_owner_type);
 
-	if (state.m_sOwnerType == hb::shared::owner::EnergySphere)
-		game.m_pEffectSpr[0]->Draw(sX, sY, 1, hb::shared::sprite::DrawParams::Alpha(0.5f));
+	if (state.m_owner_type == hb::shared::owner::EnergySphere)
+		game.m_effect_sprites[0]->draw(sX, sY, 1, hb::shared::sprite::DrawParams::alpha_blend(0.5f));
 
-	DrawBody(game, bodyDirIndex, sX, sY, frame, bInv, state.m_sOwnerType, state.m_status.bFrozen);
+	draw_body(game, bodyDirIndex, sX, sY, frame, inv, state.m_owner_type, state.m_status.frozen);
 }
 
 // -----------------------------------------------------------------------
-bool CheckInvisibility(CGame& game, const CEntityRenderState& state, bool& bInv, bool& bAdminInvis)
+bool check_invisibility(CGame& game, const CEntityRenderState& state, bool& inv, bool& admin_invis)
 {
-	bAdminInvis = false;
+	admin_invis = false;
 
-	if (hb::shared::owner::IsAlwaysInvisible(state.m_sOwnerType))
-		bInv = true;
+	if (hb::shared::owner::is_always_invisible(state.m_owner_type))
+		inv = true;
 
-	if (state.m_status.bInvisibility)
+	if (state.m_status.invisibility)
 	{
-		// Admin invisibility: bInvisibility + bGMMode combo means admin invis
+		// Admin invisibility: invisibility + gm_mode combo means admin invis
 		// Always draw with red-tinted transparency for any viewer that receives this packet
-		if (state.m_status.bGMMode)
+		if (state.m_status.gm_mode)
 		{
-			bInv = true;
-			bAdminInvis = true;
-			return false; // Draw with admin invis transparency
+			inv = true;
+			admin_invis = true;
+			return false; // draw with admin invis transparency
 		}
 
-		if (state.m_wObjectID == game.m_pPlayer->m_sPlayerObjectID)
-			bInv = true;
-		else if (IsFriendly(state.m_status.iRelationship))
-			bInv = true;
+		if (state.m_object_id == game.m_player->m_player_object_id)
+			inv = true;
+		else if (IsFriendly(state.m_status.relationship))
+			inv = true;
 		else
 			return true; // Don't draw at all
 	}
-	return false; // Draw (possibly with bInv transparency)
+	return false; // draw (possibly with inv transparency)
 }
 
 // -----------------------------------------------------------------------
-void ApplyDirectionOverride(CEntityRenderState& state)
+void apply_direction_override(CEntityRenderState& state)
 {
-	switch (state.m_sOwnerType) {
+	switch (state.m_owner_type) {
 	case hb::shared::owner::AirElemental:
-		state.m_iDir = 1;
+		state.m_dir = 1;
 		break;
 	case hb::shared::owner::Gate:
-		if (state.m_iDir <= 3) state.m_iDir = 3;
-		else state.m_iDir = 5;
+		if (state.m_dir <= 3) state.m_dir = 3;
+		else state.m_dir = 5;
 		break;
 	}
 }
 
 // -----------------------------------------------------------------------
-void DrawName(CGame& game, const CEntityRenderState& state, int sX, int sY)
+void draw_name(CGame& game, const CEntityRenderState& state, int sX, int sY)
 {
-	if (state.m_cName[0] != '\0')
+	if (state.m_name[0] != '\0')
 	{
-		if (state.IsPlayer())
-			game.DrawObjectName(sX, sY, state.m_cName.data(), state.m_status, state.m_wObjectID);
+		if (state.is_player())
+			game.draw_object_name(sX, sY, state.m_name.data(), state.m_status, state.m_object_id);
 		else
-			game.DrawNpcName(sX, sY, state.m_sOwnerType, state.m_status, state.m_sNpcConfigId);
+			game.draw_npc_name(sX, sY, state.m_owner_type, state.m_status, state.m_npc_config_id);
 	}
 }
 
 // -----------------------------------------------------------------------
-void UpdateChat(CGame& game, const CEntityRenderState& state,
+void update_chat(CGame& game, const CEntityRenderState& state,
                 int sX, int sY, int indexX, int indexY)
 {
-	if (state.m_iChatIndex == 0) return;
+	if (state.m_chat_index == 0) return;
 
-	if (game.m_floatingText.IsValid(state.m_iChatIndex, state.m_wObjectID))
+	if (game.m_floating_text.is_valid(state.m_chat_index, state.m_object_id))
 	{
-		game.m_floatingText.UpdatePosition(state.m_iChatIndex, static_cast<short>(sX), static_cast<short>(sY));
+		game.m_floating_text.update_position(state.m_chat_index, static_cast<short>(sX), static_cast<short>(sY));
 	}
 	else
 	{
-		game.m_pMapData->ClearChatMsg(indexX, indexY);
+		game.m_map_data->clear_chat_msg(indexX, indexY);
 	}
 }
 
 // -----------------------------------------------------------------------
-void DrawNpcLight(CGame& game, short sOwnerType, int sX, int sY)
+void draw_npc_light(CGame& game, short owner_type, int sX, int sY)
 {
-	switch (sOwnerType) {
+	switch (owner_type) {
 	case hb::shared::owner::ShopKeeper:
 	case hb::shared::owner::Gandalf:
 	case hb::shared::owner::Howard:
@@ -355,95 +365,95 @@ void DrawNpcLight(CGame& game, short sOwnerType, int sX, int sY)
 	case hb::shared::owner::Catapult:
 	case hb::shared::owner::HBT:
 	case hb::shared::owner::Gail:
-		game.m_pEffectSpr[0]->Draw(sX, sY, 1, hb::shared::sprite::DrawParams::Alpha(0.5f));
+		game.m_effect_sprites[0]->draw(sX, sY, 1, hb::shared::sprite::DrawParams::alpha_blend(0.5f));
 		break;
 	}
 }
 
 // -----------------------------------------------------------------------
-void DrawEffectAuras(CGame& game, const CEntityRenderState& state, int sX, int sY)
+void draw_effect_auras(CGame& game, const CEntityRenderState& state, int sX, int sY)
 {
-	if (state.m_iEffectType == 0) return;
-	switch (state.m_iEffectType) {
-	case 1: game.m_pEffectSpr[26]->Draw(sX, sY, state.m_iEffectFrame, hb::shared::sprite::DrawParams::Alpha(0.5f)); break;
-	case 2: game.m_pEffectSpr[27]->Draw(sX, sY, state.m_iEffectFrame, hb::shared::sprite::DrawParams::Alpha(0.5f)); break;
+	if (state.m_effect_type == 0) return;
+	switch (state.m_effect_type) {
+	case 1: game.m_effect_sprites[26]->draw(sX, sY, state.m_effect_frame, hb::shared::sprite::DrawParams::alpha_blend(0.5f)); break;
+	case 2: game.m_effect_sprites[27]->draw(sX, sY, state.m_effect_frame, hb::shared::sprite::DrawParams::alpha_blend(0.5f)); break;
 	}
 }
 
 // -----------------------------------------------------------------------
-void DrawBerserkGlow(CGame& game, const EquipmentIndices& eq, const CEntityRenderState& state,
+void draw_berserk_glow(CGame& game, const EquipmentIndices& eq, const CEntityRenderState& state,
                      int sX, int sY)
 {
-	if (!state.m_status.bBerserk) return;
-	int bodyDirIndex = eq.iBodyIndex + (state.m_iDir - 1);
-	game.m_pSprite[bodyDirIndex]->Draw(sX, sY, state.m_iFrame,
-		hb::shared::sprite::DrawParams::AdditiveColored(GameColors::BerserkGlow.r, GameColors::BerserkGlow.g, GameColors::BerserkGlow.b, 0.7f));
+	if (!state.m_status.berserk) return;
+	int bodyDirIndex = eq.m_body_index + (state.m_dir - 1);
+	game.m_sprite[bodyDirIndex]->draw(sX, sY, state.m_frame,
+		hb::shared::sprite::DrawParams::additive_colored(GameColors::BerserkGlow.r, GameColors::BerserkGlow.g, GameColors::BerserkGlow.b, 0.7f));
 }
 
 // -----------------------------------------------------------------------
-void DrawAbaddonEffects(CGame& game, const CEntityRenderState& state, int sX, int sY)
+void draw_abaddon_effects(CGame& game, const CEntityRenderState& state, int sX, int sY)
 {
-	if (state.m_sOwnerType != hb::shared::owner::Abaddon) return;
+	if (state.m_owner_type != hb::shared::owner::Abaddon) return;
 
-	int randFrame = state.m_iFrame % 12;
-	game.m_pEffectSpr[154]->Draw(sX - 50, sY - 50, randFrame, hb::shared::sprite::DrawParams::Alpha(0.7f));
-	game.m_pEffectSpr[155]->Draw(sX - 20, sY - 80, randFrame, hb::shared::sprite::DrawParams::Alpha(0.7f));
-	game.m_pEffectSpr[156]->Draw(sX + 70, sY - 50, randFrame, hb::shared::sprite::DrawParams::Alpha(0.7f));
-	game.m_pEffectSpr[157]->Draw(sX - 30, sY, randFrame, hb::shared::sprite::DrawParams::Alpha(0.7f));
-	game.m_pEffectSpr[158]->Draw(sX - 60, sY + 90, randFrame, hb::shared::sprite::DrawParams::Alpha(0.7f));
-	game.m_pEffectSpr[159]->Draw(sX + 65, sY + 85, randFrame, hb::shared::sprite::DrawParams::Alpha(0.7f));
+	int randFrame = state.m_frame % 12;
+	game.m_effect_sprites[154]->draw(sX - 50, sY - 50, randFrame, hb::shared::sprite::DrawParams::alpha_blend(0.7f));
+	game.m_effect_sprites[155]->draw(sX - 20, sY - 80, randFrame, hb::shared::sprite::DrawParams::alpha_blend(0.7f));
+	game.m_effect_sprites[156]->draw(sX + 70, sY - 50, randFrame, hb::shared::sprite::DrawParams::alpha_blend(0.7f));
+	game.m_effect_sprites[157]->draw(sX - 30, sY, randFrame, hb::shared::sprite::DrawParams::alpha_blend(0.7f));
+	game.m_effect_sprites[158]->draw(sX - 60, sY + 90, randFrame, hb::shared::sprite::DrawParams::alpha_blend(0.7f));
+	game.m_effect_sprites[159]->draw(sX + 65, sY + 85, randFrame, hb::shared::sprite::DrawParams::alpha_blend(0.7f));
 
-	int ef = state.m_iEffectFrame;
-	switch (state.m_iDir) {
+	int ef = state.m_effect_frame;
+	switch (state.m_dir) {
 	case 1:
-		game.m_pEffectSpr[153]->Draw(sX, sY + 108, ef % 28, hb::shared::sprite::DrawParams::Alpha(0.7f));
-		game.m_pEffectSpr[164]->Draw(sX - 50, sY + 10, ef % 15, hb::shared::sprite::DrawParams::Alpha(0.7f));
+		game.m_effect_sprites[153]->draw(sX, sY + 108, ef % 28, hb::shared::sprite::DrawParams::alpha_blend(0.7f));
+		game.m_effect_sprites[164]->draw(sX - 50, sY + 10, ef % 15, hb::shared::sprite::DrawParams::alpha_blend(0.7f));
 		break;
 	case 2:
-		game.m_pEffectSpr[153]->Draw(sX, sY + 95, ef % 28, hb::shared::sprite::DrawParams::Alpha(0.7f));
-		game.m_pEffectSpr[164]->Draw(sX - 70, sY + 10, ef % 15, hb::shared::sprite::DrawParams::Alpha(0.7f));
+		game.m_effect_sprites[153]->draw(sX, sY + 95, ef % 28, hb::shared::sprite::DrawParams::alpha_blend(0.7f));
+		game.m_effect_sprites[164]->draw(sX - 70, sY + 10, ef % 15, hb::shared::sprite::DrawParams::alpha_blend(0.7f));
 		break;
 	case 3:
-		game.m_pEffectSpr[153]->Draw(sX, sY + 105, ef % 28, hb::shared::sprite::DrawParams::Alpha(0.7f));
-		game.m_pEffectSpr[164]->Draw(sX - 90, sY + 10, ef % 15, hb::shared::sprite::DrawParams::Alpha(0.7f));
+		game.m_effect_sprites[153]->draw(sX, sY + 105, ef % 28, hb::shared::sprite::DrawParams::alpha_blend(0.7f));
+		game.m_effect_sprites[164]->draw(sX - 90, sY + 10, ef % 15, hb::shared::sprite::DrawParams::alpha_blend(0.7f));
 		break;
 	case 4:
-		game.m_pEffectSpr[153]->Draw(sX - 35, sY + 100, ef % 28, hb::shared::sprite::DrawParams::Alpha(0.7f));
-		game.m_pEffectSpr[164]->Draw(sX - 80, sY + 10, ef % 15, hb::shared::sprite::DrawParams::Alpha(0.7f));
+		game.m_effect_sprites[153]->draw(sX - 35, sY + 100, ef % 28, hb::shared::sprite::DrawParams::alpha_blend(0.7f));
+		game.m_effect_sprites[164]->draw(sX - 80, sY + 10, ef % 15, hb::shared::sprite::DrawParams::alpha_blend(0.7f));
 		break;
 	case 5:
-		game.m_pEffectSpr[153]->Draw(sX, sY + 95, ef % 28, hb::shared::sprite::DrawParams::Alpha(0.7f));
-		game.m_pEffectSpr[164]->Draw(sX - 65, sY - 5, ef % 15, hb::shared::sprite::DrawParams::Alpha(0.7f));
+		game.m_effect_sprites[153]->draw(sX, sY + 95, ef % 28, hb::shared::sprite::DrawParams::alpha_blend(0.7f));
+		game.m_effect_sprites[164]->draw(sX - 65, sY - 5, ef % 15, hb::shared::sprite::DrawParams::alpha_blend(0.7f));
 		break;
 	case 6:
-		game.m_pEffectSpr[153]->Draw(sX + 45, sY + 95, ef % 28, hb::shared::sprite::DrawParams::Alpha(0.7f));
-		game.m_pEffectSpr[164]->Draw(sX - 31, sY + 10, ef % 15, hb::shared::sprite::DrawParams::Alpha(0.7f));
+		game.m_effect_sprites[153]->draw(sX + 45, sY + 95, ef % 28, hb::shared::sprite::DrawParams::alpha_blend(0.7f));
+		game.m_effect_sprites[164]->draw(sX - 31, sY + 10, ef % 15, hb::shared::sprite::DrawParams::alpha_blend(0.7f));
 		break;
 	case 7:
-		game.m_pEffectSpr[153]->Draw(sX + 40, sY + 110, ef % 28, hb::shared::sprite::DrawParams::Alpha(0.7f));
-		game.m_pEffectSpr[164]->Draw(sX - 30, sY + 10, ef % 15, hb::shared::sprite::DrawParams::Alpha(0.7f));
+		game.m_effect_sprites[153]->draw(sX + 40, sY + 110, ef % 28, hb::shared::sprite::DrawParams::alpha_blend(0.7f));
+		game.m_effect_sprites[164]->draw(sX - 30, sY + 10, ef % 15, hb::shared::sprite::DrawParams::alpha_blend(0.7f));
 		break;
 	case 8:
-		game.m_pEffectSpr[153]->Draw(sX + 20, sY + 110, ef % 28, hb::shared::sprite::DrawParams::Alpha(0.7f));
-		game.m_pEffectSpr[164]->Draw(sX - 20, sY + 16, ef % 15, hb::shared::sprite::DrawParams::Alpha(0.7f));
+		game.m_effect_sprites[153]->draw(sX + 20, sY + 110, ef % 28, hb::shared::sprite::DrawParams::alpha_blend(0.7f));
+		game.m_effect_sprites[164]->draw(sX - 20, sY + 16, ef % 15, hb::shared::sprite::DrawParams::alpha_blend(0.7f));
 		break;
 	}
 }
 
 // -----------------------------------------------------------------------
-void DrawGMEffect(CGame& game, const CEntityRenderState& state, int sX, int sY)
+void draw_gm_effect(CGame& game, const CEntityRenderState& state, int sX, int sY)
 {
-	if (state.m_status.bGMMode && state.IsPlayer())
-		game.m_pEffectSpr[45]->Draw(sX - 13, sY - 34, 0, hb::shared::sprite::DrawParams::Additive(1.0f));
+	if (state.m_status.gm_mode && state.is_player())
+		game.m_effect_sprites[45]->draw(sX - 13, sY - 34, 0, hb::shared::sprite::DrawParams::additive(1.0f));
 }
 
 // -----------------------------------------------------------------------
-void DrawAfkEffect(CGame& game, const CEntityRenderState& state, int sX, int sY, uint32_t dwTime)
+void draw_afk_effect(CGame& game, const CEntityRenderState& state, int sX, int sY, uint32_t time)
 {
-	if (!state.IsPlayer()) return;
-	if (!state.m_status.bAfk) return;
+	if (!state.is_player()) return;
+	if (!state.m_status.afk) return;
 
-	// effect9.pak sprite 19 = m_pEffectSpr[66 + 19 = 85], 17 frames (0-16)
+	// effect9.pak sprite 19 = m_effect_sprites[66 + 19 = 85], 17 frames (0-16)
 	constexpr int AFK_SPRITE_INDEX = 85;
 	constexpr int AFK_MAX_FRAMES = 17;
 
@@ -452,13 +462,13 @@ void DrawAfkEffect(CGame& game, const CEntityRenderState& state, int sX, int sY,
 	static int s_iAfkFrame = 0;
 	static uint32_t s_dwNextFrameTime = 0;
 
-	if (dwTime >= s_dwNextFrameTime)
+	if (time >= s_dwNextFrameTime)
 	{
 		s_iAfkFrame = (s_iAfkFrame + 1) % AFK_MAX_FRAMES;
-		s_dwNextFrameTime = dwTime + 100 + (rand() % 101); // 100-200ms
+		s_dwNextFrameTime = time + 100 + (rand() % 101); // 100-200ms
 	}
 
-	game.m_pEffectSpr[AFK_SPRITE_INDEX]->Draw(sX + 56, sY+32, s_iAfkFrame, hb::shared::sprite::DrawParams::Alpha(0.8f));
+	game.m_effect_sprites[AFK_SPRITE_INDEX]->draw(sX + 56, sY+32, s_iAfkFrame, hb::shared::sprite::DrawParams::alpha_blend(0.8f));
 }
 
 } // namespace RenderHelpers

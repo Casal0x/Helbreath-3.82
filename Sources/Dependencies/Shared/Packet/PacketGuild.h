@@ -9,7 +9,7 @@ namespace hb {
 namespace net {
 	HB_PACK_BEGIN
 
-	// Guild creation request payload (passed to RequestCreateNewGuild)
+	// Guild creation request payload (passed to request_create_new_guild)
 	struct HB_PACKED GuildCreatePayload {
 		char char_name[hb::shared::limits::CharNameLen];
 		char guild_name[hb::shared::limits::GuildNameLen];
@@ -17,7 +17,7 @@ namespace net {
 		std::uint32_t guild_guid;
 	};
 
-	// Guild disband request payload (passed to RequestDisbandGuild)
+	// Guild disband request payload (passed to request_disband_guild)
 	struct HB_PACKED GuildDisbandPayload {
 		char char_name[hb::shared::limits::CharNameLen];
 		char guild_name[hb::shared::limits::GuildNameLen];

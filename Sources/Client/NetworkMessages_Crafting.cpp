@@ -3,44 +3,44 @@
 
 namespace NetworkMessageHandlers {
 
-void HandleCraftingSuccess(CGame* pGame, char* pData)
+void handle_crafting_success(CGame* game, char* data)
 {
-	pGame->m_craftingManager.HandleCraftingSuccess(pData);
+	game->m_crafting_manager.handle_crafting_success(data);
 }
 
-void HandleCraftingFail(CGame* pGame, char* pData)
+void handle_crafting_fail(CGame* game, char* data)
 {
-	pGame->m_craftingManager.HandleCraftingFail(pData);
+	game->m_crafting_manager.handle_crafting_fail(data);
 }
 
-void HandleBuildItemSuccess(CGame* pGame, char* pData)
+void handle_build_item_success(CGame* game, char* data)
 {
-	pGame->m_craftingManager.HandleBuildItemSuccess(pData);
+	game->m_crafting_manager.handle_build_item_success(data);
 }
 
-void HandleBuildItemFail(CGame* pGame, char* pData)
+void handle_build_item_fail(CGame* game, char* data)
 {
-	pGame->m_craftingManager.HandleBuildItemFail(pData);
+	game->m_crafting_manager.handle_build_item_fail(data);
 }
 
-void HandlePortionSuccess(CGame* pGame, char* pData)
+void handle_portion_success(CGame* game, char* data)
 {
-	pGame->m_craftingManager.HandlePortionSuccess(pData);
+	game->m_crafting_manager.handle_portion_success(data);
 }
 
-void HandlePortionFail(CGame* pGame, char* pData)
+void handle_portion_fail(CGame* game, char* data)
 {
-	pGame->m_craftingManager.HandlePortionFail(pData);
+	game->m_crafting_manager.handle_portion_fail(data);
 }
 
-void HandleLowPortionSkill(CGame* pGame, char* pData)
+void handle_low_portion_skill(CGame* game, char* data)
 {
-	pGame->m_craftingManager.HandleLowPortionSkill(pData);
+	game->m_crafting_manager.handle_low_portion_skill(data);
 }
 
-void HandleNoMatchingPortion(CGame* pGame, char* pData)
+void handle_no_matching_portion(CGame* game, char* data)
 {
-	pGame->m_craftingManager.HandleNoMatchingPortion(pData);
+	game->m_crafting_manager.handle_no_matching_portion(data);
 }
 
 } // namespace NetworkMessageHandlers

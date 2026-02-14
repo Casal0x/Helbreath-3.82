@@ -15,7 +15,7 @@ using namespace hb::shared::item;
 using hb::shared::item::EquipPos;
 using namespace hb::client::sprite_id;
 
-// Draw order: first entry drawn first (bottom layer), last entry drawn last (top layer).
+// draw order: first entry drawn first (bottom layer), last entry drawn last (top layer).
 // Collision checks iterate in reverse so topmost-drawn item has highest click priority.
 static constexpr EquipSlotLayout MaleEquipSlots[] = {
 	{ EquipPos::Back,        41,  137, false },
@@ -49,43 +49,43 @@ static constexpr EquipSlotLayout FemaleEquipSlots[] = {
 	{ EquipPos::Head,        72,  139, false },
 };
 
-DialogBox_Character::DialogBox_Character(CGame* pGame)
-	: IDialogBox(DialogBoxId::CharacterInfo, pGame)
+DialogBox_Character::DialogBox_Character(CGame* game)
+	: IDialogBox(DialogBoxId::CharacterInfo, game)
 {
-	SetDefaultRect(30 , 30 , 270, 376);
+	set_default_rect(30 , 30 , 270, 376);
 }
 
 // Helper: Display stat with optional angelic bonus (blue if boosted)
-void DialogBox_Character::DrawStat(int x1, int x2, int y, int baseStat, int angelicBonus)
+void DialogBox_Character::draw_stat(int x1, int x2, int y, int baseStat, int angelicBonus)
 {
 	if (angelicBonus == 0)
 	{
 		auto buf = std::format("{}", baseStat);
-		PutAlignedString(x1, x2, y, buf.c_str(), GameColors::UILabel);
+		put_aligned_string(x1, x2, y, buf.c_str(), GameColors::UILabel);
 	}
 	else
 	{
 		auto buf = std::format("{}", baseStat + angelicBonus);
-		PutAlignedString(x1, x2, y, buf.c_str(), GameColors::UIModifiedStat);
+		put_aligned_string(x1, x2, y, buf.c_str(), GameColors::UIModifiedStat);
 	}
 }
 
 // Find the topmost equipped slot colliding with the mouse, using the given table.
 // Returns the EquipPos of the topmost hit, or EquipPos::None if nothing collides.
-static EquipPos FindHoverSlot(CGame* pGame, const EquipSlotLayout* slots, int slotCount,
-	short sX, short sY, short msX, short msY, const char* cEquipPoiStatus, int spriteOffset)
+static EquipPos FindHoverSlot(CGame* game, const EquipSlotLayout* slots, int slotCount,
+	short sX, short sY, short mouse_x, short mouse_y, const char* equip_poi_status, int spriteOffset)
 {
 	for (int i = slotCount - 1; i >= 0; i--)
 	{
 		int ep = static_cast<int>(slots[i].equipPos);
-		int itemIdx = cEquipPoiStatus[ep];
+		int itemIdx = equip_poi_status[ep];
 		if (itemIdx == -1) continue;
 
-		CItem* pCfg = pGame->GetItemConfig(pGame->m_pItemList[itemIdx]->m_sIDnum);
-		if (pCfg == nullptr) continue;
+		CItem* cfg = game->get_item_config(game->m_item_list[itemIdx]->m_id_num);
+		if (cfg == nullptr) continue;
 
-		if (pGame->m_pSprite[ItemEquipPivotPoint + pCfg->m_sSprite + spriteOffset]->CheckCollision(
-			sX + slots[i].offsetX, sY + slots[i].offsetY, pCfg->m_sSpriteFrame, msX, msY))
+		if (game->m_sprite[ItemEquipPivotPoint + cfg->m_sprite + spriteOffset]->CheckCollision(
+			sX + slots[i].offsetX, sY + slots[i].offsetY, cfg->m_sprite_frame, mouse_x, mouse_y))
 		{
 			return slots[i].equipPos;
 		}
@@ -93,84 +93,84 @@ static EquipPos FindHoverSlot(CGame* pGame, const EquipSlotLayout* slots, int sl
 	return EquipPos::None;
 }
 
-// Helper: Render equipped item with optional hover highlight
-void DialogBox_Character::DrawEquippedItem(hb::shared::item::EquipPos equipPos, int drawX, int drawY,
-	const char* cEquipPoiStatus, bool useWeaponColors, bool bHighlight, int spriteOffset)
+// Helper: render equipped item with optional hover highlight
+void DialogBox_Character::draw_equipped_item(hb::shared::item::EquipPos equipPos, int drawX, int drawY,
+	const char* equip_poi_status, bool useWeaponColors, bool highlight, int spriteOffset)
 {
-	int itemIdx = cEquipPoiStatus[static_cast<int>(equipPos)];
+	int itemIdx = equip_poi_status[static_cast<int>(equipPos)];
 	if (itemIdx == -1) return;
 
-	CItem* pItem = m_pGame->m_pItemList[itemIdx].get();
-	CItem* pCfg = m_pGame->GetItemConfig(pItem->m_sIDnum);
-	if (pCfg == nullptr) return;
+	CItem* item = m_game->m_item_list[itemIdx].get();
+	CItem* cfg = m_game->get_item_config(item->m_id_num);
+	if (cfg == nullptr) return;
 
-	short sSprH = pCfg->m_sSprite;
-	short sFrame = pCfg->m_sSpriteFrame;
-	char cItemColor = pItem->m_cItemColor;
-	bool bDisabled = m_pGame->m_bIsItemDisabled[itemIdx];
+	short spr_h = cfg->m_sprite;
+	short frame = cfg->m_sprite_frame;
+	char item_color = item->m_item_color;
+	bool disabled = m_game->m_is_item_disabled[itemIdx];
 
 	// Select color array based on item type (weapons use different colors)
 	const hb::shared::render::Color* colors = useWeaponColors ? GameColors::Weapons : GameColors::Items;
 
-	auto pSprite = m_pGame->m_pSprite[ItemEquipPivotPoint + sSprH + spriteOffset];
+	auto sprite = m_game->m_sprite[ItemEquipPivotPoint + spr_h + spriteOffset];
 
-	if (!bDisabled)
+	if (!disabled)
 	{
-		if (cItemColor == 0)
-			pSprite->Draw(drawX, drawY, sFrame);
+		if (item_color == 0)
+			sprite->draw(drawX, drawY, frame);
 		else
-			pSprite->Draw(drawX, drawY, sFrame, hb::shared::sprite::DrawParams::Tint(colors[cItemColor].r, colors[cItemColor].g, colors[cItemColor].b));
+			sprite->draw(drawX, drawY, frame, hb::shared::sprite::DrawParams::tint(colors[item_color].r, colors[item_color].g, colors[item_color].b));
 	}
 	else
 	{
-		if (cItemColor == 0)
-			pSprite->Draw(drawX, drawY, sFrame, hb::shared::sprite::DrawParams::Alpha(0.25f));
+		if (item_color == 0)
+			sprite->draw(drawX, drawY, frame, hb::shared::sprite::DrawParams::alpha_blend(0.25f));
 		else
-			pSprite->Draw(drawX, drawY, sFrame, hb::shared::sprite::DrawParams::TintedAlpha(colors[cItemColor].r, colors[cItemColor].g, colors[cItemColor].b, 0.7f));
+			sprite->draw(drawX, drawY, frame, hb::shared::sprite::DrawParams::tinted_alpha(colors[item_color].r, colors[item_color].g, colors[item_color].b, 0.7f));
 	}
 
-	if (bHighlight)
-		pSprite->Draw(drawX, drawY, sFrame, hb::shared::sprite::DrawParams::Additive(0.35f));
+	if (highlight)
+		sprite->draw(drawX, drawY, frame, hb::shared::sprite::DrawParams::additive(0.35f));
 }
 
-// Helper: Draw hover button
-void DialogBox_Character::DrawHoverButton(int sX, int sY, int btnX, int btnY,
-	short msX, short msY, int hoverFrame, int normalFrame)
+// Helper: draw hover button
+void DialogBox_Character::draw_hover_button(int sX, int sY, int btnX, int btnY,
+	short mouse_x, short mouse_y, int hoverFrame, int normalFrame)
 {
-	bool bHover = (msX >= sX + btnX) && (msX <= sX + btnX + ui_layout::btn_size_x) &&
-	              (msY >= sY + btnY) && (msY <= sY + btnY + ui_layout::btn_size_y);
-	const bool dialogTrans = ConfigManager::Get().IsDialogTransparencyEnabled();
-	DrawNewDialogBox(InterfaceNdButton, sX + btnX, sY + btnY,
-		bHover ? hoverFrame : normalFrame, false, dialogTrans);
+	bool hover = (mouse_x >= sX + btnX) && (mouse_x <= sX + btnX + ui_layout::btn_size_x) &&
+	              (mouse_y >= sY + btnY) && (mouse_y <= sY + btnY + ui_layout::btn_size_y);
+	const bool dialogTrans = config_manager::get().is_dialog_transparency_enabled();
+	draw_new_dialog_box(InterfaceNdButton, sX + btnX, sY + btnY,
+		hover ? hoverFrame : normalFrame, false, dialogTrans);
 }
 
-void DialogBox_Character::BuildEquipStatusArray(char (&cEquipPoiStatus)[DEF_MAXITEMEQUIPPOS]) const
+void DialogBox_Character::build_equip_status_array(char (&equip_poi_status)[DEF_MAXITEMEQUIPPOS]) const
 {
-	std::memset(cEquipPoiStatus, -1, sizeof(cEquipPoiStatus));
+	std::memset(equip_poi_status, -1, sizeof(equip_poi_status));
 	for (int i = 0; i < hb::shared::limits::MaxItems; i++)
 	{
-		if (m_pGame->m_pItemList[i] != nullptr && m_pGame->m_bIsItemEquipped[i])
+		if (m_game->m_item_list[i] != nullptr && m_game->m_is_item_equipped[i])
 		{
-			CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[i]->m_sIDnum);
-			if (pCfg != nullptr)
-				cEquipPoiStatus[pCfg->m_cEquipPos] = i;
+			CItem* cfg = m_game->get_item_config(m_game->m_item_list[i]->m_id_num);
+			if (cfg != nullptr)
+				equip_poi_status[cfg->m_equip_pos] = i;
 		}
 	}
 }
 
-char DialogBox_Character::FindEquipItemAtPoint(short msX, short msY, short sX, short sY,
-	const char* cEquipPoiStatus) const
+char DialogBox_Character::find_equip_item_at_point(short mouse_x, short mouse_y, short sX, short sY,
+	const char* equip_poi_status) const
 {
 	const EquipSlotLayout* slots = nullptr;
 	int slotCount = 0;
 	int spriteOffset = 0;
 
-	if (m_pGame->m_pPlayer->m_sPlayerType >= 1 && m_pGame->m_pPlayer->m_sPlayerType <= 3)
+	if (m_game->m_player->m_player_type >= 1 && m_game->m_player->m_player_type <= 3)
 	{
 		slots = MaleEquipSlots;
 		slotCount = static_cast<int>(std::size(MaleEquipSlots));
 	}
-	else if (m_pGame->m_pPlayer->m_sPlayerType >= 4 && m_pGame->m_pPlayer->m_sPlayerType <= 6)
+	else if (m_game->m_player->m_player_type >= 4 && m_game->m_player->m_player_type <= 6)
 	{
 		slots = FemaleEquipSlots;
 		slotCount = static_cast<int>(std::size(FemaleEquipSlots));
@@ -181,17 +181,17 @@ char DialogBox_Character::FindEquipItemAtPoint(short msX, short msY, short sX, s
 	for (int i = slotCount - 1; i >= 0; i--)
 	{
 		int ep = static_cast<int>(slots[i].equipPos);
-		int itemIdx = cEquipPoiStatus[ep];
+		int itemIdx = equip_poi_status[ep];
 		if (itemIdx == -1) continue;
 
-		CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[itemIdx]->m_sIDnum);
-		if (pCfg == nullptr) continue;
+		CItem* cfg = m_game->get_item_config(m_game->m_item_list[itemIdx]->m_id_num);
+		if (cfg == nullptr) continue;
 
-		short sSprH = pCfg->m_sSprite;
-		short sFrame = pCfg->m_sSpriteFrame;
+		short spr_h = cfg->m_sprite;
+		short frame = cfg->m_sprite_frame;
 
-		if (m_pGame->m_pSprite[ItemEquipPivotPoint + sSprH + spriteOffset]->CheckCollision(
-			sX + slots[i].offsetX, sY + slots[i].offsetY, sFrame, msX, msY))
+		if (m_game->m_sprite[ItemEquipPivotPoint + spr_h + spriteOffset]->CheckCollision(
+			sX + slots[i].offsetX, sY + slots[i].offsetY, frame, mouse_x, mouse_y))
 		{
 			return static_cast<char>(itemIdx);
 		}
@@ -200,366 +200,366 @@ char DialogBox_Character::FindEquipItemAtPoint(short msX, short msY, short sX, s
 	return -1;
 }
 
-void DialogBox_Character::OnDraw(short msX, short msY, short msZ, char cLB)
+void DialogBox_Character::on_draw(short mouse_x, short mouse_y, short z, char lb)
 {
-	if (!m_pGame->EnsureItemConfigsLoaded()) return;
-	short sX = Info().sX;
-	short sY = Info().sY;
-	char cCollison = -1;
-	const bool dialogTrans = ConfigManager::Get().IsDialogTransparencyEnabled();
+	if (!m_game->ensure_item_configs_loaded()) return;
+	short sX = Info().m_x;
+	short sY = Info().m_y;
+	char collison = -1;
+	const bool dialogTrans = config_manager::get().is_dialog_transparency_enabled();
 
-	DrawNewDialogBox(InterfaceNdText, sX, sY, 0, false, dialogTrans);
+	draw_new_dialog_box(InterfaceNdText, sX, sY, 0, false, dialogTrans);
 
 	// Player name and PK/contribution
-	std::string cTxt2;
-	std::string infoBuf = m_pGame->m_pPlayer->m_cPlayerName + " : ";
+	std::string txt2;
+	std::string infoBuf = m_game->m_player->m_player_name + " : ";
 
-	if (m_pGame->m_pPlayer->m_iPKCount > 0) {
-		cTxt2 = std::format(DRAW_DIALOGBOX_CHARACTER1, m_pGame->m_pPlayer->m_iPKCount);
-		infoBuf += cTxt2;
+	if (m_game->m_player->m_pk_count > 0) {
+		txt2 = std::format(DRAW_DIALOGBOX_CHARACTER1, m_game->m_player->m_pk_count);
+		infoBuf += txt2;
 	}
-	cTxt2 = std::format(DRAW_DIALOGBOX_CHARACTER2, m_pGame->m_pPlayer->m_iContribution);
-	infoBuf += cTxt2;
-	PutAlignedString(sX + 24, sX + 252, sY + 52, infoBuf.c_str(), GameColors::UIDarkRed);
+	txt2 = std::format(DRAW_DIALOGBOX_CHARACTER2, m_game->m_player->m_contribution);
+	infoBuf += txt2;
+	put_aligned_string(sX + 24, sX + 252, sY + 52, infoBuf.c_str(), GameColors::UIDarkRed);
 
 	// Citizenship / Guild status
 	std::string statusBuf;
-	if (!m_pGame->m_pPlayer->m_bCitizen)
+	if (!m_game->m_player->m_citizen)
 	{
 		statusBuf = DRAW_DIALOGBOX_CHARACTER7;
 	}
 	else
 	{
-		statusBuf = m_pGame->m_pPlayer->m_bHunter
-			? (m_pGame->m_pPlayer->m_bAresden ? DEF_MSG_ARECIVIL : DEF_MSG_ELVCIVIL)
-			: (m_pGame->m_pPlayer->m_bAresden ? DEF_MSG_ARESOLDIER : DEF_MSG_ELVSOLDIER);
+		statusBuf = m_game->m_player->m_hunter
+			? (m_game->m_player->m_aresden ? DEF_MSG_ARECIVIL : DEF_MSG_ELVCIVIL)
+			: (m_game->m_player->m_aresden ? DEF_MSG_ARESOLDIER : DEF_MSG_ELVSOLDIER);
 
-		if (m_pGame->m_pPlayer->m_iGuildRank >= 0)
+		if (m_game->m_player->m_guild_rank >= 0)
 		{
 			statusBuf += "(";
-			statusBuf += m_pGame->m_pPlayer->m_cGuildName;
-			statusBuf += m_pGame->m_pPlayer->m_iGuildRank == 0 ? DEF_MSG_GUILDMASTER1 : DEF_MSG_GUILDSMAN1;
+			statusBuf += m_game->m_player->m_guild_name;
+			statusBuf += m_game->m_player->m_guild_rank == 0 ? DEF_MSG_GUILDMASTER1 : DEF_MSG_GUILDSMAN1;
 		}
 	}
-	PutAlignedString(sX, sX + 275, sY + 69, statusBuf.c_str(), GameColors::UILabel);
+	put_aligned_string(sX, sX + 275, sY + 69, statusBuf.c_str(), GameColors::UILabel);
 
 	// Level, Exp, Next Exp
 	std::string statBuf;
-	statBuf = std::format("{}", m_pGame->m_pPlayer->m_iLevel);
-	PutAlignedString(sX + 180, sX + 250, sY + 106, statBuf.c_str(), GameColors::UILabel);
+	statBuf = std::format("{}", m_game->m_player->m_level);
+	put_aligned_string(sX + 180, sX + 250, sY + 106, statBuf.c_str(), GameColors::UILabel);
 
-	statBuf = m_pGame->FormatCommaNumber(m_pGame->m_pPlayer->m_iExp);
-	PutAlignedString(sX + 180, sX + 250, sY + 125, statBuf.c_str(), GameColors::UILabel);
+	statBuf = m_game->format_comma_number(m_game->m_player->m_exp);
+	put_aligned_string(sX + 180, sX + 250, sY + 125, statBuf.c_str(), GameColors::UILabel);
 
-	statBuf = m_pGame->FormatCommaNumber(m_pGame->iGetLevelExp(m_pGame->m_pPlayer->m_iLevel + 1));
-	PutAlignedString(sX + 180, sX + 250, sY + 142, statBuf.c_str(), GameColors::UILabel);
+	statBuf = m_game->format_comma_number(m_game->get_level_exp(m_game->m_player->m_level + 1));
+	put_aligned_string(sX + 180, sX + 250, sY + 142, statBuf.c_str(), GameColors::UILabel);
 
 	// Calculate max stats
-	int iMaxHP = hb::shared::calc::CalculateMaxHP(m_pGame->m_pPlayer->m_iVit, m_pGame->m_pPlayer->m_iLevel, m_pGame->m_pPlayer->m_iStr, m_pGame->m_pPlayer->m_iAngelicStr);
-	int iMaxMP = hb::shared::calc::CalculateMaxMP(m_pGame->m_pPlayer->m_iMag, m_pGame->m_pPlayer->m_iAngelicMag, m_pGame->m_pPlayer->m_iLevel, m_pGame->m_pPlayer->m_iInt, m_pGame->m_pPlayer->m_iAngelicInt);
-	int iMaxSP = hb::shared::calc::CalculateMaxSP(m_pGame->m_pPlayer->m_iStr, m_pGame->m_pPlayer->m_iAngelicStr, m_pGame->m_pPlayer->m_iLevel);
-	int iMaxLoad = hb::shared::calc::CalculateMaxLoad(m_pGame->m_pPlayer->m_iStr, m_pGame->m_pPlayer->m_iAngelicStr, m_pGame->m_pPlayer->m_iLevel);
+	int max_hp = hb::shared::calc::CalculateMaxHP(m_game->m_player->m_vit, m_game->m_player->m_level, m_game->m_player->m_str, m_game->m_player->m_angelic_str);
+	int max_mp = hb::shared::calc::CalculateMaxMP(m_game->m_player->m_mag, m_game->m_player->m_angelic_mag, m_game->m_player->m_level, m_game->m_player->m_int, m_game->m_player->m_angelic_int);
+	int max_sp = hb::shared::calc::CalculateMaxSP(m_game->m_player->m_str, m_game->m_player->m_angelic_str, m_game->m_player->m_level);
+	int max_load = hb::shared::calc::CalculateMaxLoad(m_game->m_player->m_str, m_game->m_player->m_angelic_str, m_game->m_player->m_level);
 
 	// HP, MP, SP
 	std::string valueBuf;
-	valueBuf = std::format("{}/{}", m_pGame->m_pPlayer->m_iHP, iMaxHP);
-	PutAlignedString(sX + 180, sX + 250, sY + 173, valueBuf.c_str(), GameColors::UILabel);
+	valueBuf = std::format("{}/{}", m_game->m_player->m_hp, max_hp);
+	put_aligned_string(sX + 180, sX + 250, sY + 173, valueBuf.c_str(), GameColors::UILabel);
 
-	valueBuf = std::format("{}/{}", m_pGame->m_pPlayer->m_iMP, iMaxMP);
-	PutAlignedString(sX + 180, sX + 250, sY + 191, valueBuf.c_str(), GameColors::UILabel);
+	valueBuf = std::format("{}/{}", m_game->m_player->m_mp, max_mp);
+	put_aligned_string(sX + 180, sX + 250, sY + 191, valueBuf.c_str(), GameColors::UILabel);
 
-	valueBuf = std::format("{}/{}", m_pGame->m_pPlayer->m_iSP, iMaxSP);
-	PutAlignedString(sX + 180, sX + 250, sY + 208, valueBuf.c_str(), GameColors::UILabel);
+	valueBuf = std::format("{}/{}", m_game->m_player->m_sp, max_sp);
+	put_aligned_string(sX + 180, sX + 250, sY + 208, valueBuf.c_str(), GameColors::UILabel);
 
-	// Max Load
-	int iTotalWeight = InventoryManager::Get().CalcTotalWeight();
-	valueBuf = std::format("{}/{}", (iTotalWeight / 100), iMaxLoad);
-	PutAlignedString(sX + 180, sX + 250, sY + 240, valueBuf.c_str(), GameColors::UILabel);
+	// Max load
+	int total_weight = inventory_manager::get().calc_total_weight();
+	valueBuf = std::format("{}/{}", (total_weight / 100), max_load);
+	put_aligned_string(sX + 180, sX + 250, sY + 240, valueBuf.c_str(), GameColors::UILabel);
 
 	// Enemy Kills
-	valueBuf = std::format("{}", m_pGame->m_pPlayer->m_iEnemyKillCount);
-	PutAlignedString(sX + 180, sX + 250, sY + 257, valueBuf.c_str(), GameColors::UILabel);
+	valueBuf = std::format("{}", m_game->m_player->m_enemy_kill_count);
+	put_aligned_string(sX + 180, sX + 250, sY + 257, valueBuf.c_str(), GameColors::UILabel);
 
 	// Stats with angelic bonuses
-	DrawStat(sX + 48, sX + 82, sY + 285, m_pGame->m_pPlayer->m_iStr, m_pGame->m_pPlayer->m_iAngelicStr);   // Str
-	DrawStat(sX + 48, sX + 82, sY + 302, m_pGame->m_pPlayer->m_iDex, m_pGame->m_pPlayer->m_iAngelicDex);   // Dex
-	DrawStat(sX + 135, sX + 167, sY + 285, m_pGame->m_pPlayer->m_iInt, m_pGame->m_pPlayer->m_iAngelicInt); // Int
-	DrawStat(sX + 135, sX + 167, sY + 302, m_pGame->m_pPlayer->m_iMag, m_pGame->m_pPlayer->m_iAngelicMag); // Mag
+	draw_stat(sX + 48, sX + 82, sY + 285, m_game->m_player->m_str, m_game->m_player->m_angelic_str);   // Str
+	draw_stat(sX + 48, sX + 82, sY + 302, m_game->m_player->m_dex, m_game->m_player->m_angelic_dex);   // Dex
+	draw_stat(sX + 135, sX + 167, sY + 285, m_game->m_player->m_int, m_game->m_player->m_angelic_int); // Int
+	draw_stat(sX + 135, sX + 167, sY + 302, m_game->m_player->m_mag, m_game->m_player->m_angelic_mag); // Mag
 
 	// Vit and Chr (no angelic bonus)
 	std::string vitChrBuf;
-	vitChrBuf = std::format("{}", m_pGame->m_pPlayer->m_iVit);
-	PutAlignedString(sX + 218, sX + 251, sY + 285, vitChrBuf.c_str(), GameColors::UILabel);
-	vitChrBuf = std::format("{}", m_pGame->m_pPlayer->m_iCharisma);
-	PutAlignedString(sX + 218, sX + 251, sY + 302, vitChrBuf.c_str(), GameColors::UILabel);
+	vitChrBuf = std::format("{}", m_game->m_player->m_vit);
+	put_aligned_string(sX + 218, sX + 251, sY + 285, vitChrBuf.c_str(), GameColors::UILabel);
+	vitChrBuf = std::format("{}", m_game->m_player->m_charisma);
+	put_aligned_string(sX + 218, sX + 251, sY + 302, vitChrBuf.c_str(), GameColors::UILabel);
 
 	// Build equipment status array
-	char cEquipPoiStatus[DEF_MAXITEMEQUIPPOS];
-	BuildEquipStatusArray(cEquipPoiStatus);
+	char equip_poi_status[DEF_MAXITEMEQUIPPOS];
+	build_equip_status_array(equip_poi_status);
 
-	// Draw character model based on gender
-	if (m_pGame->m_pPlayer->m_sPlayerType >= 1 && m_pGame->m_pPlayer->m_sPlayerType <= 3)
+	// draw character model based on gender
+	if (m_game->m_player->m_player_type >= 1 && m_game->m_player->m_player_type <= 3)
 	{
-		DrawMaleCharacter(sX, sY, msX, msY, cEquipPoiStatus, cCollison);
+		draw_male_character(sX, sY, mouse_x, mouse_y, equip_poi_status, collison);
 	}
-	else if (m_pGame->m_pPlayer->m_sPlayerType >= 4 && m_pGame->m_pPlayer->m_sPlayerType <= 6)
+	else if (m_game->m_player->m_player_type >= 4 && m_game->m_player->m_player_type <= 6)
 	{
-		DrawFemaleCharacter(sX, sY, msX, msY, cEquipPoiStatus, cCollison);
+		draw_female_character(sX, sY, mouse_x, mouse_y, equip_poi_status, collison);
 	}
 
-	// Draw buttons (Quest, Party, LevelUp)
-	DrawHoverButton(sX, sY, 15, 340, msX, msY, 5, 4);   // Quest
-	DrawHoverButton(sX, sY, 98, 340, msX, msY, 45, 44); // Party
-	DrawHoverButton(sX, sY, 180, 340, msX, msY, 11, 10); // LevelUp
+	// draw buttons (Quest, Party, LevelUp)
+	draw_hover_button(sX, sY, 15, 340, mouse_x, mouse_y, 5, 4);   // Quest
+	draw_hover_button(sX, sY, 98, 340, mouse_x, mouse_y, 45, 44); // Party
+	draw_hover_button(sX, sY, 180, 340, mouse_x, mouse_y, 11, 10); // LevelUp
 }
 
-void DialogBox_Character::DrawMaleCharacter(short sX, short sY, short msX, short msY,
-	const char* cEquipPoiStatus, char& cCollison)
+void DialogBox_Character::draw_male_character(short sX, short sY, short mouse_x, short mouse_y,
+	const char* equip_poi_status, char& collison)
 {
 	// Base body
-	m_pGame->m_pSprite[ItemEquipPivotPoint + 0]->Draw(sX + 171, sY + 290, m_pGame->m_pPlayer->m_sPlayerType - 1);
+	m_game->m_sprite[ItemEquipPivotPoint + 0]->draw(sX + 171, sY + 290, m_game->m_player->m_player_type - 1);
 
 	// Hair (if no helmet)
-	if (cEquipPoiStatus[ToInt(EquipPos::Head)] == -1)
+	if (equip_poi_status[to_int(EquipPos::Head)] == -1)
 	{
-		const auto& hc = GameColors::Hair[m_pGame->m_pPlayer->m_playerAppearance.iHairColor];
-		m_pGame->m_pSprite[ItemEquipPivotPoint + 18]->Draw(sX + 171, sY + 290, m_pGame->m_pPlayer->m_playerAppearance.iHairStyle, hb::shared::sprite::DrawParams::Tint(hc.r, hc.g, hc.b));
+		const auto& hc = GameColors::Hair[m_game->m_player->m_playerAppearance.hair_color];
+		m_game->m_sprite[ItemEquipPivotPoint + 18]->draw(sX + 171, sY + 290, m_game->m_player->m_playerAppearance.hair_style, hb::shared::sprite::DrawParams::tint(hc.r, hc.g, hc.b));
 	}
 
 	// Underwear
-	m_pGame->m_pSprite[ItemEquipPivotPoint + 19]->Draw(sX + 171, sY + 290, m_pGame->m_pPlayer->m_playerAppearance.iUnderwearType);
+	m_game->m_sprite[ItemEquipPivotPoint + 19]->draw(sX + 171, sY + 290, m_game->m_player->m_playerAppearance.underwear_type);
 
 	// Find topmost hovered slot (reverse scan) before drawing
-	EquipPos hoverSlot = FindHoverSlot(m_pGame, MaleEquipSlots, static_cast<int>(std::size(MaleEquipSlots)),
-		sX, sY, msX, msY, cEquipPoiStatus, 0);
+	EquipPos hoverSlot = FindHoverSlot(m_game, MaleEquipSlots, static_cast<int>(std::size(MaleEquipSlots)),
+		sX, sY, mouse_x, mouse_y, equip_poi_status, 0);
 	if (hoverSlot != EquipPos::None)
-		cCollison = static_cast<char>(hoverSlot);
+		collison = static_cast<char>(hoverSlot);
 
 	// Equipment slots (draw order from table)
 	for (const auto& slot : MaleEquipSlots)
 	{
-		DrawEquippedItem(slot.equipPos, sX + slot.offsetX, sY + slot.offsetY,
-			cEquipPoiStatus, slot.useWeaponColors, slot.equipPos == hoverSlot);
+		draw_equipped_item(slot.equipPos, sX + slot.offsetX, sY + slot.offsetY,
+			equip_poi_status, slot.useWeaponColors, slot.equipPos == hoverSlot);
 	}
 
 	// Angel staff special case
-	if (cEquipPoiStatus[ToInt(EquipPos::TwoHand)] != -1)
+	if (equip_poi_status[to_int(EquipPos::TwoHand)] != -1)
 	{
-		int itemIdx = cEquipPoiStatus[ToInt(EquipPos::TwoHand)];
-		CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[itemIdx]->m_sIDnum);
-		if (pCfg != nullptr)
+		int itemIdx = equip_poi_status[to_int(EquipPos::TwoHand)];
+		CItem* cfg = m_game->get_item_config(m_game->m_item_list[itemIdx]->m_id_num);
+		if (cfg != nullptr)
 		{
-			short sSprH = pCfg->m_sSprite;
-			short sFrame = pCfg->m_sSpriteFrame;
-			if (sSprH == 8) // Angel staff
+			short spr_h = cfg->m_sprite;
+			short frame = cfg->m_sprite_frame;
+			if (spr_h == 8) // Angel staff
 			{
-				if (!m_pGame->m_bIsItemDisabled[itemIdx])
-					m_pGame->m_pSprite[ItemEquipPivotPoint + sSprH + 40]->Draw(sX + 45, sY + 143, sFrame);
+				if (!m_game->m_is_item_disabled[itemIdx])
+					m_game->m_sprite[ItemEquipPivotPoint + spr_h + 40]->draw(sX + 45, sY + 143, frame);
 				else
-					m_pGame->m_pSprite[ItemEquipPivotPoint + sSprH + 40]->Draw(sX + 45, sY + 143, sFrame, hb::shared::sprite::DrawParams::Alpha(0.5f));
+					m_game->m_sprite[ItemEquipPivotPoint + spr_h + 40]->draw(sX + 45, sY + 143, frame, hb::shared::sprite::DrawParams::alpha_blend(0.5f));
 			}
 		}
 	}
 }
 
-void DialogBox_Character::DrawFemaleCharacter(short sX, short sY, short msX, short msY,
-	const char* cEquipPoiStatus, char& cCollison)
+void DialogBox_Character::draw_female_character(short sX, short sY, short mouse_x, short mouse_y,
+	const char* equip_poi_status, char& collison)
 {
 	// Base body (female uses +40 offset from male sprites)
-	m_pGame->m_pSprite[ItemEquipPivotPoint + 40]->Draw(sX + 171, sY + 290, m_pGame->m_pPlayer->m_sPlayerType - 4);
+	m_game->m_sprite[ItemEquipPivotPoint + 40]->draw(sX + 171, sY + 290, m_game->m_player->m_player_type - 4);
 
 	// Hair (if no helmet) - female hair is at +18+40 = +58
-	if (cEquipPoiStatus[ToInt(EquipPos::Head)] == -1)
+	if (equip_poi_status[to_int(EquipPos::Head)] == -1)
 	{
-		const auto& hc = GameColors::Hair[m_pGame->m_pPlayer->m_playerAppearance.iHairColor];
-		m_pGame->m_pSprite[ItemEquipPivotPoint + 18 + 40]->Draw(sX + 171, sY + 290, m_pGame->m_pPlayer->m_playerAppearance.iHairStyle, hb::shared::sprite::DrawParams::Tint(hc.r, hc.g, hc.b));
+		const auto& hc = GameColors::Hair[m_game->m_player->m_playerAppearance.hair_color];
+		m_game->m_sprite[ItemEquipPivotPoint + 18 + 40]->draw(sX + 171, sY + 290, m_game->m_player->m_playerAppearance.hair_style, hb::shared::sprite::DrawParams::tint(hc.r, hc.g, hc.b));
 	}
 
 	// Underwear - female underwear is at +19+40 = +59
-	m_pGame->m_pSprite[ItemEquipPivotPoint + 19 + 40]->Draw(sX + 171, sY + 290, m_pGame->m_pPlayer->m_playerAppearance.iUnderwearType);
+	m_game->m_sprite[ItemEquipPivotPoint + 19 + 40]->draw(sX + 171, sY + 290, m_game->m_player->m_playerAppearance.underwear_type);
 
 	// Check for skirt in pants slot (sprite 12, frame 0 = skirt)
-	bool bSkirt = false;
-	if (cEquipPoiStatus[ToInt(EquipPos::Pants)] != -1)
+	bool skirt = false;
+	if (equip_poi_status[to_int(EquipPos::Pants)] != -1)
 	{
-		CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[cEquipPoiStatus[ToInt(EquipPos::Pants)]]->m_sIDnum);
-		if (pCfg != nullptr && pCfg->m_sSprite == 12 && pCfg->m_sSpriteFrame == 0)
-			bSkirt = true;
+		CItem* cfg = m_game->get_item_config(m_game->m_item_list[equip_poi_status[to_int(EquipPos::Pants)]]->m_id_num);
+		if (cfg != nullptr && cfg->m_sprite == 12 && cfg->m_sprite_frame == 0)
+			skirt = true;
 	}
 
 	// Find topmost hovered slot (reverse scan) before drawing
-	EquipPos hoverSlot = FindHoverSlot(m_pGame, FemaleEquipSlots, static_cast<int>(std::size(FemaleEquipSlots)),
-		sX, sY, msX, msY, cEquipPoiStatus, 40);
+	EquipPos hoverSlot = FindHoverSlot(m_game, FemaleEquipSlots, static_cast<int>(std::size(FemaleEquipSlots)),
+		sX, sY, mouse_x, mouse_y, equip_poi_status, 40);
 	if (hoverSlot != EquipPos::None)
-		cCollison = static_cast<char>(hoverSlot);
+		collison = static_cast<char>(hoverSlot);
 
 	// If wearing skirt, pre-draw boots under the skirt
-	if (bSkirt)
-		DrawEquippedItem(EquipPos::Leggings, sX + 171, sY + 290, cEquipPoiStatus, false, hoverSlot == EquipPos::Leggings, 40);
+	if (skirt)
+		draw_equipped_item(EquipPos::Leggings, sX + 171, sY + 290, equip_poi_status, false, hoverSlot == EquipPos::Leggings, 40);
 
 	// Equipment slots (draw order from table)
 	for (const auto& slot : FemaleEquipSlots)
 	{
-		if (bSkirt && slot.equipPos == EquipPos::Leggings) continue; // already drawn
-		DrawEquippedItem(slot.equipPos, sX + slot.offsetX, sY + slot.offsetY,
-			cEquipPoiStatus, slot.useWeaponColors, slot.equipPos == hoverSlot, 40);
+		if (skirt && slot.equipPos == EquipPos::Leggings) continue; // already drawn
+		draw_equipped_item(slot.equipPos, sX + slot.offsetX, sY + slot.offsetY,
+			equip_poi_status, slot.useWeaponColors, slot.equipPos == hoverSlot, 40);
 	}
 
 	// Angel staff special case
-	if (cEquipPoiStatus[ToInt(EquipPos::TwoHand)] != -1)
+	if (equip_poi_status[to_int(EquipPos::TwoHand)] != -1)
 	{
-		int itemIdx = cEquipPoiStatus[ToInt(EquipPos::TwoHand)];
-		CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[itemIdx]->m_sIDnum);
-		if (pCfg != nullptr)
+		int itemIdx = equip_poi_status[to_int(EquipPos::TwoHand)];
+		CItem* cfg = m_game->get_item_config(m_game->m_item_list[itemIdx]->m_id_num);
+		if (cfg != nullptr)
 		{
-			short sSprH = pCfg->m_sSprite;
-			short sFrame = pCfg->m_sSpriteFrame;
-			if (sSprH == 8) // Angel staff
+			short spr_h = cfg->m_sprite;
+			short frame = cfg->m_sprite_frame;
+			if (spr_h == 8) // Angel staff
 			{
-				if (!m_pGame->m_bIsItemDisabled[itemIdx])
-					m_pGame->m_pSprite[ItemEquipPivotPoint + sSprH + 40]->Draw(sX + 45, sY + 143, sFrame);
+				if (!m_game->m_is_item_disabled[itemIdx])
+					m_game->m_sprite[ItemEquipPivotPoint + spr_h + 40]->draw(sX + 45, sY + 143, frame);
 				else
-					m_pGame->m_pSprite[ItemEquipPivotPoint + sSprH + 40]->Draw(sX + 45, sY + 143, sFrame, hb::shared::sprite::DrawParams::Alpha(0.5f));
+					m_game->m_sprite[ItemEquipPivotPoint + spr_h + 40]->draw(sX + 45, sY + 143, frame, hb::shared::sprite::DrawParams::alpha_blend(0.5f));
 			}
 		}
 	}
 }
 
-bool DialogBox_Character::OnClick(short msX, short msY)
+bool DialogBox_Character::on_click(short mouse_x, short mouse_y)
 {
-	short sX = Info().sX;
-	short sY = Info().sY;
+	short sX = Info().m_x;
+	short sY = Info().m_y;
 
 	// Quest button
-	if ((msX >= sX + 15) && (msX <= sX + 15 + ui_layout::btn_size_x) && (msY >= sY + 340) && (msY <= sY + 340 + ui_layout::btn_size_y)) {
-		EnableDialogBox(DialogBoxId::Quest, 1, 0, 0);
-		DisableThisDialog();
-		PlaySoundEffect('E', 14, 5);
+	if ((mouse_x >= sX + 15) && (mouse_x <= sX + 15 + ui_layout::btn_size_x) && (mouse_y >= sY + 340) && (mouse_y <= sY + 340 + ui_layout::btn_size_y)) {
+		enable_dialog_box(DialogBoxId::Quest, 1, 0, 0);
+		disable_this_dialog();
+		play_sound_effect('E', 14, 5);
 		return true;
 	}
 	// Party button
-	if ((msX >= sX + 98) && (msX <= sX + 98 + ui_layout::btn_size_x) && (msY >= sY + 340) && (msY <= sY + 340 + ui_layout::btn_size_y)) {
-		EnableDialogBox(DialogBoxId::Party, 0, 0, 0);
-		DisableThisDialog();
-		PlaySoundEffect('E', 14, 5);
+	if ((mouse_x >= sX + 98) && (mouse_x <= sX + 98 + ui_layout::btn_size_x) && (mouse_y >= sY + 340) && (mouse_y <= sY + 340 + ui_layout::btn_size_y)) {
+		enable_dialog_box(DialogBoxId::Party, 0, 0, 0);
+		disable_this_dialog();
+		play_sound_effect('E', 14, 5);
 		return true;
 	}
 	// LevelUp button
-	if ((msX >= sX + 180) && (msX <= sX + 180 + ui_layout::btn_size_x) && (msY >= sY + 340) && (msY <= sY + 340 + ui_layout::btn_size_y)) {
-		EnableDialogBox(DialogBoxId::LevelUpSetting, 0, 0, 0);
-		DisableThisDialog();
-		PlaySoundEffect('E', 14, 5);
+	if ((mouse_x >= sX + 180) && (mouse_x <= sX + 180 + ui_layout::btn_size_x) && (mouse_y >= sY + 340) && (mouse_y <= sY + 340 + ui_layout::btn_size_y)) {
+		enable_dialog_box(DialogBoxId::LevelUpSetting, 0, 0, 0);
+		disable_this_dialog();
+		play_sound_effect('E', 14, 5);
 		return true;
 	}
 
 	return false;
 }
 
-bool DialogBox_Character::OnDoubleClick(short msX, short msY)
+bool DialogBox_Character::on_double_click(short mouse_x, short mouse_y)
 {
-	if (m_pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::ItemDropExternal))
+	if (m_game->m_dialog_box_manager.is_enabled(DialogBoxId::ItemDropExternal))
 		return false;
 
-	short sX = Info().sX;
-	short sY = Info().sY;
+	short sX = Info().m_x;
+	short sY = Info().m_y;
 
 	// Build equipment position status array
-	char cEquipPoiStatus[DEF_MAXITEMEQUIPPOS];
-	BuildEquipStatusArray(cEquipPoiStatus);
+	char equip_poi_status[DEF_MAXITEMEQUIPPOS];
+	build_equip_status_array(equip_poi_status);
 
 	// Find clicked item
-	char cItemID = FindEquipItemAtPoint(msX, msY, sX, sY, cEquipPoiStatus);
-	if (cItemID == -1 || m_pGame->m_pItemList[cItemID] == nullptr)
+	char item_id = find_equip_item_at_point(mouse_x, mouse_y, sX, sY, equip_poi_status);
+	if (item_id == -1 || m_game->m_item_list[item_id] == nullptr)
 		return false;
 
-	CItem* pItem = m_pGame->m_pItemList[cItemID].get();
-	CItem* pCfg = m_pGame->GetItemConfig(pItem->m_sIDnum);
-	if (pCfg == nullptr)
+	CItem* item = m_game->m_item_list[item_id].get();
+	CItem* cfg = m_game->get_item_config(item->m_id_num);
+	if (cfg == nullptr)
 		return false;
 
 	// Skip consumables, arrows, and stacked items
-	if (pCfg->GetItemType() == ItemType::Eat ||
-		pCfg->GetItemType() == ItemType::Consume ||
-		pCfg->GetItemType() == ItemType::Arrow ||
-		pItem->m_dwCount > 1)
+	if (cfg->get_item_type() == ItemType::Eat ||
+		cfg->get_item_type() == ItemType::Consume ||
+		cfg->get_item_type() == ItemType::Arrow ||
+		item->m_count > 1)
 		return false;
 
 	// Check if at repair shop
-	if (m_pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::SaleMenu) &&
-		!m_pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::SellOrRepair) &&
-		m_pGame->m_dialogBoxManager.Info(DialogBoxId::GiveItem).sV3 == 24)
+	if (m_game->m_dialog_box_manager.is_enabled(DialogBoxId::SaleMenu) &&
+		!m_game->m_dialog_box_manager.is_enabled(DialogBoxId::SellOrRepair) &&
+		m_game->m_dialog_box_manager.Info(DialogBoxId::GiveItem).m_v3 == 24)
 	{
-		bSendCommand(MsgId::CommandCommon, CommonType::ReqRepairItem, 0, cItemID,
-			m_pGame->m_dialogBoxManager.Info(DialogBoxId::GiveItem).sV3, 0,
-			pCfg->m_cName,
-			m_pGame->m_dialogBoxManager.Info(DialogBoxId::GiveItem).sV4);
+		send_command(MsgId::CommandCommon, CommonType::ReqRepairItem, 0, item_id,
+			m_game->m_dialog_box_manager.Info(DialogBoxId::GiveItem).m_v3, 0,
+			cfg->m_name,
+			m_game->m_dialog_box_manager.Info(DialogBoxId::GiveItem).m_v4);
 	}
 	else
 	{
 		// Release (unequip) the item
-		if (m_pGame->m_bIsItemEquipped[cItemID])
+		if (m_game->m_is_item_equipped[item_id])
 		{
 			std::string G_cTxt;
-			auto itemInfo = ItemNameFormatter::Get().Format(pItem);
+			auto itemInfo = item_name_formatter::get().format(item);
 			G_cTxt = std::format(ITEM_EQUIPMENT_RELEASED, itemInfo.name.c_str());
-			AddEventList(G_cTxt.c_str(), 10);
+			add_event_list(G_cTxt.c_str(), 10);
 
 			{
-				short sID = pItem->m_sIDnum;
-				if (sID == hb::shared::item::ItemId::AngelicPandentSTR || sID == hb::shared::item::ItemId::AngelicPandentDEX ||
-					sID == hb::shared::item::ItemId::AngelicPandentINT || sID == hb::shared::item::ItemId::AngelicPandentMAG)
-					m_pGame->PlayGameSound('E', 53, 0);
+				short id = item->m_id_num;
+				if (id == hb::shared::item::ItemId::AngelicPandentSTR || id == hb::shared::item::ItemId::AngelicPandentDEX ||
+					id == hb::shared::item::ItemId::AngelicPandentINT || id == hb::shared::item::ItemId::AngelicPandentMAG)
+					m_game->play_game_sound('E', 53, 0);
 				else
-					m_pGame->PlayGameSound('E', 29, 0);
+					m_game->play_game_sound('E', 29, 0);
 			}
 
 			// Remove Angelic Stats
-			if (pCfg->m_cEquipPos >= 11 &&
-				pCfg->GetItemType() == ItemType::Equip)
+			if (cfg->m_equip_pos >= 11 &&
+				cfg->get_item_type() == ItemType::Equip)
 			{
-				if (pItem->m_sIDnum == hb::shared::item::ItemId::AngelicPandentSTR)
-					m_pGame->m_pPlayer->m_iAngelicStr = 0;
-				else if (pItem->m_sIDnum == hb::shared::item::ItemId::AngelicPandentDEX)
-					m_pGame->m_pPlayer->m_iAngelicDex = 0;
-				else if (pItem->m_sIDnum == hb::shared::item::ItemId::AngelicPandentINT)
-					m_pGame->m_pPlayer->m_iAngelicInt = 0;
-				else if (pItem->m_sIDnum == hb::shared::item::ItemId::AngelicPandentMAG)
-					m_pGame->m_pPlayer->m_iAngelicMag = 0;
+				if (item->m_id_num == hb::shared::item::ItemId::AngelicPandentSTR)
+					m_game->m_player->m_angelic_str = 0;
+				else if (item->m_id_num == hb::shared::item::ItemId::AngelicPandentDEX)
+					m_game->m_player->m_angelic_dex = 0;
+				else if (item->m_id_num == hb::shared::item::ItemId::AngelicPandentINT)
+					m_game->m_player->m_angelic_int = 0;
+				else if (item->m_id_num == hb::shared::item::ItemId::AngelicPandentMAG)
+					m_game->m_player->m_angelic_mag = 0;
 			}
 
-			bSendCommand(MsgId::CommandCommon, CommonType::ReleaseItem, 0, cItemID, 0, 0, 0);
-			m_pGame->m_bIsItemEquipped[cItemID] = false;
-			m_pGame->m_sItemEquipmentStatus[pCfg->m_cEquipPos] = -1;
-			CursorTarget::ClearSelection();
+			send_command(MsgId::CommandCommon, CommonType::ReleaseItem, 0, item_id, 0, 0, 0);
+			m_game->m_is_item_equipped[item_id] = false;
+			m_game->m_item_equipment_status[cfg->m_equip_pos] = -1;
+			CursorTarget::clear_selection();
 		}
 	}
 
 	return true;
 }
 
-PressResult DialogBox_Character::OnPress(short msX, short msY)
+PressResult DialogBox_Character::on_press(short mouse_x, short mouse_y)
 {
-	if (m_pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::ItemDropExternal))
+	if (m_game->m_dialog_box_manager.is_enabled(DialogBoxId::ItemDropExternal))
 		return PressResult::Normal;
 
-	short sX = Info().sX;
-	short sY = Info().sY;
+	short sX = Info().m_x;
+	short sY = Info().m_y;
 
-	char cEquipPoiStatus[DEF_MAXITEMEQUIPPOS];
-	BuildEquipStatusArray(cEquipPoiStatus);
+	char equip_poi_status[DEF_MAXITEMEQUIPPOS];
+	build_equip_status_array(equip_poi_status);
 
-	char itemIdx = FindEquipItemAtPoint(msX, msY, sX, sY, cEquipPoiStatus);
+	char itemIdx = find_equip_item_at_point(mouse_x, mouse_y, sX, sY, equip_poi_status);
 	if (itemIdx != -1)
 	{
-		CursorTarget::SetSelection(SelectedObjectType::Item, static_cast<short>(itemIdx), 0, 0);
+		CursorTarget::set_selection(SelectedObjectType::Item, static_cast<short>(itemIdx), 0, 0);
 		return PressResult::ItemSelected;
 	}
 
 	return PressResult::Normal;
 }
 
-bool DialogBox_Character::OnItemDrop(short msX, short msY)
+bool DialogBox_Character::on_item_drop(short mouse_x, short mouse_y)
 {
-	InventoryManager::Get().EquipItem(static_cast<char>(CursorTarget::GetSelectedID()));
+	inventory_manager::get().equip_item(static_cast<char>(CursorTarget::get_selected_id()));
 	return true;
 }

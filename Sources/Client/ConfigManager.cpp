@@ -18,96 +18,96 @@ static const struct { int w, h; } s_ValidResolutions[] = {
 };
 static const int s_NumValidResolutions = sizeof(s_ValidResolutions) / sizeof(s_ValidResolutions[0]);
 
-ConfigManager& ConfigManager::Get()
+config_manager& config_manager::get()
 {
-	static ConfigManager instance;
+	static config_manager instance;
 	return instance;
 }
 
-void ConfigManager::Initialize()
+void config_manager::initialize()
 {
 	// Only initialize once - don't reset if already initialized
-	if (m_bInitialized)
+	if (m_initialized)
 		return;
 
-	SetDefaults();
-	m_bInitialized = true;
-	m_bDirty = false;
+	set_defaults();
+	m_initialized = true;
+	m_dirty = false;
 }
 
-void ConfigManager::Shutdown()
+void config_manager::shutdown()
 {
 	// Auto-save if dirty
-	if (m_bDirty)
+	if (m_dirty)
 	{
-		Save();
+		save();
 	}
-	m_bInitialized = false;
+	m_initialized = false;
 }
 
-void ConfigManager::SetDefaults()
+void config_manager::set_defaults()
 {
 	// Shortcut defaults (none assigned)
-	m_magicShortcut = -1;
-	m_recentShortcut = -1;
+	m_magic_shortcut = -1;
+	m_recent_shortcut = -1;
 	for (int i = 0; i < MAX_SHORTCUTS; i++)
 	{
 		m_shortcuts[i] = -1;
 	}
 
 	// Audio defaults
-	m_masterVolume = 100;
-	m_soundVolume = 100;
-	m_musicVolume = 100;
-	m_ambientVolume = 100;
-	m_uiVolume = 100;
-	m_bMasterEnabled = true;
-	m_bSoundEnabled = true;
-	m_bMusicEnabled = true;
-	m_bAmbientEnabled = true;
-	m_bUIEnabled = true;
+	m_master_volume = 100;
+	m_sound_volume = 100;
+	m_music_volume = 100;
+	m_ambient_volume = 100;
+	m_ui_volume = 100;
+	m_master_enabled = true;
+	m_sound_enabled = true;
+	m_music_enabled = true;
+	m_ambient_enabled = true;
+	m_ui_enabled = true;
 
 	// hb::shared::render::Window defaults
-	m_windowWidth = 800;
-	m_windowHeight = 600;
+	m_window_width = 800;
+	m_window_height = 600;
 
 	// Display/Detail defaults
-	m_bShowFPS = false;
-	m_bShowLatency = false;
-	m_cDetailLevel = 2;
-	m_bZoomMap = true;
-	m_bDialogTrans = false;
-	m_bRunningMode = false;
+	m_show_fps = false;
+	m_show_latency = false;
+	m_detail_level = 2;
+	m_zoom_map = true;
+	m_dialog_trans = false;
+	m_running_mode = false;
 #ifdef DEF_WINDOWED_MODE
-	m_bFullscreen = false;
+	m_fullscreen = false;
 #else
-	m_bFullscreen = true;
+	m_fullscreen = true;
 #endif
-	m_bCaptureMouse = true;
-	m_bBorderless = true;
-	m_bVSync = false;
-	m_iFpsLimit = 60;
-	m_bFullscreenStretch = false;
-	m_bTileGrid = false;     // Simple tile grid off by default
-	m_bPatchingGrid = false; // Patching debug grid off by default
+	m_capture_mouse = true;
+	m_borderless = true;
+	m_vsync = false;
+	m_fps_limit = 60;
+	m_fullscreen_stretch = false;
+	m_tile_grid = false;     // Simple tile grid off by default
+	m_patching_grid = false; // Patching debug grid off by default
 
-	m_bDirty = false;
+	m_dirty = false;
 }
 
-int ConfigManager::Clamp(int value, int min, int max)
+int config_manager::clamp(int value, int min, int max)
 {
 	if (value < min) return min;
 	if (value > max) return max;
 	return value;
 }
 
-bool ConfigManager::Load(const char* filename)
+bool config_manager::load(const char* filename)
 {
 	std::ifstream file(filename);
 	if (!file.is_open())
 	{
 		// No config file - save defaults and return success
-		Save(filename);
+		save(filename);
 		return true;
 	}
 
@@ -122,7 +122,7 @@ bool ConfigManager::Load(const char* filename)
 			if (shortcuts.contains("magic"))
 			{
 				int slot = shortcuts["magic"].get<int>();
-				m_magicShortcut = (slot >= 0 && slot < MAX_MAGIC_SLOT) ? static_cast<short>(slot) : -1;
+				m_magic_shortcut = (slot >= 0 && slot < MAX_MAGIC_SLOT) ? static_cast<short>(slot) : -1;
 			}
 			if (shortcuts.contains("slots") && shortcuts["slots"].is_array())
 			{
@@ -141,43 +141,43 @@ bool ConfigManager::Load(const char* filename)
 			auto& audio = j["audio"];
 			if (audio.contains("masterVolume"))
 			{
-				m_masterVolume = Clamp(audio["masterVolume"].get<int>(), 0, 100);
+				m_master_volume = clamp(audio["masterVolume"].get<int>(), 0, 100);
 			}
 			if (audio.contains("soundVolume"))
 			{
-				m_soundVolume = Clamp(audio["soundVolume"].get<int>(), 0, 100);
+				m_sound_volume = clamp(audio["soundVolume"].get<int>(), 0, 100);
 			}
 			if (audio.contains("musicVolume"))
 			{
-				m_musicVolume = Clamp(audio["musicVolume"].get<int>(), 0, 100);
+				m_music_volume = clamp(audio["musicVolume"].get<int>(), 0, 100);
 			}
 			if (audio.contains("ambientVolume"))
 			{
-				m_ambientVolume = Clamp(audio["ambientVolume"].get<int>(), 0, 100);
+				m_ambient_volume = clamp(audio["ambientVolume"].get<int>(), 0, 100);
 			}
 			if (audio.contains("uiVolume"))
 			{
-				m_uiVolume = Clamp(audio["uiVolume"].get<int>(), 0, 100);
+				m_ui_volume = clamp(audio["uiVolume"].get<int>(), 0, 100);
 			}
 			if (audio.contains("masterEnabled"))
 			{
-				m_bMasterEnabled = audio["masterEnabled"].get<bool>();
+				m_master_enabled = audio["masterEnabled"].get<bool>();
 			}
 			if (audio.contains("soundEnabled"))
 			{
-				m_bSoundEnabled = audio["soundEnabled"].get<bool>();
+				m_sound_enabled = audio["soundEnabled"].get<bool>();
 			}
 			if (audio.contains("musicEnabled"))
 			{
-				m_bMusicEnabled = audio["musicEnabled"].get<bool>();
+				m_music_enabled = audio["musicEnabled"].get<bool>();
 			}
 			if (audio.contains("ambientEnabled"))
 			{
-				m_bAmbientEnabled = audio["ambientEnabled"].get<bool>();
+				m_ambient_enabled = audio["ambientEnabled"].get<bool>();
 			}
 			if (audio.contains("uiEnabled"))
 			{
-				m_bUIEnabled = audio["uiEnabled"].get<bool>();
+				m_ui_enabled = audio["uiEnabled"].get<bool>();
 			}
 		}
 
@@ -187,11 +187,11 @@ bool ConfigManager::Load(const char* filename)
 			auto& window = j["window"];
 			if (window.contains("width"))
 			{
-				m_windowWidth = Clamp(window["width"].get<int>(), 640, 3840);
+				m_window_width = clamp(window["width"].get<int>(), 640, 3840);
 			}
 			if (window.contains("height"))
 			{
-				m_windowHeight = Clamp(window["height"].get<int>(), 480, 2160);
+				m_window_height = clamp(window["height"].get<int>(), 480, 2160);
 			}
 		}
 
@@ -201,85 +201,85 @@ bool ConfigManager::Load(const char* filename)
 			auto& display = j["display"];
 			if (display.contains("showFps"))
 			{
-				m_bShowFPS = display["showFps"].get<bool>();
+				m_show_fps = display["showFps"].get<bool>();
 			}
 			if (display.contains("showLatency"))
 			{
-				m_bShowLatency = display["showLatency"].get<bool>();
+				m_show_latency = display["showLatency"].get<bool>();
 			}
 			if (display.contains("detailLevel"))
 			{
-				m_cDetailLevel = Clamp(display["detailLevel"].get<int>(), 0, 2);
+				m_detail_level = clamp(display["detailLevel"].get<int>(), 0, 2);
 			}
 			if (display.contains("zoomMap"))
 			{
-				m_bZoomMap = display["zoomMap"].get<bool>();
+				m_zoom_map = display["zoomMap"].get<bool>();
 			}
 			if (display.contains("dialogTransparency"))
 			{
-				m_bDialogTrans = display["dialogTransparency"].get<bool>();
+				m_dialog_trans = display["dialogTransparency"].get<bool>();
 			}
 			if (display.contains("runningMode"))
 			{
-				m_bRunningMode = display["runningMode"].get<bool>();
+				m_running_mode = display["runningMode"].get<bool>();
 			}
 			if (display.contains("fullscreen"))
 			{
-				m_bFullscreen = display["fullscreen"].get<bool>();
+				m_fullscreen = display["fullscreen"].get<bool>();
 			}
 			if (display.contains("captureMouse"))
 			{
-				m_bCaptureMouse = display["captureMouse"].get<bool>();
+				m_capture_mouse = display["captureMouse"].get<bool>();
 			}
 			if (display.contains("borderless"))
 			{
-				m_bBorderless = display["borderless"].get<bool>();
+				m_borderless = display["borderless"].get<bool>();
 			}
 			if (display.contains("tileGrid"))
 			{
-				m_bTileGrid = display["tileGrid"].get<bool>();
+				m_tile_grid = display["tileGrid"].get<bool>();
 			}
 			if (display.contains("patchingGrid"))
 			{
-				m_bPatchingGrid = display["patchingGrid"].get<bool>();
+				m_patching_grid = display["patchingGrid"].get<bool>();
 			}
 			if (display.contains("vsync"))
 			{
-				m_bVSync = display["vsync"].get<bool>();
+				m_vsync = display["vsync"].get<bool>();
 			}
 			if (display.contains("fpsLimit"))
 			{
-				m_iFpsLimit = display["fpsLimit"].get<int>();
-				if (m_iFpsLimit < 0) m_iFpsLimit = 0;
+				m_fps_limit = display["fpsLimit"].get<int>();
+				if (m_fps_limit < 0) m_fps_limit = 0;
 			}
 			if (display.contains("fullscreenStretch"))
 			{
-				m_bFullscreenStretch = display["fullscreenStretch"].get<bool>();
+				m_fullscreen_stretch = display["fullscreenStretch"].get<bool>();
 			}
 		}
 
 		// Validate resolution to nearest 4:3 option
-		bool bValidResolution = false;
+		bool valid_resolution = false;
 		for (int i = 0; i < s_NumValidResolutions; i++) {
-			if (m_windowWidth == s_ValidResolutions[i].w && m_windowHeight == s_ValidResolutions[i].h) {
-				bValidResolution = true;
+			if (m_window_width == s_ValidResolutions[i].w && m_window_height == s_ValidResolutions[i].h) {
+				valid_resolution = true;
 				break;
 			}
 		}
-		if (!bValidResolution) {
+		if (!valid_resolution) {
 			// Find nearest 4:3 resolution
 			int bestIndex = 0;
-			int bestDiff = abs(s_ValidResolutions[0].w - m_windowWidth) + abs(s_ValidResolutions[0].h - m_windowHeight);
+			int bestDiff = abs(s_ValidResolutions[0].w - m_window_width) + abs(s_ValidResolutions[0].h - m_window_height);
 			for (int i = 1; i < s_NumValidResolutions; i++) {
-				int diff = abs(s_ValidResolutions[i].w - m_windowWidth) + abs(s_ValidResolutions[i].h - m_windowHeight);
+				int diff = abs(s_ValidResolutions[i].w - m_window_width) + abs(s_ValidResolutions[i].h - m_window_height);
 				if (diff < bestDiff) {
 					bestDiff = diff;
 					bestIndex = i;
 				}
 			}
-			m_windowWidth = s_ValidResolutions[bestIndex].w;
-			m_windowHeight = s_ValidResolutions[bestIndex].h;
-			m_bDirty = true; // Mark dirty so corrected value is saved
+			m_window_width = s_ValidResolutions[bestIndex].w;
+			m_window_height = s_ValidResolutions[bestIndex].h;
+			m_dirty = true; // Mark dirty so corrected value is saved
 		}
 	}
 	catch (const json::exception&)
@@ -288,13 +288,13 @@ bool ConfigManager::Load(const char* filename)
 		return false;
 	}
 
-	// Save immediately to persist any defaults for new keys or corrected values
-	m_bDirty = true;
-	Save();
+	// save immediately to persist any defaults for new keys or corrected values
+	m_dirty = true;
+	save();
 	return true;
 }
 
-bool ConfigManager::Save(const char* filename)
+bool config_manager::save(const char* filename)
 {
 	json j;
 
@@ -304,7 +304,7 @@ bool ConfigManager::Save(const char* filename)
 	j["server"]["gamePort"] = DEF_GSERVER_PORT;
 
 	// Shortcuts
-	j["shortcuts"]["magic"] = m_magicShortcut;
+	j["shortcuts"]["magic"] = m_magic_shortcut;
 	j["shortcuts"]["slots"] = json::array();
 	for (int i = 0; i < MAX_SHORTCUTS; i++)
 	{
@@ -312,36 +312,36 @@ bool ConfigManager::Save(const char* filename)
 	}
 
 	// Audio settings
-	j["audio"]["masterVolume"] = m_masterVolume;
-	j["audio"]["soundVolume"] = m_soundVolume;
-	j["audio"]["musicVolume"] = m_musicVolume;
-	j["audio"]["ambientVolume"] = m_ambientVolume;
-	j["audio"]["uiVolume"] = m_uiVolume;
-	j["audio"]["masterEnabled"] = m_bMasterEnabled;
-	j["audio"]["soundEnabled"] = m_bSoundEnabled;
-	j["audio"]["musicEnabled"] = m_bMusicEnabled;
-	j["audio"]["ambientEnabled"] = m_bAmbientEnabled;
-	j["audio"]["uiEnabled"] = m_bUIEnabled;
+	j["audio"]["masterVolume"] = m_master_volume;
+	j["audio"]["soundVolume"] = m_sound_volume;
+	j["audio"]["musicVolume"] = m_music_volume;
+	j["audio"]["ambientVolume"] = m_ambient_volume;
+	j["audio"]["uiVolume"] = m_ui_volume;
+	j["audio"]["masterEnabled"] = m_master_enabled;
+	j["audio"]["soundEnabled"] = m_sound_enabled;
+	j["audio"]["musicEnabled"] = m_music_enabled;
+	j["audio"]["ambientEnabled"] = m_ambient_enabled;
+	j["audio"]["uiEnabled"] = m_ui_enabled;
 
 	// hb::shared::render::Window settings
-	j["window"]["width"] = m_windowWidth;
-	j["window"]["height"] = m_windowHeight;
+	j["window"]["width"] = m_window_width;
+	j["window"]["height"] = m_window_height;
 
 	// Display/Detail settings
-	j["display"]["showFps"] = m_bShowFPS;
-	j["display"]["showLatency"] = m_bShowLatency;
-	j["display"]["detailLevel"] = m_cDetailLevel;
-	j["display"]["zoomMap"] = m_bZoomMap;
-	j["display"]["dialogTransparency"] = m_bDialogTrans;
-	j["display"]["runningMode"] = m_bRunningMode;
-	j["display"]["fullscreen"] = m_bFullscreen;
-	j["display"]["captureMouse"] = m_bCaptureMouse;
-	j["display"]["borderless"] = m_bBorderless;
-	j["display"]["tileGrid"] = m_bTileGrid;
-	j["display"]["patchingGrid"] = m_bPatchingGrid;
-	j["display"]["vsync"] = m_bVSync;
-	j["display"]["fpsLimit"] = m_iFpsLimit;
-	j["display"]["fullscreenStretch"] = m_bFullscreenStretch;
+	j["display"]["showFps"] = m_show_fps;
+	j["display"]["showLatency"] = m_show_latency;
+	j["display"]["detailLevel"] = m_detail_level;
+	j["display"]["zoomMap"] = m_zoom_map;
+	j["display"]["dialogTransparency"] = m_dialog_trans;
+	j["display"]["runningMode"] = m_running_mode;
+	j["display"]["fullscreen"] = m_fullscreen;
+	j["display"]["captureMouse"] = m_capture_mouse;
+	j["display"]["borderless"] = m_borderless;
+	j["display"]["tileGrid"] = m_tile_grid;
+	j["display"]["patchingGrid"] = m_patching_grid;
+	j["display"]["vsync"] = m_vsync;
+	j["display"]["fpsLimit"] = m_fps_limit;
+	j["display"]["fullscreenStretch"] = m_fullscreen_stretch;
 
 	std::ofstream file(filename);
 	if (!file.is_open())
@@ -350,23 +350,23 @@ bool ConfigManager::Save(const char* filename)
 	}
 
 	file << j.dump(4); // Pretty print with 4-space indent
-	m_bDirty = false;
+	m_dirty = false;
 	return true;
 }
 
-void ConfigManager::SetMagicShortcut(short slot)
+void config_manager::set_magic_shortcut(short slot)
 {
 	if (slot >= -1 && slot < MAX_MAGIC_SLOT)
 	{
-		if (m_magicShortcut != slot)
+		if (m_magic_shortcut != slot)
 		{
-			m_magicShortcut = slot;
-			m_bDirty = true;
+			m_magic_shortcut = slot;
+			m_dirty = true;
 		}
 	}
 }
 
-short ConfigManager::GetShortcut(int index) const
+short config_manager::get_shortcut(int index) const
 {
 	if (index >= 0 && index < MAX_SHORTCUTS)
 	{
@@ -375,7 +375,7 @@ short ConfigManager::GetShortcut(int index) const
 	return -1;
 }
 
-void ConfigManager::SetShortcut(int index, short slot)
+void config_manager::set_shortcut(int index, short slot)
 {
 	if (index >= 0 && index < MAX_SHORTCUTS)
 	{
@@ -384,128 +384,128 @@ void ConfigManager::SetShortcut(int index, short slot)
 			if (m_shortcuts[index] != slot)
 			{
 				m_shortcuts[index] = slot;
-				m_bDirty = true;
+				m_dirty = true;
 			}
 		}
 	}
 }
 
-void ConfigManager::SetMasterVolume(int volume)
+void config_manager::set_master_volume(int volume)
 {
-	volume = Clamp(volume, 0, 100);
-	if (m_masterVolume != volume)
+	volume = clamp(volume, 0, 100);
+	if (m_master_volume != volume)
 	{
-		m_masterVolume = volume;
-		m_bDirty = true;
-		Save();
+		m_master_volume = volume;
+		m_dirty = true;
+		save();
 	}
 }
 
-void ConfigManager::SetMasterEnabled(bool enabled)
+void config_manager::set_master_enabled(bool enabled)
 {
-	if (m_bMasterEnabled != enabled)
+	if (m_master_enabled != enabled)
 	{
-		m_bMasterEnabled = enabled;
-		m_bDirty = true;
-		Save();
+		m_master_enabled = enabled;
+		m_dirty = true;
+		save();
 	}
 }
 
-void ConfigManager::SetSoundVolume(int volume)
+void config_manager::set_sound_volume(int volume)
 {
-	volume = Clamp(volume, 0, 100);
-	if (m_soundVolume != volume)
+	volume = clamp(volume, 0, 100);
+	if (m_sound_volume != volume)
 	{
-		m_soundVolume = volume;
-		m_bDirty = true;
-		Save();
+		m_sound_volume = volume;
+		m_dirty = true;
+		save();
 	}
 }
 
-void ConfigManager::SetMusicVolume(int volume)
+void config_manager::set_music_volume(int volume)
 {
-	volume = Clamp(volume, 0, 100);
-	if (m_musicVolume != volume)
+	volume = clamp(volume, 0, 100);
+	if (m_music_volume != volume)
 	{
-		m_musicVolume = volume;
-		m_bDirty = true;
-		Save();
+		m_music_volume = volume;
+		m_dirty = true;
+		save();
 	}
 }
 
-void ConfigManager::SetSoundEnabled(bool enabled)
+void config_manager::set_sound_enabled(bool enabled)
 {
-	if (m_bSoundEnabled != enabled)
+	if (m_sound_enabled != enabled)
 	{
-		m_bSoundEnabled = enabled;
-		m_bDirty = true;
-		Save();
+		m_sound_enabled = enabled;
+		m_dirty = true;
+		save();
 	}
 }
 
-void ConfigManager::SetMusicEnabled(bool enabled)
+void config_manager::set_music_enabled(bool enabled)
 {
-	if (m_bMusicEnabled != enabled)
+	if (m_music_enabled != enabled)
 	{
-		m_bMusicEnabled = enabled;
-		m_bDirty = true;
-		Save();
+		m_music_enabled = enabled;
+		m_dirty = true;
+		save();
 	}
 }
 
-void ConfigManager::SetAmbientVolume(int volume)
+void config_manager::set_ambient_volume(int volume)
 {
-	volume = Clamp(volume, 0, 100);
-	if (m_ambientVolume != volume)
+	volume = clamp(volume, 0, 100);
+	if (m_ambient_volume != volume)
 	{
-		m_ambientVolume = volume;
-		m_bDirty = true;
-		Save();
+		m_ambient_volume = volume;
+		m_dirty = true;
+		save();
 	}
 }
 
-void ConfigManager::SetUIVolume(int volume)
+void config_manager::set_ui_volume(int volume)
 {
-	volume = Clamp(volume, 0, 100);
-	if (m_uiVolume != volume)
+	volume = clamp(volume, 0, 100);
+	if (m_ui_volume != volume)
 	{
-		m_uiVolume = volume;
-		m_bDirty = true;
-		Save();
+		m_ui_volume = volume;
+		m_dirty = true;
+		save();
 	}
 }
 
-void ConfigManager::SetAmbientEnabled(bool enabled)
+void config_manager::set_ambient_enabled(bool enabled)
 {
-	if (m_bAmbientEnabled != enabled)
+	if (m_ambient_enabled != enabled)
 	{
-		m_bAmbientEnabled = enabled;
-		m_bDirty = true;
-		Save();
+		m_ambient_enabled = enabled;
+		m_dirty = true;
+		save();
 	}
 }
 
-void ConfigManager::SetUIEnabled(bool enabled)
+void config_manager::set_ui_enabled(bool enabled)
 {
-	if (m_bUIEnabled != enabled)
+	if (m_ui_enabled != enabled)
 	{
-		m_bUIEnabled = enabled;
-		m_bDirty = true;
-		Save();
+		m_ui_enabled = enabled;
+		m_dirty = true;
+		save();
 	}
 }
 
-void ConfigManager::SetWindowSize(int width, int height)
+void config_manager::set_window_size(int width, int height)
 {
 	// Validate to nearest 4:3 resolution
-	bool bValid = false;
+	bool valid = false;
 	for (int i = 0; i < s_NumValidResolutions; i++) {
 		if (width == s_ValidResolutions[i].w && height == s_ValidResolutions[i].h) {
-			bValid = true;
+			valid = true;
 			break;
 		}
 	}
-	if (!bValid) {
+	if (!valid) {
 		// Snap to nearest valid resolution
 		int bestIndex = 0;
 		int bestDiff = abs(s_ValidResolutions[0].w - width) + abs(s_ValidResolutions[0].h - height);
@@ -520,153 +520,153 @@ void ConfigManager::SetWindowSize(int width, int height)
 		height = s_ValidResolutions[bestIndex].h;
 	}
 
-	if (m_windowWidth != width || m_windowHeight != height)
+	if (m_window_width != width || m_window_height != height)
 	{
-		m_windowWidth = width;
-		m_windowHeight = height;
-		m_bDirty = true;
-		Save();
+		m_window_width = width;
+		m_window_height = height;
+		m_dirty = true;
+		save();
 	}
 }
 
-void ConfigManager::SetShowFpsEnabled(bool enabled)
+void config_manager::set_show_fps_enabled(bool enabled)
 {
-	if (m_bShowFPS != enabled)
+	if (m_show_fps != enabled)
 	{
-		m_bShowFPS = enabled;
-		m_bDirty = true;
-		Save();
+		m_show_fps = enabled;
+		m_dirty = true;
+		save();
 	}
 }
 
-void ConfigManager::SetShowLatencyEnabled(bool enabled)
+void config_manager::set_show_latency_enabled(bool enabled)
 {
-	if (m_bShowLatency != enabled)
+	if (m_show_latency != enabled)
 	{
-		m_bShowLatency = enabled;
-		m_bDirty = true;
-		Save();
+		m_show_latency = enabled;
+		m_dirty = true;
+		save();
 	}
 }
 
-void ConfigManager::SetDetailLevel(int level)
+void config_manager::set_detail_level(int level)
 {
-	level = Clamp(level, 0, 2);
-	if (m_cDetailLevel != level)
+	level = clamp(level, 0, 2);
+	if (m_detail_level != level)
 	{
-		m_cDetailLevel = level;
-		m_bDirty = true;
-		Save();
+		m_detail_level = level;
+		m_dirty = true;
+		save();
 	}
 }
 
-void ConfigManager::SetZoomMapEnabled(bool enabled)
+void config_manager::set_zoom_map_enabled(bool enabled)
 {
-	if (m_bZoomMap != enabled)
+	if (m_zoom_map != enabled)
 	{
-		m_bZoomMap = enabled;
-		m_bDirty = true;
-		Save();
+		m_zoom_map = enabled;
+		m_dirty = true;
+		save();
 	}
 }
 
-void ConfigManager::SetDialogTransparencyEnabled(bool enabled)
+void config_manager::set_dialog_transparency_enabled(bool enabled)
 {
-	if (m_bDialogTrans != enabled)
+	if (m_dialog_trans != enabled)
 	{
-		m_bDialogTrans = enabled;
-		m_bDirty = true;
-		Save();
+		m_dialog_trans = enabled;
+		m_dirty = true;
+		save();
 	}
 }
 
-void ConfigManager::SetRunningModeEnabled(bool enabled)
+void config_manager::set_running_mode_enabled(bool enabled)
 {
-	if (m_bRunningMode != enabled)
+	if (m_running_mode != enabled)
 	{
-		m_bRunningMode = enabled;
-		m_bDirty = true;
-		Save();
+		m_running_mode = enabled;
+		m_dirty = true;
+		save();
 	}
 }
 
-void ConfigManager::SetFullscreenEnabled(bool enabled)
+void config_manager::set_fullscreen_enabled(bool enabled)
 {
-	if (m_bFullscreen != enabled)
+	if (m_fullscreen != enabled)
 	{
-		m_bFullscreen = enabled;
-		m_bDirty = true;
-		Save();
+		m_fullscreen = enabled;
+		m_dirty = true;
+		save();
 	}
 }
 
-void ConfigManager::SetMouseCaptureEnabled(bool enabled)
+void config_manager::set_mouse_capture_enabled(bool enabled)
 {
-	if (m_bCaptureMouse != enabled)
+	if (m_capture_mouse != enabled)
 	{
-		m_bCaptureMouse = enabled;
-		m_bDirty = true;
-		Save();
+		m_capture_mouse = enabled;
+		m_dirty = true;
+		save();
 	}
 }
 
-void ConfigManager::SetBorderlessEnabled(bool enabled)
+void config_manager::set_borderless_enabled(bool enabled)
 {
-	if (m_bBorderless != enabled)
+	if (m_borderless != enabled)
 	{
-		m_bBorderless = enabled;
-		m_bDirty = true;
-		Save();
+		m_borderless = enabled;
+		m_dirty = true;
+		save();
 	}
 }
 
-void ConfigManager::SetTileGridEnabled(bool enabled)
+void config_manager::set_tile_grid_enabled(bool enabled)
 {
-	if (m_bTileGrid != enabled)
+	if (m_tile_grid != enabled)
 	{
-		m_bTileGrid = enabled;
-		m_bDirty = true;
-		Save();
+		m_tile_grid = enabled;
+		m_dirty = true;
+		save();
 	}
 }
 
-void ConfigManager::SetPatchingGridEnabled(bool enabled)
+void config_manager::set_patching_grid_enabled(bool enabled)
 {
-	if (m_bPatchingGrid != enabled)
+	if (m_patching_grid != enabled)
 	{
-		m_bPatchingGrid = enabled;
-		m_bDirty = true;
-		Save();
+		m_patching_grid = enabled;
+		m_dirty = true;
+		save();
 	}
 }
 
-void ConfigManager::SetVSyncEnabled(bool enabled)
+void config_manager::set_vsync_enabled(bool enabled)
 {
-	if (m_bVSync != enabled)
+	if (m_vsync != enabled)
 	{
-		m_bVSync = enabled;
-		m_bDirty = true;
-		Save();
+		m_vsync = enabled;
+		m_dirty = true;
+		save();
 	}
 }
 
-void ConfigManager::SetFpsLimit(int limit)
+void config_manager::set_fps_limit(int limit)
 {
 	if (limit < 0) limit = 0;
-	if (m_iFpsLimit != limit)
+	if (m_fps_limit != limit)
 	{
-		m_iFpsLimit = limit;
-		m_bDirty = true;
-		Save();
+		m_fps_limit = limit;
+		m_dirty = true;
+		save();
 	}
 }
 
-void ConfigManager::SetFullscreenStretchEnabled(bool enabled)
+void config_manager::set_fullscreen_stretch_enabled(bool enabled)
 {
-	if (m_bFullscreenStretch != enabled)
+	if (m_fullscreen_stretch != enabled)
 	{
-		m_bFullscreenStretch = enabled;
-		m_bDirty = true;
-		Save();
+		m_fullscreen_stretch = enabled;
+		m_dirty = true;
+		save();
 	}
 }

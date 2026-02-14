@@ -15,7 +15,7 @@ namespace CMisc
 {
 	// Movement direction calculation using asymmetric zones (N/S 3:1, E/W 4:1 ratio)
 	// Returns direction 1-8 (N, NE, E, SE, S, SW, W, NW) or 0 if same position
-	static inline char cGetNextMoveDir(short sX, short sY, short dX, short dY)
+	static inline char get_next_move_dir(short sX, short sY, short dX, short dY)
 	{
 		short diffX = dX - sX;
 		short diffY = dY - sY;
@@ -47,19 +47,19 @@ namespace CMisc
 		return 8;  // NW
 	}
 
-	static inline void GetPoint(int x0, int y0, int x1, int y1, int * pX, int * pY, int * pError, int iCount)
+	static inline void get_point(int x0, int y0, int x1, int y1, int * pX, int * pY, int * error_acc, int count)
 	{
 		int dx, dy, x_inc, y_inc, error, index;
-		int iResultX, iResultY, iCnt = 0;
+		int result_x, result_y, cnt = 0;
 
 		if ((x0 == x1) && (y0 == y1))
 		{	*pX = x0;
 			*pY = y0;
 			return;
 		}
-		error = *pError;
-		iResultX = x0;
-		iResultY = y0;
+		error = *error_acc;
+		result_x = x0;
+		result_y = y0;
 		dx = x1-x0;
 		dy = y1-y0;
 		if(dx>=0) x_inc = 1;
@@ -77,29 +77,29 @@ namespace CMisc
 			{	error += dy;
 				if(error > dx)
 				{	error -= dx;
-					iResultY += y_inc;
+					result_y += y_inc;
 				}
-				iResultX += x_inc;
-				iCnt++;
-				if (iCnt >= iCount) break;
+				result_x += x_inc;
+				cnt++;
+				if (cnt >= count) break;
 			}
 		}else
 		{	for(index = 0; index <= dy; index++)
 			{	error += dx;
 				if(error > dy)
 				{	error -= dy;
-					iResultX += x_inc;
+					result_x += x_inc;
 				}
-				iResultY += y_inc;
-				iCnt++;
-				if (iCnt >= iCount) break;
+				result_y += y_inc;
+				cnt++;
+				if (cnt >= count) break;
 		}	}
-		*pX = iResultX;
-		*pY = iResultY;
-		*pError = error;
+		*pX = result_x;
+		*pY = result_y;
+		*error_acc = error;
 	}
 
-	static inline bool bCheckValidString(const char * str)
+	static inline bool check_valid_string(const char * str)
 	{
 		size_t len = strlen(str);
 		for (size_t i = 0; i < len; i++)
@@ -108,17 +108,17 @@ namespace CMisc
 		return true;
 	}
 
-	static inline void ReplaceString(char * pStr, char cFrom, char cTo)
+	static inline void replace_string(char * str, char cFrom, char to)
 	{
-		size_t len = strlen(pStr);
+		size_t len = strlen(str);
 		for (size_t i = 0; i < len; i++)
-		{	if (pStr[i] == cFrom) pStr[i] = cTo;
+		{	if (str[i] == cFrom) str[i] = to;
 		}
 	}
 
-	static inline char cCalcDirection(short sX, short sY, short dX, short dY)
+	static inline char calc_direction(short sX, short sY, short dX, short dY)
 	{
-		double dTmp1, dTmp2, dTmp3;
+		double tmp1, tmp2, tmp3;
 		if ((sX == dX) && (sY == dY)) return 1;
 		if ((sX == dX) && (sY != dY))
 		{	if (sY > dY) return 1;
@@ -128,63 +128,63 @@ namespace CMisc
 		{	if (sX > dX) return 7;
 			else return 3;
 		}
-		dTmp1 = static_cast<double>(dX - sX);
-		dTmp2 = static_cast<double>(dY - sY);
-		dTmp3 = dTmp1 / dTmp2;
-		if (dTmp3 < -3)
+		tmp1 = static_cast<double>(dX - sX);
+		tmp2 = static_cast<double>(dY - sY);
+		tmp3 = tmp1 / tmp2;
+		if (tmp3 < -3)
 		{	if (sX > dX) return 7;
 			else return 3;
 		}
-		if (dTmp3 > 3)
+		if (tmp3 > 3)
 		{	if (sX > dX) return 7;
 			else return 3;
 		}
-		if ((dTmp3 > -0.3333f) && (dTmp3 <= 0.3333f))
+		if ((tmp3 > -0.3333f) && (tmp3 <= 0.3333f))
 		{	if (sY > dY) return 1;
 			else return 5;
 		}
-		if ((dTmp3 > 0.3333f) && (dTmp3 <= 3.0f))
+		if ((tmp3 > 0.3333f) && (tmp3 <= 3.0f))
 		{	if (sX > dX) return 8;
 			else return 4;
 		}
-		if ((dTmp3 >= -0.3333f) && (dTmp3 < 3.0f))
+		if ((tmp3 >= -0.3333f) && (tmp3 < 3.0f))
 		{	if (sX > dX) return 7;
 			else return 3;
 		}
-		if ((dTmp3 >= -3.0f) && (dTmp3 < -0.3333f))
+		if ((tmp3 >= -3.0f) && (tmp3 < -0.3333f))
 		{	if (sX > dX) return 6;
 			else return 2;
 		}
 		return 1;
 	}
 
-	static inline bool bCheckValidName(const char *pStr)
+	static inline bool check_valid_name(const char *str)
 	{
-		size_t i, iLen;
-		iLen = strlen(pStr);
-		for (i = 0; i < iLen; i++)
-		{	if ( static_cast<unsigned char>(pStr[i]) >= 128 )	return false;
-			if ( (pStr[i] == ',')  || (pStr[i] == '=') || (pStr[i] == ' ')  || (pStr[i] == '\n') ||
-				 (pStr[i] == '\t') || (pStr[i] == '.') || (pStr[i] == '\\') || (pStr[i] == '/')  ||
-				 (pStr[i] == ':')  || (pStr[i] == '*') || (pStr[i] == '?')  || (pStr[i] == '<')  ||
-				 (pStr[i] == '>')  || (pStr[i] == '|') || (pStr[i] == '"')  || (pStr[i] == '`')  ||
-				 (pStr[i] == ';')  || (pStr[i] == '=') || (pStr[i] == '@')  || (pStr[i] == '[')  ||
-				 (pStr[i] == ']')  || (pStr[i] == '^') || (pStr[i] == '_')  || (pStr[i] == '\'') ) return false;
-			if( (pStr[i] < '0') || (pStr[i] > 'z')) return false;
+		size_t i, len;
+		len = strlen(str);
+		for (i = 0; i < len; i++)
+		{	if ( static_cast<unsigned char>(str[i]) >= 128 )	return false;
+			if ( (str[i] == ',')  || (str[i] == '=') || (str[i] == ' ')  || (str[i] == '\n') ||
+				 (str[i] == '\t') || (str[i] == '.') || (str[i] == '\\') || (str[i] == '/')  ||
+				 (str[i] == ':')  || (str[i] == '*') || (str[i] == '?')  || (str[i] == '<')  ||
+				 (str[i] == '>')  || (str[i] == '|') || (str[i] == '"')  || (str[i] == '`')  ||
+				 (str[i] == ';')  || (str[i] == '=') || (str[i] == '@')  || (str[i] == '[')  ||
+				 (str[i] == ']')  || (str[i] == '^') || (str[i] == '_')  || (str[i] == '\'') ) return false;
+			if( (str[i] < '0') || (str[i] > 'z')) return false;
 		}
 		return true;
 	}
 
-	static inline bool bIsValidEmail(const char *pStr)
+	static inline bool is_valid_email(const char *str)
 	{
-		size_t len = strlen( pStr );
+		size_t len = strlen( str );
 		if( len < 7 ) return false;
 		bool hasAt = false;
 		bool hasDot = false;
 		for( size_t i = 0; i < len; i++ )
 		{
-			if( pStr[i] == '@' ) hasAt = true;
-			if( pStr[i] == '.' ) hasDot = true;
+			if( str[i] == '@' ) hasAt = true;
+			if( str[i] == '.' ) hasDot = true;
 		}
 		return hasAt && hasDot;
 	}

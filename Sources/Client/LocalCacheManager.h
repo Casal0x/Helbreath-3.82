@@ -15,23 +15,23 @@ enum class ConfigCacheType : uint8_t
 class LocalCacheManager
 {
 public:
-	static LocalCacheManager& Get();
+	static LocalCacheManager& get();
 
-	void Initialize();
-	void Shutdown();
+	void initialize();
+	void shutdown();
 
-	bool     HasCache(ConfigCacheType type) const;
-	uint32_t GetHash(ConfigCacheType type) const;
+	bool     has_cache(ConfigCacheType type) const;
+	uint32_t get_hash(ConfigCacheType type) const;
 
-	void AccumulatePacket(ConfigCacheType type, const char* pData, uint32_t size);
-	bool FinalizeAndSave(ConfigCacheType type);
+	void accumulate_packet(ConfigCacheType type, const char* data, uint32_t size);
+	bool finalize_and_save(ConfigCacheType type);
 
-	using PacketCallback = bool(*)(char* pData, uint32_t size, void* ctx);
-	bool ReplayFromCache(ConfigCacheType type, PacketCallback cb, void* ctx);
+	using PacketCallback = bool(*)(char* data, uint32_t size, void* ctx);
+	bool replay_from_cache(ConfigCacheType type, PacketCallback cb, void* ctx);
 
-	void ResetAccumulator(ConfigCacheType type);
+	void reset_accumulator(ConfigCacheType type);
 
-	bool IsReplaying() const { return m_bIsReplaying; }
+	bool is_replaying() const { return m_bIsReplaying; }
 
 private:
 	static constexpr uint32_t CACHE_MAGIC   = 0x48424346;

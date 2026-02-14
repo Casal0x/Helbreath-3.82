@@ -8,14 +8,14 @@
 class CMineral
 {
 public:
-	inline CMineral(char cType, char cMapIndex, int sX, int sY, int iRemain)
+	inline CMineral(char type, char map_index, int sX, int sY, int remain)
 	{
-		m_cType = cType;
-		m_cMapIndex = cMapIndex;
-		m_sX = sX;
-		m_sY = sY;;
-		m_iRemain = iRemain;
-		m_iDifficulty = 0;
+		m_type = type;
+		m_map_index = map_index;
+		m_x = sX;
+		m_y = sY;;
+		m_remain = remain;
+		m_difficulty = 0;
 	}
 
 	inline virtual ~CMineral()
@@ -23,12 +23,12 @@ public:
 
 	}
 
-	char  m_cType;
+	char  m_type;
 
-	char  m_cMapIndex;
-	int   m_sX, m_sY;
-	int   m_iDifficulty;
-	short m_sDynamicObjectHandle;
+	char  m_map_index;
+	int   m_x, m_y;
+	int   m_difficulty;
+	short m_dynamic_object_handle;
 
-	int   m_iRemain;
+	int   m_remain;
 };

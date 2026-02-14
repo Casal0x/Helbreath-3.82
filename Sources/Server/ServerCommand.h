@@ -10,20 +10,20 @@ class ServerCommand
 {
 public:
 	virtual ~ServerCommand() = default;
-	virtual const char* GetName() const = 0;
+	virtual const char* get_name() const = 0;
 	virtual const char* GetDescription() const = 0;
 	virtual const char* GetHelp() const { return GetDescription(); }
-	virtual void Execute(CGame* pGame, const char* pArgs) = 0;
+	virtual void execute(CGame* game, const char* args) = 0;
 };
 
 class ServerCommandManager
 {
 public:
-	static ServerCommandManager& Get();
+	static ServerCommandManager& get();
 
-	void Initialize(CGame* pGame);
-	void RegisterCommand(std::unique_ptr<ServerCommand> command);
-	bool ProcessCommand(const char* pInput);
+	void initialize(CGame* game);
+	void register_command(std::unique_ptr<ServerCommand> command);
+	bool process_command(const char* input);
 
 private:
 	ServerCommandManager() = default;
@@ -31,9 +31,9 @@ private:
 	ServerCommandManager(const ServerCommandManager&) = delete;
 	ServerCommandManager& operator=(const ServerCommandManager&) = delete;
 
-	void RegisterBuiltInCommands();
+	void register_built_in_commands();
 
-	CGame* m_pGame = nullptr;
+	CGame* m_game = nullptr;
 	std::vector<std::unique_ptr<ServerCommand>> m_commands;
-	bool m_bInitialized = false;
+	bool m_initialized = false;
 };

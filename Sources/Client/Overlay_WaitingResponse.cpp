@@ -12,14 +12,14 @@
 #include "GameFonts.h"
 using namespace hb::client::sprite_id;
 
-Overlay_WaitingResponse::Overlay_WaitingResponse(CGame* pGame)
-    : IGameScreen(pGame)
+Overlay_WaitingResponse::Overlay_WaitingResponse(CGame* game)
+    : IGameScreen(game)
 {
 }
 
 void Overlay_WaitingResponse::on_initialize()
 {
-    m_dwStartTime = GameClock::GetTimeMS();
+    m_dwStartTime = GameClock::get_time_ms();
     m_dwAnimTime = m_dwStartTime;
 }
 
@@ -30,74 +30,74 @@ void Overlay_WaitingResponse::on_uninitialize()
 
 void Overlay_WaitingResponse::on_update()
 {
-    uint32_t dwTime = GameClock::GetTimeMS();
-    uint32_t dwElapsed = dwTime - m_dwStartTime;
+    uint32_t time = GameClock::get_time_ms();
+    uint32_t elapsed = time - m_dwStartTime;
 
     // ESC key cancels (only after 7 seconds to wait for response)
     if (hb::shared::input::is_key_pressed(KeyCode::Escape))
     {
-        if (dwElapsed > 7000)
+        if (elapsed > 7000)
         {
             // Close sockets
-            if (m_pGame->m_pLSock != nullptr)
+            if (m_game->m_l_sock != nullptr)
             {
-                m_pGame->m_pLSock.reset();
+                m_game->m_l_sock.reset();
             }
-            if (m_pGame->m_pGSock != nullptr)
+            if (m_game->m_g_sock != nullptr)
             {
-                m_pGame->m_pGSock.reset();
+                m_game->m_g_sock.reset();
             }
 
-            // Clear overlay - base screen will be revealed
+            // clear overlay - base screen will be revealed
             clear_overlay();
             return;
         }
     }
 
     // Animation frame updates (for cursor/menu animations)
-    if ((dwTime - m_dwAnimTime) > 100)
+    if ((time - m_dwAnimTime) > 100)
     {
-        m_pGame->m_cMenuFrame++;
-        m_dwAnimTime = dwTime;
+        m_game->m_menu_frame++;
+        m_dwAnimTime = time;
     }
-    if (m_pGame->m_cMenuFrame >= 8)
+    if (m_game->m_menu_frame >= 8)
     {
-        m_pGame->m_cMenuDirCnt++;
-        if (m_pGame->m_cMenuDirCnt > 8)
+        m_game->m_menu_dir_cnt++;
+        if (m_game->m_menu_dir_cnt > 8)
         {
-            m_pGame->m_cMenuDir++;
-            m_pGame->m_cMenuDirCnt = 1;
+            m_game->m_menu_dir++;
+            m_game->m_menu_dir_cnt = 1;
         }
-        if (m_pGame->m_cMenuDir > 8) m_pGame->m_cMenuDir = 1;
-        m_pGame->m_cMenuFrame = 0;
+        if (m_game->m_menu_dir > 8) m_game->m_menu_dir = 1;
+        m_game->m_menu_frame = 0;
     }
 }
 
 void Overlay_WaitingResponse::on_render()
 {
-    uint32_t dwTime = GameClock::GetTimeMS();
-    uint32_t dwElapsed = dwTime - m_dwStartTime;
+    uint32_t time = GameClock::get_time_ms();
+    uint32_t elapsed = time - m_dwStartTime;
 
     int dlgX, dlgY;
-    GetCenteredDialogPos(InterfaceNdGame4, 2, dlgX, dlgY);
+    get_centered_dialog_pos(InterfaceNdGame4, 2, dlgX, dlgY);
 
-    // Draw dialog box
-    DrawNewDialogBox(InterfaceNdGame4, dlgX, dlgY, 2);
+    // draw dialog box
+    draw_new_dialog_box(InterfaceNdGame4, dlgX, dlgY, 2);
 
-    // Draw status text
-    hb::shared::text::DrawText(GameFont::Bitmap1, dlgX + 37, dlgY + 65, "Connected. Waiting for response...", hb::shared::text::TextStyle::WithHighlight(GameColors::UIDarkRed));
+    // draw status text
+    hb::shared::text::draw_text(GameFont::Bitmap1, dlgX + 37, dlgY + 65, "Connected. Waiting for response...", hb::shared::text::TextStyle::with_highlight(GameColors::UIDarkRed));
 
     // Show appropriate message based on elapsed time
-    if (dwElapsed > 7000)
+    if (elapsed > 7000)
     {
         // Show ESC hint after 7 seconds
-        PutAlignedString(dlgX + 18, dlgX + 301, dlgY + 100, UPDATE_SCREEN_ON_WATING_RESPONSE1);
-        PutAlignedString(dlgX + 18, dlgX + 301, dlgY + 115, UPDATE_SCREEN_ON_WATING_RESPONSE2);
+        put_aligned_string(dlgX + 18, dlgX + 301, dlgY + 100, UPDATE_SCREEN_ON_WATING_RESPONSE1);
+        put_aligned_string(dlgX + 18, dlgX + 301, dlgY + 115, UPDATE_SCREEN_ON_WATING_RESPONSE2);
     }
     else
     {
-        PutAlignedString(dlgX + 18, dlgX + 301, dlgY + 100, UPDATE_SCREEN_ON_WATING_RESPONSE3);
+        put_aligned_string(dlgX + 18, dlgX + 301, dlgY + 100, UPDATE_SCREEN_ON_WATING_RESPONSE3);
     }
 
-    DrawVersion();
+    draw_version();
 }

@@ -10,122 +10,122 @@
 using namespace hb::shared::action;
 using namespace hb::client::sprite_id;
 
-DialogBox_GuideMap::DialogBox_GuideMap(CGame* pGame)
-	: IDialogBox(DialogBoxId::GuideMap, pGame)
+DialogBox_GuideMap::DialogBox_GuideMap(CGame* game)
+	: IDialogBox(DialogBoxId::GuideMap, game)
 {
-	SetDefaultRect(LOGICAL_MAX_X() - 128, 0, 128, 128);
+	set_default_rect(LOGICAL_MAX_X() - 128, 0, 128, 128);
 }
 
-void DialogBox_GuideMap::OnUpdate()
+void DialogBox_GuideMap::on_update()
 {
-	// Clear expired monster event
-	if (m_pGame->m_dwMonsterEventTime != 0 &&
-		(m_pGame->m_dwCurTime - m_pGame->m_dwMonsterEventTime) >= 30000)
+	// clear expired monster event
+	if (m_game->m_monster_event_time != 0 &&
+		(m_game->m_cur_time - m_game->m_monster_event_time) >= 30000)
 	{
-		m_pGame->m_dwMonsterEventTime = 0;
-		m_pGame->m_sMonsterID = 0;
+		m_game->m_monster_event_time = 0;
+		m_game->m_monster_id = 0;
 	}
 }
 
-void DialogBox_GuideMap::DrawBorder(short sX, short sY)
+void DialogBox_GuideMap::draw_border(short sX, short sY)
 {
-	m_pGame->m_Renderer->DrawRectOutline(sX - 2, sY - 2, 132, 132, hb::shared::render::Color(50, 50, 50), 2);
+	m_game->m_Renderer->draw_rect_outline(sX - 2, sY - 2, 132, 132, hb::shared::render::Color(50, 50, 50), 2);
 }
 
-void DialogBox_GuideMap::DrawZoomedMap(short sX, short sY)
+void DialogBox_GuideMap::draw_zoomed_map(short sX, short sY)
 {
-	int m_iMaxMapIndex = InterfaceGuideMap + m_pGame->m_cMapIndex + 1;
-	uint32_t dwTime = m_pGame->m_dwCurTime;
+	int m_iMaxMapIndex = InterfaceGuideMap + m_game->m_map_index + 1;
+	uint32_t time = m_game->m_cur_time;
 
-	if (m_pGame->m_cMapIndex >= 35)
-		m_iMaxMapIndex = InterfaceGuideMap + m_pGame->m_cMapIndex + 1;
+	if (m_game->m_map_index >= 35)
+		m_iMaxMapIndex = InterfaceGuideMap + m_game->m_map_index + 1;
 
-	short shX = m_pGame->m_pPlayer->m_sPlayerX - 64;
-	short shY = m_pGame->m_pPlayer->m_sPlayerY - 64;
+	short shX = m_game->m_player->m_player_x - 64;
+	short shY = m_game->m_player->m_player_y - 64;
 	if (shX < 0) shX = 0;
 	if (shY < 0) shY = 0;
-	if (shX > m_pGame->m_pMapData->m_sMapSizeX - 128) shX = m_pGame->m_pMapData->m_sMapSizeX - 128;
-	if (shY > m_pGame->m_pMapData->m_sMapSizeY - 128) shY = m_pGame->m_pMapData->m_sMapSizeY - 128;
+	if (shX > m_game->m_map_data->m_map_size_x - 128) shX = m_game->m_map_data->m_map_size_x - 128;
+	if (shY > m_game->m_map_data->m_map_size_y - 128) shY = m_game->m_map_data->m_map_size_y - 128;
 
-	if (ConfigManager::Get().IsDialogTransparencyEnabled())
-		m_pGame->m_pSprite[m_iMaxMapIndex]->DrawShifted(sX, sY, shX, shY, 0, hb::shared::sprite::DrawParams::Alpha(0.25f));
+	if (config_manager::get().is_dialog_transparency_enabled())
+		m_game->m_sprite[m_iMaxMapIndex]->DrawShifted(sX, sY, shX, shY, 0, hb::shared::sprite::DrawParams::alpha_blend(0.25f));
 	else
-		m_pGame->m_pSprite[m_iMaxMapIndex]->DrawShifted(sX, sY, shX, shY, 0);
+		m_game->m_sprite[m_iMaxMapIndex]->DrawShifted(sX, sY, shX, shY, 0);
 
-	m_pGame->m_pSprite[InterfaceNdCrusade]->Draw(sX - shX + m_pGame->m_pPlayer->m_sPlayerX, sY - shY + m_pGame->m_pPlayer->m_sPlayerY, 37);
+	m_game->m_sprite[InterfaceNdCrusade]->draw(sX - shX + m_game->m_player->m_player_x, sY - shY + m_game->m_player->m_player_y, 37);
 
-	if ((m_pGame->m_dwCurTime - m_pGame->m_dwMonsterEventTime) < 30000)
+	if ((m_game->m_cur_time - m_game->m_monster_event_time) < 30000)
 	{
-		if ((m_pGame->m_dwCurTime % 500) < 370)
+		if ((m_game->m_cur_time % 500) < 370)
 		{
-			if (m_pGame->m_sEventX >= shX && m_pGame->m_sEventX <= shX + 128 &&
-				m_pGame->m_sEventY >= shY && m_pGame->m_sEventY <= shY + 128)
+			if (m_game->m_event_x >= shX && m_game->m_event_x <= shX + 128 &&
+				m_game->m_event_y >= shY && m_game->m_event_y <= shY + 128)
 			{
-				m_pGame->m_pSprite[InterfaceMonster]->Draw(sX + m_pGame->m_sEventX - shX, sY + m_pGame->m_sEventY - shY, m_pGame->m_sMonsterID);
+				m_game->m_sprite[InterfaceMonster]->draw(sX + m_game->m_event_x - shX, sY + m_game->m_event_y - shY, m_game->m_monster_id);
 			}
 		}
 	}
 }
 
-void DialogBox_GuideMap::DrawFullMap(short sX, short sY)
+void DialogBox_GuideMap::draw_full_map(short sX, short sY)
 {
 	int m_iMinMapIndex = InterfaceGuideMap;
-	int m_iMinMapSquare = m_pGame->m_cMapIndex;
-	uint32_t dwTime = m_pGame->m_dwCurTime;
+	int m_iMinMapSquare = m_game->m_map_index;
+	uint32_t time = m_game->m_cur_time;
 
-	if (m_pGame->m_cMapIndex >= 35)
+	if (m_game->m_map_index >= 35)
 	{
 		m_iMinMapIndex = InterfaceGuideMap + 35;
-		m_iMinMapSquare = m_pGame->m_cMapIndex - 35;
+		m_iMinMapSquare = m_game->m_map_index - 35;
 	}
 
-	if (ConfigManager::Get().IsDialogTransparencyEnabled())
-		m_pGame->m_pSprite[m_iMinMapIndex]->Draw(sX, sY, m_iMinMapSquare, hb::shared::sprite::DrawParams::Alpha(0.25f));
+	if (config_manager::get().is_dialog_transparency_enabled())
+		m_game->m_sprite[m_iMinMapIndex]->draw(sX, sY, m_iMinMapSquare, hb::shared::sprite::DrawParams::alpha_blend(0.25f));
 	else
-		m_pGame->m_pSprite[m_iMinMapIndex]->Draw(sX, sY, m_iMinMapSquare, hb::shared::sprite::DrawParams::NoColorKey());
+		m_game->m_sprite[m_iMinMapIndex]->draw(sX, sY, m_iMinMapSquare, hb::shared::sprite::DrawParams::no_color_key());
 
-	short shX = (m_pGame->m_pPlayer->m_sPlayerX * 128) / (m_pGame->m_pMapData->m_sMapSizeX);
-	short shY = (m_pGame->m_pPlayer->m_sPlayerY * 128) / (m_pGame->m_pMapData->m_sMapSizeY);
-	m_pGame->m_pSprite[InterfaceNdCrusade]->Draw(sX + shX, sY + shY, 37);
+	short shX = (m_game->m_player->m_player_x * 128) / (m_game->m_map_data->m_map_size_x);
+	short shY = (m_game->m_player->m_player_y * 128) / (m_game->m_map_data->m_map_size_y);
+	m_game->m_sprite[InterfaceNdCrusade]->draw(sX + shX, sY + shY, 37);
 
-	if ((m_pGame->m_dwCurTime - m_pGame->m_dwMonsterEventTime) < 30000)
+	if ((m_game->m_cur_time - m_game->m_monster_event_time) < 30000)
 	{
-		if ((m_pGame->m_dwCurTime % 500) < 370)
+		if ((m_game->m_cur_time % 500) < 370)
 		{
-			shX = (m_pGame->m_sEventX * 128) / (m_pGame->m_pMapData->m_sMapSizeX);
-			shY = (m_pGame->m_sEventY * 128) / (m_pGame->m_pMapData->m_sMapSizeY);
-			m_pGame->m_pSprite[InterfaceMonster]->Draw(sX + shX, sY + shY, m_pGame->m_sMonsterID);
+			shX = (m_game->m_event_x * 128) / (m_game->m_map_data->m_map_size_x);
+			shY = (m_game->m_event_y * 128) / (m_game->m_map_data->m_map_size_y);
+			m_game->m_sprite[InterfaceMonster]->draw(sX + shX, sY + shY, m_game->m_monster_id);
 		}
 	}
 }
 
-void DialogBox_GuideMap::DrawLocationTooltip(short msX, short msY, short sX, short sY)
+void DialogBox_GuideMap::draw_location_tooltip(short mouse_x, short mouse_y, short sX, short sY)
 {
 	std::string G_cTxt;
 	short shX, shY;
-	short szY = Info().sSizeY;
+	short size_y = Info().m_size_y;
 
-	if (ConfigManager::Get().IsZoomMapEnabled())
+	if (config_manager::get().is_zoom_map_enabled())
 	{
-		shX = m_pGame->m_pPlayer->m_sPlayerX - 64;
-		shY = m_pGame->m_pPlayer->m_sPlayerY - 64;
+		shX = m_game->m_player->m_player_x - 64;
+		shY = m_game->m_player->m_player_y - 64;
 		if (shX < 0) shX = 0;
 		if (shY < 0) shY = 0;
-		if (shX > m_pGame->m_pMapData->m_sMapSizeX - 128) shX = m_pGame->m_pMapData->m_sMapSizeX - 128;
-		if (shY > m_pGame->m_pMapData->m_sMapSizeY - 128) shY = m_pGame->m_pMapData->m_sMapSizeY - 128;
-		shX += msX - sX;
-		shY += msY - sY;
+		if (shX > m_game->m_map_data->m_map_size_x - 128) shX = m_game->m_map_data->m_map_size_x - 128;
+		if (shY > m_game->m_map_data->m_map_size_y - 128) shY = m_game->m_map_data->m_map_size_y - 128;
+		shX += mouse_x - sX;
+		shY += mouse_y - sY;
 	}
 	else
 	{
-		shX = (msX - sX) * m_pGame->m_pMapData->m_sMapSizeX / 128;
-		shY = (msY - sY) * m_pGame->m_pMapData->m_sMapSizeY / 128;
+		shX = (mouse_x - sX) * m_game->m_map_data->m_map_size_x / 128;
+		shY = (mouse_y - sY) * m_game->m_map_data->m_map_size_y / 128;
 	}
 
 	G_cTxt = std::format("{}, {}", shX, shY);
 
 	// Aresden map locations
-	if (m_pGame->m_cMapIndex == 11)
+	if (m_game->m_map_index == 11)
 	{
 		if (shX > 46 && shX < 66 && shY > 107 && shY < 127) G_cTxt = DEF_MSG_MAPNAME_MAGICTOWER;
 		else if (shX > 103 && shX < 123 && shY > 86 && shY < 116) G_cTxt = DEF_MSG_MAPNAME_GUILDHALL;
@@ -143,7 +143,7 @@ void DialogBox_GuideMap::DrawLocationTooltip(short msX, short msY, short sX, sho
 		else if (shX > 88 && shX < 108 && shY > 150 && shY < 170) G_cTxt = DEF_MSG_MAPNAME_CMDHALL;
 	}
 	// Elvine map locations
-	else if (m_pGame->m_cMapIndex == 3)
+	else if (m_game->m_map_index == 3)
 	{
 		if (shX > 170 && shX < 190 && shY > 65 && shY < 85) G_cTxt = DEF_MSG_MAPNAME_MAGICTOWER;
 		else if (shX > 67 && shX < 87 && shY > 130 && shY < 150) G_cTxt = DEF_MSG_MAPNAME_GUILDHALL;
@@ -161,7 +161,7 @@ void DialogBox_GuideMap::DrawLocationTooltip(short msX, short msY, short sX, sho
 		else if (shX > 207 && shX < 227 && shY > 79 && shY < 99) G_cTxt = DEF_MSG_MAPNAME_CMDHALL;
 	}
 	// Elvine Farm
-	else if (m_pGame->m_cMapIndex == 5)
+	else if (m_game->m_map_index == 5)
 	{
 		if (shX > 62 && shX < 82 && shY > 187 && shY < 207) G_cTxt = DEF_MSG_MAPNAME_WAREHOUSE;
 		else if (shX > 81 && shX < 101 && shY > 169 && shY < 189) G_cTxt = DEF_MSG_MAPNAME_SHOP;
@@ -170,7 +170,7 @@ void DialogBox_GuideMap::DrawLocationTooltip(short msX, short msY, short sX, sho
 		else if (shX > 86 && shX < 106 && shY > 139 && shY < 159) G_cTxt = DEF_MSG_MAPNAME_BARRACK;
 	}
 	// Aresden Farm
-	else if (m_pGame->m_cMapIndex == 6)
+	else if (m_game->m_map_index == 6)
 	{
 		if (shX > 30 && shX < 50 && shY > 80 && shY < 100) G_cTxt = DEF_MSG_MAPNAME_WAREHOUSE;
 		else if (shX > 55 && shX < 85 && shY > 80 && shY < 100) G_cTxt = DEF_MSG_MAPNAME_BLACKSMITH;
@@ -179,98 +179,98 @@ void DialogBox_GuideMap::DrawLocationTooltip(short msX, short msY, short sX, sho
 		else if (shX > 45 && shX < 65 && shY > 123 && shY < 143) G_cTxt = DEF_MSG_MAPNAME_BARRACK;
 	}
 
-	PutString(msX - 10, msY - 13, G_cTxt.c_str(), GameColors::UIPaleYellow);
+	put_string(mouse_x - 10, mouse_y - 13, G_cTxt.c_str(), GameColors::UIPaleYellow);
 }
 
-void DialogBox_GuideMap::OnDraw(short msX, short msY, short msZ, char cLB)
+void DialogBox_GuideMap::on_draw(short mouse_x, short mouse_y, short z, char lb)
 {
-	if (m_pGame->m_cMapIndex < 0) return;
+	if (m_game->m_map_index < 0) return;
 
-	short sX = Info().sX;
-	short sY = Info().sY;
-	short szX = Info().sSizeX;
-	short szY = Info().sSizeY;
+	short sX = Info().m_x;
+	short sY = Info().m_y;
+	short size_x = Info().m_size_x;
+	short size_y = Info().m_size_y;
 
-	// Clamp position
+	// clamp position
 	if (sX < 20) sX = 0;
 	if (sY < 20) sY = 0;
 	if (sX > LOGICAL_WIDTH() - 128 - 20) sX = LOGICAL_WIDTH() - 128;
 	if (sY > 547 - 128 - 20) sY = 547 - 128;
 
-	DrawBorder(sX, sY);
+	draw_border(sX, sY);
 
-	if (ConfigManager::Get().IsZoomMapEnabled())
-		DrawZoomedMap(sX, sY);
+	if (config_manager::get().is_zoom_map_enabled())
+		draw_zoomed_map(sX, sY);
 	else
-		DrawFullMap(sX, sY);
+		draw_full_map(sX, sY);
 
-	if (cLB != 0) return;
+	if (lb != 0) return;
 
 	// Mouse hover - show zoom toggle hint and location tooltip
-	if (msX >= sX && msX < sX + szY && msY >= sY && msY < sY + szY)
+	if (mouse_x >= sX && mouse_x < sX + size_y && mouse_y >= sY && mouse_y < sY + size_y)
 	{
 		short shY;
 		if (sY > 213) shY = sY - 17;
-		else shY = sY + szY + 4;
+		else shY = sY + size_y + 4;
 
-		if (ConfigManager::Get().IsZoomMapEnabled())
-			PutString(sX, shY, DEF_MSG_GUIDEMAP_MIN, GameColors::UIPaleYellow);
+		if (config_manager::get().is_zoom_map_enabled())
+			put_string(sX, shY, DEF_MSG_GUIDEMAP_MIN, GameColors::UIPaleYellow);
 		else
-			PutString(sX, shY, DEF_MSG_GUIDEMAP_MAX, GameColors::UIPaleYellow);
+			put_string(sX, shY, DEF_MSG_GUIDEMAP_MAX, GameColors::UIPaleYellow);
 
-		DrawLocationTooltip(msX, msY, sX, sY);
+		draw_location_tooltip(mouse_x, mouse_y, sX, sY);
 	}
 }
 
-bool DialogBox_GuideMap::OnClick(short msX, short msY)
+bool DialogBox_GuideMap::on_click(short mouse_x, short mouse_y)
 {
 	return false;
 }
 
-bool DialogBox_GuideMap::OnDoubleClick(short msX, short msY)
+bool DialogBox_GuideMap::on_double_click(short mouse_x, short mouse_y)
 {
-	if (CursorTarget::GetCursorFrame() != 0) return false;
-	if (m_pGame->m_cMapIndex < 0) return false;
+	if (CursorTarget::get_cursor_frame() != 0) return false;
+	if (m_game->m_map_index < 0) return false;
 
-	short sX = Info().sX;
-	short sY = Info().sY;
-	short szX = Info().sSizeX;
-	short szY = Info().sSizeY;
+	short sX = Info().m_x;
+	short sY = Info().m_y;
+	short size_x = Info().m_size_x;
+	short size_y = Info().m_size_y;
 
-	// Clamp position (same as OnDraw)
+	// clamp position (same as on_draw)
 	if (sX < 20) sX = 0;
 	if (sY < 20) sY = 0;
 	if (sX > LOGICAL_MAX_X() - 128 - 20) sX = LOGICAL_MAX_X() - 128;
 	if (sY > 547 - 128 - 20) sY = 547 - 128;
 
 	short shX, shY;
-	if (ConfigManager::Get().IsZoomMapEnabled())
+	if (config_manager::get().is_zoom_map_enabled())
 	{
-		shX = m_pGame->m_pPlayer->m_sPlayerX - 64;
-		shY = m_pGame->m_pPlayer->m_sPlayerY - 64;
+		shX = m_game->m_player->m_player_x - 64;
+		shY = m_game->m_player->m_player_y - 64;
 		if (shX < 0) shX = 0;
 		if (shY < 0) shY = 0;
-		if (shX > m_pGame->m_pMapData->m_sMapSizeX - 128) shX = m_pGame->m_pMapData->m_sMapSizeX - 128;
-		if (shY > m_pGame->m_pMapData->m_sMapSizeY - 128) shY = m_pGame->m_pMapData->m_sMapSizeY - 128;
-		shX = shX + msX - sX;
-		shY = shY + msY - sY;
+		if (shX > m_game->m_map_data->m_map_size_x - 128) shX = m_game->m_map_data->m_map_size_x - 128;
+		if (shY > m_game->m_map_data->m_map_size_y - 128) shY = m_game->m_map_data->m_map_size_y - 128;
+		shX = shX + mouse_x - sX;
+		shY = shY + mouse_y - sY;
 	}
 	else
 	{
-		shX = (m_pGame->m_pMapData->m_sMapSizeX * (msX - sX)) / 128;
-		shY = (m_pGame->m_pMapData->m_sMapSizeY * (msY - sY)) / 128;
+		shX = (m_game->m_map_data->m_map_size_x * (mouse_x - sX)) / 128;
+		shY = (m_game->m_map_data->m_map_size_y * (mouse_y - sY)) / 128;
 	}
 
 	if (shX < 30 || shY < 30) return false;
-	if (shX > m_pGame->m_pMapData->m_sMapSizeX - 30 || shY > m_pGame->m_pMapData->m_sMapSizeY - 30) return false;
+	if (shX > m_game->m_map_data->m_map_size_x - 30 || shY > m_game->m_map_data->m_map_size_y - 30) return false;
 
-	if (ConfigManager::Get().IsRunningModeEnabled() && m_pGame->m_pPlayer->m_iSP > 0)
-		m_pGame->m_pPlayer->m_Controller.SetCommand(Type::Run);
+	if (config_manager::get().is_running_mode_enabled() && m_game->m_player->m_sp > 0)
+		m_game->m_player->m_Controller.set_command(Type::Run);
 	else
-		m_pGame->m_pPlayer->m_Controller.SetCommand(Type::Move);
+		m_game->m_player->m_Controller.set_command(Type::Move);
 
-	m_pGame->m_pPlayer->m_Controller.SetDestination(shX, shY);
-	m_pGame->m_pPlayer->m_Controller.CalculatePlayerTurn(m_pGame->m_pPlayer->m_sPlayerX, m_pGame->m_pPlayer->m_sPlayerY, m_pGame->m_pMapData.get());
+	m_game->m_player->m_Controller.set_destination(shX, shY);
+	m_game->m_player->m_Controller.calculate_player_turn(m_game->m_player->m_player_x, m_game->m_player->m_player_y, m_game->m_map_data.get());
 
 	return true;
 }

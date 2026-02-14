@@ -34,7 +34,7 @@ public:
 	// Attach a window (must be called before initialize)
 	void attach_window(IWindow* window);
 
-	// Initialize the application (calls on_initialize — pre-realize)
+	// initialize the application (calls on_initialize — pre-realize)
 	bool initialize();
 
 	// Run the main loop. Returns exit code.

@@ -20,57 +20,57 @@ class CItem
 public:
     inline CItem()
     {
-        std::memset(m_cName, 0, sizeof(m_cName));
+        std::memset(m_name, 0, sizeof(m_name));
 
-        m_sIDnum = 0;
-        m_cItemType = 0;
-        m_cEquipPos = 0;
-        m_sItemEffectType = 0;
+        m_id_num = 0;
+        m_item_type = 0;
+        m_equip_pos = 0;
+        m_item_effect_type = 0;
 
-        m_sItemEffectValue1 = 0;
-        m_sItemEffectValue2 = 0;
-        m_sItemEffectValue3 = 0;
-        m_sItemEffectValue4 = 0;
-        m_sItemEffectValue5 = 0;
-        m_sItemEffectValue6 = 0;
+        m_item_effect_value1 = 0;
+        m_item_effect_value2 = 0;
+        m_item_effect_value3 = 0;
+        m_item_effect_value4 = 0;
+        m_item_effect_value5 = 0;
+        m_item_effect_value6 = 0;
 
-        m_wMaxLifeSpan = 0;
-        m_sSpecialEffect = 0;
-        m_sSpecialEffectValue1 = 0;
-        m_sSpecialEffectValue2 = 0;
+        m_max_life_span = 0;
+        m_special_effect = 0;
+        m_special_effect_value1 = 0;
+        m_special_effect_value2 = 0;
 
-        m_sX = 0;
-        m_sY = 0;
+        m_x = 0;
+        m_y = 0;
 
-        m_sSprite = 0;
-        m_sSpriteFrame = 0;
+        m_sprite = 0;
+        m_sprite_frame = 0;
 
-        m_cApprValue = 0;
-        m_cSpeed = 0;
+        m_appearance_value = 0;
+        m_speed = 0;
 
-        m_wPrice = 0;
-        m_wWeight = 0;
-        m_sLevelLimit = 0;
-        m_cGenderLimit = 0;
+        m_price = 0;
+        m_weight = 0;
+        m_level_limit = 0;
+        m_gender_limit = 0;
 
-        m_sRelatedSkill = 0;
+        m_related_skill = 0;
 
-        m_cCategory = 0;
-        m_bIsForSale = false;
+        m_category = 0;
+        m_is_for_sale = false;
 
-        m_dwCount = 1;
-        m_sTouchEffectType = 0;
-        m_sTouchEffectValue1 = 0;
-        m_sTouchEffectValue2 = 0;
-        m_sTouchEffectValue3 = 0;
+        m_count = 1;
+        m_touch_effect_type = 0;
+        m_touch_effect_value1 = 0;
+        m_touch_effect_value2 = 0;
+        m_touch_effect_value3 = 0;
 
-        m_cItemColor = 0;
-        m_sItemSpecEffectValue1 = 0;
-        m_sItemSpecEffectValue2 = 0;
-        m_sItemSpecEffectValue3 = 0;
+        m_item_color = 0;
+        m_item_special_effect_value1 = 0;
+        m_item_special_effect_value2 = 0;
+        m_item_special_effect_value3 = 0;
 
-        m_wCurLifeSpan = 0;
-        m_dwAttribute = 0;
+        m_cur_life_span = 0;
+        m_attribute = 0;
     }
 
     inline virtual ~CItem()
@@ -81,90 +81,90 @@ public:
     // Core Item Data
     //------------------------------------------------------------------------
 
-    char  m_cName[hb::shared::limits::ItemNameLen];    // Internal item name (from database)
+    char  m_name[hb::shared::limits::ItemNameLen];    // Internal item name (from database)
 
-    short m_sIDnum;                 // Item ID number (unique identifier)
-    char  m_cItemType;              // Item type (see ItemType enum)
-    char  m_cEquipPos;              // Equipment position (see EquipPos enum)
+    short m_id_num;                 // Item ID number (unique identifier)
+    char  m_item_type;              // Item type (see ItemType enum)
+    char  m_equip_pos;              // Equipment position (see EquipPos enum)
 
     //------------------------------------------------------------------------
     // Item Effects
     //------------------------------------------------------------------------
 
-    short m_sItemEffectType;        // Primary effect type (see ItemEffectType enum)
-    short m_sItemEffectValue1;      // Effect value 1
-    short m_sItemEffectValue2;      // Effect value 2
-    short m_sItemEffectValue3;      // Effect value 3
-    short m_sItemEffectValue4;      // Effect value 4 (for armor: stat bonus type)
-    short m_sItemEffectValue5;      // Effect value 5 (for armor: stat bonus amount)
-    short m_sItemEffectValue6;      // Effect value 6
+    short m_item_effect_type;        // Primary effect type (see ItemEffectType enum)
+    short m_item_effect_value1;      // Effect value 1
+    short m_item_effect_value2;      // Effect value 2
+    short m_item_effect_value3;      // Effect value 3
+    short m_item_effect_value4;      // Effect value 4 (for armor: stat bonus type)
+    short m_item_effect_value5;      // Effect value 5 (for armor: stat bonus amount)
+    short m_item_effect_value6;      // Effect value 6
 
     //------------------------------------------------------------------------
     // Special Effects
     //------------------------------------------------------------------------
 
-    short m_sSpecialEffect;         // Special effect type
-    short m_sSpecialEffectValue1;   // Special effect value 1
-    short m_sSpecialEffectValue2;   // Special effect value 2
+    short m_special_effect;         // Special effect type
+    short m_special_effect_value1;   // Special effect value 1
+    short m_special_effect_value2;   // Special effect value 2
 
     //------------------------------------------------------------------------
     // Item-Specific Effects (attributes applied to item instance)
     //------------------------------------------------------------------------
 
-    short m_sItemSpecEffectValue1;  // Item spec effect value 1
-    short m_sItemSpecEffectValue2;  // Item spec effect value 2
-    short m_sItemSpecEffectValue3;  // Item spec effect value 3
+    short m_item_special_effect_value1;  // Item spec effect value 1
+    short m_item_special_effect_value2;  // Item spec effect value 2
+    short m_item_special_effect_value3;  // Item spec effect value 3
 
     //------------------------------------------------------------------------
     // Touch Effects (triggered on first touch/acquisition)
     //------------------------------------------------------------------------
 
-    short m_sTouchEffectType;       // Touch effect type (see TouchEffectType enum)
-    short m_sTouchEffectValue1;     // Touch effect value 1
-    short m_sTouchEffectValue2;     // Touch effect value 2
-    short m_sTouchEffectValue3;     // Touch effect value 3
+    short m_touch_effect_type;       // Touch effect type (see TouchEffectType enum)
+    short m_touch_effect_value1;     // Touch effect value 1
+    short m_touch_effect_value2;     // Touch effect value 2
+    short m_touch_effect_value3;     // Touch effect value 3
 
     //------------------------------------------------------------------------
     // Visual Properties
     //------------------------------------------------------------------------
 
-    short m_sSprite;                // Sprite sheet index
-    short m_sSpriteFrame;           // Frame within sprite sheet
-    char  m_cApprValue;             // Appearance value (for equipped items)
-    char  m_cItemColor;             // Item color variant
+    short m_sprite;                // Sprite sheet index
+    short m_sprite_frame;           // Frame within sprite sheet
+    char  m_appearance_value;             // Appearance value (for equipped items)
+    char  m_item_color;             // Item color variant
 
     //------------------------------------------------------------------------
     // Position (client-side for inventory/ground display)
     //------------------------------------------------------------------------
 
-    short m_sX;                     // X position
-    short m_sY;                     // Y position
+    short m_x;                     // X position
+    short m_y;                     // Y position
 
     //------------------------------------------------------------------------
     // Stats and Limits
     //------------------------------------------------------------------------
 
-    char  m_cSpeed;                 // Weapon attack speed
-    uint32_t m_wPrice;              // Base price in gold
-    uint16_t m_wWeight;             // Weight (affects encumbrance)
-    short m_sLevelLimit;            // Minimum level to use
-    char  m_cGenderLimit;           // Gender restriction (0=none, 1=male, 2=female)
-    short m_sRelatedSkill;          // Related skill for proficiency
+    char  m_speed;                 // Weapon attack speed
+    uint32_t m_price;              // Base price in gold
+    uint16_t m_weight;             // Weight (affects encumbrance)
+    short m_level_limit;            // Minimum level to use
+    char  m_gender_limit;           // Gender restriction (0=none, 1=male, 2=female)
+    short m_related_skill;          // Related skill for proficiency
 
     //------------------------------------------------------------------------
     // Durability
     //------------------------------------------------------------------------
 
-    uint16_t m_wMaxLifeSpan;        // Maximum durability
-    uint16_t m_wCurLifeSpan;        // Current durability
+    uint16_t m_max_life_span;        // Maximum durability
+    uint16_t m_cur_life_span;        // Current durability
 
     //------------------------------------------------------------------------
     // Miscellaneous
     //------------------------------------------------------------------------
 
-    char  m_cCategory;              // Item category (for shop filtering)
-    bool  m_bIsForSale;             // Can be sold to NPC shops
-    uint32_t m_dwCount;             // Stack count (for stackable items)
+    char  m_category;              // Item category (for shop filtering)
+    bool  m_is_for_sale;             // Can be sold to NPC shops
+    uint32_t m_count;             // Stack count (for stackable items)
 
     //------------------------------------------------------------------------
     // Attribute Flags
@@ -179,113 +179,113 @@ public:
     //   f: Additional special flag value
     //------------------------------------------------------------------------
 
-    uint32_t m_dwAttribute;
+    uint32_t m_attribute;
 
     //------------------------------------------------------------------------
     // Display Name Helpers
     //------------------------------------------------------------------------
 
-    // Returns display name if set, otherwise falls back to m_cName
-    // Note: Since DB migration, m_cName now contains display names directly
-    const char* GetDisplayName() const
+    // Returns display name if set, otherwise falls back to m_name
+    // Note: Since DB migration, m_name now contains display names directly
+    const char* get_display_name() const
     {
-        return m_cName;
+        return m_name;
     }
 
     //------------------------------------------------------------------------
     // Type-Safe Enum Accessors
     //------------------------------------------------------------------------
 
-    hb::shared::item::EquipPos GetEquipPos() const
+    hb::shared::item::EquipPos get_equip_pos() const
     {
-        return hb::shared::item::ToEquipPos(m_cEquipPos);
+        return hb::shared::item::to_equip_pos(m_equip_pos);
     }
 
-    void SetEquipPos(hb::shared::item::EquipPos pos)
+    void set_equip_pos(hb::shared::item::EquipPos pos)
     {
-        m_cEquipPos = hb::shared::item::ToInt(pos);
+        m_equip_pos = hb::shared::item::to_int(pos);
     }
 
-    hb::shared::item::ItemType GetItemType() const
+    hb::shared::item::ItemType get_item_type() const
     {
-        return hb::shared::item::ToItemType(m_cItemType);
+        return hb::shared::item::to_item_type(m_item_type);
     }
 
-    void SetItemType(hb::shared::item::ItemType type)
+    void set_item_type(hb::shared::item::ItemType type)
     {
-        m_cItemType = hb::shared::item::ToInt(type);
+        m_item_type = hb::shared::item::to_int(type);
     }
 
-    hb::shared::item::ItemEffectType GetItemEffectType() const
+    hb::shared::item::ItemEffectType get_item_effect_type() const
     {
-        return hb::shared::item::ToItemEffectType(m_sItemEffectType);
+        return hb::shared::item::to_item_effect_type(m_item_effect_type);
     }
 
-    void SetItemEffectType(hb::shared::item::ItemEffectType type)
+    void set_item_effect_type(hb::shared::item::ItemEffectType type)
     {
-        m_sItemEffectType = hb::shared::item::ToInt(type);
+        m_item_effect_type = hb::shared::item::to_int(type);
     }
 
-    hb::shared::item::TouchEffectType GetTouchEffectType() const
+    hb::shared::item::TouchEffectType get_touch_effect_type() const
     {
-        return hb::shared::item::ToTouchEffectType(m_sTouchEffectType);
+        return hb::shared::item::to_touch_effect_type(m_touch_effect_type);
     }
 
-    void SetTouchEffectType(hb::shared::item::TouchEffectType type)
+    void set_touch_effect_type(hb::shared::item::TouchEffectType type)
     {
-        m_sTouchEffectType = hb::shared::item::ToInt(type);
+        m_touch_effect_type = hb::shared::item::to_int(type);
     }
 
     //------------------------------------------------------------------------
     // Attribute Helpers
     //------------------------------------------------------------------------
 
-    bool IsCustomMade() const
+    bool is_custom_made() const
     {
-        return (m_dwAttribute & 0x00000001) != 0;
+        return (m_attribute & 0x00000001) != 0;
     }
 
-    void SetCustomMade(bool custom)
+    void set_custom_made(bool custom)
     {
         if (custom)
-            m_dwAttribute |= 0x00000001;
+            m_attribute |= 0x00000001;
         else
-            m_dwAttribute &= ~0x00000001;
+            m_attribute &= ~0x00000001;
     }
 
-    // Get attribute type (bits 28-31, 'a' nibble)
-    uint8_t GetAttributeType() const
+    // get attribute type (bits 28-31, 'a' nibble)
+    uint8_t get_attribute_type() const
     {
-        return static_cast<uint8_t>((m_dwAttribute >> 28) & 0x0F);
+        return static_cast<uint8_t>((m_attribute >> 28) & 0x0F);
     }
 
-    // Get attribute value (bits 24-27, 'b' nibble)
-    uint8_t GetAttributeValue() const
+    // get attribute value (bits 24-27, 'b' nibble)
+    uint8_t get_attribute_value() const
     {
-        return static_cast<uint8_t>((m_dwAttribute >> 24) & 0x0F);
+        return static_cast<uint8_t>((m_attribute >> 24) & 0x0F);
     }
 
     // Check if item is stackable based on its type
-    bool IsStackable() const
+    bool is_stackable() const
     {
-        return hb::shared::item::IsStackableType(GetItemType());
+        return hb::shared::item::is_stackable_type(get_item_type());
     }
 
     // Check if item is a weapon
-    bool IsWeapon() const
+    bool is_weapon() const
     {
-        return hb::shared::item::IsWeaponSlot(GetEquipPos());
+        return hb::shared::item::is_weapon_slot(get_equip_pos());
     }
 
     // Check if item is armor
-    bool IsArmor() const
+    bool is_armor() const
     {
-        return hb::shared::item::IsArmorSlot(GetEquipPos());
+        return hb::shared::item::is_armor_slot(get_equip_pos());
     }
 
     // Check if item is an accessory
-    bool IsAccessory() const
+    bool is_accessory() const
     {
-        return hb::shared::item::IsAccessorySlot(GetEquipPos());
+        return hb::shared::item::is_accessory_slot(get_equip_pos());
     }
 };

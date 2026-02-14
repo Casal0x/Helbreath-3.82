@@ -1,4 +1,4 @@
-// EffectManager.h: Visual effects system manager
+// effect_manager.h: Visual effects system manager
 //
 //////////////////////////////////////////////////////////////////////
 
@@ -13,34 +13,34 @@
 class CGame;
 class CEffect;
 
-class EffectManager
+class effect_manager
 {
 public:
-	explicit EffectManager(CGame* pGame);
-	~EffectManager();
+	explicit effect_manager(CGame* game);
+	~effect_manager();
 
 	// Initialization
-	void SetEffectSprites(hb::shared::sprite::SpriteCollection& effectSpr);
+	void set_effect_sprites(hb::shared::sprite::SpriteCollection& effectSpr);
 
 	// Main API
-	void AddEffect(EffectType sType, int sX, int sY, int dX, int dY, char cStartFrame, int iV1 = 1);
-	void Update();   // Updates effect frames, removes finished effects
+	void add_effect(EffectType type, int sX, int sY, int dX, int dY, char start_frame, int v1 = 1);
+	void update();   // Updates effect frames, removes finished effects
 	
-	// Render methods (separate for correct draw order: lights before objects, effects after)
-	void DrawEffects();     // Draw particle effects (call after DrawObjects)
-	void DrawEffectLights(); // Draw lighting effects (call before DrawObjects)
+	// render methods (separate for correct draw order: lights before objects, effects after)
+	void draw_effects();     // draw particle effects (call after draw_objects)
+	void draw_effect_lights(); // draw lighting effects (call before draw_objects)
 
 	// Cleanup
-	void ClearAllEffects();
+	void clear_all_effects();
 
 private:
 	// Private implementation methods (defined in separate .cpp files)
-	void AddEffectImpl(EffectType sType, int sX, int sY, int dX, int dY, char cStartFrame, int iV1 = 0);
-	void UpdateEffectsImpl();
-	void DrawEffectsImpl();
-	void DrawEffectLightsImpl();
+	void add_effect_impl(EffectType type, int sX, int sY, int dX, int dY, char start_frame, int v1 = 0);
+	void update_effects_impl();
+	void draw_effects_impl();
+	void draw_effect_lights_impl();
 
-	CGame* m_pGame;
-	CEffect* m_pEffectList[game_limits::max_effects];
-	hb::shared::sprite::SpriteCollection* m_pEffectSpr;  // Reference, not owned
+	CGame* m_game;
+	CEffect* m_effect_list[game_limits::max_effects];
+	hb::shared::sprite::SpriteCollection* m_effect_sprites;  // Reference, not owned
 };

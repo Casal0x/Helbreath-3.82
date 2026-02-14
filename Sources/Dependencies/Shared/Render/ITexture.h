@@ -17,8 +17,8 @@ public:
     virtual ~ITexture() = default;
 
     // ============== Dimensions ==============
-    virtual uint16_t GetWidth() const = 0;
-    virtual uint16_t GetHeight() const = 0;
+    virtual uint16_t get_width() const = 0;
+    virtual uint16_t get_height() const = 0;
 
     // ============== Blitting ==============
     virtual bool Blt(RECT* destRect, ITexture* src, RECT* srcRect, uint32_t flags) = 0;

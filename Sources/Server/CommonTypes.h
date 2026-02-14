@@ -41,7 +41,7 @@ private:
     static bool s_initialized;
 
 public:
-    static void Initialize() {
+    static void initialize() {
         if (!s_initialized) {
             s_startTime = std::chrono::steady_clock::now();
             s_initialized = true;
@@ -49,7 +49,7 @@ public:
     }
 
     static uint32_t GetTimeMS() {
-        if (!s_initialized) Initialize();
+        if (!s_initialized) initialize();
 
         auto now = std::chrono::steady_clock::now();
         auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - s_startTime);

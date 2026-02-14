@@ -76,7 +76,7 @@ namespace net {
 			return reinterpret_cast<char*>(m_buffer.data());
 		}
 
-		std::size_t Size() const
+		std::size_t size() const
 		{
 			return m_buffer.size();
 		}

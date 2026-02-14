@@ -12,153 +12,153 @@
 #include <string>
 
 namespace NetworkMessageHandlers {
-	void HandleCharisma(CGame* pGame, char* pData)
+	void HandleCharisma(CGame* game, char* data)
 	{
-		int  iPrevChar;
-		std::string cTxt;
+		int  prev_char;
+		std::string txt;
 
-		iPrevChar = pGame->m_pPlayer->m_iCharisma;
+		prev_char = game->m_player->m_charisma;
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyCharisma>(
-			pData, sizeof(hb::net::PacketNotifyCharisma));
+			data, sizeof(hb::net::PacketNotifyCharisma));
 		if (!pkt) return;
-		pGame->m_pPlayer->m_iCharisma = static_cast<int>(pkt->charisma);
+		game->m_player->m_charisma = static_cast<int>(pkt->charisma);
 
-		if (pGame->m_pPlayer->m_iCharisma > iPrevChar)
+		if (game->m_player->m_charisma > prev_char)
 		{
-			cTxt = std::format(NOTIFYMSG_CHARISMA_UP, pGame->m_pPlayer->m_iCharisma - iPrevChar);
-			pGame->AddEventList(cTxt.c_str(), 10);
-			pGame->PlayGameSound('E', 21, 0);
+			txt = std::format(NOTIFYMSG_CHARISMA_UP, game->m_player->m_charisma - prev_char);
+			game->add_event_list(txt.c_str(), 10);
+			game->play_game_sound('E', 21, 0);
 		}
 		else
 		{
-			cTxt = std::format(NOTIFYMSG_CHARISMA_DOWN, iPrevChar - pGame->m_pPlayer->m_iCharisma);
-			pGame->AddEventList(cTxt.c_str(), 10);
+			txt = std::format(NOTIFYMSG_CHARISMA_DOWN, prev_char - game->m_player->m_charisma);
+			game->add_event_list(txt.c_str(), 10);
 		}
 	}
 
-	void HandleHunger(CGame* pGame, char* pData)
+	void HandleHunger(CGame* game, char* data)
 	{
-		char cHLv;
+		char h_lv;
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyHunger>(
-			pData, sizeof(hb::net::PacketNotifyHunger));
+			data, sizeof(hb::net::PacketNotifyHunger));
 		if (!pkt) return;
-		pGame->m_pPlayer->m_iHungerStatus = pkt->hunger;
+		game->m_player->m_hunger_status = pkt->hunger;
 
-		cHLv = pGame->m_pPlayer->m_iHungerStatus;
-		if ((cHLv <= 40) && (cHLv > 30)) pGame->AddEventList(NOTIFYMSG_HUNGER1, 10);
-		if ((cHLv <= 25) && (cHLv > 20)) pGame->AddEventList(NOTIFYMSG_HUNGER2, 10);
-		if ((cHLv <= 20) && (cHLv > 15)) pGame->AddEventList(NOTIFYMSG_HUNGER3, 10);
-		if ((cHLv <= 15) && (cHLv > 10)) pGame->AddEventList(NOTIFYMSG_HUNGER4, 10);
-		if ((cHLv <= 10) && (cHLv >= 0)) pGame->AddEventList(NOTIFYMSG_HUNGER5, 10);
+		h_lv = game->m_player->m_hunger_status;
+		if ((h_lv <= 40) && (h_lv > 30)) game->add_event_list(NOTIFYMSG_HUNGER1, 10);
+		if ((h_lv <= 25) && (h_lv > 20)) game->add_event_list(NOTIFYMSG_HUNGER2, 10);
+		if ((h_lv <= 20) && (h_lv > 15)) game->add_event_list(NOTIFYMSG_HUNGER3, 10);
+		if ((h_lv <= 15) && (h_lv > 10)) game->add_event_list(NOTIFYMSG_HUNGER4, 10);
+		if ((h_lv <= 10) && (h_lv >= 0)) game->add_event_list(NOTIFYMSG_HUNGER5, 10);
 	}
 
-	void HandlePlayerProfile(CGame* pGame, char* pData)
+	void HandlePlayerProfile(CGame* game, char* data)
 	{
-		std::string cTemp;
+		std::string temp;
 		int i;
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyPlayerProfile>(
-			pData, sizeof(hb::net::PacketNotifyPlayerProfile));
+			data, sizeof(hb::net::PacketNotifyPlayerProfile));
 		if (!pkt) return;
-		cTemp = pkt->text;
-		for (i = 0; i < static_cast<int>(cTemp.size()); i++)
-			if (cTemp[i] == '_') cTemp[i] = ' ';
-		pGame->AddEventList(cTemp.c_str(), 10);
+		temp = pkt->text;
+		for (i = 0; i < static_cast<int>(temp.size()); i++)
+			if (temp[i] == '_') temp[i] = ' ';
+		game->add_event_list(temp.c_str(), 10);
 	}
 
-	void HandlePlayerStatus(CGame* pGame, bool bOnGame, char* pData)
+	void HandlePlayerStatus(CGame* game, bool on_game, char* data)
 	{
-		char cName[12]{}, cMapName[12]{};
-		std::string cTxt;
+		char name[12]{}, map_name[12]{};
+		std::string txt;
 		uint16_t dx = 1, dy = 1;
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyPlayerStatus>(
-			pData, sizeof(hb::net::PacketNotifyPlayerStatus));
+			data, sizeof(hb::net::PacketNotifyPlayerStatus));
 		if (!pkt) return;
-		memcpy(cName, pkt->name, sizeof(pkt->name));
-		memcpy(cMapName, pkt->map_name, sizeof(pkt->map_name));
+		memcpy(name, pkt->name, sizeof(pkt->name));
+		memcpy(map_name, pkt->map_name, sizeof(pkt->map_name));
 		dx = pkt->x;
 		dy = pkt->y;
-		if (bOnGame == true) {
-			if (cMapName[0] == 0)
-				cTxt = std::format(NOTIFYMSG_PLAYER_STATUS1, cName);
-			else cTxt = std::format(NOTIFYMSG_PLAYER_STATUS2, cName, cMapName, dx, dy);
+		if (on_game == true) {
+			if (map_name[0] == 0)
+				txt = std::format(NOTIFYMSG_PLAYER_STATUS1, name);
+			else txt = std::format(NOTIFYMSG_PLAYER_STATUS2, name, map_name, dx, dy);
 		}
-		else cTxt = std::format(NOTIFYMSG_PLAYER_STATUS3, cName);
-		pGame->AddEventList(cTxt.c_str(), 10);
+		else txt = std::format(NOTIFYMSG_PLAYER_STATUS3, name);
+		game->add_event_list(txt.c_str(), 10);
 	}
 
-	void HandleWhisperMode(CGame* pGame, bool bActive, char* pData)
+	void HandleWhisperMode(CGame* game, bool active, char* data)
 	{
-		char cName[12]{};
-		std::string cTxt;
+		char name[12]{};
+		std::string txt;
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyWhisperMode>(
-			pData, sizeof(hb::net::PacketNotifyWhisperMode));
+			data, sizeof(hb::net::PacketNotifyWhisperMode));
 		if (!pkt) return;
-		memcpy(cName, pkt->name, sizeof(pkt->name));
-		if (bActive == true)
+		memcpy(name, pkt->name, sizeof(pkt->name));
+		if (active == true)
 		{
-			cTxt = std::format(NOTIFYMSG_WHISPERMODE1, cName);
-			ChatManager::Get().AddWhisperTarget(cName);
+			txt = std::format(NOTIFYMSG_WHISPERMODE1, name);
+			ChatManager::get().add_whisper_target(name);
 		}
-		else cTxt = NOTIFYMSG_WHISPERMODE2;
+		else txt = NOTIFYMSG_WHISPERMODE2;
 
-		pGame->AddEventList(cTxt.c_str(), 10);
+		game->add_event_list(txt.c_str(), 10);
 	}
 
-	void HandlePlayerShutUp(CGame* pGame, char* pData)
+	void HandlePlayerShutUp(CGame* game, char* data)
 	{
-		char cName[12]{};
-		std::string cTxt;
-		WORD wTime;
+		char name[12]{};
+		std::string txt;
+		WORD time;
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyPlayerShutUp>(
-			pData, sizeof(hb::net::PacketNotifyPlayerShutUp));
+			data, sizeof(hb::net::PacketNotifyPlayerShutUp));
 		if (!pkt) return;
-		wTime = pkt->time;
-		memcpy(cName, pkt->name, sizeof(pkt->name));
-		if (pGame->m_pPlayer->m_cPlayerName == std::string_view(cName, strnlen(cName, hb::shared::limits::CharNameLen)))
-			cTxt = std::format(NOTIFYMSG_PLAYER_SHUTUP1, wTime);
-		else cTxt = std::format(NOTIFYMSG_PLAYER_SHUTUP2, cName, wTime);
+		time = pkt->time;
+		memcpy(name, pkt->name, sizeof(pkt->name));
+		if (game->m_player->m_player_name == std::string_view(name, strnlen(name, hb::shared::limits::CharNameLen)))
+			txt = std::format(NOTIFYMSG_PLAYER_SHUTUP1, time);
+		else txt = std::format(NOTIFYMSG_PLAYER_SHUTUP2, name, time);
 
-		pGame->AddEventList(cTxt.c_str(), 10);
+		game->add_event_list(txt.c_str(), 10);
 	}
 
-	void HandleRatingPlayer(CGame* pGame, char* pData)
+	void HandleRatingPlayer(CGame* game, char* data)
 	{
-		char cName[12]{};
-		std::string cTxt;
-		uint16_t cValue;
+		char name[12]{};
+		std::string txt;
+		uint16_t value;
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyRatingPlayer>(
-			pData, sizeof(hb::net::PacketNotifyRatingPlayer));
+			data, sizeof(hb::net::PacketNotifyRatingPlayer));
 		if (!pkt) return;
-		cValue = pkt->result;
-		memcpy(cName, pkt->name, sizeof(pkt->name));
-		if (pGame->m_pPlayer->m_cPlayerName == std::string_view(cName, strnlen(cName, hb::shared::limits::CharNameLen)))
+		value = pkt->result;
+		memcpy(name, pkt->name, sizeof(pkt->name));
+		if (game->m_player->m_player_name == std::string_view(name, strnlen(name, hb::shared::limits::CharNameLen)))
 		{
-			if (cValue == 1)
+			if (value == 1)
 			{
-				cTxt = NOTIFYMSG_RATING_PLAYER1;
-				pGame->PlayGameSound('E', 23, 0);
+				txt = NOTIFYMSG_RATING_PLAYER1;
+				game->play_game_sound('E', 23, 0);
 			}
 		}
 		else
 		{
-			if (cValue == 1)
-				cTxt = std::format(NOTIFYMSG_RATING_PLAYER2, cName);
-			else cTxt = std::format(NOTIFYMSG_RATING_PLAYER3, cName);
+			if (value == 1)
+				txt = std::format(NOTIFYMSG_RATING_PLAYER2, name);
+			else txt = std::format(NOTIFYMSG_RATING_PLAYER3, name);
 		}
-		if (!cTxt.empty()) pGame->AddEventList(cTxt.c_str(), 10);
+		if (!txt.empty()) game->add_event_list(txt.c_str(), 10);
 	}
 
-	void HandleCannotRating(CGame* pGame, char* pData)
+	void HandleCannotRating(CGame* game, char* data)
 	{
-		std::string cTxt;
+		std::string txt;
 
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyCannotRating>(
-			pData, sizeof(hb::net::PacketNotifyCannotRating));
+			data, sizeof(hb::net::PacketNotifyCannotRating));
 		if (!pkt) return;
-		const auto wTime = pkt->time_left;
+		const auto time = pkt->time_left;
 
-		if (wTime == 0) cTxt = NOTIFYMSG_CANNOT_RATING1;
-		else cTxt = std::format(NOTIFYMSG_CANNOT_RATING2, wTime * 3);
-		pGame->AddEventList(cTxt.c_str(), 10);
+		if (time == 0) txt = NOTIFYMSG_CANNOT_RATING1;
+		else txt = std::format(NOTIFYMSG_CANNOT_RATING2, time * 3);
+		game->add_event_list(txt.c_str(), 10);
 	}
 }

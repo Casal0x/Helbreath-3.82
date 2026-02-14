@@ -29,7 +29,7 @@ namespace net {
 		std::uint16_t total_points;
 	};
 
-	// Heldenian teleport response (30 bytes, written after PacketHeader in cTxt buffer)
+	// Heldenian teleport response (30 bytes, written after PacketHeader in txt buffer)
 	// Note: short values written with cp+=4 in original code = int32 slots on LE
 	struct HB_PACKED HeldenianTeleportResponse {
 		std::int32_t count;       // always 4

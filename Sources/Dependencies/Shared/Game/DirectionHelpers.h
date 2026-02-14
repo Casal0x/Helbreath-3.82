@@ -10,21 +10,21 @@ namespace hb::shared::direction {
 	constexpr int OffsetY[] = { 0, -1, -1, 0, 1, 1,  1,  0, -1 };
 
 	// Apply directional offset to coordinates.
-	inline void ApplyOffset(char cDir, int& x, int& y)
+	inline void ApplyOffset(char dir, int& x, int& y)
 	{
-		if (cDir >= 1 && cDir <= 8)
+		if (dir >= 1 && dir <= 8)
 		{
-			x += OffsetX[cDir];
-			y += OffsetY[cDir];
+			x += OffsetX[dir];
+			y += OffsetY[dir];
 		}
 	}
 
-	inline void ApplyOffset(char cDir, short& x, short& y)
+	inline void ApplyOffset(char dir, short& x, short& y)
 	{
-		if (cDir >= 1 && cDir <= 8)
+		if (dir >= 1 && dir <= 8)
 		{
-			x += static_cast<short>(OffsetX[cDir]);
-			y += static_cast<short>(OffsetY[cDir]);
+			x += static_cast<short>(OffsetX[dir]);
+			y += static_cast<short>(OffsetY[dir]);
 		}
 	}
 

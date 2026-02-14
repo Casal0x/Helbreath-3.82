@@ -14,20 +14,20 @@ extern char G_cTxt[120];
 // Construction/Destruction
 //////////////////////////////////////////////////////////////////////
 
-PartyManager::PartyManager(class CGame* pGame)
+PartyManager::PartyManager(class CGame* game)
 {
 	
 
 	for(int i = 0; i < hb::server::party::MaxParty; i++) {
-		m_iMemberNumList[i] = 0;
-		m_stMemberNameList[i].m_iPartyID = 0;
-		m_stMemberNameList[i].m_iIndex = 0;
-		m_stMemberNameList[i].m_dwServerChangeTime = 0;
-		std::memset(m_stMemberNameList[i].m_cName, 0, sizeof(m_stMemberNameList[i].m_cName));
+		m_member_num_list[i] = 0;
+		m_member_name_list[i].m_party_id = 0;
+		m_member_name_list[i].m_index = 0;
+		m_member_name_list[i].server_change_time = 0;
+		std::memset(m_member_name_list[i].m_name, 0, sizeof(m_member_name_list[i].m_name));
 	}
 
-	m_pGame = pGame;
-	m_dwCheckMemberActTime = GameClock::GetTimeMS();
+	m_game = game;
+	m_check_member_act_time = GameClock::GetTimeMS();
 }
 
 PartyManager::~PartyManager()
@@ -35,20 +35,20 @@ PartyManager::~PartyManager()
 
 }
 
-int PartyManager::iCreateNewParty(char* pMasterName)
+int PartyManager::create_new_party_id(char* master_name)
 {
-	int iPartyID;
+	int party_id;
 
 	// ??? PartyMaster? ????? ?? 
 	for(int i = 1; i < hb::server::party::MaxParty; i++)
-		if ((m_stMemberNameList[i].m_iPartyID != 0) && (hb_stricmp(m_stMemberNameList[i].m_cName, pMasterName) == 0)) return 0;
+		if ((m_member_name_list[i].m_party_id != 0) && (hb_stricmp(m_member_name_list[i].m_name, master_name) == 0)) return 0;
 
-	iPartyID = 0;
+	party_id = 0;
 	for(int i = 1; i < hb::server::party::MaxParty; i++)
-		if (m_iMemberNumList[i] == 0) {
+		if (m_member_num_list[i] == 0) {
 			// Party ID? i, ??? ??
-			iPartyID = i;
-			m_iMemberNumList[iPartyID]++;
+			party_id = i;
+			m_member_num_list[party_id]++;
 			goto CNP_BREAKLOOP;
 		}
 
@@ -57,207 +57,207 @@ int PartyManager::iCreateNewParty(char* pMasterName)
 CNP_BREAKLOOP:;
 	// ?? ??? ????.
 	for(int i = 1; i < hb::server::party::MaxParty; i++)
-		if (m_stMemberNameList[i].m_iPartyID == 0) {
-			m_stMemberNameList[i].m_iPartyID = iPartyID;
-			std::memset(m_stMemberNameList[i].m_cName, 0, sizeof(m_stMemberNameList[i].m_cName));
-			strcpy(m_stMemberNameList[i].m_cName, pMasterName);
-			m_stMemberNameList[i].m_iIndex = 1;
+		if (m_member_name_list[i].m_party_id == 0) {
+			m_member_name_list[i].m_party_id = party_id;
+			std::memset(m_member_name_list[i].m_name, 0, sizeof(m_member_name_list[i].m_name));
+			strcpy(m_member_name_list[i].m_name, master_name);
+			m_member_name_list[i].m_index = 1;
 
 			//testcode
-			hb::logger::log("New party(ID:{} Master:{})", iPartyID, pMasterName);
+			hb::logger::log("New party(ID:{} Master:{})", party_id, master_name);
 
-			return iPartyID;
+			return party_id;
 		}
 
 	return 0;
 }
 
-bool PartyManager::bDeleteParty(int iPartyID)
+bool PartyManager::delete_party(int party_id)
 {
-	bool bFlag;
-	char cData[120];
+	bool flag;
+	char data[120];
 
-	bFlag = false;
-	m_iMemberNumList[iPartyID] = 0;
+	flag = false;
+	m_member_num_list[party_id] = 0;
 
 	for(int i = 1; i < hb::server::party::MaxParty; i++)
-		if (m_stMemberNameList[i].m_iPartyID == iPartyID) {
-			m_stMemberNameList[i].m_iPartyID = 0;
-			m_stMemberNameList[i].m_iIndex = 0;
-			m_stMemberNameList[i].m_dwServerChangeTime = 0;
-			std::memset(m_stMemberNameList[i].m_cName, 0, sizeof(m_stMemberNameList[i].m_cName));
-			bFlag = true;
+		if (m_member_name_list[i].m_party_id == party_id) {
+			m_member_name_list[i].m_party_id = 0;
+			m_member_name_list[i].m_index = 0;
+			m_member_name_list[i].server_change_time = 0;
+			std::memset(m_member_name_list[i].m_name, 0, sizeof(m_member_name_list[i].m_name));
+			flag = true;
 		}
 
 	// Notify game server about party deletion
-	std::memset(cData, 0, sizeof(cData));
+	std::memset(data, 0, sizeof(data));
 	hb::net::PartyOpResultDelete delResult{};
 	delResult.op_type = 2;
-	delResult.party_id = static_cast<uint16_t>(iPartyID);
-	std::memcpy(cData, &delResult, sizeof(delResult));
-	m_pGame->PartyOperationResultHandler(cData);
+	delResult.party_id = static_cast<uint16_t>(party_id);
+	std::memcpy(data, &delResult, sizeof(delResult));
+	m_game->party_operation_result_handler(data);
 
 	//testcode
-	hb::logger::log("Delete party(ID:{})", iPartyID);
+	hb::logger::log("Delete party(ID:{})", party_id);
 
-	return bFlag;
+	return flag;
 }
 
-bool PartyManager::bAddMember(int iPartyID, char* pMemberName)
+bool PartyManager::add_member(int party_id, char* member_name)
 {
 	
 
-	if (m_iMemberNumList[iPartyID] >= hb::server::party::MaxPartyMember) return false;
+	if (m_member_num_list[party_id] >= hb::server::party::MaxPartyMember) return false;
 
 	// ?? ??? ?? ???? ??
 	for(int i = 1; i < hb::server::party::MaxParty; i++)
-		if ((m_stMemberNameList[i].m_iPartyID != 0) && (hb_stricmp(m_stMemberNameList[i].m_cName, pMemberName) == 0))
+		if ((m_member_name_list[i].m_party_id != 0) && (hb_stricmp(m_member_name_list[i].m_name, member_name) == 0))
 		{
-			m_stMemberNameList[i].m_iPartyID = 0;
-			m_stMemberNameList[i].m_iIndex = 0;
-			m_stMemberNameList[i].m_dwServerChangeTime = 0;
-			std::memset(m_stMemberNameList[i].m_cName, 0, sizeof(m_stMemberNameList[i].m_cName));
+			m_member_name_list[i].m_party_id = 0;
+			m_member_name_list[i].m_index = 0;
+			m_member_name_list[i].server_change_time = 0;
+			std::memset(m_member_name_list[i].m_name, 0, sizeof(m_member_name_list[i].m_name));
 
-			m_iMemberNumList[iPartyID]--;
-			if (m_iMemberNumList[iPartyID] <= 1) bDeleteParty(iPartyID); // ???? 1?? ??? ?? ??
+			m_member_num_list[party_id]--;
+			if (m_member_num_list[party_id] <= 1) delete_party(party_id); // ???? 1?? ??? ?? ??
 		}
 	//		return false;
 
 	for(int i = 1; i < hb::server::party::MaxParty; i++)
-		if (m_stMemberNameList[i].m_iPartyID == 0) {
-			m_stMemberNameList[i].m_iPartyID = iPartyID;
-			m_stMemberNameList[i].m_iIndex = 1;
-			m_stMemberNameList[i].m_dwServerChangeTime = 0;
-			std::memset(m_stMemberNameList[i].m_cName, 0, sizeof(m_stMemberNameList[i].m_cName));
-			strcpy(m_stMemberNameList[i].m_cName, pMemberName);
-			m_iMemberNumList[iPartyID]++;
+		if (m_member_name_list[i].m_party_id == 0) {
+			m_member_name_list[i].m_party_id = party_id;
+			m_member_name_list[i].m_index = 1;
+			m_member_name_list[i].server_change_time = 0;
+			std::memset(m_member_name_list[i].m_name, 0, sizeof(m_member_name_list[i].m_name));
+			strcpy(m_member_name_list[i].m_name, member_name);
+			m_member_num_list[party_id]++;
 
 			//testcode
-			hb::logger::log("Add Member: PartyID:{} Name:{}", iPartyID, pMemberName);
+			hb::logger::log("Add Member: PartyID:{} Name:{}", party_id, member_name);
 			return true;
 		}
 
 	return false;
 }
 
-bool PartyManager::bRemoveMember(int iPartyID, char* pMemberName)
+bool PartyManager::remove_member(int party_id, char* member_name)
 {
 	
 
 	for(int i = 1; i < hb::server::party::MaxParty; i++)
-		if ((m_stMemberNameList[i].m_iPartyID == iPartyID) && (hb_stricmp(m_stMemberNameList[i].m_cName, pMemberName) == 0)) {
+		if ((m_member_name_list[i].m_party_id == party_id) && (hb_stricmp(m_member_name_list[i].m_name, member_name) == 0)) {
 
-			m_stMemberNameList[i].m_iPartyID = 0;
-			m_stMemberNameList[i].m_iIndex = 0;
-			m_stMemberNameList[i].m_dwServerChangeTime = 0;
-			std::memset(m_stMemberNameList[i].m_cName, 0, sizeof(m_stMemberNameList[i].m_cName));
+			m_member_name_list[i].m_party_id = 0;
+			m_member_name_list[i].m_index = 0;
+			m_member_name_list[i].server_change_time = 0;
+			std::memset(m_member_name_list[i].m_name, 0, sizeof(m_member_name_list[i].m_name));
 
-			m_iMemberNumList[iPartyID]--;
-			if (m_iMemberNumList[iPartyID] <= 1) bDeleteParty(iPartyID); // ???? 1?? ??? ?? ?? 
+			m_member_num_list[party_id]--;
+			if (m_member_num_list[party_id] <= 1) delete_party(party_id); // ???? 1?? ??? ?? ?? 
 
 			//testcode
-			hb::logger::log("Remove Member: PartyID:{} Name:{}", iPartyID, pMemberName);
+			hb::logger::log("Remove Member: PartyID:{} Name:{}", party_id, member_name);
 			return true;
 		}
 
 	return false;
 }
 
-bool PartyManager::bCheckPartyMember(int iGSCH, int iPartyID, char* pName)
+bool PartyManager::check_party_member(int gsch, int party_id, char* name)
 {
-	char cData[120]{};
+	char data[120]{};
 
 	for (int i = 1; i < hb::server::party::MaxParty; i++)
-		if ((m_stMemberNameList[i].m_iPartyID == iPartyID) && (hb_stricmp(m_stMemberNameList[i].m_cName, pName) == 0)) {
-			m_stMemberNameList[i].m_dwServerChangeTime = 0;
+		if ((m_member_name_list[i].m_party_id == party_id) && (hb_stricmp(m_member_name_list[i].m_name, name) == 0)) {
+			m_member_name_list[i].server_change_time = 0;
 			return true;
 		}
 
 	// Member not found — notify game server to remove
 	hb::net::PartyOpCreateRequest req{};
 	req.op_type = 3;
-	req.client_h = static_cast<uint16_t>(iGSCH);
-	std::memcpy(req.name, pName, sizeof(req.name));
-	std::memcpy(cData, &req, sizeof(req));
-	m_pGame->PartyOperationResultHandler(cData);
+	req.client_h = static_cast<uint16_t>(gsch);
+	std::memcpy(req.name, name, sizeof(req.name));
+	std::memcpy(data, &req, sizeof(req));
+	m_game->party_operation_result_handler(data);
 
 	return false;
 }
 
-bool PartyManager::bGetPartyInfo(int iGSCH, char* pName, int iPartyID)
+bool PartyManager::get_party_info(int gsch, char* name, int party_id)
 {
-	char cData[1024]{};
+	char data[1024]{};
 
-	auto& hdr = *reinterpret_cast<hb::net::PartyOpResultInfoHeader*>(cData);
+	auto& hdr = *reinterpret_cast<hb::net::PartyOpResultInfoHeader*>(data);
 	hdr.op_type = 5;
-	hdr.client_h = static_cast<uint16_t>(iGSCH);
-	std::memcpy(hdr.name, pName, sizeof(hdr.name));
+	hdr.client_h = static_cast<uint16_t>(gsch);
+	std::memcpy(hdr.name, name, sizeof(hdr.name));
 
-	char* cp = cData + sizeof(hb::net::PartyOpResultInfoHeader);
-	int iTotal = 0;
+	char* cp = data + sizeof(hb::net::PartyOpResultInfoHeader);
+	int total = 0;
 	for (int i = 1; i < hb::server::party::MaxParty; i++)
-		if ((m_stMemberNameList[i].m_iPartyID == iPartyID) && (m_stMemberNameList[i].m_iPartyID != 0)) {
-			std::memcpy(cp, m_stMemberNameList[i].m_cName, hb::shared::limits::CharNameLen - 1);
+		if ((m_member_name_list[i].m_party_id == party_id) && (m_member_name_list[i].m_party_id != 0)) {
+			std::memcpy(cp, m_member_name_list[i].m_name, hb::shared::limits::CharNameLen - 1);
 			cp += 11;
-			iTotal++;
+			total++;
 		}
 
-	hdr.total = static_cast<uint16_t>(iTotal);
-	m_pGame->PartyOperationResultHandler(cData);
+	hdr.total = static_cast<uint16_t>(total);
+	m_game->party_operation_result_handler(data);
 
 	return true;
 }
 
-void PartyManager::GameServerDown()
+void PartyManager::game_server_down()
 {
 	
 
 	for(int i = 0; i < hb::server::party::MaxParty; i++)
-		if (m_stMemberNameList[i].m_iIndex == 1) {
+		if (m_member_name_list[i].m_index == 1) {
 			//testcode
-			hb::logger::log("Removing party member '{}' (server shutdown)", m_stMemberNameList[i].m_cName);
+			hb::logger::log("Removing party member '{}' (server shutdown)", m_member_name_list[i].m_name);
 
-			m_iMemberNumList[m_stMemberNameList[i].m_iPartyID]--;
-			m_stMemberNameList[i].m_iPartyID = 0;
-			m_stMemberNameList[i].m_iIndex = 0;
-			m_stMemberNameList[i].m_dwServerChangeTime = 0;
-			std::memset(m_stMemberNameList[i].m_cName, 0, sizeof(m_stMemberNameList[i].m_cName));
+			m_member_num_list[m_member_name_list[i].m_party_id]--;
+			m_member_name_list[i].m_party_id = 0;
+			m_member_name_list[i].m_index = 0;
+			m_member_name_list[i].server_change_time = 0;
+			std::memset(m_member_name_list[i].m_name, 0, sizeof(m_member_name_list[i].m_name));
 		}
 }
 
-void PartyManager::SetServerChangeStatus(char* pName, int iPartyID)
+void PartyManager::set_server_change_status(char* name, int party_id)
 {
 	
 
 	for(int i = 1; i < hb::server::party::MaxParty; i++)
-		if ((m_stMemberNameList[i].m_iPartyID == iPartyID) && (hb_stricmp(m_stMemberNameList[i].m_cName, pName) == 0)) {
-			m_stMemberNameList[i].m_dwServerChangeTime = GameClock::GetTimeMS();
+		if ((m_member_name_list[i].m_party_id == party_id) && (hb_stricmp(m_member_name_list[i].m_name, name) == 0)) {
+			m_member_name_list[i].server_change_time = GameClock::GetTimeMS();
 			return;
 		}
 }
 
-void PartyManager::CheckMemberActivity()
+void PartyManager::check_member_activity()
 {
-	uint32_t dwTime = GameClock::GetTimeMS();
-	char cData[120];
+	uint32_t time = GameClock::GetTimeMS();
+	char data[120];
 
-	if ((dwTime - m_dwCheckMemberActTime) > 1000 * 2) {
-		m_dwCheckMemberActTime = dwTime;
+	if ((time - m_check_member_act_time) > 1000 * 2) {
+		m_check_member_act_time = time;
 	}
 	else return;
 
 	for (int i = 1; i < hb::server::party::MaxParty; i++)
-		if ((m_stMemberNameList[i].m_dwServerChangeTime != 0) && ((dwTime - m_stMemberNameList[i].m_dwServerChangeTime) > 1000 * 20)) {
-			std::memset(cData, 0, sizeof(cData));
+		if ((m_member_name_list[i].server_change_time != 0) && ((time - m_member_name_list[i].server_change_time) > 1000 * 20)) {
+			std::memset(data, 0, sizeof(data));
 			hb::net::PartyOpResultWithStatus dismissOp{};
 			dismissOp.op_type = 6;
 			dismissOp.result = 1;
 			dismissOp.client_h = 0;
-			std::memcpy(dismissOp.name, m_stMemberNameList[i].m_cName, sizeof(dismissOp.name));
-			dismissOp.party_id = static_cast<uint16_t>(m_stMemberNameList[i].m_iPartyID);
-			std::memcpy(cData, &dismissOp, sizeof(dismissOp));
-			m_pGame->PartyOperationResultHandler(cData);
+			std::memcpy(dismissOp.name, m_member_name_list[i].m_name, sizeof(dismissOp.name));
+			dismissOp.party_id = static_cast<uint16_t>(m_member_name_list[i].m_party_id);
+			std::memcpy(data, &dismissOp, sizeof(dismissOp));
+			m_game->party_operation_result_handler(data);
 
-			bRemoveMember(m_stMemberNameList[i].m_iPartyID, m_stMemberNameList[i].m_cName);
+			remove_member(m_member_name_list[i].m_party_id, m_member_name_list[i].m_name);
 		}
 }

@@ -1,8 +1,8 @@
 // Screen_TestPrimitives.h: Visual Test Scene for Primitive Drawing
 //
 // Exercises every hb::shared::render::IRenderer primitive method:
-// DrawPixel, DrawLine, DrawRectFilled, DrawRectOutline,
-// DrawRoundedRectFilled, DrawRoundedRectOutline
+// draw_pixel, draw_line, draw_rect_filled, draw_rect_outline,
+// draw_rounded_rect_filled, draw_rounded_rect_outline
 //
 // Press ESC to exit the game.
 //
@@ -17,7 +17,7 @@ class Screen_TestPrimitives : public IGameScreen
 public:
 	SCREEN_TYPE(Screen_TestPrimitives)
 
-	explicit Screen_TestPrimitives(CGame* pGame);
+	explicit Screen_TestPrimitives(CGame* game);
 	~Screen_TestPrimitives() override = default;
 
 	void on_initialize() override;
@@ -26,12 +26,12 @@ public:
 	void on_render() override;
 
 private:
-	void RenderHeader();
-	void RenderPixelTests(int y);
-	void RenderLineAlphaTests(int y);
-	void RenderLineAdditiveTests(int y);
-	void RenderRectFilledTests(int y);
-	void RenderRectOutlineTests(int y);
-	void RenderRoundedRectFilledTests(int y);
-	void RenderRoundedRectOutlineTests(int y);
+	void render_header();
+	void render_pixel_tests(int y);
+	void render_line_alpha_tests(int y);
+	void render_line_additive_tests(int y);
+	void render_rect_filled_tests(int y);
+	void render_rect_outline_tests(int y);
+	void render_rounded_rect_filled_tests(int y);
+	void render_rounded_rect_outline_tests(int y);
 };

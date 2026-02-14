@@ -1,25 +1,25 @@
-// QuestManager.h: Handles client-side quest network messages.
+// quest_manager.h: Handles client-side quest network messages.
 // Extracted from NetworkMessages_Quest.cpp (Phase B3).
 
 #pragma once
 
 class CGame;
 
-class QuestManager
+class quest_manager
 {
 public:
-	QuestManager() = default;
-	~QuestManager() = default;
+	quest_manager() = default;
+	~quest_manager() = default;
 
-	void SetGame(CGame* pGame) { m_pGame = pGame; }
+	void set_game(CGame* game) { m_game = game; }
 
 	// Network message handlers
-	void HandleQuestCounter(char* pData);
-	void HandleQuestContents(char* pData);
-	void HandleQuestReward(char* pData);
-	void HandleQuestCompleted(char* pData);
-	void HandleQuestAborted(char* pData);
+	void handle_quest_counter(char* data);
+	void handle_quest_contents(char* data);
+	void handle_quest_reward(char* data);
+	void handle_quest_completed(char* data);
+	void handle_quest_aborted(char* data);
 
 private:
-	CGame* m_pGame = nullptr;
+	CGame* m_game = nullptr;
 };

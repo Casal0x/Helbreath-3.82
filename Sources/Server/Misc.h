@@ -11,36 +11,36 @@
 
 namespace CMisc
 {
-	static inline char cGetNextMoveDir(short sX, short sY, short dX, short dY)
+	static inline char get_next_move_dir(short sX, short sY, short dX, short dY)
 	{
 		short absX, absY;
-		char  cRet = 0;
+		char  ret = 0;
 
 		absX = sX - dX;
 		absY = sY - dY;
 
-		if ((absX == 0) && (absY == 0)) cRet = 0;
+		if ((absX == 0) && (absY == 0)) ret = 0;
 
 		if (absX == 0) {
-			if (absY > 0) cRet = 1;
-			if (absY < 0) cRet = 5;
+			if (absY > 0) ret = 1;
+			if (absY < 0) ret = 5;
 		}
 		if (absY == 0) {
-			if (absX > 0) cRet = 7;
-			if (absX < 0) cRet = 3;
+			if (absX > 0) ret = 7;
+			if (absX < 0) ret = 3;
 		}
-		if ( (absX > 0)	&& (absY > 0) ) cRet = 8;
-		if ( (absX < 0)	&& (absY > 0) ) cRet = 2;
-		if ( (absX > 0)	&& (absY < 0) ) cRet = 6;
-		if ( (absX < 0)	&& (absY < 0) ) cRet = 4;
+		if ( (absX > 0)	&& (absY > 0) ) ret = 8;
+		if ( (absX < 0)	&& (absY > 0) ) ret = 2;
+		if ( (absX > 0)	&& (absY < 0) ) ret = 6;
+		if ( (absX < 0)	&& (absY < 0) ) ret = 4;
 
-		return cRet;
+		return ret;
 	}
 
-	static inline void GetPoint(int x0, int y0, int x1, int y1, int * pX, int * pY, int * pError)
+	static inline void GetPoint(int x0, int y0, int x1, int y1, int * pX, int * pY, int * error_acc)
 	{
 		int dx, dy, x_inc, y_inc, error, index;
-		int iResultX, iResultY, iDstCnt;
+		int result_x, result_y, dst_cnt;
 
 		if ((x0 == x1) && (y0 == y1)) {
 			*pX = x0;
@@ -48,11 +48,11 @@ namespace CMisc
 			return;
 		}
 
-		error = *pError;
+		error = *error_acc;
 
-		iResultX = x0;
-		iResultY = y0;
-		iDstCnt  = 0;
+		result_x = x0;
+		result_y = y0;
+		dst_cnt  = 0;
 
 		dx = x1-x0;
 		dy = y1-y0;
@@ -85,9 +85,9 @@ namespace CMisc
 				if(error>dx)
 				{
 					error-=dx;
-					iResultY += y_inc;
+					result_y += y_inc;
 				}
-				iResultX += x_inc;
+				result_x += x_inc;
 				goto CALC_OK;
 			}
 		}
@@ -99,50 +99,50 @@ namespace CMisc
 				if(error>0)
 				{
 					error-=dy;
-					iResultX += x_inc;
+					result_x += x_inc;
 				}
-				iResultY += y_inc;
+				result_y += y_inc;
 				goto CALC_OK;
 			}
 		}
 
 	CALC_OK:;
 
-		*pX = iResultX;
-		*pY = iResultY;
-		*pError = error;
+		*pX = result_x;
+		*pY = result_y;
+		*error_acc = error;
 	}
 
 	// Forwards to shared implementation in GameGeometry.h
-	static inline void GetPoint2(int x0, int y0, int x1, int y1, int* pX, int* pY, int* pError, int iCount)
+	static inline void GetPoint2(int x0, int y0, int x1, int y1, int* pX, int* pY, int* error_acc, int count)
 	{
-		hb::shared::geometry::GetPoint2(x0, y0, x1, y1, pX, pY, pError, iCount);
+		hb::shared::geometry::GetPoint2(x0, y0, x1, y1, pX, pY, error_acc, count);
 	}
 
-	static inline void GetDirPoint(char cDir, int * pX, int * pY)
+	static inline void GetDirPoint(char dir, int * pX, int * pY)
 	{
-		hb::shared::direction::ApplyOffset(cDir, *pX, *pY);
+		hb::shared::direction::ApplyOffset(dir, *pX, *pY);
 	}
 
-	static inline bool bCheckValidName(char *pStr)
+	static inline bool check_valid_name(char *str)
 	{
-		size_t iLen = strlen(pStr);
-		for(int i = 0; i < iLen; i++)
+		size_t len = strlen(str);
+		for(int i = 0; i < len; i++)
 		{
-			if ( (pStr[i] == ',')  || (pStr[i] == '=')  || (pStr[i] == ' ') ||
-				 (pStr[i] == '\n') || (pStr[i] == '\t') || /*(pStr[i] == '.') ||*/
-				 (pStr[i] == '\\') || (pStr[i] == '/')  || (pStr[i] == ':') ||
-				 (pStr[i] == '*')  || (pStr[i] == '?')  || (pStr[i] == '<') ||
-				 (pStr[i] == '>')  || (pStr[i] == '|')  || (pStr[i] == '"') ) return false;
+			if ( (str[i] == ',')  || (str[i] == '=')  || (str[i] == ' ') ||
+				 (str[i] == '\n') || (str[i] == '\t') || /*(str[i] == '.') ||*/
+				 (str[i] == '\\') || (str[i] == '/')  || (str[i] == ':') ||
+				 (str[i] == '*')  || (str[i] == '?')  || (str[i] == '<') ||
+				 (str[i] == '>')  || (str[i] == '|')  || (str[i] == '"') ) return false;
 
-			if ((i <= iLen-2) && ((unsigned char)pStr[i] >= 128)) {
-				if (((unsigned char)pStr[i] == 164) && ((unsigned char)pStr[i+1] >= 161) &&
-					((unsigned char)pStr[i+1] <= 211)) {
+			if ((i <= len-2) && ((unsigned char)str[i] >= 128)) {
+				if (((unsigned char)str[i] == 164) && ((unsigned char)str[i+1] >= 161) &&
+					((unsigned char)str[i+1] <= 211)) {
 
 				}
 				else
-				if (((unsigned char)pStr[i] >= 176) && ((unsigned char)pStr[i] <= 200) &&
-					((unsigned char)pStr[i+1] >= 161) && ((unsigned char)pStr[i+1] <= 254)) {
+				if (((unsigned char)str[i] >= 176) && ((unsigned char)str[i] <= 200) &&
+					((unsigned char)str[i+1] >= 161) && ((unsigned char)str[i+1] <= 254)) {
 
 				}
 				else return false;
@@ -155,68 +155,68 @@ namespace CMisc
 
 	static inline void Temp()
 	{
-		FILE * pSrcFile, * pDestFile, * pSrcFileA, * pSrcFileB;
+		FILE * src_file, * dest_file, * src_file_a, * src_file_b;
 		
-		char cTemp[100000];
+		char temp[100000];
 
-		pSrcFile = fopen("middleland.amd", "rb");
-		pDestFile = fopen("middleland.amd.result", "wb");
+		src_file = fopen("middleland.amd", "rb");
+		dest_file = fopen("middleland.amd.result", "wb");
 
-		pSrcFileA = fopen("middleland1.amd", "rb");
-		pSrcFileB = fopen("middleland2.amd", "rb");
+		src_file_a = fopen("middleland1.amd", "rb");
+		src_file_b = fopen("middleland2.amd", "rb");
 
-		fread(cTemp, 1, 256, pSrcFile);
-		fread(cTemp, 1, 256, pSrcFileA);
-		fread(cTemp, 1, 256, pSrcFileB);
+		fread(temp, 1, 256, src_file);
+		fread(temp, 1, 256, src_file_a);
+		fread(temp, 1, 256, src_file_b);
 		for(int i = 1; i <= 444; i++)
-			fread(cTemp, 1, 5240, pSrcFileB);
+			fread(temp, 1, 5240, src_file_b);
 
-		std::memset(cTemp, 0, sizeof(cTemp));
-		strcpy(cTemp, "MAPSIZEX = 824 MAPSIZEY = 824 TILESIZE = 10");
+		std::memset(temp, 0, sizeof(temp));
+		strcpy(temp, "MAPSIZEX = 824 MAPSIZEY = 824 TILESIZE = 10");
 
-		fwrite(cTemp, 1, 256, pDestFile);
+		fwrite(temp, 1, 256, dest_file);
 
 		for(int i = 1; i <= 80; i++) {
-			std::memset(cTemp, 0, sizeof(cTemp));
-			fread((cTemp + 1500), 1, 5240, pSrcFileA);
-			fwrite(cTemp, 1, 824*10, pDestFile);
+			std::memset(temp, 0, sizeof(temp));
+			fread((temp + 1500), 1, 5240, src_file_a);
+			fwrite(temp, 1, 824*10, dest_file);
 		}
 
-		std::memset(cTemp, 0, sizeof(cTemp));
-		for(int i = 1; i <= 68; i++) fwrite(cTemp, 1, 824*10, pDestFile);
+		std::memset(temp, 0, sizeof(temp));
+		for(int i = 1; i <= 68; i++) fwrite(temp, 1, 824*10, dest_file);
 
 		//148
 		/*
-		std::memset(cTemp, 0, sizeof(cTemp));
-		for(int i = 1; i <= 150; i++) fwrite(cTemp, 1, 824*10, pDestFile);
+		std::memset(temp, 0, sizeof(temp));
+		for(int i = 1; i <= 150; i++) fwrite(temp, 1, 824*10, dest_file);
 		*/
 
 		for(int i = 1; i <= 524; i++) {
-			std::memset(cTemp, 0, sizeof(cTemp));
-			fread((cTemp + 1500), 1, 5240, pSrcFile);
-			fwrite(cTemp, 1, 824*10, pDestFile);
+			std::memset(temp, 0, sizeof(temp));
+			fread((temp + 1500), 1, 5240, src_file);
+			fwrite(temp, 1, 824*10, dest_file);
 		}
 
-		std::memset(cTemp, 0, sizeof(cTemp));
-		for(int i = 1; i <= 68; i++) fwrite(cTemp, 1, 824*10, pDestFile);
+		std::memset(temp, 0, sizeof(temp));
+		for(int i = 1; i <= 68; i++) fwrite(temp, 1, 824*10, dest_file);
 
 		for(int i = 1; i <= 80; i++) {
-			std::memset(cTemp, 0, sizeof(cTemp));
-			fread((cTemp + 1500), 1, 5240, pSrcFileB);
-			fwrite(cTemp, 1, 824*10, pDestFile);
+			std::memset(temp, 0, sizeof(temp));
+			fread((temp + 1500), 1, 5240, src_file_b);
+			fwrite(temp, 1, 824*10, dest_file);
 		}
 
-		std::memset(cTemp, 0, sizeof(cTemp));
-		for(int i = 1; i <= 2; i++) fwrite(cTemp, 1, 824*10, pDestFile);
+		std::memset(temp, 0, sizeof(temp));
+		for(int i = 1; i <= 2; i++) fwrite(temp, 1, 824*10, dest_file);
 
 		/*
-		std::memset(cTemp, 0, sizeof(cTemp));
-		for(int i = 1; i <= 150; i++) fwrite(cTemp, 1, 824*10, pDestFile);
+		std::memset(temp, 0, sizeof(temp));
+		for(int i = 1; i <= 150; i++) fwrite(temp, 1, 824*10, dest_file);
 		*/
 
-		fclose(pSrcFile);
-		fclose(pDestFile);
-		fclose(pSrcFileA);
-		fclose(pSrcFileB);
+		fclose(src_file);
+		fclose(dest_file);
+		fclose(src_file_a);
+		fclose(src_file_b);
 	}
 }

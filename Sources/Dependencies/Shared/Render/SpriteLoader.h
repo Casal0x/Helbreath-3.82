@@ -25,13 +25,13 @@ public:
         SpriteLoader loader;
         loader.m_pakName = pakName;
 
-        ISpriteFactory* factory = Sprites::GetFactory();
+        ISpriteFactory* factory = Sprites::get_factory();
         if (!factory) {
             throw std::runtime_error("No sprite factory set");
         }
 
         // Build full path using factory's configured sprite path
-        std::string pakPath = factory->GetSpritePath() + "\\" + pakName + ".pak";
+        std::string pakPath = factory->get_sprite_path() + "\\" + pakName + ".pak";
 
         try {
             loader.m_pak = PAKLib::loadpak_fast(pakPath);
@@ -51,12 +51,12 @@ public:
         SpriteLoader loader;
         loader.m_pakName = pakName;
 
-        ISpriteFactory* factory = Sprites::GetFactory();
+        ISpriteFactory* factory = Sprites::get_factory();
         if (!factory) {
             throw std::runtime_error("No sprite factory set");
         }
 
-        std::string pakPath = factory->GetSpritePath() + "\\" + pakName + ".pak";
+        std::string pakPath = factory->get_sprite_path() + "\\" + pakName + ".pak";
 
         try {
             loader.m_pak = PAKLib::loadpak_fast(pakPath);
@@ -70,7 +70,7 @@ public:
         loader.m_isPakOpen = false;
     }
 
-    // Get a sprite from the loaded PAK file
+    // get a sprite from the loaded PAK file
     // Returns nullptr if sprite creation fails
     ISprite* get_sprite(size_t index, bool alphaEffect = true) {
         if (!m_isPakOpen) {
@@ -81,16 +81,16 @@ public:
                                     " >= " + std::to_string(m_pak.sprites.size()));
         }
 
-        ISpriteFactory* factory = Sprites::GetFactory();
+        ISpriteFactory* factory = Sprites::get_factory();
         if (!factory) {
             return nullptr;
         }
 
         // Use factory's CreateFromData method if available
-        return factory->CreateSpriteFromData(m_pak.sprites[index], alphaEffect);
+        return factory->create_sprite_from_data(m_pak.sprites[index], alphaEffect);
     }
 
-    // Get the number of sprites in the PAK
+    // get the number of sprites in the PAK
     size_t get_sprite_count() const {
         if (!m_isPakOpen) {
             return 0;
@@ -98,7 +98,7 @@ public:
         return m_pak.sprites.size();
     }
 
-    // Get PAK name
+    // get PAK name
     const std::string& get_pak_name() const { return m_pakName; }
 
     // Check if PAK is open

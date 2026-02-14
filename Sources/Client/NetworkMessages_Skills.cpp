@@ -10,504 +10,504 @@
 #include <string>
 
 namespace NetworkMessageHandlers {
-	void HandleDownSkillIndexSet(CGame* pGame, char* pData)
+	void HandleDownSkillIndexSet(CGame* game, char* data)
 	{
-		short sSkillIndex;
+		short skill_index;
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyDownSkillIndexSet>(
-			pData, sizeof(hb::net::PacketNotifyDownSkillIndexSet));
+			data, sizeof(hb::net::PacketNotifyDownSkillIndexSet));
 		if (!pkt) return;
-		sSkillIndex = static_cast<short>(pkt->skill_index);
-		pGame->m_iDownSkillIndex = sSkillIndex;
-		pGame->m_dialogBoxManager.Info(DialogBoxId::Skill).bFlag = false;
+		skill_index = static_cast<short>(pkt->skill_index);
+		game->m_down_skill_index = skill_index;
+		game->m_dialog_box_manager.Info(DialogBoxId::Skill).m_flag = false;
 	}
 
-	void HandleMagicStudyFail(CGame* pGame, char* pData)
+	void HandleMagicStudyFail(CGame* game, char* data)
 	{
-		char cMagicNum, cName[31]{}, cFailCode;
-		std::string cTxt;
-		int iCost, iReqInt;
+		char magic_num, name[31]{}, fail_code;
+		std::string txt;
+		int cost, req_int;
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyMagicStudyFail>(
-			pData, sizeof(hb::net::PacketNotifyMagicStudyFail));
+			data, sizeof(hb::net::PacketNotifyMagicStudyFail));
 		if (!pkt) return;
-		cFailCode = static_cast<char>(pkt->result);
-		cMagicNum = static_cast<char>(pkt->magic_id);
-		memcpy(cName, pkt->magic_name, 30);
-		iCost = pkt->cost;
-		iReqInt = pkt->req_int;
+		fail_code = static_cast<char>(pkt->result);
+		magic_num = static_cast<char>(pkt->magic_id);
+		memcpy(name, pkt->magic_name, 30);
+		cost = pkt->cost;
+		req_int = pkt->req_int;
 
-		if (iCost > 0)
+		if (cost > 0)
 		{
-			cTxt = std::format(NOTIFYMSG_MAGICSTUDY_FAIL1, cName);
-			pGame->AddEventList(cTxt.c_str(), 10);
+			txt = std::format(NOTIFYMSG_MAGICSTUDY_FAIL1, name);
+			game->add_event_list(txt.c_str(), 10);
 		}
 		else
 		{
-			cTxt = std::format(NOTIFYMSG_MAGICSTUDY_FAIL2, cName);
-			pGame->AddEventList(cTxt.c_str(), 10);
-			cTxt = std::format(NOTIFYMSG_MAGICSTUDY_FAIL3, iReqInt);
-			pGame->AddEventList(cTxt.c_str(), 10);
+			txt = std::format(NOTIFYMSG_MAGICSTUDY_FAIL2, name);
+			game->add_event_list(txt.c_str(), 10);
+			txt = std::format(NOTIFYMSG_MAGICSTUDY_FAIL3, req_int);
+			game->add_event_list(txt.c_str(), 10);
 		}
 	}
 
-	void HandleMagicStudySuccess(CGame* pGame, char* pData)
+	void HandleMagicStudySuccess(CGame* game, char* data)
 	{
-		char cMagicNum, cName[31]{};
-		std::string cTxt;
+		char magic_num, name[31]{};
+		std::string txt;
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyMagicStudySuccess>(
-			pData, sizeof(hb::net::PacketNotifyMagicStudySuccess));
+			data, sizeof(hb::net::PacketNotifyMagicStudySuccess));
 		if (!pkt) return;
-		cMagicNum = static_cast<char>(pkt->magic_id);
-		if (cMagicNum < 0 || cMagicNum >= hb::shared::limits::MaxMagicType) return;
-		pGame->m_pPlayer->m_iMagicMastery[cMagicNum] = 1;
+		magic_num = static_cast<char>(pkt->magic_id);
+		if (magic_num < 0 || magic_num >= hb::shared::limits::MaxMagicType) return;
+		game->m_player->m_magic_mastery[magic_num] = 1;
 	  // Magic learned - affects magic list
-		memcpy(cName, pkt->magic_name, 30);
-		cTxt = std::format(NOTIFYMSG_MAGICSTUDY_SUCCESS1, cName);
-		pGame->AddEventList(cTxt.c_str(), 10);
-		pGame->PlayGameSound('E', 23, 0);
+		memcpy(name, pkt->magic_name, 30);
+		txt = std::format(NOTIFYMSG_MAGICSTUDY_SUCCESS1, name);
+		game->add_event_list(txt.c_str(), 10);
+		game->play_game_sound('E', 23, 0);
 	}
 
-	void HandleSkillTrainSuccess(CGame* pGame, char* pData)
+	void HandleSkillTrainSuccess(CGame* game, char* data)
 	{
-		char cSkillNum, cSkillLevel;
-		std::string cTemp;
+		char skill_num, skill_level;
+		std::string temp;
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifySkillTrainSuccess>(
-			pData, sizeof(hb::net::PacketNotifySkillTrainSuccess));
+			data, sizeof(hb::net::PacketNotifySkillTrainSuccess));
 		if (!pkt) return;
-		cSkillNum = static_cast<char>(pkt->skill_num);
-		if (cSkillNum < 0 || cSkillNum >= hb::shared::limits::MaxSkillType) return;
-		if (!pGame->m_pSkillCfgList[cSkillNum]) return;
-		cSkillLevel = static_cast<char>(pkt->skill_level);
-		cTemp = std::format(NOTIFYMSG_SKILL_TRAIN_SUCCESS1, pGame->m_pSkillCfgList[cSkillNum]->m_cName, cSkillLevel);
-		pGame->AddEventList(cTemp.c_str(), 10);
-		pGame->m_pSkillCfgList[cSkillNum]->m_iLevel = cSkillLevel;
-		pGame->m_pPlayer->m_iSkillMastery[cSkillNum] = static_cast<unsigned char>(cSkillLevel);
-		pGame->PlayGameSound('E', 23, 0);
+		skill_num = static_cast<char>(pkt->skill_num);
+		if (skill_num < 0 || skill_num >= hb::shared::limits::MaxSkillType) return;
+		if (!game->m_skill_cfg_list[skill_num]) return;
+		skill_level = static_cast<char>(pkt->skill_level);
+		temp = std::format(NOTIFYMSG_SKILL_TRAIN_SUCCESS1, game->m_skill_cfg_list[skill_num]->m_name, skill_level);
+		game->add_event_list(temp.c_str(), 10);
+		game->m_skill_cfg_list[skill_num]->m_level = skill_level;
+		game->m_player->m_skill_mastery[skill_num] = static_cast<unsigned char>(skill_level);
+		game->play_game_sound('E', 23, 0);
 	}
 
-	void HandleSkill(CGame* pGame, char* pData)
+	void HandleSkill(CGame* game, char* data)
 	{
-		short sSkillIndex, sValue;
-		std::string cTxt;
+		short skill_index, value;
+		std::string txt;
 
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifySkill>(
-			pData, sizeof(hb::net::PacketNotifySkill));
+			data, sizeof(hb::net::PacketNotifySkill));
 		if (!pkt) return;
-		sSkillIndex = static_cast<short>(pkt->skill_index);
-		if (sSkillIndex < 0 || sSkillIndex >= hb::shared::limits::MaxSkillType) return;
-		if (!pGame->m_pSkillCfgList[sSkillIndex]) return;
-		sValue = static_cast<short>(pkt->skill_value);
-		pGame->m_floatingText.RemoveByObjectID(pGame->m_pPlayer->m_sPlayerObjectID);
-		if (pGame->m_pSkillCfgList[sSkillIndex]->m_iLevel < sValue)
+		skill_index = static_cast<short>(pkt->skill_index);
+		if (skill_index < 0 || skill_index >= hb::shared::limits::MaxSkillType) return;
+		if (!game->m_skill_cfg_list[skill_index]) return;
+		value = static_cast<short>(pkt->skill_value);
+		game->m_floating_text.remove_by_object_id(game->m_player->m_player_object_id);
+		if (game->m_skill_cfg_list[skill_index]->m_level < value)
 		{
-			cTxt = std::format(NOTIFYMSG_SKILL1, pGame->m_pSkillCfgList[sSkillIndex]->m_cName, sValue - pGame->m_pSkillCfgList[sSkillIndex]->m_iLevel);
-			pGame->AddEventList(cTxt.c_str(), 10);
-			pGame->PlayGameSound('E', 23, 0);
-			cTxt = std::format("{} +{}%", pGame->m_pSkillCfgList[sSkillIndex]->m_cName, sValue - pGame->m_pSkillCfgList[sSkillIndex]->m_iLevel);
-			pGame->m_floatingText.AddNotifyText(NotifyTextType::SkillChange, cTxt.c_str(), pGame->m_dwCurTime,
-				pGame->m_pPlayer->m_sPlayerObjectID, pGame->m_pMapData.get());
+			txt = std::format(NOTIFYMSG_SKILL1, game->m_skill_cfg_list[skill_index]->m_name, value - game->m_skill_cfg_list[skill_index]->m_level);
+			game->add_event_list(txt.c_str(), 10);
+			game->play_game_sound('E', 23, 0);
+			txt = std::format("{} +{}%", game->m_skill_cfg_list[skill_index]->m_name, value - game->m_skill_cfg_list[skill_index]->m_level);
+			game->m_floating_text.add_notify_text(notify_text_type::skill_change, txt.c_str(), game->m_cur_time,
+				game->m_player->m_player_object_id, game->m_map_data.get());
 		}
-		else if (pGame->m_pSkillCfgList[sSkillIndex]->m_iLevel > sValue) {
-			cTxt = std::format(NOTIFYMSG_SKILL2, pGame->m_pSkillCfgList[sSkillIndex]->m_cName, pGame->m_pSkillCfgList[sSkillIndex]->m_iLevel - sValue);
-			pGame->AddEventList(cTxt.c_str(), 10);
-			pGame->PlayGameSound('E', 24, 0);
-			cTxt = std::format("{} -{}%", pGame->m_pSkillCfgList[sSkillIndex]->m_cName, sValue - pGame->m_pSkillCfgList[sSkillIndex]->m_iLevel);
-			pGame->m_floatingText.AddNotifyText(NotifyTextType::SkillChange, cTxt.c_str(), pGame->m_dwCurTime,
-				pGame->m_pPlayer->m_sPlayerObjectID, pGame->m_pMapData.get());
+		else if (game->m_skill_cfg_list[skill_index]->m_level > value) {
+			txt = std::format(NOTIFYMSG_SKILL2, game->m_skill_cfg_list[skill_index]->m_name, game->m_skill_cfg_list[skill_index]->m_level - value);
+			game->add_event_list(txt.c_str(), 10);
+			game->play_game_sound('E', 24, 0);
+			txt = std::format("{} -{}%", game->m_skill_cfg_list[skill_index]->m_name, value - game->m_skill_cfg_list[skill_index]->m_level);
+			game->m_floating_text.add_notify_text(notify_text_type::skill_change, txt.c_str(), game->m_cur_time,
+				game->m_player->m_player_object_id, game->m_map_data.get());
 		}
-		pGame->m_pSkillCfgList[sSkillIndex]->m_iLevel = sValue;
-		pGame->m_pPlayer->m_iSkillMastery[sSkillIndex] = static_cast<unsigned char>(sValue);
+		game->m_skill_cfg_list[skill_index]->m_level = value;
+		game->m_player->m_skill_mastery[skill_index] = static_cast<unsigned char>(value);
 	}
 
-	void HandleSkillUsingEnd(CGame* pGame, char* pData)
+	void HandleSkillUsingEnd(CGame* game, char* data)
 	{
-		WORD wResult;
+		WORD result;
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifySkillUsingEnd>(
-			pData, sizeof(hb::net::PacketNotifySkillUsingEnd));
+			data, sizeof(hb::net::PacketNotifySkillUsingEnd));
 		if (!pkt) return;
-		wResult = pkt->result;
-		switch (wResult) {
+		result = pkt->result;
+		switch (result) {
 		case 0:
-			pGame->AddEventList(NOTIFYMSG_SKILL_USINGEND1, 10);
+			game->add_event_list(NOTIFYMSG_SKILL_USINGEND1, 10);
 			break;
 		case 1:
-			pGame->AddEventList(NOTIFYMSG_SKILL_USINGEND2, 10);
+			game->add_event_list(NOTIFYMSG_SKILL_USINGEND2, 10);
 			break;
 		}
-		pGame->m_bSkillUsingStatus = false;
+		game->m_skill_using_status = false;
 	}
 
-	void HandleMagicEffectOn(CGame* pGame, char* pData)
+	void HandleMagicEffectOn(CGame* game, char* data)
 	{
-		short  sMagicType, sMagicEffect, sOwnerH;
+		short  magic_type, magic_effect, owner_h;
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyMagicEffect>(
-			pData, sizeof(hb::net::PacketNotifyMagicEffect));
+			data, sizeof(hb::net::PacketNotifyMagicEffect));
 		if (!pkt) return;
-		sMagicType = static_cast<short>(pkt->magic_type);
-		sMagicEffect = static_cast<short>(pkt->effect);
-		sOwnerH = static_cast<short>(pkt->owner);
-		switch (sMagicType) {
+		magic_type = static_cast<short>(pkt->magic_type);
+		magic_effect = static_cast<short>(pkt->effect);
+		owner_h = static_cast<short>(pkt->owner);
+		switch (magic_type) {
 		case hb::shared::magic::Protect:
-			switch (sMagicEffect) {
+			switch (magic_effect) {
 			case 1: // "You are completely protected from arrows!"
-				pGame->AddEventList(NOTIFYMSG_MAGICEFFECT_ON1, 10);
+				game->add_event_list(NOTIFYMSG_MAGICEFFECT_ON1, 10);
 				break;
 			case 2: // "You are protected from magic!"
-				pGame->AddEventList(NOTIFYMSG_MAGICEFFECT_ON2, 10);
+				game->add_event_list(NOTIFYMSG_MAGICEFFECT_ON2, 10);
 				break;
 			case 3: // "Defense ratio increased by a magic shield!"
 			case 4: // "Defense ratio increased by a magic shield!"
-				pGame->AddEventList(NOTIFYMSG_MAGICEFFECT_ON3, 10);
+				game->add_event_list(NOTIFYMSG_MAGICEFFECT_ON3, 10);
 				break;
 			case 5: // "You are completely protected from magic!"
-				pGame->AddEventList(NOTIFYMSG_MAGICEFFECT_ON14, 10);
+				game->add_event_list(NOTIFYMSG_MAGICEFFECT_ON14, 10);
 				break;
 			}
 			break;
 
 		case hb::shared::magic::HoldObject:
-			switch (sMagicEffect) {
+			switch (magic_effect) {
 			case 1: // "You were bounded by a Hold Person spell! Unable to move!"
-				pGame->m_pPlayer->m_bParalyze = true;
-				pGame->AddEventList(NOTIFYMSG_MAGICEFFECT_ON4, 10);
+				game->m_player->m_paralyze = true;
+				game->add_event_list(NOTIFYMSG_MAGICEFFECT_ON4, 10);
 				break;
 			case 2: // "You were bounded by a Paralysis spell! Unable to move!"
-				pGame->m_pPlayer->m_bParalyze = true;
-				pGame->AddEventList(NOTIFYMSG_MAGICEFFECT_ON5, 10);
+				game->m_player->m_paralyze = true;
+				game->add_event_list(NOTIFYMSG_MAGICEFFECT_ON5, 10);
 				break;
 			}
 			break;
 
 		case hb::shared::magic::Invisibility:
-			switch (sMagicEffect) {
+			switch (magic_effect) {
 			case 1: // "You are now invisible, no one can see you!"
-				pGame->AddEventList(NOTIFYMSG_MAGICEFFECT_ON6, 10);
+				game->add_event_list(NOTIFYMSG_MAGICEFFECT_ON6, 10);
 				break;
 			}
 			break;
 
 		case hb::shared::magic::Confuse:
-			switch (sMagicEffect) {
+			switch (magic_effect) {
 			case 1:	// Confuse Language "No one understands you because of language confusion magic!"
-				pGame->AddEventList(NOTIFYMSG_MAGICEFFECT_ON7, 10);
+				game->add_event_list(NOTIFYMSG_MAGICEFFECT_ON7, 10);
 				break;
 
 			case 2: // Confusion "Confusion magic casted, impossible to determine player allegience."
-				pGame->AddEventList(NOTIFYMSG_MAGICEFFECT_ON8, 10);
-				pGame->m_pPlayer->m_bIsConfusion = true;
+				game->add_event_list(NOTIFYMSG_MAGICEFFECT_ON8, 10);
+				game->m_player->m_is_confusion = true;
 				break;
 
 			case 3:	// Illusion "Illusion magic casted, impossible to tell who is who!"
-				pGame->AddEventList(NOTIFYMSG_MAGICEFFECT_ON9, 10);
-				pGame->_SetIlusionEffect(sOwnerH);
+				game->add_event_list(NOTIFYMSG_MAGICEFFECT_ON9, 10);
+				game->set_ilusion_effect(owner_h);
 				break;
 
 			case 4:	// IllusionMouvement "You are thrown into confusion, and you are flustered yourself." // snoopy
-				pGame->AddEventList(NOTIFYMSG_MAGICEFFECT_ON15, 10);
-				pGame->m_bIllusionMVT = true;
+				game->add_event_list(NOTIFYMSG_MAGICEFFECT_ON15, 10);
+				game->m_illusion_mvt = true;
 				break;
 			}
 			break;
 
 		case hb::shared::magic::Poison:
-			pGame->AddEventList(NOTIFYMSG_MAGICEFFECT_ON10, 10);
-			pGame->m_pPlayer->m_bIsPoisoned = true;
+			game->add_event_list(NOTIFYMSG_MAGICEFFECT_ON10, 10);
+			game->m_player->m_is_poisoned = true;
 			break;
 
 		case hb::shared::magic::Berserk:
-			switch (sMagicEffect) {
+			switch (magic_effect) {
 			case 1:
-				pGame->AddEventList(NOTIFYMSG_MAGICEFFECT_ON11, 10);
+				game->add_event_list(NOTIFYMSG_MAGICEFFECT_ON11, 10);
 				break;
 			}
 			break;
 
 		case hb::shared::magic::Polymorph:
-			switch (sMagicEffect) {
+			switch (magic_effect) {
 			case 1:
-				pGame->AddEventList(NOTIFYMSG_MAGICEFFECT_ON12, 10);
+				game->add_event_list(NOTIFYMSG_MAGICEFFECT_ON12, 10);
 				break;
 			}
 			break;
 
 		case hb::shared::magic::Ice:
-			pGame->AddEventList(NOTIFYMSG_MAGICEFFECT_ON13, 10);
+			game->add_event_list(NOTIFYMSG_MAGICEFFECT_ON13, 10);
 			break;
 		}
 	}
 
-	void HandleMagicEffectOff(CGame* pGame, char* pData)
+	void HandleMagicEffectOff(CGame* game, char* data)
 	{
-		short  sMagicType, sMagicEffect;
+		short  magic_type, magic_effect;
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyMagicEffect>(
-			pData, sizeof(hb::net::PacketNotifyMagicEffect));
+			data, sizeof(hb::net::PacketNotifyMagicEffect));
 		if (!pkt) return;
-		sMagicType = static_cast<short>(pkt->magic_type);
-		sMagicEffect = static_cast<short>(pkt->effect);
-		switch (sMagicType) {
+		magic_type = static_cast<short>(pkt->magic_type);
+		magic_effect = static_cast<short>(pkt->effect);
+		switch (magic_type) {
 		case hb::shared::magic::Protect:
-			switch (sMagicEffect) {
+			switch (magic_effect) {
 			case 1: // "Protection from arrows has vanished."
-				pGame->AddEventList(NOTIFYMSG_MAGICEFFECT_OFF1, 10);
+				game->add_event_list(NOTIFYMSG_MAGICEFFECT_OFF1, 10);
 				break;
 			case 2:	// "Protection from magic has vanished."
-				pGame->AddEventList(NOTIFYMSG_MAGICEFFECT_OFF2, 10);
+				game->add_event_list(NOTIFYMSG_MAGICEFFECT_OFF2, 10);
 				break;
 			case 3:	// "Defense shield effect has vanished."
 			case 4:	// "Defense shield effect has vanished."
-				pGame->AddEventList(NOTIFYMSG_MAGICEFFECT_OFF3, 10);
+				game->add_event_list(NOTIFYMSG_MAGICEFFECT_OFF3, 10);
 				break;
 			case 5:	// "Absolute Magic Protection has been vanished."
-				pGame->AddEventList(NOTIFYMSG_MAGICEFFECT_OFF14, 10);
+				game->add_event_list(NOTIFYMSG_MAGICEFFECT_OFF14, 10);
 				break;
 			}
 			break;
 
 		case hb::shared::magic::HoldObject:
-			switch (sMagicEffect) {
+			switch (magic_effect) {
 			case 1:	// "Hold person magic effect has vanished."
-				pGame->m_pPlayer->m_bParalyze = false;
-				pGame->AddEventList(NOTIFYMSG_MAGICEFFECT_OFF4, 10);
+				game->m_player->m_paralyze = false;
+				game->add_event_list(NOTIFYMSG_MAGICEFFECT_OFF4, 10);
 				break;
 
 			case 2:	// "Paralysis magic effect has vanished."
-				pGame->m_pPlayer->m_bParalyze = false;
-				pGame->AddEventList(NOTIFYMSG_MAGICEFFECT_OFF5, 10);
+				game->m_player->m_paralyze = false;
+				game->add_event_list(NOTIFYMSG_MAGICEFFECT_OFF5, 10);
 				break;
 			}
 			break;
 
 		case hb::shared::magic::Invisibility:
-			switch (sMagicEffect) {
+			switch (magic_effect) {
 			case 1:	// "Invisibility magic effect has vanished."
-				pGame->AddEventList(NOTIFYMSG_MAGICEFFECT_OFF6, 10);
+				game->add_event_list(NOTIFYMSG_MAGICEFFECT_OFF6, 10);
 				break;
 			}
 			break;
 
 		case hb::shared::magic::Confuse:
-			switch (sMagicEffect) {
+			switch (magic_effect) {
 			case 1:	// "Language confuse magic effect has vanished."
-				pGame->AddEventList(NOTIFYMSG_MAGICEFFECT_OFF7, 10);
+				game->add_event_list(NOTIFYMSG_MAGICEFFECT_OFF7, 10);
 				break;
 			case 2:	// "Confusion magic has vanished."
-				pGame->AddEventList(NOTIFYMSG_MAGICEFFECT_OFF8, 10);
-				pGame->m_pPlayer->m_bIsConfusion = false;
+				game->add_event_list(NOTIFYMSG_MAGICEFFECT_OFF8, 10);
+				game->m_player->m_is_confusion = false;
 				break;
 			case 3:	// "Illusion magic has vanished."
-				pGame->AddEventList(NOTIFYMSG_MAGICEFFECT_OFF9, 10);
-				pGame->m_iIlusionOwnerH = 0;
+				game->add_event_list(NOTIFYMSG_MAGICEFFECT_OFF9, 10);
+				game->m_ilusion_owner_h = 0;
 				break;
 			case 4:	// "At last, you gather your senses." // snoopy
-				pGame->AddEventList(NOTIFYMSG_MAGICEFFECT_OFF15, 10);
-				pGame->m_bIllusionMVT = false;
+				game->add_event_list(NOTIFYMSG_MAGICEFFECT_OFF15, 10);
+				game->m_illusion_mvt = false;
 				break;
 			}
 			break;
 
 		case hb::shared::magic::Poison:
-			if (pGame->m_pPlayer->m_bIsPoisoned) pGame->AddEventList(NOTIFYMSG_MAGICEFFECT_OFF10, 10);
-			pGame->m_pPlayer->m_bIsPoisoned = false;
+			if (game->m_player->m_is_poisoned) game->add_event_list(NOTIFYMSG_MAGICEFFECT_OFF10, 10);
+			game->m_player->m_is_poisoned = false;
 			break;
 
 		case hb::shared::magic::Berserk:
-			switch (sMagicEffect) {
+			switch (magic_effect) {
 			case 1:
-				pGame->AddEventList(NOTIFYMSG_MAGICEFFECT_OFF11, 10);
+				game->add_event_list(NOTIFYMSG_MAGICEFFECT_OFF11, 10);
 				break;
 			}
 			break;
 
 		case hb::shared::magic::Polymorph:
-			switch (sMagicEffect) {
+			switch (magic_effect) {
 			case 1:
-				pGame->AddEventList(NOTIFYMSG_MAGICEFFECT_OFF12, 10);
+				game->add_event_list(NOTIFYMSG_MAGICEFFECT_OFF12, 10);
 				break;
 			}
 			break;
 
 		case hb::shared::magic::Ice:
-			pGame->AddEventList(NOTIFYMSG_MAGICEFFECT_OFF13, 10);
+			game->add_event_list(NOTIFYMSG_MAGICEFFECT_OFF13, 10);
 			break;
 		}
 	}
 
-	void HandleSpellSkill(CGame* pGame, char* pData)
+	void HandleSpellSkill(CGame* game, char* data)
 	{
 		int i;
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifySpellSkill>(
-			pData, sizeof(hb::net::PacketNotifySpellSkill));
+			data, sizeof(hb::net::PacketNotifySpellSkill));
 		if (!pkt) return;
 		for (i = 0; i < hb::shared::limits::MaxMagicType; i++) {
-			pGame->m_pPlayer->m_iMagicMastery[i] = pkt->magic_mastery[i];
+			game->m_player->m_magic_mastery[i] = pkt->magic_mastery[i];
 		}
 		for (i = 0; i < hb::shared::limits::MaxSkillType; i++) {
-			pGame->m_pPlayer->m_iSkillMastery[i] = pkt->skill_mastery[i];
-			if (pGame->m_pSkillCfgList[i] != 0)
-				pGame->m_pSkillCfgList[i]->m_iLevel = pkt->skill_mastery[i];
+			game->m_player->m_skill_mastery[i] = pkt->skill_mastery[i];
+			if (game->m_skill_cfg_list[i] != 0)
+				game->m_skill_cfg_list[i]->m_level = pkt->skill_mastery[i];
 		}
 	}
 
-	void HandleStateChangeSuccess(CGame* pGame, char* pData)
+	void HandleStateChangeSuccess(CGame* game, char* data)
 	{
 		int i;
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyStateChangeSuccess>(
-			pData, sizeof(hb::net::PacketNotifyStateChangeSuccess));
+			data, sizeof(hb::net::PacketNotifyStateChangeSuccess));
 		if (!pkt) return;
 		for (i = 0; i < hb::shared::limits::MaxMagicType; i++) {
-			pGame->m_pPlayer->m_iMagicMastery[i] = pkt->magic_mastery[i];
+			game->m_player->m_magic_mastery[i] = pkt->magic_mastery[i];
 		}
 		for (i = 0; i < hb::shared::limits::MaxSkillType; i++) {
-			pGame->m_pPlayer->m_iSkillMastery[i] = pkt->skill_mastery[i];
-			if (pGame->m_pSkillCfgList[i] != 0)
-				pGame->m_pSkillCfgList[i]->m_iLevel = pkt->skill_mastery[i];
+			game->m_player->m_skill_mastery[i] = pkt->skill_mastery[i];
+			if (game->m_skill_cfg_list[i] != 0)
+				game->m_skill_cfg_list[i]->m_level = pkt->skill_mastery[i];
 		}
 		// Calculate majestic cost before applying (m_wLU_* are negative for reductions)
-		int iTotalReduction = -(pGame->m_pPlayer->m_wLU_Str + pGame->m_pPlayer->m_wLU_Vit +
-			pGame->m_pPlayer->m_wLU_Dex + pGame->m_pPlayer->m_wLU_Int +
-			pGame->m_pPlayer->m_wLU_Mag + pGame->m_pPlayer->m_wLU_Char);
-		int iMajesticCost = iTotalReduction / 3;
+		int total_reduction = -(game->m_player->m_lu_str + game->m_player->m_lu_vit +
+			game->m_player->m_lu_dex + game->m_player->m_lu_int +
+			game->m_player->m_lu_mag + game->m_player->m_lu_char);
+		int majestic_cost = total_reduction / 3;
 
 		// Apply pending stat changes (adds negative values = reduces stats)
-		pGame->m_pPlayer->m_iStr += pGame->m_pPlayer->m_wLU_Str;
-		pGame->m_pPlayer->m_iVit += pGame->m_pPlayer->m_wLU_Vit;
-		pGame->m_pPlayer->m_iDex += pGame->m_pPlayer->m_wLU_Dex;
-		pGame->m_pPlayer->m_iInt += pGame->m_pPlayer->m_wLU_Int;
-		pGame->m_pPlayer->m_iMag += pGame->m_pPlayer->m_wLU_Mag;
-		pGame->m_pPlayer->m_iCharisma += pGame->m_pPlayer->m_wLU_Char;
-		pGame->m_pPlayer->m_iLU_Point = (pGame->m_pPlayer->m_iLevel - 1) * 3 - ((pGame->m_pPlayer->m_iStr + pGame->m_pPlayer->m_iVit + pGame->m_pPlayer->m_iDex + pGame->m_pPlayer->m_iInt + pGame->m_pPlayer->m_iMag + pGame->m_pPlayer->m_iCharisma) - 70);
-		pGame->m_iGizonItemUpgradeLeft -= iMajesticCost;
-		pGame->m_pPlayer->m_wLU_Str = pGame->m_pPlayer->m_wLU_Vit = pGame->m_pPlayer->m_wLU_Dex = pGame->m_pPlayer->m_wLU_Int = pGame->m_pPlayer->m_wLU_Mag = pGame->m_pPlayer->m_wLU_Char = 0;
-		pGame->m_dialogBoxManager.DisableDialogBox(DialogBoxId::ChangeStatsMajestic);
-		pGame->m_dialogBoxManager.EnableDialogBox(DialogBoxId::LevelUpSetting, 0, 0, 0);
-		pGame->AddEventList("Your stat has been changed.", 10);
+		game->m_player->m_str += game->m_player->m_lu_str;
+		game->m_player->m_vit += game->m_player->m_lu_vit;
+		game->m_player->m_dex += game->m_player->m_lu_dex;
+		game->m_player->m_int += game->m_player->m_lu_int;
+		game->m_player->m_mag += game->m_player->m_lu_mag;
+		game->m_player->m_charisma += game->m_player->m_lu_char;
+		game->m_player->m_lu_point = (game->m_player->m_level - 1) * 3 - ((game->m_player->m_str + game->m_player->m_vit + game->m_player->m_dex + game->m_player->m_int + game->m_player->m_mag + game->m_player->m_charisma) - 70);
+		game->m_gizon_item_upgrade_left -= majestic_cost;
+		game->m_player->m_lu_str = game->m_player->m_lu_vit = game->m_player->m_lu_dex = game->m_player->m_lu_int = game->m_player->m_lu_mag = game->m_player->m_lu_char = 0;
+		game->m_dialog_box_manager.disable_dialog_box(DialogBoxId::ChangeStatsMajestic);
+		game->m_dialog_box_manager.enable_dialog_box(DialogBoxId::LevelUpSetting, 0, 0, 0);
+		game->add_event_list("Your stat has been changed.", 10);
 	}
 
-	void HandleStateChangeFailed(CGame* pGame, char* pData)
+	void HandleStateChangeFailed(CGame* game, char* data)
 	{
-		pGame->m_pPlayer->m_wLU_Str = pGame->m_pPlayer->m_wLU_Vit = pGame->m_pPlayer->m_wLU_Dex = pGame->m_pPlayer->m_wLU_Int = pGame->m_pPlayer->m_wLU_Mag = pGame->m_pPlayer->m_wLU_Char = 0;
-		pGame->m_pPlayer->m_iLU_Point = (pGame->m_pPlayer->m_iLevel - 1) * 3 - ((pGame->m_pPlayer->m_iStr + pGame->m_pPlayer->m_iVit + pGame->m_pPlayer->m_iDex + pGame->m_pPlayer->m_iInt + pGame->m_pPlayer->m_iMag + pGame->m_pPlayer->m_iCharisma) - 70);
-		pGame->m_dialogBoxManager.DisableDialogBox(DialogBoxId::ChangeStatsMajestic);
-		pGame->AddEventList("Your stat has not been changed.", 10);
+		game->m_player->m_lu_str = game->m_player->m_lu_vit = game->m_player->m_lu_dex = game->m_player->m_lu_int = game->m_player->m_lu_mag = game->m_player->m_lu_char = 0;
+		game->m_player->m_lu_point = (game->m_player->m_level - 1) * 3 - ((game->m_player->m_str + game->m_player->m_vit + game->m_player->m_dex + game->m_player->m_int + game->m_player->m_mag + game->m_player->m_charisma) - 70);
+		game->m_dialog_box_manager.disable_dialog_box(DialogBoxId::ChangeStatsMajestic);
+		game->add_event_list("Your stat has not been changed.", 10);
 	}
 
-	void HandleSettingFailed(CGame* pGame, char* pData)
+	void HandleSettingFailed(CGame* game, char* data)
 	{
-		pGame->AddEventList("Your stat has not been changed.", 10);
-		pGame->m_pPlayer->m_wLU_Str = pGame->m_pPlayer->m_wLU_Vit = pGame->m_pPlayer->m_wLU_Dex = pGame->m_pPlayer->m_wLU_Int = pGame->m_pPlayer->m_wLU_Mag = pGame->m_pPlayer->m_wLU_Char = 0;
-		pGame->m_pPlayer->m_iLU_Point = (pGame->m_pPlayer->m_iLevel - 1) * 3 - ((pGame->m_pPlayer->m_iStr + pGame->m_pPlayer->m_iVit + pGame->m_pPlayer->m_iDex + pGame->m_pPlayer->m_iInt + pGame->m_pPlayer->m_iMag + pGame->m_pPlayer->m_iCharisma) - 70);
+		game->add_event_list("Your stat has not been changed.", 10);
+		game->m_player->m_lu_str = game->m_player->m_lu_vit = game->m_player->m_lu_dex = game->m_player->m_lu_int = game->m_player->m_lu_mag = game->m_player->m_lu_char = 0;
+		game->m_player->m_lu_point = (game->m_player->m_level - 1) * 3 - ((game->m_player->m_str + game->m_player->m_vit + game->m_player->m_dex + game->m_player->m_int + game->m_player->m_mag + game->m_player->m_charisma) - 70);
 	}
 
-	void HandleSpecialAbilityStatus(CGame* pGame, char* pData)
+	void HandleSpecialAbilityStatus(CGame* game, char* data)
 	{
 		std::string G_cTxt;
-		short sV1, sV2, sV3;
+		short v1, v2, v3;
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifySpecialAbilityStatus>(
-			pData, sizeof(hb::net::PacketNotifySpecialAbilityStatus));
+			data, sizeof(hb::net::PacketNotifySpecialAbilityStatus));
 		if (!pkt) return;
-		sV1 = pkt->status_type;
-		sV2 = pkt->ability_type;
-		sV3 = pkt->seconds_left;
+		v1 = pkt->status_type;
+		v2 = pkt->ability_type;
+		v3 = pkt->seconds_left;
 
-		if (sV1 == 1) // Use SA
+		if (v1 == 1) // Use SA
 		{
-			pGame->PlayGameSound('E', 35, 0);
-			pGame->AddEventList(NOTIFY_MSG_HANDLER4, 10); 
-			switch (sV2) {
-			case 1: G_cTxt = std::format(NOTIFY_MSG_HANDLER5, sV3); break;
-			case 2: G_cTxt = std::format(NOTIFY_MSG_HANDLER6, sV3); break;
-			case 3: G_cTxt = std::format(NOTIFY_MSG_HANDLER7, sV3); break;
-			case 4: G_cTxt = std::format(NOTIFY_MSG_HANDLER8, sV3); break;
-			case 5: G_cTxt = std::format(NOTIFY_MSG_HANDLER9, sV3); break;
-			case 50:G_cTxt = std::format(NOTIFY_MSG_HANDLER10, sV3); break;
-			case 51:G_cTxt = std::format(NOTIFY_MSG_HANDLER11, sV3); break;
-			case 52:G_cTxt = std::format(NOTIFY_MSG_HANDLER12, sV3); break;
+			game->play_game_sound('E', 35, 0);
+			game->add_event_list(NOTIFY_MSG_HANDLER4, 10); 
+			switch (v2) {
+			case 1: G_cTxt = std::format(NOTIFY_MSG_HANDLER5, v3); break;
+			case 2: G_cTxt = std::format(NOTIFY_MSG_HANDLER6, v3); break;
+			case 3: G_cTxt = std::format(NOTIFY_MSG_HANDLER7, v3); break;
+			case 4: G_cTxt = std::format(NOTIFY_MSG_HANDLER8, v3); break;
+			case 5: G_cTxt = std::format(NOTIFY_MSG_HANDLER9, v3); break;
+			case 50:G_cTxt = std::format(NOTIFY_MSG_HANDLER10, v3); break;
+			case 51:G_cTxt = std::format(NOTIFY_MSG_HANDLER11, v3); break;
+			case 52:G_cTxt = std::format(NOTIFY_MSG_HANDLER12, v3); break;
 			case 55: 
-				if (sV3 > 90)
-					G_cTxt = std::format("You cast a powerfull incantation, you can't use it again before {} minutes.", sV3 / 60);
+				if (v3 > 90)
+					G_cTxt = std::format("You cast a powerfull incantation, you can't use it again before {} minutes.", v3 / 60);
 				else
-					G_cTxt = std::format("You cast a powerfull incantation, you can't use it again before {} seconds.", sV3);
+					G_cTxt = std::format("You cast a powerfull incantation, you can't use it again before {} seconds.", v3);
 				break;
 			}
-			pGame->AddEventList(G_cTxt.c_str(), 10);
+			game->add_event_list(G_cTxt.c_str(), 10);
 		}
-		else if (sV1 == 2) // Finished using
+		else if (v1 == 2) // Finished using
 		{
-			if (pGame->m_pPlayer->m_iSpecialAbilityType != static_cast<int>(sV2))
+			if (game->m_player->m_special_ability_type != static_cast<int>(v2))
 			{
-				pGame->PlayGameSound('E', 34, 0);
-				pGame->AddEventList(NOTIFY_MSG_HANDLER13, 10);
-				if (sV3 >= 60)
+				game->play_game_sound('E', 34, 0);
+				game->add_event_list(NOTIFY_MSG_HANDLER13, 10);
+				if (v3 >= 60)
 				{
-					switch (sV2) {
-					case 1: G_cTxt = std::format(NOTIFY_MSG_HANDLER14, sV3 / 60); pGame->AddEventList(G_cTxt.c_str(), 10); break;
-					case 2: G_cTxt = std::format(NOTIFY_MSG_HANDLER15, sV3 / 60); pGame->AddEventList(G_cTxt.c_str(), 10); break;
-					case 3: G_cTxt = std::format(NOTIFY_MSG_HANDLER16, sV3 / 60); pGame->AddEventList(G_cTxt.c_str(), 10); break;
-					case 4: G_cTxt = std::format(NOTIFY_MSG_HANDLER17, sV3 / 60); pGame->AddEventList(G_cTxt.c_str(), 10); break;
-					case 5: G_cTxt = std::format(NOTIFY_MSG_HANDLER18, sV3 / 60); pGame->AddEventList(G_cTxt.c_str(), 10); break;
-					case 50:G_cTxt = std::format(NOTIFY_MSG_HANDLER19, sV3 / 60); pGame->AddEventList(G_cTxt.c_str(), 10); break;
-					case 51:G_cTxt = std::format(NOTIFY_MSG_HANDLER20, sV3 / 60); pGame->AddEventList(G_cTxt.c_str(), 10); break;
-					case 52:G_cTxt = std::format(NOTIFY_MSG_HANDLER21, sV3 / 60); pGame->AddEventList(G_cTxt.c_str(), 10); break;
+					switch (v2) {
+					case 1: G_cTxt = std::format(NOTIFY_MSG_HANDLER14, v3 / 60); game->add_event_list(G_cTxt.c_str(), 10); break;
+					case 2: G_cTxt = std::format(NOTIFY_MSG_HANDLER15, v3 / 60); game->add_event_list(G_cTxt.c_str(), 10); break;
+					case 3: G_cTxt = std::format(NOTIFY_MSG_HANDLER16, v3 / 60); game->add_event_list(G_cTxt.c_str(), 10); break;
+					case 4: G_cTxt = std::format(NOTIFY_MSG_HANDLER17, v3 / 60); game->add_event_list(G_cTxt.c_str(), 10); break;
+					case 5: G_cTxt = std::format(NOTIFY_MSG_HANDLER18, v3 / 60); game->add_event_list(G_cTxt.c_str(), 10); break;
+					case 50:G_cTxt = std::format(NOTIFY_MSG_HANDLER19, v3 / 60); game->add_event_list(G_cTxt.c_str(), 10); break;
+					case 51:G_cTxt = std::format(NOTIFY_MSG_HANDLER20, v3 / 60); game->add_event_list(G_cTxt.c_str(), 10); break;
+					case 52:G_cTxt = std::format(NOTIFY_MSG_HANDLER21, v3 / 60); game->add_event_list(G_cTxt.c_str(), 10); break;
 					}
 				}
 				else
 				{
-					switch (sV2) {
-					case 1: G_cTxt = std::format(NOTIFY_MSG_HANDLER22, sV3); pGame->AddEventList(G_cTxt.c_str(), 10); break;
-					case 2: G_cTxt = std::format(NOTIFY_MSG_HANDLER23, sV3); pGame->AddEventList(G_cTxt.c_str(), 10); break;
-					case 3: G_cTxt = std::format(NOTIFY_MSG_HANDLER24, sV3); pGame->AddEventList(G_cTxt.c_str(), 10); break;
-					case 4: G_cTxt = std::format(NOTIFY_MSG_HANDLER25, sV3); pGame->AddEventList(G_cTxt.c_str(), 10); break;
-					case 5: G_cTxt = std::format(NOTIFY_MSG_HANDLER26, sV3); pGame->AddEventList(G_cTxt.c_str(), 10); break;
-					case 50:G_cTxt = std::format(NOTIFY_MSG_HANDLER27, sV3); pGame->AddEventList(G_cTxt.c_str(), 10); break;
-					case 51:G_cTxt = std::format(NOTIFY_MSG_HANDLER28, sV3); pGame->AddEventList(G_cTxt.c_str(), 10); break;
-					case 52:G_cTxt = std::format(NOTIFY_MSG_HANDLER29, sV3); pGame->AddEventList(G_cTxt.c_str(), 10); break;
+					switch (v2) {
+					case 1: G_cTxt = std::format(NOTIFY_MSG_HANDLER22, v3); game->add_event_list(G_cTxt.c_str(), 10); break;
+					case 2: G_cTxt = std::format(NOTIFY_MSG_HANDLER23, v3); game->add_event_list(G_cTxt.c_str(), 10); break;
+					case 3: G_cTxt = std::format(NOTIFY_MSG_HANDLER24, v3); game->add_event_list(G_cTxt.c_str(), 10); break;
+					case 4: G_cTxt = std::format(NOTIFY_MSG_HANDLER25, v3); game->add_event_list(G_cTxt.c_str(), 10); break;
+					case 5: G_cTxt = std::format(NOTIFY_MSG_HANDLER26, v3); game->add_event_list(G_cTxt.c_str(), 10); break;
+					case 50:G_cTxt = std::format(NOTIFY_MSG_HANDLER27, v3); game->add_event_list(G_cTxt.c_str(), 10); break;
+					case 51:G_cTxt = std::format(NOTIFY_MSG_HANDLER28, v3); game->add_event_list(G_cTxt.c_str(), 10); break;
+					case 52:G_cTxt = std::format(NOTIFY_MSG_HANDLER29, v3); game->add_event_list(G_cTxt.c_str(), 10); break;
 					}
 				}
 			}
-			pGame->m_pPlayer->m_iSpecialAbilityType = static_cast<int>(sV2);
-			pGame->m_dwSpecialAbilitySettingTime = pGame->m_dwCurTime;
-			pGame->m_pPlayer->m_iSpecialAbilityTimeLeftSec = static_cast<int>(sV3);
+			game->m_player->m_special_ability_type = static_cast<int>(v2);
+			game->m_special_ability_setting_time = game->m_cur_time;
+			game->m_player->m_special_ability_time_left_sec = static_cast<int>(v3);
 		}
-		else if (sV1 == 3)  // End of using time
+		else if (v1 == 3)  // End of using time
 		{
-			pGame->m_pPlayer->m_bIsSpecialAbilityEnabled = false;
-			pGame->m_dwSpecialAbilitySettingTime = pGame->m_dwCurTime;
-			if (sV3 == 0)
+			game->m_player->m_is_special_ability_enabled = false;
+			game->m_special_ability_setting_time = game->m_cur_time;
+			if (v3 == 0)
 			{
-				pGame->m_pPlayer->m_iSpecialAbilityTimeLeftSec = 1200;
-				pGame->AddEventList(NOTIFY_MSG_HANDLER30, 10);
+				game->m_player->m_special_ability_time_left_sec = 1200;
+				game->add_event_list(NOTIFY_MSG_HANDLER30, 10);
 			}
 			else
 			{
-				pGame->m_pPlayer->m_iSpecialAbilityTimeLeftSec = static_cast<int>(sV3);
-				if (sV3 > 90)
-					G_cTxt = std::format("Special ability has run out! Will be available in {} minutes.", sV3 / 60);
-				else G_cTxt = std::format("Special ability has run out! Will be available in {} seconds.", sV3);
-				pGame->AddEventList(G_cTxt.c_str(), 10);
+				game->m_player->m_special_ability_time_left_sec = static_cast<int>(v3);
+				if (v3 > 90)
+					G_cTxt = std::format("Special ability has run out! Will be available in {} minutes.", v3 / 60);
+				else G_cTxt = std::format("Special ability has run out! Will be available in {} seconds.", v3);
+				game->add_event_list(G_cTxt.c_str(), 10);
 			}
 		}
-		else if (sV1 == 4) // Unequiped the SA item
+		else if (v1 == 4) // Unequiped the SA item
 		{
-			pGame->AddEventList(NOTIFY_MSG_HANDLER31, 10);
-			pGame->m_pPlayer->m_iSpecialAbilityType = 0;
+			game->add_event_list(NOTIFY_MSG_HANDLER31, 10);
+			game->m_player->m_special_ability_type = 0;
 		}
-		else if (sV1 == 5) // Angel
+		else if (v1 == 5) // Angel
 		{
-			pGame->PlayGameSound('E', 52, 0); 
+			game->play_game_sound('E', 52, 0); 
 		}
 	}
 
-	void HandleSpecialAbilityEnabled(CGame* pGame, char* pData)
+	void HandleSpecialAbilityEnabled(CGame* game, char* data)
 	{
-		if (pGame->m_pPlayer->m_bIsSpecialAbilityEnabled == false) {
-			pGame->PlayGameSound('E', 30, 5);
-			pGame->AddEventList(NOTIFY_MSG_HANDLER32, 10);
+		if (game->m_player->m_is_special_ability_enabled == false) {
+			game->play_game_sound('E', 30, 5);
+			game->add_event_list(NOTIFY_MSG_HANDLER32, 10);
 		}
-		pGame->m_pPlayer->m_bIsSpecialAbilityEnabled = true;
+		game->m_player->m_is_special_ability_enabled = true;
 	}
 
-	void HandleSkillTrainFail(CGame* pGame, char* pData)
+	void HandleSkillTrainFail(CGame* game, char* data)
 	{
-		pGame->AddEventList("You failed to train skill.", 10);
-		pGame->PlayGameSound('E', 24, 0);
+		game->add_event_list("You failed to train skill.", 10);
+		game->play_game_sound('E', 24, 0);
 	}
 }

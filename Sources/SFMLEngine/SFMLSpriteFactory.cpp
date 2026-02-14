@@ -7,8 +7,8 @@
 #include "SFMLSprite.h"
 #include "SFMLRenderer.h"
 
-SFMLSpriteFactory::SFMLSpriteFactory(SFMLRenderer* pRenderer)
-    : m_pRenderer(pRenderer)
+SFMLSpriteFactory::SFMLSpriteFactory(SFMLRenderer* renderer)
+    : m_renderer(renderer)
     , m_spritePath("sprites")
     , m_ambient_light_level(1)
 {
@@ -17,59 +17,59 @@ SFMLSpriteFactory::SFMLSpriteFactory(SFMLRenderer* pRenderer)
 SFMLSpriteFactory::~SFMLSpriteFactory()
 {
     // Note: Factory does not own created sprites
-    // Caller is responsible for destroying sprites via DestroySprite
+    // Caller is responsible for destroying sprites via destroy_sprite
 }
 
-hb::shared::sprite::ISprite* SFMLSpriteFactory::CreateSprite(const std::string& pakName, int spriteIndex, bool alphaEffect)
+hb::shared::sprite::ISprite* SFMLSpriteFactory::create_sprite(const std::string& pakName, int spriteIndex, bool alphaEffect)
 {
     std::string fullPath = BuildPakPath(pakName);
 
-    SFMLSprite* sprite = new SFMLSprite(m_pRenderer, fullPath, spriteIndex, alphaEffect);
+    SFMLSprite* sprite = new SFMLSprite(m_renderer, fullPath, spriteIndex, alphaEffect);
 
     // Apply global alpha degree
     if (alphaEffect && m_ambient_light_level != 1)
     {
-        sprite->SetAmbientLightLevel(static_cast<char>(m_ambient_light_level));
+        sprite->set_ambient_light_level(static_cast<char>(m_ambient_light_level));
     }
 
     return sprite;
 }
 
-hb::shared::sprite::ISprite* SFMLSpriteFactory::CreateSpriteFromData(const PAKLib::sprite& spriteData, bool alphaEffect)
+hb::shared::sprite::ISprite* SFMLSpriteFactory::create_sprite_from_data(const PAKLib::sprite& spriteData, bool alphaEffect)
 {
-    SFMLSprite* sprite = new SFMLSprite(m_pRenderer, spriteData, alphaEffect);
+    SFMLSprite* sprite = new SFMLSprite(m_renderer, spriteData, alphaEffect);
 
     // Apply global alpha degree
     if (alphaEffect && m_ambient_light_level != 1)
     {
-        sprite->SetAmbientLightLevel(static_cast<char>(m_ambient_light_level));
+        sprite->set_ambient_light_level(static_cast<char>(m_ambient_light_level));
     }
 
     return sprite;
 }
 
-void SFMLSpriteFactory::DestroySprite(hb::shared::sprite::ISprite* sprite)
+void SFMLSpriteFactory::destroy_sprite(hb::shared::sprite::ISprite* sprite)
 {
     delete sprite;
 }
 
-void SFMLSpriteFactory::SetAmbientLightLevel(int level)
+void SFMLSpriteFactory::set_ambient_light_level(int level)
 {
     m_ambient_light_level = level;
 
     // Update renderer's sprite alpha degree
-    if (m_pRenderer)
+    if (m_renderer)
     {
-        m_pRenderer->SetAmbientLightLevel(static_cast<char>(level));
+        m_renderer->set_ambient_light_level(static_cast<char>(level));
     }
 }
 
-int SFMLSpriteFactory::GetAmbientLightLevel() const
+int SFMLSpriteFactory::get_ambient_light_level() const
 {
     return m_ambient_light_level;
 }
 
-int SFMLSpriteFactory::GetSpriteCount(const std::string& pakName) const
+int SFMLSpriteFactory::get_sprite_count(const std::string& pakName) const
 {
     std::string fullPath = BuildPakPath(pakName);
 

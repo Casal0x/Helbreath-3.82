@@ -17,12 +17,12 @@ public:
 	{
 	}
 
-	std::string m_cName;
-	std::string m_cMapName;
-	short m_sSkinCol = 0, m_sSex = 0;
+	std::string m_name;
+	std::string m_map_name;
+	short m_skin_color = 0, m_sex = 0;
 	hb::shared::entity::PlayerAppearance m_appearance{};
-	short	m_sStr = 0, m_sVit = 0, m_sDex = 0, m_sInt = 0, m_sMag = 0, m_sChr = 0;
-	int	m_sLevel = 0;
-	DWORD   m_iExp = 0;
-	int   m_iYear = 0, m_iMonth = 0, m_iDay = 0, m_iHour = 0, m_iMinute = 0;
+	short	m_str = 0, m_vit = 0, m_dex = 0, m_int = 0, m_mag = 0, m_chr = 0;
+	int	m_level = 0;
+	DWORD   m_exp = 0;
+	int   m_year = 0, m_month = 0, m_day = 0, m_hour = 0, m_minute = 0;
 };

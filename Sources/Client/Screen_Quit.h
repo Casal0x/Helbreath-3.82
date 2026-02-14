@@ -14,7 +14,7 @@ class Screen_Quit : public IGameScreen
 public:
     SCREEN_TYPE(Screen_Quit)
 
-    explicit Screen_Quit(CGame* pGame);
+    explicit Screen_Quit(CGame* game);
     ~Screen_Quit() override = default;
 
     void on_initialize() override;

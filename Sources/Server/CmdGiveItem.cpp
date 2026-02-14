@@ -10,24 +10,24 @@
 #include "StringCompat.h"
 using namespace hb::server::config;
 
-void CmdGiveItem::Execute(CGame* pGame, const char* pArgs)
+void CmdGiveItem::execute(CGame* game, const char* args)
 {
-	if (pArgs == nullptr || pArgs[0] == '\0')
+	if (args == nullptr || args[0] == '\0')
 	{
 		hb::logger::log("Usage: giveitem <playername> <item_id> <amount>");
 		return;
 	}
 
 	// Parse player name
-	char cPlayerName[32];
-	std::memset(cPlayerName, 0, sizeof(cPlayerName));
-	const char* p = pArgs;
+	char player_name[32];
+	std::memset(player_name, 0, sizeof(player_name));
+	const char* p = args;
 	int i = 0;
-	while (*p != '\0' && *p != ' ' && *p != '\t' && i < (int)(sizeof(cPlayerName) - 1))
+	while (*p != '\0' && *p != ' ' && *p != '\t' && i < (int)(sizeof(player_name) - 1))
 	{
-		cPlayerName[i++] = *p++;
+		player_name[i++] = *p++;
 	}
-	cPlayerName[i] = '\0';
+	player_name[i] = '\0';
 
 	// Skip whitespace
 	while (*p == ' ' || *p == '\t')
@@ -40,7 +40,7 @@ void CmdGiveItem::Execute(CGame* pGame, const char* pArgs)
 	}
 
 	// Parse item ID
-	int iItemID = std::atoi(p);
+	int item_id = std::atoi(p);
 	while (*p != '\0' && *p != ' ' && *p != '\t')
 		p++;
 
@@ -55,67 +55,67 @@ void CmdGiveItem::Execute(CGame* pGame, const char* pArgs)
 	}
 
 	// Parse amount
-	int iAmount = std::atoi(p);
+	int amount = std::atoi(p);
 
 	// Find player by name
-	int iClientH = 0;
+	int client_h = 0;
 	for(int j = 1; j < MaxClients; j++)
 	{
-		if (pGame->m_pClientList[j] != nullptr &&
-			hb_stricmp(pGame->m_pClientList[j]->m_cCharName, cPlayerName) == 0)
+		if (game->m_client_list[j] != nullptr &&
+			hb_stricmp(game->m_client_list[j]->m_char_name, player_name) == 0)
 		{
-			iClientH = j;
+			client_h = j;
 			break;
 		}
 	}
 
-	if (iClientH == 0)
+	if (client_h == 0)
 	{
-		hb::logger::log("Player '{}' not found.", cPlayerName);
+		hb::logger::log("Player '{}' not found.", player_name);
 		return;
 	}
 
 	// Validate item ID
-	if (iItemID < 0 || iItemID >= MaxItemTypes || pGame->m_pItemConfigList[iItemID] == nullptr)
+	if (item_id < 0 || item_id >= MaxItemTypes || game->m_item_config_list[item_id] == nullptr)
 	{
-		hb::logger::log("Invalid item ID: {}.", iItemID);
+		hb::logger::log("Invalid item ID: {}.", item_id);
 		return;
 	}
 
-	if (iAmount < 1) iAmount = 1;
-	if (iAmount > 1000) iAmount = 1000;
+	if (amount < 1) amount = 1;
+	if (amount > 1000) amount = 1000;
 
-	const char* pItemName = pGame->m_pItemConfigList[iItemID]->m_cName;
-	auto itemType = pGame->m_pItemConfigList[iItemID]->GetItemType();
-	bool bTrueStack = hb::shared::item::IsTrueStackType(itemType) || (iItemID == hb::shared::item::ItemId::Gold);
+	const char* item_name = game->m_item_config_list[item_id]->m_name;
+	auto itemType = game->m_item_config_list[item_id]->get_item_type();
+	bool true_stack = hb::shared::item::is_true_stack_type(itemType) || (item_id == hb::shared::item::ItemId::Gold);
 
-	int iCreated = 0;
+	int created = 0;
 
-	if (bTrueStack)
+	if (true_stack)
 	{
 		// True stacks: single item with count = amount (arrows, materials, gold)
-		CItem* pItem = new CItem;
-		if (pGame->m_pItemManager->_bInitItemAttr(pItem, iItemID) == false)
+		CItem* item = new CItem;
+		if (game->m_item_manager->init_item_attr(item, item_id) == false)
 		{
-			delete pItem;
-			hb::logger::log("Failed to initialize item ID: {}.", iItemID);
+			delete item;
+			hb::logger::log("Failed to initialize item ID: {}.", item_id);
 			return;
 		}
-		pItem->m_dwCount = iAmount;
+		item->m_count = amount;
 
-		if (pGame->m_pItemManager->bAddItem(iClientH, pItem, 0) == false)
+		if (game->m_item_manager->add_item(client_h, item, 0) == false)
 		{
 			hb::logger::log("Failed to give item: player inventory full.");
 			return;
 		}
-		iCreated = iAmount;
+		created = amount;
 	}
 	else
 	{
 		// Soft-linked items: individual items, one bulk notification
-		iCreated = pGame->m_pItemManager->_bAddClientBulkItemList(iClientH, pItemName, iAmount);
+		created = game->m_item_manager->add_client_bulk_item_list(client_h, item_name, amount);
 	}
 
 	// Success
-	hb::logger::log("Gave {}x {} (ID: {}) to {}.", iCreated, pItemName, iItemID, cPlayerName);
+	hb::logger::log("Gave {}x {} (ID: {}) to {}.", created, item_name, item_id, player_name);
 }

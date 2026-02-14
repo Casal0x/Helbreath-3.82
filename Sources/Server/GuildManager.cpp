@@ -17,301 +17,301 @@ namespace sock = hb::shared::net::socket;
 
 extern char G_cTxt[512];
 
-void GuildManager::ResponseCreateNewGuildHandler(char* pData, int iType)
+void GuildManager::response_create_new_guild_handler(char* data, int type)
 {
 
-	uint16_t wResult;
-	char cCharName[hb::shared::limits::CharNameLen];
-	int iRet;
+	uint16_t result;
+	char char_name[hb::shared::limits::CharNameLen];
+	int ret;
 
-	std::memset(cCharName, 0, sizeof(cCharName));
-	memcpy(cCharName, pData, hb::shared::limits::CharNameLen - 1);
+	std::memset(char_name, 0, sizeof(char_name));
+	memcpy(char_name, data, hb::shared::limits::CharNameLen - 1);
 
 	for(int i = 1; i < hb::server::config::MaxClients; i++)
-		if ((m_pGame->m_pClientList[i] != 0) && (hb_strnicmp(m_pGame->m_pClientList[i]->m_cCharName, cCharName, hb::shared::limits::CharNameLen - 1) == 0) &&
-			(m_pGame->m_pClientList[i]->m_iLevel >= 20) && (m_pGame->m_pClientList[i]->m_iCharisma >= 20)) {
+		if ((m_game->m_client_list[i] != 0) && (hb_strnicmp(m_game->m_client_list[i]->m_char_name, char_name, hb::shared::limits::CharNameLen - 1) == 0) &&
+			(m_game->m_client_list[i]->m_level >= 20) && (m_game->m_client_list[i]->m_charisma >= 20)) {
 
-			switch (iType) {
+			switch (type) {
 			case 1: // LogResMsg::Confirm
-				wResult = MsgType::Confirm;
-				m_pGame->m_pClientList[i]->m_iGuildRank = 0;
-				hb::logger::log("Guild '{}' created by {}", m_pGame->m_pClientList[i]->m_cGuildName, m_pGame->m_pClientList[i]->m_cCharName);
+				result = MsgType::Confirm;
+				m_game->m_client_list[i]->m_guild_rank = 0;
+				hb::logger::log("Guild '{}' created by {}", m_game->m_client_list[i]->m_guild_name, m_game->m_client_list[i]->m_char_name);
 				break;
 
 			case 0: // LogResMsg::Reject
-				wResult = MsgType::Reject;
-				std::memset(m_pGame->m_pClientList[i]->m_cGuildName, 0, sizeof(m_pGame->m_pClientList[i]->m_cGuildName));
-				memcpy(m_pGame->m_pClientList[i]->m_cGuildName, "NONE", 4);
-				m_pGame->m_pClientList[i]->m_iGuildRank = -1;
-				m_pGame->m_pClientList[i]->m_iGuildGUID = -1;
-				hb::logger::log("Guild '{}' creation failed for {}", m_pGame->m_pClientList[i]->m_cGuildName, m_pGame->m_pClientList[i]->m_cCharName);
+				result = MsgType::Reject;
+				std::memset(m_game->m_client_list[i]->m_guild_name, 0, sizeof(m_game->m_client_list[i]->m_guild_name));
+				memcpy(m_game->m_client_list[i]->m_guild_name, "NONE", 4);
+				m_game->m_client_list[i]->m_guild_rank = -1;
+				m_game->m_client_list[i]->m_guild_guid = -1;
+				hb::logger::log("Guild '{}' creation failed for {}", m_game->m_client_list[i]->m_guild_name, m_game->m_client_list[i]->m_char_name);
 				break;
 			}
 
 			hb::net::PacketHeader pkt{};
 			pkt.msg_id = MsgId::ResponseCreateNewGuild;
-			pkt.msg_type = wResult;
+			pkt.msg_type = result;
 
-			iRet = m_pGame->m_pClientList[i]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
-			switch (iRet) {
+			ret = m_game->m_client_list[i]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+			switch (ret) {
 			case sock::Event::QueueFull:
 			case sock::Event::SocketError:
 			case sock::Event::CriticalError:
 			case sock::Event::SocketClosed:
-				m_pGame->DeleteClient(i, true, true);
+				m_game->delete_client(i, true, true);
 				return;
 			}
 
 			return;
 		}
 
-	hb::logger::log("Non-existent player data from login server: {}", cCharName);
+	hb::logger::log("Non-existent player data from login server: {}", char_name);
 }
 
-void GuildManager::RequestCreateNewGuildHandler(int iClientH, char* pData, size_t dwMsgSize)
+void GuildManager::request_create_new_guild_handler(int client_h, char* data, size_t msg_size)
 {
-	char cGuildName[21], cData[100];
-	int     iRet;
+	char guild_name[21], msg_data[100];
+	int     ret;
 	hb::time::local_time SysTime{};
 
-	if (m_pGame->m_pClientList[iClientH] == 0) return;
-	if (m_pGame->m_pClientList[iClientH]->m_bIsInitComplete == false) return;
-	if (m_pGame->m_bIsCrusadeMode) return;
+	if (m_game->m_client_list[client_h] == 0) return;
+	if (m_game->m_client_list[client_h]->m_is_init_complete == false) return;
+	if (m_game->m_is_crusade_mode) return;
 
 	const auto* pkt = hb::net::PacketCast<hb::net::PacketRequestGuildAction>(
-		pData, sizeof(hb::net::PacketRequestGuildAction));
+		data, sizeof(hb::net::PacketRequestGuildAction));
 	if (!pkt) return;
-	std::memset(cGuildName, 0, sizeof(cGuildName));
-	memcpy(cGuildName, pkt->guild, sizeof(pkt->guild));
+	std::memset(guild_name, 0, sizeof(guild_name));
+	memcpy(guild_name, pkt->guild, sizeof(pkt->guild));
 
-	if (m_pGame->m_pClientList[iClientH]->m_iGuildRank != -1) {
-		hb::logger::log("Cannot create guild: already a guild member ({})", m_pGame->m_pClientList[iClientH]->m_cCharName);
+	if (m_game->m_client_list[client_h]->m_guild_rank != -1) {
+		hb::logger::log("Cannot create guild: already a guild member ({})", m_game->m_client_list[client_h]->m_char_name);
 	}
 	else {
-		if ((m_pGame->m_pClientList[iClientH]->m_iLevel < 20) || (m_pGame->m_pClientList[iClientH]->m_iCharisma < 20) ||
-			(memcmp(m_pGame->m_pClientList[iClientH]->m_cLocation, "NONE", 4) == 0) ||
-			(memcmp(m_pGame->m_pClientList[iClientH]->m_cLocation, m_pGame->m_pMapList[m_pGame->m_pClientList[iClientH]->m_cMapIndex]->m_cLocationName, 10) != 0)) { // v1.4
-			std::memset(cData, 0, sizeof(cData));
+		if ((m_game->m_client_list[client_h]->m_level < 20) || (m_game->m_client_list[client_h]->m_charisma < 20) ||
+			(memcmp(m_game->m_client_list[client_h]->m_location, "NONE", 4) == 0) ||
+			(memcmp(m_game->m_client_list[client_h]->m_location, m_game->m_map_list[m_game->m_client_list[client_h]->m_map_index]->m_location_name, 10) != 0)) { // v1.4
+			std::memset(msg_data, 0, sizeof(msg_data));
 
 			hb::net::PacketHeader pkt{};
 			pkt.msg_id = MsgId::ResponseCreateNewGuild;
 			pkt.msg_type = MsgType::Reject;
 
-			iRet = m_pGame->m_pClientList[iClientH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
-			switch (iRet) {
+			ret = m_game->m_client_list[client_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+			switch (ret) {
 			case sock::Event::QueueFull:
 			case sock::Event::SocketError:
 			case sock::Event::CriticalError:
 			case sock::Event::SocketClosed:
-				m_pGame->DeleteClient(iClientH, true, true);
+				m_game->delete_client(client_h, true, true);
 				return;
 			}
 		}
 		else {
-			std::memset(m_pGame->m_pClientList[iClientH]->m_cGuildName, 0, sizeof(m_pGame->m_pClientList[iClientH]->m_cGuildName));
-			strcpy(m_pGame->m_pClientList[iClientH]->m_cGuildName, cGuildName);
-			std::memset(m_pGame->m_pClientList[iClientH]->m_cLocation, 0, sizeof(m_pGame->m_pClientList[iClientH]->m_cLocation));
-			strcpy(m_pGame->m_pClientList[iClientH]->m_cLocation, m_pGame->m_pMapList[m_pGame->m_pClientList[iClientH]->m_cMapIndex]->m_cLocationName);
+			std::memset(m_game->m_client_list[client_h]->m_guild_name, 0, sizeof(m_game->m_client_list[client_h]->m_guild_name));
+			strcpy(m_game->m_client_list[client_h]->m_guild_name, guild_name);
+			std::memset(m_game->m_client_list[client_h]->m_location, 0, sizeof(m_game->m_client_list[client_h]->m_location));
+			strcpy(m_game->m_client_list[client_h]->m_location, m_game->m_map_list[m_game->m_client_list[client_h]->m_map_index]->m_location_name);
 			SysTime = hb::time::local_time::now();
-			m_pGame->m_pClientList[iClientH]->m_iGuildGUID = (int)(SysTime.year + SysTime.month + SysTime.day + SysTime.hour + SysTime.minute + GameClock::GetTimeMS());
+			m_game->m_client_list[client_h]->m_guild_guid = (int)(SysTime.year + SysTime.month + SysTime.day + SysTime.hour + SysTime.minute + GameClock::GetTimeMS());
 
 			hb::net::GuildCreatePayload guildData{};
-			std::memcpy(guildData.char_name, m_pGame->m_pClientList[iClientH]->m_cCharName, sizeof(guildData.char_name));
-			std::memcpy(guildData.guild_name, m_pGame->m_pClientList[iClientH]->m_cGuildName, sizeof(guildData.guild_name));
-			std::memcpy(guildData.location, m_pGame->m_pClientList[iClientH]->m_cLocation, sizeof(guildData.location));
-			guildData.guild_guid = static_cast<uint32_t>(m_pGame->m_pClientList[iClientH]->m_iGuildGUID);
-			RequestCreateNewGuild(iClientH, reinterpret_cast<char*>(&guildData));
+			std::memcpy(guildData.char_name, m_game->m_client_list[client_h]->m_char_name, sizeof(guildData.char_name));
+			std::memcpy(guildData.guild_name, m_game->m_client_list[client_h]->m_guild_name, sizeof(guildData.guild_name));
+			std::memcpy(guildData.location, m_game->m_client_list[client_h]->m_location, sizeof(guildData.location));
+			guildData.guild_guid = static_cast<uint32_t>(m_game->m_client_list[client_h]->m_guild_guid);
+			request_create_new_guild(client_h, reinterpret_cast<char*>(&guildData));
 		}
 	}
 }
 
-void GuildManager::RequestDisbandGuildHandler(int iClientH, char* pData, size_t dwMsgSize)
+void GuildManager::request_disband_guild_handler(int client_h, char* data, size_t msg_size)
 {
-	char cGuildName[21];
+	char guild_name[21];
 
-	if (m_pGame->m_bIsCrusadeMode) return;
+	if (m_game->m_is_crusade_mode) return;
 
 	const auto* pkt = hb::net::PacketCast<hb::net::PacketRequestGuildAction>(
-		pData, sizeof(hb::net::PacketRequestGuildAction));
+		data, sizeof(hb::net::PacketRequestGuildAction));
 	if (!pkt) return;
-	std::memset(cGuildName, 0, sizeof(cGuildName));
+	std::memset(guild_name, 0, sizeof(guild_name));
 
-	memcpy(cGuildName, pkt->guild, sizeof(pkt->guild));
+	memcpy(guild_name, pkt->guild, sizeof(pkt->guild));
 
-	if ((m_pGame->m_pClientList[iClientH]->m_iGuildRank != 0) || (memcmp(m_pGame->m_pClientList[iClientH]->m_cGuildName, cGuildName, 20) != 0)) {
-		hb::logger::log("Cannot disband guild: not guildmaster ({})", m_pGame->m_pClientList[iClientH]->m_cCharName);
+	if ((m_game->m_client_list[client_h]->m_guild_rank != 0) || (memcmp(m_game->m_client_list[client_h]->m_guild_name, guild_name, 20) != 0)) {
+		hb::logger::log("Cannot disband guild: not guildmaster ({})", m_game->m_client_list[client_h]->m_char_name);
 	}
 	else {
 		hb::net::GuildDisbandPayload disbandData{};
-		std::memcpy(disbandData.char_name, m_pGame->m_pClientList[iClientH]->m_cCharName, sizeof(disbandData.char_name));
-		std::memcpy(disbandData.guild_name, m_pGame->m_pClientList[iClientH]->m_cGuildName, sizeof(disbandData.guild_name));
-		RequestDisbandGuild(iClientH, reinterpret_cast<char*>(&disbandData));
+		std::memcpy(disbandData.char_name, m_game->m_client_list[client_h]->m_char_name, sizeof(disbandData.char_name));
+		std::memcpy(disbandData.guild_name, m_game->m_client_list[client_h]->m_guild_name, sizeof(disbandData.guild_name));
+		request_disband_guild(client_h, reinterpret_cast<char*>(&disbandData));
 	}
 }
 
-void GuildManager::ResponseDisbandGuildHandler(char* pData, int iType)
+void GuildManager::response_disband_guild_handler(char* data, int type)
 {
 
-	uint16_t wResult;
-	char cCharName[hb::shared::limits::CharNameLen];
-	int iRet;
+	uint16_t result;
+	char char_name[hb::shared::limits::CharNameLen];
+	int ret;
 
-	std::memset(cCharName, 0, sizeof(cCharName));
-	memcpy(cCharName, pData, hb::shared::limits::CharNameLen - 1);
+	std::memset(char_name, 0, sizeof(char_name));
+	memcpy(char_name, data, hb::shared::limits::CharNameLen - 1);
 
 	for(int i = 1; i < hb::server::config::MaxClients; i++)
-		if ((m_pGame->m_pClientList[i] != 0) && (hb_strnicmp(m_pGame->m_pClientList[i]->m_cCharName, cCharName, hb::shared::limits::CharNameLen - 1) == 0)) {
+		if ((m_game->m_client_list[i] != 0) && (hb_strnicmp(m_game->m_client_list[i]->m_char_name, char_name, hb::shared::limits::CharNameLen - 1) == 0)) {
 
-			switch (iType) {
+			switch (type) {
 			case 1: // LogResMsg::Confirm
-				wResult = MsgType::Confirm;
-				hb::logger::log("Guild '{}' disbanded by {}", m_pGame->m_pClientList[i]->m_cGuildName, m_pGame->m_pClientList[i]->m_cCharName);
+				result = MsgType::Confirm;
+				hb::logger::log("Guild '{}' disbanded by {}", m_game->m_client_list[i]->m_guild_name, m_game->m_client_list[i]->m_char_name);
 
-				SendGuildMsg(i, Notify::GuildDisbanded, 0, 0, 0);
+				send_guild_msg(i, Notify::GuildDisbanded, 0, 0, 0);
 
-				std::memset(m_pGame->m_pClientList[i]->m_cGuildName, 0, sizeof(m_pGame->m_pClientList[i]->m_cGuildName));
-				memcpy(m_pGame->m_pClientList[i]->m_cGuildName, "NONE", 4);
-				m_pGame->m_pClientList[i]->m_iGuildRank = -1;
-				m_pGame->m_pClientList[i]->m_iGuildGUID = -1;
+				std::memset(m_game->m_client_list[i]->m_guild_name, 0, sizeof(m_game->m_client_list[i]->m_guild_name));
+				memcpy(m_game->m_client_list[i]->m_guild_name, "NONE", 4);
+				m_game->m_client_list[i]->m_guild_rank = -1;
+				m_game->m_client_list[i]->m_guild_guid = -1;
 				break;
 
 			case 0: // LogResMsg::Reject
-				wResult = MsgType::Reject;
-				hb::logger::log("Guild '{}' disband failed for {}", m_pGame->m_pClientList[i]->m_cGuildName, m_pGame->m_pClientList[i]->m_cCharName);
+				result = MsgType::Reject;
+				hb::logger::log("Guild '{}' disband failed for {}", m_game->m_client_list[i]->m_guild_name, m_game->m_client_list[i]->m_char_name);
 				break;
 			}
 
 			hb::net::PacketHeader pkt{};
 			pkt.msg_id = MsgId::ResponseDisbandGuild;
-			pkt.msg_type = wResult;
+			pkt.msg_type = result;
 
-			iRet = m_pGame->m_pClientList[i]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
-			switch (iRet) {
+			ret = m_game->m_client_list[i]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+			switch (ret) {
 			case sock::Event::QueueFull:
 			case sock::Event::SocketError:
 			case sock::Event::CriticalError:
 			case sock::Event::SocketClosed:
-				m_pGame->DeleteClient(i, true, true);
+				m_game->delete_client(i, true, true);
 				return;
 			}
 			return;
 		}
 
-	hb::logger::log("Non-existent player data from login server: {}", cCharName);
+	hb::logger::log("Non-existent player data from login server: {}", char_name);
 }
 
-void GuildManager::JoinGuildApproveHandler(int iClientH, const char* pName)
+void GuildManager::join_guild_approve_handler(int client_h, const char* name)
 {
 
-	bool bIsExist = false;
+	bool is_exist = false;
 
-	if (m_pGame->m_pClientList[iClientH] == 0) return;
-	if (m_pGame->m_pClientList[iClientH]->m_bIsInitComplete == false) return;
+	if (m_game->m_client_list[client_h] == 0) return;
+	if (m_game->m_client_list[client_h]->m_is_init_complete == false) return;
 
 	for(int i = 1; i < hb::server::config::MaxClients; i++)
-		if ((m_pGame->m_pClientList[i] != 0) && (hb_strnicmp(m_pGame->m_pClientList[i]->m_cCharName, pName, hb::shared::limits::CharNameLen - 1) == 0)) {
-			if (memcmp(m_pGame->m_pClientList[i]->m_cLocation, m_pGame->m_pClientList[iClientH]->m_cLocation, 10) != 0) return;
+		if ((m_game->m_client_list[i] != 0) && (hb_strnicmp(m_game->m_client_list[i]->m_char_name, name, hb::shared::limits::CharNameLen - 1) == 0)) {
+			if (memcmp(m_game->m_client_list[i]->m_location, m_game->m_client_list[client_h]->m_location, 10) != 0) return;
 
-			std::memset(m_pGame->m_pClientList[i]->m_cGuildName, 0, sizeof(m_pGame->m_pClientList[i]->m_cGuildName));
-			strcpy(m_pGame->m_pClientList[i]->m_cGuildName, m_pGame->m_pClientList[iClientH]->m_cGuildName);
+			std::memset(m_game->m_client_list[i]->m_guild_name, 0, sizeof(m_game->m_client_list[i]->m_guild_name));
+			strcpy(m_game->m_client_list[i]->m_guild_name, m_game->m_client_list[client_h]->m_guild_name);
 
 			// GUID.
-			m_pGame->m_pClientList[i]->m_iGuildGUID = m_pGame->m_pClientList[iClientH]->m_iGuildGUID;
+			m_game->m_client_list[i]->m_guild_guid = m_game->m_client_list[client_h]->m_guild_guid;
 
-			std::memset(m_pGame->m_pClientList[i]->m_cLocation, 0, sizeof(m_pGame->m_pClientList[i]->m_cLocation));
-			strcpy(m_pGame->m_pClientList[i]->m_cLocation, m_pGame->m_pClientList[iClientH]->m_cLocation);
+			std::memset(m_game->m_client_list[i]->m_location, 0, sizeof(m_game->m_client_list[i]->m_location));
+			strcpy(m_game->m_client_list[i]->m_location, m_game->m_client_list[client_h]->m_location);
 
-			m_pGame->m_pClientList[i]->m_iGuildRank = m_pGame->m_iStartingGuildRank;
+			m_game->m_client_list[i]->m_guild_rank = m_game->m_starting_guild_rank;
 
-			m_pGame->SendNotifyMsg(iClientH, i, CommonType::JoinGuildApprove, 0, 0, 0, 0);
+			m_game->send_notify_msg(client_h, i, CommonType::JoinGuildApprove, 0, 0, 0, 0);
 
-			m_pGame->SendEventToNearClient_TypeA(iClientH, hb::shared::owner_class::Player, MsgId::EventMotion, Type::NullAction, 0, 0, 0);
+			m_game->send_event_to_near_client_type_a(client_h, hb::shared::owner_class::Player, MsgId::EventMotion, Type::NullAction, 0, 0, 0);
 
-			SendGuildMsg(i, Notify::NewGuildsman, 0, 0, 0);
+			send_guild_msg(i, Notify::NewGuildsman, 0, 0, 0);
 
 			return;
 		}
 
 }
 
-void GuildManager::JoinGuildRejectHandler(int iClientH, const char* pName)
+void GuildManager::join_guild_reject_handler(int client_h, const char* name)
 {
 
-	if (m_pGame->m_pClientList[iClientH] == 0) return;
-	if (m_pGame->m_pClientList[iClientH]->m_bIsInitComplete == false) return;
+	if (m_game->m_client_list[client_h] == 0) return;
+	if (m_game->m_client_list[client_h]->m_is_init_complete == false) return;
 
 	for(int i = 1; i < hb::server::config::MaxClients; i++)
-		if ((m_pGame->m_pClientList[i] != 0) && (hb_strnicmp(m_pGame->m_pClientList[i]->m_cCharName, pName, hb::shared::limits::CharNameLen - 1) == 0)) {
+		if ((m_game->m_client_list[i] != 0) && (hb_strnicmp(m_game->m_client_list[i]->m_char_name, name, hb::shared::limits::CharNameLen - 1) == 0)) {
 
-			m_pGame->SendNotifyMsg(iClientH, i, CommonType::JoinGuildReject, 0, 0, 0, 0);
+			m_game->send_notify_msg(client_h, i, CommonType::JoinGuildReject, 0, 0, 0, 0);
 			return;
 		}
 
 }
 
-void GuildManager::DismissGuildApproveHandler(int iClientH, const char* pName)
+void GuildManager::dismiss_guild_approve_handler(int client_h, const char* name)
 {
 
-	if (m_pGame->m_pClientList[iClientH] == 0) return;
-	if (m_pGame->m_pClientList[iClientH]->m_bIsInitComplete == false) return;
+	if (m_game->m_client_list[client_h] == 0) return;
+	if (m_game->m_client_list[client_h]->m_is_init_complete == false) return;
 	for(int i = 1; i < hb::server::config::MaxClients; i++)
-		if ((m_pGame->m_pClientList[i] != 0) && (hb_strnicmp(m_pGame->m_pClientList[i]->m_cCharName, pName, hb::shared::limits::CharNameLen - 1) == 0)) {
+		if ((m_game->m_client_list[i] != 0) && (hb_strnicmp(m_game->m_client_list[i]->m_char_name, name, hb::shared::limits::CharNameLen - 1) == 0)) {
 
-			SendGuildMsg(i, Notify::DismissGuildsman, 0, 0, 0);
+			send_guild_msg(i, Notify::DismissGuildsman, 0, 0, 0);
 
-			std::memset(m_pGame->m_pClientList[i]->m_cGuildName, 0, sizeof(m_pGame->m_pClientList[i]->m_cGuildName));
-			strcpy(m_pGame->m_pClientList[i]->m_cGuildName, "NONE");
-			m_pGame->m_pClientList[i]->m_iGuildRank = -1;
-			m_pGame->m_pClientList[i]->m_iGuildGUID = -1;
+			std::memset(m_game->m_client_list[i]->m_guild_name, 0, sizeof(m_game->m_client_list[i]->m_guild_name));
+			strcpy(m_game->m_client_list[i]->m_guild_name, "NONE");
+			m_game->m_client_list[i]->m_guild_rank = -1;
+			m_game->m_client_list[i]->m_guild_guid = -1;
 
-			m_pGame->SendNotifyMsg(iClientH, i, CommonType::DismissGuildApprove, 0, 0, 0, 0);
+			m_game->send_notify_msg(client_h, i, CommonType::DismissGuildApprove, 0, 0, 0, 0);
 
-			m_pGame->SendEventToNearClient_TypeA(iClientH, hb::shared::owner_class::Player, MsgId::EventMotion, Type::NullAction, 0, 0, 0);
+			m_game->send_event_to_near_client_type_a(client_h, hb::shared::owner_class::Player, MsgId::EventMotion, Type::NullAction, 0, 0, 0);
 			return;
 		}
 
 }
 
-void GuildManager::DismissGuildRejectHandler(int iClientH, const char* pName)
+void GuildManager::dismiss_guild_reject_handler(int client_h, const char* name)
 {
 
-	if (m_pGame->m_pClientList[iClientH] == 0) return;
-	if (m_pGame->m_pClientList[iClientH]->m_bIsInitComplete == false) return;
+	if (m_game->m_client_list[client_h] == 0) return;
+	if (m_game->m_client_list[client_h]->m_is_init_complete == false) return;
 
 	for(int i = 1; i < hb::server::config::MaxClients; i++)
-		if ((m_pGame->m_pClientList[i] != 0) && (hb_strnicmp(m_pGame->m_pClientList[i]->m_cCharName, pName, hb::shared::limits::CharNameLen - 1) == 0)) {
+		if ((m_game->m_client_list[i] != 0) && (hb_strnicmp(m_game->m_client_list[i]->m_char_name, name, hb::shared::limits::CharNameLen - 1) == 0)) {
 
-			m_pGame->SendNotifyMsg(iClientH, i, CommonType::DismissGuildReject, 0, 0, 0, 0);
+			m_game->send_notify_msg(client_h, i, CommonType::DismissGuildReject, 0, 0, 0, 0);
 			return;
 		}
 
 }
 
-void GuildManager::SendGuildMsg(int iClientH, uint16_t wNotifyMsgType, short sV1, short sV2, char* pString)
+void GuildManager::send_guild_msg(int client_h, uint16_t notify_msg_type, short v1, short v2, char* string)
 {
-	int iRet;
+	int ret;
 
-	if (m_pGame->m_pClientList[iClientH] == 0) return;
-	if (m_pGame->m_pClientList[iClientH]->m_bIsInitComplete == false) return;
+	if (m_game->m_client_list[client_h] == 0) return;
+	if (m_game->m_client_list[client_h]->m_is_init_complete == false) return;
 
 	for(int i = 0; i < hb::server::config::MaxClients; i++)
-		if ((m_pGame->m_pClientList[i] != 0) &&
-			(memcmp(m_pGame->m_pClientList[i]->m_cGuildName, m_pGame->m_pClientList[iClientH]->m_cGuildName, 20) == 0)) {
+		if ((m_game->m_client_list[i] != 0) &&
+			(memcmp(m_game->m_client_list[i]->m_guild_name, m_game->m_client_list[client_h]->m_guild_name, 20) == 0)) {
 
-			switch (wNotifyMsgType) {
+			switch (notify_msg_type) {
 			case Notify::GuildDisbanded:
-				if (i == iClientH) break;
+				if (i == client_h) break;
 				{
 					hb::net::PacketNotifyGuildDisbanded pkt{};
 					pkt.header.msg_id = MsgId::Notify;
-					pkt.header.msg_type = wNotifyMsgType;
-					memcpy(pkt.guild_name, m_pGame->m_pClientList[iClientH]->m_cGuildName, sizeof(pkt.guild_name));
-					iRet = m_pGame->m_pClientList[i]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+					pkt.header.msg_type = notify_msg_type;
+					memcpy(pkt.guild_name, m_game->m_client_list[client_h]->m_guild_name, sizeof(pkt.guild_name));
+					ret = m_game->m_client_list[i]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 				}
-				std::memset(m_pGame->m_pClientList[i]->m_cGuildName, 0, sizeof(m_pGame->m_pClientList[i]->m_cGuildName));
-				strcpy(m_pGame->m_pClientList[i]->m_cGuildName, "NONE");
-				m_pGame->m_pClientList[i]->m_iGuildRank = -1;
-				m_pGame->m_pClientList[i]->m_iGuildGUID = -1;
+				std::memset(m_game->m_client_list[i]->m_guild_name, 0, sizeof(m_game->m_client_list[i]->m_guild_name));
+				strcpy(m_game->m_client_list[i]->m_guild_name, "NONE");
+				m_game->m_client_list[i]->m_guild_rank = -1;
+				m_game->m_client_list[i]->m_guild_guid = -1;
 				break;
 
 			case Notify::EventMsgString:
@@ -321,15 +321,15 @@ void GuildManager::SendGuildMsg(int iClientH, uint16_t wNotifyMsgType, short sV1
 
 				auto* header = writer.Append<hb::net::PacketHeader>();
 				header->msg_id = MsgId::Notify;
-				header->msg_type = wNotifyMsgType;
+				header->msg_type = notify_msg_type;
 
-				if (pString != 0) {
-					const std::size_t len = std::strlen(pString);
-					writer.AppendBytes(pString, len);
+				if (string != 0) {
+					const std::size_t len = std::strlen(string);
+					writer.AppendBytes(string, len);
 				}
 				writer.AppendBytes("", 1);
 
-				iRet = m_pGame->m_pClientList[i]->m_pXSock->iSendMsg(writer.Data(), static_cast<int>(writer.Size()));
+				ret = m_game->m_client_list[i]->m_socket->send_msg(writer.Data(), static_cast<int>(writer.size()));
 			}
 			break;
 
@@ -337,9 +337,9 @@ void GuildManager::SendGuildMsg(int iClientH, uint16_t wNotifyMsgType, short sV1
 			{
 				hb::net::PacketNotifyNewGuildsMan pkt{};
 				pkt.header.msg_id = MsgId::Notify;
-				pkt.header.msg_type = wNotifyMsgType;
-				memcpy(pkt.name, m_pGame->m_pClientList[iClientH]->m_cCharName, sizeof(pkt.name));
-				iRet = m_pGame->m_pClientList[i]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+				pkt.header.msg_type = notify_msg_type;
+				memcpy(pkt.name, m_game->m_client_list[client_h]->m_char_name, sizeof(pkt.name));
+				ret = m_game->m_client_list[i]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 			}
 			break;
 
@@ -347,249 +347,249 @@ void GuildManager::SendGuildMsg(int iClientH, uint16_t wNotifyMsgType, short sV1
 			{
 				hb::net::PacketNotifyDismissGuildsMan pkt{};
 				pkt.header.msg_id = MsgId::Notify;
-				pkt.header.msg_type = wNotifyMsgType;
-				memcpy(pkt.name, m_pGame->m_pClientList[iClientH]->m_cCharName, sizeof(pkt.name));
-				iRet = m_pGame->m_pClientList[i]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+				pkt.header.msg_type = notify_msg_type;
+				memcpy(pkt.name, m_game->m_client_list[client_h]->m_char_name, sizeof(pkt.name));
+				ret = m_game->m_client_list[i]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 			}
 			break;
 			}
 
-			switch (iRet) {
+			switch (ret) {
 			case sock::Event::QueueFull:
 			case sock::Event::SocketError:
 			case sock::Event::CriticalError:
 			case sock::Event::SocketClosed:
-				m_pGame->DeleteClient(i, true, true);
+				m_game->delete_client(i, true, true);
 				return;
 			}
 		}
 
 }
 
-void GuildManager::GuildNotifyHandler(char* pData, size_t dwMsgSize)
+void GuildManager::guild_notify_handler(char* data, size_t msg_size)
 {
-	char* cp, cCharName[hb::shared::limits::CharNameLen], cGuildName[21];
+	char* cp, char_name[hb::shared::limits::CharNameLen], guild_name[21];
 
-	std::memset(cCharName, 0, sizeof(cCharName));
-	std::memset(cGuildName, 0, sizeof(cGuildName));
+	std::memset(char_name, 0, sizeof(char_name));
+	std::memset(guild_name, 0, sizeof(guild_name));
 
-	const auto* header = hb::net::PacketCast<hb::net::PacketHeader>(pData, sizeof(hb::net::PacketHeader));
+	const auto* header = hb::net::PacketCast<hb::net::PacketHeader>(data, sizeof(hb::net::PacketHeader));
 	if (!header) return;
-	cp = (char*)(pData + sizeof(hb::net::PacketHeader));
+	cp = (char*)(data + sizeof(hb::net::PacketHeader));
 
-	memcpy(cCharName, cp, hb::shared::limits::CharNameLen);
+	memcpy(char_name, cp, hb::shared::limits::CharNameLen);
 	cp += hb::shared::limits::CharNameLen;
 
-	memcpy(cGuildName, cp, hb::shared::limits::GuildNameLen);
+	memcpy(guild_name, cp, hb::shared::limits::GuildNameLen);
 	cp += hb::shared::limits::GuildNameLen;
 
 }
 
-void GuildManager::UserCommand_BanGuildsman(int iClientH, char* pData, size_t dwMsgSize)
+void GuildManager::user_command_ban_guildsman(int client_h, char* data, size_t msg_size)
 {
 	char   seps[] = "= \t\r\n";
-	char* token, cTargetName[11], cBuff[256];
+	char* token, target_name[11], buff[256];
 
-	if (m_pGame->m_pClientList[iClientH] == 0) return;
-	if ((dwMsgSize) <= 0) return;
+	if (m_game->m_client_list[client_h] == 0) return;
+	if ((msg_size) <= 0) return;
 
-	if (m_pGame->m_pClientList[iClientH]->m_iGuildRank != 0) {
-		m_pGame->SendNotifyMsg(0, iClientH, Notify::NoGuildMasterLevel, 0, 0, 0, 0);
+	if (m_game->m_client_list[client_h]->m_guild_rank != 0) {
+		m_game->send_notify_msg(0, client_h, Notify::NoGuildMasterLevel, 0, 0, 0, 0);
 		return;
 	}
 
-	std::memset(cTargetName, 0, sizeof(cTargetName));
-	std::memset(cBuff, 0, sizeof(cBuff));
-	memcpy(cBuff, pData, dwMsgSize);
+	std::memset(target_name, 0, sizeof(target_name));
+	std::memset(buff, 0, sizeof(buff));
+	memcpy(buff, data, msg_size);
 
-	token = strtok(cBuff, seps);
+	token = strtok(buff, seps);
 	token = strtok(NULL, seps);
 
 	if (token != 0) {
 		if (strlen(token) > hb::shared::limits::CharNameLen - 1)
-			memcpy(cTargetName, token, hb::shared::limits::CharNameLen - 1);
-		else memcpy(cTargetName, token, strlen(token));
+			memcpy(target_name, token, hb::shared::limits::CharNameLen - 1);
+		else memcpy(target_name, token, strlen(token));
 
 		for(int i = 1; i < hb::server::config::MaxClients; i++)
-			if ((m_pGame->m_pClientList[i] != 0) && (hb_strnicmp(m_pGame->m_pClientList[i]->m_cCharName, cTargetName, hb::shared::limits::CharNameLen - 1) == 0)) {
+			if ((m_game->m_client_list[i] != 0) && (hb_strnicmp(m_game->m_client_list[i]->m_char_name, target_name, hb::shared::limits::CharNameLen - 1) == 0)) {
 
-				if (memcmp(m_pGame->m_pClientList[iClientH]->m_cGuildName, m_pGame->m_pClientList[i]->m_cGuildName, 20) != 0) {
+				if (memcmp(m_game->m_client_list[client_h]->m_guild_name, m_game->m_client_list[i]->m_guild_name, 20) != 0) {
 
-					m_pGame->SendNotifyMsg(0, iClientH, Notify::CannotBanGuildman, 0, 0, 0, 0);
+					m_game->send_notify_msg(0, client_h, Notify::CannotBanGuildman, 0, 0, 0, 0);
 					return;
 				}
 
-				SendGuildMsg(i, Notify::DismissGuildsman, 0, 0, 0);
+				send_guild_msg(i, Notify::DismissGuildsman, 0, 0, 0);
 
-				std::memset(m_pGame->m_pClientList[i]->m_cGuildName, 0, sizeof(m_pGame->m_pClientList[i]->m_cGuildName));
-				strcpy(m_pGame->m_pClientList[i]->m_cGuildName, "NONE");
-				m_pGame->m_pClientList[i]->m_iGuildRank = -1;
-				m_pGame->m_pClientList[i]->m_iGuildGUID = -1;
+				std::memset(m_game->m_client_list[i]->m_guild_name, 0, sizeof(m_game->m_client_list[i]->m_guild_name));
+				strcpy(m_game->m_client_list[i]->m_guild_name, "NONE");
+				m_game->m_client_list[i]->m_guild_rank = -1;
+				m_game->m_client_list[i]->m_guild_guid = -1;
 
-				m_pGame->SendNotifyMsg(0, iClientH, Notify::SuccessBanGuildman, 0, 0, 0, 0);
+				m_game->send_notify_msg(0, client_h, Notify::SuccessBanGuildman, 0, 0, 0, 0);
 
-				m_pGame->SendNotifyMsg(iClientH, i, CommonType::BanGuild, 0, 0, 0, 0);
+				m_game->send_notify_msg(client_h, i, CommonType::BanGuild, 0, 0, 0, 0);
 
-				m_pGame->SendEventToNearClient_TypeA(i, hb::shared::owner_class::Player, MsgId::EventMotion, Type::NullAction, 0, 0, 0);
+				m_game->send_event_to_near_client_type_a(i, hb::shared::owner_class::Player, MsgId::EventMotion, Type::NullAction, 0, 0, 0);
 
 				return;
 			}
-		m_pGame->SendNotifyMsg(0, iClientH, Notify::PlayerNotOnGame, 0, 0, 0, cTargetName);
+		m_game->send_notify_msg(0, client_h, Notify::PlayerNotOnGame, 0, 0, 0, target_name);
 	}
 
 	return;
 }
 
-void GuildManager::UserCommand_DissmissGuild(int iClientH, char* pData, size_t dwMsgSize)
+void GuildManager::user_command_dismiss_guild(int client_h, char* data, size_t msg_size)
 {
 
 }
 
-void GuildManager::RequestCreateNewGuild(int iClientH, char* pData)
+void GuildManager::request_create_new_guild(int client_h, char* data)
 {
-	char cFileName[255];
-	char cTxt[500];
-	char cTxt2[100];
-	char cGuildMasterName[hb::shared::limits::CharNameLen], cGuildLocation[11], cDir[255], cGuildName[21];
-	uint32_t dwGuildGUID;
+	char file_name[255];
+	char txt[500];
+	char txt2[100];
+	char guild_master_name[hb::shared::limits::CharNameLen], guild_location[11], dir[255], guild_name[21];
+	uint32_t guild_guid;
 	hb::time::local_time SysTime{};
-	FILE* pFile;
+	FILE* file;
 
-	if (m_pGame->m_pClientList[iClientH] == 0) return;
-	std::memset(cFileName, 0, sizeof(cFileName));
-	std::memset(cTxt, 0, sizeof(cTxt));
-	std::memset(cTxt2, 0, sizeof(cTxt2));
-	std::memset(cDir, 0, sizeof(cDir));
-	std::memset(cGuildMasterName, 0, sizeof(cGuildMasterName));
-	std::memset(cGuildName, 0, sizeof(cGuildName));
-	std::memset(cGuildLocation, 0, sizeof(cGuildLocation));
+	if (m_game->m_client_list[client_h] == 0) return;
+	std::memset(file_name, 0, sizeof(file_name));
+	std::memset(txt, 0, sizeof(txt));
+	std::memset(txt2, 0, sizeof(txt2));
+	std::memset(dir, 0, sizeof(dir));
+	std::memset(guild_master_name, 0, sizeof(guild_master_name));
+	std::memset(guild_name, 0, sizeof(guild_name));
+	std::memset(guild_location, 0, sizeof(guild_location));
 
-	const auto& guildData = *reinterpret_cast<const hb::net::GuildCreatePayload*>(pData);
-	std::memcpy(cGuildMasterName, guildData.char_name, sizeof(guildData.char_name));
-	std::memcpy(cGuildName, guildData.guild_name, sizeof(guildData.guild_name));
-	std::memcpy(cGuildLocation, guildData.location, sizeof(guildData.location));
-	dwGuildGUID = guildData.guild_guid;
+	const auto& guildData = *reinterpret_cast<const hb::net::GuildCreatePayload*>(data);
+	std::memcpy(guild_master_name, guildData.char_name, sizeof(guildData.char_name));
+	std::memcpy(guild_name, guildData.guild_name, sizeof(guildData.guild_name));
+	std::memcpy(guild_location, guildData.location, sizeof(guildData.location));
+	guild_guid = guildData.guild_guid;
 
-	strcat(cFileName, "Guilds");
-	strcat(cFileName, "/");
-	std::snprintf(cTxt2, sizeof(cTxt2), "AscII%d", *cGuildName);
-	strcat(cFileName, cTxt2);
-	strcat(cDir, cFileName);
-	strcat(cFileName, "/");
-	strcat(cFileName, "/");
-	strcat(cFileName, cGuildName);
-	strcat(cFileName, ".txt");
+	strcat(file_name, "Guilds");
+	strcat(file_name, "/");
+	std::snprintf(txt2, sizeof(txt2), "AscII%d", *guild_name);
+	strcat(file_name, txt2);
+	strcat(dir, file_name);
+	strcat(file_name, "/");
+	strcat(file_name, "/");
+	strcat(file_name, guild_name);
+	strcat(file_name, ".txt");
 
-	std::filesystem::create_directories(cDir);
+	std::filesystem::create_directories(dir);
 
-	pFile = fopen(cFileName, "rt");
-	if (pFile != 0) {
-		hb::logger::error("Cannot create guild: name already exists ({})", cFileName);
+	file = fopen(file_name, "rt");
+	if (file != 0) {
+		hb::logger::error("Cannot create guild: name already exists ({})", file_name);
 
-		ResponseCreateNewGuildHandler(cGuildMasterName, 0);
-		fclose(pFile);
+		response_create_new_guild_handler(guild_master_name, 0);
+		fclose(file);
 	}
 	else {
-		pFile = fopen(cFileName, "wt");
-		if (pFile == 0) {
-			hb::logger::error("Cannot create guild: file creation failed ({})", cFileName);
+		file = fopen(file_name, "wt");
+		if (file == 0) {
+			hb::logger::error("Cannot create guild: file creation failed ({})", file_name);
 
-			ResponseCreateNewGuildHandler(cGuildMasterName, 0);
+			response_create_new_guild_handler(guild_master_name, 0);
 		}
 		else {
-			hb::logger::log("Guild created: {}", cFileName);
+			hb::logger::log("Guild created: {}", file_name);
 
-			std::memset(cTxt2, 0, sizeof(cTxt2));
-			std::memset(cTxt, 0, sizeof(cTxt));
+			std::memset(txt2, 0, sizeof(txt2));
+			std::memset(txt, 0, sizeof(txt));
 			SysTime = hb::time::local_time::now();
 
-			std::snprintf(cTxt, sizeof(cTxt), ";Guild file - Updated %4d/%2d/%2d/%2d/%2d", SysTime.year, SysTime.month, SysTime.day, SysTime.hour, SysTime.minute);
-			strcat(cTxt, "\n");
-			strcat(cTxt, ";Just created\n\n");
+			std::snprintf(txt, sizeof(txt), ";Guild file - Updated %4d/%2d/%2d/%2d/%2d", SysTime.year, SysTime.month, SysTime.day, SysTime.hour, SysTime.minute);
+			strcat(txt, "\n");
+			strcat(txt, ";Just created\n\n");
 
-			strcat(cTxt, "[GUILD-INFO]\n\n");
+			strcat(txt, "[GUILD-INFO]\n\n");
 
-			strcat(cTxt, "guildmaster-name     = ");
-			strcat(cTxt, cGuildMasterName);
-			strcat(cTxt, "\n");
+			strcat(txt, "guildmaster-name     = ");
+			strcat(txt, guild_master_name);
+			strcat(txt, "\n");
 
-			strcat(cTxt, "guild-GUID           = ");
-			std::snprintf(cTxt2, sizeof(cTxt2), "%d", dwGuildGUID);
-			strcat(cTxt, cTxt2);
-			strcat(cTxt, "\n");
+			strcat(txt, "guild-GUID           = ");
+			std::snprintf(txt2, sizeof(txt2), "%d", guild_guid);
+			strcat(txt, txt2);
+			strcat(txt, "\n");
 
-			strcat(cTxt, "guild-location       = ");
-			strcat(cTxt, cGuildLocation);
-			strcat(cTxt, "\n\n");
+			strcat(txt, "guild-location       = ");
+			strcat(txt, guild_location);
+			strcat(txt, "\n\n");
 
-			strcat(cTxt, "[GUILDSMAN]\n\n");
+			strcat(txt, "[GUILDSMAN]\n\n");
 
-			fwrite(cTxt, 1, strlen(cTxt), pFile);
+			fwrite(txt, 1, strlen(txt), file);
 
-			ResponseCreateNewGuildHandler(cGuildMasterName, 1);
-			fclose(pFile);
+			response_create_new_guild_handler(guild_master_name, 1);
+			fclose(file);
 		}
 	}
 }
 
-void GuildManager::RequestDisbandGuild(int iClientH, char* pData)
+void GuildManager::request_disband_guild(int client_h, char* data)
 {
-	char cTemp[500];
-	char cFileName[255], cTxt[100], cDir[100];
-	char cGuildMasterName[hb::shared::limits::CharNameLen], cGuildName[21];
-	FILE* pFile;
+	char temp[500];
+	char file_name[255], txt[100], dir[100];
+	char guild_master_name[hb::shared::limits::CharNameLen], guild_name[21];
+	FILE* file;
 
-	if (m_pGame->m_pClientList[iClientH] == 0) return;
-	std::memset(cFileName, 0, sizeof(cFileName));
-	std::memset(cTxt, 0, sizeof(cTxt));
-	std::memset(cDir, 0, sizeof(cDir));
-	std::memset(cTemp, 0, sizeof(cTemp));
-	std::memset(cGuildMasterName, 0, sizeof(cGuildMasterName));
-	std::memset(cGuildName, 0, sizeof(cGuildName));
+	if (m_game->m_client_list[client_h] == 0) return;
+	std::memset(file_name, 0, sizeof(file_name));
+	std::memset(txt, 0, sizeof(txt));
+	std::memset(dir, 0, sizeof(dir));
+	std::memset(temp, 0, sizeof(temp));
+	std::memset(guild_master_name, 0, sizeof(guild_master_name));
+	std::memset(guild_name, 0, sizeof(guild_name));
 
-	const auto& disbandData = *reinterpret_cast<const hb::net::GuildDisbandPayload*>(pData);
-	std::memcpy(cGuildMasterName, disbandData.char_name, sizeof(disbandData.char_name));
-	std::memcpy(cGuildName, disbandData.guild_name, sizeof(disbandData.guild_name));
+	const auto& disbandData = *reinterpret_cast<const hb::net::GuildDisbandPayload*>(data);
+	std::memcpy(guild_master_name, disbandData.char_name, sizeof(disbandData.char_name));
+	std::memcpy(guild_name, disbandData.guild_name, sizeof(disbandData.guild_name));
 
-	strcat(cFileName, "Guilds");
-	strcat(cFileName, "/");
-	strcat(cFileName, "/");
-	std::snprintf(cTxt, sizeof(cTxt), "AscII%d", *cGuildName);
-	strcat(cFileName, cTxt);
-	strcat(cDir, cFileName);
-	strcat(cFileName, "/");
-	strcat(cFileName, "/");
-	strcat(cFileName, cGuildName);
-	strcat(cFileName, ".txt");
+	strcat(file_name, "Guilds");
+	strcat(file_name, "/");
+	strcat(file_name, "/");
+	std::snprintf(txt, sizeof(txt), "AscII%d", *guild_name);
+	strcat(file_name, txt);
+	strcat(dir, file_name);
+	strcat(file_name, "/");
+	strcat(file_name, "/");
+	strcat(file_name, guild_name);
+	strcat(file_name, ".txt");
 
-	pFile = fopen(cFileName, "rt");
-	if (pFile != 0) {
-		fclose(pFile);
-		hb::logger::log("Guild disbanded, deleting file: {}", cFileName);
-		if (std::remove(cFileName) == 0) {
-			ResponseDisbandGuildHandler(cGuildMasterName, 1);
+	file = fopen(file_name, "rt");
+	if (file != 0) {
+		fclose(file);
+		hb::logger::log("Guild disbanded, deleting file: {}", file_name);
+		if (std::remove(file_name) == 0) {
+			response_disband_guild_handler(guild_master_name, 1);
 		}
 		else {
 
-			ResponseDisbandGuildHandler(cGuildMasterName, 0);
+			response_disband_guild_handler(guild_master_name, 0);
 		}
 	}
 	else {
 
-		ResponseDisbandGuildHandler(cGuildMasterName, 0);
+		response_disband_guild_handler(guild_master_name, 0);
 	}
 }
 
-void GuildManager::RequestGuildNameHandler(int iClientH, int iObjectID, int iIndex)
+void GuildManager::request_guild_name_handler(int client_h, int object_id, int index)
 {
-	if (m_pGame->m_pClientList[iClientH] == 0) return;
-	if ((iObjectID <= 0) || (iObjectID >= hb::server::config::MaxClients)) return;
+	if (m_game->m_client_list[client_h] == 0) return;
+	if ((object_id <= 0) || (object_id >= hb::server::config::MaxClients)) return;
 
-	if (m_pGame->m_pClientList[iObjectID] == 0) {
+	if (m_game->m_client_list[object_id] == 0) {
 		// Object .
 
 	}
 	else {
-		m_pGame->SendNotifyMsg(0, iClientH, Notify::ReqGuildNameAnswer, m_pGame->m_pClientList[iObjectID]->m_iGuildRank, iIndex, 0, m_pGame->m_pClientList[iObjectID]->m_cGuildName);
+		m_game->send_notify_msg(0, client_h, Notify::ReqGuildNameAnswer, m_game->m_client_list[object_id]->m_guild_rank, index, 0, m_game->m_client_list[object_id]->m_guild_name);
 	}
 }

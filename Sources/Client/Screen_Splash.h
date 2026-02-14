@@ -17,7 +17,7 @@ class Screen_Splash : public IGameScreen
 public:
     SCREEN_TYPE(Screen_Splash)
 
-    explicit Screen_Splash(CGame* pGame);
+    explicit Screen_Splash(CGame* game);
     ~Screen_Splash() override = default;
 
     void on_initialize() override;
@@ -39,5 +39,5 @@ private:
 
     std::array<Credit, NUM_CONTRIBUTORS> m_credits;
 
-    float GetContributorAlpha(uint32_t elapsedMs, int contributorIndex) const;
+    float get_contributor_alpha(uint32_t elapsedMs, int contributorIndex) const;
 };

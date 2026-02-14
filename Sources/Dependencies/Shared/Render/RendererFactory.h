@@ -47,20 +47,20 @@ public:
     // Returns true on success
     static bool Set(RendererType type);
 
-    // Get the current renderer instance
-    static IRenderer* Get();
+    // get the current renderer instance
+    static IRenderer* get();
 
     // Destroy the current renderer
     static void Destroy();
 
-    // Get the underlying renderer pointer
+    // get the underlying renderer pointer
     static void* GetNative();
 
-    // Get the current renderer type
+    // get the current renderer type
     static RendererType GetType();
 
 private:
-    static IRenderer* s_pRenderer;
+    static IRenderer* s_renderer;
     static RendererType s_type;
 };
 
@@ -75,13 +75,13 @@ public:
     // Create the OS window from staged params + initialize input system
     static bool realize();
 
-    // Get the current window instance
+    // get the current window instance
     static IWindow* get();
 
     // Destroy the current window
     static void destroy();
 
-    // Get the window handle (HWND on Windows)
+    // get the window handle (HWND on Windows)
     static hb::shared::types::NativeWindowHandle get_handle();
 
     // Convenience: Check if window is open and active
@@ -100,7 +100,7 @@ public:
     static void set_borderless(bool borderless);
 
 private:
-    static IWindow* s_pWindow;
+    static IWindow* s_window;
 };
 
 } // namespace hb::shared::render

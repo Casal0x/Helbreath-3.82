@@ -4,6 +4,7 @@
 
 #include "IOServicePool.h"
 #include <cstdio>
+#include "Log.h"
 
 namespace hb::shared::net {
 
@@ -16,31 +17,31 @@ IOServicePool::IOServicePool(int threadCount)
 
 IOServicePool::~IOServicePool()
 {
-	Stop();
+	stop();
 }
 
-void IOServicePool::Start()
+void IOServicePool::start()
 {
 	if (m_threadCount <= 0) return;
 	if (!m_threads.empty()) return; // Already started
 
-	printf("[IOServicePool] Starting %d I/O threads\n", m_threadCount);
+	hb::logger::debug("[IOServicePool] Starting {} I/O threads\n", m_threadCount);
 
 	for(int i = 0; i < m_threadCount; i++) {
 		m_threads.emplace_back([this, i]() {
-			printf("[IOServicePool] I/O thread %d started\n", i);
+			hb::logger::debug("[IOServicePool] I/O thread {} started\n", i);
 			m_ioContext.run();
-			printf("[IOServicePool] I/O thread %d exited\n", i);
+			hb::logger::debug("[IOServicePool] I/O thread {} exited\n", i);
 		});
 	}
 }
 
-void IOServicePool::Stop()
+void IOServicePool::stop()
 {
 	// Release work guard so run() can return when idle
 	m_workGuard.reset();
 
-	// Stop accepting new handlers
+	// stop accepting new handlers
 	m_ioContext.stop();
 
 	// Join all threads

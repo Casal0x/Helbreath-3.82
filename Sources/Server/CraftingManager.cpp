@@ -24,52 +24,52 @@ namespace sock = hb::shared::net::socket;
 CraftingManager::CraftingManager()
 {
 	for (int i = 0; i < MaxPortionTypes; i++) {
-		m_pPortionConfigList[i] = 0;
-		m_pCraftingConfigList[i] = 0;
+		m_portion_config_list[i] = 0;
+		m_crafting_config_list[i] = 0;
 	}
 }
 
 CraftingManager::~CraftingManager()
 {
-	CleanupArrays();
+	cleanup_arrays();
 }
 
-void CraftingManager::InitArrays()
+void CraftingManager::init_arrays()
 {
 	for (int i = 0; i < MaxPortionTypes; i++) {
-		m_pPortionConfigList[i] = 0;
-		m_pCraftingConfigList[i] = 0;
+		m_portion_config_list[i] = 0;
+		m_crafting_config_list[i] = 0;
 	}
 }
 
-void CraftingManager::CleanupArrays()
+void CraftingManager::cleanup_arrays()
 {
 	for (int i = 0; i < MaxPortionTypes; i++) {
-		if (m_pPortionConfigList[i] != 0) delete m_pPortionConfigList[i];
-		if (m_pCraftingConfigList[i] != 0) delete m_pCraftingConfigList[i];
+		if (m_portion_config_list[i] != 0) delete m_portion_config_list[i];
+		if (m_crafting_config_list[i] != 0) delete m_crafting_config_list[i];
 	}
 }
 
-void CraftingManager::ReqCreatePortionHandler(int iClientH, char* pData)
+void CraftingManager::req_create_portion_handler(int client_h, char* data)
 {
-	char cI[6], cPortionName[hb::shared::limits::ItemNameLen];
-	int    iRet, j, iEraseReq, iSkillLimit, iSkillLevel, iResult, iDifficulty;
-	short sItemIndex[6], sTemp;
-	short  sItemNumber[6], sItemArray[12];
-	bool   bDup, bFlag;
-	CItem* pItem;
+	char cI[6], portion_name[hb::shared::limits::ItemNameLen];
+	int    ret, j, erase_req, skill_limit, skill_level, result, difficulty;
+	short item_index[6], temp;
+	short  item_number[6], item_array[12];
+	bool   dup, flag;
+	CItem* item;
 
-	if (m_pGame->m_pClientList[iClientH] == 0) return;
-	m_pGame->m_pClientList[iClientH]->m_iSkillMsgRecvCount++;
+	if (m_game->m_client_list[client_h] == 0) return;
+	m_game->m_client_list[client_h]->m_skill_msg_recv_count++;
 
 	for(int i = 0; i < 6; i++) {
 		cI[i] = -1;
-		sItemIndex[i] = -1;
-		sItemNumber[i] = 0;
+		item_index[i] = -1;
+		item_number[i] = 0;
 	}
 
 	const auto* pkt = hb::net::PacketCast<hb::net::PacketCommandCommonItems>(
-		pData, sizeof(hb::net::PacketCommandCommonItems));
+		data, sizeof(hb::net::PacketCommandCommonItems));
 	if (!pkt) return;
 	for(int i = 0; i < 6; i++) {
 		cI[i] = static_cast<char>(pkt->item_ids[i]);
@@ -77,22 +77,22 @@ void CraftingManager::ReqCreatePortionHandler(int iClientH, char* pData)
 
 	for(int i = 0; i < 6; i++) {
 		if (cI[i] >= hb::shared::limits::MaxItems) return;
-		if ((cI[i] >= 0) && (m_pGame->m_pClientList[iClientH]->m_pItemList[cI[i]] == 0)) return;
+		if ((cI[i] >= 0) && (m_game->m_client_list[client_h]->m_item_list[cI[i]] == 0)) return;
 	}
 
 	for(int i = 0; i < 6; i++)
 		if (cI[i] >= 0) {
-			bDup = false;
+			dup = false;
 			for (j = 0; j < 6; j++)
-				if (sItemIndex[j] == cI[i]) {
-					sItemNumber[j]++;
-					bDup = true;
+				if (item_index[j] == cI[i]) {
+					item_number[j]++;
+					dup = true;
 				}
-			if (bDup == false) {
+			if (dup == false) {
 				for (j = 0; j < 6; j++)
-					if (sItemIndex[j] == -1) {
-						sItemIndex[j] = cI[i];
-						sItemNumber[j]++;
+					if (item_index[j] == -1) {
+						item_index[j] = cI[i];
+						item_number[j]++;
 						goto RCPH_LOOPBREAK;
 					}
 			RCPH_LOOPBREAK:;
@@ -100,160 +100,160 @@ void CraftingManager::ReqCreatePortionHandler(int iClientH, char* pData)
 		}
 
 	for(int i = 0; i < 6; i++)
-		if (sItemIndex[i] != -1) {
-			if (sItemIndex[i] < 0) return;
-			if ((sItemIndex[i] >= 0) && (sItemIndex[i] >= hb::shared::limits::MaxItems)) return;
-			if (m_pGame->m_pClientList[iClientH]->m_pItemList[sItemIndex[i]] == 0) return;
-			if (m_pGame->m_pClientList[iClientH]->m_pItemList[sItemIndex[i]]->m_dwCount < static_cast<uint32_t>(sItemNumber[i])) return;
+		if (item_index[i] != -1) {
+			if (item_index[i] < 0) return;
+			if ((item_index[i] >= 0) && (item_index[i] >= hb::shared::limits::MaxItems)) return;
+			if (m_game->m_client_list[client_h]->m_item_list[item_index[i]] == 0) return;
+			if (m_game->m_client_list[client_h]->m_item_list[item_index[i]]->m_count < static_cast<uint32_t>(item_number[i])) return;
 		}
 
 	// . Bubble Sort
-	bFlag = true;
-	while (bFlag) {
-		bFlag = false;
+	flag = true;
+	while (flag) {
+		flag = false;
 		for(int i = 0; i < 5; i++)
-			if ((sItemIndex[i] != -1) && (sItemIndex[i + 1] != -1)) {
-				if ((m_pGame->m_pClientList[iClientH]->m_pItemList[sItemIndex[i]]->m_sIDnum) <
-					(m_pGame->m_pClientList[iClientH]->m_pItemList[sItemIndex[i + 1]]->m_sIDnum)) {
-					sTemp = sItemIndex[i + 1];
-					sItemIndex[i + 1] = sItemIndex[i];
-					sItemIndex[i] = sTemp;
-					sTemp = sItemNumber[i + 1];
-					sItemNumber[i + 1] = sItemNumber[i];
-					sItemNumber[i] = sTemp;
-					bFlag = true;
+			if ((item_index[i] != -1) && (item_index[i + 1] != -1)) {
+				if ((m_game->m_client_list[client_h]->m_item_list[item_index[i]]->m_id_num) <
+					(m_game->m_client_list[client_h]->m_item_list[item_index[i + 1]]->m_id_num)) {
+					temp = item_index[i + 1];
+					item_index[i + 1] = item_index[i];
+					item_index[i] = temp;
+					temp = item_number[i + 1];
+					item_number[i + 1] = item_number[i];
+					item_number[i] = temp;
+					flag = true;
 				}
 			}
 	}
 
 	j = 0;
 	for(int i = 0; i < 6; i++) {
-		if (sItemIndex[i] != -1)
-			sItemArray[j] = m_pGame->m_pClientList[iClientH]->m_pItemList[sItemIndex[i]]->m_sIDnum;
-		else sItemArray[j] = sItemIndex[i];
-		sItemArray[j + 1] = sItemNumber[i];
+		if (item_index[i] != -1)
+			item_array[j] = m_game->m_client_list[client_h]->m_item_list[item_index[i]]->m_id_num;
+		else item_array[j] = item_index[i];
+		item_array[j + 1] = item_number[i];
 		j += 2;
 	}
 
-	std::memset(cPortionName, 0, sizeof(cPortionName));
+	std::memset(portion_name, 0, sizeof(portion_name));
 
 	for(int i = 0; i < MaxPortionTypes; i++)
-		if (m_pPortionConfigList[i] != 0) {
-			bFlag = false;
+		if (m_portion_config_list[i] != 0) {
+			flag = false;
 			for (j = 0; j < 12; j++)
-				if (m_pPortionConfigList[i]->m_sArray[j] != sItemArray[j]) bFlag = true;
+				if (m_portion_config_list[i]->m_array[j] != item_array[j]) flag = true;
 
-			if (bFlag == false) {
-				std::memset(cPortionName, 0, sizeof(cPortionName));
-				memcpy(cPortionName, m_pPortionConfigList[i]->m_cName, hb::shared::limits::ItemNameLen - 1);
-				iSkillLimit = m_pPortionConfigList[i]->m_iSkillLimit;
-				iDifficulty = m_pPortionConfigList[i]->m_iDifficulty;
+			if (flag == false) {
+				std::memset(portion_name, 0, sizeof(portion_name));
+				memcpy(portion_name, m_portion_config_list[i]->m_name, hb::shared::limits::ItemNameLen - 1);
+				skill_limit = m_portion_config_list[i]->m_skill_limit;
+				difficulty = m_portion_config_list[i]->m_difficulty;
 			}
 		}
 
-	if (strlen(cPortionName) == 0) {
-		m_pGame->SendNotifyMsg(0, iClientH, Notify::NoMatchingPortion, 0, 0, 0, 0);
+	if (strlen(portion_name) == 0) {
+		m_game->send_notify_msg(0, client_h, Notify::NoMatchingPortion, 0, 0, 0, 0);
 		return;
 	}
 
-	iSkillLevel = m_pGame->m_pClientList[iClientH]->m_cSkillMastery[12];
-	if (iSkillLimit > iSkillLevel) {
-		m_pGame->SendNotifyMsg(0, iClientH, Notify::LowPortionSkill, 0, 0, 0, cPortionName);
+	skill_level = m_game->m_client_list[client_h]->m_skill_mastery[12];
+	if (skill_limit > skill_level) {
+		m_game->send_notify_msg(0, client_h, Notify::LowPortionSkill, 0, 0, 0, portion_name);
 		return;
 	}
 
-	iSkillLevel -= iDifficulty;
-	if (iSkillLevel <= 0) iSkillLevel = 1;
+	skill_level -= difficulty;
+	if (skill_level <= 0) skill_level = 1;
 
-	iResult = m_pGame->iDice(1, 100);
-	if (iResult > iSkillLevel) {
-		m_pGame->SendNotifyMsg(0, iClientH, Notify::PortionFail, 0, 0, 0, cPortionName);
+	result = m_game->dice(1, 100);
+	if (result > skill_level) {
+		m_game->send_notify_msg(0, client_h, Notify::PortionFail, 0, 0, 0, portion_name);
 		return;
 	}
 
-	m_pGame->m_pSkillManager->CalculateSSN_SkillIndex(iClientH, 12, 1);
+	m_game->m_skill_manager->calculate_ssn_skill_index(client_h, 12, 1);
 
-	if (strlen(cPortionName) != 0) {
-		pItem = 0;
-		pItem = new CItem;
-		if (pItem == 0) return;
+	if (strlen(portion_name) != 0) {
+		item = 0;
+		item = new CItem;
+		if (item == 0) return;
 
 		for(int i = 0; i < 6; i++)
-			if (sItemIndex[i] != -1) {
-				if (m_pGame->m_pClientList[iClientH]->m_pItemList[sItemIndex[i]]->GetItemType() == ItemType::Consume)
+			if (item_index[i] != -1) {
+				if (m_game->m_client_list[client_h]->m_item_list[item_index[i]]->get_item_type() == ItemType::Consume)
 					// v1.41 !!!
-					m_pGame->m_pItemManager->SetItemCount(iClientH, sItemIndex[i], //     m_pClientList[iClientH]->m_pItemList[sItemIndex[i]]->m_cName,
-						m_pGame->m_pClientList[iClientH]->m_pItemList[sItemIndex[i]]->m_dwCount - sItemNumber[i]);
-				else m_pGame->m_pItemManager->ItemDepleteHandler(iClientH, sItemIndex[i], false);
+					m_game->m_item_manager->set_item_count(client_h, item_index[i], //     m_client_list[client_h]->m_item_list[item_index[i]]->m_name,
+						m_game->m_client_list[client_h]->m_item_list[item_index[i]]->m_count - item_number[i]);
+				else m_game->m_item_manager->item_deplete_handler(client_h, item_index[i], false);
 			}
 
-		m_pGame->SendNotifyMsg(0, iClientH, Notify::PortionSuccess, 0, 0, 0, cPortionName);
-		m_pGame->m_pClientList[iClientH]->m_iExpStock += m_pGame->iDice(1, (iDifficulty / 3));
+		m_game->send_notify_msg(0, client_h, Notify::PortionSuccess, 0, 0, 0, portion_name);
+		m_game->m_client_list[client_h]->m_exp_stock += m_game->dice(1, (difficulty / 3));
 
-		if ((m_pGame->m_pItemManager->_bInitItemAttr(pItem, cPortionName))) {
-			if (m_pGame->m_pItemManager->_bAddClientItemList(iClientH, pItem, &iEraseReq)) {
-				iRet = m_pGame->m_pItemManager->SendItemNotifyMsg(iClientH, Notify::ItemObtained, pItem, 0);
-				switch (iRet) {
+		if ((m_game->m_item_manager->init_item_attr(item, portion_name))) {
+			if (m_game->m_item_manager->add_client_item_list(client_h, item, &erase_req)) {
+				ret = m_game->m_item_manager->send_item_notify_msg(client_h, Notify::ItemObtained, item, 0);
+				switch (ret) {
 				case sock::Event::QueueFull:
 				case sock::Event::SocketError:
 				case sock::Event::CriticalError:
 				case sock::Event::SocketClosed:
-					m_pGame->DeleteClient(iClientH, true, true);
+					m_game->delete_client(client_h, true, true);
 					break;
 				}
 
-				//if ((pItem->m_wPrice * pItem->m_dwCount) > 1000)
-				//	SendMsgToLS(ServerMsgId::RequestSavePlayerData, iClientH);
+				//if ((item->m_price * item->m_count) > 1000)
+				//	SendMsgToLS(ServerMsgId::RequestSavePlayerData, client_h);
 			}
 			else {
-				m_pGame->m_pMapList[m_pGame->m_pClientList[iClientH]->m_cMapIndex]->bSetItem(m_pGame->m_pClientList[iClientH]->m_sX,
-					m_pGame->m_pClientList[iClientH]->m_sY, pItem);
+				m_game->m_map_list[m_game->m_client_list[client_h]->m_map_index]->set_item(m_game->m_client_list[client_h]->m_x,
+					m_game->m_client_list[client_h]->m_y, item);
 
-				m_pGame->SendEventToNearClient_TypeB(MsgId::EventCommon, CommonType::ItemDrop, m_pGame->m_pClientList[iClientH]->m_cMapIndex,
-					m_pGame->m_pClientList[iClientH]->m_sX, m_pGame->m_pClientList[iClientH]->m_sY,
-					pItem->m_sIDnum, 0, pItem->m_cItemColor, pItem->m_dwAttribute); // v1.4
+				m_game->send_event_to_near_client_type_b(MsgId::EventCommon, CommonType::ItemDrop, m_game->m_client_list[client_h]->m_map_index,
+					m_game->m_client_list[client_h]->m_x, m_game->m_client_list[client_h]->m_y,
+					item->m_id_num, 0, item->m_item_color, item->m_attribute); // v1.4
 
-				iRet = m_pGame->m_pItemManager->SendItemNotifyMsg(iClientH, Notify::CannotCarryMoreItem, 0, 0);
+				ret = m_game->m_item_manager->send_item_notify_msg(client_h, Notify::CannotCarryMoreItem, 0, 0);
 
-				switch (iRet) {
+				switch (ret) {
 				case sock::Event::QueueFull:
 				case sock::Event::SocketError:
 				case sock::Event::CriticalError:
 				case sock::Event::SocketClosed:
-					m_pGame->DeleteClient(iClientH, true, true);
+					m_game->delete_client(client_h, true, true);
 					break;
 				}
 			}
 		}
 		else {
-			delete pItem;
-			pItem = 0;
+			delete item;
+			item = 0;
 		}
 	}
 }
 
 ///		Snoopy: Added Crafting to the same file than potions
-void CraftingManager::ReqCreateCraftingHandler(int iClientH, char* pData)
+void CraftingManager::req_create_crafting_handler(int client_h, char* data)
 {
-	char cI[6], cCraftingName[hb::shared::limits::ItemNameLen];
-	int    iRet, j, iEraseReq, iRiskLevel, iDifficulty, iNeededContrib = 0;
-	short sTemp;
-	short  sItemIndex[6], sItemPurity[6], sItemNumber[6], sItemArray[12];
-	bool   bDup, bFlag, bNeedLog;
-	CItem* pItem;
+	char cI[6], crafting_name[hb::shared::limits::ItemNameLen];
+	int    ret, j, erase_req, risk_level, difficulty, needed_contrib = 0;
+	short temp;
+	short  item_index[6], item_purity[6], item_number[6], item_array[12];
+	bool   dup, flag, need_log;
+	CItem* item;
 
-	if (m_pGame->m_pClientList[iClientH] == 0) return;
-	m_pGame->m_pClientList[iClientH]->m_iSkillMsgRecvCount++;
+	if (m_game->m_client_list[client_h] == 0) return;
+	m_game->m_client_list[client_h]->m_skill_msg_recv_count++;
 
 	for(int i = 0; i < 6; i++)
 	{
 		cI[i] = -1;
-		sItemIndex[i] = -1;
-		sItemNumber[i] = 0;
-		sItemPurity[i] = -1;
+		item_index[i] = -1;
+		item_number[i] = 0;
+		item_purity[i] = -1;
 	}
 	const auto* pkt = hb::net::PacketCast<hb::net::PacketCommandCommonBuild>(
-		pData, sizeof(hb::net::PacketCommandCommonBuild));
+		data, sizeof(hb::net::PacketCommandCommonBuild));
 	if (!pkt) return;
 	for(int i = 0; i < 6; i++) {
 		cI[i] = static_cast<char>(pkt->item_ids[i]);
@@ -262,26 +262,26 @@ void CraftingManager::ReqCreateCraftingHandler(int iClientH, char* pData)
 	for(int i = 0; i < 6; i++)
 	{
 		if (cI[i] >= hb::shared::limits::MaxItems) return;
-		if ((cI[i] >= 0) && (m_pGame->m_pClientList[iClientH]->m_pItemList[cI[i]] == 0)) return;
+		if ((cI[i] >= 0) && (m_game->m_client_list[client_h]->m_item_list[cI[i]] == 0)) return;
 	}
 
 	for(int i = 0; i < 6; i++)
 		if (cI[i] >= 0)
 		{
-			bDup = false;
+			dup = false;
 			for (j = 0; j < 6; j++)
-				if (sItemIndex[j] == cI[i])
+				if (item_index[j] == cI[i])
 				{
-					sItemNumber[j]++;
-					bDup = true;
+					item_number[j]++;
+					dup = true;
 				}
-			if (bDup == false)
+			if (dup == false)
 			{
 				for (j = 0; j < 6; j++)
-					if (sItemIndex[j] == -1)
+					if (item_index[j] == -1)
 					{
-						sItemIndex[j] = cI[i];
-						sItemNumber[j]++;
+						item_index[j] = cI[i];
+						item_number[j]++;
 						goto RCPH_LOOPBREAK;
 					}
 			RCPH_LOOPBREAK:;
@@ -289,129 +289,129 @@ void CraftingManager::ReqCreateCraftingHandler(int iClientH, char* pData)
 		}
 
 	for(int i = 0; i < 6; i++)
-		if (sItemIndex[i] != -1)
+		if (item_index[i] != -1)
 		{
-			if (sItemIndex[i] < 0) return;
-			if ((sItemIndex[i] >= 0) && (sItemIndex[i] >= hb::shared::limits::MaxItems)) return;
-			if (m_pGame->m_pClientList[iClientH]->m_pItemList[sItemIndex[i]] == 0) return;
-			if (m_pGame->m_pClientList[iClientH]->m_pItemList[sItemIndex[i]]->m_dwCount < static_cast<uint32_t>(sItemNumber[i])) return;
-			sItemPurity[i] = m_pGame->m_pClientList[iClientH]->m_pItemList[sItemIndex[i]]->m_sItemSpecEffectValue2;
-			if ((m_pGame->m_pClientList[iClientH]->m_pItemList[sItemIndex[i]]->GetItemType() == ItemType::None)
-				&& (m_pGame->m_pClientList[iClientH]->m_pItemList[sItemIndex[i]]->m_sSprite == 6)
-				&& (m_pGame->m_pClientList[iClientH]->m_pItemList[sItemIndex[i]]->m_sSpriteFrame == 129))
+			if (item_index[i] < 0) return;
+			if ((item_index[i] >= 0) && (item_index[i] >= hb::shared::limits::MaxItems)) return;
+			if (m_game->m_client_list[client_h]->m_item_list[item_index[i]] == 0) return;
+			if (m_game->m_client_list[client_h]->m_item_list[item_index[i]]->m_count < static_cast<uint32_t>(item_number[i])) return;
+			item_purity[i] = m_game->m_client_list[client_h]->m_item_list[item_index[i]]->m_item_special_effect_value2;
+			if ((m_game->m_client_list[client_h]->m_item_list[item_index[i]]->get_item_type() == ItemType::None)
+				&& (m_game->m_client_list[client_h]->m_item_list[item_index[i]]->m_sprite == 6)
+				&& (m_game->m_client_list[client_h]->m_item_list[item_index[i]]->m_sprite_frame == 129))
 			{
-				sItemPurity[i] = 100; // Merien stones considered 100% purity.
+				item_purity[i] = 100; // Merien stones considered 100% purity.
 			}
-			if (m_pGame->m_pClientList[iClientH]->m_pItemList[sItemIndex[i]]->GetItemType() == ItemType::Consume)
+			if (m_game->m_client_list[client_h]->m_item_list[item_index[i]]->get_item_type() == ItemType::Consume)
 			{
-				sItemPurity[i] = -1; // Diamonds / Emeralds.etc.. never have purity
+				item_purity[i] = -1; // Diamonds / Emeralds.etc.. never have purity
 			}
-			if (sItemNumber[i] > 1) // No purity for stacked items
+			if (item_number[i] > 1) // No purity for stacked items
 			{
-				sItemPurity[i] = -1;
+				item_purity[i] = -1;
 			}
 			/*std::snprintf(G_cTxt, sizeof(G_cTxt), "Crafting: %d x %s (%d)"
-				, sItemNumber[i]
-				, m_pGame->m_pClientList[iClientH]->m_pItemList[sItemIndex[i]]->m_cName
-				, m_pGame->m_pClientList[iClientH]->m_pItemList[sItemIndex[i]]->m_sIDnum);
+				, item_number[i]
+				, m_game->m_client_list[client_h]->m_item_list[item_index[i]]->m_name
+				, m_game->m_client_list[client_h]->m_item_list[item_index[i]]->m_id_num);
 			PutLogList(G_cTxt);*/
 
-			if ((m_pGame->m_pClientList[iClientH]->m_pItemList[sItemIndex[i]]->GetItemType() == ItemType::Equip)
-				&& (m_pGame->m_pClientList[iClientH]->m_pItemList[sItemIndex[i]]->GetEquipPos() == EquipPos::Neck))
+			if ((m_game->m_client_list[client_h]->m_item_list[item_index[i]]->get_item_type() == ItemType::Equip)
+				&& (m_game->m_client_list[client_h]->m_item_list[item_index[i]]->get_equip_pos() == EquipPos::Neck))
 			{
-				iNeededContrib = 10; // Necks Crafting requires 10 contrib
+				needed_contrib = 10; // Necks Crafting requires 10 contrib
 			}
 		}
 
 	// Bubble Sort
-	bFlag = true;
-	while (bFlag)
+	flag = true;
+	while (flag)
 	{
-		bFlag = false;
+		flag = false;
 		for(int i = 0; i < 5; i++)
-			if ((sItemIndex[i] != -1) && (sItemIndex[i + 1] != -1))
+			if ((item_index[i] != -1) && (item_index[i + 1] != -1))
 			{
-				if ((m_pGame->m_pClientList[iClientH]->m_pItemList[sItemIndex[i]]->m_sIDnum) < (m_pGame->m_pClientList[iClientH]->m_pItemList[sItemIndex[i + 1]]->m_sIDnum))
+				if ((m_game->m_client_list[client_h]->m_item_list[item_index[i]]->m_id_num) < (m_game->m_client_list[client_h]->m_item_list[item_index[i + 1]]->m_id_num))
 				{
-					sTemp = sItemIndex[i + 1];
-					sItemIndex[i + 1] = sItemIndex[i];
-					sItemIndex[i] = sTemp;
-					sTemp = sItemPurity[i + 1];
-					sItemPurity[i + 1] = sItemPurity[i];
-					sItemPurity[i] = sTemp;
-					sTemp = sItemNumber[i + 1];
-					sItemNumber[i + 1] = sItemNumber[i];
-					sItemNumber[i] = sTemp;
-					bFlag = true;
+					temp = item_index[i + 1];
+					item_index[i + 1] = item_index[i];
+					item_index[i] = temp;
+					temp = item_purity[i + 1];
+					item_purity[i + 1] = item_purity[i];
+					item_purity[i] = temp;
+					temp = item_number[i + 1];
+					item_number[i + 1] = item_number[i];
+					item_number[i] = temp;
+					flag = true;
 				}
 			}
 	}
 	j = 0;
 	for(int i = 0; i < 6; i++)
 	{
-		if (sItemIndex[i] != -1)
-			sItemArray[j] = m_pGame->m_pClientList[iClientH]->m_pItemList[sItemIndex[i]]->m_sIDnum;
-		else sItemArray[j] = sItemIndex[i];
-		sItemArray[j + 1] = sItemNumber[i];
+		if (item_index[i] != -1)
+			item_array[j] = m_game->m_client_list[client_h]->m_item_list[item_index[i]]->m_id_num;
+		else item_array[j] = item_index[i];
+		item_array[j + 1] = item_number[i];
 		j += 2;
 	}
 
 	// Search Crafting you wanna build
-	std::memset(cCraftingName, 0, sizeof(cCraftingName));
+	std::memset(crafting_name, 0, sizeof(crafting_name));
 	for(int i = 0; i < MaxPortionTypes; i++)
-		if (m_pCraftingConfigList[i] != 0)
+		if (m_crafting_config_list[i] != 0)
 		{
-			bFlag = false;
+			flag = false;
 			for (j = 0; j < 12; j++)
 			{
-				if (m_pCraftingConfigList[i]->m_sArray[j] != sItemArray[j]) bFlag = true; // one item mismatch
+				if (m_crafting_config_list[i]->m_array[j] != item_array[j]) flag = true; // one item mismatch
 			}
-			if (bFlag == false) // good Crafting receipe
+			if (flag == false) // good Crafting receipe
 			{
-				std::memset(cCraftingName, 0, sizeof(cCraftingName));
-				memcpy(cCraftingName, m_pCraftingConfigList[i]->m_cName, hb::shared::limits::ItemNameLen - 1);
-				iRiskLevel = m_pCraftingConfigList[i]->m_iSkillLimit;			// % to loose item if crafting fails
-				iDifficulty = m_pCraftingConfigList[i]->m_iDifficulty;
+				std::memset(crafting_name, 0, sizeof(crafting_name));
+				memcpy(crafting_name, m_crafting_config_list[i]->m_name, hb::shared::limits::ItemNameLen - 1);
+				risk_level = m_crafting_config_list[i]->m_skill_limit;			// % to loose item if crafting fails
+				difficulty = m_crafting_config_list[i]->m_difficulty;
 			}
 		}
 
 	// Check if recipe is OK
-	if (strlen(cCraftingName) == 0)
+	if (strlen(crafting_name) == 0)
 	{
-		m_pGame->SendNotifyMsg(0, iClientH, Notify::CraftingFail, 1, 0, 0, 0); // "There is not enough material"
+		m_game->send_notify_msg(0, client_h, Notify::CraftingFail, 1, 0, 0, 0); // "There is not enough material"
 		return;
 	}
 	// Check for Contribution
-	if (m_pGame->m_pClientList[iClientH]->m_iContribution < iNeededContrib)
+	if (m_game->m_client_list[client_h]->m_contribution < needed_contrib)
 	{
-		m_pGame->SendNotifyMsg(0, iClientH, Notify::CraftingFail, 2, 0, 0, 0); // "There is not enough Contribution Point"
+		m_game->send_notify_msg(0, client_h, Notify::CraftingFail, 2, 0, 0, 0); // "There is not enough Contribution Point"
 		return;
 	}
 	// Check possible Failure
-	if (m_pGame->iDice(1, 100) > static_cast<uint32_t>(iDifficulty))
+	if (m_game->dice(1, 100) > static_cast<uint32_t>(difficulty))
 	{
-		m_pGame->SendNotifyMsg(0, iClientH, Notify::CraftingFail, 3, 0, 0, 0); // "Crafting failed"
+		m_game->send_notify_msg(0, client_h, Notify::CraftingFail, 3, 0, 0, 0); // "Crafting failed"
 		// Remove parts...
-		pItem = 0;
-		pItem = new CItem;
-		if (pItem == 0) return;
+		item = 0;
+		item = new CItem;
+		if (item == 0) return;
 		for(int i = 0; i < 6; i++)
-			if (sItemIndex[i] != -1)
+			if (item_index[i] != -1)
 			{	// Deplete any Merien Stone
-				if ((m_pGame->m_pClientList[iClientH]->m_pItemList[sItemIndex[i]]->GetItemType() == ItemType::None)
-					&& (m_pGame->m_pClientList[iClientH]->m_pItemList[sItemIndex[i]]->m_sSprite == 6)
-					&& (m_pGame->m_pClientList[iClientH]->m_pItemList[sItemIndex[i]]->m_sSpriteFrame == 129))
+				if ((m_game->m_client_list[client_h]->m_item_list[item_index[i]]->get_item_type() == ItemType::None)
+					&& (m_game->m_client_list[client_h]->m_item_list[item_index[i]]->m_sprite == 6)
+					&& (m_game->m_client_list[client_h]->m_item_list[item_index[i]]->m_sprite_frame == 129))
 				{
-					m_pGame->m_pItemManager->ItemDepleteHandler(iClientH, sItemIndex[i], false);
+					m_game->m_item_manager->item_deplete_handler(client_h, item_index[i], false);
 				}
 				else
 					// Risk to deplete any other items (not stackable ones) // DEF_ITEMTYPE_CONSUME
-					if ((m_pGame->m_pClientList[iClientH]->m_pItemList[sItemIndex[i]]->GetItemType() == ItemType::Equip)
-						|| (m_pGame->m_pClientList[iClientH]->m_pItemList[sItemIndex[i]]->GetItemType() == ItemType::Material))
+					if ((m_game->m_client_list[client_h]->m_item_list[item_index[i]]->get_item_type() == ItemType::Equip)
+						|| (m_game->m_client_list[client_h]->m_item_list[item_index[i]]->get_item_type() == ItemType::Material))
 					{
-						if (m_pGame->iDice(1, 100) < static_cast<uint32_t>(iRiskLevel))
+						if (m_game->dice(1, 100) < static_cast<uint32_t>(risk_level))
 						{
-							m_pGame->m_pItemManager->ItemDepleteHandler(iClientH, sItemIndex[i], false);
+							m_game->m_item_manager->item_deplete_handler(client_h, item_index[i], false);
 						}
 					}
 			}
@@ -419,129 +419,129 @@ void CraftingManager::ReqCreateCraftingHandler(int iClientH, char* pData)
 	}
 
 	// Purity
-	int iPurity, iTot = 0, iCount = 0;
+	int purity, tot = 0, count = 0;
 	for(int i = 0; i < 6; i++)
 	{
-		if (sItemIndex[i] != -1)
+		if (item_index[i] != -1)
 		{
-			if (sItemPurity[i] != -1)
+			if (item_purity[i] != -1)
 			{
-				iTot += sItemPurity[i];
-				iCount++;
+				tot += item_purity[i];
+				count++;
 			}
 		}
 	}
-	if (iCount == 0)
+	if (count == 0)
 	{
-		iPurity = 20 + m_pGame->iDice(1, 80);			// Wares have random purity (20%..100%)
-		bNeedLog = false;
+		purity = 20 + m_game->dice(1, 80);			// Wares have random purity (20%..100%)
+		need_log = false;
 	}
 	else
 	{
-		iPurity = iTot / iCount;
-		iTot = (iPurity * 4) / 5;
-		iCount = iPurity - iTot;
-		iPurity = iTot + m_pGame->iDice(1, iCount);	// Jewel completion depends off Wares purity
-		bNeedLog = true;
+		purity = tot / count;
+		tot = (purity * 4) / 5;
+		count = purity - tot;
+		purity = tot + m_game->dice(1, count);	// Jewel completion depends off Wares purity
+		need_log = true;
 	}
-	if (iNeededContrib != 0)
+	if (needed_contrib != 0)
 	{
-		iPurity = 0;						// Necks require contribution but no purity/completion
-		bNeedLog = true;
+		purity = 0;						// Necks require contribution but no purity/completion
+		need_log = true;
 	}
-	m_pGame->m_pSkillManager->CalculateSSN_SkillIndex(iClientH, 18, 1);
+	m_game->m_skill_manager->calculate_ssn_skill_index(client_h, 18, 1);
 
-	if (strlen(cCraftingName) != 0)
+	if (strlen(crafting_name) != 0)
 	{
-		pItem = 0;
-		pItem = new CItem;
-		if (pItem == 0) return;
+		item = 0;
+		item = new CItem;
+		if (item == 0) return;
 		for(int i = 0; i < 6; i++)
 		{
-			if (sItemIndex[i] != -1)
+			if (item_index[i] != -1)
 			{
-				if (m_pGame->m_pClientList[iClientH]->m_pItemList[sItemIndex[i]]->GetItemType() == ItemType::Consume)
+				if (m_game->m_client_list[client_h]->m_item_list[item_index[i]]->get_item_type() == ItemType::Consume)
 				{
-					m_pGame->m_pItemManager->SetItemCount(iClientH, sItemIndex[i],
-						m_pGame->m_pClientList[iClientH]->m_pItemList[sItemIndex[i]]->m_dwCount - sItemNumber[i]);
+					m_game->m_item_manager->set_item_count(client_h, item_index[i],
+						m_game->m_client_list[client_h]->m_item_list[item_index[i]]->m_count - item_number[i]);
 				}
 				else // So if item is not Type 5 (stackable items), you deplete item
 				{
-					m_pGame->m_pItemManager->ItemDepleteHandler(iClientH, sItemIndex[i], false);
+					m_game->m_item_manager->item_deplete_handler(client_h, item_index[i], false);
 				}
 			}
 		}
-		if (iNeededContrib != 0)
+		if (needed_contrib != 0)
 		{
-			m_pGame->m_pClientList[iClientH]->m_iContribution -= iNeededContrib;
+			m_game->m_client_list[client_h]->m_contribution -= needed_contrib;
 			// No known msg to send info to client, so client will compute shown Contrib himself.
 		}
 
-		m_pGame->SendNotifyMsg(0, iClientH, Notify::CraftingSuccess, 0, 0, 0, 0);
+		m_game->send_notify_msg(0, client_h, Notify::CraftingSuccess, 0, 0, 0, 0);
 
-		m_pGame->m_pClientList[iClientH]->m_iExpStock += m_pGame->iDice(2, 100);
+		m_game->m_client_list[client_h]->m_exp_stock += m_game->dice(2, 100);
 
-		if ((m_pGame->m_pItemManager->_bInitItemAttr(pItem, cCraftingName)))
+		if ((m_game->m_item_manager->init_item_attr(item, crafting_name)))
 		{	// // Snoopy: Added Purity to Oils/Elixirs
-			if (iPurity != 0)
+			if (purity != 0)
 			{
-				pItem->m_sItemSpecEffectValue2 = iPurity;
-				pItem->m_dwAttribute = 1;
+				item->m_item_special_effect_value2 = purity;
+				item->m_attribute = 1;
 			}
-			pItem->SetTouchEffectType(TouchEffectType::ID);
-			pItem->m_sTouchEffectValue1 = static_cast<short>(m_pGame->iDice(1, 100000));
-			pItem->m_sTouchEffectValue2 = static_cast<short>(m_pGame->iDice(1, 100000));
-			// pItem->m_sTouchEffectValue3 = GameClock::GetTimeMS();
+			item->set_touch_effect_type(TouchEffectType::ID);
+			item->m_touch_effect_value1 = static_cast<short>(m_game->dice(1, 100000));
+			item->m_touch_effect_value2 = static_cast<short>(m_game->dice(1, 100000));
+			// item->m_touch_effect_value3 = GameClock::GetTimeMS();
 			hb::time::local_time SysTime{};
-			char cTemp[256];
+			char temp[256];
 			SysTime = hb::time::local_time::now();
-			std::memset(cTemp, 0, sizeof(cTemp));
-			std::snprintf(cTemp, sizeof(cTemp), "%d%2d", (short)SysTime.month, (short)SysTime.day);
-			pItem->m_sTouchEffectValue3 = atoi(cTemp);
+			std::memset(temp, 0, sizeof(temp));
+			std::snprintf(temp, sizeof(temp), "%d%2d", (short)SysTime.month, (short)SysTime.day);
+			item->m_touch_effect_value3 = atoi(temp);
 
 			// SNOOPY log anything above WAREs
-			if (bNeedLog)
+			if (need_log)
 			{
-				hb::logger::log<log_channel::events>("Player '{}' crafting '{}' purity={}", m_pGame->m_pClientList[iClientH]->m_cCharName, pItem->m_cName, pItem->m_sItemSpecEffectValue2);
+				hb::logger::log<log_channel::events>("Player '{}' crafting '{}' purity={}", m_game->m_client_list[client_h]->m_char_name, item->m_name, item->m_item_special_effect_value2);
 			}
-			if (m_pGame->m_pItemManager->_bAddClientItemList(iClientH, pItem, &iEraseReq))
+			if (m_game->m_item_manager->add_client_item_list(client_h, item, &erase_req))
 			{
-				iRet = m_pGame->m_pItemManager->SendItemNotifyMsg(iClientH, Notify::ItemObtained, pItem, 0);
-				switch (iRet) {
+				ret = m_game->m_item_manager->send_item_notify_msg(client_h, Notify::ItemObtained, item, 0);
+				switch (ret) {
 				case sock::Event::QueueFull:
 				case sock::Event::SocketError:
 				case sock::Event::CriticalError:
 				case sock::Event::SocketClosed:
-					m_pGame->DeleteClient(iClientH, true, true);
+					m_game->delete_client(client_h, true, true);
 					break;
 				}
-				//if ((pItem->m_wPrice * pItem->m_dwCount) > 1000)
-				//	SendMsgToLS(ServerMsgId::RequestSavePlayerData, iClientH);
+				//if ((item->m_price * item->m_count) > 1000)
+				//	SendMsgToLS(ServerMsgId::RequestSavePlayerData, client_h);
 			}
 			else
 			{
-				m_pGame->m_pMapList[m_pGame->m_pClientList[iClientH]->m_cMapIndex]->bSetItem(m_pGame->m_pClientList[iClientH]->m_sX,
-					m_pGame->m_pClientList[iClientH]->m_sY, pItem);
-				m_pGame->SendEventToNearClient_TypeB(MsgId::EventCommon, CommonType::ItemDrop, m_pGame->m_pClientList[iClientH]->m_cMapIndex,
-					m_pGame->m_pClientList[iClientH]->m_sX, m_pGame->m_pClientList[iClientH]->m_sY,
-					pItem->m_sIDnum, 0, pItem->m_cItemColor, pItem->m_dwAttribute);
+				m_game->m_map_list[m_game->m_client_list[client_h]->m_map_index]->set_item(m_game->m_client_list[client_h]->m_x,
+					m_game->m_client_list[client_h]->m_y, item);
+				m_game->send_event_to_near_client_type_b(MsgId::EventCommon, CommonType::ItemDrop, m_game->m_client_list[client_h]->m_map_index,
+					m_game->m_client_list[client_h]->m_x, m_game->m_client_list[client_h]->m_y,
+					item->m_id_num, 0, item->m_item_color, item->m_attribute);
 
-				iRet = m_pGame->m_pItemManager->SendItemNotifyMsg(iClientH, Notify::CannotCarryMoreItem, 0, 0);
+				ret = m_game->m_item_manager->send_item_notify_msg(client_h, Notify::CannotCarryMoreItem, 0, 0);
 
-				switch (iRet) {
+				switch (ret) {
 				case sock::Event::QueueFull:
 				case sock::Event::SocketError:
 				case sock::Event::CriticalError:
 				case sock::Event::SocketClosed:
-					m_pGame->DeleteClient(iClientH, true, true);
+					m_game->delete_client(client_h, true, true);
 					break;
 				}
 			}
 		}
 		else
 		{
-			delete pItem;
-			pItem = 0;
+			delete item;
+			item = 0;
 		}
 	}
 }

@@ -18,348 +18,348 @@ namespace sock = hb::shared::net::socket;
 
 extern char G_cTxt[512];
 
-void LootManager::ApplyPKpenalty(short sAttackerH, short sVictumH)
+void LootManager::apply_pk_penalty(short attacker_h, short victum_h)
 {
-	uint32_t iV1, iV2;
+	uint32_t v1, v2;
 
-	if (m_pGame->m_pClientList[sAttackerH] == 0) return;
-	if (m_pGame->m_pClientList[sVictumH] == 0) return;
-	if ((m_pGame->m_pClientList[sAttackerH]->m_bIsSafeAttackMode) && (m_pGame->m_pClientList[sAttackerH]->m_iPKCount == 0)) return;
-	if ((strcmp(m_pGame->m_pClientList[sVictumH]->m_cLocation, "aresden") != 0) && (strcmp(m_pGame->m_pClientList[sVictumH]->m_cLocation, "elvine") != 0) && (strcmp(m_pGame->m_pClientList[sVictumH]->m_cLocation, "elvhunter") != 0) && (strcmp(m_pGame->m_pClientList[sVictumH]->m_cLocation, "arehunter") != 0)) {
+	if (m_game->m_client_list[attacker_h] == 0) return;
+	if (m_game->m_client_list[victum_h] == 0) return;
+	if ((m_game->m_client_list[attacker_h]->m_is_safe_attack_mode) && (m_game->m_client_list[attacker_h]->m_player_kill_count == 0)) return;
+	if ((strcmp(m_game->m_client_list[victum_h]->m_location, "aresden") != 0) && (strcmp(m_game->m_client_list[victum_h]->m_location, "elvine") != 0) && (strcmp(m_game->m_client_list[victum_h]->m_location, "elvhunter") != 0) && (strcmp(m_game->m_client_list[victum_h]->m_location, "arehunter") != 0)) {
 		return;
 	}
 
 	// PK Count
-	m_pGame->m_pClientList[sAttackerH]->m_iPKCount++;
+	m_game->m_client_list[attacker_h]->m_player_kill_count++;
 
-	m_pGame->m_pCombatManager->_bPKLog(PkLog::ByPk, sAttackerH, sVictumH, 0);
+	m_game->m_combat_manager->pk_log(PkLog::ByPk, attacker_h, victum_h, 0);
 
-	iV1 = m_pGame->iDice((m_pGame->m_pClientList[sVictumH]->m_iLevel / 2) + 1, 50);
-	iV2 = m_pGame->iDice((m_pGame->m_pClientList[sAttackerH]->m_iLevel / 2) + 1, 50);
+	v1 = m_game->dice((m_game->m_client_list[victum_h]->m_level / 2) + 1, 50);
+	v2 = m_game->dice((m_game->m_client_list[attacker_h]->m_level / 2) + 1, 50);
 
-	m_pGame->m_pClientList[sAttackerH]->m_iExp -= iV1;
-	m_pGame->m_pClientList[sAttackerH]->m_iExp -= iV2;
-	if (m_pGame->m_pClientList[sAttackerH]->m_iExp < 0) m_pGame->m_pClientList[sAttackerH]->m_iExp = 0;
+	m_game->m_client_list[attacker_h]->m_exp -= v1;
+	m_game->m_client_list[attacker_h]->m_exp -= v2;
+	if (m_game->m_client_list[attacker_h]->m_exp < 0) m_game->m_client_list[attacker_h]->m_exp = 0;
 
-	m_pGame->SendNotifyMsg(0, sAttackerH, Notify::PkPenalty, 0, 0, 0, 0);
+	m_game->send_notify_msg(0, attacker_h, Notify::PkPenalty, 0, 0, 0, 0);
 
-	m_pGame->SendEventToNearClient_TypeA(sAttackerH, hb::shared::owner_class::Player, MsgId::EventMotion, Type::NullAction, 0, 0, 0);
+	m_game->send_event_to_near_client_type_a(attacker_h, hb::shared::owner_class::Player, MsgId::EventMotion, Type::NullAction, 0, 0, 0);
 
-	// std::snprintf(G_cTxt, sizeof(G_cTxt), "(!) PK-penalty: (%s)  (%d) (%d) ", m_pGame->m_pClientList[sAttackerH]->m_cCharName, iV1+iV2, m_pGame->m_pClientList[sAttackerH]->m_iExp);
+	// std::snprintf(G_cTxt, sizeof(G_cTxt), "(!) PK-penalty: (%s)  (%d) (%d) ", m_game->m_client_list[attacker_h]->m_char_name, v1+v2, m_game->m_client_list[attacker_h]->m_exp);
 	//PutLogFileList(G_cTxt);
 
-	m_pGame->m_stCityStatus[m_pGame->m_pClientList[sAttackerH]->m_cSide].iCrimes++;
+	m_game->m_city_status[m_game->m_client_list[attacker_h]->m_side].crimes++;
 
-	m_pGame->m_pClientList[sAttackerH]->m_iRating -= 10;
-	if (m_pGame->m_pClientList[sAttackerH]->m_iRating > 10000)  m_pGame->m_pClientList[sAttackerH]->m_iRating = 10000;
-	if (m_pGame->m_pClientList[sAttackerH]->m_iRating < -10000) m_pGame->m_pClientList[sAttackerH]->m_iRating = -10000;
+	m_game->m_client_list[attacker_h]->m_rating -= 10;
+	if (m_game->m_client_list[attacker_h]->m_rating > 10000)  m_game->m_client_list[attacker_h]->m_rating = 10000;
+	if (m_game->m_client_list[attacker_h]->m_rating < -10000) m_game->m_client_list[attacker_h]->m_rating = -10000;
 
-	if (strcmp(m_pGame->m_pClientList[sAttackerH]->m_cLocation, "aresden") == 0) {
-		if ((strcmp(m_pGame->m_pMapList[m_pGame->m_pClientList[sAttackerH]->m_cMapIndex]->m_cName, "arebrk11") == 0) ||
-			(strcmp(m_pGame->m_pMapList[m_pGame->m_pClientList[sAttackerH]->m_cMapIndex]->m_cName, "arebrk12") == 0) ||
-			(strcmp(m_pGame->m_pMapList[m_pGame->m_pClientList[sAttackerH]->m_cMapIndex]->m_cName, "arebrk21") == 0) ||
-			(strcmp(m_pGame->m_pMapList[m_pGame->m_pClientList[sAttackerH]->m_cMapIndex]->m_cName, "arebrk22") == 0) ||
-			(strcmp(m_pGame->m_pMapList[m_pGame->m_pClientList[sAttackerH]->m_cMapIndex]->m_cName, "aresden") == 0) ||
-			(strcmp(m_pGame->m_pMapList[m_pGame->m_pClientList[sAttackerH]->m_cMapIndex]->m_cName, "huntzone2") == 0) ||
-			(strcmp(m_pGame->m_pMapList[m_pGame->m_pClientList[sAttackerH]->m_cMapIndex]->m_cName, "areuni") == 0) ||
-			(strcmp(m_pGame->m_pMapList[m_pGame->m_pClientList[sAttackerH]->m_cMapIndex]->m_cName, "arefarm") == 0)) {
+	if (strcmp(m_game->m_client_list[attacker_h]->m_location, "aresden") == 0) {
+		if ((strcmp(m_game->m_map_list[m_game->m_client_list[attacker_h]->m_map_index]->m_name, "arebrk11") == 0) ||
+			(strcmp(m_game->m_map_list[m_game->m_client_list[attacker_h]->m_map_index]->m_name, "arebrk12") == 0) ||
+			(strcmp(m_game->m_map_list[m_game->m_client_list[attacker_h]->m_map_index]->m_name, "arebrk21") == 0) ||
+			(strcmp(m_game->m_map_list[m_game->m_client_list[attacker_h]->m_map_index]->m_name, "arebrk22") == 0) ||
+			(strcmp(m_game->m_map_list[m_game->m_client_list[attacker_h]->m_map_index]->m_name, "aresden") == 0) ||
+			(strcmp(m_game->m_map_list[m_game->m_client_list[attacker_h]->m_map_index]->m_name, "huntzone2") == 0) ||
+			(strcmp(m_game->m_map_list[m_game->m_client_list[attacker_h]->m_map_index]->m_name, "areuni") == 0) ||
+			(strcmp(m_game->m_map_list[m_game->m_client_list[attacker_h]->m_map_index]->m_name, "arefarm") == 0)) {
 
 			// PK .   5
-			std::memset(m_pGame->m_pClientList[sAttackerH]->m_cLockedMapName, 0, sizeof(m_pGame->m_pClientList[sAttackerH]->m_cLockedMapName));
-			strcpy(m_pGame->m_pClientList[sAttackerH]->m_cLockedMapName, "arejail");
-			m_pGame->m_pClientList[sAttackerH]->m_iLockedMapTime = 60 * 3;
-			m_pGame->RequestTeleportHandler(sAttackerH, "2   ", "arejail", -1, -1);
+			std::memset(m_game->m_client_list[attacker_h]->m_locked_map_name, 0, sizeof(m_game->m_client_list[attacker_h]->m_locked_map_name));
+			strcpy(m_game->m_client_list[attacker_h]->m_locked_map_name, "arejail");
+			m_game->m_client_list[attacker_h]->m_locked_map_time = 60 * 3;
+			m_game->request_teleport_handler(attacker_h, "2   ", "arejail", -1, -1);
 			return;
 		}
 	}
 
-	if (strcmp(m_pGame->m_pClientList[sAttackerH]->m_cLocation, "elvine") == 0) {
-		if ((strcmp(m_pGame->m_pMapList[m_pGame->m_pClientList[sAttackerH]->m_cMapIndex]->m_cName, "elvbrk11") == 0) ||
-			(strcmp(m_pGame->m_pMapList[m_pGame->m_pClientList[sAttackerH]->m_cMapIndex]->m_cName, "elvbrk12") == 0) ||
-			(strcmp(m_pGame->m_pMapList[m_pGame->m_pClientList[sAttackerH]->m_cMapIndex]->m_cName, "elvbrk21") == 0) ||
-			(strcmp(m_pGame->m_pMapList[m_pGame->m_pClientList[sAttackerH]->m_cMapIndex]->m_cName, "elvbrk22") == 0) ||
-			(strcmp(m_pGame->m_pMapList[m_pGame->m_pClientList[sAttackerH]->m_cMapIndex]->m_cName, "elvine") == 0) ||
-			(strcmp(m_pGame->m_pMapList[m_pGame->m_pClientList[sAttackerH]->m_cMapIndex]->m_cName, "huntzone1") == 0) ||
-			(strcmp(m_pGame->m_pMapList[m_pGame->m_pClientList[sAttackerH]->m_cMapIndex]->m_cName, "elvuni") == 0) ||
-			(strcmp(m_pGame->m_pMapList[m_pGame->m_pClientList[sAttackerH]->m_cMapIndex]->m_cName, "elvfarm") == 0)) {
+	if (strcmp(m_game->m_client_list[attacker_h]->m_location, "elvine") == 0) {
+		if ((strcmp(m_game->m_map_list[m_game->m_client_list[attacker_h]->m_map_index]->m_name, "elvbrk11") == 0) ||
+			(strcmp(m_game->m_map_list[m_game->m_client_list[attacker_h]->m_map_index]->m_name, "elvbrk12") == 0) ||
+			(strcmp(m_game->m_map_list[m_game->m_client_list[attacker_h]->m_map_index]->m_name, "elvbrk21") == 0) ||
+			(strcmp(m_game->m_map_list[m_game->m_client_list[attacker_h]->m_map_index]->m_name, "elvbrk22") == 0) ||
+			(strcmp(m_game->m_map_list[m_game->m_client_list[attacker_h]->m_map_index]->m_name, "elvine") == 0) ||
+			(strcmp(m_game->m_map_list[m_game->m_client_list[attacker_h]->m_map_index]->m_name, "huntzone1") == 0) ||
+			(strcmp(m_game->m_map_list[m_game->m_client_list[attacker_h]->m_map_index]->m_name, "elvuni") == 0) ||
+			(strcmp(m_game->m_map_list[m_game->m_client_list[attacker_h]->m_map_index]->m_name, "elvfarm") == 0)) {
 
 			// PK .   5
-			std::memset(m_pGame->m_pClientList[sAttackerH]->m_cLockedMapName, 0, sizeof(m_pGame->m_pClientList[sAttackerH]->m_cLockedMapName));
-			strcpy(m_pGame->m_pClientList[sAttackerH]->m_cLockedMapName, "elvjail");
-			m_pGame->m_pClientList[sAttackerH]->m_iLockedMapTime = 60 * 3;
-			m_pGame->RequestTeleportHandler(sAttackerH, "2   ", "elvjail", -1, -1);
+			std::memset(m_game->m_client_list[attacker_h]->m_locked_map_name, 0, sizeof(m_game->m_client_list[attacker_h]->m_locked_map_name));
+			strcpy(m_game->m_client_list[attacker_h]->m_locked_map_name, "elvjail");
+			m_game->m_client_list[attacker_h]->m_locked_map_time = 60 * 3;
+			m_game->request_teleport_handler(attacker_h, "2   ", "elvjail", -1, -1);
 			return;
 		}
 	}
 }
 
 // 05/17/2004 - Hypnotoad - register pk log
-void LootManager::PK_KillRewardHandler(short sAttackerH, short sVictumH)
+void LootManager::pk_kill_reward_handler(short attacker_h, short victum_h)
 {
-	if (m_pGame->m_pClientList[sAttackerH] == 0) return;
-	if (m_pGame->m_pClientList[sVictumH] == 0)   return;
+	if (m_game->m_client_list[attacker_h] == 0) return;
+	if (m_game->m_client_list[victum_h] == 0)   return;
 
-	m_pGame->m_pCombatManager->_bPKLog(PkLog::ByPlayer, sAttackerH, sVictumH, 0);
+	m_game->m_combat_manager->pk_log(PkLog::ByPlayer, attacker_h, victum_h, 0);
 
-	if (m_pGame->m_pClientList[sAttackerH]->m_iPKCount != 0) {
+	if (m_game->m_client_list[attacker_h]->m_player_kill_count != 0) {
 		// PK   PK   .
 
 	}
 	else {
-		m_pGame->m_pClientList[sAttackerH]->m_iRewardGold += m_pGame->iGetExpLevel(m_pGame->m_pClientList[sVictumH]->m_iExp) * 3;
+		m_game->m_client_list[attacker_h]->m_reward_gold += m_game->get_exp_level(m_game->m_client_list[victum_h]->m_exp) * 3;
 
-		if (m_pGame->m_pClientList[sAttackerH]->m_iRewardGold > MaxRewardGold)
-			m_pGame->m_pClientList[sAttackerH]->m_iRewardGold = MaxRewardGold;
-		if (m_pGame->m_pClientList[sAttackerH]->m_iRewardGold < 0)
-			m_pGame->m_pClientList[sAttackerH]->m_iRewardGold = 0;
+		if (m_game->m_client_list[attacker_h]->m_reward_gold > MaxRewardGold)
+			m_game->m_client_list[attacker_h]->m_reward_gold = MaxRewardGold;
+		if (m_game->m_client_list[attacker_h]->m_reward_gold < 0)
+			m_game->m_client_list[attacker_h]->m_reward_gold = 0;
 
-		m_pGame->SendNotifyMsg(0, sAttackerH, Notify::PkCaptured, m_pGame->m_pClientList[sVictumH]->m_iPKCount, m_pGame->m_pClientList[sVictumH]->m_iLevel, 0, m_pGame->m_pClientList[sVictumH]->m_cCharName);
+		m_game->send_notify_msg(0, attacker_h, Notify::PkCaptured, m_game->m_client_list[victum_h]->m_player_kill_count, m_game->m_client_list[victum_h]->m_level, 0, m_game->m_client_list[victum_h]->m_char_name);
 	}
 }
 
-void LootManager::EnemyKillRewardHandler(int iAttackerH, int iClientH)
+void LootManager::enemy_kill_reward_handler(int attacker_h, int client_h)
 {
 	// enemy-kill-mode = 1 | 0
-	// if m_bEnemyKillMode is true than death match mode
+	// if m_enemy_kill_mode is true than death match mode
 
 	int iEK_Level;
-	uint32_t iRewardExp;
+	uint32_t reward_exp;
 
-	if (m_pGame->m_pClientList[iAttackerH] == 0) return;
-	if (m_pGame->m_pClientList[iClientH] == 0)   return;
+	if (m_game->m_client_list[attacker_h] == 0) return;
+	if (m_game->m_client_list[client_h] == 0)   return;
 
-	m_pGame->m_pCombatManager->_bPKLog(PkLog::ByEnemy, iAttackerH, iClientH, 0);
+	m_game->m_combat_manager->pk_log(PkLog::ByEnemy, attacker_h, client_h, 0);
 
 	iEK_Level = 30;
-	if (m_pGame->m_pClientList[iAttackerH]->m_iLevel >= 80) iEK_Level = 80;
-	if (m_pGame->m_pClientList[iAttackerH]->m_iLevel >= m_pGame->m_iMaxLevel) {
-		if (m_pGame->iGetExpLevel(m_pGame->m_pClientList[iClientH]->m_iExp) >= iEK_Level) {
-			if ((memcmp(m_pGame->m_pClientList[iClientH]->m_cLocation, m_pGame->m_pClientList[iClientH]->m_cMapName, 10) != 0)
-				&& (m_pGame->m_bEnemyKillMode == false)) {
-				m_pGame->m_pClientList[iAttackerH]->m_iEnemyKillCount += m_pGame->m_iEnemyKillAdjust;
+	if (m_game->m_client_list[attacker_h]->m_level >= 80) iEK_Level = 80;
+	if (m_game->m_client_list[attacker_h]->m_level >= m_game->m_max_level) {
+		if (m_game->get_exp_level(m_game->m_client_list[client_h]->m_exp) >= iEK_Level) {
+			if ((memcmp(m_game->m_client_list[client_h]->m_location, m_game->m_client_list[client_h]->m_map_name, 10) != 0)
+				&& (m_game->m_enemy_kill_mode == false)) {
+				m_game->m_client_list[attacker_h]->m_enemy_kill_count += m_game->m_enemy_kill_adjust;
 			}
 
-			if (m_pGame->m_bEnemyKillMode) {
-				m_pGame->m_pClientList[iAttackerH]->m_iEnemyKillCount += m_pGame->m_iEnemyKillAdjust;
+			if (m_game->m_enemy_kill_mode) {
+				m_game->m_client_list[attacker_h]->m_enemy_kill_count += m_game->m_enemy_kill_adjust;
 			}
 		}
-		m_pGame->m_pClientList[iAttackerH]->m_iRewardGold += m_pGame->iDice(1, (m_pGame->iGetExpLevel(m_pGame->m_pClientList[iClientH]->m_iExp)));
-		if (m_pGame->m_pClientList[iAttackerH]->m_iRewardGold > MaxRewardGold)
-			m_pGame->m_pClientList[iAttackerH]->m_iRewardGold = MaxRewardGold;
-		if (m_pGame->m_pClientList[iAttackerH]->m_iRewardGold < 0)
-			m_pGame->m_pClientList[iAttackerH]->m_iRewardGold = 0;
+		m_game->m_client_list[attacker_h]->m_reward_gold += m_game->dice(1, (m_game->get_exp_level(m_game->m_client_list[client_h]->m_exp)));
+		if (m_game->m_client_list[attacker_h]->m_reward_gold > MaxRewardGold)
+			m_game->m_client_list[attacker_h]->m_reward_gold = MaxRewardGold;
+		if (m_game->m_client_list[attacker_h]->m_reward_gold < 0)
+			m_game->m_client_list[attacker_h]->m_reward_gold = 0;
 
-		m_pGame->SendNotifyMsg(0, iAttackerH, Notify::EnemyKillReward, iClientH, 0, 0, 0);
+		m_game->send_notify_msg(0, attacker_h, Notify::EnemyKillReward, client_h, 0, 0, 0);
 		return;
 	}
 
-	if (m_pGame->m_pClientList[iAttackerH]->m_iPKCount != 0) {
+	if (m_game->m_client_list[attacker_h]->m_player_kill_count != 0) {
 	}
 	else {
-		if (m_pGame->m_pClientList[iClientH]->m_iGuildRank == -1) {
-			iRewardExp = (m_pGame->iDice(3, (3 * m_pGame->iGetExpLevel(m_pGame->m_pClientList[iClientH]->m_iExp))) + m_pGame->iGetExpLevel(m_pGame->m_pClientList[iClientH]->m_iExp)) / 3;
+		if (m_game->m_client_list[client_h]->m_guild_rank == -1) {
+			reward_exp = (m_game->dice(3, (3 * m_game->get_exp_level(m_game->m_client_list[client_h]->m_exp))) + m_game->get_exp_level(m_game->m_client_list[client_h]->m_exp)) / 3;
 
-			if (m_pGame->m_bIsCrusadeMode) {
-				m_pGame->m_pClientList[iAttackerH]->m_iExp += (iRewardExp / 3) * 4;
-				m_pGame->m_pClientList[iAttackerH]->m_iWarContribution += (iRewardExp - (iRewardExp / 3)) * 12;
+			if (m_game->m_is_crusade_mode) {
+				m_game->m_client_list[attacker_h]->m_exp += (reward_exp / 3) * 4;
+				m_game->m_client_list[attacker_h]->m_war_contribution += (reward_exp - (reward_exp / 3)) * 12;
 
-				if (m_pGame->m_pClientList[iAttackerH]->m_iWarContribution > m_pGame->m_iMaxWarContribution)
-					m_pGame->m_pClientList[iAttackerH]->m_iWarContribution = m_pGame->m_iMaxWarContribution;
+				if (m_game->m_client_list[attacker_h]->m_war_contribution > m_game->m_max_war_contribution)
+					m_game->m_client_list[attacker_h]->m_war_contribution = m_game->m_max_war_contribution;
 
-				m_pGame->m_pClientList[iAttackerH]->m_iConstructionPoint += m_pGame->m_pClientList[iClientH]->m_iLevel / 2;
+				m_game->m_client_list[attacker_h]->m_construction_point += m_game->m_client_list[client_h]->m_level / 2;
 
-				if (m_pGame->m_pClientList[iAttackerH]->m_iConstructionPoint > m_pGame->m_iMaxConstructionPoints)
-					m_pGame->m_pClientList[iAttackerH]->m_iConstructionPoint = m_pGame->m_iMaxConstructionPoints;
+				if (m_game->m_client_list[attacker_h]->m_construction_point > m_game->m_max_construction_points)
+					m_game->m_client_list[attacker_h]->m_construction_point = m_game->m_max_construction_points;
 
 				//testcode
-				hb::logger::log("Enemy player killed by player, construction +{}, war contribution +{}", m_pGame->m_pClientList[iClientH]->m_iLevel / 2, (iRewardExp - (iRewardExp / 3)) * 6);
+				hb::logger::log("Enemy player killed by player, construction +{}, war contribution +{}", m_game->m_client_list[client_h]->m_level / 2, (reward_exp - (reward_exp / 3)) * 6);
 
-				m_pGame->SendNotifyMsg(0, iAttackerH, Notify::ConstructionPoint, m_pGame->m_pClientList[iAttackerH]->m_iConstructionPoint, m_pGame->m_pClientList[iAttackerH]->m_iWarContribution, 0, 0);
+				m_game->send_notify_msg(0, attacker_h, Notify::ConstructionPoint, m_game->m_client_list[attacker_h]->m_construction_point, m_game->m_client_list[attacker_h]->m_war_contribution, 0, 0);
 
-				if (m_pGame->iGetExpLevel(m_pGame->m_pClientList[iClientH]->m_iExp) >= iEK_Level) {
-					if (memcmp(m_pGame->m_pClientList[iClientH]->m_cLocation, m_pGame->m_pClientList[iClientH]->m_cMapName, 10) != 0) {
-						m_pGame->m_pClientList[iAttackerH]->m_iEnemyKillCount += m_pGame->m_iEnemyKillAdjust;
+				if (m_game->get_exp_level(m_game->m_client_list[client_h]->m_exp) >= iEK_Level) {
+					if (memcmp(m_game->m_client_list[client_h]->m_location, m_game->m_client_list[client_h]->m_map_name, 10) != 0) {
+						m_game->m_client_list[attacker_h]->m_enemy_kill_count += m_game->m_enemy_kill_adjust;
 					}
-					if (m_pGame->m_bEnemyKillMode) {
-						m_pGame->m_pClientList[iAttackerH]->m_iEnemyKillCount += m_pGame->m_iEnemyKillAdjust;
+					if (m_game->m_enemy_kill_mode) {
+						m_game->m_client_list[attacker_h]->m_enemy_kill_count += m_game->m_enemy_kill_adjust;
 					}
 				}
-				m_pGame->m_pClientList[iAttackerH]->m_iRewardGold += m_pGame->iDice(1, (m_pGame->iGetExpLevel(m_pGame->m_pClientList[iClientH]->m_iExp)));
-				if (m_pGame->m_pClientList[iAttackerH]->m_iRewardGold > MaxRewardGold)
-					m_pGame->m_pClientList[iAttackerH]->m_iRewardGold = MaxRewardGold;
-				if (m_pGame->m_pClientList[iAttackerH]->m_iRewardGold < 0)
-					m_pGame->m_pClientList[iAttackerH]->m_iRewardGold = 0;
+				m_game->m_client_list[attacker_h]->m_reward_gold += m_game->dice(1, (m_game->get_exp_level(m_game->m_client_list[client_h]->m_exp)));
+				if (m_game->m_client_list[attacker_h]->m_reward_gold > MaxRewardGold)
+					m_game->m_client_list[attacker_h]->m_reward_gold = MaxRewardGold;
+				if (m_game->m_client_list[attacker_h]->m_reward_gold < 0)
+					m_game->m_client_list[attacker_h]->m_reward_gold = 0;
 			}
 			else {
-				m_pGame->m_pClientList[iAttackerH]->m_iExp += iRewardExp;
-				if (m_pGame->iGetExpLevel(m_pGame->m_pClientList[iClientH]->m_iExp) >= iEK_Level) {
-					if ((memcmp(m_pGame->m_pClientList[iClientH]->m_cLocation, m_pGame->m_pClientList[iClientH]->m_cMapName, 10) != 0)
-						&& (m_pGame->m_bEnemyKillMode == false)) {
-						m_pGame->m_pClientList[iAttackerH]->m_iEnemyKillCount += m_pGame->m_iEnemyKillAdjust;
+				m_game->m_client_list[attacker_h]->m_exp += reward_exp;
+				if (m_game->get_exp_level(m_game->m_client_list[client_h]->m_exp) >= iEK_Level) {
+					if ((memcmp(m_game->m_client_list[client_h]->m_location, m_game->m_client_list[client_h]->m_map_name, 10) != 0)
+						&& (m_game->m_enemy_kill_mode == false)) {
+						m_game->m_client_list[attacker_h]->m_enemy_kill_count += m_game->m_enemy_kill_adjust;
 					}
 
-					if (m_pGame->m_bEnemyKillMode) {
-						m_pGame->m_pClientList[iAttackerH]->m_iEnemyKillCount += m_pGame->m_iEnemyKillAdjust;
+					if (m_game->m_enemy_kill_mode) {
+						m_game->m_client_list[attacker_h]->m_enemy_kill_count += m_game->m_enemy_kill_adjust;
 					}
 				}
-				m_pGame->m_pClientList[iAttackerH]->m_iRewardGold += m_pGame->iDice(1, (m_pGame->iGetExpLevel(m_pGame->m_pClientList[iClientH]->m_iExp)));
-				if (m_pGame->m_pClientList[iAttackerH]->m_iRewardGold > MaxRewardGold)
-					m_pGame->m_pClientList[iAttackerH]->m_iRewardGold = MaxRewardGold;
-				if (m_pGame->m_pClientList[iAttackerH]->m_iRewardGold < 0)
-					m_pGame->m_pClientList[iAttackerH]->m_iRewardGold = 0;
+				m_game->m_client_list[attacker_h]->m_reward_gold += m_game->dice(1, (m_game->get_exp_level(m_game->m_client_list[client_h]->m_exp)));
+				if (m_game->m_client_list[attacker_h]->m_reward_gold > MaxRewardGold)
+					m_game->m_client_list[attacker_h]->m_reward_gold = MaxRewardGold;
+				if (m_game->m_client_list[attacker_h]->m_reward_gold < 0)
+					m_game->m_client_list[attacker_h]->m_reward_gold = 0;
 			}
 		}
 		else {
-			iRewardExp = (m_pGame->iDice(3, (3 * m_pGame->iGetExpLevel(m_pGame->m_pClientList[iClientH]->m_iExp))) + m_pGame->iGetExpLevel(m_pGame->m_pClientList[iClientH]->m_iExp)) / 3;
+			reward_exp = (m_game->dice(3, (3 * m_game->get_exp_level(m_game->m_client_list[client_h]->m_exp))) + m_game->get_exp_level(m_game->m_client_list[client_h]->m_exp)) / 3;
 
-			if (m_pGame->m_bIsCrusadeMode) {
-				m_pGame->m_pClientList[iAttackerH]->m_iExp += (iRewardExp / 3) * 4;
-				m_pGame->m_pClientList[iAttackerH]->m_iWarContribution += (iRewardExp - (iRewardExp / 3)) * 12;
+			if (m_game->m_is_crusade_mode) {
+				m_game->m_client_list[attacker_h]->m_exp += (reward_exp / 3) * 4;
+				m_game->m_client_list[attacker_h]->m_war_contribution += (reward_exp - (reward_exp / 3)) * 12;
 
-				if (m_pGame->m_pClientList[iAttackerH]->m_iWarContribution > m_pGame->m_iMaxWarContribution)
-					m_pGame->m_pClientList[iAttackerH]->m_iWarContribution = m_pGame->m_iMaxWarContribution;
+				if (m_game->m_client_list[attacker_h]->m_war_contribution > m_game->m_max_war_contribution)
+					m_game->m_client_list[attacker_h]->m_war_contribution = m_game->m_max_war_contribution;
 
-				m_pGame->m_pClientList[iAttackerH]->m_iConstructionPoint += m_pGame->m_pClientList[iClientH]->m_iLevel / 2;
+				m_game->m_client_list[attacker_h]->m_construction_point += m_game->m_client_list[client_h]->m_level / 2;
 
-				if (m_pGame->m_pClientList[iAttackerH]->m_iConstructionPoint > m_pGame->m_iMaxConstructionPoints)
-					m_pGame->m_pClientList[iAttackerH]->m_iConstructionPoint = m_pGame->m_iMaxConstructionPoints;
+				if (m_game->m_client_list[attacker_h]->m_construction_point > m_game->m_max_construction_points)
+					m_game->m_client_list[attacker_h]->m_construction_point = m_game->m_max_construction_points;
 
 				//testcode
-				hb::logger::log("Enemy player killed by player, construction +{}, war contribution +{}", m_pGame->m_pClientList[iClientH]->m_iLevel / 2, (iRewardExp - (iRewardExp / 3)) * 6);
+				hb::logger::log("Enemy player killed by player, construction +{}, war contribution +{}", m_game->m_client_list[client_h]->m_level / 2, (reward_exp - (reward_exp / 3)) * 6);
 
-				m_pGame->SendNotifyMsg(0, iAttackerH, Notify::ConstructionPoint, m_pGame->m_pClientList[iAttackerH]->m_iConstructionPoint, m_pGame->m_pClientList[iAttackerH]->m_iWarContribution, 0, 0);
+				m_game->send_notify_msg(0, attacker_h, Notify::ConstructionPoint, m_game->m_client_list[attacker_h]->m_construction_point, m_game->m_client_list[attacker_h]->m_war_contribution, 0, 0);
 
-				if (m_pGame->iGetExpLevel(m_pGame->m_pClientList[iClientH]->m_iExp) >= iEK_Level) {
-					if ((memcmp(m_pGame->m_pClientList[iClientH]->m_cLocation, m_pGame->m_pClientList[iClientH]->m_cMapName, 10) != 0)
-						&& (m_pGame->m_bEnemyKillMode == false)) {
-						m_pGame->m_pClientList[iAttackerH]->m_iEnemyKillCount += m_pGame->m_iEnemyKillAdjust;
+				if (m_game->get_exp_level(m_game->m_client_list[client_h]->m_exp) >= iEK_Level) {
+					if ((memcmp(m_game->m_client_list[client_h]->m_location, m_game->m_client_list[client_h]->m_map_name, 10) != 0)
+						&& (m_game->m_enemy_kill_mode == false)) {
+						m_game->m_client_list[attacker_h]->m_enemy_kill_count += m_game->m_enemy_kill_adjust;
 					}
 
-					if (m_pGame->m_bEnemyKillMode) {
-						m_pGame->m_pClientList[iAttackerH]->m_iEnemyKillCount += m_pGame->m_iEnemyKillAdjust;
+					if (m_game->m_enemy_kill_mode) {
+						m_game->m_client_list[attacker_h]->m_enemy_kill_count += m_game->m_enemy_kill_adjust;
 					}
 				}
-				m_pGame->m_pClientList[iAttackerH]->m_iRewardGold += m_pGame->iDice(1, (m_pGame->iGetExpLevel(m_pGame->m_pClientList[iClientH]->m_iExp)));
-				if (m_pGame->m_pClientList[iAttackerH]->m_iRewardGold > MaxRewardGold)
-					m_pGame->m_pClientList[iAttackerH]->m_iRewardGold = MaxRewardGold;
-				if (m_pGame->m_pClientList[iAttackerH]->m_iRewardGold < 0)
-					m_pGame->m_pClientList[iAttackerH]->m_iRewardGold = 0;
+				m_game->m_client_list[attacker_h]->m_reward_gold += m_game->dice(1, (m_game->get_exp_level(m_game->m_client_list[client_h]->m_exp)));
+				if (m_game->m_client_list[attacker_h]->m_reward_gold > MaxRewardGold)
+					m_game->m_client_list[attacker_h]->m_reward_gold = MaxRewardGold;
+				if (m_game->m_client_list[attacker_h]->m_reward_gold < 0)
+					m_game->m_client_list[attacker_h]->m_reward_gold = 0;
 			}
 			else {
-				m_pGame->m_pClientList[iAttackerH]->m_iExp += iRewardExp;
-				if (m_pGame->iGetExpLevel(m_pGame->m_pClientList[iClientH]->m_iExp) >= iEK_Level) {
-					if ((memcmp(m_pGame->m_pClientList[iClientH]->m_cLocation, m_pGame->m_pClientList[iClientH]->m_cMapName, 10) != 0)
-						&& (m_pGame->m_bEnemyKillMode == false)) {
-						m_pGame->m_pClientList[iAttackerH]->m_iEnemyKillCount += m_pGame->m_iEnemyKillAdjust;
+				m_game->m_client_list[attacker_h]->m_exp += reward_exp;
+				if (m_game->get_exp_level(m_game->m_client_list[client_h]->m_exp) >= iEK_Level) {
+					if ((memcmp(m_game->m_client_list[client_h]->m_location, m_game->m_client_list[client_h]->m_map_name, 10) != 0)
+						&& (m_game->m_enemy_kill_mode == false)) {
+						m_game->m_client_list[attacker_h]->m_enemy_kill_count += m_game->m_enemy_kill_adjust;
 					}
 
-					if (m_pGame->m_bEnemyKillMode) {
-						m_pGame->m_pClientList[iAttackerH]->m_iEnemyKillCount += m_pGame->m_iEnemyKillAdjust;
+					if (m_game->m_enemy_kill_mode) {
+						m_game->m_client_list[attacker_h]->m_enemy_kill_count += m_game->m_enemy_kill_adjust;
 					}
 				}
-				m_pGame->m_pClientList[iAttackerH]->m_iRewardGold += m_pGame->iDice(1, (m_pGame->iGetExpLevel(m_pGame->m_pClientList[iClientH]->m_iExp)));
-				if (m_pGame->m_pClientList[iAttackerH]->m_iRewardGold > MaxRewardGold)
-					m_pGame->m_pClientList[iAttackerH]->m_iRewardGold = MaxRewardGold;
-				if (m_pGame->m_pClientList[iAttackerH]->m_iRewardGold < 0)
-					m_pGame->m_pClientList[iAttackerH]->m_iRewardGold = 0;
+				m_game->m_client_list[attacker_h]->m_reward_gold += m_game->dice(1, (m_game->get_exp_level(m_game->m_client_list[client_h]->m_exp)));
+				if (m_game->m_client_list[attacker_h]->m_reward_gold > MaxRewardGold)
+					m_game->m_client_list[attacker_h]->m_reward_gold = MaxRewardGold;
+				if (m_game->m_client_list[attacker_h]->m_reward_gold < 0)
+					m_game->m_client_list[attacker_h]->m_reward_gold = 0;
 			}
 		}
 
-		m_pGame->SendNotifyMsg(0, iAttackerH, Notify::EnemyKillReward, iClientH, 0, 0, 0);
+		m_game->send_notify_msg(0, attacker_h, Notify::EnemyKillReward, client_h, 0, 0, 0);
 
-		if (m_pGame->bCheckLimitedUser(iAttackerH) == false) {
-			m_pGame->SendNotifyMsg(0, iAttackerH, Notify::Exp, 0, 0, 0, 0);
+		if (m_game->check_limited_user(attacker_h) == false) {
+			m_game->send_notify_msg(0, attacker_h, Notify::Exp, 0, 0, 0, 0);
 		}
-		m_pGame->bCheckLevelUp(iAttackerH);
+		m_game->check_level_up(attacker_h);
 
-		m_pGame->m_stCityStatus[m_pGame->m_pClientList[iAttackerH]->m_cSide].iWins++;
+		m_game->m_city_status[m_game->m_client_list[attacker_h]->m_side].wins++;
 	}
 }
 
 // 05/22/2004 - Hypnotoad - register in pk log
-void LootManager::ApplyCombatKilledPenalty(int iClientH, int cPenaltyLevel, bool bIsSAattacked)
+void LootManager::apply_combat_killed_penalty(int client_h, int penalty_level, bool is_s_aattacked)
 {
-	uint32_t iExp;
+	uint32_t exp;
 
-	if (m_pGame->m_pClientList[iClientH] == 0) return;
-	if (m_pGame->m_pClientList[iClientH]->m_bIsInitComplete == false) return;
+	if (m_game->m_client_list[client_h] == 0) return;
+	if (m_game->m_client_list[client_h]->m_is_init_complete == false) return;
 
 	// Crusade
-	if (m_pGame->m_bIsCrusadeMode) {
+	if (m_game->m_is_crusade_mode) {
 		// PKcount
-		if (m_pGame->m_pClientList[iClientH]->m_iPKCount > 0) {
-			m_pGame->m_pClientList[iClientH]->m_iPKCount--;
-			m_pGame->SendNotifyMsg(0, iClientH, Notify::PkPenalty, 0, 0, 0, 0);
+		if (m_game->m_client_list[client_h]->m_player_kill_count > 0) {
+			m_game->m_client_list[client_h]->m_player_kill_count--;
+			m_game->send_notify_msg(0, client_h, Notify::PkPenalty, 0, 0, 0, 0);
 			// v2.15
-			m_pGame->m_pCombatManager->_bPKLog(PkLog::ReduceCriminal, 0, iClientH, 0);
+			m_game->m_combat_manager->pk_log(PkLog::ReduceCriminal, 0, client_h, 0);
 
 		}
 		return;
 	}
 	else {
 		// PKcount
-		if (m_pGame->m_pClientList[iClientH]->m_iPKCount > 0) {
-			m_pGame->m_pClientList[iClientH]->m_iPKCount--;
-			m_pGame->SendNotifyMsg(0, iClientH, Notify::PkPenalty, 0, 0, 0, 0);
+		if (m_game->m_client_list[client_h]->m_player_kill_count > 0) {
+			m_game->m_client_list[client_h]->m_player_kill_count--;
+			m_game->send_notify_msg(0, client_h, Notify::PkPenalty, 0, 0, 0, 0);
 			// v2.15
-			m_pGame->m_pCombatManager->_bPKLog(PkLog::ReduceCriminal, 0, iClientH, 0);
+			m_game->m_combat_manager->pk_log(PkLog::ReduceCriminal, 0, client_h, 0);
 		}
 
-		iExp = m_pGame->iDice(1, (5 * cPenaltyLevel * m_pGame->m_pClientList[iClientH]->m_iLevel));
+		exp = m_game->dice(1, (5 * penalty_level * m_game->m_client_list[client_h]->m_level));
 
-		if (m_pGame->m_pClientList[iClientH]->m_bIsNeutral) iExp = iExp / 3;
+		if (m_game->m_client_list[client_h]->m_is_neutral) exp = exp / 3;
 
-		// if (m_pGame->m_pClientList[iClientH]->m_iLevel == hb::shared::limits::PlayerMaxLevel) iExp = 0;
+		// if (m_game->m_client_list[client_h]->m_level == hb::shared::limits::PlayerMaxLevel) exp = 0;
 
-		m_pGame->m_pClientList[iClientH]->m_iExp -= iExp;
-		if (m_pGame->m_pClientList[iClientH]->m_iExp < 0) m_pGame->m_pClientList[iClientH]->m_iExp = 0;
+		m_game->m_client_list[client_h]->m_exp -= exp;
+		if (m_game->m_client_list[client_h]->m_exp < 0) m_game->m_client_list[client_h]->m_exp = 0;
 
-		m_pGame->SendNotifyMsg(0, iClientH, Notify::Exp, 0, 0, 0, 0);
+		m_game->send_notify_msg(0, client_h, Notify::Exp, 0, 0, 0, 0);
 
-		if (m_pGame->m_pClientList[iClientH]->m_bIsNeutral != true) {
-			if (m_pGame->m_pClientList[iClientH]->m_iLevel < 80) {
+		if (m_game->m_client_list[client_h]->m_is_neutral != true) {
+			if (m_game->m_client_list[client_h]->m_level < 80) {
 				// v2.03 60 -> 80
-				cPenaltyLevel--;
-				if (cPenaltyLevel <= 0) cPenaltyLevel = 1;
-				_PenaltyItemDrop(iClientH, cPenaltyLevel, bIsSAattacked);
+				penalty_level--;
+				if (penalty_level <= 0) penalty_level = 1;
+				penalty_item_drop(client_h, penalty_level, is_s_aattacked);
 			}
-			else _PenaltyItemDrop(iClientH, cPenaltyLevel, bIsSAattacked);
+			else penalty_item_drop(client_h, penalty_level, is_s_aattacked);
 		}
 	}
 }
 
 // 05/29/2004 - Hypnotoad - Limits some items from not dropping
-void LootManager::_PenaltyItemDrop(int iClientH, int iTotal, bool bIsSAattacked)
+void LootManager::penalty_item_drop(int client_h, int total, bool is_s_aattacked)
 {
-	int j, iRemainItem;
-	char cItemIndexList[hb::shared::limits::MaxItems], cItemIndex;
+	int j, remain_item;
+	char item_index_list[hb::shared::limits::MaxItems], item_index;
 
-	if (m_pGame->m_pClientList[iClientH] == 0) return;
-	if (m_pGame->m_pClientList[iClientH]->m_bIsInitComplete == false) return;
+	if (m_game->m_client_list[client_h] == 0) return;
+	if (m_game->m_client_list[client_h]->m_is_init_complete == false) return;
 
-	if ((m_pGame->m_pClientList[iClientH]->m_iAlterItemDropIndex != -1) && (m_pGame->m_pClientList[iClientH]->m_pItemList[m_pGame->m_pClientList[iClientH]->m_iAlterItemDropIndex] != 0)) {
+	if ((m_game->m_client_list[client_h]->m_alter_item_drop_index != -1) && (m_game->m_client_list[client_h]->m_item_list[m_game->m_client_list[client_h]->m_alter_item_drop_index] != 0)) {
 		// Testcode
-		if (m_pGame->m_pClientList[iClientH]->m_pItemList[m_pGame->m_pClientList[iClientH]->m_iAlterItemDropIndex]->GetItemEffectType() == ItemEffectType::AlterItemDrop) {
-			if (m_pGame->m_pClientList[iClientH]->m_pItemList[m_pGame->m_pClientList[iClientH]->m_iAlterItemDropIndex]->m_wCurLifeSpan > 0) {
-				m_pGame->m_pClientList[iClientH]->m_pItemList[m_pGame->m_pClientList[iClientH]->m_iAlterItemDropIndex]->m_wCurLifeSpan--;
-				m_pGame->SendNotifyMsg(0, iClientH, Notify::CurLifeSpan, m_pGame->m_pClientList[iClientH]->m_iAlterItemDropIndex, m_pGame->m_pClientList[iClientH]->m_pItemList[m_pGame->m_pClientList[iClientH]->m_iAlterItemDropIndex]->m_wCurLifeSpan, 0, 0);
+		if (m_game->m_client_list[client_h]->m_item_list[m_game->m_client_list[client_h]->m_alter_item_drop_index]->get_item_effect_type() == ItemEffectType::AlterItemDrop) {
+			if (m_game->m_client_list[client_h]->m_item_list[m_game->m_client_list[client_h]->m_alter_item_drop_index]->m_cur_life_span > 0) {
+				m_game->m_client_list[client_h]->m_item_list[m_game->m_client_list[client_h]->m_alter_item_drop_index]->m_cur_life_span--;
+				m_game->send_notify_msg(0, client_h, Notify::CurLifeSpan, m_game->m_client_list[client_h]->m_alter_item_drop_index, m_game->m_client_list[client_h]->m_item_list[m_game->m_client_list[client_h]->m_alter_item_drop_index]->m_cur_life_span, 0, 0);
 			}
-			m_pGame->m_pItemManager->DropItemHandler(iClientH, m_pGame->m_pClientList[iClientH]->m_iAlterItemDropIndex, -1, m_pGame->m_pClientList[iClientH]->m_pItemList[m_pGame->m_pClientList[iClientH]->m_iAlterItemDropIndex]->m_cName);
+			m_game->m_item_manager->drop_item_handler(client_h, m_game->m_client_list[client_h]->m_alter_item_drop_index, -1, m_game->m_client_list[client_h]->m_item_list[m_game->m_client_list[client_h]->m_alter_item_drop_index]->m_name);
 
-			m_pGame->m_pClientList[iClientH]->m_iAlterItemDropIndex = -1;
+			m_game->m_client_list[client_h]->m_alter_item_drop_index = -1;
 		}
 		else {
 			// v2.04 testcode
 			hb::logger::log<log_channel::events>("Alter Drop Item Index Error1");
 			for(int i = 0; i < hb::shared::limits::MaxItems; i++)
-				if ((m_pGame->m_pClientList[iClientH]->m_pItemList[i] != 0) && (m_pGame->m_pClientList[iClientH]->m_pItemList[i]->GetItemEffectType() == ItemEffectType::AlterItemDrop)) {
-					m_pGame->m_pClientList[iClientH]->m_iAlterItemDropIndex = i;
-					if (m_pGame->m_pClientList[iClientH]->m_pItemList[m_pGame->m_pClientList[iClientH]->m_iAlterItemDropIndex]->m_wCurLifeSpan > 0) {
-						m_pGame->m_pClientList[iClientH]->m_pItemList[m_pGame->m_pClientList[iClientH]->m_iAlterItemDropIndex]->m_wCurLifeSpan--;
-						m_pGame->SendNotifyMsg(0, iClientH, Notify::CurLifeSpan, m_pGame->m_pClientList[iClientH]->m_iAlterItemDropIndex, m_pGame->m_pClientList[iClientH]->m_pItemList[m_pGame->m_pClientList[iClientH]->m_iAlterItemDropIndex]->m_wCurLifeSpan, 0, 0);
+				if ((m_game->m_client_list[client_h]->m_item_list[i] != 0) && (m_game->m_client_list[client_h]->m_item_list[i]->get_item_effect_type() == ItemEffectType::AlterItemDrop)) {
+					m_game->m_client_list[client_h]->m_alter_item_drop_index = i;
+					if (m_game->m_client_list[client_h]->m_item_list[m_game->m_client_list[client_h]->m_alter_item_drop_index]->m_cur_life_span > 0) {
+						m_game->m_client_list[client_h]->m_item_list[m_game->m_client_list[client_h]->m_alter_item_drop_index]->m_cur_life_span--;
+						m_game->send_notify_msg(0, client_h, Notify::CurLifeSpan, m_game->m_client_list[client_h]->m_alter_item_drop_index, m_game->m_client_list[client_h]->m_item_list[m_game->m_client_list[client_h]->m_alter_item_drop_index]->m_cur_life_span, 0, 0);
 					}
-					m_pGame->m_pItemManager->DropItemHandler(iClientH, m_pGame->m_pClientList[iClientH]->m_iAlterItemDropIndex, -1, m_pGame->m_pClientList[iClientH]->m_pItemList[m_pGame->m_pClientList[iClientH]->m_iAlterItemDropIndex]->m_cName);
-					m_pGame->m_pClientList[iClientH]->m_iAlterItemDropIndex = -1;
+					m_game->m_item_manager->drop_item_handler(client_h, m_game->m_client_list[client_h]->m_alter_item_drop_index, -1, m_game->m_client_list[client_h]->m_item_list[m_game->m_client_list[client_h]->m_alter_item_drop_index]->m_name);
+					m_game->m_client_list[client_h]->m_alter_item_drop_index = -1;
 					return;
 				}
 
@@ -370,90 +370,90 @@ void LootManager::_PenaltyItemDrop(int iClientH, int iTotal, bool bIsSAattacked)
 
 PID_DROP:
 
-	for(int i = 1; i <= iTotal; i++) {
-		iRemainItem = 0;
-		std::memset(cItemIndexList, 0, sizeof(cItemIndexList));
+	for(int i = 1; i <= total; i++) {
+		remain_item = 0;
+		std::memset(item_index_list, 0, sizeof(item_index_list));
 
 		for (j = 0; j < hb::shared::limits::MaxItems; j++)
-			if (m_pGame->m_pClientList[iClientH]->m_pItemList[j] != 0) {
-				cItemIndexList[iRemainItem] = j;
-				iRemainItem++;
+			if (m_game->m_client_list[client_h]->m_item_list[j] != 0) {
+				item_index_list[remain_item] = j;
+				remain_item++;
 			}
 
-		if (iRemainItem == 0) return;
-		cItemIndex = cItemIndexList[m_pGame->iDice(1, iRemainItem) - 1];
+		if (remain_item == 0) return;
+		item_index = item_index_list[m_game->dice(1, remain_item) - 1];
 
-		if ((m_pGame->m_pClientList[iClientH]->m_pItemList[cItemIndex]->GetTouchEffectType() != TouchEffectType::None) &&
-			(m_pGame->m_pClientList[iClientH]->m_pItemList[cItemIndex]->m_sTouchEffectValue1 == m_pGame->m_pClientList[iClientH]->m_sCharIDnum1) &&
-			(m_pGame->m_pClientList[iClientH]->m_pItemList[cItemIndex]->m_sTouchEffectValue2 == m_pGame->m_pClientList[iClientH]->m_sCharIDnum2) &&
-			(m_pGame->m_pClientList[iClientH]->m_pItemList[cItemIndex]->m_sTouchEffectValue3 == m_pGame->m_pClientList[iClientH]->m_sCharIDnum3)) {
+		if ((m_game->m_client_list[client_h]->m_item_list[item_index]->get_touch_effect_type() != TouchEffectType::None) &&
+			(m_game->m_client_list[client_h]->m_item_list[item_index]->m_touch_effect_value1 == m_game->m_client_list[client_h]->m_char_id_num1) &&
+			(m_game->m_client_list[client_h]->m_item_list[item_index]->m_touch_effect_value2 == m_game->m_client_list[client_h]->m_char_id_num2) &&
+			(m_game->m_client_list[client_h]->m_item_list[item_index]->m_touch_effect_value3 == m_game->m_client_list[client_h]->m_char_id_num3)) {
 		}
 
 		else if (
-			(m_pGame->m_pClientList[iClientH]->m_pItemList[cItemIndex]->m_sIDnum >= 400) &&
-			(m_pGame->m_pClientList[iClientH]->m_pItemList[cItemIndex]->m_sIDnum != 402) &&
-			(m_pGame->m_pClientList[iClientH]->m_pItemList[cItemIndex]->m_sIDnum <= 428)) {
+			(m_game->m_client_list[client_h]->m_item_list[item_index]->m_id_num >= 400) &&
+			(m_game->m_client_list[client_h]->m_item_list[item_index]->m_id_num != 402) &&
+			(m_game->m_client_list[client_h]->m_item_list[item_index]->m_id_num <= 428)) {
 		}
 
-		else if (((m_pGame->m_pClientList[iClientH]->m_pItemList[cItemIndex]->GetItemEffectType() == ItemEffectType::AttackSpecAbility) ||
-			(m_pGame->m_pClientList[iClientH]->m_pItemList[cItemIndex]->GetItemEffectType() == ItemEffectType::DefenseSpecAbility)) &&
-			(bIsSAattacked == false)) {
+		else if (((m_game->m_client_list[client_h]->m_item_list[item_index]->get_item_effect_type() == ItemEffectType::AttackSpecAbility) ||
+			(m_game->m_client_list[client_h]->m_item_list[item_index]->get_item_effect_type() == ItemEffectType::DefenseSpecAbility)) &&
+			(is_s_aattacked == false)) {
 		}
 
-		else if ((m_pGame->m_pClientList[iClientH]->m_bIsLuckyEffect) && (m_pGame->iDice(1, 10) == 5)) {
+		else if ((m_game->m_client_list[client_h]->m_is_lucky_effect) && (m_game->dice(1, 10) == 5)) {
 			// 10%    .
 		}
 
-		else m_pGame->m_pItemManager->DropItemHandler(iClientH, cItemIndex, -1, m_pGame->m_pClientList[iClientH]->m_pItemList[cItemIndex]->m_cName);
+		else m_game->m_item_manager->drop_item_handler(client_h, item_index, -1, m_game->m_client_list[client_h]->m_item_list[item_index]->m_name);
 	}
 }
 
-void LootManager::GetRewardMoneyHandler(int iClientH)
+void LootManager::get_reward_money_handler(int client_h)
 {
-	int iRet, iEraseReq, iWeightLeft;
-	uint32_t iRewardGoldLeft;
-	CItem* pItem;
+	int ret, erase_req, weight_left;
+	uint32_t reward_gold_left;
+	CItem* item;
 
-	if (m_pGame->m_pClientList[iClientH] == 0) return;
-	if (m_pGame->m_pClientList[iClientH]->m_bIsInitComplete == false) return;
+	if (m_game->m_client_list[client_h] == 0) return;
+	if (m_game->m_client_list[client_h]->m_is_init_complete == false) return;
 
-	iWeightLeft = m_pGame->_iCalcMaxLoad(iClientH) - m_pGame->iCalcTotalWeight(iClientH);
+	weight_left = m_game->calc_max_load(client_h) - m_game->calc_total_weight(client_h);
 
-	if (iWeightLeft <= 0) return;
-	iWeightLeft = iWeightLeft / 2;
-	if (iWeightLeft <= 0) return;
+	if (weight_left <= 0) return;
+	weight_left = weight_left / 2;
+	if (weight_left <= 0) return;
 
-	pItem = new CItem;
-	m_pGame->m_pItemManager->_bInitItemAttr(pItem, hb::shared::item::ItemId::Gold);
-	//pItem->m_dwCount = m_pGame->m_pClientList[iClientH]->m_iRewardGold;
+	item = new CItem;
+	m_game->m_item_manager->init_item_attr(item, hb::shared::item::ItemId::Gold);
+	//item->m_count = m_game->m_client_list[client_h]->m_reward_gold;
 
-	// (iWeightLeft / pItem->m_wWeight)     Gold.   .
-	uint32_t maxGold = static_cast<uint32_t>(iWeightLeft / m_pGame->m_pItemManager->iGetItemWeight(pItem, 1));
-	if (maxGold >= m_pGame->m_pClientList[iClientH]->m_iRewardGold) {
-		pItem->m_dwCount = m_pGame->m_pClientList[iClientH]->m_iRewardGold;
-		iRewardGoldLeft = 0;
+	// (weight_left / item->m_weight)     Gold.   .
+	uint32_t maxGold = static_cast<uint32_t>(weight_left / m_game->m_item_manager->get_item_weight(item, 1));
+	if (maxGold >= m_game->m_client_list[client_h]->m_reward_gold) {
+		item->m_count = m_game->m_client_list[client_h]->m_reward_gold;
+		reward_gold_left = 0;
 	}
 	else {
-		// (iWeightLeft / pItem->m_wWeight) .
-		pItem->m_dwCount = maxGold;
-		iRewardGoldLeft = m_pGame->m_pClientList[iClientH]->m_iRewardGold - maxGold;
+		// (weight_left / item->m_weight) .
+		item->m_count = maxGold;
+		reward_gold_left = m_game->m_client_list[client_h]->m_reward_gold - maxGold;
 	}
 
-	if (m_pGame->m_pItemManager->_bAddClientItemList(iClientH, pItem, &iEraseReq)) {
+	if (m_game->m_item_manager->add_client_item_list(client_h, item, &erase_req)) {
 
-		m_pGame->m_pClientList[iClientH]->m_iRewardGold = iRewardGoldLeft;
+		m_game->m_client_list[client_h]->m_reward_gold = reward_gold_left;
 
-		iRet = m_pGame->m_pItemManager->SendItemNotifyMsg(iClientH, Notify::ItemObtained, pItem, 0);
+		ret = m_game->m_item_manager->send_item_notify_msg(client_h, Notify::ItemObtained, item, 0);
 
-		switch (iRet) {
+		switch (ret) {
 		case sock::Event::QueueFull:
 		case sock::Event::SocketError:
 		case sock::Event::CriticalError:
-			m_pGame->DeleteClient(iClientH, true, true);
+			m_game->delete_client(client_h, true, true);
 			return;
 		}
 
-		m_pGame->SendNotifyMsg(0, iClientH, Notify::RewardGold, 0, 0, 0, 0);
+		m_game->send_notify_msg(0, client_h, Notify::RewardGold, 0, 0, 0, 0);
 	}
 	else {
 

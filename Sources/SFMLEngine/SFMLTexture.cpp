@@ -32,12 +32,12 @@ SFMLTexture::~SFMLTexture()
     // SFML handles cleanup automatically
 }
 
-uint16_t SFMLTexture::GetWidth() const
+uint16_t SFMLTexture::get_width() const
 {
     return m_width;
 }
 
-uint16_t SFMLTexture::GetHeight() const
+uint16_t SFMLTexture::get_height() const
 {
     return m_height;
 }
@@ -60,7 +60,7 @@ bool SFMLTexture::Blt(RECT* destRect, hb::shared::render::ITexture* src, RECT* s
     }
     else
     {
-        srcIntRect = sf::IntRect({0, 0}, {static_cast<int>(sfmlSrc->GetWidth()), static_cast<int>(sfmlSrc->GetHeight())});
+        srcIntRect = sf::IntRect({0, 0}, {static_cast<int>(sfmlSrc->get_width()), static_cast<int>(sfmlSrc->get_height())});
     }
 
     // Determine destination position
@@ -111,7 +111,7 @@ bool SFMLTexture::BltFast(int x, int y, hb::shared::render::ITexture* src, RECT*
     }
     else
     {
-        srcIntRect = sf::IntRect({0, 0}, {static_cast<int>(sfmlSrc->GetWidth()), static_cast<int>(sfmlSrc->GetHeight())});
+        srcIntRect = sf::IntRect({0, 0}, {static_cast<int>(sfmlSrc->get_width()), static_cast<int>(sfmlSrc->get_height())});
     }
 
     // Create sprite for drawing

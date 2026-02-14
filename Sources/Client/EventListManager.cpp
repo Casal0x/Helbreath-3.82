@@ -5,125 +5,125 @@
 #include "GameTimer.h"
 #include "lan_eng.h"
 
-EventListManager& EventListManager::Get()
+event_list_manager& event_list_manager::get()
 {
-	static EventListManager instance;
+	static event_list_manager instance;
 	return instance;
 }
 
-void EventListManager::SetGame(CGame* pGame)
+void event_list_manager::set_game(CGame* game)
 {
-	m_game = pGame;
+	m_game = game;
 }
 
-void EventListManager::AddEvent(const char* pTxt, char cColor, bool bDupAllow)
+void event_list_manager::add_event(const char* txt, char color, bool dup_allow)
 {
 	int i;
-	if ((bDupAllow == false) && (m_events[5].cTxt == pTxt)) return;
-	if (cColor == 10)
+	if ((dup_allow == false) && (m_events[5].txt == txt)) return;
+	if (color == 10)
 	{
 		for (i = 1; i < 6; i++)
 		{
-			m_events2[i - 1].cTxt = m_events2[i].cTxt;
-			m_events2[i - 1].cColor = m_events2[i].cColor;
-			m_events2[i - 1].dwTime = m_events2[i].dwTime;
+			m_events2[i - 1].txt = m_events2[i].txt;
+			m_events2[i - 1].color = m_events2[i].color;
+			m_events2[i - 1].time = m_events2[i].time;
 		}
-		m_events2[5].cTxt = pTxt;
-		m_events2[5].cColor = cColor;
-		m_events2[5].dwTime = GameClock::GetTimeMS();
+		m_events2[5].txt = txt;
+		m_events2[5].color = color;
+		m_events2[5].time = GameClock::get_time_ms();
 	}
 	else
 	{
 		for (i = 1; i < 6; i++)
 		{
-			m_events[i - 1].cTxt = m_events[i].cTxt;
-			m_events[i - 1].cColor = m_events[i].cColor;
-			m_events[i - 1].dwTime = m_events[i].dwTime;
+			m_events[i - 1].txt = m_events[i].txt;
+			m_events[i - 1].color = m_events[i].color;
+			m_events[i - 1].time = m_events[i].time;
 		}
-		m_events[5].cTxt = pTxt;
-		m_events[5].cColor = cColor;
-		m_events[5].dwTime = GameClock::GetTimeMS();
+		m_events[5].txt = txt;
+		m_events[5].color = color;
+		m_events[5].time = GameClock::get_time_ms();
 	}
 }
 
-void EventListManager::AddEventTop(const char* pTxt, char cColor)
+void event_list_manager::add_event_top(const char* txt, char color)
 {
 	for (int i = 1; i < 6; i++)
 	{
-		m_events[i - 1].cTxt = m_events[i].cTxt;
-		m_events[i - 1].cColor = m_events[i].cColor;
-		m_events[i - 1].dwTime = m_events[i].dwTime;
+		m_events[i - 1].txt = m_events[i].txt;
+		m_events[i - 1].color = m_events[i].color;
+		m_events[i - 1].time = m_events[i].time;
 	}
-	m_events[5].cTxt = pTxt;
-	m_events[5].cColor = cColor;
-	m_events[5].dwTime = GameClock::GetTimeMS();
+	m_events[5].txt = txt;
+	m_events[5].color = color;
+	m_events[5].time = GameClock::get_time_ms();
 }
 
-void EventListManager::ShowEvents(uint32_t dwTime)
+void event_list_manager::show_events(uint32_t time)
 {
 	int i;
 	int baseY = EVENTLIST2_BASE_Y();
-	m_game->m_Renderer->BeginTextBatch();
-	// uint32_t subtraction wraps safely — expired events (dwTime far in the past) produce
+	m_game->m_Renderer->begin_text_batch();
+	// uint32_t subtraction wraps safely — expired events (time far in the past) produce
 	// large differences that exceed 5000, so the comparison remains correct across wrap
 	for (i = 0; i < 6; i++)
-		if ((dwTime - m_events[i].dwTime) < 5000)
+		if ((time - m_events[i].time) < 5000)
 		{
-			switch (m_events[i].cColor) {
+			switch (m_events[i].color) {
 			case 0:
-				hb::shared::text::DrawText(GameFont::Default, 10, 10 + i * 15, m_events[i].cTxt.c_str(), hb::shared::text::TextStyle::WithShadow(GameColors::UINearWhite));
+				hb::shared::text::draw_text(GameFont::Default, 10, 10 + i * 15, m_events[i].txt.c_str(), hb::shared::text::TextStyle::with_shadow(GameColors::UINearWhite));
 				break;
 			case 1:
-				hb::shared::text::DrawText(GameFont::Default, 10, 10 + i * 15, m_events[i].cTxt.c_str(), hb::shared::text::TextStyle::WithShadow(GameColors::ChatEventGreen));
+				hb::shared::text::draw_text(GameFont::Default, 10, 10 + i * 15, m_events[i].txt.c_str(), hb::shared::text::TextStyle::with_shadow(GameColors::ChatEventGreen));
 				break;
 			case 2:
-				hb::shared::text::DrawText(GameFont::Default, 10, 10 + i * 15, m_events[i].cTxt.c_str(), hb::shared::text::TextStyle::WithShadow(GameColors::UIWorldChat));
+				hb::shared::text::draw_text(GameFont::Default, 10, 10 + i * 15, m_events[i].txt.c_str(), hb::shared::text::TextStyle::with_shadow(GameColors::UIWorldChat));
 				break;
 			case 3:
-				hb::shared::text::DrawText(GameFont::Default, 10, 10 + i * 15, m_events[i].cTxt.c_str(), hb::shared::text::TextStyle::WithShadow(GameColors::UIFactionChat));
+				hb::shared::text::draw_text(GameFont::Default, 10, 10 + i * 15, m_events[i].txt.c_str(), hb::shared::text::TextStyle::with_shadow(GameColors::UIFactionChat));
 				break;
 			case 4:
-				hb::shared::text::DrawText(GameFont::Default, 10, 10 + i * 15, m_events[i].cTxt.c_str(), hb::shared::text::TextStyle::WithShadow(GameColors::UIPartyChat));
+				hb::shared::text::draw_text(GameFont::Default, 10, 10 + i * 15, m_events[i].txt.c_str(), hb::shared::text::TextStyle::with_shadow(GameColors::UIPartyChat));
 				break;
 			case hb::shared::owner::Slime:
-				hb::shared::text::DrawText(GameFont::Default, 10, 10 + i * 15, m_events[i].cTxt.c_str(), hb::shared::text::TextStyle::WithShadow(GameColors::UIGameMasterChat));
+				hb::shared::text::draw_text(GameFont::Default, 10, 10 + i * 15, m_events[i].txt.c_str(), hb::shared::text::TextStyle::with_shadow(GameColors::UIGameMasterChat));
 				break;
 			case hb::shared::owner::Howard:
-				hb::shared::text::DrawText(GameFont::Default, 10, 10 + i * 15, m_events[i].cTxt.c_str(), hb::shared::text::TextStyle::WithShadow(GameColors::UINormalChat));
+				hb::shared::text::draw_text(GameFont::Default, 10, 10 + i * 15, m_events[i].txt.c_str(), hb::shared::text::TextStyle::with_shadow(GameColors::UINormalChat));
 				break;
 			}
 		}
 
 	for (i = 0; i < 6; i++)
-		if ((dwTime - m_events2[i].dwTime) < 5000)
+		if ((time - m_events2[i].time) < 5000)
 		{
-			switch (m_events2[i].cColor) {
+			switch (m_events2[i].color) {
 			case 0:
-				hb::shared::text::DrawText(GameFont::Default, 10, baseY + i * 15, m_events2[i].cTxt.c_str(), hb::shared::text::TextStyle::WithShadow(GameColors::UINearWhite));
+				hb::shared::text::draw_text(GameFont::Default, 10, baseY + i * 15, m_events2[i].txt.c_str(), hb::shared::text::TextStyle::with_shadow(GameColors::UINearWhite));
 				break;
 			case 1:
-				hb::shared::text::DrawText(GameFont::Default, 10, baseY + i * 15, m_events2[i].cTxt.c_str(), hb::shared::text::TextStyle::WithShadow(GameColors::ChatEventGreen));
+				hb::shared::text::draw_text(GameFont::Default, 10, baseY + i * 15, m_events2[i].txt.c_str(), hb::shared::text::TextStyle::with_shadow(GameColors::ChatEventGreen));
 				break;
 			case 2:
-				hb::shared::text::DrawText(GameFont::Default, 10, baseY + i * 15, m_events2[i].cTxt.c_str(), hb::shared::text::TextStyle::WithShadow(GameColors::UIWorldChat));
+				hb::shared::text::draw_text(GameFont::Default, 10, baseY + i * 15, m_events2[i].txt.c_str(), hb::shared::text::TextStyle::with_shadow(GameColors::UIWorldChat));
 				break;
 			case 3:
-				hb::shared::text::DrawText(GameFont::Default, 10, baseY + i * 15, m_events2[i].cTxt.c_str(), hb::shared::text::TextStyle::WithShadow(GameColors::UIFactionChat));
+				hb::shared::text::draw_text(GameFont::Default, 10, baseY + i * 15, m_events2[i].txt.c_str(), hb::shared::text::TextStyle::with_shadow(GameColors::UIFactionChat));
 				break;
 			case 4:
-				hb::shared::text::DrawText(GameFont::Default, 10, baseY + i * 15, m_events2[i].cTxt.c_str(), hb::shared::text::TextStyle::WithShadow(GameColors::UIPartyChat));
+				hb::shared::text::draw_text(GameFont::Default, 10, baseY + i * 15, m_events2[i].txt.c_str(), hb::shared::text::TextStyle::with_shadow(GameColors::UIPartyChat));
 				break;
 			case hb::shared::owner::Slime:
-				hb::shared::text::DrawText(GameFont::Default, 10, baseY + i * 15, m_events2[i].cTxt.c_str(), hb::shared::text::TextStyle::WithShadow(GameColors::UIGameMasterChat));
+				hb::shared::text::draw_text(GameFont::Default, 10, baseY + i * 15, m_events2[i].txt.c_str(), hb::shared::text::TextStyle::with_shadow(GameColors::UIGameMasterChat));
 				break;
 			case hb::shared::owner::Howard:
-				hb::shared::text::DrawText(GameFont::Default, 10, baseY + i * 15, m_events2[i].cTxt.c_str(), hb::shared::text::TextStyle::WithShadow(GameColors::UINormalChat));
+				hb::shared::text::draw_text(GameFont::Default, 10, baseY + i * 15, m_events2[i].txt.c_str(), hb::shared::text::TextStyle::with_shadow(GameColors::UINormalChat));
 				break;
 			}
 		}
-	if (m_game->m_bSkillUsingStatus == true)
+	if (m_game->m_skill_using_status == true)
 	{
-		hb::shared::text::DrawText(GameFont::Default, 440 - 29, 440 - 52, SHOW_EVENT_LIST1, hb::shared::text::TextStyle::WithShadow(GameColors::UINearWhite));
+		hb::shared::text::draw_text(GameFont::Default, 440 - 29, 440 - 52, SHOW_EVENT_LIST1, hb::shared::text::TextStyle::with_shadow(GameColors::UINearWhite));
 	}
-	m_game->m_Renderer->EndTextBatch();
+	m_game->m_Renderer->end_text_batch();
 }

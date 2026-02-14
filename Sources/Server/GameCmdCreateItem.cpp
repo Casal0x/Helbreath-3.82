@@ -8,69 +8,69 @@
 
 using namespace hb::shared::net;
 using namespace hb::server::config;
-bool GameCmdCreateItem::Execute(CGame* pGame, int iClientH, const char* pArgs)
+bool GameCmdCreateItem::execute(CGame* game, int client_h, const char* args)
 {
-	if (pGame->m_pClientList[iClientH] == nullptr)
+	if (game->m_client_list[client_h] == nullptr)
 		return true;
 
-	int iItemID = 0, iAmount = 1;
-	if (pArgs == nullptr || pArgs[0] == '\0' || sscanf(pArgs, "%d %d", &iItemID, &iAmount) < 1)
+	int item_id = 0, amount = 1;
+	if (args == nullptr || args[0] == '\0' || sscanf(args, "%d %d", &item_id, &amount) < 1)
 	{
-		pGame->SendNotifyMsg(0, iClientH, Notify::NoticeMsg, 0, 0, 0, "Usage: /createitem <item_id> [amount]");
+		game->send_notify_msg(0, client_h, Notify::NoticeMsg, 0, 0, 0, "Usage: /createitem <item_id> [amount]");
 		return true;
 	}
 
-	if (iItemID < 0 || iItemID >= MaxItemTypes || pGame->m_pItemConfigList[iItemID] == nullptr)
+	if (item_id < 0 || item_id >= MaxItemTypes || game->m_item_config_list[item_id] == nullptr)
 	{
-		pGame->SendNotifyMsg(0, iClientH, Notify::NoticeMsg, 0, 0, 0, "Invalid item ID.");
+		game->send_notify_msg(0, client_h, Notify::NoticeMsg, 0, 0, 0, "Invalid item ID.");
 		return true;
 	}
 
-	if (iAmount < 1) iAmount = 1;
-	if (iAmount > 1000) iAmount = 1000;
+	if (amount < 1) amount = 1;
+	if (amount > 1000) amount = 1000;
 
-	const char* pItemName = pGame->m_pItemConfigList[iItemID]->m_cName;
-	auto itemType = pGame->m_pItemConfigList[iItemID]->GetItemType();
-	bool bTrueStack = hb::shared::item::IsTrueStackType(itemType) || (iItemID == hb::shared::item::ItemId::Gold);
+	const char* item_name = game->m_item_config_list[item_id]->m_name;
+	auto itemType = game->m_item_config_list[item_id]->get_item_type();
+	bool true_stack = hb::shared::item::is_true_stack_type(itemType) || (item_id == hb::shared::item::ItemId::Gold);
 
-	int iCreated = 0;
+	int created = 0;
 
-	if (bTrueStack)
+	if (true_stack)
 	{
 		// True stacks: single item with count = amount (arrows, materials, gold)
-		CItem* pItem = new CItem();
-		if (pGame->m_pItemManager->_bInitItemAttr(pItem, pItemName))
+		CItem* item = new CItem();
+		if (game->m_item_manager->init_item_attr(item, item_name))
 		{
-			pItem->m_dwCount = iAmount;
-			int iEraseReq = 0;
-			if (pGame->m_pItemManager->_bAddClientItemList(iClientH, pItem, &iEraseReq))
+			item->m_count = amount;
+			int erase_req = 0;
+			if (game->m_item_manager->add_client_item_list(client_h, item, &erase_req))
 			{
-				pGame->m_pItemManager->SendItemNotifyMsg(iClientH, Notify::ItemObtained, pItem, 0);
-				iCreated = iAmount;
+				game->m_item_manager->send_item_notify_msg(client_h, Notify::ItemObtained, item, 0);
+				created = amount;
 			}
 			else
 			{
-				delete pItem;
-				pGame->SendNotifyMsg(0, iClientH, Notify::NoticeMsg, 0, 0, 0, "Inventory full.");
+				delete item;
+				game->send_notify_msg(0, client_h, Notify::NoticeMsg, 0, 0, 0, "Inventory full.");
 				return true;
 			}
 		}
 		else
 		{
-			delete pItem;
-			pGame->SendNotifyMsg(0, iClientH, Notify::NoticeMsg, 0, 0, 0, "Failed to create item.");
+			delete item;
+			game->send_notify_msg(0, client_h, Notify::NoticeMsg, 0, 0, 0, "Failed to create item.");
 			return true;
 		}
 	}
 	else
 	{
 		// Soft-linked items: individual items, one bulk notification
-		iCreated = pGame->m_pItemManager->_bAddClientBulkItemList(iClientH, pItemName, iAmount);
+		created = game->m_item_manager->add_client_bulk_item_list(client_h, item_name, amount);
 	}
 
 	char buf[128];
-	std::snprintf(buf, sizeof(buf), "Created %d x %s (ID: %d).", iCreated, pItemName, iItemID);
-	pGame->SendNotifyMsg(0, iClientH, Notify::NoticeMsg, 0, 0, 0, buf);
+	std::snprintf(buf, sizeof(buf), "Created %d x %s (ID: %d).", created, item_name, item_id);
+	game->send_notify_msg(0, client_h, Notify::NoticeMsg, 0, 0, 0, buf);
 
 	return true;
 }

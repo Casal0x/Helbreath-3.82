@@ -15,44 +15,44 @@ namespace dynamic_object = hb::shared::dynamic_object;
 
 FishingManager::FishingManager()
 {
-	InitArrays();
+	init_arrays();
 }
 
 FishingManager::~FishingManager()
 {
-	CleanupArrays();
+	cleanup_arrays();
 }
 
-void FishingManager::InitArrays()
+void FishingManager::init_arrays()
 {
 	for (int i = 0; i < MaxFishs; i++)
-		m_pFish[i] = 0;
+		m_fish[i] = 0;
 }
 
-void FishingManager::CleanupArrays()
+void FishingManager::cleanup_arrays()
 {
 	for (int i = 0; i < MaxFishs; i++)
-		if (m_pFish[i] != 0) {
-			delete m_pFish[i];
-			m_pFish[i] = 0;
+		if (m_fish[i] != 0) {
+			delete m_fish[i];
+			m_fish[i] = 0;
 		}
 }
 
-int FishingManager::iCreateFish(char cMapIndex, short sX, short sY, short sType, CItem* pItem, int iDifficulty, uint32_t dwLastTime)
+int FishingManager::create_fish(char map_index, short sX, short sY, short type, CItem* item, int difficulty, uint32_t last_time)
 {
-	int iDynamicHandle;
+	int dynamic_handle;
 
-	if ((cMapIndex < 0) || (cMapIndex >= MaxMaps)) return 0;
-	if (m_pGame->m_pMapList[cMapIndex] == 0) return 0;
-	if (m_pGame->m_pMapList[cMapIndex]->bGetIsWater(sX, sY) == false) return 0;
+	if ((map_index < 0) || (map_index >= MaxMaps)) return 0;
+	if (m_game->m_map_list[map_index] == 0) return 0;
+	if (m_game->m_map_list[map_index]->get_is_water(sX, sY) == false) return 0;
 
 	for(int i = 1; i < MaxFishs; i++)
-		if (m_pFish[i] == 0) {
-			m_pFish[i] = new class CFish(cMapIndex, sX, sY, sType, pItem, iDifficulty);
-			if (m_pFish[i] == 0) return 0;
+		if (m_fish[i] == 0) {
+			m_fish[i] = new class CFish(map_index, sX, sY, type, item, difficulty);
+			if (m_fish[i] == 0) return 0;
 
 			// Dynamic Object . Owner Fish  .
-			switch (pItem->m_sIDnum) {
+			switch (item->m_id_num) {
 			case 101:
 			case 102:
 			case 103:
@@ -64,20 +64,20 @@ int FishingManager::iCreateFish(char cMapIndex, short sX, short sY, short sType,
 			case 575:
 			case 576:
 			case 577:
-				iDynamicHandle = m_pGame->m_pDynamicObjectManager->iAddDynamicObjectList(i, 0, dynamic_object::Fish, cMapIndex, sX, sY, dwLastTime);
+				dynamic_handle = m_game->m_dynamic_object_manager->add_dynamic_object_list(i, 0, dynamic_object::Fish, map_index, sX, sY, last_time);
 				break;
 			default:
-				iDynamicHandle = m_pGame->m_pDynamicObjectManager->iAddDynamicObjectList(i, 0, dynamic_object::FishObject, cMapIndex, sX, sY, dwLastTime);
+				dynamic_handle = m_game->m_dynamic_object_manager->add_dynamic_object_list(i, 0, dynamic_object::FishObject, map_index, sX, sY, last_time);
 				break;
 			}
 
-			if (iDynamicHandle == 0) {
-				delete m_pFish[i];
-				m_pFish[i] = 0;
+			if (dynamic_handle == 0) {
+				delete m_fish[i];
+				m_fish[i] = 0;
 				return 0;
 			}
-			m_pFish[i]->m_sDynamicObjectHandle = iDynamicHandle;
-			m_pGame->m_pMapList[cMapIndex]->m_iCurFish++;
+			m_fish[i]->m_dynamic_object_handle = dynamic_handle;
+			m_game->m_map_list[map_index]->m_cur_fish++;
 
 			return i;
 		}
@@ -86,75 +86,75 @@ int FishingManager::iCreateFish(char cMapIndex, short sX, short sY, short sType,
 }
 
 
-bool FishingManager::bDeleteFish(int iHandle, int iDelMode)
+bool FishingManager::delete_fish(int handle, int del_mode)
 {
 	int iH;
-	uint32_t dwTime;
+	uint32_t time;
 
-	if (m_pFish[iHandle] == 0) return false;
+	if (m_fish[handle] == 0) return false;
 
-	dwTime = GameClock::GetTimeMS();
+	time = GameClock::GetTimeMS();
 
 	// DynamicObject .
-	iH = m_pFish[iHandle]->m_sDynamicObjectHandle;
+	iH = m_fish[handle]->m_dynamic_object_handle;
 
-	if (m_pGame->m_pDynamicObjectManager->m_pDynamicObjectList[iH] != 0) {
-		m_pGame->SendEventToNearClient_TypeB(MsgId::DynamicObject, MsgType::Reject, m_pGame->m_pDynamicObjectManager->m_pDynamicObjectList[iH]->m_cMapIndex, m_pGame->m_pDynamicObjectManager->m_pDynamicObjectList[iH]->m_sX, m_pGame->m_pDynamicObjectManager->m_pDynamicObjectList[iH]->m_sY, m_pGame->m_pDynamicObjectManager->m_pDynamicObjectList[iH]->m_sType, iH, 0, (short)0);
-		m_pGame->m_pMapList[m_pGame->m_pDynamicObjectManager->m_pDynamicObjectList[iH]->m_cMapIndex]->SetDynamicObject(0, 0, m_pGame->m_pDynamicObjectManager->m_pDynamicObjectList[iH]->m_sX, m_pGame->m_pDynamicObjectManager->m_pDynamicObjectList[iH]->m_sY, dwTime);
-		m_pGame->m_pMapList[m_pGame->m_pDynamicObjectManager->m_pDynamicObjectList[iH]->m_cMapIndex]->m_iCurFish--;
+	if (m_game->m_dynamic_object_manager->m_dynamic_object_list[iH] != 0) {
+		m_game->send_event_to_near_client_type_b(MsgId::DynamicObject, MsgType::Reject, m_game->m_dynamic_object_manager->m_dynamic_object_list[iH]->m_map_index, m_game->m_dynamic_object_manager->m_dynamic_object_list[iH]->m_x, m_game->m_dynamic_object_manager->m_dynamic_object_list[iH]->m_y, m_game->m_dynamic_object_manager->m_dynamic_object_list[iH]->m_type, iH, 0, (short)0);
+		m_game->m_map_list[m_game->m_dynamic_object_manager->m_dynamic_object_list[iH]->m_map_index]->set_dynamic_object(0, 0, m_game->m_dynamic_object_manager->m_dynamic_object_list[iH]->m_x, m_game->m_dynamic_object_manager->m_dynamic_object_list[iH]->m_y, time);
+		m_game->m_map_list[m_game->m_dynamic_object_manager->m_dynamic_object_list[iH]->m_map_index]->m_cur_fish--;
 
-		delete m_pGame->m_pDynamicObjectManager->m_pDynamicObjectList[iH];
-		m_pGame->m_pDynamicObjectManager->m_pDynamicObjectList[iH] = 0;
+		delete m_game->m_dynamic_object_manager->m_dynamic_object_list[iH];
+		m_game->m_dynamic_object_manager->m_dynamic_object_list[iH] = 0;
 	}
 
 	for(int i = 1; i < MaxClients; i++) {
-		if ((m_pGame->m_pClientList[i] != 0) && (m_pGame->m_pClientList[i]->m_bIsInitComplete) &&
-			(m_pGame->m_pClientList[i]->m_iAllocatedFish == iHandle)) {
-			m_pGame->SendNotifyMsg(0, i, Notify::FishCanceled, iDelMode, 0, 0, 0);
-			m_pGame->m_pSkillManager->ClearSkillUsingStatus(i);
+		if ((m_game->m_client_list[i] != 0) && (m_game->m_client_list[i]->m_is_init_complete) &&
+			(m_game->m_client_list[i]->m_allocated_fish == handle)) {
+			m_game->send_notify_msg(0, i, Notify::FishCanceled, del_mode, 0, 0, 0);
+			m_game->m_skill_manager->clear_skill_using_status(i);
 		}
 	}
 
-	delete m_pFish[iHandle];
-	m_pFish[iHandle] = 0;
+	delete m_fish[handle];
+	m_fish[handle] = 0;
 
 	return true;
 }
 
 
-int FishingManager::iCheckFish(int iClientH, char cMapIndex, short dX, short dY)
+int FishingManager::check_fish(int client_h, char map_index, short dX, short dY)
 {
 
-	short sDistX, sDistY;
+	short dist_x, dist_y;
 
-	if (m_pGame->m_pClientList[iClientH] == 0) return 0;
-	if (m_pGame->m_pClientList[iClientH]->m_bIsInitComplete == false) return 0;
+	if (m_game->m_client_list[client_h] == 0) return 0;
+	if (m_game->m_client_list[client_h]->m_is_init_complete == false) return 0;
 
-	if ((cMapIndex < 0) || (cMapIndex >= MaxMaps)) return 0;
+	if ((map_index < 0) || (map_index >= MaxMaps)) return 0;
 
 	for(int i = 1; i < MaxDynamicObjects; i++)
-		if (m_pGame->m_pDynamicObjectManager->m_pDynamicObjectList[i] != 0) {
-			sDistX = abs(m_pGame->m_pDynamicObjectManager->m_pDynamicObjectList[i]->m_sX - dX);
-			sDistY = abs(m_pGame->m_pDynamicObjectManager->m_pDynamicObjectList[i]->m_sY - dY);
+		if (m_game->m_dynamic_object_manager->m_dynamic_object_list[i] != 0) {
+			dist_x = abs(m_game->m_dynamic_object_manager->m_dynamic_object_list[i]->m_x - dX);
+			dist_y = abs(m_game->m_dynamic_object_manager->m_dynamic_object_list[i]->m_y - dY);
 
-			if ((m_pGame->m_pDynamicObjectManager->m_pDynamicObjectList[i]->m_cMapIndex == cMapIndex) &&
-				((m_pGame->m_pDynamicObjectManager->m_pDynamicObjectList[i]->m_sType == dynamic_object::Fish) || (m_pGame->m_pDynamicObjectManager->m_pDynamicObjectList[i]->m_sType == dynamic_object::FishObject)) &&
-				(sDistX <= 2) && (sDistY <= 2)) {
+			if ((m_game->m_dynamic_object_manager->m_dynamic_object_list[i]->m_map_index == map_index) &&
+				((m_game->m_dynamic_object_manager->m_dynamic_object_list[i]->m_type == dynamic_object::Fish) || (m_game->m_dynamic_object_manager->m_dynamic_object_list[i]->m_type == dynamic_object::FishObject)) &&
+				(dist_x <= 2) && (dist_y <= 2)) {
 				// .       Fish  .
 
-				if (m_pFish[m_pGame->m_pDynamicObjectManager->m_pDynamicObjectList[i]->m_sOwner] == 0) return 0;
-				if (m_pFish[m_pGame->m_pDynamicObjectManager->m_pDynamicObjectList[i]->m_sOwner]->m_sEngagingCount >= MaxEngagingFish) return 0;
+				if (m_fish[m_game->m_dynamic_object_manager->m_dynamic_object_list[i]->m_owner] == 0) return 0;
+				if (m_fish[m_game->m_dynamic_object_manager->m_dynamic_object_list[i]->m_owner]->m_engaging_count >= MaxEngagingFish) return 0;
 
-				if (m_pGame->m_pClientList[iClientH]->m_iAllocatedFish != 0) return 0;
-				if (m_pGame->m_pClientList[iClientH]->m_cMapIndex != cMapIndex) return 0;
-				m_pGame->m_pClientList[iClientH]->m_iAllocatedFish = m_pGame->m_pDynamicObjectManager->m_pDynamicObjectList[i]->m_sOwner;
-				m_pGame->m_pClientList[iClientH]->m_iFishChance = 1;
-				m_pGame->m_pClientList[iClientH]->m_bSkillUsingStatus[1] = true;
+				if (m_game->m_client_list[client_h]->m_allocated_fish != 0) return 0;
+				if (m_game->m_client_list[client_h]->m_map_index != map_index) return 0;
+				m_game->m_client_list[client_h]->m_allocated_fish = m_game->m_dynamic_object_manager->m_dynamic_object_list[i]->m_owner;
+				m_game->m_client_list[client_h]->m_fish_chance = 1;
+				m_game->m_client_list[client_h]->m_skill_using_status[1] = true;
 
-				m_pGame->SendNotifyMsg(0, iClientH, Notify::EventFishMode, (m_pFish[m_pGame->m_pDynamicObjectManager->m_pDynamicObjectList[i]->m_sOwner]->m_pItem->m_wPrice / 2), m_pFish[m_pGame->m_pDynamicObjectManager->m_pDynamicObjectList[i]->m_sOwner]->m_pItem->m_sSprite,
-					m_pFish[m_pGame->m_pDynamicObjectManager->m_pDynamicObjectList[i]->m_sOwner]->m_pItem->m_sSpriteFrame, m_pFish[m_pGame->m_pDynamicObjectManager->m_pDynamicObjectList[i]->m_sOwner]->m_pItem->m_cName);
+				m_game->send_notify_msg(0, client_h, Notify::EventFishMode, (m_fish[m_game->m_dynamic_object_manager->m_dynamic_object_list[i]->m_owner]->m_item->m_price / 2), m_fish[m_game->m_dynamic_object_manager->m_dynamic_object_list[i]->m_owner]->m_item->m_sprite,
+					m_fish[m_game->m_dynamic_object_manager->m_dynamic_object_list[i]->m_owner]->m_item->m_sprite_frame, m_fish[m_game->m_dynamic_object_manager->m_dynamic_object_list[i]->m_owner]->m_item->m_name);
 
-				m_pFish[m_pGame->m_pDynamicObjectManager->m_pDynamicObjectList[i]->m_sOwner]->m_sEngagingCount++;
+				m_fish[m_game->m_dynamic_object_manager->m_dynamic_object_list[i]->m_owner]->m_engaging_count++;
 
 				return i;
 			}
@@ -163,195 +163,195 @@ int FishingManager::iCheckFish(int iClientH, char cMapIndex, short dX, short dY)
 	return 0;
 }
 
-void FishingManager::FishProcessor()
+void FishingManager::fish_processor()
 {
-	int iSkillLevel, iResult, iChangeValue;
+	int skill_level, result, change_value;
 
 	for(int i = 1; i < MaxClients; i++) {
-		if ((m_pGame->m_pClientList[i] != 0) && (m_pGame->m_pClientList[i]->m_bIsInitComplete) &&
-			(m_pGame->m_pClientList[i]->m_iAllocatedFish != 0)) {
+		if ((m_game->m_client_list[i] != 0) && (m_game->m_client_list[i]->m_is_init_complete) &&
+			(m_game->m_client_list[i]->m_allocated_fish != 0)) {
 
-			if (m_pFish[m_pGame->m_pClientList[i]->m_iAllocatedFish] == 0) break;
+			if (m_fish[m_game->m_client_list[i]->m_allocated_fish] == 0) break;
 
-			iSkillLevel = m_pGame->m_pClientList[i]->m_cSkillMastery[1];
-			iSkillLevel -= m_pFish[m_pGame->m_pClientList[i]->m_iAllocatedFish]->m_iDifficulty;
-			if (iSkillLevel <= 0) iSkillLevel = 1;
+			skill_level = m_game->m_client_list[i]->m_skill_mastery[1];
+			skill_level -= m_fish[m_game->m_client_list[i]->m_allocated_fish]->m_difficulty;
+			if (skill_level <= 0) skill_level = 1;
 
-			iChangeValue = iSkillLevel / 10;
-			if (iChangeValue <= 0) iChangeValue = 1;
-			iChangeValue = m_pGame->iDice(1, iChangeValue);
+			change_value = skill_level / 10;
+			if (change_value <= 0) change_value = 1;
+			change_value = m_game->dice(1, change_value);
 
-			iResult = m_pGame->iDice(1, 100);
-			if (iSkillLevel > iResult) {
-				m_pGame->m_pClientList[i]->m_iFishChance += iChangeValue;
-				if (m_pGame->m_pClientList[i]->m_iFishChance > 99) m_pGame->m_pClientList[i]->m_iFishChance = 99;
+			result = m_game->dice(1, 100);
+			if (skill_level > result) {
+				m_game->m_client_list[i]->m_fish_chance += change_value;
+				if (m_game->m_client_list[i]->m_fish_chance > 99) m_game->m_client_list[i]->m_fish_chance = 99;
 
-				m_pGame->SendNotifyMsg(0, i, Notify::FishChance, m_pGame->m_pClientList[i]->m_iFishChance, 0, 0, 0);
+				m_game->send_notify_msg(0, i, Notify::FishChance, m_game->m_client_list[i]->m_fish_chance, 0, 0, 0);
 			}
-			else if (iSkillLevel < iResult) {
-				m_pGame->m_pClientList[i]->m_iFishChance -= iChangeValue;
-				if (m_pGame->m_pClientList[i]->m_iFishChance < 1) m_pGame->m_pClientList[i]->m_iFishChance = 1;
+			else if (skill_level < result) {
+				m_game->m_client_list[i]->m_fish_chance -= change_value;
+				if (m_game->m_client_list[i]->m_fish_chance < 1) m_game->m_client_list[i]->m_fish_chance = 1;
 
-				m_pGame->SendNotifyMsg(0, i, Notify::FishChance, m_pGame->m_pClientList[i]->m_iFishChance, 0, 0, 0);
+				m_game->send_notify_msg(0, i, Notify::FishChance, m_game->m_client_list[i]->m_fish_chance, 0, 0, 0);
 			}
 		}
 	}
 }
 
 
-void FishingManager::ReqGetFishThisTimeHandler(int iClientH)
+void FishingManager::req_get_fish_this_time_handler(int client_h)
 {
-	int iResult, iFishH;
-	CItem* pItem;
+	int result, fish_h;
+	CItem* item;
 
-	if (m_pGame->m_pClientList[iClientH] == 0) return;
-	if (m_pGame->m_pClientList[iClientH]->m_bIsInitComplete == false) return;
-	if (m_pGame->m_pClientList[iClientH]->m_iAllocatedFish == 0) return;
-	if (m_pFish[m_pGame->m_pClientList[iClientH]->m_iAllocatedFish] == 0) return;
+	if (m_game->m_client_list[client_h] == 0) return;
+	if (m_game->m_client_list[client_h]->m_is_init_complete == false) return;
+	if (m_game->m_client_list[client_h]->m_allocated_fish == 0) return;
+	if (m_fish[m_game->m_client_list[client_h]->m_allocated_fish] == 0) return;
 
-	m_pGame->m_pClientList[iClientH]->m_bSkillUsingStatus[1] = false;
+	m_game->m_client_list[client_h]->m_skill_using_status[1] = false;
 
-	iResult = m_pGame->iDice(1, 100);
-	if (m_pGame->m_pClientList[iClientH]->m_iFishChance >= iResult) {
+	result = m_game->dice(1, 100);
+	if (m_game->m_client_list[client_h]->m_fish_chance >= result) {
 
-		m_pGame->GetExp(iClientH, m_pGame->iDice(m_pFish[m_pGame->m_pClientList[iClientH]->m_iAllocatedFish]->m_iDifficulty, 5));
-		m_pGame->m_pSkillManager->CalculateSSN_SkillIndex(iClientH, 1, m_pFish[m_pGame->m_pClientList[iClientH]->m_iAllocatedFish]->m_iDifficulty);
+		m_game->get_exp(client_h, m_game->dice(m_fish[m_game->m_client_list[client_h]->m_allocated_fish]->m_difficulty, 5));
+		m_game->m_skill_manager->calculate_ssn_skill_index(client_h, 1, m_fish[m_game->m_client_list[client_h]->m_allocated_fish]->m_difficulty);
 
-		pItem = m_pFish[m_pGame->m_pClientList[iClientH]->m_iAllocatedFish]->m_pItem;
-		m_pFish[m_pGame->m_pClientList[iClientH]->m_iAllocatedFish]->m_pItem = 0;
+		item = m_fish[m_game->m_client_list[client_h]->m_allocated_fish]->m_item;
+		m_fish[m_game->m_client_list[client_h]->m_allocated_fish]->m_item = 0;
 
-		m_pGame->m_pMapList[m_pGame->m_pClientList[iClientH]->m_cMapIndex]->bSetItem(m_pGame->m_pClientList[iClientH]->m_sX,
-			m_pGame->m_pClientList[iClientH]->m_sY,
-			pItem);
+		m_game->m_map_list[m_game->m_client_list[client_h]->m_map_index]->set_item(m_game->m_client_list[client_h]->m_x,
+			m_game->m_client_list[client_h]->m_y,
+			item);
 
-		m_pGame->SendEventToNearClient_TypeB(MsgId::EventCommon, CommonType::ItemDrop, m_pGame->m_pClientList[iClientH]->m_cMapIndex,
-			m_pGame->m_pClientList[iClientH]->m_sX, m_pGame->m_pClientList[iClientH]->m_sY,
-			pItem->m_sIDnum, 0, pItem->m_cItemColor, pItem->m_dwAttribute); // v1.4 color
+		m_game->send_event_to_near_client_type_b(MsgId::EventCommon, CommonType::ItemDrop, m_game->m_client_list[client_h]->m_map_index,
+			m_game->m_client_list[client_h]->m_x, m_game->m_client_list[client_h]->m_y,
+			item->m_id_num, 0, item->m_item_color, item->m_attribute); // v1.4 color
 
-		m_pGame->SendNotifyMsg(0, iClientH, Notify::FishSuccess, 0, 0, 0, 0);
-		iFishH = m_pGame->m_pClientList[iClientH]->m_iAllocatedFish;
-		m_pGame->m_pClientList[iClientH]->m_iAllocatedFish = 0;
+		m_game->send_notify_msg(0, client_h, Notify::FishSuccess, 0, 0, 0, 0);
+		fish_h = m_game->m_client_list[client_h]->m_allocated_fish;
+		m_game->m_client_list[client_h]->m_allocated_fish = 0;
 
-		bDeleteFish(iFishH, 1);
+		delete_fish(fish_h, 1);
 		return;
 	}
 
-	m_pFish[m_pGame->m_pClientList[iClientH]->m_iAllocatedFish]->m_sEngagingCount--;
-	m_pGame->SendNotifyMsg(0, iClientH, Notify::FishFail, 0, 0, 0, 0);
+	m_fish[m_game->m_client_list[client_h]->m_allocated_fish]->m_engaging_count--;
+	m_game->send_notify_msg(0, client_h, Notify::FishFail, 0, 0, 0, 0);
 
-	m_pGame->m_pClientList[iClientH]->m_iAllocatedFish = 0;
+	m_game->m_client_list[client_h]->m_allocated_fish = 0;
 }
 
 
-void FishingManager::FishGenerator()
+void FishingManager::fish_generator()
 {
-	int iP, tX, tY, iRet;
-	char  cItemName[hb::shared::limits::ItemNameLen];
-	int sDifficulty;
-	uint32_t dwLastTime;
-	CItem* pItem;
+	int iP, tX, tY, ret;
+	char  item_name[hb::shared::limits::ItemNameLen];
+	int difficulty;
+	uint32_t last_time;
+	CItem* item;
 
 	for(int i = 0; i < MaxMaps; i++) {
-		if ((m_pGame->iDice(1, 10) == 5) && (m_pGame->m_pMapList[i] != 0) &&
-			(m_pGame->m_pMapList[i]->m_iCurFish < m_pGame->m_pMapList[i]->m_iMaxFish)) {
+		if ((m_game->dice(1, 10) == 5) && (m_game->m_map_list[i] != 0) &&
+			(m_game->m_map_list[i]->m_cur_fish < m_game->m_map_list[i]->m_max_fish)) {
 
-			iP = m_pGame->iDice(1, m_pGame->m_pMapList[i]->m_iTotalFishPoint) - 1;
-			if ((m_pGame->m_pMapList[i]->m_FishPointList[iP].x == -1) || (m_pGame->m_pMapList[i]->m_FishPointList[iP].y == -1)) break;
+			iP = m_game->dice(1, m_game->m_map_list[i]->m_total_fish_point) - 1;
+			if ((m_game->m_map_list[i]->m_fish_point_list[iP].x == -1) || (m_game->m_map_list[i]->m_fish_point_list[iP].y == -1)) break;
 
-			tX = m_pGame->m_pMapList[i]->m_FishPointList[iP].x + (m_pGame->iDice(1, 3) - 2);
-			tY = m_pGame->m_pMapList[i]->m_FishPointList[iP].y + (m_pGame->iDice(1, 3) - 2);
+			tX = m_game->m_map_list[i]->m_fish_point_list[iP].x + (m_game->dice(1, 3) - 2);
+			tY = m_game->m_map_list[i]->m_fish_point_list[iP].y + (m_game->dice(1, 3) - 2);
 
-			pItem = new CItem;
-			if (pItem == 0) break;
+			item = new CItem;
+			if (item == 0) break;
 
-			std::memset(cItemName, 0, sizeof(cItemName));
-			switch (m_pGame->iDice(1, 9)) {
-			case 1:   strcpy(cItemName, "RedCarp"); sDifficulty = m_pGame->iDice(1, 10) + 20; break;
-			case 2:   strcpy(cItemName, "GreenCarp"); sDifficulty = m_pGame->iDice(1, 5) + 10; break;
-			case 3:   strcpy(cItemName, "GoldCarp"); sDifficulty = m_pGame->iDice(1, 10) + 1;  break;
-			case 4:   strcpy(cItemName, "CrucianCarp"); sDifficulty = 1;  break;
-			case 5:   strcpy(cItemName, "BlueSeaBream"); sDifficulty = m_pGame->iDice(1, 15) + 1;  break;
-			case 6:   strcpy(cItemName, "RedSeaBream"); sDifficulty = m_pGame->iDice(1, 18) + 1;  break;
-			case 7:   strcpy(cItemName, "Salmon"); sDifficulty = m_pGame->iDice(1, 12) + 1;  break;
-			case 8:   strcpy(cItemName, "GrayMullet"); sDifficulty = m_pGame->iDice(1, 10) + 1;  break;
+			std::memset(item_name, 0, sizeof(item_name));
+			switch (m_game->dice(1, 9)) {
+			case 1:   strcpy(item_name, "RedCarp"); difficulty = m_game->dice(1, 10) + 20; break;
+			case 2:   strcpy(item_name, "GreenCarp"); difficulty = m_game->dice(1, 5) + 10; break;
+			case 3:   strcpy(item_name, "GoldCarp"); difficulty = m_game->dice(1, 10) + 1;  break;
+			case 4:   strcpy(item_name, "CrucianCarp"); difficulty = 1;  break;
+			case 5:   strcpy(item_name, "BlueSeaBream"); difficulty = m_game->dice(1, 15) + 1;  break;
+			case 6:   strcpy(item_name, "RedSeaBream"); difficulty = m_game->dice(1, 18) + 1;  break;
+			case 7:   strcpy(item_name, "Salmon"); difficulty = m_game->dice(1, 12) + 1;  break;
+			case 8:   strcpy(item_name, "GrayMullet"); difficulty = m_game->dice(1, 10) + 1;  break;
 			case 9:
-				switch (m_pGame->iDice(1, 150)) {
+				switch (m_game->dice(1, 150)) {
 				case 1:
 				case 2:
 				case 3:
-					strcpy(cItemName, "PowerGreenPotion");
-					sDifficulty = m_pGame->iDice(5, 4) + 30;
+					strcpy(item_name, "PowerGreenPotion");
+					difficulty = m_game->dice(5, 4) + 30;
 					break;
 
 				case 10:
 				case 11:
-					strcpy(cItemName, "SuperPowerGreenPotion");
-					sDifficulty = m_pGame->iDice(5, 4) + 50;
+					strcpy(item_name, "SuperPowerGreenPotion");
+					difficulty = m_game->dice(5, 4) + 50;
 					break;
 
 				case 20:
-					strcpy(cItemName, "Dagger+2");
-					sDifficulty = m_pGame->iDice(5, 4) + 30;
+					strcpy(item_name, "Dagger+2");
+					difficulty = m_game->dice(5, 4) + 30;
 					break;
 
 				case 30:
-					strcpy(cItemName, "LongSword+2");
-					sDifficulty = m_pGame->iDice(5, 4) + 40;
+					strcpy(item_name, "LongSword+2");
+					difficulty = m_game->dice(5, 4) + 40;
 					break;
 
 				case 40:
-					strcpy(cItemName, "Scimitar+2");
-					sDifficulty = m_pGame->iDice(5, 4) + 50;
+					strcpy(item_name, "Scimitar+2");
+					difficulty = m_game->dice(5, 4) + 50;
 					break;
 
 				case 50:
-					strcpy(cItemName, "Rapier+2");
-					sDifficulty = m_pGame->iDice(5, 4) + 60;
+					strcpy(item_name, "Rapier+2");
+					difficulty = m_game->dice(5, 4) + 60;
 					break;
 
 				case 60:
-					strcpy(cItemName, "Flameberge+2");
-					sDifficulty = m_pGame->iDice(5, 4) + 60;
+					strcpy(item_name, "Flameberge+2");
+					difficulty = m_game->dice(5, 4) + 60;
 					break;
 
 				case 70:
-					strcpy(cItemName, "WarAxe+2");
-					sDifficulty = m_pGame->iDice(5, 4) + 50;
+					strcpy(item_name, "WarAxe+2");
+					difficulty = m_game->dice(5, 4) + 50;
 					break;
 
 				case 90:
-					strcpy(cItemName, "Ruby");
-					sDifficulty = m_pGame->iDice(5, 4) + 40;
+					strcpy(item_name, "Ruby");
+					difficulty = m_game->dice(5, 4) + 40;
 					break;
 
 				case 95:
-					strcpy(cItemName, "Diamond");
-					sDifficulty = m_pGame->iDice(5, 4) + 40;
+					strcpy(item_name, "Diamond");
+					difficulty = m_game->dice(5, 4) + 40;
 					break;
 				}
 				break;
 			}
-			dwLastTime = (60000 * 10) + (m_pGame->iDice(1, 3) - 1) * (60000 * 10);
+			last_time = (60000 * 10) + (m_game->dice(1, 3) - 1) * (60000 * 10);
 
-			if (m_pGame->m_pItemManager->_bInitItemAttr(pItem, cItemName)) {
-				iRet = iCreateFish(i, tX, tY, 1, pItem, sDifficulty, dwLastTime);
+			if (m_game->m_item_manager->init_item_attr(item, item_name)) {
+				ret = create_fish(i, tX, tY, 1, item, difficulty, last_time);
 			}
 			else {
-				delete pItem;
-				pItem = 0;
+				delete item;
+				item = 0;
 			}
 		}
 	}
 }
 
 
-void FishingManager::ReleaseFishEngagement(int iClientH)
+void FishingManager::release_fish_engagement(int client_h)
 {
-	if (m_pGame->m_pClientList[iClientH] == 0) return;
-	if (m_pGame->m_pClientList[iClientH]->m_iAllocatedFish == 0) return;
+	if (m_game->m_client_list[client_h] == 0) return;
+	if (m_game->m_client_list[client_h]->m_allocated_fish == 0) return;
 
-	if (m_pFish[m_pGame->m_pClientList[iClientH]->m_iAllocatedFish] != 0)
-		m_pFish[m_pGame->m_pClientList[iClientH]->m_iAllocatedFish]->m_sEngagingCount--;
+	if (m_fish[m_game->m_client_list[client_h]->m_allocated_fish] != 0)
+		m_fish[m_game->m_client_list[client_h]->m_allocated_fish]->m_engaging_count--;
 
-	m_pGame->m_pClientList[iClientH]->m_iAllocatedFish = 0;
+	m_game->m_client_list[client_h]->m_allocated_fish = 0;
 }

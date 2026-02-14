@@ -12,32 +12,32 @@ static_assert(sizeof(bool) == 1, "bool must be 1 byte for packed struct compatib
 namespace hb::shared::entity {
 
 // EntityStatus: Base status fields shared by both NPCs and Players.
-// Replaces the old packed int32_t iStatus bitmask.
+// Replaces the old packed int32_t status bitmask.
 HB_PACK_BEGIN
 struct HB_PACKED EntityStatus
 {
 	// Multi-value fields (0-15 range)
-	uint8_t iAttackDelay;
-	uint8_t iAngelPercent;
+	uint8_t attack_delay;
+	uint8_t angel_percent;
 
 	// Boolean flags (shared NPC+Player)
-	bool bInvisibility;
-	bool bBerserk;
-	bool bFrozen;
-	bool bPoisoned;
+	bool invisibility;
+	bool berserk;
+	bool frozen;
+	bool poisoned;
 
 	// Combat effect flags (apply to both NPCs and players)
-	bool bInhibitionCasting;
-	bool bIllusion;
-	bool bHero;
-	bool bDefenseShield;
-	bool bMagicProtection;
-	bool bProtectionFromArrow;
+	bool inhibition_casting;
+	bool illusion;
+	bool hero;
+	bool defense_shield;
+	bool magic_protection;
+	bool protection_from_arrow;
 
 	// Per-viewer NPC relationship (set by server before sending, not persisted)
-	EntityRelationship iRelationship;
+	EntityRelationship relationship;
 
-	void Clear() { std::memset(this, 0, sizeof(*this)); }
+	void clear() { std::memset(this, 0, sizeof(*this)); }
 };
 
 // PlayerStatus: Full status for players. Contains all EntityStatus fields plus player-only fields.
@@ -46,68 +46,68 @@ struct HB_PACKED EntityStatus
 struct HB_PACKED PlayerStatus
 {
 	// === EntityStatus fields (must match EntityStatus layout) ===
-	uint8_t iAttackDelay;
-	uint8_t iAngelPercent;
-	bool bInvisibility;
-	bool bBerserk;
-	bool bFrozen;
-	bool bPoisoned;
-	bool bInhibitionCasting;
-	bool bIllusion;
-	bool bHero;
-	bool bDefenseShield;
-	bool bMagicProtection;
-	bool bProtectionFromArrow;
-	EntityRelationship iRelationship;
+	uint8_t attack_delay;
+	uint8_t angel_percent;
+	bool invisibility;
+	bool berserk;
+	bool frozen;
+	bool poisoned;
+	bool inhibition_casting;
+	bool illusion;
+	bool hero;
+	bool defense_shield;
+	bool magic_protection;
+	bool protection_from_arrow;
+	EntityRelationship relationship;
 
 	// === Player-only fields ===
 	// Angel type flags
-	bool bAngelSTR;
-	bool bAngelDEX;
-	bool bAngelINT;
-	bool bAngelMAG;
+	bool angel_str;
+	bool angel_dex;
+	bool angel_int;
+	bool angel_mag;
 
 	// Player effect flags
-	bool bSlateExp;
-	bool bHaste;
-	bool bGMMode;
-	bool bIllusionMovement;
-	bool bSlateInvincible;
-	bool bSlateMana;
+	bool slate_exp;
+	bool haste;
+	bool gm_mode;
+	bool illusion_movement;
+	bool slate_invincible;
+	bool slate_mana;
 
 	// Faction/identity flags
-	bool bHunter;
-	bool bAresden;
-	bool bCitizen;
-	bool bPK;
+	bool hunter;
+	bool aresden;
+	bool citizen;
+	bool pk;
 
 	// AFK state (server-controlled)
-	bool bAfk;
+	bool afk;
 
 	bool HasAngelType() const
 	{
-		return bAngelSTR || bAngelDEX || bAngelINT || bAngelMAG;
+		return angel_str || angel_dex || angel_int || angel_mag;
 	}
 
-	void Clear() { std::memset(this, 0, sizeof(*this)); }
+	void clear() { std::memset(this, 0, sizeof(*this)); }
 
 	// Assign from EntityStatus (NPC -> tile storage). Clears player-only fields.
 	void SetFromEntityStatus(const EntityStatus& npc)
 	{
-		Clear();
-		iAttackDelay = npc.iAttackDelay;
-		iAngelPercent = npc.iAngelPercent;
-		bInvisibility = npc.bInvisibility;
-		bBerserk = npc.bBerserk;
-		bFrozen = npc.bFrozen;
-		bPoisoned = npc.bPoisoned;
-		bInhibitionCasting = npc.bInhibitionCasting;
-		bIllusion = npc.bIllusion;
-		bHero = npc.bHero;
-		bDefenseShield = npc.bDefenseShield;
-		bMagicProtection = npc.bMagicProtection;
-		bProtectionFromArrow = npc.bProtectionFromArrow;
-		iRelationship = npc.iRelationship;
+		clear();
+		attack_delay = npc.attack_delay;
+		angel_percent = npc.angel_percent;
+		invisibility = npc.invisibility;
+		berserk = npc.berserk;
+		frozen = npc.frozen;
+		poisoned = npc.poisoned;
+		inhibition_casting = npc.inhibition_casting;
+		illusion = npc.illusion;
+		hero = npc.hero;
+		defense_shield = npc.defense_shield;
+		magic_protection = npc.magic_protection;
+		protection_from_arrow = npc.protection_from_arrow;
+		relationship = npc.relationship;
 	}
 };
 HB_PACK_END

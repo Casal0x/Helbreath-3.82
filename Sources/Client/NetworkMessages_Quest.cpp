@@ -3,29 +3,29 @@
 
 namespace NetworkMessageHandlers {
 
-void HandleQuestCounter(CGame* pGame, char* pData)
+void handle_quest_counter(CGame* game, char* data)
 {
-	pGame->m_questManager.HandleQuestCounter(pData);
+	game->m_quest_manager.handle_quest_counter(data);
 }
 
-void HandleQuestContents(CGame* pGame, char* pData)
+void handle_quest_contents(CGame* game, char* data)
 {
-	pGame->m_questManager.HandleQuestContents(pData);
+	game->m_quest_manager.handle_quest_contents(data);
 }
 
-void HandleQuestReward(CGame* pGame, char* pData)
+void handle_quest_reward(CGame* game, char* data)
 {
-	pGame->m_questManager.HandleQuestReward(pData);
+	game->m_quest_manager.handle_quest_reward(data);
 }
 
-void HandleQuestCompleted(CGame* pGame, char* pData)
+void handle_quest_completed(CGame* game, char* data)
 {
-	pGame->m_questManager.HandleQuestCompleted(pData);
+	game->m_quest_manager.handle_quest_completed(data);
 }
 
-void HandleQuestAborted(CGame* pGame, char* pData)
+void handle_quest_aborted(CGame* game, char* data)
 {
-	pGame->m_questManager.HandleQuestAborted(pData);
+	game->m_quest_manager.handle_quest_aborted(data);
 }
 
 } // namespace NetworkMessageHandlers

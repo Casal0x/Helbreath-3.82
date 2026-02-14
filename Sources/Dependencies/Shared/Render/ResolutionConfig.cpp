@@ -2,36 +2,36 @@
 
 namespace hb::shared::render {
 
-bool ResolutionConfig::s_bInitialized = false;
+bool ResolutionConfig::s_initialized = false;
 
-void ResolutionConfig::Initialize(int windowWidth, int windowHeight)
+void ResolutionConfig::initialize(int windowWidth, int windowHeight)
 {
-	Get().m_width = BASE_RESOLUTION_WIDTH;
-	Get().m_height = BASE_RESOLUTION_HEIGHT;
+	get().m_width = BASE_RESOLUTION_WIDTH;
+	get().m_height = BASE_RESOLUTION_HEIGHT;
 
 	// Store window size and calculate screen offset
-	Get().m_windowWidth = windowWidth;
-	Get().m_windowHeight = windowHeight;
-	Get().RecalculateScreenOffset();
+	get().m_windowWidth = windowWidth;
+	get().m_windowHeight = windowHeight;
+	get().recalculate_screen_offset();
 
-	s_bInitialized = true;
+	s_initialized = true;
 }
 
-ResolutionConfig& ResolutionConfig::Get()
+ResolutionConfig& ResolutionConfig::get()
 {
 	static ResolutionConfig instance;
 	return instance;
 }
 
-void ResolutionConfig::SetWindowSize(int windowWidth, int windowHeight)
+void ResolutionConfig::set_window_size(int windowWidth, int windowHeight)
 {
 	m_windowWidth = windowWidth;
 	m_windowHeight = windowHeight;
-	RecalculateScreenOffset();
+	recalculate_screen_offset();
 }
 
 
-void ResolutionConfig::RecalculateScreenOffset()
+void ResolutionConfig::recalculate_screen_offset()
 {
 	// Center the logical resolution within the window
 	// This is used when window size differs from logical size

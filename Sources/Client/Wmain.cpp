@@ -13,7 +13,7 @@
 int GameMain(hb::shared::types::NativeInstance native_instance, int icon_resource_id, const char* cmdLine)
 {
 #ifdef _DEBUG
-	DebugConsole::Allocate();
+	DebugConsole::allocate();
 #endif
 	using namespace hb::shared::render;
     srand(static_cast<unsigned>(time(0)));
@@ -30,7 +30,7 @@ int GameMain(hb::shared::types::NativeInstance native_instance, int icon_resourc
     }
     game->attach_window(window);
 
-    // Initialize (pre-realize: loads config, stages window params, loads game data)
+    // initialize (pre-realize: loads config, stages window params, loads game data)
     if (!game->initialize())
     {
         return 1;

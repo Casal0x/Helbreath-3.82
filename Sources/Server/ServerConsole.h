@@ -20,26 +20,26 @@ class ServerConsole
 public:
 	ServerConsole();
 	~ServerConsole();
-	bool Init();
-	void WriteLine(const char* text, int color = console_color::normal);
-	bool PollInput(char* pOutCmd, int maxLen);
-	void RedrawPrompt();
+	bool init();
+	void write_line(const char* text, int color = console_color::normal);
+	bool poll_input(char* out_cmd, int maxLen);
+	void redraw_prompt();
 
 private:
-	void ClearInputLine();
-	void DrawInputLine();
+	void clear_input_line();
+	void draw_input_line();
 
-	char m_szInput[256];
-	int m_iInputLen;
-	int m_iCursorPos;
-	bool m_bInit;
+	char m_input[256];
+	int m_input_len;
+	int m_cursor_pos;
+	bool m_init;
 
 #ifdef _WIN32
-	HANDLE m_hOut;
-	HANDLE m_hIn;
-	DWORD m_dwOrigMode;
+	HANDLE m_out;
+	HANDLE m_in;
+	DWORD m_orig_mode;
 #else
-	struct termios m_origTermios;
+	struct termios m_orig_termios;
 #endif
 };
 

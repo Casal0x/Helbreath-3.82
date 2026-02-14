@@ -6,49 +6,49 @@
 
 CCamera::CCamera()
 {
-    Reset();
+    reset();
 }
 
-void CCamera::Reset()
+void CCamera::reset()
 {
-    m_iPositionX = 0;
-    m_iPositionY = 0;
-    m_iDestinationX = 0;
-    m_iDestinationY = 0;
-    m_dwLastUpdateTime = 0;
-    m_iSavedPositionX = 0;
-    m_iSavedPositionY = 0;
-    m_iShakeDegree = 0;
+    m_position_x = 0;
+    m_position_y = 0;
+    m_destination_x = 0;
+    m_destination_y = 0;
+    m_last_update_time = 0;
+    m_saved_position_x = 0;
+    m_saved_position_y = 0;
+    m_shake_degree = 0;
 }
 
-void CCamera::Update(uint32_t currentTime)
+void CCamera::update(uint32_t currentTime)
 {
-    int dx = m_iDestinationX - m_iPositionX;
-    int dy = m_iDestinationY - m_iPositionY;
+    int dx = m_destination_x - m_position_x;
+    int dy = m_destination_y - m_position_y;
 
     // Already at destination
     if (dx == 0 && dy == 0)
     {
-        m_dwLastUpdateTime = currentTime;
+        m_last_update_time = currentTime;
         return;
     }
 
-    float dt = (currentTime - m_dwLastUpdateTime) * 0.001f;
-    m_dwLastUpdateTime = currentTime;
+    float dt = (currentTime - m_last_update_time) * 0.001f;
+    m_last_update_time = currentTime;
 
     // First frame or large time gap — snap immediately
     if (dt <= 0.0f || dt > 0.5f)
     {
-        m_iPositionX = m_iDestinationX;
-        m_iPositionY = m_iDestinationY;
+        m_position_x = m_destination_x;
+        m_position_y = m_destination_y;
         return;
     }
 
     // Large distance (teleport) — snap immediately
     if (abs(dx) > 128 || abs(dy) > 128)
     {
-        m_iPositionX = m_iDestinationX;
-        m_iPositionY = m_iDestinationY;
+        m_position_x = m_destination_x;
+        m_position_y = m_destination_y;
         return;
     }
 
@@ -62,70 +62,70 @@ void CCamera::Update(uint32_t currentTime)
     // Snap when sub-pixel close to avoid never arriving
     if (moveX == 0 && moveY == 0)
     {
-        m_iPositionX = m_iDestinationX;
-        m_iPositionY = m_iDestinationY;
+        m_position_x = m_destination_x;
+        m_position_y = m_destination_y;
     }
     else
     {
-        m_iPositionX += moveX;
-        m_iPositionY += moveY;
+        m_position_x += moveX;
+        m_position_y += moveY;
     }
 }
 
-void CCamera::SetPosition(int x, int y)
+void CCamera::set_position(int x, int y)
 {
-    m_iPositionX = x;
-    m_iPositionY = y;
+    m_position_x = x;
+    m_position_y = y;
 }
 
-void CCamera::SetDestination(int x, int y)
+void CCamera::set_destination(int x, int y)
 {
-    m_iDestinationX = x;
-    m_iDestinationY = y;
+    m_destination_x = x;
+    m_destination_y = y;
 }
 
-void CCamera::SnapTo(int x, int y)
+void CCamera::snap_to(int x, int y)
 {
-    m_iPositionX = x;
-    m_iPositionY = y;
-    m_iDestinationX = x;
-    m_iDestinationY = y;
-    m_dwLastUpdateTime = 0;
+    m_position_x = x;
+    m_position_y = y;
+    m_destination_x = x;
+    m_destination_y = y;
+    m_last_update_time = 0;
 }
 
-void CCamera::MoveDestination(int dx, int dy)
+void CCamera::move_destination(int dx, int dy)
 {
-    m_iDestinationX += dx;
-    m_iDestinationY += dy;
+    m_destination_x += dx;
+    m_destination_y += dy;
 }
 
-void CCamera::CenterOnTile(int tileX, int tileY, int viewCenterTileX, int viewCenterTileY)
+void CCamera::center_on_tile(int tileX, int tileY, int viewCenterTileX, int viewCenterTileY)
 {
     int x = (tileX - viewCenterTileX) * 32;
     int y = (tileY - (viewCenterTileY + 1)) * 32;
-    SnapTo(x, y);
+    snap_to(x, y);
 }
 
-bool CCamera::ApplyShake()
+bool CCamera::apply_shake()
 {
-    if (m_iShakeDegree > 0)
+    if (m_shake_degree > 0)
     {
-        m_iPositionX += m_iShakeDegree - (rand() % (m_iShakeDegree * 2));
-        m_iPositionY += m_iShakeDegree - (rand() % (m_iShakeDegree * 2));
-        m_iShakeDegree--;
+        m_position_x += m_shake_degree - (rand() % (m_shake_degree * 2));
+        m_position_y += m_shake_degree - (rand() % (m_shake_degree * 2));
+        m_shake_degree--;
         return true;
     }
     return false;
 }
 
-void CCamera::SavePosition()
+void CCamera::save_position()
 {
-    m_iSavedPositionX = m_iPositionX;
-    m_iSavedPositionY = m_iPositionY;
+    m_saved_position_x = m_position_x;
+    m_saved_position_y = m_position_y;
 }
 
-void CCamera::RestorePosition()
+void CCamera::restore_position()
 {
-    m_iPositionX = m_iSavedPositionX;
-    m_iPositionY = m_iSavedPositionY;
+    m_position_x = m_saved_position_x;
+    m_position_y = m_saved_position_y;
 }

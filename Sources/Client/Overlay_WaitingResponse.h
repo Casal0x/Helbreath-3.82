@@ -14,7 +14,7 @@ class Overlay_WaitingResponse : public IGameScreen
 public:
     SCREEN_TYPE(Overlay_WaitingResponse)
 
-    explicit Overlay_WaitingResponse(CGame* pGame);
+    explicit Overlay_WaitingResponse(CGame* game);
     ~Overlay_WaitingResponse() override = default;
 
     void on_initialize() override;

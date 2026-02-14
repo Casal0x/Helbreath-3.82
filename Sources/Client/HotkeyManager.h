@@ -7,7 +7,7 @@
 class HotkeyManager
 {
 public:
-	static HotkeyManager& Get();
+	static HotkeyManager& get();
 
 	enum class Trigger
 	{
@@ -23,10 +23,10 @@ public:
 		bool alt;
 	};
 
-	void Clear();
-	void Register(const KeyCombo& combo, Trigger trigger, std::function<void()> callback);
-	bool HandleKeyDown(KeyCode vk);
-	bool HandleKeyUp(KeyCode vk);
+	void clear();
+	void register_hotkey(const KeyCombo& combo, Trigger trigger, std::function<void()> callback);
+	bool handle_key_down(KeyCode vk);
+	bool handle_key_up(KeyCode vk);
 
 private:
 	HotkeyManager() = default;
@@ -41,7 +41,7 @@ private:
 		std::function<void()> callback;
 	};
 
-	bool HandleKey(KeyCode vk, Trigger trigger);
+	bool handle_key(KeyCode vk, Trigger trigger);
 
 	std::vector<Entry> m_entries;
 };

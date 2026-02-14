@@ -14,12 +14,12 @@ public:
 	{
 		
 
-		std::memset(m_cName, 0, sizeof(m_cName));
-		m_iSkillLimit = 0;
-		m_iDifficulty = 0;
+		std::memset(m_name, 0, sizeof(m_name));
+		m_skill_limit = 0;
+		m_difficulty = 0;
 
 		for(int i = 0; i < 12; i++)
-			m_sArray[i] = -1;
+			m_array[i] = -1;
 	}
 
 	inline virtual ~CPortion()
@@ -27,9 +27,9 @@ public:
 
 	}
 
-	char  m_cName[hb::shared::limits::ItemNameLen];
-	short m_sArray[12];
+	char  m_name[hb::shared::limits::ItemNameLen];
+	short m_array[12];
 
-	int   m_iSkillLimit, m_iDifficulty;
+	int   m_skill_limit, m_difficulty;
 
 };

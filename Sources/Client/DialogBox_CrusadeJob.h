@@ -4,13 +4,13 @@
 class DialogBox_CrusadeJob : public IDialogBox
 {
 public:
-	DialogBox_CrusadeJob(CGame* pGame);
+	DialogBox_CrusadeJob(CGame* game);
 	~DialogBox_CrusadeJob() override = default;
 
-	void OnDraw(short msX, short msY, short msZ, char cLB) override;
-	bool OnClick(short msX, short msY) override;
+	void on_draw(short mouse_x, short mouse_y, short z, char lb) override;
+	bool on_click(short mouse_x, short mouse_y) override;
 
 private:
-	void DrawModeSelectJob(short sX, short sY, short msX, short msY);
-	void DrawModeConfirm(short sX, short sY, short msX, short msY);
+	void draw_mode_select_job(short sX, short sY, short mouse_x, short mouse_y);
+	void draw_mode_confirm(short sX, short sY, short mouse_x, short mouse_y);
 };

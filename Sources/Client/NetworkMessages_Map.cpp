@@ -10,43 +10,43 @@
 #include <string>
 
 namespace NetworkMessageHandlers {
-	void HandleMapStatusNext(CGame* pGame, char* pData)
+	void HandleMapStatusNext(CGame* game, char* data)
 	{
-		pGame->AddMapStatusInfo(pData, false);
+		game->add_map_status_info(data, false);
 	}
 
-	void HandleMapStatusLast(CGame* pGame, char* pData)
+	void HandleMapStatusLast(CGame* game, char* data)
 	{
-		pGame->AddMapStatusInfo(pData, true);
+		game->add_map_status_info(data, true);
 	}
 
-	void HandleLockedMap(CGame* pGame, char* pData)
+	void HandleLockedMap(CGame* game, char* data)
 	{
-		int sV1;
-		char cTemp[120], cTxt[120]{};
+		int v1;
+		char temp[120], txt[120]{};
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyLockedMap>(
-			pData, sizeof(hb::net::PacketNotifyLockedMap));
+			data, sizeof(hb::net::PacketNotifyLockedMap));
 		if (!pkt) return;
-		sV1 = pkt->seconds_left;
-		std::memset(cTemp, 0, sizeof(cTemp));
-		memcpy(cTxt, pkt->map_name, sizeof(pkt->map_name));
+		v1 = pkt->seconds_left;
+		std::memset(temp, 0, sizeof(temp));
+		memcpy(txt, pkt->map_name, sizeof(pkt->map_name));
 
-		pGame->GetOfficialMapName(cTxt, cTemp);
+		game->get_official_map_name(txt, temp);
 		std::string msgBuf;
-		msgBuf = std::format(NOTIFY_MSG_HANDLER3, sV1, cTemp);
-		pGame->SetTopMsg(msgBuf.c_str(), 10);
-		pGame->PlayGameSound('E', 25, 0, 0);
+		msgBuf = std::format(NOTIFY_MSG_HANDLER3, v1, temp);
+		game->set_top_msg(msgBuf.c_str(), 10);
+		game->play_game_sound('E', 25, 0, 0);
 	}
 
-	void HandleShowMap(CGame* pGame, char* pData)
+	void HandleShowMap(CGame* game, char* data)
 	{
 		WORD w1, w2;
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyShowMap>(
-			pData, sizeof(hb::net::PacketNotifyShowMap));
+			data, sizeof(hb::net::PacketNotifyShowMap));
 		if (!pkt) return;
 		w1 = pkt->map_id;
 		w2 = pkt->map_type;
-		if (w2 == 0) pGame->AddEventList(NOTIFYMSG_SHOW_MAP1, 10);
-		else pGame->m_dialogBoxManager.EnableDialogBox(DialogBoxId::Map, 0, w1, w2 - 1);
+		if (w2 == 0) game->add_event_list(NOTIFYMSG_SHOW_MAP1, 10);
+		else game->m_dialog_box_manager.enable_dialog_box(DialogBoxId::Map, 0, w1, w2 - 1);
 	}
 } // namespace NetworkMessageHandlers

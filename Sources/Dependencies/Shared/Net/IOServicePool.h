@@ -30,13 +30,13 @@ public:
 	IOServicePool(const IOServicePool&) = delete;
 	IOServicePool& operator=(const IOServicePool&) = delete;
 
-	asio::io_context& GetContext() { return m_ioContext; }
+	asio::io_context& get_context() { return m_ioContext; }
 
-	// Start background threads (no-op if threadCount == 0)
-	void Start();
+	// start background threads (no-op if threadCount == 0)
+	void start();
 
-	// Stop context, join all threads
-	void Stop();
+	// stop context, join all threads
+	void stop();
 
 private:
 	asio::io_context m_ioContext;

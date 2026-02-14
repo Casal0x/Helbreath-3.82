@@ -13,14 +13,14 @@
 #include <format>
 using namespace hb::client::sprite_id;
 
-Overlay_WaitInitData::Overlay_WaitInitData(CGame* pGame)
-    : IGameScreen(pGame)
+Overlay_WaitInitData::Overlay_WaitInitData(CGame* game)
+    : IGameScreen(game)
 {
 }
 
 void Overlay_WaitInitData::on_initialize()
 {
-    m_dwStartTime = GameClock::GetTimeMS();
+    m_dwStartTime = GameClock::get_time_ms();
     m_iFrameCount = 0;
 }
 
@@ -31,8 +31,8 @@ void Overlay_WaitInitData::on_uninitialize()
 
 void Overlay_WaitInitData::on_update()
 {
-    uint32_t dwTime = GameClock::GetTimeMS();
-    uint32_t dwElapsed = dwTime - m_dwStartTime;
+    uint32_t time = GameClock::get_time_ms();
+    uint32_t elapsed = time - m_dwStartTime;
 
     m_iFrameCount++;
     if (m_iFrameCount > 100) m_iFrameCount = 100;
@@ -40,19 +40,19 @@ void Overlay_WaitInitData::on_update()
     // ESC key returns to MainMenu (only after 7 seconds)
     if (hb::shared::input::is_key_pressed(KeyCode::Escape))
     {
-        if (dwElapsed > 7000)
+        if (elapsed > 7000)
         {
             // Close sockets
-            if (m_pGame->m_pLSock != nullptr)
+            if (m_game->m_l_sock != nullptr)
             {
-                m_pGame->m_pLSock.reset();
+                m_game->m_l_sock.reset();
             }
-            if (m_pGame->m_pGSock != nullptr)
+            if (m_game->m_g_sock != nullptr)
             {
-                m_pGame->m_pGSock.reset();
+                m_game->m_g_sock.reset();
             }
 
-            m_pGame->ChangeGameMode(GameMode::MainMenu);
+            m_game->change_game_mode(GameMode::MainMenu);
             return;
         }
     }
@@ -61,26 +61,26 @@ void Overlay_WaitInitData::on_update()
 void Overlay_WaitInitData::on_render()
 {
     std::string G_cTxt;
-    uint32_t dwTime = GameClock::GetTimeMS();
-    uint32_t dwElapsed = dwTime - m_dwStartTime;
+    uint32_t time = GameClock::get_time_ms();
+    uint32_t elapsed = time - m_dwStartTime;
 
     int dlgX, dlgY;
-    GetCenteredDialogPos(InterfaceNdGame4, 2, dlgX, dlgY);
+    get_centered_dialog_pos(InterfaceNdGame4, 2, dlgX, dlgY);
 
-    DrawNewDialogBox(InterfaceNdGame4, dlgX, dlgY, 2);
+    draw_new_dialog_box(InterfaceNdGame4, dlgX, dlgY, 2);
 
-    G_cTxt = std::format("Waiting for response... {}sec", dwElapsed / 1000);
-    hb::shared::text::DrawText(GameFont::Bitmap1, dlgX + 54, dlgY + 65, G_cTxt.c_str(), hb::shared::text::TextStyle::WithHighlight(GameColors::UIDarkRed));
+    G_cTxt = std::format("Waiting for response... {}sec", elapsed / 1000);
+    hb::shared::text::draw_text(GameFont::Bitmap1, dlgX + 54, dlgY + 65, G_cTxt.c_str(), hb::shared::text::TextStyle::with_highlight(GameColors::UIDarkRed));
 
-    if (dwElapsed > 7000)
+    if (elapsed > 7000)
     {
-        PutAlignedString(dlgX + 12, dlgX + 305, dlgY + 95, UPDATE_SCREEN_ON_WAIT_INIT_DATA1);
-        PutAlignedString(dlgX + 12, dlgX + 305, dlgY + 110, UPDATE_SCREEN_ON_WAIT_INIT_DATA2);
+        put_aligned_string(dlgX + 12, dlgX + 305, dlgY + 95, UPDATE_SCREEN_ON_WAIT_INIT_DATA1);
+        put_aligned_string(dlgX + 12, dlgX + 305, dlgY + 110, UPDATE_SCREEN_ON_WAIT_INIT_DATA2);
     }
     else
     {
-        PutAlignedString(dlgX + 12, dlgX + 305, dlgY + 100, UPDATE_SCREEN_ON_WAIT_INIT_DATA3);
+        put_aligned_string(dlgX + 12, dlgX + 305, dlgY + 100, UPDATE_SCREEN_ON_WAIT_INIT_DATA3);
     }
 
-    DrawVersion();
+    draw_version();
 }

@@ -37,7 +37,7 @@ namespace GameFont
 	// Font spacing data for Numbers ('0' to '9')
 	inline const int NumbersWidths[] = { 6, 4, 6, 6, 6, 6, 6, 6, 6, 6 };
 
-	// Get FontSpacing for a given font ID
+	// get FontSpacing for a given font ID
 	// Returns spacing data for fonts that need explicit widths
 	// Returns empty spacing (useDynamicSpacing=true) for dynamic-width fonts
 	inline hb::shared::text::FontSpacing GetFontSpacing(ID fontId)

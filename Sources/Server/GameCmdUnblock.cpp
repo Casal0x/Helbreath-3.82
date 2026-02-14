@@ -5,54 +5,54 @@
 #include "StringCompat.h"
 
 using namespace hb::shared::net;
-bool GameCmdUnblock::Execute(CGame* pGame, int iClientH, const char* pArgs)
+bool GameCmdUnblock::execute(CGame* game, int client_h, const char* args)
 {
-	if (pGame->m_pClientList[iClientH] == nullptr)
+	if (game->m_client_list[client_h] == nullptr)
 		return true;
 
-	if (pArgs == nullptr || pArgs[0] == '\0')
+	if (args == nullptr || args[0] == '\0')
 	{
-		pGame->SendNotifyMsg(0, iClientH, Notify::NoticeMsg, 0, 0, 0, "Usage: /unblock CharName");
+		game->send_notify_msg(0, client_h, Notify::NoticeMsg, 0, 0, 0, "Usage: /unblock CharName");
 		return true;
 	}
 
 	// Extract character name (max 10 chars, first word only)
-	char cCharName[hb::shared::limits::CharNameLen] = {};
-	size_t nameLen = std::strlen(pArgs);
+	char char_name[hb::shared::limits::CharNameLen] = {};
+	size_t nameLen = std::strlen(args);
 	if (nameLen > 10) nameLen = 10;
 	for (size_t i = 0; i < nameLen; i++)
 	{
-		if (pArgs[i] == ' ' || pArgs[i] == '\t')
+		if (args[i] == ' ' || args[i] == '\t')
 			break;
-		cCharName[i] = pArgs[i];
+		char_name[i] = args[i];
 	}
 
-	if (cCharName[0] == '\0')
+	if (char_name[0] == '\0')
 		return true;
 
 	// Find entry in block list by character name
-	auto& blockList = pGame->m_pClientList[iClientH]->m_BlockedAccountsList;
+	auto& blockList = game->m_client_list[client_h]->m_blocked_accounts_list;
 	auto it = std::find_if(blockList.begin(), blockList.end(),
 		[&](const std::pair<std::string, std::string>& entry) {
-			return hb_stricmp(entry.second.c_str(), cCharName) == 0;
+			return hb_stricmp(entry.second.c_str(), char_name) == 0;
 		});
 
 	if (it == blockList.end())
 	{
 		char msg[64] = {};
-		std::snprintf(msg, sizeof(msg), "'%s' is not in your block list.", cCharName);
-		pGame->SendNotifyMsg(0, iClientH, Notify::NoticeMsg, 0, 0, 0, msg);
+		std::snprintf(msg, sizeof(msg), "'%s' is not in your block list.", char_name);
+		game->send_notify_msg(0, client_h, Notify::NoticeMsg, 0, 0, 0, msg);
 		return true;
 	}
 
 	// Remove from set and list
-	pGame->m_pClientList[iClientH]->m_BlockedAccounts.erase(it->first);
+	game->m_client_list[client_h]->m_blocked_accounts.erase(it->first);
 	blockList.erase(it);
-	pGame->m_pClientList[iClientH]->m_bBlockListDirty = true;
+	game->m_client_list[client_h]->m_block_list_dirty = true;
 
 	char msg[64] = {};
-	std::snprintf(msg, sizeof(msg), "'%s' has been unblocked.", cCharName);
-	pGame->SendNotifyMsg(0, iClientH, Notify::NoticeMsg, 0, 0, 0, msg);
+	std::snprintf(msg, sizeof(msg), "'%s' has been unblocked.", char_name);
+	game->send_notify_msg(0, client_h, Notify::NoticeMsg, 0, 0, 0, msg);
 
 	return true;
 }

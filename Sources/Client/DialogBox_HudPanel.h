@@ -6,21 +6,21 @@
 class DialogBox_HudPanel : public IDialogBox
 {
 public:
-	DialogBox_HudPanel(CGame* pGame);
+	DialogBox_HudPanel(CGame* game);
 	~DialogBox_HudPanel() override = default;
 
-	void OnDraw(short msX, short msY, short msZ, char cLB) override;
-	bool OnClick(short msX, short msY) override;
-	bool OnItemDrop(short msX, short msY) override;
+	void on_draw(short mouse_x, short mouse_y, short z, char lb) override;
+	bool on_click(short mouse_x, short mouse_y) override;
+	bool on_item_drop(short mouse_x, short mouse_y) override;
 
 private:
 	// Y offset for resolution - shifts all Y positions when running at higher resolutions
 	// At 640x480: offset = 0, At 800x600: offset = 120
-	static int HudYOffset() { return LOGICAL_HEIGHT() - 480; }
+	static int hud_y_offset() { return LOGICAL_HEIGHT() - 480; }
 
 	// X offset for resolution - centers the HUD when running at wider resolutions
 	// At 640x480: offset = 0, At 800x600: offset = 80 (centered)
-	static int HudXOffset() { return (LOGICAL_WIDTH() - 640) / 2; }
+	static int hud_x_offset() { return (LOGICAL_WIDTH() - 640) / 2; }
 
 	// Bar dimensions
 	static constexpr int HP_MP_BAR_WIDTH = 101;
@@ -33,11 +33,11 @@ private:
 	static constexpr int BASE_SP_BAR_X = 147;
 	static constexpr int BASE_SP_BAR_Y = 434;
 	// Runtime positions (X and Y offsets applied)
-	static int HP_BAR_X() { return BASE_HP_BAR_X + HudXOffset(); }
-	static int HP_BAR_Y() { return BASE_HP_BAR_Y + HudYOffset(); }
-	static int MP_BAR_Y() { return BASE_MP_BAR_Y + HudYOffset(); }
-	static int SP_BAR_X() { return BASE_SP_BAR_X + HudXOffset(); }
-	static int SP_BAR_Y() { return BASE_SP_BAR_Y + HudYOffset(); }
+	static int HP_BAR_X() { return BASE_HP_BAR_X + hud_x_offset(); }
+	static int HP_BAR_Y() { return BASE_HP_BAR_Y + hud_y_offset(); }
+	static int MP_BAR_Y() { return BASE_MP_BAR_Y + hud_y_offset(); }
+	static int SP_BAR_X() { return BASE_SP_BAR_X + hud_x_offset(); }
+	static int SP_BAR_Y() { return BASE_SP_BAR_Y + hud_y_offset(); }
 
 	// HP/MP/SP number positions
 	static constexpr int BASE_HP_NUM_X = 80;
@@ -46,43 +46,43 @@ private:
 	static constexpr int BASE_SP_NUM_X = 228;
 	static constexpr int BASE_SP_NUM_Y = 435;
 
-	static int HP_NUM_X() { return BASE_HP_NUM_X + HudXOffset(); }
-	static int HP_NUM_Y() { return BASE_HP_NUM_Y + HudYOffset(); }
-	static int MP_NUM_Y() { return BASE_MP_NUM_Y + HudYOffset(); }
-	static int SP_NUM_X() { return BASE_SP_NUM_X + HudXOffset(); }
-	static int SP_NUM_Y() { return BASE_SP_NUM_Y + HudYOffset(); }
+	static int HP_NUM_X() { return BASE_HP_NUM_X + hud_x_offset(); }
+	static int HP_NUM_Y() { return BASE_HP_NUM_Y + hud_y_offset(); }
+	static int MP_NUM_Y() { return BASE_MP_NUM_Y + hud_y_offset(); }
+	static int SP_NUM_X() { return BASE_SP_NUM_X + hud_x_offset(); }
+	static int SP_NUM_Y() { return BASE_SP_NUM_Y + hud_y_offset(); }
 
 	// Combat mode icon position (right side - needs X offset)
 	static constexpr int BASE_COMBAT_ICON_X = 368;
 	static constexpr int BASE_COMBAT_ICON_Y = 440;
-	static int COMBAT_ICON_X() { return BASE_COMBAT_ICON_X + HudXOffset(); }
-	static int COMBAT_ICON_Y() { return BASE_COMBAT_ICON_Y + HudYOffset(); }
+	static int COMBAT_ICON_X() { return BASE_COMBAT_ICON_X + hud_x_offset(); }
+	static int COMBAT_ICON_Y() { return BASE_COMBAT_ICON_Y + hud_y_offset(); }
 
 	// Map message text position
 	static constexpr int BASE_MAP_MSG_X1 = 140;
 	static constexpr int BASE_MAP_MSG_X2 = 323;
 	static constexpr int BASE_MAP_MSG_Y = 456;
-	static int MAP_MSG_X1() { return BASE_MAP_MSG_X1 + HudXOffset(); }
-	static int MAP_MSG_X2() { return BASE_MAP_MSG_X2 + HudXOffset(); }
-	static int MAP_MSG_Y() { return BASE_MAP_MSG_Y + HudYOffset(); }
+	static int MAP_MSG_X1() { return BASE_MAP_MSG_X1 + hud_x_offset(); }
+	static int MAP_MSG_X2() { return BASE_MAP_MSG_X2 + hud_x_offset(); }
+	static int MAP_MSG_Y() { return BASE_MAP_MSG_Y + hud_y_offset(); }
 
 	// Button regions (Y is shared, right-side X needs offset)
 	static constexpr int BASE_BTN_Y1 = 434;
 	static constexpr int BASE_BTN_Y2 = 475;
-	static int BTN_Y1() { return BASE_BTN_Y1 + HudYOffset(); }
-	static int BTN_Y2() { return BASE_BTN_Y2 + HudYOffset(); }
+	static int BTN_Y1() { return BASE_BTN_Y1 + hud_y_offset(); }
+	static int BTN_Y2() { return BASE_BTN_Y2 + hud_y_offset(); }
 
 	// Right-side buttons (need X offset for wider resolutions)
 	static constexpr int BASE_BTN_CRUSADE_X1 = 322;
 	static constexpr int BASE_BTN_CRUSADE_X2 = 355;
 	static constexpr int BASE_BTN_COMBAT_X1 = 362;
 	static constexpr int BASE_BTN_COMBAT_X2 = 404;
-	static int BTN_CRUSADE_X1() { return BASE_BTN_CRUSADE_X1 + HudXOffset(); }
-	static int BTN_CRUSADE_X2() { return BASE_BTN_CRUSADE_X2 + HudXOffset(); }
-	static int BTN_COMBAT_X1() { return BASE_BTN_COMBAT_X1 + HudXOffset(); }
-	static int BTN_COMBAT_X2() { return BASE_BTN_COMBAT_X2 + HudXOffset(); }
+	static int BTN_CRUSADE_X1() { return BASE_BTN_CRUSADE_X1 + hud_x_offset(); }
+	static int BTN_CRUSADE_X2() { return BASE_BTN_CRUSADE_X2 + hud_x_offset(); }
+	static int BTN_COMBAT_X1() { return BASE_BTN_COMBAT_X1 + hud_x_offset(); }
+	static int BTN_COMBAT_X2() { return BASE_BTN_COMBAT_X2 + hud_x_offset(); }
 
-	// Toggle button info structure
+	// toggle button info structure
 	struct ToggleButtonInfo {
 		int x1, x2;
 		int spriteX;
@@ -99,9 +99,9 @@ private:
 	static constexpr int LOCAL_LEVELUP_TEXT_Y = 448;
 
 	// Helper methods
-	void DrawGaugeBars();
-	void DrawIconButtons(short msX, short msY);
-	void DrawStatusIcons(short msX, short msY);
-	bool IsInButton(short msX, short msY, int x1, int x2) const;
-	void ToggleDialogWithSound(DialogBoxId::Type dialogId);
+	void draw_gauge_bars();
+	void draw_icon_buttons(short mouse_x, short mouse_y);
+	void draw_status_icons(short mouse_x, short mouse_y);
+	bool is_in_button(short mouse_x, short mouse_y, int x1, int x2) const;
+	void toggle_dialog_with_sound(DialogBoxId::Type dialogId);
 };

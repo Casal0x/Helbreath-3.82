@@ -24,9 +24,9 @@ void SetTextRenderer(ITextRenderer* renderer)
 }
 
 SFMLTextRenderer::SFMLTextRenderer(sf::RenderTexture* backBuffer)
-    : m_pBackBuffer(backBuffer)
+    : m_back_buffer(backBuffer)
     , m_fontLoaded(false)
-    , m_fontSize(12)  // Default size to match GDI rendering
+    , m_font_size(12)  // Default size to match GDI rendering
 {
     // Try to load a default font as fallback
     LoadDefaultFont();
@@ -102,7 +102,7 @@ void SFMLTextRenderer::SetFontSize(int size)
 {
     // SFML/FreeType renders ~2 points larger than GDI, so compensate
     int adjustedSize = (size > 2) ? (size - 2) : size;
-    m_fontSize = static_cast<unsigned int>(adjustedSize);
+    m_font_size = static_cast<unsigned int>(adjustedSize);
 }
 
 bool SFMLTextRenderer::IsFontLoaded() const
@@ -110,14 +110,14 @@ bool SFMLTextRenderer::IsFontLoaded() const
     return m_fontLoaded;
 }
 
-TextMetrics SFMLTextRenderer::MeasureText(const char* text) const
+TextMetrics SFMLTextRenderer::measure_text(const char* text) const
 {
     TextMetrics metrics = {0, 0};
 
     if (!text || !m_fontLoaded)
         return metrics;
 
-    sf::Text sfText(m_font, text, m_fontSize);
+    sf::Text sfText(m_font, text, m_font_size);
     sf::FloatRect bounds = sfText.getLocalBounds();
 
     metrics.width = static_cast<int>(bounds.size.x);
@@ -126,13 +126,13 @@ TextMetrics SFMLTextRenderer::MeasureText(const char* text) const
     return metrics;
 }
 
-int SFMLTextRenderer::GetFittingCharCount(const char* text, int maxWidth) const
+int SFMLTextRenderer::get_fitting_char_count(const char* text, int maxWidth) const
 {
     if (!text || !m_fontLoaded)
         return 0;
 
     int len = static_cast<int>(strlen(text));
-    sf::Text sfText(m_font, "", m_fontSize);
+    sf::Text sfText(m_font, "", m_font_size);
 
     for (int i = len; i > 0; i--)
     {
@@ -147,33 +147,33 @@ int SFMLTextRenderer::GetFittingCharCount(const char* text, int maxWidth) const
     return 0;
 }
 
-int SFMLTextRenderer::GetLineHeight() const
+int SFMLTextRenderer::get_line_height() const
 {
     if (!m_fontLoaded)
         return 0;
 
-    return static_cast<int>(m_font.getLineSpacing(m_fontSize));
+    return static_cast<int>(m_font.getLineSpacing(m_font_size));
 }
 
-void SFMLTextRenderer::DrawText(int x, int y, const char* text, const hb::shared::render::Color& color)
+void SFMLTextRenderer::draw_text(int x, int y, const char* text, const hb::shared::render::Color& color)
 {
-    if (!text || !m_fontLoaded || !m_pBackBuffer)
+    if (!text || !m_fontLoaded || !m_back_buffer)
         return;
 
-    sf::Text sfText(m_font, text, m_fontSize);
+    sf::Text sfText(m_font, text, m_font_size);
     sfText.setPosition({static_cast<float>(x), static_cast<float>(y)});
     sfText.setFillColor(sf::Color(color.r, color.g, color.b));
 
-    m_pBackBuffer->draw(sfText);
+    m_back_buffer->draw(sfText);
 }
 
-void SFMLTextRenderer::DrawTextAligned(int x, int y, int width, int height, const char* text, const hb::shared::render::Color& color,
+void SFMLTextRenderer::draw_text_aligned(int x, int y, int width, int height, const char* text, const hb::shared::render::Color& color,
                                         Align alignment)
 {
-    if (!text || !m_fontLoaded || !m_pBackBuffer)
+    if (!text || !m_fontLoaded || !m_back_buffer)
         return;
 
-    sf::Text sfText(m_font, text, m_fontSize);
+    sf::Text sfText(m_font, text, m_font_size);
     sf::FloatRect bounds = sfText.getLocalBounds();
 
     // Extract alignment components
@@ -201,15 +201,15 @@ void SFMLTextRenderer::DrawTextAligned(int x, int y, int width, int height, cons
     sfText.setPosition({static_cast<float>(pixelX), static_cast<float>(pixelY)});
     sfText.setFillColor(sf::Color(color.r, color.g, color.b));
 
-    m_pBackBuffer->draw(sfText);
+    m_back_buffer->draw(sfText);
 }
 
-void SFMLTextRenderer::BeginBatch()
+void SFMLTextRenderer::begin_batch()
 {
     // No-op for SFML - we don't need DC acquisition
 }
 
-void SFMLTextRenderer::EndBatch()
+void SFMLTextRenderer::end_batch()
 {
     // No-op for SFML
 }

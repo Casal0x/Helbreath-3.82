@@ -22,7 +22,7 @@
 //   WORD  → uint16_t (16-bit unsigned integer)
 //   BYTE  → uint8_t  (8-bit unsigned integer)
 //
-// Hungarian notation is preserved (e.g., dwTime remains dwTime, but type is uint32_t)
+// Hungarian notation is preserved (e.g., time remains time, but type is uint32_t)
 //
 // ============================================================================
 
@@ -55,8 +55,8 @@
 // Replaces Windows timeGetTime() with std::chrono for cross-platform compatibility
 //
 // Usage:
-//   GameClock::Initialize();  // Call once at startup
-//   uint32_t time = GameClock::GetTimeMS();  // Get current time in milliseconds
+//   GameClock::initialize();  // Call once at startup
+//   uint32_t time = GameClock::get_time_ms();  // get current time in milliseconds
 //
 // Note: Time wraps around after ~49.7 days (2^32 milliseconds), same as timeGetTime().
 //       Use delta time calculations for robust timing that handles wraparound.
@@ -67,23 +67,23 @@ private:
     static bool s_initialized;
 
 public:
-    // Initialize the game clock - call once at application startup
-    static void Initialize() {
+    // initialize the game clock - call once at application startup
+    static void initialize() {
         if (!s_initialized) {
             s_startTime = std::chrono::steady_clock::now();
             s_initialized = true;
         }
     }
 
-    // Get milliseconds since initialization
+    // get milliseconds since initialization
     // Returns: uint32_t milliseconds (0 to 4,294,967,295, wraps after ~49.7 days)
     //
     // This replaces Windows timeGetTime() with equivalent behavior:
-    //   Old: DWORD dwTime = timeGetTime();
-    //   New: uint32_t dwTime = GameClock::GetTimeMS();
+    //   Old: DWORD time = timeGetTime();
+    //   New: uint32_t time = GameClock::get_time_ms();
     //
-    static uint32_t GetTimeMS() {
-        if (!s_initialized) Initialize();
+    static uint32_t get_time_ms() {
+        if (!s_initialized) initialize();
 
         auto now = std::chrono::steady_clock::now();
         auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - s_startTime);
@@ -182,7 +182,7 @@ namespace GameColors
 	// HUD / Name Plate Colors
 	// ====================================================================
 
-	// hb::shared::text::TextStyle::WithShadow (Game.cpp, Screen_OnGame.cpp)
+	// hb::shared::text::TextStyle::with_shadow (Game.cpp, Screen_OnGame.cpp)
 	inline constexpr hb::shared::render::Color InfoGrayLight{ 180, 180, 180 };  // Lighter info text
 
 	// ====================================================================
@@ -205,7 +205,7 @@ namespace GameColors
 	inline constexpr hb::shared::render::Color UISlatesCyan{ 90, 220, 200 };    // Slates effect text (DialogBox_Slates)
 
 	// Bitmap font button colors
-	// hb::shared::text::TextStyle::WithHighlight (various dialog boxes)
+	// hb::shared::text::TextStyle::with_highlight (various dialog boxes)
 	inline constexpr hb::shared::render::Color BmpBtnNormal{ 0, 0, 7 };         // Normal bitmap button (DialogBox_NpcTalk, DialogBox_Exchange, DialogBox_Manufacture, DialogBox_Slates)
 	inline constexpr hb::shared::render::Color BmpBtnHover{ 15, 15, 15 };       // Hover bitmap button (DialogBox_Exchange)
 	inline constexpr hb::shared::render::Color BmpBtnActive{ 10, 10, 10 };      // Active bitmap button (Game.cpp, DialogBox_Manufacture)

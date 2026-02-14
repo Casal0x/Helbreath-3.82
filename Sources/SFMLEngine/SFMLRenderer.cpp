@@ -16,6 +16,22 @@
 #include <cstring>
 #include <thread>
 
+// Fragment shader: adds a flat color offset to each pixel before output.
+// Matches DDraw PutTransSpriteRGB: dest += clamp(src + (r, g, b))
+static constexpr const char* ADDITIVE_OFFSET_FRAG_SRC = R"glsl(
+uniform sampler2D texture;
+uniform vec3 colorOffset;
+
+void main()
+{
+    vec4 pixel = texture2D(texture, gl_TexCoord[0].xy);
+    if (pixel.a < 0.01) discard;
+    pixel.rgb = clamp(pixel.rgb + colorOffset, 0.0, 1.0);
+    pixel.a *= gl_Color.a;
+    gl_FragColor = pixel;
+}
+)glsl";
+
 #ifdef _WIN32
 #include <windows.h>
 #include <dxgi.h>
@@ -23,21 +39,21 @@
 #endif
 
 SFMLRenderer::SFMLRenderer()
-    : m_pRenderWindow(nullptr)
+    : m_render_window(nullptr)
     , m_texturesCreated(false)
     , m_width(640)  // Default, updated in CreateRenderTextures
     , m_height(480) // Default, updated in CreateRenderTextures
     , m_fullscreen(false)
-    , m_bFullscreenStretch(false)
-    , m_iFpsLimit(0)
-    , m_bVSync(false)
-    , m_bSkipFrame(false)
+    , m_fullscreen_stretch(false)
+    , m_fps_limit(0)
+    , m_vsync(false)
+    , m_skip_frame(false)
     , m_lastPresentTime(std::chrono::steady_clock::now())
     , m_targetFrameDuration(std::chrono::steady_clock::duration::zero())
     , m_fps(0)
     , m_framesThisSecond(0)
-    , m_deltaTime(0.0)
-    , m_fpsAccumulator(0.0)
+    , m_delta_time(0.0)
+    , m_fps_accumulator(0.0)
     , m_lastPresentedFrameTime(std::chrono::steady_clock::now())
     , m_ambient_light_level(1)
 {
@@ -46,7 +62,7 @@ SFMLRenderer::SFMLRenderer()
 
 SFMLRenderer::~SFMLRenderer()
 {
-    Shutdown();
+    shutdown();
 }
 
 #ifdef _WIN32
@@ -54,9 +70,9 @@ SFMLRenderer::~SFMLRenderer()
 // Returns the index of the GPU with the most dedicated VRAM
 static void LogGPUInfo()
 {
-    IDXGIFactory* pFactory = nullptr;
-    HRESULT hr = CreateDXGIFactory(__uuidof(IDXGIFactory), (void**)&pFactory);
-    if (FAILED(hr) || !pFactory)
+    IDXGIFactory* factory = nullptr;
+    HRESULT hr = CreateDXGIFactory(__uuidof(IDXGIFactory), (void**)&factory);
+    if (FAILED(hr) || !factory)
     {
         printf("[GPU] Failed to create DXGI factory\n");
         return;
@@ -64,15 +80,15 @@ static void LogGPUInfo()
 
     printf("[GPU] Enumerating available graphics adapters:\n");
 
-    IDXGIAdapter* pAdapter = nullptr;
+    IDXGIAdapter* adapter = nullptr;
     UINT adapterIndex = 0;
     UINT bestAdapterIndex = 0;
     SIZE_T maxDedicatedVRAM = 0;
 
-    while (pFactory->EnumAdapters(adapterIndex, &pAdapter) != DXGI_ERROR_NOT_FOUND)
+    while (factory->EnumAdapters(adapterIndex, &adapter) != DXGI_ERROR_NOT_FOUND)
     {
         DXGI_ADAPTER_DESC desc;
-        if (SUCCEEDED(pAdapter->GetDesc(&desc)))
+        if (SUCCEEDED(adapter->GetDesc(&desc)))
         {
             // Convert wide string to narrow for printf
             char adapterName[128];
@@ -91,7 +107,7 @@ static void LogGPUInfo()
                 bestAdapterIndex = adapterIndex;
             }
         }
-        pAdapter->Release();
+        adapter->Release();
         adapterIndex++;
     }
 
@@ -101,11 +117,11 @@ static void LogGPUInfo()
         printf("[GPU] Note: NvOptimusEnablement and AmdPowerXpressRequestHighPerformance exports are set to prefer discrete GPU\n");
     }
 
-    pFactory->Release();
+    factory->Release();
 }
 #endif
 
-bool SFMLRenderer::Init(hb::shared::types::NativeWindowHandle hWnd)
+bool SFMLRenderer::init(hb::shared::types::NativeWindowHandle hWnd)
 {
     // Log GPU information for debugging/verification
 #ifdef _WIN32
@@ -148,13 +164,31 @@ bool SFMLRenderer::CreateRenderTextures()
     m_backBuffer.clear(sf::Color::Transparent);
     m_backBuffer.display();
 
+    // Load additive offset shader for PutTransSpriteRGB emulation
+    m_additive_offset_shader_loaded = m_additive_offset_shader.loadFromMemory(
+        ADDITIVE_OFFSET_FRAG_SRC, sf::Shader::Type::Fragment);
+    if (m_additive_offset_shader_loaded)
+    {
+        m_additive_offset_shader.setUniform("texture", sf::Shader::CurrentTexture);
+        printf("[Shader] Additive offset shader loaded successfully\n");
+    }
+    else
+    {
+        printf("[Shader] WARNING: Failed to load additive offset shader (glare will degrade to plain additive)\n");
+    }
+
     m_texturesCreated = true;
     return true;
 }
 
+const sf::Shader* SFMLRenderer::get_additive_offset_shader() const
+{
+    return m_additive_offset_shader_loaded ? &m_additive_offset_shader : nullptr;
+}
+
 void SFMLRenderer::SetRenderWindow(sf::RenderWindow* window)
 {
-    m_pRenderWindow = window;
+    m_render_window = window;
 
     // Create render textures now that we have an OpenGL context
     if (window && !m_texturesCreated)
@@ -163,33 +197,33 @@ void SFMLRenderer::SetRenderWindow(sf::RenderWindow* window)
     }
 }
 
-void SFMLRenderer::Shutdown()
+void SFMLRenderer::shutdown()
 {
 }
 
-void SFMLRenderer::SetFullscreen(bool fullscreen)
+void SFMLRenderer::set_fullscreen(bool fullscreen)
 {
     m_fullscreen = fullscreen;
 }
 
-bool SFMLRenderer::IsFullscreen() const
+bool SFMLRenderer::is_fullscreen() const
 {
     return m_fullscreen;
 }
 
-void SFMLRenderer::SetFullscreenStretch(bool stretch)
+void SFMLRenderer::set_fullscreen_stretch(bool stretch)
 {
-    m_bFullscreenStretch = stretch;
+    m_fullscreen_stretch = stretch;
 }
 
-bool SFMLRenderer::IsFullscreenStretch() const
+bool SFMLRenderer::is_fullscreen_stretch() const
 {
-    return m_bFullscreenStretch;
+    return m_fullscreen_stretch;
 }
 
 void SFMLRenderer::SetFramerateLimit(int limit)
 {
-    m_iFpsLimit = limit;
+    m_fps_limit = limit;
     if (limit > 0)
         m_targetFrameDuration = std::chrono::duration_cast<std::chrono::steady_clock::duration>(
             std::chrono::microseconds(1000000 / limit));
@@ -199,35 +233,35 @@ void SFMLRenderer::SetFramerateLimit(int limit)
 
 int SFMLRenderer::GetFramerateLimit() const
 {
-    return m_iFpsLimit;
+    return m_fps_limit;
 }
 
 void SFMLRenderer::SetVSyncMode(bool enabled)
 {
-    m_bVSync = enabled;
+    m_vsync = enabled;
 }
 
-void SFMLRenderer::ChangeDisplayMode(hb::shared::types::NativeWindowHandle hWnd)
+void SFMLRenderer::change_display_mode(hb::shared::types::NativeWindowHandle hWnd)
 {
-    // Get the window through the hb::shared::render::Window factory
-    hb::shared::render::IWindow* pWindow = hb::shared::render::Window::get();
-    if (!pWindow)
+    // get the window through the hb::shared::render::Window factory
+    hb::shared::render::IWindow* window = hb::shared::render::Window::get();
+    if (!window)
         return;
 
     // Cast to SFMLWindow to access SFML-specific methods
-    SFMLWindow* pSFMLWindow = static_cast<SFMLWindow*>(pWindow);
+    SFMLWindow* sfml_window = static_cast<SFMLWindow*>(window);
 
     // Apply the fullscreen setting to the window
     // This will recreate the window with the new mode
-    pSFMLWindow->set_fullscreen(m_fullscreen);
+    sfml_window->set_fullscreen(m_fullscreen);
 
     // Update our render window pointer (window was recreated)
-    m_pRenderWindow = pSFMLWindow->GetRenderWindow();
+    m_render_window = sfml_window->GetRenderWindow();
 
     // Ensure the OpenGL context is active after window recreation
-    if (m_pRenderWindow)
+    if (m_render_window)
     {
-        (void)m_pRenderWindow->setActive(true);
+        (void)m_render_window->setActive(true);
     }
 
     // Verify render textures are still valid, recreate if needed
@@ -244,28 +278,28 @@ void SFMLRenderer::ChangeDisplayMode(hb::shared::types::NativeWindowHandle hWnd)
     }
 }
 
-void SFMLRenderer::BeginFrame()
+void SFMLRenderer::begin_frame()
 {
     // Ensure OpenGL context is active before any rendering operations
-    if (m_pRenderWindow)
+    if (m_render_window)
     {
-        (void)m_pRenderWindow->setActive(true);
+        (void)m_render_window->setActive(true);
     }
 
     // Engine-owned frame limiting: skip this frame if not enough time has elapsed
     // Unlimited (0) always renders; VSync uses monitor refresh rate as the target
-    if (m_iFpsLimit > 0)
+    if (m_fps_limit > 0)
     {
         auto now = std::chrono::steady_clock::now();
         if ((now - m_lastPresentTime) < m_targetFrameDuration)
         {
-            m_bSkipFrame = true;
+            m_skip_frame = true;
             // Sleep 1ms to avoid spinning the CPU (accurate with timeBeginPeriod(1))
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
             return;
         }
     }
-    m_bSkipFrame = false;
+    m_skip_frame = false;
 
     // Reset the view to ensure 1:1 pixel mapping (prevents edge artifacts)
     sf::View pixelView(sf::FloatRect({0.f, 0.f}, {static_cast<float>(m_width), static_cast<float>(m_height)}));
@@ -281,9 +315,9 @@ void SFMLRenderer::BeginFrame()
     glScissor(0, 0, m_width, m_height);
 }
 
-void SFMLRenderer::EndFrame()
+void SFMLRenderer::end_frame()
 {
-    if (m_bSkipFrame)
+    if (m_skip_frame)
         return;
 
     // Disable scissor test before presenting
@@ -291,16 +325,16 @@ void SFMLRenderer::EndFrame()
 
     m_backBuffer.display();
 
-    if (m_pRenderWindow && m_pRenderWindow->isOpen())
+    if (m_render_window && m_render_window->isOpen())
     {
-        m_pRenderWindow->clear(sf::Color::Black);
+        m_render_window->clear(sf::Color::Black);
 
-        // Get actual window size in physical pixels
+        // get actual window size in physical pixels
         float windowWidth, windowHeight;
 
 #ifdef _WIN32
         // When DPI aware, use GetClientRect for accurate physical pixel dimensions
-        HWND hWnd = static_cast<HWND>(m_pRenderWindow->getNativeHandle());
+        HWND hWnd = static_cast<HWND>(m_render_window->getNativeHandle());
         if (hWnd)
         {
             RECT clientRect;
@@ -311,7 +345,7 @@ void SFMLRenderer::EndFrame()
             }
             else
             {
-                sf::Vector2u size = m_pRenderWindow->getSize();
+                sf::Vector2u size = m_render_window->getSize();
                 windowWidth = static_cast<float>(size.x);
                 windowHeight = static_cast<float>(size.y);
             }
@@ -319,7 +353,7 @@ void SFMLRenderer::EndFrame()
         else
 #endif
         {
-            sf::Vector2u size = m_pRenderWindow->getSize();
+            sf::Vector2u size = m_render_window->getSize();
             windowWidth = static_cast<float>(size.x);
             windowHeight = static_cast<float>(size.y);
         }
@@ -327,7 +361,7 @@ void SFMLRenderer::EndFrame()
         // Reset the view to match actual window size (1:1 pixel mapping)
         // This is crucial after window resize - SFML's default view changes with setSize()
         sf::View pixelView(sf::FloatRect({0.f, 0.f}, {windowWidth, windowHeight}));
-        m_pRenderWindow->setView(pixelView);
+        m_render_window->setView(pixelView);
 
         // Use explicit source rectangle to avoid including any texture padding
         // SFML render textures may have internal padding beyond the requested size
@@ -337,7 +371,7 @@ void SFMLRenderer::EndFrame()
         float scaleX = windowWidth / static_cast<float>(m_width);
         float scaleY = windowHeight / static_cast<float>(m_height);
 
-        if (m_fullscreen && !m_bFullscreenStretch)
+        if (m_fullscreen && !m_fullscreen_stretch)
         {
             // Fullscreen letterbox: uniform scale to maintain aspect ratio
             float scale = (scaleY < scaleX) ? scaleY : scaleX;
@@ -361,17 +395,17 @@ void SFMLRenderer::EndFrame()
         // This is applied per-draw, so it doesn't affect the back buffer during rendering
         const_cast<sf::Texture&>(m_backBuffer.getTexture()).setSmooth(true);
 
-        m_pRenderWindow->draw(backBufferSprite, sf::RenderStates(sf::BlendAlpha));
+        m_render_window->draw(backBufferSprite, sf::RenderStates(sf::BlendAlpha));
 
         // Restore nearest-neighbor for internal rendering
         const_cast<sf::Texture&>(m_backBuffer.getTexture()).setSmooth(false);
 
-        m_pRenderWindow->display();
+        m_render_window->display();
 
         // Track frame metrics at the actual point of present
         auto now = std::chrono::steady_clock::now();
 
-        if (m_iFpsLimit > 0)
+        if (m_fps_limit > 0)
         {
             // Advance deadline by exact target duration to prevent timing drift
             // (snapping to 'now' would accumulate overshoot from sleep granularity)
@@ -383,50 +417,50 @@ void SFMLRenderer::EndFrame()
         }
 
         auto elapsed = std::chrono::duration<double>(now - m_lastPresentedFrameTime);
-        m_deltaTime = elapsed.count();
+        m_delta_time = elapsed.count();
         m_lastPresentedFrameTime = now;
 
         m_framesThisSecond++;
-        m_fpsAccumulator += m_deltaTime;
-        if (m_fpsAccumulator >= 1.0)
+        m_fps_accumulator += m_delta_time;
+        if (m_fps_accumulator >= 1.0)
         {
             m_fps = m_framesThisSecond;
             m_framesThisSecond = 0;
-            m_fpsAccumulator -= 1.0;
+            m_fps_accumulator -= 1.0;
         }
     }
 }
 
-bool SFMLRenderer::EndFrameCheckLostSurface()
+bool SFMLRenderer::end_frame_check_lost_surface()
 {
-    if (m_bSkipFrame)
+    if (m_skip_frame)
         return false;
-    EndFrame();
+    end_frame();
     // SFML doesn't have surface loss like DirectDraw
     return false;
 }
 
-bool SFMLRenderer::WasFramePresented() const
+bool SFMLRenderer::was_frame_presented() const
 {
-    return !m_bSkipFrame;
+    return !m_skip_frame;
 }
 
-uint32_t SFMLRenderer::GetFPS() const
+uint32_t SFMLRenderer::get_fps() const
 {
     return m_fps;
 }
 
-double SFMLRenderer::GetDeltaTime() const
+double SFMLRenderer::get_delta_time() const
 {
-    return m_deltaTime;
+    return m_delta_time;
 }
 
-double SFMLRenderer::GetDeltaTimeMS() const
+double SFMLRenderer::get_delta_time_ms() const
 {
-    return m_deltaTime * 1000.0;
+    return m_delta_time * 1000.0;
 }
 
-void SFMLRenderer::DrawPixel(int x, int y, const hb::shared::render::Color& color)
+void SFMLRenderer::draw_pixel(int x, int y, const hb::shared::render::Color& color)
 {
     if (x < m_clipArea.Left() || x >= m_clipArea.Right() ||
         y < m_clipArea.Top() || y >= m_clipArea.Bottom())
@@ -438,7 +472,7 @@ void SFMLRenderer::DrawPixel(int x, int y, const hb::shared::render::Color& colo
     m_backBuffer.draw(pixel);
 }
 
-void SFMLRenderer::DrawLine(int x0, int y0, int x1, int y1, const hb::shared::render::Color& color, hb::shared::render::BlendMode blend)
+void SFMLRenderer::draw_line(int x0, int y0, int x1, int y1, const hb::shared::render::Color& color, hb::shared::render::BlendMode blend)
 {
     if ((x0 == x1) && (y0 == y1)) return;
 
@@ -453,7 +487,7 @@ void SFMLRenderer::DrawLine(int x0, int y0, int x1, int y1, const hb::shared::re
     m_backBuffer.draw(line, (blend == hb::shared::render::BlendMode::Additive) ? sf::BlendAdd : sf::BlendAlpha);
 }
 
-void SFMLRenderer::DrawRectFilled(int x, int y, int w, int h, const hb::shared::render::Color& color)
+void SFMLRenderer::draw_rect_filled(int x, int y, int w, int h, const hb::shared::render::Color& color)
 {
     if (color.a == 0 || w <= 0 || h <= 0) return;
 
@@ -463,7 +497,7 @@ void SFMLRenderer::DrawRectFilled(int x, int y, int w, int h, const hb::shared::
     m_backBuffer.draw(rect);
 }
 
-void SFMLRenderer::DrawRectOutline(int x, int y, int w, int h, const hb::shared::render::Color& color, int thickness)
+void SFMLRenderer::draw_rect_outline(int x, int y, int w, int h, const hb::shared::render::Color& color, int thickness)
 {
     if (color.a == 0 || w <= 0 || h <= 0 || thickness <= 0) return;
 
@@ -546,7 +580,7 @@ static int GenerateRoundedRectPoints(sf::Vector2f* out, int maxVerts,
     return count;
 }
 
-void SFMLRenderer::DrawRoundedRectFilled(int x, int y, int w, int h, int radius, const hb::shared::render::Color& color)
+void SFMLRenderer::draw_rounded_rect_filled(int x, int y, int w, int h, int radius, const hb::shared::render::Color& color)
 {
     if (color.a == 0 || w <= 0 || h <= 0) return;
 
@@ -560,13 +594,13 @@ void SFMLRenderer::DrawRoundedRectFilled(int x, int y, int w, int h, int radius,
 
     if (fr <= 0.0f)
     {
-        DrawRectFilled(x, y, w, h, color);
+        draw_rect_filled(x, y, w, h, color);
         return;
     }
 
     sf::Vector2f pts[32];
     int count = GenerateRoundedRectPoints(pts, 32, fx, fy, fw, fh, fr);
-    if (count < 3) { DrawRectFilled(x, y, w, h, color); return; }
+    if (count < 3) { draw_rect_filled(x, y, w, h, color); return; }
 
     // Use TriangleFan — avoids ConvexShape's edge-normal computation entirely
     sf::VertexArray fan(sf::PrimitiveType::TriangleFan, count + 2);
@@ -587,7 +621,7 @@ void SFMLRenderer::DrawRoundedRectFilled(int x, int y, int w, int h, int radius,
     m_backBuffer.draw(fan);
 }
 
-void SFMLRenderer::DrawRoundedRectOutline(int x, int y, int w, int h, int radius,
+void SFMLRenderer::draw_rounded_rect_outline(int x, int y, int w, int h, int radius,
                                           const hb::shared::render::Color& color, int thickness)
 {
     if (color.a == 0 || w <= 0 || h <= 0 || thickness <= 0) return;
@@ -602,7 +636,7 @@ void SFMLRenderer::DrawRoundedRectOutline(int x, int y, int w, int h, int radius
 
     if (fr <= 0.0f)
     {
-        DrawRectOutline(x, y, w, h, color, thickness);
+        draw_rect_outline(x, y, w, h, color, thickness);
         return;
     }
 
@@ -618,7 +652,7 @@ void SFMLRenderer::DrawRoundedRectOutline(int x, int y, int w, int h, int radius
     // If inner rect is degenerate, fall back to filled
     if (ifw <= 0.0f || ifh <= 0.0f)
     {
-        DrawRoundedRectFilled(x, y, w, h, radius, color);
+        draw_rounded_rect_filled(x, y, w, h, radius, color);
         return;
     }
 
@@ -637,8 +671,8 @@ void SFMLRenderer::DrawRoundedRectOutline(int x, int y, int w, int h, int radius
     float oCY[4] = { fy + fr, fy + fr, fy + fh - fr, fy + fh - fr };
 
     // Inner corner centers
-    float iCX[4] = { ifx + ifr, ifx + ifw - ifr, ifx + ifw - ifr, ifx + ifr };
-    float iCY[4] = { ify + ifr, ify + ifr, ify + ifh - ifr, ify + ifh - ifr };
+    float cx[4] = { ifx + ifr, ifx + ifw - ifr, ifx + ifw - ifr, ifx + ifr };
+    float cy[4] = { ify + ifr, ify + ifr, ify + ifh - ifr, ify + ifh - ifr };
 
     // TriangleStrip: for each perimeter point, emit outer then inner
     sf::VertexArray strip(sf::PrimitiveType::TriangleStrip, (totalPts + 1) * 2);
@@ -655,7 +689,7 @@ void SFMLRenderer::DrawRoundedRectOutline(int x, int y, int w, int h, int radius
             strip[pi * 2].position = { oCX[corner] + fr * ca, oCY[corner] - fr * sa };
             strip[pi * 2].color = sfColor;
 
-            strip[pi * 2 + 1].position = { iCX[corner] + ifr * ca, iCY[corner] - ifr * sa };
+            strip[pi * 2 + 1].position = { cx[corner] + ifr * ca, cy[corner] - ifr * sa };
             strip[pi * 2 + 1].color = sfColor;
         }
     }
@@ -669,58 +703,58 @@ void SFMLRenderer::DrawRoundedRectOutline(int x, int y, int w, int h, int radius
     m_backBuffer.draw(strip);
 }
 
-void SFMLRenderer::BeginTextBatch()
+void SFMLRenderer::begin_text_batch()
 {
     // Delegate to TextLib for consistency
-    hb::shared::text::ITextRenderer* pTextRenderer = hb::shared::text::GetTextRenderer();
-    if (pTextRenderer)
-        pTextRenderer->BeginBatch();
+    hb::shared::text::ITextRenderer* text_renderer = hb::shared::text::GetTextRenderer();
+    if (text_renderer)
+        text_renderer->begin_batch();
 }
 
-void SFMLRenderer::EndTextBatch()
+void SFMLRenderer::end_text_batch()
 {
     // Delegate to TextLib for consistency
-    hb::shared::text::ITextRenderer* pTextRenderer = hb::shared::text::GetTextRenderer();
-    if (pTextRenderer)
-        pTextRenderer->EndBatch();
+    hb::shared::text::ITextRenderer* text_renderer = hb::shared::text::GetTextRenderer();
+    if (text_renderer)
+        text_renderer->end_batch();
 }
 
-void SFMLRenderer::DrawText(int x, int y, const char* text, const hb::shared::render::Color& color)
+void SFMLRenderer::draw_text(int x, int y, const char* text, const hb::shared::render::Color& color)
 {
     if (!text || !m_texturesCreated)
         return;
 
     // Delegate to TextLib - single point of font handling
-    hb::shared::text::ITextRenderer* pTextRenderer = hb::shared::text::GetTextRenderer();
-    if (pTextRenderer)
-        pTextRenderer->DrawText(x, y, text, color);
+    hb::shared::text::ITextRenderer* text_renderer = hb::shared::text::GetTextRenderer();
+    if (text_renderer)
+        text_renderer->draw_text(x, y, text, color);
 }
 
-void SFMLRenderer::DrawTextRect(const hb::shared::geometry::GameRectangle& rect, const char* text, const hb::shared::render::Color& color)
+void SFMLRenderer::draw_text_rect(const hb::shared::geometry::GameRectangle& rect, const char* text, const hb::shared::render::Color& color)
 {
     if (!text || !m_texturesCreated)
         return;
 
     // Delegate to TextLib - single point of font handling
-    hb::shared::text::ITextRenderer* pTextRenderer = hb::shared::text::GetTextRenderer();
-    if (pTextRenderer)
+    hb::shared::text::ITextRenderer* text_renderer = hb::shared::text::GetTextRenderer();
+    if (text_renderer)
     {
-        pTextRenderer->DrawTextAligned(rect.x, rect.y, rect.width, rect.height, text, color,
+        text_renderer->draw_text_aligned(rect.x, rect.y, rect.width, rect.height, text, color,
                                         hb::shared::text::Align::TopCenter);
     }
 }
 
-hb::shared::render::ITexture* SFMLRenderer::CreateTexture(uint16_t width, uint16_t height)
+hb::shared::render::ITexture* SFMLRenderer::create_texture(uint16_t width, uint16_t height)
 {
     return new SFMLTexture(width, height);
 }
 
-void SFMLRenderer::DestroyTexture(hb::shared::render::ITexture* texture)
+void SFMLRenderer::destroy_texture(hb::shared::render::ITexture* texture)
 {
     delete texture;
 }
 
-void SFMLRenderer::SetClipArea(int x, int y, int w, int h)
+void SFMLRenderer::set_clip_area(int x, int y, int w, int h)
 {
     m_clipArea = hb::shared::geometry::GameRectangle(x, y, w, h);
 
@@ -728,12 +762,12 @@ void SFMLRenderer::SetClipArea(int x, int y, int w, int h)
     // Note: SFML doesn't have direct scissor support, but we store it for manual clipping
 }
 
-hb::shared::geometry::GameRectangle SFMLRenderer::GetClipArea() const
+hb::shared::geometry::GameRectangle SFMLRenderer::get_clip_area() const
 {
     return m_clipArea;
 }
 
-bool SFMLRenderer::Screenshot(const char* filename)
+bool SFMLRenderer::screenshot(const char* filename)
 {
     if (!filename)
         return false;
@@ -742,44 +776,44 @@ bool SFMLRenderer::Screenshot(const char* filename)
     return screenshot.saveToFile(filename);
 }
 
-int SFMLRenderer::GetWidth() const
+int SFMLRenderer::get_width() const
 {
     return m_width;
 }
 
-int SFMLRenderer::GetHeight() const
+int SFMLRenderer::get_height() const
 {
     return m_height;
 }
 
-int SFMLRenderer::GetWidthMid() const
+int SFMLRenderer::get_width_mid() const
 {
     return m_width / 2;
 }
 
-int SFMLRenderer::GetHeightMid() const
+int SFMLRenderer::get_height_mid() const
 {
     return m_height / 2;
 }
 
-void SFMLRenderer::ResizeBackBuffer(int width, int height)
+void SFMLRenderer::resize_back_buffer(int width, int height)
 {
     // The back buffer always stays at 640x480 (logical resolution)
-    // hb::shared::render::Window scaling is handled in EndFrame() when presenting to the window
+    // hb::shared::render::Window scaling is handled in end_frame() when presenting to the window
     // This is intentionally a no-op for SFML
 }
 
-char SFMLRenderer::GetAmbientLightLevel() const
+char SFMLRenderer::get_ambient_light_level() const
 {
     return m_ambient_light_level;
 }
 
-void SFMLRenderer::SetAmbientLightLevel(char level)
+void SFMLRenderer::set_ambient_light_level(char level)
 {
     m_ambient_light_level = level;
 }
 
-void SFMLRenderer::ColorTransferRGB(uint32_t rgb, int* outR, int* outG, int* outB)
+void SFMLRenderer::color_transfer_rgb(uint32_t rgb, int* outR, int* outG, int* outB)
 {
     // Extract RGB from COLORREF format (0x00BBGGRR) - keep full 8-bit values
     // SFML uses RGBA8888 natively so no conversion needed
@@ -788,41 +822,41 @@ void SFMLRenderer::ColorTransferRGB(uint32_t rgb, int* outR, int* outG, int* out
     if (outB) *outB = static_cast<int>((rgb >> 16) & 0xFF);
 }
 
-int SFMLRenderer::GetTextLength(const char* text, int maxWidth)
+int SFMLRenderer::get_text_length(const char* text, int maxWidth)
 {
     if (!text)
         return 0;
 
     // Delegate to TextLib - single point of font handling
-    hb::shared::text::ITextRenderer* pTextRenderer = hb::shared::text::GetTextRenderer();
-    if (pTextRenderer)
-        return pTextRenderer->GetFittingCharCount(text, maxWidth);
+    hb::shared::text::ITextRenderer* text_renderer = hb::shared::text::GetTextRenderer();
+    if (text_renderer)
+        return text_renderer->get_fitting_char_count(text, maxWidth);
 
     return 0;
 }
 
-int SFMLRenderer::GetTextWidth(const char* text)
+int SFMLRenderer::get_text_width(const char* text)
 {
     if (!text)
         return 0;
 
     // Delegate to TextLib - single point of font handling
-    hb::shared::text::ITextRenderer* pTextRenderer = hb::shared::text::GetTextRenderer();
-    if (pTextRenderer)
+    hb::shared::text::ITextRenderer* text_renderer = hb::shared::text::GetTextRenderer();
+    if (text_renderer)
     {
-        hb::shared::text::TextMetrics metrics = pTextRenderer->MeasureText(text);
+        hb::shared::text::TextMetrics metrics = text_renderer->measure_text(text);
         return metrics.width;
     }
 
     return 0;
 }
 
-void* SFMLRenderer::GetBackBufferNative()
+void* SFMLRenderer::get_back_buffer_native()
 {
     return &m_backBuffer;
 }
 
-void* SFMLRenderer::GetNativeRenderer()
+void* SFMLRenderer::get_native_renderer()
 {
     // Return this renderer itself for SFML
     // Legacy code expecting DXC_ddraw* should check renderer type first

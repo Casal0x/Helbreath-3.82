@@ -7,18 +7,18 @@
 #include <windows.h>
 
 namespace NetworkMessageHandlers {
-	void HandleAgricultureNoArea(CGame* pGame, char* pData)
+	void HandleAgricultureNoArea(CGame* game, char* data)
 	{
-		pGame->AddEventList(DEF_MSG_NOTIFY_AGRICULTURENOAREA, 10);
+		game->add_event_list(DEF_MSG_NOTIFY_AGRICULTURENOAREA, 10);
 	}
 
-	void HandleAgricultureSkillLimit(CGame* pGame, char* pData)
+	void HandleAgricultureSkillLimit(CGame* game, char* data)
 	{
-		pGame->AddEventList(DEF_MSG_NOTIFY_AGRICULTURESKILLLIMIT, 10);
+		game->add_event_list(DEF_MSG_NOTIFY_AGRICULTURESKILLLIMIT, 10);
 	}
 
-	void HandleNoMoreAgriculture(CGame* pGame, char* pData)
+	void HandleNoMoreAgriculture(CGame* game, char* data)
 	{
-		pGame->AddEventList(DEF_MSG_NOTIFY_NOMOREAGRICULTURE, 10);
+		game->add_event_list(DEF_MSG_NOTIFY_NOMOREAGRICULTURE, 10);
 	}
 } // namespace NetworkMessageHandlers

@@ -19,31 +19,31 @@ namespace hb::shared::net {
 struct QueuedMsg {
 	char cFrom;
 	std::vector<char> data;
-	size_t dwSize;
-	int iIndex;
-	char cKey;
+	size_t size;
+	int index;
+	char key;
 
-	QueuedMsg() : cFrom(0), dwSize(0), iIndex(0), cKey(0) {}
-	QueuedMsg(char from, const char* pData, size_t size, int index, char key)
-		: cFrom(from), dwSize(size), iIndex(index), cKey(key)
+	QueuedMsg() : cFrom(0), size(0), index(0), key(0) {}
+	QueuedMsg(char from, const char* src, size_t len, int idx, char k)
+		: cFrom(from), size(len), index(idx), key(k)
 	{
-		if (pData && size > 0) {
-			data.assign(pData, pData + size);
+		if (src && len > 0) {
+			data.assign(src, src + len);
 		}
 	}
 };
 
 class ConcurrentMsgQueue {
 public:
-	bool Push(char cFrom, const char* pData, size_t dwSize, int iIndex, char cKey)
+	bool push(char cFrom, const char* data, size_t size, int index, char key)
 	{
 		std::lock_guard<std::mutex> lock(m_mutex);
 		if (m_queue.size() >= MAX_QUEUE_SIZE) return false;
-		m_queue.emplace_back(cFrom, pData, dwSize, iIndex, cKey);
+		m_queue.emplace_back(cFrom, data, size, index, key);
 		return true;
 	}
 
-	bool Pop(char* pFrom, char* pData, size_t* pSize, int* pIndex, char* pKey)
+	bool pop(char* pFrom, char* data, size_t* size, int* index, char* key)
 	{
 		std::lock_guard<std::mutex> lock(m_mutex);
 		if (m_queue.empty()) return false;
@@ -51,17 +51,17 @@ public:
 		auto& msg = m_queue.front();
 		*pFrom = msg.cFrom;
 		if (!msg.data.empty()) {
-			std::memcpy(pData, msg.data.data(), msg.dwSize);
+			std::memcpy(data, msg.data.data(), msg.size);
 		}
-		*pSize = msg.dwSize;
-		*pIndex = msg.iIndex;
-		*pKey = msg.cKey;
+		*size = msg.size;
+		*index = msg.index;
+		*key = msg.key;
 
 		m_queue.pop_front();
 		return true;
 	}
 
-	size_t Size() const
+	size_t size() const
 	{
 		std::lock_guard<std::mutex> lock(m_mutex);
 		return m_queue.size();
@@ -77,13 +77,13 @@ private:
 template<typename T>
 class ConcurrentQueue {
 public:
-	void Push(T item)
+	void push(T item)
 	{
 		std::lock_guard<std::mutex> lock(m_mutex);
 		m_queue.push_back(std::move(item));
 	}
 
-	bool Pop(T& out)
+	bool pop(T& out)
 	{
 		std::lock_guard<std::mutex> lock(m_mutex);
 		if (m_queue.empty()) return false;
@@ -92,13 +92,13 @@ public:
 		return true;
 	}
 
-	bool Empty() const
+	bool empty() const
 	{
 		std::lock_guard<std::mutex> lock(m_mutex);
 		return m_queue.empty();
 	}
 
-	size_t Size() const
+	size_t size() const
 	{
 		std::lock_guard<std::mutex> lock(m_mutex);
 		return m_queue.size();
@@ -111,8 +111,8 @@ private:
 
 // Error event from I/O threads
 struct SocketErrorEvent {
-	int iSocketIndex;
-	int iErrorCode;
+	int socket_index;
+	int error_code;
 };
 
 } // namespace hb::shared::net

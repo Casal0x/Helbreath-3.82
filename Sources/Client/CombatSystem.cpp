@@ -1,128 +1,128 @@
 ﻿#include "CombatSystem.h"
 #include "Player.h"
 
-CombatSystem& CombatSystem::Get()
+combat_system& combat_system::get()
 {
-	static CombatSystem instance;
+	static combat_system instance;
 	return instance;
 }
 
-void CombatSystem::SetPlayer(CPlayer& player)
+void combat_system::set_player(CPlayer& player)
 {
 	m_player = &player;
 }
 
 // Snoopy: added StormBlade
-int CombatSystem::GetAttackType() const
+int combat_system::get_attack_type() const
 {
 	if (!m_player) return 0;
-	uint16_t wWeaponType;
-	wWeaponType = m_player->m_playerAppearance.iWeaponType;
-	if (wWeaponType == 0)
+	uint16_t weapon_type;
+	weapon_type = m_player->m_playerAppearance.weapon_type;
+	if (weapon_type == 0)
 	{
-		if ((m_player->m_iSuperAttackLeft > 0) && (m_player->m_bSuperAttackMode == true) && (m_player->m_iSkillMastery[5] >= 100)) return 20;
+		if ((m_player->m_super_attack_left > 0) && (m_player->m_super_attack_mode == true) && (m_player->m_skill_mastery[5] >= 100)) return 20;
 		else return 1;		// Boxe
 	}
-	else if ((wWeaponType >= 1) && (wWeaponType <= 2))
+	else if ((weapon_type >= 1) && (weapon_type <= 2))
 	{
-		if ((m_player->m_iSuperAttackLeft > 0) && (m_player->m_bSuperAttackMode == true) && (m_player->m_iSkillMastery[7] >= 100)) return 21;
+		if ((m_player->m_super_attack_left > 0) && (m_player->m_super_attack_mode == true) && (m_player->m_skill_mastery[7] >= 100)) return 21;
 		else return 1;		//Dag, SS
 	}
-	else if ((wWeaponType > 2) && (wWeaponType < 20))
+	else if ((weapon_type > 2) && (weapon_type < 20))
 	{
-		if ((wWeaponType == 7) || (wWeaponType == 18)) // Added Kloness Esterk
+		if ((weapon_type == 7) || (weapon_type == 18)) // Added Kloness Esterk
 		{
-			if ((m_player->m_iSuperAttackLeft > 0) && (m_player->m_bSuperAttackMode == true) && (m_player->m_iSkillMastery[9] >= 100)) return 22;
+			if ((m_player->m_super_attack_left > 0) && (m_player->m_super_attack_mode == true) && (m_player->m_skill_mastery[9] >= 100)) return 22;
 			else return 1;  // Esterk
 		}
-		else if (wWeaponType == 15)
+		else if (weapon_type == 15)
 		{
-			if ((m_player->m_iSuperAttackLeft > 0) && (m_player->m_bSuperAttackMode == true) && (m_player->m_iSkillMastery[8] >= 100)) return 30;
+			if ((m_player->m_super_attack_left > 0) && (m_player->m_super_attack_mode == true) && (m_player->m_skill_mastery[8] >= 100)) return 30;
 			else return 5;  // StormBlade
 		}
 		else
 		{
-			if ((m_player->m_iSuperAttackLeft > 0) && (m_player->m_bSuperAttackMode == true) && (m_player->m_iSkillMastery[8] >= 100)) return 23;
+			if ((m_player->m_super_attack_left > 0) && (m_player->m_super_attack_mode == true) && (m_player->m_skill_mastery[8] >= 100)) return 23;
 			else return 1;	// LongSwords
 		}
 	}
-	else if ((wWeaponType >= 20) && (wWeaponType <= 29))
+	else if ((weapon_type >= 20) && (weapon_type <= 29))
 	{
-		if (wWeaponType == 29) {
+		if (weapon_type == 29) {
 			// Type 29 is a Long Sword variant
-			if ((m_player->m_iSuperAttackLeft > 0) && (m_player->m_bSuperAttackMode == true) && (m_player->m_iSkillMastery[8] >= 100)) return 23;
+			if ((m_player->m_super_attack_left > 0) && (m_player->m_super_attack_mode == true) && (m_player->m_skill_mastery[8] >= 100)) return 23;
 			else return 1;		// LS
 		}
-		if ((m_player->m_iSuperAttackLeft > 0) && (m_player->m_bSuperAttackMode == true) && (m_player->m_iSkillMastery[10] >= 100)) return 24;
+		if ((m_player->m_super_attack_left > 0) && (m_player->m_super_attack_mode == true) && (m_player->m_skill_mastery[10] >= 100)) return 24;
 		else return 1;		// Axes
 	}
-	else if ((wWeaponType >= 30) && (wWeaponType <= 33))
+	else if ((weapon_type >= 30) && (weapon_type <= 33))
 	{
-		if (wWeaponType == 33) {
+		if (weapon_type == 33) {
 			// Type 33 is a Long Sword variant
-			if ((m_player->m_iSuperAttackLeft > 0) && (m_player->m_bSuperAttackMode == true) && (m_player->m_iSkillMastery[8] >= 100)) return 23;
+			if ((m_player->m_super_attack_left > 0) && (m_player->m_super_attack_mode == true) && (m_player->m_skill_mastery[8] >= 100)) return 23;
 			else return 1;		// LS
 		}
-		if ((m_player->m_iSuperAttackLeft > 0) && (m_player->m_bSuperAttackMode == true) && (m_player->m_iSkillMastery[14] >= 100)) return 26;
+		if ((m_player->m_super_attack_left > 0) && (m_player->m_super_attack_mode == true) && (m_player->m_skill_mastery[14] >= 100)) return 26;
 		else return 1;		// Hammers
 	}
-	else if ((wWeaponType >= 34) && (wWeaponType < 40))
+	else if ((weapon_type >= 34) && (weapon_type < 40))
 	{
-		if ((m_player->m_iSuperAttackLeft > 0) && (m_player->m_bSuperAttackMode == true) && (m_player->m_iSkillMastery[21] >= 100)) return 27;
+		if ((m_player->m_super_attack_left > 0) && (m_player->m_super_attack_mode == true) && (m_player->m_skill_mastery[21] >= 100)) return 27;
 		else return 1;		// Wands
 	}
-	else if (wWeaponType >= 40)
+	else if (weapon_type >= 40)
 	{
-		if ((m_player->m_iSuperAttackLeft > 0) && (m_player->m_bSuperAttackMode == true) && (m_player->m_iSkillMastery[6] >= 100)) return 25;
+		if ((m_player->m_super_attack_left > 0) && (m_player->m_super_attack_mode == true) && (m_player->m_skill_mastery[6] >= 100)) return 25;
 		else return 2;		// Bows
 	}
 	return 0;
 }
 
-int CombatSystem::GetWeaponSkillType() const
+int combat_system::get_weapon_skill_type() const
 {
 	if (!m_player) return 1;
-	uint16_t wWeaponType;
-	wWeaponType = m_player->m_playerAppearance.iWeaponType;
-	if (wWeaponType == 0)
+	uint16_t weapon_type;
+	weapon_type = m_player->m_playerAppearance.weapon_type;
+	if (weapon_type == 0)
 	{
 		return 5; // Openhand
 	}
-	else if ((wWeaponType >= 1) && (wWeaponType < 3))
+	else if ((weapon_type >= 1) && (weapon_type < 3))
 	{
 		return 7; // SS
 	}
-	else if ((wWeaponType >= 3) && (wWeaponType < 20))
+	else if ((weapon_type >= 3) && (weapon_type < 20))
 	{
-		if ((wWeaponType == 7) || (wWeaponType == 18)) // Esterk or KlonessEsterk
+		if ((weapon_type == 7) || (weapon_type == 18)) // Esterk or KlonessEsterk
 			return 9; // Fencing
 		else return 8; // LS
 	}
-	else if ((wWeaponType >= 20) && (wWeaponType <= 29))
+	else if ((weapon_type >= 20) && (weapon_type <= 29))
 	{
-		if (wWeaponType == 29) return 8; // LS (LightingBlade)
+		if (weapon_type == 29) return 8; // LS (LightingBlade)
 		return 10; // Axe (20..28)
 	}
-	else if ((wWeaponType >= 30) && (wWeaponType <= 33))
+	else if ((weapon_type >= 30) && (weapon_type <= 33))
 	{
-		if (wWeaponType == 33) return 8; // LS (BlackShadow)
+		if (weapon_type == 33) return 8; // LS (BlackShadow)
 		return 14; // Hammer (30,31,32)
 	}
-	else if ((wWeaponType >= 34) && (wWeaponType < 40))
+	else if ((weapon_type >= 34) && (weapon_type < 40))
 	{
 		return 21; // Wand
 	}
-	else if (wWeaponType >= 40)
+	else if (weapon_type >= 40)
 	{
 		return 6;  // Bow
 	}
 	return 1; // Fishing !
 }
 
-bool CombatSystem::CanSuperAttack() const
+bool combat_system::can_super_attack() const
 {
 	if (!m_player) return false;
-	return m_player->m_iSuperAttackLeft > 0
-		&& m_player->m_bSuperAttackMode
-		&& m_player->m_iSkillMastery[GetWeaponSkillType()] >= 100;
+	return m_player->m_super_attack_left > 0
+		&& m_player->m_super_attack_mode
+		&& m_player->m_skill_mastery[get_weapon_skill_type()] >= 100;
 }

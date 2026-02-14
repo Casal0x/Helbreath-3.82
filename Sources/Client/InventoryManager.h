@@ -2,30 +2,30 @@
 
 class CGame;
 
-class InventoryManager
+class inventory_manager
 {
 public:
-	static InventoryManager& Get();
+	static inventory_manager& get();
 
-	void SetGame(CGame* pGame);
+	void set_game(CGame* game);
 
 	// Item ordering
-	void SetItemOrder(int cWhere, int cItemID);
+	void set_item_order(int where, int item_id);
 
 	// Weight/count queries
-	int CalcTotalWeight();
-	int GetTotalItemCount();
-	int GetBankItemCount();
+	int calc_total_weight();
+	int get_total_item_count();
+	int get_bank_item_count();
 
 	// Item operations
-	void EraseItem(int cItemID);
-	bool CheckItemOperationEnabled(int cItemID);
+	void erase_item(int item_id);
+	bool check_item_operation_enabled(int item_id);
 
 	// Equipment
-	void UnequipSlot(int cEquipPos);
-	void EquipItem(int cItemID);
+	void unequip_slot(int equip_pos);
+	void equip_item(int item_id);
 
 private:
-	InventoryManager() = default;
+	inventory_manager() = default;
 	CGame* m_game = nullptr;
 };

@@ -11,28 +11,28 @@ public:
 	SkillManager() = default;
 	~SkillManager() = default;
 
-	void SetGame(CGame* pGame) { m_pGame = pGame; }
+	void set_game(CGame* game) { m_game = game; }
 
 	// Skill config
-	bool bSendClientSkillConfigs(int iClientH);
-	void ReloadSkillConfigs();
+	bool send_client_skill_configs(int client_h);
+	void reload_skill_configs();
 
 	// Skill use
-	void UseSkillHandler(int iClientH, int iV1, int iV2, int iV3);
-	void ClearSkillUsingStatus(int iClientH);
-	void _TamingHandler(int iClientH, int iSkillNum, char cMapIndex, int dX, int dY);
+	void use_skill_handler(int client_h, int v1, int v2, int v3);
+	void clear_skill_using_status(int client_h);
+	void taming_handler(int client_h, int skill_num, char map_index, int dX, int dY);
 
 	// Skill mastery / SSN
-	void CalculateSSN_SkillIndex(int iClientH, short sSkillIndex, int iValue);
-	bool bCheckTotalSkillMasteryPoints(int iClientH, int iSkill);
-	int _iCalcSkillSSNpoint(int iLevel);
-	void TrainSkillResponse(bool bSuccess, int iClientH, int iSkillNum, int iSkillLevel);
+	void calculate_ssn_skill_index(int client_h, short skill_index, int value);
+	bool check_total_skill_mastery_points(int client_h, int skill);
+	int calc_skill_ssn_point(int level);
+	void train_skill_response(bool success, int client_h, int skill_num, int skill_level);
 
 	// Skill management
-	void SetDownSkillIndexHandler(int iClientH, int iSkillIndex);
-	void SkillCheck(int sTargetH);
-	void SetSkillAll(int iClientH, char* pData, size_t dwMsgSize);
+	void set_down_skill_index_handler(int client_h, int skill_index);
+	void skill_check(int target_h);
+	void set_skill_all(int client_h, char* data, size_t msg_size);
 
 private:
-	CGame* m_pGame = nullptr;
+	CGame* m_game = nullptr;
 };

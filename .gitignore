@@ -345,3 +345,6 @@ PLANS/
 tmpclaude*cwd
 nul
 !/Scripts
+
+# Backup checkpoints (bak.py)
+**/*.bak_*

@@ -12,7 +12,7 @@ namespace hb::shared::object_id {
 	constexpr uint16_t NpcMax = 30000;
 	constexpr uint16_t NearbyOffset = 30000; // Motion events add this offset
 
-	inline bool IsPlayerID(uint16_t id) { return id < PlayerMax; }
+	inline bool is_player_id(uint16_t id) { return id < PlayerMax; }
 	inline bool IsNpcID(uint16_t id) { return id >= NpcMin && id < NpcMax; }
 	inline bool IsNearbyOffset(uint16_t id) { return id >= NearbyOffset; }
 	inline uint16_t ToRealID(uint16_t id) { return id - NearbyOffset; }

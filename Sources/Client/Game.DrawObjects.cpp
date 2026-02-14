@@ -1,4 +1,4 @@
-// Game.DrawObjects.cpp: CGame partial implementation — DrawObjects coordinator + dispatchers
+// Game.draw_objects.cpp: CGame partial implementation — draw_objects coordinator + dispatchers
 //
 //////////////////////////////////////////////////////////////////////
 
@@ -31,40 +31,40 @@ struct MenuCharEquipment {
 };
 
 // Calculate equipment indices for human characters (male/female) in menu
-static void CalcHumanEquipment(const CEntityRenderState& state, bool isFemale, MenuCharEquipment& eq)
+static void CalcHumanEquipment(const CEntityRenderState& state, bool female, MenuCharEquipment& eq)
 {
 	// Sprite base IDs differ by gender
-	int UNDIES  = isFemale ? UndiesW    : UndiesM;
-	int HAIR    = isFemale ? HairW      : HairM;
-	int ARMOR   = isFemale ? BodyArmorW : BodyArmorM;
-	int BERK    = isFemale ? BerkW      : BerkM;
-	int LEGG    = isFemale ? LeggW      : LeggM;
-	int BOOT    = isFemale ? BootW      : BootM;
-	int WEAPON  = isFemale ? WeaponW    : WeaponM;
-	int SHIELD  = isFemale ? ShieldW    : ShieldM;
-	int MANTLE  = isFemale ? MantleW    : MantleM;
-	int HEAD    = isFemale ? HeadW      : HeadM;
+	int UNDIES  = female ? UndiesW    : UndiesM;
+	int HAIR    = female ? HairW      : HairM;
+	int ARMOR   = female ? BodyArmorW : BodyArmorM;
+	int BERK    = female ? BerkW      : BerkM;
+	int LEGG    = female ? LeggW      : LeggM;
+	int BOOT    = female ? BootW      : BootM;
+	int WEAPON  = female ? WeaponW    : WeaponM;
+	int SHIELD  = female ? ShieldW    : ShieldM;
+	int MANTLE  = female ? MantleW    : MantleM;
+	int HEAD    = female ? HeadW      : HeadM;
 
 	// Walking uses pose 3, standing uses pose 2
-	bool isWalking = state.m_appearance.bIsWalking;
-	int pose = isWalking ? 3 : 2;
+	bool walking = state.m_appearance.is_walking;
+	int pose = walking ? 3 : 2;
 
 	// Read from unpacked appearance
 	const auto& appr = state.m_appearance;
-	int undiesType   = appr.iUnderwearType;
-	int hairType     = appr.iHairStyle;
-	int armorType    = appr.iArmorType;
-	int armType      = appr.iArmArmorType;
-	int pantsType    = appr.iPantsType;
-	int helmType     = appr.iHelmType;
-	int bootsType    = appr.iBootsType;
-	int weaponType   = appr.iWeaponType;
-	int shieldType   = appr.iShieldType;
-	int mantleType   = appr.iMantleType;
-	bool hideArmor   = appr.bHideArmor;
+	int undiesType   = appr.underwear_type;
+	int hairType     = appr.hair_style;
+	int armorType    = appr.armor_type;
+	int armType      = appr.arm_armor_type;
+	int pantsType    = appr.pants_type;
+	int helmType     = appr.helm_type;
+	int bootsType    = appr.boots_type;
+	int weaponType   = appr.weapon_type;
+	int shieldType   = appr.shield_type;
+	int mantleType   = appr.mantle_type;
+	bool hideArmor   = appr.hide_armor;
 
 	// Body index
-	eq.body = 500 + (state.m_sOwnerType - 1) * 8 * 15 + (pose * 8);
+	eq.body = 500 + (state.m_owner_type - 1) * 8 * 15 + (pose * 8);
 
 	// Equipment indices (-1 = not equipped)
 	eq.undies    = UNDIES + undiesType * 15 + pose;
@@ -77,73 +77,73 @@ static void CalcHumanEquipment(const CEntityRenderState& state, bool isFemale, M
 	eq.helm      = (helmType != 0)  ? HEAD + helmType * 15 + pose : -1;
 
 	// Weapon/shield use direction in frame calculation
-	eq.weapon = (weaponType != 0) ? WEAPON + weaponType * 64 + 8 * pose + (state.m_iDir - 1) : -1;
+	eq.weapon = (weaponType != 0) ? WEAPON + weaponType * 64 + 8 * pose + (state.m_dir - 1) : -1;
 	eq.shield = (shieldType != 0) ? SHIELD + shieldType * 8 + pose : -1;
 
 	// Female skirt check (pants type 1)
-	eq.skirtDraw = isFemale && (pantsType == 1);
+	eq.skirtDraw = female && (pantsType == 1);
 }
 
-hb::shared::sprite::BoundRect CGame::DrawObject_OnMove_ForMenu(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime)
+hb::shared::sprite::BoundRect CGame::draw_object_on_move_for_menu(int indexX, int indexY, int sX, int sY, bool trans, uint32_t time)
 {
-	if (m_entityState.m_iDir < 1 || m_entityState.m_iDir > 8) return {};
+	if (m_entity_state.m_dir < 1 || m_entity_state.m_dir > 8) return {};
 
 	// Extract equipment colors from packed appearance color
 	MenuCharEquipment eq = {};
-	eq.weaponColor = m_entityState.m_appearance.iWeaponColor;
-	eq.shieldColor = m_entityState.m_appearance.iShieldColor;
-	eq.armorColor  = m_entityState.m_appearance.iArmorColor;
-	eq.mantleColor = m_entityState.m_appearance.iMantleColor;
-	eq.armColor    = m_entityState.m_appearance.iArmColor;
-	eq.pantsColor  = m_entityState.m_appearance.iPantsColor;
-	eq.bootsColor  = m_entityState.m_appearance.iBootsColor;
-	eq.helmColor   = m_entityState.m_appearance.iHelmColor;
+	eq.weaponColor = m_entity_state.m_appearance.weapon_color;
+	eq.shieldColor = m_entity_state.m_appearance.shield_color;
+	eq.armorColor  = m_entity_state.m_appearance.armor_color;
+	eq.mantleColor = m_entity_state.m_appearance.mantle_color;
+	eq.armColor    = m_entity_state.m_appearance.arm_color;
+	eq.pantsColor  = m_entity_state.m_appearance.pants_color;
+	eq.bootsColor  = m_entity_state.m_appearance.boots_color;
+	eq.helmColor   = m_entity_state.m_appearance.helm_color;
 
 	// Calculate equipment indices based on character type
-	bool isMob = false;
-	switch (m_entityState.m_sOwnerType) {
+	bool mob = false;
+	switch (m_entity_state.m_owner_type) {
 	case 1: case 2: case 3:  // Male
-		CalcHumanEquipment(m_entityState, false, eq);
+		CalcHumanEquipment(m_entity_state, false, eq);
 		break;
 	case 4: case 5: case 6:  // Female
-		CalcHumanEquipment(m_entityState, true, eq);
+		CalcHumanEquipment(m_entity_state, true, eq);
 		break;
 	default:  // Mob/NPC
-		if (m_entityState.m_sOwnerType < 10) return {};
-		eq.body = Mob + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (1 * 8);
+		if (m_entity_state.m_owner_type < 10) return {};
+		eq.body = Mob + (m_entity_state.m_owner_type - 10) * 8 * 7 + (1 * 8);
 		eq.undies = eq.hair = eq.bodyArmor = eq.armArmor = -1;
 		eq.boots = eq.pants = eq.weapon = eq.shield = eq.helm = eq.mantle = -1;
-		isMob = true;
+		mob = true;
 		break;
 	}
 	// Helper lambdas for drawing with optional color tint
-	int dirFrame = (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame;
-	int hairColor = m_entityState.m_appearance.iHairColor;
+	int dirFrame = (m_entity_state.m_dir - 1) * 8 + m_entity_state.m_frame;
+	int hairColor = m_entity_state.m_appearance.hair_color;
 
 	auto drawEquipment = [&](int idx, int color) {
 		if (idx == -1) return;
 		if (color == 0)
-			m_pSprite[idx]->Draw(sX, sY, dirFrame);
+			m_sprite[idx]->draw(sX, sY, dirFrame);
 		else
-			m_pSprite[idx]->Draw(sX, sY, dirFrame, hb::shared::sprite::DrawParams::Tint(GameColors::Items[color].r, GameColors::Items[color].g, GameColors::Items[color].b));
+			m_sprite[idx]->draw(sX, sY, dirFrame, hb::shared::sprite::DrawParams::tint(GameColors::Items[color].r, GameColors::Items[color].g, GameColors::Items[color].b));
 	};
 
 	auto drawWeapon = [&]() {
 		if (eq.weapon == -1) return;
 		if (eq.weaponColor == 0)
-			m_pSprite[eq.weapon]->Draw(sX, sY, m_entityState.m_iFrame);
+			m_sprite[eq.weapon]->draw(sX, sY, m_entity_state.m_frame);
 		else
-			m_pSprite[eq.weapon]->Draw(sX, sY, m_entityState.m_iFrame, hb::shared::sprite::DrawParams::Tint(GameColors::Weapons[eq.weaponColor].r, GameColors::Weapons[eq.weaponColor].g, GameColors::Weapons[eq.weaponColor].b));
+			m_sprite[eq.weapon]->draw(sX, sY, m_entity_state.m_frame, hb::shared::sprite::DrawParams::tint(GameColors::Weapons[eq.weaponColor].r, GameColors::Weapons[eq.weaponColor].g, GameColors::Weapons[eq.weaponColor].b));
 	};
 
 	auto drawMantle = [&](int order) {
-		if (eq.mantle != -1 && mantle_draw_order[m_entityState.m_iDir] == order)
+		if (eq.mantle != -1 && mantle_draw_order[m_entity_state.m_dir] == order)
 			drawEquipment(eq.mantle, eq.mantleColor);
 	};
 
 	// Check if mob type should skip shadow
 	auto shouldSkipShadow = [&]() {
-		switch (m_entityState.m_sOwnerType) {
+		switch (m_entity_state.m_owner_type) {
 		case hb::shared::owner::Slime: case hb::shared::owner::EnergySphere: case hb::shared::owner::TigerWorm: case hb::shared::owner::Catapult: case hb::shared::owner::CannibalPlant: case hb::shared::owner::IceGolem: case hb::shared::owner::Abaddon: case hb::shared::owner::Gate:
 			return true;
 		default:
@@ -151,21 +151,21 @@ hb::shared::sprite::BoundRect CGame::DrawObject_OnMove_ForMenu(int indexX, int i
 		}
 	};
 
-	// Draw body shadow
-	if (!shouldSkipShadow() && ConfigManager::Get().GetDetailLevel() != 0 && !isMob)
-		m_pSprite[eq.body + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, hb::shared::sprite::DrawParams::Shadow());
+	// draw body shadow
+	if (!shouldSkipShadow() && config_manager::get().get_detail_level() != 0 && !mob)
+		m_sprite[eq.body + (m_entity_state.m_dir - 1)]->draw(sX, sY, m_entity_state.m_frame, hb::shared::sprite::DrawParams::shadow());
 
-	// Draw weapon first if drawing order is 1
-	if (weapon_draw_order[m_entityState.m_iDir] == 1)
+	// draw weapon first if drawing order is 1
+	if (weapon_draw_order[m_entity_state.m_dir] == 1)
 		drawWeapon();
 
-	// Draw body
-	if (isMob)
-		m_pSprite[eq.body + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, hb::shared::sprite::DrawParams::Alpha(0.5f));
+	// draw body
+	if (mob)
+		m_sprite[eq.body + (m_entity_state.m_dir - 1)]->draw(sX, sY, m_entity_state.m_frame, hb::shared::sprite::DrawParams::alpha_blend(0.5f));
 	else
-		m_pSprite[eq.body + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame);
+		m_sprite[eq.body + (m_entity_state.m_dir - 1)]->draw(sX, sY, m_entity_state.m_frame);
 
-	// Draw equipment layers (back-to-front order)
+	// draw equipment layers (back-to-front order)
 	drawMantle(0);  // Mantle behind body
 	drawEquipment(eq.undies, 0);
 
@@ -173,7 +173,7 @@ hb::shared::sprite::BoundRect CGame::DrawObject_OnMove_ForMenu(int indexX, int i
 	if (eq.hair != -1 && eq.helm == -1)
 	{
 		const auto& hc = GameColors::Hair[hairColor];
-		m_pSprite[eq.hair]->Draw(sX, sY, dirFrame, hb::shared::sprite::DrawParams::Tint(hc.r, hc.g, hc.b));
+		m_sprite[eq.hair]->draw(sX, sY, dirFrame, hb::shared::sprite::DrawParams::tint(hc.r, hc.g, hc.b));
 	}
 
 	// Boots before pants if wearing skirt
@@ -193,152 +193,152 @@ hb::shared::sprite::BoundRect CGame::DrawObject_OnMove_ForMenu(int indexX, int i
 	drawEquipment(eq.shield, eq.shieldColor);
 	drawMantle(1);  // Mantle in front
 
-	// Draw weapon last if drawing order is not 1
-	if (weapon_draw_order[m_entityState.m_iDir] != 1)
+	// draw weapon last if drawing order is not 1
+	if (weapon_draw_order[m_entity_state.m_dir] != 1)
 		drawWeapon();
 
 	// Chat message
-	if (m_entityState.m_iChatIndex != 0)
+	if (m_entity_state.m_chat_index != 0)
 	{
-		if (m_floatingText.IsOccupied(m_entityState.m_iChatIndex))
-			m_floatingText.DrawSingle(m_entityState.m_iChatIndex, sX, sY, m_dwCurTime, m_Renderer);
+		if (m_floating_text.is_occupied(m_entity_state.m_chat_index))
+			m_floating_text.draw_single(m_entity_state.m_chat_index, sX, sY, m_cur_time, m_Renderer);
 		else
-			m_pMapData->ClearChatMsg(indexX, indexY);
+			m_map_data->clear_chat_msg(indexX, indexY);
 	}
 
-	m_entityState.m_iMoveOffsetX = 0;
-	m_entityState.m_iMoveOffsetY = 0;
-	return m_pSprite[eq.body + (m_entityState.m_iDir - 1)]->GetBoundRect();
+	m_entity_state.m_move_offset_x = 0;
+	m_entity_state.m_move_offset_y = 0;
+	return m_sprite[eq.body + (m_entity_state.m_dir - 1)]->GetBoundRect();
 }
 
 // --- DrawObject dispatcher functions ---
 
-hb::shared::sprite::BoundRect CGame::DrawObject_OnStop(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime)
+hb::shared::sprite::BoundRect CGame::draw_object_on_stop(int indexX, int indexY, int sX, int sY, bool trans, uint32_t time)
 {
-	if (m_entityState.IsPlayer())
-		return m_playerRenderer.DrawStop(indexX, indexY, sX, sY, bTrans, dwTime);
+	if (m_entity_state.is_player())
+		return m_player_renderer.draw_stop(indexX, indexY, sX, sY, trans, time);
 	else
-		return m_npcRenderer.DrawStop(indexX, indexY, sX, sY, bTrans, dwTime);
+		return m_npc_renderer.draw_stop(indexX, indexY, sX, sY, trans, time);
 }
 
-hb::shared::sprite::BoundRect CGame::DrawObject_OnMove(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime)
+hb::shared::sprite::BoundRect CGame::draw_object_on_move(int indexX, int indexY, int sX, int sY, bool trans, uint32_t time)
 {
-	if (m_entityState.IsPlayer())
-		return m_playerRenderer.DrawMove(indexX, indexY, sX, sY, bTrans, dwTime);
+	if (m_entity_state.is_player())
+		return m_player_renderer.draw_move(indexX, indexY, sX, sY, trans, time);
 	else
-		return m_npcRenderer.DrawMove(indexX, indexY, sX, sY, bTrans, dwTime);
+		return m_npc_renderer.draw_move(indexX, indexY, sX, sY, trans, time);
 }
 
-hb::shared::sprite::BoundRect CGame::DrawObject_OnRun(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime)
+hb::shared::sprite::BoundRect CGame::draw_object_on_run(int indexX, int indexY, int sX, int sY, bool trans, uint32_t time)
 {
-	if (m_entityState.IsPlayer())
-		return m_playerRenderer.DrawRun(indexX, indexY, sX, sY, bTrans, dwTime);
+	if (m_entity_state.is_player())
+		return m_player_renderer.draw_run(indexX, indexY, sX, sY, trans, time);
 	else
-		return m_npcRenderer.DrawRun(indexX, indexY, sX, sY, bTrans, dwTime);
+		return m_npc_renderer.draw_run(indexX, indexY, sX, sY, trans, time);
 }
 
-hb::shared::sprite::BoundRect CGame::DrawObject_OnAttack(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime)
+hb::shared::sprite::BoundRect CGame::draw_object_on_attack(int indexX, int indexY, int sX, int sY, bool trans, uint32_t time)
 {
-	if (m_entityState.IsPlayer())
-		return m_playerRenderer.DrawAttack(indexX, indexY, sX, sY, bTrans, dwTime);
+	if (m_entity_state.is_player())
+		return m_player_renderer.draw_attack(indexX, indexY, sX, sY, trans, time);
 	else
-		return m_npcRenderer.DrawAttack(indexX, indexY, sX, sY, bTrans, dwTime);
+		return m_npc_renderer.draw_attack(indexX, indexY, sX, sY, trans, time);
 }
 
-hb::shared::sprite::BoundRect CGame::DrawObject_OnAttackMove(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime)
+hb::shared::sprite::BoundRect CGame::draw_object_on_attack_move(int indexX, int indexY, int sX, int sY, bool trans, uint32_t time)
 {
-	if (m_entityState.IsPlayer())
-		return m_playerRenderer.DrawAttackMove(indexX, indexY, sX, sY, bTrans, dwTime);
+	if (m_entity_state.is_player())
+		return m_player_renderer.draw_attack_move(indexX, indexY, sX, sY, trans, time);
 	else
-		return m_npcRenderer.DrawAttackMove(indexX, indexY, sX, sY, bTrans, dwTime);
+		return m_npc_renderer.draw_attack_move(indexX, indexY, sX, sY, trans, time);
 }
 
-hb::shared::sprite::BoundRect CGame::DrawObject_OnMagic(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime)
+hb::shared::sprite::BoundRect CGame::draw_object_on_magic(int indexX, int indexY, int sX, int sY, bool trans, uint32_t time)
 {
-	if (m_entityState.IsPlayer())
-		return m_playerRenderer.DrawMagic(indexX, indexY, sX, sY, bTrans, dwTime);
+	if (m_entity_state.is_player())
+		return m_player_renderer.draw_magic(indexX, indexY, sX, sY, trans, time);
 	else
-		return m_npcRenderer.DrawMagic(indexX, indexY, sX, sY, bTrans, dwTime);
+		return m_npc_renderer.draw_magic(indexX, indexY, sX, sY, trans, time);
 }
 
-hb::shared::sprite::BoundRect CGame::DrawObject_OnGetItem(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime)
+hb::shared::sprite::BoundRect CGame::draw_object_on_get_item(int indexX, int indexY, int sX, int sY, bool trans, uint32_t time)
 {
-	if (m_entityState.IsPlayer())
-		return m_playerRenderer.DrawGetItem(indexX, indexY, sX, sY, bTrans, dwTime);
+	if (m_entity_state.is_player())
+		return m_player_renderer.draw_get_item(indexX, indexY, sX, sY, trans, time);
 	else
-		return m_npcRenderer.DrawGetItem(indexX, indexY, sX, sY, bTrans, dwTime);
+		return m_npc_renderer.draw_get_item(indexX, indexY, sX, sY, trans, time);
 }
 
-hb::shared::sprite::BoundRect CGame::DrawObject_OnDamage(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime)
+hb::shared::sprite::BoundRect CGame::draw_object_on_damage(int indexX, int indexY, int sX, int sY, bool trans, uint32_t time)
 {
-	if (m_entityState.IsPlayer())
-		return m_playerRenderer.DrawDamage(indexX, indexY, sX, sY, bTrans, dwTime);
+	if (m_entity_state.is_player())
+		return m_player_renderer.draw_damage(indexX, indexY, sX, sY, trans, time);
 	else
-		return m_npcRenderer.DrawDamage(indexX, indexY, sX, sY, bTrans, dwTime);
+		return m_npc_renderer.draw_damage(indexX, indexY, sX, sY, trans, time);
 }
 
-hb::shared::sprite::BoundRect CGame::DrawObject_OnDamageMove(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime)
+hb::shared::sprite::BoundRect CGame::draw_object_on_damage_move(int indexX, int indexY, int sX, int sY, bool trans, uint32_t time)
 {
-	if (m_entityState.IsPlayer())
-		return m_playerRenderer.DrawDamageMove(indexX, indexY, sX, sY, bTrans, dwTime);
+	if (m_entity_state.is_player())
+		return m_player_renderer.draw_damage_move(indexX, indexY, sX, sY, trans, time);
 	else
-		return m_npcRenderer.DrawDamageMove(indexX, indexY, sX, sY, bTrans, dwTime);
+		return m_npc_renderer.draw_damage_move(indexX, indexY, sX, sY, trans, time);
 }
 
-hb::shared::sprite::BoundRect CGame::DrawObject_OnDying(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime)
+hb::shared::sprite::BoundRect CGame::draw_object_on_dying(int indexX, int indexY, int sX, int sY, bool trans, uint32_t time)
 {
-	if (m_entityState.IsPlayer())
-		return m_playerRenderer.DrawDying(indexX, indexY, sX, sY, bTrans, dwTime);
+	if (m_entity_state.is_player())
+		return m_player_renderer.draw_dying(indexX, indexY, sX, sY, trans, time);
 	else
-		return m_npcRenderer.DrawDying(indexX, indexY, sX, sY, bTrans, dwTime);
+		return m_npc_renderer.draw_dying(indexX, indexY, sX, sY, trans, time);
 }
 
-hb::shared::sprite::BoundRect CGame::DrawObject_OnDead(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime)
+hb::shared::sprite::BoundRect CGame::draw_object_on_dead(int indexX, int indexY, int sX, int sY, bool trans, uint32_t time)
 {
-	if (m_entityState.IsPlayer())
-		return m_playerRenderer.DrawDead(indexX, indexY, sX, sY, bTrans, dwTime);
+	if (m_entity_state.is_player())
+		return m_player_renderer.draw_dead(indexX, indexY, sX, sY, trans, time);
 	else
-		return m_npcRenderer.DrawDead(indexX, indexY, sX, sY, bTrans, dwTime);
+		return m_npc_renderer.draw_dead(indexX, indexY, sX, sY, trans, time);
 }
 
-// --- DrawObjects coordinator ---
+// --- draw_objects coordinator ---
 
-void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, short sModX, short sModY, short msX, short msY)
+void CGame::draw_objects(short pivot_x, short pivot_y, short div_x, short div_y, short mod_x, short mod_y, short mouse_x, short mouse_y)
 {
-	int ix, iy, indexX, indexY, dX, dY, iDvalue;
-	char cItemColor;
-	bool bIsPlayerDrawed = false;
-	bool bRet = false;
-	short sObjSpr, sObjSprFrame, sDynamicObject, sDynamicObjectFrame;
-	char cDynamicObjectData1, cDynamicObjectData2, cDynamicObjectData3, cDynamicObjectData4;
+	int ix, iy, indexX, indexY, dX, dY, dvalue;
+	char item_color;
+	bool is_player_drawed = false;
+	bool ret = false;
+	short obj_spr, obj_spr_frame, dynamic_object, dynamic_object_frame;
+	char dynamic_object_data1, dynamic_object_data2, dynamic_object_data3, dynamic_object_data4;
 	// Xmas tree bulb positions — static arrays shared across all trees (same bulb pattern each frame).
 	// 100 entries matches the loop count at line ~725; indexed by j in [0..99].
 	static int ix1[100];
 	static int iy2[100];
-	static int iXmasTreeBulbDelay = 76;
+	static int xmas_tree_bulb_delay = 76;
 	int idelay = 75;
 
 	// Item's desc on floor
-	uint32_t dwItemAttr, dwItemSelectedAttr;
-	int iItemSelectedx, iItemSelectedy;
-	short sItemID, sItemSelectedID = -1;
+	uint32_t item_attr, item_selected_attr;
+	int item_selectedx, item_selectedy;
+	short item_id, item_selected_id = -1;
 
 	int res_x = LOGICAL_MAX_X();
 	int res_y = LOGICAL_MAX_Y();
 	int res_msy = LOGICAL_HEIGHT() - 49;
 
-	if (sDivY < 0 || sDivX < 0) return;
+	if (div_y < 0 || div_x < 0) return;
 
-	// Initialize Picking system for this frame
-	CursorTarget::BeginFrame();
+	// initialize Picking system for this frame
+	CursorTarget::begin_frame();
 
-	uint32_t dwTime = m_dwCurTime;
+	uint32_t time = m_cur_time;
 
 	// Pre-calculate map data bounds for efficient boundary checking
-	const short mapMinX = m_pMapData->m_sPivotX;
-	const short mapMaxX = m_pMapData->m_sPivotX + MapDataSizeX;
-	const short mapMinY = m_pMapData->m_sPivotY;
-	const short mapMaxY = m_pMapData->m_sPivotY + MapDataSizeY;
+	const short mapMinX = m_map_data->m_pivot_x;
+	const short mapMaxX = m_map_data->m_pivot_x + MapDataSizeX;
+	const short mapMinY = m_map_data->m_pivot_y;
+	const short mapMaxY = m_map_data->m_pivot_y + MapDataSizeY;
 
 	// Tile-based loop bounds (much cleaner than pixel-based)
 	// Buffer: 7 tiles around visible area for smooth object sliding
@@ -356,235 +356,235 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 	const int endTileY = visibleTilesY + BUFFER_TILES + EXTRA_BOTTOM_TILES;
 
 	// Visibility bounds in pixels (for culling non-visible tiles from detailed processing)
-	const int visMinX = -sModX;
+	const int visMinX = -mod_x;
 	const int visMaxX = res_x + 16;
-	const int visMinY = -sModY;
+	const int visMinY = -mod_y;
 	const int visMaxY = res_y + 32 + 16;
 
 	// Loop over tiles, calculate pixel positions when needed
 	for (int tileY = startTileY; tileY <= endTileY; tileY++)
 	{
-		indexY = sDivY + sPivotY + tileY;
-		iy = tileY * TILE_SIZE - sModY;
+		indexY = div_y + pivot_y + tileY;
+		iy = tileY * TILE_SIZE - mod_y;
 
 		for (int tileX = startTileX; tileX <= endTileX; tileX++)
 		{
-			indexX = sDivX + sPivotX + tileX;
-			ix = tileX * TILE_SIZE - sModX;
+			indexX = div_x + pivot_x + tileX;
+			ix = tileX * TILE_SIZE - mod_x;
 
-			sDynamicObject = 0;
-			bRet = false;
+			dynamic_object = 0;
+			ret = false;
 			if ((ix >= visMinX) && (ix <= visMaxX) && (iy >= visMinY) && (iy <= visMaxY))
 			{
-				m_entityState.m_wObjectID = m_entityState.m_sOwnerType = 0; m_entityState.m_status.Clear();
-				m_entityState.m_appearance.Clear();
-				m_entityState.m_iDir = m_entityState.m_iFrame = 0;
-				m_entityState.m_iEffectType = m_entityState.m_iEffectFrame = m_entityState.m_iChatIndex = 0;
-				m_entityState.m_cName.fill('\0');
+				m_entity_state.m_object_id = m_entity_state.m_owner_type = 0; m_entity_state.m_status.clear();
+				m_entity_state.m_appearance.clear();
+				m_entity_state.m_dir = m_entity_state.m_frame = 0;
+				m_entity_state.m_effect_type = m_entity_state.m_effect_frame = m_entity_state.m_chat_index = 0;
+				m_entity_state.m_name.fill('\0');
 				if ((indexX < mapMinX) || (indexX > mapMaxX) ||
 					(indexY < mapMinY) || (indexY > mapMaxY))
 				{
-					sItemID = 0;
-					bRet = false;
-					cItemColor = 0;
-					dwItemAttr = 0;
+					item_id = 0;
+					ret = false;
+					item_color = 0;
+					item_attr = 0;
 				}
 				else
 				{
-					m_entityState.m_iDataX = dX = indexX - mapMinX;
-					m_entityState.m_iDataY = dY = indexY - mapMinY;
-					m_entityState.m_wObjectID = m_pMapData->m_pData[dX][dY].m_wDeadObjectID;
-					m_entityState.m_sOwnerType = m_pMapData->m_pData[dX][dY].m_sDeadOwnerType;
-					m_entityState.m_sNpcConfigId = m_pMapData->m_pData[dX][dY].m_sDeadNpcConfigId;
-					m_entityState.m_iDir = m_pMapData->m_pData[dX][dY].m_cDeadDir;
-					m_entityState.m_appearance = m_pMapData->m_pData[dX][dY].m_deadAppearance;
-					m_entityState.m_iFrame = m_pMapData->m_pData[dX][dY].m_cDeadOwnerFrame;
-					m_entityState.m_iChatIndex = m_pMapData->m_pData[dX][dY].m_iDeadChatMsg;
-					m_entityState.m_status = m_pMapData->m_pData[dX][dY].m_deadStatus;
-					std::snprintf(m_entityState.m_cName.data(), m_entityState.m_cName.size(), "%s", m_pMapData->m_pData[dX][dY].m_cDeadOwnerName.c_str());
-					sItemID = m_pMapData->m_pData[dX][dY].m_sItemID;
-					dwItemAttr = m_pMapData->m_pData[dX][dY].m_dwItemAttr;
-					cItemColor = m_pMapData->m_pData[dX][dY].m_cItemColor & 0x0F;
-					sDynamicObject = m_pMapData->m_pData[dX][dY].m_sDynamicObjectType;
-					sDynamicObjectFrame = static_cast<short>(m_pMapData->m_pData[dX][dY].m_cDynamicObjectFrame);
-					cDynamicObjectData1 = m_pMapData->m_pData[dX][dY].m_cDynamicObjectData1;
-					cDynamicObjectData2 = m_pMapData->m_pData[dX][dY].m_cDynamicObjectData2;
-					cDynamicObjectData3 = m_pMapData->m_pData[dX][dY].m_cDynamicObjectData3;
-					cDynamicObjectData4 = m_pMapData->m_pData[dX][dY].m_cDynamicObjectData4;
+					m_entity_state.m_data_x = dX = indexX - mapMinX;
+					m_entity_state.m_data_y = dY = indexY - mapMinY;
+					m_entity_state.m_object_id = m_map_data->m_data[dX][dY].m_dead_object_id;
+					m_entity_state.m_owner_type = m_map_data->m_data[dX][dY].m_dead_owner_type;
+					m_entity_state.m_npc_config_id = m_map_data->m_data[dX][dY].m_dead_npc_config_id;
+					m_entity_state.m_dir = m_map_data->m_data[dX][dY].m_dead_dir;
+					m_entity_state.m_appearance = m_map_data->m_data[dX][dY].m_dead_appearance;
+					m_entity_state.m_frame = m_map_data->m_data[dX][dY].m_dead_owner_frame;
+					m_entity_state.m_chat_index = m_map_data->m_data[dX][dY].m_dead_chat_msg;
+					m_entity_state.m_status = m_map_data->m_data[dX][dY].m_deadStatus;
+					std::snprintf(m_entity_state.m_name.data(), m_entity_state.m_name.size(), "%s", m_map_data->m_data[dX][dY].m_dead_owner_name.c_str());
+					item_id = m_map_data->m_data[dX][dY].m_item_id;
+					item_attr = m_map_data->m_data[dX][dY].m_item_attr;
+					item_color = m_map_data->m_data[dX][dY].m_item_color & 0x0F;
+					dynamic_object = m_map_data->m_data[dX][dY].m_dynamic_object_type;
+					dynamic_object_frame = static_cast<short>(m_map_data->m_data[dX][dY].m_dynamic_object_frame);
+					dynamic_object_data1 = m_map_data->m_data[dX][dY].m_dynamic_object_data_1;
+					dynamic_object_data2 = m_map_data->m_data[dX][dY].m_dynamic_object_data_2;
+					dynamic_object_data3 = m_map_data->m_data[dX][dY].m_dynamic_object_data_3;
+					dynamic_object_data4 = m_map_data->m_data[dX][dY].m_dynamic_object_data_4;
 
-					bRet = true;
+					ret = true;
 				}
 
-				if ((bRet == true) && (sItemID != 0) && m_pItemConfigList[sItemID] != 0)
+				if ((ret == true) && (item_id != 0) && m_item_config_list[item_id] != 0)
 				{
-					if (cItemColor == 0)
-						m_pSprite[ItemGroundPivotPoint + m_pItemConfigList[sItemID]->m_sSprite]->Draw(ix, iy, m_pItemConfigList[sItemID]->m_sSpriteFrame);
+					if (item_color == 0)
+						m_sprite[ItemGroundPivotPoint + m_item_config_list[item_id]->m_sprite]->draw(ix, iy, m_item_config_list[item_id]->m_sprite_frame);
 					else
 					{
-						switch (m_pItemConfigList[sItemID]->m_sSprite) {
+						switch (m_item_config_list[item_id]->m_sprite) {
 						case 1: // Swds
 						case 2: // Bows
 						case 3: // Shields
 						case 15: // Axes/hammers ground sprite (not ShopKeeper NPC — coincidental value match)
-							m_pSprite[ItemGroundPivotPoint + m_pItemConfigList[sItemID]->m_sSprite]->Draw(ix, iy, m_pItemConfigList[sItemID]->m_sSpriteFrame, hb::shared::sprite::DrawParams::Tint(GameColors::Weapons[cItemColor].r, GameColors::Weapons[cItemColor].g, GameColors::Weapons[cItemColor].b));
+							m_sprite[ItemGroundPivotPoint + m_item_config_list[item_id]->m_sprite]->draw(ix, iy, m_item_config_list[item_id]->m_sprite_frame, hb::shared::sprite::DrawParams::tint(GameColors::Weapons[item_color].r, GameColors::Weapons[item_color].g, GameColors::Weapons[item_color].b));
 							break;
 						default:
-							m_pSprite[ItemGroundPivotPoint + m_pItemConfigList[sItemID]->m_sSprite]->Draw(ix, iy, m_pItemConfigList[sItemID]->m_sSpriteFrame, hb::shared::sprite::DrawParams::Tint(GameColors::Items[cItemColor].r, GameColors::Items[cItemColor].g, GameColors::Items[cItemColor].b));
+							m_sprite[ItemGroundPivotPoint + m_item_config_list[item_id]->m_sprite]->draw(ix, iy, m_item_config_list[item_id]->m_sprite_frame, hb::shared::sprite::DrawParams::tint(GameColors::Items[item_color].r, GameColors::Items[item_color].g, GameColors::Items[item_color].b));
 							break;
 						}
 					}
 
-					if (hb::shared::input::is_shift_down() && msX >= ix - 16 && msY >= iy - 16 && msX <= ix + 16 && msY <= iy + 16) {
-						sItemSelectedID = sItemID;
-						dwItemSelectedAttr = dwItemAttr;
-						iItemSelectedx = ix;
-						iItemSelectedy = iy;
+					if (hb::shared::input::is_shift_down() && mouse_x >= ix - 16 && mouse_y >= iy - 16 && mouse_x <= ix + 16 && mouse_y <= iy + 16) {
+						item_selected_id = item_id;
+						item_selected_attr = item_attr;
+						item_selectedx = ix;
+						item_selectedy = iy;
 					}
 
 					// Test ground item with Picking system
-					CursorTarget::TestGroundItem(ix, iy, res_msy);
+					CursorTarget::test_ground_item(ix, iy, res_msy);
 				}
 
-				if ((bRet == true) && (m_entityState.m_wObjectID != 0))
+				if ((ret == true) && (m_entity_state.m_object_id != 0))
 				{
-					hb::shared::sprite::BoundRect bounds = DrawObject_OnDead(indexX, indexY, ix, iy, false, dwTime);
+					hb::shared::sprite::BoundRect bounds = draw_object_on_dead(indexX, indexY, ix, iy, false, time);
 
 					// Build picking info for dead object
 					TargetObjectInfo info = {};
-					info.objectID = m_entityState.m_wObjectID;
-					info.mapX = indexX;
-					info.mapY = indexY;
-					info.screenX = ix;
-					info.screenY = iy;
-					info.dataX = m_entityState.m_iDataX;
-					info.dataY = m_entityState.m_iDataY;
-					info.ownerType = m_entityState.m_sOwnerType;
-					info.action = ObjectDead;
-					info.direction = m_entityState.m_iDir;
-					info.frame = m_entityState.m_iFrame;
-					info.name = m_entityState.m_cName.data();
-					info.appearance = m_entityState.m_appearance;
-					info.status = m_entityState.m_status;
-					info.type = FocusedObjectType::DeadBody;
-					CursorTarget::TestObject(bounds, info, iy, res_msy);
+					info.m_object_id = m_entity_state.m_object_id;
+					info.m_map_x = indexX;
+					info.m_map_y = indexY;
+					info.m_screen_x = ix;
+					info.m_screen_y = iy;
+					info.m_data_x = m_entity_state.m_data_x;
+					info.m_data_y = m_entity_state.m_data_y;
+					info.m_owner_type = m_entity_state.m_owner_type;
+					info.m_action = ObjectDead;
+					info.m_direction = m_entity_state.m_dir;
+					info.m_frame = m_entity_state.m_frame;
+					info.m_name = m_entity_state.m_name.data();
+					info.m_appearance = m_entity_state.m_appearance;
+					info.m_status = m_entity_state.m_status;
+					info.m_type = FocusedObjectType::DeadBody;
+					CursorTarget::test_object(bounds, info, iy, res_msy);
 				}
 
-				m_entityState.m_wObjectID = m_entityState.m_sOwnerType = 0; m_entityState.m_status.Clear();
-				m_entityState.m_appearance.Clear();
-				m_entityState.m_iFrame = m_entityState.m_iDir = 0;
-				m_entityState.m_iEffectType = m_entityState.m_iEffectFrame = m_entityState.m_iChatIndex = 0;
-				m_entityState.m_cName.fill('\0');
+				m_entity_state.m_object_id = m_entity_state.m_owner_type = 0; m_entity_state.m_status.clear();
+				m_entity_state.m_appearance.clear();
+				m_entity_state.m_frame = m_entity_state.m_dir = 0;
+				m_entity_state.m_effect_type = m_entity_state.m_effect_frame = m_entity_state.m_chat_index = 0;
+				m_entity_state.m_name.fill('\0');
 
 				if ((indexX < mapMinX) || (indexX > mapMaxX) ||
 					(indexY < mapMinY) || (indexY > mapMaxY))
 				{
-					sItemID = 0;
-					bRet = false;
+					item_id = 0;
+					ret = false;
 				}
 				else
 				{
-					m_entityState.m_iDataX = dX = indexX - mapMinX;
-					m_entityState.m_iDataY = dY = indexY - mapMinY;
-					m_entityState.m_wObjectID = m_pMapData->m_pData[dX][dY].m_wObjectID;
-					m_entityState.m_sOwnerType = m_pMapData->m_pData[dX][dY].m_sOwnerType;
-					m_entityState.m_sNpcConfigId = m_pMapData->m_pData[dX][dY].m_sNpcConfigId;
-					m_entityState.m_iAction = m_pMapData->m_pData[dX][dY].m_animation.cAction;
-					m_entityState.m_status = m_pMapData->m_pData[dX][dY].m_status;
-					m_entityState.m_iDir = m_pMapData->m_pData[dX][dY].m_animation.cDir;
-					m_entityState.m_appearance = m_pMapData->m_pData[dX][dY].m_appearance;
-					m_entityState.m_iFrame = m_pMapData->m_pData[dX][dY].m_animation.cCurrentFrame;
-					m_entityState.m_iChatIndex = m_pMapData->m_pData[dX][dY].m_iChatMsg;
-					m_entityState.m_iEffectType = m_pMapData->m_pData[dX][dY].m_iEffectType;
-					m_entityState.m_iEffectFrame = m_pMapData->m_pData[dX][dY].m_iEffectFrame;
+					m_entity_state.m_data_x = dX = indexX - mapMinX;
+					m_entity_state.m_data_y = dY = indexY - mapMinY;
+					m_entity_state.m_object_id = m_map_data->m_data[dX][dY].m_object_id;
+					m_entity_state.m_owner_type = m_map_data->m_data[dX][dY].m_owner_type;
+					m_entity_state.m_npc_config_id = m_map_data->m_data[dX][dY].m_npc_config_id;
+					m_entity_state.m_action = m_map_data->m_data[dX][dY].m_animation.m_action;
+					m_entity_state.m_status = m_map_data->m_data[dX][dY].m_status;
+					m_entity_state.m_dir = m_map_data->m_data[dX][dY].m_animation.m_dir;
+					m_entity_state.m_appearance = m_map_data->m_data[dX][dY].m_appearance;
+					m_entity_state.m_frame = m_map_data->m_data[dX][dY].m_animation.m_current_frame;
+					m_entity_state.m_chat_index = m_map_data->m_data[dX][dY].m_chat_msg;
+					m_entity_state.m_effect_type = m_map_data->m_data[dX][dY].m_effect_type;
+					m_entity_state.m_effect_frame = m_map_data->m_data[dX][dY].m_effect_frame;
 
-					std::snprintf(m_entityState.m_cName.data(), m_entityState.m_cName.size(), "%s", m_pMapData->m_pData[dX][dY].m_cOwnerName.c_str());
-					bRet = true;
+					std::snprintf(m_entity_state.m_name.data(), m_entity_state.m_name.size(), "%s", m_map_data->m_data[dX][dY].m_owner_name.c_str());
+					ret = true;
 
-					if (m_iIlusionOwnerH != 0)
+					if (m_ilusion_owner_h != 0)
 					{
-						if ((strcmp(m_entityState.m_cName.data(), m_pPlayer->m_cPlayerName.c_str()) != 0) && (!hb::shared::owner::IsNPC(m_entityState.m_sOwnerType)))
+						if ((strcmp(m_entity_state.m_name.data(), m_player->m_player_name.c_str()) != 0) && (!hb::shared::owner::is_npc(m_entity_state.m_owner_type)))
 						{
-							m_entityState.m_sOwnerType = m_cIlusionOwnerType;
-							m_entityState.m_status = m_pPlayer->m_illusionStatus;
-							m_entityState.m_appearance = m_pPlayer->m_illusionAppearance;
+							m_entity_state.m_owner_type = m_ilusion_owner_type;
+							m_entity_state.m_status = m_player->m_illusionStatus;
+							m_entity_state.m_appearance = m_player->m_illusionAppearance;
 						}
 					}
 				}
 
-				if ((bRet == true) && (m_entityState.m_cName[0] != '\0'))
+				if ((ret == true) && (m_entity_state.m_name[0] != '\0'))
 				{
-					m_entityState.m_iMoveOffsetX = 0;
-					m_entityState.m_iMoveOffsetY = 0;
+					m_entity_state.m_move_offset_x = 0;
+					m_entity_state.m_move_offset_y = 0;
 					hb::shared::sprite::BoundRect bounds = {0, -1, 0, 0};
-					switch (m_entityState.m_iAction) {
-					case Type::Stop:
-						bounds = DrawObject_OnStop(indexX, indexY, ix, iy, false, dwTime);
+					switch (m_entity_state.m_action) {
+					case Type::stop:
+						bounds = draw_object_on_stop(indexX, indexY, ix, iy, false, time);
 						break;
 
 					case Type::Move:
-						bounds = DrawObject_OnMove(indexX, indexY, ix, iy, false, dwTime);
+						bounds = draw_object_on_move(indexX, indexY, ix, iy, false, time);
 						break;
 
 					case Type::DamageMove:
-						bounds = DrawObject_OnDamageMove(indexX, indexY, ix, iy, false, dwTime);
+						bounds = draw_object_on_damage_move(indexX, indexY, ix, iy, false, time);
 						break;
 
 					case Type::Run:
-						bounds = DrawObject_OnRun(indexX, indexY, ix, iy, false, dwTime);
+						bounds = draw_object_on_run(indexX, indexY, ix, iy, false, time);
 						break;
 
 					case Type::Attack:
-						bounds = DrawObject_OnAttack(indexX, indexY, ix, iy, false, dwTime);
+						bounds = draw_object_on_attack(indexX, indexY, ix, iy, false, time);
 						break;
 
 					case Type::AttackMove:
-						bounds = DrawObject_OnAttackMove(indexX, indexY, ix, iy, false, dwTime);
+						bounds = draw_object_on_attack_move(indexX, indexY, ix, iy, false, time);
 						break;
 
 					case Type::Magic:
-						bounds = DrawObject_OnMagic(indexX, indexY, ix, iy, false, dwTime);
+						bounds = draw_object_on_magic(indexX, indexY, ix, iy, false, time);
 						break;
 
 					case Type::GetItem:
-						bounds = DrawObject_OnGetItem(indexX, indexY, ix, iy, false, dwTime);
+						bounds = draw_object_on_get_item(indexX, indexY, ix, iy, false, time);
 						break;
 
 					case Type::Damage:
-						bounds = DrawObject_OnDamage(indexX, indexY, ix, iy, false, dwTime);
+						bounds = draw_object_on_damage(indexX, indexY, ix, iy, false, time);
 						break;
 
 					case Type::Dying:
-						bounds = DrawObject_OnDying(indexX, indexY, ix, iy, false, dwTime);
+						bounds = draw_object_on_dying(indexX, indexY, ix, iy, false, time);
 						break;
 					}
 
 					// Build picking info for living object
 					TargetObjectInfo info = {};
-					info.objectID = m_entityState.m_wObjectID;
-					info.mapX = indexX;
-					info.mapY = indexY;
-					info.screenX = ix;
-					info.screenY = iy;
-					info.dataX = m_entityState.m_iDataX;
-					info.dataY = m_entityState.m_iDataY;
-					info.ownerType = m_entityState.m_sOwnerType;
-					info.action = m_entityState.m_iAction;
-					info.direction = m_entityState.m_iDir;
-					info.frame = m_entityState.m_iFrame;
-					info.name = m_entityState.m_cName.data();
-					info.appearance = m_entityState.m_appearance;
-					info.status = m_entityState.m_status;
+					info.m_object_id = m_entity_state.m_object_id;
+					info.m_map_x = indexX;
+					info.m_map_y = indexY;
+					info.m_screen_x = ix;
+					info.m_screen_y = iy;
+					info.m_data_x = m_entity_state.m_data_x;
+					info.m_data_y = m_entity_state.m_data_y;
+					info.m_owner_type = m_entity_state.m_owner_type;
+					info.m_action = m_entity_state.m_action;
+					info.m_direction = m_entity_state.m_dir;
+					info.m_frame = m_entity_state.m_frame;
+					info.m_name = m_entity_state.m_name.data();
+					info.m_appearance = m_entity_state.m_appearance;
+					info.m_status = m_entity_state.m_status;
 					// Determine type based on owner type
-					info.type = (m_entityState.IsPlayer()) ?
+					info.m_type = (m_entity_state.is_player()) ?
 						FocusedObjectType::Player : FocusedObjectType::NPC;
-					CursorTarget::TestObject(bounds, info, iy, res_msy);
+					CursorTarget::test_object(bounds, info, iy, res_msy);
 
-					if (m_entityState.m_wObjectID == m_pPlayer->m_sPlayerObjectID)
+					if (m_entity_state.m_object_id == m_player->m_player_object_id)
 					{
 						// Camera is now updated in on_render() before drawing, so we don't need to update it here
 						// This ensures viewport and entity position use the same motion offset
-						m_rcPlayerRect = m_rcBodyRect;
-						bIsPlayerDrawed = true;
+						m_player_rect = m_body_rect;
+						is_player_drawed = true;
 					}
 				}
 			}
@@ -593,27 +593,27 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 			// Bounds check for tile array access (752x752)
 			if (indexX >= 0 && indexX < 752 && indexY >= 0 && indexY < 752)
 			{
-				sObjSpr = m_pMapData->m_tile[indexX][indexY].m_sObjectSprite;
-				sObjSprFrame = m_pMapData->m_tile[indexX][indexY].m_sObjectSpriteFrame;
+				obj_spr = m_map_data->m_tile[indexX][indexY].m_sObjectSprite;
+				obj_spr_frame = m_map_data->m_tile[indexX][indexY].m_sObjectSpriteFrame;
 			}
 			else
 			{
-				sObjSpr = 0;
-				sObjSprFrame = 0;
+				obj_spr = 0;
+				obj_spr_frame = 0;
 			}
 
-			if (sObjSpr != 0)
+			if (obj_spr != 0)
 			{
-				if ((sObjSpr < 100) || (sObjSpr >= 200))
+				if ((obj_spr < 100) || (obj_spr >= 200))
 				{
-					switch (sObjSpr) {
+					switch (obj_spr) {
 					case 200:
 					case 223:
-						m_pTileSpr[sObjSpr]->Draw(ix - 16, iy - 16, sObjSprFrame, hb::shared::sprite::DrawParams::Shadow());
+						m_tile_spr[obj_spr]->draw(ix - 16, iy - 16, obj_spr_frame, hb::shared::sprite::DrawParams::shadow());
 						break;
 
 					case 224:
-						switch (sObjSprFrame) {
+						switch (obj_spr_frame) {
 						case hb::shared::owner::Tom:
 						case hb::shared::owner::Dummy:
 						case hb::shared::owner::EnergySphere:
@@ -622,114 +622,114 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 						case hb::shared::owner::ManaCollector:
 							break;
 						default:
-							m_pTileSpr[sObjSpr]->Draw(ix - 16, iy - 16, sObjSprFrame, hb::shared::sprite::DrawParams::Shadow());
+							m_tile_spr[obj_spr]->draw(ix - 16, iy - 16, obj_spr_frame, hb::shared::sprite::DrawParams::shadow());
 							break;
 						}
 					}
-					if (ConfigManager::Get().GetDetailLevel() == 0) // Special Grass & Flowers
+					if (config_manager::get().get_detail_level() == 0) // Special Grass & Flowers
 					{
-						if ((sObjSpr != 6) && (sObjSpr != 9))
-							m_pTileSpr[sObjSpr]->Draw(ix - 16, iy - 16, sObjSprFrame);
+						if ((obj_spr != 6) && (obj_spr != 9))
+							m_tile_spr[obj_spr]->draw(ix - 16, iy - 16, obj_spr_frame);
 					}
 					else
 					{
-						m_pTileSpr[sObjSpr]->Draw(ix - 16, iy - 16, sObjSprFrame);
+						m_tile_spr[obj_spr]->draw(ix - 16, iy - 16, obj_spr_frame);
 					}
 
-					switch (sObjSpr) {
+					switch (obj_spr) {
 					case 223:
-						if (sObjSprFrame == 4)
+						if (obj_spr_frame == 4)
 						{
-							if (WeatherManager::Get().IsNight()) //nuit
+							if (weather_manager::get().is_night()) //nuit
 							{
 								// Lamp fixture lights (the actual light sources on the lamp)
-								m_pEffectSpr[0]->Draw(ix + 2, iy - 147, 1, hb::shared::sprite::DrawParams::AdditiveColored(255, 230, 180, 0.8f));
-								m_pEffectSpr[0]->Draw(ix + 16, iy - 94, 1, hb::shared::sprite::DrawParams::AdditiveColored(255, 230, 180, 0.8f));
-								m_pEffectSpr[0]->Draw(ix - 19, iy - 126, 1, hb::shared::sprite::DrawParams::AdditiveColored(255, 230, 180, 0.8f));
+								m_effect_sprites[0]->draw(ix + 2, iy - 147, 1, hb::shared::sprite::DrawParams::additive_colored(255, 230, 180, 0.8f));
+								m_effect_sprites[0]->draw(ix + 16, iy - 94, 1, hb::shared::sprite::DrawParams::additive_colored(255, 230, 180, 0.8f));
+								m_effect_sprites[0]->draw(ix - 19, iy - 126, 1, hb::shared::sprite::DrawParams::additive_colored(255, 230, 180, 0.8f));
 							}
 						}
 						break;
 
 					case 370: // nuit
-						if (((dwTime - m_dwEnvEffectTime) > 400) && (sObjSprFrame == 9) && (WeatherManager::Get().IsNight())) m_pEffectManager->AddEffect(EffectType::MS_CRUSADE_CASTING, m_Camera.GetX() + ix - 16 + 30, m_Camera.GetY() + iy - 16 - 334, 0, 0, 0, 0);
-						if (((dwTime - m_dwEnvEffectTime) > 400) && (sObjSprFrame == 11) && (WeatherManager::Get().IsNight())) m_pEffectManager->AddEffect(EffectType::MS_CRUSADE_CASTING, m_Camera.GetX() + ix - 16 + 17, m_Camera.GetY() + iy - 16 - 300, 0, 0, 0, 0);
+						if (((time - m_env_effect_time) > 400) && (obj_spr_frame == 9) && (weather_manager::get().is_night())) m_effect_manager->add_effect(EffectType::MS_CRUSADE_CASTING, m_Camera.get_x() + ix - 16 + 30, m_Camera.get_y() + iy - 16 - 334, 0, 0, 0, 0);
+						if (((time - m_env_effect_time) > 400) && (obj_spr_frame == 11) && (weather_manager::get().is_night())) m_effect_manager->add_effect(EffectType::MS_CRUSADE_CASTING, m_Camera.get_x() + ix - 16 + 17, m_Camera.get_y() + iy - 16 - 300, 0, 0, 0, 0);
 						break;
 
 					case 374: // nuit
-						if (((dwTime - m_dwEnvEffectTime) > 400) && (sObjSprFrame == 2) && (WeatherManager::Get().IsNight())) m_pEffectManager->AddEffect(EffectType::MS_CRUSADE_CASTING, m_Camera.GetX() + ix - 7, m_Camera.GetY() + iy - 122, 0, 0, 0, 0);
-						if (((dwTime - m_dwEnvEffectTime) > 400) && (sObjSprFrame == 6) && (WeatherManager::Get().IsNight())) m_pEffectManager->AddEffect(EffectType::MS_CRUSADE_CASTING, m_Camera.GetX() + ix - 14, m_Camera.GetY() + iy - 321, 0, 0, 0, 0);
-						if (((dwTime - m_dwEnvEffectTime) > 400) && (sObjSprFrame == 7) && (WeatherManager::Get().IsNight())) m_pEffectManager->AddEffect(EffectType::MS_CRUSADE_CASTING, m_Camera.GetX() + ix + 7, m_Camera.GetY() + iy - 356, 0, 0, 0, 0);
+						if (((time - m_env_effect_time) > 400) && (obj_spr_frame == 2) && (weather_manager::get().is_night())) m_effect_manager->add_effect(EffectType::MS_CRUSADE_CASTING, m_Camera.get_x() + ix - 7, m_Camera.get_y() + iy - 122, 0, 0, 0, 0);
+						if (((time - m_env_effect_time) > 400) && (obj_spr_frame == 6) && (weather_manager::get().is_night())) m_effect_manager->add_effect(EffectType::MS_CRUSADE_CASTING, m_Camera.get_x() + ix - 14, m_Camera.get_y() + iy - 321, 0, 0, 0, 0);
+						if (((time - m_env_effect_time) > 400) && (obj_spr_frame == 7) && (weather_manager::get().is_night())) m_effect_manager->add_effect(EffectType::MS_CRUSADE_CASTING, m_Camera.get_x() + ix + 7, m_Camera.get_y() + iy - 356, 0, 0, 0, 0);
 						break;
 
 					case 376: // nuit
-						if (((dwTime - m_dwEnvEffectTime) > 400) && (sObjSprFrame == 12) && (WeatherManager::Get().IsNight())) {
-							m_pEffectManager->AddEffect(EffectType::MS_CRUSADE_CASTING, m_Camera.GetX() + ix - 16, m_Camera.GetY() + iy - 346, 0, 0, 0, 0);
-							m_pEffectManager->AddEffect(EffectType::MS_CRUSADE_CASTING, m_Camera.GetX() + ix + 11, m_Camera.GetY() + iy - 308, 0, 0, 0, 0);
+						if (((time - m_env_effect_time) > 400) && (obj_spr_frame == 12) && (weather_manager::get().is_night())) {
+							m_effect_manager->add_effect(EffectType::MS_CRUSADE_CASTING, m_Camera.get_x() + ix - 16, m_Camera.get_y() + iy - 346, 0, 0, 0, 0);
+							m_effect_manager->add_effect(EffectType::MS_CRUSADE_CASTING, m_Camera.get_x() + ix + 11, m_Camera.get_y() + iy - 308, 0, 0, 0, 0);
 						}
 						break;
 
 					case 378: // nuit
-						if (((dwTime - m_dwEnvEffectTime) > 400) && (sObjSprFrame == 11) && (WeatherManager::Get().IsNight())) m_pEffectManager->AddEffect(EffectType::MS_CRUSADE_CASTING, m_Camera.GetX() + ix, m_Camera.GetY() + iy - 91, 0, 0, 0, 0);
+						if (((time - m_env_effect_time) > 400) && (obj_spr_frame == 11) && (weather_manager::get().is_night())) m_effect_manager->add_effect(EffectType::MS_CRUSADE_CASTING, m_Camera.get_x() + ix, m_Camera.get_y() + iy - 91, 0, 0, 0, 0);
 						break;
 
 					case 382: // nuit
-						if (((dwTime - m_dwEnvEffectTime) > 400) && (sObjSprFrame == 9) && (WeatherManager::Get().IsNight())) {
-							m_pEffectManager->AddEffect(EffectType::MS_CRUSADE_CASTING, m_Camera.GetX() + ix + 73, m_Camera.GetY() + iy - 264, 0, 0, 0, 0);
-							m_pEffectManager->AddEffect(EffectType::MS_CRUSADE_CASTING, m_Camera.GetX() + ix + 23, m_Camera.GetY() + iy - 228, 0, 0, 0, 0);
+						if (((time - m_env_effect_time) > 400) && (obj_spr_frame == 9) && (weather_manager::get().is_night())) {
+							m_effect_manager->add_effect(EffectType::MS_CRUSADE_CASTING, m_Camera.get_x() + ix + 73, m_Camera.get_y() + iy - 264, 0, 0, 0, 0);
+							m_effect_manager->add_effect(EffectType::MS_CRUSADE_CASTING, m_Camera.get_x() + ix + 23, m_Camera.get_y() + iy - 228, 0, 0, 0, 0);
 						}
 						break;
 
 					case 429:
-						if (((dwTime - m_dwEnvEffectTime) > 400) && (sObjSprFrame == 2)) m_pEffectManager->AddEffect(EffectType::MS_CRUSADE_CASTING, m_Camera.GetX() + ix - 15, m_Camera.GetY() + iy - 224, 0, 0, 0, 0);
+						if (((time - m_env_effect_time) > 400) && (obj_spr_frame == 2)) m_effect_manager->add_effect(EffectType::MS_CRUSADE_CASTING, m_Camera.get_x() + ix - 15, m_Camera.get_y() + iy - 224, 0, 0, 0, 0);
 						break;
 					}
 				}
 				else // sprites 100..199: Trees and tree shadows
 				{
-					m_pTileSpr[sObjSpr]->CalculateBounds(ix - 16, iy - 16, sObjSprFrame);
-					if (ConfigManager::Get().GetDetailLevel() == 0)
+					m_tile_spr[obj_spr]->CalculateBounds(ix - 16, iy - 16, obj_spr_frame);
+					if (config_manager::get().get_detail_level() == 0)
 					{
-						if (sObjSpr < 100 + 11) m_pTileSpr[100 + 4]->Draw(ix - 16, iy - 16, sObjSprFrame);
-						else if (sObjSpr < 100 + 23) m_pTileSpr[100 + 9]->Draw(ix - 16, iy - 16, sObjSprFrame);
-						else if (sObjSpr < 100 + 32) m_pTileSpr[100 + 23]->Draw(ix - 16, iy - 16, sObjSprFrame);
-						else m_pTileSpr[100 + 32]->Draw(ix - 16, iy - 16, sObjSprFrame);
+						if (obj_spr < 100 + 11) m_tile_spr[100 + 4]->draw(ix - 16, iy - 16, obj_spr_frame);
+						else if (obj_spr < 100 + 23) m_tile_spr[100 + 9]->draw(ix - 16, iy - 16, obj_spr_frame);
+						else if (obj_spr < 100 + 32) m_tile_spr[100 + 23]->draw(ix - 16, iy - 16, obj_spr_frame);
+						else m_tile_spr[100 + 32]->draw(ix - 16, iy - 16, obj_spr_frame);
 					}
 					else
 					{
-						// sObjSpr is [100..199] here; sObjSpr+50 is the tree shadow sprite [150..249].
+						// obj_spr is [100..199] here; obj_spr+50 is the tree shadow sprite [150..249].
 						// SpriteCollection returns NullSprite for missing entries, so no crash if shadow is absent.
-						if ((bIsPlayerDrawed == true) && (m_pTileSpr[sObjSpr]->GetBoundRect().top <= m_rcPlayerRect.Top()) && (m_pTileSpr[sObjSpr]->GetBoundRect().bottom >= m_rcPlayerRect.Bottom()) &&
-							(ConfigManager::Get().GetDetailLevel() >= 2) && (m_pTileSpr[sObjSpr]->GetBoundRect().left <= m_rcPlayerRect.Left()) && (m_pTileSpr[sObjSpr]->GetBoundRect().right >= m_rcPlayerRect.Right()))
+						if ((is_player_drawed == true) && (m_tile_spr[obj_spr]->GetBoundRect().top <= m_player_rect.Top()) && (m_tile_spr[obj_spr]->GetBoundRect().bottom >= m_player_rect.Bottom()) &&
+							(config_manager::get().get_detail_level() >= 2) && (m_tile_spr[obj_spr]->GetBoundRect().left <= m_player_rect.Left()) && (m_tile_spr[obj_spr]->GetBoundRect().right >= m_player_rect.Right()))
 						{
-							m_pTileSpr[sObjSpr + 50]->Draw(ix, iy, sObjSprFrame, hb::shared::sprite::DrawParams::Fade());
-							m_pTileSpr[sObjSpr]->Draw(ix - 16, iy - 16, sObjSprFrame, hb::shared::sprite::DrawParams::Average());
+							m_tile_spr[obj_spr + 50]->draw(ix, iy, obj_spr_frame, hb::shared::sprite::DrawParams::fade());
+							m_tile_spr[obj_spr]->draw(ix - 16, iy - 16, obj_spr_frame, hb::shared::sprite::DrawParams::average());
 						}
 						else
 						{
 							// Normal rendering - draw shadow and tree opaque (matches original PutSpriteFast)
-							m_pTileSpr[sObjSpr + 50]->Draw(ix, iy, sObjSprFrame);
-							m_pTileSpr[sObjSpr]->Draw(ix - 16, iy - 16, sObjSprFrame);
+							m_tile_spr[obj_spr + 50]->draw(ix, iy, obj_spr_frame);
+							m_tile_spr[obj_spr]->draw(ix - 16, iy - 16, obj_spr_frame);
 						}
-						if (m_bIsXmas == true)
+						if (m_is_xmas == true)
 						{
-							if (WeatherManager::Get().IsNight()) // nuit
+							if (weather_manager::get().is_night()) // nuit
 							{
-								if (iXmasTreeBulbDelay < 0 || iXmasTreeBulbDelay > idelay + 1) iXmasTreeBulbDelay = 0;
-								if (iXmasTreeBulbDelay > idelay)
+								if (xmas_tree_bulb_delay < 0 || xmas_tree_bulb_delay > idelay + 1) xmas_tree_bulb_delay = 0;
+								if (xmas_tree_bulb_delay > idelay)
 								{
 									for (int i = 0; i < 100; i++) {
 										ix1[i] = 1 * (rand() % 400) - 200;
 										iy2[i] = -1 * (rand() % 300);
 									}
-									iXmasTreeBulbDelay = 0;
+									xmas_tree_bulb_delay = 0;
 								}
-								else iXmasTreeBulbDelay++;
+								else xmas_tree_bulb_delay++;
 
 								for (int j = 0; j < 100; j++)
 								{
-									if (m_pTileSpr[sObjSpr]->CheckCollision(ix - 16, iy - 16, sObjSprFrame, ix + ix1[j], iy + iy2[j]))
+									if (m_tile_spr[obj_spr]->CheckCollision(ix - 16, iy - 16, obj_spr_frame, ix + ix1[j], iy + iy2[j]))
 									{
-										m_pEffectSpr[66 + (j % 6)]->Draw(ix + ix1[j], iy + iy2[j], (iXmasTreeBulbDelay >> 2), hb::shared::sprite::DrawParams::Alpha(0.5f));
+										m_effect_sprites[66 + (j % 6)]->draw(ix + ix1[j], iy + iy2[j], (xmas_tree_bulb_delay >> 2), hb::shared::sprite::DrawParams::alpha_blend(0.5f));
 									}
 								}
 							}
@@ -739,96 +739,96 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 			}
 
 			// Dynamic Object
-			if ((bRet == true) && (sDynamicObject != 0))
+			if ((ret == true) && (dynamic_object != 0))
 			{
-				switch (sDynamicObject) {
+				switch (dynamic_object) {
 				case dynamic_object::PCloudBegin:	// 10
-					if (sDynamicObjectFrame >= 0)
-						m_pEffectSpr[23]->Draw(ix + (rand() % 2), iy + (rand() % 2), sDynamicObjectFrame, hb::shared::sprite::DrawParams{0.5f, 0, 0, 0, false});
+					if (dynamic_object_frame >= 0)
+						m_effect_sprites[23]->draw(ix + (rand() % 2), iy + (rand() % 2), dynamic_object_frame, hb::shared::sprite::DrawParams{0.5f, 0, 0, 0, false});
 					break;
 
 				case dynamic_object::PCloudLoop:		// 11
-					m_pEffectSpr[23]->Draw(ix + (rand() % 2), iy + (rand() % 2), sDynamicObjectFrame + 8, hb::shared::sprite::DrawParams{0.5f, 0, 0, 0, false});
+					m_effect_sprites[23]->draw(ix + (rand() % 2), iy + (rand() % 2), dynamic_object_frame + 8, hb::shared::sprite::DrawParams{0.5f, 0, 0, 0, false});
 					break;
 
 				case dynamic_object::PCloudEnd:		// 12
-					m_pEffectSpr[23]->Draw(ix + (rand() % 2), iy + (rand() % 2), sDynamicObjectFrame + 16, hb::shared::sprite::DrawParams{0.5f, 0, 0, 0, false});
+					m_effect_sprites[23]->draw(ix + (rand() % 2), iy + (rand() % 2), dynamic_object_frame + 16, hb::shared::sprite::DrawParams{0.5f, 0, 0, 0, false});
 					break;
 
 				case dynamic_object::IceStorm:		// 8
-					iDvalue = (rand() % 5) * (-1);
-					m_pEffectSpr[0]->Draw(ix, iy, 1, hb::shared::sprite::DrawParams::TintedAlpha(192 + 2 * iDvalue, 192 + 2 * iDvalue, 192 + 2 * iDvalue, 0.7f));
-					m_pEffectSpr[13]->Draw(ix, iy, sDynamicObjectFrame, hb::shared::sprite::DrawParams{0.7f, 0, 0, 0, false});
+					dvalue = (rand() % 5) * (-1);
+					m_effect_sprites[0]->draw(ix, iy, 1, hb::shared::sprite::DrawParams::tinted_alpha(192 + 2 * dvalue, 192 + 2 * dvalue, 192 + 2 * dvalue, 0.7f));
+					m_effect_sprites[13]->draw(ix, iy, dynamic_object_frame, hb::shared::sprite::DrawParams{0.7f, 0, 0, 0, false});
 					break;
 
 				case dynamic_object::Fire:			// 1
 				case dynamic_object::Fire3:			// 14
 					switch (rand() % 3) {
-					case 0: m_pEffectSpr[0]->Draw(ix, iy, 1, hb::shared::sprite::DrawParams{0.25f, 0, 0, 0, false}); break;
-					case 1: m_pEffectSpr[0]->Draw(ix, iy, 1, hb::shared::sprite::DrawParams{0.5f, 0, 0, 0, false}); break;
-					case 2: m_pEffectSpr[0]->Draw(ix, iy, 1, hb::shared::sprite::DrawParams{0.7f, 0, 0, 0, false}); break;
+					case 0: m_effect_sprites[0]->draw(ix, iy, 1, hb::shared::sprite::DrawParams{0.25f, 0, 0, 0, false}); break;
+					case 1: m_effect_sprites[0]->draw(ix, iy, 1, hb::shared::sprite::DrawParams{0.5f, 0, 0, 0, false}); break;
+					case 2: m_effect_sprites[0]->draw(ix, iy, 1, hb::shared::sprite::DrawParams{0.7f, 0, 0, 0, false}); break;
 					}
-					m_pEffectSpr[9]->Draw(ix, iy, sDynamicObjectFrame / 3, hb::shared::sprite::DrawParams{0.7f, 0, 0, 0, false});
+					m_effect_sprites[9]->draw(ix, iy, dynamic_object_frame / 3, hb::shared::sprite::DrawParams{0.7f, 0, 0, 0, false});
 					break;
 
 				case dynamic_object::Fire2:			// 13
 					switch (rand() % 3) {
-					case 0: m_pEffectSpr[0]->Draw(ix, iy, 1, hb::shared::sprite::DrawParams{0.25f, 0, 0, 0, false}); break;
-					case 1: m_pEffectSpr[0]->Draw(ix, iy, 1, hb::shared::sprite::DrawParams{0.5f, 0, 0, 0, false}); break;
-					case 2: m_pEffectSpr[0]->Draw(ix, iy, 1, hb::shared::sprite::DrawParams{0.7f, 0, 0, 0, false}); break;
+					case 0: m_effect_sprites[0]->draw(ix, iy, 1, hb::shared::sprite::DrawParams{0.25f, 0, 0, 0, false}); break;
+					case 1: m_effect_sprites[0]->draw(ix, iy, 1, hb::shared::sprite::DrawParams{0.5f, 0, 0, 0, false}); break;
+					case 2: m_effect_sprites[0]->draw(ix, iy, 1, hb::shared::sprite::DrawParams{0.7f, 0, 0, 0, false}); break;
 					}
 					break;
 
 				case dynamic_object::Fish:			// 2
 				{
-					char cTmpDOdir, cTmpDOframe;
-					cTmpDOdir = CMisc::cCalcDirection(cDynamicObjectData1, cDynamicObjectData2, cDynamicObjectData1 + cDynamicObjectData3, cDynamicObjectData2 + cDynamicObjectData4);
-					cTmpDOframe = ((cTmpDOdir - 1) * 4) + (rand() % 4);
-					m_pSprite[ItemDynamicPivotPoint + 0]->Draw(ix + cDynamicObjectData1, iy + cDynamicObjectData2, cTmpDOframe, hb::shared::sprite::DrawParams::Alpha(0.25f));
+					char tmp_d_odir, tmp_d_oframe;
+					tmp_d_odir = CMisc::calc_direction(dynamic_object_data1, dynamic_object_data2, dynamic_object_data1 + dynamic_object_data3, dynamic_object_data2 + dynamic_object_data4);
+					tmp_d_oframe = ((tmp_d_odir - 1) * 4) + (rand() % 4);
+					m_sprite[ItemDynamicPivotPoint + 0]->draw(ix + dynamic_object_data1, iy + dynamic_object_data2, tmp_d_oframe, hb::shared::sprite::DrawParams::alpha_blend(0.25f));
 				}
 				break;
 
 				case dynamic_object::Mineral1:		// 4
-					if (ConfigManager::Get().GetDetailLevel() != 0) m_pSprite[ItemDynamicPivotPoint + 1]->Draw(ix, iy, 0, hb::shared::sprite::DrawParams::Shadow());
-					m_pSprite[ItemDynamicPivotPoint + 1]->Draw(ix, iy, 0);
-					CursorTarget::TestDynamicObject(m_pSprite[ItemDynamicPivotPoint + 1]->GetBoundRect(), indexX, indexY, res_msy);
+					if (config_manager::get().get_detail_level() != 0) m_sprite[ItemDynamicPivotPoint + 1]->draw(ix, iy, 0, hb::shared::sprite::DrawParams::shadow());
+					m_sprite[ItemDynamicPivotPoint + 1]->draw(ix, iy, 0);
+					CursorTarget::test_dynamic_object(m_sprite[ItemDynamicPivotPoint + 1]->GetBoundRect(), indexX, indexY, res_msy);
 					break;
 
 				case dynamic_object::Mineral2:		// 5
-					if (ConfigManager::Get().GetDetailLevel() != 0) m_pSprite[ItemDynamicPivotPoint + 1]->Draw(ix, iy, 1, hb::shared::sprite::DrawParams::Shadow());
-					m_pSprite[ItemDynamicPivotPoint + 1]->Draw(ix, iy, 1);
-					CursorTarget::TestDynamicObject(m_pSprite[ItemDynamicPivotPoint + 1]->GetBoundRect(), indexX, indexY, res_msy);
+					if (config_manager::get().get_detail_level() != 0) m_sprite[ItemDynamicPivotPoint + 1]->draw(ix, iy, 1, hb::shared::sprite::DrawParams::shadow());
+					m_sprite[ItemDynamicPivotPoint + 1]->draw(ix, iy, 1);
+					CursorTarget::test_dynamic_object(m_sprite[ItemDynamicPivotPoint + 1]->GetBoundRect(), indexX, indexY, res_msy);
 					break;
 
 				case dynamic_object::Spike:			// 9
-					m_pEffectSpr[17]->Draw(ix, iy, sDynamicObjectFrame, hb::shared::sprite::DrawParams{0.7f, 0, 0, 0, false});
+					m_effect_sprites[17]->draw(ix, iy, dynamic_object_frame, hb::shared::sprite::DrawParams{0.7f, 0, 0, 0, false});
 					break;
 
 				case dynamic_object::AresdenFlag1:  // 6
-					m_pSprite[ItemDynamicPivotPoint + 2]->Draw(ix, iy, sDynamicObjectFrame);
+					m_sprite[ItemDynamicPivotPoint + 2]->draw(ix, iy, dynamic_object_frame);
 					break;
 
 				case dynamic_object::ElvineFlag1: // 7
-					m_pSprite[ItemDynamicPivotPoint + 2]->Draw(ix, iy, sDynamicObjectFrame);
+					m_sprite[ItemDynamicPivotPoint + 2]->draw(ix, iy, dynamic_object_frame);
 					break;
 				}
 			}
 		}
 	}
 
-	if ((dwTime - m_dwEnvEffectTime) > 400) m_dwEnvEffectTime = dwTime;
+	if ((time - m_env_effect_time) > 400) m_env_effect_time = time;
 
 	// Finalize Picking system - determines cursor type
-	EntityRelationship focusRelationship = CursorTarget::HasFocusedObject() ? CursorTarget::GetFocusStatus().iRelationship : EntityRelationship::Neutral;
-	CursorTarget::EndFrame(focusRelationship, m_iPointCommandType, m_pPlayer->m_Controller.IsCommandAvailable(), m_bIsGetPointingMode);
+	EntityRelationship focusRelationship = CursorTarget::has_focused_object() ? CursorTarget::GetFocusStatus().relationship : EntityRelationship::Neutral;
+	CursorTarget::end_frame(focusRelationship, m_point_command_type, m_player->m_Controller.is_command_available(), m_is_get_pointing_mode);
 
-	// Update legacy compatibility variables from Picking system
-	m_sMCX = CursorTarget::GetFocusedMapX();
-	m_sMCY = CursorTarget::GetFocusedMapY();
-	m_cMCName = CursorTarget::GetFocusedName();
+	// update legacy compatibility variables from Picking system
+	m_mcx = CursorTarget::get_focused_map_x();
+	m_mcy = CursorTarget::get_focused_map_y();
+	m_mc_name = CursorTarget::get_focused_name();
 
-	// Draw focused object with highlight (transparency)
-	if (CursorTarget::HasFocusedObject())
+	// draw focused object with highlight (transparency)
+	if (CursorTarget::has_focused_object())
 	{
 		short focusSX, focusSY;
 		uint16_t focusObjID;
@@ -838,29 +838,29 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 		hb::shared::entity::PlayerStatus focusStatus;
 		short focusDataX, focusDataY;
 
-		if (CursorTarget::GetFocusHighlightData(focusSX, focusSY, focusObjID, focusOwnerType,
+		if (CursorTarget::get_focus_highlight_data(focusSX, focusSY, focusObjID, focusOwnerType,
 			focusAction, focusDir, focusFrame, focusAppearance,
 			focusStatus, focusDataX, focusDataY))
 		{
 			// Set up temporary vars for drawing
-			m_entityState.m_wObjectID = focusObjID;
-			m_entityState.m_sOwnerType = focusOwnerType;
-			m_entityState.m_iAction = focusAction;
-			m_entityState.m_iFrame = focusFrame;
-			m_entityState.m_iDir = focusDir;
-			m_entityState.m_appearance = focusAppearance;
-			m_entityState.m_status = focusStatus;
-			m_entityState.m_iDataX = focusDataX;
-			m_entityState.m_iDataY = focusDataY;
-			m_entityState.m_cName.fill('\0');
-			std::snprintf(m_entityState.m_cName.data(), m_entityState.m_cName.size(), "%s", CursorTarget::GetFocusedName());
+			m_entity_state.m_object_id = focusObjID;
+			m_entity_state.m_owner_type = focusOwnerType;
+			m_entity_state.m_action = focusAction;
+			m_entity_state.m_frame = focusFrame;
+			m_entity_state.m_dir = focusDir;
+			m_entity_state.m_appearance = focusAppearance;
+			m_entity_state.m_status = focusStatus;
+			m_entity_state.m_data_x = focusDataX;
+			m_entity_state.m_data_y = focusDataY;
+			m_entity_state.m_name.fill('\0');
+			std::snprintf(m_entity_state.m_name.data(), m_entity_state.m_name.size(), "%s", CursorTarget::get_focused_name());
 
 			if ((focusAction != ObjectDead) && (focusFrame < 0)) {
 				// Skip drawing invalid frame
 			} else {
 				switch (focusAction) {
-				case Type::Stop:
-					DrawObject_OnStop(m_sMCX, m_sMCY, focusSX, focusSY, true, dwTime);
+				case Type::stop:
+					draw_object_on_stop(m_mcx, m_mcy, focusSX, focusSY, true, time);
 					break;
 				case Type::Move:
 					switch (focusOwnerType) {
@@ -924,71 +924,71 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 						break;
 
 					default: // 10..27
-						m_entityState.m_iFrame = m_entityState.m_iFrame * 2;
+						m_entity_state.m_frame = m_entity_state.m_frame * 2;
 						break;
 					}
 
-					DrawObject_OnMove(m_sMCX, m_sMCY, focusSX, focusSY, true, dwTime);
+					draw_object_on_move(m_mcx, m_mcy, focusSX, focusSY, true, time);
 					break;
 
 				case Type::DamageMove:
-					DrawObject_OnDamageMove(m_sMCX, m_sMCY, focusSX, focusSY, true, dwTime);
+					draw_object_on_damage_move(m_mcx, m_mcy, focusSX, focusSY, true, time);
 					break;
 
 				case Type::Run:
-					DrawObject_OnRun(m_sMCX, m_sMCY, focusSX, focusSY, true, dwTime);
+					draw_object_on_run(m_mcx, m_mcy, focusSX, focusSY, true, time);
 					break;
 
 				case Type::Attack:
-					DrawObject_OnAttack(m_sMCX, m_sMCY, focusSX, focusSY, true, dwTime);
+					draw_object_on_attack(m_mcx, m_mcy, focusSX, focusSY, true, time);
 					break;
 
 				case Type::AttackMove:
-					DrawObject_OnAttackMove(m_sMCX, m_sMCY, focusSX, focusSY, true, dwTime);
+					draw_object_on_attack_move(m_mcx, m_mcy, focusSX, focusSY, true, time);
 					break;
 
 				case Type::Magic:
-					DrawObject_OnMagic(m_sMCX, m_sMCY, focusSX, focusSY, true, dwTime);
+					draw_object_on_magic(m_mcx, m_mcy, focusSX, focusSY, true, time);
 					break;
 
 				case Type::Damage:
-					DrawObject_OnDamage(m_sMCX, m_sMCY, focusSX, focusSY, true, dwTime);
+					draw_object_on_damage(m_mcx, m_mcy, focusSX, focusSY, true, time);
 					break;
 
 				case Type::Dying:
-					DrawObject_OnDying(m_sMCX, m_sMCY, focusSX, focusSY, true, dwTime);
+					draw_object_on_dying(m_mcx, m_mcy, focusSX, focusSY, true, time);
 					break;
 
 				case ObjectDead:
-					DrawObject_OnDead(m_sMCX, m_sMCY, focusSX, focusSY, true, dwTime);
+					draw_object_on_dead(m_mcx, m_mcy, focusSX, focusSY, true, time);
 					break;
 				}
 			}
 		}
 	}
 
-	if (sItemSelectedID != -1) {
-		int  iLoc;
-		auto itemInfo = ItemNameFormatter::Get().Format(m_pItemConfigList[sItemSelectedID].get());
+	if (item_selected_id != -1) {
+		int  loc;
+		auto itemInfo = item_name_formatter::get().format(m_item_config_list[item_selected_id].get());
 
-		iLoc = 0;
+		loc = 0;
 		if (itemInfo.name.size() != 0)
 		{
 			if (itemInfo.is_special)
-				hb::shared::text::DrawText(GameFont::Default, msX, msY + 25, itemInfo.name.c_str(), hb::shared::text::TextStyle::WithShadow(GameColors::UIItemName_Special));
+				hb::shared::text::draw_text(GameFont::Default, mouse_x, mouse_y + 25, itemInfo.name.c_str(), hb::shared::text::TextStyle::with_shadow(GameColors::UIItemName_Special));
 			else
-				hb::shared::text::DrawText(GameFont::Default, msX, msY + 25, itemInfo.name.c_str(), hb::shared::text::TextStyle::WithShadow(GameColors::UIWhite));
-			iLoc += 15;
+				hb::shared::text::draw_text(GameFont::Default, mouse_x, mouse_y + 25, itemInfo.name.c_str(), hb::shared::text::TextStyle::with_shadow(GameColors::UIWhite));
+			loc += 15;
 		}
 		if (itemInfo.effect.size() != 0)
 		{
-			hb::shared::text::DrawText(GameFont::Default, msX, msY + 25 + iLoc, itemInfo.effect.c_str(), hb::shared::text::TextStyle::WithShadow(GameColors::UIDisabled));
-			iLoc += 15;
+			hb::shared::text::draw_text(GameFont::Default, mouse_x, mouse_y + 25 + loc, itemInfo.effect.c_str(), hb::shared::text::TextStyle::with_shadow(GameColors::UIDisabled));
+			loc += 15;
 		}
 		if (itemInfo.extra.size() != 0)
 		{
-			hb::shared::text::DrawText(GameFont::Default, msX, msY + 25 + iLoc, itemInfo.extra.c_str(), hb::shared::text::TextStyle::WithShadow(GameColors::UIDisabled));
-			iLoc += 15;
+			hb::shared::text::draw_text(GameFont::Default, mouse_x, mouse_y + 25 + loc, itemInfo.extra.c_str(), hb::shared::text::TextStyle::with_shadow(GameColors::UIDisabled));
+			loc += 15;
 		}
 	}
 }

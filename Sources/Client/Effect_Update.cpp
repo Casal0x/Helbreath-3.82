@@ -11,48 +11,48 @@
 #include "Misc.h"
 
 
-void EffectManager::UpdateEffectsImpl()
+void effect_manager::update_effects_impl()
 {
 	int i, x;
-	uint32_t dwTime;
+	uint32_t time;
 
-	short sAbsX, sAbsY, sDist;
-	char  cDir;
+	short abs_x, abs_y, dist;
+	char  dir;
 	long lPan;
-	dwTime = m_pGame->m_dwCurTime;
-	dwTime += m_pGame->m_pMapData->m_dwFrameAdjustTime;
+	time = m_game->m_cur_time;
+	time += m_game->m_map_data->m_frame_adjust_time;
 	for (i = 0; i < game_limits::max_effects; i++)
-		if (m_pEffectList[i] != 0) {
-			if ((dwTime - m_pEffectList[i]->m_dwTime) > m_pEffectList[i]->m_dwFrameTime)
+		if (m_effect_list[i] != 0) {
+			if ((time - m_effect_list[i]->m_time) > m_effect_list[i]->m_frame_time)
 			{
-				m_pEffectList[i]->m_dwTime = dwTime;
-				m_pEffectList[i]->m_cFrame++;
+				m_effect_list[i]->m_time = time;
+				m_effect_list[i]->m_frame++;
 
-				m_pEffectList[i]->m_mX2 = m_pEffectList[i]->m_mX;
-				m_pEffectList[i]->m_mY2 = m_pEffectList[i]->m_mY;
-				switch (m_pEffectList[i]->m_sType) {
+				m_effect_list[i]->m_move_x2 = m_effect_list[i]->m_move_x;
+				m_effect_list[i]->m_move_y2 = m_effect_list[i]->m_move_y;
+				switch (m_effect_list[i]->m_type) {
 				case EffectType::NORMAL_HIT: // coup normal
-					if (m_pEffectList[i]->m_cFrame == 1)
+					if (m_effect_list[i]->m_frame == 1)
 					{
-						for (int j = 1; j <= m_pEffectList[i]->m_iV1; j++) AddEffectImpl(EffectType::BURST_SMALL_GRENADE, m_pEffectList[i]->m_mX + 15 - (rand() % 30), m_pEffectList[i]->m_mY + 15 - (rand() % 30), 0, 0, -1 * (rand() % 2), 0);
+						for (int j = 1; j <= m_effect_list[i]->m_value1; j++) add_effect_impl(EffectType::BURST_SMALL_GRENADE, m_effect_list[i]->m_move_x + 15 - (rand() % 30), m_effect_list[i]->m_move_y + 15 - (rand() % 30), 0, 0, -1 * (rand() % 2), 0);
 					}
-					if (m_pEffectList[i]->m_cFrame >= m_pEffectList[i]->m_cMaxFrame)
+					if (m_effect_list[i]->m_frame >= m_effect_list[i]->m_max_frame)
 					{
-						delete m_pEffectList[i];
-						m_pEffectList[i] = 0;
+						delete m_effect_list[i];
+						m_effect_list[i] = 0;
 					}
 					break;
 
 				case EffectType::ARROW_FLYING:	// (Arrow missing target ?)
-					CMisc::GetPoint(m_pEffectList[i]->m_mX, m_pEffectList[i]->m_mY,
-						m_pEffectList[i]->m_dX * 32, m_pEffectList[i]->m_dY * 32 - 40,
-						&m_pEffectList[i]->m_mX, &m_pEffectList[i]->m_mY,
-						&m_pEffectList[i]->m_iErr, 70);
-					if ((abs(m_pEffectList[i]->m_mX - m_pEffectList[i]->m_dX * 32) <= 2)
-						&& (abs(m_pEffectList[i]->m_mY - (m_pEffectList[i]->m_dY * 32 - 40)) <= 2))
+					CMisc::get_point(m_effect_list[i]->m_move_x, m_effect_list[i]->m_move_y,
+						m_effect_list[i]->m_dest_x * 32, m_effect_list[i]->m_dest_y * 32 - 40,
+						&m_effect_list[i]->m_move_x, &m_effect_list[i]->m_move_y,
+						&m_effect_list[i]->m_error, 70);
+					if ((abs(m_effect_list[i]->m_move_x - m_effect_list[i]->m_dest_x * 32) <= 2)
+						&& (abs(m_effect_list[i]->m_move_y - (m_effect_list[i]->m_dest_y * 32 - 40)) <= 2))
 					{
-						delete m_pEffectList[i];
-						m_pEffectList[i] = 0;
+						delete m_effect_list[i];
+						m_effect_list[i] = 0;
 					}
 					break;
 
@@ -60,10 +60,10 @@ void EffectManager::UpdateEffectsImpl()
 				case EffectType::IMPACT_EFFECT: //
 				case EffectType::LIGHT_EFFECT_1:
 				case EffectType::LIGHT_EFFECT_2:
-					if (m_pEffectList[i]->m_cFrame > m_pEffectList[i]->m_cMaxFrame)
+					if (m_effect_list[i]->m_frame > m_effect_list[i]->m_max_frame)
 					{
-						delete m_pEffectList[i];
-						m_pEffectList[i] = 0;
+						delete m_effect_list[i];
+						m_effect_list[i] = 0;
 					}
 					break;
 
@@ -71,182 +71,182 @@ void EffectManager::UpdateEffectsImpl()
 				case EffectType::MASS_FIRE_STRIKE_CALLER1:
 				case EffectType::MASS_FIRE_STRIKE_CALLER3: // Fire Explosion
 				case EffectType::SALMON_BURST_IMPACT:
-					if (m_pEffectList[i]->m_cFrame == 1)
+					if (m_effect_list[i]->m_frame == 1)
 					{
-						AddEffectImpl(EffectType::BURST_LARGE, m_pEffectList[i]->m_mX + 5 - (rand() % 10), m_pEffectList[i]->m_mY + 5 - (rand() % 10), 0, 0, -1 * (rand() % 2), 0);
-						AddEffectImpl(EffectType::BURST_LARGE, m_pEffectList[i]->m_mX + 5 - (rand() % 10), m_pEffectList[i]->m_mY + 5 - (rand() % 10), 0, 0, -1 * (rand() % 2), 0);
-						AddEffectImpl(EffectType::BURST_LARGE, m_pEffectList[i]->m_mX + 5 - (rand() % 10), m_pEffectList[i]->m_mY + 5 - (rand() % 10), 0, 0, -1 * (rand() % 2), 0);
-						AddEffectImpl(EffectType::BURST_LARGE, m_pEffectList[i]->m_mX + 5 - (rand() % 10), m_pEffectList[i]->m_mY + 5 - (rand() % 10), 0, 0, -1 * (rand() % 2), 0);
-						AddEffectImpl(EffectType::BURST_LARGE, m_pEffectList[i]->m_mX + 5 - (rand() % 10), m_pEffectList[i]->m_mY + 5 - (rand() % 10), 0, 0, -1 * (rand() % 2), 0);
+						add_effect_impl(EffectType::BURST_LARGE, m_effect_list[i]->m_move_x + 5 - (rand() % 10), m_effect_list[i]->m_move_y + 5 - (rand() % 10), 0, 0, -1 * (rand() % 2), 0);
+						add_effect_impl(EffectType::BURST_LARGE, m_effect_list[i]->m_move_x + 5 - (rand() % 10), m_effect_list[i]->m_move_y + 5 - (rand() % 10), 0, 0, -1 * (rand() % 2), 0);
+						add_effect_impl(EffectType::BURST_LARGE, m_effect_list[i]->m_move_x + 5 - (rand() % 10), m_effect_list[i]->m_move_y + 5 - (rand() % 10), 0, 0, -1 * (rand() % 2), 0);
+						add_effect_impl(EffectType::BURST_LARGE, m_effect_list[i]->m_move_x + 5 - (rand() % 10), m_effect_list[i]->m_move_y + 5 - (rand() % 10), 0, 0, -1 * (rand() % 2), 0);
+						add_effect_impl(EffectType::BURST_LARGE, m_effect_list[i]->m_move_x + 5 - (rand() % 10), m_effect_list[i]->m_move_y + 5 - (rand() % 10), 0, 0, -1 * (rand() % 2), 0);
 					}
-					if (m_pEffectList[i]->m_cFrame == 7)
+					if (m_effect_list[i]->m_frame == 7)
 					{
-						AddEffectImpl(EffectType::RED_CLOUD_PARTICLES, m_pEffectList[i]->m_mX + 5 - (rand() % 10), m_pEffectList[i]->m_mY + 5 - (rand() % 10), 0, 0, 0, 0);
-						AddEffectImpl(EffectType::RED_CLOUD_PARTICLES, m_pEffectList[i]->m_mX + 5 - (rand() % 10), m_pEffectList[i]->m_mY + 5 - (rand() % 10), 0, 0, 0, 0);
-						AddEffectImpl(EffectType::RED_CLOUD_PARTICLES, m_pEffectList[i]->m_mX + 5 - (rand() % 10), m_pEffectList[i]->m_mY + 5 - (rand() % 10), 0, 0, 0, 0);
+						add_effect_impl(EffectType::RED_CLOUD_PARTICLES, m_effect_list[i]->m_move_x + 5 - (rand() % 10), m_effect_list[i]->m_move_y + 5 - (rand() % 10), 0, 0, 0, 0);
+						add_effect_impl(EffectType::RED_CLOUD_PARTICLES, m_effect_list[i]->m_move_x + 5 - (rand() % 10), m_effect_list[i]->m_move_y + 5 - (rand() % 10), 0, 0, 0, 0);
+						add_effect_impl(EffectType::RED_CLOUD_PARTICLES, m_effect_list[i]->m_move_x + 5 - (rand() % 10), m_effect_list[i]->m_move_y + 5 - (rand() % 10), 0, 0, 0, 0);
 					}
-					if (m_pEffectList[i]->m_cFrame > m_pEffectList[i]->m_cMaxFrame)
+					if (m_effect_list[i]->m_frame > m_effect_list[i]->m_max_frame)
 					{
-						delete m_pEffectList[i];
-						m_pEffectList[i] = 0;
+						delete m_effect_list[i];
+						m_effect_list[i] = 0;
 					}
 					break;
 
 				case EffectType::ENERGY_BOLT_EXPLOSION: // Lightning Bolt Burst
-					if (m_pEffectList[i]->m_cFrame == 1)
+					if (m_effect_list[i]->m_frame == 1)
 					{
-						AddEffectImpl(EffectType::BURST_MEDIUM, m_pEffectList[i]->m_mX + 5 - (rand() % 10), m_pEffectList[i]->m_mY + 5 - (rand() % 10), 0, 0, -1 * (rand() % 2));
-						AddEffectImpl(EffectType::BURST_MEDIUM, m_pEffectList[i]->m_mX + 5 - (rand() % 10), m_pEffectList[i]->m_mY + 5 - (rand() % 10), 0, 0, -1 * (rand() % 2));
-						AddEffectImpl(EffectType::BURST_MEDIUM, m_pEffectList[i]->m_mX + 5 - (rand() % 10), m_pEffectList[i]->m_mY + 5 - (rand() % 10), 0, 0, -1 * (rand() % 2));
-						AddEffectImpl(EffectType::BURST_MEDIUM, m_pEffectList[i]->m_mX + 5 - (rand() % 10), m_pEffectList[i]->m_mY + 5 - (rand() % 10), 0, 0, -1 * (rand() % 2));
-						AddEffectImpl(EffectType::BURST_MEDIUM, m_pEffectList[i]->m_mX + 5 - (rand() % 10), m_pEffectList[i]->m_mY + 5 - (rand() % 10), 0, 0, -1 * (rand() % 2));
+						add_effect_impl(EffectType::BURST_MEDIUM, m_effect_list[i]->m_move_x + 5 - (rand() % 10), m_effect_list[i]->m_move_y + 5 - (rand() % 10), 0, 0, -1 * (rand() % 2));
+						add_effect_impl(EffectType::BURST_MEDIUM, m_effect_list[i]->m_move_x + 5 - (rand() % 10), m_effect_list[i]->m_move_y + 5 - (rand() % 10), 0, 0, -1 * (rand() % 2));
+						add_effect_impl(EffectType::BURST_MEDIUM, m_effect_list[i]->m_move_x + 5 - (rand() % 10), m_effect_list[i]->m_move_y + 5 - (rand() % 10), 0, 0, -1 * (rand() % 2));
+						add_effect_impl(EffectType::BURST_MEDIUM, m_effect_list[i]->m_move_x + 5 - (rand() % 10), m_effect_list[i]->m_move_y + 5 - (rand() % 10), 0, 0, -1 * (rand() % 2));
+						add_effect_impl(EffectType::BURST_MEDIUM, m_effect_list[i]->m_move_x + 5 - (rand() % 10), m_effect_list[i]->m_move_y + 5 - (rand() % 10), 0, 0, -1 * (rand() % 2));
 					}
-					if (m_pEffectList[i]->m_cFrame >= m_pEffectList[i]->m_cMaxFrame)
+					if (m_effect_list[i]->m_frame >= m_effect_list[i]->m_max_frame)
 					{
-						delete m_pEffectList[i];
-						m_pEffectList[i] = 0;
+						delete m_effect_list[i];
+						m_effect_list[i] = 0;
 					}
 					break;
 
 				case EffectType::MAGIC_MISSILE_EXPLOSION: // Magic Missile Burst
-					if (m_pEffectList[i]->m_cFrame == 1)
+					if (m_effect_list[i]->m_frame == 1)
 					{
-						AddEffectImpl(EffectType::BURST_MEDIUM, m_pEffectList[i]->m_mX + 5 - (rand() % 10), m_pEffectList[i]->m_mY + 5 - (rand() % 10), 0, 0, -1 * (rand() % 2));
-						AddEffectImpl(EffectType::BURST_MEDIUM, m_pEffectList[i]->m_mX + 5 - (rand() % 10), m_pEffectList[i]->m_mY + 5 - (rand() % 10), 0, 0, -1 * (rand() % 2));
-						AddEffectImpl(EffectType::BURST_MEDIUM, m_pEffectList[i]->m_mX + 5 - (rand() % 10), m_pEffectList[i]->m_mY + 5 - (rand() % 10), 0, 0, -1 * (rand() % 2));
+						add_effect_impl(EffectType::BURST_MEDIUM, m_effect_list[i]->m_move_x + 5 - (rand() % 10), m_effect_list[i]->m_move_y + 5 - (rand() % 10), 0, 0, -1 * (rand() % 2));
+						add_effect_impl(EffectType::BURST_MEDIUM, m_effect_list[i]->m_move_x + 5 - (rand() % 10), m_effect_list[i]->m_move_y + 5 - (rand() % 10), 0, 0, -1 * (rand() % 2));
+						add_effect_impl(EffectType::BURST_MEDIUM, m_effect_list[i]->m_move_x + 5 - (rand() % 10), m_effect_list[i]->m_move_y + 5 - (rand() % 10), 0, 0, -1 * (rand() % 2));
 					}
-					if (m_pEffectList[i]->m_cFrame >= m_pEffectList[i]->m_cMaxFrame)
+					if (m_effect_list[i]->m_frame >= m_effect_list[i]->m_max_frame)
 					{
-						delete m_pEffectList[i];
-						m_pEffectList[i] = 0;
+						delete m_effect_list[i];
+						m_effect_list[i] = 0;
 					}
 					break;
 
 				case EffectType::BURST_MEDIUM:  // Burst Type 2
 				case EffectType::BURST_SMALL_GRENADE: // Burst Type 3
-					m_pEffectList[i]->m_mX += m_pEffectList[i]->m_rX;
-					m_pEffectList[i]->m_mY += m_pEffectList[i]->m_rY;
-					m_pEffectList[i]->m_rY++;
-					if (m_pEffectList[i]->m_cFrame > m_pEffectList[i]->m_cMaxFrame)
+					m_effect_list[i]->m_move_x += m_effect_list[i]->m_render_x;
+					m_effect_list[i]->m_move_y += m_effect_list[i]->m_render_y;
+					m_effect_list[i]->m_render_y++;
+					if (m_effect_list[i]->m_frame > m_effect_list[i]->m_max_frame)
 					{
-						delete m_pEffectList[i];
-						m_pEffectList[i] = 0;
+						delete m_effect_list[i];
+						m_effect_list[i] = 0;
 					}
 					break;
 
 				case EffectType::LIGHTNING_ARROW_EXPLOSION: // Lightning Arrow Burst
-					if (m_pEffectList[i]->m_cFrame == 1)
+					if (m_effect_list[i]->m_frame == 1)
 					{
-						AddEffectImpl(EffectType::BURST_MEDIUM, m_pEffectList[i]->m_mX + 20 - (rand() % 40), m_pEffectList[i]->m_mY + 20 - (rand() % 40), 0, 0, -1 * (rand() % 2));
-						AddEffectImpl(EffectType::BURST_MEDIUM, m_pEffectList[i]->m_mX + 20 - (rand() % 40), m_pEffectList[i]->m_mY + 20 - (rand() % 40), 0, 0, -1 * (rand() % 2));
-						AddEffectImpl(EffectType::BURST_MEDIUM, m_pEffectList[i]->m_mX + 20 - (rand() % 40), m_pEffectList[i]->m_mY + 20 - (rand() % 40), 0, 0, -1 * (rand() % 2));
-						AddEffectImpl(EffectType::BURST_MEDIUM, m_pEffectList[i]->m_mX + 20 - (rand() % 40), m_pEffectList[i]->m_mY + 20 - (rand() % 40), 0, 0, -1 * (rand() % 2));
-						AddEffectImpl(EffectType::BURST_MEDIUM, m_pEffectList[i]->m_mX + 20 - (rand() % 40), m_pEffectList[i]->m_mY + 20 - (rand() % 40), 0, 0, -1 * (rand() % 2));
-						AddEffectImpl(EffectType::BURST_MEDIUM, m_pEffectList[i]->m_mX + 20 - (rand() % 40), m_pEffectList[i]->m_mY + 20 - (rand() % 40), 0, 0, -1 * (rand() % 2));
-						AddEffectImpl(EffectType::BURST_MEDIUM, m_pEffectList[i]->m_mX + 20 - (rand() % 40), m_pEffectList[i]->m_mY + 20 - (rand() % 40), 0, 0, -1 * (rand() % 2));
-						AddEffectImpl(EffectType::BURST_MEDIUM, m_pEffectList[i]->m_mX + 20 - (rand() % 40), m_pEffectList[i]->m_mY + 20 - (rand() % 40), 0, 0, -1 * (rand() % 2));
-						AddEffectImpl(EffectType::BURST_MEDIUM, m_pEffectList[i]->m_mX + 20 - (rand() % 40), m_pEffectList[i]->m_mY + 20 - (rand() % 40), 0, 0, -1 * (rand() % 2));
-						AddEffectImpl(EffectType::BURST_MEDIUM, m_pEffectList[i]->m_mX + 20 - (rand() % 40), m_pEffectList[i]->m_mY + 20 - (rand() % 40), 0, 0, -1 * (rand() % 2));
-						AddEffectImpl(EffectType::BURST_MEDIUM, m_pEffectList[i]->m_mX + 20 - (rand() % 40), m_pEffectList[i]->m_mY + 20 - (rand() % 40), 0, 0, -1 * (rand() % 2));
+						add_effect_impl(EffectType::BURST_MEDIUM, m_effect_list[i]->m_move_x + 20 - (rand() % 40), m_effect_list[i]->m_move_y + 20 - (rand() % 40), 0, 0, -1 * (rand() % 2));
+						add_effect_impl(EffectType::BURST_MEDIUM, m_effect_list[i]->m_move_x + 20 - (rand() % 40), m_effect_list[i]->m_move_y + 20 - (rand() % 40), 0, 0, -1 * (rand() % 2));
+						add_effect_impl(EffectType::BURST_MEDIUM, m_effect_list[i]->m_move_x + 20 - (rand() % 40), m_effect_list[i]->m_move_y + 20 - (rand() % 40), 0, 0, -1 * (rand() % 2));
+						add_effect_impl(EffectType::BURST_MEDIUM, m_effect_list[i]->m_move_x + 20 - (rand() % 40), m_effect_list[i]->m_move_y + 20 - (rand() % 40), 0, 0, -1 * (rand() % 2));
+						add_effect_impl(EffectType::BURST_MEDIUM, m_effect_list[i]->m_move_x + 20 - (rand() % 40), m_effect_list[i]->m_move_y + 20 - (rand() % 40), 0, 0, -1 * (rand() % 2));
+						add_effect_impl(EffectType::BURST_MEDIUM, m_effect_list[i]->m_move_x + 20 - (rand() % 40), m_effect_list[i]->m_move_y + 20 - (rand() % 40), 0, 0, -1 * (rand() % 2));
+						add_effect_impl(EffectType::BURST_MEDIUM, m_effect_list[i]->m_move_x + 20 - (rand() % 40), m_effect_list[i]->m_move_y + 20 - (rand() % 40), 0, 0, -1 * (rand() % 2));
+						add_effect_impl(EffectType::BURST_MEDIUM, m_effect_list[i]->m_move_x + 20 - (rand() % 40), m_effect_list[i]->m_move_y + 20 - (rand() % 40), 0, 0, -1 * (rand() % 2));
+						add_effect_impl(EffectType::BURST_MEDIUM, m_effect_list[i]->m_move_x + 20 - (rand() % 40), m_effect_list[i]->m_move_y + 20 - (rand() % 40), 0, 0, -1 * (rand() % 2));
+						add_effect_impl(EffectType::BURST_MEDIUM, m_effect_list[i]->m_move_x + 20 - (rand() % 40), m_effect_list[i]->m_move_y + 20 - (rand() % 40), 0, 0, -1 * (rand() % 2));
+						add_effect_impl(EffectType::BURST_MEDIUM, m_effect_list[i]->m_move_x + 20 - (rand() % 40), m_effect_list[i]->m_move_y + 20 - (rand() % 40), 0, 0, -1 * (rand() % 2));
 					}
-					if (m_pEffectList[i]->m_cFrame >= m_pEffectList[i]->m_cMaxFrame)
+					if (m_effect_list[i]->m_frame >= m_effect_list[i]->m_max_frame)
 					{
-						delete m_pEffectList[i];
-						m_pEffectList[i] = 0;
+						delete m_effect_list[i];
+						m_effect_list[i] = 0;
 					}
 					break;
 
 				case EffectType::BURST_LARGE: // Burst Type 4
-					m_pEffectList[i]->m_mX += m_pEffectList[i]->m_rX;
-					m_pEffectList[i]->m_mY += m_pEffectList[i]->m_rY;
-					if (m_pEffectList[i]->m_cFrame > m_pEffectList[i]->m_cMaxFrame)
+					m_effect_list[i]->m_move_x += m_effect_list[i]->m_render_x;
+					m_effect_list[i]->m_move_y += m_effect_list[i]->m_render_y;
+					if (m_effect_list[i]->m_frame > m_effect_list[i]->m_max_frame)
 					{
-						delete m_pEffectList[i];
-						m_pEffectList[i] = 0;
+						delete m_effect_list[i];
+						m_effect_list[i] = 0;
 					}
 					break;
 
 				case EffectType::BUBBLES_DRUNK: // Bulles druncncity
-					if (m_pEffectList[i]->m_cFrame < 15)
+					if (m_effect_list[i]->m_frame < 15)
 					{
 						if ((rand() % 2) == 0)
-							m_pEffectList[i]->m_mX++;
-						else m_pEffectList[i]->m_mX--;
-						m_pEffectList[i]->m_mY--;
+							m_effect_list[i]->m_move_x++;
+						else m_effect_list[i]->m_move_x--;
+						m_effect_list[i]->m_move_y--;
 					}
-					if (m_pEffectList[i]->m_cFrame > m_pEffectList[i]->m_cMaxFrame)
+					if (m_effect_list[i]->m_frame > m_effect_list[i]->m_max_frame)
 					{
-						delete m_pEffectList[i];
-						m_pEffectList[i] = 0;
+						delete m_effect_list[i];
+						m_effect_list[i] = 0;
 					}
 					break;
 
 				case EffectType::PROJECTILE_GENERIC: //
-					CMisc::GetPoint(m_pEffectList[i]->m_mX, m_pEffectList[i]->m_mY,
-						m_pEffectList[i]->m_dX, m_pEffectList[i]->m_dY,
-						&m_pEffectList[i]->m_mX, &m_pEffectList[i]->m_mY,
-						&m_pEffectList[i]->m_iErr, 40);
-					AddEffectImpl(EffectType::BURST_SMALL, m_pEffectList[i]->m_mX + (rand() % 20) - 10, m_pEffectList[i]->m_mY + (rand() % 20) - 10, 0, 0, -1 * (rand() % 4));
-					if ((abs(m_pEffectList[i]->m_mX - m_pEffectList[i]->m_dX) <= 2)
-						&& (abs(m_pEffectList[i]->m_mY - (m_pEffectList[i]->m_dY)) <= 2))
+					CMisc::get_point(m_effect_list[i]->m_move_x, m_effect_list[i]->m_move_y,
+						m_effect_list[i]->m_dest_x, m_effect_list[i]->m_dest_y,
+						&m_effect_list[i]->m_move_x, &m_effect_list[i]->m_move_y,
+						&m_effect_list[i]->m_error, 40);
+					add_effect_impl(EffectType::BURST_SMALL, m_effect_list[i]->m_move_x + (rand() % 20) - 10, m_effect_list[i]->m_move_y + (rand() % 20) - 10, 0, 0, -1 * (rand() % 4));
+					if ((abs(m_effect_list[i]->m_move_x - m_effect_list[i]->m_dest_x) <= 2)
+						&& (abs(m_effect_list[i]->m_move_y - (m_effect_list[i]->m_dest_y)) <= 2))
 					{
-						AddEffectImpl(EffectType::IMPACT_BURST, m_pEffectList[i]->m_dX, m_pEffectList[i]->m_dY, 0, 0, 0, 0); // testcode 0111 18
-						AddEffectImpl(EffectType::BURST_MEDIUM, m_pEffectList[i]->m_mX + 20 - (rand() % 40), m_pEffectList[i]->m_mY + 20 - (rand() % 40), 0, 0, -1 * (rand() % 2));
-						AddEffectImpl(EffectType::BURST_MEDIUM, m_pEffectList[i]->m_mX + 20 - (rand() % 40), m_pEffectList[i]->m_mY + 20 - (rand() % 40), 0, 0, -1 * (rand() % 2));
-						AddEffectImpl(EffectType::BURST_MEDIUM, m_pEffectList[i]->m_mX + 20 - (rand() % 40), m_pEffectList[i]->m_mY + 20 - (rand() % 40), 0, 0, -1 * (rand() % 2));
-						AddEffectImpl(EffectType::BURST_MEDIUM, m_pEffectList[i]->m_mX + 20 - (rand() % 40), m_pEffectList[i]->m_mY + 20 - (rand() % 40), 0, 0, -1 * (rand() % 2));
-						AddEffectImpl(EffectType::BURST_MEDIUM, m_pEffectList[i]->m_mX + 20 - (rand() % 40), m_pEffectList[i]->m_mY + 20 - (rand() % 40), 0, 0, -1 * (rand() % 2));
-						delete m_pEffectList[i];
-						m_pEffectList[i] = 0;
+						add_effect_impl(EffectType::IMPACT_BURST, m_effect_list[i]->m_dest_x, m_effect_list[i]->m_dest_y, 0, 0, 0, 0); // testcode 0111 18
+						add_effect_impl(EffectType::BURST_MEDIUM, m_effect_list[i]->m_move_x + 20 - (rand() % 40), m_effect_list[i]->m_move_y + 20 - (rand() % 40), 0, 0, -1 * (rand() % 2));
+						add_effect_impl(EffectType::BURST_MEDIUM, m_effect_list[i]->m_move_x + 20 - (rand() % 40), m_effect_list[i]->m_move_y + 20 - (rand() % 40), 0, 0, -1 * (rand() % 2));
+						add_effect_impl(EffectType::BURST_MEDIUM, m_effect_list[i]->m_move_x + 20 - (rand() % 40), m_effect_list[i]->m_move_y + 20 - (rand() % 40), 0, 0, -1 * (rand() % 2));
+						add_effect_impl(EffectType::BURST_MEDIUM, m_effect_list[i]->m_move_x + 20 - (rand() % 40), m_effect_list[i]->m_move_y + 20 - (rand() % 40), 0, 0, -1 * (rand() % 2));
+						add_effect_impl(EffectType::BURST_MEDIUM, m_effect_list[i]->m_move_x + 20 - (rand() % 40), m_effect_list[i]->m_move_y + 20 - (rand() % 40), 0, 0, -1 * (rand() % 2));
+						delete m_effect_list[i];
+						m_effect_list[i] = 0;
 					}
 					break;
 
 				case EffectType::ICE_STORM: // Ice-Storm
-					cDir = CMisc::cGetNextMoveDir(m_pEffectList[i]->m_mX, m_pEffectList[i]->m_mY, m_pEffectList[i]->m_mX3, m_pEffectList[i]->m_mY3);
-					switch (cDir) {
+					dir = CMisc::get_next_move_dir(m_effect_list[i]->m_move_x, m_effect_list[i]->m_move_y, m_effect_list[i]->m_move_x3, m_effect_list[i]->m_move_y3);
+					switch (dir) {
 					case 1: // North
-						m_pEffectList[i]->m_rY -= 2;
+						m_effect_list[i]->m_render_y -= 2;
 						break;
 					case 2: // NorthEast
-						m_pEffectList[i]->m_rY -= 2;
-						m_pEffectList[i]->m_rX += 2;
+						m_effect_list[i]->m_render_y -= 2;
+						m_effect_list[i]->m_render_x += 2;
 						break;
 					case 3: // East
-						m_pEffectList[i]->m_rX += 2;
+						m_effect_list[i]->m_render_x += 2;
 						break;
 					case 4: // SouthEast
-						m_pEffectList[i]->m_rX += 2;
-						m_pEffectList[i]->m_rY += 2;
+						m_effect_list[i]->m_render_x += 2;
+						m_effect_list[i]->m_render_y += 2;
 						break;
 					case 5: // South
-						m_pEffectList[i]->m_rY += 2;
+						m_effect_list[i]->m_render_y += 2;
 						break;
 					case 6: // SouthWest
-						m_pEffectList[i]->m_rX -= 2;
-						m_pEffectList[i]->m_rY += 2;
+						m_effect_list[i]->m_render_x -= 2;
+						m_effect_list[i]->m_render_y += 2;
 						break;
 					case 7: // West
-						m_pEffectList[i]->m_rX -= 2;
+						m_effect_list[i]->m_render_x -= 2;
 						break;
 					case 8: // NorthWest
-						m_pEffectList[i]->m_rX -= 2;
-						m_pEffectList[i]->m_rY -= 2;
+						m_effect_list[i]->m_render_x -= 2;
+						m_effect_list[i]->m_render_y -= 2;
 						break;
 					}
-					if (m_pEffectList[i]->m_rX < -10) m_pEffectList[i]->m_rX = -10;
-					if (m_pEffectList[i]->m_rX > 10) m_pEffectList[i]->m_rX = 10;
-					if (m_pEffectList[i]->m_rY < -10) m_pEffectList[i]->m_rY = -10;
-					if (m_pEffectList[i]->m_rY > 10) m_pEffectList[i]->m_rY = 10;
-					m_pEffectList[i]->m_mX += m_pEffectList[i]->m_rX;
-					m_pEffectList[i]->m_mY += m_pEffectList[i]->m_rY;
-					m_pEffectList[i]->m_mY3--;
-					if (m_pEffectList[i]->m_cFrame > 10)
+					if (m_effect_list[i]->m_render_x < -10) m_effect_list[i]->m_render_x = -10;
+					if (m_effect_list[i]->m_render_x > 10) m_effect_list[i]->m_render_x = 10;
+					if (m_effect_list[i]->m_render_y < -10) m_effect_list[i]->m_render_y = -10;
+					if (m_effect_list[i]->m_render_y > 10) m_effect_list[i]->m_render_y = 10;
+					m_effect_list[i]->m_move_x += m_effect_list[i]->m_render_x;
+					m_effect_list[i]->m_move_y += m_effect_list[i]->m_render_y;
+					m_effect_list[i]->m_move_y3--;
+					if (m_effect_list[i]->m_frame > 10)
 					{
-						m_pEffectList[i]->m_cFrame = 0;
-						if (abs(m_pEffectList[i]->m_sY - m_pEffectList[i]->m_mY3) > 100)
+						m_effect_list[i]->m_frame = 0;
+						if (abs(m_effect_list[i]->m_y - m_effect_list[i]->m_move_y3) > 100)
 						{
-							delete m_pEffectList[i];
-							m_pEffectList[i] = 0;
+							delete m_effect_list[i];
+							m_effect_list[i] = 0;
 						}
 					}
 					break;
@@ -259,53 +259,53 @@ void EffectManager::UpdateEffectsImpl()
 				case EffectType::CRITICAL_STRIKE_6:
 				case EffectType::CRITICAL_STRIKE_7:
 				case EffectType::CRITICAL_STRIKE_8: // Critical strike with a weapon
-					CMisc::GetPoint(m_pEffectList[i]->m_mX, m_pEffectList[i]->m_mY,
-						m_pEffectList[i]->m_dX * 32, m_pEffectList[i]->m_dY * 32 - 40,
-						&m_pEffectList[i]->m_mX, &m_pEffectList[i]->m_mY,
-						&m_pEffectList[i]->m_iErr, 50);
-					AddEffectImpl(EffectType::BURST_SMALL, m_pEffectList[i]->m_mX + 10 - (rand() % 20), m_pEffectList[i]->m_mY + 10 - (rand() % 20), 0, 0, 0, 0);
-					AddEffectImpl(EffectType::BURST_SMALL, m_pEffectList[i]->m_mX + 10 - (rand() % 20), m_pEffectList[i]->m_mY + 10 - (rand() % 20), 0, 0, 0, 0);
-					AddEffectImpl(EffectType::BURST_SMALL, m_pEffectList[i]->m_mX + 10 - (rand() % 20), m_pEffectList[i]->m_mY + 10 - (rand() % 20), 0, 0, 0, 0);
-					AddEffectImpl(EffectType::BURST_SMALL, m_pEffectList[i]->m_mX + 10 - (rand() % 20), m_pEffectList[i]->m_mY + 10 - (rand() % 20), 0, 0, 0, 0);
-					AddEffectImpl(EffectType::BURST_SMALL, m_pEffectList[i]->m_mX + 10 - (rand() % 20), m_pEffectList[i]->m_mY + 10 - (rand() % 20), 0, 0, 0, 0);
-					if ((abs(m_pEffectList[i]->m_mX - m_pEffectList[i]->m_dX * 32) <= 2) &&
-						(abs(m_pEffectList[i]->m_mY - (m_pEffectList[i]->m_dY * 32 - 40)) <= 2))
+					CMisc::get_point(m_effect_list[i]->m_move_x, m_effect_list[i]->m_move_y,
+						m_effect_list[i]->m_dest_x * 32, m_effect_list[i]->m_dest_y * 32 - 40,
+						&m_effect_list[i]->m_move_x, &m_effect_list[i]->m_move_y,
+						&m_effect_list[i]->m_error, 50);
+					add_effect_impl(EffectType::BURST_SMALL, m_effect_list[i]->m_move_x + 10 - (rand() % 20), m_effect_list[i]->m_move_y + 10 - (rand() % 20), 0, 0, 0, 0);
+					add_effect_impl(EffectType::BURST_SMALL, m_effect_list[i]->m_move_x + 10 - (rand() % 20), m_effect_list[i]->m_move_y + 10 - (rand() % 20), 0, 0, 0, 0);
+					add_effect_impl(EffectType::BURST_SMALL, m_effect_list[i]->m_move_x + 10 - (rand() % 20), m_effect_list[i]->m_move_y + 10 - (rand() % 20), 0, 0, 0, 0);
+					add_effect_impl(EffectType::BURST_SMALL, m_effect_list[i]->m_move_x + 10 - (rand() % 20), m_effect_list[i]->m_move_y + 10 - (rand() % 20), 0, 0, 0, 0);
+					add_effect_impl(EffectType::BURST_SMALL, m_effect_list[i]->m_move_x + 10 - (rand() % 20), m_effect_list[i]->m_move_y + 10 - (rand() % 20), 0, 0, 0, 0);
+					if ((abs(m_effect_list[i]->m_move_x - m_effect_list[i]->m_dest_x * 32) <= 2) &&
+						(abs(m_effect_list[i]->m_move_y - (m_effect_list[i]->m_dest_y * 32 - 40)) <= 2))
 					{
-						delete m_pEffectList[i];
-						m_pEffectList[i] = 0;
+						delete m_effect_list[i];
+						m_effect_list[i] = 0;
 					}
 					break;
 
 				case EffectType::BLOODY_SHOCK_STRIKE: //
-					CMisc::GetPoint(m_pEffectList[i]->m_mX, m_pEffectList[i]->m_mY,
-						m_pEffectList[i]->m_dX, m_pEffectList[i]->m_dY,
-						&m_pEffectList[i]->m_mX, &m_pEffectList[i]->m_mY,
-						&m_pEffectList[i]->m_iErr, 50);
-					AddEffectImpl(EffectType::IMPACT_EFFECT, m_pEffectList[i]->m_mX + (rand() % 30) - 15, m_pEffectList[i]->m_mY + (rand() % 30) - 15, 0, 0, -1 * (rand() % 4));
-					if ((abs(m_pEffectList[i]->m_mX - m_pEffectList[i]->m_dX) <= 2) &&
-						(abs(m_pEffectList[i]->m_mY - (m_pEffectList[i]->m_dY)) <= 2))
+					CMisc::get_point(m_effect_list[i]->m_move_x, m_effect_list[i]->m_move_y,
+						m_effect_list[i]->m_dest_x, m_effect_list[i]->m_dest_y,
+						&m_effect_list[i]->m_move_x, &m_effect_list[i]->m_move_y,
+						&m_effect_list[i]->m_error, 50);
+					add_effect_impl(EffectType::IMPACT_EFFECT, m_effect_list[i]->m_move_x + (rand() % 30) - 15, m_effect_list[i]->m_move_y + (rand() % 30) - 15, 0, 0, -1 * (rand() % 4));
+					if ((abs(m_effect_list[i]->m_move_x - m_effect_list[i]->m_dest_x) <= 2) &&
+						(abs(m_effect_list[i]->m_move_y - (m_effect_list[i]->m_dest_y)) <= 2))
 					{
-						AddEffectImpl(EffectType::IMPACT_EFFECT, m_pEffectList[i]->m_dX, m_pEffectList[i]->m_dY, 0, 0, 0, 0); //7
-						delete m_pEffectList[i];
-						m_pEffectList[i] = 0;
+						add_effect_impl(EffectType::IMPACT_EFFECT, m_effect_list[i]->m_dest_x, m_effect_list[i]->m_dest_y, 0, 0, 0, 0); //7
+						delete m_effect_list[i];
+						m_effect_list[i] = 0;
 					}
 					break;
 
 
 				case EffectType::CHILL_WIND_IMPACT:
 				case EffectType::MASS_CHILL_WIND:
-					if (m_pEffectList[i]->m_cFrame == 9)
+					if (m_effect_list[i]->m_frame == 9)
 					{
-						AddEffectImpl(EffectType::SPARKLE_SMALL, m_pEffectList[i]->m_mX + ((rand() % 100) - 50), m_pEffectList[i]->m_mY + ((rand() % 70) - 35), 0, 0, 0, 0);
-						AddEffectImpl(EffectType::SPARKLE_SMALL, m_pEffectList[i]->m_mX + ((rand() % 100) - 50), m_pEffectList[i]->m_mY + ((rand() % 70) - 35), 0, 0, 0, 0);
-						AddEffectImpl(EffectType::SPARKLE_SMALL, m_pEffectList[i]->m_mX + ((rand() % 100) - 50), m_pEffectList[i]->m_mY + ((rand() % 70) - 35), 0, 0, 0, 0);
-						AddEffectImpl(EffectType::SPARKLE_SMALL, m_pEffectList[i]->m_mX + ((rand() % 100) - 50), m_pEffectList[i]->m_mY + ((rand() % 70) - 35), 0, 0, 0, 0);
-						AddEffectImpl(EffectType::SPARKLE_SMALL, m_pEffectList[i]->m_mX + ((rand() % 100) - 50), m_pEffectList[i]->m_mY + ((rand() % 70) - 35), 0, 0, 0, 0);
+						add_effect_impl(EffectType::SPARKLE_SMALL, m_effect_list[i]->m_move_x + ((rand() % 100) - 50), m_effect_list[i]->m_move_y + ((rand() % 70) - 35), 0, 0, 0, 0);
+						add_effect_impl(EffectType::SPARKLE_SMALL, m_effect_list[i]->m_move_x + ((rand() % 100) - 50), m_effect_list[i]->m_move_y + ((rand() % 70) - 35), 0, 0, 0, 0);
+						add_effect_impl(EffectType::SPARKLE_SMALL, m_effect_list[i]->m_move_x + ((rand() % 100) - 50), m_effect_list[i]->m_move_y + ((rand() % 70) - 35), 0, 0, 0, 0);
+						add_effect_impl(EffectType::SPARKLE_SMALL, m_effect_list[i]->m_move_x + ((rand() % 100) - 50), m_effect_list[i]->m_move_y + ((rand() % 70) - 35), 0, 0, 0, 0);
+						add_effect_impl(EffectType::SPARKLE_SMALL, m_effect_list[i]->m_move_x + ((rand() % 100) - 50), m_effect_list[i]->m_move_y + ((rand() % 70) - 35), 0, 0, 0, 0);
 					}
-					if (m_pEffectList[i]->m_cFrame > m_pEffectList[i]->m_cMaxFrame)
+					if (m_effect_list[i]->m_frame > m_effect_list[i]->m_max_frame)
 					{
-						delete m_pEffectList[i];
-						m_pEffectList[i] = 0;
+						delete m_effect_list[i];
+						m_effect_list[i] = 0;
 					}
 					break;
 
@@ -315,99 +315,99 @@ void EffectManager::UpdateEffectsImpl()
 				case EffectType::ICE_STRIKE_VARIANT_4:
 				case EffectType::ICE_STRIKE_VARIANT_5: // Small Type 1, 2
 				case EffectType::ICE_STRIKE_VARIANT_6:
-					if (m_pEffectList[i]->m_cFrame >= 7)
+					if (m_effect_list[i]->m_frame >= 7)
 					{
-						m_pEffectList[i]->m_mX--;
-						m_pEffectList[i]->m_mY += m_pEffectList[i]->m_iV1;
-						m_pEffectList[i]->m_iV1++;
+						m_effect_list[i]->m_move_x--;
+						m_effect_list[i]->m_move_y += m_effect_list[i]->m_value1;
+						m_effect_list[i]->m_value1++;
 					}
 
-					if (m_pEffectList[i]->m_cFrame > m_pEffectList[i]->m_cMaxFrame)
+					if (m_effect_list[i]->m_frame > m_effect_list[i]->m_max_frame)
 					{
-						if ((m_pEffectList[i]->m_sType != EffectType::ICE_STRIKE_VARIANT_5) && (m_pEffectList[i]->m_sType != EffectType::ICE_STRIKE_VARIANT_6))
+						if ((m_effect_list[i]->m_type != EffectType::ICE_STRIKE_VARIANT_5) && (m_effect_list[i]->m_type != EffectType::ICE_STRIKE_VARIANT_6))
 						{
-							AddEffectImpl(EffectType::SMOKE_DUST, m_pEffectList[i]->m_mX, m_pEffectList[i]->m_mY, 0, 0, 0, 0);
-							AddEffectImpl(EffectType::FOOTPRINT, m_pEffectList[i]->m_mX + ((rand() % 20) - 10), m_pEffectList[i]->m_mY + ((rand() % 20) - 10), 0, 0, 0, 0);
-							AddEffectImpl(EffectType::FOOTPRINT, m_pEffectList[i]->m_mX + ((rand() % 20) - 10), m_pEffectList[i]->m_mY + ((rand() % 20) - 10), 0, 0, 0, 0);
-							AddEffectImpl(EffectType::FOOTPRINT, m_pEffectList[i]->m_mX + ((rand() % 20) - 10), m_pEffectList[i]->m_mY + ((rand() % 20) - 10), 0, 0, 0, 0);
-							AddEffectImpl(EffectType::SPARKLE_SMALL, m_pEffectList[i]->m_mX + ((rand() % 20) - 10), m_pEffectList[i]->m_mY + ((rand() % 20) - 10), 0, 0, 0, 0);
-							AddEffectImpl(EffectType::SPARKLE_SMALL, m_pEffectList[i]->m_mX + ((rand() % 20) - 10), m_pEffectList[i]->m_mY + ((rand() % 20) - 10), 0, 0, 0, 0);
+							add_effect_impl(EffectType::SMOKE_DUST, m_effect_list[i]->m_move_x, m_effect_list[i]->m_move_y, 0, 0, 0, 0);
+							add_effect_impl(EffectType::FOOTPRINT, m_effect_list[i]->m_move_x + ((rand() % 20) - 10), m_effect_list[i]->m_move_y + ((rand() % 20) - 10), 0, 0, 0, 0);
+							add_effect_impl(EffectType::FOOTPRINT, m_effect_list[i]->m_move_x + ((rand() % 20) - 10), m_effect_list[i]->m_move_y + ((rand() % 20) - 10), 0, 0, 0, 0);
+							add_effect_impl(EffectType::FOOTPRINT, m_effect_list[i]->m_move_x + ((rand() % 20) - 10), m_effect_list[i]->m_move_y + ((rand() % 20) - 10), 0, 0, 0, 0);
+							add_effect_impl(EffectType::SPARKLE_SMALL, m_effect_list[i]->m_move_x + ((rand() % 20) - 10), m_effect_list[i]->m_move_y + ((rand() % 20) - 10), 0, 0, 0, 0);
+							add_effect_impl(EffectType::SPARKLE_SMALL, m_effect_list[i]->m_move_x + ((rand() % 20) - 10), m_effect_list[i]->m_move_y + ((rand() % 20) - 10), 0, 0, 0, 0);
 						}
-						delete m_pEffectList[i];
-						m_pEffectList[i] = 0;
+						delete m_effect_list[i];
+						m_effect_list[i] = 0;
 					}
 					break;
 
 				case EffectType::BLIZZARD_VARIANT_1: // Blizzard
 				case EffectType::BLIZZARD_VARIANT_2:
 				case EffectType::BLIZZARD_VARIANT_3:
-					if (m_pEffectList[i]->m_cFrame >= 7)
+					if (m_effect_list[i]->m_frame >= 7)
 					{
-						m_pEffectList[i]->m_mX--;
-						m_pEffectList[i]->m_mY += m_pEffectList[i]->m_iV1;
-						m_pEffectList[i]->m_iV1 += 4;
+						m_effect_list[i]->m_move_x--;
+						m_effect_list[i]->m_move_y += m_effect_list[i]->m_value1;
+						m_effect_list[i]->m_value1 += 4;
 					}
-					if (m_pEffectList[i]->m_cFrame > m_pEffectList[i]->m_cMaxFrame)
+					if (m_effect_list[i]->m_frame > m_effect_list[i]->m_max_frame)
 					{
-						if (m_pEffectList[i]->m_sType == EffectType::BLIZZARD_VARIANT_3)
-							AddEffectImpl(EffectType::BLIZZARD_IMPACT, m_pEffectList[i]->m_mX, m_pEffectList[i]->m_mY, 0, 0, 0, 0);
-						else AddEffectImpl(EffectType::SMOKE_DUST, m_pEffectList[i]->m_mX, m_pEffectList[i]->m_mY, 0, 0, 0, 0);
-						AddEffectImpl(EffectType::FOOTPRINT, m_pEffectList[i]->m_mX + ((rand() % 20) - 10), m_pEffectList[i]->m_mY + ((rand() % 20) - 10), 0, 0, 0, 0);
-						AddEffectImpl(EffectType::FOOTPRINT, m_pEffectList[i]->m_mX + ((rand() % 20) - 10), m_pEffectList[i]->m_mY + ((rand() % 20) - 10), 0, 0, 0, 0);
-						AddEffectImpl(EffectType::FOOTPRINT, m_pEffectList[i]->m_mX + ((rand() % 20) - 10), m_pEffectList[i]->m_mY + ((rand() % 20) - 10), 0, 0, 0, 0);
+						if (m_effect_list[i]->m_type == EffectType::BLIZZARD_VARIANT_3)
+							add_effect_impl(EffectType::BLIZZARD_IMPACT, m_effect_list[i]->m_move_x, m_effect_list[i]->m_move_y, 0, 0, 0, 0);
+						else add_effect_impl(EffectType::SMOKE_DUST, m_effect_list[i]->m_move_x, m_effect_list[i]->m_move_y, 0, 0, 0, 0);
+						add_effect_impl(EffectType::FOOTPRINT, m_effect_list[i]->m_move_x + ((rand() % 20) - 10), m_effect_list[i]->m_move_y + ((rand() % 20) - 10), 0, 0, 0, 0);
+						add_effect_impl(EffectType::FOOTPRINT, m_effect_list[i]->m_move_x + ((rand() % 20) - 10), m_effect_list[i]->m_move_y + ((rand() % 20) - 10), 0, 0, 0, 0);
+						add_effect_impl(EffectType::FOOTPRINT, m_effect_list[i]->m_move_x + ((rand() % 20) - 10), m_effect_list[i]->m_move_y + ((rand() % 20) - 10), 0, 0, 0, 0);
 
-						AddEffectImpl(EffectType::SPARKLE_SMALL, m_pEffectList[i]->m_mX + ((rand() % 20) - 10), m_pEffectList[i]->m_mY + ((rand() % 20) - 10), 0, 0, 0, 0);
-						AddEffectImpl(EffectType::SPARKLE_SMALL, m_pEffectList[i]->m_mX + ((rand() % 20) - 10), m_pEffectList[i]->m_mY + ((rand() % 20) - 10), 0, 0, 0, 0);
-						delete m_pEffectList[i];
-						m_pEffectList[i] = 0;
+						add_effect_impl(EffectType::SPARKLE_SMALL, m_effect_list[i]->m_move_x + ((rand() % 20) - 10), m_effect_list[i]->m_move_y + ((rand() % 20) - 10), 0, 0, 0, 0);
+						add_effect_impl(EffectType::SPARKLE_SMALL, m_effect_list[i]->m_move_x + ((rand() % 20) - 10), m_effect_list[i]->m_move_y + ((rand() % 20) - 10), 0, 0, 0, 0);
+						delete m_effect_list[i];
+						m_effect_list[i] = 0;
 					}
 					break;
 
 				case EffectType::METEOR_FLYING: //
 				case EffectType::METEOR_STRIKE_DESCENDING: // Meteor-Strike
-					if (m_pEffectList[i]->m_cFrame > m_pEffectList[i]->m_cMaxFrame)
+					if (m_effect_list[i]->m_frame > m_effect_list[i]->m_max_frame)
 					{
-						AddEffectImpl(EffectType::FIRE_AURA_GROUND, m_pEffectList[i]->m_mX, m_pEffectList[i]->m_mY, 0, 0, 0, 0);
-						AddEffectImpl(EffectType::FIRE_EXPLOSION_CRUSADE, m_pEffectList[i]->m_mX, m_pEffectList[i]->m_mY, 0, 0, 0, 0);
-						AddEffectImpl(EffectType::BURST_LARGE, m_pEffectList[i]->m_mX + 5 - (rand() % 10), m_pEffectList[i]->m_mY + 5 - (rand() % 10), 0, 0, -1 * (rand() % 2), 0);
-						AddEffectImpl(EffectType::BURST_LARGE, m_pEffectList[i]->m_mX + 5 - (rand() % 10), m_pEffectList[i]->m_mY + 5 - (rand() % 10), 0, 0, -1 * (rand() % 2), 0);
-						AddEffectImpl(EffectType::BURST_LARGE, m_pEffectList[i]->m_mX + 5 - (rand() % 10), m_pEffectList[i]->m_mY + 5 - (rand() % 10), 0, 0, -1 * (rand() % 2), 0);
-						AddEffectImpl(EffectType::BURST_LARGE, m_pEffectList[i]->m_mX + 5 - (rand() % 10), m_pEffectList[i]->m_mY + 5 - (rand() % 10), 0, 0, -1 * (rand() % 2), 0);
-						AddEffectImpl(EffectType::BURST_LARGE, m_pEffectList[i]->m_mX + 5 - (rand() % 10), m_pEffectList[i]->m_mY + 5 - (rand() % 10), 0, 0, -1 * (rand() % 2), 0);
-						delete m_pEffectList[i];
-						m_pEffectList[i] = 0;
+						add_effect_impl(EffectType::FIRE_AURA_GROUND, m_effect_list[i]->m_move_x, m_effect_list[i]->m_move_y, 0, 0, 0, 0);
+						add_effect_impl(EffectType::FIRE_EXPLOSION_CRUSADE, m_effect_list[i]->m_move_x, m_effect_list[i]->m_move_y, 0, 0, 0, 0);
+						add_effect_impl(EffectType::BURST_LARGE, m_effect_list[i]->m_move_x + 5 - (rand() % 10), m_effect_list[i]->m_move_y + 5 - (rand() % 10), 0, 0, -1 * (rand() % 2), 0);
+						add_effect_impl(EffectType::BURST_LARGE, m_effect_list[i]->m_move_x + 5 - (rand() % 10), m_effect_list[i]->m_move_y + 5 - (rand() % 10), 0, 0, -1 * (rand() % 2), 0);
+						add_effect_impl(EffectType::BURST_LARGE, m_effect_list[i]->m_move_x + 5 - (rand() % 10), m_effect_list[i]->m_move_y + 5 - (rand() % 10), 0, 0, -1 * (rand() % 2), 0);
+						add_effect_impl(EffectType::BURST_LARGE, m_effect_list[i]->m_move_x + 5 - (rand() % 10), m_effect_list[i]->m_move_y + 5 - (rand() % 10), 0, 0, -1 * (rand() % 2), 0);
+						add_effect_impl(EffectType::BURST_LARGE, m_effect_list[i]->m_move_x + 5 - (rand() % 10), m_effect_list[i]->m_move_y + 5 - (rand() % 10), 0, 0, -1 * (rand() % 2), 0);
+						delete m_effect_list[i];
+						m_effect_list[i] = 0;
 					}
-					else if (m_pEffectList[i]->m_cFrame >= 0)
+					else if (m_effect_list[i]->m_frame >= 0)
 					{
-						m_pEffectList[i]->m_mX -= 30;
-						m_pEffectList[i]->m_mY += 46;
-						AddEffectImpl(EffectType::METEOR_IMPACT, m_pEffectList[i]->m_mX, m_pEffectList[i]->m_mY, 0, 0, 0, 0);
+						m_effect_list[i]->m_move_x -= 30;
+						m_effect_list[i]->m_move_y += 46;
+						add_effect_impl(EffectType::METEOR_IMPACT, m_effect_list[i]->m_move_x, m_effect_list[i]->m_move_y, 0, 0, 0, 0);
 					}
 					break;
 
 				case EffectType::METEOR_IMPACT:
-					if (m_pEffectList[i]->m_cFrame > m_pEffectList[i]->m_cMaxFrame)
+					if (m_effect_list[i]->m_frame > m_effect_list[i]->m_max_frame)
 					{
-						delete m_pEffectList[i];
-						m_pEffectList[i] = 0;
+						delete m_effect_list[i];
+						m_effect_list[i] = 0;
 					}
-					else if (m_pEffectList[i]->m_cFrame >= 0)
+					else if (m_effect_list[i]->m_frame >= 0)
 					{
-						m_pEffectList[i]->m_mX += (rand() % 3) - 1;
-						m_pEffectList[i]->m_mY += (rand() % 3) - 1;
+						m_effect_list[i]->m_move_x += (rand() % 3) - 1;
+						m_effect_list[i]->m_move_y += (rand() % 3) - 1;
 					}
 					break;
 
 				case EffectType::MS_CRUSADE_CASTING: // Building fire after MS (crusade) 65 & 67
-					if (m_pEffectList[i]->m_cFrame > m_pEffectList[i]->m_cMaxFrame)
+					if (m_effect_list[i]->m_frame > m_effect_list[i]->m_max_frame)
 					{
-						delete m_pEffectList[i];
-						m_pEffectList[i] = 0;
+						delete m_effect_list[i];
+						m_effect_list[i] = 0;
 					}
-					else if (m_pEffectList[i]->m_cFrame >= 0)
+					else if (m_effect_list[i]->m_frame >= 0)
 					{
-						m_pEffectList[i]->m_mX += (rand() % 3) - 1;
-						m_pEffectList[i]->m_mY -= 4 + (rand() % 2);
+						m_effect_list[i]->m_move_x += (rand() % 3) - 1;
+						m_effect_list[i]->m_move_y -= 4 + (rand() % 2);
 					}
 					break;
 
@@ -416,494 +416,494 @@ void EffectManager::UpdateEffectsImpl()
 				case EffectType::CRACK_OBLIQUE:
 				case EffectType::CRACK_HORIZONTAL:
 				case EffectType::STEAMS_SMOKE:
-					if (m_pEffectList[i]->m_cFrame > m_pEffectList[i]->m_cMaxFrame)
+					if (m_effect_list[i]->m_frame > m_effect_list[i]->m_max_frame)
 					{
-						delete m_pEffectList[i];
-						m_pEffectList[i] = 0;
+						delete m_effect_list[i];
+						m_effect_list[i] = 0;
 					}
 					break;
 
 				case EffectType::WORM_BITE:
-					if (m_pEffectList[i]->m_cFrame > m_pEffectList[i]->m_cMaxFrame)
+					if (m_effect_list[i]->m_frame > m_effect_list[i]->m_max_frame)
 					{
-						delete m_pEffectList[i];
-						m_pEffectList[i] = 0;
+						delete m_effect_list[i];
+						m_effect_list[i] = 0;
 					}
-					else if (m_pEffectList[i]->m_cFrame == 11)
+					else if (m_effect_list[i]->m_frame == 11)
 					{
-						m_pGame->SetCameraShakingEffect(m_pEffectList[i]->m_iV1, 2);
+						m_game->set_camera_shaking_effect(m_effect_list[i]->m_value1, 2);
 					}
 					break;
 
 				case EffectType::BLIZZARD_PROJECTILE:
-					CMisc::GetPoint(m_pEffectList[i]->m_mX, m_pEffectList[i]->m_mY,
-						m_pEffectList[i]->m_dX, m_pEffectList[i]->m_dY,
-						&m_pEffectList[i]->m_mX, &m_pEffectList[i]->m_mY,
-						&m_pEffectList[i]->m_iErr, 50);
-					AddEffectImpl(EffectType::BLIZZARD_VARIANT_2, m_pEffectList[i]->m_mX + (rand() % 30) - 15, m_pEffectList[i]->m_mY + (rand() % 30) - 15, 0, 0, 0, 0);
-					AddEffectImpl(EffectType::SPARKLE_SMALL, m_pEffectList[i]->m_mX + ((rand() % 20) - 10), m_pEffectList[i]->m_mY + ((rand() % 20) - 10), 0, 0, 0, 0);
-					if ((abs(m_pEffectList[i]->m_mX - m_pEffectList[i]->m_dX) <= 2) &&
-						(abs(m_pEffectList[i]->m_mY - (m_pEffectList[i]->m_dY)) <= 2))
+					CMisc::get_point(m_effect_list[i]->m_move_x, m_effect_list[i]->m_move_y,
+						m_effect_list[i]->m_dest_x, m_effect_list[i]->m_dest_y,
+						&m_effect_list[i]->m_move_x, &m_effect_list[i]->m_move_y,
+						&m_effect_list[i]->m_error, 50);
+					add_effect_impl(EffectType::BLIZZARD_VARIANT_2, m_effect_list[i]->m_move_x + (rand() % 30) - 15, m_effect_list[i]->m_move_y + (rand() % 30) - 15, 0, 0, 0, 0);
+					add_effect_impl(EffectType::SPARKLE_SMALL, m_effect_list[i]->m_move_x + ((rand() % 20) - 10), m_effect_list[i]->m_move_y + ((rand() % 20) - 10), 0, 0, 0, 0);
+					if ((abs(m_effect_list[i]->m_move_x - m_effect_list[i]->m_dest_x) <= 2) &&
+						(abs(m_effect_list[i]->m_move_y - (m_effect_list[i]->m_dest_y)) <= 2))
 					{
-						AddEffectImpl(EffectType::BLIZZARD_VARIANT_3, m_pEffectList[i]->m_mX/* + (rand() % 30) - 15*/, m_pEffectList[i]->m_mY/* + (rand() % 30) - 15*/, 0, 0, 0, 0);
-						delete m_pEffectList[i];
-						m_pEffectList[i] = 0;
+						add_effect_impl(EffectType::BLIZZARD_VARIANT_3, m_effect_list[i]->m_move_x/* + (rand() % 30) - 15*/, m_effect_list[i]->m_move_y/* + (rand() % 30) - 15*/, 0, 0, 0, 0);
+						delete m_effect_list[i];
+						m_effect_list[i] = 0;
 					}
 					break;
 
 				case EffectType::STORM_BLADE: // Snoopy: Added StromBlade
-					CMisc::GetPoint(m_pEffectList[i]->m_mX
-						, m_pEffectList[i]->m_mY
-						, m_pEffectList[i]->m_dX * 32
-						, m_pEffectList[i]->m_dY * 32
-						, &m_pEffectList[i]->m_mX
-						, &m_pEffectList[i]->m_mY
-						, &m_pEffectList[i]->m_iErr
+					CMisc::get_point(m_effect_list[i]->m_move_x
+						, m_effect_list[i]->m_move_y
+						, m_effect_list[i]->m_dest_x * 32
+						, m_effect_list[i]->m_dest_y * 32
+						, &m_effect_list[i]->m_move_x
+						, &m_effect_list[i]->m_move_y
+						, &m_effect_list[i]->m_error
 						, 10);
-					if (m_pEffectList[i]->m_cFrame > m_pEffectList[i]->m_cMaxFrame)
+					if (m_effect_list[i]->m_frame > m_effect_list[i]->m_max_frame)
 					{
-						delete m_pEffectList[i];
-						m_pEffectList[i] = 0;
+						delete m_effect_list[i];
+						m_effect_list[i] = 0;
 					}
 					break;
 
 				case EffectType::MAGIC_MISSILE_FLYING: // Magic Missile
-					CMisc::GetPoint(m_pEffectList[i]->m_mX, m_pEffectList[i]->m_mY,
-						m_pEffectList[i]->m_dX * 32, m_pEffectList[i]->m_dY * 32/* - 40*/,
-						&m_pEffectList[i]->m_mX, &m_pEffectList[i]->m_mY,
-						&m_pEffectList[i]->m_iErr, 50);
-					AddEffectImpl(EffectType::BURST_SMALL, m_pEffectList[i]->m_mX + (rand() % 20) - 10, m_pEffectList[i]->m_mY + (rand() % 20) - 10, 0, 0, -1 * (rand() % 4));
+					CMisc::get_point(m_effect_list[i]->m_move_x, m_effect_list[i]->m_move_y,
+						m_effect_list[i]->m_dest_x * 32, m_effect_list[i]->m_dest_y * 32/* - 40*/,
+						&m_effect_list[i]->m_move_x, &m_effect_list[i]->m_move_y,
+						&m_effect_list[i]->m_error, 50);
+					add_effect_impl(EffectType::BURST_SMALL, m_effect_list[i]->m_move_x + (rand() % 20) - 10, m_effect_list[i]->m_move_y + (rand() % 20) - 10, 0, 0, -1 * (rand() % 4));
 
-					if ((abs(m_pEffectList[i]->m_mX - m_pEffectList[i]->m_dX * 32) <= 2) &&
-						(abs(m_pEffectList[i]->m_mY - (m_pEffectList[i]->m_dY * 32/* - 40*/)) <= 2))
+					if ((abs(m_effect_list[i]->m_move_x - m_effect_list[i]->m_dest_x * 32) <= 2) &&
+						(abs(m_effect_list[i]->m_move_y - (m_effect_list[i]->m_dest_y * 32/* - 40*/)) <= 2))
 					{
-						AddEffectImpl(EffectType::MAGIC_MISSILE_EXPLOSION, m_pEffectList[i]->m_dX * 32, m_pEffectList[i]->m_dY * 32, 0, 0, 0, 0);
-						delete m_pEffectList[i];
-						m_pEffectList[i] = 0;
+						add_effect_impl(EffectType::MAGIC_MISSILE_EXPLOSION, m_effect_list[i]->m_dest_x * 32, m_effect_list[i]->m_dest_y * 32, 0, 0, 0, 0);
+						delete m_effect_list[i];
+						m_effect_list[i] = 0;
 					}
 					break;
 
 				case EffectType::ENERGY_BOLT_FLYING: // Enegy-Bolt
-					CMisc::GetPoint(m_pEffectList[i]->m_mX, m_pEffectList[i]->m_mY,
-						m_pEffectList[i]->m_dX * 32, m_pEffectList[i]->m_dY * 32/* - 40*/,
-						&m_pEffectList[i]->m_mX, &m_pEffectList[i]->m_mY,
-						&m_pEffectList[i]->m_iErr, 50);
-					AddEffectImpl(EffectType::BURST_SMALL, m_pEffectList[i]->m_mX + (rand() % 20) - 10, m_pEffectList[i]->m_mY + (rand() % 20) - 10, 0, 0, -1 * (rand() % 4));
-					AddEffectImpl(EffectType::BURST_SMALL, m_pEffectList[i]->m_mX + (rand() % 20) - 10, m_pEffectList[i]->m_mY + (rand() % 20) - 10, 0, 0, -1 * (rand() % 4));
-					if ((abs(m_pEffectList[i]->m_mX - m_pEffectList[i]->m_dX * 32) <= 2)
-						&& (abs(m_pEffectList[i]->m_mY - m_pEffectList[i]->m_dY * 32) <= 2))
+					CMisc::get_point(m_effect_list[i]->m_move_x, m_effect_list[i]->m_move_y,
+						m_effect_list[i]->m_dest_x * 32, m_effect_list[i]->m_dest_y * 32/* - 40*/,
+						&m_effect_list[i]->m_move_x, &m_effect_list[i]->m_move_y,
+						&m_effect_list[i]->m_error, 50);
+					add_effect_impl(EffectType::BURST_SMALL, m_effect_list[i]->m_move_x + (rand() % 20) - 10, m_effect_list[i]->m_move_y + (rand() % 20) - 10, 0, 0, -1 * (rand() % 4));
+					add_effect_impl(EffectType::BURST_SMALL, m_effect_list[i]->m_move_x + (rand() % 20) - 10, m_effect_list[i]->m_move_y + (rand() % 20) - 10, 0, 0, -1 * (rand() % 4));
+					if ((abs(m_effect_list[i]->m_move_x - m_effect_list[i]->m_dest_x * 32) <= 2)
+						&& (abs(m_effect_list[i]->m_move_y - m_effect_list[i]->m_dest_y * 32) <= 2))
 					{
-						AddEffectImpl(EffectType::ENERGY_BOLT_EXPLOSION, m_pEffectList[i]->m_dX * 32, m_pEffectList[i]->m_dY * 32, 0, 0, 0, 0); // 6 testcode 0111
-						delete m_pEffectList[i];
-						m_pEffectList[i] = 0;
+						add_effect_impl(EffectType::ENERGY_BOLT_EXPLOSION, m_effect_list[i]->m_dest_x * 32, m_effect_list[i]->m_dest_y * 32, 0, 0, 0, 0); // 6 testcode 0111
+						delete m_effect_list[i];
+						m_effect_list[i] = 0;
 					}
 					break;
 
 				case EffectType::FIRE_BALL_FLYING: // Fire Ball
-					CMisc::GetPoint(m_pEffectList[i]->m_mX, m_pEffectList[i]->m_mY,
-						m_pEffectList[i]->m_dX * 32, m_pEffectList[i]->m_dY * 32/* - 40*/,
-						&m_pEffectList[i]->m_mX, &m_pEffectList[i]->m_mY,
-						&m_pEffectList[i]->m_iErr, 50);
-					if ((abs(m_pEffectList[i]->m_mX - m_pEffectList[i]->m_dX * 32) <= 2)
-						&& (abs(m_pEffectList[i]->m_mY - m_pEffectList[i]->m_dY * 32) <= 2))
+					CMisc::get_point(m_effect_list[i]->m_move_x, m_effect_list[i]->m_move_y,
+						m_effect_list[i]->m_dest_x * 32, m_effect_list[i]->m_dest_y * 32/* - 40*/,
+						&m_effect_list[i]->m_move_x, &m_effect_list[i]->m_move_y,
+						&m_effect_list[i]->m_error, 50);
+					if ((abs(m_effect_list[i]->m_move_x - m_effect_list[i]->m_dest_x * 32) <= 2)
+						&& (abs(m_effect_list[i]->m_move_y - m_effect_list[i]->m_dest_y * 32) <= 2))
 					{
-						AddEffectImpl(EffectType::FIREBALL_EXPLOSION, m_pEffectList[i]->m_dX * 32, m_pEffectList[i]->m_dY * 32, 0, 0, 0, 0);
-						delete m_pEffectList[i];
-						m_pEffectList[i] = 0;
+						add_effect_impl(EffectType::FIREBALL_EXPLOSION, m_effect_list[i]->m_dest_x * 32, m_effect_list[i]->m_dest_y * 32, 0, 0, 0, 0);
+						delete m_effect_list[i];
+						m_effect_list[i] = 0;
 					}
 					break;
 
 				case EffectType::FIRE_STRIKE_FLYING: // Fire Strike
-					CMisc::GetPoint(m_pEffectList[i]->m_mX, m_pEffectList[i]->m_mY,
-						m_pEffectList[i]->m_dX * 32, m_pEffectList[i]->m_dY * 32/* - 40*/,
-						&m_pEffectList[i]->m_mX, &m_pEffectList[i]->m_mY,
-						&m_pEffectList[i]->m_iErr, 50);
-					if ((abs(m_pEffectList[i]->m_mX - m_pEffectList[i]->m_dX * 32) <= 2)
-						&& (abs(m_pEffectList[i]->m_mY - m_pEffectList[i]->m_dY * 32) <= 2))
+					CMisc::get_point(m_effect_list[i]->m_move_x, m_effect_list[i]->m_move_y,
+						m_effect_list[i]->m_dest_x * 32, m_effect_list[i]->m_dest_y * 32/* - 40*/,
+						&m_effect_list[i]->m_move_x, &m_effect_list[i]->m_move_y,
+						&m_effect_list[i]->m_error, 50);
+					if ((abs(m_effect_list[i]->m_move_x - m_effect_list[i]->m_dest_x * 32) <= 2)
+						&& (abs(m_effect_list[i]->m_move_y - m_effect_list[i]->m_dest_y * 32) <= 2))
 					{
-						AddEffectImpl(EffectType::FIREBALL_EXPLOSION, m_pEffectList[i]->m_dX * 32, m_pEffectList[i]->m_dY * 32, 0, 0, 0, 0);
-						AddEffectImpl(EffectType::FIREBALL_EXPLOSION, m_pEffectList[i]->m_dX * 32 - 30, m_pEffectList[i]->m_dY * 32 - 15, 0, 0, -7, 0);
-						AddEffectImpl(EffectType::FIREBALL_EXPLOSION, m_pEffectList[i]->m_dX * 32 + 35, m_pEffectList[i]->m_dY * 32 - 30, 0, 0, -5, 0);
-						AddEffectImpl(EffectType::FIREBALL_EXPLOSION, m_pEffectList[i]->m_dX * 32 + 20, m_pEffectList[i]->m_dY * 32 + 30, 0, 0, -3, 0);
-						delete m_pEffectList[i];
-						m_pEffectList[i] = 0;
+						add_effect_impl(EffectType::FIREBALL_EXPLOSION, m_effect_list[i]->m_dest_x * 32, m_effect_list[i]->m_dest_y * 32, 0, 0, 0, 0);
+						add_effect_impl(EffectType::FIREBALL_EXPLOSION, m_effect_list[i]->m_dest_x * 32 - 30, m_effect_list[i]->m_dest_y * 32 - 15, 0, 0, -7, 0);
+						add_effect_impl(EffectType::FIREBALL_EXPLOSION, m_effect_list[i]->m_dest_x * 32 + 35, m_effect_list[i]->m_dest_y * 32 - 30, 0, 0, -5, 0);
+						add_effect_impl(EffectType::FIREBALL_EXPLOSION, m_effect_list[i]->m_dest_x * 32 + 20, m_effect_list[i]->m_dest_y * 32 + 30, 0, 0, -3, 0);
+						delete m_effect_list[i];
+						m_effect_list[i] = 0;
 					}
 					break;
 
 				case EffectType::LIGHTNING_ARROW_FLYING: // Lightning Arrow
-					CMisc::GetPoint(m_pEffectList[i]->m_mX, m_pEffectList[i]->m_mY,
-						m_pEffectList[i]->m_dX * 32, m_pEffectList[i]->m_dY * 32/* - 40*/,
-						&m_pEffectList[i]->m_mX, &m_pEffectList[i]->m_mY,
-						&m_pEffectList[i]->m_iErr, 50);
-					AddEffectImpl(EffectType::BURST_SMALL, m_pEffectList[i]->m_mX + (rand() % 20) - 10, m_pEffectList[i]->m_mY + (rand() % 20) - 10, 0, 0, -1 * (rand() % 4));
-					AddEffectImpl(EffectType::BURST_SMALL, m_pEffectList[i]->m_mX + (rand() % 20) - 10, m_pEffectList[i]->m_mY + (rand() % 20) - 10, 0, 0, -1 * (rand() % 4));
-					AddEffectImpl(EffectType::BURST_SMALL, m_pEffectList[i]->m_mX + (rand() % 20) - 10, m_pEffectList[i]->m_mY + (rand() % 20) - 10, 0, 0, -1 * (rand() % 4));
-					if ((abs(m_pEffectList[i]->m_mX - m_pEffectList[i]->m_dX * 32) <= 2)
-						&& (abs(m_pEffectList[i]->m_mY - m_pEffectList[i]->m_dY * 32) <= 2))
+					CMisc::get_point(m_effect_list[i]->m_move_x, m_effect_list[i]->m_move_y,
+						m_effect_list[i]->m_dest_x * 32, m_effect_list[i]->m_dest_y * 32/* - 40*/,
+						&m_effect_list[i]->m_move_x, &m_effect_list[i]->m_move_y,
+						&m_effect_list[i]->m_error, 50);
+					add_effect_impl(EffectType::BURST_SMALL, m_effect_list[i]->m_move_x + (rand() % 20) - 10, m_effect_list[i]->m_move_y + (rand() % 20) - 10, 0, 0, -1 * (rand() % 4));
+					add_effect_impl(EffectType::BURST_SMALL, m_effect_list[i]->m_move_x + (rand() % 20) - 10, m_effect_list[i]->m_move_y + (rand() % 20) - 10, 0, 0, -1 * (rand() % 4));
+					add_effect_impl(EffectType::BURST_SMALL, m_effect_list[i]->m_move_x + (rand() % 20) - 10, m_effect_list[i]->m_move_y + (rand() % 20) - 10, 0, 0, -1 * (rand() % 4));
+					if ((abs(m_effect_list[i]->m_move_x - m_effect_list[i]->m_dest_x * 32) <= 2)
+						&& (abs(m_effect_list[i]->m_move_y - m_effect_list[i]->m_dest_y * 32) <= 2))
 					{
-						AddEffectImpl(EffectType::LIGHTNING_ARROW_EXPLOSION, m_pEffectList[i]->m_dX * 32, m_pEffectList[i]->m_dY * 32, 0, 0, 0, 0);
-						delete m_pEffectList[i];
-						m_pEffectList[i] = 0;
+						add_effect_impl(EffectType::LIGHTNING_ARROW_EXPLOSION, m_effect_list[i]->m_dest_x * 32, m_effect_list[i]->m_dest_y * 32, 0, 0, 0, 0);
+						delete m_effect_list[i];
+						m_effect_list[i] = 0;
 					}
 					break;
 
 				case EffectType::LIGHTNING: // Lightning
 				case EffectType::LIGHTNING_BOLT: // Lightning-Bolt
-					if (m_pEffectList[i]->m_cFrame > m_pEffectList[i]->m_cMaxFrame)
+					if (m_effect_list[i]->m_frame > m_effect_list[i]->m_max_frame)
 					{
-						AddEffectImpl(EffectType::LIGHTNING_ARROW_EXPLOSION, m_pEffectList[i]->m_dX * 32, m_pEffectList[i]->m_dY * 32, 0, 0, 0, 0);
-						delete m_pEffectList[i];
-						m_pEffectList[i] = 0;
+						add_effect_impl(EffectType::LIGHTNING_ARROW_EXPLOSION, m_effect_list[i]->m_dest_x * 32, m_effect_list[i]->m_dest_y * 32, 0, 0, 0, 0);
+						delete m_effect_list[i];
+						m_effect_list[i] = 0;
 					}
 					else
 					{
-						m_pEffectList[i]->m_rX = 5 - (rand() % 10);
-						m_pEffectList[i]->m_rY = 5 - (rand() % 10);
+						m_effect_list[i]->m_render_x = 5 - (rand() % 10);
+						m_effect_list[i]->m_render_y = 5 - (rand() % 10);
 					}
 					break;
 
 				case EffectType::CHILL_WIND: // Chill-Wind
-					AddEffectImpl(EffectType::CHILL_WIND_IMPACT, m_pEffectList[i]->m_dX * 32, m_pEffectList[i]->m_dY * 32, 0, 0, 0, 0);
-					AddEffectImpl(EffectType::CHILL_WIND_IMPACT, m_pEffectList[i]->m_dX * 32 - 30, m_pEffectList[i]->m_dY * 32 - 15, 0, 0, -10, 0);
-					AddEffectImpl(EffectType::CHILL_WIND_IMPACT, m_pEffectList[i]->m_dX * 32 + 35, m_pEffectList[i]->m_dY * 32 - 30, 0, 0, -6, 0);
-					AddEffectImpl(EffectType::CHILL_WIND_IMPACT, m_pEffectList[i]->m_dX * 32 + 20, m_pEffectList[i]->m_dY * 32 + 30, 0, 0, -3, 0);
-					delete m_pEffectList[i];
-					m_pEffectList[i] = 0;
+					add_effect_impl(EffectType::CHILL_WIND_IMPACT, m_effect_list[i]->m_dest_x * 32, m_effect_list[i]->m_dest_y * 32, 0, 0, 0, 0);
+					add_effect_impl(EffectType::CHILL_WIND_IMPACT, m_effect_list[i]->m_dest_x * 32 - 30, m_effect_list[i]->m_dest_y * 32 - 15, 0, 0, -10, 0);
+					add_effect_impl(EffectType::CHILL_WIND_IMPACT, m_effect_list[i]->m_dest_x * 32 + 35, m_effect_list[i]->m_dest_y * 32 - 30, 0, 0, -6, 0);
+					add_effect_impl(EffectType::CHILL_WIND_IMPACT, m_effect_list[i]->m_dest_x * 32 + 20, m_effect_list[i]->m_dest_y * 32 + 30, 0, 0, -3, 0);
+					delete m_effect_list[i];
+					m_effect_list[i] = 0;
 					break;
 
 				case EffectType::TRIPLE_ENERGY_BOLT:  // Triple-Energy-Bolt
-					AddEffectImpl(EffectType::ENERGY_BOLT_FLYING, m_pEffectList[i]->m_sX, m_pEffectList[i]->m_sY,
-						m_pEffectList[i]->m_dX - 1, m_pEffectList[i]->m_dY - 1, 0);
-					AddEffectImpl(EffectType::ENERGY_BOLT_FLYING, m_pEffectList[i]->m_sX, m_pEffectList[i]->m_sY,
-						m_pEffectList[i]->m_dX + 1, m_pEffectList[i]->m_dY - 1, 0);
-					AddEffectImpl(EffectType::ENERGY_BOLT_FLYING, m_pEffectList[i]->m_sX, m_pEffectList[i]->m_sY,
-						m_pEffectList[i]->m_dX + 1, m_pEffectList[i]->m_dY + 1, 0);
-					AddEffectImpl(EffectType::BURST_SMALL, m_pEffectList[i]->m_mX + (rand() % 20) - 10, m_pEffectList[i]->m_mY + (rand() % 20) - 10, 0, 0, -1 * (rand() % 4));
-					lPan = -(((m_pGame->m_Camera.GetX() / 32) + VIEW_CENTER_TILE_X()) - m_pEffectList[i]->m_dX) * LOGICAL_WIDTH();
-					m_pGame->PlayGameSound('E', 1, sDist, lPan);
-					AddEffectImpl(EffectType::MAGIC_MISSILE_EXPLOSION, m_pEffectList[i]->m_dX * 32, m_pEffectList[i]->m_dY * 32, 0, 0, 0, 0);
-					delete m_pEffectList[i];
-					m_pEffectList[i] = 0;
+					add_effect_impl(EffectType::ENERGY_BOLT_FLYING, m_effect_list[i]->m_x, m_effect_list[i]->m_y,
+						m_effect_list[i]->m_dest_x - 1, m_effect_list[i]->m_dest_y - 1, 0);
+					add_effect_impl(EffectType::ENERGY_BOLT_FLYING, m_effect_list[i]->m_x, m_effect_list[i]->m_y,
+						m_effect_list[i]->m_dest_x + 1, m_effect_list[i]->m_dest_y - 1, 0);
+					add_effect_impl(EffectType::ENERGY_BOLT_FLYING, m_effect_list[i]->m_x, m_effect_list[i]->m_y,
+						m_effect_list[i]->m_dest_x + 1, m_effect_list[i]->m_dest_y + 1, 0);
+					add_effect_impl(EffectType::BURST_SMALL, m_effect_list[i]->m_move_x + (rand() % 20) - 10, m_effect_list[i]->m_move_y + (rand() % 20) - 10, 0, 0, -1 * (rand() % 4));
+					lPan = -(((m_game->m_Camera.get_x() / 32) + VIEW_CENTER_TILE_X()) - m_effect_list[i]->m_dest_x) * LOGICAL_WIDTH();
+					m_game->play_game_sound('E', 1, dist, lPan);
+					add_effect_impl(EffectType::MAGIC_MISSILE_EXPLOSION, m_effect_list[i]->m_dest_x * 32, m_effect_list[i]->m_dest_y * 32, 0, 0, 0, 0);
+					delete m_effect_list[i];
+					m_effect_list[i] = 0;
 					break;
 
 				case EffectType::MASS_LIGHTNING_ARROW: // Mass-Lightning-Arrow
-					if (m_pEffectList[i]->m_cFrame > m_pEffectList[i]->m_cMaxFrame)
+					if (m_effect_list[i]->m_frame > m_effect_list[i]->m_max_frame)
 					{
-						delete m_pEffectList[i];
-						m_pEffectList[i] = 0;
+						delete m_effect_list[i];
+						m_effect_list[i] = 0;
 					}
 					else
 					{
-						AddEffectImpl(EffectType::LIGHTNING_ARROW_FLYING, m_pEffectList[i]->m_sX, m_pEffectList[i]->m_sY,
-							m_pEffectList[i]->m_dX, m_pEffectList[i]->m_dY, 0);
-						sAbsX = abs(((m_pGame->m_Camera.GetX() / 32) + VIEW_CENTER_TILE_X()) - m_pEffectList[i]->m_dX);
-						sAbsY = abs(((m_pGame->m_Camera.GetY() / 32) + VIEW_CENTER_TILE_Y()) - m_pEffectList[i]->m_dY);
-						if (sAbsX > sAbsY) sDist = sAbsX;
-						else sDist = sAbsY;
-						lPan = -(((m_pGame->m_Camera.GetX() / 32) + VIEW_CENTER_TILE_X()) - m_pEffectList[i]->m_dX) * LOGICAL_WIDTH();
-						m_pGame->PlayGameSound('E', 1, sDist, lPan);
+						add_effect_impl(EffectType::LIGHTNING_ARROW_FLYING, m_effect_list[i]->m_x, m_effect_list[i]->m_y,
+							m_effect_list[i]->m_dest_x, m_effect_list[i]->m_dest_y, 0);
+						abs_x = abs(((m_game->m_Camera.get_x() / 32) + VIEW_CENTER_TILE_X()) - m_effect_list[i]->m_dest_x);
+						abs_y = abs(((m_game->m_Camera.get_y() / 32) + VIEW_CENTER_TILE_Y()) - m_effect_list[i]->m_dest_y);
+						if (abs_x > abs_y) dist = abs_x;
+						else dist = abs_y;
+						lPan = -(((m_game->m_Camera.get_x() / 32) + VIEW_CENTER_TILE_X()) - m_effect_list[i]->m_dest_x) * LOGICAL_WIDTH();
+						m_game->play_game_sound('E', 1, dist, lPan);
 					}
 					break;
 
 				case EffectType::ICE_STRIKE: // Ice-Strike
-					AddEffectImpl(EffectType::ICE_STRIKE_VARIANT_1, m_pEffectList[i]->m_dX * 32, m_pEffectList[i]->m_dY * 32, 0, 0, 0, 0);
+					add_effect_impl(EffectType::ICE_STRIKE_VARIANT_1, m_effect_list[i]->m_dest_x * 32, m_effect_list[i]->m_dest_y * 32, 0, 0, 0, 0);
 					for (x = 0; x < 14; x++)
 					{
 						{
 						constexpr EffectType ice_variants[] = { EffectType::ICE_STRIKE_VARIANT_1, EffectType::ICE_STRIKE_VARIANT_2, EffectType::ICE_STRIKE_VARIANT_3 };
-						AddEffectImpl(ice_variants[rand() % 3], m_pEffectList[i]->m_dX * 32 + (rand() % 100) - 50 + 10, m_pEffectList[i]->m_dY * 32 + (rand() % 90) - 45, 0, 0, -1 * x - 1);
+						add_effect_impl(ice_variants[rand() % 3], m_effect_list[i]->m_dest_x * 32 + (rand() % 100) - 50 + 10, m_effect_list[i]->m_dest_y * 32 + (rand() % 90) - 45, 0, 0, -1 * x - 1);
 					}
 					}
 					for (x = 0; x < 6; x++)
 					{
-						AddEffectImpl(static_cast<EffectType>(45 + (rand() % 2)), m_pEffectList[i]->m_dX * 32 + (rand() % 100) - 50 + 10, m_pEffectList[i]->m_dY * 32 + (rand() % 90) - 45, 0, 0, -1 * x - 1 - 10);
+						add_effect_impl(static_cast<EffectType>(45 + (rand() % 2)), m_effect_list[i]->m_dest_x * 32 + (rand() % 100) - 50 + 10, m_effect_list[i]->m_dest_y * 32 + (rand() % 90) - 45, 0, 0, -1 * x - 1 - 10);
 					}
-					delete m_pEffectList[i];
-					m_pEffectList[i] = 0;
+					delete m_effect_list[i];
+					m_effect_list[i] = 0;
 					break;
 
 				case EffectType::ENERGY_STRIKE: // Energy-Strike
-					if (m_pEffectList[i]->m_cFrame > m_pEffectList[i]->m_cMaxFrame)
+					if (m_effect_list[i]->m_frame > m_effect_list[i]->m_max_frame)
 					{
-						delete m_pEffectList[i];
-						m_pEffectList[i] = 0;
+						delete m_effect_list[i];
+						m_effect_list[i] = 0;
 					}
 					else
 					{
-						AddEffectImpl(EffectType::PROJECTILE_GENERIC, m_pEffectList[i]->m_sX, m_pEffectList[i]->m_sY,
-							m_pEffectList[i]->m_dX * 32 + 50 - (rand() % 100), m_pEffectList[i]->m_dY * 32 + 50 - (rand() % 100), 0);
-						sAbsX = abs(((m_pGame->m_Camera.GetX() / 32) + VIEW_CENTER_TILE_X()) - m_pEffectList[i]->m_dX);
-						sAbsY = abs(((m_pGame->m_Camera.GetY() / 32) + VIEW_CENTER_TILE_Y()) - m_pEffectList[i]->m_dY);
-						if (sAbsX > sAbsY) sDist = sAbsX;
-						else sDist = sAbsY;
-						lPan = -(((m_pGame->m_Camera.GetX() / 32) + VIEW_CENTER_TILE_X()) - m_pEffectList[i]->m_dX);
-						m_pGame->PlayGameSound('E', 1, sDist, lPan);
+						add_effect_impl(EffectType::PROJECTILE_GENERIC, m_effect_list[i]->m_x, m_effect_list[i]->m_y,
+							m_effect_list[i]->m_dest_x * 32 + 50 - (rand() % 100), m_effect_list[i]->m_dest_y * 32 + 50 - (rand() % 100), 0);
+						abs_x = abs(((m_game->m_Camera.get_x() / 32) + VIEW_CENTER_TILE_X()) - m_effect_list[i]->m_dest_x);
+						abs_y = abs(((m_game->m_Camera.get_y() / 32) + VIEW_CENTER_TILE_Y()) - m_effect_list[i]->m_dest_y);
+						if (abs_x > abs_y) dist = abs_x;
+						else dist = abs_y;
+						lPan = -(((m_game->m_Camera.get_x() / 32) + VIEW_CENTER_TILE_X()) - m_effect_list[i]->m_dest_x);
+						m_game->play_game_sound('E', 1, dist, lPan);
 					}
 					break;
 
 				case EffectType::MASS_FIRE_STRIKE_FLYING: // Mass-Fire-Strike
-					CMisc::GetPoint(m_pEffectList[i]->m_mX, m_pEffectList[i]->m_mY,
-						m_pEffectList[i]->m_dX * 32, m_pEffectList[i]->m_dY * 32/* - 40*/,
-						&m_pEffectList[i]->m_mX, &m_pEffectList[i]->m_mY,
-						&m_pEffectList[i]->m_iErr, 50);
-					if ((abs(m_pEffectList[i]->m_mX - m_pEffectList[i]->m_dX * 32) <= 2)
-						&& (abs(m_pEffectList[i]->m_mY - m_pEffectList[i]->m_dY * 32) <= 2))
+					CMisc::get_point(m_effect_list[i]->m_move_x, m_effect_list[i]->m_move_y,
+						m_effect_list[i]->m_dest_x * 32, m_effect_list[i]->m_dest_y * 32/* - 40*/,
+						&m_effect_list[i]->m_move_x, &m_effect_list[i]->m_move_y,
+						&m_effect_list[i]->m_error, 50);
+					if ((abs(m_effect_list[i]->m_move_x - m_effect_list[i]->m_dest_x * 32) <= 2)
+						&& (abs(m_effect_list[i]->m_move_y - m_effect_list[i]->m_dest_y * 32) <= 2))
 					{
-						AddEffectImpl(EffectType::MASS_FIRE_STRIKE_CALLER1, m_pEffectList[i]->m_dX * 32, m_pEffectList[i]->m_dY * 32, 0, 0, 0, 0);
-						AddEffectImpl(EffectType::MASS_FIRE_STRIKE_CALLER3, m_pEffectList[i]->m_dX * 32 - 30, m_pEffectList[i]->m_dY * 32 - 15, 0, 0, -7, 0);
-						AddEffectImpl(EffectType::MASS_FIRE_STRIKE_CALLER3, m_pEffectList[i]->m_dX * 32 + 35, m_pEffectList[i]->m_dY * 32 - 30, 0, 0, -5, 0);
-						AddEffectImpl(EffectType::MASS_FIRE_STRIKE_CALLER3, m_pEffectList[i]->m_dX * 32 + 20, m_pEffectList[i]->m_dY * 32 + 30, 0, 0, -3, 0);
-						delete m_pEffectList[i];
-						m_pEffectList[i] = 0;
+						add_effect_impl(EffectType::MASS_FIRE_STRIKE_CALLER1, m_effect_list[i]->m_dest_x * 32, m_effect_list[i]->m_dest_y * 32, 0, 0, 0, 0);
+						add_effect_impl(EffectType::MASS_FIRE_STRIKE_CALLER3, m_effect_list[i]->m_dest_x * 32 - 30, m_effect_list[i]->m_dest_y * 32 - 15, 0, 0, -7, 0);
+						add_effect_impl(EffectType::MASS_FIRE_STRIKE_CALLER3, m_effect_list[i]->m_dest_x * 32 + 35, m_effect_list[i]->m_dest_y * 32 - 30, 0, 0, -5, 0);
+						add_effect_impl(EffectType::MASS_FIRE_STRIKE_CALLER3, m_effect_list[i]->m_dest_x * 32 + 20, m_effect_list[i]->m_dest_y * 32 + 30, 0, 0, -3, 0);
+						delete m_effect_list[i];
+						m_effect_list[i] = 0;
 					}
 					break;
 
 				case EffectType::MASS_CHILL_WIND_SPELL: // Mass-Chill-Wind Chill-Wind
-					AddEffectImpl(EffectType::MASS_CHILL_WIND, m_pEffectList[i]->m_dX * 32, m_pEffectList[i]->m_dY * 32, 0, 0, 0, 0);
-					AddEffectImpl(EffectType::MASS_CHILL_WIND, m_pEffectList[i]->m_dX * 32 - 30, m_pEffectList[i]->m_dY * 32 - 15, 0, 0, -10, 0);
-					AddEffectImpl(EffectType::MASS_CHILL_WIND, m_pEffectList[i]->m_dX * 32 + 35, m_pEffectList[i]->m_dY * 32 - 30, 0, 0, -6, 0);
-					AddEffectImpl(EffectType::MASS_CHILL_WIND, m_pEffectList[i]->m_dX * 32 + 20, m_pEffectList[i]->m_dY * 32 + 30, 0, 0, -3, 0);
-					AddEffectImpl(EffectType::MASS_CHILL_WIND, m_pEffectList[i]->m_dX * 32 + (rand() % 100) - 50, m_pEffectList[i]->m_dY * 32 + (rand() % 70) - 35, 0, 0, -1 * (rand() % 10));
-					AddEffectImpl(EffectType::MASS_CHILL_WIND, m_pEffectList[i]->m_dX * 32 + (rand() % 100) - 50, m_pEffectList[i]->m_dY * 32 + (rand() % 70) - 35, 0, 0, -1 * (rand() % 10));
-					AddEffectImpl(EffectType::MASS_CHILL_WIND, m_pEffectList[i]->m_dX * 32 + (rand() % 100) - 50, m_pEffectList[i]->m_dY * 32 + (rand() % 70) - 35, 0, 0, -1 * (rand() % 10));
-					AddEffectImpl(EffectType::MASS_CHILL_WIND, m_pEffectList[i]->m_dX * 32 + (rand() % 100) - 50, m_pEffectList[i]->m_dY * 32 + (rand() % 70) - 35, 0, 0, -1 * (rand() % 10));
-					delete m_pEffectList[i];
-					m_pEffectList[i] = 0;
+					add_effect_impl(EffectType::MASS_CHILL_WIND, m_effect_list[i]->m_dest_x * 32, m_effect_list[i]->m_dest_y * 32, 0, 0, 0, 0);
+					add_effect_impl(EffectType::MASS_CHILL_WIND, m_effect_list[i]->m_dest_x * 32 - 30, m_effect_list[i]->m_dest_y * 32 - 15, 0, 0, -10, 0);
+					add_effect_impl(EffectType::MASS_CHILL_WIND, m_effect_list[i]->m_dest_x * 32 + 35, m_effect_list[i]->m_dest_y * 32 - 30, 0, 0, -6, 0);
+					add_effect_impl(EffectType::MASS_CHILL_WIND, m_effect_list[i]->m_dest_x * 32 + 20, m_effect_list[i]->m_dest_y * 32 + 30, 0, 0, -3, 0);
+					add_effect_impl(EffectType::MASS_CHILL_WIND, m_effect_list[i]->m_dest_x * 32 + (rand() % 100) - 50, m_effect_list[i]->m_dest_y * 32 + (rand() % 70) - 35, 0, 0, -1 * (rand() % 10));
+					add_effect_impl(EffectType::MASS_CHILL_WIND, m_effect_list[i]->m_dest_x * 32 + (rand() % 100) - 50, m_effect_list[i]->m_dest_y * 32 + (rand() % 70) - 35, 0, 0, -1 * (rand() % 10));
+					add_effect_impl(EffectType::MASS_CHILL_WIND, m_effect_list[i]->m_dest_x * 32 + (rand() % 100) - 50, m_effect_list[i]->m_dest_y * 32 + (rand() % 70) - 35, 0, 0, -1 * (rand() % 10));
+					add_effect_impl(EffectType::MASS_CHILL_WIND, m_effect_list[i]->m_dest_x * 32 + (rand() % 100) - 50, m_effect_list[i]->m_dest_y * 32 + (rand() % 70) - 35, 0, 0, -1 * (rand() % 10));
+					delete m_effect_list[i];
+					m_effect_list[i] = 0;
 					break;
 
 				case EffectType::WORM_BITE_MASS: // worm-bite
-					if (m_pEffectList[i]->m_cFrame > m_pEffectList[i]->m_cMaxFrame)
+					if (m_effect_list[i]->m_frame > m_effect_list[i]->m_max_frame)
 					{
-						AddEffectImpl(EffectType::WORM_BITE, m_pEffectList[i]->m_dX * 32, m_pEffectList[i]->m_dY * 32, 0, 0, 0, 0); // testcode 0111 18
-						delete m_pEffectList[i];
-						m_pEffectList[i] = 0;
+						add_effect_impl(EffectType::WORM_BITE, m_effect_list[i]->m_dest_x * 32, m_effect_list[i]->m_dest_y * 32, 0, 0, 0, 0); // testcode 0111 18
+						delete m_effect_list[i];
+						m_effect_list[i] = 0;
 					}
 					break;
 
 				case EffectType::BLOODY_SHOCK_WAVE: // Bloody-Shock-Wave
-					if (m_pEffectList[i]->m_cFrame > m_pEffectList[i]->m_cMaxFrame)
+					if (m_effect_list[i]->m_frame > m_effect_list[i]->m_max_frame)
 					{
-						delete m_pEffectList[i];
-						m_pEffectList[i] = 0;
+						delete m_effect_list[i];
+						m_effect_list[i] = 0;
 					}
-					else if ((m_pEffectList[i]->m_cFrame % 2) == 0)
+					else if ((m_effect_list[i]->m_frame % 2) == 0)
 					{
-						AddEffectImpl(EffectType::BLOODY_SHOCK_STRIKE, m_pEffectList[i]->m_sX, m_pEffectList[i]->m_sY,
-							m_pEffectList[i]->m_dX * 32 + 30 - (rand() % 60), m_pEffectList[i]->m_dY * 32 + 30 - (rand() % 60), 0);
-						sAbsX = abs(((m_pGame->m_Camera.GetX() / 32) + VIEW_CENTER_TILE_X()) - m_pEffectList[i]->m_dX);
-						sAbsY = abs(((m_pGame->m_Camera.GetY() / 32) + VIEW_CENTER_TILE_Y()) - m_pEffectList[i]->m_dY);
-						if (sAbsX > sAbsY) sDist = sAbsX;
-						else sDist = sAbsY;
-						lPan = -(((m_pGame->m_Camera.GetX() / 32) + VIEW_CENTER_TILE_X()) - m_pEffectList[i]->m_dX);
-						m_pGame->PlayGameSound('E', 1, sDist, lPan);
+						add_effect_impl(EffectType::BLOODY_SHOCK_STRIKE, m_effect_list[i]->m_x, m_effect_list[i]->m_y,
+							m_effect_list[i]->m_dest_x * 32 + 30 - (rand() % 60), m_effect_list[i]->m_dest_y * 32 + 30 - (rand() % 60), 0);
+						abs_x = abs(((m_game->m_Camera.get_x() / 32) + VIEW_CENTER_TILE_X()) - m_effect_list[i]->m_dest_x);
+						abs_y = abs(((m_game->m_Camera.get_y() / 32) + VIEW_CENTER_TILE_Y()) - m_effect_list[i]->m_dest_y);
+						if (abs_x > abs_y) dist = abs_x;
+						else dist = abs_y;
+						lPan = -(((m_game->m_Camera.get_x() / 32) + VIEW_CENTER_TILE_X()) - m_effect_list[i]->m_dest_x);
+						m_game->play_game_sound('E', 1, dist, lPan);
 					}
 					break;
 
 				case EffectType::MASS_ICE_STRIKE: // Mass-Ice-Strike
-					AddEffectImpl(EffectType::ICE_STRIKE_VARIANT_4, m_pEffectList[i]->m_dX * 32, m_pEffectList[i]->m_dY * 32, 0, 0, 0, 0);
-					AddEffectImpl(EffectType::ICE_STRIKE_VARIANT_4, m_pEffectList[i]->m_dX * 32 + (rand() % 110) - 55 + 10, m_pEffectList[i]->m_dY * 32 + (rand() % 100) - 50, 0, 0, -1 * (rand() % 3));
-					AddEffectImpl(EffectType::ICE_STRIKE_VARIANT_4, m_pEffectList[i]->m_dX * 32 + (rand() % 110) - 55 + 10, m_pEffectList[i]->m_dY * 32 + (rand() % 100) - 50, 0, 0, -1 * (rand() % 3));
-					AddEffectImpl(EffectType::ICE_STRIKE_VARIANT_4, m_pEffectList[i]->m_dX * 32 + (rand() % 110) - 55 + 10, m_pEffectList[i]->m_dY * 32 + (rand() % 100) - 50, 0, 0, -1 * (rand() % 3));
-					AddEffectImpl(EffectType::ICE_STRIKE_VARIANT_4, m_pEffectList[i]->m_dX * 32 + (rand() % 110) - 55 + 10, m_pEffectList[i]->m_dY * 32 + (rand() % 100) - 50, 0, 0, -1 * (rand() % 3));
-					AddEffectImpl(EffectType::ICE_STRIKE_VARIANT_4, m_pEffectList[i]->m_dX * 32 + (rand() % 110) - 55 + 10, m_pEffectList[i]->m_dY * 32 + (rand() % 100) - 50, 0, 0, -1 * (rand() % 3));
-					AddEffectImpl(EffectType::ICE_STRIKE_VARIANT_4, m_pEffectList[i]->m_dX * 32 + (rand() % 110) - 55 + 10, m_pEffectList[i]->m_dY * 32 + (rand() % 100) - 50, 0, 0, -1 * (rand() % 3));
-					AddEffectImpl(EffectType::ICE_STRIKE_VARIANT_4, m_pEffectList[i]->m_dX * 32 + (rand() % 110) - 55 + 10, m_pEffectList[i]->m_dY * 32 + (rand() % 100) - 50, 0, 0, -1 * (rand() % 3));
-					AddEffectImpl(EffectType::ICE_STRIKE_VARIANT_4, m_pEffectList[i]->m_dX * 32 + (rand() % 110) - 55 + 10, m_pEffectList[i]->m_dY * 32 + (rand() % 100) - 50, 0, 0, -1 * (rand() % 3));
+					add_effect_impl(EffectType::ICE_STRIKE_VARIANT_4, m_effect_list[i]->m_dest_x * 32, m_effect_list[i]->m_dest_y * 32, 0, 0, 0, 0);
+					add_effect_impl(EffectType::ICE_STRIKE_VARIANT_4, m_effect_list[i]->m_dest_x * 32 + (rand() % 110) - 55 + 10, m_effect_list[i]->m_dest_y * 32 + (rand() % 100) - 50, 0, 0, -1 * (rand() % 3));
+					add_effect_impl(EffectType::ICE_STRIKE_VARIANT_4, m_effect_list[i]->m_dest_x * 32 + (rand() % 110) - 55 + 10, m_effect_list[i]->m_dest_y * 32 + (rand() % 100) - 50, 0, 0, -1 * (rand() % 3));
+					add_effect_impl(EffectType::ICE_STRIKE_VARIANT_4, m_effect_list[i]->m_dest_x * 32 + (rand() % 110) - 55 + 10, m_effect_list[i]->m_dest_y * 32 + (rand() % 100) - 50, 0, 0, -1 * (rand() % 3));
+					add_effect_impl(EffectType::ICE_STRIKE_VARIANT_4, m_effect_list[i]->m_dest_x * 32 + (rand() % 110) - 55 + 10, m_effect_list[i]->m_dest_y * 32 + (rand() % 100) - 50, 0, 0, -1 * (rand() % 3));
+					add_effect_impl(EffectType::ICE_STRIKE_VARIANT_4, m_effect_list[i]->m_dest_x * 32 + (rand() % 110) - 55 + 10, m_effect_list[i]->m_dest_y * 32 + (rand() % 100) - 50, 0, 0, -1 * (rand() % 3));
+					add_effect_impl(EffectType::ICE_STRIKE_VARIANT_4, m_effect_list[i]->m_dest_x * 32 + (rand() % 110) - 55 + 10, m_effect_list[i]->m_dest_y * 32 + (rand() % 100) - 50, 0, 0, -1 * (rand() % 3));
+					add_effect_impl(EffectType::ICE_STRIKE_VARIANT_4, m_effect_list[i]->m_dest_x * 32 + (rand() % 110) - 55 + 10, m_effect_list[i]->m_dest_y * 32 + (rand() % 100) - 50, 0, 0, -1 * (rand() % 3));
+					add_effect_impl(EffectType::ICE_STRIKE_VARIANT_4, m_effect_list[i]->m_dest_x * 32 + (rand() % 110) - 55 + 10, m_effect_list[i]->m_dest_y * 32 + (rand() % 100) - 50, 0, 0, -1 * (rand() % 3));
 					for (x = 0; x < 16; x++)
 					{
-						AddEffectImpl(EffectType::ICE_STRIKE_VARIANT_4, m_pEffectList[i]->m_dX * 32 + (rand() % 110) - 55 + 10, m_pEffectList[i]->m_dY * 32 + (rand() % 100) - 50, 0, 0, -1 * x - 1, 0);
+						add_effect_impl(EffectType::ICE_STRIKE_VARIANT_4, m_effect_list[i]->m_dest_x * 32 + (rand() % 110) - 55 + 10, m_effect_list[i]->m_dest_y * 32 + (rand() % 100) - 50, 0, 0, -1 * x - 1, 0);
 					}
 					for (x = 0; x < 8; x++)
 					{
-						AddEffectImpl(static_cast<EffectType>(45 + (rand() % 2)), m_pEffectList[i]->m_dX * 32 + (rand() % 100) - 50 + 10, m_pEffectList[i]->m_dY * 32 + (rand() % 90) - 45, 0, 0, -1 * x - 1 - 10);
+						add_effect_impl(static_cast<EffectType>(45 + (rand() % 2)), m_effect_list[i]->m_dest_x * 32 + (rand() % 100) - 50 + 10, m_effect_list[i]->m_dest_y * 32 + (rand() % 90) - 45, 0, 0, -1 * x - 1 - 10);
 					}
-					delete m_pEffectList[i];
-					m_pEffectList[i] = 0;
+					delete m_effect_list[i];
+					m_effect_list[i] = 0;
 					break;
 
 				case EffectType::LIGHTNING_STRIKE: // Lightning-Strike
-					if (m_pEffectList[i]->m_cFrame > m_pEffectList[i]->m_cMaxFrame)
+					if (m_effect_list[i]->m_frame > m_effect_list[i]->m_max_frame)
 					{
-						delete m_pEffectList[i];
-						m_pEffectList[i] = 0;
+						delete m_effect_list[i];
+						m_effect_list[i] = 0;
 					}
 					else
 					{
-						AddEffectImpl(EffectType::LIGHTNING_BOLT, m_pEffectList[i]->m_sX, m_pEffectList[i]->m_sY,
-							m_pEffectList[i]->m_dX + (rand() % 3) - 1, m_pEffectList[i]->m_dY + (rand() % 3) - 1, 0);
-						sAbsX = abs(((m_pGame->m_Camera.GetX() / 32) + VIEW_CENTER_TILE_X()) - m_pEffectList[i]->m_dX);
-						sAbsY = abs(((m_pGame->m_Camera.GetY() / 32) + VIEW_CENTER_TILE_Y()) - m_pEffectList[i]->m_dY);
-						if (sAbsX > sAbsY) sDist = sAbsX;
-						else sDist = sAbsY;
-						lPan = -(((m_pGame->m_Camera.GetX() / 32) + VIEW_CENTER_TILE_X()) - m_pEffectList[i]->m_dX);
-						m_pGame->PlayGameSound('E', 1, sDist, lPan);
+						add_effect_impl(EffectType::LIGHTNING_BOLT, m_effect_list[i]->m_x, m_effect_list[i]->m_y,
+							m_effect_list[i]->m_dest_x + (rand() % 3) - 1, m_effect_list[i]->m_dest_y + (rand() % 3) - 1, 0);
+						abs_x = abs(((m_game->m_Camera.get_x() / 32) + VIEW_CENTER_TILE_X()) - m_effect_list[i]->m_dest_x);
+						abs_y = abs(((m_game->m_Camera.get_y() / 32) + VIEW_CENTER_TILE_Y()) - m_effect_list[i]->m_dest_y);
+						if (abs_x > abs_y) dist = abs_x;
+						else dist = abs_y;
+						lPan = -(((m_game->m_Camera.get_x() / 32) + VIEW_CENTER_TILE_X()) - m_effect_list[i]->m_dest_x);
+						m_game->play_game_sound('E', 1, dist, lPan);
 					}
 					break;
 
 				case EffectType::MASS_MAGIC_MISSILE_FLYING: // Mass-Magic-Missile
-					CMisc::GetPoint(m_pEffectList[i]->m_mX
-						, m_pEffectList[i]->m_mY
-						, m_pEffectList[i]->m_dX * 32
-						, m_pEffectList[i]->m_dY * 32
-						, &m_pEffectList[i]->m_mX
-						, &m_pEffectList[i]->m_mY
-						, &m_pEffectList[i]->m_iErr
+					CMisc::get_point(m_effect_list[i]->m_move_x
+						, m_effect_list[i]->m_move_y
+						, m_effect_list[i]->m_dest_x * 32
+						, m_effect_list[i]->m_dest_y * 32
+						, &m_effect_list[i]->m_move_x
+						, &m_effect_list[i]->m_move_y
+						, &m_effect_list[i]->m_error
 						, 50);
-					AddEffectImpl(EffectType::BURST_SMALL, m_pEffectList[i]->m_mX + (rand() % 20) - 10, m_pEffectList[i]->m_mY + (rand() % 20) - 10, 0, 0, -1 * (rand() % 4));
-					if ((abs(m_pEffectList[i]->m_mX - m_pEffectList[i]->m_dX * 32) <= 2)
-						&& (abs(m_pEffectList[i]->m_mY - m_pEffectList[i]->m_dY * 32) <= 2))
+					add_effect_impl(EffectType::BURST_SMALL, m_effect_list[i]->m_move_x + (rand() % 20) - 10, m_effect_list[i]->m_move_y + (rand() % 20) - 10, 0, 0, -1 * (rand() % 4));
+					if ((abs(m_effect_list[i]->m_move_x - m_effect_list[i]->m_dest_x * 32) <= 2)
+						&& (abs(m_effect_list[i]->m_move_y - m_effect_list[i]->m_dest_y * 32) <= 2))
 					{	// JLE 0043132A
-						delete m_pEffectList[i];
-						m_pEffectList[i] = 0;
+						delete m_effect_list[i];
+						m_effect_list[i] = 0;
 					}
 					else
 					{
-						AddEffectImpl(EffectType::MASS_MAGIC_MISSILE_AURA1, m_pEffectList[i]->m_dX * 32 + 22, m_pEffectList[i]->m_dY * 32 - 15, 0, 0, -7, 1);
-						AddEffectImpl(EffectType::MASS_MAGIC_MISSILE_AURA2, m_pEffectList[i]->m_dX * 32 - 22, m_pEffectList[i]->m_dY * 32 - 7, 0, 0, -7, 1);
-						AddEffectImpl(EffectType::MASS_MAGIC_MISSILE_AURA2, m_pEffectList[i]->m_dX * 32 + 30, m_pEffectList[i]->m_dY * 32 - 22, 0, 0, -5, 1);
-						AddEffectImpl(EffectType::MASS_MAGIC_MISSILE_AURA2, m_pEffectList[i]->m_dX * 32 + 12, m_pEffectList[i]->m_dY * 32 + 22, 0, 0, -3, 1);
+						add_effect_impl(EffectType::MASS_MAGIC_MISSILE_AURA1, m_effect_list[i]->m_dest_x * 32 + 22, m_effect_list[i]->m_dest_y * 32 - 15, 0, 0, -7, 1);
+						add_effect_impl(EffectType::MASS_MAGIC_MISSILE_AURA2, m_effect_list[i]->m_dest_x * 32 - 22, m_effect_list[i]->m_dest_y * 32 - 7, 0, 0, -7, 1);
+						add_effect_impl(EffectType::MASS_MAGIC_MISSILE_AURA2, m_effect_list[i]->m_dest_x * 32 + 30, m_effect_list[i]->m_dest_y * 32 - 22, 0, 0, -5, 1);
+						add_effect_impl(EffectType::MASS_MAGIC_MISSILE_AURA2, m_effect_list[i]->m_dest_x * 32 + 12, m_effect_list[i]->m_dest_y * 32 + 22, 0, 0, -3, 1);
 					}
 					break;
 
 				case EffectType::BLIZZARD: // Blizzard
-					if (m_pEffectList[i]->m_cFrame > m_pEffectList[i]->m_cMaxFrame)
+					if (m_effect_list[i]->m_frame > m_effect_list[i]->m_max_frame)
 					{
-						delete m_pEffectList[i];
-						m_pEffectList[i] = 0;
+						delete m_effect_list[i];
+						m_effect_list[i] = 0;
 					}
 					else
 					{
-						AddEffectImpl(EffectType::BLIZZARD_PROJECTILE, m_pEffectList[i]->m_sX, m_pEffectList[i]->m_sY,
-							m_pEffectList[i]->m_dX * 32 + (rand() % 120) - 60, m_pEffectList[i]->m_dY * 32 + (rand() % 120) - 60, 0);
-						sAbsX = abs(((m_pGame->m_Camera.GetX() / 32) + VIEW_CENTER_TILE_X()) - m_pEffectList[i]->m_dX);
-						sAbsY = abs(((m_pGame->m_Camera.GetY() / 32) + VIEW_CENTER_TILE_Y()) - m_pEffectList[i]->m_dY);
-						if (sAbsX > sAbsY) sDist = sAbsX;
-						else sDist = sAbsY;
-						lPan = -(((m_pGame->m_Camera.GetX() / 32) + VIEW_CENTER_TILE_X()) - m_pEffectList[i]->m_dX);
-						m_pGame->PlayGameSound('E', 1, sDist, lPan);
+						add_effect_impl(EffectType::BLIZZARD_PROJECTILE, m_effect_list[i]->m_x, m_effect_list[i]->m_y,
+							m_effect_list[i]->m_dest_x * 32 + (rand() % 120) - 60, m_effect_list[i]->m_dest_y * 32 + (rand() % 120) - 60, 0);
+						abs_x = abs(((m_game->m_Camera.get_x() / 32) + VIEW_CENTER_TILE_X()) - m_effect_list[i]->m_dest_x);
+						abs_y = abs(((m_game->m_Camera.get_y() / 32) + VIEW_CENTER_TILE_Y()) - m_effect_list[i]->m_dest_y);
+						if (abs_x > abs_y) dist = abs_x;
+						else dist = abs_y;
+						lPan = -(((m_game->m_Camera.get_x() / 32) + VIEW_CENTER_TILE_X()) - m_effect_list[i]->m_dest_x);
+						m_game->play_game_sound('E', 1, dist, lPan);
 					}
 					break;
 
 				case EffectType::EARTH_SHOCK_WAVE: // Earth-Shock-Wave
-					CMisc::GetPoint(m_pEffectList[i]->m_mX
-						, m_pEffectList[i]->m_mY
-						, m_pEffectList[i]->m_dX * 32
-						, m_pEffectList[i]->m_dY * 32
-						, &m_pEffectList[i]->m_mX
-						, &m_pEffectList[i]->m_mY
-						, &m_pEffectList[i]->m_iErr
+					CMisc::get_point(m_effect_list[i]->m_move_x
+						, m_effect_list[i]->m_move_y
+						, m_effect_list[i]->m_dest_x * 32
+						, m_effect_list[i]->m_dest_y * 32
+						, &m_effect_list[i]->m_move_x
+						, &m_effect_list[i]->m_move_y
+						, &m_effect_list[i]->m_error
 						, 40);
-					AddEffectImpl(EffectType::EARTH_SHOCK_WAVE_PARTICLE, m_pEffectList[i]->m_mX + (rand() % 30) - 15, m_pEffectList[i]->m_mY + (rand() % 30) - 15, 0, 0, 0, 1);
-					AddEffectImpl(EffectType::EARTH_SHOCK_WAVE_PARTICLE, m_pEffectList[i]->m_mX + (rand() % 20) - 10, m_pEffectList[i]->m_mY + (rand() % 20) - 10, 0, 0, 0, 0);
-					if (m_pEffectList[i]->m_cFrame >= m_pEffectList[i]->m_cMaxFrame)
+					add_effect_impl(EffectType::EARTH_SHOCK_WAVE_PARTICLE, m_effect_list[i]->m_move_x + (rand() % 30) - 15, m_effect_list[i]->m_move_y + (rand() % 30) - 15, 0, 0, 0, 1);
+					add_effect_impl(EffectType::EARTH_SHOCK_WAVE_PARTICLE, m_effect_list[i]->m_move_x + (rand() % 20) - 10, m_effect_list[i]->m_move_y + (rand() % 20) - 10, 0, 0, 0, 0);
+					if (m_effect_list[i]->m_frame >= m_effect_list[i]->m_max_frame)
 					{
-						delete m_pEffectList[i];
-						m_pEffectList[i] = 0;
+						delete m_effect_list[i];
+						m_effect_list[i] = 0;
 					}
 					else
 					{
-						sAbsX = abs(((m_pGame->m_Camera.GetX() / 32) + VIEW_CENTER_TILE_X()) - m_pEffectList[i]->m_dX);
-						sAbsY = abs(((m_pGame->m_Camera.GetY() / 32) + VIEW_CENTER_TILE_Y()) - m_pEffectList[i]->m_dY);
-						if (sAbsX > sAbsY) sDist = sAbsX - 10;
-						else sDist = sAbsY - 10;
-						lPan = -(((m_pGame->m_Camera.GetX() / 32) + VIEW_CENTER_TILE_X()) - m_pEffectList[i]->m_dX);
-						m_pGame->PlayGameSound('E', 1, sDist, lPan);
+						abs_x = abs(((m_game->m_Camera.get_x() / 32) + VIEW_CENTER_TILE_X()) - m_effect_list[i]->m_dest_x);
+						abs_y = abs(((m_game->m_Camera.get_y() / 32) + VIEW_CENTER_TILE_Y()) - m_effect_list[i]->m_dest_y);
+						if (abs_x > abs_y) dist = abs_x - 10;
+						else dist = abs_y - 10;
+						lPan = -(((m_game->m_Camera.get_x() / 32) + VIEW_CENTER_TILE_X()) - m_effect_list[i]->m_dest_x);
+						m_game->play_game_sound('E', 1, dist, lPan);
 					}
 					break;
 
 				case EffectType::SHOTSTAR_FALL_1:
-					if (m_pEffectList[i]->m_cFrame >= m_pEffectList[i]->m_cMaxFrame)
+					if (m_effect_list[i]->m_frame >= m_effect_list[i]->m_max_frame)
 					{
-						delete m_pEffectList[i];
-						m_pEffectList[i] = 0;
+						delete m_effect_list[i];
+						m_effect_list[i] = 0;
 					}
 					else
 					{
-						AddEffectImpl(EffectType::EXPLOSION_FIRE_APOCALYPSE, m_pEffectList[i]->m_sX + 40, m_pEffectList[i]->m_sY + 120, 0, 0, 0, 0);
-						AddEffectImpl(EffectType::CRACK_OBLIQUE, m_pEffectList[i]->m_sX - 10, m_pEffectList[i]->m_sY + 70, 0, 0, 0, 0);
-						AddEffectImpl(EffectType::CRACK_HORIZONTAL, m_pEffectList[i]->m_sX - 10, m_pEffectList[i]->m_sY + 75, 0, 0, 0, 0);
-						AddEffectImpl(EffectType::STEAMS_SMOKE, m_pEffectList[i]->m_sX - 7, m_pEffectList[i]->m_sY + 27, 0, 0, 0, 0);
-						AddEffectImpl(EffectType::SHOTSTAR_FALL_2, (rand() % (LOGICAL_WIDTH() / 4)) + LOGICAL_WIDTH() / 2, (rand() % (LOGICAL_HEIGHT() / 4)) + LOGICAL_HEIGHT() / 2, 0, 0, 0, 1);
-						AddEffectImpl(EffectType::SHOTSTAR_FALL_3, (rand() % (LOGICAL_WIDTH() / 4)) + LOGICAL_WIDTH() / 2, (rand() % (LOGICAL_HEIGHT() / 4)) + LOGICAL_HEIGHT() / 2, 0, 0, 0, 1);
-						delete m_pEffectList[i];
-						m_pEffectList[i] = 0;
+						add_effect_impl(EffectType::EXPLOSION_FIRE_APOCALYPSE, m_effect_list[i]->m_x + 40, m_effect_list[i]->m_y + 120, 0, 0, 0, 0);
+						add_effect_impl(EffectType::CRACK_OBLIQUE, m_effect_list[i]->m_x - 10, m_effect_list[i]->m_y + 70, 0, 0, 0, 0);
+						add_effect_impl(EffectType::CRACK_HORIZONTAL, m_effect_list[i]->m_x - 10, m_effect_list[i]->m_y + 75, 0, 0, 0, 0);
+						add_effect_impl(EffectType::STEAMS_SMOKE, m_effect_list[i]->m_x - 7, m_effect_list[i]->m_y + 27, 0, 0, 0, 0);
+						add_effect_impl(EffectType::SHOTSTAR_FALL_2, (rand() % (LOGICAL_WIDTH() / 4)) + LOGICAL_WIDTH() / 2, (rand() % (LOGICAL_HEIGHT() / 4)) + LOGICAL_HEIGHT() / 2, 0, 0, 0, 1);
+						add_effect_impl(EffectType::SHOTSTAR_FALL_3, (rand() % (LOGICAL_WIDTH() / 4)) + LOGICAL_WIDTH() / 2, (rand() % (LOGICAL_HEIGHT() / 4)) + LOGICAL_HEIGHT() / 2, 0, 0, 0, 1);
+						delete m_effect_list[i];
+						m_effect_list[i] = 0;
 					}
 					break;
 
 				case EffectType::SHOTSTAR_FALL_2:
-					if (m_pEffectList[i]->m_cFrame >= m_pEffectList[i]->m_cMaxFrame)
+					if (m_effect_list[i]->m_frame >= m_effect_list[i]->m_max_frame)
 					{
-						delete m_pEffectList[i];
-						m_pEffectList[i] = 0;
+						delete m_effect_list[i];
+						m_effect_list[i] = 0;
 					}
 					else
 					{
-						AddEffectImpl(EffectType::EXPLOSION_FIRE_APOCALYPSE, m_pEffectList[i]->m_sX + 110, m_pEffectList[i]->m_sY + 120, 0, 0, 0, 0);
-						AddEffectImpl(EffectType::CRACK_OBLIQUE, m_pEffectList[i]->m_sX - 10, m_pEffectList[i]->m_sY + 70, 0, 0, 0, 0);
-						AddEffectImpl(EffectType::CRACK_HORIZONTAL, m_pEffectList[i]->m_sX - 10, m_pEffectList[i]->m_sY + 75, 0, 0, 0, 0);
-						AddEffectImpl(EffectType::SHOTSTAR_FALL_3, (rand() % (LOGICAL_WIDTH() / 4)) + LOGICAL_WIDTH() / 2, (rand() % (LOGICAL_HEIGHT() / 4)) + LOGICAL_HEIGHT() / 2, 0, 0, 0, 1);
-						delete m_pEffectList[i];
-						m_pEffectList[i] = 0;
+						add_effect_impl(EffectType::EXPLOSION_FIRE_APOCALYPSE, m_effect_list[i]->m_x + 110, m_effect_list[i]->m_y + 120, 0, 0, 0, 0);
+						add_effect_impl(EffectType::CRACK_OBLIQUE, m_effect_list[i]->m_x - 10, m_effect_list[i]->m_y + 70, 0, 0, 0, 0);
+						add_effect_impl(EffectType::CRACK_HORIZONTAL, m_effect_list[i]->m_x - 10, m_effect_list[i]->m_y + 75, 0, 0, 0, 0);
+						add_effect_impl(EffectType::SHOTSTAR_FALL_3, (rand() % (LOGICAL_WIDTH() / 4)) + LOGICAL_WIDTH() / 2, (rand() % (LOGICAL_HEIGHT() / 4)) + LOGICAL_HEIGHT() / 2, 0, 0, 0, 1);
+						delete m_effect_list[i];
+						m_effect_list[i] = 0;
 					}
 					break;
 
 				case EffectType::SHOTSTAR_FALL_3:
-					if (m_pEffectList[i]->m_cFrame >= m_pEffectList[i]->m_cMaxFrame)
+					if (m_effect_list[i]->m_frame >= m_effect_list[i]->m_max_frame)
 					{
-						delete m_pEffectList[i];
-						m_pEffectList[i] = 0;
+						delete m_effect_list[i];
+						m_effect_list[i] = 0;
 					}
 					else
 					{
-						AddEffectImpl(EffectType::EXPLOSION_FIRE_APOCALYPSE, m_pEffectList[i]->m_sX + 65, m_pEffectList[i]->m_sY + 120, 0, 0, 0, 0);
-						AddEffectImpl(EffectType::CRACK_OBLIQUE, m_pEffectList[i]->m_sX - 10, m_pEffectList[i]->m_sY + 70, 0, 0, 0, 0);
-						AddEffectImpl(EffectType::CRACK_HORIZONTAL, m_pEffectList[i]->m_sX - 10, m_pEffectList[i]->m_sY + 75, 0, 0, 0, 0);
-						AddEffectImpl(EffectType::STEAMS_SMOKE, m_pEffectList[i]->m_sX - 7, m_pEffectList[i]->m_sY + 27, 0, 0, 0, 0);
-						delete m_pEffectList[i];
-						m_pEffectList[i] = 0;
+						add_effect_impl(EffectType::EXPLOSION_FIRE_APOCALYPSE, m_effect_list[i]->m_x + 65, m_effect_list[i]->m_y + 120, 0, 0, 0, 0);
+						add_effect_impl(EffectType::CRACK_OBLIQUE, m_effect_list[i]->m_x - 10, m_effect_list[i]->m_y + 70, 0, 0, 0, 0);
+						add_effect_impl(EffectType::CRACK_HORIZONTAL, m_effect_list[i]->m_x - 10, m_effect_list[i]->m_y + 75, 0, 0, 0, 0);
+						add_effect_impl(EffectType::STEAMS_SMOKE, m_effect_list[i]->m_x - 7, m_effect_list[i]->m_y + 27, 0, 0, 0, 0);
+						delete m_effect_list[i];
+						m_effect_list[i] = 0;
 					}
 					break;
 
 				case EffectType::GATE_ROUND: // Gate round
-					CMisc::GetPoint(m_pEffectList[i]->m_mX
-						, m_pEffectList[i]->m_mY
-						, m_pEffectList[i]->m_dX * 32
-						, m_pEffectList[i]->m_dY * 32 - 40
-						, &m_pEffectList[i]->m_mX
-						, &m_pEffectList[i]->m_mY
-						, &m_pEffectList[i]->m_iErr
+					CMisc::get_point(m_effect_list[i]->m_move_x
+						, m_effect_list[i]->m_move_y
+						, m_effect_list[i]->m_dest_x * 32
+						, m_effect_list[i]->m_dest_y * 32 - 40
+						, &m_effect_list[i]->m_move_x
+						, &m_effect_list[i]->m_move_y
+						, &m_effect_list[i]->m_error
 						, 10);
-					if ((abs(m_pEffectList[i]->m_mX - m_pEffectList[i]->m_dX * 32) <= 2)
-						&& (abs(m_pEffectList[i]->m_mY - (m_pEffectList[i]->m_dY * 32 - 40)) <= 2))
+					if ((abs(m_effect_list[i]->m_move_x - m_effect_list[i]->m_dest_x * 32) <= 2)
+						&& (abs(m_effect_list[i]->m_move_y - (m_effect_list[i]->m_dest_y * 32 - 40)) <= 2))
 					{
-						delete m_pEffectList[i];
-						m_pEffectList[i] = 0;
+						delete m_effect_list[i];
+						m_effect_list[i] = 0;
 					}
 					break;
 
 				case EffectType::SALMON_BURST: // Salmon burst (effect11s)
-					CMisc::GetPoint(m_pEffectList[i]->m_mX
-						, m_pEffectList[i]->m_mY
-						, m_pEffectList[i]->m_dX * 32
-						, m_pEffectList[i]->m_dY * 32
-						, &m_pEffectList[i]->m_mX
-						, &m_pEffectList[i]->m_mY
-						, &m_pEffectList[i]->m_iErr
+					CMisc::get_point(m_effect_list[i]->m_move_x
+						, m_effect_list[i]->m_move_y
+						, m_effect_list[i]->m_dest_x * 32
+						, m_effect_list[i]->m_dest_y * 32
+						, &m_effect_list[i]->m_move_x
+						, &m_effect_list[i]->m_move_y
+						, &m_effect_list[i]->m_error
 						, 50);
-					if ((abs(m_pEffectList[i]->m_mX - m_pEffectList[i]->m_dX * 32) <= 2)
-						&& (abs(m_pEffectList[i]->m_mY - (m_pEffectList[i]->m_dY * 32 - 40)) <= 2))
+					if ((abs(m_effect_list[i]->m_move_x - m_effect_list[i]->m_dest_x * 32) <= 2)
+						&& (abs(m_effect_list[i]->m_move_y - (m_effect_list[i]->m_dest_y * 32 - 40)) <= 2))
 					{
-						delete m_pEffectList[i];
-						m_pEffectList[i] = 0;
+						delete m_effect_list[i];
+						m_effect_list[i] = 0;
 					}
 					else
 					{
-						AddEffectImpl(EffectType::SALMON_BURST_IMPACT, m_pEffectList[i]->m_dX * 32, m_pEffectList[i]->m_dY * 32, 0, 0, 0, 1);
-						AddEffectImpl(EffectType::SALMON_BURST_IMPACT, m_pEffectList[i]->m_dX * 32 - 30, m_pEffectList[i]->m_dY * 32 - 15, 0, 0, -7, 1);
-						AddEffectImpl(EffectType::SALMON_BURST_IMPACT, m_pEffectList[i]->m_dX * 32 - 35, m_pEffectList[i]->m_dY * 32 - 30, 0, 0, -5, 1);
-						AddEffectImpl(EffectType::SALMON_BURST_IMPACT, m_pEffectList[i]->m_dX * 32 + 20, m_pEffectList[i]->m_dY * 32 + 30, 0, 0, -3, 1);
-						delete m_pEffectList[i];
-						m_pEffectList[i] = 0;
+						add_effect_impl(EffectType::SALMON_BURST_IMPACT, m_effect_list[i]->m_dest_x * 32, m_effect_list[i]->m_dest_y * 32, 0, 0, 0, 1);
+						add_effect_impl(EffectType::SALMON_BURST_IMPACT, m_effect_list[i]->m_dest_x * 32 - 30, m_effect_list[i]->m_dest_y * 32 - 15, 0, 0, -7, 1);
+						add_effect_impl(EffectType::SALMON_BURST_IMPACT, m_effect_list[i]->m_dest_x * 32 - 35, m_effect_list[i]->m_dest_y * 32 - 30, 0, 0, -5, 1);
+						add_effect_impl(EffectType::SALMON_BURST_IMPACT, m_effect_list[i]->m_dest_x * 32 + 20, m_effect_list[i]->m_dest_y * 32 + 30, 0, 0, -3, 1);
+						delete m_effect_list[i];
+						m_effect_list[i] = 0;
 					}
 					break;
 
@@ -976,10 +976,10 @@ void EffectManager::UpdateEffectsImpl()
 				case EffectType::MAGE_HERO_SET: // Mage hero effect
 				case EffectType::WAR_HERO_SET: // War hero effect
 				case EffectType::MASS_MM_AURA_CASTER: // Snoopy: Moved for new spells: Caster aura for Mass MagicMissile
-					if (m_pEffectList[i]->m_cFrame > m_pEffectList[i]->m_cMaxFrame)
+					if (m_effect_list[i]->m_frame > m_effect_list[i]->m_max_frame)
 					{
-						delete m_pEffectList[i];
-						m_pEffectList[i] = 0;
+						delete m_effect_list[i];
+						m_effect_list[i] = 0;
 					}
 					break;
 				}

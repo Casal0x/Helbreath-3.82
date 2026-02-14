@@ -3,15 +3,15 @@
 #include <cstdio>
 #include "Log.h"
 
-void CmdBroadcast::Execute(CGame* pGame, const char* pArgs)
+void CmdBroadcast::execute(CGame* game, const char* args)
 {
-	if (pArgs == nullptr || pArgs[0] == '\0')
+	if (args == nullptr || args[0] == '\0')
 	{
 		hb::logger::log("Usage: broadcast <message>");
 		return;
 	}
 
-	pGame->BroadcastServerMessage(pArgs);
+	game->broadcast_server_message(args);
 
-	hb::logger::log("Broadcast sent: {}", pArgs);
+	hb::logger::log("Broadcast sent: {}", args);
 }

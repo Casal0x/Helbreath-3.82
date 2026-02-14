@@ -9,10 +9,10 @@
 class CmdShowChat : public ServerCommand
 {
 public:
-	const char* GetName() const override { return "showchat"; }
+	const char* get_name() const override { return "showchat"; }
 	const char* GetDescription() const override { return "Open live chat viewer in a new terminal"; }
 	const char* GetHelp() const override { return "Usage: showchat\n  Opens a new terminal window that tails gamelogs/chat.log in real-time.\n  Only one viewer can be open at a time."; }
-	void Execute(CGame* pGame, const char* pArgs) override;
+	void execute(CGame* game, const char* args) override;
 
 private:
 #ifdef _WIN32

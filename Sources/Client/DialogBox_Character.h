@@ -13,29 +13,29 @@ struct EquipSlotLayout
 class DialogBox_Character : public IDialogBox
 {
 public:
-	DialogBox_Character(CGame* pGame);
+	DialogBox_Character(CGame* game);
 	~DialogBox_Character() override = default;
 
-	void OnDraw(short msX, short msY, short msZ, char cLB) override;
-	bool OnClick(short msX, short msY) override;
-	bool OnDoubleClick(short msX, short msY) override;
-	PressResult OnPress(short msX, short msY) override;
-	bool OnItemDrop(short msX, short msY) override;
+	void on_draw(short mouse_x, short mouse_y, short z, char lb) override;
+	bool on_click(short mouse_x, short mouse_y) override;
+	bool on_double_click(short mouse_x, short mouse_y) override;
+	PressResult on_press(short mouse_x, short mouse_y) override;
+	bool on_item_drop(short mouse_x, short mouse_y) override;
 
 private:
 	// Helper methods
-	void DrawStat(int x1, int x2, int y, int baseStat, int angelicBonus);
-	void DrawEquippedItem(hb::shared::item::EquipPos equipPos, int drawX, int drawY,
-		const char* cEquipPoiStatus, bool useWeaponColors, bool bHighlight, int spriteOffset = 0);
-	void DrawHoverButton(int sX, int sY, int btnX, int btnY,
-		short msX, short msY, int hoverFrame, int normalFrame);
-	void DrawMaleCharacter(short sX, short sY, short msX, short msY,
-		const char* cEquipPoiStatus, char& cCollison);
-	void DrawFemaleCharacter(short sX, short sY, short msX, short msY,
-		const char* cEquipPoiStatus, char& cCollison);
+	void draw_stat(int x1, int x2, int y, int baseStat, int angelicBonus);
+	void draw_equipped_item(hb::shared::item::EquipPos equipPos, int drawX, int drawY,
+		const char* equip_poi_status, bool useWeaponColors, bool highlight, int spriteOffset = 0);
+	void draw_hover_button(int sX, int sY, int btnX, int btnY,
+		short mouse_x, short mouse_y, int hoverFrame, int normalFrame);
+	void draw_male_character(short sX, short sY, short mouse_x, short mouse_y,
+		const char* equip_poi_status, char& collison);
+	void draw_female_character(short sX, short sY, short mouse_x, short mouse_y,
+		const char* equip_poi_status, char& collison);
 
 	// Shared helpers
-	void BuildEquipStatusArray(char (&cEquipPoiStatus)[hb::shared::item::DEF_MAXITEMEQUIPPOS]) const;
-	char FindEquipItemAtPoint(short msX, short msY, short sX, short sY,
-		const char* cEquipPoiStatus) const;
+	void build_equip_status_array(char (&equip_poi_status)[hb::shared::item::DEF_MAXITEMEQUIPPOS]) const;
+	char find_equip_item_at_point(short mouse_x, short mouse_y, short sX, short sY,
+		const char* equip_poi_status) const;
 };

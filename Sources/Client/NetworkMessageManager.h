@@ -7,12 +7,12 @@ class CGame;
 class NetworkMessageManager
 {
 public:
-	explicit NetworkMessageManager(CGame* pGame);
+	explicit NetworkMessageManager(CGame* game);
 	~NetworkMessageManager() = default;
 
 	// Main entry point: processes incoming network messages
-	bool ProcessMessage(uint32_t dwMsgID, char* pData, uint32_t dwMsgSize);
+	bool process_message(uint32_t msg_id, char* data, uint32_t msg_size);
 
 private:
-	CGame* m_pGame;
+	CGame* m_game;
 };

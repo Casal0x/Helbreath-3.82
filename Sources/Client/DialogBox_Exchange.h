@@ -4,14 +4,14 @@
 class DialogBox_Exchange : public IDialogBox
 {
 public:
-	DialogBox_Exchange(CGame* pGame);
+	DialogBox_Exchange(CGame* game);
 	~DialogBox_Exchange() override = default;
 
-	void OnDraw(short msX, short msY, short msZ, char cLB) override;
-	bool OnClick(short msX, short msY) override;
-	bool OnItemDrop(short msX, short msY) override;
+	void on_draw(short mouse_x, short mouse_y, short z, char lb) override;
+	bool on_click(short mouse_x, short mouse_y) override;
+	bool on_item_drop(short mouse_x, short mouse_y) override;
 
 private:
-	void DrawItems(short sX, short sY, short msX, short msY, int iStartIndex, int iEndIndex);
-	void DrawItemInfo(short sX, short sY, short szX, short msX, short msY, int iItemIndex, short sXadd);
+	void draw_items(short sX, short sY, short mouse_x, short mouse_y, int start_index, int end_index);
+	void draw_item_info(short sX, short sY, short size_x, short mouse_x, short mouse_y, int item_index, short xadd);
 };

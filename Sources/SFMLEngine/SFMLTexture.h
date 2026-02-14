@@ -19,8 +19,8 @@ public:
     // ============== hb::shared::render::ITexture Implementation ==============
 
     // Dimensions
-    uint16_t GetWidth() const override;
-    uint16_t GetHeight() const override;
+    uint16_t get_width() const override;
+    uint16_t get_height() const override;
 
     // Blitting
     bool Blt(RECT* destRect, hb::shared::render::ITexture* src, RECT* srcRect, uint32_t flags) override;
@@ -35,11 +35,11 @@ public:
 
     // ============== SFML-Specific Access ==============
 
-    // Get the underlying SFML texture
+    // get the underlying SFML texture
     sf::Texture& GetTexture() { return m_texture; }
     const sf::Texture& GetTexture() const { return m_texture; }
 
-    // Get the SFML render texture (for rendering operations)
+    // get the SFML render texture (for rendering operations)
     sf::RenderTexture* GetRenderTexture() { return &m_renderTexture; }
 
 private:

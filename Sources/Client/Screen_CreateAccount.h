@@ -9,14 +9,14 @@ class Screen_CreateAccount : public IGameScreen {
 public:
     SCREEN_TYPE(Screen_CreateAccount)
 
-    Screen_CreateAccount(class CGame* pGame);
+    Screen_CreateAccount(class CGame* game);
     virtual ~Screen_CreateAccount();
 
     virtual void on_initialize() override;
     virtual void on_uninitialize() override;
     virtual void on_update() override;
     virtual void on_render() override;
-    virtual bool on_net_response(uint16_t wResponseType, char* pData) override;
+    virtual bool on_net_response(uint16_t response_type, char* data) override;
 
 private:
     void _submit_create_account();
@@ -32,6 +32,6 @@ private:
     short m_sNewAcctMsY;
     char m_cNewAcctPrevLB;
 
-    int m_cCurFocus;
-    int m_cMaxFocus;
+    int m_cur_focus;
+    int m_max_focus;
 };

@@ -9,46 +9,46 @@
 class CMapData;
 namespace hb::shared::render { class IRenderer; }
 
-class CFloatingTextManager {
+class floating_text_manager {
 public:
 	// Add messages - find slot, bind to tile, return index or 0
-	int AddChatText(const char* pMsg, uint32_t dwTime, int iObjectID,
-	                CMapData* pMapData, short sX, short sY);
-	int AddDamageText(DamageTextType eType, const char* pMsg, uint32_t dwTime,
-	                  int iObjectID, CMapData* pMapData);
-	int AddNotifyText(NotifyTextType eType, const char* pMsg, uint32_t dwTime,
-	                  int iObjectID, CMapData* pMapData);
+	int add_chat_text(const char* pMsg, uint32_t time, int object_id,
+	                CMapData* map_data, short sX, short sY);
+	int add_damage_text(damage_text_type eType, const char* pMsg, uint32_t time,
+	                  int object_id, CMapData* map_data);
+	int add_notify_text(notify_text_type eType, const char* pMsg, uint32_t time,
+	                  int object_id, CMapData* map_data);
 
 	// Damage factory (replaces CreateDamageMsg logic)
-	int AddDamageFromValue(short sDamage, bool bLastHit, uint32_t dwTime,
-	                       int iObjectID, CMapData* pMapData);
+	int add_damage_from_value(short damage, bool last_hit, uint32_t time,
+	                       int object_id, CMapData* map_data);
 
-	void RemoveByObjectID(int iObjectID);
-	void ReleaseExpired(uint32_t dwTime);
-	void Clear(int iIndex);
-	void ClearAll();
+	void remove_by_object_id(int object_id);
+	void release_expired(uint32_t time);
+	void clear(int index);
+	void clear_all();
 
 	// Rendering
-	void DrawAll(short sMinX, short sMinY, short sMaxX, short sMaxY,
-	             uint32_t dwCurTime, hb::shared::render::IRenderer* pRenderer);
-	void DrawSingle(int iIndex, short sX, short sY,
-	                uint32_t dwCurTime, hb::shared::render::IRenderer* pRenderer);
+	void draw_all(short min_x, short min_y, short max_x, short max_y,
+	             uint32_t cur_time, hb::shared::render::IRenderer* renderer);
+	void draw_single(int index, short sX, short sY,
+	                uint32_t cur_time, hb::shared::render::IRenderer* renderer);
 
 	// Position updates from entity renderers
-	CFloatingText* Get(int iIndex);
-	void UpdatePosition(int iIndex, short sX, short sY);
+	floating_text* get(int index);
+	void update_position(int index, short sX, short sY);
 
 	// Check if slot is occupied and matches objectID
-	bool IsValid(int iIndex, int iObjectID) const;
-	bool IsOccupied(int iIndex) const;
+	bool is_valid(int index, int object_id) const;
+	bool is_occupied(int index) const;
 
 private:
-	static constexpr int MaxMessages = game_limits::max_chat_msgs;
+	static constexpr int max_messages = game_limits::max_chat_msgs;
 
-	int FindFreeSlot() const;
-	int BindToTile(int iIndex, int iObjectID, CMapData* pMapData, short sX, short sY);
-	void DrawMessage(const CFloatingText& msg, short sX, short sY,
-	                 uint32_t dwCurTime, hb::shared::render::IRenderer* pRenderer);
+	int find_free_slot() const;
+	int bind_to_tile(int index, int object_id, CMapData* map_data, short sX, short sY);
+	void draw_message(const floating_text& msg, short sX, short sY,
+	                 uint32_t cur_time, hb::shared::render::IRenderer* renderer);
 
-	std::array<std::unique_ptr<CFloatingText>, MaxMessages> m_messages;
+	std::array<std::unique_ptr<floating_text>, max_messages> m_messages;
 };

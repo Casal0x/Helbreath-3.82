@@ -4,68 +4,68 @@
 #include <cstdint>
 #include "FloatingTextTypes.h"
 
-class CFloatingText {
+class floating_text {
 public:
 	enum class Category : uint8_t { Chat, Damage, Notify };
 
 	// Chat constructor
-	CFloatingText(ChatTextType eType, const char* pMsg, uint32_t dwTime)
-		: m_eCategory(Category::Chat)
-		, m_eChatType(eType)
-		, m_eDamageType{}
-		, m_eNotifyType{}
-		, m_szText(pMsg ? pMsg : "")
-		, m_sX(0), m_sY(0)
-		, m_dwTime(dwTime)
-		, m_iObjectID(-1)
+	floating_text(chat_text_type eType, const char* pMsg, uint32_t time)
+		: m_category(Category::Chat)
+		, m_chat_type(eType)
+		, m_damage_type{}
+		, m_notify_type{}
+		, m_text(pMsg ? pMsg : "")
+		, m_x(0), m_y(0)
+		, m_time(time)
+		, m_object_id(-1)
 	{
 	}
 
 	// Damage constructor
-	CFloatingText(DamageTextType eType, const char* pMsg, uint32_t dwTime)
-		: m_eCategory(Category::Damage)
-		, m_eChatType{}
-		, m_eDamageType(eType)
-		, m_eNotifyType{}
-		, m_szText(pMsg ? pMsg : "")
-		, m_sX(0), m_sY(0)
-		, m_dwTime(dwTime)
-		, m_iObjectID(-1)
+	floating_text(damage_text_type eType, const char* pMsg, uint32_t time)
+		: m_category(Category::Damage)
+		, m_chat_type{}
+		, m_damage_type(eType)
+		, m_notify_type{}
+		, m_text(pMsg ? pMsg : "")
+		, m_x(0), m_y(0)
+		, m_time(time)
+		, m_object_id(-1)
 	{
 	}
 
 	// Notify constructor
-	CFloatingText(NotifyTextType eType, const char* pMsg, uint32_t dwTime)
-		: m_eCategory(Category::Notify)
-		, m_eChatType{}
-		, m_eDamageType{}
-		, m_eNotifyType(eType)
-		, m_szText(pMsg ? pMsg : "")
-		, m_sX(0), m_sY(0)
-		, m_dwTime(dwTime)
-		, m_iObjectID(-1)
+	floating_text(notify_text_type eType, const char* pMsg, uint32_t time)
+		: m_category(Category::Notify)
+		, m_chat_type{}
+		, m_damage_type{}
+		, m_notify_type(eType)
+		, m_text(pMsg ? pMsg : "")
+		, m_x(0), m_y(0)
+		, m_time(time)
+		, m_object_id(-1)
 	{
 	}
 
-	const AnimParams& GetParams() const
+	const AnimParams& get_params() const
 	{
-		switch (m_eCategory) {
-		case Category::Chat:   return FloatingTextParams::Chat[static_cast<int>(m_eChatType)];
-		case Category::Damage: return FloatingTextParams::Damage[static_cast<int>(m_eDamageType)];
-		case Category::Notify: return FloatingTextParams::Notify[static_cast<int>(m_eNotifyType)];
+		switch (m_category) {
+		case Category::Chat:   return FloatingTextParams::Chat[static_cast<int>(m_chat_type)];
+		case Category::Damage: return FloatingTextParams::Damage[static_cast<int>(m_damage_type)];
+		case Category::Notify: return FloatingTextParams::Notify[static_cast<int>(m_notify_type)];
 		}
 		return FloatingTextParams::Chat[0]; // fallback
 	}
 
-	bool UsesSpriteFont() const { return GetParams().bUseSpriteFont; }
+	bool uses_sprite_font() const { return get_params().m_use_sprite_font; }
 
-	Category       m_eCategory;
-	ChatTextType   m_eChatType;
-	DamageTextType m_eDamageType;
-	NotifyTextType m_eNotifyType;
+	Category       m_category;
+	chat_text_type   m_chat_type;
+	damage_text_type m_damage_type;
+	notify_text_type m_notify_type;
 
-	std::string    m_szText;
-	short          m_sX, m_sY;
-	uint32_t       m_dwTime;
-	int            m_iObjectID;
+	std::string    m_text;
+	short          m_x, m_y;
+	uint32_t       m_time;
+	int            m_object_id;
 };

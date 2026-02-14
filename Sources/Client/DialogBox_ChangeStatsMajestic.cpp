@@ -12,186 +12,186 @@ using namespace hb::client::sprite_id;
 static constexpr int POINTS_PER_MAJESTIC = 3;
 static constexpr int MIN_STAT_VALUE = 10;
 
-DialogBox_ChangeStatsMajestic::DialogBox_ChangeStatsMajestic(CGame* pGame)
-	: IDialogBox(DialogBoxId::ChangeStatsMajestic, pGame)
+DialogBox_ChangeStatsMajestic::DialogBox_ChangeStatsMajestic(CGame* game)
+	: IDialogBox(DialogBoxId::ChangeStatsMajestic, game)
 {
-	SetDefaultRect(0 , 0 , 258, 339);
+	set_default_rect(0 , 0 , 258, 339);
 }
 
-static int GetPendingMajesticCost(CGame* pGame)
+static int GetPendingMajesticCost(CGame* game)
 {
-	int iTotalReduction = -(pGame->m_pPlayer->m_wLU_Str + pGame->m_pPlayer->m_wLU_Vit +
-		pGame->m_pPlayer->m_wLU_Dex + pGame->m_pPlayer->m_wLU_Int +
-		pGame->m_pPlayer->m_wLU_Mag + pGame->m_pPlayer->m_wLU_Char);
-	return iTotalReduction / POINTS_PER_MAJESTIC;
+	int total_reduction = -(game->m_player->m_lu_str + game->m_player->m_lu_vit +
+		game->m_player->m_lu_dex + game->m_player->m_lu_int +
+		game->m_player->m_lu_mag + game->m_player->m_lu_char);
+	return total_reduction / POINTS_PER_MAJESTIC;
 }
 
-void DialogBox_ChangeStatsMajestic::DrawStatRow(short sX, short sY, int iYOffset,
-	const char* pLabel, int iCurrentStat, int16_t iPendingChange,
-	short msX, short msY, int iArrowYOffset, bool bCanUndo, bool bCanReduce)
+void DialogBox_ChangeStatsMajestic::draw_stat_row(short sX, short sY, int y_offset,
+	const char* label, int current_stat, int16_t pending_change,
+	short mouse_x, short mouse_y, int arrow_y_offset, bool can_undo, bool can_reduce)
 {
-	std::string cTxt;
+	std::string txt;
 
-	PutString(sX + 24, sY + iYOffset, (char*)pLabel, GameColors::UIBlack);
+	put_string(sX + 24, sY + y_offset, (char*)label, GameColors::UIBlack);
 
-	cTxt = std::format("{}", iCurrentStat);
-	PutString(sX + 109, sY + iYOffset, cTxt.c_str(), GameColors::UILabel);
+	txt = std::format("{}", current_stat);
+	put_string(sX + 109, sY + y_offset, txt.c_str(), GameColors::UILabel);
 
-	int iNewStat = iCurrentStat + iPendingChange;
-	cTxt = std::format("{}", iNewStat);
-	if (iNewStat != iCurrentStat)
-		PutString(sX + 162, sY + iYOffset, cTxt.c_str(), GameColors::UIRed);
+	int new_stat = current_stat + pending_change;
+	txt = std::format("{}", new_stat);
+	if (new_stat != current_stat)
+		put_string(sX + 162, sY + y_offset, txt.c_str(), GameColors::UIRed);
 	else
-		PutString(sX + 162, sY + iYOffset, cTxt.c_str(), GameColors::UILabel);
+		put_string(sX + 162, sY + y_offset, txt.c_str(), GameColors::UILabel);
 
 	// UP arrow highlight (undo reduction)
-	if ((msX >= sX + 195) && (msX <= sX + 205) && (msY >= sY + iArrowYOffset) && (msY <= sY + iArrowYOffset + 6) && bCanUndo)
-		m_pGame->m_pSprite[InterfaceNdGame4]->Draw(sX + 195, sY + iArrowYOffset, 5);
+	if ((mouse_x >= sX + 195) && (mouse_x <= sX + 205) && (mouse_y >= sY + arrow_y_offset) && (mouse_y <= sY + arrow_y_offset + 6) && can_undo)
+		m_game->m_sprite[InterfaceNdGame4]->draw(sX + 195, sY + arrow_y_offset, 5);
 
 	// DOWN arrow highlight (reduce stat)
-	if ((msX >= sX + 210) && (msX <= sX + 220) && (msY >= sY + iArrowYOffset) && (msY <= sY + iArrowYOffset + 6) && bCanReduce)
-		m_pGame->m_pSprite[InterfaceNdGame4]->Draw(sX + 210, sY + iArrowYOffset, 6);
+	if ((mouse_x >= sX + 210) && (mouse_x <= sX + 220) && (mouse_y >= sY + arrow_y_offset) && (mouse_y <= sY + arrow_y_offset + 6) && can_reduce)
+		m_game->m_sprite[InterfaceNdGame4]->draw(sX + 210, sY + arrow_y_offset, 6);
 }
 
-void DialogBox_ChangeStatsMajestic::OnDraw(short msX, short msY, short msZ, char cLB)
+void DialogBox_ChangeStatsMajestic::on_draw(short mouse_x, short mouse_y, short z, char lb)
 {
-	short sX = Info().sX;
-	short sY = Info().sY;
-	short szX = Info().sSizeX;
-	std::string cTxt;
+	short sX = Info().m_x;
+	short sY = Info().m_y;
+	short size_x = Info().m_size_x;
+	std::string txt;
 
-	DrawNewDialogBox(InterfaceNdGame2, sX, sY, 0);
-	DrawNewDialogBox(InterfaceNdText, sX, sY, 2);
-	DrawNewDialogBox(InterfaceNdGame4, sX + 16, sY + 100, 4);
+	draw_new_dialog_box(InterfaceNdGame2, sX, sY, 0);
+	draw_new_dialog_box(InterfaceNdText, sX, sY, 2);
+	draw_new_dialog_box(InterfaceNdGame4, sX + 16, sY + 100, 4);
 
-	PutAlignedString(sX, sX + szX, sY + 50, DRAW_DIALOGBOX_LEVELUP_SETTING14);
-	PutAlignedString(sX, sX + szX, sY + 65, DRAW_DIALOGBOX_LEVELUP_SETTING15);
+	put_aligned_string(sX, sX + size_x, sY + 50, DRAW_DIALOGBOX_LEVELUP_SETTING14);
+	put_aligned_string(sX, sX + size_x, sY + 65, DRAW_DIALOGBOX_LEVELUP_SETTING15);
 
 	// Majestic Points Remaining (total - pending cost)
-	int iPendingCost = GetPendingMajesticCost(m_pGame);
-	int iRemaining = m_pGame->m_iGizonItemUpgradeLeft - iPendingCost;
+	int pending_cost = GetPendingMajesticCost(m_game);
+	int remaining = m_game->m_gizon_item_upgrade_left - pending_cost;
 
-	PutString(sX + 20, sY + 85, DRAW_DIALOGBOX_LEVELUP_SETTING16, GameColors::UIBlack);
-	cTxt = std::format("{}", iRemaining);
-	if (iRemaining > 0)
-		PutString(sX + 73, sY + 102, cTxt.c_str(), GameColors::UIGreen);
+	put_string(sX + 20, sY + 85, DRAW_DIALOGBOX_LEVELUP_SETTING16, GameColors::UIBlack);
+	txt = std::format("{}", remaining);
+	if (remaining > 0)
+		put_string(sX + 73, sY + 102, txt.c_str(), GameColors::UIGreen);
 	else
-		PutString(sX + 73, sY + 102, cTxt.c_str(), GameColors::UIBlack);
+		put_string(sX + 73, sY + 102, txt.c_str(), GameColors::UIBlack);
 
-	bool bCanAfford = (iRemaining > 0);
+	bool can_afford = (remaining > 0);
 
-	DrawStatRow(sX, sY, 125, DRAW_DIALOGBOX_LEVELUP_SETTING4,
-		m_pGame->m_pPlayer->m_iStr, m_pGame->m_pPlayer->m_wLU_Str, msX, msY, 127,
-		(m_pGame->m_pPlayer->m_wLU_Str < 0),
-		bCanAfford && (m_pGame->m_pPlayer->m_iStr + m_pGame->m_pPlayer->m_wLU_Str - POINTS_PER_MAJESTIC >= MIN_STAT_VALUE));
+	draw_stat_row(sX, sY, 125, DRAW_DIALOGBOX_LEVELUP_SETTING4,
+		m_game->m_player->m_str, m_game->m_player->m_lu_str, mouse_x, mouse_y, 127,
+		(m_game->m_player->m_lu_str < 0),
+		can_afford && (m_game->m_player->m_str + m_game->m_player->m_lu_str - POINTS_PER_MAJESTIC >= MIN_STAT_VALUE));
 
-	DrawStatRow(sX, sY, 144, DRAW_DIALOGBOX_LEVELUP_SETTING5,
-		m_pGame->m_pPlayer->m_iVit, m_pGame->m_pPlayer->m_wLU_Vit, msX, msY, 146,
-		(m_pGame->m_pPlayer->m_wLU_Vit < 0),
-		bCanAfford && (m_pGame->m_pPlayer->m_iVit + m_pGame->m_pPlayer->m_wLU_Vit - POINTS_PER_MAJESTIC >= MIN_STAT_VALUE));
+	draw_stat_row(sX, sY, 144, DRAW_DIALOGBOX_LEVELUP_SETTING5,
+		m_game->m_player->m_vit, m_game->m_player->m_lu_vit, mouse_x, mouse_y, 146,
+		(m_game->m_player->m_lu_vit < 0),
+		can_afford && (m_game->m_player->m_vit + m_game->m_player->m_lu_vit - POINTS_PER_MAJESTIC >= MIN_STAT_VALUE));
 
-	DrawStatRow(sX, sY, 163, DRAW_DIALOGBOX_LEVELUP_SETTING6,
-		m_pGame->m_pPlayer->m_iDex, m_pGame->m_pPlayer->m_wLU_Dex, msX, msY, 165,
-		(m_pGame->m_pPlayer->m_wLU_Dex < 0),
-		bCanAfford && (m_pGame->m_pPlayer->m_iDex + m_pGame->m_pPlayer->m_wLU_Dex - POINTS_PER_MAJESTIC >= MIN_STAT_VALUE));
+	draw_stat_row(sX, sY, 163, DRAW_DIALOGBOX_LEVELUP_SETTING6,
+		m_game->m_player->m_dex, m_game->m_player->m_lu_dex, mouse_x, mouse_y, 165,
+		(m_game->m_player->m_lu_dex < 0),
+		can_afford && (m_game->m_player->m_dex + m_game->m_player->m_lu_dex - POINTS_PER_MAJESTIC >= MIN_STAT_VALUE));
 
-	DrawStatRow(sX, sY, 182, DRAW_DIALOGBOX_LEVELUP_SETTING7,
-		m_pGame->m_pPlayer->m_iInt, m_pGame->m_pPlayer->m_wLU_Int, msX, msY, 184,
-		(m_pGame->m_pPlayer->m_wLU_Int < 0),
-		bCanAfford && (m_pGame->m_pPlayer->m_iInt + m_pGame->m_pPlayer->m_wLU_Int - POINTS_PER_MAJESTIC >= MIN_STAT_VALUE));
+	draw_stat_row(sX, sY, 182, DRAW_DIALOGBOX_LEVELUP_SETTING7,
+		m_game->m_player->m_int, m_game->m_player->m_lu_int, mouse_x, mouse_y, 184,
+		(m_game->m_player->m_lu_int < 0),
+		can_afford && (m_game->m_player->m_int + m_game->m_player->m_lu_int - POINTS_PER_MAJESTIC >= MIN_STAT_VALUE));
 
-	DrawStatRow(sX, sY, 201, DRAW_DIALOGBOX_LEVELUP_SETTING8,
-		m_pGame->m_pPlayer->m_iMag, m_pGame->m_pPlayer->m_wLU_Mag, msX, msY, 203,
-		(m_pGame->m_pPlayer->m_wLU_Mag < 0),
-		bCanAfford && (m_pGame->m_pPlayer->m_iMag + m_pGame->m_pPlayer->m_wLU_Mag - POINTS_PER_MAJESTIC >= MIN_STAT_VALUE));
+	draw_stat_row(sX, sY, 201, DRAW_DIALOGBOX_LEVELUP_SETTING8,
+		m_game->m_player->m_mag, m_game->m_player->m_lu_mag, mouse_x, mouse_y, 203,
+		(m_game->m_player->m_lu_mag < 0),
+		can_afford && (m_game->m_player->m_mag + m_game->m_player->m_lu_mag - POINTS_PER_MAJESTIC >= MIN_STAT_VALUE));
 
-	DrawStatRow(sX, sY, 220, DRAW_DIALOGBOX_LEVELUP_SETTING9,
-		m_pGame->m_pPlayer->m_iCharisma, m_pGame->m_pPlayer->m_wLU_Char, msX, msY, 222,
-		(m_pGame->m_pPlayer->m_wLU_Char < 0),
-		bCanAfford && (m_pGame->m_pPlayer->m_iCharisma + m_pGame->m_pPlayer->m_wLU_Char - POINTS_PER_MAJESTIC >= MIN_STAT_VALUE));
+	draw_stat_row(sX, sY, 220, DRAW_DIALOGBOX_LEVELUP_SETTING9,
+		m_game->m_player->m_charisma, m_game->m_player->m_lu_char, mouse_x, mouse_y, 222,
+		(m_game->m_player->m_lu_char < 0),
+		can_afford && (m_game->m_player->m_charisma + m_game->m_player->m_lu_char - POINTS_PER_MAJESTIC >= MIN_STAT_VALUE));
 
 	// Cancel button (left)
-	if ((msX >= sX + ui_layout::left_btn_x) && (msX <= sX + ui_layout::left_btn_x + ui_layout::btn_size_x) && (msY > sY + ui_layout::btn_y) && (msY < sY + ui_layout::btn_y + ui_layout::btn_size_y))
-		DrawNewDialogBox(InterfaceNdButton, sX + ui_layout::left_btn_x, sY + ui_layout::btn_y, 17);
-	else DrawNewDialogBox(InterfaceNdButton, sX + ui_layout::left_btn_x, sY + ui_layout::btn_y, 16);
+	if ((mouse_x >= sX + ui_layout::left_btn_x) && (mouse_x <= sX + ui_layout::left_btn_x + ui_layout::btn_size_x) && (mouse_y > sY + ui_layout::btn_y) && (mouse_y < sY + ui_layout::btn_y + ui_layout::btn_size_y))
+		draw_new_dialog_box(InterfaceNdButton, sX + ui_layout::left_btn_x, sY + ui_layout::btn_y, 17);
+	else draw_new_dialog_box(InterfaceNdButton, sX + ui_layout::left_btn_x, sY + ui_layout::btn_y, 16);
 
 	// Confirm button (right) — show as active only when there are pending changes
-	if (iPendingCost > 0)
+	if (pending_cost > 0)
 	{
-		if ((msX >= sX + ui_layout::right_btn_x) && (msX <= sX + ui_layout::right_btn_x + ui_layout::btn_size_x) && (msY > sY + ui_layout::btn_y) && (msY < sY + ui_layout::btn_y + ui_layout::btn_size_y))
-			DrawNewDialogBox(InterfaceNdButton, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 1);
+		if ((mouse_x >= sX + ui_layout::right_btn_x) && (mouse_x <= sX + ui_layout::right_btn_x + ui_layout::btn_size_x) && (mouse_y > sY + ui_layout::btn_y) && (mouse_y < sY + ui_layout::btn_y + ui_layout::btn_size_y))
+			draw_new_dialog_box(InterfaceNdButton, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 1);
 		else
-			DrawNewDialogBox(InterfaceNdButton, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 0);
+			draw_new_dialog_box(InterfaceNdButton, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 0);
 	}
 }
 
-bool DialogBox_ChangeStatsMajestic::OnClick(short msX, short msY)
+bool DialogBox_ChangeStatsMajestic::on_click(short mouse_x, short mouse_y)
 {
-	short sX = Info().sX;
-	short sY = Info().sY;
+	short sX = Info().m_x;
+	short sY = Info().m_y;
 
-	int iPendingCost = GetPendingMajesticCost(m_pGame);
-	int iRemaining = m_pGame->m_iGizonItemUpgradeLeft - iPendingCost;
+	int pending_cost = GetPendingMajesticCost(m_game);
+	int remaining = m_game->m_gizon_item_upgrade_left - pending_cost;
 
 	struct StatEntry {
-		int16_t* pPending;
-		int iCurrentStat;
-		int iArrowY;
+		int16_t* pending;
+		int current_stat;
+		int arrow_y;
 	};
 
 	StatEntry stats[] = {
-		{ &m_pGame->m_pPlayer->m_wLU_Str,  m_pGame->m_pPlayer->m_iStr,      127 },
-		{ &m_pGame->m_pPlayer->m_wLU_Vit,  m_pGame->m_pPlayer->m_iVit,      146 },
-		{ &m_pGame->m_pPlayer->m_wLU_Dex,  m_pGame->m_pPlayer->m_iDex,      165 },
-		{ &m_pGame->m_pPlayer->m_wLU_Int,  m_pGame->m_pPlayer->m_iInt,      184 },
-		{ &m_pGame->m_pPlayer->m_wLU_Mag,  m_pGame->m_pPlayer->m_iMag,      203 },
-		{ &m_pGame->m_pPlayer->m_wLU_Char, m_pGame->m_pPlayer->m_iCharisma, 222 },
+		{ &m_game->m_player->m_lu_str,  m_game->m_player->m_str,      127 },
+		{ &m_game->m_player->m_lu_vit,  m_game->m_player->m_vit,      146 },
+		{ &m_game->m_player->m_lu_dex,  m_game->m_player->m_dex,      165 },
+		{ &m_game->m_player->m_lu_int,  m_game->m_player->m_int,      184 },
+		{ &m_game->m_player->m_lu_mag,  m_game->m_player->m_mag,      203 },
+		{ &m_game->m_player->m_lu_char, m_game->m_player->m_charisma, 222 },
 	};
 
 	for (auto& s : stats)
 	{
 		// UP arrow — undo a pending reduction (restore 3 points)
-		if ((msX >= sX + 195) && (msX <= sX + 205) && (msY >= sY + s.iArrowY) && (msY <= sY + s.iArrowY + 6))
+		if ((mouse_x >= sX + 195) && (mouse_x <= sX + 205) && (mouse_y >= sY + s.arrow_y) && (mouse_y <= sY + s.arrow_y + 6))
 		{
-			if (*s.pPending < 0)
+			if (*s.pending < 0)
 			{
-				*s.pPending += POINTS_PER_MAJESTIC;
-				PlaySoundEffect('E', 14, 5);
+				*s.pending += POINTS_PER_MAJESTIC;
+				play_sound_effect('E', 14, 5);
 			}
 		}
 
 		// DOWN arrow — reduce stat by 3 (costs 1 majestic point)
-		if ((msX >= sX + 210) && (msX <= sX + 220) && (msY >= sY + s.iArrowY) && (msY <= sY + s.iArrowY + 6))
+		if ((mouse_x >= sX + 210) && (mouse_x <= sX + 220) && (mouse_y >= sY + s.arrow_y) && (mouse_y <= sY + s.arrow_y + 6))
 		{
-			if (iRemaining > 0 && (s.iCurrentStat + *s.pPending - POINTS_PER_MAJESTIC >= MIN_STAT_VALUE))
+			if (remaining > 0 && (s.current_stat + *s.pending - POINTS_PER_MAJESTIC >= MIN_STAT_VALUE))
 			{
-				*s.pPending -= POINTS_PER_MAJESTIC;
-				iRemaining--;
-				PlaySoundEffect('E', 14, 5);
+				*s.pending -= POINTS_PER_MAJESTIC;
+				remaining--;
+				play_sound_effect('E', 14, 5);
 			}
 		}
 	}
 
 	// Confirm button (right) — send all pending reductions to server
 	// Don't close the dialog here; the success/failure handler will close it after applying changes
-	if ((msX >= sX + ui_layout::right_btn_x) && (msX <= sX + ui_layout::right_btn_x + ui_layout::btn_size_x) &&
-		(msY > sY + ui_layout::btn_y) && (msY < sY + ui_layout::btn_y + ui_layout::btn_size_y))
+	if ((mouse_x >= sX + ui_layout::right_btn_x) && (mouse_x <= sX + ui_layout::right_btn_x + ui_layout::btn_size_x) &&
+		(mouse_y > sY + ui_layout::btn_y) && (mouse_y < sY + ui_layout::btn_y + ui_layout::btn_size_y))
 	{
-		if (iPendingCost > 0)
+		if (pending_cost > 0)
 		{
-			bSendCommand(MsgId::StateChangePoint, 0, 0, 0, 0, 0, 0);
-			PlaySoundEffect('E', 14, 5);
+			send_command(MsgId::StateChangePoint, 0, 0, 0, 0, 0, 0);
+			play_sound_effect('E', 14, 5);
 		}
 	}
 
 	// Cancel button (left) — discard changes and close
-	if ((msX >= sX + ui_layout::left_btn_x) && (msX <= sX + ui_layout::left_btn_x + ui_layout::btn_size_x) &&
-		(msY > sY + ui_layout::btn_y) && (msY < sY + ui_layout::btn_y + ui_layout::btn_size_y))
+	if ((mouse_x >= sX + ui_layout::left_btn_x) && (mouse_x <= sX + ui_layout::left_btn_x + ui_layout::btn_size_x) &&
+		(mouse_y > sY + ui_layout::btn_y) && (mouse_y < sY + ui_layout::btn_y + ui_layout::btn_size_y))
 	{
-		m_pGame->m_pPlayer->m_wLU_Str = m_pGame->m_pPlayer->m_wLU_Vit = m_pGame->m_pPlayer->m_wLU_Dex = 0;
-		m_pGame->m_pPlayer->m_wLU_Int = m_pGame->m_pPlayer->m_wLU_Mag = m_pGame->m_pPlayer->m_wLU_Char = 0;
-		DisableDialogBox(DialogBoxId::ChangeStatsMajestic);
-		PlaySoundEffect('E', 14, 5);
+		m_game->m_player->m_lu_str = m_game->m_player->m_lu_vit = m_game->m_player->m_lu_dex = 0;
+		m_game->m_player->m_lu_int = m_game->m_player->m_lu_mag = m_game->m_player->m_lu_char = 0;
+		disable_dialog_box(DialogBoxId::ChangeStatsMajestic);
+		play_sound_effect('E', 14, 5);
 	}
 
 	return false;

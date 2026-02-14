@@ -26,9 +26,9 @@ extern char G_cData50000[50000];
 static char _tmp_cCorpseX[] = { 0,  1, 1, 1, 0, -1, -1, -1, 0, 0, 0, 0 };
 static char _tmp_cCorpseY[] = { -1, -1, 0, 1, 1,  1,  0, -1, 0, 0, 0 };
 
-bool SkillManager::bSendClientSkillConfigs(int iClientH)
+bool SkillManager::send_client_skill_configs(int client_h)
 {
-	if (m_pGame->m_pClientList[iClientH] == 0) {
+	if (m_game->m_client_list[client_h] == 0) {
 		return false;
 	}
 
@@ -40,7 +40,7 @@ bool SkillManager::bSendClientSkillConfigs(int iClientH)
 	// Count total skills
 	int totalSkills = 0;
 	for(int i = 0; i < hb::shared::limits::MaxSkillType; i++) {
-		if (m_pGame->m_pSkillConfigList[i] != 0) {
+		if (m_game->m_skill_config_list[i] != 0) {
 			totalSkills++;
 		}
 	}
@@ -64,7 +64,7 @@ bool SkillManager::bSendClientSkillConfigs(int iClientH)
 		int skipped = 0;
 
 		for(int i = 0; i < hb::shared::limits::MaxSkillType && entriesInPacket < maxEntriesPerPacket; i++) {
-			if (m_pGame->m_pSkillConfigList[i] == 0) {
+			if (m_game->m_skill_config_list[i] == 0) {
 				continue;
 			}
 
@@ -73,14 +73,14 @@ bool SkillManager::bSendClientSkillConfigs(int iClientH)
 				continue;
 			}
 
-			const CSkill* skill = m_pGame->m_pSkillConfigList[i];
+			const CSkill* skill = m_game->m_skill_config_list[i];
 			auto& entry = entries[entriesInPacket];
 
 			entry.skillId = static_cast<int16_t>(i);
 			std::memset(entry.name, 0, sizeof(entry.name));
-			std::snprintf(entry.name, sizeof(entry.name), "%s", skill->m_cName);
-			entry.isUseable = skill->m_bIsUseable ? 1 : 0;
-			entry.useMethod = skill->m_cUseMethod;
+			std::snprintf(entry.name, sizeof(entry.name), "%s", skill->m_name);
+			entry.useable = skill->m_is_useable ? 1 : 0;
+			entry.useMethod = skill->m_use_method;
 
 			entriesInPacket++;
 		}
@@ -88,16 +88,16 @@ bool SkillManager::bSendClientSkillConfigs(int iClientH)
 		pktHeader->skillCount = entriesInPacket;
 		size_t packetSize = headerSize + (entriesInPacket * entrySize);
 
-		int iRet = m_pGame->m_pClientList[iClientH]->m_pXSock->iSendMsg(G_cData50000, static_cast<int>(packetSize));
-		switch (iRet) {
+		int ret = m_game->m_client_list[client_h]->m_socket->send_msg(G_cData50000, static_cast<int>(packetSize));
+		switch (ret) {
 		case sock::Event::QueueFull:
 		case sock::Event::SocketError:
 		case sock::Event::CriticalError:
 		case sock::Event::SocketClosed:
-			hb::logger::log("Failed to send skill configs: Client({}) Packet({})", iClientH, packetIndex);
-			m_pGame->DeleteClient(iClientH, true, true);
-			delete m_pGame->m_pClientList[iClientH];
-			m_pGame->m_pClientList[iClientH] = 0;
+			hb::logger::log("Failed to send skill configs: Client({}) Packet({})", client_h, packetIndex);
+			m_game->delete_client(client_h, true, true);
+			delete m_game->m_client_list[client_h];
+			m_game->m_client_list[client_h] = 0;
 			return false;
 		}
 
@@ -108,37 +108,37 @@ bool SkillManager::bSendClientSkillConfigs(int iClientH)
 	return true;
 }
 
-void SkillManager::TrainSkillResponse(bool bSuccess, int iClientH, int iSkillNum, int iSkillLevel)
+void SkillManager::train_skill_response(bool success, int client_h, int skill_num, int skill_level)
 {
 
-	int   iRet;
+	int   ret;
 
-	if (m_pGame->m_pClientList[iClientH] == 0) return;
-	if (m_pGame->m_pClientList[iClientH]->m_bIsInitComplete == false) return;
-	if ((iSkillNum < 0) || (iSkillNum > 100)) return;
-	if ((iSkillLevel < 0) || (iSkillLevel > 100)) return;
+	if (m_game->m_client_list[client_h] == 0) return;
+	if (m_game->m_client_list[client_h]->m_is_init_complete == false) return;
+	if ((skill_num < 0) || (skill_num > 100)) return;
+	if ((skill_level < 0) || (skill_level > 100)) return;
 
-	if (bSuccess) {
-		if (m_pGame->m_pClientList[iClientH]->m_cSkillMastery[iSkillNum] != 0) return;
+	if (success) {
+		if (m_game->m_client_list[client_h]->m_skill_mastery[skill_num] != 0) return;
 
-		m_pGame->m_pClientList[iClientH]->m_cSkillMastery[iSkillNum] = iSkillLevel;
-		bCheckTotalSkillMasteryPoints(iClientH, iSkillNum);
+		m_game->m_client_list[client_h]->m_skill_mastery[skill_num] = skill_level;
+		check_total_skill_mastery_points(client_h, skill_num);
 
 		{
 
 			hb::net::PacketNotifySkillTrainSuccess pkt{};
 			pkt.header.msg_id = MsgId::Notify;
 			pkt.header.msg_type = Notify::SkillTrainSuccess;
-			pkt.skill_num = static_cast<uint8_t>(iSkillNum);
-			pkt.skill_level = static_cast<uint8_t>(iSkillLevel);
-			iRet = m_pGame->m_pClientList[iClientH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+			pkt.skill_num = static_cast<uint8_t>(skill_num);
+			pkt.skill_level = static_cast<uint8_t>(skill_level);
+			ret = m_game->m_client_list[client_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 		}
-		switch (iRet) {
+		switch (ret) {
 		case sock::Event::QueueFull:
 		case sock::Event::SocketError:
 		case sock::Event::CriticalError:
 		case sock::Event::SocketClosed:
-			m_pGame->DeleteClient(iClientH, true, true);
+			m_game->delete_client(client_h, true, true);
 			return;
 		}
 	}
@@ -148,71 +148,71 @@ void SkillManager::TrainSkillResponse(bool bSuccess, int iClientH, int iSkillNum
 
 }
 
-int SkillManager::_iCalcSkillSSNpoint(int iLevel)
+int SkillManager::calc_skill_ssn_point(int level)
 {
-	int iRet;
+	int ret;
 
-	if (iLevel < 1) return 1;
+	if (level < 1) return 1;
 
-	if (iLevel <= 50)
-		iRet = iLevel;
-	else if (iLevel > 50) {
-		iRet = (iLevel * 2);
+	if (level <= 50)
+		ret = level;
+	else if (level > 50) {
+		ret = (level * 2);
 	}
 
-	return iRet;
+	return ret;
 }
 
-void SkillManager::CalculateSSN_SkillIndex(int iClientH, short sSkillIndex, int iValue)
+void SkillManager::calculate_ssn_skill_index(int client_h, short skill_index, int value)
 {
-	int   iOldSSN, iSSNpoint, iWeaponIndex;
+	int   old_ssn, ss_npoint, weapon_index;
 
-	if (m_pGame->m_pClientList[iClientH] == 0) return;
-	if (m_pGame->m_pClientList[iClientH]->m_bIsInitComplete == false) return;
-	if ((sSkillIndex < 0) || (sSkillIndex >= hb::shared::limits::MaxSkillType)) return;
-	if (m_pGame->m_pClientList[iClientH]->m_bIsKilled) return;
+	if (m_game->m_client_list[client_h] == 0) return;
+	if (m_game->m_client_list[client_h]->m_is_init_complete == false) return;
+	if ((skill_index < 0) || (skill_index >= hb::shared::limits::MaxSkillType)) return;
+	if (m_game->m_client_list[client_h]->m_is_killed) return;
 
-	if (m_pGame->m_pClientList[iClientH]->m_cSkillMastery[sSkillIndex] == 0) return;
+	if (m_game->m_client_list[client_h]->m_skill_mastery[skill_index] == 0) return;
 
-	iOldSSN = m_pGame->m_pClientList[iClientH]->m_iSkillSSN[sSkillIndex];
-	m_pGame->m_pClientList[iClientH]->m_iSkillSSN[sSkillIndex] += iValue;
+	old_ssn = m_game->m_client_list[client_h]->m_skill_progress[skill_index];
+	m_game->m_client_list[client_h]->m_skill_progress[skill_index] += value;
 
-	iSSNpoint = m_pGame->m_iSkillSSNpoint[m_pGame->m_pClientList[iClientH]->m_cSkillMastery[sSkillIndex] + 1];
+	ss_npoint = m_game->m_skill_progress_threshold[m_game->m_client_list[client_h]->m_skill_mastery[skill_index] + 1];
 
 	// SkillSSN   Skill .
-	if ((m_pGame->m_pClientList[iClientH]->m_cSkillMastery[sSkillIndex] < 100) &&
-		(m_pGame->m_pClientList[iClientH]->m_iSkillSSN[sSkillIndex] > iSSNpoint)) {
+	if ((m_game->m_client_list[client_h]->m_skill_mastery[skill_index] < 100) &&
+		(m_game->m_client_list[client_h]->m_skill_progress[skill_index] > ss_npoint)) {
 
-		m_pGame->m_pClientList[iClientH]->m_cSkillMastery[sSkillIndex]++;
+		m_game->m_client_list[client_h]->m_skill_mastery[skill_index]++;
 		// Skill .
-		switch (sSkillIndex) {
+		switch (skill_index) {
 		case 0:
 		case 5:
 		case 13:
-			if (m_pGame->m_pClientList[iClientH]->m_cSkillMastery[sSkillIndex] > ((m_pGame->m_pClientList[iClientH]->m_iStr + m_pGame->m_pClientList[iClientH]->m_iAngelicStr) * 2)) {
-				m_pGame->m_pClientList[iClientH]->m_cSkillMastery[sSkillIndex]--;
-				m_pGame->m_pClientList[iClientH]->m_iSkillSSN[sSkillIndex] = iOldSSN;
+			if (m_game->m_client_list[client_h]->m_skill_mastery[skill_index] > ((m_game->m_client_list[client_h]->m_str + m_game->m_client_list[client_h]->m_angelic_str) * 2)) {
+				m_game->m_client_list[client_h]->m_skill_mastery[skill_index]--;
+				m_game->m_client_list[client_h]->m_skill_progress[skill_index] = old_ssn;
 			}
-			else m_pGame->m_pClientList[iClientH]->m_iSkillSSN[sSkillIndex] = 0;
+			else m_game->m_client_list[client_h]->m_skill_progress[skill_index] = 0;
 			break;
 
 		case 3:
 			// Level*2 .
-			if (m_pGame->m_pClientList[iClientH]->m_cSkillMastery[sSkillIndex] > (m_pGame->m_pClientList[iClientH]->m_iLevel * 2)) {
-				m_pGame->m_pClientList[iClientH]->m_cSkillMastery[sSkillIndex]--;
-				m_pGame->m_pClientList[iClientH]->m_iSkillSSN[sSkillIndex] = iOldSSN;
+			if (m_game->m_client_list[client_h]->m_skill_mastery[skill_index] > (m_game->m_client_list[client_h]->m_level * 2)) {
+				m_game->m_client_list[client_h]->m_skill_mastery[skill_index]--;
+				m_game->m_client_list[client_h]->m_skill_progress[skill_index] = old_ssn;
 			}
-			else m_pGame->m_pClientList[iClientH]->m_iSkillSSN[sSkillIndex] = 0;
+			else m_game->m_client_list[client_h]->m_skill_progress[skill_index] = 0;
 			break;
 
 		case 4:
 		case 18: // Crafting
 		case 21:
-			if (m_pGame->m_pClientList[iClientH]->m_cSkillMastery[sSkillIndex] > ((m_pGame->m_pClientList[iClientH]->m_iMag + m_pGame->m_pClientList[iClientH]->m_iAngelicMag) * 2)) {
-				m_pGame->m_pClientList[iClientH]->m_cSkillMastery[sSkillIndex]--;
-				m_pGame->m_pClientList[iClientH]->m_iSkillSSN[sSkillIndex] = iOldSSN;
+			if (m_game->m_client_list[client_h]->m_skill_mastery[skill_index] > ((m_game->m_client_list[client_h]->m_mag + m_game->m_client_list[client_h]->m_angelic_mag) * 2)) {
+				m_game->m_client_list[client_h]->m_skill_mastery[skill_index]--;
+				m_game->m_client_list[client_h]->m_skill_progress[skill_index] = old_ssn;
 			}
-			else m_pGame->m_pClientList[iClientH]->m_iSkillSSN[sSkillIndex] = 0;
+			else m_game->m_client_list[client_h]->m_skill_progress[skill_index] = 0;
 			break;
 
 		case 1:
@@ -222,11 +222,11 @@ void SkillManager::CalculateSSN_SkillIndex(int iClientH, short sSkillIndex, int 
 		case 9:
 		case 10:
 		case 11:
-			if (m_pGame->m_pClientList[iClientH]->m_cSkillMastery[sSkillIndex] > ((m_pGame->m_pClientList[iClientH]->m_iDex + m_pGame->m_pClientList[iClientH]->m_iAngelicDex) * 2)) {
-				m_pGame->m_pClientList[iClientH]->m_cSkillMastery[sSkillIndex]--;
-				m_pGame->m_pClientList[iClientH]->m_iSkillSSN[sSkillIndex] = iOldSSN;
+			if (m_game->m_client_list[client_h]->m_skill_mastery[skill_index] > ((m_game->m_client_list[client_h]->m_dex + m_game->m_client_list[client_h]->m_angelic_dex) * 2)) {
+				m_game->m_client_list[client_h]->m_skill_mastery[skill_index]--;
+				m_game->m_client_list[client_h]->m_skill_progress[skill_index] = old_ssn;
 			}
-			else m_pGame->m_pClientList[iClientH]->m_iSkillSSN[sSkillIndex] = 0;
+			else m_game->m_client_list[client_h]->m_skill_progress[skill_index] = 0;
 			break;
 
 		case 2:
@@ -235,122 +235,122 @@ void SkillManager::CalculateSSN_SkillIndex(int iClientH, short sSkillIndex, int 
 		case 15:
 		case 19:
 		case 20: // Enchanting
-			if (m_pGame->m_pClientList[iClientH]->m_cSkillMastery[sSkillIndex] > ((m_pGame->m_pClientList[iClientH]->m_iInt + m_pGame->m_pClientList[iClientH]->m_iAngelicInt) * 2)) {
-				m_pGame->m_pClientList[iClientH]->m_cSkillMastery[sSkillIndex]--;
-				m_pGame->m_pClientList[iClientH]->m_iSkillSSN[sSkillIndex] = iOldSSN;
+			if (m_game->m_client_list[client_h]->m_skill_mastery[skill_index] > ((m_game->m_client_list[client_h]->m_int + m_game->m_client_list[client_h]->m_angelic_int) * 2)) {
+				m_game->m_client_list[client_h]->m_skill_mastery[skill_index]--;
+				m_game->m_client_list[client_h]->m_skill_progress[skill_index] = old_ssn;
 			}
-			else m_pGame->m_pClientList[iClientH]->m_iSkillSSN[sSkillIndex] = 0;
+			else m_game->m_client_list[client_h]->m_skill_progress[skill_index] = 0;
 			break;
 
 		case 23:
-			if (m_pGame->m_pClientList[iClientH]->m_cSkillMastery[sSkillIndex] > (m_pGame->m_pClientList[iClientH]->m_iVit * 2)) {
-				m_pGame->m_pClientList[iClientH]->m_cSkillMastery[sSkillIndex]--;
-				m_pGame->m_pClientList[iClientH]->m_iSkillSSN[sSkillIndex] = iOldSSN;
+			if (m_game->m_client_list[client_h]->m_skill_mastery[skill_index] > (m_game->m_client_list[client_h]->m_vit * 2)) {
+				m_game->m_client_list[client_h]->m_skill_mastery[skill_index]--;
+				m_game->m_client_list[client_h]->m_skill_progress[skill_index] = old_ssn;
 			}
-			else m_pGame->m_pClientList[iClientH]->m_iSkillSSN[sSkillIndex] = 0;
+			else m_game->m_client_list[client_h]->m_skill_progress[skill_index] = 0;
 			break;
 
 		default:
-			m_pGame->m_pClientList[iClientH]->m_iSkillSSN[sSkillIndex] = 0;
+			m_game->m_client_list[client_h]->m_skill_progress[skill_index] = 0;
 			break;
 		}
 
-		if (m_pGame->m_pClientList[iClientH]->m_iSkillSSN[sSkillIndex] == 0) {
-			if (m_pGame->m_pClientList[iClientH]->m_sItemEquipmentStatus[ToInt(EquipPos::TwoHand)] != -1) {
-				iWeaponIndex = m_pGame->m_pClientList[iClientH]->m_sItemEquipmentStatus[ToInt(EquipPos::TwoHand)];
-				if (m_pGame->m_pClientList[iClientH]->m_pItemList[iWeaponIndex]->m_sRelatedSkill == sSkillIndex) {
-					m_pGame->m_pClientList[iClientH]->m_iHitRatio++;
+		if (m_game->m_client_list[client_h]->m_skill_progress[skill_index] == 0) {
+			if (m_game->m_client_list[client_h]->m_item_equipment_status[to_int(EquipPos::TwoHand)] != -1) {
+				weapon_index = m_game->m_client_list[client_h]->m_item_equipment_status[to_int(EquipPos::TwoHand)];
+				if (m_game->m_client_list[client_h]->m_item_list[weapon_index]->m_related_skill == skill_index) {
+					m_game->m_client_list[client_h]->m_hit_ratio++;
 				}
 			}
 
-			if (m_pGame->m_pClientList[iClientH]->m_sItemEquipmentStatus[ToInt(EquipPos::RightHand)] != -1) {
-				iWeaponIndex = m_pGame->m_pClientList[iClientH]->m_sItemEquipmentStatus[ToInt(EquipPos::RightHand)];
-				if (m_pGame->m_pClientList[iClientH]->m_pItemList[iWeaponIndex]->m_sRelatedSkill == sSkillIndex) {
+			if (m_game->m_client_list[client_h]->m_item_equipment_status[to_int(EquipPos::RightHand)] != -1) {
+				weapon_index = m_game->m_client_list[client_h]->m_item_equipment_status[to_int(EquipPos::RightHand)];
+				if (m_game->m_client_list[client_h]->m_item_list[weapon_index]->m_related_skill == skill_index) {
 					// Mace    .  1 .
-					m_pGame->m_pClientList[iClientH]->m_iHitRatio++;
+					m_game->m_client_list[client_h]->m_hit_ratio++;
 				}
 			}
 		}
 
-		if (m_pGame->m_pClientList[iClientH]->m_iSkillSSN[sSkillIndex] == 0) {
+		if (m_game->m_client_list[client_h]->m_skill_progress[skill_index] == 0) {
 			// SKill  700     1 .
-			bCheckTotalSkillMasteryPoints(iClientH, sSkillIndex);
+			check_total_skill_mastery_points(client_h, skill_index);
 
 			// Skill    .
-			m_pGame->SendNotifyMsg(0, iClientH, Notify::Skill, sSkillIndex, m_pGame->m_pClientList[iClientH]->m_cSkillMastery[sSkillIndex], 0, 0);
+			m_game->send_notify_msg(0, client_h, Notify::Skill, skill_index, m_game->m_client_list[client_h]->m_skill_mastery[skill_index], 0, 0);
 		}
 	}
 }
 
-bool SkillManager::bCheckTotalSkillMasteryPoints(int iClientH, int iSkill)
+bool SkillManager::check_total_skill_mastery_points(int client_h, int skill)
 {
 	
-	int iRemainPoint, iTotalPoints, iWeaponIndex, iDownSkillSSN, iDownPoint;
-	short sDownSkillIndex;
+	int remain_point, total_points, weapon_index, down_skill_ssn, down_point;
+	short down_skill_index;
 
-	if (m_pGame->m_pClientList[iClientH] == 0) return false;
+	if (m_game->m_client_list[client_h] == 0) return false;
 
-	iTotalPoints = 0;
+	total_points = 0;
 	for(int i = 0; i < hb::shared::limits::MaxSkillType; i++)
-		iTotalPoints += m_pGame->m_pClientList[iClientH]->m_cSkillMastery[i];
+		total_points += m_game->m_client_list[client_h]->m_skill_mastery[i];
 
-	iRemainPoint = iTotalPoints - MaxSkillPoints;
+	remain_point = total_points - MaxSkillPoints;
 
-	if (iRemainPoint > 0) {
+	if (remain_point > 0) {
 		// .      SSN    .
-		while (iRemainPoint > 0) {
+		while (remain_point > 0) {
 
-			sDownSkillIndex = -1; // v1.4
-			if (m_pGame->m_pClientList[iClientH]->m_iDownSkillIndex != -1) {
-				switch (m_pGame->m_pClientList[iClientH]->m_iDownSkillIndex) {
+			down_skill_index = -1; // v1.4
+			if (m_game->m_client_list[client_h]->m_down_skill_index != -1) {
+				switch (m_game->m_client_list[client_h]->m_down_skill_index) {
 				case 3:
 
 				default:
 					// 20    0  .
-					if (m_pGame->m_pClientList[iClientH]->m_cSkillMastery[m_pGame->m_pClientList[iClientH]->m_iDownSkillIndex] > 0) {
-						sDownSkillIndex = m_pGame->m_pClientList[iClientH]->m_iDownSkillIndex;
+					if (m_game->m_client_list[client_h]->m_skill_mastery[m_game->m_client_list[client_h]->m_down_skill_index] > 0) {
+						down_skill_index = m_game->m_client_list[client_h]->m_down_skill_index;
 					}
 					else {
-						iDownSkillSSN = 99999999;
+						down_skill_ssn = 99999999;
 						for(int i = 0; i < hb::shared::limits::MaxSkillType; i++)
-							if ((m_pGame->m_pClientList[iClientH]->m_cSkillMastery[i] >= 21) && (i != iSkill) &&
-								(m_pGame->m_pClientList[iClientH]->m_iSkillSSN[i] <= iDownSkillSSN)) {
+							if ((m_game->m_client_list[client_h]->m_skill_mastery[i] >= 21) && (i != skill) &&
+								(m_game->m_client_list[client_h]->m_skill_progress[i] <= down_skill_ssn)) {
 								// V1.22     20    .
-								iDownSkillSSN = m_pGame->m_pClientList[iClientH]->m_iSkillSSN[i];
-								sDownSkillIndex = i;
+								down_skill_ssn = m_game->m_client_list[client_h]->m_skill_progress[i];
+								down_skill_index = i;
 							}
 					}
 					break;
 				}
 			}
-			// 1      SSN   sDownSkillIndex
+			// 1      SSN   down_skill_index
 
-			if (sDownSkillIndex != -1) {
+			if (down_skill_index != -1) {
 
-				if (m_pGame->m_pClientList[iClientH]->m_cSkillMastery[sDownSkillIndex] <= 20) // v1.4
-					iDownPoint = m_pGame->m_pClientList[iClientH]->m_cSkillMastery[sDownSkillIndex];
-				else iDownPoint = 1;
+				if (m_game->m_client_list[client_h]->m_skill_mastery[down_skill_index] <= 20) // v1.4
+					down_point = m_game->m_client_list[client_h]->m_skill_mastery[down_skill_index];
+				else down_point = 1;
 
-				m_pGame->m_pClientList[iClientH]->m_cSkillMastery[sDownSkillIndex] -= iDownPoint; // v1.4
-				m_pGame->m_pClientList[iClientH]->m_iSkillSSN[sDownSkillIndex] = m_pGame->m_iSkillSSNpoint[m_pGame->m_pClientList[iClientH]->m_cSkillMastery[sDownSkillIndex] + 1] - 1;
-				iRemainPoint -= iDownPoint; // v1.4
+				m_game->m_client_list[client_h]->m_skill_mastery[down_skill_index] -= down_point; // v1.4
+				m_game->m_client_list[client_h]->m_skill_progress[down_skill_index] = m_game->m_skill_progress_threshold[m_game->m_client_list[client_h]->m_skill_mastery[down_skill_index] + 1] - 1;
+				remain_point -= down_point; // v1.4
 
-				if (m_pGame->m_pClientList[iClientH]->m_sItemEquipmentStatus[ToInt(EquipPos::TwoHand)] != -1) {
-					iWeaponIndex = m_pGame->m_pClientList[iClientH]->m_sItemEquipmentStatus[ToInt(EquipPos::TwoHand)];
-					if (m_pGame->m_pClientList[iClientH]->m_pItemList[iWeaponIndex]->m_sRelatedSkill == sDownSkillIndex) {
-						m_pGame->m_pClientList[iClientH]->m_iHitRatio -= iDownPoint; // v1.4
-						if (m_pGame->m_pClientList[iClientH]->m_iHitRatio < 0) m_pGame->m_pClientList[iClientH]->m_iHitRatio = 0;
+				if (m_game->m_client_list[client_h]->m_item_equipment_status[to_int(EquipPos::TwoHand)] != -1) {
+					weapon_index = m_game->m_client_list[client_h]->m_item_equipment_status[to_int(EquipPos::TwoHand)];
+					if (m_game->m_client_list[client_h]->m_item_list[weapon_index]->m_related_skill == down_skill_index) {
+						m_game->m_client_list[client_h]->m_hit_ratio -= down_point; // v1.4
+						if (m_game->m_client_list[client_h]->m_hit_ratio < 0) m_game->m_client_list[client_h]->m_hit_ratio = 0;
 					}
 				}
 
-				if (m_pGame->m_pClientList[iClientH]->m_sItemEquipmentStatus[ToInt(EquipPos::RightHand)] != -1) {
-					iWeaponIndex = m_pGame->m_pClientList[iClientH]->m_sItemEquipmentStatus[ToInt(EquipPos::RightHand)];
-					if (m_pGame->m_pClientList[iClientH]->m_pItemList[iWeaponIndex]->m_sRelatedSkill == sDownSkillIndex) {
-						m_pGame->m_pClientList[iClientH]->m_iHitRatio -= iDownPoint; // v1.4
-						if (m_pGame->m_pClientList[iClientH]->m_iHitRatio < 0) m_pGame->m_pClientList[iClientH]->m_iHitRatio = 0;
+				if (m_game->m_client_list[client_h]->m_item_equipment_status[to_int(EquipPos::RightHand)] != -1) {
+					weapon_index = m_game->m_client_list[client_h]->m_item_equipment_status[to_int(EquipPos::RightHand)];
+					if (m_game->m_client_list[client_h]->m_item_list[weapon_index]->m_related_skill == down_skill_index) {
+						m_game->m_client_list[client_h]->m_hit_ratio -= down_point; // v1.4
+						if (m_game->m_client_list[client_h]->m_hit_ratio < 0) m_game->m_client_list[client_h]->m_hit_ratio = 0;
 					}
 				}
-				m_pGame->SendNotifyMsg(0, iClientH, Notify::Skill, sDownSkillIndex, m_pGame->m_pClientList[iClientH]->m_cSkillMastery[sDownSkillIndex], 0, 0);
+				m_game->send_notify_msg(0, client_h, Notify::Skill, down_skill_index, m_game->m_client_list[client_h]->m_skill_mastery[down_skill_index], 0, 0);
 			}
 			else {
 				return false;
@@ -362,190 +362,190 @@ bool SkillManager::bCheckTotalSkillMasteryPoints(int iClientH, int iSkill)
 	return false;
 }
 
-void SkillManager::ClearSkillUsingStatus(int iClientH)
+void SkillManager::clear_skill_using_status(int client_h)
 {
 	
 	short tX, fX, tY, fY;
 
-	if (m_pGame->m_pClientList[iClientH] == 0) return;
+	if (m_game->m_client_list[client_h] == 0) return;
 
-	if (m_pGame->m_pClientList[iClientH]->m_bSkillUsingStatus[19]) {
-		tX = m_pGame->m_pClientList[iClientH]->m_sX;
-		tY = m_pGame->m_pClientList[iClientH]->m_sY;
-		if (m_pGame->m_pMapList[m_pGame->m_pClientList[iClientH]->m_cMapIndex]->bGetMoveable(tX, tY, 0) == false) {
-			fX = m_pGame->m_pClientList[iClientH]->m_sX + _tmp_cCorpseX[m_pGame->m_pClientList[iClientH]->m_cDir];
-			fY = m_pGame->m_pClientList[iClientH]->m_sY + _tmp_cCorpseY[m_pGame->m_pClientList[iClientH]->m_cDir];
-			if (m_pGame->m_pMapList[m_pGame->m_pClientList[iClientH]->m_cMapIndex]->bGetMoveable(fX, fY, 0) == false) {
-				m_pGame->m_pClientList[iClientH]->m_cDir = static_cast<char>(m_pGame->iDice(1, 8));
-				fX = m_pGame->m_pClientList[iClientH]->m_sX + _tmp_cCorpseX[m_pGame->m_pClientList[iClientH]->m_cDir];
-				fY = m_pGame->m_pClientList[iClientH]->m_sY + _tmp_cCorpseY[m_pGame->m_pClientList[iClientH]->m_cDir];
-				if (m_pGame->m_pMapList[m_pGame->m_pClientList[iClientH]->m_cMapIndex]->bGetMoveable(fX, fY, 0) == false) {
+	if (m_game->m_client_list[client_h]->m_skill_using_status[19]) {
+		tX = m_game->m_client_list[client_h]->m_x;
+		tY = m_game->m_client_list[client_h]->m_y;
+		if (m_game->m_map_list[m_game->m_client_list[client_h]->m_map_index]->get_moveable(tX, tY, 0) == false) {
+			fX = m_game->m_client_list[client_h]->m_x + _tmp_cCorpseX[m_game->m_client_list[client_h]->m_dir];
+			fY = m_game->m_client_list[client_h]->m_y + _tmp_cCorpseY[m_game->m_client_list[client_h]->m_dir];
+			if (m_game->m_map_list[m_game->m_client_list[client_h]->m_map_index]->get_moveable(fX, fY, 0) == false) {
+				m_game->m_client_list[client_h]->m_dir = static_cast<char>(m_game->dice(1, 8));
+				fX = m_game->m_client_list[client_h]->m_x + _tmp_cCorpseX[m_game->m_client_list[client_h]->m_dir];
+				fY = m_game->m_client_list[client_h]->m_y + _tmp_cCorpseY[m_game->m_client_list[client_h]->m_dir];
+				if (m_game->m_map_list[m_game->m_client_list[client_h]->m_map_index]->get_moveable(fX, fY, 0) == false) {
 					return;
 				}
 			}
-			m_pGame->SendNotifyMsg(0, iClientH, Notify::DamageMove, m_pGame->m_pClientList[iClientH]->m_cDir, 0, 0, 0);
+			m_game->send_notify_msg(0, client_h, Notify::DamageMove, m_game->m_client_list[client_h]->m_dir, 0, 0, 0);
 		}
 	}
 	for(int i = 0; i < hb::shared::limits::MaxSkillType; i++) {
-		m_pGame->m_pClientList[iClientH]->m_bSkillUsingStatus[i] = false;
-		m_pGame->m_pClientList[iClientH]->m_iSkillUsingTimeID[i] = 0;
+		m_game->m_client_list[client_h]->m_skill_using_status[i] = false;
+		m_game->m_client_list[client_h]->m_skill_using_time_id[i] = 0;
 	}
 
-	if (m_pGame->m_pClientList[iClientH]->m_iAllocatedFish != 0) {
-		m_pGame->m_pFishingManager->ReleaseFishEngagement(iClientH);
-		m_pGame->SendNotifyMsg(0, iClientH, Notify::FishCanceled, 0, 0, 0, 0);
+	if (m_game->m_client_list[client_h]->m_allocated_fish != 0) {
+		m_game->m_fishing_manager->release_fish_engagement(client_h);
+		m_game->send_notify_msg(0, client_h, Notify::FishCanceled, 0, 0, 0, 0);
 	}
 
 }
 
-void SkillManager::UseSkillHandler(int iClientH, int iV1, int iV2, int iV3)
+void SkillManager::use_skill_handler(int client_h, int v1, int v2, int v3)
 {
-	char  cOwnerType;
-	short sAttackerWeapon, sOwnerH;
-	int   iResult, iPlayerSkillLevel;
+	char  owner_type;
+	short attacker_weapon, owner_h;
+	int   result, player_skill_level;
 
-	if (m_pGame->m_pClientList[iClientH] == 0) return;
-	if (m_pGame->m_pClientList[iClientH]->m_bIsInitComplete == false) return;
+	if (m_game->m_client_list[client_h] == 0) return;
+	if (m_game->m_client_list[client_h]->m_is_init_complete == false) return;
 
-	if ((iV1 < 0) || (iV1 >= hb::shared::limits::MaxSkillType)) return;
-	if (m_pGame->m_pSkillConfigList[iV1] == 0) return;
-	if (m_pGame->m_pClientList[iClientH]->m_bSkillUsingStatus[iV1]) return;
+	if ((v1 < 0) || (v1 >= hb::shared::limits::MaxSkillType)) return;
+	if (m_game->m_skill_config_list[v1] == 0) return;
+	if (m_game->m_client_list[client_h]->m_skill_using_status[v1]) return;
 
 	/*
-	if (iV1 != 19) {
-		m_pGame->m_pClientList[iClientH]->m_iAbuseCount++;
-		if ((m_pGame->m_pClientList[iClientH]->m_iAbuseCount % 30) == 0) {
-			std::snprintf(G_cTxt, sizeof(G_cTxt), "(!) ÇØÅ· ¿ëÀÇÀÚ(%s) Skill(%d) Tries(%d)",m_pGame->m_pClientList[iClientH]->m_cCharName,
-																	   iV1, m_pGame->m_pClientList[iClientH]->m_iAbuseCount);
+	if (v1 != 19) {
+		m_game->m_client_list[client_h]->m_abuse_count++;
+		if ((m_game->m_client_list[client_h]->m_abuse_count % 30) == 0) {
+			std::snprintf(G_cTxt, sizeof(G_cTxt), "(!) ÇØÅ· ¿ëÀÇÀÚ(%s) Skill(%d) Tries(%d)",m_game->m_client_list[client_h]->m_char_name,
+																	   v1, m_game->m_client_list[client_h]->m_abuse_count);
 			PutLogFileList(G_cTxt);
 		}
 	}
 	*/
 
-	iPlayerSkillLevel = m_pGame->m_pClientList[iClientH]->m_cSkillMastery[iV1];
-	iResult = m_pGame->iDice(1, 100);
+	player_skill_level = m_game->m_client_list[client_h]->m_skill_mastery[v1];
+	result = m_game->dice(1, 100);
 
-	if (iResult > iPlayerSkillLevel) {
-		m_pGame->SendNotifyMsg(0, iClientH, Notify::SkillUsingEnd, 0, 0, 0, 0);
+	if (result > player_skill_level) {
+		m_game->send_notify_msg(0, client_h, Notify::SkillUsingEnd, 0, 0, 0, 0);
 		return;
 	}
 
-	switch (m_pGame->m_pSkillConfigList[iV1]->m_sType) {
+	switch (m_game->m_skill_config_list[v1]->m_type) {
 	case EffectType::Pretend:
-		switch (m_pGame->m_pSkillConfigList[iV1]->m_sValue1) {
+		switch (m_game->m_skill_config_list[v1]->m_value_1) {
 		case 1:
 
-			if (m_pGame->m_pMapList[m_pGame->m_pClientList[iClientH]->m_cMapIndex]->m_bIsFightZone) {
-				m_pGame->SendNotifyMsg(0, iClientH, Notify::SkillUsingEnd, 0, 0, 0, 0);
+			if (m_game->m_map_list[m_game->m_client_list[client_h]->m_map_index]->m_is_fight_zone) {
+				m_game->send_notify_msg(0, client_h, Notify::SkillUsingEnd, 0, 0, 0, 0);
 				return;
 			}
 
-			m_pGame->m_pMapList[m_pGame->m_pClientList[iClientH]->m_cMapIndex]->GetDeadOwner(&sOwnerH, &cOwnerType, m_pGame->m_pClientList[iClientH]->m_sX, m_pGame->m_pClientList[iClientH]->m_sY);
-			if (sOwnerH != 0) {
-				m_pGame->SendNotifyMsg(0, iClientH, Notify::SkillUsingEnd, 0, 0, 0, 0);
+			m_game->m_map_list[m_game->m_client_list[client_h]->m_map_index]->get_dead_owner(&owner_h, &owner_type, m_game->m_client_list[client_h]->m_x, m_game->m_client_list[client_h]->m_y);
+			if (owner_h != 0) {
+				m_game->send_notify_msg(0, client_h, Notify::SkillUsingEnd, 0, 0, 0, 0);
 				return;
 			}
 
-			iResult = 0;
-			m_pGame->m_pMapList[m_pGame->m_pClientList[iClientH]->m_cMapIndex]->GetOwner(&sOwnerH, &cOwnerType, m_pGame->m_pClientList[iClientH]->m_sX, m_pGame->m_pClientList[iClientH]->m_sY - 1);
-			iResult += sOwnerH;
-			m_pGame->m_pMapList[m_pGame->m_pClientList[iClientH]->m_cMapIndex]->GetOwner(&sOwnerH, &cOwnerType, m_pGame->m_pClientList[iClientH]->m_sX, m_pGame->m_pClientList[iClientH]->m_sY + 1);
-			iResult += sOwnerH;
-			m_pGame->m_pMapList[m_pGame->m_pClientList[iClientH]->m_cMapIndex]->GetOwner(&sOwnerH, &cOwnerType, m_pGame->m_pClientList[iClientH]->m_sX - 1, m_pGame->m_pClientList[iClientH]->m_sY);
-			iResult += sOwnerH;
-			m_pGame->m_pMapList[m_pGame->m_pClientList[iClientH]->m_cMapIndex]->GetOwner(&sOwnerH, &cOwnerType, m_pGame->m_pClientList[iClientH]->m_sX + 1, m_pGame->m_pClientList[iClientH]->m_sY);
-			iResult += sOwnerH;
+			result = 0;
+			m_game->m_map_list[m_game->m_client_list[client_h]->m_map_index]->get_owner(&owner_h, &owner_type, m_game->m_client_list[client_h]->m_x, m_game->m_client_list[client_h]->m_y - 1);
+			result += owner_h;
+			m_game->m_map_list[m_game->m_client_list[client_h]->m_map_index]->get_owner(&owner_h, &owner_type, m_game->m_client_list[client_h]->m_x, m_game->m_client_list[client_h]->m_y + 1);
+			result += owner_h;
+			m_game->m_map_list[m_game->m_client_list[client_h]->m_map_index]->get_owner(&owner_h, &owner_type, m_game->m_client_list[client_h]->m_x - 1, m_game->m_client_list[client_h]->m_y);
+			result += owner_h;
+			m_game->m_map_list[m_game->m_client_list[client_h]->m_map_index]->get_owner(&owner_h, &owner_type, m_game->m_client_list[client_h]->m_x + 1, m_game->m_client_list[client_h]->m_y);
+			result += owner_h;
 
-			m_pGame->m_pMapList[m_pGame->m_pClientList[iClientH]->m_cMapIndex]->GetOwner(&sOwnerH, &cOwnerType, m_pGame->m_pClientList[iClientH]->m_sX - 1, m_pGame->m_pClientList[iClientH]->m_sY - 1);
-			iResult += sOwnerH;
-			m_pGame->m_pMapList[m_pGame->m_pClientList[iClientH]->m_cMapIndex]->GetOwner(&sOwnerH, &cOwnerType, m_pGame->m_pClientList[iClientH]->m_sX + 1, m_pGame->m_pClientList[iClientH]->m_sY - 1);
-			iResult += sOwnerH;
-			m_pGame->m_pMapList[m_pGame->m_pClientList[iClientH]->m_cMapIndex]->GetOwner(&sOwnerH, &cOwnerType, m_pGame->m_pClientList[iClientH]->m_sX - 1, m_pGame->m_pClientList[iClientH]->m_sY + 1);
-			iResult += sOwnerH;
-			m_pGame->m_pMapList[m_pGame->m_pClientList[iClientH]->m_cMapIndex]->GetOwner(&sOwnerH, &cOwnerType, m_pGame->m_pClientList[iClientH]->m_sX + 1, m_pGame->m_pClientList[iClientH]->m_sY + 1);
-			iResult += sOwnerH;
+			m_game->m_map_list[m_game->m_client_list[client_h]->m_map_index]->get_owner(&owner_h, &owner_type, m_game->m_client_list[client_h]->m_x - 1, m_game->m_client_list[client_h]->m_y - 1);
+			result += owner_h;
+			m_game->m_map_list[m_game->m_client_list[client_h]->m_map_index]->get_owner(&owner_h, &owner_type, m_game->m_client_list[client_h]->m_x + 1, m_game->m_client_list[client_h]->m_y - 1);
+			result += owner_h;
+			m_game->m_map_list[m_game->m_client_list[client_h]->m_map_index]->get_owner(&owner_h, &owner_type, m_game->m_client_list[client_h]->m_x - 1, m_game->m_client_list[client_h]->m_y + 1);
+			result += owner_h;
+			m_game->m_map_list[m_game->m_client_list[client_h]->m_map_index]->get_owner(&owner_h, &owner_type, m_game->m_client_list[client_h]->m_x + 1, m_game->m_client_list[client_h]->m_y + 1);
+			result += owner_h;
 
-			if (iResult != 0) {
-				m_pGame->SendNotifyMsg(0, iClientH, Notify::SkillUsingEnd, 0, 0, 0, 0);
+			if (result != 0) {
+				m_game->send_notify_msg(0, client_h, Notify::SkillUsingEnd, 0, 0, 0, 0);
 				return;
 			}
 
-			CalculateSSN_SkillIndex(iClientH, iV1, 1);
+			calculate_ssn_skill_index(client_h, v1, 1);
 
-			sAttackerWeapon = 1;
-			m_pGame->SendEventToNearClient_TypeA(iClientH, hb::shared::owner_class::Player, MsgId::EventMotion, Type::Dying, 0, sAttackerWeapon, 0);
-			m_pGame->m_pMapList[m_pGame->m_pClientList[iClientH]->m_cMapIndex]->ClearOwner(14, iClientH, hb::shared::owner_class::Player, m_pGame->m_pClientList[iClientH]->m_sX, m_pGame->m_pClientList[iClientH]->m_sY);
-			m_pGame->m_pMapList[m_pGame->m_pClientList[iClientH]->m_cMapIndex]->SetDeadOwner(iClientH, hb::shared::owner_class::Player, m_pGame->m_pClientList[iClientH]->m_sX, m_pGame->m_pClientList[iClientH]->m_sY);
+			attacker_weapon = 1;
+			m_game->send_event_to_near_client_type_a(client_h, hb::shared::owner_class::Player, MsgId::EventMotion, Type::Dying, 0, attacker_weapon, 0);
+			m_game->m_map_list[m_game->m_client_list[client_h]->m_map_index]->clear_owner(14, client_h, hb::shared::owner_class::Player, m_game->m_client_list[client_h]->m_x, m_game->m_client_list[client_h]->m_y);
+			m_game->m_map_list[m_game->m_client_list[client_h]->m_map_index]->set_dead_owner(client_h, hb::shared::owner_class::Player, m_game->m_client_list[client_h]->m_x, m_game->m_client_list[client_h]->m_y);
 			break;
 		}
 		break;
 
 	}
 
-	m_pGame->m_pClientList[iClientH]->m_bSkillUsingStatus[iV1] = true;
+	m_game->m_client_list[client_h]->m_skill_using_status[v1] = true;
 }
 
-void SkillManager::SetDownSkillIndexHandler(int iClientH, int iSkillIndex)
+void SkillManager::set_down_skill_index_handler(int client_h, int skill_index)
 {
-	if (m_pGame->m_pClientList[iClientH] == 0) return;
-	if ((iSkillIndex < 0) || (iSkillIndex >= hb::shared::limits::MaxSkillType)) return;
+	if (m_game->m_client_list[client_h] == 0) return;
+	if ((skill_index < 0) || (skill_index >= hb::shared::limits::MaxSkillType)) return;
 
-	if (m_pGame->m_pClientList[iClientH]->m_cSkillMastery[iSkillIndex] > 0)
-		m_pGame->m_pClientList[iClientH]->m_iDownSkillIndex = iSkillIndex;
+	if (m_game->m_client_list[client_h]->m_skill_mastery[skill_index] > 0)
+		m_game->m_client_list[client_h]->m_down_skill_index = skill_index;
 
-	m_pGame->SendNotifyMsg(0, iClientH, Notify::DownSkillIndexSet, m_pGame->m_pClientList[iClientH]->m_iDownSkillIndex, 0, 0, 0);
+	m_game->send_notify_msg(0, client_h, Notify::DownSkillIndexSet, m_game->m_client_list[client_h]->m_down_skill_index, 0, 0, 0);
 }
 
-void SkillManager::_TamingHandler(int iClientH, int iSkillNum, char cMapIndex, int dX, int dY)
+void SkillManager::taming_handler(int client_h, int skill_num, char map_index, int dX, int dY)
 {
-	int iSkillLevel, iRange, iTamingLevel, iResult;
-	short sOwnerH;
-	char  cOwnerType;
+	int skill_level, range, taming_level, result;
+	short owner_h;
+	char  owner_type;
 
-	if (m_pGame->m_pClientList[iClientH] == 0) return;
-	if (m_pGame->m_pMapList[cMapIndex] == 0) return;
+	if (m_game->m_client_list[client_h] == 0) return;
+	if (m_game->m_map_list[map_index] == 0) return;
 
-	iSkillLevel = (int)m_pGame->m_pClientList[iClientH]->m_cSkillMastery[iSkillNum];
-	iRange = iSkillLevel / 12;
+	skill_level = (int)m_game->m_client_list[client_h]->m_skill_mastery[skill_num];
+	range = skill_level / 12;
 
-	for(int iX = dX - iRange; iX <= dX + iRange; iX++)
-		for(int iY = dY - iRange; iY <= dY + iRange; iY++) {
-			sOwnerH = 0;
-			if ((iX > 0) && (iY > 0) && (iX < m_pGame->m_pMapList[cMapIndex]->m_sSizeX) && (iY < m_pGame->m_pMapList[cMapIndex]->m_sSizeY))
-				m_pGame->m_pMapList[cMapIndex]->GetOwner(&sOwnerH, &cOwnerType, iX, iY);
+	for(int iX = dX - range; iX <= dX + range; iX++)
+		for(int iY = dY - range; iY <= dY + range; iY++) {
+			owner_h = 0;
+			if ((iX > 0) && (iY > 0) && (iX < m_game->m_map_list[map_index]->m_size_x) && (iY < m_game->m_map_list[map_index]->m_size_y))
+				m_game->m_map_list[map_index]->get_owner(&owner_h, &owner_type, iX, iY);
 
-			if (sOwnerH != 0) {
-				switch (cOwnerType) {
+			if (owner_h != 0) {
+				switch (owner_type) {
 				case hb::shared::owner_class::Player:
-					if (m_pGame->m_pClientList[sOwnerH] == 0) break;
+					if (m_game->m_client_list[owner_h] == 0) break;
 					break;
 
 				case hb::shared::owner_class::Npc:
-					if (m_pGame->m_pNpcList[sOwnerH] == 0) break;
-					iTamingLevel = 10;
-					switch (m_pGame->m_pNpcList[sOwnerH]->m_sType) {
+					if (m_game->m_npc_list[owner_h] == 0) break;
+					taming_level = 10;
+					switch (m_game->m_npc_list[owner_h]->m_type) {
 					case 10:
-					case 16: iTamingLevel = 1; break;
-					case 22: iTamingLevel = 2; break;
+					case 16: taming_level = 1; break;
+					case 22: taming_level = 2; break;
 					case 17:
-					case 14: iTamingLevel = 3; break;
-					case 18: iTamingLevel = 4; break;
-					case 11: iTamingLevel = 5; break;
+					case 14: taming_level = 3; break;
+					case 18: taming_level = 4; break;
+					case 11: taming_level = 5; break;
 					case 23:
-					case 12: iTamingLevel = 6; break;
-					case 28: iTamingLevel = 7; break;
+					case 12: taming_level = 6; break;
+					case 28: taming_level = 7; break;
 					case 13:
-					case 27: iTamingLevel = 8; break;
-					case 29: iTamingLevel = 9; break;
-					case 33: iTamingLevel = 9; break;
-					case 30: iTamingLevel = 9; break;
+					case 27: taming_level = 8; break;
+					case 29: taming_level = 9; break;
+					case 33: taming_level = 9; break;
+					case 30: taming_level = 9; break;
 					case 31:
-					case 32: iTamingLevel = 10; break;
+					case 32: taming_level = 10; break;
 					}
 
-					iResult = (iSkillLevel / 10);
+					result = (skill_level / 10);
 
-					if (iResult < iTamingLevel) break;
+					if (result < taming_level) break;
 
 					break;
 				}
@@ -553,74 +553,74 @@ void SkillManager::_TamingHandler(int iClientH, int iSkillNum, char cMapIndex, i
 		}
 }
 
-void SkillManager::SkillCheck(int sTargetH) {
+void SkillManager::skill_check(int target_h) {
 	//magic
-	while ((m_pGame->m_pClientList[sTargetH]->m_iMag * 2) < m_pGame->m_pClientList[sTargetH]->m_cSkillMastery[4]) {
-		m_pGame->m_pClientList[sTargetH]->m_cSkillMastery[4]--;
+	while ((m_game->m_client_list[target_h]->m_mag * 2) < m_game->m_client_list[target_h]->m_skill_mastery[4]) {
+		m_game->m_client_list[target_h]->m_skill_mastery[4]--;
 	}
 	//hand attack
-	while ((m_pGame->m_pClientList[sTargetH]->m_iStr * 2) < m_pGame->m_pClientList[sTargetH]->m_cSkillMastery[5]) {
-		m_pGame->m_pClientList[sTargetH]->m_cSkillMastery[5]--;
+	while ((m_game->m_client_list[target_h]->m_str * 2) < m_game->m_client_list[target_h]->m_skill_mastery[5]) {
+		m_game->m_client_list[target_h]->m_skill_mastery[5]--;
 	}
 	//hammer
-	while ((m_pGame->m_pClientList[sTargetH]->m_iDex * 2) < m_pGame->m_pClientList[sTargetH]->m_cSkillMastery[14]) {
-		m_pGame->m_pClientList[sTargetH]->m_cSkillMastery[14]--;
+	while ((m_game->m_client_list[target_h]->m_dex * 2) < m_game->m_client_list[target_h]->m_skill_mastery[14]) {
+		m_game->m_client_list[target_h]->m_skill_mastery[14]--;
 	}
 	//shield
-	while ((m_pGame->m_pClientList[sTargetH]->m_iDex * 2) < m_pGame->m_pClientList[sTargetH]->m_cSkillMastery[11]) {
-		m_pGame->m_pClientList[sTargetH]->m_cSkillMastery[11]--;
+	while ((m_game->m_client_list[target_h]->m_dex * 2) < m_game->m_client_list[target_h]->m_skill_mastery[11]) {
+		m_game->m_client_list[target_h]->m_skill_mastery[11]--;
 	}
 	//axe
-	while ((m_pGame->m_pClientList[sTargetH]->m_iDex * 2) < m_pGame->m_pClientList[sTargetH]->m_cSkillMastery[10]) {
-		m_pGame->m_pClientList[sTargetH]->m_cSkillMastery[10]--;
+	while ((m_game->m_client_list[target_h]->m_dex * 2) < m_game->m_client_list[target_h]->m_skill_mastery[10]) {
+		m_game->m_client_list[target_h]->m_skill_mastery[10]--;
 	}
 	//fencing
-	while ((m_pGame->m_pClientList[sTargetH]->m_iDex * 2) < m_pGame->m_pClientList[sTargetH]->m_cSkillMastery[9]) {
-		m_pGame->m_pClientList[sTargetH]->m_cSkillMastery[9]--;
+	while ((m_game->m_client_list[target_h]->m_dex * 2) < m_game->m_client_list[target_h]->m_skill_mastery[9]) {
+		m_game->m_client_list[target_h]->m_skill_mastery[9]--;
 	}
-	while ((m_pGame->m_pClientList[sTargetH]->m_iDex * 2) < m_pGame->m_pClientList[sTargetH]->m_cSkillMastery[8]) {
-		m_pGame->m_pClientList[sTargetH]->m_cSkillMastery[8]--;
+	while ((m_game->m_client_list[target_h]->m_dex * 2) < m_game->m_client_list[target_h]->m_skill_mastery[8]) {
+		m_game->m_client_list[target_h]->m_skill_mastery[8]--;
 	}
-	while ((m_pGame->m_pClientList[sTargetH]->m_iDex * 2) < m_pGame->m_pClientList[sTargetH]->m_cSkillMastery[7]) {
-		m_pGame->m_pClientList[sTargetH]->m_cSkillMastery[7]--;
+	while ((m_game->m_client_list[target_h]->m_dex * 2) < m_game->m_client_list[target_h]->m_skill_mastery[7]) {
+		m_game->m_client_list[target_h]->m_skill_mastery[7]--;
 	}
 	//archery
-	while ((m_pGame->m_pClientList[sTargetH]->m_iDex * 2) < m_pGame->m_pClientList[sTargetH]->m_cSkillMastery[6]) {
-		m_pGame->m_pClientList[sTargetH]->m_cSkillMastery[6]--;
+	while ((m_game->m_client_list[target_h]->m_dex * 2) < m_game->m_client_list[target_h]->m_skill_mastery[6]) {
+		m_game->m_client_list[target_h]->m_skill_mastery[6]--;
 	}
 	//staff
-	while ((m_pGame->m_pClientList[sTargetH]->m_iMag * 2) < m_pGame->m_pClientList[sTargetH]->m_cSkillMastery[21]) {
-		m_pGame->m_pClientList[sTargetH]->m_cSkillMastery[21]--;
+	while ((m_game->m_client_list[target_h]->m_mag * 2) < m_game->m_client_list[target_h]->m_skill_mastery[21]) {
+		m_game->m_client_list[target_h]->m_skill_mastery[21]--;
 	}
 	//alc
-	while ((m_pGame->m_pClientList[sTargetH]->m_iInt * 2) < m_pGame->m_pClientList[sTargetH]->m_cSkillMastery[12]) {
-		m_pGame->m_pClientList[sTargetH]->m_cSkillMastery[12]--;
+	while ((m_game->m_client_list[target_h]->m_int * 2) < m_game->m_client_list[target_h]->m_skill_mastery[12]) {
+		m_game->m_client_list[target_h]->m_skill_mastery[12]--;
 	}
 	//manu
-	while ((m_pGame->m_pClientList[sTargetH]->m_iStr * 2) < m_pGame->m_pClientList[sTargetH]->m_cSkillMastery[13]) {
-		m_pGame->m_pClientList[sTargetH]->m_cSkillMastery[13]--;
+	while ((m_game->m_client_list[target_h]->m_str * 2) < m_game->m_client_list[target_h]->m_skill_mastery[13]) {
+		m_game->m_client_list[target_h]->m_skill_mastery[13]--;
 	}
-	while ((m_pGame->m_pClientList[sTargetH]->m_iVit * 2) < m_pGame->m_pClientList[sTargetH]->m_cSkillMastery[23]) {
-		m_pGame->m_pClientList[sTargetH]->m_cSkillMastery[23]--;
+	while ((m_game->m_client_list[target_h]->m_vit * 2) < m_game->m_client_list[target_h]->m_skill_mastery[23]) {
+		m_game->m_client_list[target_h]->m_skill_mastery[23]--;
 	}
-	while ((m_pGame->m_pClientList[sTargetH]->m_iInt * 2) < m_pGame->m_pClientList[sTargetH]->m_cSkillMastery[19]) {
-		m_pGame->m_pClientList[sTargetH]->m_cSkillMastery[19]--;
+	while ((m_game->m_client_list[target_h]->m_int * 2) < m_game->m_client_list[target_h]->m_skill_mastery[19]) {
+		m_game->m_client_list[target_h]->m_skill_mastery[19]--;
 	}
 	//farming
-	while ((m_pGame->m_pClientList[sTargetH]->m_iInt * 2) < m_pGame->m_pClientList[sTargetH]->m_cSkillMastery[2]) {
-		m_pGame->m_pClientList[sTargetH]->m_cSkillMastery[2]--;
+	while ((m_game->m_client_list[target_h]->m_int * 2) < m_game->m_client_list[target_h]->m_skill_mastery[2]) {
+		m_game->m_client_list[target_h]->m_skill_mastery[2]--;
 	}
 	//fishing
-	while ((m_pGame->m_pClientList[sTargetH]->m_iDex * 2) < m_pGame->m_pClientList[sTargetH]->m_cSkillMastery[1]) {
-		m_pGame->m_pClientList[sTargetH]->m_cSkillMastery[1]--;
+	while ((m_game->m_client_list[target_h]->m_dex * 2) < m_game->m_client_list[target_h]->m_skill_mastery[1]) {
+		m_game->m_client_list[target_h]->m_skill_mastery[1]--;
 	}
 	//mining
-	while ((m_pGame->m_pClientList[sTargetH]->m_iStr * 2) < m_pGame->m_pClientList[sTargetH]->m_cSkillMastery[0]) {
-		m_pGame->m_pClientList[sTargetH]->m_cSkillMastery[0]--;
+	while ((m_game->m_client_list[target_h]->m_str * 2) < m_game->m_client_list[target_h]->m_skill_mastery[0]) {
+		m_game->m_client_list[target_h]->m_skill_mastery[0]--;
 	}
 }
 
-void SkillManager::ReloadSkillConfigs()
+void SkillManager::reload_skill_configs()
 {
 	sqlite3* configDb = nullptr;
 	std::string configDbPath;
@@ -633,14 +633,14 @@ void SkillManager::ReloadSkillConfigs()
 
 	for(int i = 0; i < hb::shared::limits::MaxSkillType; i++)
 	{
-		if (m_pGame->m_pSkillConfigList[i] != 0)
+		if (m_game->m_skill_config_list[i] != 0)
 		{
-			delete m_pGame->m_pSkillConfigList[i];
-			m_pGame->m_pSkillConfigList[i] = 0;
+			delete m_game->m_skill_config_list[i];
+			m_game->m_skill_config_list[i] = 0;
 		}
 	}
 
-	if (!LoadSkillConfigs(configDb, m_pGame))
+	if (!LoadSkillConfigs(configDb, m_game))
 	{
 		hb::logger::log("Skill config reload failed");
 		CloseGameConfigDatabase(configDb);
@@ -648,263 +648,263 @@ void SkillManager::ReloadSkillConfigs()
 	}
 
 	CloseGameConfigDatabase(configDb);
-	m_pGame->ComputeConfigHashes();
+	m_game->compute_config_hashes();
 	hb::logger::log("Skill configs reloaded successfully");
 }
 
-void SkillManager::SetSkillAll(int iClientH, char* pData, size_t dwMsgSize)
-//SetSkillAll Acidx Command,  Added July 04, 2005 INDEPENDENCE BABY Fuck YEA
+void SkillManager::set_skill_all(int client_h, char* data, size_t msg_size)
+//set_skill_all Acidx Command,  Added July 04, 2005 INDEPENDENCE BABY Fuck YEA
 {
-	if (m_pGame->m_pClientList[iClientH] == 0) return;
+	if (m_game->m_client_list[client_h] == 0) return;
 	//Magic
-	if (m_pGame->m_pClientList[iClientH]->m_cSkillMastery[4] < 100)
+	if (m_game->m_client_list[client_h]->m_skill_mastery[4] < 100)
 	{
 		// now we add skills
-		m_pGame->m_pClientList[iClientH]->m_cSkillMastery[4] = m_pGame->m_pClientList[iClientH]->m_iMag * 2;
-		if (m_pGame->m_pClientList[iClientH]->m_cSkillMastery[4] > 100)
+		m_game->m_client_list[client_h]->m_skill_mastery[4] = m_game->m_client_list[client_h]->m_mag * 2;
+		if (m_game->m_client_list[client_h]->m_skill_mastery[4] > 100)
 		{
-			m_pGame->m_pClientList[iClientH]->m_cSkillMastery[4] = 100;
+			m_game->m_client_list[client_h]->m_skill_mastery[4] = 100;
 		}
-		if (m_pGame->m_pClientList[iClientH]->m_iMag > 50)
+		if (m_game->m_client_list[client_h]->m_mag > 50)
 		{
-			m_pGame->m_pClientList[iClientH]->m_cSkillMastery[4] = 100;
+			m_game->m_client_list[client_h]->m_skill_mastery[4] = 100;
 		}
 		//Send a notify to update the client
-		m_pGame->SendNotifyMsg(0, iClientH, Notify::Skill, 4, m_pGame->m_pClientList[iClientH]->m_cSkillMastery[4], 0, 0);
+		m_game->send_notify_msg(0, client_h, Notify::Skill, 4, m_game->m_client_list[client_h]->m_skill_mastery[4], 0, 0);
 
 	}
 	//LongSword
-	if (m_pGame->m_pClientList[iClientH]->m_cSkillMastery[8] < 100)
+	if (m_game->m_client_list[client_h]->m_skill_mastery[8] < 100)
 	{
 		// now we add skills
-		m_pGame->m_pClientList[iClientH]->m_cSkillMastery[8] = m_pGame->m_pClientList[iClientH]->m_iDex * 2;
+		m_game->m_client_list[client_h]->m_skill_mastery[8] = m_game->m_client_list[client_h]->m_dex * 2;
 
-		if (m_pGame->m_pClientList[iClientH]->m_cSkillMastery[8] > 100)
+		if (m_game->m_client_list[client_h]->m_skill_mastery[8] > 100)
 		{
-			m_pGame->m_pClientList[iClientH]->m_cSkillMastery[8] = 100;
+			m_game->m_client_list[client_h]->m_skill_mastery[8] = 100;
 		}
-		if (m_pGame->m_pClientList[iClientH]->m_iDex > 50)
+		if (m_game->m_client_list[client_h]->m_dex > 50)
 		{
-			m_pGame->m_pClientList[iClientH]->m_cSkillMastery[8] = 100;
+			m_game->m_client_list[client_h]->m_skill_mastery[8] = 100;
 		}
 		//Send a notify to update the client
-		m_pGame->SendNotifyMsg(0, iClientH, Notify::Skill, 8, m_pGame->m_pClientList[iClientH]->m_cSkillMastery[8], 0, 0);
+		m_game->send_notify_msg(0, client_h, Notify::Skill, 8, m_game->m_client_list[client_h]->m_skill_mastery[8], 0, 0);
 
 	}
 	//Hammer
-	if (m_pGame->m_pClientList[iClientH]->m_cSkillMastery[14] < 100)
+	if (m_game->m_client_list[client_h]->m_skill_mastery[14] < 100)
 	{
 		// now we add skills
-		m_pGame->m_pClientList[iClientH]->m_cSkillMastery[14] = m_pGame->m_pClientList[iClientH]->m_iDex * 2;
-		if (m_pGame->m_pClientList[iClientH]->m_cSkillMastery[14] > 100)
+		m_game->m_client_list[client_h]->m_skill_mastery[14] = m_game->m_client_list[client_h]->m_dex * 2;
+		if (m_game->m_client_list[client_h]->m_skill_mastery[14] > 100)
 		{
-			m_pGame->m_pClientList[iClientH]->m_cSkillMastery[14] = 100;
+			m_game->m_client_list[client_h]->m_skill_mastery[14] = 100;
 		}
-		if (m_pGame->m_pClientList[iClientH]->m_iDex > 50)
+		if (m_game->m_client_list[client_h]->m_dex > 50)
 		{
-			m_pGame->m_pClientList[iClientH]->m_cSkillMastery[14] = 100;
+			m_game->m_client_list[client_h]->m_skill_mastery[14] = 100;
 		}
 		//Send a notify to update the client
-		m_pGame->SendNotifyMsg(0, iClientH, Notify::Skill, 14, m_pGame->m_pClientList[iClientH]->m_cSkillMastery[14], 0, 0);
+		m_game->send_notify_msg(0, client_h, Notify::Skill, 14, m_game->m_client_list[client_h]->m_skill_mastery[14], 0, 0);
 
 	}
 	//Axes
-	if (m_pGame->m_pClientList[iClientH]->m_cSkillMastery[10] < 100)
+	if (m_game->m_client_list[client_h]->m_skill_mastery[10] < 100)
 	{
 		// now we add skills
-		m_pGame->m_pClientList[iClientH]->m_cSkillMastery[10] = m_pGame->m_pClientList[iClientH]->m_iDex * 2;
-		if (m_pGame->m_pClientList[iClientH]->m_cSkillMastery[10] > 100)
+		m_game->m_client_list[client_h]->m_skill_mastery[10] = m_game->m_client_list[client_h]->m_dex * 2;
+		if (m_game->m_client_list[client_h]->m_skill_mastery[10] > 100)
 		{
-			m_pGame->m_pClientList[iClientH]->m_cSkillMastery[10] = 100;
+			m_game->m_client_list[client_h]->m_skill_mastery[10] = 100;
 		}
-		if (m_pGame->m_pClientList[iClientH]->m_iDex > 50)
+		if (m_game->m_client_list[client_h]->m_dex > 50)
 		{
-			m_pGame->m_pClientList[iClientH]->m_cSkillMastery[10] = 100;
+			m_game->m_client_list[client_h]->m_skill_mastery[10] = 100;
 		}
 		//Send a notify to update the client
-		m_pGame->SendNotifyMsg(0, iClientH, Notify::Skill, 10, m_pGame->m_pClientList[iClientH]->m_cSkillMastery[10], 0, 0);
+		m_game->send_notify_msg(0, client_h, Notify::Skill, 10, m_game->m_client_list[client_h]->m_skill_mastery[10], 0, 0);
 
 	}
 	//hand attack
-	if (m_pGame->m_pClientList[iClientH]->m_cSkillMastery[5] < 100)
+	if (m_game->m_client_list[client_h]->m_skill_mastery[5] < 100)
 	{
 		// now we add skills
-		m_pGame->m_pClientList[iClientH]->m_cSkillMastery[5] = m_pGame->m_pClientList[iClientH]->m_iStr * 2;
-		if (m_pGame->m_pClientList[iClientH]->m_cSkillMastery[5] > 100)
+		m_game->m_client_list[client_h]->m_skill_mastery[5] = m_game->m_client_list[client_h]->m_str * 2;
+		if (m_game->m_client_list[client_h]->m_skill_mastery[5] > 100)
 		{
-			m_pGame->m_pClientList[iClientH]->m_cSkillMastery[5] = 100;
+			m_game->m_client_list[client_h]->m_skill_mastery[5] = 100;
 		}
-		if (m_pGame->m_pClientList[iClientH]->m_iStr > 50)
+		if (m_game->m_client_list[client_h]->m_str > 50)
 		{
-			m_pGame->m_pClientList[iClientH]->m_cSkillMastery[5] = 100;
+			m_game->m_client_list[client_h]->m_skill_mastery[5] = 100;
 		}
 		//Send a notify to update the client
-		m_pGame->SendNotifyMsg(0, iClientH, Notify::Skill, 5, m_pGame->m_pClientList[iClientH]->m_cSkillMastery[5], 0, 0);
+		m_game->send_notify_msg(0, client_h, Notify::Skill, 5, m_game->m_client_list[client_h]->m_skill_mastery[5], 0, 0);
 
 	}
 	//ShortSword
-	if (m_pGame->m_pClientList[iClientH]->m_cSkillMastery[7] < 100)
+	if (m_game->m_client_list[client_h]->m_skill_mastery[7] < 100)
 	{
 		// now we add skills
-		m_pGame->m_pClientList[iClientH]->m_cSkillMastery[7] = m_pGame->m_pClientList[iClientH]->m_iDex * 2;
-		if (m_pGame->m_pClientList[iClientH]->m_cSkillMastery[7] > 100)
+		m_game->m_client_list[client_h]->m_skill_mastery[7] = m_game->m_client_list[client_h]->m_dex * 2;
+		if (m_game->m_client_list[client_h]->m_skill_mastery[7] > 100)
 		{
-			m_pGame->m_pClientList[iClientH]->m_cSkillMastery[7] = 100;
+			m_game->m_client_list[client_h]->m_skill_mastery[7] = 100;
 		}
-		if (m_pGame->m_pClientList[iClientH]->m_iDex > 50)
+		if (m_game->m_client_list[client_h]->m_dex > 50)
 		{
-			m_pGame->m_pClientList[iClientH]->m_cSkillMastery[7] = 100;
+			m_game->m_client_list[client_h]->m_skill_mastery[7] = 100;
 		}
 		//Send a notify to update the client
-		m_pGame->SendNotifyMsg(0, iClientH, Notify::Skill, 7, m_pGame->m_pClientList[iClientH]->m_cSkillMastery[7], 0, 0);
+		m_game->send_notify_msg(0, client_h, Notify::Skill, 7, m_game->m_client_list[client_h]->m_skill_mastery[7], 0, 0);
 
 	}
 	//archery
-	if (m_pGame->m_pClientList[iClientH]->m_cSkillMastery[6] < 100)
+	if (m_game->m_client_list[client_h]->m_skill_mastery[6] < 100)
 	{
 		// now we add skills
-		m_pGame->m_pClientList[iClientH]->m_cSkillMastery[6] = m_pGame->m_pClientList[iClientH]->m_iDex * 2;
-		if (m_pGame->m_pClientList[iClientH]->m_cSkillMastery[6] > 100)
+		m_game->m_client_list[client_h]->m_skill_mastery[6] = m_game->m_client_list[client_h]->m_dex * 2;
+		if (m_game->m_client_list[client_h]->m_skill_mastery[6] > 100)
 		{
-			m_pGame->m_pClientList[iClientH]->m_cSkillMastery[6] = 100;
+			m_game->m_client_list[client_h]->m_skill_mastery[6] = 100;
 		}
-		if (m_pGame->m_pClientList[iClientH]->m_iDex > 50)
+		if (m_game->m_client_list[client_h]->m_dex > 50)
 		{
-			m_pGame->m_pClientList[iClientH]->m_cSkillMastery[6] = 100;
+			m_game->m_client_list[client_h]->m_skill_mastery[6] = 100;
 		}
 		//Send a notify to update the client
-		m_pGame->SendNotifyMsg(0, iClientH, Notify::Skill, 6, m_pGame->m_pClientList[iClientH]->m_cSkillMastery[6], 0, 0);
+		m_game->send_notify_msg(0, client_h, Notify::Skill, 6, m_game->m_client_list[client_h]->m_skill_mastery[6], 0, 0);
 
 	}
 	//Fencing
-	if (m_pGame->m_pClientList[iClientH]->m_cSkillMastery[9] < 100)
+	if (m_game->m_client_list[client_h]->m_skill_mastery[9] < 100)
 	{
 		// now we add skills
-		m_pGame->m_pClientList[iClientH]->m_cSkillMastery[9] = m_pGame->m_pClientList[iClientH]->m_iDex * 2;
-		if (m_pGame->m_pClientList[iClientH]->m_cSkillMastery[9] > 100)
+		m_game->m_client_list[client_h]->m_skill_mastery[9] = m_game->m_client_list[client_h]->m_dex * 2;
+		if (m_game->m_client_list[client_h]->m_skill_mastery[9] > 100)
 		{
-			m_pGame->m_pClientList[iClientH]->m_cSkillMastery[9] = 100;
+			m_game->m_client_list[client_h]->m_skill_mastery[9] = 100;
 		}
-		if (m_pGame->m_pClientList[iClientH]->m_iDex > 50)
+		if (m_game->m_client_list[client_h]->m_dex > 50)
 		{
-			m_pGame->m_pClientList[iClientH]->m_cSkillMastery[9] = 100;
+			m_game->m_client_list[client_h]->m_skill_mastery[9] = 100;
 		}
 		//Send a notify to update the client
-		m_pGame->SendNotifyMsg(0, iClientH, Notify::Skill, 9, m_pGame->m_pClientList[iClientH]->m_cSkillMastery[9], 0, 0);
+		m_game->send_notify_msg(0, client_h, Notify::Skill, 9, m_game->m_client_list[client_h]->m_skill_mastery[9], 0, 0);
 
 	}
 	//Staff Attack
-	if (m_pGame->m_pClientList[iClientH]->m_cSkillMastery[21] < 100)
+	if (m_game->m_client_list[client_h]->m_skill_mastery[21] < 100)
 	{
 		// now we add skills
-		m_pGame->m_pClientList[iClientH]->m_cSkillMastery[21] = m_pGame->m_pClientList[iClientH]->m_iInt * 2;
-		if (m_pGame->m_pClientList[iClientH]->m_cSkillMastery[21] > 100)
+		m_game->m_client_list[client_h]->m_skill_mastery[21] = m_game->m_client_list[client_h]->m_int * 2;
+		if (m_game->m_client_list[client_h]->m_skill_mastery[21] > 100)
 		{
-			m_pGame->m_pClientList[iClientH]->m_cSkillMastery[21] = 100;
+			m_game->m_client_list[client_h]->m_skill_mastery[21] = 100;
 		}
-		if (m_pGame->m_pClientList[iClientH]->m_iInt > 50)
+		if (m_game->m_client_list[client_h]->m_int > 50)
 		{
-			m_pGame->m_pClientList[iClientH]->m_cSkillMastery[21] = 100;
+			m_game->m_client_list[client_h]->m_skill_mastery[21] = 100;
 		}
 		//Send a notify to update the client
-		m_pGame->SendNotifyMsg(0, iClientH, Notify::Skill, 21, m_pGame->m_pClientList[iClientH]->m_cSkillMastery[21], 0, 0);
+		m_game->send_notify_msg(0, client_h, Notify::Skill, 21, m_game->m_client_list[client_h]->m_skill_mastery[21], 0, 0);
 
 	}
 	//shield
-	if (m_pGame->m_pClientList[iClientH]->m_cSkillMastery[11] < 100)
+	if (m_game->m_client_list[client_h]->m_skill_mastery[11] < 100)
 	{
 		// now we add skills
-		m_pGame->m_pClientList[iClientH]->m_cSkillMastery[11] = m_pGame->m_pClientList[iClientH]->m_iDex * 2;
-		if (m_pGame->m_pClientList[iClientH]->m_cSkillMastery[11] > 100)
+		m_game->m_client_list[client_h]->m_skill_mastery[11] = m_game->m_client_list[client_h]->m_dex * 2;
+		if (m_game->m_client_list[client_h]->m_skill_mastery[11] > 100)
 		{
-			m_pGame->m_pClientList[iClientH]->m_cSkillMastery[11] = 100;
+			m_game->m_client_list[client_h]->m_skill_mastery[11] = 100;
 		}
-		if (m_pGame->m_pClientList[iClientH]->m_iDex > 50)
+		if (m_game->m_client_list[client_h]->m_dex > 50)
 		{
-			m_pGame->m_pClientList[iClientH]->m_cSkillMastery[11] = 100;
+			m_game->m_client_list[client_h]->m_skill_mastery[11] = 100;
 		}
 		//Send a notify to update the client
-		m_pGame->SendNotifyMsg(0, iClientH, Notify::Skill, 11, m_pGame->m_pClientList[iClientH]->m_cSkillMastery[11], 0, 0);
+		m_game->send_notify_msg(0, client_h, Notify::Skill, 11, m_game->m_client_list[client_h]->m_skill_mastery[11], 0, 0);
 
 	}
 	//mining
-	if (m_pGame->m_pClientList[iClientH]->m_cSkillMastery[0] < 100)
+	if (m_game->m_client_list[client_h]->m_skill_mastery[0] < 100)
 	{
 		// now we add skills
-		m_pGame->m_pClientList[iClientH]->m_cSkillMastery[0] = 100;
+		m_game->m_client_list[client_h]->m_skill_mastery[0] = 100;
 		//Send a notify to update the client
-		m_pGame->SendNotifyMsg(0, iClientH, Notify::Skill, 0, m_pGame->m_pClientList[iClientH]->m_cSkillMastery[0], 0, 0);
+		m_game->send_notify_msg(0, client_h, Notify::Skill, 0, m_game->m_client_list[client_h]->m_skill_mastery[0], 0, 0);
 
 	}
 	//fishing
-	if (m_pGame->m_pClientList[iClientH]->m_cSkillMastery[1] < 100)
+	if (m_game->m_client_list[client_h]->m_skill_mastery[1] < 100)
 	{
 		// now we add skills
-		m_pGame->m_pClientList[iClientH]->m_cSkillMastery[1] = 100;
+		m_game->m_client_list[client_h]->m_skill_mastery[1] = 100;
 		//Send a notify to update the client
-		m_pGame->SendNotifyMsg(0, iClientH, Notify::Skill, 1, m_pGame->m_pClientList[iClientH]->m_cSkillMastery[1], 0, 0);
+		m_game->send_notify_msg(0, client_h, Notify::Skill, 1, m_game->m_client_list[client_h]->m_skill_mastery[1], 0, 0);
 
 	}
 	//farming
-	if (m_pGame->m_pClientList[iClientH]->m_cSkillMastery[2] < 100)
+	if (m_game->m_client_list[client_h]->m_skill_mastery[2] < 100)
 	{
 		// now we add skills
-		m_pGame->m_pClientList[iClientH]->m_cSkillMastery[2] = 100;
+		m_game->m_client_list[client_h]->m_skill_mastery[2] = 100;
 		//Send a notify to update the client
-		m_pGame->SendNotifyMsg(0, iClientH, Notify::Skill, 2, m_pGame->m_pClientList[iClientH]->m_cSkillMastery[2], 0, 0);
+		m_game->send_notify_msg(0, client_h, Notify::Skill, 2, m_game->m_client_list[client_h]->m_skill_mastery[2], 0, 0);
 
 	}
 	//alchemy
-	if (m_pGame->m_pClientList[iClientH]->m_cSkillMastery[12] < 100)
+	if (m_game->m_client_list[client_h]->m_skill_mastery[12] < 100)
 	{
 		// now we add skills
-		m_pGame->m_pClientList[iClientH]->m_cSkillMastery[12] = 100;
+		m_game->m_client_list[client_h]->m_skill_mastery[12] = 100;
 		//Send a notify to update the client
-		m_pGame->SendNotifyMsg(0, iClientH, Notify::Skill, 12, m_pGame->m_pClientList[iClientH]->m_cSkillMastery[12], 0, 0);
+		m_game->send_notify_msg(0, client_h, Notify::Skill, 12, m_game->m_client_list[client_h]->m_skill_mastery[12], 0, 0);
 
 	}
 	//manufacturing
-	if (m_pGame->m_pClientList[iClientH]->m_cSkillMastery[13] < 100)
+	if (m_game->m_client_list[client_h]->m_skill_mastery[13] < 100)
 	{
 		// now we add skills
-		m_pGame->m_pClientList[iClientH]->m_cSkillMastery[13] = 100;
+		m_game->m_client_list[client_h]->m_skill_mastery[13] = 100;
 		//Send a notify to update the client
-		m_pGame->SendNotifyMsg(0, iClientH, Notify::Skill, 13, m_pGame->m_pClientList[iClientH]->m_cSkillMastery[13], 0, 0);
+		m_game->send_notify_msg(0, client_h, Notify::Skill, 13, m_game->m_client_list[client_h]->m_skill_mastery[13], 0, 0);
 
 	}
 	//poison resistance
-	if (m_pGame->m_pClientList[iClientH]->m_cSkillMastery[23] < 20)
+	if (m_game->m_client_list[client_h]->m_skill_mastery[23] < 20)
 	{
 		// now we add skills
-		m_pGame->m_pClientList[iClientH]->m_cSkillMastery[23] = 20;
+		m_game->m_client_list[client_h]->m_skill_mastery[23] = 20;
 		//Send a notify to update the client
-		m_pGame->SendNotifyMsg(0, iClientH, Notify::Skill, 23, m_pGame->m_pClientList[iClientH]->m_cSkillMastery[23], 0, 0);
+		m_game->send_notify_msg(0, client_h, Notify::Skill, 23, m_game->m_client_list[client_h]->m_skill_mastery[23], 0, 0);
 
 	}
 	//pretend corpse
-	if (m_pGame->m_pClientList[iClientH]->m_cSkillMastery[19] < 100)
+	if (m_game->m_client_list[client_h]->m_skill_mastery[19] < 100)
 	{
 		// now we add skills
-		m_pGame->m_pClientList[iClientH]->m_cSkillMastery[19] = m_pGame->m_pClientList[iClientH]->m_iInt * 2;
-		if (m_pGame->m_pClientList[iClientH]->m_cSkillMastery[19] > 100)
+		m_game->m_client_list[client_h]->m_skill_mastery[19] = m_game->m_client_list[client_h]->m_int * 2;
+		if (m_game->m_client_list[client_h]->m_skill_mastery[19] > 100)
 		{
-			m_pGame->m_pClientList[iClientH]->m_cSkillMastery[19] = 100;
+			m_game->m_client_list[client_h]->m_skill_mastery[19] = 100;
 		}
-		if (m_pGame->m_pClientList[iClientH]->m_iInt > 50)
+		if (m_game->m_client_list[client_h]->m_int > 50)
 		{
-			m_pGame->m_pClientList[iClientH]->m_cSkillMastery[19] = 100;
+			m_game->m_client_list[client_h]->m_skill_mastery[19] = 100;
 		}
 		//Send a notify to update the client
-		m_pGame->SendNotifyMsg(0, iClientH, Notify::Skill, 19, m_pGame->m_pClientList[iClientH]->m_cSkillMastery[19], 0, 0);
+		m_game->send_notify_msg(0, client_h, Notify::Skill, 19, m_game->m_client_list[client_h]->m_skill_mastery[19], 0, 0);
 
 	}
 	//magic resistance
-	if (m_pGame->m_pClientList[iClientH]->m_cSkillMastery[3] < 20)
+	if (m_game->m_client_list[client_h]->m_skill_mastery[3] < 20)
 	{
 		// now we add skills
-		m_pGame->m_pClientList[iClientH]->m_cSkillMastery[3] = 20;
+		m_game->m_client_list[client_h]->m_skill_mastery[3] = 20;
 		//Send a notify to update the client
-		m_pGame->SendNotifyMsg(0, iClientH, Notify::Skill, 3, m_pGame->m_pClientList[iClientH]->m_cSkillMastery[3], 0, 0);
+		m_game->send_notify_msg(0, client_h, Notify::Skill, 3, m_game->m_client_list[client_h]->m_skill_mastery[3], 0, 0);
 
 	}
 }

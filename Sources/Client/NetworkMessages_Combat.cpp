@@ -13,233 +13,233 @@
 using namespace hb::shared::action;
 
 namespace NetworkMessageHandlers {
-	void HandleKilled(CGame* pGame, char* pData)
+	void HandleKilled(CGame* game, char* data)
 	{
-		char cAttackerName[21]{};
-		pGame->m_pPlayer->m_Controller.SetCommandAvailable(false);
-		pGame->m_pPlayer->m_Controller.SetCommand(Type::Stop);
-		pGame->m_pPlayer->m_iHP = 0;
-		pGame->m_pPlayer->m_Controller.SetCommand(-1);
+		char attacker_name[21]{};
+		game->m_player->m_Controller.set_command_available(false);
+		game->m_player->m_Controller.set_command(Type::stop);
+		game->m_player->m_hp = 0;
+		game->m_player->m_Controller.set_command(-1);
 		// Restart
-		pGame->m_bItemUsingStatus = false;
-		pGame->ClearSkillUsingStatus();
+		game->m_item_using_status = false;
+		game->clear_skill_using_status();
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyKilled>(
-			pData, sizeof(hb::net::PacketNotifyKilled));
+			data, sizeof(hb::net::PacketNotifyKilled));
 		if (!pkt) return;
-		memcpy(cAttackerName, pkt->attacker_name, sizeof(pkt->attacker_name));
-		pGame->AddEventList(NOTIFYMSG_KILLED1, 10);
-		pGame->AddEventList(NOTIFYMSG_KILLED3, 10);
+		memcpy(attacker_name, pkt->attacker_name, sizeof(pkt->attacker_name));
+		game->add_event_list(NOTIFYMSG_KILLED1, 10);
+		game->add_event_list(NOTIFYMSG_KILLED3, 10);
 	}
 
-	void HandlePKcaptured(CGame* pGame, char* pData)
+	void HandlePKcaptured(CGame* game, char* data)
 	{
-		DWORD iExp, iRewardGold;
-		int     iPKcount, iLevel;
-		std::string cTxt;
+		DWORD exp, reward_gold;
+		int     p_kcount, level;
+		std::string txt;
 
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyPKcaptured>(
-			pData, sizeof(hb::net::PacketNotifyPKcaptured));
+			data, sizeof(hb::net::PacketNotifyPKcaptured));
 		if (!pkt) return;
-		iPKcount = pkt->pk_count;
-		iLevel = pkt->victim_pk_count;
-		std::string cName(pkt->victim_name, strnlen(pkt->victim_name, sizeof(pkt->victim_name)));
-		iRewardGold = pkt->reward_gold;
-		iExp = pkt->exp;
-		cTxt = std::format(NOTIFYMSG_PK_CAPTURED1, iLevel, cName, iPKcount);
-		pGame->AddEventList(cTxt.c_str(), 10);
-		if (iExp > static_cast<DWORD>(pGame->m_pPlayer->m_iExp))
+		p_kcount = pkt->pk_count;
+		level = pkt->victim_pk_count;
+		std::string name(pkt->victim_name, strnlen(pkt->victim_name, sizeof(pkt->victim_name)));
+		reward_gold = pkt->reward_gold;
+		exp = pkt->exp;
+		txt = std::format(NOTIFYMSG_PK_CAPTURED1, level, name, p_kcount);
+		game->add_event_list(txt.c_str(), 10);
+		if (exp > static_cast<DWORD>(game->m_player->m_exp))
 		{
-			cTxt = std::format(EXP_INCREASED, iExp - pGame->m_pPlayer->m_iExp);
-			pGame->AddEventList(cTxt.c_str(), 10);
-			cTxt = std::format(NOTIFYMSG_PK_CAPTURED3, iExp - pGame->m_pPlayer->m_iExp);
-			pGame->AddEventList(cTxt.c_str(), 10);
+			txt = std::format(EXP_INCREASED, exp - game->m_player->m_exp);
+			game->add_event_list(txt.c_str(), 10);
+			txt = std::format(NOTIFYMSG_PK_CAPTURED3, exp - game->m_player->m_exp);
+			game->add_event_list(txt.c_str(), 10);
 		}
 	}
 
-	void HandlePKpenalty(CGame* pGame, char* pData)
+	void HandlePKpenalty(CGame* game, char* data)
 	{
-		DWORD iExp;
-		int     iPKcount, iStr, iVit, iDex, iInt, iMag, iChr;
-		std::string cTxt;
+		DWORD exp;
+		int     p_kcount, str, vit, dex, iInt, mag, chr;
+		std::string txt;
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyPKpenalty>(
-			pData, sizeof(hb::net::PacketNotifyPKpenalty));
+			data, sizeof(hb::net::PacketNotifyPKpenalty));
 		if (!pkt) return;
-		iExp = pkt->exp;
-		iStr = pkt->str;
-		iVit = pkt->vit;
-		iDex = pkt->dex;
+		exp = pkt->exp;
+		str = pkt->str;
+		vit = pkt->vit;
+		dex = pkt->dex;
 		iInt = pkt->intel;
-		iMag = pkt->mag;
-		iChr = pkt->chr;
-		iPKcount = pkt->pk_count;
-		cTxt = std::format(NOTIFYMSG_PK_PENALTY1, iPKcount);
-		pGame->AddEventList(cTxt.c_str(), 10);
-		if (pGame->m_pPlayer->m_iExp > iExp)
+		mag = pkt->mag;
+		chr = pkt->chr;
+		p_kcount = pkt->pk_count;
+		txt = std::format(NOTIFYMSG_PK_PENALTY1, p_kcount);
+		game->add_event_list(txt.c_str(), 10);
+		if (game->m_player->m_exp > exp)
 		{
-			cTxt = std::format(NOTIFYMSG_PK_PENALTY2, pGame->m_pPlayer->m_iExp - iExp);
-			pGame->AddEventList(cTxt.c_str(), 10);
+			txt = std::format(NOTIFYMSG_PK_PENALTY2, game->m_player->m_exp - exp);
+			game->add_event_list(txt.c_str(), 10);
 		}
-		pGame->m_pPlayer->m_iExp = iExp;
-		pGame->m_pPlayer->m_iStr = iStr;
-		pGame->m_pPlayer->m_iVit = iVit;
-		pGame->m_pPlayer->m_iDex = iDex;
-		pGame->m_pPlayer->m_iInt = iInt;
-		pGame->m_pPlayer->m_iMag = iMag;
-		pGame->m_pPlayer->m_iCharisma = iChr;
-		pGame->m_pPlayer->m_iPKCount = iPKcount;
+		game->m_player->m_exp = exp;
+		game->m_player->m_str = str;
+		game->m_player->m_vit = vit;
+		game->m_player->m_dex = dex;
+		game->m_player->m_int = iInt;
+		game->m_player->m_mag = mag;
+		game->m_player->m_charisma = chr;
+		game->m_player->m_pk_count = p_kcount;
 	}
 
-	void HandleEnemyKills(CGame* pGame, char* pData)
+	void HandleEnemyKills(CGame* game, char* data)
 	{
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyEnemyKills>(
-			pData, sizeof(hb::net::PacketNotifyEnemyKills));
+			data, sizeof(hb::net::PacketNotifyEnemyKills));
 		if (!pkt) return;
-		pGame->m_pPlayer->m_iEnemyKillCount = pkt->count;
+		game->m_player->m_enemy_kill_count = pkt->count;
 	}
 
-	void HandleEnemyKillReward(CGame* pGame, char* pData)
+	void HandleEnemyKillReward(CGame* game, char* data)
 	{
-		DWORD iExp;
-		short sGuildRank;
-		std::string cTxt;
+		DWORD exp;
+		short guild_rank;
+		std::string txt;
 
-		int   iEnemyKillCount, iWarContribution;
+		int   enemy_kill_count, war_contribution;
 
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyEnemyKillReward>(
-			pData, sizeof(hb::net::PacketNotifyEnemyKillReward));
+			data, sizeof(hb::net::PacketNotifyEnemyKillReward));
 		if (!pkt) return;
 
-		iExp = pkt->exp;
-		iEnemyKillCount = static_cast<int>(pkt->kill_count);
-		std::string cName(pkt->killer_name, strnlen(pkt->killer_name, sizeof(pkt->killer_name)));
-		std::string cGuildName(pkt->killer_guild, strnlen(pkt->killer_guild, sizeof(pkt->killer_guild)));
-		sGuildRank = pkt->killer_rank;
-		iWarContribution = pkt->war_contribution;
+		exp = pkt->exp;
+		enemy_kill_count = static_cast<int>(pkt->kill_count);
+		std::string name(pkt->killer_name, strnlen(pkt->killer_name, sizeof(pkt->killer_name)));
+		std::string guild_name(pkt->killer_guild, strnlen(pkt->killer_guild, sizeof(pkt->killer_guild)));
+		guild_rank = pkt->killer_rank;
+		war_contribution = pkt->war_contribution;
 
-		if (iWarContribution > pGame->m_pPlayer->m_iWarContribution && pGame->m_pGameMsgList[21])
+		if (war_contribution > game->m_player->m_war_contribution && game->m_game_msg_list[21])
 		{
 			std::string warBuf;
-			warBuf = std::format("{} +{}!", pGame->m_pGameMsgList[21]->m_pMsg, iWarContribution - pGame->m_pPlayer->m_iWarContribution);
-			pGame->SetTopMsg(warBuf.c_str(), 5);
+			warBuf = std::format("{} +{}!", game->m_game_msg_list[21]->m_pMsg, war_contribution - game->m_player->m_war_contribution);
+			game->set_top_msg(warBuf.c_str(), 5);
 		}
-		else if (iWarContribution < pGame->m_pPlayer->m_iWarContribution)
+		else if (war_contribution < game->m_player->m_war_contribution)
 		{
 		}
-		pGame->m_pPlayer->m_iWarContribution = iWarContribution;
+		game->m_player->m_war_contribution = war_contribution;
 
-		if (sGuildRank == -1)
+		if (guild_rank == -1)
 		{
-			cTxt = std::format(NOTIFYMSG_ENEMYKILL_REWARD1, cName);
-			pGame->AddEventList(cTxt.c_str(), 10);
+			txt = std::format(NOTIFYMSG_ENEMYKILL_REWARD1, name);
+			game->add_event_list(txt.c_str(), 10);
 		}
 		else
 		{
-			cTxt = std::format(NOTIFYMSG_ENEMYKILL_REWARD2, cName, cGuildName);
-			pGame->AddEventList(cTxt.c_str(), 10);
+			txt = std::format(NOTIFYMSG_ENEMYKILL_REWARD2, name, guild_name);
+			game->add_event_list(txt.c_str(), 10);
 		}
 
-		if (pGame->m_pPlayer->m_iEnemyKillCount != iEnemyKillCount)
+		if (game->m_player->m_enemy_kill_count != enemy_kill_count)
 		{
-			if (pGame->m_pPlayer->m_iEnemyKillCount > iEnemyKillCount)
+			if (game->m_player->m_enemy_kill_count > enemy_kill_count)
 			{
-				cTxt = std::format(NOTIFYMSG_ENEMYKILL_REWARD5, pGame->m_pPlayer->m_iEnemyKillCount - iEnemyKillCount);
-				pGame->AddEventList(cTxt.c_str(), 10);
+				txt = std::format(NOTIFYMSG_ENEMYKILL_REWARD5, game->m_player->m_enemy_kill_count - enemy_kill_count);
+				game->add_event_list(txt.c_str(), 10);
 			}
 			else
 			{
-				cTxt = std::format(NOTIFYMSG_ENEMYKILL_REWARD6, iEnemyKillCount - pGame->m_pPlayer->m_iEnemyKillCount);
-				pGame->AddEventList(cTxt.c_str(), 10);
+				txt = std::format(NOTIFYMSG_ENEMYKILL_REWARD6, enemy_kill_count - game->m_player->m_enemy_kill_count);
+				game->add_event_list(txt.c_str(), 10);
 			}
 		}
 
-		pGame->m_pPlayer->m_iExp = iExp;
-		pGame->m_pPlayer->m_iEnemyKillCount = iEnemyKillCount;
-		pGame->PlayGameSound('E', 23, 0);
+		game->m_player->m_exp = exp;
+		game->m_player->m_enemy_kill_count = enemy_kill_count;
+		game->play_game_sound('E', 23, 0);
 
-		pGame->m_floatingText.RemoveByObjectID(pGame->m_pPlayer->m_sPlayerObjectID);
-		pGame->m_floatingText.AddNotifyText(NotifyTextType::EnemyKill, "Enemy Kill!", pGame->m_dwCurTime,
-			pGame->m_pPlayer->m_sPlayerObjectID, pGame->m_pMapData.get());
-		pGame->CreateScreenShot();
+		game->m_floating_text.remove_by_object_id(game->m_player->m_player_object_id);
+		game->m_floating_text.add_notify_text(notify_text_type::enemy_kill, "Enemy Kill!", game->m_cur_time,
+			game->m_player->m_player_object_id, game->m_map_data.get());
+		game->create_screen_shot();
 	}
 
-	void HandleGlobalAttackMode(CGame* pGame, char* pData)
+	void HandleGlobalAttackMode(CGame* game, char* data)
 	{
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyGlobalAttackMode>(
-			pData, sizeof(hb::net::PacketNotifyGlobalAttackMode));
+			data, sizeof(hb::net::PacketNotifyGlobalAttackMode));
 		if (!pkt) return;
 		switch (pkt->mode) {
 		case 0:
-			pGame->AddEventList(NOTIFYMSG_GLOBAL_ATTACK_MODE1, 10);
-			pGame->AddEventList(NOTIFYMSG_GLOBAL_ATTACK_MODE2, 10);
+			game->add_event_list(NOTIFYMSG_GLOBAL_ATTACK_MODE1, 10);
+			game->add_event_list(NOTIFYMSG_GLOBAL_ATTACK_MODE2, 10);
 			break;
 
 		case 1:
-			pGame->AddEventList(NOTIFYMSG_GLOBAL_ATTACK_MODE3, 10);
+			game->add_event_list(NOTIFYMSG_GLOBAL_ATTACK_MODE3, 10);
 			break;
 		}
 	}
 
-	void HandleDamageMove(CGame* pGame, char* pData)
+	void HandleDamageMove(CGame* game, char* data)
 	{
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyDamageMove>(
-			pData, sizeof(hb::net::PacketNotifyDamageMove));
+			data, sizeof(hb::net::PacketNotifyDamageMove));
 		if (!pkt) return;
-		pGame->m_pPlayer->m_sDamageMove = pkt->dir;
-		pGame->m_pPlayer->m_sDamageMoveAmount = pkt->amount;
+		game->m_player->m_damage_move = pkt->dir;
+		game->m_player->m_damage_move_amount = pkt->amount;
 	}
 
-	void HandleObserverMode(CGame* pGame, char* pData)
+	void HandleObserverMode(CGame* game, char* data)
 	{
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyObserverMode>(
-			pData, sizeof(hb::net::PacketNotifyObserverMode));
+			data, sizeof(hb::net::PacketNotifyObserverMode));
 		if (!pkt) return;
 		if (pkt->enabled == 1)
 		{
-			pGame->AddEventList(NOTIFY_MSG_HANDLER40); // "Observer Mode On. Press 'SHIFT + ESC' to Log Out..."
-			pGame->m_bIsObserverMode = true;
-			pGame->m_dwObserverCamTime = GameClock::GetTimeMS();
-			std::string cName = pGame->m_pPlayer->m_cPlayerName;
-			pGame->m_pMapData->bSetOwner(pGame->m_pPlayer->m_sPlayerObjectID, -1, -1, 0, 0, hb::shared::entity::PlayerAppearance{}, hb::shared::entity::PlayerStatus{}, cName, 0, 0, 0, 0);
+			game->add_event_list(NOTIFY_MSG_HANDLER40); // "Observer Mode On. Press 'SHIFT + ESC' to Log Out..."
+			game->m_is_observer_mode = true;
+			game->m_observer_cam_time = GameClock::get_time_ms();
+			std::string name = game->m_player->m_player_name;
+			game->m_map_data->set_owner(game->m_player->m_player_object_id, -1, -1, 0, 0, hb::shared::entity::PlayerAppearance{}, hb::shared::entity::PlayerStatus{}, name, 0, 0, 0, 0);
 		}
 		else
 		{
-			pGame->AddEventList(NOTIFY_MSG_HANDLER41); // "Observer Mode Off"
-			pGame->m_bIsObserverMode = false;
-			pGame->m_pMapData->bSetOwner(pGame->m_pPlayer->m_sPlayerObjectID, pGame->m_pPlayer->m_sPlayerX, pGame->m_pPlayer->m_sPlayerY, pGame->m_pPlayer->m_sPlayerType, pGame->m_pPlayer->m_iPlayerDir, pGame->m_pPlayer->m_playerAppearance, pGame->m_pPlayer->m_playerStatus, pGame->m_pPlayer->m_cPlayerName, Type::Stop, 0, 0, 0);
+			game->add_event_list(NOTIFY_MSG_HANDLER41); // "Observer Mode Off"
+			game->m_is_observer_mode = false;
+			game->m_map_data->set_owner(game->m_player->m_player_object_id, game->m_player->m_player_x, game->m_player->m_player_y, game->m_player->m_player_type, game->m_player->m_player_dir, game->m_player->m_playerAppearance, game->m_player->m_playerStatus, game->m_player->m_player_name, Type::stop, 0, 0, 0);
 		}
 	}
 
-	void HandleSuperAttackLeft(CGame* pGame, char* pData)
+	void HandleSuperAttackLeft(CGame* game, char* data)
 	{
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifySuperAttackLeft>(
-			pData, sizeof(hb::net::PacketNotifySuperAttackLeft));
+			data, sizeof(hb::net::PacketNotifySuperAttackLeft));
 		if (!pkt) return;
-		pGame->m_pPlayer->m_iSuperAttackLeft = pkt->left;
+		game->m_player->m_super_attack_left = pkt->left;
 	}
 
-	void HandleSafeAttackMode(CGame* pGame, char* pData)
+	void HandleSafeAttackMode(CGame* game, char* data)
 	{
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifySafeAttackMode>(
-			pData, sizeof(hb::net::PacketNotifySafeAttackMode));
+			data, sizeof(hb::net::PacketNotifySafeAttackMode));
 		if (!pkt) return;
 		switch (pkt->enabled) {
 		case 1:
-			if (!pGame->m_pPlayer->m_bIsSafeAttackMode) pGame->AddEventList(NOTIFY_MSG_HANDLER50, 10);
-			pGame->m_pPlayer->m_bIsSafeAttackMode = true;
+			if (!game->m_player->m_is_safe_attack_mode) game->add_event_list(NOTIFY_MSG_HANDLER50, 10);
+			game->m_player->m_is_safe_attack_mode = true;
 			break;
 		case 0:
-			if (pGame->m_pPlayer->m_bIsSafeAttackMode) pGame->AddEventList(NOTIFY_MSG_HANDLER51, 10);
-			pGame->m_pPlayer->m_bIsSafeAttackMode = false;
+			if (game->m_player->m_is_safe_attack_mode) game->add_event_list(NOTIFY_MSG_HANDLER51, 10);
+			game->m_player->m_is_safe_attack_mode = false;
 			break;
 		}
 	}
 
-	void HandleSpellInterrupted(CGame* pGame, char* pData)
+	void HandleSpellInterrupted(CGame* game, char* data)
 	{
-		if (pGame->m_pPlayer->m_Controller.GetCommand() == Type::Magic)
-			pGame->m_pPlayer->m_Controller.SetCommand(Type::Stop);
-		pGame->m_bIsGetPointingMode = false;
-		pGame->m_iPointCommandType = -1;
+		if (game->m_player->m_Controller.get_command() == Type::Magic)
+			game->m_player->m_Controller.set_command(Type::stop);
+		game->m_is_get_pointing_mode = false;
+		game->m_point_command_type = -1;
 	}
 }
 

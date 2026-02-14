@@ -6,43 +6,43 @@
 #include <cstring>
 
 namespace NetworkMessageHandlers {
-	void HandleSlateCreateSuccess(CGame* pGame, char* pData)
+	void HandleSlateCreateSuccess(CGame* game, char* data)
 	{
-		pGame->AddEventList(DEF_MSG_NOTIFY_SLATE_CREATESUCCESS, 10);
+		game->add_event_list(DEF_MSG_NOTIFY_SLATE_CREATESUCCESS, 10);
 	}
 
-	void HandleSlateCreateFail(CGame* pGame, char* pData)
+	void HandleSlateCreateFail(CGame* game, char* data)
 	{
-		pGame->AddEventList(DEF_MSG_NOTIFY_SLATE_CREATEFAIL, 10);
+		game->add_event_list(DEF_MSG_NOTIFY_SLATE_CREATEFAIL, 10);
 	}
 
-	void HandleSlateInvincible(CGame* pGame, char* pData)
+	void HandleSlateInvincible(CGame* game, char* data)
 	{
-		pGame->AddEventList(DEF_MSG_NOTIFY_SLATE_INVINCIBLE, 10);
-		pGame->m_bUsingSlate = true;
+		game->add_event_list(DEF_MSG_NOTIFY_SLATE_INVINCIBLE, 10);
+		game->m_using_slate = true;
 	}
 
-	void HandleSlateMana(CGame* pGame, char* pData)
+	void HandleSlateMana(CGame* game, char* data)
 	{
-		pGame->AddEventList(DEF_MSG_NOTIFY_SLATE_MANA, 10);
-		pGame->m_bUsingSlate = true;
+		game->add_event_list(DEF_MSG_NOTIFY_SLATE_MANA, 10);
+		game->m_using_slate = true;
 	}
 
-	void HandleSlateExp(CGame* pGame, char* pData)
+	void HandleSlateExp(CGame* game, char* data)
 	{
-		pGame->AddEventList(DEF_MSG_NOTIFY_SLATE_EXP, 10);
-		pGame->m_bUsingSlate = true;
+		game->add_event_list(DEF_MSG_NOTIFY_SLATE_EXP, 10);
+		game->m_using_slate = true;
 	}
 
-	void HandleSlateStatus(CGame* pGame, char* pData)
+	void HandleSlateStatus(CGame* game, char* data)
 	{
-		pGame->AddEventList(DEF_MSG_NOTIFY_SLATECLEAR, 10);
-		pGame->m_bUsingSlate = false;
+		game->add_event_list(DEF_MSG_NOTIFY_SLATECLEAR, 10);
+		game->m_using_slate = false;
 	}
 
-	void HandleSlateBerserk(CGame* pGame, char* pData)
+	void HandleSlateBerserk(CGame* game, char* data)
 	{
-		pGame->AddEventList(DEF_MSG_NOTIFY_SLATE_BERSERK, 10); // "Berserk magic casted!"
-		pGame->m_bUsingSlate = true;
+		game->add_event_list(DEF_MSG_NOTIFY_SLATE_BERSERK, 10); // "Berserk magic casted!"
+		game->m_using_slate = true;
 	}
 } // namespace NetworkMessageHandlers

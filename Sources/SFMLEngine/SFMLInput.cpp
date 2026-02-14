@@ -37,13 +37,13 @@ namespace hb::shared::input {
 // ============== SFMLInput Implementation ==============
 
 SFMLInput::SFMLInput()
-    : m_hWnd(nullptr)
-    , m_pRenderWindow(nullptr)
+    : m_handle(nullptr)
+    , m_render_window(nullptr)
     , m_active(false)
     , m_suppressed(false)
-    , m_mouseX(0)
-    , m_mouseY(0)
-    , m_wheelDelta(0)
+    , m_mouse_x(0)
+    , m_mouse_y(0)
+    , m_wheel_delta(0)
 {
     std::memset(m_mouseDown, 0, sizeof(m_mouseDown));
     std::memset(m_mousePressed, 0, sizeof(m_mousePressed));
@@ -57,19 +57,19 @@ SFMLInput::~SFMLInput() = default;
 
 void SFMLInput::Initialize(hb::shared::types::NativeWindowHandle hWnd)
 {
-    m_hWnd = hWnd;
+    m_handle = hWnd;
     m_active = true;
 }
 
-void SFMLInput::SetRenderWindow(sf::RenderWindow* pWindow)
+void SFMLInput::SetRenderWindow(sf::RenderWindow* window)
 {
-    m_pRenderWindow = pWindow;
+    m_render_window = window;
 }
 
 void SFMLInput::begin_frame()
 {
     // Reset per-frame edge states (pressed/released)
-    // Note: m_wheelDelta is NOT reset here — it accumulates across skip frames
+    // Note: m_wheel_delta is NOT reset here — it accumulates across skip frames
     // and is cleared by ResetMouseWheelDelta() after a rendered frame consumes it
     std::memset(m_mousePressed, 0, sizeof(m_mousePressed));
     std::memset(m_mouseReleased, 0, sizeof(m_mouseReleased));
@@ -79,7 +79,7 @@ void SFMLInput::begin_frame()
 
 void SFMLInput::reset_mouse_wheel_delta()
 {
-    m_wheelDelta = 0;
+    m_wheel_delta = 0;
 }
 
 // ============== Keyboard ==============
@@ -192,19 +192,19 @@ void SFMLInput::on_mouse_up(int button)
 
 int SFMLInput::get_mouse_x() const
 {
-    return m_mouseX;
+    return m_mouse_x;
 }
 
 int SFMLInput::get_mouse_y() const
 {
-    return m_mouseY;
+    return m_mouse_y;
 }
 
 void SFMLInput::on_mouse_move(int x, int y)
 {
     // SFMLWindow already transforms to logical coordinates
-    m_mouseX = x;
-    m_mouseY = y;
+    m_mouse_x = x;
+    m_mouse_y = y;
 }
 
 // ============== Mouse Wheel ==============
@@ -212,12 +212,12 @@ void SFMLInput::on_mouse_move(int x, int y)
 int SFMLInput::get_mouse_wheel_delta() const
 {
     if (m_suppressed) return 0;
-    return m_wheelDelta;
+    return m_wheel_delta;
 }
 
 void SFMLInput::on_mouse_wheel(int delta)
 {
-    m_wheelDelta += delta;
+    m_wheel_delta += delta;
 }
 
 // ============== Modifier Keys ==============

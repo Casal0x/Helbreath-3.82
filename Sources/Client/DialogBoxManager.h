@@ -14,49 +14,49 @@ public:
 	explicit DialogBoxManager(CGame* game = nullptr);
 	~DialogBoxManager() = default;  // unique_ptr handles cleanup automatically
 
-	void Initialize(CGame* game);
-	void InitDefaults();
-	void InitializeDialogBoxes();
-	void RegisterDialogBox(std::unique_ptr<IDialogBox> pDialogBox);
-	IDialogBox* GetDialogBox(DialogBoxId::Type id) const;
-	IDialogBox* GetDialogBox(int iBoxID) const;
-	void UpdateDialogBoxs();
-	void DrawDialogBoxs(short msX, short msY, short msZ, char cLB);
-	void EnableDialogBox(int iBoxID, int cType, int sV1, int sV2, char* pString = nullptr);
-	void EnableDialogBox(DialogBoxId::Type id, int cType, int sV1, int sV2, char* pString = nullptr);
-	void DisableDialogBox(int iBoxID);
-	void DisableDialogBox(DialogBoxId::Type id);
-	void ToggleDialogBox(DialogBoxId::Type id, int cType = 0, int sV1 = 0, int sV2 = 0, char* pString = nullptr);
-	int iGetTopDialogBoxIndex() const;
+	void initialize(CGame* game);
+	void init_defaults();
+	void initialize_dialog_boxes();
+	void register_dialog_box(std::unique_ptr<IDialogBox> dialog_box);
+	IDialogBox* get_dialog_box(DialogBoxId::Type id) const;
+	IDialogBox* get_dialog_box(int box_id) const;
+	void update_dialog_boxs();
+	void draw_dialog_boxs(short mouse_x, short mouse_y, short z, char lb);
+	void enable_dialog_box(int box_id, int type, int v1, int v2, char* string = nullptr);
+	void enable_dialog_box(DialogBoxId::Type id, int type, int v1, int v2, char* string = nullptr);
+	void disable_dialog_box(int box_id);
+	void disable_dialog_box(DialogBoxId::Type id);
+	void toggle_dialog_box(DialogBoxId::Type id, int type = 0, int v1 = 0, int v2 = 0, char* string = nullptr);
+	int get_top_dialog_box_index() const;
 
-	void DrawAll(short msX, short msY, short msZ, char cLB);
-	bool HandleClick(short msX, short msY);
-	bool HandleDoubleClick(short msX, short msY);
-	PressResult HandlePress(int iDlgID, short msX, short msY);
-	bool HandleItemDrop(int iDlgID, short msX, short msY);
-	bool HandleDraggingItemRelease(short msX, short msY);
+	void draw_all(short mouse_x, short mouse_y, short z, char lb);
+	bool handle_click(short mouse_x, short mouse_y);
+	bool handle_double_click(short mouse_x, short mouse_y);
+	PressResult handle_press(int dlg_id, short mouse_x, short mouse_y);
+	bool handle_item_drop(int dlg_id, short mouse_x, short mouse_y);
+	bool handle_dragging_item_release(short mouse_x, short mouse_y);
 
 	// Mouse down handling - replaces _iCheckDlgBoxFocus from Game.cpp
 	// Returns: 1 = dialog hit, 0 = no dialog hit, -1 = scroll region claimed
-	int HandleMouseDown(short msX, short msY);
+	int handle_mouse_down(short mouse_x, short mouse_y);
 
 	// Right-click to close dialogs
 	// Returns: true if a dialog was under the mouse (and potentially closed)
-	bool HandleRightClick(short msX, short msY, uint32_t dwTime);
-	void Enable(DialogBoxId::Type id, int cType, int sV1, int sV2, char* pString = nullptr);
-	void Disable(DialogBoxId::Type id);
-	void Toggle(DialogBoxId::Type id, int cType = 0, int sV1 = 0, int sV2 = 0, char* pString = nullptr);
-	int GetTopId() const;
-	bool IsEnabled(DialogBoxId::Type id) const;
-	bool IsEnabled(int iBoxID) const;
-	void SetEnabled(DialogBoxId::Type id, bool enabled);
-	void SetEnabled(int iBoxID, bool enabled);
+	bool handle_right_click(short mouse_x, short mouse_y, uint32_t time);
+	void enable(DialogBoxId::Type id, int type, int v1, int v2, char* string = nullptr);
+	void disable(DialogBoxId::Type id);
+	void toggle(DialogBoxId::Type id, int type = 0, int v1 = 0, int v2 = 0, char* string = nullptr);
+	int get_top_id() const;
+	bool is_enabled(DialogBoxId::Type id) const;
+	bool is_enabled(int box_id) const;
+	void set_enabled(DialogBoxId::Type id, bool enabled);
+	void set_enabled(int box_id, bool enabled);
 	DialogBoxInfo& Info(DialogBoxId::Type id);
 	const DialogBoxInfo& Info(DialogBoxId::Type id) const;
-	DialogBoxInfo& Info(int iBoxID);
-	const DialogBoxInfo& Info(int iBoxID) const;
-	uint8_t OrderAt(int index) const;
-	void SetOrderAt(int index, uint8_t value);
+	DialogBoxInfo& Info(int box_id);
+	const DialogBoxInfo& Info(int box_id) const;
+	uint8_t order_at(int index) const;
+	void set_order_at(int index, uint8_t value);
 
 private:
 	CGame* m_game;

@@ -12,24 +12,24 @@ class CNpcItem
 public:
 	inline CNpcItem()
 	{
-		std::memset(m_cName, 0, sizeof(m_cName));
+		std::memset(m_name, 0, sizeof(m_name));
 
-		m_sItemID = 0;
-		m_sFirstProbability = 0;
-		m_cFirstTargetValue = 0;
-		m_sSecondProbability = 0;
-		m_cSecondTargetValue = 0;
+		m_item_id = 0;
+		m_first_probability = 0;
+		m_first_target_value = 0;
+		m_second_probability = 0;
+		m_second_target_value = 0;
 	}
 
 	inline virtual ~CNpcItem()
 	{
 	}
 
-	char m_cName[hb::shared::limits::ItemNameLen];
-	short m_sItemID;
-	short m_sFirstProbability;
-	short m_sSecondProbability;
-	char m_cFirstTargetValue;
-	char m_cSecondTargetValue;
+	char m_name[hb::shared::limits::ItemNameLen];
+	short m_item_id;
+	short m_first_probability;
+	short m_second_probability;
+	char m_first_target_value;
+	char m_second_target_value;
 
 };

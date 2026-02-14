@@ -14,101 +14,101 @@ public:
 	ItemManager() = default;
 	~ItemManager() = default;
 
-	void SetGame(CGame* pGame) { m_pGame = pGame; }
+	void set_game(CGame* game) { m_game = game; }
 
 	// Item config / init
-	bool bSendClientItemConfigs(int iClientH);
-	const DropTable* GetDropTable(int id) const;
-	void _ClearItemConfigList();
-	bool _bInitItemAttr(CItem* pItem, const char* pItemName);
-	bool _bInitItemAttr(CItem* pItem, int iItemID);
-	void ReloadItemConfigs();
+	bool send_client_item_configs(int client_h);
+	const DropTable* get_drop_table(int id) const;
+	void clear_item_config_list();
+	bool init_item_attr(CItem* item, const char* item_name);
+	bool init_item_attr(CItem* item, int item_id);
+	void reload_item_configs();
 
 	// Item attribute generation
-	void _AdjustRareItemValue(CItem* pItem);
-	bool GenerateItemAttributes(CItem* pItem);
-	int RollAttributeValue();
+	void adjust_rare_item_value(CItem* item);
+	bool generate_item_attributes(CItem* item);
+	int roll_attribute_value();
 
 	// Inventory management
-	bool bAddItem(int iClientH, CItem* pItem, char cMode);
-	bool _bAddClientItemList(int iClientH, CItem* pItem, int* pDelReq);
-	int _bAddClientBulkItemList(int iClientH, const char* pItemName, int iAmount);
-	void ReleaseItemHandler(int iClientH, short sItemIndex, bool bNotice);
-	int SetItemCount(int iClientH, int iItemIndex, uint32_t dwCount);
-	int SetItemCountByID(int iClientH, short sItemID, uint32_t dwCount);
-	uint32_t dwGetItemCountByID(int iClientH, short sItemID);
-	int _iGetItemSpaceLeft(int iClientH);
-	void _SetItemPos(int iClientH, char* pData);
-	int iGetItemWeight(CItem* pItem, int iCount);
-	bool bCopyItemContents(CItem* pOriginal, CItem* pCopy);
-	bool _bCheckItemReceiveCondition(int iClientH, CItem* pItem);
-	int SendItemNotifyMsg(int iClientH, uint16_t wMsgType, CItem* pItem, int iV1);
+	bool add_item(int client_h, CItem* item, char mode);
+	bool add_client_item_list(int client_h, CItem* item, int* del_req);
+	int add_client_bulk_item_list(int client_h, const char* item_name, int amount);
+	void release_item_handler(int client_h, short item_index, bool notice);
+	int set_item_count(int client_h, int item_index, uint32_t count);
+	int set_item_count_by_id(int client_h, short item_id, uint32_t count);
+	uint32_t get_item_count_by_id(int client_h, short item_id);
+	int get_item_space_left(int client_h);
+	void set_item_pos(int client_h, char* data);
+	int get_item_weight(CItem* item, int count);
+	bool copy_item_contents(CItem* original, CItem* copy);
+	bool check_item_receive_condition(int client_h, CItem* item);
+	int send_item_notify_msg(int client_h, uint16_t msg_type, CItem* item, int v1);
 
 	// Item use / effects
-	void UseItemHandler(int iClientH, short sItemIndex, short dX, short dY, short sDestItemID);
-	void ItemDepleteHandler(int iClientH, short sItemIndex, bool bIsUseItemResult);
-	bool _bDepleteDestTypeItemUseEffect(int iClientH, int dX, int dY, short sItemIndex, short sDestItemID);
-	int iCalculateUseSkillItemEffect(int iOwnerH, char cOwnerType, char cOwnerSkill, int iSkillNum, char cMapIndex, int dX, int dY);
-	bool bPlantSeedBag(int iMapIndex, int dX, int dY, int iItemEffectValue1, int iItemEffectValue2, int iClientH);
+	void use_item_handler(int client_h, short item_index, short dX, short dY, short dest_item_id);
+	void item_deplete_handler(int client_h, short item_index, bool is_use_item_result);
+	bool deplete_dest_type_item_use_effect(int client_h, int dX, int dY, short item_index, short dest_item_id);
+	int calculate_use_skill_item_effect(int owner_h, char owner_type, char owner_skill, int skill_num, char map_index, int dX, int dY);
+	bool plant_seed_bag(int map_index, int dX, int dY, int item_effect_value1, int item_effect_value2, int client_h);
 
 	// Equipment
-	bool bEquipItemHandler(int iClientH, short sItemIndex, bool bNotify = true);
-	void CalcTotalItemEffect(int iClientH, int iEquipItemID, bool bNotify = true);
-	void CheckUniqueItemEquipment(int iClientH);
-	bool bCheckAndConvertPlusWeaponItem(int iClientH, int iItemIndex);
-	char _cCheckHeroItemEquipped(int iClientH);
-	int _iGetArrowItemIndex(int iClientH);
-	void CalculateSSN_ItemIndex(int iClientH, short sWeaponIndex, int iValue);
+	bool equip_item_handler(int client_h, short item_index, bool notify = true);
+	void calc_total_item_effect(int client_h, int equip_item_id, bool notify = true);
+	void check_unique_item_equipment(int client_h);
+	bool check_and_convert_plus_weapon_item(int client_h, int item_index);
+	char check_hero_item_equipped(int client_h);
+	int get_arrow_item_index(int client_h);
+	void calculate_ssn_item_index(int client_h, short weapon_index, int value);
 
 	// Drop / pickup
-	void DropItemHandler(int iClientH, short sItemIndex, int iAmount, const char* pItemName, bool bByPlayer = true);
-	int iClientMotion_GetItem_Handler(int iClientH, short sX, short sY, char cDir);
+	void drop_item_handler(int client_h, short item_index, int amount, const char* item_name, bool by_player = true);
+	int client_motion_get_item_handler(int client_h, short sX, short sY, char dir);
 
 	// Give / exchange
-	void GiveItemHandler(int iClientH, short sItemIndex, int iAmount, short dX, short dY, uint16_t wObjectID, const char* pItemName);
-	void ExchangeItemHandler(int iClientH, short sItemIndex, int iAmount, short dX, short dY, uint16_t wObjectID, const char* pItemName);
-	void SetExchangeItem(int iClientH, int iItemIndex, int iAmount);
-	void ConfirmExchangeItem(int iClientH);
-	void CancelExchangeItem(int iClientH);
-	void _ClearExchangeStatus(int iToH);
+	void give_item_handler(int client_h, short item_index, int amount, short dX, short dY, uint16_t object_id, const char* item_name);
+	void exchange_item_handler(int client_h, short item_index, int amount, short dX, short dY, uint16_t object_id, const char* item_name);
+	void set_exchange_item(int client_h, int item_index, int amount);
+	void confirm_exchange_item(int client_h);
+	void cancel_exchange_item(int client_h);
+	void clear_exchange_status(int to_h);
 
 	// Bank
-	bool bSetItemToBankItem(int iClientH, CItem* pItem);
-	bool bSetItemToBankItem(int iClientH, short sItemIndex);
-	void RequestRetrieveItemHandler(int iClientH, char* pData);
+	bool set_item_to_bank_item(int client_h, CItem* item);
+	bool set_item_to_bank_item(int client_h, short item_index);
+	void request_retrieve_item_handler(int client_h, char* data);
 
 	// Shop / purchase / sell
-	void RequestPurchaseItemHandler(int iClientH, const char* pItemName, int iNum, int iItemId = 0);
-	void RequestSellItemListHandler(int iClientH, char* pData);
-	void ReqSellItemHandler(int iClientH, char cItemID, char cSellToWhom, int iNum, const char* pItemName);
-	void ReqSellItemConfirmHandler(int iClientH, char cItemID, int iNum, const char* pString);
+	void request_purchase_item_handler(int client_h, const char* item_name, int num, int item_id = 0);
+	void request_sell_item_list_handler(int client_h, char* data);
+	void req_sell_item_handler(int client_h, char item_id, char sell_to_whom, int num, const char* item_name);
+	void req_sell_item_confirm_handler(int client_h, char item_id, int num, const char* string);
 
 	// Repair
-	void ReqRepairItemHandler(int iClientH, char cItemID, char cRepairWhom, const char* pString);
-	void ReqRepairItemCofirmHandler(int iClientH, char cItemID, const char* pString);
-	void RequestRepairAllItemsHandler(int iClientH);
-	void RequestRepairAllItemsDeleteHandler(int iClientH, int index);
-	void RequestRepairAllItemsConfirmHandler(int iClientH);
+	void req_repair_item_handler(int client_h, char item_id, char repair_whom, const char* string);
+	void req_repair_item_cofirm_handler(int client_h, char item_id, const char* string);
+	void request_repair_all_items_handler(int client_h);
+	void request_repair_all_items_delete_handler(int client_h, int index);
+	void request_repair_all_items_confirm_handler(int client_h);
 
 	// Crafting
-	void BuildItemHandler(int iClientH, char* pData);
+	void build_item_handler(int client_h, char* data);
 
 	// Upgrade
-	bool bCheckIsItemUpgradeSuccess(int iClientH, int iItemIndex, int iSomH, bool bBonus = false);
-	void RequestItemUpgradeHandler(int iClientH, int iItemIndex);
+	bool check_is_item_upgrade_success(int client_h, int item_index, int som_h, bool bonus = false);
+	void request_item_upgrade_handler(int client_h, int item_index);
 
 	// Hero / special
-	void GetHeroMantleHandler(int iClientH, int iItemID, const char* pString);
+	void get_hero_mantle_handler(int client_h, int item_id, const char* string);
 
 	// Slate
-	void ReqCreateSlateHandler(int iClientH, char* pData);
-	void SetSlateFlag(int iClientH, short sType, bool bFlag);
+	void req_create_slate_handler(int client_h, char* data);
+	void set_slate_flag(int client_h, short type, bool flag);
 
 	// Logging
-	bool _bItemLog(int iAction, int iClientH, char* cName, CItem* pItem);
-	bool _bItemLog(int iAction, int iGiveH, int iRecvH, CItem* pItem, bool bForceItemLog = false);
-	bool _bCheckGoodItem(CItem* pItem);
+	bool item_log(int action, int client_h, char* name, CItem* item);
+	bool item_log(int action, int give_h, int recv_h, CItem* item, bool force_item_log = false);
+	bool check_good_item(CItem* item);
 
 private:
-	CGame* m_pGame = nullptr;
+	CGame* m_game = nullptr;
 };

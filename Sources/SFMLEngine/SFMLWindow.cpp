@@ -19,8 +19,8 @@ namespace MouseButton = hb::shared::input::MouseButton;
 #endif
 
 SFMLWindow::SFMLWindow()
-    : m_hWnd(nullptr)
-    , m_pEventHandler(nullptr)
+    : m_handle(nullptr)
+    , m_event_handler(nullptr)
     , m_realized(false)
     , m_open(false)
     , m_active(true)
@@ -28,15 +28,15 @@ SFMLWindow::SFMLWindow()
     , m_width(800)
     , m_height(600)
     , m_fullscreen(false)
-    , m_bFullscreenStretch(false)
+    , m_fullscreen_stretch(false)
     , m_borderless(true)
-    , m_bMouseCaptureEnabled(false)
-    , m_bVSync(false)
-    , m_iFpsLimit(0)
-    , m_windowedWidth(0)
-    , m_windowedHeight(0)
+    , m_mouse_capture_enabled(false)
+    , m_vsync(false)
+    , m_fps_limit(0)
+    , m_windowed_width(0)
+    , m_windowed_height(0)
     , m_nativeInstance{}
-    , m_iconResourceId(0)
+    , m_icon_resource_id(0)
 {
 }
 
@@ -50,8 +50,8 @@ bool SFMLWindow::realize()
     if (m_realized)
         return false;
 
-    m_windowedWidth = m_width;
-    m_windowedHeight = m_height;
+    m_windowed_width = m_width;
+    m_windowed_height = m_height;
 
     // Create SFML window from staged params
     sf::VideoMode videoMode({static_cast<unsigned int>(m_width), static_cast<unsigned int>(m_height)});
@@ -70,24 +70,24 @@ bool SFMLWindow::realize()
     if (!m_renderWindow.isOpen())
         return false;
 
-    // Get native handle for anything that needs it
+    // get native handle for anything that needs it
 #ifdef _WIN32
-    m_hWnd = static_cast<HWND>(m_renderWindow.getNativeHandle());
+    m_handle = static_cast<HWND>(m_renderWindow.getNativeHandle());
 
     // For bordered mode, add minimize button (sf::Style::Titlebar doesn't include it)
-    if (!m_fullscreen && !m_borderless && m_hWnd)
+    if (!m_fullscreen && !m_borderless && m_handle)
     {
-        LONG style = GetWindowLong(m_hWnd, GWL_STYLE);
+        LONG style = GetWindowLong(m_handle, GWL_STYLE);
         style |= WS_MINIMIZEBOX;
-        SetWindowLong(m_hWnd, GWL_STYLE, style);
-        SetWindowPos(m_hWnd, nullptr, 0, 0, 0, 0,
+        SetWindowLong(m_handle, GWL_STYLE, style);
+        SetWindowPos(m_handle, nullptr, 0, 0, 0, 0,
             SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
     }
 #endif
 
     // Hide the system mouse cursor (game draws its own cursor)
     m_renderWindow.setMouseCursorVisible(false);
-    m_renderWindow.setMouseCursorGrabbed(m_bMouseCaptureEnabled);
+    m_renderWindow.setMouseCursorGrabbed(m_mouse_capture_enabled);
 
     // Request 1ms timer resolution for accurate sleep-based frame limiting
 #ifdef _WIN32
@@ -103,7 +103,7 @@ bool SFMLWindow::realize()
 
 void SFMLWindow::destroy()
 {
-    m_pEventHandler = nullptr;
+    m_event_handler = nullptr;
 
     if (m_renderWindow.isOpen())
     {
@@ -115,7 +115,7 @@ void SFMLWindow::destroy()
     timeEndPeriod(1);
 #endif
 
-    m_hWnd = nullptr;
+    m_handle = nullptr;
     m_realized = false;
     m_open = false;
     m_active = false;
@@ -128,7 +128,7 @@ bool SFMLWindow::is_open() const
 
 void SFMLWindow::close()
 {
-    // Don't call m_pEventHandler->on_close() here — that creates infinite recursion
+    // Don't call m_event_handler->on_close() here — that creates infinite recursion
     // since on_close() may call Window::close(). on_close() is only called from the
     // SFML event loop when the user clicks the close button.
     m_open = false;
@@ -137,7 +137,7 @@ void SFMLWindow::close()
 
 hb::shared::types::NativeWindowHandle SFMLWindow::get_handle() const
 {
-    return m_hWnd;
+    return m_handle;
 }
 
 int SFMLWindow::get_width() const
@@ -172,21 +172,21 @@ void SFMLWindow::set_fullscreen(bool fullscreen)
     if (!m_realized)
         return;
 
-    // Get display dimensions based on mode
+    // get display dimensions based on mode
     int windowWidth, windowHeight;
     if (fullscreen)
     {
         // Save windowed dimensions before going fullscreen
-        m_windowedWidth = m_width;
-        m_windowedHeight = m_height;
+        m_windowed_width = m_width;
+        m_windowed_height = m_height;
         windowWidth = GetSystemMetrics(SM_CXSCREEN);
         windowHeight = GetSystemMetrics(SM_CYSCREEN);
     }
     else
     {
         // Restore saved windowed dimensions
-        windowWidth = m_windowedWidth > 0 ? m_windowedWidth : LOGICAL_WIDTH();
-        windowHeight = m_windowedHeight > 0 ? m_windowedHeight : LOGICAL_HEIGHT();
+        windowWidth = m_windowed_width > 0 ? m_windowed_width : LOGICAL_WIDTH();
+        windowHeight = m_windowed_height > 0 ? m_windowed_height : LOGICAL_HEIGHT();
     }
 
     // Recreate window with new mode
@@ -207,22 +207,22 @@ void SFMLWindow::set_fullscreen(bool fullscreen)
     m_height = windowHeight;
 
 #ifdef _WIN32
-    m_hWnd = static_cast<HWND>(m_renderWindow.getNativeHandle());
+    m_handle = static_cast<HWND>(m_renderWindow.getNativeHandle());
 
     // For bordered windowed mode, add minimize button
-    if (!fullscreen && !m_borderless && m_hWnd)
+    if (!fullscreen && !m_borderless && m_handle)
     {
-        LONG style = GetWindowLong(m_hWnd, GWL_STYLE);
+        LONG style = GetWindowLong(m_handle, GWL_STYLE);
         style |= WS_MINIMIZEBOX;
-        SetWindowLong(m_hWnd, GWL_STYLE, style);
-        SetWindowPos(m_hWnd, nullptr, 0, 0, 0, 0,
+        SetWindowLong(m_handle, GWL_STYLE, style);
+        SetWindowPos(m_handle, nullptr, 0, 0, 0, 0,
             SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
     }
 #endif
 
     // Reapply cursor settings
     m_renderWindow.setMouseCursorVisible(false);
-    m_renderWindow.setMouseCursorGrabbed(m_bMouseCaptureEnabled);
+    m_renderWindow.setMouseCursorGrabbed(m_mouse_capture_enabled);
 
     // If switching to windowed mode, center the window
     if (!fullscreen)
@@ -231,7 +231,7 @@ void SFMLWindow::set_fullscreen(bool fullscreen)
         int screenHeight = GetSystemMetrics(SM_CYSCREEN);
         int newX = (screenWidth - windowWidth) / 2;
         int newY = (screenHeight - windowHeight) / 2;
-        SetWindowPos(m_hWnd, HWND_TOP, newX, newY, windowWidth, windowHeight, SWP_SHOWWINDOW);
+        SetWindowPos(m_handle, HWND_TOP, newX, newY, windowWidth, windowHeight, SWP_SHOWWINDOW);
     }
 }
 
@@ -250,43 +250,43 @@ void SFMLWindow::set_borderless(bool borderless)
     m_renderWindow.create(videoMode, m_title.c_str(), sfStyle, sf::State::Windowed);
 
 #ifdef _WIN32
-    m_hWnd = static_cast<HWND>(m_renderWindow.getNativeHandle());
+    m_handle = static_cast<HWND>(m_renderWindow.getNativeHandle());
 
     // For bordered mode, add minimize button
-    if (!borderless && m_hWnd)
+    if (!borderless && m_handle)
     {
-        LONG style = GetWindowLong(m_hWnd, GWL_STYLE);
+        LONG style = GetWindowLong(m_handle, GWL_STYLE);
         style |= WS_MINIMIZEBOX;
-        SetWindowLong(m_hWnd, GWL_STYLE, style);
-        SetWindowPos(m_hWnd, nullptr, 0, 0, 0, 0,
+        SetWindowLong(m_handle, GWL_STYLE, style);
+        SetWindowPos(m_handle, nullptr, 0, 0, 0, 0,
             SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
     }
 #endif
 
 
     m_renderWindow.setMouseCursorVisible(false);
-    m_renderWindow.setMouseCursorGrabbed(m_bMouseCaptureEnabled);
+    m_renderWindow.setMouseCursorGrabbed(m_mouse_capture_enabled);
 
     // Center the window
     int screenWidth = GetSystemMetrics(SM_CXSCREEN);
     int screenHeight = GetSystemMetrics(SM_CYSCREEN);
     int posX = (screenWidth - m_width) / 2;
     int posY = (screenHeight - m_height) / 2;
-    SetWindowPos(m_hWnd, HWND_TOP, posX, posY, m_width, m_height, SWP_SHOWWINDOW);
+    SetWindowPos(m_handle, HWND_TOP, posX, posY, m_width, m_height, SWP_SHOWWINDOW);
 
     // Update input system with new window handle
     if (hb::shared::input::get())
     {
-        SFMLInput* pInput = static_cast<SFMLInput*>(hb::shared::input::get());
-        pInput->Initialize(m_hWnd);
-        pInput->SetRenderWindow(&m_renderWindow);
+        SFMLInput* input = static_cast<SFMLInput*>(hb::shared::input::get());
+        input->Initialize(m_handle);
+        input->SetRenderWindow(&m_renderWindow);
     }
 
     // Update renderer with new render window
-    hb::shared::render::IRenderer* pRenderer = hb::shared::render::Renderer::Get();
-    if (pRenderer)
+    hb::shared::render::IRenderer* renderer = hb::shared::render::Renderer::get();
+    if (renderer)
     {
-        static_cast<SFMLRenderer*>(pRenderer)->SetRenderWindow(&m_renderWindow);
+        static_cast<SFMLRenderer*>(renderer)->SetRenderWindow(&m_renderWindow);
     }
 }
 
@@ -310,7 +310,7 @@ void SFMLWindow::set_size(int width, int height, bool center)
     m_renderWindow.setSize({static_cast<unsigned int>(width), static_cast<unsigned int>(height)});
 
     // Update Win32 window position/size
-    if (m_hWnd)
+    if (m_handle)
     {
         int posX = 0, posY = 0;
         if (center)
@@ -319,18 +319,18 @@ void SFMLWindow::set_size(int width, int height, bool center)
             int screenHeight = GetSystemMetrics(SM_CYSCREEN);
             posX = (screenWidth - width) / 2;
             posY = (screenHeight - height) / 2;
-            SetWindowPos(m_hWnd, HWND_TOP, posX, posY, width, height, SWP_SHOWWINDOW);
+            SetWindowPos(m_handle, HWND_TOP, posX, posY, width, height, SWP_SHOWWINDOW);
         }
         else
         {
             // Just resize, keep position
-            SetWindowPos(m_hWnd, HWND_TOP, 0, 0, width, height, SWP_NOMOVE | SWP_SHOWWINDOW);
+            SetWindowPos(m_handle, HWND_TOP, 0, 0, width, height, SWP_NOMOVE | SWP_SHOWWINDOW);
         }
     }
 
     // Re-apply mouse cursor grab to update grab boundaries to new window size
     m_renderWindow.setMouseCursorGrabbed(false);
-    m_renderWindow.setMouseCursorGrabbed(m_bMouseCaptureEnabled);
+    m_renderWindow.setMouseCursorGrabbed(m_mouse_capture_enabled);
 }
 
 void SFMLWindow::show()
@@ -338,10 +338,10 @@ void SFMLWindow::show()
     m_renderWindow.setVisible(true);
     m_renderWindow.requestFocus();
     // On Windows, also force foreground window to ensure focus
-    if (m_hWnd)
+    if (m_handle)
     {
-        SetForegroundWindow(m_hWnd);
-        SetFocus(m_hWnd);
+        SetForegroundWindow(m_handle);
+        SetFocus(m_handle);
     }
 }
 
@@ -362,33 +362,33 @@ void SFMLWindow::set_title(const char* title)
 
 void SFMLWindow::set_framerate_limit(int limit)
 {
-    m_iFpsLimit = limit;
+    m_fps_limit = limit;
     if (!m_realized)
         return;
     // When VSync is active, the monitor refresh rate controls timing —
-    // don't let an FPS limit override it. The saved m_iFpsLimit will be
+    // don't let an FPS limit override it. The saved m_fps_limit will be
     // applied when VSync is turned off (see set_vsync_enabled).
-    if (m_bVSync) return;
+    if (m_vsync) return;
     // Forward to renderer for engine-owned frame limiting
-    hb::shared::render::IRenderer* pRenderer = hb::shared::render::Renderer::Get();
-    if (pRenderer)
-        static_cast<SFMLRenderer*>(pRenderer)->SetFramerateLimit(limit);
+    hb::shared::render::IRenderer* renderer = hb::shared::render::Renderer::get();
+    if (renderer)
+        static_cast<SFMLRenderer*>(renderer)->SetFramerateLimit(limit);
 }
 
 int SFMLWindow::get_framerate_limit() const
 {
-    return m_iFpsLimit;
+    return m_fps_limit;
 }
 
 void SFMLWindow::set_vsync_enabled(bool enabled)
 {
-    m_bVSync = enabled;
+    m_vsync = enabled;
     if (!m_realized)
         return;
-    hb::shared::render::IRenderer* pRenderer = hb::shared::render::Renderer::Get();
-    if (!pRenderer) return;
+    hb::shared::render::IRenderer* renderer = hb::shared::render::Renderer::get();
+    if (!renderer) return;
 
-    auto* pSFMLRenderer = static_cast<SFMLRenderer*>(pRenderer);
+    auto* sfml_renderer = static_cast<SFMLRenderer*>(renderer);
 
     if (enabled)
     {
@@ -404,30 +404,30 @@ void SFMLWindow::set_vsync_enabled(bool enabled)
                 refreshRate = static_cast<int>(devMode.dmDisplayFrequency);
         }
 #endif
-        pSFMLRenderer->SetVSyncMode(true);
-        pSFMLRenderer->SetFramerateLimit(refreshRate);
+        sfml_renderer->SetVSyncMode(true);
+        sfml_renderer->SetFramerateLimit(refreshRate);
     }
     else
     {
-        pSFMLRenderer->SetVSyncMode(false);
+        sfml_renderer->SetVSyncMode(false);
         // Restore the user's FPS limit setting
-        pSFMLRenderer->SetFramerateLimit(m_iFpsLimit);
+        sfml_renderer->SetFramerateLimit(m_fps_limit);
     }
 }
 
 bool SFMLWindow::is_vsync_enabled() const
 {
-    return m_bVSync;
+    return m_vsync;
 }
 
 void SFMLWindow::set_fullscreen_stretch(bool stretch)
 {
-    m_bFullscreenStretch = stretch;
+    m_fullscreen_stretch = stretch;
 }
 
 bool SFMLWindow::is_fullscreen_stretch() const
 {
-    return m_bFullscreenStretch;
+    return m_fullscreen_stretch;
 }
 
 void SFMLWindow::set_native_instance(hb::shared::types::NativeInstance instance)
@@ -437,7 +437,7 @@ void SFMLWindow::set_native_instance(hb::shared::types::NativeInstance instance)
 
 void SFMLWindow::set_icon_resource_id(int id)
 {
-    m_iconResourceId = id;
+    m_icon_resource_id = id;
 }
 
 void SFMLWindow::set_mouse_cursor_visible(bool visible)
@@ -448,7 +448,7 @@ void SFMLWindow::set_mouse_cursor_visible(bool visible)
 
 void SFMLWindow::set_mouse_capture_enabled(bool enabled)
 {
-    m_bMouseCaptureEnabled = enabled;
+    m_mouse_capture_enabled = enabled;
     if (m_realized)
         m_renderWindow.setMouseCursorGrabbed(enabled);
 }
@@ -456,7 +456,7 @@ void SFMLWindow::set_mouse_capture_enabled(bool enabled)
 void SFMLWindow::show_message_box(const char* title, const char* message)
 {
 #ifdef _WIN32
-    MessageBox(m_hWnd, message, title, MB_ICONEXCLAMATION | MB_OK);
+    MessageBox(m_handle, message, title, MB_ICONEXCLAMATION | MB_OK);
 #else
     fprintf(stderr, "%s: %s\n", title, message);
 #endif
@@ -473,8 +473,8 @@ bool SFMLWindow::process_messages()
         if (event->is<sf::Event::Closed>())
         {
             // Notify the event handler — it decides whether to close or not
-            if (m_pEventHandler)
-                m_pEventHandler->on_close();
+            if (m_event_handler)
+                m_event_handler->on_close();
             // If the handler called close() or request_quit(), m_open is now false
             if (!m_open)
                 return false;
@@ -486,8 +486,8 @@ bool SFMLWindow::process_messages()
         {
             m_width = static_cast<int>(resized->size.x);
             m_height = static_cast<int>(resized->size.y);
-            if (m_pEventHandler)
-                m_pEventHandler->on_resize(m_width, m_height);
+            if (m_event_handler)
+                m_event_handler->on_resize(m_width, m_height);
         }
 
         if (const auto* focusGained = event->getIf<sf::Event::FocusGained>())
@@ -496,48 +496,48 @@ bool SFMLWindow::process_messages()
             // Reactivate OpenGL context when focus is regained
             (void)m_renderWindow.setActive(true);
             // Re-grab mouse cursor if capture is enabled
-            m_renderWindow.setMouseCursorGrabbed(m_bMouseCaptureEnabled);
-            if (m_pEventHandler)
-                m_pEventHandler->on_activate(true);
+            m_renderWindow.setMouseCursorGrabbed(m_mouse_capture_enabled);
+            if (m_event_handler)
+                m_event_handler->on_activate(true);
         }
 
         if (const auto* focusLost = event->getIf<sf::Event::FocusLost>())
         {
             m_active = false;
-            if (m_pEventHandler)
-                m_pEventHandler->on_activate(false);
+            if (m_event_handler)
+                m_event_handler->on_activate(false);
         }
 
         if (const auto* keyPressed = event->getIf<sf::Event::KeyPressed>())
         {
-            if (m_pEventHandler)
-                m_pEventHandler->on_key_down(SfmlKeyToKeyCode(keyPressed->code));
+            if (m_event_handler)
+                m_event_handler->on_key_down(SfmlKeyToKeyCode(keyPressed->code));
         }
 
         if (const auto* keyReleased = event->getIf<sf::Event::KeyReleased>())
         {
-            if (m_pEventHandler)
-                m_pEventHandler->on_key_up(SfmlKeyToKeyCode(keyReleased->code));
+            if (m_event_handler)
+                m_event_handler->on_key_up(SfmlKeyToKeyCode(keyReleased->code));
         }
 
         if (const auto* textEntered = event->getIf<sf::Event::TextEntered>())
         {
-            if (m_pEventHandler)
+            if (m_event_handler)
             {
                 // Call on_text_input with WM_CHAR-style parameters
                 // The game's GetText() function expects Win32 message format
-                m_pEventHandler->on_text_input(m_hWnd, 0x0102 /*WM_CHAR*/,
+                m_event_handler->on_text_input(m_handle, 0x0102 /*WM_CHAR*/,
                     static_cast<uintptr_t>(textEntered->unicode), 0);
             }
         }
 
         if (const auto* mouseMoved = event->getIf<sf::Event::MouseMoved>())
         {
-            if (m_pEventHandler)
+            if (m_event_handler)
             {
                 int logicalX, logicalY;
                 TransformMouseCoords(mouseMoved->position.x, mouseMoved->position.y, logicalX, logicalY);
-                m_pEventHandler->on_mouse_move(logicalX, logicalY);
+                m_event_handler->on_mouse_move(logicalX, logicalY);
             }
         }
 
@@ -549,11 +549,11 @@ bool SFMLWindow::process_messages()
             else if (mousePressed->button == sf::Mouse::Button::Middle)
                 button = MouseButton::Middle;
 
-            if (m_pEventHandler)
+            if (m_event_handler)
             {
                 int logicalX, logicalY;
                 TransformMouseCoords(mousePressed->position.x, mousePressed->position.y, logicalX, logicalY);
-                m_pEventHandler->on_mouse_button_down(button, logicalX, logicalY);
+                m_event_handler->on_mouse_button_down(button, logicalX, logicalY);
             }
         }
 
@@ -565,22 +565,22 @@ bool SFMLWindow::process_messages()
             else if (mouseReleased->button == sf::Mouse::Button::Middle)
                 button = MouseButton::Middle;
 
-            if (m_pEventHandler)
+            if (m_event_handler)
             {
                 int logicalX, logicalY;
                 TransformMouseCoords(mouseReleased->position.x, mouseReleased->position.y, logicalX, logicalY);
-                m_pEventHandler->on_mouse_button_up(button, logicalX, logicalY);
+                m_event_handler->on_mouse_button_up(button, logicalX, logicalY);
             }
         }
 
         if (const auto* mouseWheel = event->getIf<sf::Event::MouseWheelScrolled>())
         {
-            if (m_pEventHandler)
+            if (m_event_handler)
             {
                 int logicalX, logicalY;
                 TransformMouseCoords(mouseWheel->position.x, mouseWheel->position.y, logicalX, logicalY);
                 int delta = static_cast<int>(mouseWheel->delta * 120);  // Convert to Windows-style delta
-                m_pEventHandler->on_mouse_wheel(delta, logicalX, logicalY);
+                m_event_handler->on_mouse_wheel(delta, logicalX, logicalY);
             }
         }
     }
@@ -597,8 +597,8 @@ void SFMLWindow::wait_for_message()
         // Process the event we received (same logic as process_messages)
         if (event->is<sf::Event::Closed>())
         {
-            if (m_pEventHandler)
-                m_pEventHandler->on_close();
+            if (m_event_handler)
+                m_event_handler->on_close();
             if (!m_open)
                 return;
         }
@@ -607,16 +607,16 @@ void SFMLWindow::wait_for_message()
         {
             m_active = true;
             (void)m_renderWindow.setActive(true);
-            m_renderWindow.setMouseCursorGrabbed(m_bMouseCaptureEnabled);
-            if (m_pEventHandler)
-                m_pEventHandler->on_activate(true);
+            m_renderWindow.setMouseCursorGrabbed(m_mouse_capture_enabled);
+            if (m_event_handler)
+                m_event_handler->on_activate(true);
         }
 
         if (const auto* focusLost = event->getIf<sf::Event::FocusLost>())
         {
             m_active = false;
-            if (m_pEventHandler)
-                m_pEventHandler->on_activate(false);
+            if (m_event_handler)
+                m_event_handler->on_activate(false);
         }
 
         // Other events will be handled in the next process_messages() call
@@ -626,12 +626,12 @@ void SFMLWindow::wait_for_message()
 
 void SFMLWindow::set_event_handler(hb::shared::render::IWindowEventHandler* handler)
 {
-    m_pEventHandler = handler;
+    m_event_handler = handler;
 }
 
 hb::shared::render::IWindowEventHandler* SFMLWindow::get_event_handler() const
 {
-    return m_pEventHandler;
+    return m_event_handler;
 }
 
 // Convert SFML key codes to abstract KeyCode enum values
@@ -749,14 +749,14 @@ KeyCode SFMLWindow::SfmlKeyToKeyCode(sf::Keyboard::Key key)
 
 void SFMLWindow::TransformMouseCoords(int windowX, int windowY, int& logicalX, int& logicalY) const
 {
-    // Get actual window size in physical pixels
+    // get actual window size in physical pixels
     float windowWidth, windowHeight;
 
 #ifdef _WIN32
-    if (m_hWnd)
+    if (m_handle)
     {
         RECT clientRect;
-        if (GetClientRect(m_hWnd, &clientRect))
+        if (GetClientRect(m_handle, &clientRect))
         {
             windowWidth = static_cast<float>(clientRect.right - clientRect.left);
             windowHeight = static_cast<float>(clientRect.bottom - clientRect.top);
@@ -777,7 +777,7 @@ void SFMLWindow::TransformMouseCoords(int windowX, int windowY, int& logicalX, i
     float mouseX = static_cast<float>(windowX);
     float mouseY = static_cast<float>(windowY);
 
-    if (m_fullscreen && !m_bFullscreenStretch)
+    if (m_fullscreen && !m_fullscreen_stretch)
     {
         // Fullscreen letterbox - account for uniform scale and offset
         float scaleX = windowWidth / static_cast<float>(RENDER_LOGICAL_WIDTH());

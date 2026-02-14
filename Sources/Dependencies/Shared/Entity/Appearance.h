@@ -9,15 +9,15 @@ namespace hb::shared::entity {
 
 HB_PACK_BEGIN
 
-// EntityAppearance: NPC appearance using what was sAppr2.
-// NPCs don't have equipment; sAppr2 encodes sub-type and special frame.
+// EntityAppearance: NPC appearance using what was appr2.
+// NPCs don't have equipment; appr2 encodes sub-type and special frame.
 struct HB_PACKED EntityAppearance
 {
-	uint8_t iSubType;        // (sAppr2 & 0xFF00) >> 8  (crop type, crusade ownership)
-	uint8_t iSpecialFrame;   // sAppr2 & 0x00FF          (NPC special animation frame)
+	uint8_t sub_type;        // (appr2 & 0xFF00) >> 8  (crop type, crusade ownership)
+	uint8_t special_frame;   // appr2 & 0x00FF          (NPC special animation frame)
 
-	bool HasSpecialState() const { return iSubType != 0 || iSpecialFrame != 0; }
-	void Clear() { iSubType = 0; iSpecialFrame = 0; }
+	bool HasSpecialState() const { return sub_type != 0 || special_frame != 0; }
+	void clear() { sub_type = 0; special_frame = 0; }
 };
 
 // PlayerAppearance: Individual fields that replace sAppr1-4 + iApprColor.
@@ -26,54 +26,54 @@ struct HB_PACKED EntityAppearance
 struct HB_PACKED PlayerAppearance
 {
 	// Body (was sAppr1)
-	uint8_t iUnderwearType;  // sAppr1 & 0x000F
-	uint8_t iHairColor;      // (sAppr1 & 0x00F0) >> 4
-	uint8_t iHairStyle;      // (sAppr1 & 0x0F00) >> 8
-	uint8_t iSkinColor;      // (sAppr1 & 0xF000) >> 12
+	uint8_t underwear_type;  // sAppr1 & 0x000F
+	uint8_t hair_color;      // (sAppr1 & 0x00F0) >> 4
+	uint8_t hair_style;      // (sAppr1 & 0x0F00) >> 8
+	uint8_t skin_color;      // (sAppr1 & 0xF000) >> 12
 
-	// Weapons (was sAppr2)
-	uint8_t iShieldType;     // sAppr2 & 0x000F
-	uint8_t iWeaponType;     // (sAppr2 & 0x0FF0) >> 4  (8-bit range)
-	bool bIsWalking;         // (sAppr2 & 0xF000) >> 12  (combat mode)
+	// Weapons (was appr2)
+	uint8_t shield_type;     // appr2 & 0x000F
+	uint8_t weapon_type;     // (appr2 & 0x0FF0) >> 4  (8-bit range)
+	bool is_walking;         // (appr2 & 0xF000) >> 12  (combat mode)
 
 	// Armor (was sAppr3)
-	uint8_t iArmArmorType;   // sAppr3 & 0x000F
-	uint8_t iHelmType;       // (sAppr3 & 0x00F0) >> 4
-	uint8_t iPantsType;      // (sAppr3 & 0x0F00) >> 8
-	uint8_t iArmorType;      // (sAppr3 & 0xF000) >> 12
+	uint8_t arm_armor_type;   // sAppr3 & 0x000F
+	uint8_t helm_type;       // (sAppr3 & 0x00F0) >> 4
+	uint8_t pants_type;      // (sAppr3 & 0x0F00) >> 8
+	uint8_t armor_type;      // (sAppr3 & 0xF000) >> 12
 
 	// Effects (was sAppr4)
-	uint8_t iWeaponGlare;    // sAppr4 & 0x0003
-	uint8_t iShieldGlare;    // (sAppr4 & 0x000C) >> 2
-	uint8_t iEffectType;     // (sAppr4 & 0x00F0) >> 4
-	bool bHideArmor;         // (sAppr4 & 0x0080) >> 7
-	uint8_t iMantleType;     // (sAppr4 & 0x0F00) >> 8
-	uint8_t iBootsType;      // (sAppr4 & 0xF000) >> 12
+	uint8_t weapon_glare;    // sAppr4 & 0x0003
+	uint8_t shield_glare;    // (sAppr4 & 0x000C) >> 2
+	uint8_t effect_type;     // (sAppr4 & 0x00F0) >> 4
+	bool hide_armor;         // (sAppr4 & 0x0080) >> 7
+	uint8_t mantle_type;     // (sAppr4 & 0x0F00) >> 8
+	uint8_t boots_type;      // (sAppr4 & 0xF000) >> 12
 
 	// Colors (was iApprColor)
-	uint8_t iWeaponColor;    // (iApprColor >> 28) & 0xF
-	uint8_t iShieldColor;    // (iApprColor >> 24) & 0xF
-	uint8_t iArmorColor;     // (iApprColor >> 20) & 0xF
-	uint8_t iMantleColor;    // (iApprColor >> 16) & 0xF
-	uint8_t iArmColor;       // (iApprColor >> 12) & 0xF
-	uint8_t iPantsColor;     // (iApprColor >> 8) & 0xF
-	uint8_t iBootsColor;     // (iApprColor >> 4) & 0xF
-	uint8_t iHelmColor;      // iApprColor & 0xF
+	uint8_t weapon_color;    // (iApprColor >> 28) & 0xF
+	uint8_t shield_color;    // (iApprColor >> 24) & 0xF
+	uint8_t armor_color;     // (iApprColor >> 20) & 0xF
+	uint8_t mantle_color;    // (iApprColor >> 16) & 0xF
+	uint8_t arm_color;       // (iApprColor >> 12) & 0xF
+	uint8_t pants_color;     // (iApprColor >> 8) & 0xF
+	uint8_t boots_color;     // (iApprColor >> 4) & 0xF
+	uint8_t helm_color;      // iApprColor & 0xF
 
 	// NPC sub-type/special frame (always 0 for players, populated from EntityAppearance for NPCs)
-	uint8_t iSubType;        // (was sAppr2 upper byte for NPCs) crop type, crusade ownership
-	uint8_t iSpecialFrame;   // (was sAppr2 lower byte for NPCs) NPC special animation frame
+	uint8_t sub_type;        // (was appr2 upper byte for NPCs) crop type, crusade ownership
+	uint8_t special_frame;   // (was appr2 lower byte for NPCs) NPC special animation frame
 
-	bool HasNpcSpecialState() const { return iSubType != 0 || iSpecialFrame != 0; }
+	bool HasNpcSpecialState() const { return sub_type != 0 || special_frame != 0; }
 
-	void Clear() { std::memset(this, 0, sizeof(*this)); }
+	void clear() { std::memset(this, 0, sizeof(*this)); }
 
 	// Populate NPC fields from an EntityAppearance (used client-side after receiving NPC packets)
 	void SetFromNpcAppearance(const EntityAppearance& npc)
 	{
-		Clear();
-		iSubType = npc.iSubType;
-		iSpecialFrame = npc.iSpecialFrame;
+		clear();
+		sub_type = npc.sub_type;
+		special_frame = npc.special_frame;
 	}
 };
 
@@ -86,47 +86,47 @@ inline void ApplyEquipAppearance(PlayerAppearance& appearance, hb::shared::item:
 	using namespace hb::shared::item;
 	switch (pos) {
 	case EquipPos::Head:
-		appearance.iHelmType = static_cast<uint8_t>(apprValue);
-		appearance.iHelmColor = static_cast<uint8_t>(itemColor);
+		appearance.helm_type = static_cast<uint8_t>(apprValue);
+		appearance.helm_color = static_cast<uint8_t>(itemColor);
 		break;
 	case EquipPos::Body:
 		if (apprValue >= 100) {
-			appearance.iArmorType = static_cast<uint8_t>(apprValue - 100);
-			appearance.bHideArmor = true;
+			appearance.armor_type = static_cast<uint8_t>(apprValue - 100);
+			appearance.hide_armor = true;
 		} else {
-			appearance.iArmorType = static_cast<uint8_t>(apprValue);
-			appearance.bHideArmor = false;
+			appearance.armor_type = static_cast<uint8_t>(apprValue);
+			appearance.hide_armor = false;
 		}
-		appearance.iArmorColor = static_cast<uint8_t>(itemColor);
+		appearance.armor_color = static_cast<uint8_t>(itemColor);
 		break;
 	case EquipPos::Arms:
-		appearance.iArmArmorType = static_cast<uint8_t>(apprValue);
-		appearance.iArmColor = static_cast<uint8_t>(itemColor);
+		appearance.arm_armor_type = static_cast<uint8_t>(apprValue);
+		appearance.arm_color = static_cast<uint8_t>(itemColor);
 		break;
 	case EquipPos::Pants:
-		appearance.iPantsType = static_cast<uint8_t>(apprValue);
-		appearance.iPantsColor = static_cast<uint8_t>(itemColor);
+		appearance.pants_type = static_cast<uint8_t>(apprValue);
+		appearance.pants_color = static_cast<uint8_t>(itemColor);
 		break;
 	case EquipPos::Leggings:
-		appearance.iBootsType = static_cast<uint8_t>(apprValue);
-		appearance.iBootsColor = static_cast<uint8_t>(itemColor);
+		appearance.boots_type = static_cast<uint8_t>(apprValue);
+		appearance.boots_color = static_cast<uint8_t>(itemColor);
 		break;
 	case EquipPos::LeftHand:
-		appearance.iShieldType = static_cast<uint8_t>(apprValue);
-		appearance.iShieldColor = static_cast<uint8_t>(itemColor);
+		appearance.shield_type = static_cast<uint8_t>(apprValue);
+		appearance.shield_color = static_cast<uint8_t>(itemColor);
 		break;
 	case EquipPos::RightHand:
 	case EquipPos::TwoHand:
-		appearance.iWeaponType = static_cast<uint8_t>(apprValue);
-		appearance.iWeaponColor = static_cast<uint8_t>(itemColor);
+		appearance.weapon_type = static_cast<uint8_t>(apprValue);
+		appearance.weapon_color = static_cast<uint8_t>(itemColor);
 		break;
 	case EquipPos::Back:
-		appearance.iMantleType = static_cast<uint8_t>(apprValue);
-		appearance.iMantleColor = static_cast<uint8_t>(itemColor);
+		appearance.mantle_type = static_cast<uint8_t>(apprValue);
+		appearance.mantle_color = static_cast<uint8_t>(itemColor);
 		break;
 	case EquipPos::FullBody:
-		appearance.iArmorType = static_cast<uint8_t>(apprValue);
-		appearance.iMantleColor = 0;
+		appearance.armor_type = static_cast<uint8_t>(apprValue);
+		appearance.mantle_color = 0;
 		break;
 	default:
 		break;

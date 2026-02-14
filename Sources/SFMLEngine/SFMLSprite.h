@@ -23,10 +23,10 @@ class SFMLSprite : public hb::shared::sprite::ISprite
 {
 public:
     // Construction from file path (opens file, reads sprite data)
-    SFMLSprite(SFMLRenderer* pRenderer, const std::string& pakFilePath, int spriteIndex, bool alphaEffect = true);
+    SFMLSprite(SFMLRenderer* renderer, const std::string& pakFilePath, int spriteIndex, bool alphaEffect = true);
 
     // Construction from pre-loaded PAK data (no file I/O - used by SpriteLoader)
-    SFMLSprite(SFMLRenderer* pRenderer, const PAKLib::sprite& spriteData, bool alphaEffect = true);
+    SFMLSprite(SFMLRenderer* renderer, const PAKLib::sprite& spriteData, bool alphaEffect = true);
 
     virtual ~SFMLSprite();
 
@@ -35,7 +35,7 @@ public:
     //------------------------------------------------------------------
 
     // Core drawing
-    void Draw(int x, int y, int frame, const hb::shared::sprite::DrawParams& params = hb::shared::sprite::DrawParams{}) override;
+    void draw(int x, int y, int frame, const hb::shared::sprite::DrawParams& params = hb::shared::sprite::DrawParams{}) override;
     void DrawToSurface(void* destSurface, int x, int y, int frame, const hb::shared::sprite::DrawParams& params = hb::shared::sprite::DrawParams{}) override;
     void DrawWidth(int x, int y, int frame, int width, bool vertical = false) override;
     void DrawShifted(int x, int y, int shiftX, int shiftY, int frame, const hb::shared::sprite::DrawParams& params = hb::shared::sprite::DrawParams{}) override;
@@ -63,12 +63,12 @@ public:
     // SFML-Specific Methods
     //------------------------------------------------------------------
 
-    // Get the SFML texture
+    // get the SFML texture
     const sf::Texture& GetTexture() const { return m_texture; }
 
     // Alpha degree management
-    void SetAmbientLightLevel(char level);
-    char GetAmbientLightLevel() const { return m_ambient_light_level; }
+    void set_ambient_light_level(char level);
+    char get_ambient_light_level() const { return m_ambient_light_level; }
     bool HasAlphaEffect() const { return m_alphaEffect; }
 
 private:
@@ -80,9 +80,9 @@ private:
     void InitFromSpriteData(const PAKLib::sprite& spriteData);
 
     // Create SFML texture from 16-bit image data
-    bool CreateTexture();
+    bool create_texture();
 
-    // Draw implementation
+    // draw implementation
     void DrawInternal(sf::RenderTexture* target, int x, int y, int frame, const hb::shared::sprite::DrawParams& params);
 
     // Apply alpha degree effect
@@ -93,7 +93,7 @@ private:
     //------------------------------------------------------------------
 
     // hb::shared::render::Renderer reference
-    SFMLRenderer* m_pRenderer;
+    SFMLRenderer* m_renderer;
 
     // PAK file info (for lazy loading)
     std::string m_pakFilePath;

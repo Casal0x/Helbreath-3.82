@@ -11,24 +11,24 @@ namespace hb::shared::render { class IRenderer; }
 
 struct EventEntry
 {
-	uint32_t dwTime = 0;
-	char cColor = 0;
-	std::string cTxt;
+	uint32_t time = 0;
+	char color = 0;
+	std::string txt;
 };
 
-class EventListManager
+class event_list_manager
 {
 public:
-	static EventListManager& Get();
-	void SetGame(CGame* pGame);
+	static event_list_manager& get();
+	void set_game(CGame* game);
 
-	void AddEvent(const char* pTxt, char cColor = 0, bool bDupAllow = true);
-	void AddEventTop(const char* pTxt, char cColor);
-	void ShowEvents(uint32_t dwTime);
+	void add_event(const char* txt, char color = 0, bool dup_allow = true);
+	void add_event_top(const char* txt, char color);
+	void show_events(uint32_t time);
 
 private:
-	EventListManager() = default;
-	~EventListManager() = default;
+	event_list_manager() = default;
+	~event_list_manager() = default;
 
 	CGame* m_game = nullptr;
 	EventEntry m_events[6]{};

@@ -10,66 +10,66 @@
 
 
 namespace NetworkMessageHandlers {
-	void HandleItemToBank(CGame* pGame, char* pData)
+	void HandleItemToBank(CGame* game, char* data)
 	{
-		int cIndex;
-		DWORD dwCount, dwAttribute;
-		char  cName[hb::shared::limits::ItemNameLen]{}, cItemType, cEquipPos, cGenderLimit, cItemColor;
-		bool  bIsEquipped;
-		short sSprite, sSpriteFrame, sLevelLimit, sItemEffectValue2, sItemSpecEffectValue2;
-		WORD wWeight, wCurLifeSpan;
-		std::string cTxt;
+		int index;
+		DWORD count, attribute;
+		char  name[hb::shared::limits::ItemNameLen]{}, item_type, equip_pos, gender_limit, item_color;
+		bool  is_equipped;
+		short sprite, sprite_frame, level_limit, item_effect_value2, item_spec_effect_value2;
+		WORD weight, cur_life_span;
+		std::string txt;
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyItemToBank>(
-			pData, sizeof(hb::net::PacketNotifyItemToBank));
+			data, sizeof(hb::net::PacketNotifyItemToBank));
 		if (!pkt) return;
 
-		cIndex = static_cast<int>(pkt->bank_index);
-		if (cIndex < 0 || cIndex >= hb::shared::limits::MaxBankItems) return;
-		memcpy(cName, pkt->name, sizeof(pkt->name));
-		dwCount = pkt->count;
-		cItemType = static_cast<char>(pkt->item_type);
-		cEquipPos = static_cast<char>(pkt->equip_pos);
-		bIsEquipped = (pkt->is_equipped != 0);
-		sLevelLimit = static_cast<short>(pkt->level_limit);
-		cGenderLimit = static_cast<char>(pkt->gender_limit);
-		wCurLifeSpan = pkt->cur_lifespan;
-		wWeight = pkt->weight;
-		sSprite = static_cast<short>(pkt->sprite);
-		sSpriteFrame = static_cast<short>(pkt->sprite_frame);
-		cItemColor = static_cast<char>(pkt->item_color);
-		sItemEffectValue2 = static_cast<short>(pkt->item_effect_value2);
-		dwAttribute = pkt->attribute;
-		sItemSpecEffectValue2 = static_cast<short>(pkt->spec_effect_value2);
+		index = static_cast<int>(pkt->bank_index);
+		if (index < 0 || index >= hb::shared::limits::MaxBankItems) return;
+		memcpy(name, pkt->name, sizeof(pkt->name));
+		count = pkt->count;
+		item_type = static_cast<char>(pkt->item_type);
+		equip_pos = static_cast<char>(pkt->equip_pos);
+		is_equipped = (pkt->is_equipped != 0);
+		level_limit = static_cast<short>(pkt->level_limit);
+		gender_limit = static_cast<char>(pkt->gender_limit);
+		cur_life_span = pkt->cur_lifespan;
+		weight = pkt->weight;
+		sprite = static_cast<short>(pkt->sprite);
+		sprite_frame = static_cast<short>(pkt->sprite_frame);
+		item_color = static_cast<char>(pkt->item_color);
+		item_effect_value2 = static_cast<short>(pkt->item_effect_value2);
+		attribute = pkt->attribute;
+		item_spec_effect_value2 = static_cast<short>(pkt->spec_effect_value2);
 
-		std::string cStr1;
+		std::string str1;
 
 
-		char cStr2[64], cStr3[64];
-		cStr1 = cName;
-		cStr2[0] = 0;
-		cStr3[0] = 0;
+		char str2[64], str3[64];
+		str1 = name;
+		str2[0] = 0;
+		str3[0] = 0;
 
-		if (pGame->m_pBankList[cIndex] == 0) {
-			pGame->m_pBankList[cIndex] = std::make_unique<CItem>();
-			pGame->m_pBankList[cIndex]->m_sIDnum = static_cast<short>(pkt->item_id);
-			pGame->m_pBankList[cIndex]->m_dwCount = dwCount;
-			pGame->m_pBankList[cIndex]->m_wCurLifeSpan = wCurLifeSpan;
-			pGame->m_pBankList[cIndex]->m_cItemColor = cItemColor;
-			pGame->m_pBankList[cIndex]->m_dwAttribute = dwAttribute;
-			pGame->m_pBankList[cIndex]->m_sItemSpecEffectValue2 = sItemSpecEffectValue2;
+		if (game->m_bank_list[index] == 0) {
+			game->m_bank_list[index] = std::make_unique<CItem>();
+			game->m_bank_list[index]->m_id_num = static_cast<short>(pkt->item_id);
+			game->m_bank_list[index]->m_count = count;
+			game->m_bank_list[index]->m_cur_life_span = cur_life_span;
+			game->m_bank_list[index]->m_item_color = item_color;
+			game->m_bank_list[index]->m_attribute = attribute;
+			game->m_bank_list[index]->m_item_special_effect_value2 = item_spec_effect_value2;
 
-			if (dwCount == 1) cTxt = std::format(NOTIFYMSG_ITEMTOBANK3, cStr1.c_str());
-			else cTxt = std::format(NOTIFYMSG_ITEMTOBANK2, dwCount, cStr1.c_str());
+			if (count == 1) txt = std::format(NOTIFYMSG_ITEMTOBANK3, str1.c_str());
+			else txt = std::format(NOTIFYMSG_ITEMTOBANK2, count, str1.c_str());
 
-			if (pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::Bank) == true)
-				pGame->m_dialogBoxManager.Info(DialogBoxId::Bank).sView = hb::shared::limits::MaxBankItems - 12;
-			pGame->AddEventList(cTxt.c_str(), 10);
+			if (game->m_dialog_box_manager.is_enabled(DialogBoxId::Bank) == true)
+				game->m_dialog_box_manager.Info(DialogBoxId::Bank).m_view = hb::shared::limits::MaxBankItems - 12;
+			game->add_event_list(txt.c_str(), 10);
 		}
 	}
 
-	void HandleCannotItemToBank(CGame* pGame, char* pData)
+	void HandleCannotItemToBank(CGame* game, char* data)
 	{
-		pGame->AddEventList(NOTIFY_MSG_HANDLER63, 10);
+		game->add_event_list(NOTIFY_MSG_HANDLER63, 10);
 	}
 } // namespace NetworkMessageHandlers
 

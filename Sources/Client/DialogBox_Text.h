@@ -5,13 +5,13 @@
 class DialogBox_Text : public IDialogBox
 {
 public:
-	DialogBox_Text(CGame* pGame);
+	DialogBox_Text(CGame* game);
 	~DialogBox_Text() override = default;
 
-	void OnDraw(short msX, short msY, short msZ, char cLB) override;
-	bool OnClick(short msX, short msY) override;
-	PressResult OnPress(short msX, short msY) override;
+	void on_draw(short mouse_x, short mouse_y, short z, char lb) override;
+	bool on_click(short mouse_x, short mouse_y) override;
+	PressResult on_press(short mouse_x, short mouse_y) override;
 
 private:
-	int GetTotalLines() const;
+	int get_total_lines() const;
 };

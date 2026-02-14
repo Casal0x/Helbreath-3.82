@@ -20,42 +20,42 @@ public:
 		TAB_COUNT
 	};
 
-	DialogBox_SysMenu(CGame* pGame);
+	DialogBox_SysMenu(CGame* game);
 	~DialogBox_SysMenu() override = default;
 
-	void OnUpdate() override;
-	void OnDraw(short msX, short msY, short msZ, char cLB) override;
-	bool OnClick(short msX, short msY) override;
-	PressResult OnPress(short msX, short msY) override;
+	void on_update() override;
+	void on_draw(short mouse_x, short mouse_y, short z, char lb) override;
+	bool on_click(short mouse_x, short mouse_y) override;
+	PressResult on_press(short mouse_x, short mouse_y) override;
 
 	// Resolution management
 	static const Resolution s_Resolutions[];
 	static const int s_NumResolutions;
-	static int GetCurrentResolutionIndex();
-	static int GetNearestResolutionIndex(int width, int height);
-	static void CycleResolution();
-	static void ApplyResolution(int index);
+	static int get_current_resolution_index();
+	static int get_nearest_resolution_index(int width, int height);
+	static void cycle_resolution();
+	static void apply_resolution(int index);
 
 private:
 	// Tab drawing
-	void DrawTabs(short sX, short sY, short msX, short msY);
-	void DrawTabContent(short sX, short sY, short msX, short msY, char cLB);
+	void draw_tabs(short sX, short sY, short mouse_x, short mouse_y);
+	void draw_tab_content(short sX, short sY, short mouse_x, short mouse_y, char lb);
 
 	// Individual tab content
-	void DrawGeneralTab(short sX, short sY, short msX, short msY);
-	void DrawGraphicsTab(short sX, short sY, short msX, short msY);
-	void DrawAudioTab(short sX, short sY, short msX, short msY, char cLB);
-	void DrawSystemTab(short sX, short sY, short msX, short msY);
+	void draw_general_tab(short sX, short sY, short mouse_x, short mouse_y);
+	void draw_graphics_tab(short sX, short sY, short mouse_x, short mouse_y);
+	void draw_audio_tab(short sX, short sY, short mouse_x, short mouse_y, char lb);
+	void draw_system_tab(short sX, short sY, short mouse_x, short mouse_y);
 
 	// Click handlers for each tab
-	bool OnClickGeneral(short sX, short sY, short msX, short msY);
-	bool OnClickGraphics(short sX, short sY, short msX, short msY);
-	bool OnClickAudio(short sX, short sY, short msX, short msY);
-	bool OnClickSystem(short sX, short sY, short msX, short msY);
+	bool on_click_general(short sX, short sY, short mouse_x, short mouse_y);
+	bool on_click_graphics(short sX, short sY, short mouse_x, short mouse_y);
+	bool on_click_audio(short sX, short sY, short mouse_x, short mouse_y);
+	bool on_click_system(short sX, short sY, short mouse_x, short mouse_y);
 
 	// Helper to draw On/Off toggle
-	void DrawToggle(int x, int y, bool bEnabled, short msX, short msY);
-	bool IsInToggleArea(int x, int y, short msX, short msY);
+	void draw_toggle(int x, int y, bool enabled, short mouse_x, short mouse_y);
+	bool is_in_toggle_area(int x, int y, short mouse_x, short mouse_y);
 
 	int m_iActiveTab;
 

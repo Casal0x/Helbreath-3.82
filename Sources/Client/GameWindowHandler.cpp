@@ -18,37 +18,37 @@ namespace MouseButton = hb::shared::input::MouseButton;
 
 #endif
 
-GameWindowHandler::GameWindowHandler(CGame* pGame)
-    : m_pGame(pGame)
+GameWindowHandler::GameWindowHandler(CGame* game)
+    : m_game(game)
 {
 }
 
 void GameWindowHandler::on_close()
 {
-    if (!m_pGame)
+    if (!m_game)
     {
         // No game, just close via hb::shared::render::Window abstraction
         hb::shared::render::Window::close();
         return;
     }
 
-    if ((GameModeManager::GetMode() == GameMode::MainGame) && (m_pGame->m_bForceDisconn == false))
+    if ((GameModeManager::get_mode() == GameMode::MainGame) && (m_game->m_force_disconn == false))
     {
         // In main game, start logout countdown instead of closing immediately
 #ifdef _DEBUG
-        if (m_pGame->m_logout_count == -1 || m_pGame->m_logout_count > 2)
-            m_pGame->m_logout_count = 1;
+        if (m_game->m_logout_count == -1 || m_game->m_logout_count > 2)
+            m_game->m_logout_count = 1;
 #else
-        if (m_pGame->m_logout_count == -1 || m_pGame->m_logout_count > 11)
-            m_pGame->m_logout_count = 11;
+        if (m_game->m_logout_count == -1 || m_game->m_logout_count > 11)
+            m_game->m_logout_count = 11;
 #endif
     }
-    else if (GameModeManager::GetMode() == GameMode::MainMenu)
+    else if (GameModeManager::get_mode() == GameMode::MainMenu)
     {
         // On main menu, show quit screen
-        m_pGame->ChangeGameMode(GameMode::Quit);
+        m_game->change_game_mode(GameMode::Quit);
     }
-    else if (GameModeManager::GetMode() == GameMode::Null)
+    else if (GameModeManager::get_mode() == GameMode::Null)
     {
         // Game code requested close (e.g., from quit screen), proceed with destruction
         hb::shared::render::Window::close();
@@ -62,16 +62,16 @@ void GameWindowHandler::on_close()
 
 void GameWindowHandler::on_destroy()
 {
-    if (m_pGame)
+    if (m_game)
     {
-        m_pGame->Quit();
+        m_game->Quit();
     }
     // ASIO handles Winsock cleanup internally
 }
 
 void GameWindowHandler::on_activate(bool active)
 {
-    if (!m_pGame)
+    if (!m_game)
         return;
 
     if (!active)
@@ -86,16 +86,16 @@ void GameWindowHandler::on_activate(bool active)
 
         // Only check files after game is fully initialized (sprite factory exists)
         // Rate-limited to at most once per 60 seconds to avoid I/O stall on every alt-tab
-        if (hb::shared::sprite::Sprites::GetFactory() != nullptr)
+        if (hb::shared::sprite::Sprites::get_factory() != nullptr)
         {
             static uint32_t s_dwLastFileCheck = 0;
-            uint32_t dwNow = GameClock::GetTimeMS();
-            if (s_dwLastFileCheck == 0 || (dwNow - s_dwLastFileCheck) > 60000)
+            uint32_t now = GameClock::get_time_ms();
+            if (s_dwLastFileCheck == 0 || (now - s_dwLastFileCheck) > 60000)
             {
-                s_dwLastFileCheck = dwNow;
-                if (m_pGame->bCheckImportantFile() == false)
+                s_dwLastFileCheck = now;
+                if (m_game->check_important_file() == false)
                 {
-                    hb::shared::render::Window::show_error("ERROR1", "File checksum error! Get Update again please!");
+                    hb::shared::render::Window::show_error("ERROR1", "File checksum error! get update again please!");
                     hb::shared::render::Window::close();
                 }
             }
@@ -110,7 +110,7 @@ void GameWindowHandler::on_resize(int width, int height)
 
 void GameWindowHandler::on_key_down(KeyCode keyCode)
 {
-    if (!m_pGame)
+    if (!m_game)
         return;
 
     // Route all keys through Input system
@@ -125,13 +125,13 @@ void GameWindowHandler::on_key_down(KeyCode keyCode)
         keyCode != KeyCode::LAlt && keyCode != KeyCode::RAlt &&
         keyCode != KeyCode::Enter && keyCode != KeyCode::Escape)
     {
-        m_pGame->OnKeyDown(keyCode);
+        m_game->handle_key_down(keyCode);
     }
 }
 
 void GameWindowHandler::on_key_up(KeyCode keyCode)
 {
-    if (!m_pGame)
+    if (!m_game)
         return;
 
     // Route all keys through Input system
@@ -146,7 +146,7 @@ void GameWindowHandler::on_key_up(KeyCode keyCode)
         keyCode != KeyCode::LAlt && keyCode != KeyCode::RAlt &&
         keyCode != KeyCode::Enter)
     {
-        m_pGame->OnKeyUp(keyCode);
+        m_game->handle_key_up(keyCode);
     }
 }
 
@@ -188,10 +188,10 @@ void GameWindowHandler::on_mouse_wheel(int delta, int x, int y)
     }
 }
 
-bool GameWindowHandler::on_custom_message(uint32_t message, uintptr_t wParam, intptr_t lParam)
+bool GameWindowHandler::on_custom_message(uint32_t message, uintptr_t param, intptr_t lParam)
 {
 #ifdef _WIN32
-    if (!m_pGame)
+    if (!m_game)
         return false;
 
     switch (message)
@@ -224,11 +224,11 @@ bool GameWindowHandler::on_custom_message(uint32_t message, uintptr_t wParam, in
     return false;
 }
 
-bool GameWindowHandler::on_text_input(hb::shared::types::NativeWindowHandle hWnd, uint32_t message, uintptr_t wParam, intptr_t lParam)
+bool GameWindowHandler::on_text_input(hb::shared::types::NativeWindowHandle hWnd, uint32_t message, uintptr_t param, intptr_t lParam)
 {
-    if (m_pGame)
+    if (m_game)
     {
-        return TextInputManager::Get().HandleChar(hWnd, message, wParam, lParam) != 0;
+        return text_input_manager::get().handle_char(hWnd, message, param, lParam) != 0;
     }
     return false;
 }

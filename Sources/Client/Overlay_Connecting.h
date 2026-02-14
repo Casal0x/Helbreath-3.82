@@ -14,7 +14,7 @@ class Overlay_Connecting : public IGameScreen
 public:
     SCREEN_TYPE(Overlay_Connecting)
 
-    explicit Overlay_Connecting(CGame* pGame);
+    explicit Overlay_Connecting(CGame* game);
     ~Overlay_Connecting() override = default;
 
     void on_initialize() override;

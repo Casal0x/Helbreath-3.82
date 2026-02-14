@@ -26,413 +26,413 @@ using namespace hb::shared::action;
 using namespace hb::client::sprite_id;
 
 
-Screen_SelectCharacter::Screen_SelectCharacter(CGame* pGame)
-    : IGameScreen(pGame)
+Screen_SelectCharacter::Screen_SelectCharacter(CGame* game)
+    : IGameScreen(game)
     , m_dwSelCharCTime(0)
     , m_sSelCharMsX(0)
     , m_sSelCharMsY(0)
-    , m_cCurFocus(1)
-    , m_cMaxFocus(4)
+    , m_cur_focus(1)
+    , m_max_focus(4)
 {
 }
 
 void Screen_SelectCharacter::on_initialize()
 {
-    // Set current mode for code that checks GameModeManager::GetMode()
-    GameModeManager::SetCurrentMode(GameMode::SelectCharacter);
+    // Set current mode for code that checks GameModeManager::get_mode()
+    GameModeManager::set_current_mode(GameMode::SelectCharacter);
 
-    // Initialize logic (migrated from CGame::UpdateScreen_SelectCharacter m_cGameModeCount == 0 block)
-    WeatherManager::Get().SetAmbientLight(1);
-    m_pGame->InitGameSettings();
+    // initialize logic (migrated from CGame::UpdateScreen_SelectCharacter m_cGameModeCount == 0 block)
+    weather_manager::get().set_ambient_light(1);
+    m_game->init_game_settings();
     
-    m_cCurFocus = 1;
-    m_cMaxFocus = 4;
+    m_cur_focus = 1;
+    m_max_focus = 4;
     
-    m_pGame->m_cArrowPressed = 0;
-    m_dwSelCharCTime = GameClock::GetTimeMS();
+    m_game->m_arrow_pressed = 0;
+    m_dwSelCharCTime = GameClock::get_time_ms();
 }
 
 void Screen_SelectCharacter::on_uninitialize()
 {
-    TextInputManager::Get().EndInput();
+    text_input_manager::get().end_input();
 }
 
 void Screen_SelectCharacter::on_update()
 {
     // Logic migrated from CGame::UpdateScreen_SelectCharacter
-    short msX, msY, msZ;
-    char cLB, cRB;
-    uint32_t dwTime = GameClock::GetTimeMS();
-    m_pGame->m_dwCurTime = dwTime;
+    short mouse_x, mouse_y, z;
+    char lb, rb;
+    uint32_t time = GameClock::get_time_ms();
+    m_game->m_cur_time = time;
 
-    // Handle legacy arrow input (if set by OnKeyDown) or direct input
+    // Handle legacy arrow input (if set by on_key_down) or direct input
     // NOTE: Preferring direct input for robustness
     if (hb::shared::input::is_key_pressed(KeyCode::Right)) {
-        m_cCurFocus++;
-        if (m_cCurFocus > m_cMaxFocus) m_cCurFocus = 1;
+        m_cur_focus++;
+        if (m_cur_focus > m_max_focus) m_cur_focus = 1;
     }
     else if (hb::shared::input::is_key_pressed(KeyCode::Left)) {
-        m_cCurFocus--;
-        if (m_cCurFocus <= 0) m_cCurFocus = m_cMaxFocus;
+        m_cur_focus--;
+        if (m_cur_focus <= 0) m_cur_focus = m_max_focus;
     }
     
 
     if (hb::shared::input::is_key_pressed(KeyCode::Escape) == true)
     {
-        m_pGame->ChangeGameMode(GameMode::MainMenu);
+        m_game->change_game_mode(GameMode::MainMenu);
         return;
     }
 
     if (hb::shared::input::is_key_pressed(KeyCode::Enter) == true)
     {
-        m_pGame->PlayGameSound('E', 14, 5);
+        m_game->play_game_sound('E', 14, 5);
 
-        if (m_pGame->m_pCharList[m_cCurFocus - 1] != nullptr)
+        if (m_game->m_char_list[m_cur_focus - 1] != nullptr)
         {
-            if (EnterGame()) return;
+            if (enter_game()) return;
         }
         else
         {
-            m_pGame->ChangeGameMode(GameMode::CreateNewCharacter);
+            m_game->change_game_mode(GameMode::CreateNewCharacter);
             return;
         }
     }
 
-    msX = static_cast<short>(hb::shared::input::get_mouse_x());
-    msY = static_cast<short>(hb::shared::input::get_mouse_y());
-    msZ = static_cast<short>(hb::shared::input::get_mouse_wheel_delta());
-    cLB = hb::shared::input::is_mouse_button_down(MouseButton::Left) ? 1 : 0;
-    cRB = hb::shared::input::is_mouse_button_down(MouseButton::Right) ? 1 : 0;
+    mouse_x = static_cast<short>(hb::shared::input::get_mouse_x());
+    mouse_y = static_cast<short>(hb::shared::input::get_mouse_y());
+    z = static_cast<short>(hb::shared::input::get_mouse_wheel_delta());
+    lb = hb::shared::input::is_mouse_button_down(MouseButton::Left) ? 1 : 0;
+    rb = hb::shared::input::is_mouse_button_down(MouseButton::Right) ? 1 : 0;
     
-    m_sSelCharMsX = msX;
-    m_sSelCharMsY = msY;
+    m_sSelCharMsX = mouse_x;
+    m_sSelCharMsY = mouse_y;
 
-    if ((dwTime - m_dwSelCharCTime) > 100)
+    if ((time - m_dwSelCharCTime) > 100)
     {
-        m_pGame->m_cMenuFrame++;
-        m_dwSelCharCTime = dwTime;
+        m_game->m_menu_frame++;
+        m_dwSelCharCTime = time;
     }
-    if (m_pGame->m_cMenuFrame >= 8)
+    if (m_game->m_menu_frame >= 8)
     {
-        m_pGame->m_cMenuDirCnt++;
-        if (m_pGame->m_cMenuDirCnt > 8)
+        m_game->m_menu_dir_cnt++;
+        if (m_game->m_menu_dir_cnt > 8)
         {
-            m_pGame->m_cMenuDir++;
-            m_pGame->m_cMenuDirCnt = 1;
+            m_game->m_menu_dir++;
+            m_game->m_menu_dir_cnt = 1;
         }
-        m_pGame->m_cMenuFrame = 0;
+        m_game->m_menu_frame = 0;
     }
-    if (m_pGame->m_cMenuDir > 8) m_pGame->m_cMenuDir = 1;
+    if (m_game->m_menu_dir > 8) m_game->m_menu_dir = 1;
 
     if (hb::shared::input::is_mouse_button_pressed(MouseButton::Left)) {
 
         // Determine which button was clicked
-        int iMIbuttonNum = 0;
+        int m_ibutton_num = 0;
         if (hb::shared::input::is_mouse_in_rect(100 + OX, 50 + OY, 110, 200))
         {
-            m_pGame->PlayGameSound('E', 14, 5);
-            iMIbuttonNum = 1;
+            m_game->play_game_sound('E', 14, 5);
+            m_ibutton_num = 1;
         }
         else if (hb::shared::input::is_mouse_in_rect(211 + OX, 50 + OY, 110, 200))
         {
-            m_pGame->PlayGameSound('E', 14, 5);
-            iMIbuttonNum = 2;
+            m_game->play_game_sound('E', 14, 5);
+            m_ibutton_num = 2;
         }
         else if (hb::shared::input::is_mouse_in_rect(322 + OX, 50 + OY, 109, 200))
         {
-            m_pGame->PlayGameSound('E', 14, 5);
-            iMIbuttonNum = 3;
+            m_game->play_game_sound('E', 14, 5);
+            m_ibutton_num = 3;
         }
         else if (hb::shared::input::is_mouse_in_rect(432 + OX, 50 + OY, 110, 200))
         {
-            m_pGame->PlayGameSound('E', 14, 5);
-            iMIbuttonNum = 4;
+            m_game->play_game_sound('E', 14, 5);
+            m_ibutton_num = 4;
         }
         else if (hb::shared::input::is_mouse_in_rect(360 + OX, 283 + OY, 185, 32))
         {
-            m_pGame->PlayGameSound('E', 14, 5);
-            iMIbuttonNum = 5;
+            m_game->play_game_sound('E', 14, 5);
+            m_ibutton_num = 5;
         }
         else if (hb::shared::input::is_mouse_in_rect(360 + OX, 316 + OY, 185, 29))
         {
-            m_pGame->PlayGameSound('E', 14, 5);
-            iMIbuttonNum = 6;
+            m_game->play_game_sound('E', 14, 5);
+            m_ibutton_num = 6;
         }
         else if (hb::shared::input::is_mouse_in_rect(360 + OX, 346 + OY, 185, 29))
         {
-            m_pGame->PlayGameSound('E', 14, 5);
-            iMIbuttonNum = 7;
+            m_game->play_game_sound('E', 14, 5);
+            m_ibutton_num = 7;
         }
         else if (hb::shared::input::is_mouse_in_rect(360 + OX, 376 + OY, 185, 29))
         {
-            m_pGame->PlayGameSound('E', 14, 5);
-            iMIbuttonNum = 8;
+            m_game->play_game_sound('E', 14, 5);
+            m_ibutton_num = 8;
         }
         else if (hb::shared::input::is_mouse_in_rect(360 + OX, 406 + OY, 185, 29))
         {
-            m_pGame->PlayGameSound('E', 14, 5);
-            iMIbuttonNum = 9;
+            m_game->play_game_sound('E', 14, 5);
+            m_ibutton_num = 9;
         }
 
-        switch (iMIbuttonNum) {
+        switch (m_ibutton_num) {
         case 1:
         case 2:
         case 3:
         case 4:
-            if (m_cCurFocus != iMIbuttonNum)
-                m_cCurFocus = iMIbuttonNum;
+            if (m_cur_focus != m_ibutton_num)
+                m_cur_focus = m_ibutton_num;
             else
             {
-                if (m_pGame->m_pCharList[m_cCurFocus - 1] != nullptr)
+                if (m_game->m_char_list[m_cur_focus - 1] != nullptr)
                 {
-                    if (EnterGame()) return;
+                    if (enter_game()) return;
                 }
                 else
                 {
-                    m_pGame->ChangeGameMode(GameMode::CreateNewCharacter);
+                    m_game->change_game_mode(GameMode::CreateNewCharacter);
                     return;
                 }
             }
             break;
 
         case 5:
-            if (EnterGame()) return;
+            if (enter_game()) return;
             break;
 
         case 6:
-            if (m_pGame->m_iTotalChar < 4)
+            if (m_game->m_total_char < 4)
             {
-                m_pGame->ChangeGameMode(GameMode::CreateNewCharacter);
+                m_game->change_game_mode(GameMode::CreateNewCharacter);
                 return;
             }
             break;
 
         case 7:
-            if (m_pGame->m_pCharList[m_cCurFocus - 1] != nullptr)
+            if (m_game->m_char_list[m_cur_focus - 1] != nullptr)
             {
-                m_pGame->ChangeGameMode(GameMode::QueryDeleteCharacter);
-                m_pGame->m_wEnterGameType = m_cCurFocus;
+                m_game->change_game_mode(GameMode::QueryDeleteCharacter);
+                m_game->m_enter_game_type = m_cur_focus;
                 return;
             }
             break;
 
         case 8:
-            m_pGame->ChangeGameMode(GameMode::ChangePassword);
+            m_game->change_game_mode(GameMode::ChangePassword);
             return;
 
         case 9:
-            m_pGame->ChangeGameMode(GameMode::MainMenu);
+            m_game->change_game_mode(GameMode::MainMenu);
             return;
         }
     }
 }
 
-bool Screen_SelectCharacter::EnterGame()
+bool Screen_SelectCharacter::enter_game()
 {
-    if (!m_pGame->m_pCharList[m_cCurFocus - 1]) return false;
-    if (m_pGame->m_pCharList[m_cCurFocus - 1]->m_sSex == 0) return false;
+    if (!m_game->m_char_list[m_cur_focus - 1]) return false;
+    if (m_game->m_char_list[m_cur_focus - 1]->m_sex == 0) return false;
 
-    m_pGame->m_pPlayer->m_cPlayerName = m_pGame->m_pCharList[m_cCurFocus - 1]->m_cName.c_str();
-    m_pGame->m_pPlayer->m_iLevel = static_cast<int>(m_pGame->m_pCharList[m_cCurFocus - 1]->m_sLevel);
-    if (!CMisc::bCheckValidString(m_pGame->m_pPlayer->m_cPlayerName.c_str())) return false;
+    m_game->m_player->m_player_name = m_game->m_char_list[m_cur_focus - 1]->m_name.c_str();
+    m_game->m_player->m_level = static_cast<int>(m_game->m_char_list[m_cur_focus - 1]->m_level);
+    if (!CMisc::check_valid_string(m_game->m_player->m_player_name.c_str())) return false;
 
-    m_pGame->m_pSprite[InterfaceNdLogin]->Unload();
-    m_pGame->m_pSprite[InterfaceNdMainMenu]->Unload();
-    m_pGame->m_pLSock = std::make_unique<hb::shared::net::ASIOSocket>(m_pGame->m_pIOPool->GetContext(), game_limits::socket_block_limit);
-    m_pGame->m_pLSock->bConnect(m_pGame->m_cLogServerAddr.c_str(), m_pGame->m_iLogServerPort);
-    m_pGame->m_pLSock->bInitBufferSize(hb::shared::limits::MsgBufferSize);
-    m_pGame->ChangeGameMode(GameMode::Connecting);
-    m_pGame->m_dwConnectMode = MsgId::RequestEnterGame;
-    m_pGame->m_wEnterGameType = EnterGameMsg::New;
-    std::snprintf(m_pGame->m_cMsg, sizeof(m_pGame->m_cMsg), "%s", "33");
-    m_pGame->m_cMapName = m_pGame->m_pCharList[m_cCurFocus - 1]->m_cMapName;
+    m_game->m_sprite[InterfaceNdLogin]->Unload();
+    m_game->m_sprite[InterfaceNdMainMenu]->Unload();
+    m_game->m_l_sock = std::make_unique<hb::shared::net::ASIOSocket>(m_game->m_io_pool->get_context(), game_limits::socket_block_limit);
+    m_game->m_l_sock->connect(m_game->m_log_server_addr.c_str(), m_game->m_log_server_port);
+    m_game->m_l_sock->init_buffer_size(hb::shared::limits::MsgBufferSize);
+    m_game->change_game_mode(GameMode::Connecting);
+    m_game->m_connect_mode = MsgId::request_enter_game;
+    m_game->m_enter_game_type = EnterGameMsg::New;
+    std::snprintf(m_game->m_msg, sizeof(m_game->m_msg), "%s", "33");
+    m_game->m_map_name = m_game->m_char_list[m_cur_focus - 1]->m_map_name;
     return true;
 }
 
 void Screen_SelectCharacter::on_render()
 {
     // Sync local focus to global focus to maintain compatibility with the static helper
-    m_pGame->m_cCurFocus = m_cCurFocus;
+    m_game->m_cur_focus = m_cur_focus;
     
     // Pass local state to static drawing method
-    DrawBackground(m_pGame, 0, 10, m_sSelCharMsX, m_sSelCharMsY, false);
+    draw_background(m_game, 0, 10, m_sSelCharMsX, m_sSelCharMsY, false);
     
-    m_pGame->DrawVersion();
+    m_game->draw_version();
 }
 
 // Static helper implementation
-void Screen_SelectCharacter::DrawBackground(CGame* pGame, short sX, short sY, short msX, short msY, bool bIgnoreFocus)
+void Screen_SelectCharacter::draw_background(CGame* game, short sX, short sY, short mouse_x, short mouse_y, bool ignore_focus)
 {
     // Logic migrated from CGame::UpdateScreen_OnSelectCharacter
     int i;
-    int iYear, iMonth, iDay, iHour, iMinute;
-    int64_t iTemp1, iTemp2;
-    char cTotalChar = 0;
-    uint32_t dwTime = GameClock::GetTimeMS();
+    int year, month, day, hour, minute;
+    int64_t temp1, temp2;
+    char total_char = 0;
+    uint32_t time = GameClock::get_time_ms();
     sX = OX;
     sY = 10 + OY;
-    pGame->DrawNewDialogBox(InterfaceNdSelectChar, 0, 0, 0);
-    pGame->DrawNewDialogBox(InterfaceNdButton, OX, OY, 50);
+    game->draw_new_dialog_box(InterfaceNdSelectChar, 0, 0, 0);
+    game->draw_new_dialog_box(InterfaceNdButton, OX, OY, 50);
 
-    iTemp1 = 0;
-    iTemp2 = 0;
-    iYear = iMonth = iDay = iHour = iMinute = 0;
+    temp1 = 0;
+    temp2 = 0;
+    year = month = day = hour = minute = 0;
     
-    // Use pGame->m_cCurFocus as the source of truth for focus since this is shared
-    int cCurFocus = pGame->m_cCurFocus;
+    // Use game->m_cur_focus as the source of truth for focus since this is shared
+    int cur_focus = game->m_cur_focus;
 
     for (i = 0; i < 4; i++)
     {
-        if ((cCurFocus - 1 == i) && (bIgnoreFocus == false))
-            pGame->m_pSprite[InterfaceNdButton]->Draw(sX + 110 + i * 109 - 7, 63 - 9 + OY, 62);
-        else pGame->m_pSprite[InterfaceNdButton]->Draw(sX + 110 + i * 109 - 7, 63 - 9 + OY, 61);
+        if ((cur_focus - 1 == i) && (ignore_focus == false))
+            game->m_sprite[InterfaceNdButton]->draw(sX + 110 + i * 109 - 7, 63 - 9 + OY, 62);
+        else game->m_sprite[InterfaceNdButton]->draw(sX + 110 + i * 109 - 7, 63 - 9 + OY, 61);
 
-        if (pGame->m_pCharList[i] != nullptr)
+        if (game->m_char_list[i] != nullptr)
         {
-            cTotalChar++;
-            switch (pGame->m_pCharList[i]->m_sSex) {
-            case 1:	pGame->m_entityState.m_sOwnerType = hb::shared::owner::MaleFirst; break;
-            case 2:	pGame->m_entityState.m_sOwnerType = hb::shared::owner::FemaleFirst; break;
+            total_char++;
+            switch (game->m_char_list[i]->m_sex) {
+            case 1:	game->m_entity_state.m_owner_type = hb::shared::owner::MaleFirst; break;
+            case 2:	game->m_entity_state.m_owner_type = hb::shared::owner::FemaleFirst; break;
             }
-            pGame->m_entityState.m_sOwnerType += pGame->m_pCharList[i]->m_sSkinCol - 1;
-            pGame->m_entityState.m_iDir = pGame->m_cMenuDir;
-            pGame->m_entityState.m_appearance = pGame->m_pCharList[i]->m_appearance;
+            game->m_entity_state.m_owner_type += game->m_char_list[i]->m_skin_color - 1;
+            game->m_entity_state.m_dir = game->m_menu_dir;
+            game->m_entity_state.m_appearance = game->m_char_list[i]->m_appearance;
 
-            pGame->m_entityState.m_cName.fill('\0');
-            std::snprintf(pGame->m_entityState.m_cName.data(), pGame->m_entityState.m_cName.size(), "%s", pGame->m_pCharList[i]->m_cName.c_str());
+            game->m_entity_state.m_name.fill('\0');
+            std::snprintf(game->m_entity_state.m_name.data(), game->m_entity_state.m_name.size(), "%s", game->m_char_list[i]->m_name.c_str());
             
-            pGame->m_entityState.m_iAction = Type::Move;
-            pGame->m_entityState.m_iFrame = pGame->m_cMenuFrame;
+            game->m_entity_state.m_action = Type::Move;
+            game->m_entity_state.m_frame = game->m_menu_frame;
 
-            if (pGame->m_pCharList[i]->m_sSex != 0)
+            if (game->m_char_list[i]->m_sex != 0)
             {
-                if (CMisc::bCheckValidString(pGame->m_pCharList[i]->m_cName.data()) == true)
+                if (CMisc::check_valid_string(game->m_char_list[i]->m_name.data()) == true)
                 {
-                    pGame->m_pEffectSpr[0]->Draw(sX + 157 + i * 109, sY + 138, 1, hb::shared::sprite::DrawParams::AdditiveNoColorKey(0.25f));
-                    pGame->DrawObject_OnMove_ForMenu(0, 0, sX + 157 + i * 109, sY + 138, false, dwTime);
-                    hb::shared::text::DrawText(GameFont::Default, sX + 112 + i * 109, sY + 179 - 9, pGame->m_pCharList[i]->m_cName.c_str(), hb::shared::text::TextStyle::Color(GameColors::UISelectPurple));
-                    int	_sLevel = pGame->m_pCharList[i]->m_sLevel;
+                    game->m_effect_sprites[0]->draw(sX + 157 + i * 109, sY + 138, 1, hb::shared::sprite::DrawParams::additive_no_color_key(0.25f));
+                    game->draw_object_on_move_for_menu(0, 0, sX + 157 + i * 109, sY + 138, false, time);
+                    hb::shared::text::draw_text(GameFont::Default, sX + 112 + i * 109, sY + 179 - 9, game->m_char_list[i]->m_name.c_str(), hb::shared::text::TextStyle::from_color(GameColors::UISelectPurple));
+                    int	_sLevel = game->m_char_list[i]->m_level;
                     std::string charInfoBuf;
                     charInfoBuf = std::format("{}", _sLevel);
-                    hb::shared::text::DrawText(GameFont::Default, sX + 138 + i * 109, sY + 196 - 10, charInfoBuf.c_str(), hb::shared::text::TextStyle::Color(GameColors::UISelectPurple));
+                    hb::shared::text::draw_text(GameFont::Default, sX + 138 + i * 109, sY + 196 - 10, charInfoBuf.c_str(), hb::shared::text::TextStyle::from_color(GameColors::UISelectPurple));
 
-                    charInfoBuf = pGame->FormatCommaNumber(pGame->m_pCharList[i]->m_iExp);
-                    hb::shared::text::DrawText(GameFont::Default, sX + 138 + i * 109, sY + 211 - 10, charInfoBuf.c_str(), hb::shared::text::TextStyle::Color(GameColors::UISelectPurple));
+                    charInfoBuf = game->format_comma_number(game->m_char_list[i]->m_exp);
+                    hb::shared::text::draw_text(GameFont::Default, sX + 138 + i * 109, sY + 211 - 10, charInfoBuf.c_str(), hb::shared::text::TextStyle::from_color(GameColors::UISelectPurple));
                 }
-                iTemp2 = (int64_t)pGame->m_pCharList[i]->m_iYear * 1000000 + (int64_t)pGame->m_pCharList[i]->m_iMonth * 60000 + (int64_t)pGame->m_pCharList[i]->m_iDay * 1700 + (int64_t)pGame->m_pCharList[i]->m_iHour * 70 + (int64_t)pGame->m_pCharList[i]->m_iMinute;
-                if (iTemp1 < iTemp2)
+                temp2 = (int64_t)game->m_char_list[i]->m_year * 1000000 + (int64_t)game->m_char_list[i]->m_month * 60000 + (int64_t)game->m_char_list[i]->m_day * 1700 + (int64_t)game->m_char_list[i]->m_hour * 70 + (int64_t)game->m_char_list[i]->m_minute;
+                if (temp1 < temp2)
                 {
-                    iYear = pGame->m_pCharList[i]->m_iYear;
-                    iMonth = pGame->m_pCharList[i]->m_iMonth;
-                    iDay = pGame->m_pCharList[i]->m_iDay;
-                    iHour = pGame->m_pCharList[i]->m_iHour;
-                    iMinute = pGame->m_pCharList[i]->m_iMinute;
-                    iTemp1 = iTemp2;
+                    year = game->m_char_list[i]->m_year;
+                    month = game->m_char_list[i]->m_month;
+                    day = game->m_char_list[i]->m_day;
+                    hour = game->m_char_list[i]->m_hour;
+                    minute = game->m_char_list[i]->m_minute;
+                    temp1 = temp2;
                 }
             }
         }
     }
     i = 0;
 
-    pGame->DrawNewDialogBox(InterfaceNdButton, OX, OY, 51);
-    pGame->DrawNewDialogBox(InterfaceNdButton, OX, OY, 52);
-    pGame->DrawNewDialogBox(InterfaceNdButton, OX, OY, 53);
-    pGame->DrawNewDialogBox(InterfaceNdButton, OX, OY, 54);
-    pGame->DrawNewDialogBox(InterfaceNdButton, OX, OY, 55);
+    game->draw_new_dialog_box(InterfaceNdButton, OX, OY, 51);
+    game->draw_new_dialog_box(InterfaceNdButton, OX, OY, 52);
+    game->draw_new_dialog_box(InterfaceNdButton, OX, OY, 53);
+    game->draw_new_dialog_box(InterfaceNdButton, OX, OY, 54);
+    game->draw_new_dialog_box(InterfaceNdButton, OX, OY, 55);
 
-    if ((msX > 360 + OX) && (msY >= 283 + OY) && (msX < 545 + OX) && (msY <= 315 + OY)) {
-        pGame->DrawNewDialogBox(InterfaceNdButton, OX, OY, 56);
-        hb::shared::text::DrawTextAligned(GameFont::Default, 98 + OX, 290 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER1, hb::shared::text::TextStyle::Color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
-        hb::shared::text::DrawTextAligned(GameFont::Default, 98 + OX, 305 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER2, hb::shared::text::TextStyle::Color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
-        hb::shared::text::DrawTextAligned(GameFont::Default, 98 + OX, 320 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER3, hb::shared::text::TextStyle::Color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
-        hb::shared::text::DrawTextAligned(GameFont::Default, 98 + OX, 335 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER4, hb::shared::text::TextStyle::Color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
+    if ((mouse_x > 360 + OX) && (mouse_y >= 283 + OY) && (mouse_x < 545 + OX) && (mouse_y <= 315 + OY)) {
+        game->draw_new_dialog_box(InterfaceNdButton, OX, OY, 56);
+        hb::shared::text::draw_text_aligned(GameFont::Default, 98 + OX, 290 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER1, hb::shared::text::TextStyle::from_color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
+        hb::shared::text::draw_text_aligned(GameFont::Default, 98 + OX, 305 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER2, hb::shared::text::TextStyle::from_color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
+        hb::shared::text::draw_text_aligned(GameFont::Default, 98 + OX, 320 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER3, hb::shared::text::TextStyle::from_color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
+        hb::shared::text::draw_text_aligned(GameFont::Default, 98 + OX, 335 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER4, hb::shared::text::TextStyle::from_color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
     }
-    else if ((msX > 360 + OX) && (msY >= 316 + OY) && (msX < 545 + OX) && (msY <= 345 + OY)) {
-        pGame->DrawNewDialogBox(InterfaceNdButton, OX, OY, 57);
-        hb::shared::text::DrawTextAligned(GameFont::Default, 98 + OX, 305 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER5, hb::shared::text::TextStyle::Color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
+    else if ((mouse_x > 360 + OX) && (mouse_y >= 316 + OY) && (mouse_x < 545 + OX) && (mouse_y <= 345 + OY)) {
+        game->draw_new_dialog_box(InterfaceNdButton, OX, OY, 57);
+        hb::shared::text::draw_text_aligned(GameFont::Default, 98 + OX, 305 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER5, hb::shared::text::TextStyle::from_color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
     }
-    else if ((msX > 360 + OX) && (msY >= 346 + OY) && (msX < 545 + OX) && (msY <= 375 + OY)) {
-        pGame->DrawNewDialogBox(InterfaceNdButton, OX, OY, 58);
-        hb::shared::text::DrawTextAligned(GameFont::Default, 98 + OX, 275 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER6, hb::shared::text::TextStyle::Color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
-        hb::shared::text::DrawTextAligned(GameFont::Default, 98 + OX, 290 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER7, hb::shared::text::TextStyle::Color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
+    else if ((mouse_x > 360 + OX) && (mouse_y >= 346 + OY) && (mouse_x < 545 + OX) && (mouse_y <= 375 + OY)) {
+        game->draw_new_dialog_box(InterfaceNdButton, OX, OY, 58);
+        hb::shared::text::draw_text_aligned(GameFont::Default, 98 + OX, 275 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER6, hb::shared::text::TextStyle::from_color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
+        hb::shared::text::draw_text_aligned(GameFont::Default, 98 + OX, 290 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER7, hb::shared::text::TextStyle::from_color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
     }
-    else if ((msX > 360 + OX) && (msY >= 376 + OY) && (msX < 545 + OX) && (msY <= 405 + OY)) {
-        pGame->DrawNewDialogBox(InterfaceNdButton, OX, OY, 59);
-        hb::shared::text::DrawTextAligned(GameFont::Default, 98 + OX, 305 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER12, hb::shared::text::TextStyle::Color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
+    else if ((mouse_x > 360 + OX) && (mouse_y >= 376 + OY) && (mouse_x < 545 + OX) && (mouse_y <= 405 + OY)) {
+        game->draw_new_dialog_box(InterfaceNdButton, OX, OY, 59);
+        hb::shared::text::draw_text_aligned(GameFont::Default, 98 + OX, 305 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER12, hb::shared::text::TextStyle::from_color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
     }
-    else if ((msX > 360 + OX) && (msY >= 406 + OY) && (msX < 545 + OX) && (msY <= 435 + OY)) {
-        pGame->DrawNewDialogBox(InterfaceNdButton, OX, OY, 60);
-        hb::shared::text::DrawTextAligned(GameFont::Default, 98 + OX, 305 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER13, hb::shared::text::TextStyle::Color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
+    else if ((mouse_x > 360 + OX) && (mouse_y >= 406 + OY) && (mouse_x < 545 + OX) && (mouse_y <= 435 + OY)) {
+        game->draw_new_dialog_box(InterfaceNdButton, OX, OY, 60);
+        hb::shared::text::draw_text_aligned(GameFont::Default, 98 + OX, 305 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER13, hb::shared::text::TextStyle::from_color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
     }
     else {
-        if (cTotalChar == 0) {
-            hb::shared::text::DrawTextAligned(GameFont::Default, 98 + OX, 275 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER14, hb::shared::text::TextStyle::Color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
-            hb::shared::text::DrawTextAligned(GameFont::Default, 98 + OX, 290 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER15, hb::shared::text::TextStyle::Color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
-            hb::shared::text::DrawTextAligned(GameFont::Default, 98 + OX, 305 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER16, hb::shared::text::TextStyle::Color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
-            hb::shared::text::DrawTextAligned(GameFont::Default, 98 + OX, 320 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER17, hb::shared::text::TextStyle::Color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
-            hb::shared::text::DrawTextAligned(GameFont::Default, 98 + OX, 335 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER18, hb::shared::text::TextStyle::Color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
+        if (total_char == 0) {
+            hb::shared::text::draw_text_aligned(GameFont::Default, 98 + OX, 275 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER14, hb::shared::text::TextStyle::from_color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
+            hb::shared::text::draw_text_aligned(GameFont::Default, 98 + OX, 290 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER15, hb::shared::text::TextStyle::from_color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
+            hb::shared::text::draw_text_aligned(GameFont::Default, 98 + OX, 305 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER16, hb::shared::text::TextStyle::from_color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
+            hb::shared::text::draw_text_aligned(GameFont::Default, 98 + OX, 320 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER17, hb::shared::text::TextStyle::from_color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
+            hb::shared::text::draw_text_aligned(GameFont::Default, 98 + OX, 335 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER18, hb::shared::text::TextStyle::from_color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
         }
-        else if (cTotalChar < 4) {
-            hb::shared::text::DrawTextAligned(GameFont::Default, 98 + OX, 275 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER19, hb::shared::text::TextStyle::Color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
-            hb::shared::text::DrawTextAligned(GameFont::Default, 98 + OX, 290 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER20, hb::shared::text::TextStyle::Color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
-            hb::shared::text::DrawTextAligned(GameFont::Default, 98 + OX, 305 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER21, hb::shared::text::TextStyle::Color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
-            hb::shared::text::DrawTextAligned(GameFont::Default, 98 + OX, 320 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER22, hb::shared::text::TextStyle::Color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
-            hb::shared::text::DrawTextAligned(GameFont::Default, 98 + OX, 335 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER23, hb::shared::text::TextStyle::Color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
-            hb::shared::text::DrawTextAligned(GameFont::Default, 98 + OX, 350 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER24, hb::shared::text::TextStyle::Color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
+        else if (total_char < 4) {
+            hb::shared::text::draw_text_aligned(GameFont::Default, 98 + OX, 275 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER19, hb::shared::text::TextStyle::from_color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
+            hb::shared::text::draw_text_aligned(GameFont::Default, 98 + OX, 290 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER20, hb::shared::text::TextStyle::from_color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
+            hb::shared::text::draw_text_aligned(GameFont::Default, 98 + OX, 305 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER21, hb::shared::text::TextStyle::from_color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
+            hb::shared::text::draw_text_aligned(GameFont::Default, 98 + OX, 320 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER22, hb::shared::text::TextStyle::from_color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
+            hb::shared::text::draw_text_aligned(GameFont::Default, 98 + OX, 335 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER23, hb::shared::text::TextStyle::from_color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
+            hb::shared::text::draw_text_aligned(GameFont::Default, 98 + OX, 350 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER24, hb::shared::text::TextStyle::from_color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
         }
-        if (cTotalChar == 4) {
-            hb::shared::text::DrawTextAligned(GameFont::Default, 98 + OX, 290 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER25, hb::shared::text::TextStyle::Color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
-            hb::shared::text::DrawTextAligned(GameFont::Default, 98 + OX, 305 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER26, hb::shared::text::TextStyle::Color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
-            hb::shared::text::DrawTextAligned(GameFont::Default, 98 + OX, 320 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER27, hb::shared::text::TextStyle::Color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
-            hb::shared::text::DrawTextAligned(GameFont::Default, 98 + OX, 335 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER28, hb::shared::text::TextStyle::Color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
+        if (total_char == 4) {
+            hb::shared::text::draw_text_aligned(GameFont::Default, 98 + OX, 290 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER25, hb::shared::text::TextStyle::from_color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
+            hb::shared::text::draw_text_aligned(GameFont::Default, 98 + OX, 305 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER26, hb::shared::text::TextStyle::from_color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
+            hb::shared::text::draw_text_aligned(GameFont::Default, 98 + OX, 320 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER27, hb::shared::text::TextStyle::from_color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
+            hb::shared::text::draw_text_aligned(GameFont::Default, 98 + OX, 335 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER28, hb::shared::text::TextStyle::from_color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
         }
     }
     
-    int iTempMon, iTempDay, iTempHour, iTempMin;
+    int temp_mon, temp_day, temp_hour, temp_min;
     std::string infoBuf;
-    iTempMon = iTempDay = iTempHour = iTempMin = 0;
+    temp_mon = temp_day = temp_hour = temp_min = 0;
 
-    if (pGame->m_iAccntYear != 0)
+    if (game->m_accnt_year != 0)
     {
-        iTempMin = (pGame->m_iTimeLeftSecAccount / 60);
-        infoBuf = std::format(UPDATE_SCREEN_ON_SELECT_CHARACTER37, pGame->m_iAccntYear, pGame->m_iAccntMonth, pGame->m_iAccntDay);
+        temp_min = (game->m_time_left_sec_account / 60);
+        infoBuf = std::format(UPDATE_SCREEN_ON_SELECT_CHARACTER37, game->m_accnt_year, game->m_accnt_month, game->m_accnt_day);
     }
     else
     {
-        if (pGame->m_iTimeLeftSecAccount > 0)
+        if (game->m_time_left_sec_account > 0)
         {
-            iTempDay = (pGame->m_iTimeLeftSecAccount / (60 * 60 * 24));
-            iTempHour = (pGame->m_iTimeLeftSecAccount / (60 * 60)) % 24;
-            iTempMin = (pGame->m_iTimeLeftSecAccount / 60) % 60;
-            infoBuf = std::format(UPDATE_SCREEN_ON_SELECT_CHARACTER38, iTempDay, iTempHour, iTempMin);
+            temp_day = (game->m_time_left_sec_account / (60 * 60 * 24));
+            temp_hour = (game->m_time_left_sec_account / (60 * 60)) % 24;
+            temp_min = (game->m_time_left_sec_account / 60) % 60;
+            infoBuf = std::format(UPDATE_SCREEN_ON_SELECT_CHARACTER38, temp_day, temp_hour, temp_min);
         }
         else infoBuf = UPDATE_SCREEN_ON_SELECT_CHARACTER39;
     }
-    hb::shared::text::DrawTextAligned(GameFont::Default, 98 + OX, 385 + 10 + OY, (357) - (98), 15, infoBuf.c_str(), hb::shared::text::TextStyle::Color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
+    hb::shared::text::draw_text_aligned(GameFont::Default, 98 + OX, 385 + 10 + OY, (357) - (98), 15, infoBuf.c_str(), hb::shared::text::TextStyle::from_color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
 
-    if (pGame->m_iIpYear != 0)
+    if (game->m_ip_year != 0)
     {
-        iTempHour = (pGame->m_iTimeLeftSecIP / (60 * 60));
-        iTempMin = (pGame->m_iTimeLeftSecIP / 60) % 60;
-        infoBuf = std::format(UPDATE_SCREEN_ON_SELECT_CHARACTER40, iTempHour, iTempMin);
+        temp_hour = (game->m_time_left_sec_ip / (60 * 60));
+        temp_min = (game->m_time_left_sec_ip / 60) % 60;
+        infoBuf = std::format(UPDATE_SCREEN_ON_SELECT_CHARACTER40, temp_hour, temp_min);
     }
     else
     {
-        if (pGame->m_iTimeLeftSecIP > 0)
+        if (game->m_time_left_sec_ip > 0)
         {
-            iTempDay = (pGame->m_iTimeLeftSecIP / (60 * 60 * 24));
-            iTempHour = (pGame->m_iTimeLeftSecIP / (60 * 60)) % 24;
-            iTempMin = (pGame->m_iTimeLeftSecIP / 60) % 60;
-            infoBuf = std::format(UPDATE_SCREEN_ON_SELECT_CHARACTER41, iTempDay, iTempHour, iTempMin);
+            temp_day = (game->m_time_left_sec_ip / (60 * 60 * 24));
+            temp_hour = (game->m_time_left_sec_ip / (60 * 60)) % 24;
+            temp_min = (game->m_time_left_sec_ip / 60) % 60;
+            infoBuf = std::format(UPDATE_SCREEN_ON_SELECT_CHARACTER41, temp_day, temp_hour, temp_min);
         }
         else infoBuf = UPDATE_SCREEN_ON_SELECT_CHARACTER42;
     }
-    hb::shared::text::DrawTextAligned(GameFont::Default, 98 + OX, 400 + 10 + OY, (357) - (98), 15, infoBuf.c_str(), hb::shared::text::TextStyle::Color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
-    if (iYear != 0)
+    hb::shared::text::draw_text_aligned(GameFont::Default, 98 + OX, 400 + 10 + OY, (357) - (98), 15, infoBuf.c_str(), hb::shared::text::TextStyle::from_color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
+    if (year != 0)
     {
-        infoBuf = std::format(UPDATE_SCREEN_ON_SELECT_CHARACTER43, iYear, iMonth, iDay, iHour, iMinute);
-        hb::shared::text::DrawTextAligned(GameFont::Default, 98 + OX, 415 + 10 + OY, (357) - (98), 15, infoBuf.c_str(), hb::shared::text::TextStyle::Color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
+        infoBuf = std::format(UPDATE_SCREEN_ON_SELECT_CHARACTER43, year, month, day, hour, minute);
+        hb::shared::text::draw_text_aligned(GameFont::Default, 98 + OX, 415 + 10 + OY, (357) - (98), 15, infoBuf.c_str(), hb::shared::text::TextStyle::from_color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
     }
 
-    hb::shared::text::DrawTextAligned(GameFont::Default, 122 + OX, 456 + OY, (315) - (122), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER36, hb::shared::text::TextStyle::Color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
+    hb::shared::text::draw_text_aligned(GameFont::Default, 122 + OX, 456 + OY, (315) - (122), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER36, hb::shared::text::TextStyle::from_color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
 }

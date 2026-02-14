@@ -21,72 +21,72 @@
 #include "TimeUtils.h"
 
 using namespace hb::shared::net;
-GameChatCommandManager& GameChatCommandManager::Get()
+GameChatCommandManager& GameChatCommandManager::get()
 {
 	static GameChatCommandManager instance;
 	return instance;
 }
 
-void GameChatCommandManager::Initialize(CGame* pGame)
+void GameChatCommandManager::initialize(CGame* game)
 {
-	if (m_bInitialized)
+	if (m_initialized)
 		return;
 
-	m_pGame = pGame;
-	RegisterBuiltInCommands();
-	SeedCommandPermissions();
-	m_bInitialized = true;
+	m_game = game;
+	register_built_in_commands();
+	seed_command_permissions();
+	m_initialized = true;
 }
 
-void GameChatCommandManager::RegisterCommand(std::unique_ptr<GameChatCommand> command)
+void GameChatCommandManager::register_command(std::unique_ptr<GameChatCommand> command)
 {
 	m_commands.push_back(std::move(command));
 }
 
-bool GameChatCommandManager::ProcessCommand(int iClientH, const char* pMessage, size_t dwMsgSize)
+bool GameChatCommandManager::process_command(int client_h, const char* message, size_t msg_size)
 {
-	if (m_pGame == nullptr || pMessage == nullptr)
+	if (m_game == nullptr || message == nullptr)
 		return false;
 
-	if (pMessage[0] != '/')
+	if (message[0] != '/')
 		return false;
 
-	const char* pCommand = pMessage + 1;
+	const char* command = message + 1;
 
 	for (const auto& cmd : m_commands)
 	{
-		const char* cmdName = cmd->GetName();
+		const char* cmdName = cmd->get_name();
 		size_t cmdLen = std::strlen(cmdName);
 
-		if (hb_strnicmp(pCommand, cmdName, cmdLen) == 0)
+		if (hb_strnicmp(command, cmdName, cmdLen) == 0)
 		{
-			char nextChar = pCommand[cmdLen];
+			char nextChar = command[cmdLen];
 			if (nextChar == '\0' || nextChar == ' ' || nextChar == '\t')
 			{
-				const char* pArgs = pCommand + cmdLen;
-				while (*pArgs == ' ' || *pArgs == '\t')
-					pArgs++;
+				const char* args = command + cmdLen;
+				while (*args == ' ' || *args == '\t')
+					args++;
 
 				// Permission check: DB is sole authority, default to Administrator if not configured
-				int iRequiredLevel = m_pGame->GetCommandRequiredLevel(cmd->GetName());
+				int required_level = m_game->get_command_required_level(cmd->get_name());
 
 				// Level 0 = no restriction (player commands like /to, /block)
-				if (iRequiredLevel > 0)
+				if (required_level > 0)
 				{
-					int iPlayerLevel = m_pGame->m_pClientList[iClientH]->m_iAdminLevel;
-					if (iPlayerLevel < iRequiredLevel)
+					int player_level = m_game->m_client_list[client_h]->m_admin_level;
+					if (player_level < required_level)
 						return false;
 
 					// Admin commands require GM mode to be active (except /gm itself)
-					if (cmd->RequiresGMMode() && !m_pGame->m_pClientList[iClientH]->m_bIsGMMode)
+					if (cmd->requires_gm_mode() && !m_game->m_client_list[client_h]->m_is_gm_mode)
 					{
-						m_pGame->SendNotifyMsg(0, iClientH, Notify::NoticeMsg, 0, 0, 0, "You must enable GM mode first (/gm on).");
+						m_game->send_notify_msg(0, client_h, Notify::NoticeMsg, 0, 0, 0, "You must enable GM mode first (/gm on).");
 						return true;
 					}
 				}
 
-				LogCommand(iClientH, pMessage);
-				return cmd->Execute(m_pGame, iClientH, pArgs);
+				log_command(client_h, message);
+				return cmd->execute(m_game, client_h, args);
 			}
 		}
 	}
@@ -94,68 +94,68 @@ bool GameChatCommandManager::ProcessCommand(int iClientH, const char* pMessage, 
 	return false;
 }
 
-void GameChatCommandManager::LogCommand(int iClientH, const char* pCommand)
+void GameChatCommandManager::log_command(int client_h, const char* command)
 {
-	if (m_pGame == nullptr || m_pGame->m_pClientList[iClientH] == nullptr)
+	if (m_game == nullptr || m_game->m_client_list[client_h] == nullptr)
 		return;
 
-	FILE* pFile = fopen("gamelogs/commands.log", "a");
-	if (pFile == nullptr)
+	FILE* file = fopen("gamelogs/commands.log", "a");
+	if (file == nullptr)
 		return;
 
 	hb::time::local_time st{};
 	st = hb::time::local_time::now();
 
-	fprintf(pFile, "[%02d:%02d:%02d] %s: %s\n",
+	fprintf(file, "[%02d:%02d:%02d] %s: %s\n",
 		st.hour, st.minute, st.second,
-		m_pGame->m_pClientList[iClientH]->m_cCharName,
-		pCommand);
+		m_game->m_client_list[client_h]->m_char_name,
+		command);
 
-	fclose(pFile);
+	fclose(file);
 }
 
-void GameChatCommandManager::RegisterBuiltInCommands()
+void GameChatCommandManager::register_built_in_commands()
 {
-	RegisterCommand(std::make_unique<GameCmdWhisper>());
-	RegisterCommand(std::make_unique<GameCmdBlock>());
-	RegisterCommand(std::make_unique<GameCmdUnblock>());
-	RegisterCommand(std::make_unique<GameCmdGM>());
-	RegisterCommand(std::make_unique<GameCmdRegen>());
-	RegisterCommand(std::make_unique<GameCmdCreateItem>());
-	RegisterCommand(std::make_unique<GameCmdGiveItem>());
-	RegisterCommand(std::make_unique<GameCmdSpawn>());
-	RegisterCommand(std::make_unique<GameCmdGoto>());
-	RegisterCommand(std::make_unique<GameCmdCome>());
-	RegisterCommand(std::make_unique<GameCmdInvis>());
+	register_command(std::make_unique<GameCmdWhisper>());
+	register_command(std::make_unique<GameCmdBlock>());
+	register_command(std::make_unique<GameCmdUnblock>());
+	register_command(std::make_unique<GameCmdGM>());
+	register_command(std::make_unique<GameCmdRegen>());
+	register_command(std::make_unique<GameCmdCreateItem>());
+	register_command(std::make_unique<GameCmdGiveItem>());
+	register_command(std::make_unique<GameCmdSpawn>());
+	register_command(std::make_unique<GameCmdGoto>());
+	register_command(std::make_unique<GameCmdCome>());
+	register_command(std::make_unique<GameCmdInvis>());
 }
 
-void GameChatCommandManager::SeedCommandPermissions()
+void GameChatCommandManager::seed_command_permissions()
 {
-	if (m_pGame == nullptr)
+	if (m_game == nullptr)
 		return;
 
-	bool bChanged = false;
+	bool changed = false;
 	for (const auto& cmd : m_commands)
 	{
-		const char* name = cmd->GetName();
-		if (m_pGame->m_commandPermissions.find(name) == m_pGame->m_commandPermissions.end())
+		const char* name = cmd->get_name();
+		if (m_game->m_command_permissions.find(name) == m_game->m_command_permissions.end())
 		{
 			CommandPermission perm;
-			perm.iAdminLevel = cmd->GetDefaultLevel();
-			m_pGame->m_commandPermissions[name] = perm;
-			bChanged = true;
+			perm.admin_level = cmd->get_default_level();
+			m_game->m_command_permissions[name] = perm;
+			changed = true;
 
-			hb::logger::log("Command '/{}' registered (default level: {})", name, cmd->GetDefaultLevel());
+			hb::logger::log("Command '/{}' registered (default level: {})", name, cmd->get_default_level());
 		}
 	}
 
-	if (bChanged)
+	if (changed)
 	{
 		sqlite3* configDb = nullptr;
 		std::string dbPath;
 		if (EnsureGameConfigDatabase(&configDb, dbPath, nullptr))
 		{
-			SaveCommandPermissions(configDb, m_pGame);
+			SaveCommandPermissions(configDb, m_game);
 			CloseGameConfigDatabase(configDb);
 		}
 	}

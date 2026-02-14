@@ -14,15 +14,15 @@
 
 // Logical rendering resolution - now dynamic based on settings
 // Use these inline functions instead of the old macros
-inline int RENDER_LOGICAL_WIDTH()  { return hb::shared::render::ResolutionConfig::Get().LogicalWidth(); }
-inline int RENDER_LOGICAL_HEIGHT() { return hb::shared::render::ResolutionConfig::Get().LogicalHeight(); }
+inline int RENDER_LOGICAL_WIDTH()  { return hb::shared::render::ResolutionConfig::get().logical_width(); }
+inline int RENDER_LOGICAL_HEIGHT() { return hb::shared::render::ResolutionConfig::get().logical_height(); }
 
 // These are also defined in GlobalDef.h for client code
 #ifndef GLOBALDEF_H_RESOLUTION_FUNCTIONS
-inline int LOGICAL_WIDTH()  { return hb::shared::render::ResolutionConfig::Get().LogicalWidth(); }
-inline int LOGICAL_HEIGHT() { return hb::shared::render::ResolutionConfig::Get().LogicalHeight(); }
-inline int LOGICAL_MAX_X()  { return hb::shared::render::ResolutionConfig::Get().LogicalMaxX(); }
-inline int LOGICAL_MAX_Y()  { return hb::shared::render::ResolutionConfig::Get().LogicalMaxY(); }
+inline int LOGICAL_WIDTH()  { return hb::shared::render::ResolutionConfig::get().logical_width(); }
+inline int LOGICAL_HEIGHT() { return hb::shared::render::ResolutionConfig::get().logical_height(); }
+inline int LOGICAL_MAX_X()  { return hb::shared::render::ResolutionConfig::get().logical_max_x(); }
+inline int LOGICAL_MAX_Y()  { return hb::shared::render::ResolutionConfig::get().logical_max_y(); }
 #endif
 
 

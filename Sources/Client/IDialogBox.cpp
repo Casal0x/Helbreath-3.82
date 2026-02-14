@@ -3,93 +3,93 @@
 #include "GameFonts.h"
 #include "TextLibExt.h"
 
-IDialogBox::IDialogBox(DialogBoxId::Type id, CGame* pGame)
-	: m_pGame(pGame)
+IDialogBox::IDialogBox(DialogBoxId::Type id, CGame* game)
+	: m_game(game)
 	, m_id(id)
 {
 }
 
 DialogBoxInfo& IDialogBox::Info()
 {
-	return m_pGame->m_dialogBoxManager.Info(m_id);
+	return m_game->m_dialog_box_manager.Info(m_id);
 }
 
 const DialogBoxInfo& IDialogBox::Info() const
 {
-	return m_pGame->m_dialogBoxManager.Info(m_id);
+	return m_game->m_dialog_box_manager.Info(m_id);
 }
 
-bool IDialogBox::IsEnabled() const
+bool IDialogBox::is_enabled() const
 {
-	return m_pGame->m_dialogBoxManager.IsEnabled(m_id);
+	return m_game->m_dialog_box_manager.is_enabled(m_id);
 }
 
-void IDialogBox::DrawNewDialogBox(char cType, int sX, int sY, int iFrame, bool bIsNoColorKey, bool bIsTrans)
+void IDialogBox::draw_new_dialog_box(char type, int sX, int sY, int frame, bool is_no_color_key, bool is_trans)
 {
-	m_pGame->DrawNewDialogBox(cType, sX, sY, iFrame, bIsNoColorKey, bIsTrans);
+	m_game->draw_new_dialog_box(type, sX, sY, frame, is_no_color_key, is_trans);
 }
 
-void IDialogBox::PutString(int iX, int iY, const char* pString, const hb::shared::render::Color& color)
+void IDialogBox::put_string(int iX, int iY, const char* string, const hb::shared::render::Color& color)
 {
-	hb::shared::text::DrawText(GameFont::Default, iX, iY, pString, hb::shared::text::TextStyle::Color(color));
+	hb::shared::text::draw_text(GameFont::Default, iX, iY, string, hb::shared::text::TextStyle::from_color(color));
 }
 
-void IDialogBox::PutAlignedString(int iX1, int iX2, int iY, const char* pString, const hb::shared::render::Color& color)
+void IDialogBox::put_aligned_string(int x1, int x2, int iY, const char* string, const hb::shared::render::Color& color)
 {
-	hb::shared::text::DrawTextAligned(GameFont::Default, iX1, iY, iX2 - iX1, 15, pString,
-	                         hb::shared::text::TextStyle::Color(color), hb::shared::text::Align::TopCenter);
+	hb::shared::text::draw_text_aligned(GameFont::Default, x1, iY, x2 - x1, 15, string,
+	                         hb::shared::text::TextStyle::from_color(color), hb::shared::text::Align::TopCenter);
 }
 
-void IDialogBox::PlaySoundEffect(char cType, int iNum, int iDist, long lPan)
+void IDialogBox::play_sound_effect(char type, int num, int dist, long lPan)
 {
-	m_pGame->PlayGameSound(cType, iNum, iDist, lPan);
+	m_game->play_game_sound(type, num, dist, lPan);
 }
 
-void IDialogBox::AddEventList(const char* pTxt, char cColor, bool bDupAllow)
+void IDialogBox::add_event_list(const char* txt, char color, bool dup_allow)
 {
-	m_pGame->AddEventList(pTxt, cColor, bDupAllow);
+	m_game->add_event_list(txt, color, dup_allow);
 }
 
-bool IDialogBox::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1, int iV2, int iV3, const char* pString, int iV4)
+bool IDialogBox::send_command(uint32_t msg_id, uint16_t command, char dir, int v1, int v2, int v3, const char* string, int v4)
 {
-	return m_pGame->bSendCommand(dwMsgID, wCommand, cDir, iV1, iV2, iV3, pString, iV4);
+	return m_game->send_command(msg_id, command, dir, v1, v2, v3, string, v4);
 }
 
-void IDialogBox::SetDefaultRect(short sX, short sY, short sSizeX, short sSizeY)
+void IDialogBox::set_default_rect(short sX, short sY, short size_x, short size_y)
 {
 	auto& info = Info();
-	info.sX = sX;
-	info.sY = sY;
-	info.sSizeX = sSizeX;
-	info.sSizeY = sSizeY;
+	info.m_x = sX;
+	info.m_y = sY;
+	info.m_size_x = size_x;
+	info.m_size_y = size_y;
 }
 
-void IDialogBox::EnableDialogBox(DialogBoxId::Type id, int cType, int sV1, int sV2, char* pString)
+void IDialogBox::enable_dialog_box(DialogBoxId::Type id, int type, int v1, int v2, char* string)
 {
-	m_pGame->m_dialogBoxManager.EnableDialogBox(id, cType, sV1, sV2, pString);
+	m_game->m_dialog_box_manager.enable_dialog_box(id, type, v1, v2, string);
 }
 
-void IDialogBox::DisableDialogBox(DialogBoxId::Type id)
+void IDialogBox::disable_dialog_box(DialogBoxId::Type id)
 {
-	m_pGame->m_dialogBoxManager.DisableDialogBox(id);
+	m_game->m_dialog_box_manager.disable_dialog_box(id);
 }
 
-void IDialogBox::DisableThisDialog()
+void IDialogBox::disable_this_dialog()
 {
-	m_pGame->m_dialogBoxManager.DisableDialogBox(m_id);
+	m_game->m_dialog_box_manager.disable_dialog_box(m_id);
 }
 
-void IDialogBox::SetCanCloseOnRightClick(bool bCanClose)
+void IDialogBox::set_can_close_on_right_click(bool can_close)
 {
-	Info().bCanCloseOnRightClick = bCanClose;
+	Info().m_can_close_on_right_click = can_close;
 }
 
-IDialogBox* IDialogBox::GetDialogBox(DialogBoxId::Type id)
+IDialogBox* IDialogBox::get_dialog_box(DialogBoxId::Type id)
 {
-	return m_pGame->m_dialogBoxManager.GetDialogBox(id);
+	return m_game->m_dialog_box_manager.get_dialog_box(id);
 }
 
-DialogBoxInfo& IDialogBox::InfoOf(DialogBoxId::Type id)
+DialogBoxInfo& IDialogBox::info_of(DialogBoxId::Type id)
 {
-	return m_pGame->m_dialogBoxManager.Info(id);
+	return m_game->m_dialog_box_manager.Info(id);
 }

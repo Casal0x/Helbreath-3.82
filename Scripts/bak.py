@@ -2,14 +2,18 @@
 """Centralized .bak file manager with versioned checkpoints.
 
 Uses .bak_<guid> files to track layered changes. Each `guard` creates
-a new checkpoint; `revert` peels back one layer; `commit` accepts all.
+a new checkpoint; `revert <id>` restores from a specific checkpoint;
+`commit` accepts all changes.
 
 Commands:
-    guard <files...>    Create a new versioned checkpoint
-    status              List all checkpoints with dirty/clean status
-    revert              Peel back one checkpoint layer (most recent)
-    revert --all        Revert to original state (oldest checkpoint)
-    commit              Delete all .bak* files (accept current state)
+    guard <files...>            Create a new versioned checkpoint
+    status                      List all checkpoints with dirty/clean status
+    revert <id>                 Revert all files from checkpoint <id>
+    revert <id> <files...>      Revert specific files from checkpoint <id>
+    commit                      Delete all .bak* files (accept current state)
+
+Global flags:
+    --dry-run                   Preview what would happen without modifying files
 """
 
 import argparse
@@ -95,8 +99,86 @@ def resolve_path(raw: str) -> Path:
     return cwd_path.resolve()
 
 
+def file_status(bak: Path, orig: Path) -> str:
+    """Return dirty/clean/MISSING status for a bak-original pair."""
+    if not orig.exists():
+        return "MISSING"
+    elif filecmp.cmp(str(bak), str(orig), shallow=False):
+        return "clean"
+    else:
+        return "dirty"
+
+
+def get_other_checkpoints_for_file(orig: Path, exclude_guid: str) -> list[str]:
+    """Find other checkpoint GUIDs that have a .bak for the same original file."""
+    other_guids = []
+    for p in orig.parent.iterdir():
+        if p.is_file():
+            parsed = parse_bak(p)
+            if parsed and parsed[0] == orig and parsed[1] != exclude_guid:
+                other_guids.append(parsed[1])
+    return sorted(other_guids)
+
+
+def get_existing_checkpoints_for_file(filepath: Path) -> list[str]:
+    """Find all checkpoint GUIDs that have a .bak for the given file."""
+    guids = []
+    for p in filepath.parent.iterdir():
+        if p.is_file():
+            parsed = parse_bak(p)
+            if parsed and parsed[0] == filepath:
+                guids.append(parsed[1])
+    return sorted(guids)
+
+
+def generate_unique_guid() -> str:
+    """Generate a GUID that doesn't collide with existing checkpoints."""
+    existing_guids = {guid for guid, _, _ in get_checkpoints()}
+    for _ in range(100):
+        candidate = uuid.uuid4().hex[:8]
+        if candidate not in existing_guids:
+            return candidate
+    # Practically impossible, but be defensive
+    raise RuntimeError("Failed to generate unique GUID after 100 attempts")
+
+
+def find_checkpoint(checkpoint_id: str) -> tuple[str, float, list[Path]] | None:
+    """Find a checkpoint by ID (exact or prefix match)."""
+    checkpoints = get_checkpoints()
+    # Exact match first
+    for guid, mtime, bak_paths in checkpoints:
+        if guid == checkpoint_id:
+            return guid, mtime, bak_paths
+    # Prefix match
+    matches = [(g, m, b) for g, m, b in checkpoints if g.startswith(checkpoint_id)]
+    if len(matches) == 1:
+        return matches[0]
+    if len(matches) > 1:
+        print(f"ERROR: Ambiguous checkpoint ID '{checkpoint_id}'. Matches:")
+        for g, _, _ in matches:
+            print(f"  [{g}]")
+        return None
+    return None
+
+
+def print_available_checkpoints():
+    """Print list of available checkpoint IDs for the user."""
+    checkpoints = get_checkpoints()
+    if not checkpoints:
+        print("No checkpoints found.")
+    else:
+        print("Available checkpoints:")
+        for guid, mtime, bak_paths in checkpoints:
+            ts = datetime.fromtimestamp(mtime).strftime("%Y-%m-%d %H:%M:%S")
+            print(f"  [{guid}]  {ts}  ({len(bak_paths)} file(s))")
+
+
+# ── guard ──────────────────────────────────────────────────────────
+
 def cmd_guard(args: argparse.Namespace) -> int:
     """Create a new versioned checkpoint for the listed files."""
+    dry_run = args.dry_run
+    force = args.force
     files = [resolve_path(f) for f in args.files]
 
     for f in files:
@@ -104,16 +186,47 @@ def cmd_guard(args: argparse.Namespace) -> int:
             print(f"ERROR: {rel(f)} does not exist.")
             return 1
 
-    guid = uuid.uuid4().hex[:8]
+    # Check for files with existing checkpoints
+    warnings = []
+    for f in files:
+        existing = get_existing_checkpoints_for_file(f)
+        if existing:
+            for g in existing:
+                warnings.append((f, g))
+
+    if warnings and not force and not dry_run:
+        print("WARNING: The following files already have checkpoints:")
+        for f, g in warnings:
+            print(f"  {rel(f)} — already in checkpoint [{g}]")
+        print("\nGuarding will create a new layer. The file may be in a modified state.")
+        print("Use --force to proceed anyway.")
+        return 1
+
+    guid = generate_unique_guid()
+
+    if dry_run:
+        print(f"[DRY RUN] Would create checkpoint [{guid}] with {len(files)} file(s):")
+        for f in files:
+            existing = get_existing_checkpoints_for_file(f)
+            suffix = ""
+            if existing:
+                suffix = f" — WARNING: already has checkpoint [{', '.join(existing)}]"
+            print(f"  {rel(f)}{suffix}")
+        return 0
+
+    if warnings and force:
+        print("WARNING: Creating new layer on files with existing checkpoints (--force).")
 
     for f in files:
         bak = f.parent / f"{f.name}.bak_{guid}"
         shutil.copy2(str(f), str(bak))
         print(f"  Guarded: {rel(f)}")
 
-    print(f"\nCheckpoint {guid} created ({len(files)} file(s)).")
+    print(f"\nCheckpoint [{guid}] created ({len(files)} file(s)).")
     return 0
 
+
+# ── status ─────────────────────────────────────────────────────────
 
 def cmd_status(args: argparse.Namespace) -> int:
     """List all checkpoints with dirty/clean status. Exit 1 if any exist."""
@@ -142,12 +255,7 @@ def cmd_status(args: argparse.Namespace) -> int:
                 parsed = parse_bak(bak)
                 if parsed:
                     orig, _ = parsed
-                    if not orig.exists():
-                        status = "MISSING"
-                    elif filecmp.cmp(str(bak), str(orig), shallow=False):
-                        status = "clean"
-                    else:
-                        status = "dirty"
+                    status = file_status(bak, orig)
                     print(f"    [{status:^8s}]  {rel(orig)}")
             print()
 
@@ -160,22 +268,88 @@ def cmd_status(args: argparse.Namespace) -> int:
     return 1  # .bak files exist
 
 
+# ── revert ─────────────────────────────────────────────────────────
+
 def cmd_revert(args: argparse.Namespace) -> int:
-    """Peel back one checkpoint layer, or revert to original."""
-    if args.all:
-        return _revert_all()
-    return _revert_latest()
+    """Revert files from a specific checkpoint."""
+    dry_run = args.dry_run
+    force = args.force
 
+    if not args.checkpoint_id:
+        print("ERROR: revert requires a checkpoint ID.\n")
+        print_available_checkpoints()
+        return 1
 
-def _revert_latest() -> int:
-    """Restore from the most recent checkpoint, then delete it."""
-    checkpoints = get_checkpoints()
-    if not checkpoints:
-        print("Nothing to revert — no checkpoints found.")
+    checkpoint = find_checkpoint(args.checkpoint_id)
+    if not checkpoint:
+        if not get_checkpoints():
+            print("Nothing to revert — no checkpoints found.")
+        else:
+            print(f"ERROR: Checkpoint '{args.checkpoint_id}' not found.\n")
+            print_available_checkpoints()
+        return 1
+
+    guid, _, bak_paths = checkpoint
+
+    # If specific files were requested, filter to those
+    if args.files:
+        requested = [resolve_path(f) for f in args.files]
+        # Build map of orig -> bak for this checkpoint
+        orig_to_bak = {}
+        for bak in bak_paths:
+            parsed = parse_bak(bak)
+            if parsed:
+                orig_to_bak[parsed[0]] = bak
+
+        filtered_baks = []
+        for req in requested:
+            if req not in orig_to_bak:
+                print(f"ERROR: {rel(req)} is not part of checkpoint [{guid}].")
+                print(f"Files in checkpoint [{guid}]:")
+                for orig in sorted(orig_to_bak, key=lambda p: rel(p)):
+                    print(f"  {rel(orig)}")
+                return 1
+            filtered_baks.append(orig_to_bak[req])
+        bak_paths = filtered_baks
+
+    # Check for multi-layer warnings
+    multi_layer_warnings = []
+    for bak in bak_paths:
+        parsed = parse_bak(bak)
+        if parsed:
+            orig, _ = parsed
+            other_guids = get_other_checkpoints_for_file(orig, guid)
+            if other_guids:
+                multi_layer_warnings.append((orig, other_guids))
+
+    if multi_layer_warnings and not force and not dry_run:
+        print("WARNING: The following files have other checkpoint layers:")
+        for orig, other_guids in multi_layer_warnings:
+            guids_str = ", ".join(f"[{g}]" for g in other_guids)
+            print(f"  {rel(orig)} — also in checkpoint {guids_str}")
+        print("\nReverting may conflict with those checkpoints. Use --force to proceed.")
+        return 1
+
+    if dry_run:
+        file_label = f" ({len(args.files)} specific file(s))" if args.files else ""
+        print(f"[DRY RUN] Would revert checkpoint [{guid}]{file_label}:")
+        for bak in sorted(bak_paths):
+            parsed = parse_bak(bak)
+            if parsed:
+                orig, _ = parsed
+                status = file_status(bak, orig)
+                other_guids = get_other_checkpoints_for_file(orig, guid)
+                suffix = ""
+                if other_guids:
+                    guids_str = ", ".join(f"[{g}]" for g in other_guids)
+                    suffix = f" — WARNING: also in checkpoint {guids_str}"
+                print(f"  {rel(orig)}   [{status}]{suffix}")
         return 0
 
-    guid, _, bak_paths = checkpoints[-1]
-    print(f"Reverting checkpoint {guid}...")
+    if multi_layer_warnings and force:
+        print("WARNING: Reverting files with other checkpoint layers (--force).")
+
+    print(f"Reverting checkpoint [{guid}]...")
 
     for bak in sorted(bak_paths):
         parsed = parse_bak(bak)
@@ -185,48 +359,17 @@ def _revert_latest() -> int:
             bak.unlink()
             print(f"  Restored: {rel(orig)}")
 
-    remaining = len(checkpoints) - 1
+    # Check remaining checkpoints
+    remaining = len(get_checkpoints())
     print(f"\n{len(bak_paths)} file(s) restored. {remaining} checkpoint(s) remaining.")
     return 0
 
 
-def _revert_all() -> int:
-    """Restore every file to its oldest checkpoint, delete all .bak files."""
-    checkpoints = get_checkpoints()
-    if not checkpoints:
-        print("Nothing to revert — no checkpoints found.")
-        return 0
-
-    # For each file, find its oldest .bak (the original state)
-    oldest_for_file: dict[Path, Path] = {}
-    all_baks: list[Path] = []
-
-    for _, _, bak_paths in checkpoints:
-        for bak in bak_paths:
-            parsed = parse_bak(bak)
-            if parsed:
-                orig, _ = parsed
-                if orig not in oldest_for_file:
-                    oldest_for_file[orig] = bak
-            all_baks.append(bak)
-
-    print("Reverting to original state...")
-    for orig in sorted(oldest_for_file, key=lambda p: rel(p)):
-        bak = oldest_for_file[orig]
-        shutil.copy2(str(bak), str(orig))
-        print(f"  Restored: {rel(orig)}")
-
-    for bak in all_baks:
-        if bak.exists():
-            bak.unlink()
-
-    print(f"\n{len(oldest_for_file)} file(s) restored to original. "
-          f"All {len(checkpoints)} checkpoint(s) deleted.")
-    return 0
-
+# ── commit ─────────────────────────────────────────────────────────
 
 def cmd_commit(args: argparse.Namespace) -> int:
     """Delete all .bak* files (accept current state)."""
+    dry_run = args.dry_run
     baks = find_all_baks()
     legacy = find_legacy_baks()
     all_files = baks + legacy
@@ -236,6 +379,25 @@ def cmd_commit(args: argparse.Namespace) -> int:
         return 0
 
     checkpoints = get_checkpoints()
+
+    if dry_run:
+        print(f"[DRY RUN] Would delete {len(all_files)} checkpoint file(s) "
+              f"across {len(checkpoints)} checkpoint(s):")
+        for guid, mtime, bak_paths in checkpoints:
+            ts = datetime.fromtimestamp(mtime).strftime("%Y-%m-%d %H:%M:%S")
+            print(f"\n  [{guid}]  {ts}  ({len(bak_paths)} file(s))")
+            for bak in sorted(bak_paths):
+                parsed = parse_bak(bak)
+                if parsed:
+                    orig, _ = parsed
+                    status = file_status(bak, orig)
+                    print(f"    {rel(orig)}   [{status}]")
+        if legacy:
+            print(f"\n  {len(legacy)} legacy .bak file(s):")
+            for p in legacy:
+                print(f"    {rel(p)}")
+        return 0
+
     for f in all_files:
         f.unlink()
 
@@ -249,21 +411,31 @@ def cmd_commit(args: argparse.Namespace) -> int:
     return 0
 
 
+# ── main ───────────────────────────────────────────────────────────
+
 def main() -> int:
     parser = argparse.ArgumentParser(
         prog="bak.py",
         description="Versioned .bak file manager for Sources/",
     )
+    parser.add_argument("--dry-run", action="store_true",
+                        help="Preview what would happen without modifying files")
+
     sub = parser.add_subparsers(dest="command", required=True)
 
     p_guard = sub.add_parser("guard", help="Create a new versioned checkpoint")
     p_guard.add_argument("files", nargs="+", help="Files to checkpoint")
+    p_guard.add_argument("--force", action="store_true",
+                         help="Proceed even if files already have checkpoints")
 
     sub.add_parser("status", help="List all checkpoints with status")
 
-    p_revert = sub.add_parser("revert", help="Peel back one checkpoint layer")
-    p_revert.add_argument("--all", action="store_true",
-                          help="Revert to original state (oldest checkpoint)")
+    p_revert = sub.add_parser("revert", help="Revert files from a specific checkpoint")
+    p_revert.add_argument("checkpoint_id", nargs="?", default=None,
+                          help="Checkpoint ID to revert")
+    p_revert.add_argument("files", nargs="*", help="Specific files to revert (optional)")
+    p_revert.add_argument("--force", action="store_true",
+                          help="Proceed even if files have other checkpoint layers")
 
     sub.add_parser("commit", help="Delete all .bak* files (accept changes)")
 

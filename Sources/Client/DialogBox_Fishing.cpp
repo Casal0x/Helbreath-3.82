@@ -10,62 +10,62 @@
 
 using namespace hb::shared::net;
 using namespace hb::client::sprite_id;
-DialogBox_Fishing::DialogBox_Fishing(CGame* pGame)
-	: IDialogBox(DialogBoxId::Fishing, pGame)
+DialogBox_Fishing::DialogBox_Fishing(CGame* game)
+	: IDialogBox(DialogBoxId::Fishing, game)
 {
-	SetDefaultRect(193 , 241 , 263, 100);
+	set_default_rect(193 , 241 , 263, 100);
 }
 
-void DialogBox_Fishing::OnDraw(short msX, short msY, short msZ, char cLB)
+void DialogBox_Fishing::on_draw(short mouse_x, short mouse_y, short z, char lb)
 {
-	short sX = Info().sX;
-	short sY = Info().sY;
-	uint32_t dwTime = m_pGame->m_dwCurTime;
-	std::string cTxt;
+	short sX = Info().m_x;
+	short sY = Info().m_y;
+	uint32_t time = m_game->m_cur_time;
+	std::string txt;
 
-	DrawNewDialogBox(InterfaceNdGame1, sX, sY, 2);
+	draw_new_dialog_box(InterfaceNdGame1, sX, sY, 2);
 
-	auto itemInfo = ItemNameFormatter::Get().Format(m_pGame->FindItemIdByName(Info().cStr),  0);
+	auto itemInfo = item_name_formatter::get().format(m_game->find_item_id_by_name(Info().m_str),  0);
 
-	switch (Info().cMode)
+	switch (Info().m_mode)
 	{
 	case 0:
-		m_pGame->m_pSprite[ItemPackPivotPoint + Info().sV3]->Draw(sX + 18 + 35, sY + 18 + 17, Info().sV4);
+		m_game->m_sprite[ItemPackPivotPoint + Info().m_v3]->draw(sX + 18 + 35, sY + 18 + 17, Info().m_v4);
 
-		cTxt = itemInfo.name.c_str();
-		PutString(sX + 98, sY + 14, cTxt.c_str(), GameColors::UIWhite);
+		txt = itemInfo.name.c_str();
+		put_string(sX + 98, sY + 14, txt.c_str(), GameColors::UIWhite);
 
-		cTxt = std::format(DRAW_DIALOGBOX_FISHING1, Info().sV2);
-		PutString(sX + 98, sY + 28, cTxt.c_str(), GameColors::UIBlack);
+		txt = std::format(DRAW_DIALOGBOX_FISHING1, Info().m_v2);
+		put_string(sX + 98, sY + 28, txt.c_str(), GameColors::UIBlack);
 
-		PutString(sX + 97, sY + 43, DRAW_DIALOGBOX_FISHING2, GameColors::UIBlack);
+		put_string(sX + 97, sY + 43, DRAW_DIALOGBOX_FISHING2, GameColors::UIBlack);
 
-		cTxt = std::format("{} %", Info().sV1);
-		hb::shared::text::DrawText(GameFont::Bitmap1, sX + 157, sY + 40, cTxt.c_str(), hb::shared::text::TextStyle::WithHighlight(GameColors::BmpBtnFishRed));
+		txt = std::format("{} %", Info().m_v1);
+		hb::shared::text::draw_text(GameFont::Bitmap1, sX + 157, sY + 40, txt.c_str(), hb::shared::text::TextStyle::with_highlight(GameColors::BmpBtnFishRed));
 
 		// "Try Now!" button
-		if ((msX >= sX + 160) && (msX <= sX + 253) && (msY >= sY + 70) && (msY <= sY + 90))
-			hb::shared::text::DrawText(GameFont::Bitmap1, sX + 160, sY + 70, "Try Now!", hb::shared::text::TextStyle::WithHighlight(GameColors::UIMagicBlue));
+		if ((mouse_x >= sX + 160) && (mouse_x <= sX + 253) && (mouse_y >= sY + 70) && (mouse_y <= sY + 90))
+			hb::shared::text::draw_text(GameFont::Bitmap1, sX + 160, sY + 70, "Try Now!", hb::shared::text::TextStyle::with_highlight(GameColors::UIMagicBlue));
 		else
-			hb::shared::text::DrawText(GameFont::Bitmap1, sX + 160, sY + 70, "Try Now!", hb::shared::text::TextStyle::WithHighlight(GameColors::BmpBtnNormal));
+			hb::shared::text::draw_text(GameFont::Bitmap1, sX + 160, sY + 70, "Try Now!", hb::shared::text::TextStyle::with_highlight(GameColors::BmpBtnNormal));
 		break;
 	}
 }
 
-bool DialogBox_Fishing::OnClick(short msX, short msY)
+bool DialogBox_Fishing::on_click(short mouse_x, short mouse_y)
 {
-	short sX = Info().sX;
-	short sY = Info().sY;
+	short sX = Info().m_x;
+	short sY = Info().m_y;
 
-	switch (Info().cMode)
+	switch (Info().m_mode)
 	{
 	case 0:
-		if ((msX >= sX + 160) && (msX <= sX + 253) && (msY >= sY + 70) && (msY <= sY + 90))
+		if ((mouse_x >= sX + 160) && (mouse_x <= sX + 253) && (mouse_y >= sY + 70) && (mouse_y <= sY + 90))
 		{
-			m_pGame->bSendCommand(MsgId::CommandCommon, CommonType::ReqGetFishThisTime, 0, 0, 0, 0, 0);
-			m_pGame->AddEventList(DLGBOX_CLICK_FISH1, 10);
-			DisableDialogBox(DialogBoxId::Fishing);
-			m_pGame->PlayGameSound('E', 14, 5);
+			m_game->send_command(MsgId::CommandCommon, CommonType::ReqGetFishThisTime, 0, 0, 0, 0, 0);
+			m_game->add_event_list(DLGBOX_CLICK_FISH1, 10);
+			disable_dialog_box(DialogBoxId::Fishing);
+			m_game->play_game_sound('E', 14, 5);
 			return true;
 		}
 		break;
