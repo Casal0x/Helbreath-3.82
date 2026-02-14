@@ -278,6 +278,7 @@ public:
 	guild_manager m_guild_manager;
 	struct {
 		int   v1, v2, v3, v4, v5, v6, v7, item_id;
+		int   inv_slot;  // local inventory slot index for m_is_item_disabled tracking
 		uint32_t dw_v1;
 		std::string str1;
 		std::string str2;

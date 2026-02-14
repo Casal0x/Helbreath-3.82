@@ -254,7 +254,7 @@ bool DialogBox_Exchange::on_item_drop(short mouse_x, short mouse_y)
 		dropInfo.m_v2 = m_game->m_player->m_player_y + 1;
 		dropInfo.m_v3 = 1000;
 		dropInfo.m_v4 = item_id;
-		m_game->m_dialog_box_exchange_info[slot].item_id = item_id;
+		m_game->m_dialog_box_exchange_info[slot].inv_slot = item_id;
 		std::memset(dropInfo.m_str, 0, sizeof(dropInfo.m_str));
 		m_game->m_dialog_box_manager.enable_dialog_box(DialogBoxId::ItemDropExternal, item_id,
 			m_game->m_item_list[item_id]->m_count, 0);
@@ -262,7 +262,7 @@ bool DialogBox_Exchange::on_item_drop(short mouse_x, short mouse_y)
 	else
 	{
 		// Single item - add directly
-		m_game->m_dialog_box_exchange_info[slot].item_id = item_id;
+		m_game->m_dialog_box_exchange_info[slot].inv_slot = item_id;
 		m_game->m_is_item_disabled[item_id] = true;
 		send_command(MsgId::CommandCommon, CommonType::set_exchange_item, 0, item_id, 1, 0, 0);
 	}

@@ -829,15 +829,18 @@ namespace NetworkMessageHandlers {
 			game->m_dialog_box_exchange_info[j].v6 = -1;
 			game->m_dialog_box_exchange_info[j].v7 = -1;
 			game->m_dialog_box_exchange_info[j].item_id = -1;
+			game->m_dialog_box_exchange_info[j].inv_slot = -1;
 			game->m_dialog_box_exchange_info[j].dw_v1 = 0;
 		}
 		int i;
 		if (dir >= 1000)  // Set the item I want to exchange
 		{
 			i = 0;
-			if ((dir > 1000) && (dir - 1000 < hb::shared::limits::MaxItems))
+			int inv_idx = dir - 1000;
+			if (inv_idx >= 0 && inv_idx < hb::shared::limits::MaxItems)
 			{
-				game->m_is_item_disabled[dir - 1000] = true;
+				game->m_is_item_disabled[inv_idx] = true;
+				game->m_dialog_box_exchange_info[i].inv_slot = inv_idx;
 			}
 		}
 		else // Set the item he proposes me.

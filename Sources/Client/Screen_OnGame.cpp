@@ -173,13 +173,17 @@ void Screen_OnGame::on_update()
                                 std::snprintf(m_game->m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_str, hb::shared::limits::NpcNameLen, "%s", m_game->get_npc_config_name(m_game->m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_v3));
                                 break;
                             case 1000:
-                                if (m_game->m_dialog_box_exchange_info[0].v1 == -1) m_game->m_dialog_box_exchange_info[0].item_id = m_game->m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_v4;
-                                else if (m_game->m_dialog_box_exchange_info[1].v1 == -1) m_game->m_dialog_box_exchange_info[1].item_id = m_game->m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_v4;
-                                else if (m_game->m_dialog_box_exchange_info[2].v1 == -1) m_game->m_dialog_box_exchange_info[2].item_id = m_game->m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_v4;
-                                else if (m_game->m_dialog_box_exchange_info[3].v1 == -1) m_game->m_dialog_box_exchange_info[3].item_id = m_game->m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_v4;
+                            {
+                                int ex_item = m_game->m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_v4;
+                                if (m_game->m_dialog_box_exchange_info[0].v1 == -1) m_game->m_dialog_box_exchange_info[0].inv_slot = ex_item;
+                                else if (m_game->m_dialog_box_exchange_info[1].v1 == -1) m_game->m_dialog_box_exchange_info[1].inv_slot = ex_item;
+                                else if (m_game->m_dialog_box_exchange_info[2].v1 == -1) m_game->m_dialog_box_exchange_info[2].inv_slot = ex_item;
+                                else if (m_game->m_dialog_box_exchange_info[3].v1 == -1) m_game->m_dialog_box_exchange_info[3].inv_slot = ex_item;
                                 else return;
-                                m_game->send_command(MsgId::CommandCommon, CommonType::set_exchange_item, 0, m_game->m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_v4, amount, 0, 0);
+                                m_game->m_is_item_disabled[ex_item] = true;
+                                m_game->send_command(MsgId::CommandCommon, CommonType::set_exchange_item, 0, ex_item, amount, 0, 0);
                                 break;
+                            }
                             case 1001:
                                 for (i = 0; i < game_limits::max_sell_list; i++)
                                     if (m_game->m_sell_item_list[i].index == -1) {

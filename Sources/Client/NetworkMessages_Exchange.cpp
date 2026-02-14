@@ -27,9 +27,9 @@ namespace NetworkMessageHandlers {
 		// was partially cleared by item removal, flags could get stuck.
 		for (int i = 0; i < 4; i++)
 		{
-			int item_id = game->m_dialog_box_exchange_info[i].item_id;
-			if (item_id >= 0 && item_id < hb::shared::limits::MaxItems)
-				game->m_is_item_disabled[item_id] = false;
+			int slot = game->m_dialog_box_exchange_info[i].inv_slot;
+			if (slot >= 0 && slot < hb::shared::limits::MaxItems)
+				game->m_is_item_disabled[slot] = false;
 		}
 
 		//Snoopy: MultiTrade

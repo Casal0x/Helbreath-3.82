@@ -704,6 +704,7 @@ void DialogBoxManager::enable_dialog_box(int box_id, int type, int v1, int v2, c
 				m_game->m_dialog_box_exchange_info[i].v5 = -1;
 				m_game->m_dialog_box_exchange_info[i].v6 = -1;
 				m_game->m_dialog_box_exchange_info[i].v7 = -1;
+				m_game->m_dialog_box_exchange_info[i].inv_slot = -1;
 				m_game->m_dialog_box_exchange_info[i].dw_v1 = 0;
 			}
 			disable_dialog_box(DialogBoxId::ItemDropExternal);
@@ -964,10 +965,10 @@ void DialogBoxManager::disable_dialog_box(int box_id)
 	case DialogBoxId::Exchange: //Snoopy: 7 mar 06 (multiTrade) case rewriten
 		for (i = 0; i < 8; i++)
 		{
-			// Re-enable item before clearing the slot
-			int item_id = m_game->m_dialog_box_exchange_info[i].item_id;
-			if (item_id >= 0 && item_id < hb::shared::limits::MaxItems && m_game->m_is_item_disabled[item_id])
-				m_game->m_is_item_disabled[item_id] = false;
+			// Re-enable item before clearing the slot (inv_slot tracks the inventory index)
+			int slot = m_game->m_dialog_box_exchange_info[i].inv_slot;
+			if (slot >= 0 && slot < hb::shared::limits::MaxItems && m_game->m_is_item_disabled[slot])
+				m_game->m_is_item_disabled[slot] = false;
 
 			m_game->m_dialog_box_exchange_info[i].v1 = -1;
 			m_game->m_dialog_box_exchange_info[i].v2 = -1;
@@ -977,6 +978,7 @@ void DialogBoxManager::disable_dialog_box(int box_id)
 			m_game->m_dialog_box_exchange_info[i].v6 = -1;
 			m_game->m_dialog_box_exchange_info[i].v7 = -1;
 			m_game->m_dialog_box_exchange_info[i].item_id = -1;
+			m_game->m_dialog_box_exchange_info[i].inv_slot = -1;
 			m_game->m_dialog_box_exchange_info[i].dw_v1 = 0;
 		}
 		break;
