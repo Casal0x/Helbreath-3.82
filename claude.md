@@ -138,7 +138,7 @@ Both the client and server build and run on Windows and Linux. **All new code (c
 
 ## Coding Standards
 
-**Convention: `snake_case` throughout.** Full reference: `PLANS/CODING_STANDARDS.md`.
+**Convention: `snake_case` throughout.** Full reference: `CODING_STANDARDS.md`.
 
 Key rules:
 - **Tabs** for indentation, **Allman** braces.
