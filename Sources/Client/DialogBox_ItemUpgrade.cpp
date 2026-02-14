@@ -95,17 +95,21 @@ int DialogBox_ItemUpgrade::calculate_upgrade_cost(int item_index)
 
 void DialogBox_ItemUpgrade::draw_item_preview(int sX, int sY, int item_index)
 {
-    uint32_t time = m_game->m_cur_time;
-
     char item_color = m_game->m_item_list[item_index]->m_item_color;
     CItem* cfg = m_game->get_item_config(m_game->m_item_list[item_index]->m_id_num);
-    if (cfg && ((cfg->get_equip_pos() == EquipPos::LeftHand)
+    if (!cfg) return;
+
+    if (item_color == 0)
+    {
+        m_game->m_sprite[ItemPackPivotPoint + cfg->m_sprite]->draw(sX + 134, sY + 182, cfg->m_sprite_frame);
+    }
+    else if ((cfg->get_equip_pos() == EquipPos::LeftHand)
         || (cfg->get_equip_pos() == EquipPos::RightHand)
-        || (cfg->get_equip_pos() == EquipPos::TwoHand)))
+        || (cfg->get_equip_pos() == EquipPos::TwoHand))
     {
         m_game->m_sprite[ItemPackPivotPoint + cfg->m_sprite]->draw(sX + 134, sY + 182, cfg->m_sprite_frame, hb::shared::sprite::DrawParams::tint(GameColors::Weapons[item_color].r, GameColors::Weapons[item_color].g, GameColors::Weapons[item_color].b));
     }
-    else if (cfg)
+    else
     {
         m_game->m_sprite[ItemPackPivotPoint + cfg->m_sprite]->draw(sX + 134, sY + 182, cfg->m_sprite_frame, hb::shared::sprite::DrawParams::tint(GameColors::Items[item_color].r, GameColors::Items[item_color].g, GameColors::Items[item_color].b));
     }
@@ -178,20 +182,27 @@ void DialogBox_ItemUpgrade::DrawMode2_InProgress(int sX, int sY)
         char item_color = m_game->m_item_list[item_index]->m_item_color;
         CItem* cfg = m_game->get_item_config(m_game->m_item_list[item_index]->m_id_num);
 
-        if (cfg && ((cfg->get_equip_pos() == EquipPos::LeftHand)
-            || (cfg->get_equip_pos() == EquipPos::RightHand)
-            || (cfg->get_equip_pos() == EquipPos::TwoHand)))
+        if (cfg)
         {
-            m_game->m_sprite[ItemPackPivotPoint + cfg->m_sprite]->draw(sX + 134, sY + 182, cfg->m_sprite_frame, hb::shared::sprite::DrawParams::tint(GameColors::Weapons[item_color].r, GameColors::Weapons[item_color].g, GameColors::Weapons[item_color].b));
-        }
-        else if (cfg)
-        {
-            m_game->m_sprite[ItemPackPivotPoint + cfg->m_sprite]->draw(sX + 134, sY + 182, cfg->m_sprite_frame, hb::shared::sprite::DrawParams::tint(GameColors::Items[item_color].r, GameColors::Items[item_color].g, GameColors::Items[item_color].b));
-        }
+            if (item_color == 0)
+            {
+                m_game->m_sprite[ItemPackPivotPoint + cfg->m_sprite]->draw(sX + 134, sY + 182, cfg->m_sprite_frame);
+            }
+            else if ((cfg->get_equip_pos() == EquipPos::LeftHand)
+                || (cfg->get_equip_pos() == EquipPos::RightHand)
+                || (cfg->get_equip_pos() == EquipPos::TwoHand))
+            {
+                m_game->m_sprite[ItemPackPivotPoint + cfg->m_sprite]->draw(sX + 134, sY + 182, cfg->m_sprite_frame, hb::shared::sprite::DrawParams::tint(GameColors::Weapons[item_color].r, GameColors::Weapons[item_color].g, GameColors::Weapons[item_color].b));
+            }
+            else
+            {
+                m_game->m_sprite[ItemPackPivotPoint + cfg->m_sprite]->draw(sX + 134, sY + 182, cfg->m_sprite_frame, hb::shared::sprite::DrawParams::tint(GameColors::Items[item_color].r, GameColors::Items[item_color].g, GameColors::Items[item_color].b));
+            }
 
-        // Flickering effect
-        if (cfg && (rand() % 5) == 0)
-            m_game->m_sprite[ItemPackPivotPoint + cfg->m_sprite]->draw(sX + 134, sY + 182, cfg->m_sprite_frame, hb::shared::sprite::DrawParams::alpha_blend(0.25f));
+            // Flickering effect
+            if ((rand() % 5) == 0)
+                m_game->m_sprite[ItemPackPivotPoint + cfg->m_sprite]->draw(sX + 134, sY + 182, cfg->m_sprite_frame, hb::shared::sprite::DrawParams::alpha_blend(0.25f));
+        }
 
         auto itemInfo2 = item_name_formatter::get().format(m_game->m_item_list[item_index].get());
         hb::shared::text::draw_text_aligned(GameFont::Default, sX + 24, sY + 230 + 20, (sX + 248) - (sX + 24), 15, itemInfo2.name.c_str(), hb::shared::text::TextStyle::from_color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);

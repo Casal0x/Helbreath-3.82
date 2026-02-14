@@ -14,12 +14,13 @@ static_assert(std::size(channel_filenames) == static_cast<size_t>(hb::log_channe
 class client_log_backend : public hb::logger::log_backend
 {
 protected:
-	void write_console(int level, std::string_view formatted_line) override
+	void write_console(int channel, int level, std::string_view formatted_line) override
 	{
 #ifdef _DEBUG
+		(void)channel;
 		std::cout << formatted_line << '\n';
 #else
-		(void)level; (void)formatted_line;
+		(void)channel; (void)level; (void)formatted_line;
 #endif
 	}
 };

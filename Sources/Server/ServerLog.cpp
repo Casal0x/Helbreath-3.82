@@ -28,8 +28,10 @@ static_assert(std::size(channel_filenames) == static_cast<size_t>(hb::log_channe
 class server_log_backend : public hb::logger::log_backend
 {
 protected:
-	void write_console(int level, std::string_view formatted_line) override
+	void write_console(int channel, int level, std::string_view formatted_line) override
 	{
+		if (channel != (int)hb::log_channel::main) return; // only main channel shows on server console
+
 		int color;
 		switch (level)
 		{

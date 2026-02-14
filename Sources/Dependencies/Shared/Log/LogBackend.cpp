@@ -54,7 +54,7 @@ void log_backend::write(int channel, int level, std::string_view message)
 		line = std::format("[{}] [{}] [{}] {}", timestamp, level_name(level),
 			m_channel_namer(channel), message);
 
-	write_console(level, line);
+	write_console(channel, level, line);
 
 	if (channel >= 0 && channel < m_channel_count && m_files[channel].is_open())
 	{
@@ -69,8 +69,9 @@ void log_backend::write(int channel, int level, std::string_view message)
 	}
 }
 
-void log_backend::write_console(int level, std::string_view formatted_line)
+void log_backend::write_console(int channel, int level, std::string_view formatted_line)
 {
+	(void)channel;
 	std::cout << formatted_line << '\n';
 }
 

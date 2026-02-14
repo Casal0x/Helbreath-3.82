@@ -753,6 +753,9 @@ void DialogBoxManager::enable_dialog_box(int box_id, int type, int v1, int v2, c
 		}
 		else
 		{
+			// Clear disabled flag for any item currently in the dialog before resetting
+			{ int old_idx = Info(DialogBoxId::ItemUpgrade).m_v1;
+			if (old_idx >= 0 && old_idx < hb::shared::limits::MaxItems) m_game->m_is_item_disabled[old_idx] = false; }
 			int so_x, so_m;
 			so_x = so_m = 0;
 			for (i = 0; i < hb::shared::limits::MaxItems; i++)

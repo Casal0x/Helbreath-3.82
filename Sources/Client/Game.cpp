@@ -7590,6 +7590,10 @@ void CGame::init_data_response_handler(char* packet_data)
 	m_dialog_box_manager.disable_dialog_box(DialogBoxId::NpcTalk);
 	m_dialog_box_manager.disable_dialog_box(DialogBoxId::SellOrRepair);
 	m_dialog_box_manager.disable_dialog_box(DialogBoxId::GuildHallMenu); // Gail's diag
+	m_dialog_box_manager.disable_dialog_box(DialogBoxId::ItemUpgrade);
+	m_dialog_box_manager.disable_dialog_box(DialogBoxId::Manufacture);
+	m_dialog_box_manager.disable_dialog_box(DialogBoxId::Exchange);
+	m_dialog_box_manager.disable_dialog_box(DialogBoxId::Slates);
 
 	m_player->m_Controller.set_command(Type::stop);
 	m_player->m_Controller.reset_command_count();
