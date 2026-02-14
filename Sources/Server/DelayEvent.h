@@ -4,19 +4,25 @@
 
 #pragma once
 
-// MODERNIZED: Prevent old winsock.h from loading (must be before windows.h)
-#define _WINSOCKAPI_
 
-#include <windows.h>
 #include "CommonTypes.h"
 
-#define DEF_DELAYEVENTTYPE_DAMAGEOBJECT				1
-#define DEF_DELAYEVENTTYPE_MAGICRELEASE				2
-#define DEF_DELAYEVENTTYPE_USEITEM_SKILL			3
-#define DEF_DELAYEVENTTYPE_METEORSTRIKE				4
-#define DEF_DELAYEVENTTYPE_DOMETEORSTRIKEDAMAGE		5
-#define DEF_DELAYEVENTTYPE_CALCMETEORSTRIKEEFFECT	6
-#define DEF_DELAYEVENTTYPE_ANCIENT_TABLET			7
+namespace hb::server::delay_event
+{
+namespace Type
+{
+	enum : int
+	{
+		DamageObject            = 1,
+		MagicRelease            = 2,
+		UseItemSkill            = 3,
+		MeteorStrike            = 4,
+		DoMeteorStrikeDamage    = 5,
+		CalcMeteorStrikeEffect  = 6,
+		AncientTablet           = 7,
+	};
+}
+} // namespace hb::server::delay_event
 
 class CDelayEvent
 {
@@ -29,15 +35,15 @@ public:
 	{
 	}
 
-	int m_iDelayType;
-	int m_iEffectType;
+	int m_delay_type;
+	int m_effect_type;
 
-	char m_cMapIndex;
-	int m_dX, m_dY;
+	char m_map_index;
+	int m_dx, m_dy;
 
-	int  m_iTargetH;
-	char m_cTargetType;
-	int m_iV1, m_iV2, m_iV3;
+	int  m_target_handle;
+	char m_target_type;
+	int m_v1, m_v2, m_v3;
 
-	uint32_t m_dwTriggerTime;
+	uint32_t m_trigger_time;
 };

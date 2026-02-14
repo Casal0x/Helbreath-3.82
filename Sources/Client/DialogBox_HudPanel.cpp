@@ -2,7 +2,14 @@
 #include "Game.h"
 #include "GlobalDef.h"
 #include "SharedCalculations.h"
+#include "GameFonts.h"
+#include "TextLibExt.h"
+#include <cstdlib>
+#include <format>
+#include <string>
 
+using namespace hb::shared::net;
+using namespace hb::client::sprite_id;
 // Static button data shared between draw and click handling
 const DialogBox_HudPanel::ToggleButtonInfo DialogBox_HudPanel::TOGGLE_BUTTONS[] = {
 	{ 410, 447, 412, 6, "Character",   DialogBoxId::CharacterInfo },
@@ -13,228 +20,237 @@ const DialogBox_HudPanel::ToggleButtonInfo DialogBox_HudPanel::TOGGLE_BUTTONS[] 
 	{ 595, 631, 597, 11, "System Menu", DialogBoxId::SystemMenu }
 };
 
-DialogBox_HudPanel::DialogBox_HudPanel(CGame* pGame)
-	: IDialogBox(DialogBoxId::HudPanel, pGame)
+DialogBox_HudPanel::DialogBox_HudPanel(CGame* game)
+	: IDialogBox(DialogBoxId::HudPanel, game)
 {
-	SetDefaultRect(0, LOGICAL_HEIGHT - ICON_PANEL_HEIGHT, ICON_PANEL_WIDTH, ICON_PANEL_HEIGHT);
+	set_default_rect(0, LOGICAL_HEIGHT() - ICON_PANEL_HEIGHT(), ICON_PANEL_WIDTH(), ICON_PANEL_HEIGHT());
 }
 
-bool DialogBox_HudPanel::IsInButton(short msX, short msY, int x1, int x2) const
+bool DialogBox_HudPanel::is_in_button(short mouse_x, short mouse_y, int x1, int x2) const
 {
-	return (msX > x1) && (msX < x2) && (msY > BTN_Y1) && (msY < BTN_Y2);
+	return (mouse_x > x1) && (mouse_x < x2) && (mouse_y > BTN_Y1()) && (mouse_y < BTN_Y2());
 }
 
-void DialogBox_HudPanel::ToggleDialogWithSound(DialogBoxId::Type dialogId)
+void DialogBox_HudPanel::toggle_dialog_with_sound(DialogBoxId::Type dialogId)
 {
-	if (m_pGame->m_dialogBoxManager.IsEnabled(dialogId))
-		m_pGame->m_dialogBoxManager.DisableDialogBox(dialogId);
+	if (m_game->m_dialog_box_manager.is_enabled(dialogId))
+		m_game->m_dialog_box_manager.disable_dialog_box(dialogId);
 	else
-		EnableDialogBox(dialogId, 0, 0, 0);
-	m_pGame->PlaySound('E', 14, 5);
+		enable_dialog_box(dialogId, 0, 0, 0);
+	m_game->play_game_sound('E', 14, 5);
 }
 
-void DialogBox_HudPanel::DrawGaugeBars()
+void DialogBox_HudPanel::draw_gauge_bars()
 {
-	int iMaxPoint, iBarWidth;
-	uint32_t dwTime = m_pGame->m_dwCurTime;
-	auto pSprite = m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_ICONPANNEL];
+	int max_point, bar_width;
+	uint32_t time = m_game->m_cur_time;
+	auto sprite = m_game->m_sprite[InterfaceNdIconPanel];
 
 	// HP bar
-	iMaxPoint = CalculateMaxHP(m_pGame->m_iVit, m_pGame->m_iLevel,
-	                           m_pGame->m_iStr, m_pGame->m_iAngelicStr);
-	if (m_pGame->m_iHP > iMaxPoint) m_pGame->m_iHP = iMaxPoint;
-	iBarWidth = HP_MP_BAR_WIDTH - (m_pGame->m_iHP * HP_MP_BAR_WIDTH) / iMaxPoint;
-	if (iBarWidth < 0) iBarWidth = 0;
-	if (iBarWidth > HP_MP_BAR_WIDTH) iBarWidth = HP_MP_BAR_WIDTH;
-	pSprite->DrawWidth(HP_BAR_X, HP_BAR_Y, 12, iBarWidth);
+	max_point = hb::shared::calc::CalculateMaxHP(m_game->m_player->m_vit, m_game->m_player->m_level,
+	                           m_game->m_player->m_str, m_game->m_player->m_angelic_str);
+	if (max_point <= 0) max_point = 1;
+	if (m_game->m_player->m_hp > max_point) m_game->m_player->m_hp = max_point;
+	bar_width = HP_MP_BAR_WIDTH - (m_game->m_player->m_hp * HP_MP_BAR_WIDTH) / max_point;
+	if (bar_width < 0) bar_width = 0;
+	if (bar_width > HP_MP_BAR_WIDTH) bar_width = HP_MP_BAR_WIDTH;
+	sprite->DrawWidth(HP_BAR_X(), HP_BAR_Y(), 12, bar_width);
 
 	// HP number
-	wsprintf(m_pGame->G_cTxt, "%d", (short)m_pGame->m_iHP);
-	if (m_pGame->m_bIsPoisoned)
+	std::string statBuf;
+	statBuf = std::format("{}", static_cast<short>(m_game->m_player->m_hp));
+	if (m_game->m_player->m_is_poisoned)
 	{
-		m_pGame->PutString_SprNum(85, HP_NUM_Y, m_pGame->G_cTxt,
-			m_pGame->m_wR[5] * 11, m_pGame->m_wG[5] * 11, m_pGame->m_wB[5] * 11);
-		m_pGame->PutString_SprFont3(35, HP_BAR_Y + 2, "Poisoned",
-			m_pGame->m_wR[5] * 8, m_pGame->m_wG[5] * 8, m_pGame->m_wB[5] * 8, true, 2);
+		hb::shared::text::draw_text(GameFont::Numbers, 85 + hud_x_offset(), HP_NUM_Y(), statBuf.c_str(),
+			hb::shared::text::TextStyle::from_color(GameColors::PoisonText));
+		hb::shared::text::draw_text(GameFont::SprFont3_2, 35 + hud_x_offset(), HP_BAR_Y() + 2, "Poisoned",
+			hb::shared::text::TextStyle::from_color(GameColors::PoisonLabel).with_alpha(0.7f));
 	}
 	else
 	{
-		m_pGame->PutString_SprNum(HP_NUM_X + 1, HP_NUM_Y + 1, m_pGame->G_cTxt, 0, 0, 0);
-		m_pGame->PutString_SprNum(HP_NUM_X, HP_NUM_Y, m_pGame->G_cTxt, 255, 255, 255);
+		hb::shared::text::draw_text(GameFont::Numbers, HP_NUM_X() + 1, HP_NUM_Y() + 1, statBuf.c_str(), hb::shared::text::TextStyle::from_color(GameColors::UIBlack));
+		hb::shared::text::draw_text(GameFont::Numbers, HP_NUM_X(), HP_NUM_Y(), statBuf.c_str(), hb::shared::text::TextStyle::from_color(GameColors::UIWhite));
 	}
 
 	// MP bar
-	iMaxPoint = CalculateMaxMP(m_pGame->m_iMag, m_pGame->m_iAngelicMag,
-	                           m_pGame->m_iLevel, m_pGame->m_iInt, m_pGame->m_iAngelicInt);
-	if (m_pGame->m_iMP > iMaxPoint) m_pGame->m_iMP = iMaxPoint;
-	iBarWidth = HP_MP_BAR_WIDTH - (m_pGame->m_iMP * HP_MP_BAR_WIDTH) / iMaxPoint;
-	if (iBarWidth < 0) iBarWidth = 0;
-	if (iBarWidth > HP_MP_BAR_WIDTH) iBarWidth = HP_MP_BAR_WIDTH;
-	pSprite->DrawWidth(HP_BAR_X, MP_BAR_Y, 12, iBarWidth);
+	max_point = hb::shared::calc::CalculateMaxMP(m_game->m_player->m_mag, m_game->m_player->m_angelic_mag,
+	                           m_game->m_player->m_level, m_game->m_player->m_int, m_game->m_player->m_angelic_int);
+	if (max_point <= 0) max_point = 1;
+	if (m_game->m_player->m_mp > max_point) m_game->m_player->m_mp = max_point;
+	bar_width = HP_MP_BAR_WIDTH - (m_game->m_player->m_mp * HP_MP_BAR_WIDTH) / max_point;
+	if (bar_width < 0) bar_width = 0;
+	if (bar_width > HP_MP_BAR_WIDTH) bar_width = HP_MP_BAR_WIDTH;
+	sprite->DrawWidth(HP_BAR_X(), MP_BAR_Y(), 12, bar_width);
 
 	// MP number
-	wsprintf(m_pGame->G_cTxt, "%d", (short)m_pGame->m_iMP);
-	m_pGame->PutString_SprNum(HP_NUM_X + 1, MP_NUM_Y + 1, m_pGame->G_cTxt, 0, 0, 0);
-	m_pGame->PutString_SprNum(HP_NUM_X, MP_NUM_Y, m_pGame->G_cTxt, 255, 255, 255);
+	statBuf = std::format("{}", static_cast<short>(m_game->m_player->m_mp));
+	hb::shared::text::draw_text(GameFont::Numbers, HP_NUM_X() + 1, MP_NUM_Y() + 1, statBuf.c_str(), hb::shared::text::TextStyle::from_color(GameColors::UIBlack));
+	hb::shared::text::draw_text(GameFont::Numbers, HP_NUM_X(), MP_NUM_Y(), statBuf.c_str(), hb::shared::text::TextStyle::from_color(GameColors::UIWhite));
 
 	// SP bar
-	iMaxPoint = CalculateMaxSP(m_pGame->m_iStr, m_pGame->m_iAngelicStr, m_pGame->m_iLevel);
-	if (m_pGame->m_iSP > iMaxPoint) m_pGame->m_iSP = iMaxPoint;
-	iBarWidth = SP_BAR_WIDTH - (m_pGame->m_iSP * SP_BAR_WIDTH) / iMaxPoint;
-	if (iBarWidth < 0) iBarWidth = 0;
-	if (iBarWidth > SP_BAR_WIDTH) iBarWidth = SP_BAR_WIDTH;
-	pSprite->DrawWidth(SP_BAR_X, SP_BAR_Y, 13, iBarWidth);
+	max_point = hb::shared::calc::CalculateMaxSP(m_game->m_player->m_str, m_game->m_player->m_angelic_str, m_game->m_player->m_level);
+	if (max_point <= 0) max_point = 1;
+	if (m_game->m_player->m_sp > max_point) m_game->m_player->m_sp = max_point;
+	bar_width = SP_BAR_WIDTH - (m_game->m_player->m_sp * SP_BAR_WIDTH) / max_point;
+	if (bar_width < 0) bar_width = 0;
+	if (bar_width > SP_BAR_WIDTH) bar_width = SP_BAR_WIDTH;
+	sprite->DrawWidth(SP_BAR_X(), SP_BAR_Y(), 13, bar_width);
 
 	// SP number
-	wsprintf(m_pGame->G_cTxt, "%d", (short)m_pGame->m_iSP);
-	m_pGame->PutString_SprNum(SP_NUM_X + 1, SP_NUM_Y + 1, m_pGame->G_cTxt, 0, 0, 0);
-	m_pGame->PutString_SprNum(SP_NUM_X, SP_NUM_Y, m_pGame->G_cTxt, 255, 255, 255);
+	statBuf = std::format("{}", static_cast<short>(m_game->m_player->m_sp));
+	hb::shared::text::draw_text(GameFont::Numbers, SP_NUM_X() + 1, SP_NUM_Y() + 1, statBuf.c_str(), hb::shared::text::TextStyle::from_color(GameColors::UIBlack));
+	hb::shared::text::draw_text(GameFont::Numbers, SP_NUM_X(), SP_NUM_Y(), statBuf.c_str(), hb::shared::text::TextStyle::from_color(GameColors::UIWhite));
 
-	// Experience bar
-	uint32_t iCurLevelExp = m_pGame->iGetLevelExp(m_pGame->m_iLevel);
-	uint32_t iNextLevelExp = m_pGame->iGetLevelExp(m_pGame->m_iLevel + 1);
-	uint32_t iExpRange = iNextLevelExp - iCurLevelExp;
-	uint32_t iExpProgress = m_pGame->m_iExp - iCurLevelExp;
-	iBarWidth = (iExpProgress * ICON_PANEL_WIDTH) / iExpRange;
-	if (iBarWidth < 0) iBarWidth = 0;
-	if (iBarWidth > ICON_PANEL_WIDTH) iBarWidth = ICON_PANEL_WIDTH;
-	pSprite->DrawWidth(0, EXP_BAR_Y, 18, iBarWidth);
 }
 
-void DialogBox_HudPanel::DrawStatusIcons(short msX, short msY)
+void DialogBox_HudPanel::draw_status_icons(short mouse_x, short mouse_y)
 {
-	uint32_t dwTime = m_pGame->m_dwCurTime;
-	auto pSprite = m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_ICONPANNEL];
+	uint32_t time = m_game->m_cur_time;
+	auto sprite = m_game->m_sprite[InterfaceNdIconPanel];
 
-	// Level up / Restart text
-	if (m_pGame->m_iHP > 0)
+	// Level up / Restart text (mutually exclusive: dead shows Restart, alive shows Level Up)
+	if (m_game->m_player->m_hp > 0)
 	{
-		if ((m_pGame->m_iLU_Point > 0) && !m_pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::LevelUpSetting))
+		if ((m_game->m_player->m_lu_point > 0) && !m_game->m_dialog_box_manager.is_enabled(DialogBoxId::LevelUpSetting))
 		{
-			int flashColor = (GameClock::GetTimeMS() / 3) % 255;
-			m_pGame->PutString_SprFont2(LEVELUP_TEXT_X, LEVELUP_TEXT_Y, "Level Up!", flashColor, flashColor, 0);
+			int flashColor = (GameClock::get_time_ms() / 3) % 255;
+			hb::shared::text::draw_text(GameFont::Bitmap1, LEVELUP_TEXT_X(), LEVELUP_TEXT_Y(), "Level Up!", hb::shared::text::TextStyle::with_integrated_shadow(hb::shared::render::Color(flashColor, flashColor, 0)));
 		}
 	}
-	else if (m_pGame->m_cRestartCount == -1)
+	else if (m_game->m_restart_count == -1)
 	{
-		int flashColor = (GameClock::GetTimeMS() / 3) % 255;
-		m_pGame->PutString_SprFont2(LEVELUP_TEXT_X, LEVELUP_TEXT_Y, "Restart", flashColor, flashColor, 0);
+		int flashColor = (GameClock::get_time_ms() / 3) % 255;
+		hb::shared::text::draw_text(GameFont::Bitmap1, LEVELUP_TEXT_X(), LEVELUP_TEXT_Y(), "Restart", hb::shared::text::TextStyle::with_integrated_shadow(hb::shared::render::Color(flashColor, flashColor, 0)));
 	}
 
 	// Combat mode / Safe attack icon
-	if (m_pGame->m_bIsSafeAttackMode)
-		pSprite->Draw(COMBAT_ICON_X, COMBAT_ICON_Y, 4);
-	else if (m_pGame->m_bIsCombatMode)
-		pSprite->Draw(COMBAT_ICON_X, COMBAT_ICON_Y, 5);
+	if (m_game->m_player->m_is_safe_attack_mode)
+		sprite->draw(COMBAT_ICON_X(), COMBAT_ICON_Y(), 4);
+	else if (m_game->m_player->m_is_combat_mode)
+		sprite->draw(COMBAT_ICON_X(), COMBAT_ICON_Y(), 5);
 
 	// Combat mode button hover
-	if (IsInButton(msX, msY, BTN_COMBAT_X1, BTN_COMBAT_X2))
+	if (is_in_button(mouse_x, mouse_y, BTN_COMBAT_X1(), BTN_COMBAT_X2()))
 	{
-		pSprite->Draw(BTN_COMBAT_X1, BTN_Y1, 16);
-		const char* tooltip = m_pGame->m_bIsCombatMode
-			? (m_pGame->m_bIsSafeAttackMode ? "Safe Attack" : "Attack")
+		sprite->draw(BTN_COMBAT_X1(), BTN_Y1(), 16);
+		const char* tooltip = m_game->m_player->m_is_combat_mode
+			? (m_game->m_player->m_is_safe_attack_mode ? "Safe Attack" : "Attack")
 			: "Peace";
-		wsprintf(m_pGame->G_cTxt, "%s", tooltip);
-		PutString(msX - 10, msY - 20, m_pGame->G_cTxt, RGB(250, 250, 220));
+		put_string(mouse_x - 10, mouse_y - 20, tooltip, GameColors::UITooltip);
 	}
 
 	// Crusade icon
-	if (m_pGame->m_bIsCrusadeMode && m_pGame->m_iCrusadeDuty != 0)
+	if (m_game->m_is_crusade_mode && m_game->m_player->m_crusade_duty != 0)
 	{
-		bool bHover = IsInButton(msX, msY, BTN_CRUSADE_X1, BTN_CRUSADE_X2);
-		if (m_pGame->m_bAresden)
-			pSprite->Draw(BTN_CRUSADE_X1 + (bHover ? 1 : 0), BTN_Y1, bHover ? 1 : 2);
+		bool hover = is_in_button(mouse_x, mouse_y, BTN_CRUSADE_X1(), BTN_CRUSADE_X2());
+		if (m_game->m_player->m_aresden)
+			sprite->draw(BTN_CRUSADE_X1() + (hover ? 1 : 0), BTN_Y1(), hover ? 1 : 2);
 		else
-			pSprite->Draw(BTN_CRUSADE_X1, BTN_Y1, bHover ? 0 : 15);
+			sprite->draw(BTN_CRUSADE_X1(), BTN_Y1(), hover ? 0 : 15);
 	}
 
 	// Map message / coordinates (or remaining EXP when Ctrl pressed)
-	if (InputManager::Get().IsCtrlDown())
+	std::string infoBuf;
+	if (hb::shared::input::is_ctrl_down())
 	{
-		uint32_t iCurExp = m_pGame->iGetLevelExp(m_pGame->m_iLevel);
-		uint32_t iNextExp = m_pGame->iGetLevelExp(m_pGame->m_iLevel + 1);
-		if (m_pGame->m_iExp < iNextExp)
+		uint32_t cur_exp = m_game->get_level_exp(m_game->m_player->m_level);
+		uint32_t next_exp = m_game->get_level_exp(m_game->m_player->m_level + 1);
+		if (m_game->m_player->m_exp < next_exp)
 		{
-			uint32_t iExpRange = iNextExp - iCurExp;
-			uint32_t iExpProgress = (m_pGame->m_iExp > iCurExp) ? (m_pGame->m_iExp - iCurExp) : 0;
-			wsprintf(m_pGame->G_cTxt, "Rest Exp: %d", iExpRange - iExpProgress);
+			uint32_t exp_range = next_exp - cur_exp;
+			uint32_t exp_progress = (m_game->m_player->m_exp > cur_exp) ? (m_game->m_player->m_exp - cur_exp) : 0;
+			infoBuf = std::format("Rest Exp: {}", exp_range - exp_progress);
+		}
+		else
+		{
+			infoBuf.clear();
 		}
 	}
 	else
 	{
-		wsprintf(m_pGame->G_cTxt, "%s (%d,%d)", m_pGame->m_cMapMessage, m_pGame->m_sPlayerX, m_pGame->m_sPlayerY);
+		infoBuf = std::format("{} ({},{})", m_game->m_map_message, m_game->m_player->m_player_x, m_game->m_player->m_player_y);
 	}
-	PutAlignedString(MAP_MSG_X1 + 1, MAP_MSG_X2 + 1, MAP_MSG_Y + 1, m_pGame->G_cTxt, 0, 0, 0);
-	PutAlignedString(MAP_MSG_X1, MAP_MSG_X2, MAP_MSG_Y, m_pGame->G_cTxt, 200, 200, 120);
+	put_aligned_string(MAP_MSG_X1() + 1, MAP_MSG_X2() + 1, MAP_MSG_Y() + 1, infoBuf.c_str(), GameColors::UIBlack);
+	put_aligned_string(MAP_MSG_X1(), MAP_MSG_X2(), MAP_MSG_Y(), infoBuf.c_str(), GameColors::UIPaleYellow);
 }
 
-void DialogBox_HudPanel::DrawIconButtons(short msX, short msY)
+void DialogBox_HudPanel::draw_icon_buttons(short mouse_x, short mouse_y)
 {
-	if (msY <= BTN_Y1 || msY >= BTN_Y2) return;
+	if (mouse_y <= BTN_Y1() || mouse_y >= BTN_Y2()) return;
 
-	uint32_t dwTime = m_pGame->m_dwCurTime;
-	auto pSprite = m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_ICONPANNEL];
+	uint32_t time = m_game->m_cur_time;
+	auto sprite = m_game->m_sprite[InterfaceNdIconPanel];
+	int xOffset = hud_x_offset();
 
 	for (int i = 0; i < TOGGLE_BUTTON_COUNT; i++)
 	{
 		const auto& btn = TOGGLE_BUTTONS[i];
-		if (msX > btn.x1 && msX < btn.x2)
+		// Add X offset for wider resolutions
+		if (mouse_x > btn.x1 + xOffset && mouse_x < btn.x2 + xOffset)
 		{
-			pSprite->Draw(btn.spriteX, BTN_Y1, btn.spriteFrame);
-			wsprintf(m_pGame->G_cTxt, "%s", btn.tooltip);
+			sprite->draw(btn.spriteX + xOffset, BTN_Y1(), btn.spriteFrame);
 			int tooltipOffset = (btn.dialogId == DialogBoxId::SystemMenu) ? -20 : -10;
-			PutString(msX + tooltipOffset, msY - 20, m_pGame->G_cTxt, RGB(250, 250, 220));
+			put_string(mouse_x + tooltipOffset, mouse_y - 20, btn.tooltip, GameColors::UITooltip);
 			break;
 		}
 	}
 }
 
-void DialogBox_HudPanel::OnDraw(short msX, short msY, short msZ, char cLB)
+void DialogBox_HudPanel::on_draw(short mouse_x, short mouse_y, short z, char lb)
 {
-	short panelX = Info().sX;
-	short panelY = Info().sY;
+	short panelY = Info().m_y;
 
-	m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_ICONPANNEL]->Draw(panelX, panelY, 14);
-	DrawGaugeBars();
-	DrawStatusIcons(msX, msY);
-	DrawIconButtons(msX, msY);
+	// draw main HUD background centered (at xOffset, which is 0 for 640x480, 80 for 800x600)
+	m_game->m_sprite[InterfaceNdIconPanel]->draw(0, panelY, 14);
+
+	draw_gauge_bars();
+	draw_status_icons(mouse_x, mouse_y);
+	draw_icon_buttons(mouse_x, mouse_y);
 }
 
-bool DialogBox_HudPanel::OnClick(short msX, short msY)
+bool DialogBox_HudPanel::on_click(short mouse_x, short mouse_y)
 {
 	// Crusade button
-	if (IsInButton(msX, msY, BTN_CRUSADE_X1, BTN_CRUSADE_X2))
+	if (is_in_button(mouse_x, mouse_y, BTN_CRUSADE_X1(), BTN_CRUSADE_X2()))
 	{
-		if (!m_pGame->m_bIsCrusadeMode) return false;
-		switch (m_pGame->m_iCrusadeDuty)
+		if (!m_game->m_is_crusade_mode) return false;
+		switch (m_game->m_player->m_crusade_duty)
 		{
-		case 1: EnableDialogBox(DialogBoxId::CrusadeSoldier, 0, 0, 0); break;
-		case 2: EnableDialogBox(DialogBoxId::CrusadeConstructor, 0, 0, 0); break;
-		case 3: EnableDialogBox(DialogBoxId::CrusadeCommander, 0, 0, 0); break;
+		case 1: enable_dialog_box(DialogBoxId::CrusadeSoldier, 0, 0, 0); break;
+		case 2: enable_dialog_box(DialogBoxId::CrusadeConstructor, 0, 0, 0); break;
+		case 3: enable_dialog_box(DialogBoxId::CrusadeCommander, 0, 0, 0); break;
 		default: return false;
 		}
-		m_pGame->PlaySound('E', 14, 5);
+		m_game->play_game_sound('E', 14, 5);
 		return true;
 	}
 
 	// Combat mode toggle
-	if (IsInButton(msX, msY, BTN_COMBAT_X1, BTN_COMBAT_X2))
+	if (is_in_button(mouse_x, mouse_y, BTN_COMBAT_X1(), BTN_COMBAT_X2()))
 	{
-		m_pGame->bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_TOGGLECOMBATMODE, 0, 0, 0, 0, 0);
-		m_pGame->PlaySound('E', 14, 5);
+		m_game->send_command(MsgId::CommandCommon, CommonType::ToggleCombatMode, 0, 0, 0, 0, 0);
+		m_game->play_game_sound('E', 14, 5);
 		return true;
 	}
 
 	// Dialog toggle buttons (Character, Inventory, Magic, Skill, Chat, System)
+	int xOffset = hud_x_offset();
 	for (int i = 0; i < TOGGLE_BUTTON_COUNT; i++)
 	{
 		const auto& btn = TOGGLE_BUTTONS[i];
-		if (IsInButton(msX, msY, btn.x1, btn.x2))
+		// Add X offset for wider resolutions
+		if (is_in_button(mouse_x, mouse_y, btn.x1 + xOffset, btn.x2 + xOffset))
 		{
-			ToggleDialogWithSound(btn.dialogId);
+			toggle_dialog_with_sound(btn.dialogId);
 			return true;
 		}
 	}
 
+	return false;
+}
+
+bool DialogBox_HudPanel::on_item_drop(short mouse_x, short mouse_y)
+{
+	// Placeholder — no item drop behavior on HUD panel at this time
 	return false;
 }

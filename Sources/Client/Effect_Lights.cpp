@@ -1,4 +1,4 @@
-// Effect_Lights.cpp: DrawEffectLights implementation
+// Effect_Lights.cpp: draw_effect_lights implementation
 //
 //////////////////////////////////////////////////////////////////////
 
@@ -8,14 +8,14 @@
 #include "Effect.h"
 #include "GlobalDef.h"
 
-void EffectManager::DrawEffectLightsImpl()
+void effect_manager::draw_effect_lights_impl()
 {
-	int i, dX, dY, iDvalue;
-	uint32_t dwTime = m_pGame->m_dwCurTime;
-	char  cTempFrame;
-	for (i = 0; i < DEF_MAXEFFECTS; i++)
-		if (m_pEffectList[i] != 0) {
-			switch (m_pEffectList[i]->m_sType) {
+	int i, dX, dY, dvalue;
+	uint32_t time = m_game->m_cur_time;
+	char  temp_frame;
+	for (i = 0; i < game_limits::max_effects; i++)
+		if (m_effect_list[i] != 0) {
+			switch (m_effect_list[i]->m_type) {
 			case EffectType::NORMAL_HIT:
 				break;
 
@@ -26,38 +26,38 @@ void EffectManager::DrawEffectLightsImpl()
 				break;
 
 			case EffectType::FIREBALL_EXPLOSION:	// Fire Explosion
-				if (m_pEffectList[i]->m_cFrame >= 0)
+				if (m_effect_list[i]->m_frame >= 0)
 				{
-					dX = (m_pEffectList[i]->m_mX) - m_pGame->m_sViewPointX;
-					dY = (m_pEffectList[i]->m_mY) - m_pGame->m_sViewPointY;
-					iDvalue = (m_pEffectList[i]->m_cFrame - 7) * (-1);
-					if (m_pEffectList[i]->m_cFrame < 6)
-						(*m_pEffectSpr)[0]->Draw(dX, dY + 30, 1, SpriteLib::DrawParams{0.5f, 0, 0, 0, false});
-					else (*m_pEffectSpr)[0]->Draw(dX, dY + 30, 1, SpriteLib::DrawParams::TintedAlpha(iDvalue, iDvalue, iDvalue, 0.7f));
+					dX = (m_effect_list[i]->m_move_x) - m_game->m_Camera.get_x();
+					dY = (m_effect_list[i]->m_move_y) - m_game->m_Camera.get_y();
+					dvalue = (m_effect_list[i]->m_frame - 7) * (-1);
+					if (m_effect_list[i]->m_frame < 6)
+						(*m_effect_sprites)[0]->draw(dX, dY + 30, 1, hb::shared::sprite::DrawParams::additive_no_color_key());
+					else (*m_effect_sprites)[0]->draw(dX, dY + 30, 1, hb::shared::sprite::DrawParams::additive_tinted(dvalue, dvalue, dvalue));
 				}
 				break;
 
 			case EffectType::ENERGY_BOLT_EXPLOSION:	 // Energy Bolt
 			case EffectType::LIGHTNING_ARROW_EXPLOSION: // Lightning Arrow
-				if (m_pEffectList[i]->m_cFrame >= 0)
+				if (m_effect_list[i]->m_frame >= 0)
 				{
-					dX = (m_pEffectList[i]->m_mX) - m_pGame->m_sViewPointX;
-					dY = (m_pEffectList[i]->m_mY) - m_pGame->m_sViewPointY;
-					iDvalue = (m_pEffectList[i]->m_cFrame - 9) * (-1);
-					if (m_pEffectList[i]->m_cFrame < 8)
-						(*m_pEffectSpr)[0]->Draw(dX, dY + 30, 1, SpriteLib::DrawParams{0.5f, 0, 0, 0, false});
-					else (*m_pEffectSpr)[0]->Draw(dX, dY + 30, 1, SpriteLib::DrawParams::TintedAlpha(iDvalue, iDvalue, iDvalue, 0.7f));
+					dX = (m_effect_list[i]->m_move_x) - m_game->m_Camera.get_x();
+					dY = (m_effect_list[i]->m_move_y) - m_game->m_Camera.get_y();
+					dvalue = (m_effect_list[i]->m_frame - 9) * (-1);
+					if (m_effect_list[i]->m_frame < 8)
+						(*m_effect_sprites)[0]->draw(dX, dY + 30, 1, hb::shared::sprite::DrawParams::additive_no_color_key());
+					else (*m_effect_sprites)[0]->draw(dX, dY + 30, 1, hb::shared::sprite::DrawParams::additive_tinted(dvalue, dvalue, dvalue));
 				}
 				break;
 			case EffectType::MAGIC_MISSILE_EXPLOSION: // Magic Missile Explosion
-				if (m_pEffectList[i]->m_cFrame >= 0)
+				if (m_effect_list[i]->m_frame >= 0)
 				{
-					dX = (m_pEffectList[i]->m_mX) - m_pGame->m_sViewPointX;
-					dY = (m_pEffectList[i]->m_mY) - m_pGame->m_sViewPointY;
-					iDvalue = (m_pEffectList[i]->m_cFrame - 2) * (-1);
-					if (m_pEffectList[i]->m_cFrame < 2)
-						(*m_pEffectSpr)[0]->Draw(dX, dY + 30, 1, SpriteLib::DrawParams{0.5f, 0, 0, 0, false});
-					else (*m_pEffectSpr)[0]->Draw(dX, dY + 30, 1, SpriteLib::DrawParams::TintedAlpha(iDvalue, iDvalue, iDvalue, 0.7f));
+					dX = (m_effect_list[i]->m_move_x) - m_game->m_Camera.get_x();
+					dY = (m_effect_list[i]->m_move_y) - m_game->m_Camera.get_y();
+					dvalue = (m_effect_list[i]->m_frame - 2) * (-1);
+					if (m_effect_list[i]->m_frame < 2)
+						(*m_effect_sprites)[0]->draw(dX, dY + 30, 1, hb::shared::sprite::DrawParams::additive_no_color_key());
+					else (*m_effect_sprites)[0]->draw(dX, dY + 30, 1, hb::shared::sprite::DrawParams::additive_tinted(dvalue, dvalue, dvalue));
 				}
 				break;
 
@@ -70,17 +70,17 @@ void EffectManager::DrawEffectLightsImpl()
 			case EffectType::FIRE_STRIKE_FLYING:
 			case EffectType::LIGHTNING_ARROW_FLYING: // Lightning arrow
 				// Light on ground below the flying effect
-				dX = (m_pEffectList[i]->m_mX) - m_pGame->m_sViewPointX;
-				dY = (m_pEffectList[i]->m_mY) - m_pGame->m_sViewPointY;
-				iDvalue = -5;
-				(*m_pEffectSpr)[0]->Draw(dX, dY + 30, 1, SpriteLib::DrawParams::TintedAlpha(iDvalue, iDvalue, iDvalue, 0.7f));
+				dX = (m_effect_list[i]->m_move_x) - m_game->m_Camera.get_x();
+				dY = (m_effect_list[i]->m_move_y) - m_game->m_Camera.get_y();
+				dvalue = -5;
+				(*m_effect_sprites)[0]->draw(dX, dY + 30, 1, hb::shared::sprite::DrawParams::additive_tinted(dvalue, dvalue, dvalue));
 				break;
 
 			case EffectType::LIGHT_EFFECT_1:
 			case EffectType::LIGHT_EFFECT_2:
-				dX = (m_pEffectList[i]->m_mX) - m_pGame->m_sViewPointX;
-				dY = (m_pEffectList[i]->m_mY) - m_pGame->m_sViewPointY;
-				(*m_pEffectSpr)[0]->Draw(dX, dY + 30, 1, SpriteLib::DrawParams::Alpha(0.25f));
+				dX = (m_effect_list[i]->m_move_x) - m_game->m_Camera.get_x();
+				dY = (m_effect_list[i]->m_move_y) - m_game->m_Camera.get_y();
+				(*m_effect_sprites)[0]->draw(dX, dY + 30, 1, hb::shared::sprite::DrawParams::additive(0.25f));
 				break;
 
 			case EffectType::IMPACT_EFFECT:
@@ -88,91 +88,91 @@ void EffectManager::DrawEffectLightsImpl()
 
 			case EffectType::CHILL_WIND_IMPACT:
 			case EffectType::MASS_CHILL_WIND:
-				if (m_pEffectList[i]->m_cFrame >= 0)
+				if (m_effect_list[i]->m_frame >= 0)
 				{
-					dX = (m_pEffectList[i]->m_mX) - m_pGame->m_sViewPointX;
-					dY = (m_pEffectList[i]->m_mY) - m_pGame->m_sViewPointY;
-					iDvalue = (m_pEffectList[i]->m_cFrame - 7) * (-1);
-					if (m_pEffectList[i]->m_cFrame < 6)
-						(*m_pEffectSpr)[0]->Draw(dX, dY, 1, SpriteLib::DrawParams::Alpha(0.5f));
-					else (*m_pEffectSpr)[0]->Draw(dX, dY, 1, SpriteLib::DrawParams::TintedAlpha(iDvalue, iDvalue, iDvalue, 0.7f));
+					dX = (m_effect_list[i]->m_move_x) - m_game->m_Camera.get_x();
+					dY = (m_effect_list[i]->m_move_y) - m_game->m_Camera.get_y();
+					dvalue = (m_effect_list[i]->m_frame - 7) * (-1);
+					if (m_effect_list[i]->m_frame < 6)
+						(*m_effect_sprites)[0]->draw(dX, dY, 1, hb::shared::sprite::DrawParams::additive());
+					else (*m_effect_sprites)[0]->draw(dX, dY, 1, hb::shared::sprite::DrawParams::additive_tinted(dvalue, dvalue, dvalue));
 				}
 				break;
 
 			case EffectType::PROTECTION_RING: // Protection Ring
-				if (m_pEffectList[i]->m_cFrame >= 0)
+				if (m_effect_list[i]->m_frame >= 0)
 				{
-					dX = (m_pEffectList[i]->m_mX) - m_pGame->m_sViewPointX;
-					dY = (m_pEffectList[i]->m_mY) - m_pGame->m_sViewPointY;
-					(*m_pEffectSpr)[24]->Draw(dX, dY, m_pEffectList[i]->m_cFrame, SpriteLib::DrawParams{0.5f, 0, 0, 0, false});
+					dX = (m_effect_list[i]->m_move_x) - m_game->m_Camera.get_x();
+					dY = (m_effect_list[i]->m_move_y) - m_game->m_Camera.get_y();
+					(*m_effect_sprites)[24]->draw(dX, dY, m_effect_list[i]->m_frame, hb::shared::sprite::DrawParams::additive_no_color_key());
 				}
 				break;
 
 			case EffectType::BUFF_EFFECT_LIGHT:
-				if (m_pEffectList[i]->m_cFrame >= 0) {
-					dX = (m_pEffectList[i]->m_mX) - m_pGame->m_sViewPointX;
-					dY = (m_pEffectList[i]->m_mY) - m_pGame->m_sViewPointY;
-					(*m_pEffectSpr)[30]->Draw(dX, dY, m_pEffectList[i]->m_cFrame, SpriteLib::DrawParams{0.5f, 0, 0, 0, false});
+				if (m_effect_list[i]->m_frame >= 0) {
+					dX = (m_effect_list[i]->m_move_x) - m_game->m_Camera.get_x();
+					dY = (m_effect_list[i]->m_move_y) - m_game->m_Camera.get_y();
+					(*m_effect_sprites)[30]->draw(dX, dY, m_effect_list[i]->m_frame, hb::shared::sprite::DrawParams::additive_no_color_key());
 				}
 				break;
 
 			case EffectType::AURA_EFFECT_1:
-				dX = (m_pEffectList[i]->m_mX) - m_pGame->m_sViewPointX;
-				dY = (m_pEffectList[i]->m_mY) - m_pGame->m_sViewPointY;
-				(*m_pEffectSpr)[74]->Draw(dX, dY - 34, m_pEffectList[i]->m_cFrame, SpriteLib::DrawParams::Alpha(0.5f));
+				dX = (m_effect_list[i]->m_move_x) - m_game->m_Camera.get_x();
+				dY = (m_effect_list[i]->m_move_y) - m_game->m_Camera.get_y();
+				(*m_effect_sprites)[74]->draw(dX, dY - 34, m_effect_list[i]->m_frame, hb::shared::sprite::DrawParams::additive());
 				break;
 
 			case EffectType::AURA_EFFECT_2:
-				dX = (m_pEffectList[i]->m_mX) - m_pGame->m_sViewPointX;
-				dY = (m_pEffectList[i]->m_mY) - m_pGame->m_sViewPointY;
-				(*m_pEffectSpr)[75]->Draw(dX, dY + 35, m_pEffectList[i]->m_cFrame, SpriteLib::DrawParams::Alpha(0.5f));
+				dX = (m_effect_list[i]->m_move_x) - m_game->m_Camera.get_x();
+				dY = (m_effect_list[i]->m_move_y) - m_game->m_Camera.get_y();
+				(*m_effect_sprites)[75]->draw(dX, dY + 35, m_effect_list[i]->m_frame, hb::shared::sprite::DrawParams::additive());
 				break;
 
 			case EffectType::ICE_GOLEM_EFFECT_1: // Icegolem
-				dX = (m_pEffectList[i]->m_mX) - m_pGame->m_sViewPointX;
-				dY = (m_pEffectList[i]->m_mY) - m_pGame->m_sViewPointY;
-				(*m_pEffectSpr)[76]->Draw(dX + m_pEffectList[i]->m_dX * m_pEffectList[i]->m_cFrame, dY + m_pEffectList[i]->m_dY * m_pEffectList[i]->m_cFrame, m_pEffectList[i]->m_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
+				dX = (m_effect_list[i]->m_move_x) - m_game->m_Camera.get_x();
+				dY = (m_effect_list[i]->m_move_y) - m_game->m_Camera.get_y();
+				(*m_effect_sprites)[76]->draw(dX + m_effect_list[i]->m_dest_x * m_effect_list[i]->m_frame, dY + m_effect_list[i]->m_dest_y * m_effect_list[i]->m_frame, m_effect_list[i]->m_frame, hb::shared::sprite::DrawParams::additive(0.25f));
 				break;
 
 			case EffectType::ICE_GOLEM_EFFECT_2:// Icegolem
-				dX = (m_pEffectList[i]->m_mX) - m_pGame->m_sViewPointX;
-				dY = (m_pEffectList[i]->m_mY) - m_pGame->m_sViewPointY;
-				(*m_pEffectSpr)[77]->Draw(dX + m_pEffectList[i]->m_dX * m_pEffectList[i]->m_cFrame, dY + m_pEffectList[i]->m_dY * m_pEffectList[i]->m_cFrame, m_pEffectList[i]->m_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
+				dX = (m_effect_list[i]->m_move_x) - m_game->m_Camera.get_x();
+				dY = (m_effect_list[i]->m_move_y) - m_game->m_Camera.get_y();
+				(*m_effect_sprites)[77]->draw(dX + m_effect_list[i]->m_dest_x * m_effect_list[i]->m_frame, dY + m_effect_list[i]->m_dest_y * m_effect_list[i]->m_frame, m_effect_list[i]->m_frame, hb::shared::sprite::DrawParams::additive(0.25f));
 				break;
 
 			case EffectType::ICE_GOLEM_EFFECT_3:// Icegolem
-				dX = (m_pEffectList[i]->m_mX) - m_pGame->m_sViewPointX;
-				dY = (m_pEffectList[i]->m_mY) - m_pGame->m_sViewPointY;
-				(*m_pEffectSpr)[78]->Draw(dX + m_pEffectList[i]->m_dX * m_pEffectList[i]->m_cFrame, dY + m_pEffectList[i]->m_dY * m_pEffectList[i]->m_cFrame, m_pEffectList[i]->m_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
+				dX = (m_effect_list[i]->m_move_x) - m_game->m_Camera.get_x();
+				dY = (m_effect_list[i]->m_move_y) - m_game->m_Camera.get_y();
+				(*m_effect_sprites)[78]->draw(dX + m_effect_list[i]->m_dest_x * m_effect_list[i]->m_frame, dY + m_effect_list[i]->m_dest_y * m_effect_list[i]->m_frame, m_effect_list[i]->m_frame, hb::shared::sprite::DrawParams::additive(0.25f));
 				break;
 
 			case EffectType::BERSERK: // Berserk : Cirlcle 6 magic
-				dX = (m_pEffectList[i]->m_dX * 32) - m_pGame->m_sViewPointX;
-				dY = (m_pEffectList[i]->m_dY * 32) - m_pGame->m_sViewPointY;
-				(*m_pEffectSpr)[58]->Draw(dX, dY, m_pEffectList[i]->m_cFrame, SpriteLib::DrawParams{0.5f, 0, 0, 0, false});
+				dX = (m_effect_list[i]->m_dest_x * 32) - m_game->m_Camera.get_x();
+				dY = (m_effect_list[i]->m_dest_y * 32) - m_game->m_Camera.get_y();
+				(*m_effect_sprites)[58]->draw(dX, dY, m_effect_list[i]->m_frame, hb::shared::sprite::DrawParams::additive_no_color_key());
 				break;
 
 			case EffectType::ILLUSION: // Ilusion
 			case EffectType::MASS_ILLUSION: // Mass Illusion
-				cTempFrame = m_pEffectList[i]->m_cFrame;
-				dX = (m_pEffectList[i]->m_dX * 32) - m_pGame->m_sViewPointX;
-				dY = (m_pEffectList[i]->m_dY * 32) - m_pGame->m_sViewPointY;
-				(*m_pEffectSpr)[59]->Draw(dX, dY, cTempFrame, SpriteLib::DrawParams{0.5f, 0, 0, 0, false});
+				temp_frame = m_effect_list[i]->m_frame;
+				dX = (m_effect_list[i]->m_dest_x * 32) - m_game->m_Camera.get_x();
+				dY = (m_effect_list[i]->m_dest_y * 32) - m_game->m_Camera.get_y();
+				(*m_effect_sprites)[59]->draw(dX, dY, temp_frame, hb::shared::sprite::DrawParams::additive_no_color_key());
 				break;
 
 			case EffectType::ILLUSION_MOVEMENT: // Illusion mvt
 			case EffectType::MASS_ILLUSION_MOVEMENT: // Mass Illusion mvt
-				cTempFrame = m_pEffectList[i]->m_cFrame;
-				dX = (m_pEffectList[i]->m_dX * 32) - m_pGame->m_sViewPointX;
-				dY = (m_pEffectList[i]->m_dY * 32) - m_pGame->m_sViewPointY;
-				(*m_pEffectSpr)[102]->Draw(dX, dY + 30, cTempFrame, SpriteLib::DrawParams{0.5f, 0, 0, 0, false});
+				temp_frame = m_effect_list[i]->m_frame;
+				dX = (m_effect_list[i]->m_dest_x * 32) - m_game->m_Camera.get_x();
+				dY = (m_effect_list[i]->m_dest_y * 32) - m_game->m_Camera.get_y();
+				(*m_effect_sprites)[102]->draw(dX, dY + 30, temp_frame, hb::shared::sprite::DrawParams::additive_no_color_key());
 				break;
 
 			case EffectType::INHIBITION_CASTING: // Inhibition casting
-				cTempFrame = m_pEffectList[i]->m_cFrame;
-				dX = (m_pEffectList[i]->m_dX * 32) - m_pGame->m_sViewPointX;
-				dY = (m_pEffectList[i]->m_dY * 32) - m_pGame->m_sViewPointY;
-				(*m_pEffectSpr)[95]->Draw(dX, dY + 40, cTempFrame, SpriteLib::DrawParams{0.5f, 0, 0, 0, false});
+				temp_frame = m_effect_list[i]->m_frame;
+				dX = (m_effect_list[i]->m_dest_x * 32) - m_game->m_Camera.get_x();
+				dY = (m_effect_list[i]->m_dest_y * 32) - m_game->m_Camera.get_y();
+				(*m_effect_sprites)[95]->draw(dX, dY + 40, temp_frame, hb::shared::sprite::DrawParams::additive_no_color_key());
 				break;
 			}
 		}

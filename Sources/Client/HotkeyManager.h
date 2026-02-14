@@ -1,12 +1,13 @@
 #pragma once
 
+#include "IInput.h"  // For KeyCode
 #include <functional>
 #include <vector>
 
 class HotkeyManager
 {
 public:
-	static HotkeyManager& Get();
+	static HotkeyManager& get();
 
 	enum class Trigger
 	{
@@ -16,16 +17,16 @@ public:
 
 	struct KeyCombo
 	{
-		int vk;
+		KeyCode vk;
 		bool ctrl;
 		bool shift;
 		bool alt;
 	};
 
-	void Clear();
-	void Register(const KeyCombo& combo, Trigger trigger, std::function<void()> callback);
-	bool HandleKeyDown(int vk);
-	bool HandleKeyUp(int vk);
+	void clear();
+	void register_hotkey(const KeyCombo& combo, Trigger trigger, std::function<void()> callback);
+	bool handle_key_down(KeyCode vk);
+	bool handle_key_up(KeyCode vk);
 
 private:
 	HotkeyManager() = default;
@@ -40,7 +41,7 @@ private:
 		std::function<void()> callback;
 	};
 
-	bool HandleKey(int vk, Trigger trigger);
+	bool handle_key(KeyCode vk, Trigger trigger);
 
 	std::vector<Entry> m_entries;
 };

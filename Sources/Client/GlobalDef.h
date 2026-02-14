@@ -20,38 +20,44 @@
 /*** Put here global data for your server ***/
 #include "Version.h"
 
-#define NAME_WORLDNAME1			"WS1" // Name for default (1st) server
-#define DEF_SERVER_IP			"127.0.0.1"
-#define DEF_SERVER_PORT			2500
-#define DEF_GSERVER_PORT		9907
+constexpr const char* NAME_WORLDNAME1 = "WS1";
+constexpr const char* DEF_SERVER_IP = "199.187.160.239";//"192.168.1.140"; //"199.187.160.239";
+constexpr const int DEF_SERVER_PORT = 2500;
+constexpr const int DEF_GSERVER_PORT = 9907;
 
-#define LOGICAL_WIDTH			640
-#define LOGICAL_HEIGHT			480
-// Window size is now in settings.json (ConfigManager)
-#define BASE_SCREEN_WIDTH		LOGICAL_WIDTH
-#define BASE_SCREEN_HEIGHT		LOGICAL_HEIGHT
-#define SCREENX					((LOGICAL_WIDTH - BASE_SCREEN_WIDTH) / 2)
-#define SCREENY					((LOGICAL_HEIGHT - BASE_SCREEN_HEIGHT) / 2)
-#define LOGICAL_MAX_X			(LOGICAL_WIDTH - 1)
-#define LOGICAL_MAX_Y			(LOGICAL_HEIGHT - 1)
-#define VIEW_TILE_WIDTH			(LOGICAL_WIDTH / 32)
-#define VIEW_TILE_HEIGHT		(LOGICAL_HEIGHT / 32)
-#define VIEW_CENTER_TILE_X		(VIEW_TILE_WIDTH / 2)
-#define VIEW_CENTER_TILE_Y		(VIEW_TILE_HEIGHT / 2)
-#define ICON_PANEL_WIDTH		LOGICAL_WIDTH
-#define ICON_PANEL_HEIGHT		53
-#define ICON_PANEL_OFFSET_X		((LOGICAL_WIDTH - ICON_PANEL_WIDTH) / 2)
+// Resolution-dependent values are now provided by hb::shared::render::ResolutionConfig singleton
+// Include ResolutionConfig.h and use hb::shared::render::ResolutionConfig::get().MethodName()
+//
+// For backward compatibility, these inline functions provide the same interface
+// as the old macros but now return dynamic values based on settings.json
 
-#define CHAT_INPUT_X			10
-#define CHAT_INPUT_Y			(LOGICAL_HEIGHT - ICON_PANEL_HEIGHT - 16)
-#define EVENTLIST2_BASE_Y		(CHAT_INPUT_Y - (6 * 15) - 4)
-#define LEVELUP_TEXT_X			(LOGICAL_WIDTH - 90)
-#define LEVELUP_TEXT_Y			(EVENTLIST2_BASE_Y + (5 * 15))
+// Define guard to prevent RenderConstants.h from redefining these functions
+#define GLOBALDEF_H_RESOLUTION_FUNCTIONS
+
+#include "ResolutionConfig.h"
+
+inline int LOGICAL_WIDTH()      { return hb::shared::render::ResolutionConfig::get().logical_width(); }
+inline int LOGICAL_HEIGHT()     { return hb::shared::render::ResolutionConfig::get().logical_height(); }
+inline int BASE_SCREEN_WIDTH()  { return hb::shared::render::ResolutionConfig::get().logical_width(); }
+inline int BASE_SCREEN_HEIGHT() { return hb::shared::render::ResolutionConfig::get().logical_height(); }
+inline int LOGICAL_MAX_X()      { return hb::shared::render::ResolutionConfig::get().logical_max_x(); }
+inline int LOGICAL_MAX_Y()      { return hb::shared::render::ResolutionConfig::get().logical_max_y(); }
+inline int VIEW_TILE_WIDTH()    { return hb::shared::render::ResolutionConfig::get().view_tile_width(); }
+inline int VIEW_TILE_HEIGHT()   { return hb::shared::render::ResolutionConfig::get().view_tile_height(); }
+inline int VIEW_CENTER_TILE_X() { return hb::shared::render::ResolutionConfig::get().view_center_tile_x(); }
+inline int VIEW_CENTER_TILE_Y() { return hb::shared::render::ResolutionConfig::get().view_center_tile_y(); }
+inline int ICON_PANEL_WIDTH()   { return hb::shared::render::ResolutionConfig::get().icon_panel_width(); }
+inline int ICON_PANEL_HEIGHT()  { return hb::shared::render::ResolutionConfig::get().icon_panel_height(); }
+inline int ICON_PANEL_OFFSET_X(){ return hb::shared::render::ResolutionConfig::get().icon_panel_offset_x(); }
+
+inline int CHAT_INPUT_X()       { return hb::shared::render::ResolutionConfig::get().chat_input_x(); }
+inline int CHAT_INPUT_Y()       { return hb::shared::render::ResolutionConfig::get().chat_input_y(); }
+inline int EVENTLIST2_BASE_Y()  { return hb::shared::render::ResolutionConfig::get().event_list2_base_y(); }
+inline int LEVELUP_TEXT_X()     { return hb::shared::render::ResolutionConfig::get().level_up_text_x(); }
+inline int LEVELUP_TEXT_Y()     { return hb::shared::render::ResolutionConfig::get().level_up_text_y(); }
 
 
 /*** Some more compilation options ***/
-#define DEF_MAKE_ACCOUNT		// Enable acc creation. Missing sprites, fixed!
-#define DEF_USE_LOGIN
 #define DEF_COMMA_GOLD			// Allows to show comma nbe as original HB (ie: 1,200,000)
 
 #define DEF_WINDOWED_MODE		// Shows HB in a windowed mode (for debug purpose only, sprite will bug....)

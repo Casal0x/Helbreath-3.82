@@ -1,6 +1,6 @@
-// GameWindowHandler.h: Window event handler adapter for CGame
+// GameWindowHandler.h: hb::shared::render::Window event handler adapter for CGame
 //
-// Implements IWindowEventHandler and routes events to CGame methods
+// Implements hb::shared::render::IWindowEventHandler and routes events to CGame methods
 //////////////////////////////////////////////////////////////////////
 
 #pragma once
@@ -10,35 +10,35 @@
 // Forward declarations
 class CGame;
 
-class GameWindowHandler : public IWindowEventHandler
+class GameWindowHandler : public hb::shared::render::IWindowEventHandler
 {
 public:
-    GameWindowHandler(CGame* pGame);
+    GameWindowHandler(CGame* game);
     virtual ~GameWindowHandler() = default;
 
-    // ============== IWindowEventHandler Implementation ==============
+    // ============== hb::shared::render::IWindowEventHandler Implementation ==============
 
-    // Window Events
-    virtual void OnClose() override;
-    virtual void OnDestroy() override;
-    virtual void OnActivate(bool active) override;
-    virtual void OnResize(int width, int height) override;
+    // hb::shared::render::Window Events
+    virtual void on_close() override;
+    virtual void on_destroy() override;
+    virtual void on_activate(bool active) override;
+    virtual void on_resize(int width, int height) override;
 
     // Input Events
-    virtual void OnKeyDown(int keyCode) override;
-    virtual void OnKeyUp(int keyCode) override;
-    virtual void OnChar(char character) override;
-    virtual void OnMouseMove(int x, int y) override;
-    virtual void OnMouseButtonDown(int button, int x, int y) override;
-    virtual void OnMouseButtonUp(int button, int x, int y) override;
-    virtual void OnMouseWheel(int delta, int x, int y) override;
+    virtual void on_key_down(KeyCode key) override;
+    virtual void on_key_up(KeyCode key) override;
+    virtual void on_char(char character) override;
+    virtual void on_mouse_move(int x, int y) override;
+    virtual void on_mouse_button_down(int button, int x, int y) override;
+    virtual void on_mouse_button_up(int button, int x, int y) override;
+    virtual void on_mouse_wheel(int delta, int x, int y) override;
 
     // Custom Messages
-    virtual bool OnCustomMessage(UINT message, WPARAM wParam, LPARAM lParam) override;
+    virtual bool on_custom_message(uint32_t message, uintptr_t wparam, intptr_t lparam) override;
 
     // Text Input
-    virtual bool OnTextInput(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) override;
+    virtual bool on_text_input(hb::shared::types::NativeWindowHandle hwnd, uint32_t message, uintptr_t wparam, intptr_t lparam) override;
 
 private:
-    CGame* m_pGame;
+    CGame* m_game;
 };

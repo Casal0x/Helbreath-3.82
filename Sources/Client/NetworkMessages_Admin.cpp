@@ -1,73 +1,47 @@
 #include "Game.h"
 #include "NetworkMessageManager.h"
 #include "Packet/SharedPackets.h"
-#include "lan_eng.h"
 #include "DialogBoxIDs.h"
 #include <cstdio>
 #include <cstring>
-#include <windows.h>
+#include <string>
 
 namespace NetworkMessageHandlers {
 
-void HandleAdminInfo(CGame* pGame, char* pData)
-{
-	char cStr[256];
-	int iV1, iV2, iV3, iV4, iV5;
-
-	const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyAdminInfo>(
-		pData, sizeof(hb::net::PacketNotifyAdminInfo));
-	if (!pkt) return;
-	iV1 = pkt->v1;
-	iV2 = pkt->v2;
-	iV3 = pkt->v3;
-	iV4 = pkt->v4;
-	iV5 = pkt->v5;
-
-	std::memset(cStr, 0, sizeof(cStr));
-	wsprintf(cStr, "%d %d %d %d %d", iV1, iV2, iV3, iV4, iV5);
-	pGame->AddEventList(cStr);
-}
-
-void HandleCrashHandler(CGame* pGame, char* pData)
+void HandleCrashHandler(CGame* game, char* data)
 {
 	// 0x0BEF: Crash or closes the client? (Calls SE entry !)
 	// I'm not sure at all of this function's result, so let's quit game...
-	// Empty handler - just acknowledge the message
+	// empty handler - just acknowledge the message
 }
 
-void HandleIpAccountInfo(CGame* pGame, char* pData)
+void HandleIpAccountInfo(CGame* game, char* data)
 {
-	char cTemp[256];
-	std::memset(cTemp, 0, sizeof(cTemp));
+	std::string temp;
 	const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyIpAccountInfo>(
-		pData, sizeof(hb::net::PacketNotifyIpAccountInfo));
+		data, sizeof(hb::net::PacketNotifyIpAccountInfo));
 	if (!pkt) return;
-	strcpy(cTemp, pkt->text);
-	pGame->AddEventList(cTemp);
+	temp = pkt->text;
+	game->add_event_list(temp.c_str());
 }
 
-void HandleRewardGold(CGame* pGame, char* pData)
+void HandleRewardGold(CGame* game, char* data)
 {
 	const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyRewardGold>(
-		pData, sizeof(hb::net::PacketNotifyRewardGold));
+		data, sizeof(hb::net::PacketNotifyRewardGold));
 	if (!pkt) return;
-	pGame->m_iRewardGold = pkt->gold;
+	game->m_player->m_reward_gold = pkt->gold;
 }
 
-void HandleServerShutdown(CGame* pGame, char* pData)
+void HandleServerShutdown(CGame* game, char* data)
 {
 	const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyServerShutdown>(
-		pData, sizeof(hb::net::PacketNotifyServerShutdown));
+		data, sizeof(hb::net::PacketNotifyServerShutdown));
 	if (!pkt) return;
-	if (pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::Noticement) == false)
-		pGame->m_dialogBoxManager.EnableDialogBox(DialogBoxId::Noticement, pkt->mode, 0, 0);
-	else pGame->m_dialogBoxManager.Info(DialogBoxId::Noticement).cMode = pkt->mode;
-	pGame->PlaySound('E', 27, 0);
-}
-
-void HandleAdminUserLevelLow(CGame* pGame, char* pData)
-{
-	pGame->AddEventList(NOTIFY_MSG_HANDLER58, 10);
+	if (game->m_dialog_box_manager.is_enabled(DialogBoxId::Noticement) == false)
+		game->m_dialog_box_manager.enable_dialog_box(DialogBoxId::Noticement, pkt->mode, 0, 0);
+	else game->m_dialog_box_manager.Info(DialogBoxId::Noticement).m_mode = pkt->mode;
+	game->play_game_sound('E', 27, 0);
 }
 
 } // namespace NetworkMessageHandlers

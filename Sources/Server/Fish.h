@@ -1,48 +1,43 @@
 // Fish.h: interface for the CFish class.
-//
-//////////////////////////////////////////////////////////////////////
 
 #pragma once
 
-// MODERNIZED: Prevent old winsock.h from loading (must be before windows.h)
-#define _WINSOCKAPI_
 
-#include <windows.h>
 #include "CommonTypes.h"
-#include "item.h"
+#include "Item.h"
 
 class CFish  
 {
 public:
-	inline CFish(char cMapIndex, short sX, short sY, short sType, class CItem * pItem, int iDifficulty)
+	inline CFish(char map_index, short sX, short sY, short type, CItem * item, int difficulty)
 	{
-		m_cMapIndex		= cMapIndex;
-		m_sX			= sX;
-		m_sY			= sY;
-		m_sType			= sType;
-		m_pItem			= pItem;
+		m_map_index		= map_index;
+		m_x			= sX;
+		m_y			= sY;
+		m_type			= type;
+		m_item			= item;
 
-		m_sEngagingCount = 0;
-		m_iDifficulty    = iDifficulty;
+		m_engaging_count = 0;
+		m_difficulty    = difficulty;
 
-		if (m_iDifficulty <= 0)
-			m_iDifficulty = 1;
+		if (m_difficulty <= 0)
+			m_difficulty = 1;
 	}
 
 	inline virtual ~CFish()
 	{
-		if (m_pItem != 0) delete m_pItem;
+		if (m_item != 0) delete m_item;
 	}
 
-	char  m_cMapIndex;
-	short m_sX, m_sY;			// �ʻ��� ��ġ 
+	char  m_map_index;
+	short m_x, m_y;
 
-	short m_sType;				// ������ ����  
-	class CItem * m_pItem;		// �������� �Ҵ�Ǵ� ������(������ ���� ����)
+	short m_type;
+	CItem * m_item;
 
-	short m_sDynamicObjectHandle;
+	short m_dynamic_object_handle;
 
-	short m_sEngagingCount;		// ���� �� �����⸦ �븮�� �ִ� �÷��̾� �� 
-	int   m_iDifficulty;		// ���̵�. �ּ� 1�� �Ǿ�� �Ѵ�.
+	short m_engaging_count;
+	int   m_difficulty;
 };
 

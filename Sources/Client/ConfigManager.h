@@ -7,113 +7,164 @@ static const int MAX_SHORTCUTS = 5;
 static const int MAX_MAGIC_SLOT = 100;
 static const int MAX_SHORTCUT_SLOT = 200;
 
-class ConfigManager
+class config_manager
 {
 public:
-	static ConfigManager& Get();
+	static config_manager& get();
 
 	// Lifecycle
-	void Initialize();
-	void Shutdown();
+	void initialize();
+	void shutdown();
 
-	// File operations - replaces registry-based ReadSettings/WriteSettings
-	bool Load(const char* filename = "settings.json");
-	bool Save(const char* filename = "settings.json");
+	// File operations - replaces registry-based read_settings/write_settings
+	bool load(const char* filename = "settings.json");
+	bool save(const char* filename = "settings.json");
 
 	// Server address - uses DEF_SERVER_IP/PORT macros as defaults
-	const char* GetServerAddress() const { return m_serverAddress; }
-	int GetServerPort() const { return m_serverPort; }
-	int GetGameServerPort() const { return m_gameServerPort; }
+	//const char* GetServerAddress() const { return DEF_SERVER_IP; }
+	//int GetServerPort() const { return DEF_SERVER_PORT; }
+	//int GetGameServerPort() const { return DEF_GSERVER_PORT; }
 
 	// Shortcuts - replaces registry storage
 	// Magic shortcut: -1 = none, 0-99 = valid slot
-	short GetMagicShortcut() const { return m_magicShortcut; }
-	void SetMagicShortcut(short slot);
+	short get_magic_shortcut() const { return m_magic_shortcut; }
+	void set_magic_shortcut(short slot);
 
 	// Item/Skill shortcuts: -1 = none, 0-199 = valid slot
-	short GetShortcut(int index) const;
-	void SetShortcut(int index, short slot);
+	short get_shortcut(int index) const;
+	void set_shortcut(int index, short slot);
 
 	// Recent shortcut (runtime only, not persisted)
-	short GetRecentShortcut() const { return m_recentShortcut; }
-	void SetRecentShortcut(short slot) { m_recentShortcut = slot; }
+	short get_recent_shortcut() const { return m_recent_shortcut; }
+	void set_recent_shortcut(short slot) { m_recent_shortcut = slot; }
 
 	// Audio settings - adds persistence to existing runtime values
-	int GetSoundVolume() const { return m_soundVolume; }
-	int GetMusicVolume() const { return m_musicVolume; }
-	bool IsSoundEnabled() const { return m_bSoundEnabled; }
-	bool IsMusicEnabled() const { return m_bMusicEnabled; }
+	int get_master_volume() const { return m_master_volume; }
+	int get_sound_volume() const { return m_sound_volume; }
+	int get_music_volume() const { return m_music_volume; }
+	int get_ambient_volume() const { return m_ambient_volume; }
+	int get_ui_volume() const { return m_ui_volume; }
+	bool is_master_enabled() const { return m_master_enabled; }
+	bool is_sound_enabled() const { return m_sound_enabled; }
+	bool is_music_enabled() const { return m_music_enabled; }
+	bool is_ambient_enabled() const { return m_ambient_enabled; }
+	bool is_ui_enabled() const { return m_ui_enabled; }
 
-	void SetSoundVolume(int volume);
-	void SetMusicVolume(int volume);
-	void SetSoundEnabled(bool enabled);
-	void SetMusicEnabled(bool enabled);
+	void set_master_volume(int volume);
+	void set_sound_volume(int volume);
+	void set_music_volume(int volume);
+	void set_ambient_volume(int volume);
+	void set_ui_volume(int volume);
+	void set_master_enabled(bool enabled);
+	void set_sound_enabled(bool enabled);
+	void set_music_enabled(bool enabled);
+	void set_ambient_enabled(bool enabled);
+	void set_ui_enabled(bool enabled);
 
-	// Window/Resolution settings
-	int GetWindowWidth() const { return m_windowWidth; }
-	int GetWindowHeight() const { return m_windowHeight; }
-	void SetWindowSize(int width, int height);
+	// hb::shared::render::Window/Resolution settings
+	int get_window_width() const { return m_window_width; }
+	int get_window_height() const { return m_window_height; }
+	void set_window_size(int width, int height);
 
 	// Display/Detail settings
-	bool IsShowFpsEnabled() const { return m_bShowFPS; }
-	bool IsShowLatencyEnabled() const { return m_bShowLatency; }
-	int GetDetailLevel() const { return m_cDetailLevel; }
-	bool IsZoomMapEnabled() const { return m_bZoomMap; }
-	bool IsDialogTransparencyEnabled() const { return m_bDialogTrans; }
-	bool IsRunningModeEnabled() const { return m_bRunningMode; }
-	bool IsFullscreenEnabled() const { return m_bFullscreen; }
+	bool is_show_fps_enabled() const { return m_show_fps; }
+	bool is_show_latency_enabled() const { return m_show_latency; }
+	int get_detail_level() const { return m_detail_level; }
+	bool is_zoom_map_enabled() const { return m_zoom_map; }
+	bool is_dialog_transparency_enabled() const { return m_dialog_trans; }
+	bool is_running_mode_enabled() const { return m_running_mode; }
+	bool is_fullscreen_enabled() const { return m_fullscreen; }
 
-	void SetShowFpsEnabled(bool enabled);
-	void SetShowLatencyEnabled(bool enabled);
-	void SetDetailLevel(int level);
-	void SetZoomMapEnabled(bool enabled);
-	void SetDialogTransparencyEnabled(bool enabled);
-	void SetRunningModeEnabled(bool enabled);
-	void SetFullscreenEnabled(bool enabled);
+	void set_show_fps_enabled(bool enabled);
+	void set_show_latency_enabled(bool enabled);
+	void set_detail_level(int level);
+	void set_zoom_map_enabled(bool enabled);
+	void set_dialog_transparency_enabled(bool enabled);
+	void set_running_mode_enabled(bool enabled);
+	void set_fullscreen_enabled(bool enabled);
+
+	// Mouse capture
+	bool is_mouse_capture_enabled() const { return m_capture_mouse; }
+	void set_mouse_capture_enabled(bool enabled);
+
+	// Tile grid overlay (simple dark lines)
+	bool is_tile_grid_enabled() const { return m_tile_grid; }
+	void set_tile_grid_enabled(bool enabled);
+
+	// Patching grid overlay (debug with zone colors)
+	bool is_patching_grid_enabled() const { return m_patching_grid; }
+	void set_patching_grid_enabled(bool enabled);
+
+	// Borderless window
+	bool is_borderless_enabled() const { return m_borderless; }
+	void set_borderless_enabled(bool enabled);
+
+	// VSync
+	bool is_vsync_enabled() const { return m_vsync; }
+	void set_vsync_enabled(bool enabled);
+
+	// FPS limit (0 = unlimited)
+	int get_fps_limit() const { return m_fps_limit; }
+	void set_fps_limit(int limit);
+
+	// Fullscreen stretch (false = letterbox, true = stretch to fill)
+	bool is_fullscreen_stretch_enabled() const { return m_fullscreen_stretch; }
+	void set_fullscreen_stretch_enabled(bool enabled);
+
+	// Quick Actions - always enabled (pickup during movement, 95% unlock, responsive stops)
+	bool is_quick_actions_enabled() const { return true; }
 
 	// Dirty flag - indicates unsaved changes
-	bool IsDirty() const { return m_bDirty; }
-	void MarkClean() { m_bDirty = false; }
+	bool is_dirty() const { return m_dirty; }
+	void mark_clean() { m_dirty = false; }
 
 private:
-	ConfigManager() = default;
-	~ConfigManager() = default;
-	ConfigManager(const ConfigManager&) = delete;
-	ConfigManager& operator=(const ConfigManager&) = delete;
+	config_manager() = default;
+	~config_manager() = default;
+	config_manager(const config_manager&) = delete;
+	config_manager& operator=(const config_manager&) = delete;
 
-	void SetDefaults();
-	int Clamp(int value, int min, int max);
+	void set_defaults();
+	int clamp(int value, int min, int max);
 
-	// Server connection (defaults from DEF_SERVER_IP, DEF_SERVER_PORT, DEF_GSERVER_PORT)
-	char m_serverAddress[64];
-	int m_serverPort;
-	int m_gameServerPort;
-
-	// Shortcuts (matches m_sMagicShortCut, m_sShortCut[5], m_sRecentShortCut)
-	short m_magicShortcut;
+	// Shortcuts (matches m_magic_short_cut, m_short_cut[5], m_recent_short_cut)
+	short m_magic_shortcut;
 	short m_shortcuts[MAX_SHORTCUTS];
-	short m_recentShortcut;
+	short m_recent_shortcut;
 
 	// Audio (matches m_cSoundVolume, m_cMusicVolume, m_bSoundStat, m_bMusicStat)
-	int m_soundVolume;
-	int m_musicVolume;
-	bool m_bSoundEnabled;
-	bool m_bMusicEnabled;
+	int m_master_volume;
+	int m_sound_volume;
+	int m_music_volume;
+	int m_ambient_volume;
+	int m_ui_volume;
+	bool m_master_enabled;
+	bool m_sound_enabled;
+	bool m_music_enabled;
+	bool m_ambient_enabled;
+	bool m_ui_enabled;
 
-	// Window/Resolution
-	int m_windowWidth;
-	int m_windowHeight;
+	// hb::shared::render::Window/Resolution
+	int m_window_width;
+	int m_window_height;
 
 	// Display/Detail
-	bool m_bShowFPS;
-	bool m_bShowLatency;
-	int m_cDetailLevel;
-	bool m_bZoomMap;
-	bool m_bDialogTrans;
-	bool m_bRunningMode;
-	bool m_bFullscreen;
+	bool m_show_fps;
+	bool m_show_latency;
+	int m_detail_level;
+	bool m_zoom_map;
+	bool m_dialog_trans;
+	bool m_running_mode;
+	bool m_fullscreen;
+	bool m_capture_mouse;
+	bool m_borderless;
+	bool m_vsync;
+	int m_fps_limit;
+	bool m_fullscreen_stretch;
+	bool m_tile_grid;
+	bool m_patching_grid;
 
 	// State
-	bool m_bDirty;
-	bool m_bInitialized;
+	bool m_dirty;
+	bool m_initialized;
 };

@@ -1,5 +1,5 @@
-<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+﻿<?xml version='1.0' encoding='utf-8'?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Build" ToolsVersion="15.0">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
@@ -8,6 +8,14 @@
     <ProjectConfiguration Include="Release|Win32">
       <Configuration>Release</Configuration>
       <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
@@ -19,13 +27,26 @@
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <PlatformToolset>v143</PlatformToolset>
+    <UseOfMfc>false</UseOfMfc>
+    <WholeProgramOptimization>false</WholeProgramOptimization>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <PlatformToolset>v143</PlatformToolset>
     <UseOfMfc>false</UseOfMfc>
     <WholeProgramOptimization>true</WholeProgramOptimization>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <PlatformToolset>v143</PlatformToolset>
+    <UseOfMfc>false</UseOfMfc>
+    <WholeProgramOptimization>false</WholeProgramOptimization>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <PlatformToolset>v143</PlatformToolset>
     <UseOfMfc>false</UseOfMfc>
@@ -34,25 +55,100 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="$(VCTargetsPath)Microsoft.Cpp.UpgradeFromVC60.props" />
-  </ImportGroup>
+  
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="$(VCTargetsPath)Microsoft.Cpp.UpgradeFromVC60.props" />
   </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(VCTargetsPath)Microsoft.Cpp.UpgradeFromVC60.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
   <PropertyGroup Label="UserMacros" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(SolutionDir)Sources\DDrawEngine;$(SolutionDir)Dependencies\Shared;$(SolutionDir)Dependencies\Client\Includes;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
-    <LibraryPath>$(SolutionDir)lib\$(Configuration);$(SolutionDir)Dependencies\Client\Libs;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86)</LibraryPath>
-  </PropertyGroup>
+  
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(SolutionDir)Sources\DDrawEngine;$(SolutionDir)Dependencies\Shared;$(SolutionDir)Dependencies\Client\Includes;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
-    <LibraryPath>$(SolutionDir)lib\$(Configuration);$(SolutionDir)Dependencies\Client\Libs;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86)</LibraryPath>
+    <IncludePath>$(SolutionDir)Sources\SFMLEngine;$(SolutionDir)Dependencies\Shared;$(SolutionDir)Dependencies\Shared\Entity;$(SolutionDir)Dependencies\Shared\Game;$(SolutionDir)Dependencies\Shared\Net;$(SolutionDir)Dependencies\Shared\Render;$(SolutionDir)Dependencies\Shared\Util;$(SolutionDir)Dependencies\Shared\Log;$(SolutionDir)Dependencies\Client\Includes;$(SolutionDir)Dependencies\SFML\include;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+    <LibraryPath>$(SolutionDir)Dependencies\Client\Libs;$(SolutionDir)Dependencies\SFML\lib;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86)</LibraryPath>
+    <OutDir>$(SolutionDir)Debug\</OutDir>
+    <IntDir>$(Configuration)\</IntDir>
+    <TargetName>Game_SFML</TargetName>
+    <LocalDebuggerWorkingDirectory>$(SolutionDir)..\Binaries\Game</LocalDebuggerWorkingDirectory>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+    <IncludePath>$(SolutionDir)Sources\SFMLEngine;$(SolutionDir)Dependencies\Shared;$(SolutionDir)Dependencies\Shared\Entity;$(SolutionDir)Dependencies\Shared\Game;$(SolutionDir)Dependencies\Shared\Net;$(SolutionDir)Dependencies\Shared\Render;$(SolutionDir)Dependencies\Shared\Util;$(SolutionDir)Dependencies\Shared\Log;$(SolutionDir)Dependencies\Client\Includes;$(SolutionDir)Dependencies\SFML\include;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+    <LibraryPath>$(SolutionDir)Dependencies\Client\Libs;$(SolutionDir)Dependencies\SFML\lib;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86)</LibraryPath>
+    <OutDir>$(SolutionDir)Release\</OutDir>
+    <IntDir>$(Configuration)\</IntDir>
+    <TargetName>Game_SFML</TargetName>
+    <LocalDebuggerWorkingDirectory>$(SolutionDir)..\Binaries\Game</LocalDebuggerWorkingDirectory>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+  </PropertyGroup>
+  
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <LinkIncremental>true</LinkIncremental>
+    <IncludePath>$(SolutionDir)Sources\SFMLEngine;$(SolutionDir)Dependencies\Shared;$(SolutionDir)Dependencies\Shared\Entity;$(SolutionDir)Dependencies\Shared\Game;$(SolutionDir)Dependencies\Shared\Net;$(SolutionDir)Dependencies\Shared\Render;$(SolutionDir)Dependencies\Shared\Util;$(SolutionDir)Dependencies\Shared\Log;$(SolutionDir)Dependencies\Client\Includes;$(SolutionDir)Dependencies\SFML\include;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+    <LibraryPath>$(SolutionDir)Dependencies\Client\Libs\x64;$(SolutionDir)Dependencies\SFML\lib_x64;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
+    <OutDir>$(SolutionDir)Debug\</OutDir>
+    <IntDir>$(Configuration)_x64\</IntDir>
+    <TargetName>Game_SFML_x64</TargetName>
+    <LocalDebuggerWorkingDirectory>$(SolutionDir)..\Binaries\Game</LocalDebuggerWorkingDirectory>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <LinkIncremental>false</LinkIncremental>
+    <IncludePath>$(SolutionDir)Sources\SFMLEngine;$(SolutionDir)Dependencies\Shared;$(SolutionDir)Dependencies\Shared\Entity;$(SolutionDir)Dependencies\Shared\Game;$(SolutionDir)Dependencies\Shared\Net;$(SolutionDir)Dependencies\Shared\Render;$(SolutionDir)Dependencies\Shared\Util;$(SolutionDir)Dependencies\Shared\Log;$(SolutionDir)Dependencies\Client\Includes;$(SolutionDir)Dependencies\SFML\include;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+    <LibraryPath>$(SolutionDir)Dependencies\Client\Libs\x64;$(SolutionDir)Dependencies\SFML\lib_x64;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
+    <OutDir>$(SolutionDir)Release\</OutDir>
+    <IntDir>$(Configuration)_x64\</IntDir>
+    <TargetName>Game_SFML_x64</TargetName>
+    <LocalDebuggerWorkingDirectory>$(SolutionDir)..\Binaries\Game</LocalDebuggerWorkingDirectory>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+  </PropertyGroup>
+  
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <InlineFunctionExpansion>Default</InlineFunctionExpansion>
+      <StringPooling>true</StringPooling>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <Optimization>Disabled</Optimization>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_VC80_UPGRADE=0x0600;SFML_STATIC;SFML_ENGINE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <ProgramDataBaseFileName>$(IntDir)</ProgramDataBaseFileName>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+      <WholeProgramOptimization>false</WholeProgramOptimization>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <LanguageStandard_C>stdc17</LanguageStandard_C>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+    </ClCompile>
+    <Link>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <SubSystem>Windows</SubSystem>
+      <SetChecksum>false</SetChecksum>
+      <AdditionalDependencies>SFMLEngine.lib;sfml-graphics-s-d.lib;sfml-window-s-d.lib;sfml-system-s-d.lib;freetyped.lib;opengl32.lib;Ws2_32.lib;DXGUID.LIB;dxgi.lib;winmm.lib;gdi32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
+      <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
+      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
+    </Link>
+    <ResourceCompile>
+      <Culture>0x0409</Culture>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+  </ItemDefinitionGroup>
+  
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -63,44 +159,36 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_VC80_UPGRADE=0x0600;SFML_STATIC;SFML_ENGINE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
-      <PrecompiledHeaderOutputFile>
-      </PrecompiledHeaderOutputFile>
       <ObjectFileName>$(IntDir)</ObjectFileName>
       <ProgramDataBaseFileName>$(IntDir)</ProgramDataBaseFileName>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <LanguageStandard_C>stdc17</LanguageStandard_C>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
     </ClCompile>
-    <Midl>
-      <TypeLibraryName>.\Release\Client.tlb</TypeLibraryName>
-    </Midl>
-    <ResourceCompile>
-      <Culture>0x0809</Culture>
-      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-    </ResourceCompile>
-    <Bscmake>
-      <SuppressStartupBanner>true</SuppressStartupBanner>
-      <OutputFile>.\Release\Client.bsc</OutputFile>
-    </Bscmake>
     <Link>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <SubSystem>Windows</SubSystem>
-      <IgnoreAllDefaultLibraries>
-      </IgnoreAllDefaultLibraries>
       <SetChecksum>true</SetChecksum>
-      <AdditionalDependencies>DDrawEngine.lib;Ws2_32.lib;DINPUT.LIB;DSOUND.LIB;DXGUID.LIB;ddraw.lib;winmm.lib;Cint.lib;gdi32.lib;imm32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>SFMLEngine.lib;sfml-graphics-s.lib;sfml-window-s.lib;sfml-system-s.lib;freetype.lib;opengl32.lib;Ws2_32.lib;DXGUID.LIB;dxgi.lib;winmm.lib;gdi32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
       <GenerateDebugInformation>false</GenerateDebugInformation>
-      <IgnoreSpecificDefaultLibraries>
-      </IgnoreSpecificDefaultLibraries>
-      <GenerateMapFile>false</GenerateMapFile>
       <AdditionalOptions> /FORCE:UNRESOLVED</AdditionalOptions>
       <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
+      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
     </Link>
+    <ResourceCompile>
+      <Culture>0x0809</Culture>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
   </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+  
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <InlineFunctionExpansion>Default</InlineFunctionExpansion>
@@ -108,58 +196,77 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <Optimization>Disabled</Optimization>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_VC80_UPGRADE=0x0600;SFML_STATIC;SFML_ENGINE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
-      <PrecompiledHeaderOutputFile>
-      </PrecompiledHeaderOutputFile>
       <ObjectFileName>$(IntDir)</ObjectFileName>
       <ProgramDataBaseFileName>$(IntDir)</ProgramDataBaseFileName>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <WholeProgramOptimization>false</WholeProgramOptimization>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <LanguageStandard_C>stdc17</LanguageStandard_C>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
     </ClCompile>
-    <Midl>
-      <TypeLibraryName>.\Release\Client.tlb</TypeLibraryName>
-    </Midl>
+    <Link>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <SubSystem>Windows</SubSystem>
+      <SetChecksum>false</SetChecksum>
+      <AdditionalDependencies>SFMLEngine.lib;sfml-graphics-s-d.lib;sfml-window-s-d.lib;sfml-system-s-d.lib;freetyped.lib;opengl32.lib;Ws2_32.lib;dxgi.lib;winmm.lib;gdi32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
+      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
+    </Link>
     <ResourceCompile>
       <Culture>0x0409</Culture>
       <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ResourceCompile>
-    <Bscmake>
+  </ItemDefinitionGroup>
+  
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <StringPooling>true</StringPooling>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <Optimization>MaxSpeed</Optimization>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <OutputFile>$(IntDir)</OutputFile>
-    </Bscmake>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_VC80_UPGRADE=0x0600;SFML_STATIC;SFML_ENGINE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <ProgramDataBaseFileName>$(IntDir)</ProgramDataBaseFileName>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <LanguageStandard_C>stdc17</LanguageStandard_C>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+    </ClCompile>
     <Link>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <SubSystem>Windows</SubSystem>
-      <IgnoreAllDefaultLibraries>
-      </IgnoreAllDefaultLibraries>
-      <SetChecksum>false</SetChecksum>
-      <AdditionalDependencies>DDrawEngine.lib;Ws2_32.lib;DINPUT.LIB;DSOUND.LIB;DXGUID.LIB;ddraw.lib;winmm.lib;Cint.lib;gdi32.lib;imm32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
-      <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
-      <IgnoreSpecificDefaultLibraries>
-      </IgnoreSpecificDefaultLibraries>
-      <GenerateMapFile>false</GenerateMapFile>
-      <AdditionalOptions>
-      </AdditionalOptions>
-      <LinkStatus>
-      </LinkStatus>
-      <LinkTimeCodeGeneration>Default</LinkTimeCodeGeneration>
-      <EnableCOMDATFolding>false</EnableCOMDATFolding>
-      <OptimizeReferences>false</OptimizeReferences>
+      <SetChecksum>true</SetChecksum>
+      <AdditionalDependencies>SFMLEngine.lib;sfml-graphics-s.lib;sfml-window-s.lib;sfml-system-s.lib;freetype.lib;opengl32.lib;Ws2_32.lib;dxgi.lib;winmm.lib;gdi32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <AdditionalOptions> /FORCE:UNRESOLVED</AdditionalOptions>
+      <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
     </Link>
+    <ResourceCompile>
+      <Culture>0x0809</Culture>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="ActionID_Client.h" />
     <ClInclude Include="Benchmark.h" />
     <ClInclude Include="FrameTiming.h" />
-    <ClInclude Include="InputManager.h" />
     <ClInclude Include="Version.h" />
     <ClInclude Include="BuildItem.h" />
     <ClInclude Include="CharInfo.h" />
     <ClInclude Include="CommonTypes.h" />
-    <ClInclude Include="Curse.h" />
     <ClInclude Include="Effect.h" />
     <ClInclude Include="DialogBoxIDs.h" />
     <ClInclude Include="DialogBoxInfo.h" />
@@ -207,43 +314,89 @@
     <ClInclude Include="DialogBox_GuildHallMenu.h" />
     <ClInclude Include="DialogBox_SellOrRepair.h" />
     <ClInclude Include="DialogBox_Manufacture.h" />
+    <ClInclude Include="AnimationState.h" />
     <ClInclude Include="EffectManager.h" />
+    <ClInclude Include="EntityMotion.h" />
     <ClInclude Include="NetworkMessageManager.h" />
     <ClInclude Include="Game.h" />
-    <ClInclude Include="GameWindowHandler.h" />
-    <ClInclude Include="GameMonitor.h" />
+    <ClInclude Include="GameConstants.h" />
+    <ClInclude Include="GameTimer.h" />
+    <ClInclude Include="..\Dependencies\Shared\Render\Application.h" />
     <ClInclude Include="GlobalDef.h" />
     <ClInclude Include="lan_eng.h" />
     <ClInclude Include="Magic.h" />
     <ClInclude Include="MapData.h" />
     <ClInclude Include="Misc.h" />
-    <ClInclude Include="MouseInterface.h" />
     <ClInclude Include="ChatMsg.h" />
+    <ClInclude Include="ChatManager.h" />
+    <ClInclude Include="ItemNameFormatter.h" />
     <ClInclude Include="ClientMessages.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="Skill.h" />
     <ClInclude Include="SpriteID.h" />
     <ClInclude Include="Tile.h" />
     <ClInclude Include="TileSpr.h" />
-    <ClInclude Include="XSocket.h" />
     <ClInclude Include="ConfigManager.h" />
-    <ClInclude Include="Camera.h" />
+    <ClInclude Include="LocalCacheManager.h" />
     <ClInclude Include="AudioManager.h" />
     <ClInclude Include="ChatCommandManager.h" />
-    <ClInclude Include="CmdShowFrame.h" />
-    <ClInclude Include="CmdShowPing.h" />
-    <ClInclude Include="CmdWhisper.h" />
-    <ClInclude Include="CmdShout.h" />
-    <ClInclude Include="CmdIgnore.h" />
-    <ClInclude Include="CmdWeather.h" />
-    <ClInclude Include="CmdProfile.h" />
+    <ClInclude Include="CombatSystem.h" />
+    <ClInclude Include="InventoryManager.h" />
+    <ClInclude Include="MagicCastingSystem.h" />
+    <ClInclude Include="BuildItemManager.h" />
+    <ClInclude Include="ShopManager.h" />
+    <ClInclude Include="TeleportManager.h" />
+    <ClInclude Include="TextInputManager.h" />
+    <ClInclude Include="EventListManager.h" />
     <ClInclude Include="WeatherManager.h" />
-  </ItemGroup>
+    <ClInclude Include="FloatingTextTypes.h" />
+    <ClInclude Include="FloatingText.h" />
+    <ClInclude Include="FloatingTextManager.h" />
+    <ClInclude Include="FishingManager.h" />
+    <ClInclude Include="CraftingManager.h" />
+    <ClInclude Include="QuestManager.h" />
+    <ClInclude Include="GuildManager.h" />
+    <ClInclude Include="CursorTarget.h" />
+    <ClInclude Include="Player.h" />
+    <ClInclude Include="PlayerController.h" />
+    <ClInclude Include="EntityRenderState.h" />
+    <ClInclude Include="EquipmentIndices.h" />
+    <ClInclude Include="RenderHelpers.h" />
+    <ClInclude Include="PlayerRenderer.h" />
+    <ClInclude Include="NpcRenderer.h" />
+    <ClInclude Include="$(SolutionDir)Dependencies\Shared\Entity\OwnerType.h" />
+    <ClInclude Include="$(SolutionDir)Dependencies\Shared\Entity\ObjectIDRange.h" />
+    <ClInclude Include="Camera.h" />
+    <ClInclude Include="GameModeManager.h" />
+    <ClInclude Include="GameFonts.h" />
+    <ClInclude Include="IGameScreen.h" />
+    <ClInclude Include="Screen_OnGame.h" />
+    <ClInclude Include="SpellAoE.h" />
+    <ClInclude Include="Screen_MainMenu.h" />
+    <ClInclude Include="Screen_Login.h" />
+    <ClInclude Include="Screen_SelectCharacter.h" />
+    <ClInclude Include="Screen_CreateNewCharacter.h" />
+    <ClInclude Include="Screen_CreateAccount.h" />
+    <ClInclude Include="Screen_Quit.h" />
+    <ClInclude Include="Screen_Loading.h" />
+    <ClInclude Include="Screen_Splash.h" />
+    <ClInclude Include="Screen_Test.h" />
+    <ClInclude Include="Screen_TestPrimitives.h" />
+    <ClInclude Include="Overlay_Connecting.h" />
+    <ClInclude Include="Overlay_WaitingResponse.h" />
+    <ClInclude Include="Overlay_LogResMsg.h" />
+    <ClInclude Include="Overlay_QueryForceLogin.h" />
+    <ClInclude Include="Overlay_QueryDeleteCharacter.h" />
+    <ClInclude Include="Overlay_ChangePassword.h" />
+    <ClInclude Include="Overlay_VersionNotMatch.h" />
+    <ClInclude Include="Overlay_ConnectionLost.h" />
+    <ClInclude Include="Overlay_Msg.h" />
+    <ClInclude Include="Overlay_WaitInitData.h" />
+  <ClInclude Include="..\Dependencies\Shared\Net\ASIOSocket.h" /><ClInclude Include="..\Dependencies\Shared\Entity\ActionID.h" /><ClInclude Include="..\Dependencies\Shared\Game\AdminLevel.h" /><ClInclude Include="..\Dependencies\Shared\Entity\Appearance.h" /><ClInclude Include="..\Dependencies\Shared\Render\BitmapFontFactory.h" /><ClInclude Include="..\Dependencies\Shared\Util\CRC32.h" /><ClInclude Include="..\Dependencies\Shared\Render\ColorUtils.h" /><ClInclude Include="..\Dependencies\Shared\Net\ConcurrentMsgQueue.h" /><ClInclude Include="..\Dependencies\Shared\Entity\DynamicObjectID.h" /><ClInclude Include="..\Dependencies\Shared\Entity\EntityRelationship.h" /><ClInclude Include="..\Dependencies\Shared\Render\GameGeometry.h" /><ClInclude Include="..\Dependencies\Shared\Render\IBitmapFont.h" /><ClInclude Include="..\Dependencies\Shared\Render\IInput.h" /><ClInclude Include="..\Dependencies\Shared\Net\IOServicePool.h" /><ClInclude Include="..\Dependencies\Shared\Render\IRenderer.h" /><ClInclude Include="..\Dependencies\Shared\Render\ISprite.h" /><ClInclude Include="..\Dependencies\Shared\Render\ISpriteFactory.h" /><ClInclude Include="..\Dependencies\Shared\Render\ITextRenderer.h" /><ClInclude Include="..\Dependencies\Shared\Render\ITexture.h" /><ClInclude Include="..\Dependencies\Shared\Render\Event.h" /><ClInclude Include="..\Dependencies\Shared\Render\IWindow.h" /><ClInclude Include="..\Dependencies\Shared\Item\Item.h" /><ClInclude Include="..\Dependencies\Shared\Item\ItemAttributes.h" /><ClInclude Include="..\Dependencies\Shared\Item\ItemEnums.h" /><ClInclude Include="..\Dependencies\Shared\Item\SharedItem.h" /><ClInclude Include="..\Dependencies\Shared\Render\NativeTypes.h" /><ClInclude Include="..\Dependencies\Shared\Game\MagicTypes.h" /><ClInclude Include="..\Dependencies\Shared\Net\NetConstants.h" /><ClInclude Include="..\Dependencies\Shared\Net\NetMessages.h" /><ClInclude Include="..\Dependencies\Shared\Render\NullSprite.h" /><ClInclude Include="..\Dependencies\Shared\Packet\PacketCalcSocket.h" /><ClInclude Include="..\Dependencies\Shared\Packet\PacketCommon.h" /><ClInclude Include="..\Dependencies\Shared\Packet\PacketConfigCache.h" /><ClInclude Include="..\Dependencies\Shared\Packet\PacketEvent.h" /><ClInclude Include="..\Dependencies\Shared\Packet\PacketHeaders.h" /><ClInclude Include="..\Dependencies\Shared\Packet\PacketHelpers.h" /><ClInclude Include="..\Dependencies\Shared\Packet\PacketItemConfig.h" /><ClInclude Include="..\Dependencies\Shared\Packet\PacketLogin.h" /><ClInclude Include="..\Dependencies\Shared\Packet\PacketLoginResponse.h" /><ClInclude Include="..\Dependencies\Shared\Packet\PacketMagicConfig.h" /><ClInclude Include="..\Dependencies\Shared\Packet\PacketMap.h" /><ClInclude Include="..\Dependencies\Shared\Packet\PacketMotion.h" /><ClInclude Include="..\Dependencies\Shared\Packet\PacketNotify.h" /><ClInclude Include="..\Dependencies\Shared\Packet\PacketRequest.h" /><ClInclude Include="..\Dependencies\Shared\Packet\PacketResponse.h" /><ClInclude Include="..\Dependencies\Shared\Packet\PacketShop.h" /><ClInclude Include="..\Dependencies\Shared\Packet\PacketSkillConfig.h" /><ClInclude Include="..\Dependencies\Shared\Packet\SharedPackets.h" /><ClInclude Include="..\Dependencies\Shared\Entity\PlayerStatusData.h" /><ClInclude Include="..\Dependencies\Shared\Render\PrimitiveTypes.h" /><ClInclude Include="..\Dependencies\Shared\Render\RenderConstants.h" /><ClInclude Include="..\Dependencies\Shared\Render\RendererFactory.h" /><ClInclude Include="..\Dependencies\Shared\Render\ResolutionConfig.h" /><ClInclude Include="..\Dependencies\Shared\Game\SharedCalculations.h" /><ClInclude Include="..\Dependencies\Shared\Render\SpriteCollection.h" /><ClInclude Include="..\Dependencies\Shared\Render\SpriteLoader.h" /><ClInclude Include="..\Dependencies\Shared\Render\SpriteTypes.h" /><ClInclude Include="..\Dependencies\Shared\Render\TextLib.h" /><ClInclude Include="..\Dependencies\Shared\Log\Log.h" /><ClInclude Include="..\Dependencies\Shared\Log\LogLevel.h" /><ClInclude Include="..\Dependencies\Shared\Log\LogBackend.h" /><ClInclude Include="ClientLogChannels.h" /><ClInclude Include="GameEvents.h" /></ItemGroup>
   <ItemGroup>
     <ClCompile Include="CommonTypes.cpp" />
     <ClCompile Include="ConfigManager.cpp" />
-    <ClCompile Include="Camera.cpp" />
-    <ClCompile Include="Curse.cpp" />
+    <ClCompile Include="LocalCacheManager.cpp" />
     <ClCompile Include="DialogBoxManager.cpp" />
     <ClCompile Include="IDialogBox.cpp" />
     <ClCompile Include="DialogBox_WarningMsg.cpp" />
@@ -290,11 +443,41 @@
     <ClCompile Include="DialogBox_Manufacture.cpp" />
     <ClCompile Include="FrameTiming.cpp" />
     <ClCompile Include="HotkeyManager.cpp" />
-    <ClCompile Include="InputManager.cpp" />
     <ClCompile Include="Version.cpp" />
     <ClCompile Include="Game.Hotkeys.cpp" />
+    <ClCompile Include="Game.DrawObjects.cpp" />
+    <ClCompile Include="EquipmentIndices.cpp" />
+    <ClCompile Include="RenderHelpers.cpp" />
+    <ClCompile Include="PlayerRenderer.cpp" />
+    <ClCompile Include="NpcRenderer.cpp" />
     <ClCompile Include="Game.cpp" />
+    <ClCompile Include="GameModeManager.cpp" />
+    <ClCompile Include="IGameScreen.cpp" />
+    <ClCompile Include="Screen_OnGame.cpp" />
+    <ClCompile Include="SpellAoE.cpp" />
+    <ClCompile Include="Screen_MainMenu.cpp" />
+    <ClCompile Include="Screen_Login.cpp" />
+    <ClCompile Include="Screen_SelectCharacter.cpp" />
+    <ClCompile Include="Screen_CreateNewCharacter.cpp" />
+    <ClCompile Include="Screen_CreateAccount.cpp" />
+    <ClCompile Include="Screen_Quit.cpp" />
+    <ClCompile Include="Screen_Loading.cpp" />
+    <ClCompile Include="Screen_Splash.cpp" />
+    <ClCompile Include="Screen_Test.cpp" />
+    <ClCompile Include="Screen_TestPrimitives.cpp" />
+    <ClCompile Include="Overlay_Connecting.cpp" />
+    <ClCompile Include="Overlay_WaitingResponse.cpp" />
+    <ClCompile Include="Overlay_LogResMsg.cpp" />
+    <ClCompile Include="Overlay_QueryForceLogin.cpp" />
+    <ClCompile Include="Overlay_QueryDeleteCharacter.cpp" />
+    <ClCompile Include="Overlay_ChangePassword.cpp" />
+    <ClCompile Include="Overlay_VersionNotMatch.cpp" />
+    <ClCompile Include="Overlay_ConnectionLost.cpp" />
+    <ClCompile Include="Overlay_Msg.cpp" />
+    <ClCompile Include="Overlay_WaitInitData.cpp" />
+    <ClCompile Include="AnimationState.cpp" />
     <ClCompile Include="EffectManager.cpp" />
+    <ClCompile Include="EntityMotion.cpp" />
     <ClCompile Include="Effect_Add.cpp" />
     <ClCompile Include="Effect_Update.cpp" />
     <ClCompile Include="Effect_Draw.cpp" />
@@ -311,6 +494,10 @@
     <ClCompile Include="NetworkMessages_Events.cpp" />
     <ClCompile Include="NetworkMessages_Exchange.cpp" />
     <ClCompile Include="NetworkMessages_Fish.cpp" />
+    <ClCompile Include="FishingManager.cpp" />
+    <ClCompile Include="CraftingManager.cpp" />
+    <ClCompile Include="QuestManager.cpp" />
+    <ClCompile Include="GuildManager.cpp" />
     <ClCompile Include="NetworkMessages_Guild.cpp" />
     <ClCompile Include="NetworkMessages_Heldenian.cpp" />
     <ClCompile Include="NetworkMessages_Items.cpp" />
@@ -322,33 +509,39 @@
     <ClCompile Include="NetworkMessages_Slates.cpp" />
     <ClCompile Include="NetworkMessages_Stats.cpp" />
     <ClCompile Include="NetworkMessages_System.cpp" />
-    <ClCompile Include="GameMonitor.cpp" />
     <ClCompile Include="MapData.cpp" />
-    <ClCompile Include="MouseInterface.cpp" />
     <ClCompile Include="Wmain.cpp" />
-    <ClCompile Include="GameWindowHandler.cpp" />
-    <ClCompile Include="XSocket.cpp" />
+    <ClCompile Include="..\Dependencies\Shared\Render\Application.cpp" />
     <ClCompile Include="AudioManager.cpp" />
     <ClCompile Include="ChatCommandManager.cpp" />
-    <ClCompile Include="CmdShowFrame.cpp" />
-    <ClCompile Include="CmdShowPing.cpp" />
-    <ClCompile Include="CmdWhisper.cpp" />
-    <ClCompile Include="CmdShout.cpp" />
-    <ClCompile Include="CmdIgnore.cpp" />
-    <ClCompile Include="CmdWeather.cpp" />
-    <ClCompile Include="CmdProfile.cpp" />
+    <ClCompile Include="CombatSystem.cpp" />
+    <ClCompile Include="InventoryManager.cpp" />
+    <ClCompile Include="MagicCastingSystem.cpp" />
+    <ClCompile Include="BuildItemManager.cpp" />
+    <ClCompile Include="ShopManager.cpp" />
+    <ClCompile Include="TeleportManager.cpp" />
+    <ClCompile Include="TextInputManager.cpp" />
+    <ClCompile Include="EventListManager.cpp" />
+    <ClCompile Include="ChatManager.cpp" />
+    <ClCompile Include="ItemNameFormatter.cpp" />
     <ClCompile Include="miniaudio_impl.cpp" />
     <ClCompile Include="WeatherManager.cpp" />
-  </ItemGroup>
+    <ClCompile Include="FloatingTextManager.cpp" />
+    <ClCompile Include="CursorTarget.cpp" />
+    <ClCompile Include="Player.cpp" />
+    <ClCompile Include="PlayerController.cpp" />
+    <ClCompile Include="Camera.cpp" />
+  <ClCompile Include="..\Dependencies\Shared\Net\ASIOSocket.cpp" /><ClCompile Include="..\Dependencies\Shared\Net\IOServicePool.cpp" /><ClCompile Include="..\Dependencies\Shared\Render\Event.cpp" /><ClCompile Include="..\Dependencies\Shared\Render\ResolutionConfig.cpp" /><ClCompile Include="..\Dependencies\Shared\Log\LogBackend.cpp" /><ClCompile Include="ClientLog.cpp" /></ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Game.rc" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="icon1.ico" />
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\DDrawEngine\DDrawEngine.vcxproj">
-      <Project>{B3A7D8E1-4C2F-4B9A-8F1E-2C3D4E5F6A7B}</Project>
+  
+  <ItemGroup Condition="$(Configuration.Contains('SFML'))">
+    <ProjectReference Include="..\SFMLEngine\SFMLEngine.vcxproj">
+      <Project>{C4A8D9E2-5D3F-4C8B-9F2E-3D4E5F6A8B9C}</Project>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

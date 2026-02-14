@@ -1,369 +1,359 @@
 // Client.cpp: implementation of the CClient class.
-//
-//////////////////////////////////////////////////////////////////////
 
 #include "CommonTypes.h"
 #include "Client.h"
 #ifdef _WIN32
-#include <direct.h>
 #endif
+
+using namespace hb::shared::item;
+using namespace hb::server::config;
 
 extern char G_cTxt[512];
 
-//////////////////////////////////////////////////////////////////////
 // Construction/Destruction
-//////////////////////////////////////////////////////////////////////
 
-CClient::CClient(HWND hWnd)
+CClient::CClient(asio::io_context& ctx)
 {
- int i;
+ 
 
-	m_pXSock = 0;
-	m_pXSock = new class XSocket(DEF_CLIENTSOCKETBLOCKLIMIT);
-	m_pXSock->bInitBufferSize(DEF_MSGBUFFERSIZE);
+	m_socket = 0;
+	m_socket = new class hb::shared::net::ASIOSocket(ctx, hb::server::config::ClientSocketBlockLimit);
+	m_socket->init_buffer_size(hb::shared::limits::MsgBufferSize);
 
-	std::memset(m_cProfile, 0, sizeof(m_cProfile));
-	strcpy(m_cProfile, "__________");
+	std::memset(m_profile, 0, sizeof(m_profile));
+	strcpy(m_profile, "__________");
 
-	std::memset(m_cCharName, 0, sizeof(m_cCharName));
-	std::memset(m_cAccountName, 0, sizeof(m_cAccountName));
-	std::memset(m_cAccountPassword, 0, sizeof(m_cAccountPassword));
+	std::memset(m_char_name, 0, sizeof(m_char_name));
+	std::memset(m_account_name, 0, sizeof(m_account_name));
+	std::memset(m_account_password, 0, sizeof(m_account_password));
 
-	std::memset(m_cGuildName, 0, sizeof(m_cGuildName));
-	std::memset(m_cLocation, 0, sizeof(m_cLocation));
-	strcpy(m_cLocation, "NONE");
-	m_iGuildRank = -1;
-	m_iGuildGUID = -1;
+	std::memset(m_guild_name, 0, sizeof(m_guild_name));
+	std::memset(m_location, 0, sizeof(m_location));
+	strcpy(m_location, "NONE");
+	m_guild_rank = -1;
+	m_guild_guid = -1;
 
-	m_bIsInitComplete = false;
-	m_bIsClientConnected = false;
-	m_dwLastMsgId = 0;
-	m_dwLastMsgTime = 0;
-	m_dwLastMsgSize = 0;
-	m_dwLastFullObjectId = 0;
-	m_dwLastFullObjectTime = 0;
+	m_is_init_complete = false;
+	m_is_client_connected = false;
+	m_last_msg_id = 0;
+	m_last_msg_time = 0;
+	m_last_msg_size = 0;
+	m_last_full_object_id = 0;
+	m_last_full_object_time = 0;
+	m_afk_activity_time = 0;
 
-	m_iAngelicStr = m_iAngelicInt = m_iAngelicDex = m_iAngelicMag = 0;
+	m_angelic_str = m_angelic_int = m_angelic_dex = m_angelic_mag = 0;
 
 	//m_cLU_Str = m_cLU_Int = m_cLU_Vit = m_cLU_Dex = m_cLU_Mag = m_cLU_Char = 0;
-	m_iLU_Pool = 0;
-	m_cAura = 0;
+	m_levelup_pool = 0;
+	m_aura = 0;
 
-	// v1.432  ʴ´.
 	//m_iHitRatio_ItemEffect_SM = 0;
 	//m_iHitRatio_ItemEffect_L  = 0;
-	m_cVar = 0;
-	m_iEnemyKillCount = 0;
-	m_iPKCount = 0;
-	m_iRewardGold = 0;
-	m_iCurWeightLoad = 0;
-	m_dwLogoutHackCheck = 0;
+	m_var = 0;
+	m_enemy_kill_count = 0;
+	m_player_kill_count = 0;
+	m_reward_gold = 0;
+	m_cur_weight_load = 0;
+	m_logout_hack_check = 0;
 
 	// Charges
-	m_iAddTransMana = 0;
-	m_iAddChargeCritical = 0;
+	m_add_trans_mana = 0;
+	m_add_charge_critical = 0;
 
-	m_bIsSafeAttackMode  = false;
+	m_is_safe_attack_mode  = false;
 
 	//50Cent - Repair All
-	totalItemRepair = 0;
-	for (i = 0; i < DEF_MAXITEMS; i++) {
-		m_stRepairAll[i].index = 0;
-		m_stRepairAll[i].price = 0;
+	total_item_repair = 0;
+	for(int i = 0; i < hb::shared::limits::MaxItems; i++) {
+		m_repair_all[i].index = 0;
+		m_repair_all[i].price = 0;
 	}
 
-	//    ʱȭ  Ѵ.
-	for (i = 0; i < DEF_MAXITEMEQUIPPOS; i++) 
-		m_sItemEquipmentStatus[i] = -1;
+	for(int i = 0; i < DEF_MAXITEMEQUIPPOS; i++) 
+		m_item_equipment_status[i] = -1;
 	
-	// Initialize item list 
-	for (i = 0; i < DEF_MAXITEMS; i++) {
-		m_pItemList[i]       = 0;
-		m_ItemPosList[i].x   = 40;
-		m_ItemPosList[i].y   = 30;
-		m_bIsItemEquipped[i] = false;
+	// initialize item list 
+	for(int i = 0; i < hb::shared::limits::MaxItems; i++) {
+		m_item_list[i]       = 0;
+		m_item_pos_list[i].x   = 40;
+		m_item_pos_list[i].y   = 30;
+		m_is_item_equipped[i] = false;
 	}
-	m_cArrowIndex = -1;	// ȭ  ε Ҵ   
+	m_arrow_index = -1;
 
-	// ðܳ Initialize item list.
-	for (i = 0; i < DEF_MAXBANKITEMS; i++) {
-		m_pItemInBankList[i] = 0;
+	// initialize item list.
+	for(int i = 0; i < hb::shared::limits::MaxBankItems; i++) {
+		m_item_in_bank_list[i] = 0;
 	}
 
-	// Magic - Skill õ Ʈ ʱȭ 
-	for (i = 0; i < DEF_MAXMAGICTYPE; i++)
-		m_cMagicMastery[i] = 0;
+	// Magic - Skill
+	for(int i = 0; i < hb::shared::limits::MaxMagicType; i++)
+		m_magic_mastery[i] = 0;
 	
-	for (i = 0; i < DEF_MAXSKILLTYPE; i++)
-		m_cSkillMastery[i] = 0;
+	for(int i = 0; i < hb::shared::limits::MaxSkillType; i++)
+		m_skill_mastery[i] = 0;
 
-	for (i = 0; i < DEF_MAXSKILLTYPE; i++) {
-		m_bSkillUsingStatus[i] = false;
-		m_iSkillUsingTimeID[i] = 0;
+	for(int i = 0; i < hb::shared::limits::MaxSkillType; i++) {
+		m_skill_using_status[i] = false;
+		m_skill_using_time_id[i] = 0;
 	}
 
 	// testcode
-	m_cMapIndex = -1;
-	m_sX = -1;
-	m_sY = -1;
-	m_cDir = 5; 
-	m_sType   = 0;
-	m_sOriginalType = 0;
-	m_sAppr1  = 0;
-	m_sAppr2  = 0;
-	m_sAppr3  = 0;
-	m_sAppr4  = 0;
-	m_iApprColor = 0; // v1.4
-	m_iStatus = 0;
+	m_map_index = -1;
+	m_x = -1;
+	m_y = -1;
+	m_dir = 5; 
+	m_type   = 0;
+	m_original_type = 0;
+	m_appearance.clear();
+	m_status.clear();
 
-	m_cSex  = 0;
-	m_cSkin = 0;
-	m_cHairStyle  = 0;
-	m_cHairColor  = 0;
-	m_cUnderwear  = 0;
+	m_sex  = 0;
+	m_skin = 0;
+	m_hair_style  = 0;
+	m_hair_color  = 0;
+	m_underwear  = 0;
 
-	m_cAttackDiceThrow_SM = 0;	// ġ ֻ  ȸ @@@@@@@@@@@@@
-	m_cAttackDiceRange_SM = 0;
-	m_cAttackDiceThrow_L = 0;	// ġ ֻ  ȸ @@@@@@@@@@@@@
-	m_cAttackDiceRange_L = 0;
-	m_cAttackBonus_SM    = 0;
-	m_cAttackBonus_L     = 0;
+	m_attack_dice_throw_sm = 0;	// @@@@@@@@@@@@@
+	m_attack_dice_range_sm = 0;
+	m_attack_dice_throw_l = 0;	// @@@@@@@@@@@@@
+	m_attack_dice_range_l = 0;
+	m_attack_bonus_sm    = 0;
+	m_attack_bonus_l     = 0;
 	
-	// ÷̾ Ҽ   ̵尡 Ǹ ̰  NPC ݿθ  ̴. 
-	m_cSide = 0;
+	// NPC   .
+	m_side = 0;
 
-	m_iHitRatio = 0;
-	m_iDefenseRatio = 0;
+	m_hit_ratio = 0;
+	m_defense_ratio = 0;
 	
-	for (i = 0; i < DEF_MAXITEMEQUIPPOS; i++) m_iDamageAbsorption_Armor[i]  = 0;
-	m_iDamageAbsorption_Shield = 0;
+	for(int i = 0; i < DEF_MAXITEMEQUIPPOS; i++) m_damage_absorption_armor[i]  = 0;
+	m_damage_absorption_shield = 0;
 
-	m_iHPstock = 0;
-	m_bIsKilled = false;
+	m_hp_stock = 0;
+	m_is_killed = false;
 
-	for (i = 0; i < DEF_MAXMAGICEFFECTS; i++) 
-		m_cMagicEffectStatus[i]	= 0;
+	for(int i = 0; i < hb::server::config::MaxMagicEffects; i++) 
+		m_magic_effect_status[i]	= 0;
 
-	m_iWhisperPlayerIndex = -1;
-	std::memset(m_cWhisperPlayerName, 0, sizeof(m_cWhisperPlayerName));
+	m_whisper_player_index = -1;
+	std::memset(m_whisper_player_name, 0, sizeof(m_whisper_player_name));
 
-	m_iHungerStatus  = 100;  // Maximum value is 100
+	m_hunger_status  = 100;  // Maximum value is 100
 	
-	m_bIsWarLocation = false;
+	m_is_war_location = false;
 
-	m_bIsPoisoned    = false;
-	m_iPoisonLevel   = 0;
+	m_is_poisoned    = false;
+	m_poison_level   = 0;
 
-	m_iAdminUserLevel  = 0;
-	m_iRating          = 0;
-	m_iTimeLeft_ShutUp = 0;
-	m_iTimeLeft_Rating = 0;
-	m_iTimeLeft_ForceRecall  = 0;
-	m_iTimeLeft_FirmStaminar = 0;
+	m_rating          = 0;
+	m_time_left_rating = 0;
+	m_time_left_force_recall  = 0;
+	m_time_left_firm_stamina = 0;
 	
-	m_iRecentWalkTime  = 0;
-	m_iRecentRunTime   = 0;
-	m_sV1			   = 0;
+	m_recent_walk_time  = 0;
+	m_recent_run_time   = 0;
+	m_v1			   = 0;
 
-	m_bIsOnServerChange  = false;
-	m_bInhibition = false;
+	m_is_on_server_change  = false;
+	m_inhibition = false;
 
-	m_iExpStock = 0;
+	m_exp_stock = 0;
 
-	m_iAllocatedFish = 0;
-	m_iFishChance    = 0;
+	m_allocated_fish = 0;
+	m_fish_chance    = 0;
 
-	std::memset(m_cIPaddress, 0, sizeof(m_cIPaddress)); 
-	m_bIsOnWaitingProcess = false;
+	std::memset(m_ip_address, 0, sizeof(m_ip_address)); 
+	m_is_on_waiting_process = false;
 
-	m_iSuperAttackLeft  = 0;
-	m_iSuperAttackCount = 0;
+	m_super_attack_left  = 0;
+	m_super_attack_count = 0;
 
-	m_sUsingWeaponSkill = 5; // ⺻ Ǽհ 
+	m_using_weapon_skill = 5;
 
-	m_iManaSaveRatio   = 0;
-	m_iAddResistMagic  = 0;
-	m_iAddPhysicalDamage = 0;
-	m_iAddMagicalDamage  = 0;
-	m_bIsLuckyEffect     = false;
-	m_iSideEffect_MaxHPdown = 0;
+	m_mana_save_ratio   = 0;
+	m_add_resist_magic  = 0;
+	m_add_physical_damage = 0;
+	m_add_magical_damage  = 0;
+	m_is_lucky_effect     = false;
+	m_side_effect_max_hp_down = 0;
 
-	m_iAddAbsAir   = 0;	// Ӽ  
-	m_iAddAbsEarth = 0;
-	m_iAddAbsFire  = 0;
-	m_iAddAbsWater = 0;
+	m_add_abs_air   = 0;
+	m_add_abs_earth = 0;
+	m_add_abs_fire  = 0;
+	m_add_abs_water = 0;
 
-	m_iComboAttackCount = 0;
-	m_iDownSkillIndex   = -1;
-	m_bInRecallImpossibleMap = 0;
+	m_combo_attack_count = 0;
+	m_down_skill_index   = -1;
+	m_in_recall_impossible_map = 0;
 
-	m_iMagicDamageSaveItemIndex = -1;
+	m_magic_damage_save_item_index = -1;
 
-	m_sCharIDnum1 = m_sCharIDnum2 = m_sCharIDnum3 = 0;
+	m_char_id_num1 = m_char_id_num2 = m_char_id_num3 = 0;
 
 	// New 06/05/2004
-	m_iPartyID = 0;
-	m_iPartyStatus = 0;
-	m_iReqJoinPartyClientH = 0;
-	std::memset(m_cReqJoinPartyName, 0, sizeof(m_cReqJoinPartyName));
+	m_party_id = 0;
+	m_party_status = 0;
+	m_req_join_party_client_h = 0;
+	std::memset(m_req_join_party_name, 0, sizeof(m_req_join_party_name));
 
-	/*m_iPartyRank = -1; // v1.42
-	m_iPartyMemberCount = 0;
-	m_iPartyGUID        = 0;
+	/*m_party_rank = -1; // v1.42
+	m_party_member_count = 0;
+	m_party_guid        = 0;
 
-	for (i = 0; i < DEF_MAXPARTYMEMBERS; i++) {
-		m_stPartyMemberName[i].iIndex = 0;
-		std::memset(m_stPartyMemberName[i].cName, 0, sizeof(m_stPartyMemberName[i].cName));
+	for(int i = 0; i < hb::shared::limits::MaxPartyMembers; i++) {
+		m_party_member_name[i].index = 0;
+		std::memset(m_party_member_name[i].name, 0, sizeof(m_party_member_name[i].name));
 	}*/
 
-	m_iAbuseCount     = 0;
-	m_bIsBWMonitor    = false;
-	m_bIsExchangeMode = false;
+	m_abuse_count     = 0;
+	m_is_exchange_mode = false;
 
 	//hbest
-	isForceSet = false;
+	is_force_set = false;
 
-	// v1.4311-3 ߰  ʱȭ     
-    m_iFightZoneTicketNumber =	m_iFightzoneNumber = m_iReserveTime = 0 ;            
+    m_fightzone_ticket_number =	m_fightzone_number = m_reserve_time = 0 ;            
 
-	m_iPenaltyBlockYear = m_iPenaltyBlockMonth = m_iPenaltyBlockDay = 0; // v1.4
+	m_penalty_block_year = m_penalty_block_month = m_penalty_block_day = 0; // v1.4
 
-	m_iExchangeH = 0;											// ȯ  ε 
-	std::memset(m_cExchangeName, 0, sizeof(m_cExchangeName));			// ȯ  ̸ 
-	std::memset(m_cExchangeItemName, 0, sizeof(m_cExchangeItemName));	// Exchange item name 
-
-	for(i=0; i<4; i++){
-		m_cExchangeItemIndex[i]  = -1; 
-		m_iExchangeItemAmount[i] = 0;
+	m_exchange_h = 0;
+	std::memset(m_exchange_name, 0, sizeof(m_exchange_name));
+	for(int i = 0; i<4; i++){
+		m_exchange_item_id[i] = 0;
+		m_exchange_item_index[i]  = -1;
+		m_exchange_item_amount[i] = 0;
 	}
 
-	m_bIsExchangeConfirm = false;
+	m_is_exchange_confirm = false;
 
-	m_iQuest		 = 0; // Currently assigned Quest 
-	m_iQuestID       = 0; // QuestID
-	m_iAskedQuest	 = 0; //  Ʈ 
-	m_iCurQuestCount = 0; //  Ʈ  
+	m_quest		 = 0; // Currently assigned Quest 
+	m_quest_id       = 0; // QuestID
+	m_asked_quest	 = 0;
+	m_cur_quest_count = 0;
 
-	m_iQuestRewardType	 = 0; // Ʈ ذ ǰ  ->  ID̴.
-	m_iQuestRewardAmount = 0; // ǰ  
+	m_quest_reward_type	 = 0;
+	m_quest_reward_amount = 0;
 
-	m_iContribution = 0;			// Contribution 
-	m_bQuestMatchFlag_Loc = false;  // Quest location verification flag.
-	m_bIsQuestCompleted   = false;
+	m_contribution = 0;			// Contribution 
+	m_quest_match_flag_loc = false;  // Quest location verification flag.
+	m_is_quest_completed   = false;
 
-	m_cHeroArmourBonus = 0;
+	m_hero_armour_bonus = 0;
 
-	m_bIsNeutral      = false;
-	m_bIsObserverMode = false;
+	m_is_neutral      = false;
+	m_is_observer_mode = false;
 
-	// 2000.8.1 ̺Ʈ ǰ  Ȯο 
-	m_iSpecialEventID = 200081;
+	// 2000.8.1
+	m_special_event_id = 200081;
 
-	m_iSpecialWeaponEffectType  = 0;	//   ȿ : 0-None 1-ʻ߰ 2-ߵȿ 3- 4-
-	m_iSpecialWeaponEffectValue = 0;	//   ȿ 
+	m_special_weapon_effect_type  = 0;	// : 0-None 1- 2- 3- 4-
+	m_special_weapon_effect_value = 0;
 
-	m_iAddHP = m_iAddSP = m_iAddMP = 0; 
-	m_iAddAR = m_iAddPR = m_iAddDR = 0;
-	m_iAddAbsPD = m_iAddAbsMD = 0;
-	m_iAddCD = m_iAddExp = m_iAddGold = 0;
+	m_add_hp = m_add_sp = m_add_mp = 0; 
+	m_add_attack_ratio = m_add_poison_resistance = m_add_defense_ratio = 0;
+	m_add_abs_physical_defense = m_add_abs_magical_defense = 0;
+	m_add_combo_damage = m_add_exp = m_add_gold = 0;
 		
-	m_iSpecialAbilityTime = DEF_SPECABLTYTIMESEC;		// Special ability can be used once every DEF_SPECABLTYTIMESEC seconds.
-	m_iSpecialAbilityType = 0;
-	m_bIsSpecialAbilityEnabled = false;
-	m_iSpecialAbilityLastSec   = 0;
+	m_special_ability_time = SpecialAbilityTimeSec;		// Special ability can be used once every SpecialAbilityTimeSec seconds.
+	m_special_ability_type = 0;
+	m_is_special_ability_enabled = false;
+	m_special_ability_last_sec   = 0;
 
-	m_iSpecialAbilityEquipPos  = 0;
+	m_special_ability_equip_pos  = 0;
 
-	m_iMoveMsgRecvCount   = 0;
-	m_iAttackMsgRecvCount = 0;
-	m_iRunMsgRecvCount    = 0;
-	m_iSkillMsgRecvCount  = 0;
+	m_move_msg_recv_count   = 0;
+	m_attack_msg_recv_count = 0;
+	m_run_msg_recv_count    = 0;
+	m_skill_msg_recv_count  = 0;
 
-	m_bIsAdminCommandEnabled = false;
-	m_iAlterItemDropIndex = -1;
+	m_alter_item_drop_index = -1;
 
-	m_iAutoExpAmount = 0;
-	m_iWarContribution = 0;
+	m_auto_exp_amount = 0;
+	m_war_contribution = 0;
 
-	m_dwMoveLAT = m_dwRunLAT = m_dwAttackLAT = 0;
+	m_move_last_action_time = m_run_last_action_time = m_attack_last_action_time = 0;
 
-	m_dwInitCCTimeRcv = 0;
-	m_dwInitCCTime = 0;
+	m_initial_check_time_received = 0;
+	m_initial_check_time = 0;
 
-	std::memset(m_cLockedMapName, 0, sizeof(m_cLockedMapName));
-	strcpy(m_cLockedMapName, "NONE");
-	m_iLockedMapTime = 0;
+	std::memset(m_locked_map_name, 0, sizeof(m_locked_map_name));
+	strcpy(m_locked_map_name, "NONE");
+	m_locked_map_time = 0;
 
-	m_iCrusadeDuty  = 0;
-	m_dwCrusadeGUID = 0;
-	m_dwHeldenianGUID = 0;
+	m_crusade_duty  = 0;
+	m_crusade_guid = 0;
+	m_heldenian_guid = 0;
 
-	for (i = 0; i < DEF_MAXCRUSADESTRUCTURES; i++) {
-		m_stCrusadeStructureInfo[i].cType = 0;
-		m_stCrusadeStructureInfo[i].cSide = 0;
-		m_stCrusadeStructureInfo[i].sX = 0;
-		m_stCrusadeStructureInfo[i].sY = 0;
+	for(int i = 0; i < hb::shared::limits::MaxCrusadeStructures; i++) {
+		m_crusade_structure_info[i].type = 0;
+		m_crusade_structure_info[i].side = 0;
+		m_crusade_structure_info[i].x = 0;
+		m_crusade_structure_info[i].y = 0;
 	}
 
-	m_iCSIsendPoint = 0;
+	m_crusade_info_send_point = 0;
 
-	m_bIsSendingMapStatus = false;
-	std::memset(m_cSendingMapName, 0, sizeof(m_cSendingMapName));
+	m_is_sending_map_status = false;
+	std::memset(m_sending_map_name, 0, sizeof(m_sending_map_name));
 
-	m_iConstructionPoint = 0;
+	m_construction_point = 0;
 
-	std::memset(m_cConstructMapName, 0, sizeof(m_cConstructMapName));
-	m_iConstructLocX = m_iConstructLocY = -1;
+	std::memset(m_construct_map_name, 0, sizeof(m_construct_map_name));
+	m_construct_loc_x = m_construct_loc_y = -1;
 
-	m_bIsAdminOrderGoto = false;
-	m_bIsInsideWarehouse = false;
-	m_bIsInsideWizardTower = false;
-	m_bIsInsideOwnTown = false;
-	m_bIsCheckingWhisperPlayer = false;
-	m_bIsOwnLocation = false;
-	m_pIsProcessingAllowed = false;
+	m_is_inside_warehouse = false;
+	m_is_inside_wizard_tower = false;
+	m_is_inside_own_town = false;
+	m_is_checking_whisper_player = false;
+	m_is_own_location = false;
+	m_is_processing_allowed = false;
 
-	m_cHeroArmorBonus = 0;
+	m_hero_armor_bonus = 0;
 
-	m_bIsBeingResurrected = false;
-	m_bMagicConfirm = false;
-	m_bMagicItem = false;
-	m_iSpellCount = 0;
-	m_bMagicPauseTime = false;
+	m_is_being_resurrected = false;
+	m_magic_confirm = false;
+	m_magic_item = false;
+	m_spell_count = 0;
+	m_magic_pause_time = false;
 
 }
 
 CClient::~CClient()
 {
- int i;
-	
-	if (m_pXSock != 0) delete m_pXSock;
-	for (i = 0; i < DEF_MAXITEMS; i++)
-		if (m_pItemList[i] != 0) {
-			delete m_pItemList[i];
-			m_pItemList[i] = 0;
-		}
-	for(i = 0; i < DEF_MAXBANKITEMS; i++)
-		if (m_pItemInBankList[i] != 0) {
-			delete m_pItemInBankList[i];
-			m_pItemInBankList[i]=0;
-		}
+	if (m_socket != 0)
+		delete m_socket;
 
+	for(int i = 0; i < hb::shared::limits::MaxItems; i++)
+	{
+		if (m_item_list[i] != 0) {
+			delete m_item_list[i];
+			m_item_list[i] = 0;
+		}
+	}
+
+	for(int i = 0; i < hb::shared::limits::MaxBankItems; i++)
+	{
+		if (m_item_in_bank_list[i] != 0) {
+			delete m_item_in_bank_list[i];
+			m_item_in_bank_list[i] = 0;
+		}
+	}
 }
 
-bool CClient::bCreateNewParty()
+bool CClient::create_new_party()
 {
- int i;
+ 
 
-	if (m_iPartyRank != -1) return false;
+	if (m_party_rank != -1) return false;
 
-	m_iPartyRank = 0;
-	m_iPartyMemberCount = 0;
-	m_iPartyGUID = (rand() % 999999) + GameClock::GetTimeMS();
+	m_party_rank = 0;
+	m_party_member_count = 0;
+	m_party_guid = (rand() % 999999) + GameClock::GetTimeMS();
 
-	for (i = 0; i < DEF_MAXPARTYMEMBERS; i++) {
-		m_stPartyMemberName[i].iIndex = 0;
-		std::memset(m_stPartyMemberName[i].cName, 0, sizeof(m_stPartyMemberName[i].cName));
+	for(int i = 0; i < hb::shared::limits::MaxPartyMembers; i++) {
+		m_party_member_name[i].index = 0;
+		std::memset(m_party_member_name[i].name, 0, sizeof(m_party_member_name[i].name));
 	}
 
 	return true;

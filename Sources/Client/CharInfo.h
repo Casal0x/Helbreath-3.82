@@ -1,37 +1,28 @@
-// CharInfo.h: interface for the CCharInfo class.
+﻿// CharInfo.h: interface for the CCharInfo class.
 //
 //////////////////////////////////////////////////////////////////////
 
 #pragma once
+#include <string>
 
-#include <windows.h>
-#include "Cint.h"	//20030220 mando..
+#include "Appearance.h"
+#include <cstdint>
 
 class CCharInfo
 {
 public:
-	inline CCharInfo()
-	{
-		ZeroMemory(m_cName, sizeof(m_cName));
-		ZeroMemory(m_cMapName, sizeof(m_cMapName));
-		m_iApprColor = 0;
-		m_iYear   = 0;
-		m_iMonth  = 0;
-		m_iDay    = 0;
-		m_iHour   = 0;
-		m_iMinute = 0;
-	}
+	inline CCharInfo() = default;
 
 	inline virtual ~CCharInfo()
 	{
 	}
 
-	char m_cName[12], m_cMapName[12];
-	short m_sSkinCol, m_sSex, m_sAppr1, m_sAppr2, m_sAppr3, m_sAppr4;
-	short	m_sStr, m_sVit, m_sDex, m_sInt, m_sMag, m_sChr;
-	int	m_sLevel;
-//	short m_sLevel;
-	DWORD   m_iExp;
-	int   m_iApprColor;
-	int   m_iYear, m_iMonth, m_iDay, m_iHour, m_iMinute;
+	std::string m_name;
+	std::string m_map_name;
+	short m_skin_color = 0, m_sex = 0;
+	hb::shared::entity::PlayerAppearance m_appearance{};
+	short	m_str = 0, m_vit = 0, m_dex = 0, m_int = 0, m_mag = 0, m_chr = 0;
+	int	m_level = 0;
+	uint32_t   m_exp = 0;
+	int   m_year = 0, m_month = 0, m_day = 0, m_hour = 0, m_minute = 0;
 };

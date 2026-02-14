@@ -1,660 +1,663 @@
-#include "DialogBox_Commander.h"
+﻿#include "DialogBox_Commander.h"
 #include "Game.h"
+#include "TeleportManager.h"
 #include "lan_eng.h"
 #include "GlobalDef.h"
 #include "SpriteID.h"
 #include "ConfigManager.h"
 #include "NetMessages.h"
+#include "GameFonts.h"
+#include "TextLibExt.h"
+#include <format>
 
-DialogBox_Commander::DialogBox_Commander(CGame* pGame)
-	: IDialogBox(DialogBoxId::CrusadeCommander, pGame)
+using namespace hb::shared::net;
+using namespace hb::client::sprite_id;
+DialogBox_Commander::DialogBox_Commander(CGame* game)
+	: IDialogBox(DialogBoxId::CrusadeCommander, game)
 {
+	set_default_rect(20 , 20 , 310, 386);
 }
 
-void DialogBox_Commander::OnUpdate()
+void DialogBox_Commander::on_update()
 {
-	uint32_t dwTime = m_pGame->G_dwGlobalTime;
-	if ((dwTime - m_pGame->m_dwCommanderCommandRequestedTime) > 1000 * 10)
+	uint32_t time = GameClock::get_time_ms();
+	if ((time - m_game->m_commander_command_requested_time) > 1000 * 10)
 	{
-		m_pGame->_RequestMapStatus("middleland", 3);
-		m_pGame->_RequestMapStatus("middleland", 1);
-		m_pGame->m_dwCommanderCommandRequestedTime = dwTime;
+		m_game->request_map_status("middleland", 3);
+		m_game->request_map_status("middleland", 1);
+		m_game->m_commander_command_requested_time = time;
 	}
 }
 
-void DialogBox_Commander::OnDraw(short msX, short msY, short msZ, char cLB)
+void DialogBox_Commander::on_draw(short mouse_x, short mouse_y, short z, char lb)
 {
-	short sX, sY, szX, szY, MapSzX, MapSzY;
-	uint32_t dwTime = m_pGame->G_dwGlobalTime;
-	double dV1, dV2, dV3;
+	short sX, sY, size_x, size_y, MapSzX, MapSzY;
+	double v1, v2, v3;
 	int i, tX, tY;
-	sX = Info().sX;
-	sY = Info().sY;
-	szX = Info().sSizeX;
+	sX = Info().m_x;
+	sY = Info().m_y;
+	size_x = Info().m_size_x;
 
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_CRUSADE, sX, sY - 5, 0, false, ConfigManager::Get().IsDialogTransparencyEnabled());
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_TEXT, sX, sY, 15, false, ConfigManager::Get().IsDialogTransparencyEnabled());
+	draw_new_dialog_box(InterfaceNdCrusade, sX, sY - 5, 0, false, config_manager::get().is_dialog_transparency_enabled());
+	draw_new_dialog_box(InterfaceNdText, sX, sY, 15, false, config_manager::get().is_dialog_transparency_enabled());
 
-	switch (Info().cMode) {
+	switch (Info().m_mode) {
 	case 0: // Main dlg
-		m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX + 20, sY + 340, 3);
-		m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX + 20 + 50, sY + 340, 1);
-		m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX + 20 + 100, sY + 340, 2);
-		m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX + 20 + 150, sY + 340, 30);
-		m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX + 20 + 150 + 74, sY + 340, 4);
-		PutAlignedString(sX, sX + szX, sY + 37, DRAW_DIALOGBOX_COMMANDER1);
+		m_game->m_sprite[InterfaceNdCrusade]->draw(sX + 20, sY + 340, 3);
+		m_game->m_sprite[InterfaceNdCrusade]->draw(sX + 20 + 50, sY + 340, 1);
+		m_game->m_sprite[InterfaceNdCrusade]->draw(sX + 20 + 100, sY + 340, 2);
+		m_game->m_sprite[InterfaceNdCrusade]->draw(sX + 20 + 150, sY + 340, 30);
+		m_game->m_sprite[InterfaceNdCrusade]->draw(sX + 20 + 150 + 74, sY + 340, 4);
+		put_aligned_string(sX, sX + size_x, sY + 37, DRAW_DIALOGBOX_COMMANDER1);
 
-		if ((msX >= sX + 20) && (msX <= sX + 20 + 46) && (msY >= sY + 340) && (msY <= sY + 340 + 52))
+		if ((mouse_x >= sX + 20) && (mouse_x <= sX + 20 + 46) && (mouse_y >= sY + 340) && (mouse_y <= sY + 340 + 52))
 		{
-			m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX + 20, sY + 340, 17);
-			PutString2(msX + 20, msY + 35, DRAW_DIALOGBOX_COMMANDER2, 255, 255, 255);
+			m_game->m_sprite[InterfaceNdCrusade]->draw(sX + 20, sY + 340, 17);
+			hb::shared::text::draw_text(GameFont::Default, mouse_x + 20, mouse_y + 35, DRAW_DIALOGBOX_COMMANDER2, hb::shared::text::TextStyle::with_shadow(GameColors::UIWhite));
 		}
-		else if ((msX >= sX + 20 + 50) && (msX <= sX + 20 + 46 + 50) && (msY >= sY + 340) && (msY <= sY + 340 + 52))
+		else if ((mouse_x >= sX + 20 + 50) && (mouse_x <= sX + 20 + 46 + 50) && (mouse_y >= sY + 340) && (mouse_y <= sY + 340 + 52))
 		{
-			m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX + 20 + 50, sY + 340, 15);
-			PutString2(msX + 20, msY + 35, DRAW_DIALOGBOX_COMMANDER3, 255, 255, 255);
+			m_game->m_sprite[InterfaceNdCrusade]->draw(sX + 20 + 50, sY + 340, 15);
+			hb::shared::text::draw_text(GameFont::Default, mouse_x + 20, mouse_y + 35, DRAW_DIALOGBOX_COMMANDER3, hb::shared::text::TextStyle::with_shadow(GameColors::UIWhite));
 		}
-		else if ((msX >= sX + 20 + 100) && (msX <= sX + 20 + 46 + 100) && (msY >= sY + 340) && (msY <= sY + 340 + 52))
+		else if ((mouse_x >= sX + 20 + 100) && (mouse_x <= sX + 20 + 46 + 100) && (mouse_y >= sY + 340) && (mouse_y <= sY + 340 + 52))
 		{
-			m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX + 20 + 100, sY + 340, 16);
-			PutString2(msX + 20, msY + 35, DRAW_DIALOGBOX_COMMANDER4, 255, 255, 255);
+			m_game->m_sprite[InterfaceNdCrusade]->draw(sX + 20 + 100, sY + 340, 16);
+			hb::shared::text::draw_text(GameFont::Default, mouse_x + 20, mouse_y + 35, DRAW_DIALOGBOX_COMMANDER4, hb::shared::text::TextStyle::with_shadow(GameColors::UIWhite));
 		}
-		else if ((msX >= sX + 20 + 150) && (msX <= sX + 20 + 46 + 150) && (msY >= sY + 340) && (msY <= sY + 340 + 52))
+		else if ((mouse_x >= sX + 20 + 150) && (mouse_x <= sX + 20 + 46 + 150) && (mouse_y >= sY + 340) && (mouse_y <= sY + 340 + 52))
 		{
-			m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX + 20 + 150, sY + 340, 24);
-			PutString2(msX + 20, msY + 35, DRAW_DIALOGBOX_COMMANDER5, 255, 255, 255);
+			m_game->m_sprite[InterfaceNdCrusade]->draw(sX + 20 + 150, sY + 340, 24);
+			hb::shared::text::draw_text(GameFont::Default, mouse_x + 20, mouse_y + 35, DRAW_DIALOGBOX_COMMANDER5, hb::shared::text::TextStyle::with_shadow(GameColors::UIWhite));
 		}
-		else if ((msX >= sX + 20 + 150 + 74) && (msX <= sX + 20 + 46 + 150 + 74) && (msY >= sY + 340) && (msY <= sY + 340 + 52))
+		else if ((mouse_x >= sX + 20 + 150 + 74) && (mouse_x <= sX + 20 + 46 + 150 + 74) && (mouse_y >= sY + 340) && (mouse_y <= sY + 340 + 52))
 		{
-			m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX + 20 + 150 + 74, sY + 340, 18);
-			PutString2(msX + 20, msY + 35, DRAW_DIALOGBOX_COMMANDER6, 255, 255, 255);
+			m_game->m_sprite[InterfaceNdCrusade]->draw(sX + 20 + 150 + 74, sY + 340, 18);
+			hb::shared::text::draw_text(GameFont::Default, mouse_x + 20, mouse_y + 35, DRAW_DIALOGBOX_COMMANDER6, hb::shared::text::TextStyle::with_shadow(GameColors::UIWhite));
 		}
-		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_CRUSADE, sX, sY, 21, false, ConfigManager::Get().IsDialogTransparencyEnabled());
+		draw_new_dialog_box(InterfaceNdCrusade, sX, sY, 21, false, config_manager::get().is_dialog_transparency_enabled());
 		break;
 
 	case 1: // Set TP
-		m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX + 20 + 100 + 74, sY + 340, 20);
-		m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX + 20 + 150 + 74, sY + 340, 4);
-		PutAlignedString(sX, sX + szX, sY + 40, DRAW_DIALOGBOX_COMMANDER7);
+		m_game->m_sprite[InterfaceNdCrusade]->draw(sX + 20 + 100 + 74, sY + 340, 20);
+		m_game->m_sprite[InterfaceNdCrusade]->draw(sX + 20 + 150 + 74, sY + 340, 4);
+		put_aligned_string(sX, sX + size_x, sY + 40, DRAW_DIALOGBOX_COMMANDER7);
 
-		if ((msX >= sX + 20 + 150 + 74 - 50) && (msX <= sX + 20 + 46 + 150 + 74 - 50) && (msY >= sY + 340) && (msY <= sY + 340 + 52))
+		if ((mouse_x >= sX + 20 + 150 + 74 - 50) && (mouse_x <= sX + 20 + 46 + 150 + 74 - 50) && (mouse_y >= sY + 340) && (mouse_y <= sY + 340 + 52))
 		{
-			m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX + 20 + 100 + 74, sY + 340, 19);
-			PutString2(msX + 20, msY + 35, DRAW_DIALOGBOX_COMMANDER8, 255, 255, 255);
+			m_game->m_sprite[InterfaceNdCrusade]->draw(sX + 20 + 100 + 74, sY + 340, 19);
+			hb::shared::text::draw_text(GameFont::Default, mouse_x + 20, mouse_y + 35, DRAW_DIALOGBOX_COMMANDER8, hb::shared::text::TextStyle::with_shadow(GameColors::UIWhite));
 		}
-		else if ((msX >= sX + 20 + 150 + 74) && (msX <= sX + 20 + 46 + 150 + 74) && (msY >= sY + 340) && (msY <= sY + 340 + 52))
+		else if ((mouse_x >= sX + 20 + 150 + 74) && (mouse_x <= sX + 20 + 46 + 150 + 74) && (mouse_y >= sY + 340) && (mouse_y <= sY + 340 + 52))
 		{
-			m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX + 20 + 150 + 74, sY + 340, 18);
-			PutString2(msX + 20, msY + 35, DRAW_DIALOGBOX_COMMANDER9, 255, 255, 255);
+			m_game->m_sprite[InterfaceNdCrusade]->draw(sX + 20 + 150 + 74, sY + 340, 18);
+			hb::shared::text::draw_text(GameFont::Default, mouse_x + 20, mouse_y + 35, DRAW_DIALOGBOX_COMMANDER9, hb::shared::text::TextStyle::with_shadow(GameColors::UIWhite));
 		}
-		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_CRUSADE, sX, sY, 21, false, ConfigManager::Get().IsDialogTransparencyEnabled());
+		draw_new_dialog_box(InterfaceNdCrusade, sX, sY, 21, false, config_manager::get().is_dialog_transparency_enabled());
 
-		if ((msX >= sX + 15) && (msX <= sX + 15 + 278) && (msY >= sY + 60) && (msY <= sY + 60 + 272))
+		if ((mouse_x >= sX + 15) && (mouse_x <= sX + 15 + 278) && (mouse_y >= sY + 60) && (mouse_y <= sY + 60 + 272))
 		{
-			DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_CRUSADE, msX, msY, 42, false, true);
+			draw_new_dialog_box(InterfaceNdCrusade, mouse_x, mouse_y, 42, false, true);
 		}
 		break;
 
 	case 2: // Use TP
-		m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX + 20 + 50, sY + 340, 1);
-		m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX + 20 + 100 + 74, sY + 340, 20);
-		m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX + 20 + 150 + 74, sY + 340, 4);
-		PutAlignedString(sX, sX + szX, sY + 40, DRAW_DIALOGBOX_COMMANDER10);
+		m_game->m_sprite[InterfaceNdCrusade]->draw(sX + 20 + 50, sY + 340, 1);
+		m_game->m_sprite[InterfaceNdCrusade]->draw(sX + 20 + 100 + 74, sY + 340, 20);
+		m_game->m_sprite[InterfaceNdCrusade]->draw(sX + 20 + 150 + 74, sY + 340, 4);
+		put_aligned_string(sX, sX + size_x, sY + 40, DRAW_DIALOGBOX_COMMANDER10);
 
-		if ((msX >= sX + 20 + 50) && (msX <= sX + 20 + 46 + 50) && (msY >= sY + 340) && (msY <= sY + 340 + 52))
+		if ((mouse_x >= sX + 20 + 50) && (mouse_x <= sX + 20 + 46 + 50) && (mouse_y >= sY + 340) && (mouse_y <= sY + 340 + 52))
 		{
-			m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX + 20 + 50, sY + 340, 15);
-			PutString2(msX + 20, msY + 35, DRAW_DIALOGBOX_COMMANDER11, 255, 255, 255);
+			m_game->m_sprite[InterfaceNdCrusade]->draw(sX + 20 + 50, sY + 340, 15);
+			hb::shared::text::draw_text(GameFont::Default, mouse_x + 20, mouse_y + 35, DRAW_DIALOGBOX_COMMANDER11, hb::shared::text::TextStyle::with_shadow(GameColors::UIWhite));
 		}
-		else if ((msX >= sX + 20 + 150 + 74 - 50) && (msX <= sX + 20 + 46 + 150 + 74 - 50) && (msY >= sY + 340) && (msY <= sY + 340 + 52))
+		else if ((mouse_x >= sX + 20 + 150 + 74 - 50) && (mouse_x <= sX + 20 + 46 + 150 + 74 - 50) && (mouse_y >= sY + 340) && (mouse_y <= sY + 340 + 52))
 		{
-			m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX + 20 + 100 + 74, sY + 340, 19);
-			PutString2(msX + 20, msY + 35, DRAW_DIALOGBOX_COMMANDER12, 255, 255, 255);
+			m_game->m_sprite[InterfaceNdCrusade]->draw(sX + 20 + 100 + 74, sY + 340, 19);
+			hb::shared::text::draw_text(GameFont::Default, mouse_x + 20, mouse_y + 35, DRAW_DIALOGBOX_COMMANDER12, hb::shared::text::TextStyle::with_shadow(GameColors::UIWhite));
 		}
-		else if ((msX >= sX + 20 + 150 + 74) && (msX <= sX + 20 + 46 + 150 + 74) && (msY >= sY + 340) && (msY <= sY + 340 + 52))
+		else if ((mouse_x >= sX + 20 + 150 + 74) && (mouse_x <= sX + 20 + 46 + 150 + 74) && (mouse_y >= sY + 340) && (mouse_y <= sY + 340 + 52))
 		{
-			m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX + 20 + 150 + 74, sY + 340, 18);
-			PutString2(msX + 20, msY + 35, DRAW_DIALOGBOX_COMMANDER13, 255, 255, 255);
+			m_game->m_sprite[InterfaceNdCrusade]->draw(sX + 20 + 150 + 74, sY + 340, 18);
+			hb::shared::text::draw_text(GameFont::Default, mouse_x + 20, mouse_y + 35, DRAW_DIALOGBOX_COMMANDER13, hb::shared::text::TextStyle::with_shadow(GameColors::UIWhite));
 		}
-		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_CRUSADE, sX, sY, 21, false, ConfigManager::Get().IsDialogTransparencyEnabled());
+		draw_new_dialog_box(InterfaceNdCrusade, sX, sY, 21, false, config_manager::get().is_dialog_transparency_enabled());
 		break;
 
-	case 3: // Choose summon
-		if ((m_pGame->m_bCitizen == true) && (m_pGame->m_bAresden == true))
+	case 3: { // Choose summon
+		if ((m_game->m_player->m_citizen == true) && (m_game->m_player->m_aresden == true))
 		{
-			m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX + 20, sY + 220, 6);
-			m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX + 20 + 50, sY + 220, 5);
-			m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX + 20 + 100, sY + 220, 7);
-			m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX + 20 + 150, sY + 220, 35);
+			m_game->m_sprite[InterfaceNdCrusade]->draw(sX + 20, sY + 220, 6);
+			m_game->m_sprite[InterfaceNdCrusade]->draw(sX + 20 + 50, sY + 220, 5);
+			m_game->m_sprite[InterfaceNdCrusade]->draw(sX + 20 + 100, sY + 220, 7);
+			m_game->m_sprite[InterfaceNdCrusade]->draw(sX + 20 + 150, sY + 220, 35);
 		}
-		else if ((m_pGame->m_bCitizen == true) && (m_pGame->m_bAresden == false))
+		else if ((m_game->m_player->m_citizen == true) && (m_game->m_player->m_aresden == false))
 		{
-			m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX + 20, sY + 220, 9);
-			m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX + 20 + 50, sY + 220, 8);
-			m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX + 20 + 100, sY + 220, 7);
-			m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX + 20 + 150, sY + 220, 35);
+			m_game->m_sprite[InterfaceNdCrusade]->draw(sX + 20, sY + 220, 9);
+			m_game->m_sprite[InterfaceNdCrusade]->draw(sX + 20 + 50, sY + 220, 8);
+			m_game->m_sprite[InterfaceNdCrusade]->draw(sX + 20 + 100, sY + 220, 7);
+			m_game->m_sprite[InterfaceNdCrusade]->draw(sX + 20 + 150, sY + 220, 35);
 		}
-		m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX + 20 + 100 + 74, sY + 340, 20);
-		m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX + 20 + 150 + 74, sY + 340, 4);
+		m_game->m_sprite[InterfaceNdCrusade]->draw(sX + 20 + 100 + 74, sY + 340, 20);
+		m_game->m_sprite[InterfaceNdCrusade]->draw(sX + 20 + 150 + 74, sY + 340, 4);
 
-		PutAlignedString(sX, sX + szX, sY + 40, DRAW_DIALOGBOX_COMMANDER14);
+		put_aligned_string(sX, sX + size_x, sY + 40, DRAW_DIALOGBOX_COMMANDER14);
 
-		wsprintf(m_pGame->G_cTxt, "%s %d", DRAW_DIALOGBOX_COMMANDER15, m_pGame->m_iConstructionPoint);
-		PutAlignedString(sX, sX + 323, sY + 190, m_pGame->G_cTxt);
+		auto pointsBuf = std::format("{} {}", DRAW_DIALOGBOX_COMMANDER15, m_game->m_player->m_construction_point);
+		put_aligned_string(sX, sX + 323, sY + 190, pointsBuf.c_str());
 
-		if ((m_pGame->m_bCitizen == true) && (m_pGame->m_bAresden == true))
+		if ((m_game->m_player->m_citizen == true) && (m_game->m_player->m_aresden == true))
 		{
-			if ((msX >= sX + 20) && (msX <= sX + 20 + 46) && (msY >= sY + 220) && (msY <= sY + 220 + 50))
+			if ((mouse_x >= sX + 20) && (mouse_x <= sX + 20 + 46) && (mouse_y >= sY + 220) && (mouse_y <= sY + 220 + 50))
 			{
-				if (m_pGame->m_iConstructionPoint >= 3000)
+				if (m_game->m_player->m_construction_point >= 3000)
 				{
-					m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX + 20, sY + 220, 11);
+					m_game->m_sprite[InterfaceNdCrusade]->draw(sX + 20, sY + 220, 11);
 				}
-				PutString2(msX + 20, msY + 35, DRAW_DIALOGBOX_COMMANDER16, 255, 255, 255);
-				PutString2(msX + 20, msY + 50, DRAW_DIALOGBOX_COMMANDER17, 255, 255, 255);
+				hb::shared::text::draw_text(GameFont::Default, mouse_x + 20, mouse_y + 35, DRAW_DIALOGBOX_COMMANDER16, hb::shared::text::TextStyle::with_shadow(GameColors::UIWhite));
+				hb::shared::text::draw_text(GameFont::Default, mouse_x + 20, mouse_y + 50, DRAW_DIALOGBOX_COMMANDER17, hb::shared::text::TextStyle::with_shadow(GameColors::UIWhite));
 			}
-			else if ((msX >= sX + 20 + 50) && (msX <= sX + 20 + 50 + 45) && (msY >= sY + 220) && (msY <= sY + 220 + 50))
+			else if ((mouse_x >= sX + 20 + 50) && (mouse_x <= sX + 20 + 50 + 45) && (mouse_y >= sY + 220) && (mouse_y <= sY + 220 + 50))
 			{
-				if (m_pGame->m_iConstructionPoint >= 2000)
+				if (m_game->m_player->m_construction_point >= 2000)
 				{
-					m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX + 20 + 50, sY + 220, 10);
+					m_game->m_sprite[InterfaceNdCrusade]->draw(sX + 20 + 50, sY + 220, 10);
 				}
-				PutString2(msX + 20, msY + 35, DRAW_DIALOGBOX_COMMANDER18, 255, 255, 255);
-				PutString2(msX + 20, msY + 50, DRAW_DIALOGBOX_COMMANDER19, 255, 255, 255);
+				hb::shared::text::draw_text(GameFont::Default, mouse_x + 20, mouse_y + 35, DRAW_DIALOGBOX_COMMANDER18, hb::shared::text::TextStyle::with_shadow(GameColors::UIWhite));
+				hb::shared::text::draw_text(GameFont::Default, mouse_x + 20, mouse_y + 50, DRAW_DIALOGBOX_COMMANDER19, hb::shared::text::TextStyle::with_shadow(GameColors::UIWhite));
 			}
-			else if ((msX >= sX + 20 + 100) && (msX <= sX + 20 + 100 + 45) && (msY >= sY + 220) && (msY <= sY + 220 + 50))
+			else if ((mouse_x >= sX + 20 + 100) && (mouse_x <= sX + 20 + 100 + 45) && (mouse_y >= sY + 220) && (mouse_y <= sY + 220 + 50))
 			{
-				if (m_pGame->m_iConstructionPoint >= 1000)
+				if (m_game->m_player->m_construction_point >= 1000)
 				{
-					m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX + 20 + 100, sY + 220, 12);
+					m_game->m_sprite[InterfaceNdCrusade]->draw(sX + 20 + 100, sY + 220, 12);
 				}
-				PutString2(msX + 20, msY + 35, DRAW_DIALOGBOX_COMMANDER20, 255, 255, 255);
-				PutString2(msX + 20, msY + 50, DRAW_DIALOGBOX_COMMANDER21, 255, 255, 255);
+				hb::shared::text::draw_text(GameFont::Default, mouse_x + 20, mouse_y + 35, DRAW_DIALOGBOX_COMMANDER20, hb::shared::text::TextStyle::with_shadow(GameColors::UIWhite));
+				hb::shared::text::draw_text(GameFont::Default, mouse_x + 20, mouse_y + 50, DRAW_DIALOGBOX_COMMANDER21, hb::shared::text::TextStyle::with_shadow(GameColors::UIWhite));
 			}
-			else if ((msX >= sX + 20 + 150) && (msX <= sX + 20 + 150 + 45) && (msY >= sY + 220) && (msY <= sY + 220 + 50))
+			else if ((mouse_x >= sX + 20 + 150) && (mouse_x <= sX + 20 + 150 + 45) && (mouse_y >= sY + 220) && (mouse_y <= sY + 220 + 50))
 			{
-				if (m_pGame->m_iConstructionPoint >= 5000)
+				if (m_game->m_player->m_construction_point >= 5000)
 				{
-					m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX + 20 + 150, sY + 220, 29);
+					m_game->m_sprite[InterfaceNdCrusade]->draw(sX + 20 + 150, sY + 220, 29);
 				}
-				PutString2(msX + 20, msY + 35, DRAW_DIALOGBOX_COMMANDER22, 255, 255, 255);
-				PutString2(msX + 20, msY + 50, DRAW_DIALOGBOX_COMMANDER23, 255, 255, 255);
+				hb::shared::text::draw_text(GameFont::Default, mouse_x + 20, mouse_y + 35, DRAW_DIALOGBOX_COMMANDER22, hb::shared::text::TextStyle::with_shadow(GameColors::UIWhite));
+				hb::shared::text::draw_text(GameFont::Default, mouse_x + 20, mouse_y + 50, DRAW_DIALOGBOX_COMMANDER23, hb::shared::text::TextStyle::with_shadow(GameColors::UIWhite));
 			}
-			else if ((msX >= sX + 20) && (msX <= sX + 380) && (msY > sY + 140) && (msY < sY + 160))
+			else if ((mouse_x >= sX + 20) && (mouse_x <= sX + 380) && (mouse_y > sY + 140) && (mouse_y < sY + 160))
 			{
-				PutString2(msX + 20, msY + 35, DRAW_DIALOGBOX_COMMANDER24, 255, 255, 255);
+				hb::shared::text::draw_text(GameFont::Default, mouse_x + 20, mouse_y + 35, DRAW_DIALOGBOX_COMMANDER24, hb::shared::text::TextStyle::with_shadow(GameColors::UIWhite));
 			}
-			else if ((msX >= sX + 20) && (msX <= sX + 380) && (msY > sY + 160) && (msY < sY + 175))
+			else if ((mouse_x >= sX + 20) && (mouse_x <= sX + 380) && (mouse_y > sY + 160) && (mouse_y < sY + 175))
 			{
-				PutString2(msX + 20, msY + 35, DRAW_DIALOGBOX_COMMANDER25, 255, 255, 255);
+				hb::shared::text::draw_text(GameFont::Default, mouse_x + 20, mouse_y + 35, DRAW_DIALOGBOX_COMMANDER25, hb::shared::text::TextStyle::with_shadow(GameColors::UIWhite));
 			}
-			else if ((msX >= sX + 20 + 150 + 74 - 50) && (msX <= sX + 20 + 46 + 150 + 74 - 50) && (msY >= sY + 340) && (msY <= sY + 340 + 52))
+			else if ((mouse_x >= sX + 20 + 150 + 74 - 50) && (mouse_x <= sX + 20 + 46 + 150 + 74 - 50) && (mouse_y >= sY + 340) && (mouse_y <= sY + 340 + 52))
 			{
-				m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX + 20 + 100 + 74, sY + 340, 19);
-				PutString2(msX + 20, msY + 35, DRAW_DIALOGBOX_COMMANDER26, 255, 255, 255);
+				m_game->m_sprite[InterfaceNdCrusade]->draw(sX + 20 + 100 + 74, sY + 340, 19);
+				hb::shared::text::draw_text(GameFont::Default, mouse_x + 20, mouse_y + 35, DRAW_DIALOGBOX_COMMANDER26, hb::shared::text::TextStyle::with_shadow(GameColors::UIWhite));
 			}
-			else if ((msX >= sX + 20 + 150 + 74) && (msX <= sX + 20 + 46 + 150 + 74) && (msY >= sY + 340) && (msY <= sY + 340 + 52))
+			else if ((mouse_x >= sX + 20 + 150 + 74) && (mouse_x <= sX + 20 + 46 + 150 + 74) && (mouse_y >= sY + 340) && (mouse_y <= sY + 340 + 52))
 			{
-				m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX + 20 + 150 + 74, sY + 340, 18);
-				PutString2(msX + 20, msY + 35, DRAW_DIALOGBOX_COMMANDER27, 255, 255, 255);
-			}
-		}
-		else if ((m_pGame->m_bCitizen == true) && (m_pGame->m_bAresden == false))
-		{
-			if ((msX >= sX + 20) && (msX <= sX + 20 + 46) && (msY >= sY + 220) && (msY <= sY + 220 + 50))
-			{
-				if (m_pGame->m_iConstructionPoint >= 3000)
-				{
-					m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX + 20, sY + 220, 14);
-				}
-				PutString2(msX + 20, msY + 35, DRAW_DIALOGBOX_COMMANDER28, 255, 255, 255);
-				PutString2(msX + 20, msY + 50, DRAW_DIALOGBOX_COMMANDER29, 255, 255, 255);
-			}
-			else if ((msX >= sX + 20 + 50) && (msX <= sX + 20 + 50 + 45) && (msY >= sY + 220) && (msY <= sY + 220 + 50))
-			{
-				if (m_pGame->m_iConstructionPoint >= 2000)
-				{
-					m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX + 20 + 50, sY + 220, 13);
-				}
-				PutString2(msX + 20, msY + 35, DRAW_DIALOGBOX_COMMANDER30, 255, 255, 255);
-				PutString2(msX + 20, msY + 50, DRAW_DIALOGBOX_COMMANDER31, 255, 255, 255);
-			}
-			else if ((msX >= sX + 20 + 100) && (msX <= sX + 20 + 100 + 45) && (msY >= sY + 220) && (msY <= sY + 220 + 50))
-			{
-				if (m_pGame->m_iConstructionPoint >= 1000)
-				{
-					m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX + 20 + 100, sY + 220, 12);
-				}
-				PutString2(msX + 20, msY + 35, DRAW_DIALOGBOX_COMMANDER32, 255, 255, 255);
-				PutString2(msX + 20, msY + 50, DRAW_DIALOGBOX_COMMANDER33, 255, 255, 255);
-			}
-			else if ((msX >= sX + 20 + 150) && (msX <= sX + 20 + 150 + 45) && (msY >= sY + 220) && (msY <= sY + 220 + 50))
-			{
-				if (m_pGame->m_iConstructionPoint >= 5000)
-				{
-					m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX + 20 + 150, sY + 220, 29);
-				}
-				PutString2(msX + 20, msY + 35, DRAW_DIALOGBOX_COMMANDER34, 255, 255, 255);
-				PutString2(msX + 20, msY + 50, DRAW_DIALOGBOX_COMMANDER35, 255, 255, 255);
-			}
-			else if ((msX >= sX + 20) && (msX <= sX + 380) && (msY > sY + 140) && (msY < sY + 160))
-			{
-				PutString2(msX + 20, msY + 35, DRAW_DIALOGBOX_COMMANDER36, 255, 255, 255);
-			}
-			else if ((msX >= sX + 20) && (msX <= sX + 380) && (msY > sY + 160) && (msY < sY + 175))
-			{
-				PutString2(msX + 20, msY + 35, DRAW_DIALOGBOX_COMMANDER37, 255, 255, 255);
-			}
-			else if ((msX >= sX + 20 + 150 + 74 - 50) && (msX <= sX + 20 + 46 + 150 + 74 - 50) && (msY >= sY + 340) && (msY <= sY + 340 + 52))
-			{
-				m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX + 20 + 100 + 74, sY + 340, 19);
-				PutString2(msX + 20, msY + 35, DRAW_DIALOGBOX_COMMANDER38, 255, 255, 255);
-			}
-			else if ((msX >= sX + 20 + 150 + 74) && (msX <= sX + 20 + 46 + 150 + 74) && (msY >= sY + 340) && (msY <= sY + 340 + 52))
-			{
-				m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX + 20 + 150 + 74, sY + 340, 18);
-				PutString2(msX + 20, msY + 35, DRAW_DIALOGBOX_COMMANDER39, 255, 255, 255);
+				m_game->m_sprite[InterfaceNdCrusade]->draw(sX + 20 + 150 + 74, sY + 340, 18);
+				hb::shared::text::draw_text(GameFont::Default, mouse_x + 20, mouse_y + 35, DRAW_DIALOGBOX_COMMANDER27, hb::shared::text::TextStyle::with_shadow(GameColors::UIWhite));
 			}
 		}
-		PutAlignedString(sX, sX + 323, sY + 80, DRAW_DIALOGBOX_COMMANDER40);
-		PutAlignedString(sX, sX + 323, sY + 95, DRAW_DIALOGBOX_COMMANDER41);
-		PutAlignedString(sX, sX + 323, sY + 110, DRAW_DIALOGBOX_COMMANDER42);
+		else if ((m_game->m_player->m_citizen == true) && (m_game->m_player->m_aresden == false))
+		{
+			if ((mouse_x >= sX + 20) && (mouse_x <= sX + 20 + 46) && (mouse_y >= sY + 220) && (mouse_y <= sY + 220 + 50))
+			{
+				if (m_game->m_player->m_construction_point >= 3000)
+				{
+					m_game->m_sprite[InterfaceNdCrusade]->draw(sX + 20, sY + 220, 14);
+				}
+				hb::shared::text::draw_text(GameFont::Default, mouse_x + 20, mouse_y + 35, DRAW_DIALOGBOX_COMMANDER28, hb::shared::text::TextStyle::with_shadow(GameColors::UIWhite));
+				hb::shared::text::draw_text(GameFont::Default, mouse_x + 20, mouse_y + 50, DRAW_DIALOGBOX_COMMANDER29, hb::shared::text::TextStyle::with_shadow(GameColors::UIWhite));
+			}
+			else if ((mouse_x >= sX + 20 + 50) && (mouse_x <= sX + 20 + 50 + 45) && (mouse_y >= sY + 220) && (mouse_y <= sY + 220 + 50))
+			{
+				if (m_game->m_player->m_construction_point >= 2000)
+				{
+					m_game->m_sprite[InterfaceNdCrusade]->draw(sX + 20 + 50, sY + 220, 13);
+				}
+				hb::shared::text::draw_text(GameFont::Default, mouse_x + 20, mouse_y + 35, DRAW_DIALOGBOX_COMMANDER30, hb::shared::text::TextStyle::with_shadow(GameColors::UIWhite));
+				hb::shared::text::draw_text(GameFont::Default, mouse_x + 20, mouse_y + 50, DRAW_DIALOGBOX_COMMANDER31, hb::shared::text::TextStyle::with_shadow(GameColors::UIWhite));
+			}
+			else if ((mouse_x >= sX + 20 + 100) && (mouse_x <= sX + 20 + 100 + 45) && (mouse_y >= sY + 220) && (mouse_y <= sY + 220 + 50))
+			{
+				if (m_game->m_player->m_construction_point >= 1000)
+				{
+					m_game->m_sprite[InterfaceNdCrusade]->draw(sX + 20 + 100, sY + 220, 12);
+				}
+				hb::shared::text::draw_text(GameFont::Default, mouse_x + 20, mouse_y + 35, DRAW_DIALOGBOX_COMMANDER32, hb::shared::text::TextStyle::with_shadow(GameColors::UIWhite));
+				hb::shared::text::draw_text(GameFont::Default, mouse_x + 20, mouse_y + 50, DRAW_DIALOGBOX_COMMANDER33, hb::shared::text::TextStyle::with_shadow(GameColors::UIWhite));
+			}
+			else if ((mouse_x >= sX + 20 + 150) && (mouse_x <= sX + 20 + 150 + 45) && (mouse_y >= sY + 220) && (mouse_y <= sY + 220 + 50))
+			{
+				if (m_game->m_player->m_construction_point >= 5000)
+				{
+					m_game->m_sprite[InterfaceNdCrusade]->draw(sX + 20 + 150, sY + 220, 29);
+				}
+				hb::shared::text::draw_text(GameFont::Default, mouse_x + 20, mouse_y + 35, DRAW_DIALOGBOX_COMMANDER34, hb::shared::text::TextStyle::with_shadow(GameColors::UIWhite));
+				hb::shared::text::draw_text(GameFont::Default, mouse_x + 20, mouse_y + 50, DRAW_DIALOGBOX_COMMANDER35, hb::shared::text::TextStyle::with_shadow(GameColors::UIWhite));
+			}
+			else if ((mouse_x >= sX + 20) && (mouse_x <= sX + 380) && (mouse_y > sY + 140) && (mouse_y < sY + 160))
+			{
+				hb::shared::text::draw_text(GameFont::Default, mouse_x + 20, mouse_y + 35, DRAW_DIALOGBOX_COMMANDER36, hb::shared::text::TextStyle::with_shadow(GameColors::UIWhite));
+			}
+			else if ((mouse_x >= sX + 20) && (mouse_x <= sX + 380) && (mouse_y > sY + 160) && (mouse_y < sY + 175))
+			{
+				hb::shared::text::draw_text(GameFont::Default, mouse_x + 20, mouse_y + 35, DRAW_DIALOGBOX_COMMANDER37, hb::shared::text::TextStyle::with_shadow(GameColors::UIWhite));
+			}
+			else if ((mouse_x >= sX + 20 + 150 + 74 - 50) && (mouse_x <= sX + 20 + 46 + 150 + 74 - 50) && (mouse_y >= sY + 340) && (mouse_y <= sY + 340 + 52))
+			{
+				m_game->m_sprite[InterfaceNdCrusade]->draw(sX + 20 + 100 + 74, sY + 340, 19);
+				hb::shared::text::draw_text(GameFont::Default, mouse_x + 20, mouse_y + 35, DRAW_DIALOGBOX_COMMANDER38, hb::shared::text::TextStyle::with_shadow(GameColors::UIWhite));
+			}
+			else if ((mouse_x >= sX + 20 + 150 + 74) && (mouse_x <= sX + 20 + 46 + 150 + 74) && (mouse_y >= sY + 340) && (mouse_y <= sY + 340 + 52))
+			{
+				m_game->m_sprite[InterfaceNdCrusade]->draw(sX + 20 + 150 + 74, sY + 340, 18);
+				hb::shared::text::draw_text(GameFont::Default, mouse_x + 20, mouse_y + 35, DRAW_DIALOGBOX_COMMANDER39, hb::shared::text::TextStyle::with_shadow(GameColors::UIWhite));
+			}
+		}
+		put_aligned_string(sX, sX + 323, sY + 80, DRAW_DIALOGBOX_COMMANDER40);
+		put_aligned_string(sX, sX + 323, sY + 95, DRAW_DIALOGBOX_COMMANDER41);
+		put_aligned_string(sX, sX + 323, sY + 110, DRAW_DIALOGBOX_COMMANDER42);
 
-		switch (Info().sV1) {
+		switch (Info().m_v1) {
 		case 0:
-			PutAlignedString(sX, sX + 323, sY + 140, DRAW_DIALOGBOX_COMMANDER43, 255, 255, 255);
-			PutAlignedString(sX, sX + 323, sY + 160, DRAW_DIALOGBOX_COMMANDER44, 4, 0, 50);
+			put_aligned_string(sX, sX + 323, sY + 140, DRAW_DIALOGBOX_COMMANDER43, GameColors::UIWhite);
+			put_aligned_string(sX, sX + 323, sY + 160, DRAW_DIALOGBOX_COMMANDER44, GameColors::UIMagicBlue);
 			break;
 		case 1:
-			PutAlignedString(sX, sX + 323, sY + 140, DRAW_DIALOGBOX_COMMANDER43, 4, 0, 50);
-			PutAlignedString(sX, sX + 323, sY + 160, DRAW_DIALOGBOX_COMMANDER44, 255, 255, 255);
+			put_aligned_string(sX, sX + 323, sY + 140, DRAW_DIALOGBOX_COMMANDER43, GameColors::UIMagicBlue);
+			put_aligned_string(sX, sX + 323, sY + 160, DRAW_DIALOGBOX_COMMANDER44, GameColors::UIWhite);
 			break;
-		}
-		break;
-
-	case 4: // Set Construction point
-		m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX + 20 + 100 + 74, sY + 340, 20);
-		m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX + 20 + 150 + 74, sY + 340, 4);
-		PutAlignedString(sX, sX + szX, sY + 40, DRAW_DIALOGBOX_COMMANDER47);
-
-		if ((msX >= sX + 20 + 150 + 74 - 50) && (msX <= sX + 20 + 46 + 150 + 74 - 50) && (msY >= sY + 340) && (msY <= sY + 340 + 52))
-		{
-			m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX + 20 + 100 + 74, sY + 340, 19);
-			PutString2(msX + 20, msY + 35, DRAW_DIALOGBOX_COMMANDER48, 255, 255, 255);
-		}
-		else if ((msX >= sX + 20 + 150 + 74) && (msX <= sX + 20 + 46 + 150 + 74) && (msY >= sY + 340) && (msY <= sY + 340 + 52))
-		{
-			m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX + 20 + 150 + 74, sY + 340, 18);
-			PutString2(msX + 20, msY + 35, DRAW_DIALOGBOX_COMMANDER49, 255, 255, 255);
-		}
-		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_CRUSADE, sX, sY, 21);
-		if ((msX >= sX + 15) && (msX <= sX + 15 + 278) && (msY >= sY + 60) && (msY <= sY + 60 + 272))
-		{
-			DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_CRUSADE, msX, msY, 41, false, true);
 		}
 		break;
 	}
 
-	// Draw map structures and positions
-	switch (Info().cMode) {
+	case 4: // Set Construction point
+		m_game->m_sprite[InterfaceNdCrusade]->draw(sX + 20 + 100 + 74, sY + 340, 20);
+		m_game->m_sprite[InterfaceNdCrusade]->draw(sX + 20 + 150 + 74, sY + 340, 4);
+		put_aligned_string(sX, sX + size_x, sY + 40, DRAW_DIALOGBOX_COMMANDER47);
+
+		if ((mouse_x >= sX + 20 + 150 + 74 - 50) && (mouse_x <= sX + 20 + 46 + 150 + 74 - 50) && (mouse_y >= sY + 340) && (mouse_y <= sY + 340 + 52))
+		{
+			m_game->m_sprite[InterfaceNdCrusade]->draw(sX + 20 + 100 + 74, sY + 340, 19);
+			hb::shared::text::draw_text(GameFont::Default, mouse_x + 20, mouse_y + 35, DRAW_DIALOGBOX_COMMANDER48, hb::shared::text::TextStyle::with_shadow(GameColors::UIWhite));
+		}
+		else if ((mouse_x >= sX + 20 + 150 + 74) && (mouse_x <= sX + 20 + 46 + 150 + 74) && (mouse_y >= sY + 340) && (mouse_y <= sY + 340 + 52))
+		{
+			m_game->m_sprite[InterfaceNdCrusade]->draw(sX + 20 + 150 + 74, sY + 340, 18);
+			hb::shared::text::draw_text(GameFont::Default, mouse_x + 20, mouse_y + 35, DRAW_DIALOGBOX_COMMANDER49, hb::shared::text::TextStyle::with_shadow(GameColors::UIWhite));
+		}
+		draw_new_dialog_box(InterfaceNdCrusade, sX, sY, 21);
+		if ((mouse_x >= sX + 15) && (mouse_x <= sX + 15 + 278) && (mouse_y >= sY + 60) && (mouse_y <= sY + 60 + 272))
+		{
+			draw_new_dialog_box(InterfaceNdCrusade, mouse_x, mouse_y, 41, false, true);
+		}
+		break;
+	}
+
+	// draw map structures and positions
+	switch (Info().m_mode) {
 	case 0:
 	case 1:
 	case 2:
 	case 4:
-		szX = 0;
-		szY = 0;
+		size_x = 0;
+		size_y = 0;
 		MapSzX = 0;
 		MapSzY = 0;
-		if (strcmp(m_pGame->m_cStatusMapName, "aresden") == 0)
+		if (m_game->m_status_map_name == "aresden")
 		{
-			szX = 250;
-			szY = 250;
+			size_x = 250;
+			size_y = 250;
 		}
-		else if (strcmp(m_pGame->m_cStatusMapName, "elvine") == 0)
+		else if (m_game->m_status_map_name == "elvine")
 		{
-			szX = 250;
-			szY = 250;
+			size_x = 250;
+			size_y = 250;
 		}
-		else if (strcmp(m_pGame->m_cStatusMapName, "middleland") == 0)
+		else if (m_game->m_status_map_name == "middleland")
 		{
-			szX = 279;
-			szY = 280;
+			size_x = 279;
+			size_y = 280;
 			MapSzX = 524;
 			MapSzY = 524;
 		}
-		if (szX != 0)
+		if (size_x != 0)
 		{
-			for (i = 0; i < DEF_MAXCRUSADESTRUCTURES; i++)
-				if (m_pGame->m_stCrusadeStructureInfo[i].cType != 0)
+			for (i = 0; i < hb::shared::limits::MaxCrusadeStructures; i++)
+				if (m_game->m_crusade_structure_info[i].type != 0)
 				{
-					dV1 = (double)MapSzX;
-					dV2 = (double)m_pGame->m_stCrusadeStructureInfo[i].sX;
-					dV3 = (dV2 * (double)szX) / dV1;
-					tX = (int)dV3;
-					dV1 = (double)MapSzY;
-					dV2 = (double)m_pGame->m_stCrusadeStructureInfo[i].sY;
-					dV3 = (dV2 * (double)szY) / dV1;
-					tY = (int)dV3;
-					switch (m_pGame->m_stCrusadeStructureInfo[i].cType) {
+					v1 = static_cast<double>(MapSzX);
+					v2 = static_cast<double>(m_game->m_crusade_structure_info[i].x);
+					v3 = (v2 * static_cast<double>(size_x)) / v1;
+					tX = static_cast<int>(v3);
+					v1 = static_cast<double>(MapSzY);
+					v2 = static_cast<double>(m_game->m_crusade_structure_info[i].y);
+					v3 = (v2 * static_cast<double>(size_y)) / v1;
+					tY = static_cast<int>(v3);
+					switch (m_game->m_crusade_structure_info[i].type) {
 					case 38:
-						if (m_pGame->m_stCrusadeStructureInfo[i].cSide == 1)
-							DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_CRUSADE, sX + tX + 15, sY + tY + 60, 39, false, true);
-						else DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_CRUSADE, sX + tX + 15, sY + tY + 60, 37, false, true);
+						if (m_game->m_crusade_structure_info[i].side == 1)
+							draw_new_dialog_box(InterfaceNdCrusade, sX + tX + 15, sY + tY + 60, 39, false, true);
+						else draw_new_dialog_box(InterfaceNdCrusade, sX + tX + 15, sY + tY + 60, 37, false, true);
 						break;
 					case 36:
 					case 37:
 					case 39:
-						if (m_pGame->m_stCrusadeStructureInfo[i].cSide == 1)
-							DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_CRUSADE, sX + tX + 15, sY + tY + 60, 38, false, true);
-						else DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_CRUSADE, sX + tX + 15, sY + tY + 60, 36, false, true);
+						if (m_game->m_crusade_structure_info[i].side == 1)
+							draw_new_dialog_box(InterfaceNdCrusade, sX + tX + 15, sY + tY + 60, 38, false, true);
+						else draw_new_dialog_box(InterfaceNdCrusade, sX + tX + 15, sY + tY + 60, 36, false, true);
 						break;
 					case 42:
-						DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_CRUSADE, sX + tX + 15, sY + tY + 60, 40);
+						draw_new_dialog_box(InterfaceNdCrusade, sX + tX + 15, sY + tY + 60, 40);
 						break;
 					}
 				}
-			if (m_pGame->m_iTeleportLocX != -1)
+			if (teleport_manager::get().get_loc_x() != -1)
 			{
-				dV1 = (double)MapSzX;
-				dV2 = (double)m_pGame->m_iTeleportLocX;
-				dV3 = (dV2 * (double)szX) / dV1;
-				tX = (int)dV3;
-				dV1 = (double)MapSzY;
-				dV2 = (double)m_pGame->m_iTeleportLocY;
-				dV3 = (dV2 * (double)szY) / dV1;
-				tY = (int)dV3;
-				if ((Info().cMode == 1) && (tY >= 30) && (tY <= 494))
-				{
-					DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_CRUSADE, sX + tX + 15, sY + tY + 60, 42, false, true);
-				}
-				else DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_CRUSADE, sX + tX + 15, sY + tY + 60, 42, false, true);
+				v1 = static_cast<double>(MapSzX);
+				v2 = static_cast<double>(teleport_manager::get().get_loc_x());
+				v3 = (v2 * static_cast<double>(size_x)) / v1;
+				tX = static_cast<int>(v3);
+				v1 = static_cast<double>(MapSzY);
+				v2 = static_cast<double>(teleport_manager::get().get_loc_y());
+				v3 = (v2 * static_cast<double>(size_y)) / v1;
+				tY = static_cast<int>(v3);
+				draw_new_dialog_box(InterfaceNdCrusade, sX + tX + 15, sY + tY + 60, 42, false, true);
 			}
-			if ((Info().cMode != 2) && (m_pGame->m_iConstructLocX != -1))
+			if ((Info().m_mode != 2) && (m_game->m_player->m_construct_loc_x != -1))
 			{
-				dV1 = (double)MapSzX;
-				dV2 = (double)m_pGame->m_iConstructLocX;
-				dV3 = (dV2 * (double)szX) / dV1;
-				tX = (int)dV3;
-				dV1 = (double)MapSzY;
-				dV2 = (double)m_pGame->m_iConstructLocY;
-				dV3 = (dV2 * (double)szY) / dV1;
-				tY = (int)dV3;
-				DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_CRUSADE, sX + tX + 15, sY + tY + 60, 41, false, true);
+				v1 = static_cast<double>(MapSzX);
+				v2 = static_cast<double>(m_game->m_player->m_construct_loc_x);
+				v3 = (v2 * static_cast<double>(size_x)) / v1;
+				tX = static_cast<int>(v3);
+				v1 = static_cast<double>(MapSzY);
+				v2 = static_cast<double>(m_game->m_player->m_construct_loc_y);
+				v3 = (v2 * static_cast<double>(size_y)) / v1;
+				tY = static_cast<int>(v3);
+				draw_new_dialog_box(InterfaceNdCrusade, sX + tX + 15, sY + tY + 60, 41, false, true);
 			}
-			if (strcmp(m_pGame->m_cMapName, "middleland") == 0)
+			if (m_game->m_map_name == "middleland")
 			{
-				dV1 = (double)MapSzX;
-				dV2 = (double)m_pGame->m_sPlayerX;
-				dV3 = (dV2 * (double)szX) / dV1;
-				tX = (int)dV3;
-				dV1 = (double)MapSzY;
-				dV2 = (double)m_pGame->m_sPlayerY;
-				dV3 = (dV2 * (double)szY) / dV1;
-				tY = (int)dV3;
-				DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_CRUSADE, sX + tX + 15, sY + tY + 60, 43);
+				v1 = static_cast<double>(MapSzX);
+				v2 = static_cast<double>(m_game->m_player->m_player_x);
+				v3 = (v2 * static_cast<double>(size_x)) / v1;
+				tX = static_cast<int>(v3);
+				v1 = static_cast<double>(MapSzY);
+				v2 = static_cast<double>(m_game->m_player->m_player_y);
+				v3 = (v2 * static_cast<double>(size_y)) / v1;
+				tY = static_cast<int>(v3);
+				draw_new_dialog_box(InterfaceNdCrusade, sX + tX + 15, sY + tY + 60, 43);
 			}
 		}
-		if (Info().cMode != 3)
+		if (Info().m_mode != 3 && size_x > 0 && size_y > 0)
 		{
-			if ((msX >= sX + 15) && (msX <= sX + 15 + 278) && (msY >= sY + 60) && (msY <= sY + 60 + 272))
+			if ((mouse_x >= sX + 15) && (mouse_x <= sX + 15 + 278) && (mouse_y >= sY + 60) && (mouse_y <= sY + 60 + 272))
 			{
-				dV1 = (double)(msX - (sX + 15));
-				dV2 = (double)MapSzX;
-				dV3 = (dV2 * dV1) / szX;
-				tX = (int)dV3;
-				dV1 = (double)(msY - (sY + 60));
-				dV2 = (double)MapSzX;
-				dV3 = (dV2 * dV1) / szY;
-				tY = (int)dV3;
+				v1 = static_cast<double>(mouse_x - (sX + 15));
+				v2 = static_cast<double>(MapSzX);
+				v3 = (v2 * v1) / size_x;
+				tX = static_cast<int>(v3);
+				v1 = static_cast<double>(mouse_y - (sY + 60));
+				v2 = static_cast<double>(MapSzY);
+				v3 = (v2 * v1) / size_y;
+				tY = static_cast<int>(v3);
 				if (tX < 30) tX = 30;
 				if (tY < 30) tY = 30;
 				if (tX > MapSzX - 30) tX = MapSzX - 30;
 				if (tY > MapSzY - 30) tY = MapSzY - 30;
-				wsprintf(m_pGame->G_cTxt, "%d,%d", tX, tY);
-				m_pGame->PutString_SprFont3(msX + 10, msY - 10, m_pGame->G_cTxt, m_pGame->m_wR[13] * 4, m_pGame->m_wG[13] * 4, m_pGame->m_wB[13] * 4, false, 2);
+				auto coordBuf = std::format("{},{}", tX, tY);
+				hb::shared::text::draw_text(GameFont::SprFont3_2, mouse_x + 10, mouse_y - 10, coordBuf.c_str(), hb::shared::text::TextStyle::with_two_point_shadow(GameColors::Yellow4x));
 			}
 		}
 		break;
 	}
 }
 
-bool DialogBox_Commander::OnClick(short msX, short msY)
+bool DialogBox_Commander::on_click(short mouse_x, short mouse_y)
 {
 	short sX, sY, tX, tY;
 	double d1, d2, d3;
 
-	if (m_pGame->m_bIsCrusadeMode == false) return false;
+	if (m_game->m_is_crusade_mode == false) return false;
 
-	sX = Info().sX;
-	sY = Info().sY;
+	sX = Info().m_x;
+	sY = Info().m_y;
 
-	switch (Info().cMode) {
+	switch (Info().m_mode) {
 	case 0: // Main
-		if ((msX >= sX + 20) && (msX <= sX + 20 + 46) && (msY >= sY + 340) && (msY <= sY + 340 + 52))
+		if ((mouse_x >= sX + 20) && (mouse_x <= sX + 20 + 46) && (mouse_y >= sY + 340) && (mouse_y <= sY + 340 + 52))
 		{
-			Info().cMode = 1;
-			PlaySoundEffect('E', 14, 5);
+			Info().m_mode = 1;
+			play_sound_effect('E', 14, 5);
 		}
-		if ((msX >= sX + 20 + 50) && (msX <= sX + 20 + 46 + 50) && (msY >= sY + 340) && (msY <= sY + 340 + 52))
+		else if ((mouse_x >= sX + 20 + 50) && (mouse_x <= sX + 20 + 46 + 50) && (mouse_y >= sY + 340) && (mouse_y <= sY + 340 + 52))
 		{
-			if (m_pGame->m_iTeleportLocX == -1)
+			if (teleport_manager::get().get_loc_x() == -1)
 			{
-				m_pGame->SetTopMsg(m_pGame->m_pGameMsgList[15]->m_pMsg, 5);
+				if (m_game->m_game_msg_list[15]) m_game->set_top_msg(m_game->m_game_msg_list[15]->m_pMsg, 5);
 			}
-			else if (strcmp(m_pGame->m_cMapName, m_pGame->m_cTeleportMapName) == 0)
+			else if (m_game->m_map_name == teleport_manager::get().get_map_name())
 			{
-				m_pGame->SetTopMsg(m_pGame->m_pGameMsgList[16]->m_pMsg, 5);
+				if (m_game->m_game_msg_list[16]) m_game->set_top_msg(m_game->m_game_msg_list[16]->m_pMsg, 5);
 			}
 			else
 			{
-				Info().cMode = 2;
-				PlaySoundEffect('E', 14, 5);
+				Info().m_mode = 2;
+				play_sound_effect('E', 14, 5);
 			}
 		}
-		if ((msX >= sX + 20 + 100) && (msX <= sX + 20 + 46 + 100) && (msY >= sY + 340) && (msY <= sY + 340 + 52))
+		else if ((mouse_x >= sX + 20 + 100) && (mouse_x <= sX + 20 + 46 + 100) && (mouse_y >= sY + 340) && (mouse_y <= sY + 340 + 52))
 		{
-			Info().cMode = 3;
-			Info().sV1 = 0;
-			PlaySoundEffect('E', 14, 5);
+			Info().m_mode = 3;
+			Info().m_v1 = 0;
+			play_sound_effect('E', 14, 5);
 		}
-		if ((msX >= sX + 20 + 150) && (msX <= sX + 20 + 46 + 150) && (msY >= sY + 340) && (msY <= sY + 340 + 52))
+		else if ((mouse_x >= sX + 20 + 150) && (mouse_x <= sX + 20 + 46 + 150) && (mouse_y >= sY + 340) && (mouse_y <= sY + 340 + 52))
 		{
-			Info().cMode = 4;
-			PlaySoundEffect('E', 14, 5);
+			Info().m_mode = 4;
+			play_sound_effect('E', 14, 5);
 		}
-		if ((msX >= sX + 20 + 150 + 74) && (msX <= sX + 20 + 46 + 150 + 74) && (msY >= sY + 340) && (msY <= sY + 340 + 52))
+		else if ((mouse_x >= sX + 20 + 150 + 74) && (mouse_x <= sX + 20 + 46 + 150 + 74) && (mouse_y >= sY + 340) && (mouse_y <= sY + 340 + 52))
 		{
-			DisableDialogBox(DialogBoxId::Text);
-			EnableDialogBox(DialogBoxId::Text, 808, 0, 0);
-			PlaySoundEffect('E', 14, 5);
+			disable_dialog_box(DialogBoxId::Text);
+			enable_dialog_box(DialogBoxId::Text, 808, 0, 0);
+			play_sound_effect('E', 14, 5);
 		}
 		break;
 
 	case 1: // Set TP
-		if ((msX >= sX + 15) && (msX <= sX + 15 + 278) && (msY >= sY + 60) && (msY <= sY + 60 + 272))
+		if ((mouse_x >= sX + 15) && (mouse_x <= sX + 15 + 278) && (mouse_y >= sY + 60) && (mouse_y <= sY + 60 + 272))
 		{
-			d1 = (double)(msX - (sX + 15));
-			d2 = (double)(524.0f);
+			d1 = static_cast<double>(mouse_x - (sX + 15));
+			d2 = static_cast<double>(524.0f);
 			d3 = (d2 * d1) / 279.0f;
-			tX = (int)d3;
-			d1 = (double)(msY - (sY + 60));
-			d2 = (double)(524.0f);
+			tX = static_cast<int>(d3);
+			d1 = static_cast<double>(mouse_y - (sY + 60));
+			d2 = static_cast<double>(524.0f);
 			d3 = (d2 * d1) / (280.0f);
-			tY = (int)d3;
+			tY = static_cast<int>(d3);
 			if (tX < 30) tX = 30;
 			if (tY < 30) tY = 30;
 			if (tX > 494) tX = 494;
 			if (tY > 494) tY = 494;
-			bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_SETGUILDTELEPORTLOC, 0, tX, tY, 0, "middleland");
-			Info().cMode = 0;
-			PlaySoundEffect('E', 14, 5);
-			m_pGame->_RequestMapStatus("middleland", 1);
+			send_command(MsgId::CommandCommon, CommonType::SetGuildTeleportLoc, 0, tX, tY, 0, "middleland");
+			Info().m_mode = 0;
+			play_sound_effect('E', 14, 5);
+			m_game->request_map_status("middleland", 1);
 		}
-		if ((msX >= sX + 20 + 150 + 74 - 50) && (msX <= sX + 20 + 46 + 150 + 74 - 50) && (msY >= sY + 340) && (msY <= sY + 340 + 52))
+		if ((mouse_x >= sX + 20 + 150 + 74 - 50) && (mouse_x <= sX + 20 + 46 + 150 + 74 - 50) && (mouse_y >= sY + 340) && (mouse_y <= sY + 340 + 52))
 		{
-			Info().cMode = 0;
-			PlaySoundEffect('E', 14, 5);
+			Info().m_mode = 0;
+			play_sound_effect('E', 14, 5);
 		}
-		if ((msX >= sX + 20 + 150 + 74) && (msX <= sX + 20 + 46 + 150 + 74) && (msY >= sY + 340) && (msY <= sY + 340 + 52))
+		if ((mouse_x >= sX + 20 + 150 + 74) && (mouse_x <= sX + 20 + 46 + 150 + 74) && (mouse_y >= sY + 340) && (mouse_y <= sY + 340 + 52))
 		{
-			DisableDialogBox(DialogBoxId::Text);
-			EnableDialogBox(DialogBoxId::Text, 809, 0, 0);
-			PlaySoundEffect('E', 14, 5);
+			disable_dialog_box(DialogBoxId::Text);
+			enable_dialog_box(DialogBoxId::Text, 809, 0, 0);
+			play_sound_effect('E', 14, 5);
 		}
 		break;
 
 	case 2: // Use TP
-		if ((msX >= sX + 20 + 50) && (msX <= sX + 20 + 46 + 50) && (msY >= sY + 340) && (msY <= sY + 340 + 52))
+		if ((mouse_x >= sX + 20 + 50) && (mouse_x <= sX + 20 + 46 + 50) && (mouse_y >= sY + 340) && (mouse_y <= sY + 340 + 52))
 		{
-			bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_GUILDTELEPORT, 0, 0, 0, 0, 0);
-			DisableDialogBox(DialogBoxId::CrusadeCommander);
-			PlaySoundEffect('E', 14, 5);
+			send_command(MsgId::CommandCommon, CommonType::GuildTeleport, 0, 0, 0, 0, 0);
+			disable_dialog_box(DialogBoxId::CrusadeCommander);
+			play_sound_effect('E', 14, 5);
 		}
-		if ((msX >= sX + 20 + 150 + 74 - 50) && (msX <= sX + 20 + 46 + 150 + 74 - 50) && (msY >= sY + 340) && (msY <= sY + 340 + 52))
+		if ((mouse_x >= sX + 20 + 150 + 74 - 50) && (mouse_x <= sX + 20 + 46 + 150 + 74 - 50) && (mouse_y >= sY + 340) && (mouse_y <= sY + 340 + 52))
 		{
-			Info().cMode = 0;
-			PlaySoundEffect('E', 14, 5);
+			Info().m_mode = 0;
+			play_sound_effect('E', 14, 5);
 		}
-		if ((msX >= sX + 20 + 150 + 74) && (msX <= sX + 20 + 46 + 150 + 74) && (msY >= sY + 340) && (msY <= sY + 340 + 52))
+		if ((mouse_x >= sX + 20 + 150 + 74) && (mouse_x <= sX + 20 + 46 + 150 + 74) && (mouse_y >= sY + 340) && (mouse_y <= sY + 340 + 52))
 		{
-			DisableDialogBox(DialogBoxId::Text);
-			EnableDialogBox(DialogBoxId::Text, 810, 0, 0);
-			PlaySoundEffect('E', 14, 5);
+			disable_dialog_box(DialogBoxId::Text);
+			enable_dialog_box(DialogBoxId::Text, 810, 0, 0);
+			play_sound_effect('E', 14, 5);
 		}
 		break;
 
 	case 3: // Summon Unit
-		if (m_pGame->m_bAresden == true)
+		if (m_game->m_player->m_aresden == true)
 		{
-			if ((msX >= sX + 20) && (msX <= sX + 20 + 46) && (msY >= sY + 220) && (msY <= sY + 220 + 50))
+			if ((mouse_x >= sX + 20) && (mouse_x <= sX + 20 + 46) && (mouse_y >= sY + 220) && (mouse_y <= sY + 220 + 50))
 			{
-				if (m_pGame->m_iConstructionPoint >= 3000)
+				if (m_game->m_player->m_construction_point >= 3000)
 				{
-					bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_SUMMONWARUNIT, 0, 47, 1, Info().sV1, 0);
-					PlaySoundEffect('E', 14, 5);
-					DisableDialogBox(DialogBoxId::CrusadeCommander);
+					send_command(MsgId::CommandCommon, CommonType::SummonWarUnit, 0, 47, 1, Info().m_v1, 0);
+					play_sound_effect('E', 14, 5);
+					disable_dialog_box(DialogBoxId::CrusadeCommander);
 				}
 			}
-			if ((msX >= sX + 20 + 50) && (msX <= sX + 20 + 50 + 45) && (msY >= sY + 220) && (msY <= sY + 220 + 50))
+			if ((mouse_x >= sX + 20 + 50) && (mouse_x <= sX + 20 + 50 + 45) && (mouse_y >= sY + 220) && (mouse_y <= sY + 220 + 50))
 			{
-				if (m_pGame->m_iConstructionPoint >= 2000)
+				if (m_game->m_player->m_construction_point >= 2000)
 				{
-					bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_SUMMONWARUNIT, 0, 46, 1, Info().sV1, 0);
-					PlaySoundEffect('E', 14, 5);
-					DisableDialogBox(DialogBoxId::CrusadeCommander);
+					send_command(MsgId::CommandCommon, CommonType::SummonWarUnit, 0, 46, 1, Info().m_v1, 0);
+					play_sound_effect('E', 14, 5);
+					disable_dialog_box(DialogBoxId::CrusadeCommander);
 				}
 			}
-			if ((msX >= sX + 20 + 100) && (msX <= sX + 20 + 100 + 45) && (msY >= sY + 220) && (msY <= sY + 220 + 50))
+			if ((mouse_x >= sX + 20 + 100) && (mouse_x <= sX + 20 + 100 + 45) && (mouse_y >= sY + 220) && (mouse_y <= sY + 220 + 50))
 			{
-				if (m_pGame->m_iConstructionPoint >= 1000)
+				if (m_game->m_player->m_construction_point >= 1000)
 				{
-					bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_SUMMONWARUNIT, 0, 43, 1, Info().sV1, 0);
-					PlaySoundEffect('E', 14, 5);
-					DisableDialogBox(DialogBoxId::CrusadeCommander);
+					send_command(MsgId::CommandCommon, CommonType::SummonWarUnit, 0, 43, 1, Info().m_v1, 0);
+					play_sound_effect('E', 14, 5);
+					disable_dialog_box(DialogBoxId::CrusadeCommander);
 				}
 			}
-			if ((msX >= sX + 20 + 150) && (msX <= sX + 20 + 150 + 45) && (msY >= sY + 220) && (msY <= sY + 220 + 50))
+			if ((mouse_x >= sX + 20 + 150) && (mouse_x <= sX + 20 + 150 + 45) && (mouse_y >= sY + 220) && (mouse_y <= sY + 220 + 50))
 			{
-				if (m_pGame->m_iConstructionPoint >= 1500)
+				if (m_game->m_player->m_construction_point >= 1500)
 				{
-					bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_SUMMONWARUNIT, 0, 51, 1, Info().sV1, 0);
-					PlaySoundEffect('E', 14, 5);
-					DisableDialogBox(DialogBoxId::CrusadeCommander);
+					send_command(MsgId::CommandCommon, CommonType::SummonWarUnit, 0, 51, 1, Info().m_v1, 0);
+					play_sound_effect('E', 14, 5);
+					disable_dialog_box(DialogBoxId::CrusadeCommander);
 				}
 			}
 		}
-		else if (m_pGame->m_bAresden == false)
+		else if (m_game->m_player->m_aresden == false)
 		{
-			if ((msX >= sX + 20) && (msX <= sX + 20 + 46) && (msY >= sY + 220) && (msY <= sY + 220 + 50))
+			if ((mouse_x >= sX + 20) && (mouse_x <= sX + 20 + 46) && (mouse_y >= sY + 220) && (mouse_y <= sY + 220 + 50))
 			{
-				if (m_pGame->m_iConstructionPoint >= 3000)
+				if (m_game->m_player->m_construction_point >= 3000)
 				{
-					bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_SUMMONWARUNIT, 0, 45, 1, Info().sV1, 0);
-					PlaySoundEffect('E', 14, 5);
-					DisableDialogBox(DialogBoxId::CrusadeCommander);
+					send_command(MsgId::CommandCommon, CommonType::SummonWarUnit, 0, 45, 1, Info().m_v1, 0);
+					play_sound_effect('E', 14, 5);
+					disable_dialog_box(DialogBoxId::CrusadeCommander);
 				}
 			}
-			if ((msX >= sX + 20 + 50) && (msX <= sX + 20 + 50 + 45) && (msY >= sY + 220) && (msY <= sY + 220 + 50))
+			if ((mouse_x >= sX + 20 + 50) && (mouse_x <= sX + 20 + 50 + 45) && (mouse_y >= sY + 220) && (mouse_y <= sY + 220 + 50))
 			{
-				if (m_pGame->m_iConstructionPoint >= 2000)
+				if (m_game->m_player->m_construction_point >= 2000)
 				{
-					bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_SUMMONWARUNIT, 0, 44, 1, Info().sV1, 0);
-					PlaySoundEffect('E', 14, 5);
-					DisableDialogBox(DialogBoxId::CrusadeCommander);
+					send_command(MsgId::CommandCommon, CommonType::SummonWarUnit, 0, 44, 1, Info().m_v1, 0);
+					play_sound_effect('E', 14, 5);
+					disable_dialog_box(DialogBoxId::CrusadeCommander);
 				}
 			}
-			if ((msX >= sX + 20 + 100) && (msX <= sX + 20 + 100 + 45) && (msY >= sY + 220) && (msY <= sY + 220 + 50))
+			if ((mouse_x >= sX + 20 + 100) && (mouse_x <= sX + 20 + 100 + 45) && (mouse_y >= sY + 220) && (mouse_y <= sY + 220 + 50))
 			{
-				if (m_pGame->m_iConstructionPoint >= 1000)
+				if (m_game->m_player->m_construction_point >= 1000)
 				{
-					bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_SUMMONWARUNIT, 0, 43, 1, Info().sV1, 0);
-					PlaySoundEffect('E', 14, 5);
-					DisableDialogBox(DialogBoxId::CrusadeCommander);
+					send_command(MsgId::CommandCommon, CommonType::SummonWarUnit, 0, 43, 1, Info().m_v1, 0);
+					play_sound_effect('E', 14, 5);
+					disable_dialog_box(DialogBoxId::CrusadeCommander);
 				}
 			}
-			if ((msX >= sX + 20 + 150) && (msX <= sX + 20 + 150 + 45) && (msY >= sY + 220) && (msY <= sY + 220 + 50))
+			if ((mouse_x >= sX + 20 + 150) && (mouse_x <= sX + 20 + 150 + 45) && (mouse_y >= sY + 220) && (mouse_y <= sY + 220 + 50))
 			{
-				if (m_pGame->m_iConstructionPoint >= 1500)
+				if (m_game->m_player->m_construction_point >= 1500)
 				{
-					bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_SUMMONWARUNIT, 0, 51, 1, Info().sV1, 0);
-					PlaySoundEffect('E', 14, 5);
-					DisableDialogBox(DialogBoxId::CrusadeCommander);
+					send_command(MsgId::CommandCommon, CommonType::SummonWarUnit, 0, 51, 1, Info().m_v1, 0);
+					play_sound_effect('E', 14, 5);
+					disable_dialog_box(DialogBoxId::CrusadeCommander);
 				}
 			}
 		}
-		if ((msX >= sX + 20) && (msX <= sX + 380) && (msY > sY + 140) && (msY < sY + 160))
+		if ((mouse_x >= sX + 20) && (mouse_x <= sX + 380) && (mouse_y > sY + 140) && (mouse_y < sY + 160))
 		{
-			Info().sV1 = 0;
-			PlaySoundEffect('E', 14, 5);
+			Info().m_v1 = 0;
+			play_sound_effect('E', 14, 5);
 		}
-		if ((msX >= sX + 20) && (msX <= sX + 380) && (msY > sY + 160) && (msY < sY + 175))
+		if ((mouse_x >= sX + 20) && (mouse_x <= sX + 380) && (mouse_y > sY + 160) && (mouse_y < sY + 175))
 		{
-			Info().sV1 = 1;
-			PlaySoundEffect('E', 14, 5);
+			Info().m_v1 = 1;
+			play_sound_effect('E', 14, 5);
 		}
-		if ((msX >= sX + 20 + 150 + 74 - 50) && (msX <= sX + 20 + 46 + 150 + 74 - 50) && (msY >= sY + 340) && (msY <= sY + 340 + 52))
+		if ((mouse_x >= sX + 20 + 150 + 74 - 50) && (mouse_x <= sX + 20 + 46 + 150 + 74 - 50) && (mouse_y >= sY + 340) && (mouse_y <= sY + 340 + 52))
 		{
-			Info().cMode = 0;
-			PlaySoundEffect('E', 14, 5);
+			Info().m_mode = 0;
+			play_sound_effect('E', 14, 5);
 		}
-		if ((msX >= sX + 20 + 150 + 74) && (msX <= sX + 20 + 46 + 150 + 74) && (msY >= sY + 340) && (msY <= sY + 340 + 52))
+		if ((mouse_x >= sX + 20 + 150 + 74) && (mouse_x <= sX + 20 + 46 + 150 + 74) && (mouse_y >= sY + 340) && (mouse_y <= sY + 340 + 52))
 		{
-			DisableDialogBox(DialogBoxId::Text);
-			EnableDialogBox(DialogBoxId::Text, 811, 0, 0);
-			PlaySoundEffect('E', 14, 5);
+			disable_dialog_box(DialogBoxId::Text);
+			enable_dialog_box(DialogBoxId::Text, 811, 0, 0);
+			play_sound_effect('E', 14, 5);
 		}
 		break;
 
 	case 4: // Set constr
-		if ((msX >= sX + 15) && (msX <= sX + 15 + 278) && (msY >= sY + 60) && (msY <= sY + 60 + 272))
+		if ((mouse_x >= sX + 15) && (mouse_x <= sX + 15 + 278) && (mouse_y >= sY + 60) && (mouse_y <= sY + 60 + 272))
 		{
-			d1 = (double)(msX - (sX + 15));
-			d2 = (double)(524.0);
+			d1 = static_cast<double>(mouse_x - (sX + 15));
+			d2 = static_cast<double>(524.0);
 			d3 = (d2 * d1) / 279.0f;
-			tX = (int)d3;
-			d1 = (double)(msY - (sY + 60));
-			d2 = (double)(524.0);
+			tX = static_cast<int>(d3);
+			d1 = static_cast<double>(mouse_y - (sY + 60));
+			d2 = static_cast<double>(524.0);
 			d3 = (d2 * d1) / (280.0);
-			tY = (int)d3;
+			tY = static_cast<int>(d3);
 			if (tX < 30) tX = 30;
 			if (tY < 30) tY = 30;
 			if (tX > 494) tX = 494;
 			if (tY > 494) tY = 494;
-			bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_SETGUILDCONSTRUCTLOC, 0, tX, tY, 0, "middleland");
-			Info().cMode = 0;
-			PlaySoundEffect('E', 14, 5);
-			m_pGame->_RequestMapStatus("middleland", 1);
+			send_command(MsgId::CommandCommon, CommonType::SetGuildConstructLoc, 0, tX, tY, 0, "middleland");
+			Info().m_mode = 0;
+			play_sound_effect('E', 14, 5);
+			m_game->request_map_status("middleland", 1);
 		}
-		if ((msX >= sX + 20 + 150 + 74 - 50) && (msX <= sX + 20 + 46 + 150 + 74 - 50) && (msY >= sY + 340) && (msY <= sY + 340 + 52))
+		if ((mouse_x >= sX + 20 + 150 + 74 - 50) && (mouse_x <= sX + 20 + 46 + 150 + 74 - 50) && (mouse_y >= sY + 340) && (mouse_y <= sY + 340 + 52))
 		{
-			Info().cMode = 0;
-			PlaySoundEffect('E', 14, 5);
+			Info().m_mode = 0;
+			play_sound_effect('E', 14, 5);
 		}
-		if ((msX >= sX + 20 + 150 + 74) && (msX <= sX + 20 + 46 + 150 + 74) && (msY >= sY + 340) && (msY <= sY + 340 + 52))
+		if ((mouse_x >= sX + 20 + 150 + 74) && (mouse_x <= sX + 20 + 46 + 150 + 74) && (mouse_y >= sY + 340) && (mouse_y <= sY + 340 + 52))
 		{
-			DisableDialogBox(DialogBoxId::Text);
-			EnableDialogBox(DialogBoxId::Text, 812, 0, 0);
-			PlaySoundEffect('E', 14, 5);
+			disable_dialog_box(DialogBoxId::Text);
+			enable_dialog_box(DialogBoxId::Text, 812, 0, 0);
+			play_sound_effect('E', 14, 5);
 		}
 		break;
 	}

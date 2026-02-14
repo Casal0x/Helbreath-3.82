@@ -10,28 +10,61 @@ struct Resolution {
 class DialogBox_SysMenu : public IDialogBox
 {
 public:
-	DialogBox_SysMenu(CGame* pGame);
+	// Tab indices
+	enum Tab
+	{
+		TAB_GENERAL = 0,
+		TAB_GRAPHICS,
+		TAB_AUDIO,
+		TAB_SYSTEM,
+		TAB_COUNT
+	};
+
+	DialogBox_SysMenu(CGame* game);
 	~DialogBox_SysMenu() override = default;
 
-	void OnDraw(short msX, short msY, short msZ, char cLB) override;
-	bool OnClick(short msX, short msY) override;
+	void on_update() override;
+	void on_draw(short mouse_x, short mouse_y, short z, char lb) override;
+	bool on_click(short mouse_x, short mouse_y) override;
+	PressResult on_press(short mouse_x, short mouse_y) override;
 
 	// Resolution management
 	static const Resolution s_Resolutions[];
 	static const int s_NumResolutions;
-	static int GetCurrentResolutionIndex();
-	static int GetNearestResolutionIndex(int width, int height);
-	static void CycleResolution();
-	static void ApplyResolution(int index);
+	static int get_current_resolution_index();
+	static int get_nearest_resolution_index(int width, int height);
+	static void cycle_resolution();
+	static void apply_resolution(int index);
 
 private:
-	void DrawDetailLevel(short sX, short sY);
-	void DrawSoundSettings(short sX, short sY);
-	void DrawChatSettings(short sX, short sY);
-	void DrawVolumeSliders(short sX, short sY, short msX, short msY, char cLB);
-	void DrawMiscSettings(short sX, short sY);
-	void DrawServerName(short sX, short sY);
-	void DrawButtons(short sX, short sY, short msX, short msY);
-	void DrawDisplayModeButtons(short sX, short sY, short msX, short msY);
-	void DrawResolutionButton(short sX, short sY, short msX, short msY);
+	// Tab drawing
+	void draw_tabs(short sX, short sY, short mouse_x, short mouse_y);
+	void draw_tab_content(short sX, short sY, short mouse_x, short mouse_y, char lb);
+
+	// Individual tab content
+	void draw_general_tab(short sX, short sY, short mouse_x, short mouse_y);
+	void draw_graphics_tab(short sX, short sY, short mouse_x, short mouse_y);
+	void draw_audio_tab(short sX, short sY, short mouse_x, short mouse_y, char lb);
+	void draw_system_tab(short sX, short sY, short mouse_x, short mouse_y);
+
+	// Click handlers for each tab
+	bool on_click_general(short sX, short sY, short mouse_x, short mouse_y);
+	bool on_click_graphics(short sX, short sY, short mouse_x, short mouse_y);
+	bool on_click_audio(short sX, short sY, short mouse_x, short mouse_y);
+	bool on_click_system(short sX, short sY, short mouse_x, short mouse_y);
+
+	// Helper to draw On/Off toggle
+	void draw_toggle(int x, int y, bool enabled, short mouse_x, short mouse_y);
+	bool is_in_toggle_area(int x, int y, short mouse_x, short mouse_y);
+
+	int m_iActiveTab;
+
+	// Cached frame dimensions (initialized on first update)
+	bool m_bFrameSizesInitialized;
+	int m_iWideBoxWidth;    // Frame 78 width
+	int m_iWideBoxHeight;   // Frame 78 height
+	int m_iSmallBoxWidth;   // Frame 79 width
+	int m_iSmallBoxHeight;  // Frame 79 height
+	int m_iLargeBoxWidth;   // Frame 81 width
+	int m_iLargeBoxHeight;  // Frame 81 height
 };

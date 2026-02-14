@@ -1,552 +1,564 @@
 #include "Game.h"
+#include "TextInputManager.h"
+#include "MagicCastingSystem.h"
+#include "ChatManager.h"
 #include "AudioManager.h"
 #include "ConfigManager.h"
 #include "HotkeyManager.h"
-#include "LAN_ENG.H"
+#include "lan_eng.h"
+#include <format>
+#include <string>
 
-extern int _tmp_iStatus;
-extern char _tmp_cName[21];
-extern short _tmp_sOwnerType;
 
-void CGame::RegisterHotkeys()
+using namespace hb::shared::net;
+namespace MouseButton = hb::shared::input::MouseButton;
+
+void CGame::register_hotkeys()
 {
-	auto& hotkeys = HotkeyManager::Get();
-	hotkeys.Clear();
+	auto& hotkeys = HotkeyManager::get();
+	hotkeys.clear();
 
-	HotkeyManager::KeyCombo ctrlOnly{ 0, true, false, false };
+	HotkeyManager::KeyCombo ctrlOnly{ KeyCode::Unknown, true, false, false };
 
-	hotkeys.Register({ 'A', ctrlOnly.ctrl, ctrlOnly.shift, ctrlOnly.alt }, HotkeyManager::Trigger::KeyUp,
-		[this]() { Hotkey_ToggleForceAttack(); });
-	hotkeys.Register({ 'D', ctrlOnly.ctrl, ctrlOnly.shift, ctrlOnly.alt }, HotkeyManager::Trigger::KeyUp,
-		[this]() { Hotkey_CycleDetailLevel(); });
-	hotkeys.Register({ 'H', ctrlOnly.ctrl, ctrlOnly.shift, ctrlOnly.alt }, HotkeyManager::Trigger::KeyUp,
-		[this]() { Hotkey_ToggleHelp(); });
-	hotkeys.Register({ 'W', ctrlOnly.ctrl, ctrlOnly.shift, ctrlOnly.alt }, HotkeyManager::Trigger::KeyUp,
-		[this]() { Hotkey_ToggleDialogTransparency(); });
-	hotkeys.Register({ 'X', ctrlOnly.ctrl, ctrlOnly.shift, ctrlOnly.alt }, HotkeyManager::Trigger::KeyUp,
-		[this]() { Hotkey_ToggleSystemMenu(); });
-	hotkeys.Register({ 'M', ctrlOnly.ctrl, ctrlOnly.shift, ctrlOnly.alt }, HotkeyManager::Trigger::KeyUp,
-		[this]() { Hotkey_ToggleGuideMap(); });
-#ifdef _DEBUG
-	hotkeys.Register({ 'Q', ctrlOnly.ctrl, ctrlOnly.shift, ctrlOnly.alt }, HotkeyManager::Trigger::KeyUp,
-		[this]() { Hotkey_EnableAdminCommand(); });
-#endif
-	hotkeys.Register({ 'R', ctrlOnly.ctrl, ctrlOnly.shift, ctrlOnly.alt }, HotkeyManager::Trigger::KeyUp,
-		[this]() { Hotkey_ToggleRunningMode(); });
-	hotkeys.Register({ 'S', ctrlOnly.ctrl, ctrlOnly.shift, ctrlOnly.alt }, HotkeyManager::Trigger::KeyUp,
-		[this]() { Hotkey_ToggleSoundAndMusic(); });
-	hotkeys.Register({ 'T', ctrlOnly.ctrl, ctrlOnly.shift, ctrlOnly.alt }, HotkeyManager::Trigger::KeyUp,
-		[this]() { Hotkey_WhisperTarget(); });
+	hotkeys.register_hotkey({ KeyCode::A, ctrlOnly.ctrl, ctrlOnly.shift, ctrlOnly.alt }, HotkeyManager::Trigger::KeyUp,
+		[this]() { hotkey_toggle_force_attack(); });
+	hotkeys.register_hotkey({ KeyCode::D, ctrlOnly.ctrl, ctrlOnly.shift, ctrlOnly.alt }, HotkeyManager::Trigger::KeyUp,
+		[this]() { hotkey_cycle_detail_level(); });
+	hotkeys.register_hotkey({ KeyCode::H, ctrlOnly.ctrl, ctrlOnly.shift, ctrlOnly.alt }, HotkeyManager::Trigger::KeyUp,
+		[this]() { hotkey_toggle_help(); });
+	hotkeys.register_hotkey({ KeyCode::W, ctrlOnly.ctrl, ctrlOnly.shift, ctrlOnly.alt }, HotkeyManager::Trigger::KeyUp,
+		[this]() { hotkey_toggle_dialog_transparency(); });
+	hotkeys.register_hotkey({ KeyCode::X, ctrlOnly.ctrl, ctrlOnly.shift, ctrlOnly.alt }, HotkeyManager::Trigger::KeyUp,
+		[this]() { hotkey_toggle_system_menu(); });
+	hotkeys.register_hotkey({ KeyCode::M, ctrlOnly.ctrl, ctrlOnly.shift, ctrlOnly.alt }, HotkeyManager::Trigger::KeyUp,
+		[this]() { hotkey_toggle_guide_map(); });
+	hotkeys.register_hotkey({ KeyCode::R, ctrlOnly.ctrl, ctrlOnly.shift, ctrlOnly.alt }, HotkeyManager::Trigger::KeyUp,
+		[this]() { hotkey_toggle_running_mode(); });
+	hotkeys.register_hotkey({ KeyCode::S, ctrlOnly.ctrl, ctrlOnly.shift, ctrlOnly.alt }, HotkeyManager::Trigger::KeyUp,
+		[this]() { hotkey_toggle_sound_and_music(); });
+	hotkeys.register_hotkey({ KeyCode::T, ctrlOnly.ctrl, ctrlOnly.shift, ctrlOnly.alt }, HotkeyManager::Trigger::KeyUp,
+		[this]() { hotkey_whisper_target(); });
+
 }
 
-void CGame::Hotkey_ToggleForceAttack()
+void CGame::hotkey_toggle_force_attack()
 {
-	if (!InputManager::Get().IsCtrlDown() || m_cGameMode != DEF_GAMEMODE_ONMAINGAME || m_bInputStatus) {
+	if (!hb::shared::input::is_ctrl_down() || GameModeManager::get_mode() != GameMode::MainGame || text_input_manager::get().is_active()) {
 		return;
 	}
-	if (m_bForceAttack)
+	if (m_player->m_force_attack)
 	{
-		m_bForceAttack = false;
-		AddEventList(DEF_MSG_FORCEATTACK_OFF, 10);
+		m_player->m_force_attack = false;
+		add_event_list(DEF_MSG_FORCEATTACK_OFF, 10);
 	}
 	else
 	{
-		m_bForceAttack = true;
-		AddEventList(DEF_MSG_FORCEATTACK_ON, 10);
+		m_player->m_force_attack = true;
+		add_event_list(DEF_MSG_FORCEATTACK_ON, 10);
 	}
 }
 
-void CGame::Hotkey_CycleDetailLevel()
+void CGame::hotkey_cycle_detail_level()
 {
-	if (!InputManager::Get().IsCtrlDown() || m_cGameMode != DEF_GAMEMODE_ONMAINGAME || m_bInputStatus) {
+	if (!hb::shared::input::is_ctrl_down() || GameModeManager::get_mode() != GameMode::MainGame || text_input_manager::get().is_active()) {
 		return;
 	}
-	int detailLevel = ConfigManager::Get().GetDetailLevel();
+	int detailLevel = config_manager::get().get_detail_level();
 	detailLevel++;
 	if (detailLevel > 2) detailLevel = 0;
-	ConfigManager::Get().SetDetailLevel(detailLevel);
+	config_manager::get().set_detail_level(detailLevel);
 	switch (detailLevel) {
 	case 0:
-		AddEventList(NOTIFY_MSG_DETAIL_LEVEL_LOW, 10);
+		add_event_list(NOTIFY_MSG_DETAIL_LEVEL_LOW, 10);
 		break;
 	case 1:
-		AddEventList(NOTIFY_MSG_DETAIL_LEVEL_MEDIUM, 10);
+		add_event_list(NOTIFY_MSG_DETAIL_LEVEL_MEDIUM, 10);
 		break;
 	case 2:
-		AddEventList(NOTIFY_MSG_DETAIL_LEVEL_HIGH, 10);
+		add_event_list(NOTIFY_MSG_DETAIL_LEVEL_HIGH, 10);
 		break;
 	}
 }
 
-void CGame::Hotkey_ToggleHelp()
+void CGame::hotkey_toggle_help()
 {
-	if (!InputManager::Get().IsCtrlDown() || m_cGameMode != DEF_GAMEMODE_ONMAINGAME || m_bInputStatus) {
+	if (!hb::shared::input::is_ctrl_down() || GameModeManager::get_mode() != GameMode::MainGame || text_input_manager::get().is_active()) {
 		return;
 	}
-	if (m_dialogBoxManager.IsEnabled(DialogBoxId::Help) == false)
-		m_dialogBoxManager.EnableDialogBox(DialogBoxId::Help, 0, 0, 0);
+	if (m_dialog_box_manager.is_enabled(DialogBoxId::Help) == false)
+		m_dialog_box_manager.enable_dialog_box(DialogBoxId::Help, 0, 0, 0);
 	else
 	{
-		m_dialogBoxManager.DisableDialogBox(DialogBoxId::Help);
-		m_dialogBoxManager.DisableDialogBox(DialogBoxId::Text);
+		m_dialog_box_manager.disable_dialog_box(DialogBoxId::Help);
+		m_dialog_box_manager.disable_dialog_box(DialogBoxId::Text);
 	}
 }
 
-void CGame::Hotkey_ToggleDialogTransparency()
+void CGame::hotkey_toggle_dialog_transparency()
 {
-	if (!InputManager::Get().IsCtrlDown() || m_cGameMode != DEF_GAMEMODE_ONMAINGAME || m_bInputStatus) {
+	if (!hb::shared::input::is_ctrl_down() || GameModeManager::get_mode() != GameMode::MainGame || text_input_manager::get().is_active()) {
 		return;
 	}
-	bool enabled = ConfigManager::Get().IsDialogTransparencyEnabled();
-	ConfigManager::Get().SetDialogTransparencyEnabled(!enabled);
+	bool enabled = config_manager::get().is_dialog_transparency_enabled();
+	config_manager::get().set_dialog_transparency_enabled(!enabled);
 }
 
-void CGame::Hotkey_ToggleSystemMenu()
+void CGame::hotkey_toggle_system_menu()
 {
-	if (!InputManager::Get().IsCtrlDown() || m_cGameMode != DEF_GAMEMODE_ONMAINGAME || m_bInputStatus) {
+	if (!hb::shared::input::is_ctrl_down() || GameModeManager::get_mode() != GameMode::MainGame || text_input_manager::get().is_active()) {
 		return;
 	}
-	if (m_dialogBoxManager.IsEnabled(DialogBoxId::SystemMenu) == false)
-		m_dialogBoxManager.EnableDialogBox(DialogBoxId::SystemMenu, 0, 0, 0);
-	else m_dialogBoxManager.DisableDialogBox(DialogBoxId::SystemMenu);
+	if (m_dialog_box_manager.is_enabled(DialogBoxId::SystemMenu) == false)
+		m_dialog_box_manager.enable_dialog_box(DialogBoxId::SystemMenu, 0, 0, 0);
+	else m_dialog_box_manager.disable_dialog_box(DialogBoxId::SystemMenu);
 }
 
-void CGame::Hotkey_ToggleGuideMap()
+void CGame::hotkey_toggle_guide_map()
 {
-	if (m_cGameMode != DEF_GAMEMODE_ONMAINGAME || !InputManager::Get().IsCtrlDown()) {
+	if (GameModeManager::get_mode() != GameMode::MainGame || !hb::shared::input::is_ctrl_down()) {
 		return;
 	}
-	if (m_dialogBoxManager.IsEnabled(DialogBoxId::GuideMap) == true) m_dialogBoxManager.DisableDialogBox(DialogBoxId::GuideMap);
-	else m_dialogBoxManager.EnableDialogBox(DialogBoxId::GuideMap, 0, 0, 0, 0);
+	if (m_dialog_box_manager.is_enabled(DialogBoxId::GuideMap) == true) m_dialog_box_manager.disable_dialog_box(DialogBoxId::GuideMap);
+	else m_dialog_box_manager.enable_dialog_box(DialogBoxId::GuideMap, 0, 0, 0, 0);
 }
 
-void CGame::Hotkey_EnableAdminCommand()
+void CGame::hotkey_toggle_running_mode()
 {
-#ifdef _DEBUG
-	if (!InputManager::Get().IsCtrlDown() || m_cGameMode != DEF_GAMEMODE_ONMAINGAME) {
+	if (!hb::shared::input::is_ctrl_down() || GameModeManager::get_mode() != GameMode::MainGame || text_input_manager::get().is_active()) {
 		return;
 	}
-	std::memset(m_cChatMsg, 0, sizeof(m_cChatMsg));
-	strcpy(m_cChatMsg, "/enableadmincommand 147258 ");
-	StartInputString(CHAT_INPUT_X, CHAT_INPUT_Y, sizeof(m_cChatMsg), m_cChatMsg);
-#endif
-}
-
-void CGame::Hotkey_ToggleRunningMode()
-{
-	if (!InputManager::Get().IsCtrlDown() || m_cGameMode != DEF_GAMEMODE_ONMAINGAME || m_bInputStatus) {
-		return;
-	}
-	bool runningMode = ConfigManager::Get().IsRunningModeEnabled();
+	bool runningMode = config_manager::get().is_running_mode_enabled();
 	if (runningMode)
 	{
-		ConfigManager::Get().SetRunningModeEnabled(false);
-		AddEventList(NOTIFY_MSG_CONVERT_WALKING_MODE, 10);
+		config_manager::get().set_running_mode_enabled(false);
+		add_event_list(NOTIFY_MSG_CONVERT_WALKING_MODE, 10);
 	}
 	else
 	{
-		ConfigManager::Get().SetRunningModeEnabled(true);
-		AddEventList(NOTIFY_MSG_CONVERT_RUNNING_MODE, 10);
+		config_manager::get().set_running_mode_enabled(true);
+		add_event_list(NOTIFY_MSG_CONVERT_RUNNING_MODE, 10);
 	}
 }
 
-void CGame::Hotkey_ToggleSoundAndMusic()
+void CGame::hotkey_toggle_sound_and_music()
 {
-	if (!InputManager::Get().IsCtrlDown() || m_cGameMode != DEF_GAMEMODE_ONMAINGAME || m_bInputStatus) {
+	if (!hb::shared::input::is_ctrl_down() || GameModeManager::get_mode() != GameMode::MainGame || text_input_manager::get().is_active()) {
 		return;
 	}
-	if (AudioManager::Get().IsMusicEnabled())
+	if (audio_manager::get().is_music_enabled())
 	{
-		AudioManager::Get().SetMusicEnabled(false);
-		AudioManager::Get().StopMusic();
-		AddEventList(NOTIFY_MSG_MUSIC_OFF, 10);
+		audio_manager::get().set_music_enabled(false);
+		config_manager::get().set_music_enabled(false);
+		audio_manager::get().stop_music();
+		add_event_list(NOTIFY_MSG_MUSIC_OFF, 10);
 		return;
 	}
-	if (AudioManager::Get().IsSoundEnabled())
+	if (audio_manager::get().is_sound_enabled())
 	{
-		AudioManager::Get().StopSound(SoundType::Effect, 38);
-		AudioManager::Get().SetSoundEnabled(false);
-		AddEventList(NOTIFY_MSG_SOUND_OFF, 10);
+		audio_manager::get().stop_sound(sound_type::Effect, 38);
+		audio_manager::get().set_sound_enabled(false);
+		config_manager::get().set_sound_enabled(false);
+		add_event_list(NOTIFY_MSG_SOUND_OFF, 10);
 		return;
 	}
-	if (AudioManager::Get().IsSoundAvailable())
+	if (audio_manager::get().is_sound_available())
 	{
-		AudioManager::Get().SetMusicEnabled(true);
-		AddEventList(NOTIFY_MSG_MUSIC_ON, 10);
+		audio_manager::get().set_music_enabled(true);
+		config_manager::get().set_music_enabled(true);
+		add_event_list(NOTIFY_MSG_MUSIC_ON, 10);
 	}
-	if (AudioManager::Get().IsSoundAvailable())
+	if (audio_manager::get().is_sound_available())
 	{
-		AudioManager::Get().SetSoundEnabled(true);
-		AddEventList(NOTIFY_MSG_SOUND_ON, 10);
+		audio_manager::get().set_sound_enabled(true);
+		config_manager::get().set_sound_enabled(true);
+		add_event_list(NOTIFY_MSG_SOUND_ON, 10);
 	}
-	StartBGM();
+	start_bgm();
 }
 
-void CGame::Hotkey_WhisperTarget()
+void CGame::hotkey_whisper_target()
 {
-	if (!InputManager::Get().IsCtrlDown() || m_cGameMode != DEF_GAMEMODE_ONMAINGAME || m_bInputStatus) {
+	if (!hb::shared::input::is_ctrl_down() || GameModeManager::get_mode() != GameMode::MainGame || text_input_manager::get().is_active()) {
 		return;
 	}
-	char tempid[100], cLB, cRB;
-	short sX, sY, msX, msY, msZ;
-	sX = m_dialogBoxManager.Info(DialogBoxId::ChatHistory).sX;
-	sY = m_dialogBoxManager.Info(DialogBoxId::ChatHistory).sY;
-	std::memset(tempid, 0, sizeof(tempid));
-	InputManager::Get().GetLegacyState(&msX, &msY, &msZ, &cLB, &cRB);
-	if (m_dialogBoxManager.IsEnabled(DialogBoxId::ChatHistory) == true && (msX >= sX + 20) && (msX <= sX + 360) && (msY >= sY + 35) && (msY <= sY + 139))
+	std::string tempid;
+
+	char lb, rb;
+	short sX, sY, mouse_x, mouse_y, z;
+	sX = m_dialog_box_manager.Info(DialogBoxId::ChatHistory).m_x;
+	sY = m_dialog_box_manager.Info(DialogBoxId::ChatHistory).m_y;
+	mouse_x = static_cast<short>(hb::shared::input::get_mouse_x());
+
+	mouse_y = static_cast<short>(hb::shared::input::get_mouse_y());
+
+	z = static_cast<short>(hb::shared::input::get_mouse_wheel_delta());
+
+	lb = hb::shared::input::is_mouse_button_down(MouseButton::Left) ? 1 : 0;
+
+	rb = hb::shared::input::is_mouse_button_down(MouseButton::Right) ? 1 : 0;
+	if (m_dialog_box_manager.is_enabled(DialogBoxId::ChatHistory) == true && (mouse_x >= sX + 20) && (mouse_x <= sX + 360) && (mouse_y >= sY + 35) && (mouse_y <= sY + 139))
 	{
-		char* token, cBuff[64];
-		char   seps[] = ":";
-		int i = (139 - msY + sY) / 13;
-		if (m_pChatScrollList[i + m_dialogBoxManager.Info(DialogBoxId::ChatHistory).sView] == 0) return;
-		if (m_pChatScrollList[i + m_dialogBoxManager.Info(DialogBoxId::ChatHistory).sView]->m_pMsg[0] == ' ') i++;
-		strcpy(cBuff, m_pChatScrollList[i + m_dialogBoxManager.Info(DialogBoxId::ChatHistory).sView]->m_pMsg);
-		token = strtok(cBuff, seps);
-		wsprintf(tempid, "/to %s", token);
-		bSendCommand(MSGID_COMMAND_CHATMSG, 0, 0, 0, 0, 0, tempid);
+		char buff[64];
+		int i = (139 - mouse_y + sY) / 13;
+		int msg_idx = i + m_dialog_box_manager.Info(DialogBoxId::ChatHistory).m_view;
+		CMsg* chat_msg = ChatManager::get().get_message(msg_idx);
+		if (chat_msg == nullptr) return;
+		if (chat_msg->m_pMsg[0] == ' ') { i++; chat_msg = ChatManager::get().get_message(i + m_dialog_box_manager.Info(DialogBoxId::ChatHistory).m_view); }
+		if (chat_msg == nullptr) return;
+		std::snprintf(buff, sizeof(buff), "%s", chat_msg->m_pMsg);
+		char* sep = std::strchr(buff, ':');
+		if (sep) *sep = '\0';
+		tempid = std::format("/to {}", buff);
+		send_command(MsgId::CommandChatMsg, 0, 0, 0, 0, 0, tempid.c_str());
 	}
-	else if (_tmp_sOwnerType < 7 && (strlen(_tmp_cName) > 0) && (m_iIlusionOwnerH == 0)
-		&& ((m_bIsCrusadeMode == false) || _iGetFOE(_tmp_iStatus) >= 0))
+	else if (m_entity_state.is_player() && (m_entity_state.m_name[0] != '\0') && (m_ilusion_owner_h == 0)
+		&& ((m_is_crusade_mode == false) || !IsHostile(m_entity_state.m_status.relationship)))
 	{
-		wsprintf(tempid, "/to %s", _tmp_cName);
-		bSendCommand(MSGID_COMMAND_CHATMSG, 0, 0, 0, 0, 0, tempid);
+		tempid = std::format("/to {}", m_entity_state.m_name.data());
+		send_command(MsgId::CommandChatMsg, 0, 0, 0, 0, 0, tempid.c_str());
 	}
 	else
 	{
-		EndInputString();
-		wsprintf(m_cChatMsg, "/to ");
-		StartInputString(CHAT_INPUT_X, CHAT_INPUT_Y, sizeof(m_cChatMsg), m_cChatMsg);
+		text_input_manager::get().end_input();
+		m_chat_msg = "/to ";
+		text_input_manager::get().start_input(CHAT_INPUT_X(), CHAT_INPUT_Y(), ChatMsgMaxLen, m_chat_msg);
 	}
 }
 
-void CGame::Hotkey_Simple_UseHealthPotion()
+void CGame::hotkey_simple_use_health_potion()
 {
 	int i = 0;
-	if (m_iHP <= 0) return;
-	if (m_bItemUsingStatus == true)
+	if (m_player->m_hp <= 0) return;
+	if (m_item_using_status == true)
 	{
-		AddEventList(USE_RED_POTION1, 10);
+		add_event_list(USE_RED_POTION1, 10);
 		return;
 	}
-	if (m_dialogBoxManager.IsEnabled(DialogBoxId::Exchange) == true)
+	if (m_dialog_box_manager.is_enabled(DialogBoxId::Exchange) == true)
 	{
-		AddEventList(USE_RED_POTION2, 10);
+		add_event_list(USE_RED_POTION2, 10);
 		return;
 	}
-	for (i = 0; i < DEF_MAXITEMS; i++)
-		if ((m_pItemList[i] != 0) && (m_bIsItemDisabled[i] != true) &&
-			(m_pItemList[i]->m_sSprite == 6) && (m_pItemList[i]->m_sSpriteFrame == 1))
-		{
-			bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQ_USEITEM, 0, i, 0, 0, 0);
-			m_bIsItemDisabled[i] = true;
-			m_bItemUsingStatus = true;
-			return;
-		}
-
-	for (i = 0; i < DEF_MAXITEMS; i++)
-		if ((m_pItemList[i] != 0) && (m_bIsItemDisabled[i] != true) &&
-			(m_pItemList[i]->m_sSprite == 6) && (m_pItemList[i]->m_sSpriteFrame == 2))
-		{
-			bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQ_USEITEM, 0, i, 0, 0, 0);
-			m_bIsItemDisabled[i] = true;
-			m_bItemUsingStatus = true;
-			return;
-		}
-}
-
-void CGame::Hotkey_Simple_UseManaPotion()
-{
-	int i = 0;
-	if (m_iHP <= 0) return;
-	if (m_bItemUsingStatus == true)
+	for (i = 0; i < hb::shared::limits::MaxItems; i++)
 	{
-		AddEventList(USE_BLUE_POTION1, 10);
-		return;
-	}
-	if (m_dialogBoxManager.IsEnabled(DialogBoxId::Exchange) == true)
-	{
-		AddEventList(USE_BLUE_POTION2, 10);
-		return;
-	}
-
-	for (i = 0; i < DEF_MAXITEMS; i++)
-		if ((m_pItemList[i] != 0) && (m_bIsItemDisabled[i] != true) &&
-			(m_pItemList[i]->m_sSprite == 6) && (m_pItemList[i]->m_sSpriteFrame == 3))
+		if ((m_item_list[i] != 0) && (m_is_item_disabled[i] != true))
 		{
-			bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQ_USEITEM, 0, i, 0, 0, 0);
-			m_bIsItemDisabled[i] = true;
-			m_bItemUsingStatus = true;
-			return;
-		}
-
-	for (i = 0; i < DEF_MAXITEMS; i++)
-		if ((m_pItemList[i] != 0) && (m_bIsItemDisabled[i] != true) &&
-			(m_pItemList[i]->m_sSprite == 6) && (m_pItemList[i]->m_sSpriteFrame == 4))
-		{
-			bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQ_USEITEM, 0, i, 0, 0, 0);
-			m_bIsItemDisabled[i] = true;
-			m_bItemUsingStatus = true;
-			return;
-		}
-}
-
-void CGame::Hotkey_Simple_LoadBackupChat()
-{
-	if (((m_dialogBoxManager.IsEnabled(DialogBoxId::GuildMenu) == true) && (m_dialogBoxManager.Info(DialogBoxId::GuildMenu).cMode == 1) && (m_dialogBoxManager.iGetTopDialogBoxIndex() == DialogBoxId::GuildMenu)) ||
-		((m_dialogBoxManager.IsEnabled(DialogBoxId::ItemDropExternal) == true) && (m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).cMode == 1) && (m_dialogBoxManager.iGetTopDialogBoxIndex() == DialogBoxId::ItemDropExternal)))
-	{
-		return;
-	}
-	if ((!m_bInputStatus) && (m_cBackupChatMsg[0] != '!') && (m_cBackupChatMsg[0] != '~') && (m_cBackupChatMsg[0] != '^') &&
-		(m_cBackupChatMsg[0] != '@'))
-	{
-		std::memset(m_cChatMsg, 0, sizeof(m_cChatMsg));
-		strcpy(m_cChatMsg, m_cBackupChatMsg);
-		StartInputString(CHAT_INPUT_X, CHAT_INPUT_Y, sizeof(m_cChatMsg), m_cChatMsg);
-	}
-}
-
-void CGame::Hotkey_Simple_UseMagicShortcut()
-{
-	if (m_cGameMode != DEF_GAMEMODE_ONMAINGAME) return;
-	UseMagic(m_sMagicShortCut);
-}
-
-void CGame::Hotkey_Simple_ToggleCharacterInfo()
-{
-	if (m_dialogBoxManager.IsEnabled(DialogBoxId::CharacterInfo) == false)
-		m_dialogBoxManager.EnableDialogBox(DialogBoxId::CharacterInfo, 0, 0, 0);
-	else m_dialogBoxManager.DisableDialogBox(DialogBoxId::CharacterInfo);
-}
-
-void CGame::Hotkey_Simple_ToggleInventory()
-{
-	if (m_dialogBoxManager.IsEnabled(DialogBoxId::Inventory) == false)
-		m_dialogBoxManager.EnableDialogBox(DialogBoxId::Inventory, 0, 0, 0);
-	else m_dialogBoxManager.DisableDialogBox(DialogBoxId::Inventory);
-}
-
-void CGame::Hotkey_Simple_ToggleMagic()
-{
-	if (m_dialogBoxManager.IsEnabled(DialogBoxId::Magic) == false)
-		m_dialogBoxManager.EnableDialogBox(DialogBoxId::Magic, 0, 0, 0);
-	else m_dialogBoxManager.DisableDialogBox(DialogBoxId::Magic);
-}
-
-void CGame::Hotkey_Simple_ToggleSkill()
-{
-	if (m_dialogBoxManager.IsEnabled(DialogBoxId::Skill) == false)
-		m_dialogBoxManager.EnableDialogBox(DialogBoxId::Skill, 0, 0, 0);
-	else m_dialogBoxManager.DisableDialogBox(DialogBoxId::Skill);
-}
-
-void CGame::Hotkey_Simple_ToggleChatHistory()
-{
-	if (m_dialogBoxManager.IsEnabled(DialogBoxId::ChatHistory) == false)
-		m_dialogBoxManager.EnableDialogBox(DialogBoxId::ChatHistory, 0, 0, 0);
-	else m_dialogBoxManager.DisableDialogBox(DialogBoxId::ChatHistory);
-}
-
-void CGame::Hotkey_Simple_ToggleSystemMenu()
-{
-	if (m_bInputStatus) return;
-	if (m_dialogBoxManager.IsEnabled(DialogBoxId::SystemMenu) == false)
-		m_dialogBoxManager.EnableDialogBox(DialogBoxId::SystemMenu, 0, 0, 0);
-	else m_dialogBoxManager.DisableDialogBox(DialogBoxId::SystemMenu);
-}
-
-void CGame::Hotkey_Simple_UseShortcut1()
-{
-	UseShortCut(1);
-}
-
-void CGame::Hotkey_Simple_UseShortcut2()
-{
-	UseShortCut(2);
-}
-
-void CGame::Hotkey_Simple_UseShortcut3()
-{
-	UseShortCut(3);
-}
-
-void CGame::Hotkey_Simple_WhisperCycleUp()
-{
-	m_cArrowPressed = 1;
-	if (m_cGameMode == DEF_GAMEMODE_ONMAINGAME)
-	{
-		int iTotalMsg = 0;
-		for (int i = DEF_MAXWHISPERMSG - 1; i >= 0; i--)
-		{
-			if (m_pWhisperMsg[i] != 0)
+			CItem* cfg = get_item_config(m_item_list[i]->m_id_num);
+			if (cfg && (cfg->m_sprite == 6) && (cfg->m_sprite_frame == 1))
 			{
-				iTotalMsg = i;
-				break;
+				send_command(MsgId::CommandCommon, CommonType::ReqUseItem, 0, i, 0, 0, 0);
+				m_is_item_disabled[i] = true;
+				m_item_using_status = true;
+				return;
 			}
 		}
-		m_cWhisperIndex++;
-		if (m_cWhisperIndex > iTotalMsg) m_cWhisperIndex = 0;
-		if (m_cWhisperIndex < 0) m_cWhisperIndex = iTotalMsg;
-		if (m_pWhisperMsg[m_cWhisperIndex] != 0) {
-			EndInputString();
-			wsprintf(m_cChatMsg, "/to %s", m_pWhisperMsg[m_cWhisperIndex]->m_pMsg);
-			StartInputString(CHAT_INPUT_X, CHAT_INPUT_Y, sizeof(m_cChatMsg), m_cChatMsg);
-		}
 	}
-}
 
-void CGame::Hotkey_Simple_WhisperCycleDown()
-{
-	m_cArrowPressed = 3;
-	if (m_cGameMode == DEF_GAMEMODE_ONMAINGAME)
+	for (i = 0; i < hb::shared::limits::MaxItems; i++)
 	{
-		int iTotalMsg = 0;
-		for (int i = DEF_MAXWHISPERMSG - 1; i >= 0; i--)
+		if ((m_item_list[i] != 0) && (m_is_item_disabled[i] != true))
 		{
-			if (m_pWhisperMsg[i] != 0)
+			CItem* cfg = get_item_config(m_item_list[i]->m_id_num);
+			if (cfg && (cfg->m_sprite == 6) && (cfg->m_sprite_frame == 2))
 			{
-				iTotalMsg = i;
-				break;
+				send_command(MsgId::CommandCommon, CommonType::ReqUseItem, 0, i, 0, 0, 0);
+				m_is_item_disabled[i] = true;
+				m_item_using_status = true;
+				return;
 			}
 		}
-		m_cWhisperIndex--;
-		if (m_cWhisperIndex < 0) m_cWhisperIndex = iTotalMsg;
-		if (m_cWhisperIndex > iTotalMsg) m_cWhisperIndex = 0;
-		if (m_pWhisperMsg[m_cWhisperIndex] != 0) {
-			EndInputString();
-			wsprintf(m_cChatMsg, "/to %s", m_pWhisperMsg[m_cWhisperIndex]->m_pMsg);
-			StartInputString(CHAT_INPUT_X, CHAT_INPUT_Y, sizeof(m_cChatMsg), m_cChatMsg);
-		}
 	}
 }
 
-void CGame::Hotkey_Simple_ArrowLeft()
-{
-	m_cArrowPressed = 4;
-}
-
-void CGame::Hotkey_Simple_ArrowRight()
-{
-	m_cArrowPressed = 2;
-}
-
-void CGame::Hotkey_Simple_Screenshot()
-{
-	CreateScreenShot();
-}
-
-void CGame::Hotkey_Simple_TabToggleCombat()
-{
-	if (InputManager::Get().IsShiftDown())
-	{
-		m_cCurFocus--;
-		if (m_cCurFocus < 1) m_cCurFocus = m_cMaxFocus;
-	}
-	else
-	{
-		m_cCurFocus++;
-		if (m_cCurFocus > m_cMaxFocus) m_cCurFocus = 1;
-	}
-	if (m_cGameMode == DEF_GAMEMODE_ONMAINGAME)
-	{
-		bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_TOGGLECOMBATMODE, 0, 0, 0, 0, 0);
-	}
-}
-
-void CGame::Hotkey_Simple_ToggleSafeAttack()
-{
-	if (m_cGameMode == DEF_GAMEMODE_ONMAINGAME) {
-		bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_TOGGLESAFEATTACKMODE, 0, 0, 0, 0, 0);
-	}
-}
-
-void CGame::Hotkey_Simple_Escape()
-{
-	InputManager::Get().OnKeyUp(VK_ESCAPE);
-	InputManager::Get().SetEscPressed();
-	if (m_cGameMode == DEF_GAMEMODE_ONMAINGAME)
-	{
-		if ((m_bIsObserverMode == true) && (InputManager::Get().IsShiftDown())) {
-			if (m_cLogOutCount == -1) m_cLogOutCount = 1;
-			m_dialogBoxManager.DisableDialogBox(DialogBoxId::SystemMenu);
-			PlaySound('E', 14, 5);
-		}
-		else if (m_cLogOutCount != -1) {
-			if (m_bForceDisconn == false) {
-				m_cLogOutCount = -1;
-				AddEventList(DLGBOX_CLICK_SYSMENU2, 10);
-			}
-		}
-		if (m_bIsGetPointingMode == true) {
-			m_bIsGetPointingMode = false;
-			AddEventList(COMMAND_PROCESSOR1, 10);
-		}
-		m_bIsF1HelpWindowEnabled = false;
-	}
-}
-
-void CGame::Hotkey_Simple_SpecialAbility()
+void CGame::hotkey_simple_use_mana_potion()
 {
 	int i = 0;
-	uint32_t dwTime = GameClock::GetTimeMS();
-	if (m_cGameMode != DEF_GAMEMODE_ONMAINGAME) return;
-	if (m_bInputStatus) return;
-	if (m_bIsSpecialAbilityEnabled == true)
+	if (m_player->m_hp <= 0) return;
+	if (m_item_using_status == true)
 	{
-		if (m_iSpecialAbilityType != 0) {
-			bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQUEST_ACTIVATESPECABLTY, 0, 0, 0, 0, 0);
-			m_bIsSpecialAbilityEnabled = false;
+		add_event_list(USE_BLUE_POTION1, 10);
+		return;
+	}
+	if (m_dialog_box_manager.is_enabled(DialogBoxId::Exchange) == true)
+	{
+		add_event_list(USE_BLUE_POTION2, 10);
+		return;
+	}
+
+	for (i = 0; i < hb::shared::limits::MaxItems; i++)
+	{
+		if ((m_item_list[i] != 0) && (m_is_item_disabled[i] != true))
+		{
+			CItem* cfg = get_item_config(m_item_list[i]->m_id_num);
+			if (cfg && (cfg->m_sprite == 6) && (cfg->m_sprite_frame == 3))
+			{
+				send_command(MsgId::CommandCommon, CommonType::ReqUseItem, 0, i, 0, 0, 0);
+				m_is_item_disabled[i] = true;
+				m_item_using_status = true;
+				return;
+			}
 		}
-		else AddEventList(ON_KEY_UP26, 10);
+	}
+
+	for (i = 0; i < hb::shared::limits::MaxItems; i++)
+	{
+		if ((m_item_list[i] != 0) && (m_is_item_disabled[i] != true))
+		{
+			CItem* cfg = get_item_config(m_item_list[i]->m_id_num);
+			if (cfg && (cfg->m_sprite == 6) && (cfg->m_sprite_frame == 4))
+			{
+				send_command(MsgId::CommandCommon, CommonType::ReqUseItem, 0, i, 0, 0, 0);
+				m_is_item_disabled[i] = true;
+				m_item_using_status = true;
+				return;
+			}
+		}
+	}
+}
+
+void CGame::hotkey_simple_load_backup_chat()
+{
+	if (((m_dialog_box_manager.is_enabled(DialogBoxId::GuildMenu) == true) && (m_dialog_box_manager.Info(DialogBoxId::GuildMenu).m_mode == 1) && (m_dialog_box_manager.get_top_dialog_box_index() == DialogBoxId::GuildMenu)) ||
+		((m_dialog_box_manager.is_enabled(DialogBoxId::ItemDropExternal) == true) && (m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_mode == 1) && (m_dialog_box_manager.get_top_dialog_box_index() == DialogBoxId::ItemDropExternal)))
+	{
+		return;
+	}
+	if ((!text_input_manager::get().is_active()) && (m_backup_chat_msg[0] != '!') && (m_backup_chat_msg[0] != '~') && (m_backup_chat_msg[0] != '^') &&
+		(m_backup_chat_msg[0] != '@'))
+	{
+		m_chat_msg = m_backup_chat_msg;
+		text_input_manager::get().start_input(CHAT_INPUT_X(), CHAT_INPUT_Y(), ChatMsgMaxLen, m_chat_msg);
+	}
+}
+
+void CGame::hotkey_simple_use_magic_shortcut()
+{
+	if (GameModeManager::get_mode() != GameMode::MainGame) return;
+	magic_casting_system::get().begin_cast(m_magic_short_cut);
+}
+
+void CGame::hotkey_simple_toggle_character_info()
+{
+	if (m_dialog_box_manager.is_enabled(DialogBoxId::CharacterInfo) == false)
+		m_dialog_box_manager.enable_dialog_box(DialogBoxId::CharacterInfo, 0, 0, 0);
+	else m_dialog_box_manager.disable_dialog_box(DialogBoxId::CharacterInfo);
+}
+
+void CGame::hotkey_simple_toggle_inventory()
+{
+	if (m_dialog_box_manager.is_enabled(DialogBoxId::Inventory) == false)
+		m_dialog_box_manager.enable_dialog_box(DialogBoxId::Inventory, 0, 0, 0);
+	else m_dialog_box_manager.disable_dialog_box(DialogBoxId::Inventory);
+}
+
+void CGame::hotkey_simple_toggle_magic()
+{
+	if (m_dialog_box_manager.is_enabled(DialogBoxId::Magic) == false)
+		m_dialog_box_manager.enable_dialog_box(DialogBoxId::Magic, 0, 0, 0);
+	else m_dialog_box_manager.disable_dialog_box(DialogBoxId::Magic);
+}
+
+void CGame::hotkey_simple_toggle_skill()
+{
+	if (m_dialog_box_manager.is_enabled(DialogBoxId::Skill) == false)
+		m_dialog_box_manager.enable_dialog_box(DialogBoxId::Skill, 0, 0, 0);
+	else m_dialog_box_manager.disable_dialog_box(DialogBoxId::Skill);
+}
+
+void CGame::hotkey_simple_toggle_chat_history()
+{
+	if (m_dialog_box_manager.is_enabled(DialogBoxId::ChatHistory) == false)
+		m_dialog_box_manager.enable_dialog_box(DialogBoxId::ChatHistory, 0, 0, 0);
+	else m_dialog_box_manager.disable_dialog_box(DialogBoxId::ChatHistory);
+}
+
+void CGame::hotkey_simple_toggle_system_menu()
+{
+	if (text_input_manager::get().is_active()) return;
+	if (m_dialog_box_manager.is_enabled(DialogBoxId::SystemMenu) == false)
+		m_dialog_box_manager.enable_dialog_box(DialogBoxId::SystemMenu, 0, 0, 0);
+	else m_dialog_box_manager.disable_dialog_box(DialogBoxId::SystemMenu);
+}
+
+void CGame::hotkey_simple_use_shortcut1()
+{
+	use_shortcut(1);
+}
+
+void CGame::hotkey_simple_use_shortcut2()
+{
+	use_shortcut(2);
+}
+
+void CGame::hotkey_simple_use_shortcut3()
+{
+	use_shortcut(3);
+}
+
+void CGame::hotkey_simple_whisper_cycle_up()
+{
+	m_arrow_pressed = 1;
+	if (GameModeManager::get_mode() == GameMode::MainGame)
+	{
+		ChatManager::get().cycle_whisper_up();
+		int idx = ChatManager::get().get_whisper_index();
+		const char* name = ChatManager::get().get_whisper_target_name(idx);
+		if (name != nullptr) {
+			text_input_manager::get().end_input();
+			m_chat_msg = std::format("/to {}", name);
+			text_input_manager::get().start_input(CHAT_INPUT_X(), CHAT_INPUT_Y(), ChatMsgMaxLen, m_chat_msg);
+		}
+	}
+}
+
+void CGame::hotkey_simple_whisper_cycle_down()
+{
+	m_arrow_pressed = 3;
+	if (GameModeManager::get_mode() == GameMode::MainGame)
+	{
+		ChatManager::get().cycle_whisper_down();
+		int idx = ChatManager::get().get_whisper_index();
+		const char* name = ChatManager::get().get_whisper_target_name(idx);
+		if (name != nullptr) {
+			text_input_manager::get().end_input();
+			m_chat_msg = std::format("/to {}", name);
+			text_input_manager::get().start_input(CHAT_INPUT_X(), CHAT_INPUT_Y(), ChatMsgMaxLen, m_chat_msg);
+		}
+	}
+}
+
+void CGame::hotkey_simple_arrow_left()
+{
+	m_arrow_pressed = 4;
+}
+
+void CGame::hotkey_simple_arrow_right()
+{
+	m_arrow_pressed = 2;
+}
+
+void CGame::hotkey_simple_screenshot()
+{
+	create_screen_shot();
+}
+
+void CGame::hotkey_simple_tab_toggle_combat()
+{
+	if (GameModeManager::get_mode() == GameMode::MainGame)
+	{
+		if (hb::shared::input::is_shift_down())
+		{
+			m_cur_focus--;
+			if (m_cur_focus < 1) m_cur_focus = m_max_focus;
+		}
+		else
+		{
+			m_cur_focus++;
+			if (m_cur_focus > m_max_focus) m_cur_focus = 1;
+		}
+		send_command(MsgId::CommandCommon, CommonType::ToggleCombatMode, 0, 0, 0, 0, 0);
+	}
+}
+
+void CGame::hotkey_simple_toggle_safe_attack()
+{
+	if (GameModeManager::get_mode() == GameMode::MainGame) {
+		send_command(MsgId::CommandCommon, CommonType::ToggleSafeAttackMode, 0, 0, 0, 0, 0);
+	}
+}
+
+void CGame::hotkey_simple_escape()
+{
+	// Note: Escape handling is automatic through hb::shared::input::is_key_pressed(KeyCode::Escape)
+	if (GameModeManager::get_mode() == GameMode::MainGame)
+	{
+		if ((m_is_observer_mode == true) && (hb::shared::input::is_shift_down())) {
+			if (m_logout_count == -1) m_logout_count = 1;
+			m_dialog_box_manager.disable_dialog_box(DialogBoxId::SystemMenu);
+			play_game_sound('E', 14, 5);
+		}
+		else if (m_logout_count != -1) {
+			if (m_force_disconn == false) {
+				m_logout_count = -1;
+				add_event_list(DLGBOX_CLICK_SYSMENU2, 10);
+			}
+		}
+		if (m_is_get_pointing_mode == true) {
+			m_is_get_pointing_mode = false;
+			add_event_list(COMMAND_PROCESSOR1, 10);
+		}
+		m_is_f1_help_window_enabled = false;
+	}
+}
+
+void CGame::hotkey_simple_special_ability()
+{
+	int i = 0;
+	uint32_t time = GameClock::get_time_ms();
+	if (GameModeManager::get_mode() != GameMode::MainGame) return;
+	if (text_input_manager::get().is_active()) return;
+	if (m_player->m_is_special_ability_enabled == true)
+	{
+		if (m_player->m_special_ability_type != 0) {
+			send_command(MsgId::CommandCommon, CommonType::RequestActivateSpecAbility, 0, 0, 0, 0, 0);
+			m_player->m_is_special_ability_enabled = false;
+		}
+		else add_event_list(ON_KEY_UP26, 10);
 	}
 	else {
-		if (m_iSpecialAbilityType == 0) AddEventList(ON_KEY_UP26, 10);
+		if (m_player->m_special_ability_type == 0) add_event_list(ON_KEY_UP26, 10);
 		else {
-			if ((m_sPlayerAppr4 & 0x00F0) != 0) {
-				AddEventList(ON_KEY_UP28, 10);
+			std::string G_cTxt;
+			if (m_player->m_playerAppearance.effect_type != 0) {
+				add_event_list(ON_KEY_UP28, 10);
 				return;
 			}
 
-			i = (dwTime - m_dwSpecialAbilitySettingTime) / 1000;
-			i = m_iSpecialAbilityTimeLeftSec - i;
+			i = (time - m_special_ability_setting_time) / 1000;
+			i = m_player->m_special_ability_time_left_sec - i;
 			if (i < 0) i = 0;
 
-			std::memset(G_cTxt, 0, sizeof(G_cTxt));
 			if (i < 60) {
-				switch (m_iSpecialAbilityType) {
-				case 1: wsprintf(G_cTxt, ON_KEY_UP29, i); break;//"
-				case 2: wsprintf(G_cTxt, ON_KEY_UP30, i); break;//"
-				case 3: wsprintf(G_cTxt, ON_KEY_UP31, i); break;//"
-				case 4: wsprintf(G_cTxt, ON_KEY_UP32, i); break;//"
-				case 5: wsprintf(G_cTxt, ON_KEY_UP33, i); break;//"
-				case 50:wsprintf(G_cTxt, ON_KEY_UP34, i); break;//"
-				case 51:wsprintf(G_cTxt, ON_KEY_UP35, i); break;//"
-				case 52:wsprintf(G_cTxt, ON_KEY_UP36, i); break;//"
+				switch (m_player->m_special_ability_type) {
+				case 1: G_cTxt = std::format(ON_KEY_UP29, i); break;//"
+				case 2: G_cTxt = std::format(ON_KEY_UP30, i); break;//"
+				case 3: G_cTxt = std::format(ON_KEY_UP31, i); break;//"
+				case 4: G_cTxt = std::format(ON_KEY_UP32, i); break;//"
+				case 5: G_cTxt = std::format(ON_KEY_UP33, i); break;//"
+				case 50:G_cTxt = std::format(ON_KEY_UP34, i); break;//"
+				case 51:G_cTxt = std::format(ON_KEY_UP35, i); break;//"
+				case 52:G_cTxt = std::format(ON_KEY_UP36, i); break;//"
 				}
 			}
 			else {
-				switch (m_iSpecialAbilityType) {
-				case 1: wsprintf(G_cTxt, ON_KEY_UP37, i / 60); break;//"
-				case 2: wsprintf(G_cTxt, ON_KEY_UP38, i / 60); break;//"
-				case 3: wsprintf(G_cTxt, ON_KEY_UP39, i / 60); break;//"
-				case 4: wsprintf(G_cTxt, ON_KEY_UP40, i / 60); break;//"
-				case 5: wsprintf(G_cTxt, ON_KEY_UP41, i / 60); break;//"
-				case 50:wsprintf(G_cTxt, ON_KEY_UP42, i / 60); break;//"
-				case 51:wsprintf(G_cTxt, ON_KEY_UP43, i / 60); break;//"
-				case 52:wsprintf(G_cTxt, ON_KEY_UP44, i / 60); break;//"
+				switch (m_player->m_special_ability_type) {
+				case 1: G_cTxt = std::format(ON_KEY_UP37, i / 60); break;//"
+				case 2: G_cTxt = std::format(ON_KEY_UP38, i / 60); break;//"
+				case 3: G_cTxt = std::format(ON_KEY_UP39, i / 60); break;//"
+				case 4: G_cTxt = std::format(ON_KEY_UP40, i / 60); break;//"
+				case 5: G_cTxt = std::format(ON_KEY_UP41, i / 60); break;//"
+				case 50:G_cTxt = std::format(ON_KEY_UP42, i / 60); break;//"
+				case 51:G_cTxt = std::format(ON_KEY_UP43, i / 60); break;//"
+				case 52:G_cTxt = std::format(ON_KEY_UP44, i / 60); break;//"
 				}
 			}
-			AddEventList(G_cTxt, 10);
+			add_event_list(G_cTxt.c_str(), 10);
 		}
 	}
 }
 
-void CGame::Hotkey_Simple_ZoomIn()
+void CGame::hotkey_simple_zoom_in()
 {
-	if (m_bInputStatus == false) ConfigManager::Get().SetZoomMapEnabled(true);
+	if (text_input_manager::get().is_active() == false)
+	{
+		config_manager::get().set_zoom_map_enabled(true);
+	}
 }
 
-void CGame::Hotkey_Simple_ZoomOut()
+void CGame::hotkey_simple_zoom_out()
 {
-	if (m_bInputStatus == false) ConfigManager::Get().SetZoomMapEnabled(false);
+	if (text_input_manager::get().is_active() == false)
+	{
+		config_manager::get().set_zoom_map_enabled(false);
+	}
 }

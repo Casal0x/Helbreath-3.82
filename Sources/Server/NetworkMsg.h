@@ -4,29 +4,34 @@
 
 #pragma once
 
-// MODERNIZED: Prevent old winsock.h from loading (must be before windows.h)
-#define _WINSOCKAPI_
-#include <windows.h>
 #include "CommonTypes.h"
 
-#define DEF_MSGFROM_CLIENT		1
-#define DEF_MSGFROM_LOGSERVER	2
-#define DEF_MSGFROM_GATESERVER	3
-#define DEF_MSGFROM_BOT			4
+namespace hb::server::msg
+{
+namespace Source
+{
+	enum : int
+	{
+		Client    = 1,
+		LogServer = 2,
+		Bot       = 4,
+	};
+}
+} // namespace hb::server::msg
 
 class CMsg  								 
 {
 public:
-	void Get(char * pFrom, char * pData, uint32_t * pSize, int * pIndex, char * pKey);
-	bool bPut(char cFrom, char * pData, uint32_t dwSize, int iIndex, char cKey);
+	void get(char * pFrom, char * data, size_t* size, int * index, char * key);
+	bool put(char cFrom, char * data, size_t size, int index, char key);
 	CMsg();
 	virtual ~CMsg();
 
-	char   m_cFrom;
+	char   m_from;
 
-	char * m_pData;
-	uint32_t  m_dwSize;
+	char * m_data;
+	size_t  m_size;
 
-	int    m_iIndex;
-	char   m_cKey;   // v1.4
+	int    m_index;
+	char   m_key;   // v1.4
 };

@@ -1,8 +1,5 @@
 #pragma once
-// MODERNIZED: Prevent old winsock.h from loading (must be before windows.h)
-#define _WINSOCKAPI_
 
-#include <windows.h>
 #include "CommonTypes.h"
 #include <iostream>
 #include <vector>
@@ -24,17 +21,17 @@ public:
 	LoginServer();
 	~LoginServer();
 
-	void RequestLogin(int h, char* pData);
-	void GetCharList(string acc, char*& cp2, const std::vector<AccountDbCharacterSummary>& chars);
+	void request_login(int h, char* data);
+	void get_char_list(string acc, char*& cp2, const std::vector<AccountDbCharacterSummary>& chars);
 	LogIn AccountLogIn(string name, string pass, std::vector<AccountDbCharacterSummary>& chars);
-	void ResponseCharacter(int h, char* pData);
-	void DeleteCharacter(int h, char* pData);
-	void ChangePassword(int h, char* pData);
-	void RequestEnterGame(int h, char* pData);
-	void CreateNewAccount(int h, char* pData);
-	void SendLoginMsg(uint32_t msgid, uint16_t msgtype, char* data, int sz, int h);
-	void LocalSavePlayerData(int h);
-	void Activated();
+	void response_character(int h, char* data);
+	void delete_character(int h, char* data);
+	void change_password(int h, char* data);
+	void request_enter_game(int h, char* data);
+	void create_new_account(int h, char* data);
+	void send_login_msg(uint32_t msgid, uint16_t msgtype, char* data, size_t sz, int h);
+	void local_save_player_data(int h);
+	void activated();
 };
 
 extern LoginServer* g_login;

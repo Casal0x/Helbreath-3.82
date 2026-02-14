@@ -1,40 +1,59 @@
 #include "DialogBox_SysMenu.h"
-#include "InputManager.h"
 #include "Game.h"
+#include "ChatManager.h"
 #include "GlobalDef.h"
 #include "lan_eng.h"
 #include "AudioManager.h"
-#include "CommonTypes.h"
 #include "ConfigManager.h"
+#include "IInput.h"
+#include "RendererFactory.h"
+#include "ITextRenderer.h"
+#include <chrono>
 #include <cstring>
+#include <ctime>
+#include <format>
+#include <string>
+using namespace hb::client::sprite_id;
 
-extern HWND G_hWnd;
+// Content area constants
+static const int CONTENT_X = 21;
+static const int CONTENT_Y = 57;
+static const int CONTENT_WIDTH = 297;
+static const int CONTENT_HEIGHT = 234;
 
-// 4:3 resolutions from 640x480 to 1440x1080
+// Slider tracking
+static bool s_bDraggingMasterSlider = false;
+static bool s_bDraggingEffectsSlider = false;
+static bool s_bDraggingAmbientSlider = false;
+static bool s_bDraggingUISlider = false;
+static bool s_bDraggingMusicSlider = false;
+
+// 4:3 resolutions from 640x480 to 1920x1440
 const Resolution DialogBox_SysMenu::s_Resolutions[] = {
-	{ 640, 480 },
+	//{ 640, 480 },
 	{ 800, 600 },
 	{ 1024, 768 },
 	{ 1280, 960 },
-	{ 1440, 1080 }
+	{ 1440, 1080 },
+	{ 1920, 1440 }
 };
 
 const int DialogBox_SysMenu::s_NumResolutions = sizeof(s_Resolutions) / sizeof(s_Resolutions[0]);
 
-int DialogBox_SysMenu::GetCurrentResolutionIndex()
+int DialogBox_SysMenu::get_current_resolution_index()
 {
-	int currentWidth = ConfigManager::Get().GetWindowWidth();
-	int currentHeight = ConfigManager::Get().GetWindowHeight();
+	int currentWidth = config_manager::get().get_window_width();
+	int currentHeight = config_manager::get().get_window_height();
 
 	for (int i = 0; i < s_NumResolutions; i++) {
 		if (s_Resolutions[i].width == currentWidth && s_Resolutions[i].height == currentHeight) {
 			return i;
 		}
 	}
-	return GetNearestResolutionIndex(currentWidth, currentHeight);
+	return get_nearest_resolution_index(currentWidth, currentHeight);
 }
 
-int DialogBox_SysMenu::GetNearestResolutionIndex(int width, int height)
+int DialogBox_SysMenu::get_nearest_resolution_index(int width, int height)
 {
 	int bestIndex = 0;
 	int bestDiff = abs(s_Resolutions[0].width - width) + abs(s_Resolutions[0].height - height);
@@ -49,443 +68,1112 @@ int DialogBox_SysMenu::GetNearestResolutionIndex(int width, int height)
 	return bestIndex;
 }
 
-void DialogBox_SysMenu::CycleResolution()
+void DialogBox_SysMenu::cycle_resolution()
 {
-	int currentIndex = GetCurrentResolutionIndex();
+	int currentIndex = get_current_resolution_index();
 	int nextIndex = (currentIndex + 1) % s_NumResolutions;
-	ApplyResolution(nextIndex);
+	apply_resolution(nextIndex);
 }
 
-void DialogBox_SysMenu::ApplyResolution(int index)
+void DialogBox_SysMenu::apply_resolution(int index)
 {
 	if (index < 0 || index >= s_NumResolutions) return;
 
 	int newWidth = s_Resolutions[index].width;
 	int newHeight = s_Resolutions[index].height;
 
-	// Update config
-	ConfigManager::Get().SetWindowSize(newWidth, newHeight);
-	ConfigManager::Get().Save();
+	config_manager::get().set_window_size(newWidth, newHeight);
+	config_manager::get().save();
 
-	// Get screen dimensions for centering
-	int screenWidth = GetSystemMetrics(SM_CXSCREEN);
-	int screenHeight = GetSystemMetrics(SM_CYSCREEN);
+	hb::shared::render::Window::set_size(newWidth, newHeight, true);
 
-	// Calculate centered position
-	int newX = (screenWidth - newWidth) / 2;
-	int newY = (screenHeight - newHeight) / 2;
+	if (hb::shared::render::Renderer::get())
+		hb::shared::render::Renderer::get()->resize_back_buffer(newWidth, newHeight);
 
-	// Resize and center the window
-	SetWindowPos(G_hWnd, HWND_TOP, newX, newY, newWidth, newHeight, SWP_SHOWWINDOW);
-	InputManager::Get().SetActive(true);
+	hb::shared::input::get()->set_window_active(true);
 }
 
-DialogBox_SysMenu::DialogBox_SysMenu(CGame* pGame)
-	: IDialogBox(DialogBoxId::SystemMenu, pGame)
+DialogBox_SysMenu::DialogBox_SysMenu(CGame* game)
+	: IDialogBox(DialogBoxId::SystemMenu, game)
+	, m_iActiveTab(TAB_GENERAL)
+	, m_bFrameSizesInitialized(false)
+	, m_iWideBoxWidth(0)
+	, m_iWideBoxHeight(0)
+	, m_iSmallBoxWidth(0)
+	, m_iSmallBoxHeight(0)
+	, m_iLargeBoxWidth(0)
+	, m_iLargeBoxHeight(0)
 {
-	SetDefaultRect(337 + SCREENX, 107 + SCREENY, 258, 268);
+	set_default_rect(237 , 67 , 331, 303);
 }
 
-void DialogBox_SysMenu::DrawDetailLevel(short sX, short sY)
+void DialogBox_SysMenu::on_update()
 {
-	const int detailLevel = ConfigManager::Get().GetDetailLevel();
-	PutString(sX + 23, sY + 63, DRAW_DIALOGBOX_SYSMENU_DETAILLEVEL, RGB(45, 25, 25));
-	PutString(sX + 24, sY + 63, DRAW_DIALOGBOX_SYSMENU_DETAILLEVEL, RGB(45, 25, 25));
+	// Cache frame dimensions on first update (sprites loaded by now)
+	if (!m_bFrameSizesInitialized && m_game->m_sprite[InterfaceNdButton] != nullptr)
+	{
+		hb::shared::sprite::SpriteRect wideRect = m_game->m_sprite[InterfaceNdButton]->GetFrameRect(78);
+		hb::shared::sprite::SpriteRect smallRect = m_game->m_sprite[InterfaceNdButton]->GetFrameRect(79);
+		hb::shared::sprite::SpriteRect largeRect = m_game->m_sprite[InterfaceNdButton]->GetFrameRect(81);
 
-	if (detailLevel == 0)
-		PutString(sX + 121, sY + 63, DRAW_DIALOGBOX_SYSMENU_LOW, RGB(255, 255, 255));
-	else PutString(sX + 121, sY + 63, DRAW_DIALOGBOX_SYSMENU_LOW, RGB(45, 25, 25));
-
-	if (detailLevel == 1)
-		PutString(sX + 153, sY + 63, DRAW_DIALOGBOX_SYSMENU_NORMAL, RGB(255, 255, 255));
-	else PutString(sX + 153, sY + 63, DRAW_DIALOGBOX_SYSMENU_NORMAL, RGB(45, 25, 25));
-
-	if (detailLevel == 2)
-		PutString(sX + 205, sY + 63, DRAW_DIALOGBOX_SYSMENU_HIGH, RGB(255, 255, 255));
-	else PutString(sX + 205, sY + 63, DRAW_DIALOGBOX_SYSMENU_HIGH, RGB(45, 25, 25));
-}
-
-void DialogBox_SysMenu::DrawSoundSettings(short sX, short sY)
-{
-	PutString(sX + 23, sY + 84, DRAW_DIALOGBOX_SYSMENU_SOUND, RGB(45, 25, 25));
-	PutString(sX + 24, sY + 84, DRAW_DIALOGBOX_SYSMENU_SOUND, RGB(45, 25, 25));
-
-	if (AudioManager::Get().IsSoundAvailable()) {
-		if (AudioManager::Get().IsSoundEnabled())
-			PutString(sX + 85, sY + 85, DRAW_DIALOGBOX_SYSMENU_ON, RGB(255, 255, 255));
-		else
-			PutString(sX + 83, sY + 85, DRAW_DIALOGBOX_SYSMENU_OFF, RGB(200, 200, 200));
-	}
-	else PutString(sX + 68, sY + 85, DRAW_DIALOGBOX_SYSMENU_DISABLED, RGB(100, 100, 100));
-
-	PutString(sX + 123, sY + 84, DRAW_DIALOGBOX_SYSMENU_MUSIC, RGB(45, 25, 25));
-	PutString(sX + 124, sY + 84, DRAW_DIALOGBOX_SYSMENU_MUSIC, RGB(45, 25, 25));
-
-	if (AudioManager::Get().IsSoundAvailable()) {
-		if (AudioManager::Get().IsMusicEnabled())
-			PutString(sX + 180, sY + 85, DRAW_DIALOGBOX_SYSMENU_ON, RGB(255, 255, 255));
-		else
-			PutString(sX + 178, sY + 85, DRAW_DIALOGBOX_SYSMENU_OFF, RGB(200, 200, 200));
-	}
-	else PutString(sX + 163, sY + 85, DRAW_DIALOGBOX_SYSMENU_DISABLED, RGB(100, 100, 100));
-}
-
-void DialogBox_SysMenu::DrawChatSettings(short sX, short sY)
-{
-	PutString(sX + 23, sY + 106, DRAW_DIALOGBOX_SYSMENU_WHISPER, RGB(45, 25, 25));
-	PutString(sX + 24, sY + 106, DRAW_DIALOGBOX_SYSMENU_WHISPER, RGB(45, 25, 25));
-
-	if (m_pGame->m_bWhisper)
-		PutString(sX + 85, sY + 106, DRAW_DIALOGBOX_SYSMENU_ON, RGB(255, 255, 255));
-	else
-		PutString(sX + 82, sY + 106, DRAW_DIALOGBOX_SYSMENU_OFF, RGB(200, 200, 200));
-
-	PutString(sX + 123, sY + 106, DRAW_DIALOGBOX_SYSMENU_SHOUT, RGB(45, 25, 25));
-	PutString(sX + 124, sY + 106, DRAW_DIALOGBOX_SYSMENU_SHOUT, RGB(45, 25, 25));
-
-	if (m_pGame->m_bShout)
-		PutString(sX + 180, sY + 106, DRAW_DIALOGBOX_SYSMENU_ON, RGB(255, 255, 255));
-	else
-		PutString(sX + 177, sY + 106, DRAW_DIALOGBOX_SYSMENU_OFF, RGB(200, 200, 200));
-}
-
-void DialogBox_SysMenu::DrawVolumeSliders(short sX, short sY, short msX, short msY, char cLB)
-{
-	PutString(sX + 23, sY + 124, DRAW_DIALOGBOX_SYSMENU_SOUNDVOLUME, RGB(45, 25, 25));
-	PutString(sX + 24, sY + 124, DRAW_DIALOGBOX_SYSMENU_SOUNDVOLUME, RGB(45, 25, 25));
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX + 130 + AudioManager::Get().GetSoundVolume(), sY + 129, 8);
-
-	PutString(sX + 23, sY + 141, DRAW_DIALOGBOX_SYSMENU_MUSICVOLUME, RGB(45, 25, 25));
-	PutString(sX + 24, sY + 141, DRAW_DIALOGBOX_SYSMENU_MUSICVOLUME, RGB(45, 25, 25));
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX + 130 + AudioManager::Get().GetMusicVolume(), sY + 145, 8);
-
-	// Handle slider dragging
-	if ((cLB != 0) && (m_pGame->m_dialogBoxManager.iGetTopDialogBoxIndex() == DialogBoxId::SystemMenu)) {
-		if ((msX >= sX + 127) && (msX <= sX + 238) && (msY >= sY + 122) && (msY <= sY + 138)) {
-			int volume = msX - (sX + 127);
-			if (volume > 100) volume = 100;
-			if (volume < 0) volume = 0;
-			AudioManager::Get().SetSoundVolume(volume);
-		}
-		if ((msX >= sX + 127) && (msX <= sX + 238) && (msY >= sY + 139) && (msY <= sY + 155)) {
-			int volume = msX - (sX + 127);
-			if (volume > 100) volume = 100;
-			if (volume < 0) volume = 0;
-			AudioManager::Get().SetMusicVolume(volume);
+		// Only use if we got valid dimensions (not from NullSprite)
+		if (wideRect.width > 0 && wideRect.height > 0 && smallRect.width > 0 && smallRect.height > 0)
+		{
+			m_iWideBoxWidth = wideRect.width;
+			m_iWideBoxHeight = wideRect.height;
+			m_iSmallBoxWidth = smallRect.width;
+			m_iSmallBoxHeight = smallRect.height;
+			m_iLargeBoxWidth = largeRect.width > 0 ? largeRect.width : 280;
+			m_iLargeBoxHeight = largeRect.height > 0 ? largeRect.height : 16;
+			m_bFrameSizesInitialized = true;
 		}
 	}
-	else Info().bIsScrollSelected = false;
 }
 
-void DialogBox_SysMenu::DrawMiscSettings(short sX, short sY)
+void DialogBox_SysMenu::on_draw(short mouse_x, short mouse_y, short z, char lb)
 {
-	PutString(sX + 23, sY + 158, DRAW_DIALOGBOX_SYSMENU_TRANSPARENCY, RGB(45, 25, 25));
-	PutString(sX + 24, sY + 158, DRAW_DIALOGBOX_SYSMENU_TRANSPARENCY, RGB(45, 25, 25));
+	short sX = Info().m_x;
+	short sY = Info().m_y;
 
-	if (ConfigManager::Get().IsDialogTransparencyEnabled())
-		PutString(sX + 208, sY + 158, DRAW_DIALOGBOX_SYSMENU_ON, RGB(255, 255, 255));
-	else
-		PutString(sX + 207, sY + 158, DRAW_DIALOGBOX_SYSMENU_OFF, RGB(200, 200, 200));
+	// draw dialog background
+	draw_new_dialog_box(InterfaceNdGame1, sX, sY, 0);
+	draw_new_dialog_box(InterfaceNdText, sX, sY, 6);
 
-	PutString(sX + 23, sY + 180, DRAW_DIALOGBOX_SYSMENU_GUIDEMAP, RGB(45, 25, 25));
-	PutString(sX + 24, sY + 180, DRAW_DIALOGBOX_SYSMENU_GUIDEMAP, RGB(45, 25, 25));
+	// Handle mouse scroll over dialog to cycle tabs
+	if (m_game->m_dialog_box_manager.get_top_dialog_box_index() == DialogBoxId::SystemMenu && z != 0)
+	{
+		if (z > 0)
+			m_iActiveTab = (m_iActiveTab - 1 + TAB_COUNT) % TAB_COUNT;
+		else
+			m_iActiveTab = (m_iActiveTab + 1) % TAB_COUNT;
+	}
 
-	if (m_pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::GuideMap))
-		PutString(sX + 99, sY + 180, DRAW_DIALOGBOX_SYSMENU_ON, RGB(255, 255, 255));
-	else
-		PutString(sX + 98, sY + 180, DRAW_DIALOGBOX_SYSMENU_OFF, RGB(200, 200, 200));
+	draw_tabs(sX, sY, mouse_x, mouse_y);
+	draw_tab_content(sX, sY, mouse_x, mouse_y, lb);
 
-	// Current time
-	SYSTEMTIME SysTime;
-	GetLocalTime(&SysTime);
-	std::memset(m_pGame->G_cTxt, 0, sizeof(m_pGame->G_cTxt));
-	wsprintf(m_pGame->G_cTxt, "%d:%d:%d:%d:%d", SysTime.wMonth, SysTime.wDay, SysTime.wHour, SysTime.wMinute, SysTime.wSecond);
-	PutString(sX + 23, sY + 204, m_pGame->G_cTxt, RGB(45, 25, 25));
-	PutString(sX + 24, sY + 204, m_pGame->G_cTxt, RGB(45, 25, 25));
+	// save slider values to config_manager when drag ends (mouse released)
+	if (lb == 0)
+	{
+		if (s_bDraggingMasterSlider)
+		{
+			config_manager::get().set_master_volume(audio_manager::get().get_master_volume());
+		}
+		if (s_bDraggingEffectsSlider)
+		{
+			config_manager::get().set_sound_volume(audio_manager::get().get_sound_volume());
+		}
+		if (s_bDraggingAmbientSlider)
+		{
+			config_manager::get().set_ambient_volume(audio_manager::get().get_ambient_volume());
+		}
+		if (s_bDraggingUISlider)
+		{
+			config_manager::get().set_ui_volume(audio_manager::get().get_ui_volume());
+		}
+		if (s_bDraggingMusicSlider)
+		{
+			config_manager::get().set_music_volume(audio_manager::get().get_music_volume());
+		}
+		s_bDraggingMasterSlider = false;
+		s_bDraggingEffectsSlider = false;
+		s_bDraggingAmbientSlider = false;
+		s_bDraggingUISlider = false;
+		s_bDraggingMusicSlider = false;
+		Info().m_is_scroll_selected = false;
+	}
 }
 
-void DialogBox_SysMenu::DrawServerName(short sX, short sY)
+void DialogBox_SysMenu::draw_tabs(short sX, short sY, short mouse_x, short mouse_y)
 {
-	PutString(sX + 23, sY + 41, UPDATE_SCREEN_ON_SELECT_CHARACTER36, RGB(45, 25, 25));
-	PutString(sX + 24, sY + 41, UPDATE_SCREEN_ON_SELECT_CHARACTER36, RGB(45, 25, 25));
+	hb::shared::sprite::SpriteRect button_rect = m_game->m_sprite[InterfaceNdButton]->GetFrameRect(70);
+	int btnY = sY + 33;
+
+	const int tabFrames[TAB_COUNT][2] = {
+		{70, 71},  // General
+		{72, 73},  // Graphics
+		{74, 76},  // Audio
+		{75, 77}   // System
+	};
+
+	for (int i = 0; i < TAB_COUNT; i++)
+	{
+		int btnX = sX + 17 + (button_rect.width * i);
+		bool hovered = (mouse_x >= btnX && mouse_x < btnX + button_rect.width && mouse_y >= btnY && mouse_y < btnY + button_rect.height);
+		bool active = (m_iActiveTab == i);
+
+		int frameIndex = (active || hovered) ? tabFrames[i][1] : tabFrames[i][0];
+		draw_new_dialog_box(InterfaceNdButton, btnX, btnY, frameIndex);
+	}
 }
 
-void DialogBox_SysMenu::DrawDisplayModeButtons(short sX, short sY, short msX, short msY)
+void DialogBox_SysMenu::draw_tab_content(short sX, short sY, short mouse_x, short mouse_y, char lb)
 {
-	const bool isFullscreen = m_pGame->m_Renderer->IsFullscreen();
-	const short modeY = sY + 204;
-	const short windowedX = sX + 112;
-	const short fullscreenX = sX + 182;
-
-	const bool windowedHover = (msX >= sX + 110) && (msX <= sX + 168) && (msY >= sY + 200) && (msY <= sY + 213);
-	const bool fullscreenHover = (msX >= sX + 180) && (msX <= sX + 242) && (msY >= sY + 200) && (msY <= sY + 213);
-
-	COLORREF windowedColor = ((!isFullscreen) || windowedHover) ? RGB(255, 255, 255) : RGB(200, 200, 200);
-	COLORREF fullscreenColor = (isFullscreen || fullscreenHover) ? RGB(255, 255, 255) : RGB(200, 200, 200);
-
-	PutString(windowedX, modeY, "Windowed", windowedColor);
-	PutString(fullscreenX, modeY, "Fullscreen", fullscreenColor);
+	switch (m_iActiveTab)
+	{
+	case TAB_GENERAL:
+		draw_general_tab(sX, sY, mouse_x, mouse_y);
+		break;
+	case TAB_GRAPHICS:
+		draw_graphics_tab(sX, sY, mouse_x, mouse_y);
+		break;
+	case TAB_AUDIO:
+		draw_audio_tab(sX, sY, mouse_x, mouse_y, lb);
+		break;
+	case TAB_SYSTEM:
+		draw_system_tab(sX, sY, mouse_x, mouse_y);
+		break;
+	}
 }
 
-void DialogBox_SysMenu::DrawButtons(short sX, short sY, short msX, short msY)
+void DialogBox_SysMenu::draw_toggle(int x, int y, bool enabled, short mouse_x, short mouse_y)
 {
-	// Log-Out button
-	if (m_pGame->m_cLogOutCount == -1) {
-		if ((msX >= sX + DEF_LBTNPOSX) && (msX <= sX + DEF_LBTNPOSX + DEF_BTNSZX) && (msY >= sY + 225) && (msY <= sY + 225 + DEF_BTNSZY))
-			DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_LBTNPOSX, sY + 225, 9);
-		else DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_LBTNPOSX, sY + 225, 8);
+	// draw toggle background box at y-2
+	const int boxY = y - 2;
+	draw_new_dialog_box(InterfaceNdButton, x, boxY, 79);
+
+	// Use cached dimensions or fallback values
+	const int boxWidth = m_bFrameSizesInitialized ? m_iSmallBoxWidth : 36;
+	const int boxHeight = m_bFrameSizesInitialized ? m_iSmallBoxHeight : 16;
+
+	bool hover = (mouse_x >= x && mouse_x <= x + boxWidth && mouse_y >= boxY && mouse_y <= boxY + boxHeight);
+	const hb::shared::render::Color& color = (enabled || hover) ? GameColors::UIWhite : GameColors::UIDisabled;
+
+	// Center text horizontally and vertically in the box
+	const char* text = enabled ? DRAW_DIALOGBOX_SYSMENU_ON : DRAW_DIALOGBOX_SYSMENU_OFF;
+	hb::shared::text::TextMetrics metrics = hb::shared::text::GetTextRenderer()->measure_text(text);
+	int textX = x + (boxWidth - metrics.width) / 2;
+	int textY = boxY + (boxHeight - metrics.height) / 2;
+	put_string(textX, textY, text, color);
+}
+
+bool DialogBox_SysMenu::is_in_toggle_area(int x, int y, short mouse_x, short mouse_y)
+{
+	const int boxWidth = m_bFrameSizesInitialized ? m_iSmallBoxWidth : 36;
+	const int boxHeight = m_bFrameSizesInitialized ? m_iSmallBoxHeight : 16;
+	return (mouse_x >= x && mouse_x <= x + boxWidth && mouse_y >= y - 2 && mouse_y <= y - 2 + boxHeight);
+}
+
+// =============================================================================
+// GENERAL TAB
+// =============================================================================
+void DialogBox_SysMenu::draw_general_tab(short sX, short sY, short mouse_x, short mouse_y)
+{
+	const int contentX = sX + CONTENT_X;
+	const int contentY = sY + CONTENT_Y;
+	const int contentBottom = contentY + CONTENT_HEIGHT;
+	const int centerX = contentX + (CONTENT_WIDTH / 2);
+
+	// Server name at top left
+	put_string(contentX + 5, contentY + 5, UPDATE_SCREEN_ON_SELECT_CHARACTER36, GameColors::UILabel);
+	put_string(contentX + 6, contentY + 5, UPDATE_SCREEN_ON_SELECT_CHARACTER36, GameColors::UILabel);
+
+	// Current time centered below server name (MM/DD/YYYY HH:MM AM/PM)
+	auto now = std::chrono::system_clock::now();
+	std::time_t t = std::chrono::system_clock::to_time_t(now);
+	std::tm local_time{};
+#ifdef _WIN32
+	localtime_s(&local_time, &t);
+#else
+	localtime_r(&t, &local_time);
+#endif
+	std::string timeBuf;
+	int hour12 = local_time.tm_hour % 12;
+	if (hour12 == 0) hour12 = 12;
+	const char* ampm = (local_time.tm_hour < 12) ? "AM" : "PM";
+	timeBuf = std::format("{:02}/{:02}/{:04} {}:{:02} {}",
+		local_time.tm_mon + 1, local_time.tm_mday, local_time.tm_year + 1900,
+		hour12, local_time.tm_min, ampm);
+
+	int textWidth = hb::shared::text::GetTextRenderer()->measure_text(timeBuf.c_str()).width;
+	int timeX = centerX - (textWidth / 2);
+	put_string(timeX, contentY + 25, timeBuf.c_str(), GameColors::UILabel);
+	put_string(timeX + 1, contentY + 25, timeBuf.c_str(), GameColors::UILabel);
+
+	// Buttons at bottom of content area
+	int buttonY = contentBottom - 30;
+
+	// Log-Out / Continue button (left side)
+	if (m_game->m_logout_count == -1) {
+		bool hover = (mouse_x >= sX + ui_layout::left_btn_x && mouse_x <= sX + ui_layout::left_btn_x + ui_layout::btn_size_x &&
+			mouse_y >= buttonY && mouse_y <= buttonY + ui_layout::btn_size_y);
+		draw_new_dialog_box(InterfaceNdButton, sX + ui_layout::left_btn_x, buttonY, hover ? 9 : 8);
 	}
 	else {
-		// Continue button
-		if ((msX >= sX + DEF_LBTNPOSX) && (msX <= sX + DEF_LBTNPOSX + DEF_BTNSZX) && (msY >= sY + 225) && (msY <= sY + 225 + DEF_BTNSZY))
-			DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_LBTNPOSX, sY + 225, 7);
-		else DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_LBTNPOSX, sY + 225, 6);
+		bool hover = (mouse_x >= sX + ui_layout::left_btn_x && mouse_x <= sX + ui_layout::left_btn_x + ui_layout::btn_size_x &&
+			mouse_y >= buttonY && mouse_y <= buttonY + ui_layout::btn_size_y);
+		draw_new_dialog_box(InterfaceNdButton, sX + ui_layout::left_btn_x, buttonY, hover ? 7 : 6);
 	}
 
-	// Restart button (only when dead)
-	if ((m_pGame->m_iHP <= 0) && (m_pGame->m_cRestartCount == -1)) {
-		if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY >= sY + 225) && (msY <= sY + 225 + DEF_BTNSZY))
-			DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + 225, 37);
-		else DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + 225, 36);
-	}
-	else if (m_pGame->m_cRestartCount == -1) {
-		DrawDisplayModeButtons(sX, sY, msX, msY);
-		// Resolution button (replaces credits)
-		DrawResolutionButton(sX, sY, msX, msY);
+	// Restart button (right side, only when dead)
+	if ((m_game->m_player->m_hp <= 0) && (m_game->m_restart_count == -1))
+	{
+		bool hover = (mouse_x >= sX + ui_layout::right_btn_x && mouse_x <= sX + ui_layout::right_btn_x + ui_layout::btn_size_x &&
+			mouse_y >= buttonY && mouse_y <= buttonY + ui_layout::btn_size_y);
+		draw_new_dialog_box(InterfaceNdButton, sX + ui_layout::right_btn_x, buttonY, hover ? 37 : 36);
 	}
 }
 
-void DialogBox_SysMenu::DrawResolutionButton(short sX, short sY, short msX, short msY)
+// =============================================================================
+// GRAPHICS TAB
+// =============================================================================
+void DialogBox_SysMenu::draw_graphics_tab(short sX, short sY, short mouse_x, short mouse_y)
 {
-	const bool isFullscreen = m_pGame->m_Renderer->IsFullscreen();
-	int resWidth = 0;
-	int resHeight = 0;
-	if (isFullscreen) {
-		resWidth = GetSystemMetrics(SM_CXSCREEN);
-		resHeight = GetSystemMetrics(SM_CYSCREEN);
+	const int contentX = sX + CONTENT_X;
+	const int contentY = sY + CONTENT_Y;
+	const int contentRight = contentX + CONTENT_WIDTH;
+	int lineY = contentY + 5;
+	const int labelX = contentX + 5;
+
+	// Right margin for box alignment
+	const int rightMargin = 8;
+	const int boxRightEdge = contentRight - rightMargin;
+
+	// Use cached dimensions or fallback values
+	const int largeBoxWidth = m_bFrameSizesInitialized ? m_iLargeBoxWidth : 280;
+	const int largeBoxHeight = m_bFrameSizesInitialized ? m_iLargeBoxHeight : 16;
+	const int wideBoxWidth = m_bFrameSizesInitialized ? m_iWideBoxWidth : 175;
+	const int wideBoxHeight = m_bFrameSizesInitialized ? m_iWideBoxHeight : 16;
+
+	// Right-align the large box, then left-align all smaller boxes to its left edge
+	const int largeBoxX = boxRightEdge - largeBoxWidth;
+	const int wideBoxX = largeBoxX;
+	const int smallBoxX = largeBoxX;
+
+	const bool fullscreen = m_game->m_Renderer->is_fullscreen();
+
+	// --- FPS Limit --- large box (frame 81) with 5 options (disabled when VSync is on)
+	const bool v_sync_on = config_manager::get().is_vsync_enabled();
+	put_string(labelX, lineY, "FPS Limit:", GameColors::UILabel);
+	put_string(labelX + 1, lineY, "FPS Limit:", GameColors::UILabel);
+
+	const int fpsBoxY = lineY - 2;
+	draw_new_dialog_box(InterfaceNdButton, largeBoxX, fpsBoxY, 81);
+
+	static const int s_FpsOptions[] = { 60, 100, 144, 240, 0 };
+	static const char* s_FpsLabels[] = { "60", "100", "144", "240", "Max" };
+	static const int s_NumFpsOptions = 5;
+	const int fpsRegionWidth = largeBoxWidth / s_NumFpsOptions;
+	const int currentFps = config_manager::get().get_fps_limit();
+
+	for (int i = 0; i < s_NumFpsOptions; i++)
+	{
+		int regionX = largeBoxX + (fpsRegionWidth * i);
+		bool selected = (currentFps == s_FpsOptions[i]);
+		bool hover = !v_sync_on && (mouse_x >= regionX && mouse_x < regionX + fpsRegionWidth && mouse_y >= fpsBoxY && mouse_y <= fpsBoxY + largeBoxHeight);
+
+		hb::shared::text::TextMetrics fm = hb::shared::text::GetTextRenderer()->measure_text(s_FpsLabels[i]);
+		int tx = regionX + (fpsRegionWidth - fm.width) / 2;
+		int ty = fpsBoxY + (largeBoxHeight - fm.height) / 2;
+		put_string(tx, ty, s_FpsLabels[i], v_sync_on ? GameColors::UIDisabled : (selected || hover) ? GameColors::UIWhite : GameColors::UIDisabled);
+	}
+
+	lineY += 18;
+
+	// --- Aspect Ratio --- wide box (Letterbox / Widescreen), only enabled in fullscreen
+	put_string(labelX, lineY, "Aspect Ratio:", GameColors::UILabel);
+	put_string(labelX + 1, lineY, "Aspect Ratio:", GameColors::UILabel);
+
+	const int aspectBoxY = lineY - 2;
+	draw_new_dialog_box(InterfaceNdButton, wideBoxX, aspectBoxY, 78);
+
+	const bool stretch = config_manager::get().is_fullscreen_stretch_enabled();
+	const int aspectRegionWidth = wideBoxWidth / 2;
+
+	const char* letterboxText = "Letterbox";
+	const char* widescreenText = "Widescreen";
+
+	int leftRegion = wideBoxX;
+	int rightRegion = wideBoxX + aspectRegionWidth;
+	bool letterHover = fullscreen && (mouse_x >= leftRegion && mouse_x < rightRegion && mouse_y >= aspectBoxY && mouse_y <= aspectBoxY + wideBoxHeight);
+	bool wideHover = fullscreen && (mouse_x >= rightRegion && mouse_x <= wideBoxX + wideBoxWidth && mouse_y >= aspectBoxY && mouse_y <= aspectBoxY + wideBoxHeight);
+
+	hb::shared::text::TextMetrics lbm = hb::shared::text::GetTextRenderer()->measure_text(letterboxText);
+	hb::shared::text::TextMetrics wsm = hb::shared::text::GetTextRenderer()->measure_text(widescreenText);
+	int lbx = leftRegion + (aspectRegionWidth - lbm.width) / 2;
+	int wsx = rightRegion + (aspectRegionWidth - wsm.width) / 2;
+	int aty = aspectBoxY + (wideBoxHeight - lbm.height) / 2;
+
+	if (!fullscreen) {
+		put_string(lbx, aty, letterboxText, GameColors::UIDisabled);
+		put_string(wsx, aty, widescreenText, GameColors::UIDisabled);
+	} else {
+		put_string(lbx, aty, letterboxText, (!stretch || letterHover) ? GameColors::UIWhite : GameColors::UIDisabled);
+		put_string(wsx, aty, widescreenText, (stretch || wideHover) ? GameColors::UIWhite : GameColors::UIDisabled);
+	}
+
+	lineY += 18;
+
+	// --- VSync ---
+	put_string(labelX, lineY, "VSync:", GameColors::UILabel);
+	put_string(labelX + 1, lineY, "VSync:", GameColors::UILabel);
+	draw_toggle(smallBoxX, lineY, config_manager::get().is_vsync_enabled(), mouse_x, mouse_y);
+
+	lineY += 18;
+
+	// --- Detail Level --- wide box with Low/Normal/High
+	put_string(labelX, lineY, DRAW_DIALOGBOX_SYSMENU_DETAILLEVEL, GameColors::UILabel);
+	put_string(labelX + 1, lineY, DRAW_DIALOGBOX_SYSMENU_DETAILLEVEL, GameColors::UILabel);
+
+	const int detailLevel = config_manager::get().get_detail_level();
+	const int boxY = lineY - 2;
+
+	draw_new_dialog_box(InterfaceNdButton, wideBoxX, boxY, 78);
+
+	const int regionWidth = wideBoxWidth / 3;
+
+	hb::shared::text::TextMetrics lowMetrics = hb::shared::text::GetTextRenderer()->measure_text(DRAW_DIALOGBOX_SYSMENU_LOW);
+	int textY = boxY + (wideBoxHeight - lowMetrics.height) / 2;
+
+	hb::shared::text::TextMetrics normMetrics = hb::shared::text::GetTextRenderer()->measure_text(DRAW_DIALOGBOX_SYSMENU_NORMAL);
+	hb::shared::text::TextMetrics highMetrics = hb::shared::text::GetTextRenderer()->measure_text(DRAW_DIALOGBOX_SYSMENU_HIGH);
+
+	int lowX = wideBoxX + (regionWidth - lowMetrics.width) / 2;
+	int normX = wideBoxX + regionWidth + (regionWidth - normMetrics.width) / 2;
+	int highX = wideBoxX + (regionWidth * 2) + (regionWidth - highMetrics.width) / 2;
+
+	bool lowHover = (mouse_x >= wideBoxX && mouse_x < wideBoxX + regionWidth && mouse_y >= boxY && mouse_y <= boxY + wideBoxHeight);
+	bool normHover = (mouse_x >= wideBoxX + regionWidth && mouse_x < wideBoxX + (regionWidth * 2) && mouse_y >= boxY && mouse_y <= boxY + wideBoxHeight);
+	bool highHover = (mouse_x >= wideBoxX + (regionWidth * 2) && mouse_x <= wideBoxX + wideBoxWidth && mouse_y >= boxY && mouse_y <= boxY + wideBoxHeight);
+
+	put_string(lowX, textY, DRAW_DIALOGBOX_SYSMENU_LOW, (detailLevel == 0 || lowHover) ? GameColors::UIWhite : GameColors::UIDisabled);
+	put_string(normX, textY, DRAW_DIALOGBOX_SYSMENU_NORMAL, (detailLevel == 1 || normHover) ? GameColors::UIWhite : GameColors::UIDisabled);
+	put_string(highX, textY, DRAW_DIALOGBOX_SYSMENU_HIGH, (detailLevel == 2 || highHover) ? GameColors::UIWhite : GameColors::UIDisabled);
+
+	lineY += 18;
+
+	// --- Dialog Transparency ---
+	put_string(labelX, lineY, "Transparency:", GameColors::UILabel);
+	put_string(labelX + 1, lineY, "Transparency:", GameColors::UILabel);
+	draw_toggle(smallBoxX, lineY, config_manager::get().is_dialog_transparency_enabled(), mouse_x, mouse_y);
+
+	lineY += 18;
+
+	// --- Show FPS ---
+	put_string(labelX, lineY, "Show FPS:", GameColors::UILabel);
+	put_string(labelX + 1, lineY, "Show FPS:", GameColors::UILabel);
+	draw_toggle(smallBoxX, lineY, config_manager::get().is_show_fps_enabled(), mouse_x, mouse_y);
+
+	lineY += 18;
+
+	// --- Show Latency ---
+	put_string(labelX, lineY, "Show Latency:", GameColors::UILabel);
+	put_string(labelX + 1, lineY, "Show Latency:", GameColors::UILabel);
+	draw_toggle(smallBoxX, lineY, config_manager::get().is_show_latency_enabled(), mouse_x, mouse_y);
+
+	lineY += 18;
+
+#ifdef _DEBUG
+	// Tile Grid (simple dark lines) - DEBUG ONLY
+	put_string(labelX, lineY, "Tile Grid:", GameColors::UILabel);
+	put_string(labelX + 1, lineY, "Tile Grid:", GameColors::UILabel);
+	draw_toggle(smallBoxX, lineY, config_manager::get().is_tile_grid_enabled(), mouse_x, mouse_y);
+
+	lineY += 18;
+
+	// Patching Grid (debug with zone colors) - DEBUG ONLY
+	put_string(labelX, lineY, "Patching Grid:", GameColors::UILabel);
+	put_string(labelX + 1, lineY, "Patching Grid:", GameColors::UILabel);
+	draw_toggle(smallBoxX, lineY, config_manager::get().is_patching_grid_enabled(), mouse_x, mouse_y);
+
+	lineY += 18;
+#endif
+
+	// --- Display Mode --- wide box (Fullscreen / Windowed)
+	put_string(labelX, lineY, "Display Mode:", GameColors::UILabel);
+	put_string(labelX + 1, lineY, "Display Mode:", GameColors::UILabel);
+
+	const int modeBoxY = lineY - 2;
+	draw_new_dialog_box(InterfaceNdButton, wideBoxX, modeBoxY, 78);
+
+	bool modeHover = (mouse_x >= wideBoxX && mouse_x <= wideBoxX + wideBoxWidth && mouse_y >= modeBoxY && mouse_y <= modeBoxY + wideBoxHeight);
+	const hb::shared::render::Color& modeColor = modeHover ? GameColors::UIWhite : GameColors::UIDisabled;
+
+	const char* modeText = fullscreen ? "Fullscreen" : "Windowed";
+	hb::shared::text::TextMetrics modeMetrics = hb::shared::text::GetTextRenderer()->measure_text(modeText);
+	int modeTextX = wideBoxX + (wideBoxWidth - modeMetrics.width) / 2;
+	int modeTextY = modeBoxY + (wideBoxHeight - modeMetrics.height) / 2;
+	put_string(modeTextX, modeTextY, modeText, modeColor);
+
+	lineY += 18;
+
+	// --- hb::shared::render::Window Style --- wide box (Borderless / Bordered, disabled when fullscreen)
+	put_string(labelX, lineY, "Window Style:", GameColors::UILabel);
+	put_string(labelX + 1, lineY, "Window Style:", GameColors::UILabel);
+
+	const int styleBoxY = lineY - 2;
+	draw_new_dialog_box(InterfaceNdButton, wideBoxX, styleBoxY, 78);
+
+	bool styleHover = !fullscreen && (mouse_x >= wideBoxX && mouse_x <= wideBoxX + wideBoxWidth && mouse_y >= styleBoxY && mouse_y <= styleBoxY + wideBoxHeight);
+	const hb::shared::render::Color& styleColor = fullscreen ? GameColors::UIDisabled : (styleHover ? GameColors::UIWhite : GameColors::UIDisabled);
+
+	const char* styleText = config_manager::get().is_borderless_enabled() ? "Borderless" : "Bordered";
+	hb::shared::text::TextMetrics styleMetrics = hb::shared::text::GetTextRenderer()->measure_text(styleText);
+	int styleTextX = wideBoxX + (wideBoxWidth - styleMetrics.width) / 2;
+	int styleTextY = styleBoxY + (wideBoxHeight - styleMetrics.height) / 2;
+	put_string(styleTextX, styleTextY, styleText, styleColor);
+
+	lineY += 18;
+
+	// --- Resolution --- wide box with centered text (disabled when fullscreen)
+	put_string(labelX, lineY, "Resolution:", GameColors::UILabel);
+	put_string(labelX + 1, lineY, "Resolution:", GameColors::UILabel);
+
+	int resWidth, resHeight;
+	if (fullscreen) {
+		resWidth = hb::platform::get_screen_width();
+		resHeight = hb::platform::get_screen_height();
 	}
 	else {
-		int resIndex = GetCurrentResolutionIndex();
+		int resIndex = get_current_resolution_index();
 		resWidth = s_Resolutions[resIndex].width;
 		resHeight = s_Resolutions[resIndex].height;
 	}
 
-	char cResText[32];
-	wsprintf(cResText, "%dx%d", resWidth, resHeight);
+	std::string resBuf;
+	resBuf = std::format("{}x{}", resWidth, resHeight);
 
-	const short windowedX = sX + 112;
-	const short fullscreenX = sX + 182;
-	const int kCharWidth = 6;
-	const int windowedWidth = 8 * kCharWidth;
-	const int fullscreenWidth = 10 * kCharWidth;
-	const int leftBound = windowedX;
-	const int rightBound = fullscreenX + fullscreenWidth;
-	const int textWidth = static_cast<int>(std::strlen(cResText)) * kCharWidth;
-	const int textX = leftBound + ((rightBound - leftBound) / 2) - (textWidth / 2);
-	const short textY = sY + 222;
-	const bool bHover = !isFullscreen && (msX >= leftBound) && (msX <= rightBound) && (msY >= sY + 220) && (msY <= sY + 234);
+	const int resBoxY = lineY - 2;
+	draw_new_dialog_box(InterfaceNdButton, wideBoxX, resBoxY, 78);
 
-	// Draw single-line resolution text (highlighted on hover)
-	if (bHover) {
-		PutString(textX, textY, cResText, RGB(255, 255, 255));
+	bool resHover = !fullscreen && (mouse_x >= wideBoxX && mouse_x <= wideBoxX + wideBoxWidth && mouse_y >= resBoxY && mouse_y <= resBoxY + wideBoxHeight);
+	const hb::shared::render::Color& resColor = fullscreen ? GameColors::UIDisabled : (resHover ? GameColors::UIWhite : GameColors::UIDisabled);
+
+	hb::shared::text::TextMetrics resMetrics = hb::shared::text::GetTextRenderer()->measure_text(resBuf.c_str());
+	int resTextX = wideBoxX + (wideBoxWidth - resMetrics.width) / 2;
+	int resTextY = resBoxY + (wideBoxHeight - resMetrics.height) / 2;
+	put_string(resTextX, resTextY, resBuf.c_str(), resColor);
+}
+
+// =============================================================================
+// AUDIO TAB
+// =============================================================================
+void DialogBox_SysMenu::draw_audio_tab(short sX, short sY, short mouse_x, short mouse_y, char lb)
+{
+	const int contentX = sX + CONTENT_X;
+	const int contentY = sY + CONTENT_Y;
+	const int labelX = contentX + 5;
+	const int toggleX = contentX + 68;
+	const int sliderX = contentX + 110;
+
+	bool available = audio_manager::get().is_sound_available();
+
+	// --- Master: [On/Off] ---slider--- ---
+	int lineY = contentY + 8;
+
+	put_string(labelX, lineY, "Master:", GameColors::UILabel);
+	put_string(labelX + 1, lineY, "Master:", GameColors::UILabel);
+
+	if (available)
+		draw_toggle(toggleX, lineY, audio_manager::get().is_master_enabled(), mouse_x, mouse_y);
+	else
+		put_string(toggleX, lineY, DRAW_DIALOGBOX_SYSMENU_DISABLED, GameColors::UIDisabled);
+
+	int masterVol = audio_manager::get().get_master_volume();
+	draw_new_dialog_box(InterfaceNdButton, sliderX, lineY + 5, 80);
+	draw_new_dialog_box(InterfaceNdGame2, sliderX + masterVol, lineY, 8);
+
+	if (s_bDraggingMasterSlider && lb != 0)
+	{
+		int volume = mouse_x - sliderX;
+		if (volume > 100) volume = 100;
+		if (volume < 0) volume = 0;
+		audio_manager::get().set_master_volume(volume);
 	}
-	else {
-		COLORREF color = isFullscreen ? RGB(150, 150, 150) : RGB(45, 25, 25);
-		PutString(textX, textY, cResText, color);
-		PutString(textX + 1, textY, cResText, color);
+
+	// --- Effects: [On/Off] ---slider--- ---
+	lineY = contentY + 52;
+
+	put_string(labelX, lineY, "Effects:", GameColors::UILabel);
+	put_string(labelX + 1, lineY, "Effects:", GameColors::UILabel);
+
+	if (available)
+		draw_toggle(toggleX, lineY, audio_manager::get().is_sound_enabled(), mouse_x, mouse_y);
+	else
+		put_string(toggleX, lineY, DRAW_DIALOGBOX_SYSMENU_DISABLED, GameColors::UIDisabled);
+
+	int effectsVol = audio_manager::get().get_sound_volume();
+	draw_new_dialog_box(InterfaceNdButton, sliderX, lineY + 5, 80);
+	draw_new_dialog_box(InterfaceNdGame2, sliderX + effectsVol, lineY, 8);
+
+	if (s_bDraggingEffectsSlider && lb != 0)
+	{
+		int volume = mouse_x - sliderX;
+		if (volume > 100) volume = 100;
+		if (volume < 0) volume = 0;
+		audio_manager::get().set_sound_volume(volume);
+	}
+
+	// --- Ambient: [On/Off] ---slider--- ---
+	lineY = contentY + 92;
+
+	put_string(labelX, lineY, "Ambient:", GameColors::UILabel);
+	put_string(labelX + 1, lineY, "Ambient:", GameColors::UILabel);
+
+	if (available)
+		draw_toggle(toggleX, lineY, audio_manager::get().is_ambient_enabled(), mouse_x, mouse_y);
+	else
+		put_string(toggleX, lineY, DRAW_DIALOGBOX_SYSMENU_DISABLED, GameColors::UIDisabled);
+
+	int ambientVol = audio_manager::get().get_ambient_volume();
+	draw_new_dialog_box(InterfaceNdButton, sliderX, lineY + 5, 80);
+	draw_new_dialog_box(InterfaceNdGame2, sliderX + ambientVol, lineY, 8);
+
+	if (s_bDraggingAmbientSlider && lb != 0)
+	{
+		int volume = mouse_x - sliderX;
+		if (volume > 100) volume = 100;
+		if (volume < 0) volume = 0;
+		audio_manager::get().set_ambient_volume(volume);
+	}
+
+	// --- UI: [On/Off] ---slider--- ---
+	lineY = contentY + 132;
+
+	put_string(labelX, lineY, "UI:", GameColors::UILabel);
+	put_string(labelX + 1, lineY, "UI:", GameColors::UILabel);
+
+	if (available)
+		draw_toggle(toggleX, lineY, audio_manager::get().is_ui_enabled(), mouse_x, mouse_y);
+	else
+		put_string(toggleX, lineY, DRAW_DIALOGBOX_SYSMENU_DISABLED, GameColors::UIDisabled);
+
+	int uiVol = audio_manager::get().get_ui_volume();
+	draw_new_dialog_box(InterfaceNdButton, sliderX, lineY + 5, 80);
+	draw_new_dialog_box(InterfaceNdGame2, sliderX + uiVol, lineY, 8);
+
+	if (s_bDraggingUISlider && lb != 0)
+	{
+		int volume = mouse_x - sliderX;
+		if (volume > 100) volume = 100;
+		if (volume < 0) volume = 0;
+		audio_manager::get().set_ui_volume(volume);
+	}
+
+	// --- Music: [On/Off] ---slider--- ---
+	lineY = contentY + 172;
+
+	put_string(labelX, lineY, DRAW_DIALOGBOX_SYSMENU_MUSIC, GameColors::UILabel);
+	put_string(labelX + 1, lineY, DRAW_DIALOGBOX_SYSMENU_MUSIC, GameColors::UILabel);
+
+	if (available)
+		draw_toggle(toggleX, lineY, audio_manager::get().is_music_enabled(), mouse_x, mouse_y);
+	else
+		put_string(toggleX, lineY, DRAW_DIALOGBOX_SYSMENU_DISABLED, GameColors::UIDisabled);
+
+	int musicVol = audio_manager::get().get_music_volume();
+	draw_new_dialog_box(InterfaceNdButton, sliderX, lineY + 5, 80);
+	draw_new_dialog_box(InterfaceNdGame2, sliderX + musicVol, lineY, 8);
+
+	if (s_bDraggingMusicSlider && lb != 0)
+	{
+		int volume = mouse_x - sliderX;
+		if (volume > 100) volume = 100;
+		if (volume < 0) volume = 0;
+		audio_manager::get().set_music_volume(volume);
 	}
 }
 
-void DialogBox_SysMenu::OnDraw(short msX, short msY, short msZ, char cLB)
+// =============================================================================
+// SYSTEM TAB
+// =============================================================================
+void DialogBox_SysMenu::draw_system_tab(short sX, short sY, short mouse_x, short mouse_y)
 {
-	short sX = Info().sX;
-	short sY = Info().sY;
-
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME1, sX, sY, 0);
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_TEXT, sX, sY, 6);
-
-	DrawDetailLevel(sX, sY);
-	DrawSoundSettings(sX, sY);
-	DrawChatSettings(sX, sY);
-	DrawVolumeSliders(sX, sY, msX, msY, cLB);
-	DrawMiscSettings(sX, sY);
-	DrawServerName(sX, sY);
-	DrawButtons(sX, sY, msX, msY);
-}
-
-bool DialogBox_SysMenu::OnClick(short msX, short msY)
-{
-	short sX = Info().sX;
-	short sY = Info().sY;
-
-	// Detail level: Low
-	if ((msX >= sX + 120) && (msX <= sX + 150) && (msY >= sY + 63) && (msY <= sY + 74)) {
-		ConfigManager::Get().SetDetailLevel(0);
-		AddEventList(NOTIFY_MSG_DETAIL_LEVEL_LOW, 10);
-		PlaySoundEffect('E', 14, 5);
-		return true;
-	}
-
-	// Detail level: Normal
-	if ((msX >= sX + 151) && (msX <= sX + 200) && (msY >= sY + 63) && (msY <= sY + 74)) {
-		ConfigManager::Get().SetDetailLevel(1);
-		AddEventList(NOTIFY_MSG_DETAIL_LEVEL_MEDIUM, 10);
-		PlaySoundEffect('E', 14, 5);
-		return true;
-	}
-
-	// Detail level: High
-	if ((msX >= sX + 201) && (msX <= sX + 234) && (msY >= sY + 63) && (msY <= sY + 74)) {
-		ConfigManager::Get().SetDetailLevel(2);
-		AddEventList(NOTIFY_MSG_DETAIL_LEVEL_HIGH, 10);
-		PlaySoundEffect('E', 14, 5);
-		return true;
-	}
-
-	// Sound toggle
-	if ((msX >= sX + 24) && (msX <= sX + 115) && (msY >= sY + 81) && (msY <= sY + 100)) {
-		if (AudioManager::Get().IsSoundAvailable()) {
-			if (AudioManager::Get().IsSoundEnabled()) {
-				AudioManager::Get().StopSound(SoundType::Effect, 38);
-				AudioManager::Get().SetSoundEnabled(false);
-				AddEventList(NOTIFY_MSG_SOUND_OFF, 10);
-			}
-			else {
-				AudioManager::Get().SetSoundEnabled(true);
-				AddEventList(NOTIFY_MSG_SOUND_ON, 10);
-			}
-		}
-		return true;
-	}
-
-	// Music toggle
-	if ((msX >= sX + 116) && (msX <= sX + 202) && (msY >= sY + 81) && (msY <= sY + 100)) {
-		if (AudioManager::Get().IsSoundAvailable()) {
-			if (AudioManager::Get().IsMusicEnabled()) {
-				AudioManager::Get().SetMusicEnabled(false);
-				AddEventList(NOTIFY_MSG_MUSIC_OFF, 10);
-				AudioManager::Get().StopMusic();
-			}
-			else {
-				AudioManager::Get().SetMusicEnabled(true);
-				AddEventList(NOTIFY_MSG_MUSIC_ON, 10);
-				m_pGame->StartBGM();
-			}
-		}
-		return true;
-	}
+	const int contentX = sX + CONTENT_X;
+	const int contentY = sY + CONTENT_Y;
+	int lineY = contentY + 5;
+	const int labelX = contentX + 5;
+	const int valueX = contentX + 140;
 
 	// Whisper toggle
-	if ((msX >= sX + 23) && (msX <= sX + 108) && (msY >= sY + 108) && (msY <= sY + 119)) {
-		if (m_pGame->m_bWhisper == true) {
-			m_pGame->m_bWhisper = false;
-			AddEventList(BCHECK_LOCAL_CHAT_COMMAND7, 10);
-		}
-		else {
-			m_pGame->m_bWhisper = true;
-			AddEventList(BCHECK_LOCAL_CHAT_COMMAND6, 10);
-		}
-		return true;
-	}
+	put_string(labelX, lineY, DRAW_DIALOGBOX_SYSMENU_WHISPER, GameColors::UILabel);
+	put_string(labelX + 1, lineY, DRAW_DIALOGBOX_SYSMENU_WHISPER, GameColors::UILabel);
+	draw_toggle(valueX, lineY, ChatManager::get().is_whisper_enabled(), mouse_x, mouse_y);
+
+	lineY += 20;
 
 	// Shout toggle
-	if ((msX >= sX + 123) && (msX <= sX + 203) && (msY >= sY + 108) && (msY <= sY + 119)) {
-		if (m_pGame->m_bShout == true) {
-			m_pGame->m_bShout = false;
-			AddEventList(BCHECK_LOCAL_CHAT_COMMAND9, 10);
-		}
-		else {
-			m_pGame->m_bShout = true;
-			AddEventList(BCHECK_LOCAL_CHAT_COMMAND8, 10);
-		}
-		return true;
-	}
+	put_string(labelX, lineY, DRAW_DIALOGBOX_SYSMENU_SHOUT, GameColors::UILabel);
+	put_string(labelX + 1, lineY, DRAW_DIALOGBOX_SYSMENU_SHOUT, GameColors::UILabel);
+	draw_toggle(valueX, lineY, ChatManager::get().is_shout_enabled(), mouse_x, mouse_y);
 
-	// Transparency toggle
-	if ((msX >= sX + 28) && (msX <= sX + 235) && (msY >= sY + 156) && (msY <= sY + 171)) {
-		bool dialogTrans = ConfigManager::Get().IsDialogTransparencyEnabled();
-		ConfigManager::Get().SetDialogTransparencyEnabled(!dialogTrans);
-		return true;
-	}
+	lineY += 20;
+
+	// Running Mode toggle
+	put_string(labelX, lineY, "Running Mode:", GameColors::UILabel);
+	put_string(labelX + 1, lineY, "Running Mode:", GameColors::UILabel);
+	draw_toggle(valueX, lineY, config_manager::get().is_running_mode_enabled(), mouse_x, mouse_y);
+
+	lineY += 20;
+
+	// Capture Mouse toggle
+	put_string(labelX, lineY, "Capture Mouse:", GameColors::UILabel);
+	put_string(labelX + 1, lineY, "Capture Mouse:", GameColors::UILabel);
+	draw_toggle(valueX, lineY, config_manager::get().is_mouse_capture_enabled(), mouse_x, mouse_y);
+
+	lineY += 20;
 
 	// Guide Map toggle
-	if ((msX >= sX + 28) && (msX <= sX + 127) && (msY >= sY + 178) && (msY <= sY + 193)) {
-		if (m_pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::GuideMap))
-			DisableDialogBox(DialogBoxId::GuideMap);
-		else
-			EnableDialogBox(DialogBoxId::GuideMap, 0, 0, 0);
-		return true;
-	}
+	put_string(labelX, lineY, DRAW_DIALOGBOX_SYSMENU_GUIDEMAP, GameColors::UILabel);
+	put_string(labelX + 1, lineY, DRAW_DIALOGBOX_SYSMENU_GUIDEMAP, GameColors::UILabel);
+	draw_toggle(valueX, lineY, m_game->m_dialog_box_manager.is_enabled(DialogBoxId::GuideMap), mouse_x, mouse_y);
+}
 
-	// Resolution button click (only when alive and not restarting)
-	if ((m_pGame->m_iHP > 0) && (m_pGame->m_cRestartCount == -1)) {
-		bool isFullscreen = m_pGame->m_Renderer->IsFullscreen();
-		if ((msX >= sX + 110) && (msX <= sX + 168) && (msY >= sY + 200) && (msY <= sY + 213)) {
-			if (isFullscreen) {
-				m_pGame->m_Renderer->SetFullscreen(false);
-				m_pGame->m_Renderer->ChangeDisplayMode(G_hWnd);
-				InputManager::Get().SetActive(true);
-				ConfigManager::Get().SetFullscreenEnabled(false);
-				ConfigManager::Get().Save();
-				m_pGame->m_bIsRedrawPDBGS = true;
-				PlaySoundEffect('E', 14, 5);
-			}
-			return true;
-		}
+// =============================================================================
+// CLICK HANDLERS
+// =============================================================================
+bool DialogBox_SysMenu::on_click(short mouse_x, short mouse_y)
+{
+	short sX = Info().m_x;
+	short sY = Info().m_y;
 
-		if ((msX >= sX + 180) && (msX <= sX + 242) && (msY >= sY + 200) && (msY <= sY + 213)) {
-			if (!isFullscreen) {
-				m_pGame->m_Renderer->SetFullscreen(true);
-				m_pGame->m_Renderer->ChangeDisplayMode(G_hWnd);
-				InputManager::Get().SetActive(true);
-				ConfigManager::Get().SetFullscreenEnabled(true);
-				ConfigManager::Get().Save();
-				m_pGame->m_bIsRedrawPDBGS = true;
-				PlaySoundEffect('E', 14, 5);
-			}
-			return true;
-		}
+	// Check tab button clicks
+	hb::shared::sprite::SpriteRect button_rect = m_game->m_sprite[InterfaceNdButton]->GetFrameRect(70);
+	int btnY = sY + 33;
 
-		if (!isFullscreen && (msX >= sX + 112) && (msX <= sX + 242) && (msY >= sY + 220) && (msY <= sY + 234)) {
-			CycleResolution();
-			m_pGame->m_bIsRedrawPDBGS = true;
-			PlaySoundEffect('E', 14, 5);
-			AddEventList("Resolution changed.", 10);
+	for (int i = 0; i < TAB_COUNT; i++)
+	{
+		int btnX = sX + 17 + (button_rect.width * i);
+		if (mouse_x >= btnX && mouse_x < btnX + button_rect.width && mouse_y >= btnY && mouse_y < btnY + button_rect.height)
+		{
+			m_iActiveTab = i;
+			play_sound_effect('E', 14, 5);
 			return true;
 		}
 	}
 
-	if (m_pGame->m_bForceDisconn) return false;
+	// Handle clicks for active tab content
+	switch (m_iActiveTab)
+	{
+	case TAB_GENERAL:
+		return on_click_general(sX, sY, mouse_x, mouse_y);
+	case TAB_GRAPHICS:
+		return on_click_graphics(sX, sY, mouse_x, mouse_y);
+	case TAB_AUDIO:
+		return on_click_audio(sX, sY, mouse_x, mouse_y);
+	case TAB_SYSTEM:
+		return on_click_system(sX, sY, mouse_x, mouse_y);
+	}
+
+	return false;
+}
+
+PressResult DialogBox_SysMenu::on_press(short mouse_x, short mouse_y)
+{
+	// Only claim scroll for Audio tab slider areas
+	if (m_iActiveTab != TAB_AUDIO)
+		return PressResult::Normal;
+
+	short sX = Info().m_x;
+	short sY = Info().m_y;
+	const int contentX = sX + CONTENT_X;
+	const int contentY = sY + CONTENT_Y;
+	const int sliderX = contentX + 110;
+	const int sliderWidth = 100;
+
+	// Helper lambda for slider hit detection
+	auto checkSlider = [&](int sliderY, bool& dragFlag) -> bool {
+		if ((mouse_x >= sliderX) && (mouse_x <= sliderX + sliderWidth + 10) &&
+			(mouse_y >= sliderY - 5) && (mouse_y <= sliderY + 15))
+		{
+			dragFlag = true;
+			Info().m_is_scroll_selected = true;
+			return true;
+		}
+		return false;
+	};
+
+	// Master slider at contentY + 8
+	if (checkSlider(contentY + 8, s_bDraggingMasterSlider))
+		return PressResult::ScrollClaimed;
+
+	// Effects slider at contentY + 52
+	if (checkSlider(contentY + 52, s_bDraggingEffectsSlider))
+		return PressResult::ScrollClaimed;
+
+	// Ambient slider at contentY + 92
+	if (checkSlider(contentY + 92, s_bDraggingAmbientSlider))
+		return PressResult::ScrollClaimed;
+
+	// UI slider at contentY + 132
+	if (checkSlider(contentY + 132, s_bDraggingUISlider))
+		return PressResult::ScrollClaimed;
+
+	// Music slider at contentY + 172
+	if (checkSlider(contentY + 172, s_bDraggingMusicSlider))
+		return PressResult::ScrollClaimed;
+
+	return PressResult::Normal;
+}
+
+bool DialogBox_SysMenu::on_click_general(short sX, short sY, short mouse_x, short mouse_y)
+{
+	const int contentY = sY + CONTENT_Y;
+	const int contentBottom = contentY + CONTENT_HEIGHT;
+	int buttonY = contentBottom - 30;
 
 	// Log-Out / Continue button
-	if ((msX >= sX + DEF_LBTNPOSX) && (msX <= sX + DEF_LBTNPOSX + DEF_BTNSZX) && (msY >= sY + 225) && (msY <= sY + 225 + DEF_BTNSZY)) {
-		if (m_pGame->m_cLogOutCount == -1) {
-#ifdef _DEBUG
-			m_pGame->m_cLogOutCount = 1;
-#else
-			m_pGame->m_cLogOutCount = 11;
-#endif
+	if (mouse_x >= sX + ui_layout::left_btn_x && mouse_x <= sX + ui_layout::left_btn_x + ui_layout::btn_size_x &&
+		mouse_y >= buttonY && mouse_y <= buttonY + ui_layout::btn_size_y)
+	{
+		if (!m_game->m_force_disconn)
+		{
+			if (m_game->m_logout_count == -1) {
+				m_game->m_logout_count = 11;
+			}
+			else {
+				m_game->m_logout_count = -1;
+				add_event_list(DLGBOX_CLICK_SYSMENU2, 10);
+				disable_this_dialog();
+			}
+			play_sound_effect('E', 14, 5);
+			return true;
 		}
-		else {
-			m_pGame->m_cLogOutCount = -1;
-			AddEventList(DLGBOX_CLICK_SYSMENU2, 10);
-			DisableThisDialog();
-		}
-		PlaySoundEffect('E', 14, 5);
-		return true;
 	}
 
 	// Restart button (only when dead)
-	if ((m_pGame->m_iHP <= 0) && (m_pGame->m_cRestartCount == -1)) {
-		if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY >= sY + 225) && (msY <= sY + 225 + DEF_BTNSZY)) {
-			m_pGame->m_cRestartCount = 5;
-			m_pGame->m_dwRestartCountTime = GameClock::GetTimeMS();
-			DisableThisDialog();
-			wsprintf(m_pGame->G_cTxt, DLGBOX_CLICK_SYSMENU1, m_pGame->m_cRestartCount);
-			AddEventList(m_pGame->G_cTxt, 10);
-			PlaySoundEffect('E', 14, 5);
+	if ((m_game->m_player->m_hp <= 0) && (m_game->m_restart_count == -1))
+	{
+		if (mouse_x >= sX + ui_layout::right_btn_x && mouse_x <= sX + ui_layout::right_btn_x + ui_layout::btn_size_x &&
+			mouse_y >= buttonY && mouse_y <= buttonY + ui_layout::btn_size_y)
+		{
+			m_game->m_restart_count = 5;
+			m_game->m_restart_count_time = GameClock::get_time_ms();
+			disable_this_dialog();
+			std::string restartBuf;
+			restartBuf = std::format(DLGBOX_CLICK_SYSMENU1, m_game->m_restart_count);
+			add_event_list(restartBuf.c_str(), 10);
+			play_sound_effect('E', 14, 5);
 			return true;
 		}
+	}
+
+	return false;
+}
+
+bool DialogBox_SysMenu::on_click_graphics(short sX, short sY, short mouse_x, short mouse_y)
+{
+	const int contentX = sX + CONTENT_X;
+	const int contentY = sY + CONTENT_Y;
+	int lineY = contentY + 5;
+
+	// Match draw positions - right-align large box, left-align others to its left edge
+	const int contentRight = contentX + CONTENT_WIDTH;
+	const int rightMargin = 8;
+	const int boxRightEdge = contentRight - rightMargin;
+	const int largeBoxWidth = m_bFrameSizesInitialized ? m_iLargeBoxWidth : 280;
+	const int largeBoxHeight = m_bFrameSizesInitialized ? m_iLargeBoxHeight : 16;
+	const int wideBoxWidth = m_bFrameSizesInitialized ? m_iWideBoxWidth : 175;
+	const int wideBoxHeight = m_bFrameSizesInitialized ? m_iWideBoxHeight : 16;
+	const int largeBoxX = boxRightEdge - largeBoxWidth;
+	const int wideBoxX = largeBoxX;
+	const int smallBoxX = largeBoxX;
+
+	const bool fullscreen = m_game->m_Renderer->is_fullscreen();
+
+	// --- FPS Limit --- (disabled when VSync is on)
+	const bool v_sync_on = config_manager::get().is_vsync_enabled();
+	const int fpsBoxY = lineY - 2;
+	static const int s_FpsOptions[] = { 60, 100, 144, 240, 0 };
+	static const int s_NumFpsOptions = 5;
+	const int fpsRegionWidth = largeBoxWidth / s_NumFpsOptions;
+
+	if (!v_sync_on && mouse_y >= fpsBoxY && mouse_y <= fpsBoxY + largeBoxHeight && mouse_x >= largeBoxX && mouse_x <= largeBoxX + largeBoxWidth) {
+		int clickedRegion = (mouse_x - largeBoxX) / fpsRegionWidth;
+		if (clickedRegion >= 0 && clickedRegion < s_NumFpsOptions) {
+			int newLimit = s_FpsOptions[clickedRegion];
+			config_manager::get().set_fps_limit(newLimit);
+			hb::shared::render::Window::get()->set_framerate_limit(newLimit);
+			play_sound_effect('E', 14, 5);
+			return true;
+		}
+	}
+
+	lineY += 18;
+
+	// --- Aspect Ratio --- (only enabled when fullscreen)
+	const int aspectBoxY = lineY - 2;
+	const int aspectRegionWidth = wideBoxWidth / 2;
+	if (fullscreen && mouse_y >= aspectBoxY && mouse_y <= aspectBoxY + wideBoxHeight && mouse_x >= wideBoxX && mouse_x <= wideBoxX + wideBoxWidth) {
+		bool new_stretch = (mouse_x >= wideBoxX + aspectRegionWidth);
+		config_manager::get().set_fullscreen_stretch_enabled(new_stretch);
+		hb::shared::render::Window::get()->set_fullscreen_stretch(new_stretch);
+		if (hb::shared::render::Renderer::get())
+			hb::shared::render::Renderer::get()->set_fullscreen_stretch(new_stretch);
+		play_sound_effect('E', 14, 5);
+		return true;
+	}
+
+	lineY += 18;
+
+	// --- VSync toggle ---
+	if (is_in_toggle_area(smallBoxX, lineY, mouse_x, mouse_y)) {
+		bool enabled = config_manager::get().is_vsync_enabled();
+		config_manager::get().set_vsync_enabled(!enabled);
+		hb::shared::render::Window::get()->set_vsync_enabled(!enabled);
+		play_sound_effect('E', 14, 5);
+		return true;
+	}
+
+	lineY += 18;
+
+	// --- Detail Level --- wide box with three regions
+	const int boxY = lineY - 2;
+	const int regionWidth = wideBoxWidth / 3;
+	if (mouse_y >= boxY && mouse_y <= boxY + wideBoxHeight && mouse_x >= wideBoxX && mouse_x <= wideBoxX + wideBoxWidth) {
+		if (mouse_x < wideBoxX + regionWidth) {
+			config_manager::get().set_detail_level(0);
+			add_event_list(NOTIFY_MSG_DETAIL_LEVEL_LOW, 10);
+			play_sound_effect('E', 14, 5);
+			return true;
+		}
+		if (mouse_x < wideBoxX + (regionWidth * 2)) {
+			config_manager::get().set_detail_level(1);
+			add_event_list(NOTIFY_MSG_DETAIL_LEVEL_MEDIUM, 10);
+			play_sound_effect('E', 14, 5);
+			return true;
+		}
+		config_manager::get().set_detail_level(2);
+		add_event_list(NOTIFY_MSG_DETAIL_LEVEL_HIGH, 10);
+		play_sound_effect('E', 14, 5);
+		return true;
+	}
+
+	lineY += 18;
+
+	// --- Dialog Transparency toggle ---
+	if (is_in_toggle_area(smallBoxX, lineY, mouse_x, mouse_y)) {
+		bool enabled = config_manager::get().is_dialog_transparency_enabled();
+		config_manager::get().set_dialog_transparency_enabled(!enabled);
+		play_sound_effect('E', 14, 5);
+		return true;
+	}
+
+	lineY += 18;
+
+	// --- Show FPS toggle ---
+	if (is_in_toggle_area(smallBoxX, lineY, mouse_x, mouse_y)) {
+		bool enabled = config_manager::get().is_show_fps_enabled();
+		config_manager::get().set_show_fps_enabled(!enabled);
+		play_sound_effect('E', 14, 5);
+		return true;
+	}
+
+	lineY += 18;
+
+	// --- Show Latency toggle ---
+	if (is_in_toggle_area(smallBoxX, lineY, mouse_x, mouse_y)) {
+		bool enabled = config_manager::get().is_show_latency_enabled();
+		config_manager::get().set_show_latency_enabled(!enabled);
+		play_sound_effect('E', 14, 5);
+		return true;
+	}
+
+	lineY += 18;
+
+#ifdef _DEBUG
+	// Tile Grid toggle - DEBUG ONLY
+	if (is_in_toggle_area(smallBoxX, lineY, mouse_x, mouse_y)) {
+		bool enabled = config_manager::get().is_tile_grid_enabled();
+		config_manager::get().set_tile_grid_enabled(!enabled);
+		play_sound_effect('E', 14, 5);
+		return true;
+	}
+
+	lineY += 18;
+
+	// Patching Grid toggle - DEBUG ONLY
+	if (is_in_toggle_area(smallBoxX, lineY, mouse_x, mouse_y)) {
+		bool enabled = config_manager::get().is_patching_grid_enabled();
+		config_manager::get().set_patching_grid_enabled(!enabled);
+		play_sound_effect('E', 14, 5);
+		return true;
+	}
+
+	lineY += 18;
+#endif
+
+	// --- Display Mode toggle --- (wide box, toggles windowed/fullscreen)
+	const int modeBoxY = lineY - 2;
+	if (mouse_x >= wideBoxX && mouse_x <= wideBoxX + wideBoxWidth && mouse_y >= modeBoxY && mouse_y <= modeBoxY + wideBoxHeight) {
+		m_game->m_Renderer->set_fullscreen(!fullscreen);
+		m_game->m_Renderer->change_display_mode(hb::shared::render::Window::get_handle());
+		hb::shared::input::get()->set_window_active(true);
+		config_manager::get().set_fullscreen_enabled(!fullscreen);
+		config_manager::get().save();
+		play_sound_effect('E', 14, 5);
+		return true;
+	}
+
+	lineY += 18;
+
+	// --- hb::shared::render::Window Style toggle --- (wide box, only in windowed mode)
+	const int styleBoxY = lineY - 2;
+	if (!fullscreen && mouse_x >= wideBoxX && mouse_x <= wideBoxX + wideBoxWidth && mouse_y >= styleBoxY && mouse_y <= styleBoxY + wideBoxHeight) {
+		bool borderless = config_manager::get().is_borderless_enabled();
+		config_manager::get().set_borderless_enabled(!borderless);
+		hb::shared::render::Window::set_borderless(!borderless);
+		hb::shared::input::get()->set_window_active(true);
+		config_manager::get().save();
+		play_sound_effect('E', 14, 5);
+		return true;
+	}
+
+	lineY += 18;
+
+	// --- Resolution click --- (wide box, only in windowed mode)
+	const int resBoxY = lineY - 2;
+	if (!fullscreen && mouse_x >= wideBoxX && mouse_x <= wideBoxX + wideBoxWidth && mouse_y >= resBoxY && mouse_y <= resBoxY + wideBoxHeight) {
+		cycle_resolution();
+		play_sound_effect('E', 14, 5);
+		add_event_list("Resolution changed.", 10);
+		return true;
+	}
+
+	return false;
+}
+
+bool DialogBox_SysMenu::on_click_audio(short sX, short sY, short mouse_x, short mouse_y)
+{
+	const int contentX = sX + CONTENT_X;
+	const int contentY = sY + CONTENT_Y;
+	const int toggleX = contentX + 68;
+
+	if (!audio_manager::get().is_sound_available())
+		return false;
+
+	// Master toggle (lineY = contentY + 8)
+	int lineY = contentY + 8;
+	if (is_in_toggle_area(toggleX, lineY, mouse_x, mouse_y)) {
+		bool enabled = audio_manager::get().is_master_enabled();
+		audio_manager::get().set_master_enabled(!enabled);
+		config_manager::get().set_master_enabled(!enabled);
+		config_manager::get().save();
+		play_sound_effect('E', 14, 5);
+		return true;
+	}
+
+	// Effects toggle (lineY = contentY + 52)
+	lineY = contentY + 52;
+	if (is_in_toggle_area(toggleX, lineY, mouse_x, mouse_y)) {
+		bool enabled = audio_manager::get().is_sound_enabled();
+		audio_manager::get().set_sound_enabled(!enabled);
+		config_manager::get().set_sound_enabled(!enabled);
+		config_manager::get().save();
+		play_sound_effect('E', 14, 5);
+		return true;
+	}
+
+	// Ambient toggle (lineY = contentY + 92)
+	lineY = contentY + 92;
+	if (is_in_toggle_area(toggleX, lineY, mouse_x, mouse_y)) {
+		bool enabled = audio_manager::get().is_ambient_enabled();
+		audio_manager::get().set_ambient_enabled(!enabled);
+		config_manager::get().set_ambient_enabled(!enabled);
+		config_manager::get().save();
+		play_sound_effect('E', 14, 5);
+		return true;
+	}
+
+	// UI toggle (lineY = contentY + 132)
+	lineY = contentY + 132;
+	if (is_in_toggle_area(toggleX, lineY, mouse_x, mouse_y)) {
+		bool enabled = audio_manager::get().is_ui_enabled();
+		audio_manager::get().set_ui_enabled(!enabled);
+		config_manager::get().set_ui_enabled(!enabled);
+		config_manager::get().save();
+		play_sound_effect('E', 14, 5);
+		return true;
+	}
+
+	// Music toggle (lineY = contentY + 172)
+	lineY = contentY + 172;
+	if (is_in_toggle_area(toggleX, lineY, mouse_x, mouse_y)) {
+		if (audio_manager::get().is_music_enabled()) {
+			audio_manager::get().set_music_enabled(false);
+			config_manager::get().set_music_enabled(false);
+			audio_manager::get().stop_music();
+		}
+		else {
+			audio_manager::get().set_music_enabled(true);
+			config_manager::get().set_music_enabled(true);
+			m_game->start_bgm();
+		}
+		config_manager::get().save();
+		play_sound_effect('E', 14, 5);
+		return true;
+	}
+
+	return false;
+}
+
+bool DialogBox_SysMenu::on_click_system(short sX, short sY, short mouse_x, short mouse_y)
+{
+	const int contentX = sX + CONTENT_X;
+	const int contentY = sY + CONTENT_Y;
+	int lineY = contentY + 5;
+	const int valueX = contentX + 140;
+
+	// Whisper toggle
+	if (is_in_toggle_area(valueX, lineY, mouse_x, mouse_y)) {
+		if (ChatManager::get().is_whisper_enabled()) {
+			ChatManager::get().set_whisper_enabled(false);
+			add_event_list(BCHECK_LOCAL_CHAT_COMMAND7, 10);
+		}
+		else {
+			ChatManager::get().set_whisper_enabled(true);
+			add_event_list(BCHECK_LOCAL_CHAT_COMMAND6, 10);
+		}
+		play_sound_effect('E', 14, 5);
+		return true;
+	}
+
+	lineY += 20;
+
+	// Shout toggle
+	if (is_in_toggle_area(valueX, lineY, mouse_x, mouse_y)) {
+		if (ChatManager::get().is_shout_enabled()) {
+			ChatManager::get().set_shout_enabled(false);
+			add_event_list(BCHECK_LOCAL_CHAT_COMMAND9, 10);
+		}
+		else {
+			ChatManager::get().set_shout_enabled(true);
+			add_event_list(BCHECK_LOCAL_CHAT_COMMAND8, 10);
+		}
+		play_sound_effect('E', 14, 5);
+		return true;
+	}
+
+	lineY += 20;
+
+	// Running Mode toggle
+	if (is_in_toggle_area(valueX, lineY, mouse_x, mouse_y)) {
+		bool enabled = config_manager::get().is_running_mode_enabled();
+		config_manager::get().set_running_mode_enabled(!enabled);
+		play_sound_effect('E', 14, 5);
+		return true;
+	}
+
+	lineY += 20;
+
+	// Capture Mouse toggle
+	if (is_in_toggle_area(valueX, lineY, mouse_x, mouse_y)) {
+		bool enabled = config_manager::get().is_mouse_capture_enabled();
+		config_manager::get().set_mouse_capture_enabled(!enabled);
+		hb::shared::render::Window::get()->set_mouse_capture_enabled(!enabled);
+		play_sound_effect('E', 14, 5);
+		return true;
+	}
+
+	lineY += 20;
+
+	// Guide Map toggle
+	if (is_in_toggle_area(valueX, lineY, mouse_x, mouse_y)) {
+		if (m_game->m_dialog_box_manager.is_enabled(DialogBoxId::GuideMap))
+			disable_dialog_box(DialogBoxId::GuideMap);
+		else
+			enable_dialog_box(DialogBoxId::GuideMap, 0, 0, 0);
+		play_sound_effect('E', 14, 5);
+		return true;
 	}
 
 	return false;

@@ -1,140 +1,156 @@
 // Npc.h: interface for the CNpc class.
-//
-//////////////////////////////////////////////////////////////////////
 
 #pragma once
 
-// MODERNIZED: Prevent old winsock.h from loading (must be before windows.h)
-#define _WINSOCKAPI_
 
-#include <windows.h>
 #include "CommonTypes.h"
 #include "Magic.h"
+#include "GameGeometry.h"
+#include "Appearance.h"
+#include "PlayerStatusData.h"
 
-#define DEF_MAXWAYPOINTS			10
+namespace hb::server::npc
+{
 
-#define DEF_MOVETYPE_STOP			0		// ������ �ִ´�. �ʱ�ȭ�� NPC�� �⺻ �ൿ.
-#define DEF_MOVETYPE_SEQWAYPOINT	1		// �̵���θ�? ���������� �̵�. �� ������ �̵���ο���? �ش� �ൿ�� ����Ѵ�?.
-#define DEF_MOVETYPE_RANDOMWAYPOINT	2		// �̵���θ�? �����ϰ� �����Ͽ� �����δ�.
-#define DEF_MOVETYPE_FOLLOW			3		// Ư�� �����? ���� �����δ�. 
-#define DEF_MOVETYPE_RANDOMAREA		4		// ������ ���� �ȿ��� ������ ������ �����δ�.
-#define DEF_MOVETYPE_RANDOM			5		// �� ���� �ƹ��������γ� �����δ�.
-#define DEF_MOVETYPE_GUARD			6		// ó�� ������ �����? ��ġ�� ������ ������ ��ǥ�� �߽߰ô� �߰��Ѵ�.
+constexpr int MaxWaypoints = 10;
 
-#define DEF_BEHAVIOR_STOP			0
-#define DEF_BEHAVIOR_MOVE			1
-#define DEF_BEHAVIOR_ATTACK			2
-#define DEF_BEHAVIOR_FLEE			3
-#define DEF_BEHAVIOR_DEAD			4
+namespace MoveType
+{
+	enum : int
+	{
+		stop            = 0,
+		SeqWaypoint     = 1,
+		RandomWaypoint  = 2,
+		Follow          = 3,
+		RandomArea      = 4,
+		Random          = 5,
+		Guard           = 6,
+	};
+}
+
+namespace Behavior
+{
+	enum : int
+	{
+		stop    = 0,
+		Move    = 1,
+		Attack  = 2,
+		Flee    = 3,
+		Dead    = 4,
+	};
+}
+
+} // namespace hb::server::npc
 
 class CNpc  
 {
 public:
-	CNpc(char * pName5);
+	CNpc(const char * name5);
 	virtual ~CNpc();
 
 	// Auras
-	char m_pMagicConfigList[100];
+	char m_magic_config_list[100];
 
-	char  m_cNpcName[21]; // NPC�� �̸�. ���? �̸����� ��
+	char  m_npc_name[hb::shared::limits::NpcNameLen];
 
-	char  m_cName[6];	// �� �̸��� ���α׷��� ���� �ĺ�����
-	char  m_cMapIndex;
-	short m_sX, m_sY;
-	short m_sPrevX, m_sPrevY; // OPTIMIZATION FIX #3: Track previous position for delta detection
-	short m_dX, m_dY;
-	short m_vX, m_vY;
-	int   m_tmp_iError;
-	RECT  m_rcRandomArea;	// MOVETYPE_RANDOMAREA�϶� ������ǥ
+	char  m_name[6];
+	char  m_map_index;
+	short m_x, m_y;
+	short m_prev_x, m_prev_y; // OPTIMIZATION FIX #3: Track previous position for delta detection
+	short m_dx, m_dy;
+	short m_vx, m_vy;
+	int   m_tmp_error;
+	hb::shared::geometry::GameRectangle  m_random_area;	// MOVETYPE_RANDOMAREA
 
-	char  m_cDir;
-	char  m_cAction;
-	char  m_cTurn;
+	char  m_dir;
+	char  m_action;
+	char  m_turn;
 
-	short m_sType;
-	short m_sOriginalType;
-	short m_sAppr2;
-	int	  m_iStatus;
+	short m_type;
+	short m_original_type;
+	short m_npc_config_id;
+	hb::shared::entity::EntityAppearance m_appearance;
+	hb::shared::entity::EntityStatus m_status;
 
-	uint32_t m_dwTime;
-	uint32_t m_dwActionTime;
-	uint32_t m_dwHPupTime, m_dwMPupTime;
-	uint32_t m_dwDeadTime, m_dwRegenTime;
+	uint32_t m_time;
+	uint32_t m_action_time;
+	uint32_t m_hp_up_time, m_mp_up_time;
+	uint32_t m_dead_time, m_regen_time;
 
-	int  m_iHP, m_iMaxHP;						// Hit Point 
-	uint32_t  m_iExp;                    // �׿��� ���? ���? ����ġ. ExpDice�� ���� �����ȴ�.
+	int  m_hp, m_max_hp;						// Hit Point 
+	uint32_t  m_exp;                    // ? ? . ExpDice  .
 
-	int  m_iHitDice;				// ������ Hit Dice. �̰Ϳ� ���� HP�� �����ȴ�.
-	int  m_iDefenseRatio;			// Defense Ratio
-	int  m_iHitRatio;				// HitRatio
-	int  m_iMagicHitRatio;			// v1.4 ���� ���� Ratio
-	int  m_iMinBravery;			    // �ּ� �밨ġ 
-	uint32_t  m_iExpDiceMin;
-	uint32_t	 m_iExpDiceMax;
-	uint32_t  m_iGoldDiceMin;
-	uint32_t  m_iGoldDiceMax;
-	int   m_iDropTableId;
+	int  m_hit_dice;				// Hit Dice.   HP .
+	int  m_defense_ratio;			// Defense Ratio
+	int  m_hit_ratio;				// HitRatio
+	int  m_magic_hit_ratio;
+	int  m_min_bravery;
+	uint32_t  m_exp_dice_min;
+	uint32_t	 m_exp_dice_max;
+	uint32_t  m_gold_dice_min;
+	uint32_t  m_gold_dice_max;
+	int   m_drop_table_id;
 
-	char m_cSide;					// NPC�� ���� �� 
-	char m_cActionLimit;            // �� ���� 1�̸� Move�� �����ϸ� ������ �ʴ´�.  �� ���� 2�� ���������� ������ ������ �ʴ´�. 3�̸� Dummy��. �´� ����, 
-	                                // 4�� ������ ���Ǿ�, 5�� ���๰   
+	char m_side;
+	char m_action_limit;            // 1 Move   .    2    . 3 Dummy.  ,
 
-	char m_cSize;					// 0: Small-Medium 1: Large
-	char m_cAttackDiceThrow;		// ����ġ �ֻ��� ������ ȸ�� 
-	char m_cAttackDiceRange;		// ����ġ �ֻ��� ���� 
-	char m_cAttackBonus;			// ���� ���ʽ� 
-	char m_cBravery;				// NPC�� �밨�� 
-	char m_cResistMagic;			// ���� ���� 
-	char m_cMagicLevel;				// ���� ���� 
-	char m_cDayOfWeekLimit;		    // ������ ��¥ ���� 
-	char m_cChatMsgPresence;		// �����? Chat Msg �������� 
-	int  m_iMana;                   // �ִ밪�� MagicLevel*30
-	int  m_iMaxMana;				// v1.4 ���� �߰��� �͵�.
+	char m_size;					// 0: Small-Medium 1: Large
+	char m_attack_dice_throw;
+	char m_attack_dice_range;
+	char m_attack_bonus;
+	char m_bravery;
+	char m_resist_magic;
+	char m_magic_level;
+	char m_day_of_week_limit;
+	char m_chat_msg_presence;		// ? Chat Msg
+	int  m_mana;                   // MagicLevel*30
+	int  m_max_mana;
 																    
-	char  m_cMoveType;				// NPC�� �̵����? ���? 
-	char  m_cBehavior;				// NPC�� �ൿ 
-	short m_sBehaviorTurnCount;		// �ൿ ī��Ʈ 
-	char  m_cTargetSearchRange;		// NPC���ݸ�ǥ �˻� ���� 
+	char  m_move_type;
+	char  m_behavior;
+	short m_behavior_turn_count;
+	char  m_target_search_range;
 
-	int   m_iFollowOwnerIndex;		// NPC�� ���󰡰� �ִ� ��ü �ε��� 
-	char  m_cFollowOwnerType;		// ���󰡴� ��ü�� ���� (NPC or Player)
-	bool  m_bIsSummoned;            // ��ȯ�� NPC���? HP�� ������ �ʴ´�. 
-	uint32_t m_dwSummonedTime;			// ��ȯ���� �����ð� 
+	int   m_follow_owner_index;
+	char  m_follow_owner_type;		// (NPC or Player)
+	bool  m_is_summoned;            // NPC? HP  .
+	bool  m_bypass_mob_limit;        // GM-spawned: don't count toward map entity limit
+	uint32_t m_summoned_time;
 
-	int   m_iTargetIndex;			// NPC�� ���ݸ�ǥ �ε���
-	char  m_cTargetType;			// ���ݸ�ǥ�� ���� (NPC or Player)
-	char  m_cCurWaypoint;			// ���� �̵���ġ 
-	char  m_cTotalWaypoint;			// �� �̵���ġ ���� 
+	int   m_target_index;
+	char  m_target_type;			// (NPC or Player)
+	char  m_cur_waypoint;
+	char  m_total_waypoint;
 
-	int   m_iSpotMobIndex;			// spot-mob-generator���� ��������ٸ�? �ε����� ���� 
-	int   m_iWayPointIndex[DEF_MAXWAYPOINTS+1];
-	char  m_cMagicEffectStatus[DEF_MAXMAGICEFFECTS];
+	int   m_spot_mob_index;			// spot-mob-generator ?
+	int   m_waypoint_index[hb::server::npc::MaxWaypoints+1];
+	char  m_magic_effect_status[hb::server::config::MaxMagicEffects];
 
-	bool  m_bIsPermAttackMode;		// �� �÷��װ� Ȱ��ȭ �Ǿ� ������ ���ݵ��� ��ǥ�� �ٲ��� �ʴ´�.
-   	uint32_t   m_iNoDieRemainExp;		// ���� �ʰ� ���߽ÿ� ���� �� �ִ� ����ġ 
-	int   m_iAttackStrategy; 		// ���� ���� �ΰ����� Ÿ��  
-	int   m_iAILevel;				// ���� ���� 
+	bool  m_is_perm_attack_mode;
+   	uint32_t   m_no_die_remain_exp;
+	int   m_attack_strategy;
+	int   m_ai_level;
 
-	int   m_iAttackRange;			// ���� ���� 1�̻��̸� ���Ÿ� ������ �����ϴٴ� �� 
+	int   m_attack_range;
 	/*
 		AI-Level 
 			1: ���� �ൿ 
 			2: �������� ���� ���� ��ǥ���� ���� 
 			3: ���� ��ȣ���� ��ǥ�� ���� ���ݴ�󿡼�? ���� 
 	*/
-	int   m_iAttackCount;			// ���� ���� ���� Ƚ�� ī��Ʈ 
-	bool  m_bIsKilled;
-	bool  m_bIsUnsummoned;
+	int   m_attack_count;
+	bool  m_is_killed;
+	bool  m_is_unsummoned;
 
-	int   m_iLastDamage;			// ������ �ױ� ���� ���� �����?. �������? �ʹ� ũ�� ���ݼ� ���? �������� �ʴ´�.
-	int   m_iSummonControlMode;		// ��ȯ�� ���� ���?: 0�̸� Free, 1 Hold 2 Tgt 
-	char  m_cAttribute;				// ���� �Ӽ�:  �� 1 �ϴ� 2 �� 3 �� 4  
-	int   m_iAbsDamage;				// �����? ���� �����? ������, ������ ���� �����? ������ 
+	int   m_last_damage;
+	int   m_summon_control_mode;		// ?: 0 Free, 1 Hold 2 Tgt
+	char  m_attribute;				// :   1  2  3  4
+	int   m_abs_damage;
 
-	int   m_iItemRatio;				// Ư�� ������ Ȯ�� 
-	int   m_iAssignedItem;			// �Ҵ��? ������ 
+	int   m_item_ratio;
+	int   m_assigned_item;
 
-	char  m_cSpecialAbility;		// Ư�� �ɷ� 0: ����  
+	char  m_special_ability;
 
 									/*
 case 0: break;
@@ -150,19 +166,18 @@ case 8:  "Hi-Explosive"
  ���� �� ���� 60���� ũ�� NPC�� ȿ���ʹ� �����ϹǷ� �����Ѵ�.
 									*/
 
-	int	  m_iBuildCount;			// ���� Ÿ���� �������� ���? �ϼ��� ������ ���� ����� Ƚ���� �ǹ�. �ʱⰪ�� m_iMinBravery�̴�.
-									// �� ���� 0�̾�߸�? ������ �Ѵ�.
-	int   m_iManaStock;				// �׷��� ���� ���׷������� ���? ���������� 
-	bool  m_bIsMaster;				// ������ �������� ���� 
-	int   m_iGuildGUID;				// �����? ����Ʈ�� ���? ��ȯ���� ���? ���̵� �Էµȴ�.
+	int	  m_build_count;			// ?      .  m_min_bravery.
+	int   m_mana_stock;
+	bool  m_is_master;
+	int   m_guild_guid;
 	
-	char m_cCropType;
-	char m_cCropSkill;
+	char m_crop_type;
+	char m_crop_skill;
 
-	int   m_iV1;
-	char m_cArea;
+	int   m_v1;
+	char m_area;
 
-	int m_iNpcItemType;
-	int m_iNpcItemMax;
+	int m_npc_item_type;
+	int m_npc_item_max;
 
 };

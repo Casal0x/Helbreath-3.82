@@ -4,430 +4,195 @@
 #include "GlobalDef.h"
 #include "SpriteID.h"
 #include "NetMessages.h"
+#include <format>
+#include <string>
 
-DialogBox_ChangeStatsMajestic::DialogBox_ChangeStatsMajestic(CGame* pGame)
-	: IDialogBox(DialogBoxId::ChangeStatsMajestic, pGame)
+using namespace hb::shared::net;
+using namespace hb::client::sprite_id;
+static constexpr int POINTS_PER_MAJESTIC = 3;
+static constexpr int MIN_STAT_VALUE = 10;
+
+DialogBox_ChangeStatsMajestic::DialogBox_ChangeStatsMajestic(CGame* game)
+	: IDialogBox(DialogBoxId::ChangeStatsMajestic, game)
 {
+	set_default_rect(0 , 0 , 258, 339);
 }
 
-void DialogBox_ChangeStatsMajestic::OnDraw(short msX, short msY, short msZ, char cLB)
+static int GetPendingMajesticCost(CGame* game)
 {
-	short sX, sY, szX;
-	uint32_t dwTime = m_pGame->m_dwCurTime;
-	char cTxt[120];
-	int iStats;
-	sX = Info().sX;
-	sY = Info().sY;
-	szX = Info().sSizeX;
-
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX, sY, 0);
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_TEXT, sX, sY, 2);
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME4, sX + 16, sY + 100, 4);
-
-	PutAlignedString(sX, sX + szX, sY + 50, DRAW_DIALOGBOX_LEVELUP_SETTING14);
-	PutAlignedString(sX, sX + szX, sY + 65, DRAW_DIALOGBOX_LEVELUP_SETTING15);
-
-	// Majestic Points Left
-	PutString(sX + 20, sY + 85, DRAW_DIALOGBOX_LEVELUP_SETTING16, RGB(0, 0, 0));
-	wsprintf(cTxt, "%d", m_pGame->m_iGizonItemUpgradeLeft);
-	if (m_pGame->m_iGizonItemUpgradeLeft > 0)
-	{
-		PutString(sX + 73, sY + 102, cTxt, RGB(0, 255, 0));
-	}
-	else
-	{
-		PutString(sX + 73, sY + 102, cTxt, RGB(0, 0, 0));
-	}
-
-	// Strength
-	PutString(sX + 24, sY + 125, DRAW_DIALOGBOX_LEVELUP_SETTING4, RGB(5, 5, 5));
-	wsprintf(cTxt, "%d", m_pGame->m_iStr);
-	PutString(sX + 109, sY + 125, cTxt, RGB(25, 35, 25));
-	iStats = m_pGame->m_iStr + m_pGame->m_cLU_Str;
-	wsprintf(cTxt, "%d", iStats);
-	if (iStats < m_pGame->m_iStr)
-	{
-		PutString(sX + 162, sY + 125, cTxt, RGB(255, 0, 0));
-	}
-	else
-	{
-		PutString(sX + 162, sY + 125, cTxt, RGB(25, 35, 25));
-	}
-	if ((msX >= sX + 210) && (msX <= sX + 220) && (msY >= sY + 127) && (msY <= sY + 133))
-		m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_GAME4]->Draw(sX + 210, sY + 127, 6);
-
-	// Vitality
-	PutString(sX + 24, sY + 144, DRAW_DIALOGBOX_LEVELUP_SETTING5, RGB(5, 5, 5));
-	wsprintf(cTxt, "%d", m_pGame->m_iVit);
-	PutString(sX + 109, sY + 144, cTxt, RGB(25, 35, 25));
-	iStats = m_pGame->m_iVit + m_pGame->m_cLU_Vit;
-	wsprintf(cTxt, "%d", iStats);
-	if (iStats < m_pGame->m_iVit)
-	{
-		PutString(sX + 162, sY + 144, cTxt, RGB(255, 0, 0));
-	}
-	else
-	{
-		PutString(sX + 162, sY + 144, cTxt, RGB(25, 35, 25));
-	}
-	if ((msX >= sX + 210) && (msX <= sX + 220) && (msY >= sY + 146) && (msY <= sY + 152))
-		m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_GAME4]->Draw(sX + 210, sY + 146, 6);
-
-	// Dexterity
-	PutString(sX + 24, sY + 163, DRAW_DIALOGBOX_LEVELUP_SETTING6, RGB(5, 5, 5));
-	wsprintf(cTxt, "%d", m_pGame->m_iDex);
-	PutString(sX + 109, sY + 163, cTxt, RGB(25, 35, 25));
-	iStats = m_pGame->m_iDex + m_pGame->m_cLU_Dex;
-	wsprintf(cTxt, "%d", iStats);
-	if (iStats < m_pGame->m_iDex)
-	{
-		PutString(sX + 162, sY + 163, cTxt, RGB(255, 0, 0));
-	}
-	else
-	{
-		PutString(sX + 162, sY + 163, cTxt, RGB(25, 35, 25));
-	}
-	if ((msX >= sX + 210) && (msX <= sX + 220) && (msY >= sY + 165) && (msY <= sY + 171))
-		m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_GAME4]->Draw(sX + 210, sY + 165, 6);
-
-	// Intelligence
-	PutString(sX + 24, sY + 182, DRAW_DIALOGBOX_LEVELUP_SETTING7, RGB(5, 5, 5));
-	wsprintf(cTxt, "%d", m_pGame->m_iInt);
-	PutString(sX + 109, sY + 182, cTxt, RGB(25, 35, 25));
-	iStats = m_pGame->m_iInt + m_pGame->m_cLU_Int;
-	wsprintf(cTxt, "%d", iStats);
-	if (iStats < m_pGame->m_iInt)
-	{
-		PutString(sX + 162, sY + 182, cTxt, RGB(255, 0, 0));
-	}
-	else
-	{
-		PutString(sX + 162, sY + 182, cTxt, RGB(25, 35, 25));
-	}
-	if ((msX >= sX + 210) && (msX <= sX + 220) && (msY >= sY + 184) && (msY <= sY + 190))
-		m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_GAME4]->Draw(sX + 210, sY + 184, 6);
-
-	// Magic
-	PutString(sX + 24, sY + 201, DRAW_DIALOGBOX_LEVELUP_SETTING8, RGB(5, 5, 5));
-	wsprintf(cTxt, "%d", m_pGame->m_iMag);
-	PutString(sX + 109, sY + 201, cTxt, RGB(25, 35, 25));
-	iStats = m_pGame->m_iMag + m_pGame->m_cLU_Mag;
-	wsprintf(cTxt, "%d", iStats);
-	if (iStats < m_pGame->m_iMag)
-	{
-		PutString(sX + 162, sY + 201, cTxt, RGB(255, 0, 0));
-	}
-	else
-	{
-		PutString(sX + 162, sY + 201, cTxt, RGB(25, 35, 25));
-	}
-	if ((msX >= sX + 210) && (msX <= sX + 220) && (msY >= sY + 203) && (msY <= sY + 209))
-		m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_GAME4]->Draw(sX + 210, sY + 203, 6);
-
-	// Charisma
-	PutString(sX + 24, sY + 220, DRAW_DIALOGBOX_LEVELUP_SETTING9, RGB(5, 5, 5));
-	wsprintf(cTxt, "%d", m_pGame->m_iCharisma);
-	PutString(sX + 109, sY + 220, cTxt, RGB(25, 35, 25));
-	iStats = m_pGame->m_iCharisma + m_pGame->m_cLU_Char;
-	wsprintf(cTxt, "%d", iStats);
-	if (iStats < m_pGame->m_iCharisma)
-	{
-		PutString(sX + 162, sY + 220, cTxt, RGB(255, 0, 0));
-	}
-	else
-	{
-		PutString(sX + 162, sY + 220, cTxt, RGB(25, 35, 25));
-	}
-	if ((msX >= sX + 210) && (msX <= sX + 220) && (msY >= sY + 222) && (msY <= sY + 228))
-		m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_GAME4]->Draw(sX + 210, sY + 222, 6);
-
-	if ((msX >= sX + DEF_LBTNPOSX) && (msX <= sX + DEF_LBTNPOSX + DEF_BTNSZX) && (msY > sY + DEF_BTNPOSY) && (msY < sY + DEF_BTNPOSY + DEF_BTNSZY))
-		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_LBTNPOSX, sY + DEF_BTNPOSY, 17);
-	else DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_LBTNPOSX, sY + DEF_BTNPOSY, 16);
-
-	if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY > sY + DEF_BTNPOSY) && (msY < sY + DEF_BTNPOSY + DEF_BTNSZY))
-		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 1);
-	else DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 0);
+	int total_reduction = -(game->m_player->m_lu_str + game->m_player->m_lu_vit +
+		game->m_player->m_lu_dex + game->m_player->m_lu_int +
+		game->m_player->m_lu_mag + game->m_player->m_lu_char);
+	return total_reduction / POINTS_PER_MAJESTIC;
 }
 
-bool DialogBox_ChangeStatsMajestic::OnClick(short msX, short msY)
+void DialogBox_ChangeStatsMajestic::draw_stat_row(short sX, short sY, int y_offset,
+	const char* label, int current_stat, int16_t pending_change,
+	short mouse_x, short mouse_y, int arrow_y_offset, bool can_undo, bool can_reduce)
 {
-	short sX, sY;
+	std::string txt;
 
-	sX = Info().sX;
-	sY = Info().sY;
+	put_string(sX + 24, sY + y_offset, (char*)label, GameColors::UIBlack);
 
-	if ((m_pGame->cStateChange1 != 0) || (m_pGame->cStateChange2 != 0) || (m_pGame->cStateChange3 != 0)) {
-		// Strength UP
-		if ((msX >= sX + 195) && (msX <= sX + 205) && (msY >= sY + 127) && (msY <= sY + 133) && (m_pGame->m_cLU_Str < 0))
-		{
-			if (m_pGame->cStateChange1 == DEF_STR)
-			{
-				m_pGame->cStateChange1 = 0;
-				m_pGame->m_cLU_Str += 1;
-				m_pGame->m_iLU_Point -= 1;
-			}
-			else if (m_pGame->cStateChange2 == DEF_STR)
-			{
-				m_pGame->cStateChange2 = 0;
-				m_pGame->m_cLU_Str += 1;
-				m_pGame->m_iLU_Point -= 1;
-			}
-			else if (m_pGame->cStateChange3 == DEF_STR)
-			{
-				m_pGame->cStateChange3 = 0;
-				m_pGame->m_cLU_Str += 1;
-				m_pGame->m_iLU_Point -= 1;
-			}
-			PlaySoundEffect('E', 14, 5);
-		}
+	txt = std::format("{}", current_stat);
+	put_string(sX + 109, sY + y_offset, txt.c_str(), GameColors::UILabel);
 
-		// Vitality UP
-		if ((msX >= sX + 195) && (msX <= sX + 205) && (msY >= sY + 146) && (msY <= sY + 152) && (m_pGame->m_cLU_Vit < 0)) {
-			if (m_pGame->cStateChange1 == DEF_VIT)
-			{
-				m_pGame->cStateChange1 = 0;
-				m_pGame->m_cLU_Vit += 1;
-				m_pGame->m_iLU_Point -= 1;
-			}
-			else if (m_pGame->cStateChange2 == DEF_VIT)
-			{
-				m_pGame->cStateChange2 = 0;
-				m_pGame->m_cLU_Vit += 1;
-				m_pGame->m_iLU_Point -= 1;
-			}
-			else if (m_pGame->cStateChange3 == DEF_VIT)
-			{
-				m_pGame->cStateChange3 = 0;
-				m_pGame->m_cLU_Vit += 1;
-				m_pGame->m_iLU_Point -= 1;
-			}
-			PlaySoundEffect('E', 14, 5);
-		}
-
-		// Dexterity UP
-		if ((msX >= sX + 195) && (msX <= sX + 205) && (msY >= sY + 165) && (msY <= sY + 171) && (m_pGame->m_cLU_Dex < 0)) {
-			if (m_pGame->cStateChange1 == DEF_DEX) {
-				m_pGame->cStateChange1 = 0;
-				m_pGame->m_cLU_Dex += 1;
-				m_pGame->m_iLU_Point -= 1;
-			}
-			else if (m_pGame->cStateChange2 == DEF_DEX) {
-				m_pGame->cStateChange2 = 0;
-				m_pGame->m_cLU_Dex += 1;
-				m_pGame->m_iLU_Point -= 1;
-			}
-			else if (m_pGame->cStateChange3 == DEF_DEX) {
-				m_pGame->cStateChange3 = 0;
-				m_pGame->m_cLU_Dex += 1;
-				m_pGame->m_iLU_Point -= 1;
-			}
-			PlaySoundEffect('E', 14, 5);
-		}
-
-		// Intelligence UP
-		if ((msX >= sX + 195) && (msX <= sX + 205) && (msY >= sY + 184) && (msY <= sY + 190) && (m_pGame->m_cLU_Int < 0)) {
-			if (m_pGame->cStateChange1 == DEF_INT) {
-				m_pGame->cStateChange1 = 0;
-				m_pGame->m_cLU_Int += 1;
-				m_pGame->m_iLU_Point -= 1;
-			}
-			else if (m_pGame->cStateChange2 == DEF_INT) {
-				m_pGame->cStateChange2 = 0;
-				m_pGame->m_cLU_Int += 1;
-				m_pGame->m_iLU_Point -= 1;
-			}
-			else if (m_pGame->cStateChange3 == DEF_INT) {
-				m_pGame->cStateChange3 = 0;
-				m_pGame->m_cLU_Int += 1;
-				m_pGame->m_iLU_Point -= 1;
-			}
-			PlaySoundEffect('E', 14, 5);
-		}
-
-		// Magic UP
-		if ((msX >= sX + 195) && (msX <= sX + 205) && (msY >= sY + 203) && (msY <= sY + 209) && (m_pGame->m_cLU_Mag < 0)) {
-			if (m_pGame->cStateChange1 == DEF_MAG) {
-				m_pGame->cStateChange1 = 0;
-				m_pGame->m_cLU_Mag += 1;
-				m_pGame->m_iLU_Point -= 1;
-			}
-			else if (m_pGame->cStateChange2 == DEF_MAG) {
-				m_pGame->cStateChange2 = 0;
-				m_pGame->m_cLU_Mag += 1;
-				m_pGame->m_iLU_Point -= 1;
-			}
-			else if (m_pGame->cStateChange3 == DEF_MAG) {
-				m_pGame->cStateChange3 = 0;
-				m_pGame->m_cLU_Mag += 1;
-				m_pGame->m_iLU_Point -= 1;
-			}
-			PlaySoundEffect('E', 14, 5);
-		}
-
-		// Charisma UP
-		if ((msX >= sX + 195) && (msX <= sX + 205) && (msY >= sY + 222) && (msY <= sY + 228) && (m_pGame->m_cLU_Char < 0)) {
-			if (m_pGame->cStateChange1 == DEF_CHR) {
-				m_pGame->cStateChange1 = 0;
-				m_pGame->m_cLU_Char += 1;
-				m_pGame->m_iLU_Point -= 1;
-			}
-			else if (m_pGame->cStateChange2 == DEF_CHR) {
-				m_pGame->cStateChange2 = 0;
-				m_pGame->m_cLU_Char += 1;
-				m_pGame->m_iLU_Point -= 1;
-			}
-			else if (m_pGame->cStateChange3 == DEF_CHR) {
-				m_pGame->cStateChange3 = 0;
-				m_pGame->m_cLU_Char += 1;
-				m_pGame->m_iLU_Point -= 1;
-			}
-			PlaySoundEffect('E', 14, 5);
-		}
-	}
-
-	if ((m_pGame->cStateChange1 == 0) || (m_pGame->cStateChange2 == 0) || (m_pGame->cStateChange3 == 0) && (m_pGame->m_iGizonItemUpgradeLeft > 0))
-	{
-		// Strength DOWN
-		if ((msX >= sX + 210) && (msX <= sX + 220) && (msY >= sY + 127) && (msY <= sY + 133) && (m_pGame->m_iStr > 10))
-		{
-			if (m_pGame->cStateChange1 == 0)
-			{
-				m_pGame->cStateChange1 = DEF_STR;
-				m_pGame->m_cLU_Str -= 1;
-				m_pGame->m_iLU_Point += 1;
-			}
-			else if (m_pGame->cStateChange2 == 0)
-			{
-				m_pGame->cStateChange2 = DEF_STR;
-				m_pGame->m_cLU_Str -= 1;
-				m_pGame->m_iLU_Point += 1;
-			}
-			else
-			{
-				m_pGame->cStateChange3 = DEF_STR;
-				m_pGame->m_cLU_Str -= 1;
-				m_pGame->m_iLU_Point += 1;
-			}
-			PlaySoundEffect('E', 14, 5);
-		}
-
-		// Vitality DOWN
-		if ((msX >= sX + 210) && (msX <= sX + 220) && (msY >= sY + 146) && (msY <= sY + 152) && (m_pGame->m_iVit > 10)) {
-			if (m_pGame->cStateChange1 == 0) {
-				m_pGame->cStateChange1 = DEF_VIT;
-				m_pGame->m_cLU_Vit -= 1;
-				m_pGame->m_iLU_Point += 1;
-			}
-			else if (m_pGame->cStateChange2 == 0) {
-				m_pGame->cStateChange2 = DEF_VIT;
-				m_pGame->m_cLU_Vit -= 1;
-				m_pGame->m_iLU_Point += 1;
-			}
-			else {
-				m_pGame->cStateChange3 = DEF_VIT;
-				m_pGame->m_cLU_Vit -= 1;
-				m_pGame->m_iLU_Point += 1;
-			}
-			PlaySoundEffect('E', 14, 5);
-		}
-
-		// Dexterity DOWN
-		if ((msX >= sX + 210) && (msX <= sX + 220) && (msY >= sY + 165) && (msY <= sY + 171) && (m_pGame->m_iDex > 10)) {
-			if (m_pGame->cStateChange1 == 0) {
-				m_pGame->cStateChange1 = DEF_DEX;
-				m_pGame->m_cLU_Dex -= 1;
-				m_pGame->m_iLU_Point += 1;
-			}
-			else if (m_pGame->cStateChange2 == 0) {
-				m_pGame->cStateChange2 = DEF_DEX;
-				m_pGame->m_cLU_Dex -= 1;
-				m_pGame->m_iLU_Point += 1;
-			}
-			else {
-				m_pGame->cStateChange3 = DEF_DEX;
-				m_pGame->m_cLU_Dex -= 1;
-				m_pGame->m_iLU_Point += 1;
-			}
-			PlaySoundEffect('E', 14, 5);
-		}
-
-		// Intelligence DOWN
-		if ((msX >= sX + 210) && (msX <= sX + 220) && (msY >= sY + 184) && (msY <= sY + 190) && (m_pGame->m_iInt > 10))
-		{
-			if (m_pGame->cStateChange1 == 0)
-			{
-				m_pGame->cStateChange1 = DEF_INT;
-				m_pGame->m_cLU_Int -= 1;
-				m_pGame->m_iLU_Point += 1;
-			}
-			else if (m_pGame->cStateChange2 == 0)
-			{
-				m_pGame->cStateChange2 = DEF_INT;
-				m_pGame->m_cLU_Int -= 1;
-				m_pGame->m_iLU_Point += 1;
-			}
-			else
-			{
-				m_pGame->cStateChange3 = DEF_INT;
-				m_pGame->m_cLU_Int -= 1;
-				m_pGame->m_iLU_Point += 1;
-			}
-			PlaySoundEffect('E', 14, 5);
-		}
-
-		// Magic DOWN
-		if ((msX >= sX + 210) && (msX <= sX + 220) && (msY >= sY + 203) && (msY <= sY + 209) && (m_pGame->m_iMag > 10)) {
-			if (m_pGame->cStateChange1 == 0) {
-				m_pGame->cStateChange1 = DEF_MAG;
-				m_pGame->m_cLU_Mag -= 1;
-				m_pGame->m_iLU_Point += 1;
-			}
-			else if (m_pGame->cStateChange2 == 0) {
-				m_pGame->cStateChange2 = DEF_MAG;
-				m_pGame->m_cLU_Mag -= 1;
-				m_pGame->m_iLU_Point += 1;
-			}
-			else {
-				m_pGame->cStateChange3 = DEF_MAG;
-				m_pGame->m_cLU_Mag -= 1;
-				m_pGame->m_iLU_Point += 1;
-			}
-			PlaySoundEffect('E', 14, 5);
-		}
-
-		// Charisma DOWN
-		if ((msX >= sX + 210) && (msX <= sX + 220) && (msY >= sY + 222) && (msY <= sY + 228) && (m_pGame->m_iCharisma > 10)) {
-			if (m_pGame->cStateChange1 == 0) {
-				m_pGame->cStateChange1 = DEF_CHR;
-				m_pGame->m_cLU_Char -= 1;
-				m_pGame->m_iLU_Point += 1;
-			}
-			else if (m_pGame->cStateChange2 == 0) {
-				m_pGame->cStateChange2 = DEF_CHR;
-				m_pGame->m_cLU_Char -= 1;
-				m_pGame->m_iLU_Point += 1;
-			}
-			else {
-				m_pGame->cStateChange3 = DEF_CHR;
-				m_pGame->m_cLU_Char -= 1;
-				m_pGame->m_iLU_Point += 1;
-			}
-			PlaySoundEffect('E', 14, 5);
-		}
-	}
+	int new_stat = current_stat + pending_change;
+	txt = std::format("{}", new_stat);
+	if (new_stat != current_stat)
+		put_string(sX + 162, sY + y_offset, txt.c_str(), GameColors::UIRed);
 	else
+		put_string(sX + 162, sY + y_offset, txt.c_str(), GameColors::UILabel);
+
+	// UP arrow highlight (undo reduction)
+	if ((mouse_x >= sX + 195) && (mouse_x <= sX + 205) && (mouse_y >= sY + arrow_y_offset) && (mouse_y <= sY + arrow_y_offset + 6) && can_undo)
+		m_game->m_sprite[InterfaceNdGame4]->draw(sX + 195, sY + arrow_y_offset, 5);
+
+	// DOWN arrow highlight (reduce stat)
+	if ((mouse_x >= sX + 210) && (mouse_x <= sX + 220) && (mouse_y >= sY + arrow_y_offset) && (mouse_y <= sY + arrow_y_offset + 6) && can_reduce)
+		m_game->m_sprite[InterfaceNdGame4]->draw(sX + 210, sY + arrow_y_offset, 6);
+}
+
+void DialogBox_ChangeStatsMajestic::on_draw(short mouse_x, short mouse_y, short z, char lb)
+{
+	short sX = Info().m_x;
+	short sY = Info().m_y;
+	short size_x = Info().m_size_x;
+	std::string txt;
+
+	draw_new_dialog_box(InterfaceNdGame2, sX, sY, 0);
+	draw_new_dialog_box(InterfaceNdText, sX, sY, 2);
+	draw_new_dialog_box(InterfaceNdGame4, sX + 16, sY + 100, 4);
+
+	put_aligned_string(sX, sX + size_x, sY + 50, DRAW_DIALOGBOX_LEVELUP_SETTING14);
+	put_aligned_string(sX, sX + size_x, sY + 65, DRAW_DIALOGBOX_LEVELUP_SETTING15);
+
+	// Majestic Points Remaining (total - pending cost)
+	int pending_cost = GetPendingMajesticCost(m_game);
+	int remaining = m_game->m_gizon_item_upgrade_left - pending_cost;
+
+	put_string(sX + 20, sY + 85, DRAW_DIALOGBOX_LEVELUP_SETTING16, GameColors::UIBlack);
+	txt = std::format("{}", remaining);
+	if (remaining > 0)
+		put_string(sX + 73, sY + 102, txt.c_str(), GameColors::UIGreen);
+	else
+		put_string(sX + 73, sY + 102, txt.c_str(), GameColors::UIBlack);
+
+	bool can_afford = (remaining > 0);
+
+	draw_stat_row(sX, sY, 125, DRAW_DIALOGBOX_LEVELUP_SETTING4,
+		m_game->m_player->m_str, m_game->m_player->m_lu_str, mouse_x, mouse_y, 127,
+		(m_game->m_player->m_lu_str < 0),
+		can_afford && (m_game->m_player->m_str + m_game->m_player->m_lu_str - POINTS_PER_MAJESTIC >= MIN_STAT_VALUE));
+
+	draw_stat_row(sX, sY, 144, DRAW_DIALOGBOX_LEVELUP_SETTING5,
+		m_game->m_player->m_vit, m_game->m_player->m_lu_vit, mouse_x, mouse_y, 146,
+		(m_game->m_player->m_lu_vit < 0),
+		can_afford && (m_game->m_player->m_vit + m_game->m_player->m_lu_vit - POINTS_PER_MAJESTIC >= MIN_STAT_VALUE));
+
+	draw_stat_row(sX, sY, 163, DRAW_DIALOGBOX_LEVELUP_SETTING6,
+		m_game->m_player->m_dex, m_game->m_player->m_lu_dex, mouse_x, mouse_y, 165,
+		(m_game->m_player->m_lu_dex < 0),
+		can_afford && (m_game->m_player->m_dex + m_game->m_player->m_lu_dex - POINTS_PER_MAJESTIC >= MIN_STAT_VALUE));
+
+	draw_stat_row(sX, sY, 182, DRAW_DIALOGBOX_LEVELUP_SETTING7,
+		m_game->m_player->m_int, m_game->m_player->m_lu_int, mouse_x, mouse_y, 184,
+		(m_game->m_player->m_lu_int < 0),
+		can_afford && (m_game->m_player->m_int + m_game->m_player->m_lu_int - POINTS_PER_MAJESTIC >= MIN_STAT_VALUE));
+
+	draw_stat_row(sX, sY, 201, DRAW_DIALOGBOX_LEVELUP_SETTING8,
+		m_game->m_player->m_mag, m_game->m_player->m_lu_mag, mouse_x, mouse_y, 203,
+		(m_game->m_player->m_lu_mag < 0),
+		can_afford && (m_game->m_player->m_mag + m_game->m_player->m_lu_mag - POINTS_PER_MAJESTIC >= MIN_STAT_VALUE));
+
+	draw_stat_row(sX, sY, 220, DRAW_DIALOGBOX_LEVELUP_SETTING9,
+		m_game->m_player->m_charisma, m_game->m_player->m_lu_char, mouse_x, mouse_y, 222,
+		(m_game->m_player->m_lu_char < 0),
+		can_afford && (m_game->m_player->m_charisma + m_game->m_player->m_lu_char - POINTS_PER_MAJESTIC >= MIN_STAT_VALUE));
+
+	// Cancel button (left)
+	if ((mouse_x >= sX + ui_layout::left_btn_x) && (mouse_x <= sX + ui_layout::left_btn_x + ui_layout::btn_size_x) && (mouse_y > sY + ui_layout::btn_y) && (mouse_y < sY + ui_layout::btn_y + ui_layout::btn_size_y))
+		draw_new_dialog_box(InterfaceNdButton, sX + ui_layout::left_btn_x, sY + ui_layout::btn_y, 17);
+	else draw_new_dialog_box(InterfaceNdButton, sX + ui_layout::left_btn_x, sY + ui_layout::btn_y, 16);
+
+	// Confirm button (right) — show as active only when there are pending changes
+	if (pending_cost > 0)
 	{
-		if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY > sY + DEF_BTNPOSY) && (msY < sY + DEF_BTNPOSY + DEF_BTNSZY))
+		if ((mouse_x >= sX + ui_layout::right_btn_x) && (mouse_x <= sX + ui_layout::right_btn_x + ui_layout::btn_size_x) && (mouse_y > sY + ui_layout::btn_y) && (mouse_y < sY + ui_layout::btn_y + ui_layout::btn_size_y))
+			draw_new_dialog_box(InterfaceNdButton, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 1);
+		else
+			draw_new_dialog_box(InterfaceNdButton, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 0);
+	}
+}
+
+bool DialogBox_ChangeStatsMajestic::on_click(short mouse_x, short mouse_y)
+{
+	short sX = Info().m_x;
+	short sY = Info().m_y;
+
+	int pending_cost = GetPendingMajesticCost(m_game);
+	int remaining = m_game->m_gizon_item_upgrade_left - pending_cost;
+
+	struct StatEntry {
+		int16_t* pending;
+		int current_stat;
+		int arrow_y;
+	};
+
+	StatEntry stats[] = {
+		{ &m_game->m_player->m_lu_str,  m_game->m_player->m_str,      127 },
+		{ &m_game->m_player->m_lu_vit,  m_game->m_player->m_vit,      146 },
+		{ &m_game->m_player->m_lu_dex,  m_game->m_player->m_dex,      165 },
+		{ &m_game->m_player->m_lu_int,  m_game->m_player->m_int,      184 },
+		{ &m_game->m_player->m_lu_mag,  m_game->m_player->m_mag,      203 },
+		{ &m_game->m_player->m_lu_char, m_game->m_player->m_charisma, 222 },
+	};
+
+	for (auto& s : stats)
+	{
+		// UP arrow — undo a pending reduction (restore 3 points)
+		if ((mouse_x >= sX + 195) && (mouse_x <= sX + 205) && (mouse_y >= sY + s.arrow_y) && (mouse_y <= sY + s.arrow_y + 6))
 		{
-			bSendCommand(MSGID_STATECHANGEPOINT, 0, 0, 0, 0, 0, 0);
-			DisableDialogBox(DialogBoxId::ChangeStatsMajestic);
-			PlaySoundEffect('E', 14, 5);
+			if (*s.pending < 0)
+			{
+				*s.pending += POINTS_PER_MAJESTIC;
+				play_sound_effect('E', 14, 5);
+			}
+		}
+
+		// DOWN arrow — reduce stat by 3 (costs 1 majestic point)
+		if ((mouse_x >= sX + 210) && (mouse_x <= sX + 220) && (mouse_y >= sY + s.arrow_y) && (mouse_y <= sY + s.arrow_y + 6))
+		{
+			if (remaining > 0 && (s.current_stat + *s.pending - POINTS_PER_MAJESTIC >= MIN_STAT_VALUE))
+			{
+				*s.pending -= POINTS_PER_MAJESTIC;
+				remaining--;
+				play_sound_effect('E', 14, 5);
+			}
 		}
 	}
-	if ((msX >= sX + DEF_LBTNPOSX) && (msX <= sX + DEF_LBTNPOSX + DEF_BTNSZX) && (msY > sY + DEF_BTNPOSY) && (msY < sY + DEF_BTNPOSY + DEF_BTNSZY)) {
-		DisableDialogBox(DialogBoxId::ChangeStatsMajestic);
-		PlaySoundEffect('E', 14, 5);
+
+	// Confirm button (right) — send all pending reductions to server
+	// Don't close the dialog here; the success/failure handler will close it after applying changes
+	if ((mouse_x >= sX + ui_layout::right_btn_x) && (mouse_x <= sX + ui_layout::right_btn_x + ui_layout::btn_size_x) &&
+		(mouse_y > sY + ui_layout::btn_y) && (mouse_y < sY + ui_layout::btn_y + ui_layout::btn_size_y))
+	{
+		if (pending_cost > 0)
+		{
+			send_command(MsgId::StateChangePoint, 0, 0, 0, 0, 0, 0);
+			play_sound_effect('E', 14, 5);
+		}
 	}
+
+	// Cancel button (left) — discard changes and close
+	if ((mouse_x >= sX + ui_layout::left_btn_x) && (mouse_x <= sX + ui_layout::left_btn_x + ui_layout::btn_size_x) &&
+		(mouse_y > sY + ui_layout::btn_y) && (mouse_y < sY + ui_layout::btn_y + ui_layout::btn_size_y))
+	{
+		m_game->m_player->m_lu_str = m_game->m_player->m_lu_vit = m_game->m_player->m_lu_dex = 0;
+		m_game->m_player->m_lu_int = m_game->m_player->m_lu_mag = m_game->m_player->m_lu_char = 0;
+		disable_dialog_box(DialogBoxId::ChangeStatsMajestic);
+		play_sound_effect('E', 14, 5);
+	}
+
 	return false;
 }

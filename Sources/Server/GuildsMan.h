@@ -4,10 +4,7 @@
 
 #pragma once
 
-// MODERNIZED: Prevent old winsock.h from loading (must be before windows.h)
-#define _WINSOCKAPI_
 
-#include <windows.h>
 #include "CommonTypes.h"
 
 class CGuildsMan
@@ -16,13 +13,13 @@ public:
 
 	inline CGuildsMan()
 	{
-		std::memset(m_cName, 0, sizeof(m_cName));
+		std::memset(m_name, 0, sizeof(m_name));
 	}
 
 	inline virtual ~CGuildsMan()
 	{
 	}
 
-	char m_cName[11];
-	int  m_iRank;
+	char m_name[hb::shared::limits::CharNameLen];
+	int  m_rank;
 };

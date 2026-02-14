@@ -1,184 +1,230 @@
 #include "AudioManager.h"
-#include <cstdio>
+#include "ResolutionConfig.h"
+#include <cstdlib>
+#include <format>
+#include <string>
 
-AudioManager& AudioManager::Get()
+audio_manager& audio_manager::get()
 {
-	static AudioManager instance;
+	static audio_manager instance;
 	return instance;
 }
 
-bool AudioManager::Initialize(HWND hWnd)
+bool audio_manager::initialize()
 {
-	(void)hWnd; // Not needed for miniaudio
 
-	if (m_bInitialized)
-		return m_bSoundAvailable;
+	if (m_initialized)
+		return m_sound_available;
 
-	// Initialize miniaudio engine
+	// initialize miniaudio engine
 	ma_engine_config engineConfig = ma_engine_config_init();
 
 	ma_result result = ma_engine_init(&engineConfig, &m_engine);
 	if (result != MA_SUCCESS)
 	{
-		m_bSoundAvailable = false;
-		m_bInitialized = true;
+		m_sound_available = false;
+		m_initialized = true;
 		return false;
 	}
 
-	// Initialize sound effect group for separate volume control
-	result = ma_sound_group_init(&m_engine, 0, NULL, &m_sfxGroup);
+	// initialize sound effect group for separate volume control
+	result = ma_sound_group_init(&m_engine, 0, NULL, &m_sfx_group);
 	if (result == MA_SUCCESS)
 	{
-		m_bSfxGroupInitialized = true;
-		// Apply any volume that was set before initialization
-		ma_sound_group_set_volume(&m_sfxGroup, VolumeToFloat(m_soundVolume));
+		m_sfx_group_initialized = true;
+		ma_sound_group_set_volume(&m_sfx_group, volume_to_float(m_sound_volume));
 	}
 
-	m_bSoundAvailable = true;
-	m_bInitialized = true;
+	// initialize ambient sound group
+	result = ma_sound_group_init(&m_engine, 0, NULL, &m_ambient_group);
+	if (result == MA_SUCCESS)
+	{
+		m_ambient_group_initialized = true;
+		ma_sound_group_set_volume(&m_ambient_group, volume_to_float(m_ambient_volume));
+	}
+
+	// initialize UI sound group
+	result = ma_sound_group_init(&m_engine, 0, NULL, &m_ui_group);
+	if (result == MA_SUCCESS)
+	{
+		m_ui_group_initialized = true;
+		ma_sound_group_set_volume(&m_ui_group, volume_to_float(m_ui_volume));
+	}
+
+	// Apply master volume to the engine
+	ma_engine_set_volume(&m_engine, volume_to_float(m_master_volume));
+
+	m_sound_available = true;
+	m_initialized = true;
 	return true;
 }
 
-void AudioManager::LoadSounds()
+bool audio_manager::decode_file(const char* filePath, decoded_sound& out)
 {
-	if (!m_bSoundAvailable)
+	// Decode to f32 at the engine's sample rate so playback doesn't need resampling
+	ma_uint32 engineSampleRate = ma_engine_get_sample_rate(&m_engine);
+	ma_decoder_config decoderConfig = ma_decoder_config_init(ma_format_f32, 0, engineSampleRate);
+	ma_decoder decoder;
+
+	ma_result result = ma_decoder_init_file(filePath, &decoderConfig, &decoder);
+	if (result != MA_SUCCESS)
+		return false;
+
+	ma_uint64 totalFrames = 0;
+	result = ma_decoder_get_length_in_pcm_frames(&decoder, &totalFrames);
+	if (result != MA_SUCCESS || totalFrames == 0)
+	{
+		ma_decoder_uninit(&decoder);
+		return false;
+	}
+
+	ma_uint32 bytesPerFrame = ma_get_bytes_per_frame(decoder.outputFormat, decoder.outputChannels);
+	size_t dataSize = (size_t)(totalFrames * bytesPerFrame);
+
+	void* data = std::malloc(dataSize);
+	if (data == nullptr)
+	{
+		ma_decoder_uninit(&decoder);
+		return false;
+	}
+
+	ma_uint64 framesRead = 0;
+	result = ma_decoder_read_pcm_frames(&decoder, data, totalFrames, &framesRead);
+
+	out.data = data;
+	out.frameCount = framesRead;
+	out.format = decoder.outputFormat;
+	out.channels = decoder.outputChannels;
+	out.sampleRate = decoder.outputSampleRate;
+	out.loaded = true;
+
+	ma_decoder_uninit(&decoder);
+	return true;
+}
+
+void audio_manager::free_decoded_sound(decoded_sound& sound)
+{
+	if (sound.data != nullptr)
+	{
+		std::free(sound.data);
+		sound.data = nullptr;
+	}
+	sound.frameCount = 0;
+	sound.loaded = false;
+}
+
+void audio_manager::load_sounds()
+{
+	if (!m_sound_available)
 		return;
 
-	char filename[64];
-	ma_uint32 flags = MA_SOUND_FLAG_DECODE | MA_SOUND_FLAG_NO_SPATIALIZATION;
-
-	// Load Character sounds (C1-C24)
+	// load Character sounds (C1-C24)
 	for (int i = 1; i < AUDIO_MAX_CHARACTER_SOUNDS; i++)
 	{
-		std::sprintf(filename, "sounds\\C%d.wav", i);
-		ma_result result = ma_sound_init_from_file(&m_engine, filename, flags, &m_sfxGroup, NULL, &m_characterSounds[i]);
-		m_characterSoundsLoaded[i] = (result == MA_SUCCESS);
+		auto filename = std::format("sounds/c{}.wav", i);
+		decode_file(filename.c_str(), m_character_sounds[i]);
 	}
 
-	// Load Monster/Magic sounds (M1-M156)
+	// load Monster/Magic sounds (M1-M156)
 	for (int i = 1; i < AUDIO_MAX_MONSTER_SOUNDS; i++)
 	{
-		std::sprintf(filename, "sounds\\M%d.wav", i);
-		ma_result result = ma_sound_init_from_file(&m_engine, filename, flags, &m_sfxGroup, NULL, &m_monsterSounds[i]);
-		m_monsterSoundsLoaded[i] = (result == MA_SUCCESS);
+		auto filename = std::format("sounds/m{}.wav", i);
+		decode_file(filename.c_str(), m_monster_sounds[i]);
 	}
 
-	// Load Effect sounds (E1-E53)
+	// load Effect sounds (E1-E53)
 	for (int i = 1; i < AUDIO_MAX_EFFECT_SOUNDS; i++)
 	{
-		std::sprintf(filename, "sounds\\E%d.wav", i);
-		ma_result result = ma_sound_init_from_file(&m_engine, filename, flags, &m_sfxGroup, NULL, &m_effectSounds[i]);
-		m_effectSoundsLoaded[i] = (result == MA_SUCCESS);
+		auto filename = std::format("sounds/e{}.wav", i);
+		decode_file(filename.c_str(), m_effect_sounds[i]);
 	}
 }
 
-void AudioManager::Shutdown()
+void audio_manager::shutdown()
 {
-	if (!m_bInitialized)
+	if (!m_initialized)
 		return;
 
-	// Stop and unload music
-	StopMusic();
+	// stop and unload music
+	stop_music();
 
 	// Unload all sounds
-	UnloadSounds();
+	unload_sounds();
 
-	// Uninitialize sound group
-	if (m_bSfxGroupInitialized)
+	// Uninitialize sound groups
+	if (m_sfx_group_initialized)
 	{
-		ma_sound_group_uninit(&m_sfxGroup);
-		m_bSfxGroupInitialized = false;
+		ma_sound_group_uninit(&m_sfx_group);
+		m_sfx_group_initialized = false;
+	}
+	if (m_ambient_group_initialized)
+	{
+		ma_sound_group_uninit(&m_ambient_group);
+		m_ambient_group_initialized = false;
+	}
+	if (m_ui_group_initialized)
+	{
+		ma_sound_group_uninit(&m_ui_group);
+		m_ui_group_initialized = false;
 	}
 
 	// Uninitialize engine
-	if (m_bSoundAvailable)
+	if (m_sound_available)
 	{
 		ma_engine_uninit(&m_engine);
 	}
 
-	m_bInitialized = false;
-	m_bSoundAvailable = false;
+	m_initialized = false;
+	m_sound_available = false;
 }
 
-void AudioManager::UnloadSounds()
+void audio_manager::unload_sounds()
 {
-	// Stop and uninit active sounds
-	for (auto& active : m_activeSounds)
+	// stop and uninit active sounds
+	for (auto& active : m_active_sounds)
 	{
 		if (active.inUse)
 		{
-			ma_sound_uninit(&active.sound);
+			if (active.soundInitialized)
+			{
+				ma_sound_stop(&active.sound);
+				ma_sound_uninit(&active.sound);
+				active.soundInitialized = false;
+			}
 			active.inUse = false;
 		}
 	}
 
-	// Uninit pre-loaded Character sounds
+	// Free decoded Character sounds
 	for (int i = 0; i < AUDIO_MAX_CHARACTER_SOUNDS; i++)
-	{
-		if (m_characterSoundsLoaded[i])
-		{
-			ma_sound_uninit(&m_characterSounds[i]);
-			m_characterSoundsLoaded[i] = false;
-		}
-	}
+		free_decoded_sound(m_character_sounds[i]);
 
-	// Uninit pre-loaded Monster sounds
+	// Free decoded Monster sounds
 	for (int i = 0; i < AUDIO_MAX_MONSTER_SOUNDS; i++)
-	{
-		if (m_monsterSoundsLoaded[i])
-		{
-			ma_sound_uninit(&m_monsterSounds[i]);
-			m_monsterSoundsLoaded[i] = false;
-		}
-	}
+		free_decoded_sound(m_monster_sounds[i]);
 
-	// Uninit pre-loaded Effect sounds
+	// Free decoded Effect sounds
 	for (int i = 0; i < AUDIO_MAX_EFFECT_SOUNDS; i++)
-	{
-		if (m_effectSoundsLoaded[i])
-		{
-			ma_sound_uninit(&m_effectSounds[i]);
-			m_effectSoundsLoaded[i] = false;
-		}
-	}
+		free_decoded_sound(m_effect_sounds[i]);
 
-	// Stop music
-	StopMusic();
+	// stop music
+	stop_music();
 }
 
-void AudioManager::CleanupFinishedSounds()
+void audio_manager::cleanup_finished_sounds()
 {
-	for (auto& active : m_activeSounds)
+	for (auto& active : m_active_sounds)
 	{
-		if (active.inUse && !ma_sound_is_playing(&active.sound))
+		if (active.inUse && active.soundInitialized && !ma_sound_is_playing(&active.sound))
 		{
 			ma_sound_uninit(&active.sound);
+			active.soundInitialized = false;
 			active.inUse = false;
 		}
 	}
 }
 
-std::string AudioManager::GetSoundPath(SoundType type, int index) const
-{
-	char filename[64];
-	switch (type)
-	{
-	case SoundType::Character:
-		std::sprintf(filename, "sounds\\C%d.wav", index);
-		break;
-	case SoundType::Monster:
-		std::sprintf(filename, "sounds\\M%d.wav", index);
-		break;
-	case SoundType::Effect:
-		std::sprintf(filename, "sounds\\E%d.wav", index);
-		break;
-	default:
-		return "";
-	}
-	return filename;
-}
-
-float AudioManager::VolumeToFloat(int volume) const
+float audio_manager::volume_to_float(int volume) const
 {
 	// Convert 0-100 to 0.0-1.0
 	if (volume <= 0) return 0.0f;
@@ -186,92 +232,160 @@ float AudioManager::VolumeToFloat(int volume) const
 	return volume / 100.0f;
 }
 
-ma_sound* AudioManager::GetPreloadedSound(SoundType type, int index)
+decoded_sound* audio_manager::get_decoded_sound(sound_type type, int index)
 {
 	switch (type)
 	{
-	case SoundType::Character:
-		if (index >= 0 && index < AUDIO_MAX_CHARACTER_SOUNDS && m_characterSoundsLoaded[index])
-			return &m_characterSounds[index];
+	case sound_type::Character:
+		if (index >= 0 && index < AUDIO_MAX_CHARACTER_SOUNDS && m_character_sounds[index].loaded)
+			return &m_character_sounds[index];
 		break;
-	case SoundType::Monster:
-		if (index >= 0 && index < AUDIO_MAX_MONSTER_SOUNDS && m_monsterSoundsLoaded[index])
-			return &m_monsterSounds[index];
+	case sound_type::Monster:
+		if (index >= 0 && index < AUDIO_MAX_MONSTER_SOUNDS && m_monster_sounds[index].loaded)
+			return &m_monster_sounds[index];
 		break;
-	case SoundType::Effect:
-		if (index >= 0 && index < AUDIO_MAX_EFFECT_SOUNDS && m_effectSoundsLoaded[index])
-			return &m_effectSounds[index];
+	case sound_type::Effect:
+		if (index >= 0 && index < AUDIO_MAX_EFFECT_SOUNDS && m_effect_sounds[index].loaded)
+			return &m_effect_sounds[index];
 		break;
 	}
 	return nullptr;
 }
 
-void AudioManager::PlaySound(SoundType type, int index, int distance, int pan)
+ma_sound_group* audio_manager::get_group_for_sound(sound_type type, int index)
 {
-	if (!m_bSoundAvailable || !m_bSoundEnabled)
+	if (type == sound_type::Effect)
+	{
+		// Ambient: E38 (rain loop)
+		if (index == 38)
+			return &m_ambient_group;
+
+		// UI: E14 (click), E23 (notification), E24 (transaction), E25 (war notification), E29 (item place), E53 (error)
+		if (index == 14 || index == 23 || index == 24 || index == 25 || index == 29 || index == 53)
+			return &m_ui_group;
+	}
+
+	// Everything else (all C sounds, all M sounds, remaining E sounds) → effects group
+	return &m_sfx_group;
+}
+
+bool audio_manager::is_category_enabled(sound_type type, int index) const
+{
+	if (type == sound_type::Effect)
+	{
+		if (index == 38)
+			return m_ambient_enabled;
+
+		if (index == 14 || index == 23 || index == 24 || index == 25 || index == 29 || index == 53)
+			return m_ui_enabled;
+	}
+
+	return m_sound_enabled;
+}
+
+void audio_manager::play_game_sound(sound_type type, int index, int distance, int pan)
+{
+	if (!m_sound_available || !is_category_enabled(type, index))
 		return;
 
 	// Clean up finished sounds first
-	CleanupFinishedSounds();
+	cleanup_finished_sounds();
 
-	// Get the pre-loaded sound template
-	ma_sound* pTemplate = GetPreloadedSound(type, index);
-	if (pTemplate == nullptr)
+	// get the decoded sound data
+	decoded_sound* decoded = get_decoded_sound(type, index);
+	if (decoded == nullptr)
 		return;
 
 	// Calculate volume based on distance
-	float volume = 1.0f;  // Base volume (group volume handles overall level)
+	float volume = 1.0f;
 
-	// Distance attenuation (reduce by 10% per distance unit, max 10 units)
+	// Distance attenuation — derive max audible range from resolution
+	// Center-to-edge is view_center_tile_x/Y; add a few tiles beyond screen edge
 	if (distance > 0)
 	{
-		if (distance > 10) distance = 10;
-		volume *= (1.0f - (distance * 0.1f));
+		const auto& res = hb::shared::render::ResolutionConfig::get();
+		int maxDist = std::max(res.view_center_tile_x(), res.view_center_tile_y()) + 4;
+		if (maxDist < 10) maxDist = 10;
+		if (distance >= maxDist)
+			return;
+		volume *= (1.0f - (static_cast<float>(distance) / maxDist));
 	}
 
 	// Don't play if too quiet
 	if (volume < 0.01f)
 		return;
 
+	// Limit concurrent instances of the same sound — stop oldest if at cap
+	int instanceCount = 0;
+	active_sound* oldest = nullptr;
+	for (auto& active : m_active_sounds)
+	{
+		if (active.inUse && active.soundInitialized && active.type == type && active.index == index
+			&& ma_sound_is_playing(&active.sound))
+		{
+			instanceCount++;
+			if (oldest == nullptr || active.startOrder < oldest->startOrder)
+				oldest = &active;
+		}
+	}
+	if (instanceCount >= MAX_INSTANCES_PER_SOUND && oldest != nullptr)
+	{
+		ma_sound_stop(&oldest->sound);
+		ma_sound_uninit(&oldest->sound);
+		oldest->soundInitialized = false;
+		oldest->inUse = false;
+	}
+
 	// Find a free slot in the active sound pool
-	ActiveSound* pSlot = nullptr;
-	for (auto& active : m_activeSounds)
+	active_sound* slot = nullptr;
+	for (auto& active : m_active_sounds)
 	{
 		if (!active.inUse)
 		{
-			pSlot = &active;
+			slot = &active;
 			break;
 		}
 	}
 
 	// No free slot - try to reclaim a finished one
-	if (pSlot == nullptr)
+	if (slot == nullptr)
 	{
-		for (auto& active : m_activeSounds)
+		for (auto& active : m_active_sounds)
 		{
-			if (!ma_sound_is_playing(&active.sound))
+			if (active.soundInitialized && !ma_sound_is_playing(&active.sound))
 			{
 				ma_sound_uninit(&active.sound);
+				active.soundInitialized = false;
 				active.inUse = false;
-				pSlot = &active;
+				slot = &active;
 				break;
 			}
 		}
 	}
 
 	// Still no slot available - skip this sound
-	if (pSlot == nullptr)
+	if (slot == nullptr)
 		return;
 
-	// Create a copy of the pre-loaded sound for playback
-	ma_result result = ma_sound_init_copy(&m_engine, pTemplate, 0, &m_sfxGroup, &pSlot->sound);
+	// Create an audio buffer ref pointing to our decoded data
+	ma_result result = ma_audio_buffer_ref_init(decoded->format, decoded->channels, decoded->data, decoded->frameCount, &slot->bufferRef);
 	if (result != MA_SUCCESS)
 		return;
 
-	pSlot->inUse = true;
+	// Create a sound from the audio buffer ref (bypasses resource manager entirely)
+	ma_sound_group* group = get_group_for_sound(type, index);
+	result = ma_sound_init_from_data_source(&m_engine, &slot->bufferRef, MA_SOUND_FLAG_NO_SPATIALIZATION, group, &slot->sound);
+	if (result != MA_SUCCESS)
+		return;
+
+	slot->inUse = true;
+	slot->soundInitialized = true;
+	slot->type = type;
+	slot->index = index;
+	slot->startOrder = ++m_sound_order;
 
 	// Set volume for this instance
-	ma_sound_set_volume(&pSlot->sound, volume);
+	ma_sound_set_volume(&slot->sound, volume);
 
 	// Apply panning (-100 to 100 maps to -1.0 to 1.0)
 	if (pan != 0)
@@ -279,192 +393,298 @@ void AudioManager::PlaySound(SoundType type, int index, int distance, int pan)
 		float panValue = pan / 100.0f;
 		if (panValue < -1.0f) panValue = -1.0f;
 		if (panValue > 1.0f) panValue = 1.0f;
-		ma_sound_set_pan(&pSlot->sound, panValue);
+		ma_sound_set_pan(&slot->sound, panValue);
 	}
 
-	// Start playback
-	ma_sound_start(&pSlot->sound);
+	// start playback
+	ma_sound_start(&slot->sound);
 }
 
-void AudioManager::PlaySoundLoop(SoundType type, int index)
+void audio_manager::play_sound_loop(sound_type type, int index)
 {
-	if (!m_bSoundAvailable || !m_bSoundEnabled)
+	if (!m_sound_available || !is_category_enabled(type, index))
 		return;
 
-	// Get the pre-loaded sound template
-	ma_sound* pTemplate = GetPreloadedSound(type, index);
-	if (pTemplate == nullptr)
+	// get the decoded sound data
+	decoded_sound* decoded = get_decoded_sound(type, index);
+	if (decoded == nullptr)
 		return;
 
 	// Clean up finished sounds first
-	CleanupFinishedSounds();
+	cleanup_finished_sounds();
 
 	// Find a free slot
-	ActiveSound* pSlot = nullptr;
-	for (auto& active : m_activeSounds)
+	active_sound* slot = nullptr;
+	for (auto& active : m_active_sounds)
 	{
 		if (!active.inUse)
 		{
-			pSlot = &active;
+			slot = &active;
 			break;
 		}
 	}
 
-	if (pSlot == nullptr)
+	if (slot == nullptr)
 		return;
 
-	// Create a copy for looping playback
-	ma_result result = ma_sound_init_copy(&m_engine, pTemplate, 0, &m_sfxGroup, &pSlot->sound);
+	// Create an audio buffer ref pointing to our decoded data
+	ma_result result = ma_audio_buffer_ref_init(decoded->format, decoded->channels, decoded->data, decoded->frameCount, &slot->bufferRef);
 	if (result != MA_SUCCESS)
 		return;
 
-	pSlot->inUse = true;
-	ma_sound_set_looping(&pSlot->sound, MA_TRUE);
-	ma_sound_start(&pSlot->sound);
+	// Create a sound from the audio buffer ref
+	ma_sound_group* group = get_group_for_sound(type, index);
+	result = ma_sound_init_from_data_source(&m_engine, &slot->bufferRef, MA_SOUND_FLAG_NO_SPATIALIZATION, group, &slot->sound);
+	if (result != MA_SUCCESS)
+		return;
+
+	slot->inUse = true;
+	slot->soundInitialized = true;
+	ma_sound_set_looping(&slot->sound, MA_TRUE);
+	ma_sound_start(&slot->sound);
 }
 
-void AudioManager::StopSound(SoundType type, int index)
+void audio_manager::stop_sound(sound_type type, int index)
 {
-	// With the copy-based system, we can't easily identify which active sound
-	// corresponds to a specific type/index. This would require additional tracking.
-	(void)type;
-	(void)index;
-}
-
-void AudioManager::StopAllSounds()
-{
-	// Stop and uninit all active sounds
-	for (auto& active : m_activeSounds)
+	for (auto& active : m_active_sounds)
 	{
-		if (active.inUse)
+		if (active.inUse && active.soundInitialized && active.type == type && active.index == index)
 		{
 			ma_sound_stop(&active.sound);
 			ma_sound_uninit(&active.sound);
+			active.soundInitialized = false;
 			active.inUse = false;
 		}
 	}
 }
 
-void AudioManager::PlayMusic(const char* trackName)
+void audio_manager::stop_all_sounds()
 {
-	if (!m_bSoundAvailable)
+	// stop and uninit all active sounds
+	for (auto& active : m_active_sounds)
+	{
+		if (active.inUse)
+		{
+			if (active.soundInitialized)
+			{
+				ma_sound_stop(&active.sound);
+				ma_sound_uninit(&active.sound);
+				active.soundInitialized = false;
+			}
+			active.inUse = false;
+		}
+	}
+}
+
+void audio_manager::play_music(const char* trackName)
+{
+	if (!m_sound_available)
 		return;
 
 	if (trackName == nullptr || trackName[0] == '\0')
 		return;
 
 	// Check if already playing this track
-	if (m_bBgmLoaded && m_currentMusicTrack == trackName)
+	if (m_bgm_loaded && m_current_music_track == trackName)
 		return;
 
-	// Stop existing music
-	StopMusic();
+	// stop existing music
+	stop_music();
 
 	// Don't play if music is disabled
-	if (!m_bMusicEnabled)
+	if (!m_music_enabled)
 		return;
 
 	// Build full path
-	std::string filename = std::string("music\\") + trackName + ".wav";
+	std::string filename = std::string("music/") + trackName + ".wav";
 
-	// Initialize the music sound - stream from disk (music files are large)
+	// initialize the music sound - stream from disk (music files are large)
 	ma_uint32 flags = MA_SOUND_FLAG_STREAM;
-	ma_result result = ma_sound_init_from_file(&m_engine, filename.c_str(), flags, NULL, NULL, &m_bgmSound);
+	ma_result result = ma_sound_init_from_file(&m_engine, filename.c_str(), flags, NULL, NULL, &m_bgm_sound);
 
 	if (result != MA_SUCCESS)
 	{
-		m_bBgmLoaded = false;
+		m_bgm_loaded = false;
 		return;
 	}
 
-	m_bBgmLoaded = true;
-	m_currentMusicTrack = trackName;
+	m_bgm_loaded = true;
+	m_current_music_track = trackName;
 
 	// Set volume and looping
-	ma_sound_set_volume(&m_bgmSound, VolumeToFloat(m_musicVolume));
-	ma_sound_set_looping(&m_bgmSound, MA_TRUE);
+	ma_sound_set_volume(&m_bgm_sound, volume_to_float(m_music_volume));
+	ma_sound_set_looping(&m_bgm_sound, MA_TRUE);
 
-	// Start playback
-	ma_sound_start(&m_bgmSound);
+	// start playback
+	ma_sound_start(&m_bgm_sound);
 }
 
-void AudioManager::StopMusic()
+void audio_manager::stop_music()
 {
-	if (m_bBgmLoaded)
+	if (m_bgm_loaded)
 	{
-		ma_sound_stop(&m_bgmSound);
-		ma_sound_uninit(&m_bgmSound);
-		m_bBgmLoaded = false;
+		ma_sound_stop(&m_bgm_sound);
+		ma_sound_uninit(&m_bgm_sound);
+		m_bgm_loaded = false;
 	}
-	m_currentMusicTrack.clear();
+	m_current_music_track.clear();
 }
 
-bool AudioManager::IsMusicPlaying() const
+bool audio_manager::is_music_playing() const
 {
-	if (!m_bBgmLoaded)
+	if (!m_bgm_loaded)
 		return false;
 
-	return ma_sound_is_playing(&m_bgmSound) == MA_TRUE;
+	return ma_sound_is_playing(&m_bgm_sound) == MA_TRUE;
 }
 
-void AudioManager::SetSoundVolume(int volume)
+void audio_manager::set_master_volume(int volume)
 {
 	if (volume < 0) volume = 0;
 	if (volume > 100) volume = 100;
-	m_soundVolume = volume;
+	m_master_volume = volume;
+
+	// Engine volume scales all output (SFX groups + music)
+	if (m_initialized && m_sound_available)
+	{
+		ma_engine_set_volume(&m_engine, m_master_enabled ? volume_to_float(volume) : 0.0f);
+	}
+}
+
+void audio_manager::set_master_enabled(bool enabled)
+{
+	m_master_enabled = enabled;
+
+	if (m_initialized && m_sound_available)
+	{
+		ma_engine_set_volume(&m_engine, enabled ? volume_to_float(m_master_volume) : 0.0f);
+	}
+}
+
+void audio_manager::set_sound_volume(int volume)
+{
+	if (volume < 0) volume = 0;
+	if (volume > 100) volume = 100;
+	m_sound_volume = volume;
 
 	// Set sound group volume (affects all sounds in the group)
-	if (m_bSfxGroupInitialized)
+	if (m_sfx_group_initialized)
 	{
-		ma_sound_group_set_volume(&m_sfxGroup, VolumeToFloat(volume));
+		ma_sound_group_set_volume(&m_sfx_group, volume_to_float(volume));
 	}
 }
 
-void AudioManager::SetMusicVolume(int volume)
+void audio_manager::set_music_volume(int volume)
 {
 	if (volume < 0) volume = 0;
 	if (volume > 100) volume = 100;
-	m_musicVolume = volume;
+	m_music_volume = volume;
 
-	// Update currently playing music volume
-	if (m_bBgmLoaded)
+	// update currently playing music volume
+	if (m_bgm_loaded)
 	{
-		ma_sound_set_volume(&m_bgmSound, VolumeToFloat(volume));
+		ma_sound_set_volume(&m_bgm_sound, volume_to_float(volume));
 	}
 }
 
-void AudioManager::SetSoundEnabled(bool enabled)
+void audio_manager::set_sound_enabled(bool enabled)
 {
-	m_bSoundEnabled = enabled;
+	m_sound_enabled = enabled;
 
-	// Stop all sounds if disabling
+	// stop all sounds if disabling
 	if (!enabled)
 	{
-		StopAllSounds();
+		stop_all_sounds();
 	}
 }
 
-void AudioManager::SetMusicEnabled(bool enabled)
+void audio_manager::set_music_enabled(bool enabled)
 {
-	bool wasEnabled = m_bMusicEnabled;
-	m_bMusicEnabled = enabled;
+	bool wasEnabled = m_music_enabled;
+	m_music_enabled = enabled;
 
-	// Stop music if disabling
+	// stop music if disabling
 	if (wasEnabled && !enabled)
 	{
-		StopMusic();
+		stop_music();
 	}
 }
 
-void AudioManager::SetListenerPosition(int worldX, int worldY)
+void audio_manager::set_ambient_volume(int volume)
 {
-	m_listenerX = worldX;
-	m_listenerY = worldY;
+	if (volume < 0) volume = 0;
+	if (volume > 100) volume = 100;
+	m_ambient_volume = volume;
+
+	if (m_ambient_group_initialized)
+	{
+		ma_sound_group_set_volume(&m_ambient_group, volume_to_float(volume));
+	}
 }
 
-void AudioManager::Update(uint32_t currentTime)
+void audio_manager::set_ui_volume(int volume)
 {
-	(void)currentTime;
+	if (volume < 0) volume = 0;
+	if (volume > 100) volume = 100;
+	m_ui_volume = volume;
+
+	if (m_ui_group_initialized)
+	{
+		ma_sound_group_set_volume(&m_ui_group, volume_to_float(volume));
+	}
+}
+
+void audio_manager::set_ambient_enabled(bool enabled)
+{
+	m_ambient_enabled = enabled;
+
+	// stop ambient sounds if disabling (stop all and let non-ambient ones replay naturally)
+	if (!enabled)
+	{
+		// Mute the ambient group by setting volume to 0
+		if (m_ambient_group_initialized)
+		{
+			ma_sound_group_set_volume(&m_ambient_group, 0.0f);
+		}
+	}
+	else
+	{
+		// Restore ambient group volume
+		if (m_ambient_group_initialized)
+		{
+			ma_sound_group_set_volume(&m_ambient_group, volume_to_float(m_ambient_volume));
+		}
+	}
+}
+
+void audio_manager::set_ui_enabled(bool enabled)
+{
+	m_ui_enabled = enabled;
+
+	if (!enabled)
+	{
+		if (m_ui_group_initialized)
+		{
+			ma_sound_group_set_volume(&m_ui_group, 0.0f);
+		}
+	}
+	else
+	{
+		if (m_ui_group_initialized)
+		{
+			ma_sound_group_set_volume(&m_ui_group, volume_to_float(m_ui_volume));
+		}
+	}
+}
+
+void audio_manager::set_listener_position(int worldX, int worldY)
+{
+	m_listener_x = worldX;
+	m_listener_y = worldY;
+}
+
+void audio_manager::update()
+{
 	// Periodically clean up finished sounds
-	CleanupFinishedSounds();
+	cleanup_finished_sounds();
 }

@@ -4,34 +4,26 @@
 
 #pragma once
 
-#include <windows.h>
 #include "CommonTypes.h"
 #include "EffectType.h"
 
 class CEffect
 {
 public:
-	inline CEffect()
-	{
-		m_sType       = EffectType::INVALID;
-		m_cFrame      = -1;
-		m_cMaxFrame   = 0;
-		m_dwTime      = 0;
-		m_dwFrameTime = 0;
-	}
+	inline CEffect() = default;
 
 	inline virtual ~CEffect()
 	{
 
 	}
 
-	EffectType m_sType;
-	char  m_cFrame, m_cMaxFrame;
-	char  m_cDir;
-	uint32_t m_dwTime, m_dwFrameTime;
-	int   m_sX, m_sY, m_dX, m_dY;
-	int   m_mX, m_mY, m_mX2, m_mY2, m_mX3, m_mY3;
-	int   m_iErr;
-	int   m_rX, m_rY;
-	int   m_iV1;
+	EffectType m_type = EffectType::INVALID;
+	char  m_frame = -1, m_max_frame = 0;
+	char  m_dir = 0;
+	uint32_t m_time = 0, m_frame_time = 0;
+	int   m_x = 0, m_y = 0, m_dest_x = 0, m_dest_y = 0;
+	int   m_move_x = 0, m_move_y = 0, m_move_x2 = 0, m_move_y2 = 0, m_move_x3 = 0, m_move_y3 = 0;
+	int   m_error = 0;
+	int   m_render_x = 0, m_render_y = 0;
+	int   m_value1 = 0;
 };

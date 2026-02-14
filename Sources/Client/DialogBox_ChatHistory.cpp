@@ -1,114 +1,135 @@
 #include "DialogBox_ChatHistory.h"
+#include "ChatManager.h"
 #include "ConfigManager.h"
 #include "Game.h"
-#include "InputManager.h"
+#include "IInput.h"
+#include "GameFonts.h"
+#include "TextLibExt.h"
+using namespace hb::client::sprite_id;
 
 #define DEF_CHAT_VISIBLE_LINES 8
 #define DEF_CHAT_SCROLLBAR_HEIGHT 105
 
-DialogBox_ChatHistory::DialogBox_ChatHistory(CGame* pGame)
-	: IDialogBox(DialogBoxId::ChatHistory, pGame)
+DialogBox_ChatHistory::DialogBox_ChatHistory(CGame* game)
+	: IDialogBox(DialogBoxId::ChatHistory, game)
 {
-	SetDefaultRect(135 + SCREENX, 273 + SCREENY + SCREENY, 364, 162);
+	set_default_rect(135 , 273  , 364, 162);
 }
 
-void DialogBox_ChatHistory::OnDraw(short msX, short msY, short msZ, char cLB)
+void DialogBox_ChatHistory::on_draw(short mouse_x, short mouse_y, short z, char lb)
 {
-	short sX = m_pGame->m_dialogBoxManager.Info(DialogBoxId::ChatHistory).sX;
-	short sY = m_pGame->m_dialogBoxManager.Info(DialogBoxId::ChatHistory).sY;
+	short sX = m_game->m_dialog_box_manager.Info(DialogBoxId::ChatHistory).m_x;
+	short sY = m_game->m_dialog_box_manager.Info(DialogBoxId::ChatHistory).m_y;
 
-	const bool dialogTrans = ConfigManager::Get().IsDialogTransparencyEnabled();
-	m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX, sY, 4, false, dialogTrans);
-	m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_TEXT, sX, sY, 22, false, dialogTrans);
+	const bool dialogTrans = config_manager::get().is_dialog_transparency_enabled();
+	m_game->draw_new_dialog_box(InterfaceNdGame2, sX, sY, 4, false, dialogTrans);
+	m_game->draw_new_dialog_box(InterfaceNdText, sX, sY, 22, false, dialogTrans);
 
-	HandleScrollInput(sX, sY, msX, msY, msZ, cLB);
-	DrawScrollBar(sX, sY);
-	DrawChatMessages(sX, sY);
+	handle_scroll_input(sX, sY, mouse_x, mouse_y, z, lb);
+	draw_scroll_bar(sX, sY);
+	draw_chat_messages(sX, sY);
 }
 
-void DialogBox_ChatHistory::HandleScrollInput(short sX, short sY, short msX, short msY, short msZ, char cLB)
+void DialogBox_ChatHistory::handle_scroll_input(short sX, short sY, short mouse_x, short mouse_y, short z, char lb)
 {
+	auto& info = m_game->m_dialog_box_manager.Info(DialogBoxId::ChatHistory);
+
 	// Mouse wheel scrolling
-	if (m_pGame->m_dialogBoxManager.iGetTopDialogBoxIndex() == DialogBoxId::ChatHistory)
+	if (m_game->m_dialog_box_manager.get_top_dialog_box_index() == DialogBoxId::ChatHistory)
 	{
-		short sWheelDelta = InputManager::Get().GetWheelDelta();
-		if (sWheelDelta != 0)
+		short wheel_delta = hb::shared::input::get_mouse_wheel_delta();
+		if (wheel_delta != 0)
 		{
-			m_pGame->m_dialogBoxManager.Info(DialogBoxId::ChatHistory).sView += sWheelDelta / 30;
-			InputManager::Get().ClearWheelDelta();
+			info.m_view += wheel_delta / 30;
 		}
 	}
 
-	// Clamp scroll view
-	if (m_pGame->m_dialogBoxManager.Info(DialogBoxId::ChatHistory).sView < 0)
-		m_pGame->m_dialogBoxManager.Info(DialogBoxId::ChatHistory).sView = 0;
-	if (m_pGame->m_dialogBoxManager.Info(DialogBoxId::ChatHistory).sView > DEF_MAXCHATSCROLLMSGS - DEF_CHAT_VISIBLE_LINES)
-		m_pGame->m_dialogBoxManager.Info(DialogBoxId::ChatHistory).sView = DEF_MAXCHATSCROLLMSGS - DEF_CHAT_VISIBLE_LINES;
-
 	// Scroll bar dragging
-	if ((cLB != 0) && (m_pGame->m_dialogBoxManager.iGetTopDialogBoxIndex() == DialogBoxId::ChatHistory))
+	if ((lb != 0) && (m_game->m_dialog_box_manager.get_top_dialog_box_index() == DialogBoxId::ChatHistory))
 	{
 		// Drag scrollbar track
-		if ((msX >= sX + 336) && (msX <= sX + 361) && (msY >= sY + 28) && (msY <= sY + 140))
+		if ((mouse_x >= sX + 336) && (mouse_x <= sX + 361) && (mouse_y >= sY + 28) && (mouse_y <= sY + 140))
 		{
-			double d1 = (double)(msY - (sY + 28));
-			double d2 = ((DEF_MAXCHATSCROLLMSGS - DEF_CHAT_VISIBLE_LINES) * d1) / (double)DEF_CHAT_SCROLLBAR_HEIGHT;
-			m_pGame->m_dialogBoxManager.Info(DialogBoxId::ChatHistory).sView = DEF_MAXCHATSCROLLMSGS - DEF_CHAT_VISIBLE_LINES - (int)d2;
+			double d1 = static_cast<double>(mouse_y - (sY + 28));
+			double d2 = ((game_limits::max_chat_scroll_msgs - DEF_CHAT_VISIBLE_LINES) * d1) / static_cast<double>(DEF_CHAT_SCROLLBAR_HEIGHT);
+			info.m_view = game_limits::max_chat_scroll_msgs - DEF_CHAT_VISIBLE_LINES - static_cast<int>(d2);
 		}
 
 		// Scroll to top button
-		if ((msX >= sX + 336) && (msX <= sX + 361) && (msY > sY + 18) && (msY < sY + 28))
-			m_pGame->m_dialogBoxManager.Info(DialogBoxId::ChatHistory).sView = DEF_MAXCHATSCROLLMSGS - DEF_CHAT_VISIBLE_LINES;
+		if ((mouse_x >= sX + 336) && (mouse_x <= sX + 361) && (mouse_y > sY + 18) && (mouse_y < sY + 28))
+			info.m_view = game_limits::max_chat_scroll_msgs - DEF_CHAT_VISIBLE_LINES;
 
 		// Scroll to bottom button
-		if ((msX >= sX + 336) && (msX <= sX + 361) && (msY > sY + 140) && (msY < sY + 163))
-			m_pGame->m_dialogBoxManager.Info(DialogBoxId::ChatHistory).sView = 0;
+		if ((mouse_x >= sX + 336) && (mouse_x <= sX + 361) && (mouse_y > sY + 140) && (mouse_y < sY + 163))
+			info.m_view = 0;
 	}
 	else
 	{
-		m_pGame->m_dialogBoxManager.Info(DialogBoxId::ChatHistory).bIsScrollSelected = false;
+		info.m_is_scroll_selected = false;
 	}
+
+	// clamp scroll view (must be after all scroll modifications)
+	if (info.m_view < 0)
+		info.m_view = 0;
+	if (info.m_view > game_limits::max_chat_scroll_msgs - DEF_CHAT_VISIBLE_LINES)
+		info.m_view = game_limits::max_chat_scroll_msgs - DEF_CHAT_VISIBLE_LINES;
 }
 
-void DialogBox_ChatHistory::DrawScrollBar(short sX, short sY)
+void DialogBox_ChatHistory::draw_scroll_bar(short sX, short sY)
 {
-	double d1 = (double)m_pGame->m_dialogBoxManager.Info(DialogBoxId::ChatHistory).sView;
-	double d2 = (double)DEF_CHAT_SCROLLBAR_HEIGHT;
-	double d3 = (d1 * d2) / (DEF_MAXCHATSCROLLMSGS - DEF_CHAT_VISIBLE_LINES);
-	int iPointerLoc = (int)d3;
-	iPointerLoc = DEF_CHAT_SCROLLBAR_HEIGHT - iPointerLoc;
-	m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX + 346, sY + 33 + iPointerLoc, 7);
+	double d1 = static_cast<double>(m_game->m_dialog_box_manager.Info(DialogBoxId::ChatHistory).m_view);
+	double d2 = static_cast<double>(DEF_CHAT_SCROLLBAR_HEIGHT);
+	double d3 = (d1 * d2) / (game_limits::max_chat_scroll_msgs - DEF_CHAT_VISIBLE_LINES);
+	int pointer_loc = static_cast<int>(d3);
+	pointer_loc = DEF_CHAT_SCROLLBAR_HEIGHT - pointer_loc;
+	m_game->draw_new_dialog_box(InterfaceNdGame2, sX + 346, sY + 33 + pointer_loc, 7);
 }
 
-void DialogBox_ChatHistory::DrawChatMessages(short sX, short sY)
+void DialogBox_ChatHistory::draw_chat_messages(short sX, short sY)
 {
-	short sView = m_pGame->m_dialogBoxManager.Info(DialogBoxId::ChatHistory).sView;
+	short view = m_game->m_dialog_box_manager.Info(DialogBoxId::ChatHistory).m_view;
 
 	for (int i = 0; i < DEF_CHAT_VISIBLE_LINES; i++)
 	{
-		if (m_pGame->m_pChatScrollList[i + sView] != nullptr)
+		int index = i + view;
+		if (index < 0 || index >= game_limits::max_chat_scroll_msgs) continue;
+		CMsg* chat_msg = ChatManager::get().get_message(index);
+		if (chat_msg != nullptr)
 		{
-			int iYPos = sY + 127 - i * 13;
-			char* pMsg = m_pGame->m_pChatScrollList[i + sView]->m_pMsg;
+			int y_pos = sY + 127 - i * 13;
+			char* pMsg = chat_msg->m_pMsg;
 
-			switch (m_pGame->m_pChatScrollList[i + sView]->m_dwTime)
+			switch (chat_msg->m_time)
 			{
-			case 0:  m_pGame->PutString2(sX + 25, iYPos, pMsg, 230, 230, 230); break; // Normal
-			case 1:  m_pGame->PutString2(sX + 25, iYPos, pMsg, 130, 200, 130); break; // Green
-			case 2:  m_pGame->PutString2(sX + 25, iYPos, pMsg, 255, 130, 130); break; // Red
-			case 3:  m_pGame->PutString2(sX + 25, iYPos, pMsg, 130, 130, 255); break; // Blue
-			case 4:  m_pGame->PutString2(sX + 25, iYPos, pMsg, 230, 230, 130); break; // Yellow
-			case 10: m_pGame->PutString2(sX + 25, iYPos, pMsg, 180, 255, 180); break; // Light green
-			case 20: m_pGame->PutString2(sX + 25, iYPos, pMsg, 150, 150, 170); break; // Gray
+			case 0:  hb::shared::text::draw_text(GameFont::Default, sX + 25, y_pos, pMsg, hb::shared::text::TextStyle::with_shadow(GameColors::UINearWhite)); break; // Normal
+			case 1:  hb::shared::text::draw_text(GameFont::Default, sX + 25, y_pos, pMsg, hb::shared::text::TextStyle::with_shadow(GameColors::UIGuildGreen)); break; // Green
+			case 2:  hb::shared::text::draw_text(GameFont::Default, sX + 25, y_pos, pMsg, hb::shared::text::TextStyle::with_shadow(GameColors::UIWorldChat)); break; // Red
+			case 3:  hb::shared::text::draw_text(GameFont::Default, sX + 25, y_pos, pMsg, hb::shared::text::TextStyle::with_shadow(GameColors::UIFactionChat)); break; // Blue
+			case 4:  hb::shared::text::draw_text(GameFont::Default, sX + 25, y_pos, pMsg, hb::shared::text::TextStyle::with_shadow(GameColors::UIPartyChat)); break; // Yellow
+			case 10: hb::shared::text::draw_text(GameFont::Default, sX + 25, y_pos, pMsg, hb::shared::text::TextStyle::with_shadow(GameColors::UIGameMasterChat)); break; // Light green
+			case 20: hb::shared::text::draw_text(GameFont::Default, sX + 25, y_pos, pMsg, hb::shared::text::TextStyle::with_shadow(GameColors::UINormalChat)); break; // Gray
 			}
 		}
 	}
 }
 
-bool DialogBox_ChatHistory::OnClick(short msX, short msY)
+bool DialogBox_ChatHistory::on_click(short mouse_x, short mouse_y)
 {
-	// Chat history dialog has no click actions - scrolling is handled in OnDraw
+	// Chat history dialog has no click actions - scrolling is handled in on_draw
 	return false;
 }
 
+PressResult DialogBox_ChatHistory::on_press(short mouse_x, short mouse_y)
+{
+	short sX = Info().m_x;
+	short sY = Info().m_y;
+
+	// Check if click is in scroll bar region (track + buttons)
+	if ((mouse_x >= sX + 336) && (mouse_x <= sX + 361) && (mouse_y >= sY + 18) && (mouse_y <= sY + 163))
+	{
+		return PressResult::ScrollClaimed;
+	}
+
+	return PressResult::Normal;
+}
 

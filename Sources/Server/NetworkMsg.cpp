@@ -11,35 +11,35 @@
 
 CMsg::CMsg()
 {
-	m_pData  = 0;
-	m_dwSize = 0;
+	m_data  = 0;
+	m_size = 0;
 }
 
 CMsg::~CMsg()						   
 {
-	if (m_pData != 0) delete m_pData;
+	if (m_data != 0) delete m_data;
 }
 
-bool CMsg::bPut(char cFrom, char * pData, uint32_t dwSize, int iIndex, char cKey)
+bool CMsg::put(char cFrom, char * data, size_t size, int index, char key)
 {
-	m_pData = new char [dwSize + 1];
-	if (m_pData == 0) return false;
-	std::memset(m_pData, 0, dwSize + 1);
-	memcpy(m_pData, pData, dwSize);
+	m_data = new char [size + 1];
+	if (m_data == 0) return false;
+	std::memset(m_data, 0, size + 1);
+	memcpy(m_data, data, size);
 
-	m_dwSize = dwSize;
-	m_cFrom  = cFrom;
-	m_iIndex = iIndex;
-	m_cKey   = cKey;
+	m_size = size;
+	m_from  = cFrom;
+	m_index = index;
+	m_key   = key;
 
 	return true;
 }
 
-void CMsg::Get(char * pFrom, char * pData, uint32_t * pSize, int * pIndex, char * pKey)
+void CMsg::get(char * pFrom, char * data, size_t* size, int * index, char * key)
 {
-	*pFrom  = m_cFrom;
-	memcpy(pData, m_pData, m_dwSize);
-	*pSize  = m_dwSize;
-	*pIndex = m_iIndex;
-	*pKey   = m_cKey;
+	*pFrom  = m_from;
+	memcpy(data, m_data, m_size);
+	*size  = m_size;
+	*index = m_index;
+	*key   = m_key;
 }

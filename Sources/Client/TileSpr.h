@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include <windows.h>
 
 class CTileSpr
 {
@@ -19,7 +18,7 @@ public:
 		m_bIsTeleport = false;
 	}
 
-	inline virtual ~CTileSpr()
+	inline ~CTileSpr()
 	{
 	}
 

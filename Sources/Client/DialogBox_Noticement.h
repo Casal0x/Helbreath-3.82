@@ -5,8 +5,8 @@
 class DialogBox_Noticement : public IDialogBox
 {
 public:
-	explicit DialogBox_Noticement(CGame* pGame);
+	explicit DialogBox_Noticement(CGame* game);
 
-	void OnDraw(short msX, short msY, short msZ, char cLB) override;
-	bool OnClick(short msX, short msY) override;
+	void on_draw(short mouse_x, short mouse_y, short z, char lb) override;
+	bool on_click(short mouse_x, short mouse_y) override;
 };

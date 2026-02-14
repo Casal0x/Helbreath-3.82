@@ -11,37 +11,37 @@
 
 CTile::CTile()
 { 
- int i;
+ 
 
-	m_bIsMoveAllowed = true;
-	m_bIsTeleport    = false;
-	m_bIsWater       = false;
-	m_bIsFarm        = false;
+	m_is_move_allowed = true;
+	m_is_teleport    = false;
+	m_is_water       = false;
+	m_is_farm        = false;
 												   
-	m_sOwner      = 0;
-	m_cOwnerClass = 0;
+	m_owner      = 0;
+	m_owner_class = 0;
 	
-	m_sDeadOwner      = 0;
-	m_cDeadOwnerClass = 0;
+	m_dead_owner      = 0;
+	m_dead_owner_class = 0;
 	
-	for (i = 0; i < DEF_TILE_PER_ITEMS; i++) 
-		m_pItem[i] = 0;
-	m_cTotalItem = 0;
+	for(int i = 0; i < hb::server::map::TilePerItems; i++) 
+		m_item[i] = 0;
+	m_total_item = 0;
 
-	m_wDynamicObjectID   = 0;
-	m_sDynamicObjectType = 0;
+	m_dynamic_object_id   = 0;
+	m_dynamic_object_type = 0;
 
-	m_bIsTempMoveAllowed = true;
+	m_is_temp_move_allowed = true;
 
-	m_iOccupyStatus    = 0;
-	m_iOccupyFlagIndex = 0;
+	m_occupy_status    = 0;
+	m_occupy_flag_index = 0;
 	
-	m_iAttribute  = 0;
+	m_attribute  = 0;
 }
 
 CTile::~CTile()
 {
- int i;
-	for (i = 0; i < DEF_TILE_PER_ITEMS; i++) 
-	if (m_pItem[i] != 0) delete m_pItem[i];
+ 
+	for(int i = 0; i < hb::server::map::TilePerItems; i++) 
+	if (m_item[i] != 0) delete m_item[i];
 }

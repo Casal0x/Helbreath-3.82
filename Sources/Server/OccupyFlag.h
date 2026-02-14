@@ -4,32 +4,29 @@
 
 #pragma once
 
-// MODERNIZED: Prevent old winsock.h from loading (must be before windows.h)
-#define _WINSOCKAPI_
-#include <windows.h>
 #include "CommonTypes.h"
 
 class COccupyFlag
 {
 public:
-	inline COccupyFlag(int dX, int dY, char cSide, int iEKNum, int iDOI)
+	inline COccupyFlag(int dX, int dY, char side, int ek_num, int doi)
 	{
-		m_sX = dX;
-		m_sY = dY;
+		m_x = dX;
+		m_y = dY;
 
-		m_cSide = cSide;
-		m_iEKCount = iEKNum;
+		m_side = side;
+		m_enemy_kill_count = ek_num;
 
-		m_iDynamicObjectIndex = iDOI;
+		m_dynamic_object_index = doi;
 	}
 
 	inline virtual ~COccupyFlag()
 	{
 	}
 
-	char m_cSide;
-	int  m_iEKCount;
-	int  m_sX, m_sY;
+	char m_side;
+	int  m_enemy_kill_count;
+	int  m_x, m_y;
 
-	int  m_iDynamicObjectIndex;
+	int  m_dynamic_object_index;
 };

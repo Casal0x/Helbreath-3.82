@@ -1,10 +1,11 @@
 #include "Version.h"
 #include <cstdio>
+#include <format>
 
 namespace hb {
 	namespace version {
 
-		const VersionInfo& Get()
+		const VersionInfo& get()
 		{
 			static const VersionInfo kVersion{
 				HB_VERSION_MAJOR,
@@ -16,39 +17,29 @@ namespace hb {
 			return kVersion;
 		}
 
-		const char* GetSemVer()
+		std::string get_sem_ver()
 		{
-			static char buffer[64];
-			const VersionInfo& ver = Get();
+			const VersionInfo& ver = get();
 
 			if (ver.prerelease[0] != '\0') {
-				std::snprintf(buffer, sizeof(buffer), "%d.%d.%d-%s",
-					ver.major, ver.minor, ver.patch, ver.prerelease);
+				return std::format("{}.{}.{}-{}", ver.major, ver.minor, ver.patch, ver.prerelease);
 			}
-			else {
-				std::snprintf(buffer, sizeof(buffer), "%d.%d.%d",
-					ver.major, ver.minor, ver.patch);
-			}
-
-			return buffer;
+			return std::format("{}.{}.{}", ver.major, ver.minor, ver.patch);
 		}
 
-		const char* GetDisplayString()
+		std::string get_display_string()
 		{
-			return GetSemVer();
+			return get_sem_ver();
 		}
 
-		const char* GetFullString()
+		std::string get_full_string()
 		{
-			static char buffer[96];
-			const VersionInfo& ver = Get();
-			const char* semver = GetSemVer();
+			const VersionInfo& ver = get();
+			std::string semver = get_sem_ver();
 
 			if (ver.build[0] != '\0') {
-				std::snprintf(buffer, sizeof(buffer), "%s+%s", semver, ver.build);
-				return buffer;
+				return std::format("{}+{}", semver, ver.build);
 			}
-
 			return semver;
 		}
 

@@ -1,112 +1,225 @@
-# CLAUDE.md
+# Helbreath 3.82 - Project Guide
 
-Helbreath 3.82 - Classic MMORPG client-server in C++ for Windows (early 2000s codebase).
+## Build
 
-## Critical Rules
+### Windows (Visual Studio / MSBuild)
+```powershell
+powershell -ExecutionPolicy Bypass -File Sources\build.ps1 -Target All -Config Debug
+powershell -ExecutionPolicy Bypass -File Sources\build.ps1 -Target Game -Config Debug
+powershell -ExecutionPolicy Bypass -File Sources\build.ps1 -Target Server -Config Debug
+```
+- Delete `build_*.log` before building for clean logs.
+- Output: `Sources\Debug\Game_SFML_x64.exe` (client), `Sources\Debug\Server.exe` (server).
+- x64 platform. `Sources\Helbreath.sln`. C++20 server and client.
+- 78 LNK4099 warnings (missing SFML/freetype PDBs) are cosmetic — ignore.
+- SFML 3 libs are bundled in `Sources/Dependencies/SFML/`. To rebuild from source: `Scripts\build_sfml.bat`
 
-| Rule | Details |
-|------|---------|
-| **Always build from solution** | Use `Helbreath.sln`, never from `Sources/Client/` or `Sources/Server/` |
-| **Win32 only** | Target x86/Win32 architecture exclusively |
-| **No git commits** | Work only in the working tree |
-| **No over-optimization** | Implement only what is requested |
-| **Delete refactored code** | Do not keep old code "for reference" - git has history |
-| **Build early and often** | Rebuild after each logical change |
-| **Backup before bulk edits** | Create `.bak` files before mass find/replace operations |
-| **Use Python for file ops** | Prefer Python over PowerShell for text manipulation |
-
-## Build Commands
-
-**ALWAYS use the full path to batch files (do NOT use `cmd.exe /c "cd && batch"`):**
-
+### Linux (CMake — Server)
 ```bash
-# Build both Client and Server
-"C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\build_all.bat"
-
-# Client only
-"C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\build_game.bat"
-
-# Server only
-"C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\build_server.bat"
+./Sources/build_linux.sh                 # Incremental debug build
+./Sources/build_linux.sh release         # Release build
+./Sources/build_linux.sh clean           # Delete build directory
+./Sources/build_linux.sh clean release   # Clean then rebuild release
 ```
+- CMakeLists.txt: `Sources/Server/CMakeLists.txt`
+- Output: `Sources/Debug/HelbreathServer` or `Sources/Release/HelbreathServer` (mirrors Windows layout)
+- Auto-reconfigures when switching between Debug and Release
+- Deploy: `cp Sources/Debug/HelbreathServer Binaries/Server/ && chmod +x Binaries/Server/HelbreathServer`
+- Run from: `cd Binaries/Server && ./HelbreathServer`
 
-Log files are created: `build_all.log`, `build_game.log`, `build_server.log`
-
-**Output:** `Debug\Game.exe`, `Debug\Server.exe` (or `Release\`)
-
-## Project Structure
-
+### Linux (CMake — Client)
+```bash
+./Sources/build_client_linux.sh                 # Incremental debug build
+./Sources/build_client_linux.sh release         # Release build
+./Sources/build_client_linux.sh clean           # Delete build directory
+./Sources/build_client_linux.sh clean release   # Clean then rebuild release
 ```
-Sources/Client/      - Game client (DirectDraw/DirectInput/DirectSound)
-Sources/Server/      - Game server (networking, AI, world state)
-Dependencies/Shared/ - Shared headers (NetMessages.h, ActionID.h, DynamicObjectID.h)
-Dependencies/Client/ - DirectX SDK headers and libs
-Binaries/Game/       - Client configs and assets
-Binaries/Server/     - Server configs
-PLANS/               - Implementation plans for significant changes
-```
-
-## Key Files
-
-| File | Purpose |
-|------|---------|
-| `Sources/Client/Game.cpp` (~1.7MB) | Client game loop, rendering, UI |
-| `Sources/Server/Game.cpp` (~2.1MB) | Server logic, entity management |
-| `Dependencies/Shared/NetMessages.h` | Network protocol (must match both sides) |
-| `XSocket.cpp/h` | Async socket wrapper (both sides) |
-
-## Code Style
-
-- **Naming:** Hungarian notation (`m_` members, `p` pointers, `i` int, `sz` strings)
-- **Classes:** `C` prefix, PascalCase (`CGame`, `CClient`, `CNpc`)
-- **Constants:** `DEF_` prefix, ALL_CAPS
-- **Formatting:** Tabs, Allman braces
-- **Memory:** Manual `new`/`delete`, no smart pointers
-- **Headers:** `#pragma once`
-
-## Architecture
-
-### Client (Game)
-- `CGame` - Monolithic class: rendering, input, network, UI
-- `XSocket` - Async sockets via Windows message pump (`WM_USER_GAMESOCKETEVENT`)
-- DirectX 7/8: DirectDraw, DirectInput, DirectSound
-
-### Server
-- `CGame` - Central coordinator for all systems
-- `CClient` - Player session (inventory, stats, skills, connection)
-- `CNpc` - NPC behavior and AI
-- `CMap` - Tile-based world, collision, visibility
-- ODBC for database persistence
-
-### Network Protocol
-- Binary packed structures with message IDs in `NetMessages.h`
-- Both sides must have identical definitions
-- When changing: update both client and server, rebuild both
+- CMakeLists.txt: `Sources/Client/CMakeLists.txt`
+- Output: `Sources/Debug/HelbreathClient` or `Sources/Release/HelbreathClient` (mirrors Windows layout)
+- Auto-reconfigures when switching between Debug and Release
+- SFML 3 is auto-fetched and built via CMake FetchContent (no manual SFML install needed)
+- Prerequisites: `sudo apt install cmake g++ libx11-dev libxrandr-dev libxcursor-dev libgl1-mesa-dev libudev-dev libfreetype-dev`
+- Deploy: `cp Sources/Debug/HelbreathClient Binaries/Game/ && chmod +x Binaries/Game/HelbreathClient`
+- Run from: `cd Binaries/Game && ./HelbreathClient`
 
 ## Workflow
 
-1. **Before significant changes:** Write plan in `PLANS/`
-2. **Adding files:** Update `.vcxproj` to include new source/header files
-3. **After completing TODO items:** Update `DONE.md`, mark complete in `TODO.md`
-4. **Large changes:** Pause after successful build, ask user to test manually
+**Never use git commands. The user handles all git operations. Backups use `.bak_<guid>` files via `Scripts/bak.py`.**
+
+Two modes. **Default to Mode 1.** Use Mode 2 only when justified.
+
+### Mode 1: Direct Edit (DEFAULT — 1-9 files)
+
+```
+bak.py guard <files>  →  Read/Edit tools  →  Build  →  bak.py commit (or revert)
+```
+
+1. **Guard** — `python Scripts/bak.py guard <file1> [file2 ...]` — creates versioned checkpoint (.bak_<guid>).
+2. **Edit** — Read and Edit tools.
+3. **Build** — `powershell -ExecutionPolicy Bypass -File Sources/build.ps1 -Target All -Config Debug`
+4. **If build succeeds** — `python Scripts/bak.py commit` — deletes all .bak files, accepts changes.
+5. **If build fails** — choose:
+   - `guard` again to checkpoint, then fix and rebuild (layer the fix).
+   - `revert <id>` to undo a specific checkpoint, retry from previous.
+   - `revert <id> <file1> [file2 ...]` to revert specific files from a checkpoint.
+
+Rules:
+- If the change is specific edits to specific lines → Mode 1.
+- One logical change per guard-edit-build-commit cycle.
+- Each `guard` creates a new checkpoint — layer fixes and peel back selectively.
+
+### Mode 2: Python Script (BULK — 10+ files)
+
+Must justify: "This touches N files with pattern X, script appropriate because Y."
+See `CLAUDE_WORKFLOW.md` for script pattern, regex safety rules, and verification standards.
+
+**Required verification before applying:**
+1. `--dry-run` — preview all changes (full detail log to `Scripts/output/`).
+2. `--verify` — scan for Shared/SFMLEngine collisions, C++ keyword conflicts, duplicate targets.
+3. Only then run without flags to apply. See `PLANS/BulkScript_DryRun_Standards.md` for full spec.
+
+### `bak.py` Commands
+
+| Command | Purpose |
+|---------|---------|
+| `bak.py guard <files>` | Create versioned checkpoint (.bak_<guid>). Warns if files already have checkpoints (`--force` to override) |
+| `bak.py status` | List checkpoints with dirty/clean status (exit 1 if any) |
+| `bak.py revert <id>` | Revert all files from checkpoint `<id>`. Warns if files have other layers (`--force` to override) |
+| `bak.py revert <id> <files>` | Revert specific files from checkpoint `<id>` |
+| `bak.py commit` | Delete all .bak* files (accept current state) |
+
+Safety rules:
+- `revert` **always requires a checkpoint ID** — no implicit "most recent" behavior.
+- `guard` warns if a file already has a `.bak_*` from another checkpoint. Use `--force` to proceed.
+- `revert` warns if a file has `.bak_*` layers from other checkpoints. Use `--force` to proceed.
+- GUID collision check on `guard` — ensures new checkpoint ID is unique.
+
+## Code Search
+
+`Scripts/grep.py` — two modes: brief (`-b`) for quick stdout, detailed for full-context log file.
+
+```
+python Scripts/grep.py "pattern" -b                       # brief: one line per match to stdout
+python Scripts/grep.py "pattern"                          # detailed: context blocks to log file
+python Scripts/grep.py "pattern" -F --path Sources/Client # fixed string, scoped to directory
+python Scripts/grep.py "pattern" -C 8 -i -o results.log  # 8 context lines, case-insensitive
+```
+
+Brief (`-b`): prints `file:line | match` to stdout. Detailed (default): writes to `Scripts/output/grep_results.log` with context, enclosing scope, `>>>` markers. Output dir auto-clears at 10MB.
+
+## Project Structure
+
+- **Client** (`Sources/Client/`) — Game client, C++20. Cross-platform (Windows + Linux). Depends on SFMLEngine.
+- **SFMLEngine** (`Sources/SFMLEngine/`) — Rendering abstraction over SFML. Cross-platform (Windows + Linux).
+- **Server** (`Sources/Server/`) — Game server, C++20. Cross-platform (Windows + Linux). Standalone.
+- **Shared** (`Sources/Dependencies/Shared/`) — Protocol, enums, items, packets, networking.
+- `Binaries/Game/` — Client runtime (configs, sprites, sounds, maps, fonts).
+- `Binaries/Server/` — Server runtime (SQLite DBs, accounts).
+
+See `CLAUDE_ARCHITECTURE.md` for detailed client/server/shared architecture.
+
+## Cross-Platform Rules
+
+Both the client and server build and run on Windows and Linux. **All new code (client, server, shared, SFMLEngine) must be cross-platform:**
+- **No Windows API calls** (`DeleteFile`, `wsprintf`, `GetCursorPos`, `POINT`, etc.) — use C++ standard library equivalents.
+- **No MSVC-specific types/keywords** (`__int64` → `int64_t`, `__fastcall` → remove, `_TRUNCATE` → don't use).
+- **No `#ifdef _WIN32` guarding standard headers** (e.g. `<filesystem>` must be included unconditionally).
+- **Use `StringCompat.h`** for string function portability (`strtok_s` → `strtok_r`, `_stricmp` → `strcasecmp`).
+- **All headers must include what they use** — GCC is stricter than MSVC (e.g. `<cstddef>` for `size_t`).
+- **Case-sensitive filenames** — `#include` must match the exact case of the file on disk.
+- **Linux filesystem is case-sensitive** — `Binaries/Server/mapdata/` must be lowercase.
+- **Prefer `std::string`/`std::string_view`** over raw `char*`/`char[]` — avoids buffer overruns that silently work on MSVC but fail on GCC.
+
+## Modernization Direction
+
+- Legacy C-style → C++20 while preserving game logic.
+- Goal: OOP, polymorphism, templates, clearly scoped systems.
+- Modernize code you touch. Don't gold-plate untouched code.
+
+## Coding Standards
+
+**Convention: `snake_case` throughout.** Full reference: `PLANS/CODING_STANDARDS.md`.
+
+Key rules:
+- **Tabs** for indentation, **Allman** braces.
+- **Everything `snake_case`**: classes, methods, members, params, constants, enum values.
+- **No prefixes**: `weather_manager` not `CWeatherManager`, `renderer` not `IRenderer`.
+- **Members**: `m_snake_case`. Struct data members omit `m_`.
+- **Constants**: `constexpr snake_case`. No new `#define` constants.
+- **Enums**: Namespace-wrapped unscoped enum (`attack_type::normal`). `enum class` only when implicit conversion undesirable.
+- **Namespaces**: `hb::<shared|client|server>::snake_case`.
+- **Ownership**: `std::unique_ptr` only. Raw pointers non-owning. Prefer `&` references.
+- **Error handling**: Exceptions for critical failures. `bool` for recoverable. No `goto`.
+- **Null**: `nullptr` only. **Headers**: `#pragma once`. No `using namespace` in headers.
+- **Wire protocol structs**: Exception — Hungarian without `m_` to match binary format.
+- Legacy code retains old conventions until actively refactored. Do not reformat untouched code.
+
+After every `bak.py commit`, update `CHANGELOG.md` with a brief bullet list of changes under category headers. See `CLAUDE_CHANGELOG.md` for format guide and examples.
+
+## Logging
+
+Shared logging system in `Sources/Dependencies/Shared/Log/`. Uses `std::format` and multi-channel file output.
+
+### Files
+
+| File | Purpose |
+|------|---------|
+| `Log/Log.h` | **Public API** — include this to log. Provides `hb::logger::error`, `warn`, `log`, `debug` |
+| `Log/LogLevel.h` | Level constants (`error=0, warn=1, log=2, debug=3`) and `level_name()` |
+| `Log/LogBackend.h` | `log_backend` base class — multi-channel file writer, virtual `write_console()` |
+| `Log/LogBackend.cpp` | Implementation — timestamp formatting, per-channel + main dual-write, mutex-protected |
+| `Server/ServerLogChannels.h` | Server channel enum (15 channels: main, events, security, pvp, network, chat, etc.) |
+| `Server/ServerLog.cpp` | Server wiring — `server_log_backend` subclass routes to `ServerConsole` |
+| `Client/ClientLogChannels.h` | Client channel enum (2 channels: main, network) |
+| `Client/ClientLog.cpp` | Client wiring — console output only in `_DEBUG` builds |
+
+### How to Include
+
+**Basic logging (channel 0 / main)** — only need `Log.h`:
+```cpp
+#include "Log.h"
+
+hb::logger::error("SQLite open failed: {}", sqlite3_errmsg(db));
+hb::logger::warn("Unexpected value: {}", val);
+hb::logger::log("Player '{}' connected", name);
+hb::logger::debug("Tick took {}ms", elapsed);
+```
+
+**Logging to a specific channel** — also include the channels header and `using` declaration:
+```cpp
+#include "Log.h"
+#include "ServerLogChannels.h"   // or "ClientLogChannels.h"
+
+using hb::log_channel;
+
+hb::logger::warn<log_channel::security>("Swing hack: IP={} player={}", ip, name);
+hb::logger::log<log_channel::chat>("[ChatMsg] {}: {}", sender, message);
+hb::logger::log<log_channel::events>("Player '{}' crafting '{}'", name, item);
+```
+
+### Channel Behavior
+
+- Channel 0 (`main`) is the default when no template argument is given.
+- Non-zero channels write to **both** their own log file and the main log file.
+- Each channel maps to a separate `.log` file (e.g. `security` → `hackevents.log`, `chat` → `chat.log`).
+- Format: `[HH:MM:SS.mmm] [LEVEL] [channel_name] message` (channel name omitted for main).
+
+### Server Channels (`hb::log_channel`)
+
+`main`, `events`, `security`, `pvp`, `network`, `log_events`, `chat`, `commands`, `drops`, `trade`, `shop`, `crafting`, `upgrades`, `bank`, `items_misc`
+
+### Client Channels (`hb::log_channel`)
+
+`main`, `network`
+
+### Initialization / Shutdown
+
+Already wired in both targets — do not call manually:
+- **Server**: `hb::logger::initialize("gamelogs/")` in `Wmain.cpp`, `shutdown()` on exit.
+- **Client**: `hb::logger::initialize("logs")` in `Game.cpp`, `shutdown()` on exit.
 
 ## Testing
 
-No automated tests. Manual only:
-- Run server then client using configs in `Binaries/`
-- For network changes, verify message symmetry between client and server
-
-## Server Limits
-
-```cpp
-DEF_MAXCLIENTS          2000
-DEF_MAXNPCS             5000
-DEF_MAXMAPS             100
-DEF_MAXITEMTYPES        5000
-DEF_MAXDYNAMICOBJECTS   60000
-```
-
-## Known Issues
-
-- 16 header files duplicated between Client and Server (see `TODO.md`)
-- Korean comments in server code
+No automated tests. Manual: run server, then client with configs in `Binaries/`.
+For network changes, rebuild both client and server.
+Both targets can be tested on Linux — server with `build_linux.sh`, client with `build_client_linux.sh`.

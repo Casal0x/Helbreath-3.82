@@ -1,8 +1,9 @@
-// EffectManager.cpp: Visual effects system implementation (Orchestrator)
+﻿// effect_manager.cpp: Visual effects system implementation (Orchestrator)
 //
 //////////////////////////////////////////////////////////////////////
 
 #include "EffectManager.h"
+#include "GameConstants.h"
 #include "Game.h"
 #include "ISprite.h"
 #include "Effect.h"
@@ -11,37 +12,36 @@
 #include "ConfigManager.h"
 
 // External global from Game.cpp
-extern int _iAttackerHeight[];
 
-EffectManager::EffectManager(CGame* pGame)
-	: m_pGame(pGame)
-	, m_pEffectSpr(nullptr)
+effect_manager::effect_manager(CGame* game)
+	: m_game(game)
+	, m_effect_sprites(nullptr)
 {
-	for (int i = 0; i < DEF_MAXEFFECTS; i++)
-		m_pEffectList[i] = nullptr;
+	for (int i = 0; i < game_limits::max_effects; i++)
+		m_effect_list[i] = nullptr;
 }
 
 // Listo
-EffectManager::~EffectManager()
+effect_manager::~effect_manager()
 {
-	ClearAllEffects();
+	clear_all_effects();
 }
 
 // Listo
-void EffectManager::SetEffectSprites(SpriteLib::SpriteCollection& effectSpr)
+void effect_manager::set_effect_sprites(hb::shared::sprite::SpriteCollection& effectSpr)
 {
-	m_pEffectSpr = &effectSpr;
+	m_effect_sprites = &effectSpr;
 }
 
 // Listo
-void EffectManager::ClearAllEffects()
+void effect_manager::clear_all_effects()
 {
-	for (int i = 0; i < DEF_MAXEFFECTS; i++)
+	for (int i = 0; i < game_limits::max_effects; i++)
 	{
-		if (m_pEffectList[i] != nullptr)
+		if (m_effect_list[i] != nullptr)
 		{
-			delete m_pEffectList[i];
-			m_pEffectList[i] = nullptr;
+			delete m_effect_list[i];
+			m_effect_list[i] = nullptr;
 		}
 	}
 }
@@ -53,23 +53,23 @@ void EffectManager::ClearAllEffects()
 //   - Effect_Draw.cpp
 //   - Effect_Lights.cpp
 
-void EffectManager::AddEffect(EffectType sType, int sX, int sY, int dX, int dY, char cStartFrame, int iV1)
+void effect_manager::add_effect(EffectType type, int sX, int sY, int dX, int dY, char start_frame, int v1)
 {
-	AddEffectImpl(sType, sX, sY, dX, dY, cStartFrame, iV1);
+	add_effect_impl(type, sX, sY, dX, dY, start_frame, v1);
 }
 
-void EffectManager::Update()
+void effect_manager::update()
 {
-	UpdateEffectsImpl();
+	update_effects_impl();
 }
 
-void EffectManager::DrawEffects()
+void effect_manager::draw_effects()
 {
-	DrawEffectsImpl();
+	draw_effects_impl();
 }
 
-void EffectManager::DrawEffectLights()
+void effect_manager::draw_effect_lights()
 {
-	DrawEffectLightsImpl();
+	draw_effect_lights_impl();
 }
 

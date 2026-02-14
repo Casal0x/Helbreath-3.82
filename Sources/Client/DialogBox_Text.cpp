@@ -1,141 +1,157 @@
 #include "DialogBox_Text.h"
 #include "ConfigManager.h"
 #include "Game.h"
-#include "InputManager.h"
-#define DEF_TEXTDLGMAXLINES 300
+#include "IInput.h"
+#include "GameFonts.h"
+#include "TextLibExt.h"
+using namespace hb::client::sprite_id;
+// game_limits::max_text_dlg_lines is in GameConstants.h (via Game.h)
 
-DialogBox_Text::DialogBox_Text(CGame* pGame)
-	: IDialogBox(DialogBoxId::Text, pGame)
+DialogBox_Text::DialogBox_Text(CGame* game)
+	: IDialogBox(DialogBoxId::Text, game)
 {
-	SetDefaultRect(20 + SCREENX, 65 + SCREENY, 258, 339);
+	set_default_rect(20 , 65 , 258, 339);
 }
 
-int DialogBox_Text::GetTotalLines() const
+int DialogBox_Text::get_total_lines() const
 {
-	int iTotalLines = 0;
-	for (int i = 0; i < DEF_TEXTDLGMAXLINES; i++)
+	int total_lines = 0;
+	for (int i = 0; i < game_limits::max_text_dlg_lines; i++)
 	{
-		if (m_pGame->m_pMsgTextList[i] != nullptr)
-			iTotalLines++;
+		if (m_game->m_msg_text_list[i] != nullptr)
+			total_lines++;
 	}
-	return iTotalLines;
+	return total_lines;
 }
 
-void DialogBox_Text::OnDraw(short msX, short msY, short msZ, char cLB)
+void DialogBox_Text::on_draw(short mouse_x, short mouse_y, short z, char lb)
 {
-	short sX = m_pGame->m_dialogBoxManager.Info(DialogBoxId::Text).sX;
-	short sY = m_pGame->m_dialogBoxManager.Info(DialogBoxId::Text).sY;
+	short sX = m_game->m_dialog_box_manager.Info(DialogBoxId::Text).m_x;
+	short sY = m_game->m_dialog_box_manager.Info(DialogBoxId::Text).m_y;
 
-	m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX, sY, 0);
+	m_game->draw_new_dialog_box(InterfaceNdGame2, sX, sY, 0);
 
-	int iTotalLines = GetTotalLines();
+	int total_lines = get_total_lines();
 
-	if (iTotalLines > 17)
-		m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX, sY, 1);
+	if (total_lines > 17)
+		m_game->draw_new_dialog_box(InterfaceNdGame2, sX, sY, 1);
 
 	// Mouse wheel scrolling
-	if (m_pGame->m_dialogBoxManager.iGetTopDialogBoxIndex() == DialogBoxId::Text && msZ != 0)
+	if (m_game->m_dialog_box_manager.get_top_dialog_box_index() == DialogBoxId::Text && z != 0)
 	{
-		m_pGame->m_dialogBoxManager.Info(DialogBoxId::Text).sView -= msZ / 60;
-		InputManager::Get().ClearWheelDelta();
+		m_game->m_dialog_box_manager.Info(DialogBoxId::Text).m_view -= z / 60;
+
 	}
 
-	// Clamp scroll view
-	if (m_pGame->m_dialogBoxManager.Info(DialogBoxId::Text).sView < 0)
-		m_pGame->m_dialogBoxManager.Info(DialogBoxId::Text).sView = 0;
-	if (iTotalLines > 17 && m_pGame->m_dialogBoxManager.Info(DialogBoxId::Text).sView > iTotalLines - 17)
-		m_pGame->m_dialogBoxManager.Info(DialogBoxId::Text).sView = iTotalLines - 17;
+	// clamp scroll view
+	if (m_game->m_dialog_box_manager.Info(DialogBoxId::Text).m_view < 0)
+		m_game->m_dialog_box_manager.Info(DialogBoxId::Text).m_view = 0;
+	if (total_lines > 17 && m_game->m_dialog_box_manager.Info(DialogBoxId::Text).m_view > total_lines - 17)
+		m_game->m_dialog_box_manager.Info(DialogBoxId::Text).m_view = total_lines - 17;
 
-	// Draw scroll bar
-	int iPointerLoc = 0;
-	if (iTotalLines > 17)
+	// draw scroll bar
+	int pointer_loc = 0;
+	if (total_lines > 17)
 	{
-		double d1 = (double)m_pGame->m_dialogBoxManager.Info(DialogBoxId::Text).sView;
-		double d2 = (double)(iTotalLines - 17);
+		double d1 = static_cast<double>(m_game->m_dialog_box_manager.Info(DialogBoxId::Text).m_view);
+		double d2 = static_cast<double>(total_lines - 17);
 		double d3 = (274.0 * d1) / d2;
-		iPointerLoc = (int)(d3 + 0.5);
-		m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX, sY, 1);
-		m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX + 242, sY + 35 + iPointerLoc, 7);
+		pointer_loc = static_cast<int>(d3 + 0.5);
+		m_game->draw_new_dialog_box(InterfaceNdGame2, sX, sY, 1);
+		m_game->draw_new_dialog_box(InterfaceNdGame2, sX + 242, sY + 35 + pointer_loc, 7);
 	}
 
-	// Draw text lines
-	short sView = m_pGame->m_dialogBoxManager.Info(DialogBoxId::Text).sView;
+	// draw text lines
+	short view = m_game->m_dialog_box_manager.Info(DialogBoxId::Text).m_view;
 	for (int i = 0; i < 17; i++)
 	{
-		if (m_pGame->m_pMsgTextList[i + sView] != nullptr)
+		if ((i + view) < game_limits::max_text_dlg_lines && m_game->m_msg_text_list[i + view] != nullptr)
 		{
-			char* pMsg = m_pGame->m_pMsgTextList[i + sView]->m_pMsg;
-			if (ConfigManager::Get().IsDialogTransparencyEnabled() == false)
+			char* pMsg = m_game->m_msg_text_list[i + view]->m_pMsg;
+			if (config_manager::get().is_dialog_transparency_enabled() == false)
 			{
 				switch (pMsg[0])
 				{
 				case '_':
-					m_pGame->PutAlignedString(sX + 24, sX + 236, sY + 50 + i * 13, pMsg + 1, 255, 255, 255);
+					hb::shared::text::draw_text_aligned(GameFont::Default, sX + 24, sY + 50 + i * 13, sX + 236 - (sX + 24), 15, pMsg + 1, hb::shared::text::TextStyle::from_color(GameColors::UIWhite), hb::shared::text::Align::TopCenter);
 					break;
 				case ';':
-					m_pGame->PutAlignedString(sX + 24, sX + 236, sY + 50 + i * 13, pMsg + 1, 4, 0, 50);
+					hb::shared::text::draw_text_aligned(GameFont::Default, sX + 24, sY + 50 + i * 13, sX + 236 - (sX + 24), 15, pMsg + 1, hb::shared::text::TextStyle::from_color(GameColors::UIMagicBlue), hb::shared::text::Align::TopCenter);
 					break;
 				default:
-					m_pGame->PutAlignedString(sX + 24, sX + 236, sY + 50 + i * 13, pMsg, 45, 25, 25);
+					hb::shared::text::draw_text_aligned(GameFont::Default, sX + 24, sY + 50 + i * 13, sX + 236 - (sX + 24), 15, pMsg, hb::shared::text::TextStyle::from_color(GameColors::UILabel), hb::shared::text::Align::TopCenter);
 					break;
 				}
 			}
 			else
 			{
-				m_pGame->PutAlignedString(sX + 24, sX + 236, sY + 50 + i * 13, pMsg, 0, 0, 0);
+				hb::shared::text::draw_text_aligned(GameFont::Default, sX + 24, sY + 50 + i * 13, sX + 236 - (sX + 24), 15, pMsg, hb::shared::text::TextStyle::from_color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
 			}
 		}
 	}
 
 	// Handle scroll bar dragging
-	if (cLB != 0 && iTotalLines > 17)
+	if (lb != 0 && total_lines > 17)
 	{
-		if (m_pGame->m_dialogBoxManager.iGetTopDialogBoxIndex() == DialogBoxId::Text)
+		if (m_game->m_dialog_box_manager.get_top_dialog_box_index() == DialogBoxId::Text)
 		{
-			if ((msX >= sX + 240) && (msX <= sX + 260) && (msY >= sY + 40) && (msY <= sY + 320))
+			if ((mouse_x >= sX + 240) && (mouse_x <= sX + 260) && (mouse_y >= sY + 40) && (mouse_y <= sY + 320))
 			{
-				double d1 = (double)(msY - (sY + 35));
-				double d2 = (double)(iTotalLines - 17);
+				double d1 = static_cast<double>(mouse_y - (sY + 35));
+				double d2 = static_cast<double>(total_lines - 17);
 				double d3 = (d1 * d2) / 274.0;
-				iPointerLoc = (int)d3;
-				if (iPointerLoc > iTotalLines - 17)
-					iPointerLoc = iTotalLines - 17;
-				m_pGame->m_dialogBoxManager.Info(DialogBoxId::Text).sView = iPointerLoc;
+				pointer_loc = static_cast<int>(d3);
+				if (pointer_loc > total_lines - 17)
+					pointer_loc = total_lines - 17;
+				m_game->m_dialog_box_manager.Info(DialogBoxId::Text).m_view = pointer_loc;
 			}
 		}
 	}
 	else
 	{
-		m_pGame->m_dialogBoxManager.Info(DialogBoxId::Text).bIsScrollSelected = false;
+		m_game->m_dialog_box_manager.Info(DialogBoxId::Text).m_is_scroll_selected = false;
 	}
 
 	// Close button hover highlight
-	if ((msX > sX + DEF_RBTNPOSX) && (msX < sX + DEF_RBTNPOSX + DEF_BTNSZX) &&
-		(msY > sY + DEF_BTNPOSY) && (msY < sY + DEF_BTNPOSY + DEF_BTNSZY))
+	if ((mouse_x > sX + ui_layout::right_btn_x) && (mouse_x < sX + ui_layout::right_btn_x + ui_layout::btn_size_x) &&
+		(mouse_y > sY + ui_layout::btn_y) && (mouse_y < sY + ui_layout::btn_y + ui_layout::btn_size_y))
 	{
-		m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 1);
+		m_game->draw_new_dialog_box(InterfaceNdButton, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 1);
 	}
 	else
 	{
-		m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 0);
+		m_game->draw_new_dialog_box(InterfaceNdButton, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 0);
 	}
 }
 
-bool DialogBox_Text::OnClick(short msX, short msY)
+bool DialogBox_Text::on_click(short mouse_x, short mouse_y)
 {
-	short sX = m_pGame->m_dialogBoxManager.Info(DialogBoxId::Text).sX;
-	short sY = m_pGame->m_dialogBoxManager.Info(DialogBoxId::Text).sY;
+	short sX = m_game->m_dialog_box_manager.Info(DialogBoxId::Text).m_x;
+	short sY = m_game->m_dialog_box_manager.Info(DialogBoxId::Text).m_y;
 
 	// Close button
-	if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) &&
-		(msY > sY + DEF_BTNPOSY) && (msY < sY + DEF_BTNPOSY + DEF_BTNSZY))
+	if ((mouse_x >= sX + ui_layout::right_btn_x) && (mouse_x <= sX + ui_layout::right_btn_x + ui_layout::btn_size_x) &&
+		(mouse_y > sY + ui_layout::btn_y) && (mouse_y < sY + ui_layout::btn_y + ui_layout::btn_size_y))
 	{
-		m_pGame->m_dialogBoxManager.DisableDialogBox(DialogBoxId::Text);
-		m_pGame->PlaySound('E', 14, 5);
+		m_game->m_dialog_box_manager.disable_dialog_box(DialogBoxId::Text);
+		m_game->play_game_sound('E', 14, 5);
 		return true;
 	}
 
 	return false;
 }
 
+PressResult DialogBox_Text::on_press(short mouse_x, short mouse_y)
+{
+	short sX = Info().m_x;
+	short sY = Info().m_y;
+
+	// Scroll bar region
+	if ((mouse_x >= sX + 240) && (mouse_x <= sX + 260) && (mouse_y >= sY + 40) && (mouse_y <= sY + 320))
+	{
+		return PressResult::ScrollClaimed;
+	}
+
+	return PressResult::Normal;
+}
 

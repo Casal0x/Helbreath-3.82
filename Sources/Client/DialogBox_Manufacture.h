@@ -4,20 +4,28 @@
 class DialogBox_Manufacture : public IDialogBox
 {
 public:
-	DialogBox_Manufacture(CGame* pGame);
+	DialogBox_Manufacture(CGame* game);
 	~DialogBox_Manufacture() override = default;
 
-	void OnDraw(short msX, short msY, short msZ, char cLB) override;
-	bool OnClick(short msX, short msY) override;
+	void on_draw(short mouse_x, short mouse_y, short z, char lb) override;
+	bool on_click(short mouse_x, short mouse_y) override;
+	PressResult on_press(short mouse_x, short mouse_y) override;
+	bool on_item_drop(short mouse_x, short mouse_y) override;
 
 private:
-	void DrawAlchemyWaiting(short sX, short sY, short msX, short msY);
-	void DrawAlchemyCreating(short sX, short sY);
-	void DrawManufactureList(short sX, short sY, short msX, short msY, short msZ, char cLB);
-	void DrawManufactureWaiting(short sX, short sY, short msX, short msY);
-	void DrawManufactureInProgress(short sX, short sY);
-	void DrawManufactureDone(short sX, short sY, short msX, short msY);
-	void DrawCraftingWaiting(short sX, short sY, short msX, short msY);
-	void DrawCraftingInProgress(short sX, short sY);
-	void ResetItemSlots();
+	void draw_alchemy_waiting(short sX, short sY, short mouse_x, short mouse_y);
+	void draw_alchemy_creating(short sX, short sY);
+	void draw_manufacture_list(short sX, short sY, short mouse_x, short mouse_y, short z, char lb);
+	void draw_manufacture_waiting(short sX, short sY, short mouse_x, short mouse_y);
+	void draw_manufacture_in_progress(short sX, short sY);
+	void draw_manufacture_done(short sX, short sY, short mouse_x, short mouse_y);
+	void draw_crafting_waiting(short sX, short sY, short mouse_x, short mouse_y);
+	void draw_crafting_in_progress(short sX, short sY);
+	void reset_item_slots();
+
+	// Press helpers
+	bool check_slot_item_click(int slotIndex, int itemIdx, int drawX, int drawY, short mouse_x, short mouse_y);
+
+	// Item drop helper: Tries to add item to first empty slot, returns true if successful
+	bool try_add_item_to_slot(int item_id, bool updateBuildStatus);
 };

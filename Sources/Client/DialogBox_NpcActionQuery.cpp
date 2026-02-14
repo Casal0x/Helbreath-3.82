@@ -1,439 +1,405 @@
-#include "DialogBox_NpcActionQuery.h"
+﻿#include "DialogBox_NpcActionQuery.h"
 #include "Game.h"
+#include "InventoryManager.h"
+#include "ItemNameFormatter.h"
 #include "GlobalDef.h"
 #include "lan_eng.h"
+#include <format>
+#include <string>
 
-DialogBox_NpcActionQuery::DialogBox_NpcActionQuery(CGame* pGame)
-	: IDialogBox(DialogBoxId::NpcActionQuery, pGame)
+using namespace hb::shared::net;
+using namespace hb::shared::item;
+using namespace hb::client::sprite_id;
+
+DialogBox_NpcActionQuery::DialogBox_NpcActionQuery(CGame* game)
+	: IDialogBox(DialogBoxId::NpcActionQuery, game)
 {
-	SetDefaultRect(237 + SCREENX, 57 + SCREENY, 252, 87);
+	set_default_rect(237 , 57 , 252, 87);
 }
 
-void DialogBox_NpcActionQuery::DrawHighlightedText(short sX, short sY, const char* text, short msX, short msY, short hitX1, short hitX2, short hitY1, short hitY2)
+void DialogBox_NpcActionQuery::draw_highlighted_text(short sX, short sY, const char* text, short mouse_x, short mouse_y, short hitX1, short hitX2, short hitY1, short hitY2)
 {
-	if ((msX > hitX1) && (msX < hitX2) && (msY > hitY1) && (msY < hitY2)) {
-		PutString(sX, sY, (char*)text, RGB(255, 255, 255));
-		PutString(sX + 1, sY, (char*)text, RGB(255, 255, 255));
+	if ((mouse_x > hitX1) && (mouse_x < hitX2) && (mouse_y > hitY1) && (mouse_y < hitY2)) {
+		put_string(sX, sY, (char*)text, GameColors::UIWhite);
+		put_string(sX + 1, sY, (char*)text, GameColors::UIWhite);
 	}
 	else {
-		PutString(sX, sY, (char*)text, RGB(4, 0, 50));
-		PutString(sX + 1, sY, (char*)text, RGB(4, 0, 50));
+		put_string(sX, sY, (char*)text, GameColors::UIMagicBlue);
+		put_string(sX + 1, sY, (char*)text, GameColors::UIMagicBlue);
 	}
 }
 
-void DialogBox_NpcActionQuery::DrawMode0_NpcMenu(short sX, short sY, short msX, short msY)
+void DialogBox_NpcActionQuery::DrawMode0_NpcMenu(short sX, short sY, short mouse_x, short mouse_y)
 {
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX, sY, 5);
+	draw_new_dialog_box(InterfaceNdGame2, sX, sY, 5);
 
-	switch (Info().sV3) {
-	case 15:
-		PutString(sX + 33, sY + 23, NPC_NAME_SHOP_KEEPER, RGB(45, 25, 25));
-		PutString(sX + 33 - 1, sY + 23 - 1, NPC_NAME_SHOP_KEEPER, RGB(255, 255, 255));
-		break;
-	case 19:
-		PutString(sX + 33, sY + 23, NPC_NAME_MAGICIAN, RGB(45, 25, 25));
-		PutString(sX + 33 - 1, sY + 23 - 1, NPC_NAME_MAGICIAN, RGB(255, 255, 255));
-		break;
-	case 20:
-		PutString(sX + 33, sY + 23, NPC_NAME_WAREHOUSE_KEEPER, RGB(45, 25, 25));
-		PutString(sX + 33 - 1, sY + 23 - 1, NPC_NAME_WAREHOUSE_KEEPER, RGB(255, 255, 255));
-		break;
-	case 24:
-		PutString(sX + 33, sY + 23, NPC_NAME_BLACKSMITH_KEEPER, RGB(45, 25, 25));
-		PutString(sX + 33 - 1, sY + 23 - 1, NPC_NAME_BLACKSMITH_KEEPER, RGB(255, 255, 255));
-		break;
-	case 25:
-		PutString(sX + 33, sY + 23, NPC_NAME_CITYHALL_OFFICER, RGB(45, 25, 25));
-		PutString(sX + 33 - 1, sY + 23 - 1, NPC_NAME_CITYHALL_OFFICER, RGB(255, 255, 255));
-		break;
-	case 26:
-		PutString(sX + 33, sY + 23, NPC_NAME_GUILDHALL_OFFICER, RGB(45, 25, 25));
-		PutString(sX + 33 - 1, sY + 23 - 1, NPC_NAME_GUILDHALL_OFFICER, RGB(255, 255, 255));
-		break;
-	case 90:
-		PutString(sX + 33, sY + 23, "Heldenian staff officer", RGB(45, 25, 25));
-		PutString(sX + 33 - 1, sY + 23 - 1, "Heldenian staff officer", RGB(255, 255, 255));
-		break;
+	if (Info().m_v3 == 90) {
+		put_string(sX + 33, sY + 23, "Heldenian staff officer", GameColors::UILabel);
+		put_string(sX + 33 - 1, sY + 23 - 1, "Heldenian staff officer", GameColors::UIWhite);
+	}
+	else {
+		put_string(sX + 33, sY + 23, m_game->get_npc_config_name(Info().m_v3), GameColors::UILabel);
+		put_string(sX + 33 - 1, sY + 23 - 1, m_game->get_npc_config_name(Info().m_v3), GameColors::UIWhite);
 	}
 
-	if (Info().sV3 == 25) {
+	if (Info().m_v3 == 25) {
 		// OFFER
-		DrawHighlightedText(sX + 28, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY13, msX, msY, sX + 25, sX + 100, sY + 55, sY + 70);
+		draw_highlighted_text(sX + 28, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY13, mouse_x, mouse_y, sX + 25, sX + 100, sY + 55, sY + 70);
 	}
-	else if (Info().sV3 == 20) {
+	else if (Info().m_v3 == 20) {
 		// WITHDRAW
-		DrawHighlightedText(sX + 28, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY17, msX, msY, sX + 25, sX + 100, sY + 55, sY + 70);
+		draw_highlighted_text(sX + 28, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY17, mouse_x, mouse_y, sX + 25, sX + 100, sY + 55, sY + 70);
 	}
-	else if (Info().sV3 == 19) {
+	else if (Info().m_v3 == 19) {
 		// LEARN
-		DrawHighlightedText(sX + 28, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY19, msX, msY, sX + 25, sX + 100, sY + 55, sY + 70);
+		draw_highlighted_text(sX + 28, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY19, mouse_x, mouse_y, sX + 25, sX + 100, sY + 55, sY + 70);
 	}
 	else {
 		// TRADE
-		DrawHighlightedText(sX + 28, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY21, msX, msY, sX + 25, sX + 100, sY + 55, sY + 70);
+		draw_highlighted_text(sX + 28, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY21, mouse_x, mouse_y, sX + 25, sX + 100, sY + 55, sY + 70);
 	}
 
-	if (m_pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::NpcTalk) == false) {
-		DrawHighlightedText(sX + 125, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY25, msX, msY, sX + 125, sX + 180, sY + 55, sY + 70);
+	if (m_game->m_dialog_box_manager.is_enabled(DialogBoxId::NpcTalk) == false) {
+		draw_highlighted_text(sX + 125, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY25, mouse_x, mouse_y, sX + 125, sX + 180, sY + 55, sY + 70);
 	}
 }
 
-void DialogBox_NpcActionQuery::DrawMode1_GiveToPlayer(short sX, short sY, short msX, short msY)
+void DialogBox_NpcActionQuery::DrawMode1_GiveToPlayer(short sX, short sY, short mouse_x, short mouse_y)
 {
-	char cTxt[120], cTxt2[120], cStr1[64], cStr2[64], cStr3[64];
-	std::memset(cStr1, 0, sizeof(cStr1));
-	std::memset(cStr2, 0, sizeof(cStr2));
-	std::memset(cStr3, 0, sizeof(cStr3));
+	std::string txt, txt2;
 
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX, sY, 6);
-	m_pGame->GetItemName(m_pGame->m_pItemList[Info().sV1], cStr1, cStr2, cStr3);
-	wsprintf(cTxt, DRAW_DIALOGBOX_NPCACTION_QUERY29, Info().sV3, cStr1);
-	wsprintf(cTxt2, DRAW_DIALOGBOX_NPCACTION_QUERY29_1, Info().cStr);
 
-	PutString(sX + 24, sY + 25, cTxt, RGB(45, 25, 25));
-	PutString(sX + 24, sY + 40, cTxt2, RGB(45, 25, 25));
+	draw_new_dialog_box(InterfaceNdGame2, sX, sY, 6);
+	auto itemInfo = item_name_formatter::get().format(m_game->m_item_list[Info().m_v1].get());
+	txt = std::format(DRAW_DIALOGBOX_NPCACTION_QUERY29, Info().m_v3, itemInfo.name.c_str());
+	txt2 = std::format(DRAW_DIALOGBOX_NPCACTION_QUERY29_1, Info().m_str);
 
-	DrawHighlightedText(sX + 28, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY30, msX, msY, sX + 25, sX + 100, sY + 55, sY + 70);
-	DrawHighlightedText(sX + 155, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY34, msX, msY, sX + 155, sX + 210, sY + 55, sY + 70);
+	put_string(sX + 24, sY + 25, txt.c_str(), GameColors::UILabel);
+	put_string(sX + 24, sY + 40, txt2.c_str(), GameColors::UILabel);
+
+	draw_highlighted_text(sX + 28, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY30, mouse_x, mouse_y, sX + 25, sX + 100, sY + 55, sY + 70);
+	draw_highlighted_text(sX + 155, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY34, mouse_x, mouse_y, sX + 155, sX + 210, sY + 55, sY + 70);
 }
 
-void DialogBox_NpcActionQuery::DrawMode2_SellToShop(short sX, short sY, short msX, short msY)
+void DialogBox_NpcActionQuery::DrawMode2_SellToShop(short sX, short sY, short mouse_x, short mouse_y)
 {
-	char cTxt[120], cTxt2[120], cStr1[64], cStr2[64], cStr3[64];
-	std::memset(cStr1, 0, sizeof(cStr1));
-	std::memset(cStr2, 0, sizeof(cStr2));
-	std::memset(cStr3, 0, sizeof(cStr3));
+	std::string txt, txt2;
 
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX, sY, 5);
-	m_pGame->GetItemName(m_pGame->m_pItemList[Info().sV1], cStr1, cStr2, cStr3);
 
-	wsprintf(cTxt, DRAW_DIALOGBOX_NPCACTION_QUERY29, Info().sV3, cStr1);
-	wsprintf(cTxt2, DRAW_DIALOGBOX_NPCACTION_QUERY29_1, Info().cStr);
+	draw_new_dialog_box(InterfaceNdGame2, sX, sY, 5);
+	auto itemInfo2 = item_name_formatter::get().format(m_game->m_item_list[Info().m_v1].get());
 
-	PutString(sX + 24, sY + 20, cTxt, RGB(45, 25, 25));
-	PutString(sX + 24, sY + 35, cTxt2, RGB(45, 25, 25));
+	txt = std::format(DRAW_DIALOGBOX_NPCACTION_QUERY29, Info().m_v3, itemInfo2.name.c_str());
+	txt2 = std::format(DRAW_DIALOGBOX_NPCACTION_QUERY29_1, Info().m_str);
 
-	DrawHighlightedText(sX + 28, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY39, msX, msY, sX + 25, sX + 100, sY + 55, sY + 70);
+	put_string(sX + 24, sY + 20, txt.c_str(), GameColors::UILabel);
+	put_string(sX + 24, sY + 35, txt2.c_str(), GameColors::UILabel);
 
-	if ((m_pGame->m_pItemList[Info().sV1]->m_cItemType != DEF_ITEMTYPE_CONSUME) &&
-		(m_pGame->m_pItemList[Info().sV1]->m_cItemType != DEF_ITEMTYPE_ARROW))
+	draw_highlighted_text(sX + 28, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY39, mouse_x, mouse_y, sX + 25, sX + 100, sY + 55, sY + 70);
+
+	CItem* cfg = m_game->get_item_config(m_game->m_item_list[Info().m_v1]->m_id_num);
+	if (cfg && (cfg->get_item_type() != ItemType::Consume) &&
+		(cfg->get_item_type() != ItemType::Arrow))
 	{
-		DrawHighlightedText(sX + 125, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY43, msX, msY, sX + 125, sX + 180, sY + 55, sY + 70);
+		draw_highlighted_text(sX + 125, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY43, mouse_x, mouse_y, sX + 125, sX + 180, sY + 55, sY + 70);
 	}
 }
 
-void DialogBox_NpcActionQuery::DrawMode3_DepositToWarehouse(short sX, short sY, short msX, short msY)
+void DialogBox_NpcActionQuery::DrawMode3_DepositToWarehouse(short sX, short sY, short mouse_x, short mouse_y)
 {
-	char cTxt[120], cTxt2[120], cStr1[64], cStr2[64], cStr3[64];
-	std::memset(cStr1, 0, sizeof(cStr1));
-	std::memset(cStr2, 0, sizeof(cStr2));
-	std::memset(cStr3, 0, sizeof(cStr3));
+	std::string txt, txt2;
 
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX, sY, 6);
-	m_pGame->GetItemName(m_pGame->m_pItemList[Info().sV1], cStr1, cStr2, cStr3);
 
-	wsprintf(cTxt, DRAW_DIALOGBOX_NPCACTION_QUERY29, Info().sV3, cStr1);
-	wsprintf(cTxt2, DRAW_DIALOGBOX_NPCACTION_QUERY29_1, Info().cStr);
+	draw_new_dialog_box(InterfaceNdGame2, sX, sY, 6);
+	auto itemInfo3 = item_name_formatter::get().format(m_game->m_item_list[Info().m_v1].get());
 
-	PutAlignedString(sX, sX + 240, sY + 20, cTxt, 45, 25, 25);
-	PutAlignedString(sX, sX + 240, sY + 35, cTxt2, 45, 25, 25);
+	txt = std::format(DRAW_DIALOGBOX_NPCACTION_QUERY29, Info().m_v3, itemInfo3.name.c_str());
+	txt2 = std::format(DRAW_DIALOGBOX_NPCACTION_QUERY29_1, Info().m_str);
 
-	DrawHighlightedText(sX + 28, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY48, msX, msY, sX + 25, sX + 100, sY + 55, sY + 70);
+	put_aligned_string(sX, sX + 240, sY + 20, txt.c_str(), GameColors::UILabel);
+	put_aligned_string(sX, sX + 240, sY + 35, txt2.c_str(), GameColors::UILabel);
+
+	draw_highlighted_text(sX + 28, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY48, mouse_x, mouse_y, sX + 25, sX + 100, sY + 55, sY + 70);
 }
 
-void DialogBox_NpcActionQuery::DrawMode4_TalkToNpcOrUnicorn(short sX, short sY, short msX, short msY)
+void DialogBox_NpcActionQuery::DrawMode4_TalkToNpcOrUnicorn(short sX, short sY, short mouse_x, short mouse_y)
 {
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX, sY, 5);
+	draw_new_dialog_box(InterfaceNdGame2, sX, sY, 5);
 
-	switch (Info().sV3) {
-	case 21:
-		PutString(sX + 35, sY + 25, NPC_NAME_GUARD, RGB(45, 25, 25));
-		PutString(sX + 35 - 1, sY + 25 - 1, NPC_NAME_GUARD, RGB(255, 255, 255));
-		break;
-	case 32:
-		PutString(sX + 35, sY + 25, NPC_NAME_UNICORN, RGB(45, 25, 25));
-		PutString(sX + 35 - 1, sY + 25 - 1, NPC_NAME_UNICORN, RGB(255, 255, 255));
-		break;
-	case 67:
-		PutString(sX + 35, sY + 25, NPC_NAME_MCGAFFIN, RGB(45, 25, 25));
-		PutString(sX + 35 - 1, sY + 25 - 1, NPC_NAME_MCGAFFIN, RGB(255, 255, 255));
-		break;
-	case 68:
-		PutString(sX + 35, sY + 25, NPC_NAME_PERRY, RGB(45, 25, 25));
-		PutString(sX + 35 - 1, sY + 25 - 1, NPC_NAME_PERRY, RGB(255, 255, 255));
-		break;
-	case 69:
-		PutString(sX + 35, sY + 25, NPC_NAME_DEVLIN, RGB(45, 25, 25));
-		PutString(sX + 35 - 1, sY + 25 - 1, NPC_NAME_DEVLIN, RGB(255, 255, 255));
-		break;
-	}
+	put_string(sX + 35, sY + 25, m_game->get_npc_config_name(Info().m_v3), GameColors::UILabel);
+	put_string(sX + 35 - 1, sY + 25 - 1, m_game->get_npc_config_name(Info().m_v3), GameColors::UIWhite);
 
-	if (m_pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::NpcTalk) == false) {
-		DrawHighlightedText(sX + 125, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY25, msX, msY, sX + 125, sX + 180, sY + 55, sY + 70);
+	if (m_game->m_dialog_box_manager.is_enabled(DialogBoxId::NpcTalk) == false) {
+		draw_highlighted_text(sX + 125, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY25, mouse_x, mouse_y, sX + 125, sX + 180, sY + 55, sY + 70);
 	}
 }
 
-void DialogBox_NpcActionQuery::DrawMode5_ShopWithSell(short sX, short sY, short msX, short msY)
+void DialogBox_NpcActionQuery::DrawMode5_ShopWithSell(short sX, short sY, short mouse_x, short mouse_y)
 {
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX, sY, 6);
+	draw_new_dialog_box(InterfaceNdGame2, sX, sY, 6);
 
-	switch (Info().sV3) {
-	case 15:
-		PutString(sX + 33, sY + 23, NPC_NAME_SHOP_KEEPER, RGB(45, 25, 25));
-		PutString(sX + 33 - 1, sY + 23 - 1, NPC_NAME_SHOP_KEEPER, RGB(255, 255, 255));
-		break;
-	case 24:
-		PutString(sX + 33, sY + 23, NPC_NAME_BLACKSMITH_KEEPER, RGB(45, 25, 25));
-		PutString(sX + 33 - 1, sY + 23 - 1, NPC_NAME_BLACKSMITH_KEEPER, RGB(255, 255, 255));
-		// Repair All button
-		DrawHighlightedText(sX + 155, sY + 22, DRAW_DIALOGBOX_NPCACTION_QUERY49, msX, msY, sX + 155, sX + 210, sY + 22, sY + 37);
-		break;
+	put_string(sX + 33, sY + 23, m_game->get_npc_config_name(Info().m_v3), GameColors::UILabel);
+	put_string(sX + 33 - 1, sY + 23 - 1, m_game->get_npc_config_name(Info().m_v3), GameColors::UIWhite);
+
+	if (Info().m_v3 == 24) {
+		// Repair All button (Blacksmith only)
+		draw_highlighted_text(sX + 155, sY + 22, DRAW_DIALOGBOX_NPCACTION_QUERY49, mouse_x, mouse_y, sX + 155, sX + 210, sY + 22, sY + 37);
 	}
 
 	// Trade
-	DrawHighlightedText(sX + 28, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY21, msX, msY, sX + 25, sX + 100, sY + 55, sY + 70);
+	draw_highlighted_text(sX + 28, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY21, mouse_x, mouse_y, sX + 25, sX + 100, sY + 55, sY + 70);
 
 	// Sell
-	DrawHighlightedText(sX + 28 + 75, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY39, msX, msY, sX + 25 + 79, sX + 80 + 75, sY + 55, sY + 70);
+	draw_highlighted_text(sX + 28 + 75, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY39, mouse_x, mouse_y, sX + 25 + 79, sX + 80 + 75, sY + 55, sY + 70);
 
-	if (m_pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::NpcTalk) == false) {
-		DrawHighlightedText(sX + 155, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY25, msX, msY, sX + 155, sX + 210, sY + 55, sY + 70);
+	if (m_game->m_dialog_box_manager.is_enabled(DialogBoxId::NpcTalk) == false) {
+		draw_highlighted_text(sX + 155, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY25, mouse_x, mouse_y, sX + 155, sX + 210, sY + 55, sY + 70);
 	}
 }
 
-void DialogBox_NpcActionQuery::DrawMode6_Gail(short sX, short sY, short msX, short msY)
+void DialogBox_NpcActionQuery::DrawMode6_Gail(short sX, short sY, short mouse_x, short mouse_y)
 {
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX, sY, 5);
+	draw_new_dialog_box(InterfaceNdGame2, sX, sY, 5);
 
-	DrawHighlightedText(sX + 28, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY21, msX, msY, sX + 25, sX + 100, sY + 55, sY + 70);
+	draw_highlighted_text(sX + 28, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY21, mouse_x, mouse_y, sX + 25, sX + 100, sY + 55, sY + 70);
 
-	PutString(sX + 33, sY + 23, "Heldenian staff officer", RGB(45, 25, 25));
-	PutString(sX + 33 - 1, sY + 23 - 1, "Heldenian staff officer", RGB(255, 255, 255));
+	put_string(sX + 33, sY + 23, "Heldenian staff officer", GameColors::UILabel);
+	put_string(sX + 33 - 1, sY + 23 - 1, "Heldenian staff officer", GameColors::UIWhite);
 }
 
-void DialogBox_NpcActionQuery::OnDraw(short msX, short msY, short msZ, char cLB)
+void DialogBox_NpcActionQuery::on_draw(short mouse_x, short mouse_y, short z, char lb)
 {
-	short sX = Info().sX;
-	short sY = Info().sY;
+	if (!m_game->ensure_item_configs_loaded()) return;
+	short sX = Info().m_x;
+	short sY = Info().m_y;
 
-	switch (Info().cMode) {
+	switch (Info().m_mode) {
 	case 0:
-		DrawMode0_NpcMenu(sX, sY, msX, msY);
+		DrawMode0_NpcMenu(sX, sY, mouse_x, mouse_y);
 		break;
 	case 1:
-		DrawMode1_GiveToPlayer(sX, sY, msX, msY);
+		DrawMode1_GiveToPlayer(sX, sY, mouse_x, mouse_y);
 		break;
 	case 2:
-		DrawMode2_SellToShop(sX, sY, msX, msY);
+		DrawMode2_SellToShop(sX, sY, mouse_x, mouse_y);
 		break;
 	case 3:
-		DrawMode3_DepositToWarehouse(sX, sY, msX, msY);
+		DrawMode3_DepositToWarehouse(sX, sY, mouse_x, mouse_y);
 		break;
 	case 4:
-		DrawMode4_TalkToNpcOrUnicorn(sX, sY, msX, msY);
+		DrawMode4_TalkToNpcOrUnicorn(sX, sY, mouse_x, mouse_y);
 		break;
 	case 5:
-		DrawMode5_ShopWithSell(sX, sY, msX, msY);
+		DrawMode5_ShopWithSell(sX, sY, mouse_x, mouse_y);
 		break;
 	case 6:
-		DrawMode6_Gail(sX, sY, msX, msY);
+		DrawMode6_Gail(sX, sY, mouse_x, mouse_y);
 		break;
 	}
 }
 
-bool DialogBox_NpcActionQuery::OnClick(short msX, short msY)
+bool DialogBox_NpcActionQuery::on_click(short mouse_x, short mouse_y)
 {
-	short sX = Info().sX;
-	short sY = Info().sY;
+	short sX = Info().m_x;
+	short sY = Info().m_y;
 	int absX, absY;
 
-	if (m_pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::Exchange) == true) {
-		AddEventList(BITEMDROP_SKILLDIALOG1, 10);
+	if (m_game->m_dialog_box_manager.is_enabled(DialogBoxId::Exchange) == true) {
+		add_event_list(BITEMDROP_SKILLDIALOG1, 10);
 		return true;
 	}
 
-	switch (Info().cMode) {
+	switch (Info().m_mode) {
 	case 0: // Talk to npc
-		if ((msX > sX + 25) && (msX < sX + 100) && (msY > sY + 55) && (msY < sY + 70)) {
-			EnableDialogBox((DialogBoxId::Type)Info().sV1, Info().sV2, 0, 0);
-			DisableThisDialog();
+		if ((mouse_x > sX + 25) && (mouse_x < sX + 100) && (mouse_y > sY + 55) && (mouse_y < sY + 70)) {
+			enable_dialog_box((DialogBoxId::Type)Info().m_v1, Info().m_v2, 0, 0);
+			disable_this_dialog();
 			return true;
 		}
-		if ((m_pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::NpcTalk) == false) && (msX > sX + 125) && (msX < sX + 180) && (msY > sY + 55) && (msY < sY + 70)) {
-			switch (Info().sV1) {
+		if ((m_game->m_dialog_box_manager.is_enabled(DialogBoxId::NpcTalk) == false) && (mouse_x > sX + 125) && (mouse_x < sX + 180) && (mouse_y > sY + 55) && (mouse_y < sY + 70)) {
+			switch (Info().m_v1) {
 			case 7:
-				bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_TALKTONPC, 0, 1, 0, 0, 0);
-				AddEventList(TALKING_TO_GUILDHALL_OFFICER, 10);
+				send_command(MsgId::CommandCommon, CommonType::TalkToNpc, 0, 1, 0, 0, 0);
+				add_event_list(TALKING_TO_GUILDHALL_OFFICER, 10);
 				break;
 			case 11:
-				switch (Info().sV2) {
+				switch (Info().m_v2) {
 				case 1:
-					bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_TALKTONPC, 0, 2, 0, 0, 0);
-					AddEventList(TALKING_TO_SHOP_KEEPER, 10);
+					send_command(MsgId::CommandCommon, CommonType::TalkToNpc, 0, 2, 0, 0, 0);
+					add_event_list(TALKING_TO_SHOP_KEEPER, 10);
 					break;
 				case 2:
-					bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_TALKTONPC, 0, 3, 0, 0, 0);
-					AddEventList(TALKING_TO_BLACKSMITH_KEEPER, 10);
+					send_command(MsgId::CommandCommon, CommonType::TalkToNpc, 0, 3, 0, 0, 0);
+					add_event_list(TALKING_TO_BLACKSMITH_KEEPER, 10);
 					break;
 				}
 				break;
 			case 13:
-				bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_TALKTONPC, 0, 4, 0, 0, 0);
-				AddEventList(TALKING_TO_CITYHALL_OFFICER, 10);
+				send_command(MsgId::CommandCommon, CommonType::TalkToNpc, 0, 4, 0, 0, 0);
+				add_event_list(TALKING_TO_CITYHALL_OFFICER, 10);
 				break;
 			case 14:
-				bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_TALKTONPC, 0, 5, 0, 0, 0);
-				AddEventList(TALKING_TO_WAREHOUSE_KEEPER, 10);
+				send_command(MsgId::CommandCommon, CommonType::TalkToNpc, 0, 5, 0, 0, 0);
+				add_event_list(TALKING_TO_WAREHOUSE_KEEPER, 10);
 				break;
 			case 16:
-				bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_TALKTONPC, 0, 6, 0, 0, 0);
-				AddEventList(TALKING_TO_MAGICIAN, 10);
+				send_command(MsgId::CommandCommon, CommonType::TalkToNpc, 0, 6, 0, 0, 0);
+				add_event_list(TALKING_TO_MAGICIAN, 10);
 				break;
 			}
-			DisableThisDialog();
+			disable_this_dialog();
 			return true;
 		}
 		break;
 
 	case 1: // On other player
-		if ((msX > sX + 25) && (msX < sX + 100) && (msY > sY + 55) && (msY < sY + 70)) {
-			absX = abs(Info().sV5 - m_pGame->m_sPlayerX);
-			absY = abs(Info().sV6 - m_pGame->m_sPlayerY);
-			if ((absX <= 4) && (absY <= 4))
-				bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_GIVEITEMTOCHAR, Info().sV1, Info().sV3, Info().sV5, Info().sV6, m_pGame->m_pItemList[Info().sV1]->m_cName, Info().sV4);
-			else AddEventList(DLGBOX_CLICK_NPCACTION_QUERY7, 10);
-			DisableThisDialog();
+	{
+		CItem* cfg = m_game->get_item_config(m_game->m_item_list[Info().m_v1]->m_id_num);
+		if ((mouse_x > sX + 25) && (mouse_x < sX + 100) && (mouse_y > sY + 55) && (mouse_y < sY + 70)) {
+			absX = abs(Info().m_v5 - m_game->m_player->m_player_x);
+			absY = abs(Info().m_v6 - m_game->m_player->m_player_y);
+			if ((absX <= 4) && (absY <= 4) && cfg)
+				send_command(MsgId::CommandCommon, CommonType::GiveItemToChar, Info().m_v1, Info().m_v3, Info().m_v5, Info().m_v6, cfg->m_name, Info().m_v4);
+			else add_event_list(DLGBOX_CLICK_NPCACTION_QUERY7, 10);
+			disable_this_dialog();
 			return true;
 		}
-		else if ((msX > sX + 155) && (msX < sX + 210) && (msY > sY + 55) && (msY < sY + 70)) {
-			absX = abs(Info().sV5 - m_pGame->m_sPlayerX);
-			absY = abs(Info().sV6 - m_pGame->m_sPlayerY);
-			if ((absX <= 4) && (absY <= 4))
-				bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_EXCHANGEITEMTOCHAR, Info().sV1, Info().sV3, Info().sV5, Info().sV6, m_pGame->m_pItemList[Info().sV1]->m_cName, Info().sV4);
-			else AddEventList(DLGBOX_CLICK_NPCACTION_QUERY8, 10);
-			DisableThisDialog();
+		else if ((mouse_x > sX + 155) && (mouse_x < sX + 210) && (mouse_y > sY + 55) && (mouse_y < sY + 70)) {
+			absX = abs(Info().m_v5 - m_game->m_player->m_player_x);
+			absY = abs(Info().m_v6 - m_game->m_player->m_player_y);
+			if ((absX <= 4) && (absY <= 4) && cfg)
+				send_command(MsgId::CommandCommon, CommonType::ExchangeItemToChar, Info().m_v1, Info().m_v3, Info().m_v5, Info().m_v6, cfg->m_name, Info().m_v4);
+			else add_event_list(DLGBOX_CLICK_NPCACTION_QUERY8, 10);
+			disable_this_dialog();
 			return true;
 		}
 		break;
+	}
 
 	case 2: // Item on Shop/BS
-		if ((msX > sX + 25) && (msX < sX + 100) && (msY > sY + 55) && (msY < sY + 70)) {
-			bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQ_SELLITEM, 0, Info().sV1, Info().sV2, Info().sV3, m_pGame->m_pItemList[Info().sV1]->m_cName, Info().sV4);
-			DisableThisDialog();
+	{
+		CItem* cfg = m_game->get_item_config(m_game->m_item_list[Info().m_v1]->m_id_num);
+		if ((mouse_x > sX + 25) && (mouse_x < sX + 100) && (mouse_y > sY + 55) && (mouse_y < sY + 70)) {
+			if (cfg) send_command(MsgId::CommandCommon, CommonType::ReqSellItem, 0, Info().m_v1, Info().m_v2, Info().m_v3, cfg->m_name, Info().m_v4);
+			disable_this_dialog();
 			return true;
 		}
-		else if ((msX > sX + 125) && (msX < sX + 180) && (msY > sY + 55) && (msY < sY + 70)) {
-			if (Info().sV3 == 1) {
-				bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQ_REPAIRITEM, 0, Info().sV1, Info().sV2, 0, m_pGame->m_pItemList[Info().sV1]->m_cName, Info().sV4);
-				DisableThisDialog();
+		else if ((mouse_x > sX + 125) && (mouse_x < sX + 180) && (mouse_y > sY + 55) && (mouse_y < sY + 70)) {
+			if (Info().m_v3 == 1) {
+				if (cfg) send_command(MsgId::CommandCommon, CommonType::ReqRepairItem, 0, Info().m_v1, Info().m_v2, 0, cfg->m_name, Info().m_v4);
+				disable_this_dialog();
 				return true;
 			}
 		}
 		break;
+	}
 
 	case 3: // Put item in the WH
-		if ((msX > sX + 25) && (msX < sX + 105) && (msY > sY + 55) && (msY < sY + 70)) {
-			absX = abs(Info().sV5 - m_pGame->m_sPlayerX);
-			absY = abs(Info().sV6 - m_pGame->m_sPlayerY);
+	{
+		CItem* cfg = m_game->get_item_config(m_game->m_item_list[Info().m_v1]->m_id_num);
+		if ((mouse_x > sX + 25) && (mouse_x < sX + 105) && (mouse_y > sY + 55) && (mouse_y < sY + 70)) {
+			absX = abs(Info().m_v5 - m_game->m_player->m_player_x);
+			absY = abs(Info().m_v6 - m_game->m_player->m_player_y);
 			if ((absX <= 8) && (absY <= 8)) {
-				if (m_pGame->_iGetBankItemCount() >= (m_pGame->iMaxBankItems - 1)) {
-					AddEventList(DLGBOX_CLICK_NPCACTION_QUERY9, 10);
+				if (inventory_manager::get().get_bank_item_count() >= (m_game->m_max_bank_items - 1)) {
+					add_event_list(DLGBOX_CLICK_NPCACTION_QUERY9, 10);
 				}
-				else bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_GIVEITEMTOCHAR, Info().sV1, Info().sV3, Info().sV5, Info().sV6, m_pGame->m_pItemList[Info().sV1]->m_cName, Info().sV4);
+				else if (cfg) send_command(MsgId::CommandCommon, CommonType::GiveItemToChar, Info().m_v1, Info().m_v3, Info().m_v5, Info().m_v6, cfg->m_name, Info().m_v4);
 			}
-			else AddEventList(DLGBOX_CLICK_NPCACTION_QUERY7, 10);
-			DisableThisDialog();
+			else add_event_list(DLGBOX_CLICK_NPCACTION_QUERY7, 10);
+			disable_this_dialog();
 			return true;
 		}
 		break;
+	}
 
 	case 4: // talk to npc or Unicorn
-		if ((m_pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::NpcTalk) == false) && (msX > sX + 125) && (msX < sX + 180) && (msY > sY + 55) && (msY < sY + 70)) {
-			switch (Info().sV3) {
+		if ((m_game->m_dialog_box_manager.is_enabled(DialogBoxId::NpcTalk) == false) && (mouse_x > sX + 125) && (mouse_x < sX + 180) && (mouse_y > sY + 55) && (mouse_y < sY + 70)) {
+			switch (Info().m_v3) {
 			case 21:
-				bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_TALKTONPC, 0, 21, 0, 0, 0);
-				AddEventList(TALKING_TO_GUARD, 10);
+				send_command(MsgId::CommandCommon, CommonType::TalkToNpc, 0, 21, 0, 0, 0);
+				add_event_list(TALKING_TO_GUARD, 10);
 				break;
 			case 32:
-				bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_TALKTONPC, 0, 32, 0, 0, 0);
-				AddEventList(TALKING_TO_UNICORN, 10);
+				send_command(MsgId::CommandCommon, CommonType::TalkToNpc, 0, 32, 0, 0, 0);
+				add_event_list(TALKING_TO_UNICORN, 10);
 				break;
 			case 67:
-				bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_TALKTONPC, 0, 67, 0, 0, 0);
-				AddEventList(TALKING_TO_MCGAFFIN, 10);
+				send_command(MsgId::CommandCommon, CommonType::TalkToNpc, 0, 67, 0, 0, 0);
+				add_event_list(TALKING_TO_MCGAFFIN, 10);
 				break;
 			case 68:
-				bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_TALKTONPC, 0, 68, 0, 0, 0);
-				AddEventList(TALKING_TO_PERRY, 10);
+				send_command(MsgId::CommandCommon, CommonType::TalkToNpc, 0, 68, 0, 0, 0);
+				add_event_list(TALKING_TO_PERRY, 10);
 				break;
 			case 69:
-				bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_TALKTONPC, 0, 69, 0, 0, 0);
-				AddEventList(TALKING_TO_DEVLIN, 10);
+				send_command(MsgId::CommandCommon, CommonType::TalkToNpc, 0, 69, 0, 0, 0);
+				add_event_list(TALKING_TO_DEVLIN, 10);
 				break;
 			}
 		}
-		DisableThisDialog();
+		disable_this_dialog();
 		return true;
 
 	case 5: // Talk
-		if ((msX > sX + 25) && (msX < sX + 100) && (msY > sY + 55) && (msY < sY + 70)) {
-			EnableDialogBox((DialogBoxId::Type)Info().sV1, Info().sV2, 0, 0);
-			DisableThisDialog();
+		if ((mouse_x > sX + 25) && (mouse_x < sX + 100) && (mouse_y > sY + 55) && (mouse_y < sY + 70)) {
+			enable_dialog_box((DialogBoxId::Type)Info().m_v1, Info().m_v2, 0, 0);
+			disable_this_dialog();
 			return true;
 		}
-		if ((msX > sX + 25 + 75) && (msX < sX + 80 + 75) && (msY > sY + 55) && (msY < sY + 70)) {
-			EnableDialogBox(DialogBoxId::SellList, 0, 0, 0);
-			DisableThisDialog();
+		if ((mouse_x > sX + 25 + 75) && (mouse_x < sX + 80 + 75) && (mouse_y > sY + 55) && (mouse_y < sY + 70)) {
+			enable_dialog_box(DialogBoxId::SellList, 0, 0, 0);
+			disable_this_dialog();
 			return true;
 		}
-		if ((m_pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::NpcTalk) == false) && (msX > sX + 155) && (msX < sX + 210) && (msY > sY + 55) && (msY < sY + 70)) {
-			switch (Info().sV1) {
+		if ((m_game->m_dialog_box_manager.is_enabled(DialogBoxId::NpcTalk) == false) && (mouse_x > sX + 155) && (mouse_x < sX + 210) && (mouse_y > sY + 55) && (mouse_y < sY + 70)) {
+			switch (Info().m_v1) {
 			case 7:
-				bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_TALKTONPC, 0, 1, 0, 0, 0);
-				AddEventList(TALKING_TO_GUILDHALL_OFFICER, 10);
+				send_command(MsgId::CommandCommon, CommonType::TalkToNpc, 0, 1, 0, 0, 0);
+				add_event_list(TALKING_TO_GUILDHALL_OFFICER, 10);
 				break;
 			case 11:
-				switch (Info().sV2) {
+				switch (Info().m_v2) {
 				case 1:
-					bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_TALKTONPC, 0, 2, 0, 0, 0);
-					AddEventList(TALKING_TO_SHOP_KEEPER, 10);
+					send_command(MsgId::CommandCommon, CommonType::TalkToNpc, 0, 2, 0, 0, 0);
+					add_event_list(TALKING_TO_SHOP_KEEPER, 10);
 					break;
 				case 2:
-					bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_TALKTONPC, 0, 3, 0, 0, 0);
-					AddEventList(TALKING_TO_BLACKSMITH_KEEPER, 10);
+					send_command(MsgId::CommandCommon, CommonType::TalkToNpc, 0, 3, 0, 0, 0);
+					add_event_list(TALKING_TO_BLACKSMITH_KEEPER, 10);
 					break;
 				}
 				break;
 			case 13:
-				bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_TALKTONPC, 0, 4, 0, 0, 0);
-				AddEventList(TALKING_TO_CITYHALL_OFFICER, 10);
+				send_command(MsgId::CommandCommon, CommonType::TalkToNpc, 0, 4, 0, 0, 0);
+				add_event_list(TALKING_TO_CITYHALL_OFFICER, 10);
 				break;
 			case 14:
-				bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_TALKTONPC, 0, 5, 0, 0, 0);
-				AddEventList(TALKING_TO_WAREHOUSE_KEEPER, 10);
+				send_command(MsgId::CommandCommon, CommonType::TalkToNpc, 0, 5, 0, 0, 0);
+				add_event_list(TALKING_TO_WAREHOUSE_KEEPER, 10);
 				break;
 			case 16:
-				bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_TALKTONPC, 0, 6, 0, 0, 0);
-				AddEventList(TALKING_TO_MAGICIAN, 10);
+				send_command(MsgId::CommandCommon, CommonType::TalkToNpc, 0, 6, 0, 0, 0);
+				add_event_list(TALKING_TO_MAGICIAN, 10);
 				break;
 			}
-			DisableThisDialog();
+			disable_this_dialog();
 			return true;
 		}
 		// Repair All
-		if ((msX > sX + 155) && (msX < sX + 210) && (msY > sY + 22) && (msY < sY + 37)) {
-			if (Info().sV3 == 24) {
-				bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQ_REPAIRALL, 0, 0, 0, 0, 0, 0);
-				DisableThisDialog();
+		if ((mouse_x > sX + 155) && (mouse_x < sX + 210) && (mouse_y > sY + 22) && (mouse_y < sY + 37)) {
+			if (Info().m_v3 == 24) {
+				send_command(MsgId::CommandCommon, CommonType::ReqRepairAll, 0, 0, 0, 0, 0, 0);
+				disable_this_dialog();
 				return true;
 			}
 		}
 		break;
 
 	case 6: // Gail
-		if ((msX > sX + 25) && (msX < sX + 100) && (msY > sY + 55) && (msY < sY + 70)) {
-			EnableDialogBox(DialogBoxId::GuildHallMenu, 0, 0, 0);
-			DisableThisDialog();
+		if ((mouse_x > sX + 25) && (mouse_x < sX + 100) && (mouse_y > sY + 55) && (mouse_y < sY + 70)) {
+			enable_dialog_box(DialogBoxId::GuildHallMenu, 0, 0, 0);
+			disable_this_dialog();
 			return true;
 		}
 		break;

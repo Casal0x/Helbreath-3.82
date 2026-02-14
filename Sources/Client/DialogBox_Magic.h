@@ -4,9 +4,9 @@
 class DialogBox_Magic : public IDialogBox
 {
 public:
-	DialogBox_Magic(CGame* pGame);
+	DialogBox_Magic(CGame* game);
 	~DialogBox_Magic() override = default;
 
-	void OnDraw(short msX, short msY, short msZ, char cLB) override;
-	bool OnClick(short msX, short msY) override;
+	void on_draw(short mouse_x, short mouse_y, short z, char lb) override;
+	bool on_click(short mouse_x, short mouse_y) override;
 };

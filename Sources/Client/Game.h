@@ -1,41 +1,37 @@
-// Game.h: interface for the CGame class.
+﻿// Game.h: interface for the CGame class.
 //
 //////////////////////////////////////////////////////////////////////
 
 #pragma once
 
-// MODERNIZED: Prevent old winsock.h from loading (must be before windows.h)
-#define _WINSOCKAPI_
-
-#include <windows.h>
-#include <windowsx.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
-#include <time.h>
-#include <mmsystem.h>
-#include <winbase.h>
-#include <memory.h>
-#include <string.h>
-#include <process.h>
-#include <direct.h>
-#include <tlhelp32.h>
+#include "NativeTypes.h"
+#include <cstdio>
+#include <cstdlib>
+#include <cmath>
+#include <ctime>
+#include <cstring>
+#include <memory>
 #include <fstream>
 #include <iostream>
 #include <iosfwd>
 #include <vector>
 #include <sstream>
-using namespace std;
+#include <array>
+#include <format>
 
 #include "GlobalDef.h"
+#include "GameGeometry.h"
 #include "IRenderer.h"
 #include "RendererFactory.h"
 #include "ISprite.h"
 #include "ISpriteFactory.h"
 #include "SpriteCollection.h"
-#include "DDrawSpriteFactory.h"
-#include "InputManager.h"
-#include "XSocket.h"
+#include "ITextRenderer.h"
+#include "IBitmapFont.h"
+#include "BitmapFontFactory.h"
+#include "IInput.h"
+#include "ASIOSocket.h"
+#include "IOServicePool.h"
 #include "SpriteID.h"
 #include "Misc.h"
 #include "ChatMsg.h"
@@ -45,98 +41,32 @@ using namespace std;
 #include "ActionID_Client.h"
 #include "NetMessages.h"
 #include "ClientMessages.h"
-#include "MouseInterface.h"
 #include "CharInfo.h"
 #include "Item/Item.h"
 #include "Magic.h"
 #include "Skill.h"
 #include "DynamicObjectID.h"
-#include "GameMonitor.h"
 #include "BuildItem.h"
-#include "Curse.h"
 #include "DialogBoxManager.h"
 #include "EffectManager.h"
 #include "NetworkMessageManager.h"
+#include "CursorTarget.h"
+#include "Player.h"
+#include "EntityRenderState.h"
+#include "Camera.h"
+#include "GameModeManager.h"
+#include "PlayerRenderer.h"
+#include "NpcRenderer.h"
+#include "GameTimer.h"
+#include "FloatingTextManager.h"
+#include "FishingManager.h"
+#include "CraftingManager.h"
+#include "QuestManager.h"
+#include "GuildManager.h"
 
-//v2.18
-#define DEF_BTNSZX				74
-#define DEF_BTNSZY				20
-#define DEF_LBTNPOSX			30
-#define DEF_RBTNPOSX			154
-#define DEF_BTNPOSY				292
-
-#define DEF_INDEX4_MSGID		0
-#define DEF_INDEX2_MSGTYPE		4
-
-#define DEF_SOCKETBLOCKLIMIT	300
-
-#define DEF_MAXSPRITES			25000	// 20000 // Snoopy: Adjusted!
-#define DEF_MAXTILES			1000	// 800 // Snoopy: Adjusted!
-#define DEF_MAXEFFECTSPR		300
-#define DEF_MAXSOUNDEFFECTS		200		// 110   //Snoopy: Adjusted!
-#define DEF_MAXCHATMSGS			500
-#define DEF_MAXWHISPERMSG		5
-#define DEF_MAXCHATSCROLLMSGS	80
-#define DEF_MAXEFFECTS			300	//600 <- original
-#define DEF_CHATTIMEOUT_A		4000
-#define DEF_CHATTIMEOUT_B		500
-#define DEF_CHATTIMEOUT_C		2000
-#define DEF_MAXITEMS			50
-#define DEF_MAXBANKITEMS		1000 // Hard cap - actual soft limit received from server
-#define DEF_MAXGUILDSMAN		32
-#define DEF_MAXMENUITEMS		140  //v2.15  120 ->140
-#define DEF_TEXTDLGMAXLINES		300 //v2.18 3000->300
-
-#define DEF_MAXMAGICTYPE		100
-#define DEF_MAXSKILLTYPE		60
-#define DEF_MAXWHETHEROBJECTS	600
-#define DEF_MAXBUILDITEMS		100
-#define DEF_MAXGAMEMSGS			300
-#define DEF_MAXGUILDNAMES		100
-#define DEF_MAXSELLLIST			12
-
-#define WM_USER_GAMESOCKETEVENT	WM_USER + 2000
-#define WM_USER_LOGSOCKETEVENT	WM_USER + 2001
-
-#define DEF_GAMEMODE_NULL					-2
-#define DEF_GAMEMODE_ONQUIT					-1
-#define DEF_GAMEMODE_ONMAINMENU				0
-#define DEF_GAMEMODE_ONCONNECTING			1
-#define DEF_GAMEMODE_ONLOADING				2
-#define DEF_GAMEMODE_ONWAITINGINITDATA		3
-#define DEF_GAMEMODE_ONMAINGAME				4
-#define DEF_GAMEMODE_ONCONNECTIONLOST		5
-#define DEF_GAMEMODE_ONMSG					6
-#define DEF_GAMEMODE_ONCREATENEWACCOUNT		7
-#define DEF_GAMEMODE_ONLOGIN				8
-#define DEF_GAMEMODE_ONQUERYFORCELOGIN		9
-#define DEF_GAMEMODE_ONSELECTCHARACTER		10
-#define DEF_GAMEMODE_ONCREATENEWCHARACTER	11
-#define DEF_GAMEMODE_ONWAITINGRESPONSE		12
-#define DEF_GAMEMODE_ONQUERYDELETECHARACTER 13
-#define DEF_GAMEMODE_ONLOGRESMSG			14
-#define DEF_GAMEMODE_ONCHANGEPASSWORD		15
-#define DEF_GAMEMODE_ONVERSIONNOTMATCH		17
-#define DEF_GAMEMODE_ONINTRODUCTION			18
-#define DEF_GAMEMODE_ONAGREEMENT			19
-#define DEF_GAMEMODE_ONSELECTSERVER			20
-#define DEF_GAMEMODE_ONINPUTKEYCODE			21
-
-#define DEF_SERVERTYPE_GAME			1
-#define DEF_SERVERTYPE_LOG			2
-
-#define DEF_CURSORSTATUS_NULL		0
-#define DEF_CURSORSTATUS_PRESSED	1
-#define DEF_CURSORSTATUS_SELECTED	2
-#define DEF_CURSORSTATUS_DRAGGING	3
-
-#define DEF_SELECTEDOBJTYPE_DLGBOX	1
-#define DEF_SELECTEDOBJTYPE_ITEM	2
-
-#define DEF_DOUBLECLICKTIME			300
-#define DEF_DOUBLECLICKTOLERANCE	4
-#define DEF_MAXPARTYMEMBERS			8
-#define DEF_MAXCRUSADESTRUCTURES	300
+#include "GameConstants.h"
+#include "Application.h"
+#include "GameEvents.h"
 
 // Overlay types for popup screens that render over base screens
 enum class OverlayType {
@@ -148,823 +78,456 @@ enum class OverlayType {
 	QueryDeleteCharacter
 };
 
-template <typename T, class = typename enable_if<!is_pointer<T>::value>::type >
-static void Push(char*& cp, T value) {
-	auto p = (T*)cp;
-	*p = (T)value;
-	cp += sizeof(T);
-}
-
-template <typename T, class = typename enable_if<!is_pointer<T>::value>::type >
-static void Pop(char*& cp, T& v) {
-	T* p = (T*)cp;
-	v = *p;
-	cp += sizeof(T);
-}
-
-static void Push(char*& dest, const char* src, uint32_t len) {
-	memcpy(dest, src, len);
-	dest += len;
-}
-
-static void Push(char*& dest, const char* src) {
-
-	strcpy(dest, src);
-	dest += strlen(src) + 1;
-}
-
-static void Push(char*& dest, const string& str) {
-	strcpy(dest, str.c_str());
-	dest += str.length() + 1;
-}
-
-static void Pop(char*& src, char* dest, uint32_t len) {
-	memcpy(dest, src, len);
-	src += len;
-}
-static void Pop(char*& src, char* dest) {
-
-	uint32_t len = strlen(src) + 1;
-	memcpy(dest, src, len);
-	src += len;
-}
-
-static void Pop(char*& src, string& str) {
-	str = src;
-	src += str.length() + 1;
-}
-
-
-
-class CGame
+class CGame : public hb::shared::render::application
 {
 public:
+	CGame(hb::shared::types::NativeInstance native_instance, int icon_resource_id);
+	~CGame() override;
+
+	// --- application overrides ---
+	bool on_initialize() override;
+	bool on_start() override;
+	void on_uninitialize() override;
+	void on_run() override;
+	void on_event(const hb::shared::render::event& e) override;
+	bool on_native_message(uint32_t message, uintptr_t wparam, intptr_t lparam) override;
+	void on_key_event(KeyCode key, bool pressed) override;
+	bool on_text_input(hb::shared::types::NativeWindowHandle hwnd,
+	                   uint32_t message, uintptr_t wparam, intptr_t lparam) override;
 	// CLEROTH - AURAS
-	void CheckActiveAura(short sX, short sY, uint32_t dwTime, short sOwnerType);
-	void CheckActiveAura2(short sX, short sY, uint32_t dwTime, short sOwnerType);
+	void check_active_aura(short sX, short sY, uint32_t time, short owner_type);
+	void check_active_aura2(short sX, short sY, uint32_t time, short owner_type);
 
-	void NotifyMsg_CurLifeSpan(char* pData);
-
-	// MJ Stats Change Related vars - Alastor
-	char cStateChange1;
-	char cStateChange2;
-	char cStateChange3;
-
-	struct {
-		char cName[21], cDesc[11];
-		int iCount;
-		uint32_t dwType;
-		uint32_t dwValue;
-	} m_stShards[13][17];
-
-	struct {
-		char cName[21], cDesc[11];
-		int iCount;
-		uint32_t dwType;
-		uint32_t dwValue;
-	} m_stFragments[13][17];
-
-	int m_iTeleportMapCount;
-	void ResponseTeleportList(char * pData);
-	void ResponseChargedTeleport(char * pData);
-
-	void ItemEquipHandler(char cItemID);
-	void ReleaseEquipHandler(char cEquipPos);
-
-	void ReadSettings();
-	void WriteSettings();
-
-	int  iGetManaCost(int iMagicNo);
-	void UseMagic(int iMagicNo);
-	bool _bCheckMoveable( short sx, short sy );
-	bool FindGuildName(char* pName, int* ipIndex);
-	void bItemDrop_SkillDialog();
-	void bItemDrop_IconPannel(short msX, short msY);
-	void bItemDrop_Character();
-	void bItemDrop_Inventory(short msX, short msY);
-	void bItemDrop_ItemUpgrade();
-	void bItemDrop_SellList(short msX, short msY);
-	void bItemDrop_ExchangeDialog(short msX, short msY);
-	void bItemDrop_Bank(short msX, short msY);
-	void bItemDrop_ExternalScreen(char cItemID, short msX, short msY);
-	void CreateScreenShot();
-	void CrusadeWarResult(int iWinnerSide);
-	void CrusadeContributionResult(int iWarContribution);
-	void CannotConstruct(int iCode);
-	void DrawTopMsg();
-	void SetTopMsg(char * pString, unsigned char iLastSec);
-	void DrawObjectFOE(int ix, int iy, int iFrame);
-	void GrandMagicResult(char * pMapName, int iV1, int iV2, int iV3, int iV4, int iHP1, int iHP2, int iHP3, int iHP4) ;
-	void MeteorStrikeComing(int iCode);
-	void _Draw_OnLogin(char * pAccount, char * pPassword, int msX, int msY, int iFrame = 60000);
-	void DrawNewDialogBox(char cType, int sX, int sY, int iFrame, bool bIsNoColorKey = false, bool bIsTrans = false);
-	void AddMapStatusInfo(char * pData, bool bIsLastData);
-	void _RequestMapStatus(char * pMapName, int iMode);
-	int  GetCharKind(char *str, int index);
-	void ReceiveString(char * pString);
-	void EndInputString();
-	void ClearInputString();
-	void ShowReceivedString(bool bIsHide = false);
-	bool GetText(HWND hWnd,UINT msg,WPARAM wparam, LPARAM lparam);
-	void DrawDialogBoxs(short msX, short msY, short msZ, char cLB);
-	void DisplayCommaNumber_G_cTxt(uint32_t iGold);// Name changed by Snoopy (easyer to understand...)
-
-	// Slates - Alastor
-	void bItemDrop_Slates();
-
-	bool _bCheckDlgBoxClick(short msX, short msY);
+	// Camera for viewport management
+	CCamera m_Camera;
 
 
-	void ResponsePanningHandler(char * pData);
-	void _CalcSocketClosed();
-	void UpdateScreen_OnSelectServer();
-	void StartInputString(int sX, int sY, unsigned char iLen, char * pBuffer, bool bIsHide = false);
-	void _SetIlusionEffect(int iOwnerH);
-	int _iGetFOE(int iStatus);
-	void NoticementHandler(char * pData);
-	void GetItemName(short sItemId, uint32_t dwAttribute, char *pStr1, char *pStr2, char *pStr3);
-	void GetItemName(class CItem * pItem, char * pStr1, char * pStr2, char * pStr3);
-	short FindItemIdByName(const char* cItemName);
-	void _InitOnCreateNewCharacter();
-	void _LoadGameMsgTextContents();
-	bool _bCheckCurrentBuildItemStatus();
-	bool _bCheckBuildItemStatus();
-	bool _bDecodeBuildItemContents();
-	bool _bCheckBadWords(char * pMsg);
-	void GetNpcName(short sType, char * pName);
 
+	void read_settings();
+	void write_settings();
 
-#ifdef DEF_MAKE_ACCOUNT
-	int m_iAgreeView;
-	void _LoadAgreementTextContents(char cType);
-	void UpdateScreen_OnAgreement();
-	void UpdateScreen_OnCreateNewAccount();
-#endif
+	bool find_guild_name(const char* name, int* ipIndex);
+	void item_drop_external_screen(char item_id, short mouse_x, short mouse_y);
+	void create_screen_shot();
+	void crusade_war_result(int winner_side);
+	void crusade_contribution_result(int war_contribution);
+	void cannot_construct(int code);
+	void draw_top_msg();
+	void set_top_msg(const char* string, unsigned char last_sec);
+	void draw_object_foe(int ix, int iy, int frame);
+	void grand_magic_result(const char* map_name, int ares_crusade_points, int elv_crusade_points, int ares_industry_points, int elv_industry_points, int ares_crusade_casualties, int ares_industry_casualties, int elv_crusade_casualties, int elv_industry_casualties);
+	void meteor_strike_coming(int code);
 
+	void draw_new_dialog_box(char type, int sX, int sY, int frame, bool is_no_color_key = false, bool is_trans = false);
+	void add_map_status_info(const char* data, bool is_last_data);
+	void request_map_status(const char* map_name, int mode);
+	void draw_dialog_boxs(short mouse_x, short mouse_y, short mouse_z, char left_button);
+	std::string format_comma_number(uint32_t value);
 
-	void UseShortCut( int num );
-	void UpdateScreen();
-	void DrawScreen();        // Dispatches to Draw_* methods based on game mode
-	void RenderFrame();       // Clear backbuffer -> DrawScreen -> Flip (centralized)
-	void UpdateScreen_OnMainMenu();
-	void UpdateScreen_OnGame();
-	void DrawScreen_OnGame();
-	void UpdateScreen_OnConnecting();
-	void UpdateScreen_OnWaitInitData();
-	void MakeSprite( char* FileName, short sStart, short sCount, bool bAlphaEffect = true);
-	void MakeTileSpr( char* FileName, short sStart, short sCount, bool bAlphaEffect = true);
-	void MakeEffectSpr( char* FileName, short sStart, short sCount, bool bAlphaEffect = true);
-	void UpdateScreen_OnLoading(bool bActive);
-	void UpdateScreen_OnConnectionLost();
-	void UpdateScreen_OnLogin();
-	void UpdateScreen_OnMsg();
-	void UpdateScreen_OnQuit();
-	void UpdateScreen_OnQueryForceLogin();
-	void UpdateScreen_OnQueryDeleteCharacter();
-	void UpdateScreen_OnWaitingResponse();
-	void UpdateScreen_OnCreateNewCharacter();
-	void UpdateScreen_OnSelectCharacter();
-	void UpdateScreen_OnLogResMsg();
-	void UpdateScreen_OnSelectCharacter(short sX, short sY, short msX, short msY, bool bIgnoreFocus = false);
-	void UpdateScreen_OnChangePassword();
-	void DrawScreen_OnLoadingProgress();
-	void UpdateScreen_OnVersionNotMatch();
+	void response_panning_handler(char * data);
+	void set_ilusion_effect(int owner_h);
+	void noticement_handler(char * data);
+	CItem* get_item_config(int item_id) const;
+	short find_item_id_by_name(const char* item_name);
+	void load_game_msg_text_contents();
+	const char* get_npc_config_name(short type) const;
+	const char* get_npc_config_name_by_id(short npcConfigId) const;
+	short resolve_npc_type(short npcConfigId) const;
 
-	// Separated Update/Draw methods (Phase 3 refactor)
-	void UpdateScreen_Quit();
-	void DrawScreen_Quit();
-	void UpdateScreen_VersionNotMatch();
-	void DrawScreen_VersionNotMatch();
-	void UpdateScreen_ConnectionLost();
-	void DrawScreen_ConnectionLost();
-	void UpdateScreen_Msg();
-	void DrawScreen_Msg();
-	void UpdateScreen_WaitingResponse();
-	void DrawScreen_WaitingResponse();
-	void UpdateScreen_Connecting();
-	void DrawScreen_Connecting();
-	void UpdateScreen_QueryForceLogin();
-	void DrawScreen_QueryForceLogin();
-	void UpdateScreen_QueryDeleteCharacter();
-	void DrawScreen_QueryDeleteCharacter();
-	void UpdateScreen_MainMenu();
-	void DrawScreen_MainMenu();
-	void UpdateScreen_Login();
-	void DrawScreen_Login();
-	void UpdateScreen_SelectServer();
-	void DrawScreen_SelectServer();
-	void UpdateScreen_WaitInitData();
-	void DrawScreen_WaitInitData();
-	void UpdateScreen_LogResMsg();
-	void DrawScreen_LogResMsg();
-	void UpdateScreen_ChangePassword();
-	void DrawScreen_ChangePassword();
-	void UpdateScreen_CreateNewAccount();
-	void DrawScreen_CreateNewAccount();
-	void UpdateScreen_SelectCharacter();
-	void DrawScreen_SelectCharacter();
-	void UpdateScreen_CreateNewCharacter();
-	void DrawScreen_CreateNewCharacter();
-	void UpdateScreen_Loading();
-	void DrawScreen_Loading();
+	void use_shortcut( int num );
+	void draw_cursor();
+	void on_update();   // Logic update: audio, timers, network, game state
+	void on_render();   // render only: clear backbuffer -> draw -> flip
 
-	// Overlay system for popup screens that render over base screens
-	void ShowOverlay(OverlayType type, char context, char message = 0);
-	void HideOverlay();
-	bool IsOverlayActive() const { return m_activeOverlay != OverlayType::None; }
-	void UpdateOverlay();
-	void DrawOverlay();
+	void npc_talk_handler(char * packet_data);
+	void set_camera_shaking_effect(short dist, int mul = 0);
+	void clear_skill_using_status();
+	bool check_ex_id(const char* name);
+	bool check_local_chat_command(const char* pMsg);
+	char get_official_map_name(const char* map_name, char* name);
+	uint32_t get_level_exp(int level);
+	void draw_version();
+	bool is_item_on_hand();
+	void dynamic_object_handler(char * data);
+	bool check_item_by_type(hb::shared::item::ItemType type);
+	void draw_npc_name(   short screen_x, short screen_y, short owner_type, const hb::shared::entity::PlayerStatus& status, short npc_config_id = -1);
+	void draw_object_name(short screen_x, short screen_y, const char* name, const hb::shared::entity::PlayerStatus& status, uint16_t object_id);
+	void play_game_sound(char type, int num, int dist, long lPan = 0);  // Forwards to audio_manager
+	void load_text_dlg_contents(int type);
+	int  load_text_dlg_contents2(int type);
+	void request_full_object_data(uint16_t object_id);
+	void retrieve_item_handler(char * data);
+	void civil_right_admission_handler(char * data);
+	void draw_character_body(short sX, short sY, short type);
+	void request_teleport_and_wait_data();
+	void point_command_handler(int indexX, int indexY, char item_id = -1);
+	void add_event_list(const char* txt, char color = 0, bool dup_allow = true);
+	void shift_guild_operation_list();
+	void put_guild_operation_list(char * name, char op_mode);
+	void disband_guild_response_handler(char * data);
+	void init_player_characteristics(char * data);
+	void create_new_guild_response_handler(char * data);
+	void init_game_settings();
+	void common_event_handler(char * data);
+	int get_top_dialog_box_index();
+	void disable_dialog_box(int box_id);
+	void enable_dialog_box(int box_id, int type, int v1, int v2, char * string = 0);
+	void init_item_list(char * packet_data);
+	hb::shared::sprite::BoundRect draw_object_on_dead(int indexX, int indexY, int sX, int sY, bool trans, uint32_t time);
+	hb::shared::sprite::BoundRect draw_object_on_dying(int indexX, int indexY, int sX, int sY, bool trans, uint32_t time);
+	hb::shared::sprite::BoundRect draw_object_on_magic(int indexX, int indexY, int sX, int sY, bool trans, uint32_t time);
+	hb::shared::sprite::BoundRect draw_object_on_attack(int indexX, int indexY, int sX, int sY, bool trans, uint32_t time);
+	hb::shared::sprite::BoundRect draw_object_on_attack_move(int indexX, int indexY, int sX, int sY, bool trans, uint32_t time);
+	hb::shared::sprite::BoundRect draw_object_on_stop(int indexX, int indexY, int sX, int sY, bool trans, uint32_t time);
+	hb::shared::sprite::BoundRect draw_object_on_move_for_menu(int indexX, int indexY, int sX, int sY, bool trans, uint32_t time);
+	hb::shared::sprite::BoundRect draw_object_on_move(int indexX, int indexY, int sX, int sY, bool trans, uint32_t time);
+	hb::shared::sprite::BoundRect draw_object_on_damage_move(int indexX, int indexY, int sX, int sY, bool trans, uint32_t time);
+	hb::shared::sprite::BoundRect draw_object_on_run(int indexX, int indexY, int sX, int sY, bool trans, uint32_t time);
+	hb::shared::sprite::BoundRect draw_object_on_damage(int indexX, int indexY, int sX, int sY, bool trans, uint32_t time);
+	hb::shared::sprite::BoundRect draw_object_on_get_item(int indexX, int indexY, int sX, int sY, bool trans, uint32_t time);
+	void clear_guild_name_list();
+	void draw_background(short div_x, short mod_x, short div_y, short mod_y);
+	void chat_msg_handler(char * packet_data);
+	void release_unused_sprites();
+	void handle_key_up(KeyCode key);
+	void change_game_mode(GameMode mode);
+	void log_recv_msg_handler(char * data);
+	void log_response_handler(char * packet_data);
+	void on_log_socket_event();  // MODERNIZED: Polls socket instead of handling window messages
+	void on_timer();
+	void log_event_handler(char * data);
+	void read_map_data(short pivot_x, short pivot_y, const char* packet_data);
+	void motion_event_handler(char * packet_data);
+	void init_data_response_handler(char * packet_data);
+	void init_player_response_handler(char * data);
+	void connection_establish_handler(char where);
+	void motion_response_handler(char * packet_data);
+	void game_recv_msg_handler(uint32_t msg_size, char * data);
+	void draw_objects(short pivot_x, short pivot_y, short div_x, short div_y, short mod_x, short mod_y, short mouse_x, short mouse_y);
+	bool send_command(uint32_t message_id, uint16_t command, char direction, int value1, int value2, int value3, const char* text, int value4 = 0); // v1.4
+	void restore_sprites();
+	void command_processor(short mouse_x, short mouse_y, short tile_x, short tile_y, char left_button, char right_button);
+	bool process_left_click(short mouse_x, short mouse_y, short tile_x, short tile_y, uint32_t current_time, uint16_t& action_type);
+	bool process_right_click(short mouse_x, short mouse_y, short tile_x, short tile_y, uint32_t current_time, uint16_t& action_type);
+	void process_motion_commands(uint16_t action_type);
+	void on_game_socket_event();  // MODERNIZED: Polls socket instead of handling window messages
+	void handle_key_down(KeyCode key);
+	void register_hotkeys();
+	void hotkey_toggle_force_attack();
+	void hotkey_cycle_detail_level();
+	void hotkey_toggle_help();
+	void hotkey_toggle_dialog_transparency();
+	void hotkey_toggle_system_menu();
+	void hotkey_toggle_guide_map();
+	void hotkey_toggle_running_mode();
+	void hotkey_toggle_sound_and_music();
+	void hotkey_whisper_target();
+	void hotkey_simple_use_health_potion();
+	void hotkey_simple_use_mana_potion();
+	void hotkey_simple_load_backup_chat();
+	void hotkey_simple_use_magic_shortcut();
+	void hotkey_simple_toggle_character_info();
+	void hotkey_simple_toggle_inventory();
+	void hotkey_simple_toggle_magic();
+	void hotkey_simple_toggle_skill();
+	void hotkey_simple_toggle_chat_history();
+	void hotkey_simple_toggle_system_menu();
+	void hotkey_simple_use_shortcut1();
+	void hotkey_simple_use_shortcut2();
+	void hotkey_simple_use_shortcut3();
+	void hotkey_simple_whisper_cycle_up();
+	void hotkey_simple_whisper_cycle_down();
+	void hotkey_simple_arrow_left();
+	void hotkey_simple_arrow_right();
+	void hotkey_simple_screenshot();
+	void hotkey_simple_tab_toggle_combat();
+	void hotkey_simple_toggle_safe_attack();
+	void hotkey_simple_escape();
+	void hotkey_simple_special_ability();
+	void hotkey_simple_zoom_in();
+	void hotkey_simple_zoom_out();
+	// Platform specifics (passed from main, used in on_initialize)
+	hb::shared::types::NativeInstance m_native_instance;
+	int m_icon_resource_id;
 
-	void NpcTalkHandler(char * pData);
-	int  _iGetWeaponSkillType();
-	void SetCameraShakingEffect(short sDist, int iMul = 0);
-	bool bDlgBoxPress_SkillDlg(short msX, short msY);
-	bool bDlgBoxPress_Inventory(short msX, short msY);
-	bool bDlgBoxPress_Character(short msX, short msY);
-	void ClearSkillUsingStatus();
-	bool bCheckItemOperationEnabled(char cItemID);
-	void _DrawThunderEffect(int sX, int sY, int dX, int dY, int rX, int rY, char cType);
-	void DrawLine2(int x0, int y0, int x1, int y1, int iR, int iG, int iB);
-	void DrawLine(int x0, int y0, int x1, int y1, int iR, int iG, int iB);
-	void SetWhetherStatus(bool bStart, char cType);
-	void WhetherObjectFrameCounter();
-	void DrawWhetherEffects();
-	bool bCheckExID(char * pName);
-	bool bCheckLocalChatCommand(char * pMsg);
-	char GetOfficialMapName(char * pMapName, char * pName);
-	uint32_t iGetLevelExp(int iLevel);
-	int _iCalcTotalWeight();
-	void DrawVersion();
-	bool _bIsItemOnHand();
-	void DynamicObjectHandler(char * pData);
-	bool _bCheckItemByType(char cType);
-	void _DrawBlackRect(int iSize);
-	void DrawNpcName(   short sX, short sY, short sOwnerType, int iStatus);
-	void DrawObjectName(short sX, short sY, char * pName, int iStatus);
-	void PlaySound(char cType, int iNum, int iDist, long lPan = 0);  // Forwards to AudioManager
-	void _RemoveChatMsgListByObjectID(int iObjectID);
-	void _LoadTextDlgContents(int cType);
-	int  _iLoadTextDlgContents2(int iType);
-	void DrawChatMsgs(short sX, short sY, short dX, short dY);
-	void RequestFullObjectData(uint16_t wObjectID);
-	bool bInitSkillCfgList();
-	bool bCheckImportantFile();
-	void DlbBoxDoubleClick_Inventory(short msX, short msY);
-	void DlbBoxDoubleClick_Character(short msX, short msY);
-	void DlbBoxDoubleClick_GuideMap(short msX, short msY);
-	bool _bCheckDlgBoxDoubleClick(short msX, short msY);
-	void EraseItem(char cItemID);
-	void RetrieveItemHandler(char * pData);
-	void CivilRightAdmissionHandler(char * pData);
-	void _Draw_CharacterBody(short sX, short sY, short sType);
-	void ClearContents_OnSelectCharacter();
-	void ClearContents_OnCreateNewAccount();
-	void _Draw_UpdateScreen_OnCreateNewAccount();
-	bool _bDraw_OnCreateNewCharacter(char * pName, short msX, short msY, int iPoint);
-	bool _bGetIsStringIsNumber(char * pStr);
-	bool bInitMagicCfgList();
-	void _LoadShopMenuContents(char cType);
-	void _RequestShopContents(int16_t npcType);
-	void ResponseShopContentsHandler(char* pData);
-	void PutChatScrollList(char * pMsg, char cType);
-	void RequestTeleportAndWaitData();
-	void PointCommandHandler(int indexX, int indexY, char cItemID = -1);
-	void AddEventList(char * pTxt, char cColor = 0, bool bDupAllow = true);
-	void ShowEventList(uint32_t dwTime);
-	void SetItemCount(char * pItemName, uint32_t dwCount);
-	void _ShiftGuildOperationList();
-	void _PutGuildOperationList(char * pName, char cOpMode);
-	void DisbandGuildResponseHandler(char * pData);
-	void InitPlayerCharacteristics(char * pData);
-	void CreateNewGuildResponseHandler(char * pData);
-	void _GetHairColorRGB(int iColorType , int * pR, int * pG, int * pB);
-	void InitGameSettings();
-	void CommonEventHandler(char * pData);
-	bool _bCheckDraggingItemRelease(short msX, short msY);
-	void _SetItemOrder(char cWhere, char cItemID);
-	int iGetTopDialogBoxIndex();
-	void DisableDialogBox(int iBoxID);
-	void EnableDialogBox(int iBoxID, int cType, int sV1, int sV2, char * pString = 0);
-	void InitItemList(char * pData);
-	int _iCheckDlgBoxFocus(short msX, short msY, char cButtonSide);
-	void GetPlayerTurn();
-	bool __fastcall DrawObject_OnDead(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime, int msX, int msY);
-	bool __fastcall DrawObject_OnDying(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime, int msX, int msY);
-	bool __fastcall DrawObject_OnMagic(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime, int msX, int msY);
-	bool __fastcall DrawObject_OnAttack(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime, int msX, int msY);
-	bool __fastcall DrawObject_OnAttackMove(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime, int msX, int msY);
-	bool __fastcall DrawObject_OnStop(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime, int msX, int msY);
-	bool __fastcall DrawObject_OnMove_ForMenu(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime, int msX, int msY);
-	bool __fastcall DrawObject_OnMove(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime, int msX, int msY, bool frame_omision);
-	bool __fastcall DrawObject_OnDamageMove(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime, int msX, int msY, bool frame_omision);
-	bool __fastcall DrawObject_OnRun(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime, int msX, int msY, bool frame_omision);
-	bool __fastcall DrawObject_OnDamage(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime, int msX, int msY);
-	bool __fastcall DrawObject_OnGetItem(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime, int msX, int msY);
-	bool bEffectFrameCounter();
-	void ClearGuildNameList();
-	void DrawBackground(short sDivX, short sModX, short sDivY, short sModY);
-	void DrawChatMsgBox(short sX, short sY, int iChatIndex, bool bIsPreDC);
-	void ReleaseTimeoverChatMsg();
-	void ChatMsgHandler(char * pData);
-	void ReleaseUnusedSprites();
-	bool bReadIp();
-	void OnKeyUp(WPARAM wParam);
-	void ChangeGameMode(char cMode);
-	void PutString(int iX, int iY, char * pString, COLORREF color);
-	void PutString(int iX, int iY, char * pString, COLORREF color, bool bHide, char cBGtype, bool bIsPreDC = false);
-	void PutString2(int iX, int iY, char * pString, short sR, short sG, short sB);
-	void PutAlignedString(int iX1, int iX2, int iY, char * pString, short sR = 0, short sG = 0, short sB = 0);
-	void PutString_SprFont(int iX, int iY, char * pStr, short sR, short sG, short sB);
-	void PutString_SprFont2(int iX, int iY, char * pStr, short sR, short sG, short sB);
-	void PutString_SprFont3(int iX, int iY, char * pStr, short sR, short sG, short sB, bool bTrans = false, int iType = 0);
-	void PutString_SprNum(int iX, int iY, char * pStr, short sR, short sG, short sB);
-	void LogRecvMsgHandler(char * pData);
-	void LogResponseHandler(char * pData);
-	void OnLogSocketEvent();  // MODERNIZED: Polls socket instead of handling window messages
-	void OnTimer();
-	void LogEventHandler(char * pData);
-	void _ReadMapData(short sPivotX, short sPivotY, const char* pData);
-	void MotionEventHandler(char * pData);
-	void InitDataResponseHandler(char * pData);
-	void InitPlayerResponseHandler(char * pData);
-	void ConnectionEstablishHandler(char cWhere);
-	void MotionResponseHandler(char * pData);
-	void GameRecvMsgHandler(uint32_t dwMsgSize, char * pData);
-	void DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, short sModX, short sModY, short msX, short msY);
-	bool bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1, int iV2, int iV3, char * pString, int iV4 = 0); // v1.4
-	char cGetNextMoveDir(short sX, short sY, short dstX, short dstY, bool bMoveCheck = false, bool bMIM = false);
-	void RestoreSprites();
-	void CommandProcessor(short msX, short msY, short indexX, short indexY, char cLB, char cRB);
-	void OnGameSocketEvent();  // MODERNIZED: Polls socket instead of handling window messages
-	void CalcViewPoint();
-	void OnKeyDown(WPARAM wParam);
-	void RegisterHotkeys();
-	void Hotkey_ToggleForceAttack();
-	void Hotkey_CycleDetailLevel();
-	void Hotkey_ToggleHelp();
-	void Hotkey_ToggleDialogTransparency();
-	void Hotkey_ToggleSystemMenu();
-	void Hotkey_ToggleGuideMap();
-	void Hotkey_EnableAdminCommand();
-	void Hotkey_ToggleRunningMode();
-	void Hotkey_ToggleSoundAndMusic();
-	void Hotkey_WhisperTarget();
-	void Hotkey_Simple_UseHealthPotion();
-	void Hotkey_Simple_UseManaPotion();
-	void Hotkey_Simple_LoadBackupChat();
-	void Hotkey_Simple_UseMagicShortcut();
-	void Hotkey_Simple_ToggleCharacterInfo();
-	void Hotkey_Simple_ToggleInventory();
-	void Hotkey_Simple_ToggleMagic();
-	void Hotkey_Simple_ToggleSkill();
-	void Hotkey_Simple_ToggleChatHistory();
-	void Hotkey_Simple_ToggleSystemMenu();
-	void Hotkey_Simple_UseShortcut1();
-	void Hotkey_Simple_UseShortcut2();
-	void Hotkey_Simple_UseShortcut3();
-	void Hotkey_Simple_WhisperCycleUp();
-	void Hotkey_Simple_WhisperCycleDown();
-	void Hotkey_Simple_ArrowLeft();
-	void Hotkey_Simple_ArrowRight();
-	void Hotkey_Simple_Screenshot();
-	void Hotkey_Simple_TabToggleCombat();
-	void Hotkey_Simple_ToggleSafeAttack();
-	void Hotkey_Simple_Escape();
-	void Hotkey_Simple_SpecialAbility();
-	void Hotkey_Simple_ZoomIn();
-	void Hotkey_Simple_ZoomOut();
-	void Quit();
-	bool bInit(HWND hWnd, HINSTANCE hInst, char * pCmdLine);
+	void reserve_fightzone_response_handler(char * data);
+	void start_bgm();  // Forwards to audio_manager based on current location
 
-	void ReserveFightzoneResponseHandler(char * pData);
-	int _iGetAttackType();
-	bool __bDecodeBuildItemContents(char * pBuffer);
-	int _iGetBankItemCount();
-	int _iGetTotalItemNum();
-	LONG GetRegKey(HKEY key, LPCTSTR subkey, LPTSTR retdata);
-	void GoHomepage();
-	void StartBGM();  // Forwards to AudioManager based on current location
-
-	//Snoopy: added function:
-	bool bReadLoginConfigFile(char * cFn);
-	int bHasHeroSet( short Appr3, short Appr4, char OwnerType);
-	void ShowHeldenianVictory(short sSide);
-	void ResponseHeldenianTeleportList(char *pData);
-	void DKGlare(int iWeaponColor, int iWeaponIndex, int *iWeaponGlare);
-	void DrawDruncncity();
-	void Abaddon_corpse(int sX, int sY);
-	void DrawAngel(int iSprite, short sX, short sY, char cFrame, uint32_t dwTime);
-
+	int has_hero_set(const hb::shared::entity::PlayerAppearance& appr, short OwnerType);
+	void show_heldenian_victory(short side);
+	void dk_glare(int weapon_color, int weapon_index, int *weapon_glare);
+	void abaddon_corpse(int sX, int sY);
+	void draw_angel(int sprite, short sX, short sY, char frame, uint32_t time);
 
 	//50Cent - Repair All
-	void NotifyMsg_RepairAllPrices(char* pData);
 	short totalItemRepair;
 	int totalPrice;
 	struct
 	{
 		char index;
 		short price;
-	} m_stRepairAll[DEF_MAXITEMS];
+	} m_repair_all[hb::shared::limits::MaxItems];
 
+	bool item_drop_history(short item_id);
 
-	bool _ItemDropHistory(char * ItemName);
-	CGame();
-	virtual ~CGame();
+	GameTimer m_game_timer;
+	DialogBoxManager m_dialog_box_manager;
+	fishing_manager m_fishing_manager;
+	crafting_manager m_crafting_manager;
+	quest_manager m_quest_manager;
+	guild_manager m_guild_manager;
+	struct {
+		int   v1, v2, v3, v4, v5, v6, v7, item_id;
+		int   inv_slot;  // local inventory slot index for m_is_item_disabled tracking
+		uint32_t dw_v1;
+		std::string str1;
+		std::string str2;
+	} m_dialog_box_exchange_info[8];
+	struct {
+		int index;
+		int amount;
+	} m_sell_item_list[game_limits::max_sell_list];
 
 	struct {
-		short sX;
-		short sY;
-		short sCursorFrame;
-		char  cPrevStatus;
-		char  cSelectedObjectType;
-		short sSelectedObjectID;
-		short sPrevX, sPrevY, sDistX, sDistY;
-		uint32_t dwSelectClickTime;
-		short sClickX, sClickY;
-	} m_stMCursor;
-
-	DialogBoxManager m_dialogBoxManager;
-//Snoopy=>>>>>>>>>>>>>>>>>>>>>
-	struct {
-		int   sV1, sV2, sV3, sV4, sV5, sV6, sV7, sItemID;
-		uint32_t dwV1;
-		char  cStr1[32], cStr2[32];
-	} m_stDialogBoxExchangeInfo[8];
-//Snoopy end<<<<<<<<<<<<<<<<<<
-	struct {
-		int iIndex;
-		int iAmount;
-	} m_stSellItemList[DEF_MAXSELLLIST];
+		std::string name;
+		char op_mode;
+	} m_guild_op_list[100];
 
 	struct {
-		char cName[22];
-		char cOpMode;
-	} m_stGuildOpList[100];
+		bool is_quest_completed;
+		short who, quest_type, contribution, target_type, target_count, x, y, range;
+		short current_count;
+		std::string target_name;
+	} m_quest;
 
 	struct {
-		uint32_t dwTime;
-		char  cColor;
-		char  cTxt[96];
-	} m_stEventHistory[6];
+		char status;
+		std::string name;
+	} m_party_member[hb::shared::limits::MaxPartyMembers];
 
 	struct {
-		uint32_t dwTime;
-		char  cColor;
-		char  cTxt[96];
-	} m_stEventHistory2[6];
+		short x, y;
+		char type;
+		char side;
+	} m_crusade_structure_info[hb::shared::limits::MaxCrusadeStructures];
 
 	struct {
-		short sX, sY, sBX;
-		char cStep;
-	} m_stWhetherObject[DEF_MAXWHETHEROBJECTS];
-
-	struct {
-		bool bIsQuestCompleted;
-		short sWho, sQuestType, sContribution, sTargetType, sTargetCount, sX, sY, sRange;
-		short sCurrentCount; // by Snoopy
-		char cTargetName[22];
-	} m_stQuest;
-
-	struct {
-		char cStatus;
-		char cName[12];
-	} m_stPartyMember[DEF_MAXPARTYMEMBERS];
-
-	struct {
-		short sX, sY;
-		char cType;
-		char cSide;
-	} m_stCrusadeStructureInfo[DEF_MAXCRUSADESTRUCTURES];
-
-	struct {
-		char cName[12];
-	} m_stPartyMemberNameList[DEF_MAXPARTYMEMBERS+1];
+		std::string name;
+	} m_party_member_name_list[hb::shared::limits::MaxPartyMembers+1];
 
 	// v2.171 2002-6-14
 	struct {
-		uint32_t dwRefTime;
-		int iGuildRank;
-		char cCharName[12];
-		char cGuildName[24];
-	} m_stGuildName[DEF_MAXGUILDNAMES];
-
-	struct {
-		int iIndex;
-		char mapname[12];
-		int iX;
-		int iY;
-		int iCost;
-	} m_stTeleportList[20];
-
-	class IRenderer* m_Renderer;  // Abstract renderer interface
-	DDrawSpriteFactory* m_pSpriteFactory;  // Sprite factory for creating sprites
-	SpriteLib::SpriteCollection m_pSprite;
-	SpriteLib::SpriteCollection m_pTileSpr;
-	SpriteLib::SpriteCollection m_pEffectSpr;
-	class CMapData * m_pMapData;
-	class XSocket * m_pGSock;
-	class XSocket * m_pLSock;
-	class CMsg    * m_pChatMsgList[DEF_MAXCHATMSGS];
-	class CMsg    * m_pChatScrollList[DEF_MAXCHATSCROLLMSGS];
-	class CMsg    * m_pWhisperMsg[DEF_MAXWHISPERMSG];
-	EffectManager* m_pEffectManager;
-	NetworkMessageManager* m_pNetworkMessageManager;
-	class CItem   * m_pItemList[DEF_MAXITEMS];
-	class CItem   * m_pBankList[DEF_MAXBANKITEMS];
-	class CMagic * m_pMagicCfgList[DEF_MAXMAGICTYPE];
-	class CSkill * m_pSkillCfgList[DEF_MAXSKILLTYPE];
-	class CMsg * m_pMsgTextList[DEF_TEXTDLGMAXLINES];
-	class CMsg * m_pMsgTextList2[DEF_TEXTDLGMAXLINES];
-	class CMsg * m_pAgreeMsgTextList[DEF_TEXTDLGMAXLINES];
-	class CMsg * m_pExID;
-	class CBuildItem * m_pBuildItemList[DEF_MAXBUILDITEMS];
-	class CBuildItem * m_pDispBuildItemList[DEF_MAXBUILDITEMS];
+		uint32_t ref_time;
+		int guild_rank;
+		std::string char_name;
+		std::string guild_name;
+	} m_guild_name_cache[game_limits::max_guild_names];
 
 
-	class CGameMonitor * m_pCGameMonitor;
-	class CItem * m_pItemForSaleList[DEF_MAXMENUITEMS];
-	int16_t m_sPendingShopType;  // Shop type awaiting response from server (0 = none)
-	class CCharInfo * m_pCharList[4];
-	class CMsg * m_pGameMsgList[DEF_MAXGAMEMSGS];
-	class CCurse m_curse;
+	class hb::shared::render::IRenderer* m_Renderer;  // Abstract renderer interface
+	std::unique_ptr<hb::shared::sprite::ISpriteFactory> m_sprite_factory;  // Sprite factory for creating sprites
+	hb::shared::sprite::SpriteCollection m_sprite;
+	hb::shared::sprite::SpriteCollection m_tile_spr;
+	hb::shared::sprite::SpriteCollection m_effect_sprites;
 
-	char * m_pInputBuffer;
+	std::unique_ptr<CPlayer> m_player;  // Main player data
+	std::unique_ptr<class CMapData> m_map_data;
+	std::unique_ptr<hb::shared::net::IOServicePool> m_io_pool;  // 0 threads = manual poll mode for client
+	std::unique_ptr<class hb::shared::net::ASIOSocket> m_g_sock;
+	std::unique_ptr<class hb::shared::net::ASIOSocket> m_l_sock;
+	floating_text_manager m_floating_text;
+	std::unique_ptr<effect_manager> m_effect_manager;
+	std::unique_ptr<NetworkMessageManager> m_network_message_manager;
+	std::array<std::unique_ptr<class CItem>, hb::shared::limits::MaxItems> m_item_list;
+	std::array<std::unique_ptr<class CItem>, hb::shared::limits::MaxBankItems> m_bank_list;
+	std::array<std::unique_ptr<class CMagic>, hb::shared::limits::MaxMagicType> m_magic_cfg_list;
+	std::array<std::unique_ptr<class CSkill>, hb::shared::limits::MaxSkillType> m_skill_cfg_list;
+	std::array<std::unique_ptr<class CMsg>, game_limits::max_text_dlg_lines> m_msg_text_list;
+	std::array<std::unique_ptr<class CMsg>, game_limits::max_text_dlg_lines> m_msg_text_list2;
+	std::array<std::unique_ptr<class CMsg>, game_limits::max_text_dlg_lines> m_agree_msg_text_list;
+	std::unique_ptr<class CMsg> m_ex_id;
 
-	uint32_t G_dwGlobalTime;
-	uint32_t m_dwCommandTime; //v2.15 SpeedHack
-	uint32_t m_dwConnectMode;
-	uint32_t m_dwTime;
-	uint32_t m_dwCurTime;
-	uint32_t m_dwCheckConnTime, m_dwCheckSprTime, m_dwCheckChatTime;
-	uint32_t m_dwCheckConnectionTime;
-	uint32_t m_dwDialogCloseTime;
-	int  m_dwLogOutCountTime;//was DWORD
-	uint32_t m_dwRestartCountTime;
-	uint32_t m_dwWOFtime; //v1.4
-	uint32_t m_dwObserverCamTime;
-	uint32_t m_dwDamagedTime;
-	uint32_t m_dwSpecialAbilitySettingTime;
-	uint32_t m_dwCommanderCommandRequestedTime;
-	uint32_t m_dwTopMsgTime;
-	uint32_t m_dwEnvEffectTime;
+	std::array<std::unique_ptr<class CCharInfo>, 4> m_char_list;
+	std::array<std::unique_ptr<class CMsg>, game_limits::max_game_msgs> m_game_msg_list;
+
+
+	uint32_t m_connect_mode;
+	std::vector<char> m_pending_login_packet;
+	uint32_t m_time;
+	uint32_t m_cur_time;
+	uint32_t m_check_conn_time, m_check_spr_time, m_check_chat_time;
+	uint32_t m_check_connection_time;
+	uint32_t m_logout_count_time;
+	uint32_t m_restart_count_time;
+	uint32_t m_observer_cam_time;
+	uint32_t m_damaged_time;
+	uint32_t m_special_ability_setting_time;
+	uint32_t m_commander_command_requested_time;
+	uint32_t m_top_msg_time;
+	uint32_t m_env_effect_time;
 
 	//v2.2
-	uint32_t m_dwMonsterEventTime;
-	short m_sMonsterID;
-	short m_sEventX, m_sEventY;
+	uint32_t m_monster_event_time;
+	short m_monster_id;
+	short m_event_x, m_event_y;
 
+	//v2.183 Hunter Mode - Moved to CPlayer
 
-	//v2.183 Hunter Mode;
-	bool m_bHunter;
-	bool m_bAresden;
-	bool m_bCitizen;
-	//v2.183 Hunter Mode;
+std::array<bool, hb::shared::limits::MaxItems> m_is_item_equipped{};
+	std::array<bool, hb::shared::limits::MaxItems> m_is_item_disabled{};
+	bool m_is_get_pointing_mode;
+	bool m_wait_for_new_click;  // After magic cast, ignore held click until released
+	uint32_t m_magic_cast_time;  // Timestamp when magic was cast (for post-cast delay)
+	bool m_skill_using_status;
+	bool m_item_using_status;
+	bool m_is_observer_mode, m_is_observer_commanded;
+	bool m_is_first_conn;
+	bool m_is_server_changing = false;
+	bool m_is_crusade_mode;
 
-	bool m_bIsProgramActive;
-	bool m_bCommandAvailable;
-	bool m_bIsItemEquipped[DEF_MAXITEMS];
-	bool m_bIsItemDisabled[DEF_MAXITEMS];
-	bool m_bIsGetPointingMode;
-	bool m_bIsCombatMode;
-	bool m_bIsSafeAttackMode;
-	bool m_bSkillUsingStatus;
-	bool m_bItemUsingStatus;
-	bool m_bIsWhetherEffect;
-	bool m_bSuperAttackMode;	//
-	bool m_bIsObserverMode, m_bIsObserverCommanded;
-	bool m_bIsPoisoned;
-	bool m_bIsFirstConn;
-	bool m_bIsConfusion;
-	bool m_bIsRedrawPDBGS;
-	bool m_bDrawFlagDir;
-	bool m_bIsCrusadeMode;
-	bool m_bIsSpecialAbilityEnabled;
-	bool m_bInputStatus;
-	bool m_bIsSpecial;
+	bool m_is_f1_help_window_enabled;
+	bool m_hide_local_cursor;
+	bool m_mouse_initialized = false;
 
-	bool m_bIsF1HelpWindowEnabled;
-	bool m_bIsTeleportRequested;
-	bool m_bIsPrevMoveBlocked;
-	bool m_bIsHideLocalCursor;
+	bool m_force_disconn;
 
-	bool m_bForceDisconn;
-	bool m_bForceAttack;
-	bool m_bParalyze;
+	uint32_t m_fps_time;
+	int m_latency_ms;
+	uint32_t m_last_net_msg_id;
+	uint32_t m_last_net_msg_time;
+	uint32_t m_last_net_msg_size;
+	uint32_t m_last_net_recv_time;
+	uint32_t m_last_npc_event_time;
 
-	short m_sFrameCount;
-	short m_sFPS;
-	uint32_t m_dwFPStime;
-	int m_iLatencyMs;
-	uint32_t m_dwLastNetMsgId;
-	uint32_t m_dwLastNetMsgTime;
-	uint32_t m_dwLastNetMsgSize;
-	uint32_t m_dwLastNetRecvTime;
-	uint32_t m_dwLastNpcEventTime;
+	int m_fightzone_number;
+	int m_fightzone_number_temp;
 
-	int m_iFightzoneNumber;
-	int m_iFightzoneNumberTemp;
-	int m_iPlayerApprColor; // v1.4
-	int m_iHP;//was int			// Hit Point
-	int m_iMP;//was int			// Mana Point
-	int m_iSP;//was int			// Staminar Point
-	int m_iAC;						// Armour Class
-	int m_iTHAC0;					// To Hit Armour Class 0
-	int m_iHungerStatus;
+	int m_point_command_type;
+	int m_total_char;
+	short m_magic_short_cut;
+	int m_accnt_year, m_accnt_month, m_accnt_day;
+	int m_ip_year, m_ip_month, m_ip_day;
+	int m_down_skill_index;
 
-	uint32_t m_iExp;
-	int m_iLevel, m_iStr, m_iInt, m_iVit, m_iDex, m_iMag, m_iCharisma, m_iContribution;
-	// Snoopy: Added Angels
-	int m_iAngelicStr, m_iAngelicInt, m_iAngelicDex, m_iAngelicMag;
+	int m_ilusion_owner_h;
+	short m_recent_short_cut;
+	std::array<short, 6> m_short_cut{}; // Snoopy: 6 shortcuts
+	int m_draw_flag;
 
-	int m_iEnemyKillCount;
-	int m_iPKCount;
-	int m_iRewardGold;
-	int m_iGuildRank, m_iTotalGuildsMan;
-	int m_iPointCommandType;
-	int m_iTotalChar;
-//	int m_iAccountStatus;
-	short m_sMagicShortCut;
-	int m_iLU_Point;
-	int m_iCameraShakingDegree;
-	int m_iSuperAttackLeft;
-	int m_iAccntYear, m_iAccntMonth, m_iAccntDay;
-	int m_iIpYear, m_iIpMonth, m_iIpDay;
-	int m_iDownSkillIndex;
+	int m_time_left_sec_account, m_time_left_sec_ip;
+	int m_log_server_port, m_game_server_port;
+	int m_block_year, m_block_month, m_block_day;
+	unsigned char m_top_msg_last_sec;
+	int m_net_lag_count;
+	int m_total_party_member;
+	int m_party_status;
+	int m_gizon_item_upgrade_left;
+	std::array<short, hb::shared::item::DEF_MAXITEMEQUIPPOS> m_item_equipment_status{};
+	short m_mcx, m_mcy;
+	int   m_casting_magic_type;
+	short m_vdl_x, m_vdl_y;
 
-	int m_iIlusionOwnerH;
-	int m_iApprColor_IE;
-	int m_iInputX, m_iInputY;
-	int m_iPDBGSdivX, m_iPDBGSdivY;			   // Pre-Draw Background Surface
-	short m_sRecentShortCut;
-	short m_sShortCut[6]; // Snoopy: 6 shortcuts
-	int	m_iSpecialAbilityTimeLeftSec;
-	int m_iDrawFlag;
-	bool m_bSkipFrame;  // Set by UpdateScreen_OnGame when iUpdateRet == 0 to skip flip
-
-	// Frame state shared between Update and Draw phases
-	short m_sFrameMouseX, m_sFrameMouseY, m_sFrameMouseZ;
-	char m_cFrameMouseLB, m_cFrameMouseRB;
-
-	int m_iSpecialAbilityType;
-	int m_iTimeLeftSecAccount, m_iTimeLeftSecIP;
-	int m_iCrusadeDuty;
-	int m_iLogServerPort, m_iGameServerPort;
-	int m_iRating; //Rating
-
-	int m_iPrevMoveX, m_iPrevMoveY;
-	int m_iBlockYear, m_iBlockMonth, m_iBlockDay;
-	unsigned char m_iTopMsgLastSec;
-	int m_iConstructionPoint;
-	int m_iWarContribution;
-	int m_iConstructLocX, m_iConstructLocY;
-	int m_iNetLagCount;
-	int m_iTeleportLocX, m_iTeleportLocY;
-	int m_iTotalPartyMember;
-	int m_iPartyStatus;
-	int m_iGizonItemUpgradeLeft;
-	//int m_iFeedBackCardIndex; // removed by Snoopy
-
-	short m_sItemEquipmentStatus[DEF_MAXITEMEQUIPPOS];
-	short m_sPlayerX, m_sPlayerY;
-	short m_sPlayerObjectID;
-	short m_sPlayerType;
-	short m_sPlayerAppr1, m_sPlayerAppr2, m_sPlayerAppr3, m_sPlayerAppr4;
-	int m_iPlayerStatus;
-	short m_sMCX, m_sMCY;
-	short m_sCommX, m_sCommY;
-	int   m_iCastingMagicType;
-	short m_sDamageMove, m_sDamageMoveAmount;
-	short m_sAppr1_IE, m_sAppr2_IE, m_sAppr3_IE, m_sAppr4_IE;
-	int m_iStatus_IE;
-	short m_sViewDstX, m_sViewDstY;
-	short m_sViewPointX, m_sViewPointY;
-	short m_sVDL_X, m_sVDL_Y;
-
-	uint16_t m_wCommObjectID;
-	uint16_t m_wLastAttackTargetID;
-	uint16_t m_wEnterGameType;
-	uint16_t m_wR[16], m_wG[16], m_wB[16];
-	uint16_t m_wWR[16], m_wWG[16], m_wWB[16];
-
-	unsigned char m_cInputMaxLen;
-	char m_cEdit[4];
-	char G_cTxt[128];
-	char m_cGameModeCount;
-	char m_cBGMmapName[12];
-	char m_cItemOrder[DEF_MAXITEMS];
-	char m_cAmountString[12];
-	char m_cLogOutCount;
-	char m_cRestartCount;
-	char m_cGameMode;
+	uint16_t m_comm_object_id;
+	uint16_t m_last_attack_target_id;
+	uint16_t m_enter_game_type;
+	char m_item_order[hb::shared::limits::MaxItems];
+	static constexpr int AmountStringMaxLen = 12;
+	std::string m_amount_string;
+	int  m_logout_count;
+	int m_restart_count;
 
 	// Overlay system state
-	OverlayType m_activeOverlay = OverlayType::None;
-	char m_cOverlayContext;      // Which background screen (replaces m_cMsg[0] for overlay)
-	char m_cOverlayMessage;      // Message code (replaces m_cMsg[1] for overlay)
-	uint32_t m_dwOverlayStartTime;  // When overlay was shown
+	OverlayType m_active_overlay = OverlayType::None;
+	char m_overlay_context;      // Which background screen (replaces m_msg[0] for overlay)
+	char m_overlay_message;      // Message code (replaces m_msg[1] for overlay)
+	uint32_t m_overlay_start_time;  // When overlay was shown
 
-	char m_cWhisperIndex;
-	char m_cAccountName[12];
-	char m_cAccountPassword[12];
-	char m_cAccountAge[12];
-	char m_cNewPassword[12];
-	char m_cNewPassConfirm[12];
-	char m_cAccountCountry[18];
-	char m_cAccountSSN[32];
-	char m_cEmailAddr[52];
-	char m_cAccountQuiz[46];// Quiz
-	char m_cAccountAnswer[22];
-	char m_cPlayerName[12];
-	char m_cPlayerDir;
-	char m_cMsg[200];
-	char m_cLocation[12];
-	char m_cCurLocation[12];
-   	char m_cGuildName[22];
-	char m_cMCName[12];
-	char m_cMapName[12];
-	char m_cMapMessage[32];
-	char m_cMapIndex;
-	char m_cPlayerTurn;
-	char m_cCommand;
-	char m_cCurFocus, m_cMaxFocus;
-	char m_cEnterCheck, m_cTabCheck, m_cLeftArrowCheck;
-	char m_cArrowPressed;
-	char m_cLogServerAddr[16];
-	char m_cChatMsg[64];
-	char m_cBackupChatMsg[64];
-	char m_cGender, m_cSkinCol, m_cHairStyle, m_cHairCol, m_cUnderCol;
-	char m_ccStr, m_ccVit, m_ccDex, m_ccInt, m_ccMag, m_ccChr;
-	uint16_t m_cLU_Str, m_cLU_Vit, m_cLU_Dex, m_cLU_Int, m_cLU_Mag, m_cLU_Char;
+	char m_msg[200];
+	std::string m_location;
+	std::string m_cur_location;
+	std::string m_mc_name;
+	std::string m_map_name;
+	std::string m_map_message;
+	char m_map_index;
+	char m_cur_focus, m_max_focus;
+	char m_arrow_pressed;
+	std::string m_log_server_addr;
+	static constexpr int ChatMsgMaxLen = 64;
+	std::string m_chat_msg;
+	std::string m_backup_chat_msg;
 
-	char m_cMagicMastery[DEF_MAXMAGICTYPE];
-	unsigned char m_cSkillMastery[DEF_MAXSKILLTYPE]; // v1.4
-	char m_cWorldServerName[32];
-	char m_cMenuDir, m_cMenuDirCnt, m_cMenuFrame;
-	char m_cWhetherEffectType;
-	char m_cWhetherStatus;
-	char m_cIlusionOwnerType;
-	char m_cName_IE[12];
-	char m_sViewDX, m_sViewDY;
-	char m_cCommandCount;
-	char m_cLoading;
-	char m_cDiscount;
+	std::string m_world_server_name;
+	char m_menu_dir, m_menu_dir_cnt, m_menu_frame;
+	char m_ilusion_owner_type;
+	std::string m_name_ie;
+	char m_loading;
+	char m_discount;
 
-	char m_cStatusMapName[12];
-	char m_cTopMsg[64];
-	char m_cTeleportMapName[12];
-	char m_cConstructMapName[12];
-	char m_cGameServerName[22]; //  Gateway
+	std::string m_status_map_name;
+	std::string m_top_msg;
+	std::string m_construct_map_name;
+	std::string m_game_server_name; //  Gateway
 
-	class CItem* m_pItemConfigList[5000];
-	bool _bDecodeItemConfigFileContents(char* pData, uint32_t dwMsgSize);
+	std::array<std::unique_ptr<class CItem>, 5000> m_item_config_list;
+	bool decode_item_config_file_contents(char* data, uint32_t msg_size);
+	bool decode_magic_config_file_contents(char* data, uint32_t msg_size);
+	bool decode_skill_config_file_contents(char* data, uint32_t msg_size);
+	bool decode_npc_config_file_contents(char* data, uint32_t msg_size);
 
-	int iNpcHP, iNpcMaxHP;
+	struct NpcConfig { short npcType = 0; std::string name; bool valid = false; };
+	std::array<NpcConfig, hb::shared::limits::MaxNpcConfigs> m_npc_config_list{};   // indexed by npc_id
+	std::array<std::string, 120> m_npc_name_by_type;                    // type->name reverse map (last config wins)
+	int m_npc_configs_received = 0;
 
-	char m_cItemDrop[25][25];
+	enum class ConfigRetryLevel : uint8_t { None = 0, CacheTried = 1, ServerRequested = 2, Failed = 3 };
+	ConfigRetryLevel m_config_retry[4]{};  // indexed by ConfigCacheType (Items=0, Magic=1, Skills=2, Npcs=3)
+	uint32_t m_config_request_time = 0;
+	static constexpr uint32_t CONFIG_REQUEST_TIMEOUT_MS = 10000;
 
-	RECT m_rcPlayerRect, m_rcBodyRect;
-	HWND m_hWnd;
+	bool m_init_data_ready = false;      // RESPONSE_INITDATA received, waiting for configs
+	bool m_configs_ready = false;       // All configs loaded, safe to enter game
 
-	HANDLE m_hPakFile;
+	bool ensure_config_loaded(int type);
+	bool try_replay_cache_for_config(int type);
+	void request_configs_from_server(bool items, bool magic, bool skills, bool npcs = false);
+	void check_configs_ready_and_enter_game();
 
-	bool m_bWhisper;
-	bool m_bShout;
+	bool ensure_item_configs_loaded()  { return ensure_config_loaded(0); }
+	bool ensure_magic_configs_loaded() { return ensure_config_loaded(1); }
+	bool ensure_skill_configs_loaded() { return ensure_config_loaded(2); }
+	bool ensure_npc_configs_loaded()   { return ensure_config_loaded(3); }
 
-	bool m_bItemDrop;
-    int  m_iItemDropCnt;
+	short m_item_drop_id[25];
 
-	// Snoopy: Apocalypse Gate
-	char m_cGateMapName[12];
-	int  m_iGatePositX, m_iGatePositY;
-	int m_iHeldenianAresdenLeftTower;
-	int m_iHeldenianElvineLeftTower;
-	int m_iHeldenianAresdenFlags;
-	int m_iHeldenianElvineFlags;
-	bool m_bIllusionMVT;
-	int m_iGameServerMode;
-	bool m_bIsXmas;
-	bool m_bUsingSlate;
+	hb::shared::geometry::GameRectangle m_player_rect, m_body_rect;
 
-	bool _tmp_bSpriteOmit;
 
-	//Snoopy: Avatar
-	bool m_bIsAvatarMode;
-	bool m_bIsAvatarMessenger;
+	bool m_item_drop;
+	int  m_item_drop_cnt;
 
-	//Snoopy: Crafting
-	//bool _bDecodeCraftItemContents();
-	//bool __bDecodeCraftItemContents(char *pBuffer);
-	//bool _bCheckCraftItemStatus();
-	//bool _bCheckCurrentCraftItemStatus();
+	std::string m_gate_map_name;
+	int  m_gate_posit_x, m_gate_posit_y;
+	int m_heldenian_aresden_left_tower;
+	int m_heldenian_elvine_left_tower;
+	int m_heldenian_aresden_flags;
+	int m_heldenian_elvine_flags;
+	bool m_illusion_mvt;
+	bool m_is_xmas;
+	bool m_using_slate;
 
-	class CBuildItem * m_pCraftItemList[DEF_MAXBUILDITEMS];
-	class CBuildItem * m_pDispCraftItemList[DEF_MAXBUILDITEMS];
-	int   m_iContributionPrice;
+	// Entity render state (temporary state for currently rendered entity)
+	CEntityRenderState m_entity_state;
 
-	char m_cTakeHeroItemName[100]; //Drajwer - hero item str
+	// hb::shared::render::Renderer classes for entity drawing
+	CPlayerRenderer m_player_renderer;
+	CNpcRenderer m_npc_renderer;
 
-	short iMaxStats;
-	int iMaxLevel;
-	int iMaxBankItems;
+
+	int   m_contribution_price;
+
+
+	short m_max_stats;
+	int m_max_level;
+	int m_max_bank_items;
 };
 

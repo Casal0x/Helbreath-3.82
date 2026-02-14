@@ -1,0 +1,113 @@
+﻿// IGameScreen.h: Interface for game screens with lifecycle management
+//
+// Provides an object-oriented approach to screen management with:
+// - Lifecycle methods: on_initialize, on_uninitialize, on_update, on_render
+// - Type identification via SCREEN_TYPE macro
+// - Helper methods that delegate to CGame for common operations
+//
+//////////////////////////////////////////////////////////////////////
+
+#pragma once
+
+#include "CommonTypes.h"
+#include <cstdint>
+#include <string>
+
+class CGame;
+class GameModeManager;
+
+// Macro to define screen type - converts class name to string automatically
+// Usage: Add SCREEN_TYPE(ClassName) in the public section of your screen class
+#define SCREEN_TYPE(ClassName) \
+    static constexpr ScreenTypeId screen_type_id = #ClassName; \
+    ScreenTypeId get_type_id() const override { return screen_type_id; }
+
+class IGameScreen
+{
+public:
+    using ScreenTypeId = const char*;
+
+    explicit IGameScreen(CGame* game);
+    virtual ~IGameScreen() = default;
+
+    // Prevent copying/moving - screens own state and should not be copied
+    IGameScreen(const IGameScreen&) = delete;
+    IGameScreen& operator=(const IGameScreen&) = delete;
+    IGameScreen(IGameScreen&&) = delete;
+    IGameScreen& operator=(IGameScreen&&) = delete;
+
+    // ============== Core Lifecycle (pure virtual) ==============
+    // These must be implemented by each screen
+
+    // Called once when screen becomes active (after previous screen's on_uninitialize)
+    virtual void on_initialize() = 0;
+
+    // Called once when screen is about to be replaced (before new screen's on_initialize)
+    virtual void on_uninitialize() = 0;
+
+    // Called each frame to update logic, handle input, process state changes
+    virtual void on_update() = 0;
+
+    // Called each frame to render the screen (after begin_frame, before end_frame)
+    virtual void on_render() = 0;
+
+    // Returns the screen type identifier for runtime type checking
+    virtual ScreenTypeId get_type_id() const = 0;
+
+    // Whether the overlay system should draw a full-screen dim behind this overlay.
+    // Override to false for overlays that draw their own background (e.g. DevConsole).
+    virtual bool wants_background_dim() const { return true; }
+
+    // Called when a server response arrives in log_response_handler.
+    // Return true if this screen handled the response (stops further processing),
+    // false to fall through to default handling. Optional — not all screens need this.
+    virtual bool on_net_response(uint16_t response_type, char* data) { return false; }
+
+protected:
+    // ============== Helper Methods (delegate to CGame) ==============
+    // These provide convenient access to common CGame functionality
+
+    // Drawing helpers
+    void draw_new_dialog_box(char type, int sX, int sY, int frame,
+                          bool is_no_color_key = false, bool is_trans = false);
+    // Computes centered position for a dialog sprite frame within the logical resolution
+    void get_centered_dialog_pos(char type, int frame, int& outX, int& outY);
+    void put_string(int iX, int iY, const char* string, const hb::shared::render::Color& color);
+    void put_aligned_string(int x1, int x2, int iY, const char* string,
+                          const hb::shared::render::Color& color = GameColors::UIBlack);
+    void put_string_spr_font(int iX, int iY, const char* str, uint8_t r, uint8_t g, uint8_t b);
+    void draw_version();
+
+    // Audio helpers
+    void play_game_sound(char type, int num, int dist, long lPan = 0);
+
+    // Event/message helpers
+    void add_event_list(const char* txt, char color = 0, bool dup_allow = true);
+
+    // Input string helpers (for text entry screens)
+    void start_input_string(int sX, int sY, unsigned char len, std::string& buffer, bool is_hide = false);
+    void end_input_string();
+    void clear_input_string();
+    void show_received_string();
+
+    // Screen transition helper - request transition to a new screen
+    // This delegates to GameModeManager::set_screen<T>()
+    template<typename T, typename... Args>
+    void set_screen(Args&&... args);
+
+    // Overlay helpers - show/hide overlay screens on top of base screen
+    // Overlays automatically block input to the base screen
+    template<typename T, typename... Args>
+    void set_overlay(Args&&... args);
+
+    void clear_overlay();
+
+    // Timing helper - returns milliseconds since this screen/overlay was initialized
+    uint32_t get_elapsed_ms() const;
+
+    // Access to owning game instance
+    CGame* m_game;
+};
+
+// Template implementation - defined inline since it just forwards to GameModeManager
+// The actual implementation requires GameModeManager.h, so screens must include both headers

@@ -7,10 +7,11 @@
 
 #pragma once
 #include "CommonTypes.h"
+#include "EntityRelationship.h"
 
 #include "Npc.h"
 #include "Map.h"
-#include "Game.h"  // For DEF_MAXNPCS
+#include "Game.h"  // For hb::server::config::MaxNpcs
 
 struct DropTable;
 
@@ -28,58 +29,59 @@ public:
      * Main spawn generation loop. Called each game tick.
      * Processes all maps and spawn points, creating new NPCs as needed.
      */
-    void ProcessSpawns();
+    void process_spawns();
 
     /**
      * Create a new NPC entity.
      *
-     * @param pNpcName - Config name (e.g., "Slime", "Orc")
-     * @param pName - Unique ID (e.g., "_A0001")
-     * @param pMapName - Map to spawn on
+     * @param npc_config_id - Index into m_npc_config_list[]
+     * @param name - Unique ID (e.g., "_A0001")
+     * @param map_name - Map to spawn on
      * @param sClass - Movement class
-     * @param cSA - Special ability
-     * @param cMoveType - Movement behavior
-     * @param poX, poY - Spawn position (output)
-     * @param pWaypointList - Waypoint array
-     * @param pArea - Spawn area bounds
-     * @param iSpotMobIndex - Spawn point index (0=random, 1-99=spot)
-     * @param cChangeSide - Faction override
-     * @param bHideGenMode - Hide if players nearby
-     * @param bIsSummoned - Summoned or natural spawn
-     * @param bFirmBerserk - Start with berserk
-     * @param bIsMaster - Guild war summon
-     * @param iGuildGUID - Guild ID
+     * @param sa - Special ability
+     * @param move_type - Movement behavior
+     * @param offset_x, offset_y - Spawn position (output)
+     * @param waypoint_list - Waypoint array
+     * @param area - Spawn area bounds
+     * @param spot_mob_index - Spawn point index (0=random, 1-99=spot)
+     * @param change_side - Faction override
+     * @param hide_gen_mode - Hide if players nearby
+     * @param is_summoned - Summoned or natural spawn
+     * @param firm_berserk - start with berserk
+     * @param is_master - Guild war summon
+     * @param guild_guid - Guild ID
      * @return NPC handle (1-4999) or -1 on failure
      */
-    int CreateEntity(
-        char* pNpcName, char* pName, char* pMapName,
-        short sClass, char cSA, char cMoveType,
-        int* poX, int* poY,
-        char* pWaypointList, RECT* pArea,
-        int iSpotMobIndex, char cChangeSide,
-        bool bHideGenMode, bool bIsSummoned,
-        bool bFirmBerserk, bool bIsMaster,
-        int iGuildGUID
+    int create_entity(
+        int npc_config_id, char* name, char* map_name,
+        short sClass, char sa, char move_type,
+        int* offset_x, int* offset_y,
+        char* waypoint_list, hb::shared::geometry::GameRectangle* area,
+        int spot_mob_index, char change_side,
+        bool hide_gen_mode, bool is_summoned,
+        bool firm_berserk, bool is_master,
+        int guild_guid,
+        bool bypass_mob_limit = false
     );
 
     /**
      * Remove entity from world and free resources.
      * Handles item drops, counter updates, and cleanup.
      *
-     * @param iEntityHandle - Entity to delete (1-4999)
+     * @param entity_handle - Entity to delete (1-4999)
      */
-    void DeleteEntity(int iEntityHandle);
+    void delete_entity(int entity_handle);
 
     /**
      * Handle entity death event.
      * Awards XP, updates quests, generates loot.
      *
-     * @param iEntityHandle - Entity that died
-     * @param sAttackerH - Attacker handle
-     * @param cAttackerType - Attacker type (player/npc)
-     * @param sDamage - Final damage dealt
+     * @param entity_handle - Entity that died
+     * @param attacker_h - Attacker handle
+     * @param attacker_type - Attacker type (player/npc)
+     * @param damage - Final damage dealt
      */
-    void OnEntityKilled(int iEntityHandle, short sAttackerH, char cAttackerType, short sDamage);
+    void on_entity_killed(int entity_handle, short attacker_h, char attacker_type, short damage);
 
     // ========================================================================
     // Update & Behavior System
@@ -89,129 +91,128 @@ public:
      * Main entity update loop. Called each game tick.
      * Processes all active entities, updates AI, timers, etc.
      */
-    void ProcessEntities();
+    void process_entities();
 
     /**
-     * Execute behavior for dead entity (respawn timer).
+     * execute behavior for dead entity (respawn timer).
      */
-    void UpdateDeadBehavior(int iEntityHandle);
+    void update_dead_behavior(int entity_handle);
 
     /**
-     * Execute movement behavior.
+     * execute movement behavior.
      */
-    void UpdateMoveBehavior(int iEntityHandle);
+    void update_move_behavior(int entity_handle);
 
     /**
-     * Execute combat behavior.
+     * execute combat behavior.
      */
-    void UpdateAttackBehavior(int iEntityHandle);
+    void update_attack_behavior(int entity_handle);
 
     /**
-     * Execute idle behavior.
+     * execute idle behavior.
      */
-    void UpdateStopBehavior(int iEntityHandle);
+    void update_stop_behavior(int entity_handle);
 
     /**
-     * Execute flee behavior.
+     * execute flee behavior.
      */
-    void UpdateFleeBehavior(int iEntityHandle);
+    void update_flee_behavior(int entity_handle);
 
     // ========================================================================
     // NPC Behavior & Helpers
     // ========================================================================
 
-    void NpcBehavior_Move(int iNpcH);
-    void TargetSearch(int iNpcH, short* pTarget, char* pTargetType);
-    void NpcBehavior_Attack(int iNpcH);
-    void NpcBehavior_Flee(int iNpcH);
-    void NpcBehavior_Stop(int iNpcH);
-    void NpcBehavior_Dead(int iNpcH);
-    void CalcNextWayPointDestination(int iNpcH);
-    void NpcMagicHandler(int iNpcH, short dX, short dY, short sType);
-    int iGetNpcRelationship(int iWhatH, int iRecvH);
-    int iGetNpcRelationship_SendEvent(int iNpcH, int iOpponentH);
-    void NpcRequestAssistance(int iNpcH);
-    bool _bNpcBehavior_ManaCollector(int iNpcH);
-    bool _bNpcBehavior_Detector(int iNpcH);
-    void _NpcBehavior_GrandMagicGenerator(int iNpcH);
-    bool bSetNpcFollowMode(char* pName, char* pFollowName, char cFollowOwnerType);
-    void bSetNpcAttackMode(char* cName, int iTargetH, char cTargetType, bool bIsPermAttack);
+    void npc_behavior_move(int npc_h);
+    void target_search(int npc_h, short* target, char* target_type);
+    void npc_behavior_attack(int npc_h);
+    void npc_behavior_flee(int npc_h);
+    void npc_behavior_stop(int npc_h);
+    void npc_behavior_dead(int npc_h);
+    void calc_next_waypoint_destination(int npc_h);
+    void npc_magic_handler(int npc_h, short dX, short dY, short type);
+    EntityRelationship get_npc_relationship(int npc_h, int viewer_h);
+    void npc_request_assistance(int npc_h);
+    bool npc_behavior_mana_collector(int npc_h);
+    bool npc_behavior_detector(int npc_h);
+    void npc_behavior_grand_magic_generator(int npc_h);
+    bool set_npc_follow_mode(char* name, char* follow_name, char follow_owner_type);
+    void set_npc_attack_mode(char* name, int target_h, char target_type, bool is_perm_attack);
 
     // ========================================================================
     // Query & Access
     // ========================================================================
 
     /**
-     * Get entity pointer by handle.
+     * get entity pointer by handle.
      * @return CNpc pointer or NULL if invalid
      */
-    CNpc* GetEntity(int iEntityHandle) const;
+    CNpc* get_entity(int entity_handle) const;
 
     /**
-     * Get entity pointer by GUID.
+     * get entity pointer by GUID.
      * @return CNpc pointer or NULL if not found
      */
-    CNpc* GetEntityByGUID(uint32_t dwGUID) const;
+    CNpc* get_entity_by_guid(uint32_t guid) const;
 
     /**
-     * Get entity handle by GUID.
+     * get entity handle by GUID.
      * @return Entity handle (1-4999) or -1 if not found
      */
-    int GetEntityHandleByGUID(uint32_t dwGUID) const;
+    int get_entity_handle_by_guid(uint32_t guid) const;
 
     /**
-     * Get entity GUID by handle.
+     * get entity GUID by handle.
      * @return GUID or 0 if invalid handle
      */
-    uint32_t GetEntityGUID(int iEntityHandle) const;
+    uint32_t get_entity_guid(int entity_handle) const;
 
     /**
-     * Get total active entities across all maps.
+     * get total active entities across all maps.
      */
-    int GetTotalActiveEntities() const;
+    int get_total_active_entities() const;
 
     /**
-     * Get total entities on specific map.
+     * get total entities on specific map.
      */
-    int GetMapEntityCount(int iMapIndex) const;
+    int get_map_entity_count(int map_index) const;
 
     /**
      * Find entity by name.
      * @return Entity handle or -1 if not found
      */
-    int FindEntityByName(const char* pName) const;
+    int find_entity_by_name(const char* name) const;
 
     /**
-     * Get active entity list for efficient iteration.
+     * get active entity list for efficient iteration.
      * Returns array of active entity indices (not handles!).
-     * Use with GetActiveEntityCount() to iterate only active entities.
+     * Use with get_active_entity_count() to iterate only active entities.
      *
-     * Performance: O(active_count) instead of O(DEF_MAXNPCS)
+     * Performance: O(active_count) instead of O(hb::server::config::MaxNpcs)
      *
      * Example:
-     *   int* pActiveList = m_pEntityManager->GetActiveEntityList();
-     *   int iCount = m_pEntityManager->GetActiveEntityCount();
-     *   for (int i = 0; i < iCount; i++) {
-     *       int iHandle = pActiveList[i];
-     *       NpcProcess(iHandle);
+     *   int* pActiveList = m_entity_manager->get_active_entity_list();
+     *   int count = m_entity_manager->get_active_entity_count();
+     *   for(int i = 0; i < count; i++) {
+     *       int handle = pActiveList[i];
+     *       npc_process(handle);
      *   }
      */
-    int* GetActiveEntityList() const { return m_pActiveEntityList; }
+    int* get_active_entity_list() const { return m_active_entity_list; }
 
     /**
-     * Get number of active entities.
-     * Use with GetActiveEntityList() for efficient iteration.
+     * get number of active entities.
+     * Use with get_active_entity_list() for efficient iteration.
      */
-    int GetActiveEntityCount() const { return m_iActiveEntityCount; }
+    int get_active_entity_count() const { return m_active_entity_count; }
 
     /**
-     * Get direct access to entity array for backward compatibility.
+     * get direct access to entity array for backward compatibility.
      * WARNING: Direct array access bypasses EntityManager logic.
-     * Prefer using GetEntity() or GetActiveEntityList().
+     * Prefer using get_entity() or get_active_entity_list().
      *
      * @return CNpc** array (indices 0-4999, index 0 unused)
      */
-    CNpc** GetEntityArray() const { return m_pNpcList; }
+    CNpc** get_entity_array() const { return m_npc_list; }
 
     // ========================================================================
     // Configuration
@@ -221,12 +222,12 @@ public:
      * Set map list pointer (from CGame).
      * Required for spawn system to access map data.
      */
-    void SetMapList(class CMap** pMapList, int iMaxMaps);
+    void set_map_list(class CMap** map_list, int max_maps);
 
     /**
      * Set game instance pointer for callbacks.
      */
-    void SetGame(class CGame* pGame);
+    void set_game(class CGame* game);
 
 private:
     // ========================================================================
@@ -234,34 +235,34 @@ private:
     // ========================================================================
 
     /**
-     * Initialize NPC attributes from configuration.
+     * initialize NPC attributes from configuration.
      */
-    bool InitEntityAttributes(CNpc* pNpc, const char* pNpcName, short sClass, char cSA);
+    bool init_entity_attributes(CNpc* npc, int npc_config_id, short sClass, char sa);
 
     /**
      * Find first available entity slot.
      * @return Slot index (1-4999) or -1 if full
      */
-    int GetFreeEntitySlot() const;
+    int get_free_entity_slot() const;
 
     /**
      * Validate entity handle is in range and exists.
      */
-    bool IsValidEntity(int iEntityHandle) const;
+    bool is_valid_entity(int entity_handle) const;
 
     /**
      * Generate item drops when entity dies.
      */
-    void GenerateEntityLoot(int iEntityHandle, short sAttackerH, char cAttackerType);
+    void generate_entity_loot(int entity_handle, short attacker_h, char attacker_type);
 
     /**
      * Internal cleanup for entity deletion (drops, counters, naming value).
      */
-    void DeleteNpcInternal(int iNpcH);
+    void delete_npc_internal(int npc_h);
 
-    void NpcDeadItemGenerator(int iNpcH, short sAttackerH, char cAttackerType);
-    int RollDropTableItem(const DropTable* table, int tier, int& outMinCount, int& outMaxCount) const;
-    bool SpawnNpcDropItem(int iNpcH, int itemId, int minCount, int maxCount);
+    void npc_dead_item_generator(int npc_h, short attacker_h, char attacker_type);
+    int roll_drop_table_item(const DropTable* table, int tier, int& outMinCount, int& outMaxCount) const;
+    bool spawn_npc_drop_item(int npc_h, int item_id, int min_count, int max_count);
 
     // ========================================================================
     // Spawn Point Management
@@ -270,46 +271,46 @@ private:
     /**
      * Process random mob generators for a map.
      */
-    void ProcessRandomSpawns(int iMapIndex);
+    void process_random_spawns(int map_index);
 
     /**
      * Process spot mob generators for a map.
      */
-    void ProcessSpotSpawns(int iMapIndex);
+    void process_spot_spawns(int map_index);
 
     /**
      * Check if spawn point can spawn (limits, timers).
      */
-    bool CanSpawnAtSpot(int iMapIndex, int iSpotIndex) const;
+    bool can_spawn_at_spot(int map_index, int spot_index) const;
 
     /**
      * Generate next unique GUID for new entity.
      */
-    uint32_t GenerateEntityGUID();
+    uint32_t generate_entity_guid();
 
     // ========================================================================
     // Data Members
     // ========================================================================
 
     // Entity Storage (OWNED by EntityManager)
-    class CNpc** m_pNpcList;                // Entity array (indices 0-4999, index 0 unused)
-    uint32_t m_dwEntityGUID[DEF_MAXNPCS];  // GUID for each entity slot
+    class CNpc** m_npc_list;                // Entity array (indices 0-4999, index 0 unused)
+    uint32_t m_entity_guid[hb::server::config::MaxNpcs];  // GUID for each entity slot
 
     // Performance: Active Entity Tracking
     // Instead of iterating 5,000 slots, iterate only active entities
-    int* m_pActiveEntityList;               // Indices of active entities
-    int m_iActiveEntityCount;               // Number of active entities
+    int* m_active_entity_list;               // Indices of active entities
+    int m_active_entity_count;               // Number of active entities
 
     // External References
-    class CMap** m_pMapList;                // Reference to map list (from CGame)
-    class CGame* m_pGame;                   // Reference to game instance
-    int m_iMaxMaps;                         // Number of maps
+    class CMap** m_map_list;                // Reference to map list (from CGame)
+    class CGame* m_game;                   // Reference to game instance
+    int m_max_maps;                         // Number of maps
 
     // Entity Statistics
-    int m_iTotalEntities;                   // Total active entities (same as m_iActiveEntityCount)
-    uint32_t m_dwNextGUID;                     // Next GUID to assign (monotonically increasing)
+    int m_total_entities;                   // Total active entities (same as m_active_entity_count)
+    uint32_t m_next_guid;                     // Next GUID to assign (monotonically increasing)
 
-    bool m_bInitialized;                    // Initialization flag
+    bool m_initialized;                    // Initialization flag
 
     // ========================================================================
     // Active Entity List Management (Private Helpers)
@@ -317,13 +318,13 @@ private:
 
     /**
      * Add entity to active list when created.
-     * Called by CreateEntity().
+     * Called by create_entity().
      */
-    void AddToActiveList(int iEntityHandle);
+    void add_to_active_list(int entity_handle);
 
     /**
      * Remove entity from active list when deleted.
-     * Called by DeleteEntity().
+     * Called by delete_entity().
      */
-    void RemoveFromActiveList(int iEntityHandle);
+    void remove_from_active_list(int entity_handle);
 };

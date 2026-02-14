@@ -2,156 +2,162 @@
 #include "ConfigManager.h"
 #include "Game.h"
 #include "GlobalDef.h"
+#include "GameFonts.h"
+#include "TextLibExt.h"
+#include <format>
+#include <string>
+using namespace hb::client::sprite_id;
 
-DialogBox_Map::DialogBox_Map(CGame* pGame)
-	: IDialogBox(DialogBoxId::Map, pGame)
+DialogBox_Map::DialogBox_Map(CGame* game)
+	: IDialogBox(DialogBoxId::Map, game)
 {
-	SetDefaultRect(336 + SCREENX, 88 + SCREENY, 270, 346);
+	set_default_rect(336 , 88 , 270, 346);
 }
 
-void DialogBox_Map::OnEnable(int cType, int sV1, int sV2, char* pString)
+void DialogBox_Map::on_enable(int type, int v1, int v2, char* string)
 {
-	Info().sV1 = sV1;
-	Info().sV2 = sV2;
-	Info().sSizeX = 290;
-	Info().sSizeY = 290;
+	Info().m_v1 = v1;
+	Info().m_v2 = v2;
+	Info().m_size_x = 290;
+	Info().m_size_y = 290;
 }
 
-void DialogBox_Map::OnDraw(short msX, short msY, short msZ, char cLB)
+void DialogBox_Map::on_draw(short mouse_x, short mouse_y, short z, char lb)
 {
-	short sX = Info().sX;
-	short sY = Info().sY;
-	const bool dialogTrans = ConfigManager::Get().IsDialogTransparencyEnabled();
-	uint32_t dwTime = m_pGame->m_dwCurTime;
-	double dV1, dV2, dV3;
-	int tX, tY, szX, szY, dX, dY;
+	short sX = Info().m_x;
+	short sY = Info().m_y;
+	const bool dialogTrans = config_manager::get().is_dialog_transparency_enabled();
+	uint32_t time = m_game->m_cur_time;
+	double v1, v2, v3;
+	int tX, tY, size_x, size_y, dX, dY;
 
-	szX = 0;
-	szY = 0;
+	size_x = 0;
+	size_y = 0;
 
-	switch (Info().sV1) {
+	switch (Info().m_v1) {
 	case 1:
-		switch (Info().sV2) {
+		switch (Info().m_v2) {
 		case 0: // aresden
 			if (dialogTrans)
-				m_pGame->m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS1]->Draw(sX, sY, 0, SpriteLib::DrawParams::Alpha(0.25f));
-			else m_pGame->m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS1]->Draw(sX, sY, 0);
+				m_game->m_sprite[InterfaceNewMaps1]->draw(sX, sY, 0, hb::shared::sprite::DrawParams::alpha_blend(0.25f));
+			else m_game->m_sprite[InterfaceNewMaps1]->draw(sX, sY, 0);
 			dX = 19;
 			dY = 20;
-			szX = 260;
-			szY = 260;
+			size_x = 260;
+			size_y = 260;
 			break;
 
 		case 1: // elvine
 			if (dialogTrans)
-				m_pGame->m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS1]->Draw(sX, sY, 1, SpriteLib::DrawParams::Alpha(0.25f));
-			else m_pGame->m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS1]->Draw(sX, sY, 1);
+				m_game->m_sprite[InterfaceNewMaps1]->draw(sX, sY, 1, hb::shared::sprite::DrawParams::alpha_blend(0.25f));
+			else m_game->m_sprite[InterfaceNewMaps1]->draw(sX, sY, 1);
 			dX = 20;
 			dY = 18;
-			szX = 260;
-			szY = 260;
+			size_x = 260;
+			size_y = 260;
 			break;
 
 		case 2: // middleland
 			if (dialogTrans)
-				m_pGame->m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS2]->Draw(sX, sY, 0, SpriteLib::DrawParams::Alpha(0.25f));
-			else m_pGame->m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS2]->Draw(sX, sY, 0);
+				m_game->m_sprite[InterfaceNewMaps2]->draw(sX, sY, 0, hb::shared::sprite::DrawParams::alpha_blend(0.25f));
+			else m_game->m_sprite[InterfaceNewMaps2]->draw(sX, sY, 0);
 			dX = 11;
 			dY = 31;
-			szX = 280;
-			szY = 253;
+			size_x = 280;
+			size_y = 253;
 			break;
 
 		case 3: // default
 			if (dialogTrans)
-				m_pGame->m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS2]->Draw(sX, sY, 1, SpriteLib::DrawParams::Alpha(0.25f));
-			else m_pGame->m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS2]->Draw(sX, sY, 1);
+				m_game->m_sprite[InterfaceNewMaps2]->draw(sX, sY, 1, hb::shared::sprite::DrawParams::alpha_blend(0.25f));
+			else m_game->m_sprite[InterfaceNewMaps2]->draw(sX, sY, 1);
 			dX = 52;
 			dY = 42;
-			szX = 200;
-			szY = 200;
+			size_x = 200;
+			size_y = 200;
 			break;
 
 		case 4: // aresden dungeon
 			if (dialogTrans)
-				m_pGame->m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS3]->Draw(sX, sY, 0, SpriteLib::DrawParams::Alpha(0.25f));
-			else m_pGame->m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS3]->Draw(sX, sY, 0);
+				m_game->m_sprite[InterfaceNewMaps3]->draw(sX, sY, 0, hb::shared::sprite::DrawParams::alpha_blend(0.25f));
+			else m_game->m_sprite[InterfaceNewMaps3]->draw(sX, sY, 0);
 			dX = 40;
 			dY = 40;
-			szX = 220;
-			szY = 220;
+			size_x = 220;
+			size_y = 220;
 			break;
 
 		case 5: // elvine dungeon
 			if (dialogTrans)
-				m_pGame->m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS3]->Draw(sX, sY, 1, SpriteLib::DrawParams::Alpha(0.25f));
-			else m_pGame->m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS3]->Draw(sX, sY, 1);
+				m_game->m_sprite[InterfaceNewMaps3]->draw(sX, sY, 1, hb::shared::sprite::DrawParams::alpha_blend(0.25f));
+			else m_game->m_sprite[InterfaceNewMaps3]->draw(sX, sY, 1);
 			dX = 40;
 			dY = 40;
-			szX = 220;
-			szY = 220;
+			size_x = 220;
+			size_y = 220;
 			break;
 
 		case 6: // aresden
 			if (dialogTrans)
-				m_pGame->m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS4]->Draw(sX, sY, 0, SpriteLib::DrawParams::Alpha(0.25f));
-			else m_pGame->m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS4]->Draw(sX, sY, 0);
+				m_game->m_sprite[InterfaceNewMaps4]->draw(sX, sY, 0, hb::shared::sprite::DrawParams::alpha_blend(0.25f));
+			else m_game->m_sprite[InterfaceNewMaps4]->draw(sX, sY, 0);
 			dX = 40;
 			dY = 40;
-			szX = 220;
-			szY = 220;
+			size_x = 220;
+			size_y = 220;
 			break;
 
 		case 7: // elvine
 			if (dialogTrans)
-				m_pGame->m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS4]->Draw(sX, sY, 1, SpriteLib::DrawParams::Alpha(0.25f));
-			else m_pGame->m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS4]->Draw(sX, sY, 1);
+				m_game->m_sprite[InterfaceNewMaps4]->draw(sX, sY, 1, hb::shared::sprite::DrawParams::alpha_blend(0.25f));
+			else m_game->m_sprite[InterfaceNewMaps4]->draw(sX, sY, 1);
 			dX = 40;
 			dY = 40;
-			szX = 220;
-			szY = 220;
+			size_x = 220;
+			size_y = 220;
 			break;
 
 		case 8: // aresden
 			if (dialogTrans)
-				m_pGame->m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS5]->Draw(sX, sY, 0, SpriteLib::DrawParams::Alpha(0.25f));
-			else m_pGame->m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS5]->Draw(sX, sY, 0);
+				m_game->m_sprite[InterfaceNewMaps5]->draw(sX, sY, 0, hb::shared::sprite::DrawParams::alpha_blend(0.25f));
+			else m_game->m_sprite[InterfaceNewMaps5]->draw(sX, sY, 0);
 			dX = 40;
 			dY = 32;
-			szX = 220;
-			szY = 220;
+			size_x = 220;
+			size_y = 220;
 			break;
 
 		case 9: // elvine
 			if (dialogTrans)
-				m_pGame->m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS5]->Draw(sX, sY, 1, SpriteLib::DrawParams::Alpha(0.25f));
-			else m_pGame->m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS5]->Draw(sX, sY, 1);
+				m_game->m_sprite[InterfaceNewMaps5]->draw(sX, sY, 1, hb::shared::sprite::DrawParams::alpha_blend(0.25f));
+			else m_game->m_sprite[InterfaceNewMaps5]->draw(sX, sY, 1);
 			dX = 40;
 			dY = 38;
-			szX = 220;
-			szY = 220;
+			size_x = 220;
+			size_y = 220;
 			break;
 		}
 
-		dV1 = (double)m_pGame->m_pMapData->m_sMapSizeX;
-		dV2 = (double)m_pGame->m_sPlayerX;
-		dV3 = (dV2 * (double)szX) / dV1;
-		tX = (int)dV3 + dX;
+		v1 = static_cast<double>(m_game->m_map_data->m_map_size_x);
+		v2 = static_cast<double>(m_game->m_player->m_player_x);
+		v3 = (v2 * static_cast<double>(size_x)) / v1;
+		tX = static_cast<int>(v3) + dX;
 
-		dV1 = (double)m_pGame->m_pMapData->m_sMapSizeY;
-		if (dV1 == 752) dV1 = 680;
-		dV2 = (double)m_pGame->m_sPlayerY;
-		dV3 = (dV2 * (double)szY) / dV1;
-		tY = (int)dV3 + dY;
+		v1 = static_cast<double>(m_game->m_map_data->m_map_size_y);
+		if (v1 == 752) v1 = 680;
+		v2 = static_cast<double>(m_game->m_player->m_player_y);
+		v3 = (v2 * static_cast<double>(size_y)) / v1;
+		tY = static_cast<int>(v3) + dY;
 
-		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME4, sX + tX, sY + tY, 43);
-		wsprintf(m_pGame->G_cTxt, "%d,%d", m_pGame->m_sPlayerX, m_pGame->m_sPlayerY);
-		m_pGame->PutString_SprFont3(sX + 10 + tX - 5, sY + 10 + tY - 6, m_pGame->G_cTxt, m_pGame->m_wR[13] * 4, m_pGame->m_wG[13] * 4, m_pGame->m_wB[13] * 4, false, 2);
+		draw_new_dialog_box(InterfaceNdGame4, sX + tX, sY + tY, 43);
+		std::string coordBuf;
+		coordBuf = std::format("{},{}", m_game->m_player->m_player_x, m_game->m_player->m_player_y);
+		hb::shared::text::draw_text(GameFont::SprFont3_2, sX + 10 + tX - 5, sY + 10 + tY - 6, coordBuf.c_str(), hb::shared::text::TextStyle::with_two_point_shadow(GameColors::Yellow4x));
 		break;
 	}
 }
 
-bool DialogBox_Map::OnClick(short msX, short msY)
+bool DialogBox_Map::on_click(short mouse_x, short mouse_y)
 {
 	// Map dialog has no click handling - it just displays
 	return false;

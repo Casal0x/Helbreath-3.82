@@ -1,62 +1,67 @@
 #include "DialogBox_Noticement.h"
 #include "Game.h"
 #include "lan_eng.h"
+#include <format>
+#include <string>
+using namespace hb::client::sprite_id;
 
-DialogBox_Noticement::DialogBox_Noticement(CGame* pGame)
-	: IDialogBox(DialogBoxId::Noticement, pGame)
+DialogBox_Noticement::DialogBox_Noticement(CGame* game)
+	: IDialogBox(DialogBoxId::Noticement, game)
 {
-	SetDefaultRect(162 + SCREENX, 40 + SCREENY, 315, 171);
+	set_default_rect(162 , 40 , 315, 171);
 }
 
-void DialogBox_Noticement::OnDraw(short msX, short msY, short msZ, char cLB)
+void DialogBox_Noticement::on_draw(short mouse_x, short mouse_y, short z, char lb)
 {
-	short sX = Info().sX;
-	short sY = Info().sY;
-	short szX = Info().sSizeX;
+	short sX = Info().m_x;
+	short sY = Info().m_y;
+	short size_x = Info().m_size_x;
 
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME4, sX, sY, 2);
+	draw_new_dialog_box(InterfaceNdGame4, sX, sY, 2);
 
-	switch (Info().cMode)
+	switch (Info().m_mode)
 	{
 	case 1: // Server shutting down in X minutes
-		std::memset(m_pGame->G_cTxt, 0, sizeof(m_pGame->G_cTxt));
-		if (Info().sV1 != 0)
-			wsprintf(m_pGame->G_cTxt, DRAW_DIALOGBOX_NOTICEMSG1, Info().sV1);
-		else
-			strcpy(m_pGame->G_cTxt, DRAW_DIALOGBOX_NOTICEMSG2);
-		PutAlignedString(sX, sX + szX, sY + 31, m_pGame->G_cTxt, 100, 10, 10);
-		PutAlignedString(sX, sX + szX, sY + 48, DRAW_DIALOGBOX_NOTICEMSG3);
-		PutAlignedString(sX, sX + szX, sY + 65, DRAW_DIALOGBOX_NOTICEMSG4);
-		PutAlignedString(sX, sX + szX, sY + 82, DRAW_DIALOGBOX_NOTICEMSG5);
-		PutAlignedString(sX, sX + szX, sY + 99, DRAW_DIALOGBOX_NOTICEMSG6);
+		{
+			std::string msgBuf;
+			if (Info().m_v1 != 0)
+				msgBuf = std::format(DRAW_DIALOGBOX_NOTICEMSG1, Info().m_v1);
+			else
+				msgBuf = DRAW_DIALOGBOX_NOTICEMSG2;
+			put_aligned_string(sX, sX + size_x, sY + 31, msgBuf.c_str(), GameColors::UINoticeRed);
+		}
+		put_aligned_string(sX, sX + size_x, sY + 48, DRAW_DIALOGBOX_NOTICEMSG3);
+		put_aligned_string(sX, sX + size_x, sY + 65, DRAW_DIALOGBOX_NOTICEMSG4);
+		put_aligned_string(sX, sX + size_x, sY + 82, DRAW_DIALOGBOX_NOTICEMSG5);
+		put_aligned_string(sX, sX + size_x, sY + 99, DRAW_DIALOGBOX_NOTICEMSG6);
 		break;
 
-	case 2: // Shutdown has started
-		PutAlignedString(sX, sX + szX, sY + 31, DRAW_DIALOGBOX_NOTICEMSG7, 100, 10, 10);
-		PutAlignedString(sX, sX + szX, sY + 48, DRAW_DIALOGBOX_NOTICEMSG8);
-		PutAlignedString(sX, sX + szX, sY + 65, DRAW_DIALOGBOX_NOTICEMSG9);
-		PutAlignedString(sX, sX + szX, sY + 82, DRAW_DIALOGBOX_NOTICEMSG10);
-		PutAlignedString(sX, sX + szX, sY + 99, DRAW_DIALOGBOX_NOTICEMSG11);
+	case 2: // shutdown has started
+		put_aligned_string(sX, sX + size_x, sY + 31, DRAW_DIALOGBOX_NOTICEMSG7, GameColors::UINoticeRed);
+		put_aligned_string(sX, sX + size_x, sY + 48, DRAW_DIALOGBOX_NOTICEMSG8);
+		put_aligned_string(sX, sX + size_x, sY + 65, DRAW_DIALOGBOX_NOTICEMSG9);
+		put_aligned_string(sX, sX + size_x, sY + 82, DRAW_DIALOGBOX_NOTICEMSG10);
+		put_aligned_string(sX, sX + size_x, sY + 99, DRAW_DIALOGBOX_NOTICEMSG11);
 		break;
 	}
 
 	// OK button (same position for both modes)
-	if ((msX >= sX + 210) && (msX <= sX + 210 + DEF_BTNSZX) && (msY > sY + 127) && (msY < sY + 127 + DEF_BTNSZY))
-		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + 210, sY + 127, 1);
+	if ((mouse_x >= sX + 210) && (mouse_x <= sX + 210 + ui_layout::btn_size_x) && (mouse_y > sY + 127) && (mouse_y < sY + 127 + ui_layout::btn_size_y))
+		draw_new_dialog_box(InterfaceNdButton, sX + 210, sY + 127, 1);
 	else
-		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + 210, sY + 127, 0);
+		draw_new_dialog_box(InterfaceNdButton, sX + 210, sY + 127, 0);
 }
 
-bool DialogBox_Noticement::OnClick(short msX, short msY)
+bool DialogBox_Noticement::on_click(short mouse_x, short mouse_y)
 {
-	short sX = Info().sX;
-	short sY = Info().sY;
+	short sX = Info().m_x;
+	short sY = Info().m_y;
 
 	// OK button
-	if ((msX >= sX + 210) && (msX <= sX + 210 + DEF_BTNSZX) && (msY > sY + 127) && (msY < sY + 127 + DEF_BTNSZY))
+	if ((mouse_x >= sX + 210) && (mouse_x <= sX + 210 + ui_layout::btn_size_x) && (mouse_y > sY + 127) && (mouse_y < sY + 127 + ui_layout::btn_size_y))
 	{
-		PlaySoundEffect('E', 14, 5);
-		DisableThisDialog();
+		play_sound_effect('E', 14, 5);
+		disable_this_dialog();
 		return true;
 	}
 

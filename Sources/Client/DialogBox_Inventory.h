@@ -6,11 +6,14 @@ class CItem;
 class DialogBox_Inventory : public IDialogBox
 {
 public:
-	DialogBox_Inventory(CGame* pGame);
+	DialogBox_Inventory(CGame* game);
 	~DialogBox_Inventory() override = default;
 
-	void OnDraw(short msX, short msY, short msZ, char cLB) override;
-	bool OnClick(short msX, short msY) override;
+	void on_draw(short mouse_x, short mouse_y, short z, char lb) override;
+	bool on_click(short mouse_x, short mouse_y) override;
+	bool on_double_click(short mouse_x, short mouse_y) override;
+	PressResult on_press(short mouse_x, short mouse_y) override;
+	bool on_item_drop(short mouse_x, short mouse_y) override;
 
 private:
 	// Layout constants
@@ -27,6 +30,6 @@ private:
 	static constexpr int BTN_Y1 = 172;
 	static constexpr int BTN_Y2 = 184;
 
-	// Helper: Draw a single inventory item with proper coloring and state
-	void DrawInventoryItem(CItem* pItem, int itemIdx, int baseX, int baseY);
+	// Helper: draw a single inventory item with proper coloring and state
+	void draw_inventory_item(CItem* item, int itemIdx, int baseX, int baseY);
 };

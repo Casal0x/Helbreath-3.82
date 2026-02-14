@@ -1,0 +1,27 @@
+#pragma once
+
+#include "SpriteTypes.h"
+#include <cstdint>
+
+class CGame;
+
+class CPlayerRenderer
+{
+public:
+	explicit CPlayerRenderer(CGame& game) : m_game(game) {}
+
+	hb::shared::sprite::BoundRect draw_stop(int indexX, int indexY, int sX, int sY, bool trans, uint32_t time);
+	hb::shared::sprite::BoundRect draw_move(int indexX, int indexY, int sX, int sY, bool trans, uint32_t time);
+	hb::shared::sprite::BoundRect draw_run(int indexX, int indexY, int sX, int sY, bool trans, uint32_t time);
+	hb::shared::sprite::BoundRect draw_attack(int indexX, int indexY, int sX, int sY, bool trans, uint32_t time);
+	hb::shared::sprite::BoundRect draw_attack_move(int indexX, int indexY, int sX, int sY, bool trans, uint32_t time);
+	hb::shared::sprite::BoundRect draw_magic(int indexX, int indexY, int sX, int sY, bool trans, uint32_t time);
+	hb::shared::sprite::BoundRect draw_get_item(int indexX, int indexY, int sX, int sY, bool trans, uint32_t time);
+	hb::shared::sprite::BoundRect draw_damage(int indexX, int indexY, int sX, int sY, bool trans, uint32_t time);
+	hb::shared::sprite::BoundRect draw_damage_move(int indexX, int indexY, int sX, int sY, bool trans, uint32_t time);
+	hb::shared::sprite::BoundRect draw_dying(int indexX, int indexY, int sX, int sY, bool trans, uint32_t time);
+	hb::shared::sprite::BoundRect draw_dead(int indexX, int indexY, int sX, int sY, bool trans, uint32_t time);
+
+private:
+	CGame& m_game;
+};

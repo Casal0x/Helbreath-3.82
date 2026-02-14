@@ -1,137 +1,133 @@
-// Tile.h: interface for the CTile class.
+﻿// Tile.h: interface for the CTile class.
 //
 //////////////////////////////////////////////////////////////////////
 
 #pragma once
 
-#include <windows.h>
-#include <mmsystem.h>
+#include "EntityMotion.h"
+#include "AnimationState.h"
+#include <string>
+#include "Appearance.h"
+#include "PlayerStatusData.h"
+#include <cstdint>
 
 class CTile
 {
 public:
-	bool  m_bSpriteOmit;
-
-	inline void Clear()
+	inline void clear()
 	{
-		m_wObjectID     = 0;
-		m_wDeadObjectID = 0;
+		m_object_id     = 0;
+		m_dead_object_id = 0;
 
-		m_sOwnerType = 0;
-		ZeroMemory(m_cOwnerName, sizeof(m_cOwnerName));
+		m_owner_type = 0;
+		m_npc_config_id = -1;
+		m_owner_name.clear();
 
-		m_sDeadOwnerType = 0;
-		ZeroMemory(m_cDeadOwnerName, sizeof(m_cDeadOwnerName));
+		m_dead_owner_type = 0;
+		m_dead_npc_config_id = -1;
+		m_dead_owner_name.clear();
 
-		m_cDeadOwnerFrame = -1;
-		m_dwDeadOwnerTime = 0;
+		m_dead_owner_frame = -1;
+		m_dead_owner_time = 0;
 
-		m_cOwnerAction = 0;
-		m_cDir         = 0;
-		m_cOwnerFrame  = 0;
+		m_item_id = 0;
+		m_item_attr = 0;
+		m_item_color       = 0;
 
-		m_sItemID = 0;
-		m_dwItemAttr = 0;
-		m_cItemColor       = 0;
+		m_dynamic_object_type  = 0;
+		m_dynamic_object_frame = 0;
 
-		m_sDynamicObjectType  = 0;
-		m_cDynamicObjectFrame = 0;
+		m_chat_msg     = 0;
+		m_dead_chat_msg = 0;
 
-		m_iChatMsg     = 0;
-		m_iDeadChatMsg = 0;
+		m_status.clear();
+		m_deadStatus.clear();
 
-		m_iStatus      = 0;
-		m_iDeadStatus  = 0;
+		m_v1 = 0;
+		m_v2 = 0;
+		m_v3 = 0;
 
-		m_sV1 = 0;
-		m_sV2 = 0;
-		m_sV3 = 0;
+		m_effect_type  = 0;
+		m_effect_frame = 0;
+		m_effect_total_frame = 0;
+		m_effect_time = 0;
 
-		m_sAppr1 = 0;
-		m_sAppr2 = 0;
-		m_sAppr3 = 0;
-		m_sAppr4 = 0;
-		m_iApprColor = 0;
+		m_appearance.clear();
+		m_dead_appearance.clear();
 
-		m_iEffectType  = 0;
-		m_iEffectFrame = 0;
-		m_iEffectTotalFrame = 0;
-		m_dwEffectTime = 0;
-
-		m_dwOwnerTime        = 0;
+		m_animation.reset();
+		m_motion.reset();
 	}
 
-	inline CTile() : m_bSpriteOmit(false)
+	inline CTile()
 	{
-		m_sOwnerType = 0;
-		ZeroMemory(m_cOwnerName, sizeof(m_cOwnerName));
-		m_sDeadOwnerType = 0;
-		ZeroMemory(m_cDeadOwnerName, sizeof(m_cDeadOwnerName));
-		m_cDeadOwnerFrame     = -1;
+		m_owner_type = 0;
+		m_npc_config_id = -1;
+		m_dead_owner_type = 0;
+		m_dead_npc_config_id = -1;
+		m_dead_owner_frame     = -1;
 
-		m_sDynamicObjectType  = 0;
-		m_cDynamicObjectFrame = 0;
+		m_dynamic_object_type  = 0;
+		m_dynamic_object_frame = 0;
 
-		m_iChatMsg       = 0;
-		m_iDeadChatMsg   = 0;
+		m_chat_msg       = 0;
+		m_dead_chat_msg   = 0;
 
-		m_wObjectID = 0;
+		m_object_id = 0;
 
-		m_iEffectType  = 0;
-		m_iEffectFrame = 0;
-		m_iEffectTotalFrame = 0;
-		m_dwEffectTime = 0;
+		m_effect_type  = 0;
+		m_effect_frame = 0;
+		m_effect_total_frame = 0;
+		m_effect_time = 0;
 	}
 
-	inline virtual ~CTile()
+	inline ~CTile()
 	{
-	}	
-	DWORD m_dwOwnerTime;
-	DWORD m_dwEffectTime;
-	DWORD m_dwDeadOwnerTime;
-	DWORD m_dwDynamicObjectTime;
-	
-	int   m_iChatMsg;
-	int   m_cItemColor; // v1.4
-	int   m_iEffectType;
-	int   m_iDeadApprColor; // v1.4
-	int   m_iEffectFrame, m_iEffectTotalFrame;
-	int   m_iApprColor; // v1.4
-	int   m_iDeadChatMsg;
+	}
+	uint32_t m_effect_time;
+	uint32_t m_dead_owner_time;
+	uint32_t m_dynamic_object_time;
 
-	WORD  m_wDeadObjectID;
-	WORD  m_wObjectID;
+	int   m_chat_msg;
+	int   m_item_color; // v1.4
+	int   m_effect_type;
+	int   m_effect_frame, m_effect_total_frame;
+	int   m_dead_chat_msg;
 
-	short m_sOwnerType;							// +B2C
-	short m_sAppr1;								// +B2E
-	short m_sAppr2;								// +B30
-	short m_sAppr3;								// +B32
-	short m_sAppr4;								// +B34
-	int m_iStatus;								// +B38
-	
-	short m_sDeadOwnerType;						// +B3C
-	short m_sDeadAppr1;
-	short m_sDeadAppr2;
-	short m_sDeadAppr3;
-	short m_sDeadAppr4;
-	
-	int m_iDeadStatus;
-	short m_sV1;
-	short m_sV2;					
-	short m_sV3;								// +B50
-	short m_sDynamicObjectType;
+	uint16_t  m_dead_object_id;
+	uint16_t  m_object_id;
 
-	short m_sItemID;
-	DWORD m_dwItemAttr;
+	short m_owner_type;							// +B2C
+	short m_npc_config_id;						// NPC config index (for name lookup, -1 if player)
+	hb::shared::entity::PlayerStatus m_status;
 
-	char  m_cDeadOwnerFrame;
-	char  m_cOwnerAction;						// +B59
-	char  m_cOwnerFrame;						// +B5A
-	char  m_cDir;
-	char  m_cDeadDir;
-	
-	char  m_cDynamicObjectFrame;
-	char  m_cDynamicObjectData1, m_cDynamicObjectData2, m_cDynamicObjectData3, m_cDynamicObjectData4;
-	char  m_cOwnerName[12];
-	char  m_cDeadOwnerName[12];
+	short m_dead_owner_type;						// +B3C
+	short m_dead_npc_config_id;					// Dead NPC config index
+
+	hb::shared::entity::PlayerStatus m_deadStatus;
+	short m_v1;
+	short m_v2;
+	short m_v3;								// +B50
+	short m_dynamic_object_type;
+
+	short m_item_id;
+	uint32_t m_item_attr;
+
+	char  m_dead_owner_frame;
+	char  m_dead_dir;
+
+	char  m_dynamic_object_frame;
+	char  m_dynamic_object_data_1, m_dynamic_object_data_2, m_dynamic_object_data_3, m_dynamic_object_data_4;
+	std::string m_owner_name;
+	std::string m_dead_owner_name;
+
+	// Unpacked appearance data (extracted from m_sAppr1-4 at reception)
+	hb::shared::entity::PlayerAppearance m_appearance;
+	hb::shared::entity::PlayerAppearance m_dead_appearance;
+
+	// Animation state (replaces m_cOwnerAction, m_cOwnerFrame, m_dir, m_dwOwnerTime)
+	animation_state m_animation;
+
+	// Smooth movement interpolation
+	EntityMotion m_motion;
 };

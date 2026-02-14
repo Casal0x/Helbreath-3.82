@@ -4,9 +4,9 @@
 class DialogBox_ItemDropAmount : public IDialogBox
 {
 public:
-	DialogBox_ItemDropAmount(CGame* pGame);
+	DialogBox_ItemDropAmount(CGame* game);
 	~DialogBox_ItemDropAmount() override = default;
 
-	void OnDraw(short msX, short msY, short msZ, char cLB) override;
-	bool OnClick(short msX, short msY) override;
+	void on_draw(short mouse_x, short mouse_y, short z, char lb) override;
+	bool on_click(short mouse_x, short mouse_y) override;
 };

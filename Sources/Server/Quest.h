@@ -1,12 +1,7 @@
 // Quest.h: interface for the CQuest class.
-//
-//////////////////////////////////////////////////////////////////////
 
 #pragma once
 
-// MODERNIZED: Prevent old winsock.h from loading (must be before windows.h)
-#define _WINSOCKAPI_
-#include <windows.h>
 #include "CommonTypes.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -14,55 +9,64 @@
 #include <memory.h>
 
 
-#define DEF_QUESTTYPE_MONSTERHUNT				1		// �Ϲ����� ���� ���� 
-#define DEF_QUESTTYPE_MONSTERHUNT_TIMELIMIT		2		// �ð� ������ �ɷ��ִ� ���� ���� 
-#define DEF_QUESTTYPE_ASSASSINATION 			3		// �ϻ� 
-#define DEF_QUESTTYPE_DELIVERY					4		// ���: Ư�� ��ҷ� �������� ����Ѵ�.
-#define DEF_QUESTTYPE_ESCORT					5		// ��ȣ: Ư�� ĳ���͸� ��ȣ�Ѵ�.
-#define DEF_QUESTTYPE_GUARD						6		// Ư�� ������ ���� �������κ��� ����Ѵ�. 
-#define DEF_QUESTTYPE_GOPLACE					7		// Ư�� ��ҷ� ����. ���� ħ�� 
-#define DEF_QUESTTYPE_BUILDSTRUCTURE			8		// ������ ��ġ �ӹ�
-#define DEF_QUESTTYPE_SUPPLYBUILDSTRUCTURE		9		// ������ ��ġ ���� �ӹ�
-#define DEF_QUESTTYPE_STRATEGICSTRIKE			10		// ������ �����ӹ� 
-#define DEF_QUESTTYPE_SENDTOBATTLE				11		// ��ٷ� ������� �����ϴ� �ӹ�
-#define DEF_QUESTTYPE_SETOCCUPYFLAG				12		// ���� ���� ����� ��ġ�ϴ� �ӹ� 
+namespace hb::server::quest
+{
+namespace Type
+{
+	enum : int
+	{
+		MonsterHunt             = 1,
+		MonsterHuntTimeLimit    = 2,
+		Assassination           = 3,
+		Delivery                = 4,
+		Escort                  = 5,
+		Guard                   = 6,
+		GoPlace                 = 7,
+		BuildStructure          = 8,
+		SupplyBuildStructure    = 9,
+		StrategicStrike         = 10,
+		SendToBattle            = 11,
+		SetOccupyFlag           = 12,
+	};
+}
+} // namespace hb::server::quest
 
 class CQuest  
 {
 public:
 	
-	char m_cSide;				// ��� ���� ���ϴ� �ӹ��ΰ�? 
+	char m_side;
 	
-	int m_iType;				// Quest ���� 
-	int m_iTargetType;			// Quest�� ��ǥ ����. �� Type�� ���� �ٸ� ���� ��������. 
-	int m_iMaxCount;			// �ִ� ���� Ƚ�� 
+	int m_type;				// Quest
+	int m_target_type;			// Quest  .  Type    .
+	int m_max_count;
 
-	int m_iFrom;				// Quest�� �����ִ� NPC ���� 
+	int m_from;				// Quest  NPC
 	
-	int m_iMinLevel;			// Quest�� �ޱ� ���� ���� ����. 
-	int m_iMaxLevel;			// Quest�� �ޱ� ���� �ִ� ���� 
+	int m_min_level;			// Quest    .
+	int m_max_level;			// Quest
 
-	int m_iRequiredSkillNum;	// ���� �Ǵܿ� �ʿ��� ��ų ��ȣ 
-	int m_iRequiredSkillLevel;	// ���� �Ǵܿ� �ʿ��� ��ų ���� 
+	int m_required_skill_num;
+	int m_required_skill_level;
 
-	int m_iTimeLimit; 			// �ð� ���� ������ 
-	int m_iAssignType;			// ����Ʈ �Ҵ� Ÿ��. -1�̸� �ƹ�����. 1�̸� Crusade �������϶���.
+	int m_time_limit;
+	int m_assign_type;			// . -1 . 1 Crusade .
 
-								// ��ǰ ���� �� ����. 3�� �� 1���� �����ϰ� ������. 0�� �ε����� ��� ����.
-	int m_iRewardType[4]; 
-	int m_iRewardAmount[4];
+								// . 3  1  . 0   .
+	int m_reward_type[4]; 
+	int m_reward_amount[4];
 
-	int m_iContribution;		// ���嵵 
-	int m_iContributionLimit;	// �ִ� ���嵵 ���� 
+	int m_contribution;
+	int m_contribution_limit;
 
-	int m_iResponseMode;		// ���� ���: 0(ok) 1(Accept/Decline) 2(Next)
+	int m_response_mode;		// : 0(ok) 1(Accept/Decline) 2(Next)
 
-	char m_cTargetName[21];		// ����Ʈ�� ������ �̸�. �� Ȥ�� ĳ���� �̸�  
-	int  m_sX, m_sY, m_iRange;	// ����Ʈ�� ������ �� ��� 
+	char m_target_name[hb::shared::limits::NpcNameLen];
+	int  m_x, m_y, m_range;
 
-	int  m_iQuestID;			// ����Ʈ ID. ���� ����Ʈ�� ������ ����Ǿ��� ��츦 ����� ����.
+	int  m_quest_id;
 
-	int  m_iReqContribution;	// ����Ʈ�� �ñ� ���� ���� ���嵵 ����. 
+	int  m_req_contribution;
 
 
 	//CQuest();

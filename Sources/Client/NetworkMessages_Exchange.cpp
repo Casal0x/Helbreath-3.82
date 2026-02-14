@@ -7,22 +7,33 @@
 #include <cstdio>
 
 namespace NetworkMessageHandlers {
-	void HandleExchangeItemComplete(CGame* pGame, char* pData)
+	void HandleExchangeItemComplete(CGame* game, char* data)
 	{
-		pGame->AddEventList(NOTIFYMSG_EXCHANGEITEM_COMPLETE1, 10);
-		pGame->m_dialogBoxManager.DisableDialogBox(DialogBoxId::Exchange);
+		game->add_event_list(NOTIFYMSG_EXCHANGEITEM_COMPLETE1, 10);
+		game->m_dialog_box_manager.disable_dialog_box(DialogBoxId::Exchange);
 		//Snoopy: MultiTrade
-		pGame->m_dialogBoxManager.DisableDialogBox(DialogBoxId::ConfirmExchange);
-		pGame->PlaySound('E', 23, 5);
+		game->m_dialog_box_manager.disable_dialog_box(DialogBoxId::ConfirmExchange);
+		game->play_game_sound('E', 23, 5);
 	}
 
-	void HandleCancelExchangeItem(CGame* pGame, char* pData)
+	void HandleCancelExchangeItem(CGame* game, char* data)
 	{
-		pGame->PlaySound('E', 24, 5);
-		pGame->AddEventList(NOTIFYMSG_CANCEL_EXCHANGEITEM1, 10);
-		pGame->AddEventList(NOTIFYMSG_CANCEL_EXCHANGEITEM2, 10);
+		game->play_game_sound('E', 24, 5);
+		game->add_event_list(NOTIFYMSG_CANCEL_EXCHANGEITEM1, 10);
+		game->add_event_list(NOTIFYMSG_CANCEL_EXCHANGEITEM2, 10);
+
+		// Explicitly clear item disabled flags before disabling dialogs.
+		// disable_dialog_box(Exchange) also clears these, but if exchange info
+		// was partially cleared by item removal, flags could get stuck.
+		for (int i = 0; i < 4; i++)
+		{
+			int slot = game->m_dialog_box_exchange_info[i].inv_slot;
+			if (slot >= 0 && slot < hb::shared::limits::MaxItems)
+				game->m_is_item_disabled[slot] = false;
+		}
+
 		//Snoopy: MultiTrade
-		pGame->m_dialogBoxManager.DisableDialogBox(DialogBoxId::ConfirmExchange);
-		pGame->m_dialogBoxManager.DisableDialogBox(DialogBoxId::Exchange);
+		game->m_dialog_box_manager.disable_dialog_box(DialogBoxId::ConfirmExchange);
+		game->m_dialog_box_manager.disable_dialog_box(DialogBoxId::Exchange);
 	}
 } // namespace NetworkMessageHandlers

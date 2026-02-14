@@ -1,6 +1,6 @@
 #pragma once
 
-// Effect type IDs for CEffect::m_sType
+// Effect type IDs for CEffect::m_type
 // Each value corresponds to a distinct visual/audio effect in the game
 enum class EffectType : short
 {

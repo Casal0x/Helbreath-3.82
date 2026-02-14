@@ -1,405 +1,400 @@
 // Client.h: interface for the CClient class.
-//
-//////////////////////////////////////////////////////////////////////
 
 #pragma once
 
-// MODERNIZED: Prevent old winsock.h from loading (must be before windows.h)
-#define _WINSOCKAPI_
 
-#include <windows.h>
 #include "CommonTypes.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
-#include "XSocket.h"
+#include "ASIOSocket.h"
 #include "Item.h"
 #include "GuildsMan.h"
 #include "Magic.h"
 #include "GlobalDef.h"
+#include "NetConstants.h"
 #include <fstream>
 #include <vector>
 #include <string>
+#include <set>
+#include "GameGeometry.h"
+#include "Appearance.h"
+#include "PlayerStatusData.h"
+#include "StringCompat.h"
 using namespace std;
 
-#define DEF_CLIENTSOCKETBLOCKLIMIT	150  // MODERNIZED: Increased from 15 to handle 50+ entities sending updates
+namespace hb::server::config { constexpr int ClientSocketBlockLimit = 2000; } // Queue size per client
 
-#define DEF_MSGBUFFERSIZE	60000  // MODERNIZED: Increased from 30000 to handle more entity data
-#define DEF_MAXITEMS		50
-#define DEF_MAXBANKITEMS	1000 // Hard cap - soft limit is m_iMaxBankItems (default 200)
-#define DEF_MAXGUILDSMAN	128 // �ִ� ���� �� 
+// hb::shared::limits::MaxMagicType and hb::shared::limits::MaxSkillType are defined in NetConstants.h
 
-#define	DEF_MAXMAGICTYPE	100	// �����Ϸ��� �α׼������뵵 �ٲپ��? �Ѵ�.
-#define DEF_MAXSKILLTYPE	60
-
-#define DEF_MAXPARTYMEMBERS	100
-
-#define DEF_SPECABLTYTIMESEC	1200
+namespace hb::server::config { constexpr int SpecialAbilityTimeSec = 1200; }
 
 class CClient  
 {
 public:
 
-	int m_iAngelicStr, m_iAngelicInt, m_iAngelicDex, m_iAngelicMag;
+	int m_angelic_str, m_angelic_int, m_angelic_dex, m_angelic_mag;
 		
-	char m_cVar;
-	int m_iRecentWalkTime;
-	int m_iRecentRunTime;
-	short m_sV1;
-	char m_cHeroArmourBonus;
+	char m_var;
+	int m_recent_walk_time;
+	int m_recent_run_time;
+	short m_v1;
+	char m_hero_armour_bonus;
 
-	bool bCreateNewParty();
+	bool create_new_party();
 
 	// Hack Checkers
-	uint32_t m_dwMagicFreqTime, m_dwMoveFreqTime, m_dwAttackFreqTime;
-	bool m_bIsMoveBlocked, m_bMagicItem;
-	uint32_t dwClientTime;
-	bool m_bMagicConfirm;
-	int m_iSpellCount;
-	bool m_bMagicPauseTime;
+	uint32_t m_magic_freq_time, m_move_freq_time, m_attack_freq_time;
+	bool m_is_move_blocked, m_magic_item;
+	uint32_t client_time;
+	bool m_magic_confirm;
+	int m_spell_count;
+	bool m_magic_pause_time;
 	//int m_iUninteruptibleCheck;
 	//char m_cConnectionCheck;
 
-	bool m_bIsClientConnected;
-	uint32_t m_dwLastMsgId;
-	uint32_t m_dwLastMsgTime;
-	uint32_t m_dwLastMsgSize;
-	uint32_t m_dwLastFullObjectId;
-	uint32_t m_dwLastFullObjectTime;
+	bool m_is_client_connected;
+	uint32_t m_last_msg_id;
+	uint32_t m_last_msg_time;
+	size_t m_last_msg_size;
+	uint32_t m_last_full_object_id;
+	uint32_t m_last_full_object_time;
 
-	CClient(HWND hWnd);
+	CClient(asio::io_context& ctx);
 	virtual ~CClient();
 
-	char m_cCharName[11];
-	char m_cAccountName[11];
-	char m_cAccountPassword[11];
+	char m_char_name[hb::shared::limits::CharNameLen];
+	char m_account_name[hb::shared::limits::AccountNameLen];
+	char m_account_password[hb::shared::limits::AccountPassLen];
 
-	bool  m_bIsInitComplete;
-	bool  m_bIsMsgSendAvailable;
+	bool  m_is_init_complete;
+	bool  m_is_msg_send_available;
 
-	char  m_cMapName[11];
-	char  m_cMapIndex;
-	short m_sX, m_sY;
+	char  m_map_name[11];
+	char  m_map_index;
+	short m_x, m_y;
 	
-	char  m_cGuildName[21];		// �����? �̸� 
-	char  m_cLocation[11];      //  <- ���̸��� �״��? ����ȴ�?. �Ҽ� ���� 
-	int   m_iGuildRank;			// -1�̸� ���ǹ�. 0�̸� ���? ������. �����? ��峻������? ���� 
-	int   m_iGuildGUID;
+	char  m_guild_name[21];
+	char  m_location[11];
+	int   m_guild_rank;
+	int   m_guild_guid;
 	
-	char  m_cDir;
-	short m_sType;				// ���� Ÿ�� <- �������� �ÿ� ���Ѵ�. 
-	short m_sOriginalType;		// �������� Ÿ��
-	short m_sAppr1;
-	short m_sAppr2;
-	short m_sAppr3;
-	short m_sAppr4;
-	int   m_iApprColor;			// v1.4 ���� �÷����̺�
-	int   m_iStatus;
+	char  m_dir;
+	short m_type;
+	short m_original_type;
+	hb::shared::entity::PlayerAppearance m_appearance;
+	hb::shared::entity::PlayerStatus m_status;
 
-	uint32_t m_dwTime, m_dwHPTime, m_dwMPTime, m_dwSPTime, m_dwAutoSaveTime, m_dwHungerTime, m_dwWarmEffectTime;
-	// Player Ư��ġ 
+	uint32_t m_time, m_hp_time, m_mp_time, m_sp_time, m_auto_save_time, m_hunger_time, m_warm_effect_time;
+	uint32_t m_afk_activity_time;
+	// Player
 
-	char m_cSex, m_cSkin, m_cHairStyle, m_cHairColor, m_cUnderwear;
+	char m_sex, m_skin, m_hair_style, m_hair_color, m_underwear;
 
-	int  m_iHP;						// Hit Point
-	int  m_iHPstock;
-	int  m_iMP;
-	int  m_iSP;
-	uint32_t  m_iExp;
-	uint32_t m_iNextLevelExp;
-	bool m_bIsKilled;
+	int  m_hp;						// Hit Point
+	int  m_hp_stock;
+	int  m_mp;
+	int  m_sp;
+	uint32_t  m_exp;
+	uint32_t m_next_level_exp;
+	bool m_is_killed;
 
-	int  m_iDefenseRatio;		// Defense Ratio
-	int  m_iHitRatio;			// Hit Ratio
+	int  m_defense_ratio;		// Defense Ratio
+	int  m_hit_ratio;			// Hit Ratio
 
-	// v1.432 �������? �ʴ´�.
-	//int  m_iHitRatio_ItemEffect_SM; // ������ �������� ���� HitRatio ���氪
+	// int  m_iHitRatio_ItemEffect_SM; //    HitRatio
 	//int  m_iHitRatio_ItemEffect_L;
 
-	int  m_iDamageAbsorption_Armor[DEF_MAXITEMEQUIPPOS];		// ���� �������� ���� Damage ���� ȿ��
-	int  m_iDamageAbsorption_Shield;	// Parrying ���? �������� Damage ���� ȿ�� 
+	int  m_damage_absorption_armor[hb::shared::item::DEF_MAXITEMEQUIPPOS];		// Damage
+	int  m_damage_absorption_shield;	// Parrying ?  Damage
 
-	int  m_iLevel;
-	int  m_iStr, m_iInt, m_iVit, m_iDex, m_iMag, m_iCharisma;
-	//char m_cLU_Str, m_cLU_Int, m_cLU_Vit, m_cLU_Dex, m_cLU_Mag, m_cLU_Char;   // �������ÿ� �Ҵ�Ǿ�? �ö󰡴� Ư��ġ��.
-	int  m_iLuck; 
-	int  m_iLU_Pool;
-	char m_cAura;
+	int  m_level;
+	int  m_str, m_int, m_vit, m_dex, m_mag, m_charisma;
+	// char m_cLU_Str, m_cLU_Int, m_cLU_Vit, m_cLU_Dex, m_cLU_Mag, m_cLU_Char;   //  ?  .
+	int  m_luck; 
+	int  m_levelup_pool;
+	char m_aura;
 	//MOG var - 3.51
-	int m_iGizonItemUpgradeLeft;
+	int m_gizon_item_upgrade_left;
 
-	int m_iAddTransMana, m_iAddChargeCritical;
+	int m_add_trans_mana, m_add_charge_critical;
 
 
-	uint32_t m_iRewardGold;
-	int  m_iEnemyKillCount, m_iPKCount;
-	int  m_iCurWeightLoad;		// ���� �� ����ǰ ���� 
+	uint32_t m_reward_gold;
+	int  m_enemy_kill_count, m_player_kill_count;
+	int  m_cur_weight_load;
 
-	char m_cSide;				// �÷��̾��� �� 
+	char m_side;
 	
-	bool m_bInhibition;
+	bool m_inhibition;
 
 	//50Cent - Repair All
-	short totalItemRepair;
+	short total_item_repair;
 	struct
 	{
 		char index;
 		short price;
-	} m_stRepairAll[DEF_MAXITEMS];
+	} m_repair_all[hb::shared::limits::MaxItems];
 
-	char m_cAttackDiceThrow_SM;	// ����ġ �ֻ��� ������ ȸ�� 
-	char m_cAttackDiceRange_SM;	// ����ġ �ֻ��� ���� 
-	char m_cAttackDiceThrow_L;	// ����ġ �ֻ��� ������ ȸ�� 
-	char m_cAttackDiceRange_L;	// ����ġ �ֻ��� ���� 
-	char m_cAttackBonus_SM;		// ���� ���ʽ�
-	char m_cAttackBonus_L;		// ���� ���ʽ�
+	char m_attack_dice_throw_sm;
+	char m_attack_dice_range_sm;
+	char m_attack_dice_throw_l;
+	char m_attack_dice_range_l;
+	char m_attack_bonus_sm;
+	char m_attack_bonus_l;
 
-	class CItem * m_pItemList[DEF_MAXITEMS];
-	POINT m_ItemPosList[DEF_MAXITEMS];
-	class CItem * m_pItemInBankList[DEF_MAXBANKITEMS];
+	CItem * m_item_list[hb::shared::limits::MaxItems];
+	hb::shared::geometry::GamePoint m_item_pos_list[hb::shared::limits::MaxItems];
+	CItem * m_item_in_bank_list[hb::shared::limits::MaxBankItems];
 	
-	bool  m_bIsItemEquipped[DEF_MAXITEMS];
-	short m_sItemEquipmentStatus[DEF_MAXITEMEQUIPPOS];
-	char  m_cArrowIndex;		// �÷��̾ Ȱ�� ����Ҷ�? ȭ�� ������ �ε���. �ʱⰪ�� -1(�Ҵ� �ȵ�)
+	bool  m_is_item_equipped[hb::shared::limits::MaxItems];
+	short m_item_equipment_status[hb::shared::item::DEF_MAXITEMEQUIPPOS];
+	char  m_arrow_index;		// ?   .  -1( )
 
-	char           m_cMagicMastery[DEF_MAXMAGICTYPE];
-	unsigned char  m_cSkillMastery[DEF_MAXSKILLTYPE]; // v1.4
+	char           m_magic_mastery[hb::shared::limits::MaxMagicType];
+	unsigned char  m_skill_mastery[hb::shared::limits::MaxSkillType]; // v1.4
 
-	int   m_iSkillSSN[DEF_MAXSKILLTYPE];
-	bool  m_bSkillUsingStatus[DEF_MAXSKILLTYPE];
-	int   m_iSkillUsingTimeID[DEF_MAXSKILLTYPE]; //v1.12
+	int   m_skill_progress[hb::shared::limits::MaxSkillType];
+	bool  m_skill_using_status[hb::shared::limits::MaxSkillType];
+	int   m_skill_using_time_id[hb::shared::limits::MaxSkillType]; //v1.12
 
-	char  m_cMagicEffectStatus[DEF_MAXMAGICEFFECTS];
+	char  m_magic_effect_status[hb::server::config::MaxMagicEffects];
 
-	int   m_iWhisperPlayerIndex;
-	char  m_cProfile[256];
+	int   m_whisper_player_index;
+	char  m_profile[256];
 
-	int   m_iHungerStatus;		// �����? ����Ʈ. �̰� 0�̵Ǹ� ���¹̳ʰ� ������ ������ ü�µ� �����̻� ���� �ʽ��ϴ�. 
+	int   m_hunger_status;
 
-	uint32_t m_dwWarBeginTime;		// ������ ����? ������ ��ϵǴ�? �ð�. 
-	bool  m_bIsWarLocation;		// ���� ������ �ִ����� ǥ�� 
+	uint32_t m_war_begin_time;
+	bool  m_is_war_location;
 
-	bool  m_bIsPoisoned;		// �ߵ��Ǿ������� ���� 
-	int   m_iPoisonLevel;       // ���� ���� 
-	uint32_t m_dwPoisonTime;		// �ߵ� �ð�.
+	bool  m_is_poisoned;
+	int   m_poison_level;
+	uint32_t m_poison_time;
 	
-	int   m_iPenaltyBlockYear, m_iPenaltyBlockMonth, m_iPenaltyBlockDay; // v1.4
+	int   m_penalty_block_year, m_penalty_block_month, m_penalty_block_day; // v1.4
 
-	//v1.4311-3 �߰� ���� ���� ������ ��ȣ�� ������ ������ �ð�
-	int   m_iFightzoneNumber , m_iReserveTime, m_iFightZoneTicketNumber ; 
+	int   m_fightzone_number , m_reserve_time, m_fightzone_ticket_number ; 
 
-	class XSocket * m_pXSock;
+	class hb::shared::net::ASIOSocket * m_socket;
 
-	int   m_iAdminUserLevel;     // ������ ����. 0�̸� ��ȿ. ��ȣ�� �ö� ���� ������ Ŀ����.
-	int   m_iRating;
+	int   m_rating;
 
-	int   m_iTimeLeft_ShutUp;	 // �� ���� 0�� �ƴϸ� ä�ø޽����� ���޵��� �ʴ´�.
-	int   m_iTimeLeft_Rating;	 // �ٸ� �÷��̾��� ������ �ű��? ���� ���� �ð�. 0�̸� ���? ����  
-	int   m_iTimeLeft_ForceRecall;  // ���� ���ݵǱ� ���� �����ִ� �ð�ƽ 
-	int   m_iTimeLeft_FirmStaminar; // ���¹̳ʰ� �޾� �������� �ʴ� �ð� �� 
+	int   m_time_left_rating;
+	int   m_time_left_force_recall;
+	int   m_time_left_firm_stamina;
 
-	bool isForceSet;   //hbest
-	time_t m_iForceStart;
+	bool is_force_set;   //hbest
+	time_t m_force_start;
 
-	bool  m_bIsOnServerChange;     // �� ���� Ȱ��ȭ �Ǿ� ������ ������ ������ ���� �� ī������ ���� �ʴ´�.
+	bool  m_is_on_server_change;
 
-	uint32_t   m_iExpStock;			 // �׿��ִ� ����ġ 
-	uint32_t m_dwExpStockTime;		 // ExpStock ���? �ð�.
+	uint32_t   m_exp_stock;
+	uint32_t m_exp_stock_time;		 // ExpStock ? .
 
-	uint32_t   m_iAutoExpAmount;		 // Auto-Exp �ð� ���� ���� ����ġ 
-	uint32_t m_dwAutoExpTime;		 // Auto-Exp ���? �ð�.
+	uint32_t   m_auto_exp_amount;		 // Auto-Exp
+	uint32_t m_auto_exp_time;		 // Auto-Exp ? .
 
-	uint32_t m_dwRecentAttackTime;  // ���� �ֱٿ� �����ߴ� �ð� 
+	uint32_t m_recent_attack_time;
 
-	int   m_iAllocatedFish;		 // �� ���� 0�� �ƴϸ� �̺�Ʈ ���ø����? �̾߱��?. 
-	int   m_iFishChance;		 // ���� ���� ���� 
+	int   m_allocated_fish;
+	int   m_fish_chance;
 	
-	char  m_cIPaddress[21];		 // Ŭ���̾�Ʈ�� IP address
-	bool  m_bIsSafeAttackMode;
+	char  m_ip_address[21];		 // IP address
+	bool  m_is_safe_attack_mode;
 
-	bool  m_bIsOnWaitingProcess; // �ڷ���Ʈ�� ó���� ��ٸ���? ���¶��? 
+	bool  m_is_on_waiting_process;
 	
-	int   m_iSuperAttackLeft;	 // v1.2 �ʻ��? ���? ���� Ƚ�� 
-	int   m_iSuperAttackCount;   // v1.2 �ʻ��? ���? ���� ī��Ʈ. �� ī��Ʈ�� �� ���� �ʻ��? ���? Ƚ���� �þ��. 
+	int   m_super_attack_left;
+	int   m_super_attack_count;
 
-	short m_sUsingWeaponSkill;	 // v1.2 ���� ����ϴ�? ������ ��ų �ε��� 
+	short m_using_weapon_skill;
 
-	int   m_iManaSaveRatio;		 // v1.2 ���� ���� ����Ʈ 
+	int   m_mana_save_ratio;
 	
-	bool  m_bIsLuckyEffect;		 // v1.2 ���? ȿ�� 
-	int   m_iSideEffect_MaxHPdown; // v1.4 �ִ� HP ���� ȿ�� 
+	bool  m_is_lucky_effect;
+	int   m_side_effect_max_hp_down;
 
-	int   m_iComboAttackCount;   // v1.3 ��Ÿ ���� ī��Ʈ 
-	int   m_iDownSkillIndex;	 // v1.3 �ٸ� ��ų�� �ö󰥶� ���� ��ų �ε��� 
+	int   m_combo_attack_count;
+	int   m_down_skill_index;
 
-	int   m_iMagicDamageSaveItemIndex; // v1.3 ���� ���� �����? ���� ������ �ε��� (������ -1)
+	int   m_magic_damage_save_item_index;
 
-	short m_sCharIDnum1, m_sCharIDnum2, m_sCharIDnum3; // v1.3 �� ĳ���Ͱ� ���� ������!
+	short m_char_id_num1, m_char_id_num2, m_char_id_num3;
 
-	int   m_iAbuseCount;		// ��ŷ ������ �ľǿ� 
+	int   m_abuse_count;
 	
-	bool  m_bIsBWMonitor;		// BadWord ������ΰ�??
+	// bool  m_is_exchange_mode;		//    ??
+	// int   m_exchange_h;				//  ?
+	// char  m_exchange_name[11];		//  ?
+	// char  m_cExchangeItemName[21];	//
+	// char  m_exchange_item_index;  //
+	// int   m_exchange_item_amount; //
+	// bool  m_is_exchange_confirm;  //
 
-	//bool  m_bIsExchangeMode;		// ���� ������ ��ȯ ����ΰ�?? 
-	//int   m_iExchangeH;				// ��ȯ�� �����? �ε��� 
-	//char  m_cExchangeName[11];		// ��ȯ�� �����? �̸� 
-	//char  m_cExchangeItemName[21];	// ��ȯ�ϰ��� �ϴ� ������ �̸� 
-	//char  m_cExchangeItemIndex;  // ��ȯ�� ������ �ε��� 
-	//int   m_iExchangeItemAmount; // ��ȯ�� ������ ���� 
-	//bool  m_bIsExchangeConfirm;  // ��ȯ Ȯ�� 
+	bool  m_is_exchange_mode;			// Is In Exchange Mode? 
+	int   m_exchange_h;					// Client ID to Exchanging with 
+	char  m_exchange_name[hb::shared::limits::CharNameLen];	// Name of Client to Exchanging with
+	short m_exchange_item_id[4];	// Item ID to validate exchange hasn't been tampered
 
-	bool  m_bIsExchangeMode;			// Is In Exchange Mode? 
-	int   m_iExchangeH;					// Client ID to Exchanging with 
-	char  m_cExchangeName[11];			// Name of Client to Exchanging with 
-	char  m_cExchangeItemName[4][21];	// Name of Item to exchange 
+	char  m_exchange_item_index[4];		// ItemID to Exchange
+	int   m_exchange_item_amount[4];		// Ammount to exchange with
 
-	char  m_cExchangeItemIndex[4];		// ItemID to Exchange
-	int   m_iExchangeItemAmount[4];		// Ammount to exchange with
+	bool  m_is_exchange_confirm;			// Has the user hit confirm? 
+	int	  exchange_count;				//Keeps track of items which are on list
 
-	bool  m_bIsExchangeConfirm;			// Has the user hit confirm? 
-	int	  iExchangeCount;				//Keeps track of items which are on list
-
-	int   m_iQuest;				 // ���� �Ҵ��? Quest 
-	int   m_iQuestID;			 // �Ҵ����? Quest�� ID�� 
-	int   m_iAskedQuest;		 // ��� ����Ʈ 
-	int   m_iCurQuestCount;		 // ���� ����Ʈ ���� 
+	int   m_quest;				 // ? Quest
+	int   m_quest_id;			 // ? Quest ID
+	int   m_asked_quest;
+	int   m_cur_quest_count;
 	
-	int   m_iQuestRewardType;	 // ����Ʈ �ذ��? ��ǰ ���� -> �������� ID���̴�.
-	int   m_iQuestRewardAmount;	 // ��ǰ ���� 
+	int   m_quest_reward_type;
+	int   m_quest_reward_amount;
 
-	int   m_iContribution;		 // ���ÿ� ���� ���嵵. 
+	int   m_contribution;
 
-	bool  m_bQuestMatchFlag_Loc; // ����Ʈ ���� ������ �Ǵ��ϱ� ����.
-	bool  m_bIsQuestCompleted;   // ����Ʈ�� �Ϸ�Ǿ��°�?? 
+	bool  m_quest_match_flag_loc;
+	bool  m_is_quest_completed;
 
-	int   m_iCustomItemValue_Attack;
-	int   m_iCustomItemValue_Defense;
+	int   m_custom_item_value_attack;
+	int   m_custom_item_value_defense;
 
-	int   m_iMinAP_SM;			// Custom-Item�� ȿ���� ���� �ּ� AP
-	int   m_iMinAP_L;
+	int   m_min_attack_power_sm;			// Custom-Item    AP
+	int   m_min_attack_power_l;
 
-	int   m_iMaxAP_SM;			// Custom-Item�� ȿ���� ���� �ִ� AP
-	int   m_iMaxAP_L;
+	int   m_max_attack_power_sm;			// Custom-Item    AP
+	int   m_max_attack_power_l;
 
-	bool  m_bIsNeutral;			// v1.5 �߸����θ� �Ǻ��ϱ� ���� �÷���. ó�� �ӵ��� ���̱� �����̴�.
-	bool  m_bIsObserverMode;	// v1.5 ������ �������? �Ǻ� 
+	bool  m_is_neutral;
+	bool  m_is_observer_mode;
 
-	int   m_iSpecialEventID;	// Ư�� ���? ����Ȯ�ο� �÷��� 
+	int   m_special_event_id;
 
-	int   m_iSpecialWeaponEffectType;	// ���? ������ ȿ�� ����
-	int   m_iSpecialWeaponEffectValue;	// ���? ������ ȿ�� ��
-	// ���? ������ ȿ�� ����: 
-	// 0-None 1-�ʻ�������߰�? 2-�ߵ�ȿ�� 3-������  
-	// 5-��ø�� 6-������ 7-������ 8-��ȭ�� 9-���빮����
+	int   m_special_weapon_effect_type;
+	int   m_special_weapon_effect_value;
+	// 0-None 1-? 2- 3-
+	// 5- 6- 7- 8- 9-
 
 	// v1.42
-	int   m_iAddHP, m_iAddSP, m_iAddMP; 
-	int   m_iAddAR, m_iAddPR, m_iAddDR;
-	int   m_iAddMR, m_iAddAbsPD, m_iAddAbsMD; 
-	int   m_iAddCD, m_iAddExp, m_iAddGold;		// ���� ���� �����? ������. �������ʹ� ���������� ���ȴ�.
+	int   m_add_hp, m_add_sp, m_add_mp; 
+	int   m_add_attack_ratio, m_add_poison_resistance, m_add_defense_ratio;
+	int   m_add_magic_resistance, m_add_abs_physical_defense, m_add_abs_magical_defense; 
+	int   m_add_combo_damage, m_add_exp, m_add_gold;
 
-	int   m_iAddResistMagic;					// v1.2 �߰� ���� ���� 
-	int   m_iAddPhysicalDamage;					// v1.2 ���� �����? �߰� ����Ʈ 
-	int   m_iAddMagicalDamage;	
+	int   m_add_resist_magic;
+	int   m_add_physical_damage;
+	int   m_add_magical_damage;	
 
-	int   m_iAddAbsAir;							// �Ӽ��� �����? ����
-	int   m_iAddAbsEarth;
-	int   m_iAddAbsFire;
-	int   m_iAddAbsWater;
+	int   m_add_abs_air;
+	int   m_add_abs_earth;
+	int   m_add_abs_fire;
+	int   m_add_abs_water;
 	
-	int   m_iLastDamage;
+	int   m_last_damage;
 
-	int   m_iMoveMsgRecvCount, m_iAttackMsgRecvCount, m_iRunMsgRecvCount, m_iSkillMsgRecvCount;
-	uint32_t m_dwMoveLAT, m_dwRunLAT, m_dwAttackLAT;
+	int   m_move_msg_recv_count, m_attack_msg_recv_count, m_run_msg_recv_count, m_skill_msg_recv_count;
+	uint32_t m_move_last_action_time, m_run_last_action_time, m_attack_last_action_time;
 
-	int   m_iSpecialAbilityTime;				// Ư�� �ɷ��� ����ϱ�? ���ؼ��� �� ���� 0�� �Ǿ��? �Ѵ�. 
-	bool  m_bIsSpecialAbilityEnabled;			// Ư�� �ɷ��� Ȱ��ȭ �� �����ΰ�?
-	uint32_t m_dwSpecialAbilityStartTime;			// Ư�� �ɷ��� ����ϱ�? ������ �ð�
-	int   m_iSpecialAbilityLastSec;				// Ư�� �ɷ� ���� �ð�.
+	int   m_special_ability_time;
+	bool  m_is_special_ability_enabled;
+	uint32_t m_special_ability_start_time;
+	int   m_special_ability_last_sec;
 
-	int   m_iSpecialAbilityType;				// �Ҵ��? Ư�� �ɷ� ����
-												// ������
-												// 0:�ɷ� ����  1:���ݽ� �� HP 50% ����  2:�õ� ȿ��  3: ���� ȿ��  4: ���� ��ų  5:���� �����? ��ŭ�� HP�� ��´�?.
-												// �����?
-												// 50: ���� ���� 0�� ����. 51:�ش� ���� �����? ��ȿȭ  52: ��5�� ���� �����? ��ȿȭ
-	int   m_iSpecialAbilityEquipPos;			// ����? ���? Ư��ȿ���� ����Ǵ�? ������ �ǹ���.
-	bool  m_bIsAdminCommandEnabled;
-	int   m_iAlterItemDropIndex;				// ������ ���? �������� ������ �ε��� 
+	int   m_special_ability_type;
+	int   m_special_ability_equip_pos;
+	int   m_alter_item_drop_index;
 
-	int   m_iWarContribution;					// ���� ���嵵 
+	int   m_war_contribution;
 
-	uint32_t m_dwSpeedHackCheckTime;				// �ӵ����� �˻� ��ƾ 
-	int   m_iSpeedHackCheckExp;		
-	uint32_t m_dwLogoutHackCheck;
+	uint32_t m_speed_hack_check_time;
+	int   m_speed_hack_check_exp;		
+	uint32_t m_logout_hack_check;
 
-	uint32_t m_dwInitCCTimeRcv;
-	uint32_t m_dwInitCCTime;
+	uint32_t m_initial_check_time_received;
+	uint32_t m_initial_check_time;
 
-	char  m_cLockedMapName[11];					// ���� �� �̸�
-	int   m_iLockedMapTime;						// �� ���� 0 �̻��̸� ���� �ڷ���Ʈ �ص� ���� ������ ����.
+	char  m_locked_map_name[11];
+	int   m_locked_map_time;
 
-	int   m_iCrusadeDuty;						// ũ�缼�̵忡�� ���� ����: 1-�뺴. 2-�Ǽ���. 3-���ְ�
-	uint32_t m_dwCrusadeGUID;						// ũ�缼�̵� GUID
-	uint32_t m_dwHeldenianGUID;
-	bool m_bInRecallImpossibleMap;
+	int   m_crusade_duty;						// : 1-. 2-. 3-
+	uint32_t m_crusade_guid;						// GUID
+	uint32_t m_heldenian_guid;
+	bool m_in_recall_impossible_map;
 
-	// �� ��Ʈ���Ĵ� ���� ������ �����ϴ� ���̴�. �ѹ��� ���� �� �� ���� ������ �������� ���� ������ �����Ѵ�.
 	struct {
-		char cType;
-		char cSide;
-		short sX, sY;
-	} m_stCrusadeStructureInfo[DEF_MAXCRUSADESTRUCTURES];
-	int m_iCSIsendPoint;
+		char type;
+		char side;
+		short x, y;
+	} m_crusade_structure_info[hb::shared::limits::MaxCrusadeStructures];
+	int m_crusade_info_send_point;
 
-	char m_cSendingMapName[11];
-	bool m_bIsSendingMapStatus;
+	char m_sending_map_name[11];
+	bool m_is_sending_map_status;
 
-	// ���ְ��� �Ǽ��� �� �ִ� ����Ʈ. �Ϲ� �÷��̾��� �ڽ��� �ൿ�� ���� �������̴�.
-	int  m_iConstructionPoint;
+	int  m_construction_point;
 
-	char m_cConstructMapName[11];
-	int  m_iConstructLocX, m_iConstructLocY;
+	char m_construct_map_name[11];
+	int  m_construct_loc_x, m_construct_loc_y;
 	
 	// 2.06
-	bool m_bIsPlayerCivil;
-	bool m_bIsAttackModeChange;
+	bool m_is_player_civil;
+	bool m_is_attack_mode_change;
 
 	// New 06/05/2004
 	// Party Stuff
-	int m_iPartyID;
-	int m_iPartyStatus;
-	int m_iReqJoinPartyClientH;
-	char m_cReqJoinPartyName[12];
+	int m_party_id;
+	int m_party_status;
+	int m_req_join_party_client_h;
+	char m_req_join_party_name[hb::shared::limits::CharNameLen];
 
-	int   m_iPartyRank;										// Party�������� ��ġ. -1�̸� ���ǹ�. 1�̸� ��Ƽ ������. 12�� ���? 
-	int   m_iPartyMemberCount;								// ��Ƽ �ο� ���ѿ� 
-	int   m_iPartyGUID;										// v1.42 Party GUID
+	int   m_party_rank;										// Party . -1 . 1  . 12 ?
+	int   m_party_member_count;
+	int   m_party_guid;										// v1.42 Party GUID
 	struct {
-	int  iIndex;
-	char cName[11];
-	} m_stPartyMemberName[DEF_MAXPARTYMEMBERS];
+	int  index;
+	char name[hb::shared::limits::CharNameLen];
+	} m_party_member_name[hb::shared::limits::MaxPartyMembers];
 
 	// New 07/05/2004
-	uint32_t m_dwLastActionTime;
-	int m_iDeadPenaltyTime;
+	uint32_t m_last_action_time;
+	int m_dead_penalty_time;
 
 	// New 16/05/2004
-	char m_cWhisperPlayerName[11];
-	bool m_bIsAdminOrderGoto;
-	bool m_bIsInsideWarehouse;
-	bool m_bIsInsideWizardTower;
-	bool m_bIsInsideOwnTown;
-	bool m_bIsCheckingWhisperPlayer;
-	bool m_bIsOwnLocation;
-	bool m_pIsProcessingAllowed;
+	char m_whisper_player_name[hb::shared::limits::CharNameLen];
+	bool m_is_inside_warehouse;
+	bool m_is_inside_wizard_tower;
+	bool m_is_inside_own_town;
+	bool m_is_checking_whisper_player;
+	bool m_is_own_location;
+	bool m_is_processing_allowed;
 
 	// Updated 10/11/2004 - 24/05/2004
-	char m_cHeroArmorBonus;
+	char m_hero_armor_bonus;
 
 	// New 25/05/2004
-	bool m_bIsBeingResurrected;
+	bool m_is_being_resurrected;
 
-	uint32_t m_dwFightzoneDeadTime;
-	char m_cSaveCount;
+	uint32_t m_fightzone_dead_time;
+	char m_save_count;
+
+	uint32_t m_last_config_request_time = 0;
+	uint32_t m_last_damage_taken_time = 0;
+
+	// Admin / GM
+	bool m_is_gm_mode = false;
+	bool m_is_admin_invisible = false;
+	uint32_t m_last_gm_immune_notify_time = 0;
+	int m_admin_index = -1;
+	int m_admin_level = 0;
+
+	// Block list
+	struct CaseInsensitiveLess {
+		bool operator()(const std::string& a, const std::string& b) const {
+			return hb_stricmp(a.c_str(), b.c_str()) < 0;
+		}
+	};
+	std::set<std::string, CaseInsensitiveLess> m_blocked_accounts;
+	std::vector<std::pair<std::string, std::string>> m_blocked_accounts_list;
+	bool m_block_list_dirty = false;
 
 };

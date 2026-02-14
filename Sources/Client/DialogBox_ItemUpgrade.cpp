@@ -1,419 +1,434 @@
-#include "DialogBox_ItemUpgrade.h"
+﻿#include "DialogBox_ItemUpgrade.h"
+#include "CursorTarget.h"
 #include "Game.h"
+#include "ItemNameFormatter.h"
 #include "lan_eng.h"
+#include "GameFonts.h"
+#include "TextLibExt.h"
+#include <format>
+#include <string>
 
-DialogBox_ItemUpgrade::DialogBox_ItemUpgrade(CGame* pGame)
-	: IDialogBox(DialogBoxId::ItemUpgrade, pGame)
+using namespace hb::shared::net;
+using namespace hb::shared::item;
+using namespace hb::client::sprite_id;
+
+DialogBox_ItemUpgrade::DialogBox_ItemUpgrade(CGame* game)
+	: IDialogBox(DialogBoxId::ItemUpgrade, game)
 {
-	SetDefaultRect(60 + SCREENX, 50 + SCREENY, 258, 339);
+	set_default_rect(60 , 50 , 258, 339);
 }
 
-void DialogBox_ItemUpgrade::OnDraw(short msX, short msY, short msZ, char cLB)
+void DialogBox_ItemUpgrade::on_draw(short mouse_x, short mouse_y, short z, char lb)
 {
-    int sX = m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sX;
-    int sY = m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sY;
+    if (!m_game->ensure_item_configs_loaded()) return;
+    int sX = m_game->m_dialog_box_manager.Info(DialogBoxId::ItemUpgrade).m_x;
+    int sY = m_game->m_dialog_box_manager.Info(DialogBoxId::ItemUpgrade).m_y;
 
-    m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX, sY, 0);
-    m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_TEXT, sX, sY, 5); // Item Upgrade Text
+    m_game->draw_new_dialog_box(InterfaceNdGame2, sX, sY, 0);
+    m_game->draw_new_dialog_box(InterfaceNdText, sX, sY, 5); // Item Upgrade Text
 
-    switch (m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).cMode) {
+    switch (m_game->m_dialog_box_manager.Info(DialogBoxId::ItemUpgrade).m_mode) {
     case 1:
-        DrawMode1_GizonUpgrade(sX, sY, msX, msY);
+        DrawMode1_GizonUpgrade(sX, sY, mouse_x, mouse_y);
         break;
     case 2:
         DrawMode2_InProgress(sX, sY);
         break;
     case 3:
-        DrawMode3_Success(sX, sY, msX, msY);
+        DrawMode3_Success(sX, sY, mouse_x, mouse_y);
         break;
     case 4:
-        DrawMode4_Failed(sX, sY, msX, msY);
+        DrawMode4_Failed(sX, sY, mouse_x, mouse_y);
         break;
     case 5:
-        DrawMode5_SelectUpgradeType(sX, sY, msX, msY);
+        DrawMode5_SelectUpgradeType(sX, sY, mouse_x, mouse_y);
         break;
     case 6:
-        DrawMode6_StoneUpgrade(sX, sY, msX, msY);
+        DrawMode6_StoneUpgrade(sX, sY, mouse_x, mouse_y);
         break;
     case 7:
-        DrawMode7_ItemLost(sX, sY, msX, msY);
+        DrawMode7_ItemLost(sX, sY, mouse_x, mouse_y);
         break;
     case 8:
-        DrawMode8_MaxUpgrade(sX, sY, msX, msY);
+        DrawMode8_MaxUpgrade(sX, sY, mouse_x, mouse_y);
         break;
     case 9:
-        DrawMode9_CannotUpgrade(sX, sY, msX, msY);
+        DrawMode9_CannotUpgrade(sX, sY, mouse_x, mouse_y);
         break;
     case 10:
-        DrawMode10_NoPoints(sX, sY, msX, msY);
+        DrawMode10_NoPoints(sX, sY, mouse_x, mouse_y);
         break;
     }
 }
 
-int DialogBox_ItemUpgrade::CalculateUpgradeCost(int iItemIndex)
+int DialogBox_ItemUpgrade::calculate_upgrade_cost(int item_index)
 {
-    int iValue = (m_pGame->m_pItemList[iItemIndex]->m_dwAttribute & 0xF0000000) >> 28;
-    iValue = iValue * (iValue + 6) / 8 + 2;
+    int value = (m_game->m_item_list[item_index]->m_attribute & 0xF0000000) >> 28;
+    value = value * (value + 6) / 8 + 2;
 
     // Special handling for Angelic Pendants
-    if ((m_pGame->m_pItemList[iItemIndex]->m_cEquipPos >= 11)
-        && (m_pGame->m_pItemList[iItemIndex]->m_cItemType == 1))
+    CItem* cfg = m_game->get_item_config(m_game->m_item_list[item_index]->m_id_num);
+    if (cfg && (cfg->m_equip_pos >= 11)
+        && (cfg->get_item_type() == ItemType::Equip))
     {
-        if ((memcmp(m_pGame->m_pItemList[iItemIndex]->m_cName, "AngelicPandent(STR)", 19) == 0)
-            || (memcmp(m_pGame->m_pItemList[iItemIndex]->m_cName, "AngelicPandent(DEX)", 19) == 0)
-            || (memcmp(m_pGame->m_pItemList[iItemIndex]->m_cName, "AngelicPandent(INT)", 19) == 0)
-            || (memcmp(m_pGame->m_pItemList[iItemIndex]->m_cName, "AngelicPandent(MAG)", 19) == 0))
+        short id = m_game->m_item_list[item_index]->m_id_num;
+        if (id == hb::shared::item::ItemId::AngelicPandentSTR || id == hb::shared::item::ItemId::AngelicPandentDEX ||
+            id == hb::shared::item::ItemId::AngelicPandentINT || id == hb::shared::item::ItemId::AngelicPandentMAG)
         {
-            iValue = (m_pGame->m_pItemList[iItemIndex]->m_dwAttribute & 0xF0000000) >> 28;
-            switch (iValue) {
-            case 0: iValue = 10; break;
-            case 1: iValue = 11; break;
-            case 2: iValue = 13; break;
-            case 3: iValue = 16; break;
-            case 4: iValue = 20; break;
-            case 5: iValue = 25; break;
-            case 6: iValue = 31; break;
-            case 7: iValue = 38; break;
-            case 8: iValue = 46; break;
-            case 9: iValue = 55; break;
+            value = (m_game->m_item_list[item_index]->m_attribute & 0xF0000000) >> 28;
+            switch (value) {
+            case 0: value = 10; break;
+            case 1: value = 11; break;
+            case 2: value = 13; break;
+            case 3: value = 16; break;
+            case 4: value = 20; break;
+            case 5: value = 25; break;
+            case 6: value = 31; break;
+            case 7: value = 38; break;
+            case 8: value = 46; break;
+            case 9: value = 55; break;
             }
         }
     }
-    return iValue;
+    return value;
 }
 
-void DialogBox_ItemUpgrade::DrawItemPreview(int sX, int sY, int iItemIndex)
+void DialogBox_ItemUpgrade::draw_item_preview(int sX, int sY, int item_index)
 {
-    uint32_t dwTime = m_pGame->m_dwCurTime;
-    char cStr1[120], cStr2[120], cStr3[120];
+    char item_color = m_game->m_item_list[item_index]->m_item_color;
+    CItem* cfg = m_game->get_item_config(m_game->m_item_list[item_index]->m_id_num);
+    if (!cfg) return;
 
-    char cItemColor = m_pGame->m_pItemList[iItemIndex]->m_cItemColor;
-    if ((m_pGame->m_pItemList[iItemIndex]->m_cEquipPos == DEF_EQUIPPOS_LHAND)
-        || (m_pGame->m_pItemList[iItemIndex]->m_cEquipPos == DEF_EQUIPPOS_RHAND)
-        || (m_pGame->m_pItemList[iItemIndex]->m_cEquipPos == DEF_EQUIPPOS_TWOHAND))
+    if (item_color == 0)
     {
-        m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_pItemList[iItemIndex]->m_sSprite]->Draw(sX + 134, sY + 182, m_pGame->m_pItemList[iItemIndex]->m_sSpriteFrame, SpriteLib::DrawParams::Tint(m_pGame->m_wWR[cItemColor] - m_pGame->m_wR[0], m_pGame->m_wWG[cItemColor] - m_pGame->m_wG[0], m_pGame->m_wWB[cItemColor] - m_pGame->m_wB[0]));
+        m_game->m_sprite[ItemPackPivotPoint + cfg->m_sprite]->draw(sX + 134, sY + 182, cfg->m_sprite_frame);
+    }
+    else if ((cfg->get_equip_pos() == EquipPos::LeftHand)
+        || (cfg->get_equip_pos() == EquipPos::RightHand)
+        || (cfg->get_equip_pos() == EquipPos::TwoHand))
+    {
+        m_game->m_sprite[ItemPackPivotPoint + cfg->m_sprite]->draw(sX + 134, sY + 182, cfg->m_sprite_frame, hb::shared::sprite::DrawParams::tint(GameColors::Weapons[item_color].r, GameColors::Weapons[item_color].g, GameColors::Weapons[item_color].b));
     }
     else
     {
-        m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_pItemList[iItemIndex]->m_sSprite]->Draw(sX + 134, sY + 182, m_pGame->m_pItemList[iItemIndex]->m_sSpriteFrame, SpriteLib::DrawParams::Tint(m_pGame->m_wR[cItemColor] - m_pGame->m_wR[0], m_pGame->m_wG[cItemColor] - m_pGame->m_wG[0], m_pGame->m_wB[cItemColor] - m_pGame->m_wB[0]));
+        m_game->m_sprite[ItemPackPivotPoint + cfg->m_sprite]->draw(sX + 134, sY + 182, cfg->m_sprite_frame, hb::shared::sprite::DrawParams::tint(GameColors::Items[item_color].r, GameColors::Items[item_color].g, GameColors::Items[item_color].b));
     }
 
-    std::memset(cStr1, 0, sizeof(cStr1));
-    std::memset(cStr2, 0, sizeof(cStr2));
-    std::memset(cStr3, 0, sizeof(cStr3));
-    m_pGame->GetItemName(m_pGame->m_pItemList[iItemIndex], cStr1, cStr2, cStr3);
-    m_pGame->PutAlignedString(sX + 24, sX + 248, sY + 230 + 20, cStr1);
-    m_pGame->PutAlignedString(sX + 24, sX + 248, sY + 245 + 20, cStr2);
-    m_pGame->PutAlignedString(sX + 24, sX + 248, sY + 260 + 20, cStr3);
+    auto itemInfo = item_name_formatter::get().format(m_game->m_item_list[item_index].get());
+    hb::shared::text::draw_text_aligned(GameFont::Default, sX + 24, sY + 230 + 20, (sX + 248) - (sX + 24), 15, itemInfo.name.c_str(), hb::shared::text::TextStyle::from_color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
+    hb::shared::text::draw_text_aligned(GameFont::Default, sX + 24, sY + 245 + 20, (sX + 248) - (sX + 24), 15, itemInfo.effect.c_str(), hb::shared::text::TextStyle::from_color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
+    hb::shared::text::draw_text_aligned(GameFont::Default, sX + 24, sY + 260 + 20, (sX + 248) - (sX + 24), 15, itemInfo.extra.c_str(), hb::shared::text::TextStyle::from_color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
 }
 
-void DialogBox_ItemUpgrade::DrawMode1_GizonUpgrade(int sX, int sY, int msX, int msY)
+void DialogBox_ItemUpgrade::DrawMode1_GizonUpgrade(int sX, int sY, int mouse_x, int mouse_y)
 {
-    uint32_t dwTime = m_pGame->m_dwCurTime;
-    int iItemIndex = m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV1;
-    char cTxt[256];
+    uint32_t time = m_game->m_cur_time;
+    int item_index = m_game->m_dialog_box_manager.Info(DialogBoxId::ItemUpgrade).m_v1;
+    std::string txt;
 
-    m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME3, sX, sY, 3);
-    m_pGame->PutAlignedString(sX + 24, sX + 248, sY + 20 + 30, DRAW_DIALOGBOX_ITEMUPGRADE1);
-    m_pGame->PutAlignedString(sX + 24, sX + 248, sY + 20 + 45, DRAW_DIALOGBOX_ITEMUPGRADE2);
-    m_pGame->PutAlignedString(sX + 24, sX + 248, sY + 20 + 60, DRAW_DIALOGBOX_ITEMUPGRADE3);
-    m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_LBTNPOSX, sY + DEF_BTNPOSY, 46);
+    m_game->draw_new_dialog_box(InterfaceNdGame3, sX, sY, 3);
+    hb::shared::text::draw_text_aligned(GameFont::Default, sX + 24, sY + 20 + 30, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE1, hb::shared::text::TextStyle::from_color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
+    hb::shared::text::draw_text_aligned(GameFont::Default, sX + 24, sY + 20 + 45, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE2, hb::shared::text::TextStyle::from_color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
+    hb::shared::text::draw_text_aligned(GameFont::Default, sX + 24, sY + 20 + 60, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE3, hb::shared::text::TextStyle::from_color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
+    m_game->draw_new_dialog_box(InterfaceNdButton, sX + ui_layout::left_btn_x, sY + ui_layout::btn_y, 46);
 
-    wsprintf(cTxt, DRAW_DIALOGBOX_ITEMUPGRADE11, m_pGame->m_iGizonItemUpgradeLeft);
-    m_pGame->PutAlignedString(sX + 24, sX + 248, sY + 100, cTxt);
+    txt = std::format(DRAW_DIALOGBOX_ITEMUPGRADE11, m_game->m_gizon_item_upgrade_left);
+    hb::shared::text::draw_text_aligned(GameFont::Default, sX + 24, sY + 100, (sX + 248) - (sX + 24), 15, txt.c_str(), hb::shared::text::TextStyle::from_color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
 
-    if (iItemIndex != -1)
+    if (item_index != -1)
     {
-        m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME3, sX, sY, 3);
-        int iValue = CalculateUpgradeCost(iItemIndex);
+        m_game->draw_new_dialog_box(InterfaceNdGame3, sX, sY, 3);
+        int value = calculate_upgrade_cost(item_index);
 
-        wsprintf(cTxt, DRAW_DIALOGBOX_ITEMUPGRADE12, iValue);
-        if (m_pGame->m_iGizonItemUpgradeLeft < iValue)
-            m_pGame->PutAlignedString(sX + 24, sX + 248, sY + 115, cTxt, 195, 25, 25);
+        txt = std::format(DRAW_DIALOGBOX_ITEMUPGRADE12, value);
+        if (m_game->m_gizon_item_upgrade_left < value)
+            hb::shared::text::draw_text_aligned(GameFont::Default, sX + 24, sY + 115, (sX + 248) - (sX + 24), 15, txt.c_str(), hb::shared::text::TextStyle::from_color(GameColors::UIWarningRed), hb::shared::text::Align::TopCenter);
         else
-            m_pGame->PutAlignedString(sX + 24, sX + 248, sY + 115, cTxt);
+            hb::shared::text::draw_text_aligned(GameFont::Default, sX + 24, sY + 115, (sX + 248) - (sX + 24), 15, txt.c_str(), hb::shared::text::TextStyle::from_color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
 
-        DrawItemPreview(sX, sY, iItemIndex);
+        draw_item_preview(sX, sY, item_index);
 
-        if (m_pGame->m_iGizonItemUpgradeLeft < iValue)
-            m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_LBTNPOSX, sY + DEF_BTNPOSY, 46);
+        if (m_game->m_gizon_item_upgrade_left < value)
+            m_game->draw_new_dialog_box(InterfaceNdButton, sX + ui_layout::left_btn_x, sY + ui_layout::btn_y, 46);
         else
         {
-            if ((msX >= sX + DEF_LBTNPOSX) && (msX <= sX + DEF_LBTNPOSX + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
-                m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_LBTNPOSX, sY + DEF_BTNPOSY, 47);
+            if ((mouse_x >= sX + ui_layout::left_btn_x) && (mouse_x <= sX + ui_layout::left_btn_x + ui_layout::btn_size_x) && (mouse_y >= sY + ui_layout::btn_y) && (mouse_y <= sY + ui_layout::btn_y + ui_layout::btn_size_y))
+                m_game->draw_new_dialog_box(InterfaceNdButton, sX + ui_layout::left_btn_x, sY + ui_layout::btn_y, 47);
             else
-                m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_LBTNPOSX, sY + DEF_BTNPOSY, 46);
+                m_game->draw_new_dialog_box(InterfaceNdButton, sX + ui_layout::left_btn_x, sY + ui_layout::btn_y, 46);
         }
     }
     else
-        m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_LBTNPOSX, sY + DEF_BTNPOSY, 46);
+        m_game->draw_new_dialog_box(InterfaceNdButton, sX + ui_layout::left_btn_x, sY + ui_layout::btn_y, 46);
 
     // Cancel button
-    if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
-        m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 17);
+    if ((mouse_x >= sX + ui_layout::right_btn_x) && (mouse_x <= sX + ui_layout::right_btn_x + ui_layout::btn_size_x) && (mouse_y >= sY + ui_layout::btn_y) && (mouse_y <= sY + ui_layout::btn_y + ui_layout::btn_size_y))
+        m_game->draw_new_dialog_box(InterfaceNdButton, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 17);
     else
-        m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 16);
+        m_game->draw_new_dialog_box(InterfaceNdButton, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 16);
 }
 
 void DialogBox_ItemUpgrade::DrawMode2_InProgress(int sX, int sY)
 {
-    uint32_t dwTime = m_pGame->m_dwCurTime;
-    int iItemIndex = m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV1;
+    uint32_t time = m_game->m_cur_time;
+    int item_index = m_game->m_dialog_box_manager.Info(DialogBoxId::ItemUpgrade).m_v1;
 
-    m_pGame->PutAlignedString(sX + 24, sX + 248, sY + 55 + 30 + 282 - 117 - 170, DRAW_DIALOGBOX_ITEMUPGRADE5);
-    m_pGame->PutAlignedString(sX + 24, sX + 248, sY + 55 + 45 + 282 - 117 - 170, DRAW_DIALOGBOX_ITEMUPGRADE6);
+    hb::shared::text::draw_text_aligned(GameFont::Default, sX + 24, sY + 55 + 30 + 282 - 117 - 170, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE5, hb::shared::text::TextStyle::from_color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
+    hb::shared::text::draw_text_aligned(GameFont::Default, sX + 24, sY + 55 + 45 + 282 - 117 - 170, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE6, hb::shared::text::TextStyle::from_color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
 
-    if (iItemIndex != -1)
+    if (item_index != -1)
     {
-        m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME3, sX, sY, 3);
-        char cItemColor = m_pGame->m_pItemList[iItemIndex]->m_cItemColor;
+        m_game->draw_new_dialog_box(InterfaceNdGame3, sX, sY, 3);
+        char item_color = m_game->m_item_list[item_index]->m_item_color;
+        CItem* cfg = m_game->get_item_config(m_game->m_item_list[item_index]->m_id_num);
 
-        if ((m_pGame->m_pItemList[iItemIndex]->m_cEquipPos == DEF_EQUIPPOS_LHAND)
-            || (m_pGame->m_pItemList[iItemIndex]->m_cEquipPos == DEF_EQUIPPOS_RHAND)
-            || (m_pGame->m_pItemList[iItemIndex]->m_cEquipPos == DEF_EQUIPPOS_TWOHAND))
+        if (cfg)
         {
-            m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_pItemList[iItemIndex]->m_sSprite]->Draw(sX + 134, sY + 182, m_pGame->m_pItemList[iItemIndex]->m_sSpriteFrame, SpriteLib::DrawParams::Tint(m_pGame->m_wWR[cItemColor] - m_pGame->m_wR[0], m_pGame->m_wWG[cItemColor] - m_pGame->m_wG[0], m_pGame->m_wWB[cItemColor] - m_pGame->m_wB[0]));
-        }
-        else
-        {
-            m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_pItemList[iItemIndex]->m_sSprite]->Draw(sX + 134, sY + 182, m_pGame->m_pItemList[iItemIndex]->m_sSpriteFrame, SpriteLib::DrawParams::Tint(m_pGame->m_wR[cItemColor] - m_pGame->m_wR[0], m_pGame->m_wG[cItemColor] - m_pGame->m_wG[0], m_pGame->m_wB[cItemColor] - m_pGame->m_wB[0]));
+            if (item_color == 0)
+            {
+                m_game->m_sprite[ItemPackPivotPoint + cfg->m_sprite]->draw(sX + 134, sY + 182, cfg->m_sprite_frame);
+            }
+            else if ((cfg->get_equip_pos() == EquipPos::LeftHand)
+                || (cfg->get_equip_pos() == EquipPos::RightHand)
+                || (cfg->get_equip_pos() == EquipPos::TwoHand))
+            {
+                m_game->m_sprite[ItemPackPivotPoint + cfg->m_sprite]->draw(sX + 134, sY + 182, cfg->m_sprite_frame, hb::shared::sprite::DrawParams::tint(GameColors::Weapons[item_color].r, GameColors::Weapons[item_color].g, GameColors::Weapons[item_color].b));
+            }
+            else
+            {
+                m_game->m_sprite[ItemPackPivotPoint + cfg->m_sprite]->draw(sX + 134, sY + 182, cfg->m_sprite_frame, hb::shared::sprite::DrawParams::tint(GameColors::Items[item_color].r, GameColors::Items[item_color].g, GameColors::Items[item_color].b));
+            }
+
+            // Flickering effect
+            if ((rand() % 5) == 0)
+                m_game->m_sprite[ItemPackPivotPoint + cfg->m_sprite]->draw(sX + 134, sY + 182, cfg->m_sprite_frame, hb::shared::sprite::DrawParams::alpha_blend(0.25f));
         }
 
-        // Flickering effect
-        if ((rand() % 5) == 0)
-            m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_pItemList[iItemIndex]->m_sSprite]->Draw(sX + 134, sY + 182, m_pGame->m_pItemList[iItemIndex]->m_sSpriteFrame, SpriteLib::DrawParams::Alpha(0.25f));
-
-        char cStr1[120], cStr2[120], cStr3[120];
-        std::memset(cStr1, 0, sizeof(cStr1));
-        std::memset(cStr2, 0, sizeof(cStr2));
-        std::memset(cStr3, 0, sizeof(cStr3));
-        m_pGame->GetItemName(m_pGame->m_pItemList[iItemIndex], cStr1, cStr2, cStr3);
-        m_pGame->PutAlignedString(sX + 24, sX + 248, sY + 230 + 20, cStr1);
-        m_pGame->PutAlignedString(sX + 24, sX + 248, sY + 245 + 20, cStr2);
-        m_pGame->PutAlignedString(sX + 24, sX + 248, sY + 260 + 20, cStr3);
+        auto itemInfo2 = item_name_formatter::get().format(m_game->m_item_list[item_index].get());
+        hb::shared::text::draw_text_aligned(GameFont::Default, sX + 24, sY + 230 + 20, (sX + 248) - (sX + 24), 15, itemInfo2.name.c_str(), hb::shared::text::TextStyle::from_color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
+        hb::shared::text::draw_text_aligned(GameFont::Default, sX + 24, sY + 245 + 20, (sX + 248) - (sX + 24), 15, itemInfo2.effect.c_str(), hb::shared::text::TextStyle::from_color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
+        hb::shared::text::draw_text_aligned(GameFont::Default, sX + 24, sY + 260 + 20, (sX + 248) - (sX + 24), 15, itemInfo2.extra.c_str(), hb::shared::text::TextStyle::from_color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
     }
 
     // Send upgrade command after 4 seconds
-    if (((dwTime - m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).dwV1) / 1000 > 4)
-        && (m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).dwV1 != 0))
+    if (((time - m_game->m_dialog_box_manager.Info(DialogBoxId::ItemUpgrade).m_dw_v1) / 1000 > 4)
+        && (m_game->m_dialog_box_manager.Info(DialogBoxId::ItemUpgrade).m_dw_v1 != 0))
     {
-        m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).dwV1 = 0;
-        m_pGame->bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_UPGRADEITEM, 0, iItemIndex, 0, 0, 0);
+        m_game->m_dialog_box_manager.Info(DialogBoxId::ItemUpgrade).m_dw_v1 = 0;
+        m_game->send_command(MsgId::CommandCommon, CommonType::UpgradeItem, 0, item_index, 0, 0, 0);
     }
 }
 
-void DialogBox_ItemUpgrade::DrawMode3_Success(int sX, int sY, int msX, int msY)
+void DialogBox_ItemUpgrade::DrawMode3_Success(int sX, int sY, int mouse_x, int mouse_y)
 {
-    int iItemIndex = m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV1;
+    int item_index = m_game->m_dialog_box_manager.Info(DialogBoxId::ItemUpgrade).m_v1;
 
-    m_pGame->PutAlignedString(sX + 24, sX + 248, sY + 55 + 30 + 282 - 117 - 170, DRAW_DIALOGBOX_ITEMUPGRADE7);
-    m_pGame->PutAlignedString(sX + 24, sX + 248, sY + 55 + 45 + 282 - 117 - 170, DRAW_DIALOGBOX_ITEMUPGRADE8);
+    hb::shared::text::draw_text_aligned(GameFont::Default, sX + 24, sY + 55 + 30 + 282 - 117 - 170, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE7, hb::shared::text::TextStyle::from_color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
+    hb::shared::text::draw_text_aligned(GameFont::Default, sX + 24, sY + 55 + 45 + 282 - 117 - 170, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE8, hb::shared::text::TextStyle::from_color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
 
-    if (iItemIndex != -1)
+    if (item_index != -1)
     {
-        m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME3, sX, sY, 3);
-        DrawItemPreview(sX, sY, iItemIndex);
+        m_game->draw_new_dialog_box(InterfaceNdGame3, sX, sY, 3);
+        draw_item_preview(sX, sY, item_index);
     }
 
     // OK button
-    if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY > sY + DEF_BTNPOSY) && (msY < sY + DEF_BTNPOSY + DEF_BTNSZY))
-        m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 1);
+    if ((mouse_x >= sX + ui_layout::right_btn_x) && (mouse_x <= sX + ui_layout::right_btn_x + ui_layout::btn_size_x) && (mouse_y > sY + ui_layout::btn_y) && (mouse_y < sY + ui_layout::btn_y + ui_layout::btn_size_y))
+        m_game->draw_new_dialog_box(InterfaceNdButton, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 1);
     else
-        m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 0);
+        m_game->draw_new_dialog_box(InterfaceNdButton, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 0);
 }
 
-void DialogBox_ItemUpgrade::DrawMode4_Failed(int sX, int sY, int msX, int msY)
+void DialogBox_ItemUpgrade::DrawMode4_Failed(int sX, int sY, int mouse_x, int mouse_y)
 {
-    int iItemIndex = m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV1;
+    int item_index = m_game->m_dialog_box_manager.Info(DialogBoxId::ItemUpgrade).m_v1;
 
-    m_pGame->PutAlignedString(sX + 24, sX + 248, sY + 55 + 30 + 282 - 117 - 170, DRAW_DIALOGBOX_ITEMUPGRADE9);
+    hb::shared::text::draw_text_aligned(GameFont::Default, sX + 24, sY + 55 + 30 + 282 - 117 - 170, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE9, hb::shared::text::TextStyle::from_color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
 
     // Check if item was destroyed
-    if ((iItemIndex != -1) && (m_pGame->m_pItemList[iItemIndex] == 0))
+    if ((item_index != -1) && (m_game->m_item_list[item_index] == 0))
     {
-        m_pGame->PlaySound('E', 24, 0, 0);
-        m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).cMode = 7;
+        m_game->play_game_sound('E', 24, 0, 0);
+        m_game->m_dialog_box_manager.Info(DialogBoxId::ItemUpgrade).m_mode = 7;
         return;
     }
 
-    if (iItemIndex != -1)
+    if (item_index != -1)
     {
-        m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME3, sX, sY, 3);
-        DrawItemPreview(sX, sY, iItemIndex);
+        m_game->draw_new_dialog_box(InterfaceNdGame3, sX, sY, 3);
+        draw_item_preview(sX, sY, item_index);
     }
 
     // OK button
-    if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY > sY + DEF_BTNPOSY) && (msY < sY + DEF_BTNPOSY + DEF_BTNSZY))
-        m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 1);
+    if ((mouse_x >= sX + ui_layout::right_btn_x) && (mouse_x <= sX + ui_layout::right_btn_x + ui_layout::btn_size_x) && (mouse_y > sY + ui_layout::btn_y) && (mouse_y < sY + ui_layout::btn_y + ui_layout::btn_size_y))
+        m_game->draw_new_dialog_box(InterfaceNdButton, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 1);
     else
-        m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 0);
+        m_game->draw_new_dialog_box(InterfaceNdButton, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 0);
 }
 
-void DialogBox_ItemUpgrade::DrawMode5_SelectUpgradeType(int sX, int sY, int msX, int msY)
+void DialogBox_ItemUpgrade::DrawMode5_SelectUpgradeType(int sX, int sY, int mouse_x, int mouse_y)
 {
-    m_pGame->PutAlignedString(sX + 24, sX + 248, sY + 20 + 45, DRAW_DIALOGBOX_ITEMUPGRADE13);
+    hb::shared::text::draw_text_aligned(GameFont::Default, sX + 24, sY + 20 + 45, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE13, hb::shared::text::TextStyle::from_color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
 
     // Normal item upgrade option
-    if ((msX > sX + 24) && (msX < sX + 248) && (msY > sY + 100) && (msY < sY + 115))
+    if ((mouse_x > sX + 24) && (mouse_x < sX + 248) && (mouse_y > sY + 100) && (mouse_y < sY + 115))
     {
-        m_pGame->PutAlignedString(sX + 24, sX + 248, sY + 100, DRAW_DIALOGBOX_ITEMUPGRADE14, 255, 255, 255);
-        m_pGame->PutAlignedString(sX + 24, sX + 248, sY + 150, DRAW_DIALOGBOX_ITEMUPGRADE16);
-        m_pGame->PutAlignedString(sX + 24, sX + 248, sY + 165, DRAW_DIALOGBOX_ITEMUPGRADE17);
-        m_pGame->PutAlignedString(sX + 24, sX + 248, sY + 180, DRAW_DIALOGBOX_ITEMUPGRADE18);
-        m_pGame->PutAlignedString(sX + 24, sX + 248, sY + 195, DRAW_DIALOGBOX_ITEMUPGRADE19);
-        m_pGame->PutAlignedString(sX + 24, sX + 248, sY + 210, DRAW_DIALOGBOX_ITEMUPGRADE20);
-        m_pGame->PutAlignedString(sX + 24, sX + 248, sY + 225, DRAW_DIALOGBOX_ITEMUPGRADE21);
-        m_pGame->PutAlignedString(sX + 24, sX + 248, sY + 255, DRAW_DIALOGBOX_ITEMUPGRADE26);
-        m_pGame->PutAlignedString(sX + 24, sX + 248, sY + 270, DRAW_DIALOGBOX_ITEMUPGRADE27);
+        hb::shared::text::draw_text_aligned(GameFont::Default, sX + 24, sY + 100, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE14, hb::shared::text::TextStyle::from_color(GameColors::UIWhite), hb::shared::text::Align::TopCenter);
+        hb::shared::text::draw_text_aligned(GameFont::Default, sX + 24, sY + 150, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE16, hb::shared::text::TextStyle::from_color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
+        hb::shared::text::draw_text_aligned(GameFont::Default, sX + 24, sY + 165, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE17, hb::shared::text::TextStyle::from_color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
+        hb::shared::text::draw_text_aligned(GameFont::Default, sX + 24, sY + 180, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE18, hb::shared::text::TextStyle::from_color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
+        hb::shared::text::draw_text_aligned(GameFont::Default, sX + 24, sY + 195, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE19, hb::shared::text::TextStyle::from_color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
+        hb::shared::text::draw_text_aligned(GameFont::Default, sX + 24, sY + 210, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE20, hb::shared::text::TextStyle::from_color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
+        hb::shared::text::draw_text_aligned(GameFont::Default, sX + 24, sY + 225, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE21, hb::shared::text::TextStyle::from_color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
+        hb::shared::text::draw_text_aligned(GameFont::Default, sX + 24, sY + 255, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE26, hb::shared::text::TextStyle::from_color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
+        hb::shared::text::draw_text_aligned(GameFont::Default, sX + 24, sY + 270, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE27, hb::shared::text::TextStyle::from_color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
     }
     else
-        m_pGame->PutAlignedString(sX + 24, sX + 248, sY + 100, DRAW_DIALOGBOX_ITEMUPGRADE14, 4, 0, 50);
+        hb::shared::text::draw_text_aligned(GameFont::Default, sX + 24, sY + 100, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE14, hb::shared::text::TextStyle::from_color(GameColors::UIMagicBlue), hb::shared::text::Align::TopCenter);
 
     // Majestic item upgrade option
-    if ((msX > sX + 24) && (msX < sX + 248) && (msY > sY + 120) && (msY < sY + 135))
+    if ((mouse_x > sX + 24) && (mouse_x < sX + 248) && (mouse_y > sY + 120) && (mouse_y < sY + 135))
     {
-        m_pGame->PutAlignedString(sX + 24, sX + 248, sY + 120, DRAW_DIALOGBOX_ITEMUPGRADE15, 255, 255, 255);
-        m_pGame->PutAlignedString(sX + 24, sX + 248, sY + 150, DRAW_DIALOGBOX_ITEMUPGRADE22);
-        m_pGame->PutAlignedString(sX + 24, sX + 248, sY + 165, DRAW_DIALOGBOX_ITEMUPGRADE23);
-        m_pGame->PutAlignedString(sX + 24, sX + 248, sY + 180, DRAW_DIALOGBOX_ITEMUPGRADE24);
-        m_pGame->PutAlignedString(sX + 24, sX + 248, sY + 195, DRAW_DIALOGBOX_ITEMUPGRADE25);
-        m_pGame->PutAlignedString(sX + 24, sX + 248, sY + 225, DRAW_DIALOGBOX_ITEMUPGRADE28);
-        m_pGame->PutAlignedString(sX + 24, sX + 248, sY + 240, DRAW_DIALOGBOX_ITEMUPGRADE29);
+        hb::shared::text::draw_text_aligned(GameFont::Default, sX + 24, sY + 120, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE15, hb::shared::text::TextStyle::from_color(GameColors::UIWhite), hb::shared::text::Align::TopCenter);
+        hb::shared::text::draw_text_aligned(GameFont::Default, sX + 24, sY + 150, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE22, hb::shared::text::TextStyle::from_color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
+        hb::shared::text::draw_text_aligned(GameFont::Default, sX + 24, sY + 165, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE23, hb::shared::text::TextStyle::from_color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
+        hb::shared::text::draw_text_aligned(GameFont::Default, sX + 24, sY + 180, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE24, hb::shared::text::TextStyle::from_color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
+        hb::shared::text::draw_text_aligned(GameFont::Default, sX + 24, sY + 195, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE25, hb::shared::text::TextStyle::from_color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
+        hb::shared::text::draw_text_aligned(GameFont::Default, sX + 24, sY + 225, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE28, hb::shared::text::TextStyle::from_color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
+        hb::shared::text::draw_text_aligned(GameFont::Default, sX + 24, sY + 240, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE29, hb::shared::text::TextStyle::from_color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
     }
     else
-        m_pGame->PutAlignedString(sX + 24, sX + 248, sY + 120, DRAW_DIALOGBOX_ITEMUPGRADE15, 4, 0, 50);
+        hb::shared::text::draw_text_aligned(GameFont::Default, sX + 24, sY + 120, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE15, hb::shared::text::TextStyle::from_color(GameColors::UIMagicBlue), hb::shared::text::Align::TopCenter);
 
     // Cancel button
-    if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
-        m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 17);
+    if ((mouse_x >= sX + ui_layout::right_btn_x) && (mouse_x <= sX + ui_layout::right_btn_x + ui_layout::btn_size_x) && (mouse_y >= sY + ui_layout::btn_y) && (mouse_y <= sY + ui_layout::btn_y + ui_layout::btn_size_y))
+        m_game->draw_new_dialog_box(InterfaceNdButton, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 17);
     else
-        m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 16);
+        m_game->draw_new_dialog_box(InterfaceNdButton, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 16);
 }
 
-void DialogBox_ItemUpgrade::DrawMode6_StoneUpgrade(int sX, int sY, int msX, int msY)
+void DialogBox_ItemUpgrade::DrawMode6_StoneUpgrade(int sX, int sY, int mouse_x, int mouse_y)
 {
-    int iItemIndex = m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV1;
-    int iSoX = m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV2;
-    int iSoM = m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV3;
-    char cTxt[256];
+    int item_index = m_game->m_dialog_box_manager.Info(DialogBoxId::ItemUpgrade).m_v1;
+    int so_x = m_game->m_dialog_box_manager.Info(DialogBoxId::ItemUpgrade).m_v2;
+    int so_m = m_game->m_dialog_box_manager.Info(DialogBoxId::ItemUpgrade).m_v3;
+    std::string txt;
 
-    m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME3, sX, sY, 3);
-    m_pGame->PutAlignedString(sX + 24, sX + 248, sY + 20 + 30, DRAW_DIALOGBOX_ITEMUPGRADE31);
-    m_pGame->PutAlignedString(sX + 24, sX + 248, sY + 20 + 45, DRAW_DIALOGBOX_ITEMUPGRADE32);
-    m_pGame->PutAlignedString(sX + 24, sX + 248, sY + 20 + 60, DRAW_DIALOGBOX_ITEMUPGRADE33);
+    m_game->draw_new_dialog_box(InterfaceNdGame3, sX, sY, 3);
+    hb::shared::text::draw_text_aligned(GameFont::Default, sX + 24, sY + 20 + 30, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE31, hb::shared::text::TextStyle::from_color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
+    hb::shared::text::draw_text_aligned(GameFont::Default, sX + 24, sY + 20 + 45, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE32, hb::shared::text::TextStyle::from_color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
+    hb::shared::text::draw_text_aligned(GameFont::Default, sX + 24, sY + 20 + 60, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE33, hb::shared::text::TextStyle::from_color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
 
-    if (iSoX == 0)
+    if (so_x == 0)
     {
-        m_pGame->PutAlignedString(sX + 24, sX + 248, sY + 20 + 80, DRAW_DIALOGBOX_ITEMUPGRADE41, 195, 25, 25);
+        hb::shared::text::draw_text_aligned(GameFont::Default, sX + 24, sY + 20 + 80, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE41, hb::shared::text::TextStyle::from_color(GameColors::UIWarningRed), hb::shared::text::Align::TopCenter);
     }
     else
     {
-        wsprintf(cTxt, DRAW_DIALOGBOX_ITEMUPGRADE34, iSoX);
-        m_pGame->PutAlignedString(sX + 24, sX + 248, sY + 20 + 80, cTxt);
+        txt = std::format(DRAW_DIALOGBOX_ITEMUPGRADE34, so_x);
+        hb::shared::text::draw_text_aligned(GameFont::Default, sX + 24, sY + 20 + 80, (sX + 248) - (sX + 24), 15, txt.c_str(), hb::shared::text::TextStyle::from_color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
     }
 
-    if (iSoM == 0)
+    if (so_m == 0)
     {
-        m_pGame->PutAlignedString(sX + 24, sX + 248, sY + 20 + 95, DRAW_DIALOGBOX_ITEMUPGRADE42, 195, 25, 25);
+        hb::shared::text::draw_text_aligned(GameFont::Default, sX + 24, sY + 20 + 95, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE42, hb::shared::text::TextStyle::from_color(GameColors::UIWarningRed), hb::shared::text::Align::TopCenter);
     }
     else
     {
-        wsprintf(cTxt, DRAW_DIALOGBOX_ITEMUPGRADE35, iSoM);
-        m_pGame->PutAlignedString(sX + 24, sX + 248, sY + 20 + 95, cTxt);
+        txt = std::format(DRAW_DIALOGBOX_ITEMUPGRADE35, so_m);
+        hb::shared::text::draw_text_aligned(GameFont::Default, sX + 24, sY + 20 + 95, (sX + 248) - (sX + 24), 15, txt.c_str(), hb::shared::text::TextStyle::from_color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
     }
 
-    m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_LBTNPOSX, sY + DEF_BTNPOSY, 46);
+    m_game->draw_new_dialog_box(InterfaceNdButton, sX + ui_layout::left_btn_x, sY + ui_layout::btn_y, 46);
 
-    if (iItemIndex != -1)
+    if (item_index != -1)
     {
-        m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME3, sX, sY, 3);
-        DrawItemPreview(sX, sY, iItemIndex);
+        m_game->draw_new_dialog_box(InterfaceNdGame3, sX, sY, 3);
+        draw_item_preview(sX, sY, item_index);
 
-        if ((msX >= sX + DEF_LBTNPOSX) && (msX <= sX + DEF_LBTNPOSX + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
-            m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_LBTNPOSX, sY + DEF_BTNPOSY, 47);
+        if ((mouse_x >= sX + ui_layout::left_btn_x) && (mouse_x <= sX + ui_layout::left_btn_x + ui_layout::btn_size_x) && (mouse_y >= sY + ui_layout::btn_y) && (mouse_y <= sY + ui_layout::btn_y + ui_layout::btn_size_y))
+            m_game->draw_new_dialog_box(InterfaceNdButton, sX + ui_layout::left_btn_x, sY + ui_layout::btn_y, 47);
         else
-            m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_LBTNPOSX, sY + DEF_BTNPOSY, 46);
+            m_game->draw_new_dialog_box(InterfaceNdButton, sX + ui_layout::left_btn_x, sY + ui_layout::btn_y, 46);
     }
 
     // Cancel button
-    if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
-        m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 17);
+    if ((mouse_x >= sX + ui_layout::right_btn_x) && (mouse_x <= sX + ui_layout::right_btn_x + ui_layout::btn_size_x) && (mouse_y >= sY + ui_layout::btn_y) && (mouse_y <= sY + ui_layout::btn_y + ui_layout::btn_size_y))
+        m_game->draw_new_dialog_box(InterfaceNdButton, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 17);
     else
-        m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 16);
+        m_game->draw_new_dialog_box(InterfaceNdButton, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 16);
 }
 
-void DialogBox_ItemUpgrade::DrawMode7_ItemLost(int sX, int sY, int msX, int msY)
+void DialogBox_ItemUpgrade::DrawMode7_ItemLost(int sX, int sY, int mouse_x, int mouse_y)
 {
-    m_pGame->PutAlignedString(sX + 24, sX + 248, sY + 20 + 130, DRAW_DIALOGBOX_ITEMUPGRADE36);
-    m_pGame->PutAlignedString(sX + 24, sX + 248, sY + 20 + 145, DRAW_DIALOGBOX_ITEMUPGRADE37);
+    hb::shared::text::draw_text_aligned(GameFont::Default, sX + 24, sY + 20 + 130, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE36, hb::shared::text::TextStyle::from_color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
+    hb::shared::text::draw_text_aligned(GameFont::Default, sX + 24, sY + 20 + 145, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE37, hb::shared::text::TextStyle::from_color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
 
     // OK button
-    if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY > sY + DEF_BTNPOSY) && (msY < sY + DEF_BTNPOSY + DEF_BTNSZY))
-        m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 1);
+    if ((mouse_x >= sX + ui_layout::right_btn_x) && (mouse_x <= sX + ui_layout::right_btn_x + ui_layout::btn_size_x) && (mouse_y > sY + ui_layout::btn_y) && (mouse_y < sY + ui_layout::btn_y + ui_layout::btn_size_y))
+        m_game->draw_new_dialog_box(InterfaceNdButton, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 1);
     else
-        m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 0);
+        m_game->draw_new_dialog_box(InterfaceNdButton, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 0);
 }
 
-void DialogBox_ItemUpgrade::DrawMode8_MaxUpgrade(int sX, int sY, int msX, int msY)
+void DialogBox_ItemUpgrade::DrawMode8_MaxUpgrade(int sX, int sY, int mouse_x, int mouse_y)
 {
-    m_pGame->PutAlignedString(sX + 24, sX + 248, sY + 20 + 130, DRAW_DIALOGBOX_ITEMUPGRADE38);
+    hb::shared::text::draw_text_aligned(GameFont::Default, sX + 24, sY + 20 + 130, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE38, hb::shared::text::TextStyle::from_color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
 
     // OK button
-    if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY > sY + DEF_BTNPOSY) && (msY < sY + DEF_BTNPOSY + DEF_BTNSZY))
-        m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 1);
+    if ((mouse_x >= sX + ui_layout::right_btn_x) && (mouse_x <= sX + ui_layout::right_btn_x + ui_layout::btn_size_x) && (mouse_y > sY + ui_layout::btn_y) && (mouse_y < sY + ui_layout::btn_y + ui_layout::btn_size_y))
+        m_game->draw_new_dialog_box(InterfaceNdButton, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 1);
     else
-        m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 0);
+        m_game->draw_new_dialog_box(InterfaceNdButton, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 0);
 }
 
-void DialogBox_ItemUpgrade::DrawMode9_CannotUpgrade(int sX, int sY, int msX, int msY)
+void DialogBox_ItemUpgrade::DrawMode9_CannotUpgrade(int sX, int sY, int mouse_x, int mouse_y)
 {
-    m_pGame->PutAlignedString(sX + 24, sX + 248, sY + 20 + 130, DRAW_DIALOGBOX_ITEMUPGRADE39);
+    hb::shared::text::draw_text_aligned(GameFont::Default, sX + 24, sY + 20 + 130, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE39, hb::shared::text::TextStyle::from_color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
 
     // OK button
-    if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY > sY + DEF_BTNPOSY) && (msY < sY + DEF_BTNPOSY + DEF_BTNSZY))
-        m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 1);
+    if ((mouse_x >= sX + ui_layout::right_btn_x) && (mouse_x <= sX + ui_layout::right_btn_x + ui_layout::btn_size_x) && (mouse_y > sY + ui_layout::btn_y) && (mouse_y < sY + ui_layout::btn_y + ui_layout::btn_size_y))
+        m_game->draw_new_dialog_box(InterfaceNdButton, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 1);
     else
-        m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 0);
+        m_game->draw_new_dialog_box(InterfaceNdButton, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 0);
 }
 
-void DialogBox_ItemUpgrade::DrawMode10_NoPoints(int sX, int sY, int msX, int msY)
+void DialogBox_ItemUpgrade::DrawMode10_NoPoints(int sX, int sY, int mouse_x, int mouse_y)
 {
-    m_pGame->PutAlignedString(sX + 24, sX + 248, sY + 20 + 130, DRAW_DIALOGBOX_ITEMUPGRADE40);
+    hb::shared::text::draw_text_aligned(GameFont::Default, sX + 24, sY + 20 + 130, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE40, hb::shared::text::TextStyle::from_color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
 
     // OK button
-    if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY > sY + DEF_BTNPOSY) && (msY < sY + DEF_BTNPOSY + DEF_BTNSZY))
-        m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 1);
+    if ((mouse_x >= sX + ui_layout::right_btn_x) && (mouse_x <= sX + ui_layout::right_btn_x + ui_layout::btn_size_x) && (mouse_y > sY + ui_layout::btn_y) && (mouse_y < sY + ui_layout::btn_y + ui_layout::btn_size_y))
+        m_game->draw_new_dialog_box(InterfaceNdButton, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 1);
     else
-        m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 0);
+        m_game->draw_new_dialog_box(InterfaceNdButton, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 0);
 }
 
-bool DialogBox_ItemUpgrade::OnClick(short msX, short msY)
+bool DialogBox_ItemUpgrade::on_click(short mouse_x, short mouse_y)
 {
-    short sX = m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sX;
-    short sY = m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sY;
-    int iItemIndex = m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV1;
+    short sX = m_game->m_dialog_box_manager.Info(DialogBoxId::ItemUpgrade).m_x;
+    short sY = m_game->m_dialog_box_manager.Info(DialogBoxId::ItemUpgrade).m_y;
+    int item_index = m_game->m_dialog_box_manager.Info(DialogBoxId::ItemUpgrade).m_v1;
 
-    switch (m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).cMode) {
+    switch (m_game->m_dialog_box_manager.Info(DialogBoxId::ItemUpgrade).m_mode) {
     case 1: // Gizon upgrade
-        if ((iItemIndex != -1) && (msX >= sX + DEF_LBTNPOSX) && (msX <= sX + DEF_LBTNPOSX + DEF_BTNSZX)
-            && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
+        if ((item_index != -1) && (mouse_x >= sX + ui_layout::left_btn_x) && (mouse_x <= sX + ui_layout::left_btn_x + ui_layout::btn_size_x)
+            && (mouse_y >= sY + ui_layout::btn_y) && (mouse_y <= sY + ui_layout::btn_y + ui_layout::btn_size_y))
         {
-            int iValue = (m_pGame->m_pItemList[iItemIndex]->m_dwAttribute & 0xF0000000) >> 28;
-            iValue = iValue * (iValue + 6) / 8 + 2;
-            if (m_pGame->m_iGizonItemUpgradeLeft < iValue) break;
+            int value = calculate_upgrade_cost(item_index);
+            if (m_game->m_gizon_item_upgrade_left < value) break;
 
-            m_pGame->PlaySound('E', 14, 5);
-            m_pGame->PlaySound('E', 44, 0);
-            m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).cMode = 2;
-            m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).dwV1 = m_pGame->m_dwCurTime;
+            m_game->play_game_sound('E', 14, 5);
+            m_game->play_game_sound('E', 44, 0);
+            m_game->m_dialog_box_manager.Info(DialogBoxId::ItemUpgrade).m_mode = 2;
+            m_game->m_dialog_box_manager.Info(DialogBoxId::ItemUpgrade).m_dw_v1 = m_game->m_cur_time;
             return true;
         }
-        if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX)
-            && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
+        if ((mouse_x >= sX + ui_layout::right_btn_x) && (mouse_x <= sX + ui_layout::right_btn_x + ui_layout::btn_size_x)
+            && (mouse_y >= sY + ui_layout::btn_y) && (mouse_y <= sY + ui_layout::btn_y + ui_layout::btn_size_y))
         {
-            m_pGame->PlaySound('E', 14, 5);
-            m_pGame->m_dialogBoxManager.DisableDialogBox(DialogBoxId::ItemUpgrade);
+            m_game->play_game_sound('E', 14, 5);
+            m_game->m_dialog_box_manager.disable_dialog_box(DialogBoxId::ItemUpgrade);
             return true;
         }
         break;
@@ -425,74 +440,104 @@ bool DialogBox_ItemUpgrade::OnClick(short msX, short msY)
     case 9:  // Cannot upgrade
     case 10: // No points
     case 12: // Need stone
-        if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX)
-            && (msY > sY + DEF_BTNPOSY) && (msY < sY + DEF_BTNPOSY + DEF_BTNSZY))
+        if ((mouse_x >= sX + ui_layout::right_btn_x) && (mouse_x <= sX + ui_layout::right_btn_x + ui_layout::btn_size_x)
+            && (mouse_y > sY + ui_layout::btn_y) && (mouse_y < sY + ui_layout::btn_y + ui_layout::btn_size_y))
         {
-            m_pGame->PlaySound('E', 14, 5);
-            m_pGame->m_dialogBoxManager.DisableDialogBox(DialogBoxId::ItemUpgrade);
+            m_game->play_game_sound('E', 14, 5);
+            m_game->m_dialog_box_manager.disable_dialog_box(DialogBoxId::ItemUpgrade);
             return true;
         }
         break;
 
     case 5: // Main menu - select upgrade type
         // Normal item upgrade (Stone)
-        if ((msX > sX + 24) && (msX < sX + 248) && (msY > sY + 100) && (msY < sY + 115))
+        if ((mouse_x > sX + 24) && (mouse_x < sX + 248) && (mouse_y > sY + 100) && (mouse_y < sY + 115))
         {
-            m_pGame->PlaySound('E', 14, 5);
-            int iSoX = 0, iSoM = 0;
-            for (int i = 0; i < DEF_MAXITEMS; i++)
-                if (m_pGame->m_pItemList[i] != 0)
+            m_game->play_game_sound('E', 14, 5);
+            int so_x = 0, so_m = 0;
+            for (int i = 0; i < hb::shared::limits::MaxItems; i++)
+                if (m_game->m_item_list[i] != 0)
                 {
-                    if ((m_pGame->m_pItemList[i]->m_sSprite == 6) && (m_pGame->m_pItemList[i]->m_sSpriteFrame == 128)) iSoX++;
-                    if ((m_pGame->m_pItemList[i]->m_sSprite == 6) && (m_pGame->m_pItemList[i]->m_sSpriteFrame == 129)) iSoM++;
+                    if ((m_game->m_item_list[i]->m_sprite == 6) && (m_game->m_item_list[i]->m_sprite_frame == 128)) so_x++;
+                    if ((m_game->m_item_list[i]->m_sprite == 6) && (m_game->m_item_list[i]->m_sprite_frame == 129)) so_m++;
                 }
 
-            if ((iSoX > 0) || (iSoM > 0))
+            if ((so_x > 0) || (so_m > 0))
             {
-                m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).cMode = 6;
-                m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV2 = iSoX;
-                m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV3 = iSoM;
+                m_game->m_dialog_box_manager.Info(DialogBoxId::ItemUpgrade).m_mode = 6;
+                m_game->m_dialog_box_manager.Info(DialogBoxId::ItemUpgrade).m_v2 = so_x;
+                m_game->m_dialog_box_manager.Info(DialogBoxId::ItemUpgrade).m_v3 = so_m;
             }
             else
-                m_pGame->AddEventList(DRAW_DIALOGBOX_ITEMUPGRADE30, 10);
+                m_game->add_event_list(DRAW_DIALOGBOX_ITEMUPGRADE30, 10);
             return true;
         }
         // Majestic item upgrade (Gizon)
-        if ((msX > sX + 24) && (msX < sX + 248) && (msY > sY + 120) && (msY < sY + 135))
+        if ((mouse_x > sX + 24) && (mouse_x < sX + 248) && (mouse_y > sY + 120) && (mouse_y < sY + 135))
         {
-            m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).cMode = 1;
-            m_pGame->PlaySound('E', 14, 5);
+            m_game->m_dialog_box_manager.Info(DialogBoxId::ItemUpgrade).m_mode = 1;
+            m_game->play_game_sound('E', 14, 5);
             return true;
         }
         // Cancel
-        if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX)
-            && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
+        if ((mouse_x >= sX + ui_layout::right_btn_x) && (mouse_x <= sX + ui_layout::right_btn_x + ui_layout::btn_size_x)
+            && (mouse_y >= sY + ui_layout::btn_y) && (mouse_y <= sY + ui_layout::btn_y + ui_layout::btn_size_y))
         {
-            m_pGame->PlaySound('E', 14, 5);
-            m_pGame->m_dialogBoxManager.DisableDialogBox(DialogBoxId::ItemUpgrade);
+            m_game->play_game_sound('E', 14, 5);
+            m_game->m_dialog_box_manager.disable_dialog_box(DialogBoxId::ItemUpgrade);
             return true;
         }
         break;
 
     case 6: // Stone upgrade
-        if ((iItemIndex != -1) && (msX >= sX + DEF_LBTNPOSX) && (msX <= sX + DEF_LBTNPOSX + DEF_BTNSZX)
-            && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
+        if ((item_index != -1) && (mouse_x >= sX + ui_layout::left_btn_x) && (mouse_x <= sX + ui_layout::left_btn_x + ui_layout::btn_size_x)
+            && (mouse_y >= sY + ui_layout::btn_y) && (mouse_y <= sY + ui_layout::btn_y + ui_layout::btn_size_y))
         {
-            m_pGame->PlaySound('E', 14, 5);
-            m_pGame->PlaySound('E', 44, 0);
-            m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).cMode = 2;
-            m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).dwV1 = m_pGame->m_dwCurTime;
+            m_game->play_game_sound('E', 14, 5);
+            m_game->play_game_sound('E', 44, 0);
+            m_game->m_dialog_box_manager.Info(DialogBoxId::ItemUpgrade).m_mode = 2;
+            m_game->m_dialog_box_manager.Info(DialogBoxId::ItemUpgrade).m_dw_v1 = m_game->m_cur_time;
             return true;
         }
-        if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX)
-            && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
+        if ((mouse_x >= sX + ui_layout::right_btn_x) && (mouse_x <= sX + ui_layout::right_btn_x + ui_layout::btn_size_x)
+            && (mouse_y >= sY + ui_layout::btn_y) && (mouse_y <= sY + ui_layout::btn_y + ui_layout::btn_size_y))
         {
-            m_pGame->PlaySound('E', 14, 5);
-            m_pGame->m_dialogBoxManager.DisableDialogBox(DialogBoxId::ItemUpgrade);
+            m_game->play_game_sound('E', 14, 5);
+            m_game->m_dialog_box_manager.disable_dialog_box(DialogBoxId::ItemUpgrade);
             return true;
         }
         break;
     }
 
     return false;
+}
+
+bool DialogBox_ItemUpgrade::on_item_drop(short mouse_x, short mouse_y)
+{
+	int item_id = CursorTarget::get_selected_id();
+	if (item_id < 0 || item_id >= hb::shared::limits::MaxItems) return false;
+	if (m_game->m_is_item_disabled[item_id]) return false;
+	if (m_game->m_player->m_Controller.get_command() < 0) return false;
+	CItem* cfg = m_game->get_item_config(m_game->m_item_list[item_id]->m_id_num);
+	if (!cfg || cfg->get_equip_pos() == EquipPos::None) return false;
+
+	switch (Info().m_mode) {
+	case 1:
+		if (Info().m_v1 >= 0 && Info().m_v1 < hb::shared::limits::MaxItems)
+			m_game->m_is_item_disabled[Info().m_v1] = false;
+		Info().m_v1 = item_id;
+		m_game->m_is_item_disabled[item_id] = true;
+		m_game->play_game_sound('E', 29, 0);
+		break;
+
+	case 6:
+		if (Info().m_v1 >= 0 && Info().m_v1 < hb::shared::limits::MaxItems)
+			m_game->m_is_item_disabled[Info().m_v1] = false;
+		Info().m_v1 = item_id;
+		m_game->m_is_item_disabled[item_id] = true;
+		m_game->play_game_sound('E', 29, 0);
+		break;
+	}
+
+	return true;
 }

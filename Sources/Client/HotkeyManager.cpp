@@ -1,42 +1,42 @@
 #include "HotkeyManager.h"
-#include "InputManager.h"
+#include "IInput.h"
 #include <utility>
 
-HotkeyManager& HotkeyManager::Get()
+HotkeyManager& HotkeyManager::get()
 {
 	static HotkeyManager s_instance;
 	return s_instance;
 }
 
-void HotkeyManager::Clear()
+void HotkeyManager::clear()
 {
 	m_entries.clear();
 }
 
-void HotkeyManager::Register(const KeyCombo& combo, Trigger trigger, std::function<void()> callback)
+void HotkeyManager::register_hotkey(const KeyCombo& combo, Trigger trigger, std::function<void()> callback)
 {
 	m_entries.push_back(Entry{ combo, trigger, std::move(callback) });
 }
 
-bool HotkeyManager::HandleKeyDown(int vk)
+bool HotkeyManager::handle_key_down(KeyCode vk)
 {
-	return HandleKey(vk, Trigger::KeyDown);
+	return handle_key(vk, Trigger::KeyDown);
 }
 
-bool HotkeyManager::HandleKeyUp(int vk)
+bool HotkeyManager::handle_key_up(KeyCode vk)
 {
-	return HandleKey(vk, Trigger::KeyUp);
+	return handle_key(vk, Trigger::KeyUp);
 }
 
-bool HotkeyManager::HandleKey(int vk, Trigger trigger)
+bool HotkeyManager::handle_key(KeyCode vk, Trigger trigger)
 {
 	if (m_entries.empty()) {
 		return false;
 	}
 
-	const bool ctrlDown = InputManager::Get().IsCtrlDown();
-	const bool shiftDown = InputManager::Get().IsShiftDown();
-	const bool altDown = InputManager::Get().IsAltDown();
+	const bool ctrlDown = hb::shared::input::is_ctrl_down();
+	const bool shiftDown = hb::shared::input::is_shift_down();
+	const bool altDown = hb::shared::input::is_alt_down();
 
 	bool handled = false;
 	for (const auto& entry : m_entries)
@@ -47,10 +47,19 @@ bool HotkeyManager::HandleKey(int vk, Trigger trigger)
 		if (entry.combo.ctrl && !ctrlDown) {
 			continue;
 		}
+		if (!entry.combo.ctrl && ctrlDown) {
+			continue;
+		}
 		if (entry.combo.shift && !shiftDown) {
 			continue;
 		}
+		if (!entry.combo.shift && shiftDown) {
+			continue;
+		}
 		if (entry.combo.alt && !altDown) {
+			continue;
+		}
+		if (!entry.combo.alt && altDown) {
 			continue;
 		}
 		if (entry.callback) {

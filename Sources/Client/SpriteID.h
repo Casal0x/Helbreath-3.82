@@ -1,117 +1,83 @@
 #pragma once
 
-#define DEF_SPRID_MOUSECURSOR				0
+namespace hb::client::sprite_id
+{
 
-#define DEF_SPRID_INTERFACE_SPRFONTS		22
-#define DEF_SPRID_INTERFACE_ADDINTERFACE	27
-#define DEF_SPRID_INTERFACE_SPRFONTS2		28
-#define DEF_SPRID_INTERFACE_F1HELPWINDOWS	29
-#define DEF_SPRID_INTERFACE_FONT1			30	
-#define DEF_SPRID_INTERFACE_FONT2			31
-// Crafting
-#define DEF_SPRID_INTERFACE_CRAFTING		32
+constexpr int MouseCursor                   = 0;
 
-#define DEF_SPRID_INTERFACE_NEWMAPS1		35
-#define DEF_SPRID_INTERFACE_NEWMAPS2		36
-#define DEF_SPRID_INTERFACE_NEWMAPS3		37
-#define DEF_SPRID_INTERFACE_NEWMAPS4		38
-#define DEF_SPRID_INTERFACE_NEWMAPS5		39 
+// Interface sprite IDs
+constexpr int InterfaceSprFonts             = 22;
+constexpr int InterfaceAddInterface         = 27;
+constexpr int InterfaceSprFonts2            = 28;
+constexpr int InterfaceF1HelpWindows        = 29;
+constexpr int InterfaceFont1                = 30;
+constexpr int InterfaceFont2                = 31;
+constexpr int InterfaceCrafting             = 32;
 
-#define DEF_SPRID_INTERFACE_MONSTER			50
-#define DEF_SPRID_INTERFACE_ND_LOADING		51
-#define DEF_SPRID_INTERFACE_ND_MAINMENU		52
-#define DEF_SPRID_INTERFACE_ND_LOGIN		53
-#define DEF_SPRID_INTERFACE_ND_NEWACCOUNT	54
-#define DEF_SPRID_INTERFACE_ND_QUIT			55
-#define DEF_SPRID_INTERFACE_ND_AGREEMENT	56
-#define DEF_SPRID_INTERFACE_ND_SELECTCHAR	57
-#define DEF_SPRID_INTERFACE_ND_NEWCHAR		58
-#define DEF_SPRID_INTERFACE_ND_NEWEXCHANGE	59
-#define DEF_SPRID_INTERFACE_ND_GAME1		60
-#define DEF_SPRID_INTERFACE_ND_GAME2		61
-#define DEF_SPRID_INTERFACE_ND_GAME3		62
-#define DEF_SPRID_INTERFACE_ND_GAME4		63
-#define DEF_SPRID_INTERFACE_ND_ICONPANNEL	64
-#define DEF_SPRID_INTERFACE_ND_ICONPANNEL2	65
-#define DEF_SPRID_INTERFACE_ND_INVENTORY	67
-#define DEF_SPRID_INTERFACE_ND_TEXT			70
-#define DEF_SPRID_INTERFACE_ND_BUTTON		71
-#define DEF_SPRID_INTERFACE_ND_CRUSADE		72
-#define DEF_SPRID_INTERFACE_GUIDEMAP		420 // Snoopy:73 ->420 pour ajout de minimaps v3.51 (450 sur la 351)
+constexpr int InterfaceNewMaps1             = 35;
+constexpr int InterfaceNewMaps2             = 36;
+constexpr int InterfaceNewMaps3             = 37;
+constexpr int InterfaceNewMaps4             = 38;
+constexpr int InterfaceNewMaps5             = 39;
 
-#define DEF_SPRID_INTERFACE_FEEDBACK1		40
-#define DEF_SPRID_INTERFACE_FEEDBACK2		41
-#define DEF_SPRID_INTERFACE_FEEDBACK3		42
-#define DEF_SPRID_INTERFACE_FEEDBACK4		43
-#define DEF_SPRID_INTERFACE_FEEDBACK5		44
-#define DEF_SPRID_INTERFACE_FEEDBACK6		45
-#define DEF_SPRID_INTERFACE_FEEDBACK7		46
+constexpr int InterfaceMonster              = 50;
+constexpr int InterfaceNdLoading            = 51;
+constexpr int InterfaceNdMainMenu           = 52;
+constexpr int InterfaceNdLogin              = 53;
+constexpr int InterfaceNdNewAccount         = 54;
+constexpr int InterfaceNdQuit               = 55;
+constexpr int InterfaceNdSelectChar         = 57;
+constexpr int InterfaceNdNewChar            = 58;
+constexpr int InterfaceNdNewExchange        = 59;
+constexpr int InterfaceNdGame1              = 60;
+constexpr int InterfaceNdGame2              = 61;
+constexpr int InterfaceNdGame3              = 62;
+constexpr int InterfaceNdGame4              = 63;
+constexpr int InterfaceNdIconPanel          = 64;
+constexpr int InterfaceNdIconPanel2         = 65;
+constexpr int InterfaceNdInventory          = 67;
+constexpr int InterfaceNdText               = 70;
+constexpr int InterfaceNdButton             = 71;
+constexpr int InterfaceNdCrusade            = 72;
+constexpr int InterfaceGuideMap             = 420;
 
-#define DEF_SPRID_INTERFACE_ND_PARTYSTATUS				80
+constexpr int InterfaceNdPartyStatus        = 80;
 
-//#define DEF_SPRID_BGTILE_PIVOTPOINT			200 //  
-//#define DEF_SPRID_EFFECT_PIVOTPOINT			20500 // 22000
-#define DEF_SPRID_ITEMGROUND_PIVOTPOINT		100 //60
-#define DEF_SPRID_ITEMEQUIP_PIVOTPOINT		200 //80
-#define DEF_SPRID_ITEMPACK_PIVOTPOINT		300 //120
-#define DEF_SPRID_ITEMDYNAMIC_PIVOTPOINT	400 //160
-//#define DEF_SPRID_ITEMGROUND_PIVOTPOINT		20060 //60
-//#define DEF_SPRID_ITEMEQUIP_PIVOTPOINT		20100 //80
-//#define DEF_SPRID_ITEMPACK_PIVOTPOINT		20180 //120
-//#define DEF_SPRID_ITEMDYNAMIC_PIVOTPOINT	20240 //160
+// Item pivot points
+constexpr int ItemGroundPivotPoint          = 100;
+constexpr int ItemEquipPivotPoint           = 200;
+constexpr int ItemPackPivotPoint            = 300;
+constexpr int ItemDynamicPivotPoint         = 400;
 
-// Snoopy: remplace par des macros pour pouvoir ajuster facilement....
-//         sinon les mobs ecrasent la suite !
-#define DEF_SPRID_MOB			17000
+// Mob base sprite ID
+constexpr int Mob                           = 17000;
 
-#define DEF_SPRID_UNDIES_M		1400	// 4580 
-#define DEF_SPRID_UNDIES_W		11400
-#define DEF_SPRID_HAIR_M		1600	// 4820 (240 pour 120)
-#define DEF_SPRID_HAIR_W		11600
-#define DEF_SPRID_BODYARMOR_M	1800	// 5060 (240 pour 120)
-#define DEF_SPRID_BODYARMOR_W	11800
-#define DEF_SPRID_BERK_M		2100	// 5300 (240 pour 180) 
-#define DEF_SPRID_BERK_W		12100
-#define DEF_SPRID_LEGG_M		2300	// 5540
-#define DEF_SPRID_LEGG_W		12300
-#define DEF_SPRID_BOOT_M		2500	// 5780
-#define DEF_SPRID_BOOT_W		12500
-#define DEF_SPRID_MANTLE_M		2600	// 9230
-#define DEF_SPRID_MANTLE_W		12600
-#define DEF_SPRID_HEAD_M		2800	// 9300
-#define DEF_SPRID_HEAD_W		12800
+// Character equipment sprite bases (male/female)
+constexpr int UndiesM                       = 1400;
+constexpr int UndiesW                       = 11400;
+constexpr int HairM                         = 1600;
+constexpr int HairW                         = 11600;
+constexpr int BodyArmorM                    = 1800;
+constexpr int BodyArmorW                    = 11800;
+constexpr int BerkM                         = 2100;
+constexpr int BerkW                         = 12100;
+constexpr int LeggM                         = 2300;
+constexpr int LeggW                         = 12300;
+constexpr int BootM                         = 2500;
+constexpr int BootW                         = 12500;
+constexpr int MantleM                       = 2600;
+constexpr int MantleW                       = 12600;
+constexpr int HeadM                         = 2800;
+constexpr int HeadW                         = 12800;
+constexpr int WeaponM                       = 3000;
+constexpr int WeaponW                       = 13000;
+constexpr int ShieldM                       = 6500;
+constexpr int ShieldW                       = 16500;
 
-#define DEF_SPRID_WEAPON_M		3000	// 6020 
-#define DEF_SPRID_WEAPON_W		13000
+// Angels
+constexpr int TutelaryAngelsPivotPoint      = 10800;
 
-#define DEF_SPRID_SHIELD_M		6500	// 9100
-#define DEF_SPRID_SHIELD_W		16500
+// Splash screen
+constexpr int SplashScreen                  = 18491;
 
-//Snoopy: Angels
-#define DEF_SPRID_TUTELARYANGELS_PIVOTPOINT 10800
-
-//         sinon les mobs ecrasent la suite !
-/*#define DEF_SPRID_MOB			1220
-
-#define DEF_SPRID_UNDIES_M		4580 
-#define DEF_SPRID_UNDIES_W		14580
-#define DEF_SPRID_HAIR_M		4820
-#define DEF_SPRID_HAIR_W		14820
-#define DEF_SPRID_BODYARMOR_M	5060
-#define DEF_SPRID_BODYARMOR_W	15060
-#define DEF_SPRID_BERK_M		5300
-#define DEF_SPRID_BERK_W		15300
-#define DEF_SPRID_LEGG_M		5540
-#define DEF_SPRID_LEGG_W		15540
-#define DEF_SPRID_BOOT_M		5780
-#define DEF_SPRID_BOOT_W		15780
-#define DEF_SPRID_MANTLE_M		9230
-#define DEF_SPRID_MANTLE_W		19230
-#define DEF_SPRID_HEAD_M		9300
-#define DEF_SPRID_HEAD_W		19300
-
-#define DEF_SPRID_WEAPON_M		6020 
-#define DEF_SPRID_WEAPON_W		16020
-
-#define DEF_SPRID_SHIELD_M		9100
-#define DEF_SPRID_SHIELD_W		19100*/
+} // namespace hb::client::sprite_id

@@ -1,67 +1,74 @@
-#include "Game.h"
+﻿#include "Game.h"
+#include "BuildItemManager.h"
+#include "InventoryManager.h"
+#include "ItemNameFormatter.h"
 #include "NetworkMessageManager.h"
 #include "Packet/SharedPackets.h"
 #include "lan_eng.h"
 #include "DialogBoxIDs.h"
-#include <windows.h>
 #include <cstdio>
 #include <cstring>
 #include <cmath>
+#include <format>
+#include <string>
+
+using namespace hb::shared::net;
+using namespace hb::shared::item;
 
 namespace NetworkMessageHandlers {
-	void HandleItemPurchased(CGame* pGame, char* pData)
+	void HandleItemPurchased(CGame* game, char* data)
 	{
 		int i, j;
-		uint32_t dwCount;
-		char  cName[21], cItemType, cEquipPos, cGenderLimit;
-		bool  bIsEquipped;
-		short sSprite, sSpriteFrame, sLevelLimit;
-		uint16_t wCost, wWeight, wCurLifeSpan;
-		char  cTxt[120], cItemColor;
+		uint32_t count;
+		char  name[hb::shared::limits::ItemNameLen]{}, equip_pos, gender_limit;
+		ItemType item_type;
+		bool  is_equipped;
+		short sprite, sprite_frame, level_limit;
+		uint16_t cost, weight, cur_life_span, max_life_span;
+		std::string txt;
+
+		char item_color;
 
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyItemPurchased>(
-			pData, sizeof(hb::net::PacketNotifyItemPurchased));
+			data, sizeof(hb::net::PacketNotifyItemPurchased));
 		if (!pkt) return;
 
-		std::memset(cName, 0, sizeof(cName));
-		memcpy(cName, pkt->name, 20);
-		dwCount = pkt->count;
-		cItemType = static_cast<char>(pkt->item_type);
-		cEquipPos = static_cast<char>(pkt->equip_pos);
-		bIsEquipped = (pkt->is_equipped != 0);
-		sLevelLimit = static_cast<short>(pkt->level_limit);
-		cGenderLimit = static_cast<char>(pkt->gender_limit);
-		wCurLifeSpan = pkt->cur_lifespan;
-		wWeight = pkt->weight;
-		sSprite = static_cast<short>(pkt->sprite);
-		sSpriteFrame = static_cast<short>(pkt->sprite_frame);
-		cItemColor = static_cast<char>(pkt->item_color);
-		wCost = pkt->cost;
-		std::memset(cTxt, 0, sizeof(cTxt));
-		char cStr1[64], cStr2[64], cStr3[64];
-		strcpy(cStr1, cName);
-		cStr2[0] = 0;
-		cStr3[0] = 0;
-		wsprintf(cTxt, NOTIFYMSG_ITEMPURCHASED, cStr1, wCost);
-		pGame->AddEventList(cTxt, 10);
+		memcpy(name, pkt->name, sizeof(pkt->name));
+		count = pkt->count;
+		item_type = static_cast<ItemType>(pkt->item_type);
+		equip_pos = static_cast<char>(pkt->equip_pos);
+		is_equipped = (pkt->is_equipped != 0);
+		level_limit = static_cast<short>(pkt->level_limit);
+		gender_limit = static_cast<char>(pkt->gender_limit);
+		cur_life_span = pkt->cur_lifespan;
+		max_life_span = pkt->max_lifespan;
+		weight = pkt->weight;
+		sprite = static_cast<short>(pkt->sprite);
+		sprite_frame = static_cast<short>(pkt->sprite_frame);
+		item_color = static_cast<char>(pkt->item_color);
+		cost = pkt->cost;
+		txt = std::format(NOTIFYMSG_ITEMPURCHASED, name, cost);
+		game->add_event_list(txt.c_str(), 10);
 
-		if ((cItemType == DEF_ITEMTYPE_CONSUME) || (cItemType == DEF_ITEMTYPE_ARROW))
+		short item_id = pkt->item_id;
+
+		if ((item_type == ItemType::Consume) || (item_type == ItemType::Arrow))
 		{
-			for (i = 0; i < DEF_MAXITEMS; i++)
-				if ((pGame->m_pItemList[i] != 0) && (memcmp(pGame->m_pItemList[i]->m_cName, cName, 20) == 0))
+			for (i = 0; i < hb::shared::limits::MaxItems; i++)
+				if ((game->m_item_list[i] != 0) && (game->m_item_list[i]->m_id_num == item_id))
 				{
-					pGame->m_pItemList[i]->m_dwCount += dwCount;
+					game->m_item_list[i]->m_count += count;
 					return;
 				}
 		}
 
 		short nX, nY;
-		for (i = 0; i < DEF_MAXITEMS; i++)
+		for (i = 0; i < hb::shared::limits::MaxItems; i++)
 		{
-			if ((pGame->m_pItemList[i] != 0) && (memcmp(pGame->m_pItemList[i]->m_cName, cName, 20) == 0))
+			if ((game->m_item_list[i] != 0) && (game->m_item_list[i]->m_id_num == item_id))
 			{
-				nX = pGame->m_pItemList[i]->m_sX;
-				nY = pGame->m_pItemList[i]->m_sY;
+				nX = game->m_item_list[i]->m_x;
+				nY = game->m_item_list[i]->m_y;
 				break;
 			}
 			else
@@ -71,30 +78,24 @@ namespace NetworkMessageHandlers {
 			}
 		}
 
-		for (i = 0; i < DEF_MAXITEMS; i++)
-			if (pGame->m_pItemList[i] == 0)
+		for (i = 0; i < hb::shared::limits::MaxItems; i++)
+			if (game->m_item_list[i] == 0)
 			{
-				pGame->m_pItemList[i] = new class CItem;
-				memcpy(pGame->m_pItemList[i]->m_cName, cName, 20);
-				pGame->m_pItemList[i]->m_dwCount = dwCount;
-				pGame->m_pItemList[i]->m_sX = nX;
-				pGame->m_pItemList[i]->m_sY = nY;
-				pGame->bSendCommand(MSGID_REQUEST_SETITEMPOS, 0, i, nX, nY, 0, 0);
-				pGame->m_pItemList[i]->m_cItemType = cItemType;
-				pGame->m_pItemList[i]->m_cEquipPos = cEquipPos;
-				pGame->m_bIsItemDisabled[i] = false;
-				pGame->m_bIsItemEquipped[i] = false;
-				pGame->m_pItemList[i]->m_sLevelLimit = sLevelLimit;
-				pGame->m_pItemList[i]->m_cGenderLimit = cGenderLimit;
-				pGame->m_pItemList[i]->m_wCurLifeSpan = wCurLifeSpan;
-				pGame->m_pItemList[i]->m_wWeight = wWeight;
-				pGame->m_pItemList[i]->m_sSprite = sSprite;
-				pGame->m_pItemList[i]->m_sSpriteFrame = sSpriteFrame;
-				pGame->m_pItemList[i]->m_cItemColor = cItemColor;
+				game->m_item_list[i] = std::make_unique<CItem>();
+				game->m_item_list[i]->m_id_num = item_id;
+				game->m_item_list[i]->m_count = count;
+				game->m_item_list[i]->m_x = nX;
+				game->m_item_list[i]->m_y = nY;
+				game->send_command(MsgId::RequestSetItemPos, 0, i, nX, nY, 0, 0);
+				game->m_is_item_disabled[i] = false;
+				game->m_is_item_equipped[i] = false;
+				game->m_item_list[i]->m_cur_life_span = cur_life_span;
+				game->m_item_list[i]->m_item_color = item_color;
+				game->m_item_list[i]->m_attribute = 0;
 
-				for (j = 0; j < DEF_MAXITEMS; j++)
-					if (pGame->m_cItemOrder[j] == -1) {
-						pGame->m_cItemOrder[j] = i;
+				for (j = 0; j < hb::shared::limits::MaxItems; j++)
+					if (game->m_item_order[j] == -1) {
+						game->m_item_order[j] = i;
 						return;
 					}
 
@@ -102,68 +103,67 @@ namespace NetworkMessageHandlers {
 			}
 	}
 
-	void HandleItemObtained(CGame* pGame, char* pData)
+	void HandleItemObtained(CGame* game, char* data)
 	{
 		int i, j;
-		uint32_t dwCount, dwAttribute;
-		char  cName[21], cItemType, cEquipPos;
-		bool  bIsEquipped;
-		short sSprite, sSpriteFrame, sLevelLimit, sSpecialEV2;
-		char  cTxt[120], cGenderLimit, cItemColor;
-		uint16_t wWeight, wCurLifeSpan;
+		uint32_t count, attribute;
+		char  name[hb::shared::limits::ItemNameLen]{}, equip_pos;
+		ItemType item_type;
+		bool  is_equipped;
+		short sprite, sprite_frame, level_limit, special_ev2;
+		std::string txt;
+
+		char gender_limit, item_color;
+		uint16_t weight, cur_life_span, max_life_span;
 
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyItemObtained>(
-			pData, sizeof(hb::net::PacketNotifyItemObtained));
+			data, sizeof(hb::net::PacketNotifyItemObtained));
 		if (!pkt) return;
 
-		std::memset(cName, 0, sizeof(cName));
-		memcpy(cName, pkt->name, 20);
-		dwCount = pkt->count;
-		cItemType = static_cast<char>(pkt->item_type);
-		cEquipPos = static_cast<char>(pkt->equip_pos);
-		bIsEquipped = (pkt->is_equipped != 0);
-		sLevelLimit = static_cast<short>(pkt->level_limit);
-		cGenderLimit = static_cast<char>(pkt->gender_limit);
-		wCurLifeSpan = pkt->cur_lifespan;
-		wWeight = pkt->weight;
-		sSprite = static_cast<short>(pkt->sprite);
-		sSpriteFrame = static_cast<short>(pkt->sprite_frame);
-		cItemColor = static_cast<char>(pkt->item_color);
-		sSpecialEV2 = static_cast<short>(pkt->spec_value2);
-		dwAttribute = pkt->attribute;
+		memcpy(name, pkt->name, sizeof(pkt->name));
+		count = pkt->count;
+		item_type = static_cast<ItemType>(pkt->item_type);
+		equip_pos = static_cast<char>(pkt->equip_pos);
+		is_equipped = (pkt->is_equipped != 0);
+		level_limit = static_cast<short>(pkt->level_limit);
+		gender_limit = static_cast<char>(pkt->gender_limit);
+		cur_life_span = pkt->cur_lifespan;
+		max_life_span = pkt->max_lifespan;
+		weight = pkt->weight;
+		sprite = static_cast<short>(pkt->sprite);
+		sprite_frame = static_cast<short>(pkt->sprite_frame);
+		item_color = static_cast<char>(pkt->item_color);
+		special_ev2 = static_cast<short>(pkt->spec_value2);
+		attribute = pkt->attribute;
 
-		char cStr1[64], cStr2[64], cStr3[64];
-		strcpy(cStr1, cName);
-		cStr2[0] = 0;
-		cStr3[0] = 0;
+		if (count == 1) txt = std::format(NOTIFYMSG_ITEMOBTAINED2, name);
+		else txt = std::format(NOTIFYMSG_ITEMOBTAINED1, count, name);
 
-		std::memset(cTxt, 0, sizeof(cTxt));
-		if (dwCount == 1) wsprintf(cTxt, NOTIFYMSG_ITEMOBTAINED2, cStr1);
-		else wsprintf(cTxt, NOTIFYMSG_ITEMOBTAINED1, dwCount, cStr1);
+		game->add_event_list(txt.c_str(), 10);
+		game->play_game_sound('E', 20, 0);
 
-		pGame->AddEventList(cTxt, 10);
-		pGame->PlaySound('E', 20, 0);
+		game->m_map_data->set_item(game->m_player->m_player_x, game->m_player->m_player_y, 0, 0, 0, false);
 
-		pGame->m_pMapData->bSetItem(pGame->m_sPlayerX, pGame->m_sPlayerY, 0, 0, 0, false);
+		short item_id = pkt->item_id;
 
-		if ((cItemType == DEF_ITEMTYPE_CONSUME) || (cItemType == DEF_ITEMTYPE_ARROW))
+		if ((item_type == ItemType::Consume) || (item_type == ItemType::Arrow))
 		{
-			for (i = 0; i < DEF_MAXITEMS; i++)
-				if ((pGame->m_pItemList[i] != 0) && (memcmp(pGame->m_pItemList[i]->m_cName, cName, 20) == 0))
+			for (i = 0; i < hb::shared::limits::MaxItems; i++)
+				if ((game->m_item_list[i] != 0) && (game->m_item_list[i]->m_id_num == item_id))
 				{
-					pGame->m_pItemList[i]->m_dwCount += dwCount;
-					pGame->m_bIsItemDisabled[i] = false;
+					game->m_item_list[i]->m_count += count;
+					game->m_is_item_disabled[i] = false;
 					return;
 				}
 		}
 
 		short nX, nY;
-		for (i = 0; i < DEF_MAXITEMS; i++)
+		for (i = 0; i < hb::shared::limits::MaxItems; i++)
 		{
-			if ((pGame->m_pItemList[i] != 0) && (memcmp(pGame->m_pItemList[i]->m_cName, cName, 20) == 0))
+			if ((game->m_item_list[i] != 0) && (game->m_item_list[i]->m_id_num == item_id))
 			{
-				nX = pGame->m_pItemList[i]->m_sX;
-				nY = pGame->m_pItemList[i]->m_sY;
+				nX = game->m_item_list[i]->m_x;
+				nY = game->m_item_list[i]->m_y;
 				break;
 			}
 			else
@@ -173,518 +173,598 @@ namespace NetworkMessageHandlers {
 			}
 		}
 
-		for (i = 0; i < DEF_MAXITEMS; i++)
-			if (pGame->m_pItemList[i] == 0)
+		for (i = 0; i < hb::shared::limits::MaxItems; i++)
+			if (game->m_item_list[i] == 0)
 			{
-				pGame->m_pItemList[i] = new class CItem;
-				memcpy(pGame->m_pItemList[i]->m_cName, cName, 20);
-				pGame->m_pItemList[i]->m_dwCount = dwCount;
-				pGame->m_pItemList[i]->m_sX = nX;
-				pGame->m_pItemList[i]->m_sY = nY;
-				pGame->bSendCommand(MSGID_REQUEST_SETITEMPOS, 0, i, nX, nY, 0, 0);
-				pGame->m_pItemList[i]->m_cItemType = cItemType;
-				pGame->m_pItemList[i]->m_cEquipPos = cEquipPos;
-				pGame->m_bIsItemDisabled[i] = false;
-				pGame->m_bIsItemEquipped[i] = false;
-				pGame->m_pItemList[i]->m_sLevelLimit = sLevelLimit;
-				pGame->m_pItemList[i]->m_cGenderLimit = cGenderLimit;
-				pGame->m_pItemList[i]->m_wCurLifeSpan = wCurLifeSpan;
-				pGame->m_pItemList[i]->m_wWeight = wWeight;
-				pGame->m_pItemList[i]->m_sSprite = sSprite;
-				pGame->m_pItemList[i]->m_sSpriteFrame = sSpriteFrame;
-				pGame->m_pItemList[i]->m_cItemColor = cItemColor;
-				pGame->m_pItemList[i]->m_sItemSpecEffectValue2 = sSpecialEV2;
-				pGame->m_pItemList[i]->m_dwAttribute = dwAttribute;
+				game->m_item_list[i] = std::make_unique<CItem>();
+				game->m_item_list[i]->m_id_num = item_id;
+				game->m_item_list[i]->m_count = count;
+				game->m_item_list[i]->m_x = nX;
+				game->m_item_list[i]->m_y = nY;
+				game->send_command(MsgId::RequestSetItemPos, 0, i, nX, nY, 0, 0);
+				game->m_is_item_disabled[i] = false;
+				game->m_is_item_equipped[i] = false;
+				game->m_item_list[i]->m_cur_life_span = cur_life_span;
+				game->m_item_list[i]->m_item_color = item_color;
+				game->m_item_list[i]->m_item_special_effect_value2 = special_ev2;
+				game->m_item_list[i]->m_attribute = attribute;
 
-				pGame->_bCheckBuildItemStatus();
+				build_item_manager::get().update_available_recipes();
 
-				for (j = 0; j < DEF_MAXITEMS; j++)
-					if (pGame->m_cItemOrder[j] == -1) {
-						pGame->m_cItemOrder[j] = i;
+				for (j = 0; j < hb::shared::limits::MaxItems; j++)
+					if (game->m_item_order[j] == -1) {
+						game->m_item_order[j] = i;
 						return;
 					}
 				return;
 			}
 	}
 
-	void HandleItemLifeSpanEnd(CGame* pGame, char* pData)
+	void HandleItemObtainedBulk(CGame* game, char* data)
 	{
-		short sEquipPos, sItemIndex;
-		char cTxt[120];
+		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyItemObtained>(
+			data, sizeof(hb::net::PacketNotifyItemObtained));
+		if (!pkt) return;
+
+		char name[hb::shared::limits::ItemNameLen]{};
+		memcpy(name, pkt->name, sizeof(pkt->name));
+
+		int total_count = pkt->count;
+		short item_id = pkt->item_id;
+		uint16_t cur_life_span = pkt->cur_lifespan;
+		uint16_t max_life_span = pkt->max_lifespan;
+		uint16_t weight = pkt->weight;
+		short sprite = static_cast<short>(pkt->sprite);
+		short sprite_frame = static_cast<short>(pkt->sprite_frame);
+		char item_color = static_cast<char>(pkt->item_color);
+		short special_ev2 = static_cast<short>(pkt->spec_value2);
+		uint32_t attribute = pkt->attribute;
+
+		// One chat message for the entire batch
+		std::string txt;
+		if (total_count == 1) txt = std::format(NOTIFYMSG_ITEMOBTAINED2, name);
+		else txt = std::format(NOTIFYMSG_ITEMOBTAINED1, total_count, name);
+		game->add_event_list(txt.c_str(), 10);
+		game->play_game_sound('E', 20, 0);
+
+		// Create individual items in separate slots (no Consume/Arrow merge)
+		short nX = 40, nY = 30;
+		for (int i = 0; i < hb::shared::limits::MaxItems; i++)
+		{
+			if ((game->m_item_list[i] != 0) && (game->m_item_list[i]->m_id_num == item_id))
+			{
+				nX = game->m_item_list[i]->m_x;
+				nY = game->m_item_list[i]->m_y;
+				break;
+			}
+		}
+
+		int created = 0;
+		for (int n = 0; n < total_count; n++)
+		{
+			for (int i = 0; i < hb::shared::limits::MaxItems; i++)
+			{
+				if (game->m_item_list[i] == 0)
+				{
+					game->m_item_list[i] = std::make_unique<CItem>();
+					game->m_item_list[i]->m_id_num = item_id;
+					game->m_item_list[i]->m_count = 1;
+					game->m_item_list[i]->m_x = nX;
+					game->m_item_list[i]->m_y = nY;
+					game->send_command(MsgId::RequestSetItemPos, 0, i, nX, nY, 0, 0);
+					game->m_is_item_disabled[i] = false;
+					game->m_is_item_equipped[i] = false;
+					game->m_item_list[i]->m_cur_life_span = cur_life_span;
+					game->m_item_list[i]->m_max_life_span = max_life_span;
+					game->m_item_list[i]->m_weight = weight;
+					game->m_item_list[i]->m_item_color = item_color;
+					game->m_item_list[i]->m_item_special_effect_value2 = special_ev2;
+					game->m_item_list[i]->m_attribute = attribute;
+
+					for (int j = 0; j < hb::shared::limits::MaxItems; j++)
+					{
+						if (game->m_item_order[j] == -1)
+						{
+							game->m_item_order[j] = i;
+							break;
+						}
+					}
+					created++;
+					break;
+				}
+			}
+		}
+
+		if (created > 0)
+			build_item_manager::get().update_available_recipes();
+	}
+
+	void HandleItemLifeSpanEnd(CGame* game, char* data)
+	{
+		short equip_pos, item_index;
+		std::string txt;
 
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyItemLifeSpanEnd>(
-			pData, sizeof(hb::net::PacketNotifyItemLifeSpanEnd));
+			data, sizeof(hb::net::PacketNotifyItemLifeSpanEnd));
 		if (!pkt) return;
-		sEquipPos = static_cast<short>(pkt->equip_pos);
-		sItemIndex = static_cast<short>(pkt->item_index);
+		equip_pos = static_cast<short>(pkt->equip_pos);
+		item_index = static_cast<short>(pkt->item_index);
+		if (item_index < 0 || item_index >= hb::shared::limits::MaxItems) return;
+		if (!game->m_item_list[item_index]) return;
 
-		char cStr1[64], cStr2[64], cStr3[64];
-		pGame->GetItemName(pGame->m_pItemList[sItemIndex], cStr1, cStr2, cStr3);
-		wsprintf(cTxt, NOTIFYMSG_ITEMLIFE_SPANEND1, cStr1);
-		pGame->AddEventList(cTxt, 10);
-		pGame->m_sItemEquipmentStatus[pGame->m_pItemList[sItemIndex]->m_cEquipPos] = -1;
-		pGame->m_bIsItemEquipped[sItemIndex] = false;
-		pGame->m_pItemList[sItemIndex]->m_wCurLifeSpan = 0;
+		auto itemInfo = item_name_formatter::get().format(game->m_item_list[item_index].get());
+		txt = std::format(NOTIFYMSG_ITEMLIFE_SPANEND1, itemInfo.name.c_str());
+		game->add_event_list(txt.c_str(), 10);
+		game->m_item_equipment_status[game->m_item_list[item_index]->m_equip_pos] = -1;
+		game->m_is_item_equipped[item_index] = false;
+		game->m_item_list[item_index]->m_cur_life_span = 0;
 
-		pGame->PlaySound('E', 10, 0);
+		game->play_game_sound('E', 10, 0);
 	}
 
-	void HandleItemReleased(CGame* pGame, char* pData)
+	void HandleItemReleased(CGame* game, char* data)
 	{
-		short sEquipPos, sItemIndex;
-		char cTxt[120];
+		short equip_pos, item_index;
+		std::string txt;
 
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyItemReleased>(
-			pData, sizeof(hb::net::PacketNotifyItemReleased));
+			data, sizeof(hb::net::PacketNotifyItemReleased));
 		if (!pkt) return;
-		sEquipPos = static_cast<short>(pkt->equip_pos);
-		sItemIndex = static_cast<short>(pkt->item_index);
+		equip_pos = static_cast<short>(pkt->equip_pos);
+		item_index = static_cast<short>(pkt->item_index);
+		if (item_index < 0 || item_index >= hb::shared::limits::MaxItems) return;
+		if (!game->m_item_list[item_index]) return;
 
-		char cStr1[64], cStr2[64], cStr3[64];
-		pGame->GetItemName(pGame->m_pItemList[sItemIndex], cStr1, cStr2, cStr3);
-		wsprintf(cTxt, ITEM_EQUIPMENT_RELEASED, cStr1);
-		pGame->AddEventList(cTxt, 10);
-		pGame->m_bIsItemEquipped[sItemIndex] = false;
-		pGame->m_sItemEquipmentStatus[pGame->m_pItemList[sItemIndex]->m_cEquipPos] = -1;
+		auto itemInfo2 = item_name_formatter::get().format(game->m_item_list[item_index].get());
+		txt = std::format(ITEM_EQUIPMENT_RELEASED, itemInfo2.name.c_str());
+		game->add_event_list(txt.c_str(), 10);
+		game->m_is_item_equipped[item_index] = false;
+		game->m_item_equipment_status[game->m_item_list[item_index]->m_equip_pos] = -1;
 
-		if (memcmp(pGame->m_pItemList[sItemIndex]->m_cName, "AngelicPendant", 14) == 0) 
-			pGame->PlaySound('E', 53, 0);
-		else 
-			pGame->PlaySound('E', 29, 0);
-	}
-
-	void HandleSetItemCount(CGame* pGame, char* pData)
-	{
-		short  sItemIndex;
-		uint32_t dwCount;
-		bool   bIsItemUseResponse;
-		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifySetItemCount>(
-			pData, sizeof(hb::net::PacketNotifySetItemCount));
-		if (!pkt) return;
-		sItemIndex = static_cast<short>(pkt->item_index);
-		dwCount = pkt->count;
-		bIsItemUseResponse = (pkt->notify != 0);
-		if (pGame->m_pItemList[sItemIndex] != 0)
 		{
-			pGame->m_pItemList[sItemIndex]->m_dwCount = dwCount;
-			if (bIsItemUseResponse == true) pGame->m_bIsItemDisabled[sItemIndex] = false;
+			short id = game->m_item_list[item_index]->m_id_num;
+			if (id == hb::shared::item::ItemId::AngelicPandentSTR || id == hb::shared::item::ItemId::AngelicPandentDEX ||
+				id == hb::shared::item::ItemId::AngelicPandentINT || id == hb::shared::item::ItemId::AngelicPandentMAG)
+				game->play_game_sound('E', 53, 0);
+			else
+				game->play_game_sound('E', 29, 0);
 		}
 	}
 
-	void HandleItemDepleted_EraseItem(CGame* pGame, char* pData)
+	void HandleSetItemCount(CGame* game, char* data)
 	{
-		short  sItemIndex;
-		bool   bIsUseItemResult;
-		char   cTxt[120];
+		short  item_index;
+		uint32_t count;
+		bool   is_item_use_response;
+		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifySetItemCount>(
+			data, sizeof(hb::net::PacketNotifySetItemCount));
+		if (!pkt) return;
+		item_index = static_cast<short>(pkt->item_index);
+		if (item_index < 0 || item_index >= hb::shared::limits::MaxItems) return;
+		count = pkt->count;
+		is_item_use_response = (pkt->notify != 0);
+		if (game->m_item_list[item_index] != 0)
+		{
+			game->m_item_list[item_index]->m_count = count;
+			if (is_item_use_response == true) game->m_is_item_disabled[item_index] = false;
+		}
+	}
+
+	void HandleItemDepleted_EraseItem(CGame* game, char* data)
+	{
+		short  item_index;
+		bool   is_use_item_result;
+		std::string txt;
 
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyItemDepletedEraseItem>(
-			pData, sizeof(hb::net::PacketNotifyItemDepletedEraseItem));
+			data, sizeof(hb::net::PacketNotifyItemDepletedEraseItem));
 		if (!pkt) return;
-		sItemIndex = static_cast<short>(pkt->item_index);
-		bIsUseItemResult = (pkt->use_result != 0);
+		item_index = static_cast<short>(pkt->item_index);
+		if (item_index < 0 || item_index >= hb::shared::limits::MaxItems) return;
+		if (!game->m_item_list[item_index]) return;
+		is_use_item_result = (pkt->use_result != 0);
 
-		std::memset(cTxt, 0, sizeof(cTxt));
+		auto itemInfo3 = item_name_formatter::get().format(game->m_item_list[item_index].get());
 
-		char cStr1[64], cStr2[64], cStr3[64];
-		pGame->GetItemName(pGame->m_pItemList[sItemIndex], cStr1, cStr2, cStr3);
+		CItem* cfg = game->get_item_config(game->m_item_list[item_index]->m_id_num);
 
-		if (pGame->m_bIsItemEquipped[sItemIndex] == true) {
-			wsprintf(cTxt, ITEM_EQUIPMENT_RELEASED, cStr1);
-			pGame->AddEventList(cTxt, 10);
+		if (game->m_is_item_equipped[item_index] == true) {
+			txt = std::format(ITEM_EQUIPMENT_RELEASED, itemInfo3.name.c_str());
+			game->add_event_list(txt.c_str(), 10);
 
-			pGame->m_sItemEquipmentStatus[pGame->m_pItemList[sItemIndex]->m_cEquipPos] = -1;
-			pGame->m_bIsItemEquipped[sItemIndex] = false;
+			if (cfg) game->m_item_equipment_status[cfg->m_equip_pos] = -1;
+			game->m_is_item_equipped[item_index] = false;
 		}
 
-		std::memset(cTxt, 0, sizeof(cTxt));
-		if ((pGame->m_pItemList[sItemIndex]->m_cItemType == DEF_ITEMTYPE_CONSUME) ||
-			(pGame->m_pItemList[sItemIndex]->m_cItemType == DEF_ITEMTYPE_ARROW)) {
-			wsprintf(cTxt, NOTIFYMSG_ITEMDEPlETED_ERASEITEM2, cStr1);
+		if (cfg && ((cfg->get_item_type() == ItemType::Consume) ||
+			(cfg->get_item_type() == ItemType::Arrow))) {
+			txt = std::format(NOTIFYMSG_ITEMDEPlETED_ERASEITEM2, itemInfo3.name.c_str());
 		}
-		else {
-			if (pGame->m_pItemList[sItemIndex]->m_cItemType == DEF_ITEMTYPE_USE_DEPLETE) {
-				if (bIsUseItemResult == true) {
-					wsprintf(cTxt, NOTIFYMSG_ITEMDEPlETED_ERASEITEM3, cStr1);
+		else if (cfg) {
+			if (cfg->get_item_type() == ItemType::UseDeplete) {
+				if (is_use_item_result == true) {
+					txt = std::format(NOTIFYMSG_ITEMDEPlETED_ERASEITEM3, itemInfo3.name.c_str());
 				}
 			}
-			else if (pGame->m_pItemList[sItemIndex]->m_cItemType == DEF_ITEMTYPE_EAT) {
-				if (bIsUseItemResult == true) {
-					wsprintf(cTxt, NOTIFYMSG_ITEMDEPlETED_ERASEITEM4, cStr1);
-					if ((pGame->m_sPlayerType >= 1) && (pGame->m_sPlayerType <= 3))
-						pGame->PlaySound('C', 19, 0);
-					if ((pGame->m_sPlayerType >= 4) && (pGame->m_sPlayerType <= 6))
-						pGame->PlaySound('C', 20, 0);
+			else if (cfg->get_item_type() == ItemType::Eat) {
+				if (is_use_item_result == true) {
+					txt = std::format(NOTIFYMSG_ITEMDEPlETED_ERASEITEM4, itemInfo3.name.c_str());
+					if ((game->m_player->m_player_type >= 1) && (game->m_player->m_player_type <= 3))
+						game->play_game_sound('C', 19, 0);
+					if ((game->m_player->m_player_type >= 4) && (game->m_player->m_player_type <= 6))
+						game->play_game_sound('C', 20, 0);
 				}
 			}
-			else if (pGame->m_pItemList[sItemIndex]->m_cItemType == DEF_ITEMTYPE_USE_DEPLETE_DEST) {
-				if (bIsUseItemResult == true) {
-					wsprintf(cTxt, NOTIFYMSG_ITEMDEPlETED_ERASEITEM3, cStr1);
+			else if (cfg->get_item_type() == ItemType::UseDepleteDest) {
+				if (is_use_item_result == true) {
+					txt = std::format(NOTIFYMSG_ITEMDEPlETED_ERASEITEM3, itemInfo3.name.c_str());
 				}
 			}
 			else {
-				if (bIsUseItemResult == true) {
-					wsprintf(cTxt, NOTIFYMSG_ITEMDEPlETED_ERASEITEM6, cStr1);
-					pGame->PlaySound('E', 10, 0);
+				if (is_use_item_result == true) {
+					txt = std::format(NOTIFYMSG_ITEMDEPlETED_ERASEITEM6, itemInfo3.name.c_str());
+					game->play_game_sound('E', 10, 0);
 				}
 			}
 		}
-		pGame->AddEventList(cTxt, 10);
+		if (!txt.empty()) game->add_event_list(txt.c_str(), 10);
 
-		if (bIsUseItemResult == true) pGame->m_bItemUsingStatus = false;
-		pGame->EraseItem((char)sItemIndex);
-		pGame->_bCheckBuildItemStatus();
+		if (is_use_item_result == true) game->m_item_using_status = false;
+		inventory_manager::get().erase_item(static_cast<char>(item_index));
+		build_item_manager::get().update_available_recipes();
 	}
 
-	void HandleDropItemFin_EraseItem(CGame* pGame, char* pData)
+	void HandleDropItemFin_EraseItem(CGame* game, char* data)
 	{
-		int iAmount;
-		short  sItemIndex;
-		char   cTxt[120];
+		int amount;
+		short  item_index;
+		std::string txt;
 
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyDropItemFinEraseItem>(
-			pData, sizeof(hb::net::PacketNotifyDropItemFinEraseItem));
+			data, sizeof(hb::net::PacketNotifyDropItemFinEraseItem));
 		if (!pkt) return;
-		sItemIndex = static_cast<short>(pkt->item_index);
-		iAmount = static_cast<int>(pkt->amount);
+		item_index = static_cast<short>(pkt->item_index);
+		if (item_index < 0 || item_index >= hb::shared::limits::MaxItems) return;
+		if (!game->m_item_list[item_index]) return;
+		amount = static_cast<int>(pkt->amount);
 
-		char cStr1[64], cStr2[64], cStr3[64];
-		pGame->GetItemName(pGame->m_pItemList[sItemIndex], cStr1, cStr2, cStr3);
+		auto itemInfo4 = item_name_formatter::get().format(game->m_item_list[item_index].get());
 
-		std::memset(cTxt, 0, sizeof(cTxt));
-		if (pGame->m_bIsItemEquipped[sItemIndex] == true)
+		if (game->m_is_item_equipped[item_index] == true)
 		{
-			wsprintf(cTxt, ITEM_EQUIPMENT_RELEASED, cStr1);
-			pGame->AddEventList(cTxt, 10);
-			pGame->m_sItemEquipmentStatus[pGame->m_pItemList[sItemIndex]->m_cEquipPos] = -1;
-			pGame->m_bIsItemEquipped[sItemIndex] = false;
+			txt = std::format(ITEM_EQUIPMENT_RELEASED, itemInfo4.name.c_str());
+			game->add_event_list(txt.c_str(), 10);
+			game->m_item_equipment_status[game->m_item_list[item_index]->m_equip_pos] = -1;
+			game->m_is_item_equipped[item_index] = false;
 		}
-		if (pGame->m_iHP > 0)
+		if (game->m_player->m_hp > 0)
 		{
-			wsprintf(cTxt, NOTIFYMSG_THROW_ITEM2, cStr1);
+			txt = std::format(NOTIFYMSG_THROW_ITEM2, itemInfo4.name.c_str());
 		}
 		else
 		{
-			if (iAmount < 2)
-				wsprintf(cTxt, NOTIFYMSG_DROPITEMFIN_ERASEITEM3, cStr1);
+			if (amount < 2)
+				txt = std::format(NOTIFYMSG_DROPITEMFIN_ERASEITEM3, itemInfo4.name.c_str());
 			else
 			{
-				wsprintf(cTxt, NOTIFYMSG_DROPITEMFIN_ERASEITEM5, cStr1);
+				txt = std::format(NOTIFYMSG_DROPITEMFIN_ERASEITEM5, itemInfo4.name.c_str());
 			}
 		}
-		pGame->AddEventList(cTxt, 10);
-		pGame->EraseItem((char)sItemIndex);
-		pGame->_bCheckBuildItemStatus();
+		game->add_event_list(txt.c_str(), 10);
+		inventory_manager::get().erase_item(static_cast<char>(item_index));
+		build_item_manager::get().update_available_recipes();
 	}
 
-	void HandleGiveItemFin_EraseItem(CGame* pGame, char* pData)
+	void HandleGiveItemFin_EraseItem(CGame* game, char* data)
 	{
-		int iAmount;
-		short  sItemIndex;
-		char cName[21], cTxt[250];
+		int amount;
+		short  item_index;
+		std::string txt;
+
+		char name[hb::shared::limits::ItemNameLen]{};
 
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyGiveItemFinEraseItem>(
-			pData, sizeof(hb::net::PacketNotifyGiveItemFinEraseItem));
+			data, sizeof(hb::net::PacketNotifyGiveItemFinEraseItem));
 		if (!pkt) return;
-		sItemIndex = static_cast<short>(pkt->item_index);
-		iAmount = static_cast<int>(pkt->amount);
+		item_index = static_cast<short>(pkt->item_index);
+		if (item_index < 0 || item_index >= hb::shared::limits::MaxItems) return;
+		if (!game->m_item_list[item_index]) return;
+		amount = static_cast<int>(pkt->amount);
 
-		std::memset(cName, 0, sizeof(cName));
-		memcpy(cName, pkt->name, 20);
+		memcpy(name, pkt->name, sizeof(pkt->name));
 
-		char cStr1[64], cStr2[64], cStr3[64];
-		strcpy(cStr1, pGame->m_pItemList[sItemIndex]->m_cName);
-		cStr2[0] = 0;
-		cStr3[0] = 0;
+		CItem* cfg = game->get_item_config(game->m_item_list[item_index]->m_id_num);
+		const char* item_name = cfg ? cfg->m_name : "Unknown";
 
-		if (pGame->m_bIsItemEquipped[sItemIndex] == true) {
-			wsprintf(cTxt, ITEM_EQUIPMENT_RELEASED, cStr1);
-			pGame->AddEventList(cTxt, 10);
+		if (game->m_is_item_equipped[item_index] == true) {
+			txt = std::format(ITEM_EQUIPMENT_RELEASED, item_name);
+			game->add_event_list(txt.c_str(), 10);
 
-			pGame->m_sItemEquipmentStatus[pGame->m_pItemList[sItemIndex]->m_cEquipPos] = -1;
-			pGame->m_bIsItemEquipped[sItemIndex] = false;
+			if (cfg) game->m_item_equipment_status[cfg->m_equip_pos] = -1;
+			game->m_is_item_equipped[item_index] = false;
 		}
-		if (cName[0] == 0) wsprintf(cTxt, NOTIFYMSG_GIVEITEMFIN_ERASEITEM2, iAmount, cStr1);
+		if (name[0] == 0) txt = std::format(NOTIFYMSG_GIVEITEMFIN_ERASEITEM2, amount, item_name);
 		else {
-			if (strcmp(cName, "Howard") == 0)
-				wsprintf(cTxt, NOTIFYMSG_GIVEITEMFIN_ERASEITEM3, iAmount, cStr1);
-			else if (strcmp(cName, "William") == 0)
-				wsprintf(cTxt, NOTIFYMSG_GIVEITEMFIN_ERASEITEM4, iAmount, cStr1);
-			else if (strcmp(cName, "Kennedy") == 0)
-				wsprintf(cTxt, NOTIFYMSG_GIVEITEMFIN_ERASEITEM5, iAmount, cStr1);
-			else if (strcmp(cName, "Tom") == 0)
-				wsprintf(cTxt, NOTIFYMSG_GIVEITEMFIN_ERASEITEM7, iAmount, cStr1);
-			else wsprintf(cTxt, NOTIFYMSG_GIVEITEMFIN_ERASEITEM8, iAmount, cStr1, cName);
+			if (strcmp(name, "Howard") == 0)
+				txt = std::format(NOTIFYMSG_GIVEITEMFIN_ERASEITEM3, amount, item_name);
+			else if (strcmp(name, "William") == 0)
+				txt = std::format(NOTIFYMSG_GIVEITEMFIN_ERASEITEM4, amount, item_name);
+			else if (strcmp(name, "Kennedy") == 0)
+				txt = std::format(NOTIFYMSG_GIVEITEMFIN_ERASEITEM5, amount, item_name);
+			else if (strcmp(name, "Tom") == 0)
+				txt = std::format(NOTIFYMSG_GIVEITEMFIN_ERASEITEM7, amount, item_name);
+			else txt = std::format(NOTIFYMSG_GIVEITEMFIN_ERASEITEM8, amount, item_name, name);
 		}
-		pGame->AddEventList(cTxt, 10);
-		pGame->EraseItem((char)sItemIndex);
-		pGame->_bCheckBuildItemStatus();
+		game->add_event_list(txt.c_str(), 10);
+		inventory_manager::get().erase_item(static_cast<char>(item_index));
+		build_item_manager::get().update_available_recipes();
 	}
 
-	void HandleItemRepaired(CGame* pGame, char* pData)
+	void HandleItemRepaired(CGame* game, char* data)
 	{
-		char cTxt[120];
-		DWORD dwItemID, dwLife;
+		std::string txt;
+		uint32_t item_id, life;
 
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyItemRepaired>(
-			pData, sizeof(hb::net::PacketNotifyItemRepaired));
+			data, sizeof(hb::net::PacketNotifyItemRepaired));
 		if (!pkt) return;
-		dwItemID = pkt->item_id;
-		dwLife = pkt->life;
+		item_id = pkt->item_id;
+		if (item_id >= static_cast<uint32_t>(hb::shared::limits::MaxItems)) return;
+		if (!game->m_item_list[item_id]) return;
+		life = pkt->life;
 
-		pGame->m_pItemList[dwItemID]->m_wCurLifeSpan = (WORD)dwLife;
-		pGame->m_bIsItemDisabled[dwItemID] = false;
-		char cStr1[64], cStr2[64], cStr3[64];
-		pGame->GetItemName(pGame->m_pItemList[dwItemID], cStr1, cStr2, cStr3);
+		game->m_item_list[item_id]->m_cur_life_span = static_cast<uint16_t>(life);
+		game->m_is_item_disabled[item_id] = false;
+		auto itemInfo5 = item_name_formatter::get().format(game->m_item_list[item_id].get());
 
-		wsprintf(cTxt, NOTIFYMSG_ITEMREPAIRED1, cStr1);
+		txt = std::format(NOTIFYMSG_ITEMREPAIRED1, itemInfo5.name.c_str());
 
-		pGame->AddEventList(cTxt, 10);
+		game->add_event_list(txt.c_str(), 10);
 	}
 
-	void HandleRepairItemPrice(CGame* pGame, char* pData)
+	void HandleRepairItemPrice(CGame* game, char* data)
 	{
-		char cName[21];
-		DWORD wV1, wV2, wV3, wV4;
+		char name[hb::shared::limits::ItemNameLen]{};
+		uint32_t v1, v2, v3, v4;
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyRepairItemPrice>(
-			pData, sizeof(hb::net::PacketNotifyRepairItemPrice));
+			data, sizeof(hb::net::PacketNotifyRepairItemPrice));
 		if (!pkt) return;
-		wV1 = pkt->v1;
-		wV2 = pkt->v2;
-		wV3 = pkt->v3;
-		wV4 = pkt->v4;
-		std::memset(cName, 0, sizeof(cName));
-		memcpy(cName, pkt->item_name, 20);
-		pGame->m_dialogBoxManager.EnableDialogBox(DialogBoxId::SellOrRepair, 2, wV1, wV2);
-		pGame->m_dialogBoxManager.Info(DialogBoxId::SellOrRepair).sV3 = wV3;
+		v1 = pkt->v1;
+		v2 = pkt->v2;
+		v3 = pkt->v3;
+		v4 = pkt->v4;
+		memcpy(name, pkt->item_name, sizeof(pkt->item_name));
+		game->m_dialog_box_manager.enable_dialog_box(DialogBoxId::SellOrRepair, 2, v1, v2);
+		game->m_dialog_box_manager.Info(DialogBoxId::SellOrRepair).m_v3 = v3;
 	}
 
-	void HandleRepairAllPrices(CGame* pGame, char* pData)
+	void HandleRepairAllPrices(CGame* game, char* data)
 	{
 		int i;
 
-		pGame->totalPrice = 0;
+		game->totalPrice = 0;
 		const auto* header = hb::net::PacketCast<hb::net::PacketNotifyRepairAllPricesHeader>(
-			pData, sizeof(hb::net::PacketNotifyRepairAllPricesHeader));
+			data, sizeof(hb::net::PacketNotifyRepairAllPricesHeader));
 		if (!header) return;
 		const auto* entries = reinterpret_cast<const hb::net::PacketNotifyRepairAllPricesEntry*>(
-			pData + sizeof(hb::net::PacketNotifyRepairAllPricesHeader));
-		pGame->totalItemRepair = header->total;
+			data + sizeof(hb::net::PacketNotifyRepairAllPricesHeader));
+		game->totalItemRepair = (std::min)(static_cast<int>(header->total), hb::shared::limits::MaxItems);
 
-		for (i = 0; i < pGame->totalItemRepair; i++)
+		for (i = 0; i < game->totalItemRepair; i++)
 		{
-			pGame->m_stRepairAll[i].index = entries[i].index;
-			pGame->m_stRepairAll[i].price = entries[i].price;
+			game->m_repair_all[i].index = entries[i].index;
+			game->m_repair_all[i].price = entries[i].price;
 
-			pGame->totalPrice += pGame->m_stRepairAll[i].price;
+			game->totalPrice += game->m_repair_all[i].price;
 		}
-		if (pGame->totalItemRepair == 0)
-			pGame->m_dialogBoxManager.EnableDialogBox(DialogBoxId::RepairAll, 1, 0, 0);
+		if (game->totalItemRepair == 0)
+			game->m_dialog_box_manager.enable_dialog_box(DialogBoxId::RepairAll, 1, 0, 0);
 		else
-			pGame->m_dialogBoxManager.EnableDialogBox(DialogBoxId::RepairAll, 0, 0, 0);
+			game->m_dialog_box_manager.enable_dialog_box(DialogBoxId::RepairAll, 0, 0, 0);
 	}
 
-	void HandleSellItemPrice(CGame* pGame, char* pData)
+	void HandleSellItemPrice(CGame* game, char* data)
 	{
-		char cName[21];
-		DWORD wV1, wV2, wV3, wV4;
+		char name[hb::shared::limits::ItemNameLen]{};
+		uint32_t v1, v2, v3, v4;
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifySellItemPrice>(
-			pData, sizeof(hb::net::PacketNotifySellItemPrice));
+			data, sizeof(hb::net::PacketNotifySellItemPrice));
 		if (!pkt) return;
-		wV1 = pkt->v1;
-		wV2 = pkt->v2;
-		wV3 = pkt->v3;
-		wV4 = pkt->v4;
-		std::memset(cName, 0, sizeof(cName));
-		memcpy(cName, pkt->item_name, 20);
-		pGame->m_dialogBoxManager.EnableDialogBox(DialogBoxId::SellOrRepair, 1, wV1, wV2);
-		pGame->m_dialogBoxManager.Info(DialogBoxId::SellOrRepair).sV3 = wV3;
-		pGame->m_dialogBoxManager.Info(DialogBoxId::SellOrRepair).sV4 = wV4;
+		v1 = pkt->v1;
+		v2 = pkt->v2;
+		v3 = pkt->v3;
+		v4 = pkt->v4;
+		memcpy(name, pkt->item_name, sizeof(pkt->item_name));
+		game->m_dialog_box_manager.enable_dialog_box(DialogBoxId::SellOrRepair, 1, v1, v2);
+		game->m_dialog_box_manager.Info(DialogBoxId::SellOrRepair).m_v3 = v3;
+		game->m_dialog_box_manager.Info(DialogBoxId::SellOrRepair).m_v4 = v4;
 	}
 
-	void HandleCannotRepairItem(CGame* pGame, char* pData)
+	void HandleCannotRepairItem(CGame* game, char* data)
 	{
-		char cTxt[120], cStr1[64], cStr2[64], cStr3[64];
+		std::string txt;
+
 
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyCannotRepairItem>(
-			pData, sizeof(hb::net::PacketNotifyCannotRepairItem));
+			data, sizeof(hb::net::PacketNotifyCannotRepairItem));
 		if (!pkt) return;
-		const auto wV1 = pkt->item_index;
-		const auto wV2 = pkt->reason;
-		std::memset(cStr1, 0, sizeof(cStr1));
-		std::memset(cStr2, 0, sizeof(cStr2));
-		std::memset(cStr3, 0, sizeof(cStr3));
-		pGame->GetItemName(pGame->m_pItemList[wV1], cStr1, cStr2, cStr3);
+		const auto v1 = pkt->item_index;
+		const auto v2 = pkt->reason;
+		if (v1 < 0 || v1 >= hb::shared::limits::MaxItems) return;
+		if (!game->m_item_list[v1]) { game->m_is_item_disabled[v1] = false; return; }
+		auto itemInfo6 = item_name_formatter::get().format(game->m_item_list[v1].get());
 
-		switch (wV2) {
+		switch (v2) {
 		case 1:
-			wsprintf(cTxt, NOTIFYMSG_CANNOT_REPAIR_ITEM1, cStr1);
-			pGame->AddEventList(cTxt, 10);
+			txt = std::format(NOTIFYMSG_CANNOT_REPAIR_ITEM1, itemInfo6.name.c_str());
+			game->add_event_list(txt.c_str(), 10);
 			break;
 		case 2:
-			wsprintf(cTxt, NOTIFYMSG_CANNOT_REPAIR_ITEM2, cStr1);
-			pGame->AddEventList(cTxt, 10);
+			txt = std::format(NOTIFYMSG_CANNOT_REPAIR_ITEM2, itemInfo6.name.c_str());
+			game->add_event_list(txt.c_str(), 10);
 			break;
 		}
-		pGame->m_bIsItemDisabled[wV1] = false;
+		game->m_is_item_disabled[v1] = false;
 	}
 
-	void HandleCannotSellItem(CGame* pGame, char* pData)
+	void HandleCannotSellItem(CGame* game, char* data)
 	{
-		char cTxt[120], cStr1[64], cStr2[64], cStr3[64];
+		std::string txt;
+
 
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyCannotSellItem>(
-			pData, sizeof(hb::net::PacketNotifyCannotSellItem));
+			data, sizeof(hb::net::PacketNotifyCannotSellItem));
 		if (!pkt) return;
-		const auto wV1 = pkt->item_index;
-		const auto wV2 = pkt->reason;
+		const auto v1 = pkt->item_index;
+		const auto v2 = pkt->reason;
+		if (v1 < 0 || v1 >= hb::shared::limits::MaxItems) return;
+		if (!game->m_item_list[v1]) { game->m_is_item_disabled[v1] = false; return; }
 
-		std::memset(cStr1, 0, sizeof(cStr1));
-		std::memset(cStr2, 0, sizeof(cStr2));
-		std::memset(cStr3, 0, sizeof(cStr3));
-		pGame->GetItemName(pGame->m_pItemList[wV1], cStr1, cStr2, cStr3);
+		auto itemInfo7 = item_name_formatter::get().format(game->m_item_list[v1].get());
 
-		switch (wV2) {
+		switch (v2) {
 		case 1:
-			wsprintf(cTxt, NOTIFYMSG_CANNOT_SELL_ITEM1, cStr1);
-			pGame->AddEventList(cTxt, 10);
+			txt = std::format(NOTIFYMSG_CANNOT_SELL_ITEM1, itemInfo7.name.c_str());
+			game->add_event_list(txt.c_str(), 10);
 			break;
 
 		case 2:
-			wsprintf(cTxt, NOTIFYMSG_CANNOT_SELL_ITEM2, cStr1);
-			pGame->AddEventList(cTxt, 10);
+			txt = std::format(NOTIFYMSG_CANNOT_SELL_ITEM2, itemInfo7.name.c_str());
+			game->add_event_list(txt.c_str(), 10);
 			break;
 
 		case 3:
-			wsprintf(cTxt, NOTIFYMSG_CANNOT_SELL_ITEM3, cStr1);
-			pGame->AddEventList(cTxt, 10);
-			pGame->AddEventList(NOTIFYMSG_CANNOT_SELL_ITEM4, 10);
+			txt = std::format(NOTIFYMSG_CANNOT_SELL_ITEM3, itemInfo7.name.c_str());
+			game->add_event_list(txt.c_str(), 10);
+			game->add_event_list(NOTIFYMSG_CANNOT_SELL_ITEM4, 10);
 			break;
 
 		case 4:
-			pGame->AddEventList(NOTIFYMSG_CANNOT_SELL_ITEM5, 10);
-			pGame->AddEventList(NOTIFYMSG_CANNOT_SELL_ITEM6, 10);
+			game->add_event_list(NOTIFYMSG_CANNOT_SELL_ITEM5, 10);
+			game->add_event_list(NOTIFYMSG_CANNOT_SELL_ITEM6, 10);
 			break;
 		}
-		pGame->m_bIsItemDisabled[wV1] = false;
+		game->m_is_item_disabled[v1] = false;
 	}
 
-	void HandleCannotGiveItem(CGame* pGame, char* pData)
+	void HandleCannotGiveItem(CGame* game, char* data)
 	{
-		char cName[21], cTxt[256];
+		std::string txt;
+
+		char name[hb::shared::limits::ItemNameLen]{};
 
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyCannotGiveItem>(
-			pData, sizeof(hb::net::PacketNotifyCannotGiveItem));
+			data, sizeof(hb::net::PacketNotifyCannotGiveItem));
 		if (!pkt) return;
-		const auto wItemIndex = pkt->item_index;
-		const auto iAmount = static_cast<int>(pkt->amount);
-		std::memset(cName, 0, sizeof(cName));
-		memcpy(cName, pkt->name, 20);
+		const auto item_index = pkt->item_index;
+		if (item_index < 0 || item_index >= hb::shared::limits::MaxItems) return;
+		if (!game->m_item_list[item_index]) return;
+		const auto amount = static_cast<int>(pkt->amount);
+		memcpy(name, pkt->name, sizeof(pkt->name));
 
-		char cStr1[64], cStr2[64], cStr3[64];
-		pGame->GetItemName(pGame->m_pItemList[wItemIndex], cStr1, cStr2, cStr3);
-		if (iAmount == 1) wsprintf(cTxt, NOTIFYMSG_CANNOT_GIVE_ITEM2, cStr1, cName);
-		else wsprintf(cTxt, NOTIFYMSG_CANNOT_GIVE_ITEM1, iAmount, cStr1, cName);
+		auto itemInfo8 = item_name_formatter::get().format(game->m_item_list[item_index].get());
+		if (amount == 1) txt = std::format(NOTIFYMSG_CANNOT_GIVE_ITEM2, itemInfo8.name.c_str(), name);
+		else txt = std::format(NOTIFYMSG_CANNOT_GIVE_ITEM1, amount, itemInfo8.name.c_str(), name);
 
-		pGame->AddEventList(cTxt, 10);
+		game->add_event_list(txt.c_str(), 10);
 	}
 
-	void HandleItemColorChange(CGame* pGame, char* pData)
+	void HandleItemColorChange(CGame* game, char* data)
 	{
-		short sItemIndex, sItemColor;
-		char cTxt[120];
+		short item_index, item_color;
+		std::string txt;
 
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyItemColorChange>(
-			pData, sizeof(hb::net::PacketNotifyItemColorChange));
+			data, sizeof(hb::net::PacketNotifyItemColorChange));
 		if (!pkt) return;
-		sItemIndex = static_cast<short>(pkt->item_index);
-		sItemColor = static_cast<short>(pkt->item_color);
+		item_index = static_cast<short>(pkt->item_index);
+		if (item_index < 0 || item_index >= hb::shared::limits::MaxItems) return;
+		item_color = static_cast<short>(pkt->item_color);
 
-		if (pGame->m_pItemList[sItemIndex] != 0) {
-			char cStr1[64], cStr2[64], cStr3[64];
-			pGame->GetItemName(pGame->m_pItemList[sItemIndex], cStr1, cStr2, cStr3);
-			if (sItemColor != -1) {
-				pGame->m_pItemList[sItemIndex]->m_cItemColor = (char)sItemColor;
-				wsprintf(cTxt, NOTIFYMSG_ITEMCOLOR_CHANGE1, cStr1);
-				pGame->AddEventList(cTxt, 10);
+		if (game->m_item_list[item_index] != 0) {
+			auto itemInfo9 = item_name_formatter::get().format(game->m_item_list[item_index].get());
+			if (item_color != -1) {
+				game->m_item_list[item_index]->m_item_color = static_cast<char>(item_color);
+				txt = std::format(NOTIFYMSG_ITEMCOLOR_CHANGE1, itemInfo9.name.c_str());
+				game->add_event_list(txt.c_str(), 10);
 			}
 			else {
-				wsprintf(cTxt, NOTIFYMSG_ITEMCOLOR_CHANGE2, cStr1);
-				pGame->AddEventList(cTxt, 10);
+				txt = std::format(NOTIFYMSG_ITEMCOLOR_CHANGE2, itemInfo9.name.c_str());
+				game->add_event_list(txt.c_str(), 10);
 			}
 		}
 	}
 
-	void HandleDropItemFin_CountChanged(CGame* pGame, char* pData)
+	void HandleDropItemFin_CountChanged(CGame* game, char* data)
 	{
-		char cTxt[256];
+		std::string txt;
 
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyDropItemFinCountChanged>(
-			pData, sizeof(hb::net::PacketNotifyDropItemFinCountChanged));
+			data, sizeof(hb::net::PacketNotifyDropItemFinCountChanged));
 		if (!pkt) return;
-		const auto wItemIndex = pkt->item_index;
-		const auto iAmount = static_cast<int>(pkt->amount);
+		const auto item_index = pkt->item_index;
+		if (item_index < 0 || item_index >= hb::shared::limits::MaxItems) return;
+		if (!game->m_item_list[item_index]) return;
+		const auto amount = static_cast<int>(pkt->amount);
 
-		char cStr1[64], cStr2[64], cStr3[64];
-		strcpy(cStr1, pGame->m_pItemList[wItemIndex]->m_cName);
-		cStr2[0] = 0;
-		cStr3[0] = 0;
-		wsprintf(cTxt, NOTIFYMSG_THROW_ITEM1, iAmount, cStr1);
+		CItem* cfg = game->get_item_config(game->m_item_list[item_index]->m_id_num);
+		txt = std::format(NOTIFYMSG_THROW_ITEM1, amount, cfg ? cfg->m_name : "Unknown");
 
-		pGame->AddEventList(cTxt, 10);
+		game->add_event_list(txt.c_str(), 10);
 	}
 
-	void HandleGiveItemFin_CountChanged(CGame* pGame, char* pData)
+	void HandleGiveItemFin_CountChanged(CGame* game, char* data)
 	{
-		char cName[21], cTxt[256];
-		WORD wItemIndex;
-		int iAmount;
+		std::string txt;
+
+		char name[hb::shared::limits::ItemNameLen]{};
+		uint16_t item_index;
+		int amount;
 
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyGiveItemFinCountChanged>(
-			pData, sizeof(hb::net::PacketNotifyGiveItemFinCountChanged));
+			data, sizeof(hb::net::PacketNotifyGiveItemFinCountChanged));
 		if (!pkt) return;
-		wItemIndex = pkt->item_index;
-		iAmount = static_cast<int>(pkt->amount);
+		item_index = pkt->item_index;
+		if (item_index >= hb::shared::limits::MaxItems) return;
+		if (!game->m_item_list[item_index]) return;
+		amount = static_cast<int>(pkt->amount);
 
-		std::memset(cName, 0, sizeof(cName));
-		memcpy(cName, pkt->name, 20);
+		memcpy(name, pkt->name, sizeof(pkt->name));
 
-		char cStr1[64], cStr2[64], cStr3[64];
-		strcpy(cStr1, pGame->m_pItemList[wItemIndex]->m_cName);
-		cStr2[0] = 0;
-		cStr3[0] = 0;
-		if (iAmount == 1) wsprintf(cTxt, NOTIFYMSG_GIVEITEMFIN_COUNTCHANGED1, cStr1, cName);
-		wsprintf(cTxt, NOTIFYMSG_GIVEITEMFIN_COUNTCHANGED2, iAmount, cStr1, cName);
-		pGame->AddEventList(cTxt, 10);
+		CItem* cfg = game->get_item_config(game->m_item_list[item_index]->m_id_num);
+		if (amount == 1) txt = std::format(NOTIFYMSG_GIVEITEMFIN_COUNTCHANGED1, cfg ? cfg->m_name : "Unknown", name);
+		else txt = std::format(NOTIFYMSG_GIVEITEMFIN_COUNTCHANGED2, amount, cfg ? cfg->m_name : "Unknown", name);
+		game->add_event_list(txt.c_str(), 10);
 	}
 
-	void HandleSetExchangeItem(CGame* pGame, char* pData)
+	void HandleSetExchangeItem(CGame* game, char* data)
 	{
-		short sDir, sSprite, sSpriteFrame, sCurLife, sMaxLife, sPerformance;
-		int iAmount, i;
-		char cColor, cItemName[24], cCharName[12];
-		DWORD dwAttribute;
-		std::memset(cItemName, 0, sizeof(cItemName));
-		std::memset(cCharName, 0, sizeof(cCharName));
+		short dir, sprite, sprite_frame, cur_life, max_life, performance, item_id;
+		int amount, i;
+		char color, item_name[hb::shared::limits::ItemNameLen], char_name[12];
+		uint32_t attribute;
+		std::memset(item_name, 0, sizeof(item_name));
 
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyExchangeItem>(
-			pData, sizeof(hb::net::PacketNotifyExchangeItem));
+			data, sizeof(hb::net::PacketNotifyExchangeItem));
 		if (!pkt) return;
-		sDir = static_cast<short>(pkt->dir);
-		sSprite = pkt->sprite;
-		sSpriteFrame = pkt->sprite_frame;
-		iAmount = pkt->amount;
-		cColor = static_cast<char>(pkt->color);
-		sCurLife = pkt->cur_life;
-		sMaxLife = pkt->max_life;
-		sPerformance = pkt->performance;
-		memcpy(cItemName, pkt->item_name, 20);
-		memcpy(cCharName, pkt->char_name, 10);
-		dwAttribute = pkt->attribute;
+		dir = static_cast<short>(pkt->dir);
+		sprite = pkt->sprite;
+		sprite_frame = pkt->sprite_frame;
+		amount = pkt->amount;
+		color = static_cast<char>(pkt->color);
+		cur_life = pkt->cur_life;
+		max_life = pkt->max_life;
+		performance = pkt->performance;
+		memcpy(item_name, pkt->item_name, sizeof(pkt->item_name));
+		memcpy(char_name, pkt->char_name, sizeof(pkt->char_name));
+		attribute = pkt->attribute;
+		item_id = pkt->item_id;
 
-		if (sDir >= 1000)  // Set the item I want to exchange
+		if (dir >= 1000)  // Set the item I want to exchange
 		{
 			i = 0;
-			while (pGame->m_stDialogBoxExchangeInfo[i].sV1 != -1)
+			while (game->m_dialog_box_exchange_info[i].v1 != -1)
 			{
 				i++;
 				if (i >= 4) return; // Error situation
@@ -693,256 +773,270 @@ namespace NetworkMessageHandlers {
 		else // Set the item he proposes me.
 		{
 			i = 4;
-			while (pGame->m_stDialogBoxExchangeInfo[i].sV1 != -1)
+			while (game->m_dialog_box_exchange_info[i].v1 != -1)
 			{
 				i++;
 				if (i >= 8) return; // Error situation
 			}
 		}
-		pGame->m_stDialogBoxExchangeInfo[i].sV1 = sSprite;
-		pGame->m_stDialogBoxExchangeInfo[i].sV2 = sSpriteFrame;
-		pGame->m_stDialogBoxExchangeInfo[i].sV3 = iAmount;
-		pGame->m_stDialogBoxExchangeInfo[i].sV4 = cColor;
-		pGame->m_stDialogBoxExchangeInfo[i].sV5 = (int)sCurLife;
-		pGame->m_stDialogBoxExchangeInfo[i].sV6 = (int)sMaxLife;
-		pGame->m_stDialogBoxExchangeInfo[i].sV7 = (int)sPerformance;
-		memcpy(pGame->m_stDialogBoxExchangeInfo[i].cStr1, cItemName, 20);
-		memcpy(pGame->m_stDialogBoxExchangeInfo[i].cStr2, cCharName, 10);
-		pGame->m_stDialogBoxExchangeInfo[i].dwV1 = dwAttribute;
+		game->m_dialog_box_exchange_info[i].v1 = sprite;
+		game->m_dialog_box_exchange_info[i].v2 = sprite_frame;
+		game->m_dialog_box_exchange_info[i].v3 = amount;
+		game->m_dialog_box_exchange_info[i].v4 = color;
+		game->m_dialog_box_exchange_info[i].v5 = static_cast<int>(cur_life);
+		game->m_dialog_box_exchange_info[i].v6 = static_cast<int>(max_life);
+		game->m_dialog_box_exchange_info[i].v7 = static_cast<int>(performance);
+		game->m_dialog_box_exchange_info[i].str1.assign(item_name, strnlen(item_name, hb::shared::limits::ItemNameLen));
+		game->m_dialog_box_exchange_info[i].str2.assign(char_name, strnlen(char_name, hb::shared::limits::CharNameLen));
+		game->m_dialog_box_exchange_info[i].dw_v1 = attribute;
+		game->m_dialog_box_exchange_info[i].item_id = item_id;
 	}
 
-	void HandleOpenExchangeWindow(CGame* pGame, char* pData)
+	void HandleOpenExchangeWindow(CGame* game, char* data)
 	{
-		short sDir, sSprite, sSpriteFrame, sCurLife, sMaxLife, sPerformance;
-		int iAmount;
-		char cColor, cItemName[24], cCharName[12];
-		DWORD dwAttribute;
-		std::memset(cItemName, 0, sizeof(cItemName));
-		std::memset(cCharName, 0, sizeof(cCharName));
+		short dir, sprite, sprite_frame, cur_life, max_life, performance, item_id;
+		int amount;
+		char color, item_name[hb::shared::limits::ItemNameLen], char_name[12];
+		uint32_t attribute;
+		std::memset(item_name, 0, sizeof(item_name));
 
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyExchangeItem>(
-			pData, sizeof(hb::net::PacketNotifyExchangeItem));
+			data, sizeof(hb::net::PacketNotifyExchangeItem));
 		if (!pkt) return;
-		sDir = static_cast<short>(pkt->dir);
-		sSprite = pkt->sprite;
-		sSpriteFrame = pkt->sprite_frame;
-		iAmount = pkt->amount;
-		cColor = static_cast<char>(pkt->color);
-		sCurLife = pkt->cur_life;
-		sMaxLife = pkt->max_life;
-		sPerformance = pkt->performance;
-		memcpy(cItemName, pkt->item_name, 20);
-		memcpy(cCharName, pkt->char_name, 10);
-		dwAttribute = pkt->attribute;
+		dir = static_cast<short>(pkt->dir);
+		sprite = pkt->sprite;
+		sprite_frame = pkt->sprite_frame;
+		amount = pkt->amount;
+		color = static_cast<char>(pkt->color);
+		cur_life = pkt->cur_life;
+		max_life = pkt->max_life;
+		performance = pkt->performance;
+		memcpy(item_name, pkt->item_name, sizeof(pkt->item_name));
+		memcpy(char_name, pkt->char_name, sizeof(pkt->char_name));
+		attribute = pkt->attribute;
+		item_id = pkt->item_id;
 
-		pGame->m_dialogBoxManager.EnableDialogBox(DialogBoxId::Exchange, 1, 0, 0, 0);
+		game->m_dialog_box_manager.enable_dialog_box(DialogBoxId::Exchange, 1, 0, 0, 0);
+		// initialize all exchange slots
+		for (int j = 0; j < 8; j++)
+		{
+			game->m_dialog_box_exchange_info[j].v1 = -1;
+			game->m_dialog_box_exchange_info[j].v2 = -1;
+			game->m_dialog_box_exchange_info[j].v3 = -1;
+			game->m_dialog_box_exchange_info[j].v4 = -1;
+			game->m_dialog_box_exchange_info[j].v5 = -1;
+			game->m_dialog_box_exchange_info[j].v6 = -1;
+			game->m_dialog_box_exchange_info[j].v7 = -1;
+			game->m_dialog_box_exchange_info[j].item_id = -1;
+			game->m_dialog_box_exchange_info[j].inv_slot = -1;
+			game->m_dialog_box_exchange_info[j].dw_v1 = 0;
+		}
 		int i;
-		if (sDir >= 1000)  // Set the item I want to exchange
+		if (dir >= 1000)  // Set the item I want to exchange
 		{
 			i = 0;
-			while (pGame->m_stDialogBoxExchangeInfo[i].sV1 != -1)
+			int inv_idx = dir - 1000;
+			if (inv_idx >= 0 && inv_idx < hb::shared::limits::MaxItems)
 			{
-				i++;
-				if (i >= 4) return; // Error situation
-			}
-			if ((sDir > 1000) && (i == 0))
-			{
-				pGame->m_bIsItemDisabled[sDir - 1000] = true;
-				pGame->m_stDialogBoxExchangeInfo[0].sItemID = sDir - 1000;
+				game->m_is_item_disabled[inv_idx] = true;
+				game->m_dialog_box_exchange_info[i].inv_slot = inv_idx;
 			}
 		}
 		else // Set the item he proposes me.
 		{
 			i = 4;
-			while (pGame->m_stDialogBoxExchangeInfo[i].sV1 != -1)
-			{
-				i++;
-				if (i >= 8) return; // Error situation
-			}
 		}
-		pGame->m_stDialogBoxExchangeInfo[i].sV1 = sSprite;
-		pGame->m_stDialogBoxExchangeInfo[i].sV2 = sSpriteFrame;
-		pGame->m_stDialogBoxExchangeInfo[i].sV3 = iAmount;
-		pGame->m_stDialogBoxExchangeInfo[i].sV4 = cColor;
-		pGame->m_stDialogBoxExchangeInfo[i].sV5 = (int)sCurLife;
-		pGame->m_stDialogBoxExchangeInfo[i].sV6 = (int)sMaxLife;
-		pGame->m_stDialogBoxExchangeInfo[i].sV7 = (int)sPerformance;
-		memcpy(pGame->m_stDialogBoxExchangeInfo[i].cStr1, cItemName, 20);
-		memcpy(pGame->m_stDialogBoxExchangeInfo[i].cStr2, cCharName, 10);
-		pGame->m_stDialogBoxExchangeInfo[i].dwV1 = dwAttribute;
+		game->m_dialog_box_exchange_info[i].v1 = sprite;
+		game->m_dialog_box_exchange_info[i].v2 = sprite_frame;
+		game->m_dialog_box_exchange_info[i].v3 = amount;
+		game->m_dialog_box_exchange_info[i].v4 = color;
+		game->m_dialog_box_exchange_info[i].v5 = static_cast<int>(cur_life);
+		game->m_dialog_box_exchange_info[i].v6 = static_cast<int>(max_life);
+		game->m_dialog_box_exchange_info[i].v7 = static_cast<int>(performance);
+		game->m_dialog_box_exchange_info[i].str1.assign(item_name, strnlen(item_name, hb::shared::limits::ItemNameLen));
+		game->m_dialog_box_exchange_info[i].str2.assign(char_name, strnlen(char_name, hb::shared::limits::CharNameLen));
+		game->m_dialog_box_exchange_info[i].dw_v1 = attribute;
+		game->m_dialog_box_exchange_info[i].item_id = item_id;
 	}
 
-	void HandleCurLifeSpan(CGame* pGame, char* pData)
+	void HandleCurLifeSpan(CGame* game, char* data)
 	{
-		int iItemIndex;
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyCurLifeSpan>(
-			pData, sizeof(hb::net::PacketNotifyCurLifeSpan));
-		if (!pkt) return;
-		iItemIndex = pkt->item_index;
-		pGame->m_pItemList[iItemIndex]->m_wCurLifeSpan = static_cast<WORD>(pkt->cur_lifespan);
+			data, sizeof(hb::net::PacketNotifyCurLifeSpan));
+
+		if (!pkt)
+			return;
+
+		int item_index = pkt->item_index;
+		if (item_index < 0 || item_index >= hb::shared::limits::MaxItems) return;
+
+		if (game->m_item_list[item_index] == nullptr)
+			return;
+
+		game->m_item_list[item_index]->m_cur_life_span = static_cast<uint16_t>(pkt->cur_lifespan);
 	}
 
-	void HandleNotEnoughGold(CGame* pGame, char* pData)
+	void HandleNotEnoughGold(CGame* game, char* data)
 	{
-		pGame->m_dialogBoxManager.DisableDialogBox(DialogBoxId::SellOrRepair);
-		pGame->AddEventList(NOTIFY_MSG_HANDLER67, 10);
+		game->m_dialog_box_manager.disable_dialog_box(DialogBoxId::SellOrRepair);
+		game->add_event_list(NOTIFY_MSG_HANDLER67, 10);
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyNotEnoughGold>(
-			pData, sizeof(hb::net::PacketNotifyNotEnoughGold));
+			data, sizeof(hb::net::PacketNotifyNotEnoughGold));
 		if (!pkt) return;
-		if (pkt->item_index >= 0) {
-			pGame->m_bIsItemDisabled[pkt->item_index] = false;
+		if (pkt->item_index >= 0 && pkt->item_index < hb::shared::limits::MaxItems) {
+			game->m_is_item_disabled[pkt->item_index] = false;
 		}
 	}
 
-	void HandleCannotCarryMoreItem(CGame* pGame, char* pData)
+	void HandleCannotCarryMoreItem(CGame* game, char* data)
 	{
-		pGame->AddEventList(NOTIFY_MSG_HANDLER65, 10);
-		pGame->AddEventList(NOTIFY_MSG_HANDLER66, 10);
+		game->add_event_list(NOTIFY_MSG_HANDLER65, 10);
+		game->add_event_list(NOTIFY_MSG_HANDLER66, 10);
 		// Bank dialog Box
-		pGame->m_dialogBoxManager.Info(DialogBoxId::Bank).cMode = 0;
+		game->m_dialog_box_manager.Info(DialogBoxId::Bank).m_mode = 0;
 	}
 
-	void HandleItemAttributeChange(CGame* pGame, char* pData)
+	void HandleItemAttributeChange(CGame* game, char* data)
 	{
-		short sV1;
-		DWORD dwTemp;
+		short v1;
+		uint32_t temp;
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyItemAttributeChange>(
-			pData, sizeof(hb::net::PacketNotifyItemAttributeChange));
+			data, sizeof(hb::net::PacketNotifyItemAttributeChange));
 		if (!pkt) return;
-		sV1 = static_cast<short>(pkt->item_index);
-		dwTemp = pGame->m_pItemList[sV1]->m_dwAttribute;
-		pGame->m_pItemList[sV1]->m_dwAttribute = pkt->attribute;
+		v1 = static_cast<short>(pkt->item_index);
+		if (v1 < 0 || v1 >= hb::shared::limits::MaxItems) return;
+		if (!game->m_item_list[v1]) return;
+		temp = game->m_item_list[v1]->m_attribute;
+		game->m_item_list[v1]->m_attribute = pkt->attribute;
 		if (pkt->spec_value1 != 0)
-			pGame->m_pItemList[sV1]->m_sItemSpecEffectValue1 = static_cast<short>(pkt->spec_value1);
+			game->m_item_list[v1]->m_item_special_effect_value1 = static_cast<short>(pkt->spec_value1);
 		if (pkt->spec_value2 != 0)
-			pGame->m_pItemList[sV1]->m_sItemSpecEffectValue2 = static_cast<short>(pkt->spec_value2);
+			game->m_item_list[v1]->m_item_special_effect_value2 = static_cast<short>(pkt->spec_value2);
 		
-		if (dwTemp == pGame->m_pItemList[sV1]->m_dwAttribute)
+		if (temp == game->m_item_list[v1]->m_attribute)
 		{
-			if (pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::ItemUpgrade) == true)
+			if (game->m_dialog_box_manager.is_enabled(DialogBoxId::ItemUpgrade) == true)
 			{
-				pGame->m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).cMode = 4;// Failed
+				game->m_dialog_box_manager.Info(DialogBoxId::ItemUpgrade).m_mode = 4;// Failed
 			}
-			pGame->PlaySound('E', 24, 5);
+			game->play_game_sound('E', 24, 5);
 		}
 		else
 		{
-			if (pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::ItemUpgrade) == true)
+			if (game->m_dialog_box_manager.is_enabled(DialogBoxId::ItemUpgrade) == true)
 			{
-				pGame->m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).cMode = 3; // Success
+				game->m_dialog_box_manager.Info(DialogBoxId::ItemUpgrade).m_mode = 3; // Success
 			}
-			pGame->PlaySound('E', 23, 5);
-			switch (pGame->m_sPlayerType) {
+			game->play_game_sound('E', 23, 5);
+			switch (game->m_player->m_player_type) {
 			case 1:
 			case 2:
 			case 3:
-				pGame->PlaySound('C', 21, 0);
+				game->play_game_sound('C', 21, 0);
 				break;
 			case 4:
 			case 5:
 			case 6:
-				pGame->PlaySound('C', 22, 0);
+				game->play_game_sound('C', 22, 0);
 				break;
 			}
 		}
 	}
 
-	void HandleItemUpgradeFail(CGame* pGame, char* pData)
+	void HandleItemUpgradeFail(CGame* game, char* data)
 	{
-		short sV1;
+		short v1;
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyItemUpgradeFail>(
-			pData, sizeof(hb::net::PacketNotifyItemUpgradeFail));
+			data, sizeof(hb::net::PacketNotifyItemUpgradeFail));
 		if (!pkt) return;
-		sV1 = static_cast<short>(pkt->reason);
-		if (pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::ItemUpgrade) == false) return;
-		pGame->PlaySound('E', 24, 5);
-		switch (sV1) {
+		v1 = static_cast<short>(pkt->reason);
+		if (game->m_dialog_box_manager.is_enabled(DialogBoxId::ItemUpgrade) == false) return;
+		game->play_game_sound('E', 24, 5);
+		switch (v1) {
 		case 1:
-			pGame->m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).cMode = 8; // Failed
+			game->m_dialog_box_manager.Info(DialogBoxId::ItemUpgrade).m_mode = 8; // Failed
 			break;
 		case 2:
-			pGame->m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).cMode = 9; // Failed
+			game->m_dialog_box_manager.Info(DialogBoxId::ItemUpgrade).m_mode = 9; // Failed
 			break;
 		case 3:
-			pGame->m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).cMode = 10; // Failed
+			game->m_dialog_box_manager.Info(DialogBoxId::ItemUpgrade).m_mode = 10; // Failed
 			break;
 		}
 	}
 
-	void HandleGizonItemUpgradeLeft(CGame* pGame, char* pData)
+	void HandleGizonItemUpgradeLeft(CGame* game, char* data)
 	{
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyGizonItemUpgradeLeft>(
-			pData, sizeof(hb::net::PacketNotifyGizonItemUpgradeLeft));
+			data, sizeof(hb::net::PacketNotifyGizonItemUpgradeLeft));
 		if (!pkt) return;
-		pGame->m_iGizonItemUpgradeLeft = pkt->left;
+		game->m_gizon_item_upgrade_left = pkt->left;
 		switch (pkt->reason) {
 		case 1:
-			pGame->AddEventList(NOTIFY_MSG_HANDLER_GIZONITEMUPGRADELEFT1, 10);
+			game->add_event_list(NOTIFY_MSG_HANDLER_GIZONITEMUPGRADELEFT1, 10);
 			break;
 		}
 	}
 
-	void HandleGizonItemChange(CGame* pGame, char* pData)
+	void HandleGizonItemChange(CGame* game, char* data)
 	{
-		short sV1;
+		short v1;
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyGizonItemChange>(
-			pData, sizeof(hb::net::PacketNotifyGizonItemChange));
+			data, sizeof(hb::net::PacketNotifyGizonItemChange));
 		if (!pkt) return;
-		sV1 = static_cast<short>(pkt->item_index);
-		pGame->m_pItemList[sV1]->m_cItemType = pkt->item_type;
-		pGame->m_pItemList[sV1]->m_wCurLifeSpan = pkt->cur_lifespan;
-		pGame->m_pItemList[sV1]->m_sSprite = pkt->sprite;
-		pGame->m_pItemList[sV1]->m_sSpriteFrame = pkt->sprite_frame;
-		pGame->m_pItemList[sV1]->m_cItemColor = pkt->item_color;
-		pGame->m_pItemList[sV1]->m_sItemSpecEffectValue2 = pkt->spec_value2;
-		pGame->m_pItemList[sV1]->m_dwAttribute = pkt->attribute;
-		std::memset(pGame->m_pItemList[sV1]->m_cName, 0, sizeof(pGame->m_pItemList[sV1]->m_cName));
-		memcpy(pGame->m_pItemList[sV1]->m_cName, pkt->item_name, sizeof(pkt->item_name));
+		v1 = static_cast<short>(pkt->item_index);
+		if (v1 < 0 || v1 >= hb::shared::limits::MaxItems) return;
+		if (!game->m_item_list[v1]) return;
+		if (pkt->item_id > 0) game->m_item_list[v1]->m_id_num = pkt->item_id;
+		game->m_item_list[v1]->m_cur_life_span = pkt->cur_lifespan;
+		game->m_item_list[v1]->m_item_color = pkt->item_color;
+		game->m_item_list[v1]->m_item_special_effect_value2 = pkt->spec_value2;
+		game->m_item_list[v1]->m_attribute = pkt->attribute;
 		
-		if (pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::ItemUpgrade) == true)
+		if (game->m_dialog_box_manager.is_enabled(DialogBoxId::ItemUpgrade) == true)
 		{
-			pGame->m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).cMode = 3; // success
+			game->m_dialog_box_manager.Info(DialogBoxId::ItemUpgrade).m_mode = 3; // success
 		}
-		pGame->PlaySound('E', 23, 5);
-		switch (pGame->m_sPlayerType) {
+		game->play_game_sound('E', 23, 5);
+		switch (game->m_player->m_player_type) {
 		case 1:
 		case 2:
 		case 3:
-			pGame->PlaySound('C', 21, 0);
+			game->play_game_sound('C', 21, 0);
 			break;
 		case 4:
 		case 5:
 		case 6:
-			pGame->PlaySound('C', 22, 0);
+			game->play_game_sound('C', 22, 0);
 			break;
 		}
 	}
 
-	void HandleItemPosList(CGame* pGame, char* pData)
+	void HandleItemPosList(CGame* game, char* data)
 	{
 		int i;
 		short sX, sY;
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyItemPosList>(
-			pData, sizeof(hb::net::PacketNotifyItemPosList));
+			data, sizeof(hb::net::PacketNotifyItemPosList));
 		if (!pkt) return;
-		for (i = 0; i < DEF_MAXITEMS; i++) {
+		for (i = 0; i < hb::shared::limits::MaxItems; i++) {
 			sX = pkt->positions[i * 2];
 			sY = pkt->positions[i * 2 + 1];
-			if (pGame->m_pItemList[i] != 0) {
+			if (game->m_item_list[i] != 0) {
 				if (sY < -10) sY = -10;
 				if (sX < 0)   sX = 0;
 				if (sX > 170) sX = 170;
 				if (sY > 95)  sY = 95;
 
-				pGame->m_pItemList[i]->m_sX = sX;
-				pGame->m_pItemList[i]->m_sY = sY;
+				game->m_item_list[i]->m_x = sX;
+				game->m_item_list[i]->m_y = sY;
 			}
 		}
 	}
 
-	void HandleItemSold(CGame* pGame, char* pData)
+	void HandleItemSold(CGame* game, char* data)
 	{
-		pGame->m_dialogBoxManager.DisableDialogBox(DialogBoxId::SellOrRepair);
+		game->m_dialog_box_manager.disable_dialog_box(DialogBoxId::SellOrRepair);
 	}
 }
 

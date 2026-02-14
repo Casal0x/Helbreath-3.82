@@ -4,14 +4,17 @@
 class DialogBox_Bank : public IDialogBox
 {
 public:
-	DialogBox_Bank(CGame* pGame);
+	DialogBox_Bank(CGame* game);
 	~DialogBox_Bank() override = default;
 
-	void OnDraw(short msX, short msY, short msZ, char cLB) override;
-	bool OnClick(short msX, short msY) override;
+	void on_draw(short mouse_x, short mouse_y, short z, char lb) override;
+	bool on_click(short mouse_x, short mouse_y) override;
+	bool on_double_click(short mouse_x, short mouse_y) override;
+	PressResult on_press(short mouse_x, short mouse_y) override;
+	bool on_item_drop(short mouse_x, short mouse_y) override;
 
 private:
-	void DrawItemList(short sX, short sY, short szX, short msX, short msY, short msZ, char cLB);
-	void DrawItemDetails(short sX, short sY, short szX, int iItemIndex, int yPos);
-	void DrawScrollbar(short sX, short sY, int iTotalLines, short msX, short msY, short msZ, char cLB);
+	void draw_item_list(short sX, short sY, short size_x, short mouse_x, short mouse_y, short z, char lb);
+	void draw_item_details(short sX, short sY, short size_x, int item_index, int yPos);
+	void draw_scrollbar(short sX, short sY, int total_lines, short mouse_x, short mouse_y, short z, char lb);
 };

@@ -1,42 +1,45 @@
 #include "DialogBox_WarningMsg.h"
 #include "Game.h"
 #include "lan_eng.h"
+#include "GameFonts.h"
+#include "TextLibExt.h"
+using namespace hb::client::sprite_id;
 
-DialogBox_WarningMsg::DialogBox_WarningMsg(CGame* pGame)
-	: IDialogBox(DialogBoxId::WarningBattleArea, pGame)
+DialogBox_WarningMsg::DialogBox_WarningMsg(CGame* game)
+	: IDialogBox(DialogBoxId::WarningBattleArea, game)
 {
-	SetDefaultRect(0 + SCREENX, 0 + SCREENY, 310, 170);
+	set_default_rect(0 , 0 , 310, 170);
 }
 
-void DialogBox_WarningMsg::OnDraw(short msX, short msY, short msZ, char cLB)
+void DialogBox_WarningMsg::on_draw(short mouse_x, short mouse_y, short z, char lb)
 {
-	short sX = Info().sX;
-	short sY = Info().sY;
+	short sX = Info().m_x;
+	short sY = Info().m_y;
 
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME4, sX, sY, 2);
+	draw_new_dialog_box(InterfaceNdGame4, sX, sY, 2);
 
-	PutString2(sX + 63, sY + 35, DEF_MSG_WARNING1, 200, 200, 25);
-	PutString(sX + 30, sY + 57, DEF_MSG_WARNING2, RGB(220, 130, 45));
-	PutString(sX + 30, sY + 74, DEF_MSG_WARNING3, RGB(220, 130, 45));
-	PutString(sX + 30, sY + 92, DEF_MSG_WARNING4, RGB(220, 130, 45));
-	PutString(sX + 30, sY + 110, DEF_MSG_WARNING5, RGB(220, 130, 45));
+	hb::shared::text::draw_text(GameFont::Default, sX + 63, sY + 35, DEF_MSG_WARNING1, hb::shared::text::TextStyle::with_shadow(GameColors::UIYellow));
+	put_string(sX + 30, sY + 57, DEF_MSG_WARNING2, GameColors::UIOrange);
+	put_string(sX + 30, sY + 74, DEF_MSG_WARNING3, GameColors::UIOrange);
+	put_string(sX + 30, sY + 92, DEF_MSG_WARNING4, GameColors::UIOrange);
+	put_string(sX + 30, sY + 110, DEF_MSG_WARNING5, GameColors::UIOrange);
 
 	// OK button
-	if ((msX >= sX + 122) && (msX <= sX + 125 + DEF_BTNSZX) && (msY >= sY + 127) && (msY <= sY + 127 + DEF_BTNSZY))
-		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + 122, sY + 127, 1);
+	if ((mouse_x >= sX + 122) && (mouse_x <= sX + 125 + ui_layout::btn_size_x) && (mouse_y >= sY + 127) && (mouse_y <= sY + 127 + ui_layout::btn_size_y))
+		draw_new_dialog_box(InterfaceNdButton, sX + 122, sY + 127, 1);
 	else
-		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + 122, sY + 127, 0);
+		draw_new_dialog_box(InterfaceNdButton, sX + 122, sY + 127, 0);
 }
 
-bool DialogBox_WarningMsg::OnClick(short msX, short msY)
+bool DialogBox_WarningMsg::on_click(short mouse_x, short mouse_y)
 {
-	short sX = Info().sX;
-	short sY = Info().sY;
+	short sX = Info().m_x;
+	short sY = Info().m_y;
 
 	// OK button click
-	if ((msX >= sX + 120) && (msX <= sX + 120 + DEF_BTNSZX) && (msY >= sY + 127) && (msY <= sY + 127 + DEF_BTNSZY))
+	if ((mouse_x >= sX + 122) && (mouse_x <= sX + 125 + ui_layout::btn_size_x) && (mouse_y >= sY + 127) && (mouse_y <= sY + 127 + ui_layout::btn_size_y))
 	{
-		DisableThisDialog();
+		disable_this_dialog();
 		return true;
 	}
 

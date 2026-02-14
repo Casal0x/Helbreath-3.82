@@ -11,7 +11,7 @@
 class CCrusadeCore : public CGame
 {
 public:
-	void Test();
+	void test();
 	CCrusadeCore();
 	virtual ~CCrusadeCore();
 

@@ -1,30 +1,30 @@
-// Skill.h: interface for the CSkill class.
+﻿// Skill.h: interface for the CSkill class.
 //
 //////////////////////////////////////////////////////////////////////
 
 #pragma once
+#include <string>
 
-#include <windows.h>
+#include <cstring>
 
 class CSkill
 {
 public:
 	inline CSkill()
 	{
-		ZeroMemory(m_cName, sizeof(m_cName));
 
-		m_iLevel = 0;
-		m_bIsUseable = false;
-		m_cUseMethod = 0;
+		m_level = 0;
+		m_is_useable = false;
+		m_use_method = 0;
 	}
 
 	inline virtual ~CSkill()
 	{
 	}
 
-	char m_cName[21];
+	std::string m_name;
 
-	int  m_iLevel;
-	bool m_bIsUseable;
-	char m_cUseMethod;
+	int  m_level;
+	bool m_is_useable;
+	char m_use_method;
 };

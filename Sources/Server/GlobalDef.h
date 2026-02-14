@@ -1,4 +1,5 @@
 #pragma once
 #include "CommonTypes.h"
+#include "NetConstants.h"
 
-#define DEF_MAXCRUSADESTRUCTURES		300
+namespace hb::server::config { constexpr int GameTickMultiplier = 15; } // (1 = 300ms ticks)

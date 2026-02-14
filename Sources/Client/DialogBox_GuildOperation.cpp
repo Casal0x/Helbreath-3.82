@@ -1,181 +1,183 @@
-#include "DialogBox_GuildOperation.h"
+﻿#include "DialogBox_GuildOperation.h"
 #include "Game.h"
 #include "lan_eng.h"
+#include <string>
 
-DialogBox_GuildOperation::DialogBox_GuildOperation(CGame* pGame)
-	: IDialogBox(DialogBoxId::GuildOperation, pGame)
+using namespace hb::shared::net;
+using namespace hb::client::sprite_id;
+DialogBox_GuildOperation::DialogBox_GuildOperation(CGame* game)
+	: IDialogBox(DialogBoxId::GuildOperation, game)
 {
-	SetDefaultRect(0 + SCREENX, 0 + SCREENY, 270, 236);
+	set_default_rect(337 , 57 , 295, 346);
 }
 
-void DialogBox_GuildOperation::OnDraw(short msX, short msY, short msZ, char cLB)
+void DialogBox_GuildOperation::on_draw(short mouse_x, short mouse_y, short z, char lb)
 {
-	short sX = Info().sX;
-	short sY = Info().sY;
+	short sX = Info().m_x;
+	short sY = Info().m_y;
 
-	m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX, sY, 0);
-	m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_TEXT, sX, sY, 19);
+	m_game->draw_new_dialog_box(InterfaceNdGame2, sX, sY, 0);
+	m_game->draw_new_dialog_box(InterfaceNdText, sX, sY, 19);
 
-	switch (m_pGame->m_stGuildOpList[0].cOpMode) {
+	switch (m_game->m_guild_op_list[0].op_mode) {
 	case 1:
-		DrawJoinRequest(sX, sY, msX, msY);
+		draw_join_request(sX, sY, mouse_x, mouse_y);
 		break;
 	case 2:
-		DrawDismissRequest(sX, sY, msX, msY);
+		draw_dismiss_request(sX, sY, mouse_x, mouse_y);
 		break;
 	case 3:
 	case 4:
 	case 5:
 	case 6:
 	case 7:
-		DrawInfoMessage(sX, sY, msX, msY, m_pGame->m_stGuildOpList[0].cOpMode);
+		draw_info_message(sX, sY, mouse_x, mouse_y, m_game->m_guild_op_list[0].op_mode);
 		break;
 	}
 }
 
-void DialogBox_GuildOperation::DrawJoinRequest(short sX, short sY, short msX, short msY)
+void DialogBox_GuildOperation::draw_join_request(short sX, short sY, short mouse_x, short mouse_y)
 {
-	PutAlignedString(sX + 24, sX + 248, sY + 50, DRAW_DIALOGBOX_GUILD_OPERATION1);
-	PutAlignedString(sX + 24, sX + 248, sY + 65, m_pGame->m_stGuildOpList[0].cName, 35, 35, 35);
-	PutAlignedString(sX + 24, sX + 248, sY + 69, "____________________", 0, 0, 0);
-	PutAlignedString(sX + 24, sX + 248, sY + 90, DRAW_DIALOGBOX_GUILD_OPERATION2);
-	PutAlignedString(sX + 24, sX + 248, sY + 105, DRAW_DIALOGBOX_GUILD_OPERATION3);
-	PutAlignedString(sX + 24, sX + 248, sY + 120, DRAW_DIALOGBOX_GUILD_OPERATION4);
-	PutAlignedString(sX + 24, sX + 248, sY + 160, DRAW_DIALOGBOX_GUILD_OPERATION5, 55, 25, 25);
+	put_aligned_string(sX + 24, sX + 248, sY + 50, DRAW_DIALOGBOX_GUILD_OPERATION1);
+	put_aligned_string(sX + 24, sX + 248, sY + 65, m_game->m_guild_op_list[0].name.c_str(), GameColors::UILabel);
+	put_aligned_string(sX + 24, sX + 248, sY + 69, "____________________", GameColors::UIBlack);
+	put_aligned_string(sX + 24, sX + 248, sY + 90, DRAW_DIALOGBOX_GUILD_OPERATION2);
+	put_aligned_string(sX + 24, sX + 248, sY + 105, DRAW_DIALOGBOX_GUILD_OPERATION3);
+	put_aligned_string(sX + 24, sX + 248, sY + 120, DRAW_DIALOGBOX_GUILD_OPERATION4);
+	put_aligned_string(sX + 24, sX + 248, sY + 160, DRAW_DIALOGBOX_GUILD_OPERATION5, GameColors::UILabel);
 
-	if ((msX >= sX + DEF_LBTNPOSX) && (msX <= sX + DEF_LBTNPOSX + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
-		m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_LBTNPOSX, sY + DEF_BTNPOSY, 33);
-	else m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_LBTNPOSX, sY + DEF_BTNPOSY, 32);
+	if ((mouse_x >= sX + ui_layout::left_btn_x) && (mouse_x <= sX + ui_layout::left_btn_x + ui_layout::btn_size_x) && (mouse_y >= sY + ui_layout::btn_y) && (mouse_y <= sY + ui_layout::btn_y + ui_layout::btn_size_y))
+		m_game->draw_new_dialog_box(InterfaceNdButton, sX + ui_layout::left_btn_x, sY + ui_layout::btn_y, 33);
+	else m_game->draw_new_dialog_box(InterfaceNdButton, sX + ui_layout::left_btn_x, sY + ui_layout::btn_y, 32);
 
-	if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
-		m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 35);
-	else m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 34);
+	if ((mouse_x >= sX + ui_layout::right_btn_x) && (mouse_x <= sX + ui_layout::right_btn_x + ui_layout::btn_size_x) && (mouse_y >= sY + ui_layout::btn_y) && (mouse_y <= sY + ui_layout::btn_y + ui_layout::btn_size_y))
+		m_game->draw_new_dialog_box(InterfaceNdButton, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 35);
+	else m_game->draw_new_dialog_box(InterfaceNdButton, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 34);
 }
 
-void DialogBox_GuildOperation::DrawDismissRequest(short sX, short sY, short msX, short msY)
+void DialogBox_GuildOperation::draw_dismiss_request(short sX, short sY, short mouse_x, short mouse_y)
 {
-	PutAlignedString(sX + 24, sX + 248, sY + 50, DRAW_DIALOGBOX_GUILD_OPERATION6);
-	PutAlignedString(sX + 24, sX + 248, sY + 65, m_pGame->m_stGuildOpList[0].cName, 35, 35, 35);
-	PutAlignedString(sX + 24, sX + 248, sY + 69, "____________________", 0, 0, 0);
-	PutAlignedString(sX + 24, sX + 248, sY + 90, DRAW_DIALOGBOX_GUILD_OPERATION7);
-	PutAlignedString(sX + 24, sX + 248, sY + 105, DRAW_DIALOGBOX_GUILD_OPERATION8);
-	PutAlignedString(sX + 24, sX + 248, sY + 120, DRAW_DIALOGBOX_GUILD_OPERATION9);
-	PutAlignedString(sX + 24, sX + 248, sY + 160, DRAW_DIALOGBOX_GUILD_OPERATION10, 55, 25, 25);
+	put_aligned_string(sX + 24, sX + 248, sY + 50, DRAW_DIALOGBOX_GUILD_OPERATION6);
+	put_aligned_string(sX + 24, sX + 248, sY + 65, m_game->m_guild_op_list[0].name.c_str(), GameColors::UILabel);
+	put_aligned_string(sX + 24, sX + 248, sY + 69, "____________________", GameColors::UIBlack);
+	put_aligned_string(sX + 24, sX + 248, sY + 90, DRAW_DIALOGBOX_GUILD_OPERATION7);
+	put_aligned_string(sX + 24, sX + 248, sY + 105, DRAW_DIALOGBOX_GUILD_OPERATION8);
+	put_aligned_string(sX + 24, sX + 248, sY + 120, DRAW_DIALOGBOX_GUILD_OPERATION9);
+	put_aligned_string(sX + 24, sX + 248, sY + 160, DRAW_DIALOGBOX_GUILD_OPERATION10, GameColors::UILabel);
 
-	if ((msX >= sX + DEF_LBTNPOSX) && (msX <= sX + DEF_LBTNPOSX + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
-		m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_LBTNPOSX, sY + DEF_BTNPOSY, 33);
-	else m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_LBTNPOSX, sY + DEF_BTNPOSY, 32);
+	if ((mouse_x >= sX + ui_layout::left_btn_x) && (mouse_x <= sX + ui_layout::left_btn_x + ui_layout::btn_size_x) && (mouse_y >= sY + ui_layout::btn_y) && (mouse_y <= sY + ui_layout::btn_y + ui_layout::btn_size_y))
+		m_game->draw_new_dialog_box(InterfaceNdButton, sX + ui_layout::left_btn_x, sY + ui_layout::btn_y, 33);
+	else m_game->draw_new_dialog_box(InterfaceNdButton, sX + ui_layout::left_btn_x, sY + ui_layout::btn_y, 32);
 
-	if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
-		m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 35);
-	else m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 34);
+	if ((mouse_x >= sX + ui_layout::right_btn_x) && (mouse_x <= sX + ui_layout::right_btn_x + ui_layout::btn_size_x) && (mouse_y >= sY + ui_layout::btn_y) && (mouse_y <= sY + ui_layout::btn_y + ui_layout::btn_size_y))
+		m_game->draw_new_dialog_box(InterfaceNdButton, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 35);
+	else m_game->draw_new_dialog_box(InterfaceNdButton, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 34);
 }
 
-void DialogBox_GuildOperation::DrawInfoMessage(short sX, short sY, short msX, short msY, int mode)
+void DialogBox_GuildOperation::draw_info_message(short sX, short sY, short mouse_x, short mouse_y, int mode)
 {
 	switch (mode) {
 	case 3:
-		PutAlignedString(sX + 24, sX + 248, sY + 50, DRAW_DIALOGBOX_GUILD_OPERATION11);
-		PutAlignedString(sX + 24, sX + 248, sY + 65, m_pGame->m_stGuildOpList[0].cName, 35, 35, 35);
-		PutAlignedString(sX + 24, sX + 248, sY + 69, "____________________", 0, 0, 0);
-		PutAlignedString(sX + 24, sX + 248, sY + 90, DRAW_DIALOGBOX_GUILD_OPERATION12);
-		PutAlignedString(sX + 24, sX + 248, sY + 105, DRAW_DIALOGBOX_GUILD_OPERATION13);
+		put_aligned_string(sX + 24, sX + 248, sY + 50, DRAW_DIALOGBOX_GUILD_OPERATION11);
+		put_aligned_string(sX + 24, sX + 248, sY + 65, m_game->m_guild_op_list[0].name.c_str(), GameColors::UILabel);
+		put_aligned_string(sX + 24, sX + 248, sY + 69, "____________________", GameColors::UIBlack);
+		put_aligned_string(sX + 24, sX + 248, sY + 90, DRAW_DIALOGBOX_GUILD_OPERATION12);
+		put_aligned_string(sX + 24, sX + 248, sY + 105, DRAW_DIALOGBOX_GUILD_OPERATION13);
 		break;
 	case 4:
-		PutAlignedString(sX + 24, sX + 248, sY + 50, DRAW_DIALOGBOX_GUILD_OPERATION14);
-		PutAlignedString(sX + 24, sX + 248, sY + 65, m_pGame->m_stGuildOpList[0].cName, 35, 35, 35);
-		PutAlignedString(sX + 24, sX + 248, sY + 69, "____________________", 0, 0, 0);
-		PutAlignedString(sX + 24, sX + 248, sY + 90, DRAW_DIALOGBOX_GUILD_OPERATION15);
-		PutAlignedString(sX + 24, sX + 248, sY + 105, DRAW_DIALOGBOX_GUILD_OPERATION16);
+		put_aligned_string(sX + 24, sX + 248, sY + 50, DRAW_DIALOGBOX_GUILD_OPERATION14);
+		put_aligned_string(sX + 24, sX + 248, sY + 65, m_game->m_guild_op_list[0].name.c_str(), GameColors::UILabel);
+		put_aligned_string(sX + 24, sX + 248, sY + 69, "____________________", GameColors::UIBlack);
+		put_aligned_string(sX + 24, sX + 248, sY + 90, DRAW_DIALOGBOX_GUILD_OPERATION15);
+		put_aligned_string(sX + 24, sX + 248, sY + 105, DRAW_DIALOGBOX_GUILD_OPERATION16);
 		break;
 	case 5:
-		PutAlignedString(sX + 24, sX + 248, sY + 50, DRAW_DIALOGBOX_GUILD_OPERATION17);
-		PutAlignedString(sX + 24, sX + 248, sY + 65, m_pGame->m_stGuildOpList[0].cName, 35, 35, 35);
-		PutAlignedString(sX + 24, sX + 248, sY + 69, "____________________", 0, 0, 0);
-		PutAlignedString(sX + 24, sX + 248, sY + 90, DRAW_DIALOGBOX_GUILD_OPERATION18);
-		PutAlignedString(sX + 24, sX + 248, sY + 105, DRAW_DIALOGBOX_GUILD_OPERATION19);
-		PutAlignedString(sX + 24, sX + 248, sY + 120, DRAW_DIALOGBOX_GUILD_OPERATION20);
+		put_aligned_string(sX + 24, sX + 248, sY + 50, DRAW_DIALOGBOX_GUILD_OPERATION17);
+		put_aligned_string(sX + 24, sX + 248, sY + 65, m_game->m_guild_op_list[0].name.c_str(), GameColors::UILabel);
+		put_aligned_string(sX + 24, sX + 248, sY + 69, "____________________", GameColors::UIBlack);
+		put_aligned_string(sX + 24, sX + 248, sY + 90, DRAW_DIALOGBOX_GUILD_OPERATION18);
+		put_aligned_string(sX + 24, sX + 248, sY + 105, DRAW_DIALOGBOX_GUILD_OPERATION19);
+		put_aligned_string(sX + 24, sX + 248, sY + 120, DRAW_DIALOGBOX_GUILD_OPERATION20);
 		break;
 	case 6:
-		PutAlignedString(sX + 24, sX + 248, sY + 50, DRAW_DIALOGBOX_GUILD_OPERATION21);
-		PutAlignedString(sX + 24, sX + 248, sY + 65, m_pGame->m_stGuildOpList[0].cName, 35, 35, 35);
-		PutAlignedString(sX + 24, sX + 248, sY + 69, "____________________", 0, 0, 0);
-		PutAlignedString(sX + 24, sX + 248, sY + 90, DRAW_DIALOGBOX_GUILD_OPERATION22);
-		PutAlignedString(sX + 24, sX + 248, sY + 105, DRAW_DIALOGBOX_GUILD_OPERATION23);
+		put_aligned_string(sX + 24, sX + 248, sY + 50, DRAW_DIALOGBOX_GUILD_OPERATION21);
+		put_aligned_string(sX + 24, sX + 248, sY + 65, m_game->m_guild_op_list[0].name.c_str(), GameColors::UILabel);
+		put_aligned_string(sX + 24, sX + 248, sY + 69, "____________________", GameColors::UIBlack);
+		put_aligned_string(sX + 24, sX + 248, sY + 90, DRAW_DIALOGBOX_GUILD_OPERATION22);
+		put_aligned_string(sX + 24, sX + 248, sY + 105, DRAW_DIALOGBOX_GUILD_OPERATION23);
 		break;
 	case 7:
-		PutAlignedString(sX + 24, sX + 248, sY + 50, DRAW_DIALOGBOX_GUILD_OPERATION24);
-		PutAlignedString(sX + 24, sX + 248, sY + 90, DRAW_DIALOGBOX_GUILD_OPERATION25);
-		PutAlignedString(sX + 24, sX + 248, sY + 105, DRAW_DIALOGBOX_GUILD_OPERATION26);
-		PutAlignedString(sX + 24, sX + 248, sY + 120, DRAW_DIALOGBOX_GUILD_OPERATION27);
+		put_aligned_string(sX + 24, sX + 248, sY + 50, DRAW_DIALOGBOX_GUILD_OPERATION24);
+		put_aligned_string(sX + 24, sX + 248, sY + 90, DRAW_DIALOGBOX_GUILD_OPERATION25);
+		put_aligned_string(sX + 24, sX + 248, sY + 105, DRAW_DIALOGBOX_GUILD_OPERATION26);
+		put_aligned_string(sX + 24, sX + 248, sY + 120, DRAW_DIALOGBOX_GUILD_OPERATION27);
 		break;
 	}
 
-	if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY > sY + DEF_BTNPOSY) && (msY < sY + DEF_BTNPOSY + DEF_BTNSZY))
-		m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 1);
-	else m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 0);
+	if ((mouse_x >= sX + ui_layout::right_btn_x) && (mouse_x <= sX + ui_layout::right_btn_x + ui_layout::btn_size_x) && (mouse_y > sY + ui_layout::btn_y) && (mouse_y < sY + ui_layout::btn_y + ui_layout::btn_size_y))
+		m_game->draw_new_dialog_box(InterfaceNdButton, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 1);
+	else m_game->draw_new_dialog_box(InterfaceNdButton, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 0);
 }
 
-bool DialogBox_GuildOperation::OnClick(short msX, short msY)
+bool DialogBox_GuildOperation::on_click(short mouse_x, short mouse_y)
 {
-	short sX = Info().sX;
-	short sY = Info().sY;
-	char cName20[24];
+	short sX = Info().m_x;
+	short sY = Info().m_y;
+	std::string name20;
 
-	std::memset(cName20, 0, sizeof(cName20));
 
-	switch (m_pGame->m_stGuildOpList[0].cOpMode) {
+	switch (m_game->m_guild_op_list[0].op_mode) {
 	case 3:
 	case 4:
 	case 5:
 	case 6:
 	case 7:
-		if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY > sY + DEF_BTNPOSY) && (msY < sY + DEF_BTNPOSY + DEF_BTNSZY)) {
-			m_pGame->_ShiftGuildOperationList();
-			if (m_pGame->m_stGuildOpList[0].cOpMode == 0)
-				m_pGame->m_dialogBoxManager.DisableDialogBox(DialogBoxId::GuildOperation);
+		if ((mouse_x >= sX + ui_layout::right_btn_x) && (mouse_x <= sX + ui_layout::right_btn_x + ui_layout::btn_size_x) && (mouse_y > sY + ui_layout::btn_y) && (mouse_y < sY + ui_layout::btn_y + ui_layout::btn_size_y)) {
+			m_game->shift_guild_operation_list();
+			if (m_game->m_guild_op_list[0].op_mode == 0)
+				m_game->m_dialog_box_manager.disable_dialog_box(DialogBoxId::GuildOperation);
 			return true;
 		}
 		return false;
 	}
 
 	// Approve button
-	if ((msX >= sX + DEF_LBTNPOSX) && (msX <= sX + DEF_LBTNPOSX + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY)) {
-		PlaySoundEffect('E', 14, 5);
+	if ((mouse_x >= sX + ui_layout::left_btn_x) && (mouse_x <= sX + ui_layout::left_btn_x + ui_layout::btn_size_x) && (mouse_y >= sY + ui_layout::btn_y) && (mouse_y <= sY + ui_layout::btn_y + ui_layout::btn_size_y)) {
+		play_sound_effect('E', 14, 5);
 
-		switch (m_pGame->m_stGuildOpList[0].cOpMode) {
+		switch (m_game->m_guild_op_list[0].op_mode) {
 		case 1:
-			strcpy(cName20, m_pGame->m_stGuildOpList[0].cName);
-			bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_JOINGUILDAPPROVE, 0, 0, 0, 0, cName20);
+			name20 = m_game->m_guild_op_list[0].name;
+			send_command(MsgId::CommandCommon, CommonType::JoinGuildApprove, 0, 0, 0, 0, name20.c_str());
 			break;
 		case 2:
-			strcpy(cName20, m_pGame->m_stGuildOpList[0].cName);
-			bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_DISMISSGUILDAPPROVE, 0, 0, 0, 0, cName20);
+			name20 = m_game->m_guild_op_list[0].name;
+			send_command(MsgId::CommandCommon, CommonType::DismissGuildApprove, 0, 0, 0, 0, name20.c_str());
 			break;
 		}
-		m_pGame->_ShiftGuildOperationList();
-		if (m_pGame->m_stGuildOpList[0].cOpMode == 0)
-			m_pGame->m_dialogBoxManager.DisableDialogBox(DialogBoxId::GuildOperation);
+		m_game->shift_guild_operation_list();
+		if (m_game->m_guild_op_list[0].op_mode == 0)
+			m_game->m_dialog_box_manager.disable_dialog_box(DialogBoxId::GuildOperation);
 		return true;
 	}
 
 	// Reject button
-	if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY)) {
-		PlaySoundEffect('E', 14, 5);
+	if ((mouse_x >= sX + ui_layout::right_btn_x) && (mouse_x <= sX + ui_layout::right_btn_x + ui_layout::btn_size_x) && (mouse_y >= sY + ui_layout::btn_y) && (mouse_y <= sY + ui_layout::btn_y + ui_layout::btn_size_y)) {
+		play_sound_effect('E', 14, 5);
 
-		switch (m_pGame->m_stGuildOpList[0].cOpMode) {
+		switch (m_game->m_guild_op_list[0].op_mode) {
 		case 1:
-			strcpy(cName20, m_pGame->m_stGuildOpList[0].cName);
-			bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_JOINGUILDREJECT, 0, 0, 0, 0, cName20);
+			name20 = m_game->m_guild_op_list[0].name;
+			send_command(MsgId::CommandCommon, CommonType::JoinGuildReject, 0, 0, 0, 0, name20.c_str());
 			break;
 		case 2:
-			strcpy(cName20, m_pGame->m_stGuildOpList[0].cName);
-			bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_DISMISSGUILDREJECT, 0, 0, 0, 0, cName20);
+			name20 = m_game->m_guild_op_list[0].name;
+			send_command(MsgId::CommandCommon, CommonType::DismissGuildReject, 0, 0, 0, 0, name20.c_str());
 			break;
 		}
-		m_pGame->_ShiftGuildOperationList();
-		if (m_pGame->m_stGuildOpList[0].cOpMode == 0)
-			m_pGame->m_dialogBoxManager.DisableDialogBox(DialogBoxId::GuildOperation);
+		m_game->shift_guild_operation_list();
+		if (m_game->m_guild_op_list[0].op_mode == 0)
+			m_game->m_dialog_box_manager.disable_dialog_box(DialogBoxId::GuildOperation);
 		return true;
 	}
 

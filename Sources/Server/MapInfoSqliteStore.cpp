@@ -1,7 +1,6 @@
 #include "MapInfoSqliteStore.h"
 
-#define _WINSOCKAPI_
-#include <windows.h>
+#include <filesystem>
 #include <cstdio>
 #include <cstring>
 #include <cstdlib>
@@ -10,9 +9,7 @@
 #include "TeleportLoc.h"
 #include "StrategicPoint.h"
 #include "sqlite3.h"
-
-extern void PutLogList(char* cMsg);
-extern void PutLogListLevel(int level, const char* cMsg);
+#include "Log.h"
 
 namespace
 {
@@ -21,9 +18,7 @@ namespace
 		char* err = nullptr;
 		int rc = sqlite3_exec(db, sql, nullptr, nullptr, &err);
 		if (rc != SQLITE_OK) {
-			char logMsg[512] = {};
-			std::snprintf(logMsg, sizeof(logMsg), "(MAPINFO-SQLITE) Exec failed: %s", err ? err : "unknown");
-			PutLogList(logMsg);
+			hb::logger::log("MapInfo SQLite exec failed: {}", err ? err : "unknown");
 			sqlite3_free(err);
 			return false;
 		}
@@ -74,33 +69,18 @@ bool EnsureMapInfoDatabase(sqlite3** outDb, std::string& outPath, bool* outCreat
 		return false;
 	}
 
-	std::string dbPath = "MapInfo.db";
-	DWORD attrs = GetFileAttributes(dbPath.c_str());
-	if (attrs == INVALID_FILE_ATTRIBUTES) {
-		char modulePath[MAX_PATH] = {};
-		DWORD len = GetModuleFileNameA(nullptr, modulePath, MAX_PATH);
-		if (len > 0 && len < MAX_PATH) {
-			char* lastSlash = strrchr(modulePath, '\\');
-			if (lastSlash != nullptr) {
-				*(lastSlash + 1) = '\0';
-				dbPath.assign(modulePath);
-				dbPath.append("MapInfo.db");
-			}
-		}
+	std::string dbPath = "mapinfo.db";
+	if (!std::filesystem::exists(dbPath)) {
+		auto exeDir = std::filesystem::current_path();
+		dbPath = (exeDir / "mapinfo.db").string();
 	}
 	outPath = dbPath;
 
-	bool created = false;
-	attrs = GetFileAttributes(dbPath.c_str());
-	if (attrs == INVALID_FILE_ATTRIBUTES) {
-		created = true;
-	}
+	bool created = !std::filesystem::exists(dbPath);
 
 	sqlite3* db = nullptr;
 	if (sqlite3_open(dbPath.c_str(), &db) != SQLITE_OK) {
-		char logMsg[512] = {};
-		std::snprintf(logMsg, sizeof(logMsg), "(MAPINFO-SQLITE) Open failed: %s", sqlite3_errmsg(db));
-		PutLogList(logMsg);
+		hb::logger::log("MapInfo SQLite open failed: {}", sqlite3_errmsg(db));
 		sqlite3_close(db);
 		return false;
 	}
@@ -118,7 +98,7 @@ bool EnsureMapInfoDatabase(sqlite3** outDb, std::string& outPath, bool* outCreat
 		" key TEXT PRIMARY KEY,"
 		" value TEXT NOT NULL"
 		");"
-		"INSERT OR REPLACE INTO meta(key, value) VALUES('schema_version','1');"
+		"INSERT OR REPLACE INTO meta(key, value) VALUES('schema_version','2');"
 
 		// Core map settings
 		"CREATE TABLE IF NOT EXISTS maps ("
@@ -144,7 +124,8 @@ bool EnsureMapInfoDatabase(sqlite3** outDb, std::string& outPath, bool* outCreat
 		" heldenian_mode_map INTEGER NOT NULL DEFAULT 0,"
 		" mob_event_amount INTEGER NOT NULL DEFAULT 15,"
 		" energy_sphere_auto_creation INTEGER NOT NULL DEFAULT 0,"
-		" pk_mode INTEGER NOT NULL DEFAULT 0"
+		" pk_mode INTEGER NOT NULL DEFAULT 0,"
+		" attack_enabled INTEGER NOT NULL DEFAULT 1"
 		");"
 
 		// Teleport locations
@@ -185,10 +166,10 @@ bool EnsureMapInfoDatabase(sqlite3** outDb, std::string& outPath, bool* outCreat
 		"CREATE TABLE IF NOT EXISTS map_no_attack_areas ("
 		" map_name TEXT NOT NULL,"
 		" area_index INTEGER NOT NULL CHECK(area_index >= 0 AND area_index < 50),"
-		" rect_left INTEGER NOT NULL,"
-		" rect_top INTEGER NOT NULL,"
-		" rect_right INTEGER NOT NULL,"
-		" rect_bottom INTEGER NOT NULL,"
+		" tile_x INTEGER NOT NULL,"
+		" tile_y INTEGER NOT NULL,"
+		" tile_w INTEGER NOT NULL,"
+		" tile_h INTEGER NOT NULL,"
 		" PRIMARY KEY (map_name, area_index),"
 		" FOREIGN KEY (map_name) REFERENCES maps(map_name) ON DELETE CASCADE"
 		");"
@@ -197,10 +178,10 @@ bool EnsureMapInfoDatabase(sqlite3** outDb, std::string& outPath, bool* outCreat
 		"CREATE TABLE IF NOT EXISTS map_npc_avoid_rects ("
 		" map_name TEXT NOT NULL,"
 		" rect_index INTEGER NOT NULL CHECK(rect_index >= 0 AND rect_index < 50),"
-		" rect_left INTEGER NOT NULL,"
-		" rect_top INTEGER NOT NULL,"
-		" rect_right INTEGER NOT NULL,"
-		" rect_bottom INTEGER NOT NULL,"
+		" tile_x INTEGER NOT NULL,"
+		" tile_y INTEGER NOT NULL,"
+		" tile_w INTEGER NOT NULL,"
+		" tile_h INTEGER NOT NULL,"
 		" PRIMARY KEY (map_name, rect_index),"
 		" FOREIGN KEY (map_name) REFERENCES maps(map_name) ON DELETE CASCADE"
 		");"
@@ -210,13 +191,15 @@ bool EnsureMapInfoDatabase(sqlite3** outDb, std::string& outPath, bool* outCreat
 		" map_name TEXT NOT NULL,"
 		" generator_index INTEGER NOT NULL CHECK(generator_index >= 0 AND generator_index < 100),"
 		" generator_type INTEGER NOT NULL CHECK(generator_type IN (1, 2)),"
-		" rect_left INTEGER NOT NULL DEFAULT 0,"
-		" rect_top INTEGER NOT NULL DEFAULT 0,"
-		" rect_right INTEGER NOT NULL DEFAULT 0,"
-		" rect_bottom INTEGER NOT NULL DEFAULT 0,"
+		" tile_x INTEGER NOT NULL DEFAULT 0,"
+		" tile_y INTEGER NOT NULL DEFAULT 0,"
+		" tile_w INTEGER NOT NULL DEFAULT 0,"
+		" tile_h INTEGER NOT NULL DEFAULT 0,"
 		" waypoints TEXT NOT NULL DEFAULT '',"
-		" mob_type INTEGER NOT NULL,"
+		" npc_config_id INTEGER NOT NULL,"
 		" max_mobs INTEGER NOT NULL,"
+		" prob_sa INTEGER NOT NULL DEFAULT 15,"
+		" kind_sa INTEGER NOT NULL DEFAULT 1,"
 		" PRIMARY KEY (map_name, generator_index),"
 		" FOREIGN KEY (map_name) REFERENCES maps(map_name) ON DELETE CASCADE"
 		");"
@@ -303,7 +286,7 @@ bool EnsureMapInfoDatabase(sqlite3** outDb, std::string& outPath, bool* outCreat
 		"CREATE TABLE IF NOT EXISTS map_item_events ("
 		" map_name TEXT NOT NULL,"
 		" event_index INTEGER NOT NULL CHECK(event_index >= 0 AND event_index < 200),"
-		" item_name TEXT NOT NULL CHECK(length(item_name) <= 20),"
+		" item_name TEXT NOT NULL CHECK(length(item_name) <= 41),"
 		" amount INTEGER NOT NULL,"
 		" total_num INTEGER NOT NULL,"
 		" event_month INTEGER NOT NULL,"
@@ -341,7 +324,7 @@ bool EnsureMapInfoDatabase(sqlite3** outDb, std::string& outPath, bool* outCreat
 		"CREATE TABLE IF NOT EXISTS map_npcs ("
 		" id INTEGER PRIMARY KEY AUTOINCREMENT,"
 		" map_name TEXT NOT NULL,"
-		" npc_name TEXT NOT NULL CHECK(length(npc_name) <= 20),"
+		" npc_config_id INTEGER NOT NULL,"
 		" move_type INTEGER NOT NULL,"
 		" waypoint_list TEXT NOT NULL DEFAULT '',"
 		" name_prefix TEXT NOT NULL DEFAULT '' CHECK(length(name_prefix) <= 1),"
@@ -352,10 +335,10 @@ bool EnsureMapInfoDatabase(sqlite3** outDb, std::string& outPath, bool* outCreat
 		"CREATE TABLE IF NOT EXISTS map_apocalypse_boss ("
 		" map_name TEXT PRIMARY KEY,"
 		" npc_id INTEGER NOT NULL,"
-		" rect_x1 INTEGER NOT NULL,"
-		" rect_y1 INTEGER NOT NULL,"
-		" rect_x2 INTEGER NOT NULL,"
-		" rect_y2 INTEGER NOT NULL,"
+		" tile_x INTEGER NOT NULL,"
+		" tile_y INTEGER NOT NULL,"
+		" tile_w INTEGER NOT NULL,"
+		" tile_h INTEGER NOT NULL,"
 		" FOREIGN KEY (map_name) REFERENCES maps(map_name) ON DELETE CASCADE"
 		");"
 
@@ -363,10 +346,10 @@ bool EnsureMapInfoDatabase(sqlite3** outDb, std::string& outPath, bool* outCreat
 		"CREATE TABLE IF NOT EXISTS map_dynamic_gate ("
 		" map_name TEXT PRIMARY KEY,"
 		" gate_type INTEGER NOT NULL,"
-		" rect_x1 INTEGER NOT NULL,"
-		" rect_y1 INTEGER NOT NULL,"
-		" rect_x2 INTEGER NOT NULL,"
-		" rect_y2 INTEGER NOT NULL,"
+		" tile_x INTEGER NOT NULL,"
+		" tile_y INTEGER NOT NULL,"
+		" tile_w INTEGER NOT NULL,"
+		" tile_h INTEGER NOT NULL,"
 		" dest_map TEXT NOT NULL CHECK(length(dest_map) <= 10),"
 		" dest_x INTEGER NOT NULL,"
 		" dest_y INTEGER NOT NULL,"
@@ -421,9 +404,7 @@ int GetMapNamesFromDatabase(sqlite3* db, char mapNames[][11], int maxMaps)
 	const char* sql = "SELECT map_name FROM maps ORDER BY map_name;";
 	sqlite3_stmt* stmt = nullptr;
 	if (sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr) != SQLITE_OK) {
-		char logMsg[512] = {};
-		std::snprintf(logMsg, sizeof(logMsg), "(MAPINFO-SQLITE) GetMapNames prepare failed: %s", sqlite3_errmsg(db));
-		PutLogList(logMsg);
+		hb::logger::log("MapInfo SQLite: GetMapNames prepare failed: {}", sqlite3_errmsg(db));
 		return 0;
 	}
 
@@ -437,9 +418,9 @@ int GetMapNamesFromDatabase(sqlite3* db, char mapNames[][11], int maxMaps)
 	return count;
 }
 
-bool LoadMapBaseSettings(sqlite3* db, const char* mapName, CMap* pMap)
+bool LoadMapBaseSettings(sqlite3* db, const char* map_name, CMap* map)
 {
-	if (db == nullptr || mapName == nullptr || pMap == nullptr) {
+	if (db == nullptr || map_name == nullptr || map == nullptr) {
 		return false;
 	}
 
@@ -449,7 +430,8 @@ bool LoadMapBaseSettings(sqlite3* db, const char* mapName, CMap* pMap)
 		" mineral_generator_enabled, mineral_generator_level,"
 		" max_fish, max_mineral, fixed_day_mode, recall_impossible,"
 		" apocalypse_map, apocalypse_mob_gen_type, citizen_limit, is_fight_zone,"
-		" heldenian_map, heldenian_mode_map, mob_event_amount, energy_sphere_auto_creation, pk_mode"
+		" heldenian_map, heldenian_mode_map, mob_event_amount, energy_sphere_auto_creation, pk_mode,"
+		" attack_enabled"
 		" FROM maps WHERE map_name = ? COLLATE NOCASE;";
 
 	sqlite3_stmt* stmt = nullptr;
@@ -457,33 +439,34 @@ bool LoadMapBaseSettings(sqlite3* db, const char* mapName, CMap* pMap)
 		return false;
 	}
 
-	PrepareAndBindText(stmt, 1, mapName);
+	PrepareAndBindText(stmt, 1, map_name);
 
 	bool ok = false;
 	if (sqlite3_step(stmt) == SQLITE_ROW) {
 		int col = 0;
-		CopyColumnText(stmt, col++, pMap->m_cLocationName, sizeof(pMap->m_cLocationName));
-		pMap->m_iMaximumObject = sqlite3_column_int(stmt, col++);
-		pMap->m_iLevelLimit = sqlite3_column_int(stmt, col++);
-		pMap->m_iUpperLevelLimit = sqlite3_column_int(stmt, col++);
-		pMap->m_cType = static_cast<char>(sqlite3_column_int(stmt, col++));
-		pMap->m_bRandomMobGenerator = sqlite3_column_int(stmt, col++) != 0;
-		pMap->m_cRandomMobGeneratorLevel = static_cast<char>(sqlite3_column_int(stmt, col++));
-		pMap->m_bMineralGenerator = sqlite3_column_int(stmt, col++) != 0;
-		pMap->m_cMineralGeneratorLevel = static_cast<char>(sqlite3_column_int(stmt, col++));
-		pMap->m_iMaxFish = sqlite3_column_int(stmt, col++);
-		pMap->m_iMaxMineral = sqlite3_column_int(stmt, col++);
-		pMap->m_bIsFixedDayMode = sqlite3_column_int(stmt, col++) != 0;
-		pMap->m_bIsRecallImpossible = sqlite3_column_int(stmt, col++) != 0;
-		pMap->m_bIsApocalypseMap = sqlite3_column_int(stmt, col++) != 0;
-		pMap->m_iApocalypseMobGenType = sqlite3_column_int(stmt, col++);
-		pMap->m_bIsCitizenLimit = sqlite3_column_int(stmt, col++) != 0;
-		pMap->m_bIsFightZone = sqlite3_column_int(stmt, col++) != 0;
-		pMap->m_bIsHeldenianMap = sqlite3_column_int(stmt, col++) != 0;
-		pMap->m_cHeldenianModeMap = static_cast<char>(sqlite3_column_int(stmt, col++));
-		pMap->sMobEventAmount = static_cast<short>(sqlite3_column_int(stmt, col++));
-		pMap->m_bIsEnergySphereAutoCreation = sqlite3_column_int(stmt, col++) != 0;
-		// pk_mode is read but we don't have a direct member for it
+		CopyColumnText(stmt, col++, map->m_location_name, sizeof(map->m_location_name));
+		map->m_maximum_object = sqlite3_column_int(stmt, col++);
+		map->m_level_limit = sqlite3_column_int(stmt, col++);
+		map->m_upper_level_limit = sqlite3_column_int(stmt, col++);
+		map->m_type = static_cast<char>(sqlite3_column_int(stmt, col++));
+		map->m_random_mob_generator = sqlite3_column_int(stmt, col++) != 0;
+		map->m_random_mob_generator_level = static_cast<char>(sqlite3_column_int(stmt, col++));
+		map->m_mineral_generator = sqlite3_column_int(stmt, col++) != 0;
+		map->m_mineral_generator_level = static_cast<char>(sqlite3_column_int(stmt, col++));
+		map->m_max_fish = sqlite3_column_int(stmt, col++);
+		map->m_max_mineral = sqlite3_column_int(stmt, col++);
+		map->m_is_fixed_day_mode = sqlite3_column_int(stmt, col++) != 0;
+		map->m_is_recall_impossible = sqlite3_column_int(stmt, col++) != 0;
+		map->m_is_apocalypse_map = sqlite3_column_int(stmt, col++) != 0;
+		map->m_apocalypse_mob_gen_type = sqlite3_column_int(stmt, col++);
+		map->m_is_citizen_limit = sqlite3_column_int(stmt, col++) != 0;
+		map->m_is_fight_zone = sqlite3_column_int(stmt, col++) != 0;
+		map->m_is_heldenian_map = sqlite3_column_int(stmt, col++) != 0;
+		map->m_heldenian_mode_map = static_cast<char>(sqlite3_column_int(stmt, col++));
+		map->m_mob_event_amount = static_cast<short>(sqlite3_column_int(stmt, col++));
+		map->m_is_energy_sphere_auto_creation = sqlite3_column_int(stmt, col++) != 0;
+		col++; // pk_mode - read but no direct member
+		map->m_is_attack_enabled = sqlite3_column_int(stmt, col++) != 0;
 		ok = true;
 	}
 
@@ -491,9 +474,9 @@ bool LoadMapBaseSettings(sqlite3* db, const char* mapName, CMap* pMap)
 	return ok;
 }
 
-bool LoadMapTeleportLocations(sqlite3* db, const char* mapName, CMap* pMap)
+bool LoadMapTeleportLocations(sqlite3* db, const char* map_name, CMap* map)
 {
-	if (db == nullptr || mapName == nullptr || pMap == nullptr) {
+	if (db == nullptr || map_name == nullptr || map == nullptr) {
 		return false;
 	}
 
@@ -506,32 +489,32 @@ bool LoadMapTeleportLocations(sqlite3* db, const char* mapName, CMap* pMap)
 		return false;
 	}
 
-	PrepareAndBindText(stmt, 1, mapName);
+	PrepareAndBindText(stmt, 1, map_name);
 
 	while (sqlite3_step(stmt) == SQLITE_ROW) {
 		int idx = sqlite3_column_int(stmt, 0);
-		if (idx < 0 || idx >= DEF_MAXTELEPORTLOC) continue;
+		if (idx < 0 || idx >= hb::server::map::MaxTeleportLoc) continue;
 
-		if (pMap->m_pTeleportLoc[idx] == nullptr) {
-			pMap->m_pTeleportLoc[idx] = new CTeleportLoc;
+		if (map->m_teleport_loc[idx] == nullptr) {
+			map->m_teleport_loc[idx] = new CTeleportLoc;
 		}
 
-		CTeleportLoc* pTele = pMap->m_pTeleportLoc[idx];
-		pTele->m_sSrcX = static_cast<short>(sqlite3_column_int(stmt, 1));
-		pTele->m_sSrcY = static_cast<short>(sqlite3_column_int(stmt, 2));
-		CopyColumnText(stmt, 3, pTele->m_cDestMapName, sizeof(pTele->m_cDestMapName));
-		pTele->m_sDestX = static_cast<short>(sqlite3_column_int(stmt, 4));
-		pTele->m_sDestY = static_cast<short>(sqlite3_column_int(stmt, 5));
-		pTele->m_cDir = static_cast<char>(sqlite3_column_int(stmt, 6));
+		CTeleportLoc* tele = map->m_teleport_loc[idx];
+		tele->m_src_x = static_cast<short>(sqlite3_column_int(stmt, 1));
+		tele->m_src_y = static_cast<short>(sqlite3_column_int(stmt, 2));
+		CopyColumnText(stmt, 3, tele->m_dest_map_name, sizeof(tele->m_dest_map_name));
+		tele->m_dest_x = static_cast<short>(sqlite3_column_int(stmt, 4));
+		tele->m_dest_y = static_cast<short>(sqlite3_column_int(stmt, 5));
+		tele->m_dir = static_cast<char>(sqlite3_column_int(stmt, 6));
 	}
 
 	sqlite3_finalize(stmt);
 	return true;
 }
 
-bool LoadMapInitialPoints(sqlite3* db, const char* mapName, CMap* pMap)
+bool LoadMapInitialPoints(sqlite3* db, const char* map_name, CMap* map)
 {
-	if (db == nullptr || mapName == nullptr || pMap == nullptr) {
+	if (db == nullptr || map_name == nullptr || map == nullptr) {
 		return false;
 	}
 
@@ -543,23 +526,23 @@ bool LoadMapInitialPoints(sqlite3* db, const char* mapName, CMap* pMap)
 		return false;
 	}
 
-	PrepareAndBindText(stmt, 1, mapName);
+	PrepareAndBindText(stmt, 1, map_name);
 
 	while (sqlite3_step(stmt) == SQLITE_ROW) {
 		int idx = sqlite3_column_int(stmt, 0);
-		if (idx < 0 || idx >= DEF_MAXINITIALPOINT) continue;
+		if (idx < 0 || idx >= hb::server::map::MaxInitialPoint) continue;
 
-		pMap->m_pInitialPoint[idx].x = sqlite3_column_int(stmt, 1);
-		pMap->m_pInitialPoint[idx].y = sqlite3_column_int(stmt, 2);
+		map->m_initial_point[idx].x = sqlite3_column_int(stmt, 1);
+		map->m_initial_point[idx].y = sqlite3_column_int(stmt, 2);
 	}
 
 	sqlite3_finalize(stmt);
 	return true;
 }
 
-bool LoadMapWaypoints(sqlite3* db, const char* mapName, CMap* pMap)
+bool LoadMapWaypoints(sqlite3* db, const char* map_name, CMap* map)
 {
-	if (db == nullptr || mapName == nullptr || pMap == nullptr) {
+	if (db == nullptr || map_name == nullptr || map == nullptr) {
 		return false;
 	}
 
@@ -571,28 +554,28 @@ bool LoadMapWaypoints(sqlite3* db, const char* mapName, CMap* pMap)
 		return false;
 	}
 
-	PrepareAndBindText(stmt, 1, mapName);
+	PrepareAndBindText(stmt, 1, map_name);
 
 	while (sqlite3_step(stmt) == SQLITE_ROW) {
 		int idx = sqlite3_column_int(stmt, 0);
-		if (idx < 0 || idx >= DEF_MAXWAYPOINTCFG) continue;
+		if (idx < 0 || idx >= hb::server::map::MaxWaypointCfg) continue;
 
-		pMap->m_WaypointList[idx].x = sqlite3_column_int(stmt, 1);
-		pMap->m_WaypointList[idx].y = sqlite3_column_int(stmt, 2);
+		map->m_waypoint_list[idx].x = sqlite3_column_int(stmt, 1);
+		map->m_waypoint_list[idx].y = sqlite3_column_int(stmt, 2);
 	}
 
 	sqlite3_finalize(stmt);
 	return true;
 }
 
-bool LoadMapNoAttackAreas(sqlite3* db, const char* mapName, CMap* pMap)
+bool LoadMapNoAttackAreas(sqlite3* db, const char* map_name, CMap* map)
 {
-	if (db == nullptr || mapName == nullptr || pMap == nullptr) {
+	if (db == nullptr || map_name == nullptr || map == nullptr) {
 		return false;
 	}
 
 	const char* sql =
-		"SELECT area_index, rect_left, rect_top, rect_right, rect_bottom"
+		"SELECT area_index, tile_x, tile_y, tile_w, tile_h"
 		" FROM map_no_attack_areas WHERE map_name = ? COLLATE NOCASE ORDER BY area_index;";
 
 	sqlite3_stmt* stmt = nullptr;
@@ -600,30 +583,31 @@ bool LoadMapNoAttackAreas(sqlite3* db, const char* mapName, CMap* pMap)
 		return false;
 	}
 
-	PrepareAndBindText(stmt, 1, mapName);
+	PrepareAndBindText(stmt, 1, map_name);
 
 	while (sqlite3_step(stmt) == SQLITE_ROW) {
 		int idx = sqlite3_column_int(stmt, 0);
-		if (idx < 0 || idx >= DEF_MAXNMR) continue;
+		if (idx < 0 || idx >= hb::server::map::MaxNmr) continue;
 
-		pMap->m_rcNoAttackRect[idx].left = sqlite3_column_int(stmt, 1);
-		pMap->m_rcNoAttackRect[idx].top = sqlite3_column_int(stmt, 2);
-		pMap->m_rcNoAttackRect[idx].right = sqlite3_column_int(stmt, 3);
-		pMap->m_rcNoAttackRect[idx].bottom = sqlite3_column_int(stmt, 4);
+		map->m_no_attack_rect[idx] = hb::shared::geometry::GameRectangle(
+			sqlite3_column_int(stmt, 1),
+			sqlite3_column_int(stmt, 2),
+			sqlite3_column_int(stmt, 3),
+			sqlite3_column_int(stmt, 4));
 	}
 
 	sqlite3_finalize(stmt);
 	return true;
 }
 
-bool LoadMapNpcAvoidRects(sqlite3* db, const char* mapName, CMap* pMap)
+bool LoadMapNpcAvoidRects(sqlite3* db, const char* map_name, CMap* map)
 {
-	if (db == nullptr || mapName == nullptr || pMap == nullptr) {
+	if (db == nullptr || map_name == nullptr || map == nullptr) {
 		return false;
 	}
 
 	const char* sql =
-		"SELECT rect_index, rect_left, rect_top, rect_right, rect_bottom"
+		"SELECT rect_index, tile_x, tile_y, tile_w, tile_h"
 		" FROM map_npc_avoid_rects WHERE map_name = ? COLLATE NOCASE ORDER BY rect_index;";
 
 	sqlite3_stmt* stmt = nullptr;
@@ -631,31 +615,32 @@ bool LoadMapNpcAvoidRects(sqlite3* db, const char* mapName, CMap* pMap)
 		return false;
 	}
 
-	PrepareAndBindText(stmt, 1, mapName);
+	PrepareAndBindText(stmt, 1, map_name);
 
 	while (sqlite3_step(stmt) == SQLITE_ROW) {
 		int idx = sqlite3_column_int(stmt, 0);
-		if (idx < 0 || idx >= DEF_MAXMGAR) continue;
+		if (idx < 0 || idx >= hb::server::map::MaxMgar) continue;
 
-		pMap->m_rcMobGenAvoidRect[idx].left = sqlite3_column_int(stmt, 1);
-		pMap->m_rcMobGenAvoidRect[idx].top = sqlite3_column_int(stmt, 2);
-		pMap->m_rcMobGenAvoidRect[idx].right = sqlite3_column_int(stmt, 3);
-		pMap->m_rcMobGenAvoidRect[idx].bottom = sqlite3_column_int(stmt, 4);
+		map->m_mob_generator_avoid_rect[idx] = hb::shared::geometry::GameRectangle(
+			sqlite3_column_int(stmt, 1),
+			sqlite3_column_int(stmt, 2),
+			sqlite3_column_int(stmt, 3),
+			sqlite3_column_int(stmt, 4));
 	}
 
 	sqlite3_finalize(stmt);
 	return true;
 }
 
-bool LoadMapSpotMobGenerators(sqlite3* db, const char* mapName, CMap* pMap)
+bool LoadMapSpotMobGenerators(sqlite3* db, const char* map_name, CMap* map)
 {
-	if (db == nullptr || mapName == nullptr || pMap == nullptr) {
+	if (db == nullptr || map_name == nullptr || map == nullptr) {
 		return false;
 	}
 
 	const char* sql =
-		"SELECT generator_index, generator_type, rect_left, rect_top, rect_right, rect_bottom,"
-		" waypoints, mob_type, max_mobs"
+		"SELECT generator_index, generator_type, tile_x, tile_y, tile_w, tile_h,"
+		" waypoints, npc_config_id, max_mobs, prob_sa, kind_sa"
 		" FROM map_spot_mob_generators WHERE map_name = ? COLLATE NOCASE ORDER BY generator_index;";
 
 	sqlite3_stmt* stmt = nullptr;
@@ -663,37 +648,40 @@ bool LoadMapSpotMobGenerators(sqlite3* db, const char* mapName, CMap* pMap)
 		return false;
 	}
 
-	PrepareAndBindText(stmt, 1, mapName);
+	PrepareAndBindText(stmt, 1, map_name);
 
 	while (sqlite3_step(stmt) == SQLITE_ROW) {
 		int idx = sqlite3_column_int(stmt, 0);
-		if (idx < 0 || idx >= DEF_MAXSPOTMOBGENERATOR) continue;
+		if (idx < 0 || idx >= hb::server::map::MaxSpotMobGenerator) continue;
 
-		pMap->m_stSpotMobGenerator[idx].bDefined = true;
-		pMap->m_stSpotMobGenerator[idx].cType = static_cast<char>(sqlite3_column_int(stmt, 1));
-		pMap->m_stSpotMobGenerator[idx].rcRect.left = sqlite3_column_int(stmt, 2);
-		pMap->m_stSpotMobGenerator[idx].rcRect.top = sqlite3_column_int(stmt, 3);
-		pMap->m_stSpotMobGenerator[idx].rcRect.right = sqlite3_column_int(stmt, 4);
-		pMap->m_stSpotMobGenerator[idx].rcRect.bottom = sqlite3_column_int(stmt, 5);
+		map->m_spot_mob_generator[idx].is_defined = true;
+		map->m_spot_mob_generator[idx].type = static_cast<char>(sqlite3_column_int(stmt, 1));
+		map->m_spot_mob_generator[idx].rcRect = hb::shared::geometry::GameRectangle(
+			sqlite3_column_int(stmt, 2),
+			sqlite3_column_int(stmt, 3),
+			sqlite3_column_int(stmt, 4),
+			sqlite3_column_int(stmt, 5));
 
 		// Parse waypoints for type 2
 		char waypointStr[256] = {};
 		CopyColumnText(stmt, 6, waypointStr, sizeof(waypointStr));
-		ParseWaypointList(waypointStr, pMap->m_stSpotMobGenerator[idx].cWaypoint, 10);
+		ParseWaypointList(waypointStr, map->m_spot_mob_generator[idx].waypoints, 10);
 
-		pMap->m_stSpotMobGenerator[idx].iMobType = sqlite3_column_int(stmt, 7);
-		pMap->m_stSpotMobGenerator[idx].iMaxMobs = sqlite3_column_int(stmt, 8);
-		pMap->m_stSpotMobGenerator[idx].iCurMobs = 0;
-		pMap->m_stSpotMobGenerator[idx].iTotalActiveMob = 0;
+		map->m_spot_mob_generator[idx].npc_config_id = sqlite3_column_int(stmt, 7);
+		map->m_spot_mob_generator[idx].max_mobs = sqlite3_column_int(stmt, 8);
+		map->m_spot_mob_generator[idx].prob_sa = sqlite3_column_int(stmt, 9);
+		map->m_spot_mob_generator[idx].kind_sa = sqlite3_column_int(stmt, 10);
+		map->m_spot_mob_generator[idx].cur_mobs = 0;
+		map->m_spot_mob_generator[idx].total_active_mob = 0;
 	}
 
 	sqlite3_finalize(stmt);
 	return true;
 }
 
-bool LoadMapFishPoints(sqlite3* db, const char* mapName, CMap* pMap)
+bool LoadMapFishPoints(sqlite3* db, const char* map_name, CMap* map)
 {
-	if (db == nullptr || mapName == nullptr || pMap == nullptr) {
+	if (db == nullptr || map_name == nullptr || map == nullptr) {
 		return false;
 	}
 
@@ -705,24 +693,24 @@ bool LoadMapFishPoints(sqlite3* db, const char* mapName, CMap* pMap)
 		return false;
 	}
 
-	PrepareAndBindText(stmt, 1, mapName);
+	PrepareAndBindText(stmt, 1, map_name);
 
 	while (sqlite3_step(stmt) == SQLITE_ROW) {
 		int idx = sqlite3_column_int(stmt, 0);
-		if (idx < 0 || idx >= DEF_MAXFISHPOINT) continue;
+		if (idx < 0 || idx >= hb::server::map::MaxFishPoint) continue;
 
-		pMap->m_FishPointList[idx].x = sqlite3_column_int(stmt, 1);
-		pMap->m_FishPointList[idx].y = sqlite3_column_int(stmt, 2);
-		pMap->m_iTotalFishPoint++;
+		map->m_fish_point_list[idx].x = sqlite3_column_int(stmt, 1);
+		map->m_fish_point_list[idx].y = sqlite3_column_int(stmt, 2);
+		map->m_total_fish_point++;
 	}
 
 	sqlite3_finalize(stmt);
 	return true;
 }
 
-bool LoadMapMineralPoints(sqlite3* db, const char* mapName, CMap* pMap)
+bool LoadMapMineralPoints(sqlite3* db, const char* map_name, CMap* map)
 {
-	if (db == nullptr || mapName == nullptr || pMap == nullptr) {
+	if (db == nullptr || map_name == nullptr || map == nullptr) {
 		return false;
 	}
 
@@ -734,24 +722,24 @@ bool LoadMapMineralPoints(sqlite3* db, const char* mapName, CMap* pMap)
 		return false;
 	}
 
-	PrepareAndBindText(stmt, 1, mapName);
+	PrepareAndBindText(stmt, 1, map_name);
 
 	while (sqlite3_step(stmt) == SQLITE_ROW) {
 		int idx = sqlite3_column_int(stmt, 0);
-		if (idx < 0 || idx >= DEF_MAXMINERALPOINT) continue;
+		if (idx < 0 || idx >= hb::server::map::MaxMineralPoint) continue;
 
-		pMap->m_MineralPointList[idx].x = sqlite3_column_int(stmt, 1);
-		pMap->m_MineralPointList[idx].y = sqlite3_column_int(stmt, 2);
-		pMap->m_iTotalMineralPoint++;
+		map->m_mineral_point_list[idx].x = sqlite3_column_int(stmt, 1);
+		map->m_mineral_point_list[idx].y = sqlite3_column_int(stmt, 2);
+		map->m_total_mineral_point++;
 	}
 
 	sqlite3_finalize(stmt);
 	return true;
 }
 
-bool LoadMapStrategicPoints(sqlite3* db, const char* mapName, CMap* pMap)
+bool LoadMapStrategicPoints(sqlite3* db, const char* map_name, CMap* map)
 {
-	if (db == nullptr || mapName == nullptr || pMap == nullptr) {
+	if (db == nullptr || map_name == nullptr || map == nullptr) {
 		return false;
 	}
 
@@ -764,29 +752,29 @@ bool LoadMapStrategicPoints(sqlite3* db, const char* mapName, CMap* pMap)
 		return false;
 	}
 
-	PrepareAndBindText(stmt, 1, mapName);
+	PrepareAndBindText(stmt, 1, map_name);
 
 	while (sqlite3_step(stmt) == SQLITE_ROW) {
 		int idx = sqlite3_column_int(stmt, 0);
-		if (idx < 0 || idx >= DEF_MAXSTRATEGICPOINTS) continue;
+		if (idx < 0 || idx >= hb::server::map::MaxStrategicPoints) continue;
 
-		if (pMap->m_pStrategicPointList[idx] == nullptr) {
-			pMap->m_pStrategicPointList[idx] = new CStrategicPoint;
+		if (map->m_strategic_point_list[idx] == nullptr) {
+			map->m_strategic_point_list[idx] = new CStrategicPoint;
 		}
 
-		pMap->m_pStrategicPointList[idx]->m_iSide = sqlite3_column_int(stmt, 1);
-		pMap->m_pStrategicPointList[idx]->m_iValue = sqlite3_column_int(stmt, 2);
-		pMap->m_pStrategicPointList[idx]->m_iX = sqlite3_column_int(stmt, 3);
-		pMap->m_pStrategicPointList[idx]->m_iY = sqlite3_column_int(stmt, 4);
+		map->m_strategic_point_list[idx]->m_side = sqlite3_column_int(stmt, 1);
+		map->m_strategic_point_list[idx]->m_value = sqlite3_column_int(stmt, 2);
+		map->m_strategic_point_list[idx]->m_x = sqlite3_column_int(stmt, 3);
+		map->m_strategic_point_list[idx]->m_y = sqlite3_column_int(stmt, 4);
 	}
 
 	sqlite3_finalize(stmt);
 	return true;
 }
 
-bool LoadMapEnergySphereCreationPoints(sqlite3* db, const char* mapName, CMap* pMap)
+bool LoadMapEnergySphereCreationPoints(sqlite3* db, const char* map_name, CMap* map)
 {
-	if (db == nullptr || mapName == nullptr || pMap == nullptr) {
+	if (db == nullptr || map_name == nullptr || map == nullptr) {
 		return false;
 	}
 
@@ -799,25 +787,25 @@ bool LoadMapEnergySphereCreationPoints(sqlite3* db, const char* mapName, CMap* p
 		return false;
 	}
 
-	PrepareAndBindText(stmt, 1, mapName);
+	PrepareAndBindText(stmt, 1, map_name);
 
 	while (sqlite3_step(stmt) == SQLITE_ROW) {
 		int idx = sqlite3_column_int(stmt, 0);
-		if (idx < 0 || idx >= DEF_MAXENERGYSPHERES) continue;
+		if (idx < 0 || idx >= hb::server::map::MaxEnergySpheres) continue;
 
-		pMap->m_stEnergySphereCreationList[idx].cType = static_cast<char>(sqlite3_column_int(stmt, 1));
-		pMap->m_stEnergySphereCreationList[idx].sX = sqlite3_column_int(stmt, 2);
-		pMap->m_stEnergySphereCreationList[idx].sY = sqlite3_column_int(stmt, 3);
-		pMap->m_iTotalEnergySphereCreationPoint++;
+		map->m_energy_sphere_creation_list[idx].type = static_cast<char>(sqlite3_column_int(stmt, 1));
+		map->m_energy_sphere_creation_list[idx].x = sqlite3_column_int(stmt, 2);
+		map->m_energy_sphere_creation_list[idx].y = sqlite3_column_int(stmt, 3);
+		map->m_total_energy_sphere_creation_point++;
 	}
 
 	sqlite3_finalize(stmt);
 	return true;
 }
 
-bool LoadMapEnergySphereGoalPoints(sqlite3* db, const char* mapName, CMap* pMap)
+bool LoadMapEnergySphereGoalPoints(sqlite3* db, const char* map_name, CMap* map)
 {
-	if (db == nullptr || mapName == nullptr || pMap == nullptr) {
+	if (db == nullptr || map_name == nullptr || map == nullptr) {
 		return false;
 	}
 
@@ -830,27 +818,27 @@ bool LoadMapEnergySphereGoalPoints(sqlite3* db, const char* mapName, CMap* pMap)
 		return false;
 	}
 
-	PrepareAndBindText(stmt, 1, mapName);
+	PrepareAndBindText(stmt, 1, map_name);
 
 	while (sqlite3_step(stmt) == SQLITE_ROW) {
 		int idx = sqlite3_column_int(stmt, 0);
-		if (idx < 0 || idx >= DEF_MAXENERGYSPHERES) continue;
+		if (idx < 0 || idx >= hb::server::map::MaxEnergySpheres) continue;
 
-		pMap->m_stEnergySphereGoalList[idx].cResult = static_cast<char>(sqlite3_column_int(stmt, 1));
-		pMap->m_stEnergySphereGoalList[idx].aresdenX = sqlite3_column_int(stmt, 2);
-		pMap->m_stEnergySphereGoalList[idx].aresdenY = sqlite3_column_int(stmt, 3);
-		pMap->m_stEnergySphereGoalList[idx].elvineX = sqlite3_column_int(stmt, 4);
-		pMap->m_stEnergySphereGoalList[idx].elvineY = sqlite3_column_int(stmt, 5);
-		pMap->m_iTotalEnergySphereGoalPoint++;
+		map->m_energy_sphere_goal_list[idx].result = static_cast<char>(sqlite3_column_int(stmt, 1));
+		map->m_energy_sphere_goal_list[idx].aresden_x = sqlite3_column_int(stmt, 2);
+		map->m_energy_sphere_goal_list[idx].aresden_y = sqlite3_column_int(stmt, 3);
+		map->m_energy_sphere_goal_list[idx].elvine_x = sqlite3_column_int(stmt, 4);
+		map->m_energy_sphere_goal_list[idx].elvine_y = sqlite3_column_int(stmt, 5);
+		map->m_total_energy_sphere_goal_point++;
 	}
 
 	sqlite3_finalize(stmt);
 	return true;
 }
 
-bool LoadMapStrikePoints(sqlite3* db, const char* mapName, CMap* pMap)
+bool LoadMapStrikePoints(sqlite3* db, const char* map_name, CMap* map)
 {
-	if (db == nullptr || mapName == nullptr || pMap == nullptr) {
+	if (db == nullptr || map_name == nullptr || map == nullptr) {
 		return false;
 	}
 
@@ -864,37 +852,37 @@ bool LoadMapStrikePoints(sqlite3* db, const char* mapName, CMap* pMap)
 		return false;
 	}
 
-	PrepareAndBindText(stmt, 1, mapName);
+	PrepareAndBindText(stmt, 1, map_name);
 
 	while (sqlite3_step(stmt) == SQLITE_ROW) {
 		int idx = sqlite3_column_int(stmt, 0);
-		if (idx < 0 || idx >= DEF_MAXSTRIKEPOINTS) continue;
+		if (idx < 0 || idx >= hb::server::map::MaxStrikePoints) continue;
 
-		pMap->m_stStrikePoint[idx].dX = sqlite3_column_int(stmt, 1);
-		pMap->m_stStrikePoint[idx].dY = sqlite3_column_int(stmt, 2);
-		pMap->m_stStrikePoint[idx].iHP = sqlite3_column_int(stmt, 3);
-		pMap->m_stStrikePoint[idx].iInitHP = pMap->m_stStrikePoint[idx].iHP;
-		pMap->m_stStrikePoint[idx].iEffectX[0] = sqlite3_column_int(stmt, 4);
-		pMap->m_stStrikePoint[idx].iEffectY[0] = sqlite3_column_int(stmt, 5);
-		pMap->m_stStrikePoint[idx].iEffectX[1] = sqlite3_column_int(stmt, 6);
-		pMap->m_stStrikePoint[idx].iEffectY[1] = sqlite3_column_int(stmt, 7);
-		pMap->m_stStrikePoint[idx].iEffectX[2] = sqlite3_column_int(stmt, 8);
-		pMap->m_stStrikePoint[idx].iEffectY[2] = sqlite3_column_int(stmt, 9);
-		pMap->m_stStrikePoint[idx].iEffectX[3] = sqlite3_column_int(stmt, 10);
-		pMap->m_stStrikePoint[idx].iEffectY[3] = sqlite3_column_int(stmt, 11);
-		pMap->m_stStrikePoint[idx].iEffectX[4] = sqlite3_column_int(stmt, 12);
-		pMap->m_stStrikePoint[idx].iEffectY[4] = sqlite3_column_int(stmt, 13);
-		CopyColumnText(stmt, 14, pMap->m_stStrikePoint[idx].cRelatedMapName,
-			sizeof(pMap->m_stStrikePoint[idx].cRelatedMapName));
+		map->m_strike_point[idx].x = sqlite3_column_int(stmt, 1);
+		map->m_strike_point[idx].y = sqlite3_column_int(stmt, 2);
+		map->m_strike_point[idx].hp = sqlite3_column_int(stmt, 3);
+		map->m_strike_point[idx].init_hp = map->m_strike_point[idx].hp;
+		map->m_strike_point[idx].effect_x[0] = sqlite3_column_int(stmt, 4);
+		map->m_strike_point[idx].effect_y[0] = sqlite3_column_int(stmt, 5);
+		map->m_strike_point[idx].effect_x[1] = sqlite3_column_int(stmt, 6);
+		map->m_strike_point[idx].effect_y[1] = sqlite3_column_int(stmt, 7);
+		map->m_strike_point[idx].effect_x[2] = sqlite3_column_int(stmt, 8);
+		map->m_strike_point[idx].effect_y[2] = sqlite3_column_int(stmt, 9);
+		map->m_strike_point[idx].effect_x[3] = sqlite3_column_int(stmt, 10);
+		map->m_strike_point[idx].effect_y[3] = sqlite3_column_int(stmt, 11);
+		map->m_strike_point[idx].effect_x[4] = sqlite3_column_int(stmt, 12);
+		map->m_strike_point[idx].effect_y[4] = sqlite3_column_int(stmt, 13);
+		CopyColumnText(stmt, 14, map->m_strike_point[idx].related_map_name,
+			sizeof(map->m_strike_point[idx].related_map_name));
 	}
 
 	sqlite3_finalize(stmt);
 	return true;
 }
 
-bool LoadMapItemEvents(sqlite3* db, const char* mapName, CMap* pMap)
+bool LoadMapItemEvents(sqlite3* db, const char* map_name, CMap* map)
 {
-	if (db == nullptr || mapName == nullptr || pMap == nullptr) {
+	if (db == nullptr || map_name == nullptr || map == nullptr) {
 		return false;
 	}
 
@@ -907,30 +895,30 @@ bool LoadMapItemEvents(sqlite3* db, const char* mapName, CMap* pMap)
 		return false;
 	}
 
-	PrepareAndBindText(stmt, 1, mapName);
+	PrepareAndBindText(stmt, 1, map_name);
 
 	while (sqlite3_step(stmt) == SQLITE_ROW) {
 		int idx = sqlite3_column_int(stmt, 0);
-		if (idx < 0 || idx >= DEF_MAXITEMEVENTS) continue;
+		if (idx < 0 || idx >= hb::server::map::MaxItemEvents) continue;
 
-		CopyColumnText(stmt, 1, pMap->m_stItemEventList[idx].cItemName,
-			sizeof(pMap->m_stItemEventList[idx].cItemName));
-		pMap->m_stItemEventList[idx].iAmount = sqlite3_column_int(stmt, 2);
-		pMap->m_stItemEventList[idx].iTotalNum = sqlite3_column_int(stmt, 3);
-		pMap->m_stItemEventList[idx].iMonth = sqlite3_column_int(stmt, 4);
-		pMap->m_stItemEventList[idx].iDay = sqlite3_column_int(stmt, 5);
+		CopyColumnText(stmt, 1, map->m_item_event_list[idx].item_name,
+			sizeof(map->m_item_event_list[idx].item_name));
+		map->m_item_event_list[idx].amount = sqlite3_column_int(stmt, 2);
+		map->m_item_event_list[idx].total_num = sqlite3_column_int(stmt, 3);
+		map->m_item_event_list[idx].month = sqlite3_column_int(stmt, 4);
+		map->m_item_event_list[idx].day = sqlite3_column_int(stmt, 5);
 		// event_type (column 6) is not stored in CMap struct
 		// mob_list (column 7) could be parsed into separate mob fields if needed
-		pMap->m_iTotalItemEvents++;
+		map->m_total_item_events++;
 	}
 
 	sqlite3_finalize(stmt);
 	return true;
 }
 
-bool LoadMapHeldenianTowers(sqlite3* db, const char* mapName, CMap* pMap)
+bool LoadMapHeldenianTowers(sqlite3* db, const char* map_name, CMap* map)
 {
-	if (db == nullptr || mapName == nullptr || pMap == nullptr) {
+	if (db == nullptr || map_name == nullptr || map == nullptr) {
 		return false;
 	}
 
@@ -943,25 +931,25 @@ bool LoadMapHeldenianTowers(sqlite3* db, const char* mapName, CMap* pMap)
 		return false;
 	}
 
-	PrepareAndBindText(stmt, 1, mapName);
+	PrepareAndBindText(stmt, 1, map_name);
 
 	while (sqlite3_step(stmt) == SQLITE_ROW) {
 		int idx = sqlite3_column_int(stmt, 0);
-		if (idx < 0 || idx >= DEF_MAXHELDENIANTOWER) continue;
+		if (idx < 0 || idx >= hb::server::map::MaxHeldenianTower) continue;
 
-		pMap->m_stHeldenianTower[idx].sTypeID = static_cast<short>(sqlite3_column_int(stmt, 1));
-		pMap->m_stHeldenianTower[idx].cSide = static_cast<char>(sqlite3_column_int(stmt, 2));
-		pMap->m_stHeldenianTower[idx].dX = static_cast<short>(sqlite3_column_int(stmt, 3));
-		pMap->m_stHeldenianTower[idx].dY = static_cast<short>(sqlite3_column_int(stmt, 4));
+		map->m_heldenian_tower[idx].type_id = static_cast<short>(sqlite3_column_int(stmt, 1));
+		map->m_heldenian_tower[idx].side = static_cast<char>(sqlite3_column_int(stmt, 2));
+		map->m_heldenian_tower[idx].x = static_cast<short>(sqlite3_column_int(stmt, 3));
+		map->m_heldenian_tower[idx].y = static_cast<short>(sqlite3_column_int(stmt, 4));
 	}
 
 	sqlite3_finalize(stmt);
 	return true;
 }
 
-bool LoadMapHeldenianGateDoors(sqlite3* db, const char* mapName, CMap* pMap)
+bool LoadMapHeldenianGateDoors(sqlite3* db, const char* map_name, CMap* map)
 {
-	if (db == nullptr || mapName == nullptr || pMap == nullptr) {
+	if (db == nullptr || map_name == nullptr || map == nullptr) {
 		return false;
 	}
 
@@ -974,36 +962,36 @@ bool LoadMapHeldenianGateDoors(sqlite3* db, const char* mapName, CMap* pMap)
 		return false;
 	}
 
-	PrepareAndBindText(stmt, 1, mapName);
+	PrepareAndBindText(stmt, 1, map_name);
 
 	while (sqlite3_step(stmt) == SQLITE_ROW) {
 		int idx = sqlite3_column_int(stmt, 0);
-		if (idx < 0 || idx >= DEF_MAXHELDENIANDOOR) continue;
+		if (idx < 0 || idx >= hb::server::map::MaxHeldenianDoor) continue;
 
-		pMap->m_stHeldenianGateDoor[idx].cDir = static_cast<char>(sqlite3_column_int(stmt, 1));
-		pMap->m_stHeldenianGateDoor[idx].dX = static_cast<short>(sqlite3_column_int(stmt, 2));
-		pMap->m_stHeldenianGateDoor[idx].dY = static_cast<short>(sqlite3_column_int(stmt, 3));
+		map->m_heldenian_gate_door[idx].dir = static_cast<char>(sqlite3_column_int(stmt, 1));
+		map->m_heldenian_gate_door[idx].x = static_cast<short>(sqlite3_column_int(stmt, 2));
+		map->m_heldenian_gate_door[idx].y = static_cast<short>(sqlite3_column_int(stmt, 3));
 	}
 
 	sqlite3_finalize(stmt);
 	return true;
 }
 
-bool LoadMapNpcs(sqlite3* db, const char* mapName, CMap* pMap)
+bool LoadMapNpcs(sqlite3* db, const char* map_name, CMap* map)
 {
 	// NPCs are handled differently - they are spawned by CGame, not stored in CMap directly
 	// This function is a placeholder for future NPC spawning from database
 	return true;
 }
 
-bool LoadMapApocalypseBoss(sqlite3* db, const char* mapName, CMap* pMap)
+bool LoadMapApocalypseBoss(sqlite3* db, const char* map_name, CMap* map)
 {
-	if (db == nullptr || mapName == nullptr || pMap == nullptr) {
+	if (db == nullptr || map_name == nullptr || map == nullptr) {
 		return false;
 	}
 
 	const char* sql =
-		"SELECT npc_id, rect_x1, rect_y1, rect_x2, rect_y2"
+		"SELECT npc_id, tile_x, tile_y, tile_w, tile_h"
 		" FROM map_apocalypse_boss WHERE map_name = ? COLLATE NOCASE;";
 
 	sqlite3_stmt* stmt = nullptr;
@@ -1011,28 +999,29 @@ bool LoadMapApocalypseBoss(sqlite3* db, const char* mapName, CMap* pMap)
 		return false;
 	}
 
-	PrepareAndBindText(stmt, 1, mapName);
+	PrepareAndBindText(stmt, 1, map_name);
 
 	if (sqlite3_step(stmt) == SQLITE_ROW) {
-		pMap->m_iApocalypseBossMobNpcID = sqlite3_column_int(stmt, 0);
-		pMap->m_sApocalypseBossMobRectX1 = static_cast<short>(sqlite3_column_int(stmt, 1));
-		pMap->m_sApocalypseBossMobRectY1 = static_cast<short>(sqlite3_column_int(stmt, 2));
-		pMap->m_sApocalypseBossMobRectX2 = static_cast<short>(sqlite3_column_int(stmt, 3));
-		pMap->m_sApocalypseBossMobRectY2 = static_cast<short>(sqlite3_column_int(stmt, 4));
+		map->m_apocalypse_boss_mob_npc_id = sqlite3_column_int(stmt, 0);
+		map->m_apocalypse_boss_mob = hb::shared::geometry::GameRectangle(
+			sqlite3_column_int(stmt, 1),
+			sqlite3_column_int(stmt, 2),
+			sqlite3_column_int(stmt, 3),
+			sqlite3_column_int(stmt, 4));
 	}
 
 	sqlite3_finalize(stmt);
 	return true;
 }
 
-bool LoadMapDynamicGate(sqlite3* db, const char* mapName, CMap* pMap)
+bool LoadMapDynamicGate(sqlite3* db, const char* map_name, CMap* map)
 {
-	if (db == nullptr || mapName == nullptr || pMap == nullptr) {
+	if (db == nullptr || map_name == nullptr || map == nullptr) {
 		return false;
 	}
 
 	const char* sql =
-		"SELECT gate_type, rect_x1, rect_y1, rect_x2, rect_y2, dest_map, dest_x, dest_y"
+		"SELECT gate_type, tile_x, tile_y, tile_w, tile_h, dest_map, dest_x, dest_y"
 		" FROM map_dynamic_gate WHERE map_name = ? COLLATE NOCASE;";
 
 	sqlite3_stmt* stmt = nullptr;
@@ -1040,68 +1029,67 @@ bool LoadMapDynamicGate(sqlite3* db, const char* mapName, CMap* pMap)
 		return false;
 	}
 
-	PrepareAndBindText(stmt, 1, mapName);
+	PrepareAndBindText(stmt, 1, map_name);
 
 	if (sqlite3_step(stmt) == SQLITE_ROW) {
-		pMap->m_cDynamicGateType = static_cast<char>(sqlite3_column_int(stmt, 0));
-		pMap->m_sDynamicGateCoordRectX1 = static_cast<short>(sqlite3_column_int(stmt, 1));
-		pMap->m_sDynamicGateCoordRectY1 = static_cast<short>(sqlite3_column_int(stmt, 2));
-		pMap->m_sDynamicGateCoordRectX2 = static_cast<short>(sqlite3_column_int(stmt, 3));
-		pMap->m_sDynamicGateCoordRectY2 = static_cast<short>(sqlite3_column_int(stmt, 4));
-		CopyColumnText(stmt, 5, pMap->m_cDynamicGateCoordDestMap,
-			sizeof(pMap->m_cDynamicGateCoordDestMap));
-		pMap->m_sDynamicGateCoordTgtX = static_cast<short>(sqlite3_column_int(stmt, 6));
-		pMap->m_sDynamicGateCoordTgtY = static_cast<short>(sqlite3_column_int(stmt, 7));
+		map->m_dynamic_gate_type = static_cast<char>(sqlite3_column_int(stmt, 0));
+		map->m_dynamic_gate_coord = hb::shared::geometry::GameRectangle(
+			sqlite3_column_int(stmt, 1),
+			sqlite3_column_int(stmt, 2),
+			sqlite3_column_int(stmt, 3),
+			sqlite3_column_int(stmt, 4));
+		CopyColumnText(stmt, 5, map->m_dynamic_gate_coord_dest_map,
+			sizeof(map->m_dynamic_gate_coord_dest_map));
+		map->m_dynamic_gate_coord_tgt_x = static_cast<short>(sqlite3_column_int(stmt, 6));
+		map->m_dynamic_gate_coord_tgt_y = static_cast<short>(sqlite3_column_int(stmt, 7));
 	}
 
 	sqlite3_finalize(stmt);
 	return true;
 }
 
-bool LoadMapConfig(sqlite3* db, const char* mapName, CMap* pMap)
+bool LoadMapConfig(sqlite3* db, const char* map_name, CMap* map)
 {
-	if (db == nullptr || mapName == nullptr || pMap == nullptr) {
+	if (db == nullptr || map_name == nullptr || map == nullptr) {
 		return false;
 	}
 
 	// Load all components
-	if (!LoadMapBaseSettings(db, mapName, pMap)) {
-		char logMsg[256];
-		std::snprintf(logMsg, sizeof(logMsg), "(MAPINFO-SQLITE) Failed to load base settings for map: %s", mapName);
-		PutLogList(logMsg);
+	if (!LoadMapBaseSettings(db, map_name, map)) {
+		hb::logger::log("MapInfo SQLite: failed to load base settings for map {}", map_name);
 		return false;
 	}
 
 	// Load child tables - these are non-critical, log but don't fail
-	LoadMapTeleportLocations(db, mapName, pMap);
-	LoadMapInitialPoints(db, mapName, pMap);
-	LoadMapWaypoints(db, mapName, pMap);
-	LoadMapNoAttackAreas(db, mapName, pMap);
-	LoadMapNpcAvoidRects(db, mapName, pMap);
-	LoadMapSpotMobGenerators(db, mapName, pMap);
-	LoadMapFishPoints(db, mapName, pMap);
-	LoadMapMineralPoints(db, mapName, pMap);
-	LoadMapStrategicPoints(db, mapName, pMap);
-	LoadMapEnergySphereCreationPoints(db, mapName, pMap);
-	LoadMapEnergySphereGoalPoints(db, mapName, pMap);
-	LoadMapStrikePoints(db, mapName, pMap);
-	LoadMapItemEvents(db, mapName, pMap);
-	LoadMapHeldenianTowers(db, mapName, pMap);
-	LoadMapHeldenianGateDoors(db, mapName, pMap);
-	LoadMapNpcs(db, mapName, pMap);
-	LoadMapApocalypseBoss(db, mapName, pMap);
-	LoadMapDynamicGate(db, mapName, pMap);
+	LoadMapTeleportLocations(db, map_name, map);
+	LoadMapInitialPoints(db, map_name, map);
+	LoadMapWaypoints(db, map_name, map);
+	LoadMapNoAttackAreas(db, map_name, map);
+	LoadMapNpcAvoidRects(db, map_name, map);
+	LoadMapSpotMobGenerators(db, map_name, map);
+	LoadMapFishPoints(db, map_name, map);
+	LoadMapMineralPoints(db, map_name, map);
+	LoadMapStrategicPoints(db, map_name, map);
+	LoadMapEnergySphereCreationPoints(db, map_name, map);
+	LoadMapEnergySphereGoalPoints(db, map_name, map);
+	LoadMapStrikePoints(db, map_name, map);
+	LoadMapItemEvents(db, map_name, map);
+	LoadMapHeldenianTowers(db, map_name, map);
+	LoadMapHeldenianGateDoors(db, map_name, map);
+	LoadMapNpcs(db, map_name, map);
+	LoadMapApocalypseBoss(db, map_name, map);
+	LoadMapDynamicGate(db, map_name, map);
 
 	return true;
 }
 
-bool SaveMapConfig(sqlite3* db, const CMap* pMap)
+bool SaveMapConfig(sqlite3* db, const CMap* map)
 {
 	// TODO: Implement save functionality for admin tools
 	return false;
 }
 
-bool SaveAllMapConfigs(sqlite3* db, CMap** pMapList, int mapCount)
+bool SaveAllMapConfigs(sqlite3* db, CMap** map_list, int mapCount)
 {
 	// TODO: Implement save functionality for admin tools
 	return false;

@@ -1,22 +1,24 @@
 #include "GameConfigSqliteStore.h"
 
-#define _WINSOCKAPI_
-#include <windows.h>
+#include <filesystem>
 #include <cstdio>
 #include <cstring>
 
 #include "Item.h"
 #include "BuildItem.h"
 #include "Game.h"
+#include "ItemManager.h"
+#include "CraftingManager.h"
+#include "QuestManager.h"
 #include "Magic.h"
 #include "Npc.h"
 #include "Portion.h"
 #include "Quest.h"
 #include "Skill.h"
 #include "sqlite3.h"
-
-extern void PutLogList(char* cMsg);
-extern void PutLogListLevel(int level, const char* cMsg);
+#include "Log.h"
+#include "StringCompat.h"
+using namespace hb::server::config;
 
 namespace
 {
@@ -26,8 +28,7 @@ namespace
         int rc = sqlite3_exec(db, sql, nullptr, nullptr, &err);
         if (rc != SQLITE_OK) {
             char logMsg[512] = {};
-            std::snprintf(logMsg, sizeof(logMsg), "(SQLITE) Exec failed: %s", err ? err : "unknown");
-            PutLogList(logMsg);
+            hb::logger::error("SQLite exec failed: {}", err ? err : "unknown");
             sqlite3_free(err);
             return false;
         }
@@ -121,6 +122,19 @@ namespace
         }
         return sqlite3_step(stmt) == SQLITE_DONE;
     }
+
+    bool InsertKeyValueFloat(sqlite3_stmt* stmt, const char* key, float value)
+    {
+        sqlite3_reset(stmt);
+        sqlite3_clear_bindings(stmt);
+        bool ok = true;
+        ok &= PrepareAndBindText(stmt, 1, key);
+        ok &= (sqlite3_bind_double(stmt, 2, static_cast<double>(value)) == SQLITE_OK);
+        if (!ok) {
+            return false;
+        }
+        return sqlite3_step(stmt) == SQLITE_DONE;
+    }
 }
 
 bool EnsureGameConfigDatabase(sqlite3** outDb, std::string& outPath, bool* outCreated)
@@ -129,33 +143,19 @@ bool EnsureGameConfigDatabase(sqlite3** outDb, std::string& outPath, bool* outCr
         return false;
     }
 
-    std::string dbPath = "GameConfigs.db";
-    DWORD attrs = GetFileAttributes(dbPath.c_str());
-    if (attrs == INVALID_FILE_ATTRIBUTES) {
-        char modulePath[MAX_PATH] = {};
-        DWORD len = GetModuleFileNameA(nullptr, modulePath, MAX_PATH);
-        if (len > 0 && len < MAX_PATH) {
-            char* lastSlash = strrchr(modulePath, '\\');
-            if (lastSlash != nullptr) {
-                *(lastSlash + 1) = '\0';
-                dbPath.assign(modulePath);
-                dbPath.append("GameConfigs.db");
-            }
-        }
+    std::string dbPath = "gameconfigs.db";
+    if (!std::filesystem::exists(dbPath)) {
+        auto exeDir = std::filesystem::current_path();
+        dbPath = (exeDir / "gameconfigs.db").string();
     }
     outPath = dbPath;
 
-    bool created = false;
-    attrs = GetFileAttributes(dbPath.c_str());
-    if (attrs == INVALID_FILE_ATTRIBUTES) {
-        created = true;
-    }
+    bool created = !std::filesystem::exists(dbPath);
 
     sqlite3* db = nullptr;
     if (sqlite3_open(dbPath.c_str(), &db) != SQLITE_OK) {
         char logMsg[512] = {};
-        std::snprintf(logMsg, sizeof(logMsg), "(SQLITE) Open failed: %s", sqlite3_errmsg(db));
-        PutLogList(logMsg);
+        hb::logger::error("SQLite open failed: {}", sqlite3_errmsg(db));
         sqlite3_close(db);
         return false;
     }
@@ -221,15 +221,19 @@ bool EnsureGameConfigDatabase(sqlite3** outDb, std::string& outPath, bool* outCr
         " key TEXT PRIMARY KEY,"
         " value TEXT NOT NULL"
         ");"
-        "CREATE TABLE IF NOT EXISTS admin_list ("
-        " gm_name TEXT PRIMARY KEY"
-        ");"
         "CREATE TABLE IF NOT EXISTS banned_list ("
         " ip_address TEXT PRIMARY KEY"
         ");"
-        "CREATE TABLE IF NOT EXISTS admin_level_permissions ("
-        " key TEXT PRIMARY KEY,"
-        " value INTEGER NOT NULL"
+        "CREATE TABLE IF NOT EXISTS admins ("
+        " account_name TEXT PRIMARY KEY,"
+        " character_name TEXT NOT NULL,"
+        " approved_ip TEXT NOT NULL DEFAULT '0.0.0.0',"
+        " admin_level INTEGER NOT NULL DEFAULT 1"
+        ");"
+        "CREATE TABLE IF NOT EXISTS admin_command_permissions ("
+        " command TEXT PRIMARY KEY COLLATE NOCASE,"
+        " admin_level INTEGER NOT NULL DEFAULT 1000,"
+        " description TEXT NOT NULL DEFAULT ''"
         ");"
         "CREATE TABLE IF NOT EXISTS npc_configs ("
         " npc_id INTEGER PRIMARY KEY,"
@@ -308,7 +312,9 @@ bool EnsureGameConfigDatabase(sqlite3** outDb, std::string& outPath, bool* outCr
         " value3 INTEGER NOT NULL,"
         " value4 INTEGER NOT NULL,"
         " value5 INTEGER NOT NULL,"
-        " value6 INTEGER NOT NULL"
+        " value6 INTEGER NOT NULL,"
+        " is_useable INTEGER NOT NULL DEFAULT 0,"
+        " use_method INTEGER NOT NULL DEFAULT 0"
         ");"
         "CREATE TABLE IF NOT EXISTS quest_configs ("
         " quest_index INTEGER PRIMARY KEY,"
@@ -442,6 +448,10 @@ bool EnsureGameConfigDatabase(sqlite3** outDb, std::string& outPath, bool* outCr
         ExecSql(db, "ALTER TABLE npc_configs ADD COLUMN drop_table_id INTEGER NOT NULL DEFAULT 0;");
     }
 
+    if (!HasColumn(db, "admins", "admin_level")) {
+        ExecSql(db, "ALTER TABLE admins ADD COLUMN admin_level INTEGER NOT NULL DEFAULT 1;");
+    }
+
     *outDb = db;
     if (outCreated != nullptr) {
         *outCreated = created;
@@ -478,7 +488,7 @@ bool SaveItemConfigs(sqlite3* db, CItem* const* itemList, int maxItems)
         return false;
     }
 
-    for (int i = 0; i < maxItems; i++) {
+    for(int i = 0; i < maxItems; i++) {
         if (itemList[i] == nullptr) {
             continue;
         }
@@ -487,33 +497,33 @@ bool SaveItemConfigs(sqlite3* db, CItem* const* itemList, int maxItems)
         sqlite3_clear_bindings(stmt);
         int col = 1;
         bool ok = true;
-        ok &= (sqlite3_bind_int(stmt, col++, itemList[i]->m_sIDnum) == SQLITE_OK);
-        ok &= PrepareAndBindText(stmt, col++, itemList[i]->m_cName);
-        ok &= (sqlite3_bind_int(stmt, col++, itemList[i]->m_cItemType) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, itemList[i]->m_cEquipPos) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, itemList[i]->m_sItemEffectType) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, itemList[i]->m_sItemEffectValue1) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, itemList[i]->m_sItemEffectValue2) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, itemList[i]->m_sItemEffectValue3) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, itemList[i]->m_sItemEffectValue4) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, itemList[i]->m_sItemEffectValue5) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, itemList[i]->m_sItemEffectValue6) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, itemList[i]->m_wMaxLifeSpan) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, itemList[i]->m_sSpecialEffect) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, itemList[i]->m_sSprite) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, itemList[i]->m_sSpriteFrame) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, static_cast<int>(itemList[i]->m_wPrice)) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, itemList[i]->m_bIsForSale ? 1 : 0) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, itemList[i]->m_wWeight) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, itemList[i]->m_cApprValue) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, itemList[i]->m_cSpeed) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, itemList[i]->m_sLevelLimit) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, itemList[i]->m_cGenderLimit) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, itemList[i]->m_sSpecialEffectValue1) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, itemList[i]->m_sSpecialEffectValue2) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, itemList[i]->m_sRelatedSkill) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, itemList[i]->m_cCategory) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, itemList[i]->m_cItemColor) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, itemList[i]->m_id_num) == SQLITE_OK);
+        ok &= PrepareAndBindText(stmt, col++, itemList[i]->m_name);
+        ok &= (sqlite3_bind_int(stmt, col++, itemList[i]->m_item_type) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, itemList[i]->m_equip_pos) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, itemList[i]->m_item_effect_type) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, itemList[i]->m_item_effect_value1) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, itemList[i]->m_item_effect_value2) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, itemList[i]->m_item_effect_value3) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, itemList[i]->m_item_effect_value4) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, itemList[i]->m_item_effect_value5) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, itemList[i]->m_item_effect_value6) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, itemList[i]->m_max_life_span) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, itemList[i]->m_special_effect) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, itemList[i]->m_sprite) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, itemList[i]->m_sprite_frame) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, static_cast<int>(itemList[i]->m_price)) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, itemList[i]->m_is_for_sale ? 1 : 0) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, itemList[i]->m_weight) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, itemList[i]->m_appearance_value) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, itemList[i]->m_speed) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, itemList[i]->m_level_limit) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, itemList[i]->m_gender_limit) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, itemList[i]->m_special_effect_value1) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, itemList[i]->m_special_effect_value2) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, itemList[i]->m_related_skill) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, itemList[i]->m_category) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, itemList[i]->m_item_color) == SQLITE_OK);
 
         if (!ok || sqlite3_step(stmt) != SQLITE_DONE) {
             sqlite3_finalize(stmt);
@@ -551,46 +561,46 @@ bool LoadItemConfigs(sqlite3* db, CItem** itemList, int maxItems)
 
     while (sqlite3_step(stmt) == SQLITE_ROW) {
         int col = 0;
-        int itemId = sqlite3_column_int(stmt, col++);
-        if (itemId < 0 || itemId >= maxItems) {
+        int item_id = sqlite3_column_int(stmt, col++);
+        if (item_id < 0 || item_id >= maxItems) {
             continue;
         }
 
-        if (itemList[itemId] != nullptr) {
-            delete itemList[itemId];
-            itemList[itemId] = nullptr;
+        if (itemList[item_id] != nullptr) {
+            delete itemList[item_id];
+            itemList[item_id] = nullptr;
         }
 
         CItem* item = new CItem();
-        item->m_sIDnum = (short)itemId;
-        CopyColumnText(stmt, col++, item->m_cName, sizeof(item->m_cName));
-        item->m_cItemType = (char)sqlite3_column_int(stmt, col++);
-        item->m_cEquipPos = (char)sqlite3_column_int(stmt, col++);
-        item->m_sItemEffectType = (short)sqlite3_column_int(stmt, col++);
-        item->m_sItemEffectValue1 = (short)sqlite3_column_int(stmt, col++);
-        item->m_sItemEffectValue2 = (short)sqlite3_column_int(stmt, col++);
-        item->m_sItemEffectValue3 = (short)sqlite3_column_int(stmt, col++);
-        item->m_sItemEffectValue4 = (short)sqlite3_column_int(stmt, col++);
-        item->m_sItemEffectValue5 = (short)sqlite3_column_int(stmt, col++);
-        item->m_sItemEffectValue6 = (short)sqlite3_column_int(stmt, col++);
-        item->m_wMaxLifeSpan = (uint16_t)sqlite3_column_int(stmt, col++);
-        item->m_sSpecialEffect = (short)sqlite3_column_int(stmt, col++);
-        item->m_sSprite = (short)sqlite3_column_int(stmt, col++);
-        item->m_sSpriteFrame = (short)sqlite3_column_int(stmt, col++);
-        item->m_wPrice = (uint32_t)sqlite3_column_int(stmt, col++);
-        item->m_bIsForSale = (sqlite3_column_int(stmt, col++) != 0);
-        item->m_wWeight = (uint16_t)sqlite3_column_int(stmt, col++);
-        item->m_cApprValue = (char)sqlite3_column_int(stmt, col++);
-        item->m_cSpeed = (char)sqlite3_column_int(stmt, col++);
-        item->m_sLevelLimit = (short)sqlite3_column_int(stmt, col++);
-        item->m_cGenderLimit = (char)sqlite3_column_int(stmt, col++);
-        item->m_sSpecialEffectValue1 = (short)sqlite3_column_int(stmt, col++);
-        item->m_sSpecialEffectValue2 = (short)sqlite3_column_int(stmt, col++);
-        item->m_sRelatedSkill = (short)sqlite3_column_int(stmt, col++);
-        item->m_cCategory = (char)sqlite3_column_int(stmt, col++);
-        item->m_cItemColor = (char)sqlite3_column_int(stmt, col++);
+        item->m_id_num = (short)item_id;
+        CopyColumnText(stmt, col++, item->m_name, sizeof(item->m_name));
+        item->m_item_type = (char)sqlite3_column_int(stmt, col++);
+        item->m_equip_pos = (char)sqlite3_column_int(stmt, col++);
+        item->m_item_effect_type = (short)sqlite3_column_int(stmt, col++);
+        item->m_item_effect_value1 = (short)sqlite3_column_int(stmt, col++);
+        item->m_item_effect_value2 = (short)sqlite3_column_int(stmt, col++);
+        item->m_item_effect_value3 = (short)sqlite3_column_int(stmt, col++);
+        item->m_item_effect_value4 = (short)sqlite3_column_int(stmt, col++);
+        item->m_item_effect_value5 = (short)sqlite3_column_int(stmt, col++);
+        item->m_item_effect_value6 = (short)sqlite3_column_int(stmt, col++);
+        item->m_max_life_span = (uint16_t)sqlite3_column_int(stmt, col++);
+        item->m_special_effect = (short)sqlite3_column_int(stmt, col++);
+        item->m_sprite = (short)sqlite3_column_int(stmt, col++);
+        item->m_sprite_frame = (short)sqlite3_column_int(stmt, col++);
+        item->m_price = (uint32_t)sqlite3_column_int(stmt, col++);
+        item->m_is_for_sale = (sqlite3_column_int(stmt, col++) != 0);
+        item->m_weight = (uint16_t)sqlite3_column_int(stmt, col++);
+        item->m_appearance_value = (char)sqlite3_column_int(stmt, col++);
+        item->m_speed = (char)sqlite3_column_int(stmt, col++);
+        item->m_level_limit = (short)sqlite3_column_int(stmt, col++);
+        item->m_gender_limit = (char)sqlite3_column_int(stmt, col++);
+        item->m_special_effect_value1 = (short)sqlite3_column_int(stmt, col++);
+        item->m_special_effect_value2 = (short)sqlite3_column_int(stmt, col++);
+        item->m_related_skill = (short)sqlite3_column_int(stmt, col++);
+        item->m_category = (char)sqlite3_column_int(stmt, col++);
+        item->m_item_color = (char)sqlite3_column_int(stmt, col++);
 
-        itemList[itemId] = item;
+        itemList[item_id] = item;
     }
 
     sqlite3_finalize(stmt);
@@ -625,16 +635,16 @@ bool SaveRealmConfig(sqlite3* db, const CGame* game)
     }
 
     bool ok = true;
-    ok &= PrepareAndBindText(stmtRealm, 1, game->m_cRealmName);
-    ok &= PrepareAndBindText(stmtRealm, 2, game->m_cLoginListenIP);
-    ok &= (sqlite3_bind_int(stmtRealm, 3, game->m_iLoginListenPort) == SQLITE_OK);
-    ok &= PrepareAndBindText(stmtRealm, 4, game->m_cGameListenIP);
-    ok &= (sqlite3_bind_int(stmtRealm, 5, game->m_iGameListenPort) == SQLITE_OK);
+    ok &= PrepareAndBindText(stmtRealm, 1, game->m_realm_name);
+    ok &= PrepareAndBindText(stmtRealm, 2, game->m_login_listen_ip);
+    ok &= (sqlite3_bind_int(stmtRealm, 3, game->m_login_listen_port) == SQLITE_OK);
+    ok &= PrepareAndBindText(stmtRealm, 4, game->m_game_listen_ip);
+    ok &= (sqlite3_bind_int(stmtRealm, 5, game->m_game_listen_port) == SQLITE_OK);
 
     // Optional connection IP/port (bind NULL if empty)
-    if (game->m_cGameConnectionIP[0] != '\0') {
-        ok &= PrepareAndBindText(stmtRealm, 6, game->m_cGameConnectionIP);
-        ok &= (sqlite3_bind_int(stmtRealm, 7, game->m_iGameConnectionPort) == SQLITE_OK);
+    if (game->m_game_connection_ip[0] != '\0') {
+        ok &= PrepareAndBindText(stmtRealm, 6, game->m_game_connection_ip);
+        ok &= (sqlite3_bind_int(stmtRealm, 7, game->m_game_connection_port) == SQLITE_OK);
     } else {
         ok &= (sqlite3_bind_null(stmtRealm, 6) == SQLITE_OK);
         ok &= (sqlite3_bind_null(stmtRealm, 7) == SQLITE_OK);
@@ -655,14 +665,14 @@ bool SaveRealmConfig(sqlite3* db, const CGame* game)
     }
 
     int mapIndex = 0;
-    for (int i = 0; i < DEF_MAXMAPS; i++) {
-        if (game->m_pMapList[i] == nullptr) {
+    for(int i = 0; i < MaxMaps; i++) {
+        if (game->m_map_list[i] == nullptr) {
             continue;
         }
         sqlite3_reset(stmtMap);
         sqlite3_clear_bindings(stmtMap);
         ok = (sqlite3_bind_int(stmtMap, 1, mapIndex++) == SQLITE_OK);
-        ok &= PrepareAndBindText(stmtMap, 2, game->m_pMapList[i]->m_cName);
+        ok &= PrepareAndBindText(stmtMap, 2, game->m_map_list[i]->m_name);
         if (!ok || sqlite3_step(stmtMap) != SQLITE_DONE) {
             sqlite3_finalize(stmtMap);
             RollbackTransaction(db);
@@ -708,40 +718,37 @@ bool LoadRealmConfig(sqlite3* db, CGame* game)
         int connPort = sqlite3_column_int(stmt, 6);
 
         if (realmName) {
-            std::snprintf(game->m_cRealmName, sizeof(game->m_cRealmName), "%s", realmName);
+            std::snprintf(game->m_realm_name, sizeof(game->m_realm_name), "%s", realmName);
         }
         if (loginIP) {
-            std::snprintf(game->m_cLoginListenIP, sizeof(game->m_cLoginListenIP), "%s", loginIP);
+            std::snprintf(game->m_login_listen_ip, sizeof(game->m_login_listen_ip), "%s", loginIP);
         }
-        game->m_iLoginListenPort = loginPort;
+        game->m_login_listen_port = loginPort;
 
         if (gameIP) {
-            std::snprintf(game->m_cGameListenIP, sizeof(game->m_cGameListenIP), "%s", gameIP);
+            std::snprintf(game->m_game_listen_ip, sizeof(game->m_game_listen_ip), "%s", gameIP);
         }
-        game->m_iGameListenPort = gamePort;
+        game->m_game_listen_port = gamePort;
 
         // Optional connection IP/port
         if (connIP && connIP[0] != '\0') {
-            std::snprintf(game->m_cGameConnectionIP, sizeof(game->m_cGameConnectionIP), "%s", connIP);
-            game->m_iGameConnectionPort = connPort;
+            std::snprintf(game->m_game_connection_ip, sizeof(game->m_game_connection_ip), "%s", connIP);
+            game->m_game_connection_port = connPort;
         } else {
-            game->m_cGameConnectionIP[0] = '\0';
-            game->m_iGameConnectionPort = 0;
+            game->m_game_connection_ip[0] = '\0';
+            game->m_game_connection_port = 0;
         }
 
         realmLoaded = true;
 
         char logMsg[256] = {};
-        std::snprintf(logMsg, sizeof(logMsg), "Loaded realm: %s (Login: %s:%d, Game: %s:%d)",
-            game->m_cRealmName, game->m_cLoginListenIP, game->m_iLoginListenPort,
-            game->m_cGameListenIP, game->m_iGameListenPort);
-        PutLogListLevel(LOG_LEVEL_NOTICE, logMsg);
+        hb::logger::log("Loaded realm: {} (Login: {}:{}, Game: {}:{})", game->m_realm_name, game->m_login_listen_ip, game->m_login_listen_port, game->m_game_listen_ip, game->m_game_listen_port);
     }
 
     sqlite3_finalize(stmt);
 
     if (!realmLoaded) {
-        PutLogListLevel(LOG_LEVEL_ERROR, "No realm configuration found in realmlist table (id=1)");
+        hb::logger::error("No realm configuration found in realmlist table (id=1)");
         return false;
     }
 
@@ -751,17 +758,16 @@ bool LoadRealmConfig(sqlite3* db, CGame* game)
     }
 
     int mapsLoaded = 0;
-    PutLogListLevel(LOG_LEVEL_NOTICE, "Loading active maps from GameConfigs.db...");
+    hb::logger::log("Loading active maps from gameconfigs.db");
     while (sqlite3_step(stmt) == SQLITE_ROW) {
         const unsigned char* nameText = sqlite3_column_text(stmt, 0);
         if (nameText == nullptr) {
             continue;
         }
         const char* name = reinterpret_cast<const char*>(nameText);
-        if (!game->_bRegisterMap(const_cast<char*>(name))) {
+        if (!game->register_map(const_cast<char*>(name))) {
             char logMsg[256] = {};
-            std::snprintf(logMsg, sizeof(logMsg), "Map load failed: %s", name);
-            PutLogListLevel(LOG_LEVEL_ERROR, logMsg);
+            hb::logger::error("Map load failed: {}", name);
             sqlite3_finalize(stmt);
             return false;
         }
@@ -771,8 +777,7 @@ bool LoadRealmConfig(sqlite3* db, CGame* game)
     sqlite3_finalize(stmt);
     {
         char logMsg[128] = {};
-        std::snprintf(logMsg, sizeof(logMsg), "Loaded %d maps.", mapsLoaded);
-        PutLogListLevel(LOG_LEVEL_NOTICE, logMsg);
+        hb::logger::log("Loaded {} maps.", mapsLoaded);
     }
     return true;
 }
@@ -799,56 +804,50 @@ bool SaveSettingsConfig(sqlite3* db, const CGame* game)
     }
 
     bool ok = true;
-    ok &= InsertKeyValueInt(stmt, "primary-drop-rate", game->m_iPrimaryDropRate);
-    ok &= InsertKeyValueInt(stmt, "secondary-drop-rate", game->m_iSecondaryDropRate);
-    ok &= InsertKeyValue(stmt, "enemy-kill-mode", game->m_bEnemyKillMode ? "deathmatch" : "classic");
-    ok &= InsertKeyValueInt(stmt, "enemy-kill-adjust", game->m_iEnemyKillAdjust);
-    ok &= InsertKeyValueInt(stmt, "monday-raid-time", game->m_sRaidTimeMonday);
-    ok &= InsertKeyValueInt(stmt, "tuesday-raid-time", game->m_sRaidTimeTuesday);
-    ok &= InsertKeyValueInt(stmt, "wednesday-raid-time", game->m_sRaidTimeWednesday);
-    ok &= InsertKeyValueInt(stmt, "thursday-raid-time", game->m_sRaidTimeThursday);
-    ok &= InsertKeyValueInt(stmt, "friday-raid-time", game->m_sRaidTimeFriday);
-    ok &= InsertKeyValueInt(stmt, "saturday-raid-time", game->m_sRaidTimeSaturday);
-    ok &= InsertKeyValueInt(stmt, "sunday-raid-time", game->m_sRaidTimeSunday);
-    switch (game->m_bLogChatOption) {
-    case 1: ok &= InsertKeyValue(stmt, "log-chat-settings", "player"); break;
-    case 2: ok &= InsertKeyValue(stmt, "log-chat-settings", "gm"); break;
-    case 3: ok &= InsertKeyValue(stmt, "log-chat-settings", "all"); break;
-    case 4: ok &= InsertKeyValue(stmt, "log-chat-settings", "none"); break;
-    default: ok &= InsertKeyValue(stmt, "log-chat-settings", "player"); break;
-    }
-    ok &= InsertKeyValueInt(stmt, "slate-success-rate", game->m_sSlateSuccessRate);
-    ok &= InsertKeyValueInt(stmt, "rep-drop-modifier", game->m_cRepDropModifier);
+    ok &= InsertKeyValueFloat(stmt, "primary-drop-rate", game->m_primary_drop_rate);
+    ok &= InsertKeyValueFloat(stmt, "gold-drop-rate", game->m_gold_drop_rate);
+    ok &= InsertKeyValueFloat(stmt, "secondary-drop-rate", game->m_secondary_drop_rate);
+    ok &= InsertKeyValue(stmt, "enemy-kill-mode", game->m_enemy_kill_mode ? "deathmatch" : "classic");
+    ok &= InsertKeyValueInt(stmt, "enemy-kill-adjust", game->m_enemy_kill_adjust);
+    ok &= InsertKeyValueInt(stmt, "monday-raid-time", game->m_raid_time_monday);
+    ok &= InsertKeyValueInt(stmt, "tuesday-raid-time", game->m_raid_time_tuesday);
+    ok &= InsertKeyValueInt(stmt, "wednesday-raid-time", game->m_raid_time_wednesday);
+    ok &= InsertKeyValueInt(stmt, "thursday-raid-time", game->m_raid_time_thursday);
+    ok &= InsertKeyValueInt(stmt, "friday-raid-time", game->m_raid_time_friday);
+    ok &= InsertKeyValueInt(stmt, "saturday-raid-time", game->m_raid_time_saturday);
+    ok &= InsertKeyValueInt(stmt, "sunday-raid-time", game->m_raid_time_sunday);
+    ok &= InsertKeyValueInt(stmt, "slate-success-rate", game->m_slate_success_rate);
+    ok &= InsertKeyValueInt(stmt, "rep-drop-modifier", game->m_rep_drop_modifier);
 
     // Timing Settings
-    ok &= InsertKeyValueInt(stmt, "client-timeout-ms", game->m_iClientTimeout);
-    ok &= InsertKeyValueInt(stmt, "stamina-regen-interval", game->m_iStaminaRegenInterval);
-    ok &= InsertKeyValueInt(stmt, "poison-damage-interval", game->m_iPoisonDamageInterval);
-    ok &= InsertKeyValueInt(stmt, "health-regen-interval", game->m_iHealthRegenInterval);
-    ok &= InsertKeyValueInt(stmt, "mana-regen-interval", game->m_iManaRegenInterval);
-    ok &= InsertKeyValueInt(stmt, "hunger-consume-interval", game->m_iHungerConsumeInterval);
-    ok &= InsertKeyValueInt(stmt, "summon-creature-duration", game->m_iSummonCreatureDuration);
-    ok &= InsertKeyValueInt(stmt, "autosave-interval", game->m_iAutosaveInterval);
-    ok &= InsertKeyValueInt(stmt, "lag-protection-interval", game->m_iLagProtectionInterval);
+    ok &= InsertKeyValueInt(stmt, "client-timeout-ms", game->m_client_timeout);
+    ok &= InsertKeyValueInt(stmt, "stamina-regen-interval", game->m_stamina_regen_interval);
+    ok &= InsertKeyValueInt(stmt, "poison-damage-interval", game->m_poison_damage_interval);
+    ok &= InsertKeyValueInt(stmt, "health-regen-interval", game->m_health_regen_interval);
+    ok &= InsertKeyValueInt(stmt, "mana-regen-interval", game->m_mana_regen_interval);
+    ok &= InsertKeyValueInt(stmt, "hunger-consume-interval", game->m_hunger_consume_interval);
+    ok &= InsertKeyValueInt(stmt, "summon-creature-duration", game->m_summon_creature_duration);
+    ok &= InsertKeyValueInt(stmt, "autosave-interval", game->m_autosave_interval);
+    ok &= InsertKeyValueInt(stmt, "lag-protection-interval", game->m_lag_protection_interval);
 
     // Character/Leveling Settings
-    ok &= InsertKeyValueInt(stmt, "base-stat-value", game->m_iBaseStatValue);
-    ok &= InsertKeyValueInt(stmt, "creation-stat-bonus", game->m_iCreationStatBonus);
-    ok &= InsertKeyValueInt(stmt, "levelup-stat-gain", game->m_iLevelupStatGain);
-    ok &= InsertKeyValueInt(stmt, "max-level", game->m_iMaxLevel);
+    ok &= InsertKeyValueInt(stmt, "base-stat-value", game->m_base_stat_value);
+    ok &= InsertKeyValueInt(stmt, "creation-stat-bonus", game->m_creation_stat_bonus);
+    ok &= InsertKeyValueInt(stmt, "levelup-stat-gain", game->m_levelup_stat_gain);
+    ok &= InsertKeyValueInt(stmt, "max-level", game->m_max_level);
 
     // Combat Settings
-    ok &= InsertKeyValueInt(stmt, "minimum-hit-ratio", game->m_iMinimumHitRatio);
-    ok &= InsertKeyValueInt(stmt, "maximum-hit-ratio", game->m_iMaximumHitRatio);
+    ok &= InsertKeyValueInt(stmt, "minimum-hit-ratio", game->m_minimum_hit_ratio);
+    ok &= InsertKeyValueInt(stmt, "maximum-hit-ratio", game->m_maximum_hit_ratio);
 
     // Gameplay Settings
-    ok &= InsertKeyValueInt(stmt, "nighttime-duration", game->m_iNighttimeDuration);
-    ok &= InsertKeyValueInt(stmt, "starting-guild-rank", game->m_iStartingGuildRank);
-    ok &= InsertKeyValueInt(stmt, "grand-magic-mana-consumption", game->m_iGrandMagicManaConsumption);
-    ok &= InsertKeyValueInt(stmt, "maximum-construction-points", game->m_iMaxConstructionPoints);
-    ok &= InsertKeyValueInt(stmt, "maximum-summon-points", game->m_iMaxSummonPoints);
-    ok &= InsertKeyValueInt(stmt, "maximum-war-contribution", game->m_iMaxWarContribution);
-    ok &= InsertKeyValueInt(stmt, "max-bank-items", game->m_iMaxBankItems);
+    ok &= InsertKeyValueInt(stmt, "nighttime-duration", game->m_nighttime_duration);
+    ok &= InsertKeyValueInt(stmt, "starting-guild-rank", game->m_starting_guild_rank);
+    ok &= InsertKeyValueInt(stmt, "grand-magic-mana-consumption", game->m_grand_magic_mana_consumption);
+    ok &= InsertKeyValueInt(stmt, "maximum-construction-points", game->m_max_construction_points);
+    ok &= InsertKeyValueInt(stmt, "maximum-summon-points", game->m_max_summon_points);
+    ok &= InsertKeyValueInt(stmt, "maximum-war-contribution", game->m_max_war_contribution);
+    ok &= InsertKeyValueInt(stmt, "max-bank-items", game->m_max_bank_items);
 
     sqlite3_finalize(stmt);
     if (!ok) {
@@ -884,171 +883,92 @@ bool LoadSettingsConfig(sqlite3* db, CGame* game)
         const char* value = reinterpret_cast<const char*>(valueText);
 
         if (std::strcmp(key, "primary-drop-rate") == 0) {
-            game->m_iPrimaryDropRate = std::atoi(value);
+            game->m_primary_drop_rate = static_cast<float>(std::atof(value));
+        } else if (std::strcmp(key, "gold-drop-rate") == 0) {
+            game->m_gold_drop_rate = static_cast<float>(std::atof(value));
         } else if (std::strcmp(key, "secondary-drop-rate") == 0) {
-            game->m_iSecondaryDropRate = std::atoi(value);
+            game->m_secondary_drop_rate = static_cast<float>(std::atof(value));
         } else if (std::strcmp(key, "enemy-kill-mode") == 0) {
-            if (_stricmp(value, "deathmatch") == 0) {
-                game->m_bEnemyKillMode = true;
-            } else if (_stricmp(value, "classic") == 0) {
-                game->m_bEnemyKillMode = false;
+            if (hb_stricmp(value, "deathmatch") == 0) {
+                game->m_enemy_kill_mode = true;
+            } else if (hb_stricmp(value, "classic") == 0) {
+                game->m_enemy_kill_mode = false;
             } else {
-                game->m_bEnemyKillMode = (std::atoi(value) != 0);
+                game->m_enemy_kill_mode = (std::atoi(value) != 0);
             }
         } else if (std::strcmp(key, "enemy-kill-adjust") == 0) {
-            game->m_iEnemyKillAdjust = std::atoi(value);
+            game->m_enemy_kill_adjust = std::atoi(value);
         } else if (std::strcmp(key, "monday-raid-time") == 0) {
-            game->m_sRaidTimeMonday = (short)std::atoi(value);
+            game->m_raid_time_monday = (short)std::atoi(value);
         } else if (std::strcmp(key, "tuesday-raid-time") == 0) {
-            game->m_sRaidTimeTuesday = (short)std::atoi(value);
+            game->m_raid_time_tuesday = (short)std::atoi(value);
         } else if (std::strcmp(key, "wednesday-raid-time") == 0) {
-            game->m_sRaidTimeWednesday = (short)std::atoi(value);
+            game->m_raid_time_wednesday = (short)std::atoi(value);
         } else if (std::strcmp(key, "thursday-raid-time") == 0) {
-            game->m_sRaidTimeThursday = (short)std::atoi(value);
+            game->m_raid_time_thursday = (short)std::atoi(value);
         } else if (std::strcmp(key, "friday-raid-time") == 0) {
-            game->m_sRaidTimeFriday = (short)std::atoi(value);
+            game->m_raid_time_friday = (short)std::atoi(value);
         } else if (std::strcmp(key, "saturday-raid-time") == 0) {
-            game->m_sRaidTimeSaturday = (short)std::atoi(value);
+            game->m_raid_time_saturday = (short)std::atoi(value);
         } else if (std::strcmp(key, "sunday-raid-time") == 0) {
-            game->m_sRaidTimeSunday = (short)std::atoi(value);
-        } else if (std::strcmp(key, "log-chat-settings") == 0) {
-            if (_stricmp(value, "player") == 0) {
-                game->m_bLogChatOption = 1;
-            } else if (_stricmp(value, "gm") == 0) {
-                game->m_bLogChatOption = 2;
-            } else if (_stricmp(value, "all") == 0) {
-                game->m_bLogChatOption = 3;
-            } else if (_stricmp(value, "none") == 0) {
-                game->m_bLogChatOption = 4;
-            }
+            game->m_raid_time_sunday = (short)std::atoi(value);
         } else if (std::strcmp(key, "slate-success-rate") == 0) {
-            game->m_sSlateSuccessRate = (short)std::atoi(value);
+            game->m_slate_success_rate = (short)std::atoi(value);
         } else if (std::strcmp(key, "rep-drop-modifier") == 0) {
-            game->m_cRepDropModifier = (char)std::atoi(value);
+            game->m_rep_drop_modifier = (char)std::atoi(value);
         }
         // Timing Settings
         else if (std::strcmp(key, "client-timeout-ms") == 0) {
-            game->m_iClientTimeout = std::atoi(value);
+            game->m_client_timeout = std::atoi(value);
         } else if (std::strcmp(key, "stamina-regen-interval") == 0) {
-            game->m_iStaminaRegenInterval = std::atoi(value);
+            game->m_stamina_regen_interval = std::atoi(value);
         } else if (std::strcmp(key, "poison-damage-interval") == 0) {
-            game->m_iPoisonDamageInterval = std::atoi(value);
+            game->m_poison_damage_interval = std::atoi(value);
         } else if (std::strcmp(key, "health-regen-interval") == 0) {
-            game->m_iHealthRegenInterval = std::atoi(value);
+            game->m_health_regen_interval = std::atoi(value);
         } else if (std::strcmp(key, "mana-regen-interval") == 0) {
-            game->m_iManaRegenInterval = std::atoi(value);
+            game->m_mana_regen_interval = std::atoi(value);
         } else if (std::strcmp(key, "hunger-consume-interval") == 0) {
-            game->m_iHungerConsumeInterval = std::atoi(value);
+            game->m_hunger_consume_interval = std::atoi(value);
         } else if (std::strcmp(key, "summon-creature-duration") == 0) {
-            game->m_iSummonCreatureDuration = std::atoi(value);
+            game->m_summon_creature_duration = std::atoi(value);
         } else if (std::strcmp(key, "autosave-interval") == 0) {
-            game->m_iAutosaveInterval = std::atoi(value);
+            game->m_autosave_interval = std::atoi(value);
         } else if (std::strcmp(key, "lag-protection-interval") == 0) {
-            game->m_iLagProtectionInterval = std::atoi(value);
+            game->m_lag_protection_interval = std::atoi(value);
         }
         // Character/Leveling Settings
         else if (std::strcmp(key, "base-stat-value") == 0) {
-            game->m_iBaseStatValue = std::atoi(value);
+            game->m_base_stat_value = std::atoi(value);
         } else if (std::strcmp(key, "creation-stat-bonus") == 0) {
-            game->m_iCreationStatBonus = std::atoi(value);
+            game->m_creation_stat_bonus = std::atoi(value);
         } else if (std::strcmp(key, "levelup-stat-gain") == 0) {
-            game->m_iLevelupStatGain = std::atoi(value);
+            game->m_levelup_stat_gain = std::atoi(value);
         } else if (std::strcmp(key, "max-level") == 0 || std::strcmp(key, "max-player-level") == 0) {
-            game->m_iMaxLevel = std::atoi(value);
+            game->m_max_level = std::atoi(value);
         }
         // Combat Settings
         else if (std::strcmp(key, "minimum-hit-ratio") == 0) {
-            game->m_iMinimumHitRatio = std::atoi(value);
+            game->m_minimum_hit_ratio = std::atoi(value);
         } else if (std::strcmp(key, "maximum-hit-ratio") == 0) {
-            game->m_iMaximumHitRatio = std::atoi(value);
+            game->m_maximum_hit_ratio = std::atoi(value);
         }
         // Gameplay Settings
         else if (std::strcmp(key, "nighttime-duration") == 0) {
-            game->m_iNighttimeDuration = std::atoi(value);
+            game->m_nighttime_duration = std::atoi(value);
         } else if (std::strcmp(key, "starting-guild-rank") == 0) {
-            game->m_iStartingGuildRank = std::atoi(value);
+            game->m_starting_guild_rank = std::atoi(value);
         } else if (std::strcmp(key, "grand-magic-mana-consumption") == 0) {
-            game->m_iGrandMagicManaConsumption = std::atoi(value);
+            game->m_grand_magic_mana_consumption = std::atoi(value);
         } else if (std::strcmp(key, "maximum-construction-points") == 0) {
-            game->m_iMaxConstructionPoints = std::atoi(value);
+            game->m_max_construction_points = std::atoi(value);
         } else if (std::strcmp(key, "maximum-summon-points") == 0) {
-            game->m_iMaxSummonPoints = std::atoi(value);
+            game->m_max_summon_points = std::atoi(value);
         } else if (std::strcmp(key, "maximum-war-contribution") == 0) {
-            game->m_iMaxWarContribution = std::atoi(value);
+            game->m_max_war_contribution = std::atoi(value);
         } else if (std::strcmp(key, "max-bank-items") == 0) {
-            game->m_iMaxBankItems = std::atoi(value);
+            game->m_max_bank_items = std::atoi(value);
         }
-    }
-
-    sqlite3_finalize(stmt);
-    return true;
-}
-
-bool SaveAdminListConfig(sqlite3* db, const CGame* game)
-{
-    if (db == nullptr || game == nullptr) {
-        return false;
-    }
-
-    if (!BeginTransaction(db)) {
-        return false;
-    }
-
-    if (!ClearTable(db, "admin_list")) {
-        RollbackTransaction(db);
-        return false;
-    }
-
-    sqlite3_stmt* stmt = nullptr;
-    if (sqlite3_prepare_v2(db, "INSERT INTO admin_list(gm_name) VALUES(?);", -1, &stmt, nullptr) != SQLITE_OK) {
-        RollbackTransaction(db);
-        return false;
-    }
-
-    for (int i = 0; i < DEF_MAXADMINS; i++) {
-        if (game->m_stAdminList[i].m_cGMName[0] == 0) {
-            continue;
-        }
-        sqlite3_reset(stmt);
-        sqlite3_clear_bindings(stmt);
-        if (!PrepareAndBindText(stmt, 1, game->m_stAdminList[i].m_cGMName) ||
-            sqlite3_step(stmt) != SQLITE_DONE) {
-            sqlite3_finalize(stmt);
-            RollbackTransaction(db);
-            return false;
-        }
-    }
-
-    sqlite3_finalize(stmt);
-    if (!CommitTransaction(db)) {
-        RollbackTransaction(db);
-        return false;
-    }
-    return true;
-}
-
-bool LoadAdminListConfig(sqlite3* db, CGame* game)
-{
-    if (db == nullptr || game == nullptr) {
-        return false;
-    }
-
-    for (int i = 0; i < DEF_MAXADMINS; i++) {
-        std::memset(game->m_stAdminList[i].m_cGMName, 0, sizeof(game->m_stAdminList[i].m_cGMName));
-    }
-
-    sqlite3_stmt* stmt = nullptr;
-    if (sqlite3_prepare_v2(db, "SELECT gm_name FROM admin_list ORDER BY gm_name;", -1, &stmt, nullptr) != SQLITE_OK) {
-        return false;
-    }
-
-    int index = 0;
-    while (sqlite3_step(stmt) == SQLITE_ROW) {
-        if (index >= DEF_MAXADMINS) {
-            break;
-        }
-        CopyColumnText(stmt, 0, game->m_stAdminList[index].m_cGMName, sizeof(game->m_stAdminList[index].m_cGMName));
-        index++;
     }
 
     sqlite3_finalize(stmt);
@@ -1076,13 +996,13 @@ bool SaveBannedListConfig(sqlite3* db, const CGame* game)
         return false;
     }
 
-    for (int i = 0; i < DEF_MAXBANNED; i++) {
-        if (game->m_stBannedList[i].m_cBannedIPaddress[0] == 0) {
+    for(int i = 0; i < MaxBanned; i++) {
+        if (game->m_banned_list[i].banned_ip_address[0] == 0) {
             continue;
         }
         sqlite3_reset(stmt);
         sqlite3_clear_bindings(stmt);
-        if (!PrepareAndBindText(stmt, 1, game->m_stBannedList[i].m_cBannedIPaddress) ||
+        if (!PrepareAndBindText(stmt, 1, game->m_banned_list[i].banned_ip_address) ||
             sqlite3_step(stmt) != SQLITE_DONE) {
             sqlite3_finalize(stmt);
             RollbackTransaction(db);
@@ -1104,8 +1024,8 @@ bool LoadBannedListConfig(sqlite3* db, CGame* game)
         return false;
     }
 
-    for (int i = 0; i < DEF_MAXBANNED; i++) {
-        std::memset(game->m_stBannedList[i].m_cBannedIPaddress, 0, sizeof(game->m_stBannedList[i].m_cBannedIPaddress));
+    for(int i = 0; i < MaxBanned; i++) {
+        std::memset(game->m_banned_list[i].banned_ip_address, 0, sizeof(game->m_banned_list[i].banned_ip_address));
     }
 
     sqlite3_stmt* stmt = nullptr;
@@ -1115,10 +1035,10 @@ bool LoadBannedListConfig(sqlite3* db, CGame* game)
 
     int index = 0;
     while (sqlite3_step(stmt) == SQLITE_ROW) {
-        if (index >= DEF_MAXBANNED) {
+        if (index >= MaxBanned) {
             break;
         }
-        CopyColumnText(stmt, 0, game->m_stBannedList[index].m_cBannedIPaddress, sizeof(game->m_stBannedList[index].m_cBannedIPaddress));
+        CopyColumnText(stmt, 0, game->m_banned_list[index].banned_ip_address, sizeof(game->m_banned_list[index].banned_ip_address));
         index++;
     }
 
@@ -1126,21 +1046,155 @@ bool LoadBannedListConfig(sqlite3* db, CGame* game)
     return true;
 }
 
-bool SaveAdminSettingsConfig(sqlite3* db, const CGame* game)
+bool SaveAdminConfig(sqlite3* db, const CGame* game)
 {
-    // Admin level permissions - stub for future implementation
-    // Table renamed from admin_settings to admin_level_permissions
-    (void)db;
-    (void)game;
+    if (db == nullptr || game == nullptr) {
+        return false;
+    }
+
+    if (!BeginTransaction(db)) {
+        return false;
+    }
+
+    if (!ClearTable(db, "admins")) {
+        RollbackTransaction(db);
+        return false;
+    }
+
+    sqlite3_stmt* stmt = nullptr;
+    if (sqlite3_prepare_v2(db, "INSERT INTO admins(account_name, character_name, approved_ip, admin_level) VALUES(?,?,?,?);", -1, &stmt, nullptr) != SQLITE_OK) {
+        RollbackTransaction(db);
+        return false;
+    }
+
+    for (int i = 0; i < game->m_admin_count; i++) {
+        if (game->m_admin_list[i].m_account_name[0] == 0) {
+            continue;
+        }
+        sqlite3_reset(stmt);
+        sqlite3_clear_bindings(stmt);
+        if (!PrepareAndBindText(stmt, 1, game->m_admin_list[i].m_account_name) ||
+            !PrepareAndBindText(stmt, 2, game->m_admin_list[i].m_char_name) ||
+            !PrepareAndBindText(stmt, 3, game->m_admin_list[i].approved_ip) ||
+            sqlite3_bind_int(stmt, 4, game->m_admin_list[i].m_admin_level) != SQLITE_OK ||
+            sqlite3_step(stmt) != SQLITE_DONE) {
+            sqlite3_finalize(stmt);
+            RollbackTransaction(db);
+            return false;
+        }
+    }
+
+    sqlite3_finalize(stmt);
+    if (!CommitTransaction(db)) {
+        RollbackTransaction(db);
+        return false;
+    }
     return true;
 }
 
-bool LoadAdminSettingsConfig(sqlite3* db, CGame* game)
+bool LoadAdminConfig(sqlite3* db, CGame* game)
 {
-    // Admin level permissions - stub for future implementation
-    // Table renamed from admin_settings to admin_level_permissions
-    (void)db;
-    (void)game;
+    if (db == nullptr || game == nullptr) {
+        return false;
+    }
+
+    for (int i = 0; i < MaxAdmins; i++) {
+        std::memset(&game->m_admin_list[i], 0, sizeof(AdminEntry));
+    }
+    game->m_admin_count = 0;
+
+    sqlite3_stmt* stmt = nullptr;
+    if (sqlite3_prepare_v2(db, "SELECT account_name, character_name, approved_ip, admin_level FROM admins ORDER BY account_name;", -1, &stmt, nullptr) != SQLITE_OK) {
+        return false;
+    }
+
+    int index = 0;
+    while (sqlite3_step(stmt) == SQLITE_ROW) {
+        if (index >= MaxAdmins) {
+            break;
+        }
+        CopyColumnText(stmt, 0, game->m_admin_list[index].m_account_name, sizeof(game->m_admin_list[index].m_account_name));
+        CopyColumnText(stmt, 1, game->m_admin_list[index].m_char_name, sizeof(game->m_admin_list[index].m_char_name));
+        CopyColumnText(stmt, 2, game->m_admin_list[index].approved_ip, sizeof(game->m_admin_list[index].approved_ip));
+        game->m_admin_list[index].m_admin_level = sqlite3_column_int(stmt, 3);
+        if (game->m_admin_list[index].m_admin_level < 1)
+            game->m_admin_list[index].m_admin_level = 1;
+        index++;
+    }
+
+    sqlite3_finalize(stmt);
+    game->m_admin_count = index;
+    return true;
+}
+
+bool SaveCommandPermissions(sqlite3* db, const CGame* game)
+{
+    if (db == nullptr || game == nullptr) {
+        return false;
+    }
+
+    if (!BeginTransaction(db)) {
+        return false;
+    }
+
+    if (!ClearTable(db, "admin_command_permissions")) {
+        RollbackTransaction(db);
+        return false;
+    }
+
+    sqlite3_stmt* stmt = nullptr;
+    if (sqlite3_prepare_v2(db, "INSERT INTO admin_command_permissions(command, admin_level, description) VALUES(?,?,?);", -1, &stmt, nullptr) != SQLITE_OK) {
+        RollbackTransaction(db);
+        return false;
+    }
+
+    for (const auto& pair : game->m_command_permissions) {
+        sqlite3_reset(stmt);
+        sqlite3_clear_bindings(stmt);
+        sqlite3_bind_text(stmt, 1, pair.first.c_str(), -1, SQLITE_TRANSIENT);
+        sqlite3_bind_int(stmt, 2, pair.second.admin_level);
+        sqlite3_bind_text(stmt, 3, pair.second.description.c_str(), -1, SQLITE_TRANSIENT);
+        if (sqlite3_step(stmt) != SQLITE_DONE) {
+            sqlite3_finalize(stmt);
+            RollbackTransaction(db);
+            return false;
+        }
+    }
+
+    sqlite3_finalize(stmt);
+    if (!CommitTransaction(db)) {
+        RollbackTransaction(db);
+        return false;
+    }
+    return true;
+}
+
+bool LoadCommandPermissions(sqlite3* db, CGame* game)
+{
+    if (db == nullptr || game == nullptr) {
+        return false;
+    }
+
+    game->m_command_permissions.clear();
+
+    sqlite3_stmt* stmt = nullptr;
+    if (sqlite3_prepare_v2(db, "SELECT command, admin_level, description FROM admin_command_permissions;", -1, &stmt, nullptr) != SQLITE_OK) {
+        return false;
+    }
+
+    while (sqlite3_step(stmt) == SQLITE_ROW) {
+        const char* name = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
+        int level = sqlite3_column_int(stmt, 1);
+        const char* desc = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 2));
+        if (name != nullptr) {
+            CommandPermission perm;
+            perm.admin_level = level;
+            perm.description = (desc != nullptr) ? desc : "";
+            game->m_command_permissions[name] = perm;
+        }
+    }
+
+    sqlite3_finalize(stmt);
     return true;
 }
 
@@ -1174,45 +1228,45 @@ bool SaveNpcConfigs(sqlite3* db, const CGame* game)
         return false;
     }
 
-    for (int i = 0; i < DEF_MAXNPCTYPES; i++) {
-        if (game->m_pNpcConfigList[i] == nullptr) {
+    for(int i = 0; i < MaxNpcTypes; i++) {
+        if (game->m_npc_config_list[i] == nullptr) {
             continue;
         }
 
-        const CNpc* npc = game->m_pNpcConfigList[i];
+        const CNpc* npc = game->m_npc_config_list[i];
         sqlite3_reset(stmt);
         sqlite3_clear_bindings(stmt);
         int col = 1;
         bool ok = true;
         ok &= (sqlite3_bind_int(stmt, col++, i) == SQLITE_OK);
-        ok &= PrepareAndBindText(stmt, col++, npc->m_cNpcName);
-        ok &= (sqlite3_bind_int(stmt, col++, npc->m_sType) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, npc->m_iHitDice) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, npc->m_iDefenseRatio) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, npc->m_iHitRatio) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, npc->m_iMinBravery) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, static_cast<int>(npc->m_iExpDiceMin)) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, static_cast<int>(npc->m_iExpDiceMax)) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, static_cast<int>(npc->m_iGoldDiceMin)) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, static_cast<int>(npc->m_iGoldDiceMax)) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, npc->m_cAttackDiceThrow) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, npc->m_cAttackDiceRange) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, npc->m_cSize) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, npc->m_cSide) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, npc->m_cActionLimit) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, static_cast<int>(npc->m_dwActionTime)) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, npc->m_cResistMagic) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, npc->m_cMagicLevel) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, npc->m_cDayOfWeekLimit) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, npc->m_cChatMsgPresence) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, npc->m_cTargetSearchRange) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, static_cast<int>(npc->m_dwRegenTime)) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, npc->m_cAttribute) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, npc->m_iAbsDamage) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, npc->m_iMaxMana) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, npc->m_iMagicHitRatio) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, npc->m_iAttackRange) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, npc->m_iDropTableId) == SQLITE_OK);
+        ok &= PrepareAndBindText(stmt, col++, npc->m_npc_name);
+        ok &= (sqlite3_bind_int(stmt, col++, npc->m_type) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, npc->m_hit_dice) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, npc->m_defense_ratio) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, npc->m_hit_ratio) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, npc->m_min_bravery) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, static_cast<int>(npc->m_exp_dice_min)) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, static_cast<int>(npc->m_exp_dice_max)) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, static_cast<int>(npc->m_gold_dice_min)) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, static_cast<int>(npc->m_gold_dice_max)) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, npc->m_attack_dice_throw) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, npc->m_attack_dice_range) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, npc->m_size) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, npc->m_side) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, npc->m_action_limit) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, static_cast<int>(npc->m_action_time)) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, npc->m_resist_magic) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, npc->m_magic_level) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, npc->m_day_of_week_limit) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, npc->m_chat_msg_presence) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, npc->m_target_search_range) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, static_cast<int>(npc->m_regen_time)) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, npc->m_attribute) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, npc->m_abs_damage) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, npc->m_max_mana) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, npc->m_magic_hit_ratio) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, npc->m_attack_range) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, npc->m_drop_table_id) == SQLITE_OK);
 
         if (!ok || sqlite3_step(stmt) != SQLITE_DONE) {
             sqlite3_finalize(stmt);
@@ -1235,9 +1289,9 @@ bool LoadNpcConfigs(sqlite3* db, CGame* game)
         return false;
     }
 
-    for (int i = 0; i < DEF_MAXNPCTYPES; i++) {
-        delete game->m_pNpcConfigList[i];
-        game->m_pNpcConfigList[i] = nullptr;
+    for(int i = 0; i < MaxNpcTypes; i++) {
+        delete game->m_npc_config_list[i];
+        game->m_npc_config_list[i] = nullptr;
     }
 
     const char* sql =
@@ -1256,42 +1310,42 @@ bool LoadNpcConfigs(sqlite3* db, CGame* game)
     while (sqlite3_step(stmt) == SQLITE_ROW) {
         int col = 0;
         int npcId = sqlite3_column_int(stmt, col++);
-        if (npcId < 0 || npcId >= DEF_MAXNPCTYPES) {
+        if (npcId < 0 || npcId >= MaxNpcTypes) {
             continue;
         }
 
         CNpc* npc = new CNpc(" ");
-        std::memset(npc->m_cNpcName, 0, sizeof(npc->m_cNpcName));
-        CopyColumnText(stmt, col++, npc->m_cNpcName, sizeof(npc->m_cNpcName));
-        npc->m_sType = (short)sqlite3_column_int(stmt, col++);
-        npc->m_iHitDice = sqlite3_column_int(stmt, col++);
-        npc->m_iDefenseRatio = sqlite3_column_int(stmt, col++);
-        npc->m_iHitRatio = sqlite3_column_int(stmt, col++);
-        npc->m_iMinBravery = sqlite3_column_int(stmt, col++);
-        npc->m_iExpDiceMin = sqlite3_column_int(stmt, col++);
-        npc->m_iExpDiceMax = sqlite3_column_int(stmt, col++);
-        npc->m_iGoldDiceMin = sqlite3_column_int(stmt, col++);
-        npc->m_iGoldDiceMax = sqlite3_column_int(stmt, col++);
-        npc->m_cAttackDiceThrow = (char)sqlite3_column_int(stmt, col++);
-        npc->m_cAttackDiceRange = (char)sqlite3_column_int(stmt, col++);
-        npc->m_cSize = (char)sqlite3_column_int(stmt, col++);
-        npc->m_cSide = (char)sqlite3_column_int(stmt, col++);
-        npc->m_cActionLimit = (char)sqlite3_column_int(stmt, col++);
-        npc->m_dwActionTime = (uint32_t)sqlite3_column_int(stmt, col++);
-        npc->m_cResistMagic = (char)sqlite3_column_int(stmt, col++);
-        npc->m_cMagicLevel = (char)sqlite3_column_int(stmt, col++);
-        npc->m_cDayOfWeekLimit = (char)sqlite3_column_int(stmt, col++);
-        npc->m_cChatMsgPresence = (char)sqlite3_column_int(stmt, col++);
-        npc->m_cTargetSearchRange = (char)sqlite3_column_int(stmt, col++);
-        npc->m_dwRegenTime = (uint32_t)sqlite3_column_int(stmt, col++);
-        npc->m_cAttribute = (char)sqlite3_column_int(stmt, col++);
-        npc->m_iAbsDamage = sqlite3_column_int(stmt, col++);
-        npc->m_iMaxMana = sqlite3_column_int(stmt, col++);
-        npc->m_iMagicHitRatio = sqlite3_column_int(stmt, col++);
-        npc->m_iAttackRange = sqlite3_column_int(stmt, col++);
-        npc->m_iDropTableId = sqlite3_column_int(stmt, col++);
+        std::memset(npc->m_npc_name, 0, sizeof(npc->m_npc_name));
+        CopyColumnText(stmt, col++, npc->m_npc_name, sizeof(npc->m_npc_name));
+        npc->m_type = (short)sqlite3_column_int(stmt, col++);
+        npc->m_hit_dice = sqlite3_column_int(stmt, col++);
+        npc->m_defense_ratio = sqlite3_column_int(stmt, col++);
+        npc->m_hit_ratio = sqlite3_column_int(stmt, col++);
+        npc->m_min_bravery = sqlite3_column_int(stmt, col++);
+        npc->m_exp_dice_min = sqlite3_column_int(stmt, col++);
+        npc->m_exp_dice_max = sqlite3_column_int(stmt, col++);
+        npc->m_gold_dice_min = sqlite3_column_int(stmt, col++);
+        npc->m_gold_dice_max = sqlite3_column_int(stmt, col++);
+        npc->m_attack_dice_throw = (char)sqlite3_column_int(stmt, col++);
+        npc->m_attack_dice_range = (char)sqlite3_column_int(stmt, col++);
+        npc->m_size = (char)sqlite3_column_int(stmt, col++);
+        npc->m_side = (char)sqlite3_column_int(stmt, col++);
+        npc->m_action_limit = (char)sqlite3_column_int(stmt, col++);
+        npc->m_action_time = (uint32_t)sqlite3_column_int(stmt, col++);
+        npc->m_resist_magic = (char)sqlite3_column_int(stmt, col++);
+        npc->m_magic_level = (char)sqlite3_column_int(stmt, col++);
+        npc->m_day_of_week_limit = (char)sqlite3_column_int(stmt, col++);
+        npc->m_chat_msg_presence = (char)sqlite3_column_int(stmt, col++);
+        npc->m_target_search_range = (char)sqlite3_column_int(stmt, col++);
+        npc->m_regen_time = (uint32_t)sqlite3_column_int(stmt, col++);
+        npc->m_attribute = (char)sqlite3_column_int(stmt, col++);
+        npc->m_abs_damage = sqlite3_column_int(stmt, col++);
+        npc->m_max_mana = sqlite3_column_int(stmt, col++);
+        npc->m_magic_hit_ratio = sqlite3_column_int(stmt, col++);
+        npc->m_attack_range = sqlite3_column_int(stmt, col++);
+        npc->m_drop_table_id = sqlite3_column_int(stmt, col++);
 
-        game->m_pNpcConfigList[npcId] = npc;
+        game->m_npc_config_list[npcId] = npc;
     }
 
     sqlite3_finalize(stmt);
@@ -1304,7 +1358,7 @@ bool LoadDropTables(sqlite3* db, CGame* game)
         return false;
     }
 
-    game->m_DropTables.clear();
+    game->m_drop_tables.clear();
 
     const char* tableSql = "SELECT drop_table_id, name, description FROM drop_tables ORDER BY drop_table_id;";
     sqlite3_stmt* stmt = nullptr;
@@ -1319,8 +1373,8 @@ bool LoadDropTables(sqlite3* db, CGame* game)
         std::memset(table.description, 0, sizeof(table.description));
         CopyColumnText(stmt, 1, table.name, sizeof(table.name));
         CopyColumnText(stmt, 2, table.description, sizeof(table.description));
-        std::memset(table.totalWeight, 0, sizeof(table.totalWeight));
-        game->m_DropTables[table.id] = table;
+        std::memset(table.total_weight, 0, sizeof(table.total_weight));
+        game->m_drop_tables[table.id] = table;
     }
     sqlite3_finalize(stmt);
 
@@ -1334,13 +1388,13 @@ bool LoadDropTables(sqlite3* db, CGame* game)
     while (sqlite3_step(stmt) == SQLITE_ROW) {
         int tableId = sqlite3_column_int(stmt, 0);
         int tier = sqlite3_column_int(stmt, 1);
-        int itemId = sqlite3_column_int(stmt, 2);
+        int item_id = sqlite3_column_int(stmt, 2);
         int weight = sqlite3_column_int(stmt, 3);
-        int minCount = sqlite3_column_int(stmt, 4);
-        int maxCount = sqlite3_column_int(stmt, 5);
+        int min_count = sqlite3_column_int(stmt, 4);
+        int max_count = sqlite3_column_int(stmt, 5);
 
-        auto it = game->m_DropTables.find(tableId);
-        if (it == game->m_DropTables.end()) {
+        auto it = game->m_drop_tables.find(tableId);
+        if (it == game->m_drop_tables.end()) {
             continue;
         }
         if (tier < 1 || tier > 2) {
@@ -1351,16 +1405,16 @@ bool LoadDropTables(sqlite3* db, CGame* game)
         }
 
         DropEntry entry = {};
-        entry.itemId = itemId;
+        entry.item_id = item_id;
         entry.weight = weight;
-        entry.minCount = minCount;
-        entry.maxCount = maxCount;
+        entry.min_count = min_count;
+        entry.max_count = max_count;
         it->second.tierEntries[tier].push_back(entry);
-        it->second.totalWeight[tier] += weight;
+        it->second.total_weight[tier] += weight;
     }
     sqlite3_finalize(stmt);
 
-    return !game->m_DropTables.empty();
+    return !game->m_drop_tables.empty();
 }
 
 bool LoadShopConfigs(sqlite3* db, CGame* game)
@@ -1369,25 +1423,24 @@ bool LoadShopConfigs(sqlite3* db, CGame* game)
         return false;
     }
 
-    game->m_NpcShopMappings.clear();
-    game->m_ShopData.clear();
-    game->m_bIsShopDataAvailable = false;
+    game->m_npc_shop_mappings.clear();
+    game->m_shop_data.clear();
+    game->m_is_shop_data_available = false;
 
     // Load NPC -> shop mappings
     const char* mappingSql = "SELECT npc_type, shop_id, description FROM npc_shop_mapping ORDER BY npc_type;";
     sqlite3_stmt* stmt = nullptr;
     if (sqlite3_prepare_v2(db, mappingSql, -1, &stmt, nullptr) != SQLITE_OK) {
         char logMsg[256] = {};
-        std::snprintf(logMsg, sizeof(logMsg), "(!) LoadShopConfigs: Failed to prepare npc_shop_mapping query");
-        PutLogList(logMsg);
+        hb::logger::log("LoadShopConfigs: Failed to prepare npc_shop_mapping query");
         return false;
     }
 
     int mappingCount = 0;
     while (sqlite3_step(stmt) == SQLITE_ROW) {
-        int npcType = sqlite3_column_int(stmt, 0);
-        int shopId = sqlite3_column_int(stmt, 1);
-        game->m_NpcShopMappings[npcType] = shopId;
+        int npc_type = sqlite3_column_int(stmt, 0);
+        int shop_id = sqlite3_column_int(stmt, 1);
+        game->m_npc_shop_mappings[npc_type] = shop_id;
         mappingCount++;
     }
     sqlite3_finalize(stmt);
@@ -1396,34 +1449,31 @@ bool LoadShopConfigs(sqlite3* db, CGame* game)
     const char* itemsSql = "SELECT shop_id, item_id FROM shop_items ORDER BY shop_id, item_id;";
     if (sqlite3_prepare_v2(db, itemsSql, -1, &stmt, nullptr) != SQLITE_OK) {
         char logMsg[256] = {};
-        std::snprintf(logMsg, sizeof(logMsg), "(!) LoadShopConfigs: Failed to prepare shop_items query");
-        PutLogList(logMsg);
+        hb::logger::log("LoadShopConfigs: Failed to prepare shop_items query");
         return false;
     }
 
     int itemCount = 0;
     while (sqlite3_step(stmt) == SQLITE_ROW) {
-        int shopId = sqlite3_column_int(stmt, 0);
-        int16_t itemId = static_cast<int16_t>(sqlite3_column_int(stmt, 1));
+        int shop_id = sqlite3_column_int(stmt, 0);
+        int16_t item_id = static_cast<int16_t>(sqlite3_column_int(stmt, 1));
 
         // Create shop if it doesn't exist
-        if (game->m_ShopData.find(shopId) == game->m_ShopData.end()) {
+        if (game->m_shop_data.find(shop_id) == game->m_shop_data.end()) {
             ShopData shop = {};
-            shop.shopId = shopId;
-            game->m_ShopData[shopId] = shop;
+            shop.shop_id = shop_id;
+            game->m_shop_data[shop_id] = shop;
         }
 
-        game->m_ShopData[shopId].itemIds.push_back(itemId);
+        game->m_shop_data[shop_id].item_ids.push_back(item_id);
         itemCount++;
     }
     sqlite3_finalize(stmt);
 
     if (mappingCount > 0 || itemCount > 0) {
-        game->m_bIsShopDataAvailable = true;
+        game->m_is_shop_data_available = true;
         char logMsg[256] = {};
-        std::snprintf(logMsg, sizeof(logMsg), "(!) Shop configs loaded: %d NPC mappings, %d shops, %d total items",
-            mappingCount, static_cast<int>(game->m_ShopData.size()), itemCount);
-        PutLogList(logMsg);
+        hb::logger::log("Shop configs loaded: {} NPC mappings, {} shops, {} total items", mappingCount, static_cast<int>(game->m_shop_data.size()), itemCount);
     }
 
     return true;
@@ -1457,37 +1507,37 @@ bool SaveMagicConfigs(sqlite3* db, const CGame* game)
         return false;
     }
 
-    for (int i = 0; i < DEF_MAXMAGICTYPE; i++) {
-        if (game->m_pMagicConfigList[i] == nullptr) {
+    for(int i = 0; i < hb::shared::limits::MaxMagicType; i++) {
+        if (game->m_magic_config_list[i] == nullptr) {
             continue;
         }
 
-        const CMagic* magic = game->m_pMagicConfigList[i];
+        const CMagic* magic = game->m_magic_config_list[i];
         sqlite3_reset(stmt);
         sqlite3_clear_bindings(stmt);
         int col = 1;
         bool ok = true;
         ok &= (sqlite3_bind_int(stmt, col++, i) == SQLITE_OK);
-        ok &= PrepareAndBindText(stmt, col++, magic->m_cName);
-        ok &= (sqlite3_bind_int(stmt, col++, magic->m_sType) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, static_cast<int>(magic->m_dwDelayTime)) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, static_cast<int>(magic->m_dwLastTime)) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, magic->m_sValue1) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, magic->m_sValue2) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, magic->m_sValue3) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, magic->m_sValue4) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, magic->m_sValue5) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, magic->m_sValue6) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, magic->m_sValue7) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, magic->m_sValue8) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, magic->m_sValue9) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, magic->m_sValue10) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, magic->m_sValue11) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, magic->m_sValue12) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, magic->m_sIntLimit) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, magic->m_iGoldCost) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, magic->m_cCategory) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, magic->m_iAttribute) == SQLITE_OK);
+        ok &= PrepareAndBindText(stmt, col++, magic->m_name);
+        ok &= (sqlite3_bind_int(stmt, col++, magic->m_type) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, static_cast<int>(magic->m_delay_time)) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, static_cast<int>(magic->m_last_time)) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, magic->m_value_1) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, magic->m_value_2) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, magic->m_value_3) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, magic->m_value_4) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, magic->m_value_5) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, magic->m_value_6) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, magic->m_value_7) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, magic->m_value_8) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, magic->m_value_9) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, magic->m_value_10) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, magic->m_value_11) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, magic->m_value_12) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, magic->m_intelligence_limit) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, magic->m_gold_cost) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, magic->m_category) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, magic->m_attribute) == SQLITE_OK);
 
         if (!ok || sqlite3_step(stmt) != SQLITE_DONE) {
             sqlite3_finalize(stmt);
@@ -1510,9 +1560,9 @@ bool LoadMagicConfigs(sqlite3* db, CGame* game)
         return false;
     }
 
-    for (int i = 0; i < DEF_MAXMAGICTYPE; i++) {
-        delete game->m_pMagicConfigList[i];
-        game->m_pMagicConfigList[i] = nullptr;
+    for(int i = 0; i < hb::shared::limits::MaxMagicType; i++) {
+        delete game->m_magic_config_list[i];
+        game->m_magic_config_list[i] = nullptr;
     }
 
     const char* sql =
@@ -1529,33 +1579,33 @@ bool LoadMagicConfigs(sqlite3* db, CGame* game)
     while (sqlite3_step(stmt) == SQLITE_ROW) {
         int col = 0;
         int magicId = sqlite3_column_int(stmt, col++);
-        if (magicId < 0 || magicId >= DEF_MAXMAGICTYPE) {
+        if (magicId < 0 || magicId >= hb::shared::limits::MaxMagicType) {
             continue;
         }
 
         CMagic* magic = new CMagic();
-        CopyColumnText(stmt, col++, magic->m_cName, sizeof(magic->m_cName));
-        magic->m_sType = (short)sqlite3_column_int(stmt, col++);
-        magic->m_dwDelayTime = (uint32_t)sqlite3_column_int(stmt, col++);
-        magic->m_dwLastTime = (uint32_t)sqlite3_column_int(stmt, col++);
-        magic->m_sValue1 = (short)sqlite3_column_int(stmt, col++);
-        magic->m_sValue2 = (short)sqlite3_column_int(stmt, col++);
-        magic->m_sValue3 = (short)sqlite3_column_int(stmt, col++);
-        magic->m_sValue4 = (short)sqlite3_column_int(stmt, col++);
-        magic->m_sValue5 = (short)sqlite3_column_int(stmt, col++);
-        magic->m_sValue6 = (short)sqlite3_column_int(stmt, col++);
-        magic->m_sValue7 = (short)sqlite3_column_int(stmt, col++);
-        magic->m_sValue8 = (short)sqlite3_column_int(stmt, col++);
-        magic->m_sValue9 = (short)sqlite3_column_int(stmt, col++);
-        magic->m_sValue10 = (short)sqlite3_column_int(stmt, col++);
-        magic->m_sValue11 = (short)sqlite3_column_int(stmt, col++);
-        magic->m_sValue12 = (short)sqlite3_column_int(stmt, col++);
-        magic->m_sIntLimit = (short)sqlite3_column_int(stmt, col++);
-        magic->m_iGoldCost = sqlite3_column_int(stmt, col++);
-        magic->m_cCategory = (char)sqlite3_column_int(stmt, col++);
-        magic->m_iAttribute = sqlite3_column_int(stmt, col++);
+        CopyColumnText(stmt, col++, magic->m_name, sizeof(magic->m_name));
+        magic->m_type = (short)sqlite3_column_int(stmt, col++);
+        magic->m_delay_time = (uint32_t)sqlite3_column_int(stmt, col++);
+        magic->m_last_time = (uint32_t)sqlite3_column_int(stmt, col++);
+        magic->m_value_1 = (short)sqlite3_column_int(stmt, col++);
+        magic->m_value_2 = (short)sqlite3_column_int(stmt, col++);
+        magic->m_value_3 = (short)sqlite3_column_int(stmt, col++);
+        magic->m_value_4 = (short)sqlite3_column_int(stmt, col++);
+        magic->m_value_5 = (short)sqlite3_column_int(stmt, col++);
+        magic->m_value_6 = (short)sqlite3_column_int(stmt, col++);
+        magic->m_value_7 = (short)sqlite3_column_int(stmt, col++);
+        magic->m_value_8 = (short)sqlite3_column_int(stmt, col++);
+        magic->m_value_9 = (short)sqlite3_column_int(stmt, col++);
+        magic->m_value_10 = (short)sqlite3_column_int(stmt, col++);
+        magic->m_value_11 = (short)sqlite3_column_int(stmt, col++);
+        magic->m_value_12 = (short)sqlite3_column_int(stmt, col++);
+        magic->m_intelligence_limit = (short)sqlite3_column_int(stmt, col++);
+        magic->m_gold_cost = sqlite3_column_int(stmt, col++);
+        magic->m_category = (char)sqlite3_column_int(stmt, col++);
+        magic->m_attribute = sqlite3_column_int(stmt, col++);
 
-        game->m_pMagicConfigList[magicId] = magic;
+        game->m_magic_config_list[magicId] = magic;
     }
 
     sqlite3_finalize(stmt);
@@ -1579,8 +1629,9 @@ bool SaveSkillConfigs(sqlite3* db, const CGame* game)
 
     const char* sql =
         "INSERT INTO skill_configs("
-        " skill_id, name, skill_type, value1, value2, value3, value4, value5, value6"
-        ") VALUES(?,?,?,?,?,?,?,?,?);";
+        " skill_id, name, skill_type, value1, value2, value3, value4, value5, value6,"
+        " is_useable, use_method"
+        ") VALUES(?,?,?,?,?,?,?,?,?,?,?);";
 
     sqlite3_stmt* stmt = nullptr;
     if (sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr) != SQLITE_OK) {
@@ -1588,25 +1639,27 @@ bool SaveSkillConfigs(sqlite3* db, const CGame* game)
         return false;
     }
 
-    for (int i = 0; i < DEF_MAXSKILLTYPE; i++) {
-        if (game->m_pSkillConfigList[i] == nullptr) {
+    for(int i = 0; i < hb::shared::limits::MaxSkillType; i++) {
+        if (game->m_skill_config_list[i] == nullptr) {
             continue;
         }
 
-        const CSkill* skill = game->m_pSkillConfigList[i];
+        const CSkill* skill = game->m_skill_config_list[i];
         sqlite3_reset(stmt);
         sqlite3_clear_bindings(stmt);
         int col = 1;
         bool ok = true;
         ok &= (sqlite3_bind_int(stmt, col++, i) == SQLITE_OK);
-        ok &= PrepareAndBindText(stmt, col++, skill->m_cName);
-        ok &= (sqlite3_bind_int(stmt, col++, skill->m_sType) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, skill->m_sValue1) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, skill->m_sValue2) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, skill->m_sValue3) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, skill->m_sValue4) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, skill->m_sValue5) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, skill->m_sValue6) == SQLITE_OK);
+        ok &= PrepareAndBindText(stmt, col++, skill->m_name);
+        ok &= (sqlite3_bind_int(stmt, col++, skill->m_type) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, skill->m_value_1) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, skill->m_value_2) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, skill->m_value_3) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, skill->m_value_4) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, skill->m_value_5) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, skill->m_value_6) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, skill->m_is_useable ? 1 : 0) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, skill->m_use_method) == SQLITE_OK);
 
         if (!ok || sqlite3_step(stmt) != SQLITE_DONE) {
             sqlite3_finalize(stmt);
@@ -1629,13 +1682,14 @@ bool LoadSkillConfigs(sqlite3* db, CGame* game)
         return false;
     }
 
-    for (int i = 0; i < DEF_MAXSKILLTYPE; i++) {
-        delete game->m_pSkillConfigList[i];
-        game->m_pSkillConfigList[i] = nullptr;
+    for(int i = 0; i < hb::shared::limits::MaxSkillType; i++) {
+        delete game->m_skill_config_list[i];
+        game->m_skill_config_list[i] = nullptr;
     }
 
     const char* sql =
-        "SELECT skill_id, name, skill_type, value1, value2, value3, value4, value5, value6"
+        "SELECT skill_id, name, skill_type, value1, value2, value3, value4, value5, value6,"
+        " is_useable, use_method"
         " FROM skill_configs ORDER BY skill_id;";
 
     sqlite3_stmt* stmt = nullptr;
@@ -1646,21 +1700,23 @@ bool LoadSkillConfigs(sqlite3* db, CGame* game)
     while (sqlite3_step(stmt) == SQLITE_ROW) {
         int col = 0;
         int skillId = sqlite3_column_int(stmt, col++);
-        if (skillId < 0 || skillId >= DEF_MAXSKILLTYPE) {
+        if (skillId < 0 || skillId >= hb::shared::limits::MaxSkillType) {
             continue;
         }
 
         CSkill* skill = new CSkill();
-        CopyColumnText(stmt, col++, skill->m_cName, sizeof(skill->m_cName));
-        skill->m_sType = (short)sqlite3_column_int(stmt, col++);
-        skill->m_sValue1 = (short)sqlite3_column_int(stmt, col++);
-        skill->m_sValue2 = (short)sqlite3_column_int(stmt, col++);
-        skill->m_sValue3 = (short)sqlite3_column_int(stmt, col++);
-        skill->m_sValue4 = (short)sqlite3_column_int(stmt, col++);
-        skill->m_sValue5 = (short)sqlite3_column_int(stmt, col++);
-        skill->m_sValue6 = (short)sqlite3_column_int(stmt, col++);
+        CopyColumnText(stmt, col++, skill->m_name, sizeof(skill->m_name));
+        skill->m_type = (short)sqlite3_column_int(stmt, col++);
+        skill->m_value_1 = (short)sqlite3_column_int(stmt, col++);
+        skill->m_value_2 = (short)sqlite3_column_int(stmt, col++);
+        skill->m_value_3 = (short)sqlite3_column_int(stmt, col++);
+        skill->m_value_4 = (short)sqlite3_column_int(stmt, col++);
+        skill->m_value_5 = (short)sqlite3_column_int(stmt, col++);
+        skill->m_value_6 = (short)sqlite3_column_int(stmt, col++);
+        skill->m_is_useable = (sqlite3_column_int(stmt, col++) != 0);
+        skill->m_use_method = (char)sqlite3_column_int(stmt, col++);
 
-        game->m_pSkillConfigList[skillId] = skill;
+        game->m_skill_config_list[skillId] = skill;
     }
 
     sqlite3_finalize(stmt);
@@ -1697,43 +1753,43 @@ bool SaveQuestConfigs(sqlite3* db, const CGame* game)
         return false;
     }
 
-    for (int i = 0; i < DEF_MAXQUESTTYPE; i++) {
-        if (game->m_pQuestConfigList[i] == nullptr) {
+    for(int i = 0; i < hb::server::config::MaxQuestType; i++) {
+        if (game->m_quest_manager->m_quest_config_list[i] == nullptr) {
             continue;
         }
 
-        const CQuest* quest = game->m_pQuestConfigList[i];
+        const CQuest* quest = game->m_quest_manager->m_quest_config_list[i];
         sqlite3_reset(stmt);
         sqlite3_clear_bindings(stmt);
         int col = 1;
         bool ok = true;
         ok &= (sqlite3_bind_int(stmt, col++, i) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, quest->m_cSide) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, quest->m_iType) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, quest->m_iTargetType) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, quest->m_iMaxCount) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, quest->m_iFrom) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, quest->m_iMinLevel) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, quest->m_iMaxLevel) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, quest->m_iRequiredSkillNum) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, quest->m_iRequiredSkillLevel) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, quest->m_iTimeLimit) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, quest->m_iAssignType) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, quest->m_iRewardType[1]) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, quest->m_iRewardAmount[1]) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, quest->m_iRewardType[2]) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, quest->m_iRewardAmount[2]) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, quest->m_iRewardType[3]) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, quest->m_iRewardAmount[3]) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, quest->m_iContribution) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, quest->m_iContributionLimit) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, quest->m_iResponseMode) == SQLITE_OK);
-        ok &= PrepareAndBindText(stmt, col++, quest->m_cTargetName);
-        ok &= (sqlite3_bind_int(stmt, col++, quest->m_sX) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, quest->m_sY) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, quest->m_iRange) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, quest->m_iQuestID) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, quest->m_iReqContribution) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, quest->m_side) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, quest->m_type) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, quest->m_target_type) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, quest->m_max_count) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, quest->m_from) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, quest->m_min_level) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, quest->m_max_level) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, quest->m_required_skill_num) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, quest->m_required_skill_level) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, quest->m_time_limit) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, quest->m_assign_type) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, quest->m_reward_type[1]) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, quest->m_reward_amount[1]) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, quest->m_reward_type[2]) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, quest->m_reward_amount[2]) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, quest->m_reward_type[3]) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, quest->m_reward_amount[3]) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, quest->m_contribution) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, quest->m_contribution_limit) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, quest->m_response_mode) == SQLITE_OK);
+        ok &= PrepareAndBindText(stmt, col++, quest->m_target_name);
+        ok &= (sqlite3_bind_int(stmt, col++, quest->m_x) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, quest->m_y) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, quest->m_range) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, quest->m_quest_id) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, quest->m_req_contribution) == SQLITE_OK);
 
         if (!ok || sqlite3_step(stmt) != SQLITE_DONE) {
             sqlite3_finalize(stmt);
@@ -1756,9 +1812,9 @@ bool LoadQuestConfigs(sqlite3* db, CGame* game)
         return false;
     }
 
-    for (int i = 0; i < DEF_MAXQUESTTYPE; i++) {
-        delete game->m_pQuestConfigList[i];
-        game->m_pQuestConfigList[i] = nullptr;
+    for(int i = 0; i < hb::server::config::MaxQuestType; i++) {
+        delete game->m_quest_manager->m_quest_config_list[i];
+        game->m_quest_manager->m_quest_config_list[i] = nullptr;
     }
 
     const char* sql =
@@ -1777,39 +1833,39 @@ bool LoadQuestConfigs(sqlite3* db, CGame* game)
     while (sqlite3_step(stmt) == SQLITE_ROW) {
         int col = 0;
         int questIndex = sqlite3_column_int(stmt, col++);
-        if (questIndex < 0 || questIndex >= DEF_MAXQUESTTYPE) {
+        if (questIndex < 0 || questIndex >= hb::server::config::MaxQuestType) {
             continue;
         }
 
         CQuest* quest = new CQuest();
-        quest->m_cSide = (char)sqlite3_column_int(stmt, col++);
-        quest->m_iType = sqlite3_column_int(stmt, col++);
-        quest->m_iTargetType = sqlite3_column_int(stmt, col++);
-        quest->m_iMaxCount = sqlite3_column_int(stmt, col++);
-        quest->m_iFrom = sqlite3_column_int(stmt, col++);
-        quest->m_iMinLevel = sqlite3_column_int(stmt, col++);
-        quest->m_iMaxLevel = sqlite3_column_int(stmt, col++);
-        quest->m_iRequiredSkillNum = sqlite3_column_int(stmt, col++);
-        quest->m_iRequiredSkillLevel = sqlite3_column_int(stmt, col++);
-        quest->m_iTimeLimit = sqlite3_column_int(stmt, col++);
-        quest->m_iAssignType = sqlite3_column_int(stmt, col++);
-        quest->m_iRewardType[1] = sqlite3_column_int(stmt, col++);
-        quest->m_iRewardAmount[1] = sqlite3_column_int(stmt, col++);
-        quest->m_iRewardType[2] = sqlite3_column_int(stmt, col++);
-        quest->m_iRewardAmount[2] = sqlite3_column_int(stmt, col++);
-        quest->m_iRewardType[3] = sqlite3_column_int(stmt, col++);
-        quest->m_iRewardAmount[3] = sqlite3_column_int(stmt, col++);
-        quest->m_iContribution = sqlite3_column_int(stmt, col++);
-        quest->m_iContributionLimit = sqlite3_column_int(stmt, col++);
-        quest->m_iResponseMode = sqlite3_column_int(stmt, col++);
-        CopyColumnText(stmt, col++, quest->m_cTargetName, sizeof(quest->m_cTargetName));
-        quest->m_sX = sqlite3_column_int(stmt, col++);
-        quest->m_sY = sqlite3_column_int(stmt, col++);
-        quest->m_iRange = sqlite3_column_int(stmt, col++);
-        quest->m_iQuestID = sqlite3_column_int(stmt, col++);
-        quest->m_iReqContribution = sqlite3_column_int(stmt, col++);
+        quest->m_side = (char)sqlite3_column_int(stmt, col++);
+        quest->m_type = sqlite3_column_int(stmt, col++);
+        quest->m_target_type = sqlite3_column_int(stmt, col++);
+        quest->m_max_count = sqlite3_column_int(stmt, col++);
+        quest->m_from = sqlite3_column_int(stmt, col++);
+        quest->m_min_level = sqlite3_column_int(stmt, col++);
+        quest->m_max_level = sqlite3_column_int(stmt, col++);
+        quest->m_required_skill_num = sqlite3_column_int(stmt, col++);
+        quest->m_required_skill_level = sqlite3_column_int(stmt, col++);
+        quest->m_time_limit = sqlite3_column_int(stmt, col++);
+        quest->m_assign_type = sqlite3_column_int(stmt, col++);
+        quest->m_reward_type[1] = sqlite3_column_int(stmt, col++);
+        quest->m_reward_amount[1] = sqlite3_column_int(stmt, col++);
+        quest->m_reward_type[2] = sqlite3_column_int(stmt, col++);
+        quest->m_reward_amount[2] = sqlite3_column_int(stmt, col++);
+        quest->m_reward_type[3] = sqlite3_column_int(stmt, col++);
+        quest->m_reward_amount[3] = sqlite3_column_int(stmt, col++);
+        quest->m_contribution = sqlite3_column_int(stmt, col++);
+        quest->m_contribution_limit = sqlite3_column_int(stmt, col++);
+        quest->m_response_mode = sqlite3_column_int(stmt, col++);
+        CopyColumnText(stmt, col++, quest->m_target_name, sizeof(quest->m_target_name));
+        quest->m_x = sqlite3_column_int(stmt, col++);
+        quest->m_y = sqlite3_column_int(stmt, col++);
+        quest->m_range = sqlite3_column_int(stmt, col++);
+        quest->m_quest_id = sqlite3_column_int(stmt, col++);
+        quest->m_req_contribution = sqlite3_column_int(stmt, col++);
 
-        game->m_pQuestConfigList[questIndex] = quest;
+        game->m_quest_manager->m_quest_config_list[questIndex] = quest;
     }
 
     sqlite3_finalize(stmt);
@@ -1852,20 +1908,20 @@ bool SavePortionConfigs(sqlite3* db, const CGame* game)
         return false;
     }
 
-    for (int i = 0; i < DEF_MAXPORTIONTYPES; i++) {
-        if (game->m_pPortionConfigList[i] != nullptr) {
-            const CPortion* potion = game->m_pPortionConfigList[i];
+    for(int i = 0; i < hb::server::config::MaxPortionTypes; i++) {
+        if (game->m_crafting_manager->m_portion_config_list[i] != nullptr) {
+            const CPortion* potion = game->m_crafting_manager->m_portion_config_list[i];
             sqlite3_reset(potionStmt);
             sqlite3_clear_bindings(potionStmt);
             int col = 1;
             bool ok = true;
             ok &= (sqlite3_bind_int(potionStmt, col++, i) == SQLITE_OK);
-            ok &= PrepareAndBindText(potionStmt, col++, potion->m_cName);
-            for (int a = 0; a < 12; a++) {
-                ok &= (sqlite3_bind_int(potionStmt, col++, potion->m_sArray[a]) == SQLITE_OK);
+            ok &= PrepareAndBindText(potionStmt, col++, potion->m_name);
+            for(int a = 0; a < 12; a++) {
+                ok &= (sqlite3_bind_int(potionStmt, col++, potion->m_array[a]) == SQLITE_OK);
             }
-            ok &= (sqlite3_bind_int(potionStmt, col++, potion->m_iSkillLimit) == SQLITE_OK);
-            ok &= (sqlite3_bind_int(potionStmt, col++, potion->m_iDifficulty) == SQLITE_OK);
+            ok &= (sqlite3_bind_int(potionStmt, col++, potion->m_skill_limit) == SQLITE_OK);
+            ok &= (sqlite3_bind_int(potionStmt, col++, potion->m_difficulty) == SQLITE_OK);
             if (!ok || sqlite3_step(potionStmt) != SQLITE_DONE) {
                 sqlite3_finalize(potionStmt);
                 sqlite3_finalize(craftingStmt);
@@ -1874,19 +1930,19 @@ bool SavePortionConfigs(sqlite3* db, const CGame* game)
             }
         }
 
-        if (game->m_pCraftingConfigList[i] != nullptr) {
-            const CPortion* crafting = game->m_pCraftingConfigList[i];
+        if (game->m_crafting_manager->m_crafting_config_list[i] != nullptr) {
+            const CPortion* crafting = game->m_crafting_manager->m_crafting_config_list[i];
             sqlite3_reset(craftingStmt);
             sqlite3_clear_bindings(craftingStmt);
             int col = 1;
             bool ok = true;
             ok &= (sqlite3_bind_int(craftingStmt, col++, i) == SQLITE_OK);
-            ok &= PrepareAndBindText(craftingStmt, col++, crafting->m_cName);
-            for (int a = 0; a < 12; a++) {
-                ok &= (sqlite3_bind_int(craftingStmt, col++, crafting->m_sArray[a]) == SQLITE_OK);
+            ok &= PrepareAndBindText(craftingStmt, col++, crafting->m_name);
+            for(int a = 0; a < 12; a++) {
+                ok &= (sqlite3_bind_int(craftingStmt, col++, crafting->m_array[a]) == SQLITE_OK);
             }
-            ok &= (sqlite3_bind_int(craftingStmt, col++, crafting->m_iSkillLimit) == SQLITE_OK);
-            ok &= (sqlite3_bind_int(craftingStmt, col++, crafting->m_iDifficulty) == SQLITE_OK);
+            ok &= (sqlite3_bind_int(craftingStmt, col++, crafting->m_skill_limit) == SQLITE_OK);
+            ok &= (sqlite3_bind_int(craftingStmt, col++, crafting->m_difficulty) == SQLITE_OK);
             if (!ok || sqlite3_step(craftingStmt) != SQLITE_DONE) {
                 sqlite3_finalize(potionStmt);
                 sqlite3_finalize(craftingStmt);
@@ -1911,11 +1967,11 @@ bool LoadPortionConfigs(sqlite3* db, CGame* game)
         return false;
     }
 
-    for (int i = 0; i < DEF_MAXPORTIONTYPES; i++) {
-        delete game->m_pPortionConfigList[i];
-        game->m_pPortionConfigList[i] = nullptr;
-        delete game->m_pCraftingConfigList[i];
-        game->m_pCraftingConfigList[i] = nullptr;
+    for(int i = 0; i < hb::server::config::MaxPortionTypes; i++) {
+        delete game->m_crafting_manager->m_portion_config_list[i];
+        game->m_crafting_manager->m_portion_config_list[i] = nullptr;
+        delete game->m_crafting_manager->m_crafting_config_list[i];
+        game->m_crafting_manager->m_crafting_config_list[i] = nullptr;
     }
 
     const char* potionSql =
@@ -1935,17 +1991,17 @@ bool LoadPortionConfigs(sqlite3* db, CGame* game)
     while (sqlite3_step(stmt) == SQLITE_ROW) {
         int col = 0;
         int potionId = sqlite3_column_int(stmt, col++);
-        if (potionId < 0 || potionId >= DEF_MAXPORTIONTYPES) {
+        if (potionId < 0 || potionId >= hb::server::config::MaxPortionTypes) {
             continue;
         }
         CPortion* potion = new CPortion();
-        CopyColumnText(stmt, col++, potion->m_cName, sizeof(potion->m_cName));
-        for (int a = 0; a < 12; a++) {
-            potion->m_sArray[a] = (short)sqlite3_column_int(stmt, col++);
+        CopyColumnText(stmt, col++, potion->m_name, sizeof(potion->m_name));
+        for(int a = 0; a < 12; a++) {
+            potion->m_array[a] = (short)sqlite3_column_int(stmt, col++);
         }
-        potion->m_iSkillLimit = sqlite3_column_int(stmt, col++);
-        potion->m_iDifficulty = sqlite3_column_int(stmt, col++);
-        game->m_pPortionConfigList[potionId] = potion;
+        potion->m_skill_limit = sqlite3_column_int(stmt, col++);
+        potion->m_difficulty = sqlite3_column_int(stmt, col++);
+        game->m_crafting_manager->m_portion_config_list[potionId] = potion;
     }
 
     sqlite3_finalize(stmt);
@@ -1956,17 +2012,17 @@ bool LoadPortionConfigs(sqlite3* db, CGame* game)
     while (sqlite3_step(stmt) == SQLITE_ROW) {
         int col = 0;
         int craftingId = sqlite3_column_int(stmt, col++);
-        if (craftingId < 0 || craftingId >= DEF_MAXPORTIONTYPES) {
+        if (craftingId < 0 || craftingId >= hb::server::config::MaxPortionTypes) {
             continue;
         }
         CPortion* crafting = new CPortion();
-        CopyColumnText(stmt, col++, crafting->m_cName, sizeof(crafting->m_cName));
-        for (int a = 0; a < 12; a++) {
-            crafting->m_sArray[a] = (short)sqlite3_column_int(stmt, col++);
+        CopyColumnText(stmt, col++, crafting->m_name, sizeof(crafting->m_name));
+        for(int a = 0; a < 12; a++) {
+            crafting->m_array[a] = (short)sqlite3_column_int(stmt, col++);
         }
-        crafting->m_iSkillLimit = sqlite3_column_int(stmt, col++);
-        crafting->m_iDifficulty = sqlite3_column_int(stmt, col++);
-        game->m_pCraftingConfigList[craftingId] = crafting;
+        crafting->m_skill_limit = sqlite3_column_int(stmt, col++);
+        crafting->m_difficulty = sqlite3_column_int(stmt, col++);
+        game->m_crafting_manager->m_crafting_config_list[craftingId] = crafting;
     }
 
     sqlite3_finalize(stmt);
@@ -2002,28 +2058,28 @@ bool SaveBuildItemConfigs(sqlite3* db, const CGame* game)
         return false;
     }
 
-    for (int i = 0; i < DEF_MAXBUILDITEMS; i++) {
-        if (game->m_pBuildItemList[i] == nullptr) {
+    for(int i = 0; i < hb::shared::limits::MaxBuildItems; i++) {
+        if (game->m_build_item_list[i] == nullptr) {
             continue;
         }
 
-        const CBuildItem* build = game->m_pBuildItemList[i];
+        const CBuildItem* build = game->m_build_item_list[i];
         sqlite3_reset(stmt);
         sqlite3_clear_bindings(stmt);
         int col = 1;
         bool ok = true;
         ok &= (sqlite3_bind_int(stmt, col++, i) == SQLITE_OK);
-        ok &= PrepareAndBindText(stmt, col++, build->m_cName);
-        ok &= (sqlite3_bind_int(stmt, col++, build->m_iSkillLimit) == SQLITE_OK);
-        for (int a = 0; a < 6; a++) {
-            ok &= (sqlite3_bind_int(stmt, col++, build->m_iMaterialItemID[a]) == SQLITE_OK);
-            ok &= (sqlite3_bind_int(stmt, col++, build->m_iMaterialItemCount[a]) == SQLITE_OK);
-            ok &= (sqlite3_bind_int(stmt, col++, build->m_iMaterialItemValue[a]) == SQLITE_OK);
+        ok &= PrepareAndBindText(stmt, col++, build->m_name);
+        ok &= (sqlite3_bind_int(stmt, col++, build->m_skill_limit) == SQLITE_OK);
+        for(int a = 0; a < 6; a++) {
+            ok &= (sqlite3_bind_int(stmt, col++, build->m_material_item_id[a]) == SQLITE_OK);
+            ok &= (sqlite3_bind_int(stmt, col++, build->m_material_item_count[a]) == SQLITE_OK);
+            ok &= (sqlite3_bind_int(stmt, col++, build->m_material_item_value[a]) == SQLITE_OK);
         }
-        ok &= (sqlite3_bind_int(stmt, col++, build->m_iAverageValue) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, build->m_iMaxSkill) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, build->m_wAttribute) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, build->m_sItemID) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, build->m_average_value) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, build->m_max_skill) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, build->m_attribute) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, build->m_item_id) == SQLITE_OK);
 
         if (!ok || sqlite3_step(stmt) != SQLITE_DONE) {
             sqlite3_finalize(stmt);
@@ -2046,9 +2102,9 @@ bool LoadBuildItemConfigs(sqlite3* db, CGame* game)
         return false;
     }
 
-    for (int i = 0; i < DEF_MAXBUILDITEMS; i++) {
-        delete game->m_pBuildItemList[i];
-        game->m_pBuildItemList[i] = nullptr;
+    for(int i = 0; i < hb::shared::limits::MaxBuildItems; i++) {
+        delete game->m_build_item_list[i];
+        game->m_build_item_list[i] = nullptr;
     }
 
     const char* sql =
@@ -2066,47 +2122,46 @@ bool LoadBuildItemConfigs(sqlite3* db, CGame* game)
     while (sqlite3_step(stmt) == SQLITE_ROW) {
         int col = 0;
         int buildId = sqlite3_column_int(stmt, col++);
-        if (buildId < 0 || buildId >= DEF_MAXBUILDITEMS) {
+        if (buildId < 0 || buildId >= hb::shared::limits::MaxBuildItems) {
             continue;
         }
 
         CBuildItem* build = new CBuildItem();
-        CopyColumnText(stmt, col++, build->m_cName, sizeof(build->m_cName));
-        build->m_iSkillLimit = sqlite3_column_int(stmt, col++);
-        for (int a = 0; a < 6; a++) {
-            build->m_iMaterialItemID[a] = sqlite3_column_int(stmt, col++);
-            build->m_iMaterialItemCount[a] = sqlite3_column_int(stmt, col++);
-            build->m_iMaterialItemValue[a] = sqlite3_column_int(stmt, col++);
+        CopyColumnText(stmt, col++, build->m_name, sizeof(build->m_name));
+        build->m_skill_limit = sqlite3_column_int(stmt, col++);
+        for(int a = 0; a < 6; a++) {
+            build->m_material_item_id[a] = sqlite3_column_int(stmt, col++);
+            build->m_material_item_count[a] = sqlite3_column_int(stmt, col++);
+            build->m_material_item_value[a] = sqlite3_column_int(stmt, col++);
         }
-        build->m_iAverageValue = sqlite3_column_int(stmt, col++);
-        build->m_iMaxSkill = sqlite3_column_int(stmt, col++);
-        build->m_wAttribute = (uint16_t)sqlite3_column_int(stmt, col++);
+        build->m_average_value = sqlite3_column_int(stmt, col++);
+        build->m_max_skill = sqlite3_column_int(stmt, col++);
+        build->m_attribute = (uint16_t)sqlite3_column_int(stmt, col++);
         int storedItemId = sqlite3_column_int(stmt, col++);
 
         // Use the stored item_id directly instead of looking up by name
         // (names in items table are now display names, not internal names)
-        if (storedItemId > 0 && storedItemId < DEF_MAXITEMTYPES && game->m_pItemConfigList[storedItemId] != nullptr) {
-            build->m_sItemID = static_cast<short>(storedItemId);
+        if (storedItemId > 0 && storedItemId < MaxItemTypes && game->m_item_config_list[storedItemId] != nullptr) {
+            build->m_item_id = static_cast<short>(storedItemId);
         } else {
             // Fallback to name lookup for backwards compatibility
             CItem tempItem;
-            if (game->_bInitItemAttr(&tempItem, build->m_cName)) {
-                build->m_sItemID = tempItem.m_sIDnum;
+            if (game->m_item_manager->init_item_attr(&tempItem, build->m_name)) {
+                build->m_item_id = tempItem.m_id_num;
             } else {
                 char logMsg[256] = {};
-                std::snprintf(logMsg, sizeof(logMsg), "(!) Warning: BuildItem '%s' has invalid item_id %d", build->m_cName, storedItemId);
-                PutLogList(logMsg);
+                hb::logger::log("BuildItem '{}' has invalid item_id {}", build->m_name, storedItemId);
                 delete build;
                 continue; // Skip this build item instead of failing completely
             }
         }
 
-        build->m_iMaxValue = 0;
-        for (int a = 0; a < 6; a++) {
-            build->m_iMaxValue += (build->m_iMaterialItemValue[a] * 100);
+        build->m_max_value = 0;
+        for(int a = 0; a < 6; a++) {
+            build->m_max_value += (build->m_material_item_value[a] * 100);
         }
 
-        game->m_pBuildItemList[buildId] = build;
+        game->m_build_item_list[buildId] = build;
     }
 
     sqlite3_finalize(stmt);
@@ -2139,19 +2194,19 @@ bool SaveCrusadeConfig(sqlite3* db, const CGame* game)
         return false;
     }
 
-    for (int i = 0; i < DEF_MAXCRUSADESTRUCTURES; i++) {
-        const auto& entry = game->m_stCrusadeStructures[i];
-        if (entry.cType == 0 || entry.cMapName[0] == 0) {
+    for(int i = 0; i < hb::shared::limits::MaxCrusadeStructures; i++) {
+        const auto& entry = game->m_crusade_structures[i];
+        if (entry.type == 0 || entry.map_name[0] == 0) {
             continue;
         }
         sqlite3_reset(stmt);
         sqlite3_clear_bindings(stmt);
         bool ok = true;
         ok &= (sqlite3_bind_int(stmt, 1, i) == SQLITE_OK);
-        ok &= PrepareAndBindText(stmt, 2, entry.cMapName);
-        ok &= (sqlite3_bind_int(stmt, 3, entry.cType) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, 4, entry.dX) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, 5, entry.dY) == SQLITE_OK);
+        ok &= PrepareAndBindText(stmt, 2, entry.map_name);
+        ok &= (sqlite3_bind_int(stmt, 3, entry.type) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, 4, entry.x) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, 5, entry.y) == SQLITE_OK);
         if (!ok || sqlite3_step(stmt) != SQLITE_DONE) {
             sqlite3_finalize(stmt);
             RollbackTransaction(db);
@@ -2173,11 +2228,11 @@ bool LoadCrusadeConfig(sqlite3* db, CGame* game)
         return false;
     }
 
-    for (int i = 0; i < DEF_MAXCRUSADESTRUCTURES; i++) {
-        std::memset(game->m_stCrusadeStructures[i].cMapName, 0, sizeof(game->m_stCrusadeStructures[i].cMapName));
-        game->m_stCrusadeStructures[i].cType = 0;
-        game->m_stCrusadeStructures[i].dX = 0;
-        game->m_stCrusadeStructures[i].dY = 0;
+    for(int i = 0; i < hb::shared::limits::MaxCrusadeStructures; i++) {
+        std::memset(game->m_crusade_structures[i].map_name, 0, sizeof(game->m_crusade_structures[i].map_name));
+        game->m_crusade_structures[i].type = 0;
+        game->m_crusade_structures[i].x = 0;
+        game->m_crusade_structures[i].y = 0;
     }
 
     const char* sql =
@@ -2192,14 +2247,14 @@ bool LoadCrusadeConfig(sqlite3* db, CGame* game)
     while (sqlite3_step(stmt) == SQLITE_ROW) {
         int col = 0;
         int structureId = sqlite3_column_int(stmt, col++);
-        if (structureId < 0 || structureId >= DEF_MAXCRUSADESTRUCTURES) {
+        if (structureId < 0 || structureId >= hb::shared::limits::MaxCrusadeStructures) {
             continue;
         }
-        CopyColumnText(stmt, col++, game->m_stCrusadeStructures[structureId].cMapName,
-            sizeof(game->m_stCrusadeStructures[structureId].cMapName));
-        game->m_stCrusadeStructures[structureId].cType = (char)sqlite3_column_int(stmt, col++);
-        game->m_stCrusadeStructures[structureId].dX = sqlite3_column_int(stmt, col++);
-        game->m_stCrusadeStructures[structureId].dY = sqlite3_column_int(stmt, col++);
+        CopyColumnText(stmt, col++, game->m_crusade_structures[structureId].map_name,
+            sizeof(game->m_crusade_structures[structureId].map_name));
+        game->m_crusade_structures[structureId].type = (char)sqlite3_column_int(stmt, col++);
+        game->m_crusade_structures[structureId].x = sqlite3_column_int(stmt, col++);
+        game->m_crusade_structures[structureId].y = sqlite3_column_int(stmt, col++);
     }
 
     sqlite3_finalize(stmt);
@@ -2232,16 +2287,16 @@ bool SaveScheduleConfig(sqlite3* db, const CGame* game)
     bool success = true;
 
     // Save crusade schedules
-    for (int i = 0; i < DEF_MAXSCHEDULE && success; i++) {
-        if (game->m_stCrusadeWarSchedule[i].iDay >= 0) {
+    for(int i = 0; i < hb::server::config::MaxSchedule && success; i++) {
+        if (game->m_crusade_war_schedule[i].day >= 0) {
             sqlite3_reset(stmt);
             sqlite3_clear_bindings(stmt);
             bool ok = true;
             ok &= PrepareAndBindText(stmt, 1, "crusade");
             ok &= (sqlite3_bind_int(stmt, 2, i) == SQLITE_OK);
-            ok &= (sqlite3_bind_int(stmt, 3, game->m_stCrusadeWarSchedule[i].iDay) == SQLITE_OK);
-            ok &= (sqlite3_bind_int(stmt, 4, game->m_stCrusadeWarSchedule[i].iHour) == SQLITE_OK);
-            ok &= (sqlite3_bind_int(stmt, 5, game->m_stCrusadeWarSchedule[i].iMinute) == SQLITE_OK);
+            ok &= (sqlite3_bind_int(stmt, 3, game->m_crusade_war_schedule[i].day) == SQLITE_OK);
+            ok &= (sqlite3_bind_int(stmt, 4, game->m_crusade_war_schedule[i].hour) == SQLITE_OK);
+            ok &= (sqlite3_bind_int(stmt, 5, game->m_crusade_war_schedule[i].minute) == SQLITE_OK);
             ok &= (sqlite3_bind_null(stmt, 6) == SQLITE_OK);  // end_hour
             ok &= (sqlite3_bind_null(stmt, 7) == SQLITE_OK);  // end_minute
             ok &= (sqlite3_bind_int(stmt, 8, 0) == SQLITE_OK);  // is_active
@@ -2250,20 +2305,20 @@ bool SaveScheduleConfig(sqlite3* db, const CGame* game)
     }
 
     // Save apocalypse schedules (start and end times in one row)
-    for (int i = 0; i < DEF_MAXAPOCALYPSE && success; i++) {
-        if (game->m_stApocalypseScheduleStart[i].iDay >= 0) {
+    for(int i = 0; i < hb::server::config::MaxApocalypse && success; i++) {
+        if (game->m_apocalypse_schedule_start[i].day >= 0) {
             sqlite3_reset(stmt);
             sqlite3_clear_bindings(stmt);
             bool ok = true;
             ok &= PrepareAndBindText(stmt, 1, "apocalypse");
             ok &= (sqlite3_bind_int(stmt, 2, i) == SQLITE_OK);
-            ok &= (sqlite3_bind_int(stmt, 3, game->m_stApocalypseScheduleStart[i].iDay) == SQLITE_OK);
-            ok &= (sqlite3_bind_int(stmt, 4, game->m_stApocalypseScheduleStart[i].iHour) == SQLITE_OK);
-            ok &= (sqlite3_bind_int(stmt, 5, game->m_stApocalypseScheduleStart[i].iMinute) == SQLITE_OK);
+            ok &= (sqlite3_bind_int(stmt, 3, game->m_apocalypse_schedule_start[i].day) == SQLITE_OK);
+            ok &= (sqlite3_bind_int(stmt, 4, game->m_apocalypse_schedule_start[i].hour) == SQLITE_OK);
+            ok &= (sqlite3_bind_int(stmt, 5, game->m_apocalypse_schedule_start[i].minute) == SQLITE_OK);
             // End time from the corresponding end schedule
-            if (game->m_stApocalypseScheduleEnd[i].iDay >= 0) {
-                ok &= (sqlite3_bind_int(stmt, 6, game->m_stApocalypseScheduleEnd[i].iHour) == SQLITE_OK);
-                ok &= (sqlite3_bind_int(stmt, 7, game->m_stApocalypseScheduleEnd[i].iMinute) == SQLITE_OK);
+            if (game->m_apocalypse_schedule_end[i].day >= 0) {
+                ok &= (sqlite3_bind_int(stmt, 6, game->m_apocalypse_schedule_end[i].hour) == SQLITE_OK);
+                ok &= (sqlite3_bind_int(stmt, 7, game->m_apocalypse_schedule_end[i].minute) == SQLITE_OK);
             } else {
                 ok &= (sqlite3_bind_null(stmt, 6) == SQLITE_OK);
                 ok &= (sqlite3_bind_null(stmt, 7) == SQLITE_OK);
@@ -2274,18 +2329,18 @@ bool SaveScheduleConfig(sqlite3* db, const CGame* game)
     }
 
     // Save heldenian schedules (these have end times)
-    for (int i = 0; i < DEF_MAXHELDENIAN && success; i++) {
-        if (game->m_stHeldenianSchedule[i].iDay >= 0) {
+    for(int i = 0; i < hb::server::config::MaxHeldenian && success; i++) {
+        if (game->m_heldenian_schedule[i].day >= 0) {
             sqlite3_reset(stmt);
             sqlite3_clear_bindings(stmt);
             bool ok = true;
             ok &= PrepareAndBindText(stmt, 1, "heldenian");
             ok &= (sqlite3_bind_int(stmt, 2, i) == SQLITE_OK);
-            ok &= (sqlite3_bind_int(stmt, 3, game->m_stHeldenianSchedule[i].iDay) == SQLITE_OK);
-            ok &= (sqlite3_bind_int(stmt, 4, game->m_stHeldenianSchedule[i].StartiHour) == SQLITE_OK);
-            ok &= (sqlite3_bind_int(stmt, 5, game->m_stHeldenianSchedule[i].StartiMinute) == SQLITE_OK);
-            ok &= (sqlite3_bind_int(stmt, 6, game->m_stHeldenianSchedule[i].EndiHour) == SQLITE_OK);
-            ok &= (sqlite3_bind_int(stmt, 7, game->m_stHeldenianSchedule[i].EndiMinute) == SQLITE_OK);
+            ok &= (sqlite3_bind_int(stmt, 3, game->m_heldenian_schedule[i].day) == SQLITE_OK);
+            ok &= (sqlite3_bind_int(stmt, 4, game->m_heldenian_schedule[i].start_hour) == SQLITE_OK);
+            ok &= (sqlite3_bind_int(stmt, 5, game->m_heldenian_schedule[i].start_minute) == SQLITE_OK);
+            ok &= (sqlite3_bind_int(stmt, 6, game->m_heldenian_schedule[i].end_hour) == SQLITE_OK);
+            ok &= (sqlite3_bind_int(stmt, 7, game->m_heldenian_schedule[i].end_minute) == SQLITE_OK);
             ok &= (sqlite3_bind_int(stmt, 8, 0) == SQLITE_OK);  // is_active
             success = ok && (sqlite3_step(stmt) == SQLITE_DONE);
         }
@@ -2311,26 +2366,26 @@ bool LoadScheduleConfig(sqlite3* db, CGame* game)
         return false;
     }
 
-    // Initialize all schedules to -1
-    for (int i = 0; i < DEF_MAXSCHEDULE; i++) {
-        game->m_stCrusadeWarSchedule[i].iDay = -1;
-        game->m_stCrusadeWarSchedule[i].iHour = -1;
-        game->m_stCrusadeWarSchedule[i].iMinute = -1;
+    // initialize all schedules to -1
+    for(int i = 0; i < hb::server::config::MaxSchedule; i++) {
+        game->m_crusade_war_schedule[i].day = -1;
+        game->m_crusade_war_schedule[i].hour = -1;
+        game->m_crusade_war_schedule[i].minute = -1;
     }
-    for (int i = 0; i < DEF_MAXAPOCALYPSE; i++) {
-        game->m_stApocalypseScheduleStart[i].iDay = -1;
-        game->m_stApocalypseScheduleStart[i].iHour = -1;
-        game->m_stApocalypseScheduleStart[i].iMinute = -1;
-        game->m_stApocalypseScheduleEnd[i].iDay = -1;
-        game->m_stApocalypseScheduleEnd[i].iHour = -1;
-        game->m_stApocalypseScheduleEnd[i].iMinute = -1;
+    for(int i = 0; i < hb::server::config::MaxApocalypse; i++) {
+        game->m_apocalypse_schedule_start[i].day = -1;
+        game->m_apocalypse_schedule_start[i].hour = -1;
+        game->m_apocalypse_schedule_start[i].minute = -1;
+        game->m_apocalypse_schedule_end[i].day = -1;
+        game->m_apocalypse_schedule_end[i].hour = -1;
+        game->m_apocalypse_schedule_end[i].minute = -1;
     }
-    for (int i = 0; i < DEF_MAXHELDENIAN; i++) {
-        game->m_stHeldenianSchedule[i].iDay = -1;
-        game->m_stHeldenianSchedule[i].StartiHour = -1;
-        game->m_stHeldenianSchedule[i].StartiMinute = -1;
-        game->m_stHeldenianSchedule[i].EndiHour = -1;
-        game->m_stHeldenianSchedule[i].EndiMinute = -1;
+    for(int i = 0; i < hb::server::config::MaxHeldenian; i++) {
+        game->m_heldenian_schedule[i].day = -1;
+        game->m_heldenian_schedule[i].start_hour = -1;
+        game->m_heldenian_schedule[i].start_minute = -1;
+        game->m_heldenian_schedule[i].end_hour = -1;
+        game->m_heldenian_schedule[i].end_minute = -1;
     }
 
     // Load all events from unified table
@@ -2354,31 +2409,31 @@ bool LoadScheduleConfig(sqlite3* db, CGame* game)
         // is_active at column 7 - can be used for state tracking
 
         if (strcmp(eventType, "crusade") == 0) {
-            if (idx >= 0 && idx < DEF_MAXSCHEDULE) {
-                game->m_stCrusadeWarSchedule[idx].iDay = day;
-                game->m_stCrusadeWarSchedule[idx].iHour = startHour;
-                game->m_stCrusadeWarSchedule[idx].iMinute = startMinute;
+            if (idx >= 0 && idx < hb::server::config::MaxSchedule) {
+                game->m_crusade_war_schedule[idx].day = day;
+                game->m_crusade_war_schedule[idx].hour = startHour;
+                game->m_crusade_war_schedule[idx].minute = startMinute;
             }
         }
         else if (strcmp(eventType, "apocalypse") == 0) {
-            if (idx >= 0 && idx < DEF_MAXAPOCALYPSE) {
-                // Start time
-                game->m_stApocalypseScheduleStart[idx].iDay = day;
-                game->m_stApocalypseScheduleStart[idx].iHour = startHour;
-                game->m_stApocalypseScheduleStart[idx].iMinute = startMinute;
+            if (idx >= 0 && idx < hb::server::config::MaxApocalypse) {
+                // start time
+                game->m_apocalypse_schedule_start[idx].day = day;
+                game->m_apocalypse_schedule_start[idx].hour = startHour;
+                game->m_apocalypse_schedule_start[idx].minute = startMinute;
                 // End time (same day as start)
-                game->m_stApocalypseScheduleEnd[idx].iDay = day;
-                game->m_stApocalypseScheduleEnd[idx].iHour = endHour;
-                game->m_stApocalypseScheduleEnd[idx].iMinute = endMinute;
+                game->m_apocalypse_schedule_end[idx].day = day;
+                game->m_apocalypse_schedule_end[idx].hour = endHour;
+                game->m_apocalypse_schedule_end[idx].minute = endMinute;
             }
         }
         else if (strcmp(eventType, "heldenian") == 0) {
-            if (idx >= 0 && idx < DEF_MAXHELDENIAN) {
-                game->m_stHeldenianSchedule[idx].iDay = day;
-                game->m_stHeldenianSchedule[idx].StartiHour = startHour;
-                game->m_stHeldenianSchedule[idx].StartiMinute = startMinute;
-                game->m_stHeldenianSchedule[idx].EndiHour = endHour;
-                game->m_stHeldenianSchedule[idx].EndiMinute = endMinute;
+            if (idx >= 0 && idx < hb::server::config::MaxHeldenian) {
+                game->m_heldenian_schedule[idx].day = day;
+                game->m_heldenian_schedule[idx].start_hour = startHour;
+                game->m_heldenian_schedule[idx].start_minute = startMinute;
+                game->m_heldenian_schedule[idx].end_hour = endHour;
+                game->m_heldenian_schedule[idx].end_minute = endMinute;
             }
         }
     }
