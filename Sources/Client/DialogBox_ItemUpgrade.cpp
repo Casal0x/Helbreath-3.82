@@ -458,8 +458,10 @@ bool DialogBox_ItemUpgrade::on_click(short mouse_x, short mouse_y)
             for (int i = 0; i < hb::shared::limits::MaxItems; i++)
                 if (m_game->m_item_list[i] != 0)
                 {
-                    if ((m_game->m_item_list[i]->m_sprite == 6) && (m_game->m_item_list[i]->m_sprite_frame == 128)) so_x++;
-                    if ((m_game->m_item_list[i]->m_sprite == 6) && (m_game->m_item_list[i]->m_sprite_frame == 129)) so_m++;
+                    CItem* cfg = m_game->get_item_config(m_game->m_item_list[i]->m_id_num);
+                    if (!cfg) continue;
+                    if ((cfg->m_sprite == 6) && (cfg->m_sprite_frame == 128)) so_x++;
+                    if ((cfg->m_sprite == 6) && (cfg->m_sprite_frame == 129)) so_m++;
                 }
 
             if ((so_x > 0) || (so_m > 0))
@@ -469,14 +471,25 @@ bool DialogBox_ItemUpgrade::on_click(short mouse_x, short mouse_y)
                 m_game->m_dialog_box_manager.Info(DialogBoxId::ItemUpgrade).m_v3 = so_m;
             }
             else
+            {
                 m_game->add_event_list(DRAW_DIALOGBOX_ITEMUPGRADE30, 10);
+                m_game->m_dialog_box_manager.disable_dialog_box(DialogBoxId::ItemUpgrade);
+            }
             return true;
         }
         // Majestic item upgrade (Gizon)
         if ((mouse_x > sX + 24) && (mouse_x < sX + 248) && (mouse_y > sY + 120) && (mouse_y < sY + 135))
         {
-            m_game->m_dialog_box_manager.Info(DialogBoxId::ItemUpgrade).m_mode = 1;
             m_game->play_game_sound('E', 14, 5);
+            if (m_game->m_gizon_item_upgrade_left > 0)
+            {
+                m_game->m_dialog_box_manager.Info(DialogBoxId::ItemUpgrade).m_mode = 1;
+            }
+            else
+            {
+                m_game->add_event_list(DRAW_DIALOGBOX_ITEMUPGRADE40, 10);
+                m_game->m_dialog_box_manager.disable_dialog_box(DialogBoxId::ItemUpgrade);
+            }
             return true;
         }
         // Cancel
