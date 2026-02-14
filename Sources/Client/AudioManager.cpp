@@ -121,21 +121,21 @@ void audio_manager::load_sounds()
 	// load Character sounds (C1-C24)
 	for (int i = 1; i < AUDIO_MAX_CHARACTER_SOUNDS; i++)
 	{
-		auto filename = std::format("sounds\\c{}.wav", i);
+		auto filename = std::format("sounds/c{}.wav", i);
 		decode_file(filename.c_str(), m_character_sounds[i]);
 	}
 
 	// load Monster/Magic sounds (M1-M156)
 	for (int i = 1; i < AUDIO_MAX_MONSTER_SOUNDS; i++)
 	{
-		auto filename = std::format("sounds\\m{}.wav", i);
+		auto filename = std::format("sounds/m{}.wav", i);
 		decode_file(filename.c_str(), m_monster_sounds[i]);
 	}
 
 	// load Effect sounds (E1-E53)
 	for (int i = 1; i < AUDIO_MAX_EFFECT_SOUNDS; i++)
 	{
-		auto filename = std::format("sounds\\e{}.wav", i);
+		auto filename = std::format("sounds/e{}.wav", i);
 		decode_file(filename.c_str(), m_effect_sounds[i]);
 	}
 }
@@ -496,7 +496,7 @@ void audio_manager::play_music(const char* trackName)
 		return;
 
 	// Build full path
-	std::string filename = std::string("music\\") + trackName + ".wav";
+	std::string filename = std::string("music/") + trackName + ".wav";
 
 	// initialize the music sound - stream from disk (music files are large)
 	ma_uint32 flags = MA_SOUND_FLAG_STREAM;

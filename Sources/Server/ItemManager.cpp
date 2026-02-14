@@ -2201,7 +2201,7 @@ void ItemManager::use_item_handler(int client_h, short item_index, short dX, sho
 					else {
 						char dest_map_name[hb::shared::limits::MapNameLen]{};
 						int zoneNum = m_game->m_client_list[client_h]->m_item_list[item_index]->m_item_effect_value2 - 10;
-						std::snprintf(dest_map_name, sizeof(dest_map_name), "fightzone%d", zoneNum % 10);
+						std::snprintf(dest_map_name, sizeof(dest_map_name), "fightzone%c", '0' + (zoneNum % 10));
 						if (memcmp(m_game->m_client_list[client_h]->m_map_name, dest_map_name, 10) != 0) {
 							//v1.42
 							item_deplete_handler(client_h, item_index, true);

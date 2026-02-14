@@ -2,7 +2,6 @@
 #include "NetworkMessageManager.h"
 #include "Packet/SharedPackets.h"
 #include "lan_eng.h"
-#include <windows.h>
 #include <cstdio>
 #include <cstring>
 #include <cmath>
@@ -103,7 +102,7 @@ namespace NetworkMessageHandlers {
 			game->add_event_list(txt.c_str(), 10);
 			game->play_game_sound('E', 23, 0);
 			txt = std::format("{} +{}%", game->m_skill_cfg_list[skill_index]->m_name, value - game->m_skill_cfg_list[skill_index]->m_level);
-			game->m_floating_text.add_notify_text(notify_text_type::skill_change, txt.c_str(), game->m_cur_time,
+			game->m_floating_text.add_notify_text(notify_text_type::skill_change, txt, game->m_cur_time,
 				game->m_player->m_player_object_id, game->m_map_data.get());
 		}
 		else if (game->m_skill_cfg_list[skill_index]->m_level > value) {
@@ -111,7 +110,7 @@ namespace NetworkMessageHandlers {
 			game->add_event_list(txt.c_str(), 10);
 			game->play_game_sound('E', 24, 0);
 			txt = std::format("{} -{}%", game->m_skill_cfg_list[skill_index]->m_name, value - game->m_skill_cfg_list[skill_index]->m_level);
-			game->m_floating_text.add_notify_text(notify_text_type::skill_change, txt.c_str(), game->m_cur_time,
+			game->m_floating_text.add_notify_text(notify_text_type::skill_change, txt, game->m_cur_time,
 				game->m_player->m_player_object_id, game->m_map_data.get());
 		}
 		game->m_skill_cfg_list[skill_index]->m_level = value;
@@ -120,7 +119,7 @@ namespace NetworkMessageHandlers {
 
 	void HandleSkillUsingEnd(CGame* game, char* data)
 	{
-		WORD result;
+		uint16_t result;
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifySkillUsingEnd>(
 			data, sizeof(hb::net::PacketNotifySkillUsingEnd));
 		if (!pkt) return;

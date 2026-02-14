@@ -8,7 +8,6 @@
 #include "DialogBoxIDs.h"
 #include <cstdio>
 #include <cstring>
-#include <windows.h>
 
 void fishing_manager::handle_fish_chance(char* data)
 {
@@ -26,7 +25,7 @@ void fishing_manager::handle_event_fish_mode(char* data)
 	if (!m_game) return;
 	short sprite, sprite_frame;
 	char name[hb::shared::limits::ItemNameLen]{};
-	WORD price;
+	uint16_t price;
 
 	const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyEventFishMode>(
 		data, sizeof(hb::net::PacketNotifyEventFishMode));

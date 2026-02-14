@@ -23,7 +23,7 @@ void Screen_Splash::on_initialize()
 {
     GameModeManager::set_current_mode(GameMode::Splash);
 
-    m_game->m_sprite[SplashScreen] = hb::shared::sprite::Sprites::create("New-Dialog", 3, false);
+    m_game->m_sprite[SplashScreen] = hb::shared::sprite::Sprites::create("new-dialog", 3, false);
 
     m_credits = {{
         { "Centuu - HelbreathServer starting base", "https://github.com/centuu/HelbreathServer" },

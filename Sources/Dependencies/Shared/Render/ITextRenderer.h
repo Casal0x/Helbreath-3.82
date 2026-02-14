@@ -8,11 +8,6 @@
 #include <cstdint>
 #include "PrimitiveTypes.h"
 
-// Undefine Windows draw_text macro to avoid naming conflict
-#ifdef draw_text
-#undef draw_text
-#endif
-
 namespace hb::shared::text {
 
 // ============== Basic Types ==============

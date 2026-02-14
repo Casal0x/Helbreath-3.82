@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <string_view>
 #include <cstdint>
 #include "FloatingTextTypes.h"
 
@@ -9,12 +10,12 @@ public:
 	enum class Category : uint8_t { Chat, Damage, Notify };
 
 	// Chat constructor
-	floating_text(chat_text_type eType, const char* pMsg, uint32_t time)
+	floating_text(chat_text_type eType, std::string_view msg, uint32_t time)
 		: m_category(Category::Chat)
 		, m_chat_type(eType)
 		, m_damage_type{}
 		, m_notify_type{}
-		, m_text(pMsg ? pMsg : "")
+		, m_text(msg)
 		, m_x(0), m_y(0)
 		, m_time(time)
 		, m_object_id(-1)
@@ -22,12 +23,12 @@ public:
 	}
 
 	// Damage constructor
-	floating_text(damage_text_type eType, const char* pMsg, uint32_t time)
+	floating_text(damage_text_type eType, std::string_view msg, uint32_t time)
 		: m_category(Category::Damage)
 		, m_chat_type{}
 		, m_damage_type(eType)
 		, m_notify_type{}
-		, m_text(pMsg ? pMsg : "")
+		, m_text(msg)
 		, m_x(0), m_y(0)
 		, m_time(time)
 		, m_object_id(-1)
@@ -35,12 +36,12 @@ public:
 	}
 
 	// Notify constructor
-	floating_text(notify_text_type eType, const char* pMsg, uint32_t time)
+	floating_text(notify_text_type eType, std::string_view msg, uint32_t time)
 		: m_category(Category::Notify)
 		, m_chat_type{}
 		, m_damage_type{}
 		, m_notify_type(eType)
-		, m_text(pMsg ? pMsg : "")
+		, m_text(msg)
 		, m_x(0), m_y(0)
 		, m_time(time)
 		, m_object_id(-1)

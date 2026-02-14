@@ -7,8 +7,9 @@
 #include <cstring>
 #include <chrono>
 
+#include "platform_headers.h"
+
 #ifdef _WIN32
-#include <windows.h>
 #include <psapi.h>
 #endif
 
@@ -107,11 +108,11 @@ public:
 };
 
 // Static member initialization
-__declspec(selectany) bool DebugConsole::s_bAllocated = false;
-__declspec(selectany) FILE* DebugConsole::s_pOut = nullptr;
-__declspec(selectany) FILE* DebugConsole::s_pErr = nullptr;
+inline bool DebugConsole::s_bAllocated = false;
+inline FILE* DebugConsole::s_pOut = nullptr;
+inline FILE* DebugConsole::s_pErr = nullptr;
 #ifdef _WIN32
-__declspec(selectany) SIZE_T DebugConsole::s_lastWorkingSet = 0;
+inline SIZE_T DebugConsole::s_lastWorkingSet = 0;
 #endif
 
 // ============================================================================
@@ -196,8 +197,8 @@ public:
 };
 
 // Static members initialization
-__declspec(selectany) BenchmarkScope::BenchmarkSlot BenchmarkScope::s_slots[64];
-__declspec(selectany) int BenchmarkScope::s_iSlotCount = 0;
+inline BenchmarkScope::BenchmarkSlot BenchmarkScope::s_slots[64];
+inline int BenchmarkScope::s_iSlotCount = 0;
 
 // Two-level indirection so __LINE__ expands before token-pasting
 #define BENCHMARK_CONCAT_IMPL_(a,b) a##b

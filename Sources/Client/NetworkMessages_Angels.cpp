@@ -4,7 +4,6 @@
 #include "lan_eng.h"
 #include <cstdio>
 #include <cstring>
-#include <windows.h>
 
 namespace NetworkMessageHandlers {
 	void HandleAngelFailed(CGame* game, char* data)

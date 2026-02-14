@@ -6,7 +6,6 @@
 #include "DialogBoxIDs.h"
 #include <cstdio>
 #include <cstring>
-#include <windows.h>
 #include <cmath>
 #include <format>
 #include <string>

@@ -40,7 +40,7 @@ void ChatManager::clear_messages()
 	for (auto& msg : m_messages) msg.reset();
 }
 
-CMsg* ChatManager::GetMessage(int index) const
+CMsg* ChatManager::get_message(int index) const
 {
 	if (index < 0 || index >= game_limits::max_chat_scroll_msgs) return nullptr;
 	return m_messages[index].get();

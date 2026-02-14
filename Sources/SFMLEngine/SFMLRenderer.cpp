@@ -32,8 +32,9 @@ void main()
 }
 )glsl";
 
+#include "platform_headers.h"
+
 #ifdef _WIN32
-#include <windows.h>
 #include <dxgi.h>
 #pragma comment(lib, "dxgi.lib")
 #endif

@@ -5,6 +5,7 @@
 
 #include "SFMLSprite.h"
 #include "SFMLRenderer.h"
+#include "CommonTypes.h"
 #include <SFML/Graphics/Sprite.hpp>
 #include <SFML/Graphics/RenderTexture.hpp>
 
@@ -110,7 +111,7 @@ void SFMLSprite::draw(int x, int y, int frame, const hb::shared::sprite::DrawPar
     }
 
     m_inUse = true;
-    m_lastAccessTime = GetTickCount();
+    m_lastAccessTime = GameClock::get_time_ms();
 
     DrawInternal(m_renderer->GetBackBuffer(), x, y, frame, params);
 
@@ -133,7 +134,7 @@ void SFMLSprite::DrawToSurface(void* destSurface, int x, int y, int frame, const
     }
 
     m_inUse = true;
-    m_lastAccessTime = GetTickCount();
+    m_lastAccessTime = GameClock::get_time_ms();
 
     sf::RenderTexture* target = static_cast<sf::RenderTexture*>(destSurface);
     DrawInternal(target, x, y, frame, params);
@@ -354,7 +355,7 @@ void SFMLSprite::DrawInternal(sf::RenderTexture* target, int x, int y, int frame
         // Additive blend with per-pixel color offset via fragment shader
         // Matches DDraw PutTransSpriteRGB: dest += clamp(src + (r, g, b))
         states.blendMode = sf::BlendAdd;
-        if (!wasSmooth) {
+        if (!wasSmooth && !params.m_nearest_filter) {
             m_texture.setSmooth(true);
             needSmoothRestore = true;
         }
@@ -384,8 +385,10 @@ void SFMLSprite::DrawInternal(sf::RenderTexture* target, int x, int y, int frame
     } else if (params.m_blend_mode == hb::shared::sprite::BlendMode::Additive) {
         states.blendMode = sf::BlendAdd;
         // Enable smooth filtering for additive blending (light effects)
-        // This produces smooth gradients like DDraw's per-pixel blending
-        if (!wasSmooth) {
+        // This produces smooth gradients like DDraw's per-pixel blending.
+        // Skip for bitmap fonts (m_nearest_filter) — bilinear filtering causes
+        // glyph edge bleed artifacts, especially on Linux/OpenGL.
+        if (!wasSmooth && !params.m_nearest_filter) {
             m_texture.setSmooth(true);
             needSmoothRestore = true;
         }
@@ -425,7 +428,7 @@ void SFMLSprite::DrawWidth(int x, int y, int frame, int width, bool vertical)
     }
 
     m_inUse = true;
-    m_lastAccessTime = GetTickCount();
+    m_lastAccessTime = GameClock::get_time_ms();
 
     const PAKLib::sprite_rect& frameRect = m_frames[frame];
 

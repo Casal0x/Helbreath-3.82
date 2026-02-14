@@ -93,7 +93,7 @@ void DialogBox_ChatHistory::draw_chat_messages(short sX, short sY)
 	{
 		int index = i + view;
 		if (index < 0 || index >= game_limits::max_chat_scroll_msgs) continue;
-		CMsg* chat_msg = ChatManager::get().GetMessage(index);
+		CMsg* chat_msg = ChatManager::get().get_message(index);
 		if (chat_msg != nullptr)
 		{
 			int y_pos = sY + 127 - i * 13;

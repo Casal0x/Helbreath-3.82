@@ -11,10 +11,6 @@
 #include "PrimitiveTypes.h"
 #include <cstdint>
 
-// Undefine Windows draw_text macro to avoid naming conflict with IRenderer::draw_text
-#ifdef draw_text
-#undef draw_text
-#endif
 #include "RenderConstants.h"
 
 namespace hb::shared::render {

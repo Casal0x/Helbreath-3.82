@@ -31,7 +31,7 @@ public:
         }
 
         // Build full path using factory's configured sprite path
-        std::string pakPath = factory->get_sprite_path() + "\\" + pakName + ".pak";
+        std::string pakPath = factory->get_sprite_path() + "/" + pakName + ".pak";
 
         try {
             loader.m_pak = PAKLib::loadpak_fast(pakPath);
@@ -56,7 +56,7 @@ public:
             throw std::runtime_error("No sprite factory set");
         }
 
-        std::string pakPath = factory->get_sprite_path() + "\\" + pakName + ".pak";
+        std::string pakPath = factory->get_sprite_path() + "/" + pakName + ".pak";
 
         try {
             loader.m_pak = PAKLib::loadpak_fast(pakPath);

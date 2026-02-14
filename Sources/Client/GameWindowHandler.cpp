@@ -11,11 +11,12 @@
 #include "ISpriteFactory.h"
 #include "GameModeManager.h"
 
-#ifdef _WIN32
-#include <windowsx.h>
+#include "platform_headers.h"
 
 namespace MouseButton = hb::shared::input::MouseButton;
 
+#ifdef _WIN32
+#include <windowsx.h>
 #endif
 
 GameWindowHandler::GameWindowHandler(CGame* game)
@@ -64,7 +65,7 @@ void GameWindowHandler::on_destroy()
 {
     if (m_game)
     {
-        m_game->Quit();
+        hb::shared::render::Window::close();
     }
     // ASIO handles Winsock cleanup internally
 }
@@ -84,22 +85,7 @@ void GameWindowHandler::on_activate(bool active)
         if (hb::shared::input::get())
             hb::shared::input::get()->set_window_active(true);
 
-        // Only check files after game is fully initialized (sprite factory exists)
-        // Rate-limited to at most once per 60 seconds to avoid I/O stall on every alt-tab
-        if (hb::shared::sprite::Sprites::get_factory() != nullptr)
-        {
-            static uint32_t s_dwLastFileCheck = 0;
-            uint32_t now = GameClock::get_time_ms();
-            if (s_dwLastFileCheck == 0 || (now - s_dwLastFileCheck) > 60000)
-            {
-                s_dwLastFileCheck = now;
-                if (m_game->check_important_file() == false)
-                {
-                    hb::shared::render::Window::show_error("ERROR1", "File checksum error! get update again please!");
-                    hb::shared::render::Window::close();
-                }
-            }
-        }
+        // Legacy file integrity check removed — check_important_file() no longer exists.
     }
 }
 

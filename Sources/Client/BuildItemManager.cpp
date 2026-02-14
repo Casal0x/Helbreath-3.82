@@ -1,5 +1,4 @@
-﻿#define NOMINMAX
-#include "BuildItemManager.h"
+﻿#include "BuildItemManager.h"
 #include "Game.h"
 #include <fstream>
 #include <string>
@@ -26,7 +25,7 @@ bool build_item_manager::load_recipes()
 			m_recipes[i].reset();
 	}
 
-	std::ifstream file("contents\\bitemcfg.txt");
+	std::ifstream file("contents/bitemcfg.txt");
 	if (!file) return false;
 
 	std::string content((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
@@ -89,7 +88,7 @@ bool build_item_manager::update_available_recipes()
 					for (j = 0; j < hb::shared::limits::MaxItems; j++)
 						if (m_game->m_item_list[j] != 0) {
 							CItem* cfg_j = m_game->get_item_config(m_game->m_item_list[j]->m_id_num);
-							if (cfg_j && (memcmp(cfg_j->m_name, temp_name, hb::shared::limits::ItemNameLen - 1) == 0) && (m_game->m_item_list[j]->m_count >= static_cast<DWORD>(count)) &&
+							if (cfg_j && (memcmp(cfg_j->m_name, temp_name, hb::shared::limits::ItemNameLen - 1) == 0) && (m_game->m_item_list[j]->m_count >= static_cast<uint32_t>(count)) &&
 								(item_count[j] > 0))
 							{
 								match++;
@@ -111,7 +110,7 @@ bool build_item_manager::update_available_recipes()
 						if (m_game->m_item_list[j] != 0)
 						{
 							CItem* cfg_j = m_game->get_item_config(m_game->m_item_list[j]->m_id_num);
-							if (cfg_j && (memcmp(cfg_j->m_name, temp_name, hb::shared::limits::ItemNameLen - 1) == 0) && (m_game->m_item_list[j]->m_count >= static_cast<DWORD>(count)) &&
+							if (cfg_j && (memcmp(cfg_j->m_name, temp_name, hb::shared::limits::ItemNameLen - 1) == 0) && (m_game->m_item_list[j]->m_count >= static_cast<uint32_t>(count)) &&
 								(item_count[j] > 0))
 							{
 								match++;
@@ -133,7 +132,7 @@ bool build_item_manager::update_available_recipes()
 						if (m_game->m_item_list[j] != 0)
 						{
 							CItem* cfg_j = m_game->get_item_config(m_game->m_item_list[j]->m_id_num);
-							if (cfg_j && (memcmp(cfg_j->m_name, temp_name, hb::shared::limits::ItemNameLen - 1) == 0) && (m_game->m_item_list[j]->m_count >= static_cast<DWORD>(count)) &&
+							if (cfg_j && (memcmp(cfg_j->m_name, temp_name, hb::shared::limits::ItemNameLen - 1) == 0) && (m_game->m_item_list[j]->m_count >= static_cast<uint32_t>(count)) &&
 								(item_count[j] > 0))
 							{
 								match++;
@@ -155,7 +154,7 @@ bool build_item_manager::update_available_recipes()
 						if (m_game->m_item_list[j] != 0)
 						{
 							CItem* cfg_j = m_game->get_item_config(m_game->m_item_list[j]->m_id_num);
-							if (cfg_j && (memcmp(cfg_j->m_name, temp_name, hb::shared::limits::ItemNameLen - 1) == 0) && (m_game->m_item_list[j]->m_count >= static_cast<DWORD>(count)) &&
+							if (cfg_j && (memcmp(cfg_j->m_name, temp_name, hb::shared::limits::ItemNameLen - 1) == 0) && (m_game->m_item_list[j]->m_count >= static_cast<uint32_t>(count)) &&
 								(item_count[j] > 0))
 							{
 								match++;
@@ -178,7 +177,7 @@ bool build_item_manager::update_available_recipes()
 						if (m_game->m_item_list[j] != 0)
 						{
 							CItem* cfg_j = m_game->get_item_config(m_game->m_item_list[j]->m_id_num);
-							if (cfg_j && (memcmp(cfg_j->m_name, temp_name, hb::shared::limits::ItemNameLen - 1) == 0) && (m_game->m_item_list[j]->m_count >= static_cast<DWORD>(count)) &&
+							if (cfg_j && (memcmp(cfg_j->m_name, temp_name, hb::shared::limits::ItemNameLen - 1) == 0) && (m_game->m_item_list[j]->m_count >= static_cast<uint32_t>(count)) &&
 								(item_count[j] > 0))
 							{
 								match++;
@@ -201,7 +200,7 @@ bool build_item_manager::update_available_recipes()
 						if (m_game->m_item_list[j] != 0)
 						{
 							CItem* cfg_j = m_game->get_item_config(m_game->m_item_list[j]->m_id_num);
-							if (cfg_j && (memcmp(cfg_j->m_name, temp_name, hb::shared::limits::ItemNameLen - 1) == 0) && (m_game->m_item_list[j]->m_count >= static_cast<DWORD>(count)) &&
+							if (cfg_j && (memcmp(cfg_j->m_name, temp_name, hb::shared::limits::ItemNameLen - 1) == 0) && (m_game->m_item_list[j]->m_count >= static_cast<uint32_t>(count)) &&
 								(item_count[j] > 0))
 							{
 								match++;
@@ -383,7 +382,7 @@ bool build_item_manager::validate_current_recipe()
 			if (item_index[i] == -1) continue;
 			CItem* cfg_bi = m_game->get_item_config(m_game->m_item_list[item_index[i]]->m_id_num);
 			if (cfg_bi && (memcmp(cfg_bi->m_name, temp_name, hb::shared::limits::ItemNameLen - 1) == 0) &&
-				(m_game->m_item_list[item_index[i]]->m_count >= static_cast<DWORD>(count)) &&
+				(m_game->m_item_list[item_index[i]]->m_count >= static_cast<uint32_t>(count)) &&
 				(item_count[i] > 0) && (item_flag[i] == false))
 			{
 				match++;
@@ -407,7 +406,7 @@ CCBIS_STEP2:;
 			if (item_index[i] == -1) continue;
 			CItem* cfg_bi = m_game->get_item_config(m_game->m_item_list[item_index[i]]->m_id_num);
 			if (cfg_bi && (memcmp(cfg_bi->m_name, temp_name, hb::shared::limits::ItemNameLen - 1) == 0) &&
-				(m_game->m_item_list[item_index[i]]->m_count >= static_cast<DWORD>(count)) &&
+				(m_game->m_item_list[item_index[i]]->m_count >= static_cast<uint32_t>(count)) &&
 				(item_count[i] > 0) && (item_flag[i] == false))
 			{
 				match++;
@@ -431,7 +430,7 @@ CCBIS_STEP3:;
 			if (item_index[i] == -1) continue;
 			CItem* cfg_bi = m_game->get_item_config(m_game->m_item_list[item_index[i]]->m_id_num);
 			if (cfg_bi && (memcmp(cfg_bi->m_name, temp_name, hb::shared::limits::ItemNameLen - 1) == 0) &&
-				(m_game->m_item_list[item_index[i]]->m_count >= static_cast<DWORD>(count)) &&
+				(m_game->m_item_list[item_index[i]]->m_count >= static_cast<uint32_t>(count)) &&
 				(item_count[i] > 0) && (item_flag[i] == false))
 			{
 				match++;
@@ -455,7 +454,7 @@ CCBIS_STEP4:;
 			if (item_index[i] == -1) continue;
 			CItem* cfg_bi = m_game->get_item_config(m_game->m_item_list[item_index[i]]->m_id_num);
 			if (cfg_bi && (memcmp(cfg_bi->m_name, temp_name, hb::shared::limits::ItemNameLen - 1) == 0) &&
-				(m_game->m_item_list[item_index[i]]->m_count >= static_cast<DWORD>(count)) &&
+				(m_game->m_item_list[item_index[i]]->m_count >= static_cast<uint32_t>(count)) &&
 				(item_count[i] > 0) && (item_flag[i] == false))
 			{
 				match++;
@@ -479,7 +478,7 @@ CCBIS_STEP5:;
 			if (item_index[i] == -1) continue;
 			CItem* cfg_bi = m_game->get_item_config(m_game->m_item_list[item_index[i]]->m_id_num);
 			if (cfg_bi && (memcmp(cfg_bi->m_name, temp_name, hb::shared::limits::ItemNameLen - 1) == 0) &&
-				(m_game->m_item_list[item_index[i]]->m_count >= static_cast<DWORD>(count)) &&
+				(m_game->m_item_list[item_index[i]]->m_count >= static_cast<uint32_t>(count)) &&
 				(item_count[i] > 0) && (item_flag[i] == false))
 			{
 				match++;
@@ -503,7 +502,7 @@ CCBIS_STEP6:;
 			if (item_index[i] == -1) continue;
 			CItem* cfg_bi = m_game->get_item_config(m_game->m_item_list[item_index[i]]->m_id_num);
 			if (cfg_bi && (memcmp(cfg_bi->m_name, temp_name, hb::shared::limits::ItemNameLen - 1) == 0) &&
-				(m_game->m_item_list[item_index[i]]->m_count >= static_cast<DWORD>(count)) &&
+				(m_game->m_item_list[item_index[i]]->m_count >= static_cast<uint32_t>(count)) &&
 				(item_count[i] > 0) && (item_flag[i] == false))
 			{
 				match++;

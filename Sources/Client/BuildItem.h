@@ -5,7 +5,6 @@
 #pragma once
 #include <string>
 
-#include <windows.h>
 #include "CommonTypes.h"
 #include "NetConstants.h"
 

@@ -87,6 +87,18 @@ private:
     // Transform window coordinates to logical game coordinates (640x480)
     void TransformMouseCoords(int windowX, int windowY, int& logicalX, int& logicalY) const;
 
+    // Apply cursor grab based on mode: skip in fullscreen (cursor already confined),
+    // apply user preference in windowed mode.
+    void apply_cursor_grab();
+
+    // Cross-platform helpers — use platform wrappers on Windows, SFML on Linux.
+    void get_desktop_size(int& width, int& height) const;
+    void move_window(int x, int y, int width, int height);
+
+    // On Windows, clip the OS cursor to the rendered area (letterbox region)
+    // in fullscreen non-stretch mode.  No-op on Linux and in windowed mode.
+    void update_cursor_clip();
+
     sf::RenderWindow m_renderWindow;
     hb::shared::types::NativeWindowHandle m_handle;  // Native handle for compatibility
     hb::shared::render::IWindowEventHandler* m_event_handler;

@@ -2,6 +2,7 @@
 
 #include <array>
 #include <memory>
+#include <string_view>
 #include <cstdint>
 #include "FloatingText.h"
 #include "GameConstants.h"
@@ -12,11 +13,11 @@ namespace hb::shared::render { class IRenderer; }
 class floating_text_manager {
 public:
 	// Add messages - find slot, bind to tile, return index or 0
-	int add_chat_text(const char* pMsg, uint32_t time, int object_id,
+	int add_chat_text(std::string_view msg, uint32_t time, int object_id,
 	                CMapData* map_data, short sX, short sY);
-	int add_damage_text(damage_text_type eType, const char* pMsg, uint32_t time,
+	int add_damage_text(damage_text_type eType, std::string_view msg, uint32_t time,
 	                  int object_id, CMapData* map_data);
-	int add_notify_text(notify_text_type eType, const char* pMsg, uint32_t time,
+	int add_notify_text(notify_text_type eType, std::string_view msg, uint32_t time,
 	                  int object_id, CMapData* map_data);
 
 	// Damage factory (replaces CreateDamageMsg logic)

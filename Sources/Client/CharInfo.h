@@ -5,8 +5,8 @@
 #pragma once
 #include <string>
 
-#include <windows.h>
 #include "Appearance.h"
+#include <cstdint>
 
 class CCharInfo
 {
@@ -23,6 +23,6 @@ public:
 	hb::shared::entity::PlayerAppearance m_appearance{};
 	short	m_str = 0, m_vit = 0, m_dex = 0, m_int = 0, m_mag = 0, m_chr = 0;
 	int	m_level = 0;
-	DWORD   m_exp = 0;
+	uint32_t   m_exp = 0;
 	int   m_year = 0, m_month = 0, m_day = 0, m_hour = 0, m_minute = 0;
 };

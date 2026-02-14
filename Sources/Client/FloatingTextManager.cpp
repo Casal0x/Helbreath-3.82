@@ -8,7 +8,6 @@
 #include "AudioManager.h"
 #include "GameGeometry.h"
 #include <cstdio>
-#include <cstring>
 #include <format>
 #include <string>
 
@@ -61,30 +60,30 @@ int floating_text_manager::bind_to_tile(int index, int object_id, CMapData* map_
 // Add methods
 // ---------------------------------------------------------------
 
-int floating_text_manager::add_chat_text(const char* pMsg, uint32_t time, int object_id,
+int floating_text_manager::add_chat_text(std::string_view msg, uint32_t time, int object_id,
                                       CMapData* map_data, short sX, short sY)
 {
 	int i = find_free_slot();
 	if (i == 0) return 0;
-	m_messages[i] = std::make_unique<floating_text>(chat_text_type::player_chat, pMsg, time);
+	m_messages[i] = std::make_unique<floating_text>(chat_text_type::player_chat, msg, time);
 	return bind_to_tile(i, object_id, map_data, sX, sY);
 }
 
-int floating_text_manager::add_damage_text(damage_text_type eType, const char* pMsg, uint32_t time,
+int floating_text_manager::add_damage_text(damage_text_type eType, std::string_view msg, uint32_t time,
                                         int object_id, CMapData* map_data)
 {
 	int i = find_free_slot();
 	if (i == 0) return 0;
-	m_messages[i] = std::make_unique<floating_text>(eType, pMsg, time);
+	m_messages[i] = std::make_unique<floating_text>(eType, msg, time);
 	return bind_to_tile(i, object_id, map_data, -10, -10);
 }
 
-int floating_text_manager::add_notify_text(notify_text_type eType, const char* pMsg, uint32_t time,
+int floating_text_manager::add_notify_text(notify_text_type eType, std::string_view msg, uint32_t time,
                                         int object_id, CMapData* map_data)
 {
 	int i = find_free_slot();
 	if (i == 0) return 0;
-	m_messages[i] = std::make_unique<floating_text>(eType, pMsg, time);
+	m_messages[i] = std::make_unique<floating_text>(eType, msg, time);
 	return bind_to_tile(i, object_id, map_data, -10, -10);
 }
 
@@ -97,18 +96,18 @@ int floating_text_manager::add_damage_from_value(short damage, bool last_hit, ui
 	{
 		txt = "* Immune *";
 		audio_manager::get().play_game_sound(sound_type::Character, 17, 0, 0);
-		return add_damage_text(damage_text_type::Medium, txt.c_str(), time, object_id, map_data);
+		return add_damage_text(damage_text_type::Medium, txt, time, object_id, map_data);
 	}
 	if (damage == Sentinel::MagicFailed)
 	{
 		txt = "* Failed! *";
 		audio_manager::get().play_game_sound(sound_type::Character, 17, 0, 0);
-		return add_damage_text(damage_text_type::Medium, txt.c_str(), time, object_id, map_data);
+		return add_damage_text(damage_text_type::Medium, txt, time, object_id, map_data);
 	}
 	if (damage > 128)
 	{
 		txt = "Critical!";
-		return add_damage_text(damage_text_type::Large, txt.c_str(), time, object_id, map_data);
+		return add_damage_text(damage_text_type::Large, txt, time, object_id, map_data);
 	}
 	if (damage > 0)
 	{
@@ -121,7 +120,7 @@ int floating_text_manager::add_damage_from_value(short damage, bool last_hit, ui
 		if (damage < 12)       eType = damage_text_type::Small;
 		else if (damage < 40)  eType = damage_text_type::Medium;
 		else                    eType = damage_text_type::Large;
-		return add_damage_text(eType, txt.c_str(), time, object_id, map_data);
+		return add_damage_text(eType, txt, time, object_id, map_data);
 	}
 	return 0;
 }
@@ -241,62 +240,51 @@ void floating_text_manager::draw_message(const floating_text& msg, short sX, sho
 	{
 		// Sprite font path: split text into 20-char lines for multi-line display
 		// Note: Text encoding is EUC-KR (legacy Korean). get_char_kind detects multibyte boundaries.
-		const char* text = msg.m_text.c_str();
-		char msg_a[22]{}, msg_b[22]{}, msg_c[22]{};
-		const char* cp = text;
-		size_t cpLen;
+		const std::string& text = msg.m_text;
+		std::string msg_a, msg_b, msg_c;
 		int lines = 0;
+		size_t pos = 0;
 
-		cpLen = std::strlen(cp);
-		if (cpLen != 0) {
-			std::memcpy(msg_a, cp, std::min<size_t>(20, cpLen));
-			if (cpLen > 20) {
-				int ret = get_char_kind(msg_a, 19);
-				if (ret == CharKind_HAN1) {
-					msg_a[20] = cp[20];
-					cp++;
-				}
+		if (pos < text.size()) {
+			size_t count = std::min<size_t>(20, text.size() - pos);
+			if (count == 20 && pos + 20 < text.size()) {
+				int ret = get_char_kind(text.c_str() + pos, 19);
+				if (ret == CharKind_HAN1) count = 21;
 			}
-			cp += 20;
+			msg_a = text.substr(pos, count);
+			pos += count;
 			lines = 1;
 		}
 
-		cpLen = std::strlen(cp);
-		if (cpLen != 0) {
-			std::memcpy(msg_b, cp, std::min<size_t>(20, cpLen));
-			if (cpLen > 20) {
-				int ret = get_char_kind(msg_b, 19);
-				if (ret == CharKind_HAN1) {
-					msg_b[20] = cp[20];
-					cp++;
-				}
+		if (pos < text.size()) {
+			size_t count = std::min<size_t>(20, text.size() - pos);
+			if (count == 20 && pos + 20 < text.size()) {
+				int ret = get_char_kind(text.c_str() + pos, 19);
+				if (ret == CharKind_HAN1) count = 21;
 			}
-			cp += 20;
+			msg_b = text.substr(pos, count);
+			pos += count;
 			lines = 2;
 		}
 
-		cpLen = std::strlen(cp);
-		if (cpLen != 0) {
-			std::memcpy(msg_c, cp, std::min<size_t>(20, cpLen));
-			if (cpLen > 20) {
-				int ret = get_char_kind(msg_c, 19);
-				if (ret == CharKind_HAN1) {
-					msg_c[20] = cp[20];
-					cp++;
-				}
+		if (pos < text.size()) {
+			size_t count = std::min<size_t>(20, text.size() - pos);
+			if (count == 20 && pos + 20 < text.size()) {
+				int ret = get_char_kind(text.c_str() + pos, 19);
+				if (ret == CharKind_HAN1) count = 21;
 			}
-			cp += 20;
+			msg_c = text.substr(pos, count);
+			pos += count;
 			lines = 3;
 		}
 
 		// Compute text pixel width for centering
 		int size = 0;
-		for (int i = 0; i < 20; i++)
-			if (msg_a[i] != 0)
-			{
-				if (static_cast<unsigned char>(msg_a[i]) >= 128) { size += 5; i++; }
-				else size += 4;
-			}
+		for (size_t i = 0; i < msg_a.size(); i++)
+		{
+			if (static_cast<unsigned char>(msg_a[i]) >= 128) { size += 5; i++; }
+			else size += 4;
+		}
 
 		int font_id = GameFont::SprFont3_0 + params.m_font_offset;
 		int base_y = sY - params.m_start_offset_y - rise;
@@ -324,16 +312,16 @@ void floating_text_manager::draw_message(const floating_text& msg, short sX, sho
 
 			switch (lines) {
 			case 1:
-				hb::shared::text::draw_text(font_id, sX - size, base_y, msg_a, style);
+				hb::shared::text::draw_text(font_id, sX - size, base_y, msg_a.c_str(), style);
 				break;
 			case 2:
-				hb::shared::text::draw_text(font_id, sX - size, base_y - 16, msg_a, style);
-				hb::shared::text::draw_text(font_id, sX - size, base_y, msg_b, style);
+				hb::shared::text::draw_text(font_id, sX - size, base_y - 16, msg_a.c_str(), style);
+				hb::shared::text::draw_text(font_id, sX - size, base_y, msg_b.c_str(), style);
 				break;
 			case 3:
-				hb::shared::text::draw_text(font_id, sX - size, base_y - 32, msg_a, style);
-				hb::shared::text::draw_text(font_id, sX - size, base_y - 16, msg_b, style);
-				hb::shared::text::draw_text(font_id, sX - size, base_y, msg_c, style);
+				hb::shared::text::draw_text(font_id, sX - size, base_y - 32, msg_a.c_str(), style);
+				hb::shared::text::draw_text(font_id, sX - size, base_y - 16, msg_b.c_str(), style);
+				hb::shared::text::draw_text(font_id, sX - size, base_y, msg_c.c_str(), style);
 				break;
 			}
 		}

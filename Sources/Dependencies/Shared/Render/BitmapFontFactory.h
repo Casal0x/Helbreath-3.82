@@ -10,11 +10,6 @@
 #include <vector>
 #include <memory>
 
-// Undefine Windows CreateFont macro to avoid naming conflict
-#ifdef CreateFont
-#undef CreateFont
-#endif
-
 namespace hb::shared::text {
 
 struct FontSpacing

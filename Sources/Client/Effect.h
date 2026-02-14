@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include <windows.h>
 #include "CommonTypes.h"
 #include "EffectType.h"
 

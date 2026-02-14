@@ -11,15 +11,12 @@
 #include "RenderConstants.h"
 #include <SFML/Window/Event.hpp>
 
-#ifdef _WIN32
-#include <windows.h>
+#include "platform_headers.h"
 
 namespace MouseButton = hb::shared::input::MouseButton;
 
-#endif
-
 SFMLWindow::SFMLWindow()
-    : m_handle(nullptr)
+    : m_handle{}
     , m_event_handler(nullptr)
     , m_realized(false)
     , m_open(false)
@@ -56,7 +53,19 @@ bool SFMLWindow::realize()
     // Create SFML window from staged params
     sf::VideoMode videoMode({static_cast<unsigned int>(m_width), static_cast<unsigned int>(m_height)});
 
+    // On Linux, use a borderless window at desktop size instead of true fullscreen.
+    // X11's fullscreen mode grabs the pointer and can lock mouse movement entirely.
+#ifdef _WIN32
     sf::State state = m_fullscreen ? sf::State::Fullscreen : sf::State::Windowed;
+#else
+    sf::State state = sf::State::Windowed;
+    if (m_fullscreen)
+    {
+        int desk_w, desk_h;
+        get_desktop_size(desk_w, desk_h);
+        videoMode = sf::VideoMode({static_cast<unsigned int>(desk_w), static_cast<unsigned int>(desk_h)});
+    }
+#endif
 
     // Pick style: fullscreen/borderless use None, bordered uses Titlebar
     auto sfStyle = sf::Style::None;
@@ -73,36 +82,52 @@ bool SFMLWindow::realize()
     // get native handle for anything that needs it
 #ifdef _WIN32
     m_handle = static_cast<HWND>(m_renderWindow.getNativeHandle());
+#endif
 
     // For bordered mode, add minimize button (sf::Style::Titlebar doesn't include it)
     if (!m_fullscreen && !m_borderless && m_handle)
     {
-        LONG style = GetWindowLong(m_handle, GWL_STYLE);
-        style |= WS_MINIMIZEBOX;
-        SetWindowLong(m_handle, GWL_STYLE, style);
-        SetWindowPos(m_handle, nullptr, 0, 0, 0, 0,
-            SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
+        hb::platform::add_minimize_button(m_handle);
     }
-#endif
 
     // Hide the system mouse cursor (game draws its own cursor)
     m_renderWindow.setMouseCursorVisible(false);
-    m_renderWindow.setMouseCursorGrabbed(m_mouse_capture_enabled);
+    apply_cursor_grab();
 
     // Request 1ms timer resolution for accurate sleep-based frame limiting
-#ifdef _WIN32
-    timeBeginPeriod(1);
-#endif
+    hb::platform::set_timer_resolution(1);
 
     m_realized = true;
     m_open = true;
     m_active = true;
 
+    // Position the window: fullscreen at (0,0), windowed centered on screen.
+    // On Linux, "fullscreen" is a borderless window at desktop size, so it must
+    // be explicitly placed at the origin to cover the display.
+    {
+        int screen_w, screen_h;
+        get_desktop_size(screen_w, screen_h);
+        if (m_fullscreen)
+        {
+            move_window(0, 0, screen_w, screen_h);
+        }
+        else
+        {
+            int pos_x = (screen_w - m_width) / 2;
+            int pos_y = (screen_h - m_height) / 2;
+            move_window(pos_x, pos_y, m_width, m_height);
+        }
+    }
+
+    update_cursor_clip();
     return true;
 }
 
 void SFMLWindow::destroy()
 {
+#ifdef _WIN32
+    ClipCursor(nullptr);
+#endif
     m_event_handler = nullptr;
 
     if (m_renderWindow.isOpen())
@@ -111,11 +136,9 @@ void SFMLWindow::destroy()
     }
 
     // Restore default timer resolution
-#ifdef _WIN32
-    timeEndPeriod(1);
-#endif
+    hb::platform::restore_timer_resolution(1);
 
-    m_handle = nullptr;
+    m_handle = {};
     m_realized = false;
     m_open = false;
     m_active = false;
@@ -176,11 +199,10 @@ void SFMLWindow::set_fullscreen(bool fullscreen)
     int windowWidth, windowHeight;
     if (fullscreen)
     {
-        // Save windowed dimensions before going fullscreen
-        m_windowed_width = m_width;
-        m_windowed_height = m_height;
-        windowWidth = GetSystemMetrics(SM_CXSCREEN);
-        windowHeight = GetSystemMetrics(SM_CYSCREEN);
+        // m_windowed_width/height are already tracked by realize() and set_size().
+        // Do NOT save m_width/m_height here — resize events may have shrunk them
+        // by the window decoration size, causing progressive shrinking on each toggle.
+        get_desktop_size(windowWidth, windowHeight);
     }
     else
     {
@@ -191,7 +213,11 @@ void SFMLWindow::set_fullscreen(bool fullscreen)
 
     // Recreate window with new mode
     sf::VideoMode videoMode({static_cast<unsigned int>(windowWidth), static_cast<unsigned int>(windowHeight)});
+#ifdef _WIN32
     sf::State state = fullscreen ? sf::State::Fullscreen : sf::State::Windowed;
+#else
+    sf::State state = sf::State::Windowed;
+#endif
 
     // Pick style based on borderless setting (fullscreen always None)
     auto sfStyle = sf::Style::None;
@@ -208,31 +234,35 @@ void SFMLWindow::set_fullscreen(bool fullscreen)
 
 #ifdef _WIN32
     m_handle = static_cast<HWND>(m_renderWindow.getNativeHandle());
+#endif
 
     // For bordered windowed mode, add minimize button
     if (!fullscreen && !m_borderless && m_handle)
     {
-        LONG style = GetWindowLong(m_handle, GWL_STYLE);
-        style |= WS_MINIMIZEBOX;
-        SetWindowLong(m_handle, GWL_STYLE, style);
-        SetWindowPos(m_handle, nullptr, 0, 0, 0, 0,
-            SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
+        hb::platform::add_minimize_button(m_handle);
     }
-#endif
 
     // Reapply cursor settings
     m_renderWindow.setMouseCursorVisible(false);
-    m_renderWindow.setMouseCursorGrabbed(m_mouse_capture_enabled);
+    apply_cursor_grab();
 
-    // If switching to windowed mode, center the window
-    if (!fullscreen)
+    // Position: fullscreen at origin, windowed centered
     {
-        int screenWidth = GetSystemMetrics(SM_CXSCREEN);
-        int screenHeight = GetSystemMetrics(SM_CYSCREEN);
-        int newX = (screenWidth - windowWidth) / 2;
-        int newY = (screenHeight - windowHeight) / 2;
-        SetWindowPos(m_handle, HWND_TOP, newX, newY, windowWidth, windowHeight, SWP_SHOWWINDOW);
+        int screen_w, screen_h;
+        get_desktop_size(screen_w, screen_h);
+        if (fullscreen)
+        {
+            move_window(0, 0, screen_w, screen_h);
+        }
+        else
+        {
+            int new_x = (screen_w - windowWidth) / 2;
+            int new_y = (screen_h - windowHeight) / 2;
+            move_window(new_x, new_y, windowWidth, windowHeight);
+        }
     }
+
+    update_cursor_clip();
 }
 
 void SFMLWindow::set_borderless(bool borderless)
@@ -251,28 +281,23 @@ void SFMLWindow::set_borderless(bool borderless)
 
 #ifdef _WIN32
     m_handle = static_cast<HWND>(m_renderWindow.getNativeHandle());
+#endif
 
     // For bordered mode, add minimize button
     if (!borderless && m_handle)
     {
-        LONG style = GetWindowLong(m_handle, GWL_STYLE);
-        style |= WS_MINIMIZEBOX;
-        SetWindowLong(m_handle, GWL_STYLE, style);
-        SetWindowPos(m_handle, nullptr, 0, 0, 0, 0,
-            SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
+        hb::platform::add_minimize_button(m_handle);
     }
-#endif
-
 
     m_renderWindow.setMouseCursorVisible(false);
-    m_renderWindow.setMouseCursorGrabbed(m_mouse_capture_enabled);
+    apply_cursor_grab();
 
     // Center the window
-    int screenWidth = GetSystemMetrics(SM_CXSCREEN);
-    int screenHeight = GetSystemMetrics(SM_CYSCREEN);
-    int posX = (screenWidth - m_width) / 2;
-    int posY = (screenHeight - m_height) / 2;
-    SetWindowPos(m_handle, HWND_TOP, posX, posY, m_width, m_height, SWP_SHOWWINDOW);
+    int screen_w, screen_h;
+    get_desktop_size(screen_w, screen_h);
+    int pos_x = (screen_w - m_width) / 2;
+    int pos_y = (screen_h - m_height) / 2;
+    move_window(pos_x, pos_y, m_width, m_height);
 
     // Update input system with new window handle
     if (hb::shared::input::get())
@@ -303,45 +328,66 @@ void SFMLWindow::set_size(int width, int height, bool center)
     m_width = width;
     m_height = height;
 
+    // Track the requested windowed size so fullscreen toggle can restore it.
+    // Only update when not fullscreen — fullscreen dimensions are transient.
+    if (!m_fullscreen)
+    {
+        m_windowed_width = width;
+        m_windowed_height = height;
+    }
+
     if (!m_realized)
         return;
 
     // Update the SFML window size
     m_renderWindow.setSize({static_cast<unsigned int>(width), static_cast<unsigned int>(height)});
 
-    // Update Win32 window position/size
-    if (m_handle)
+    // Update window position/size
+    if (center)
     {
-        int posX = 0, posY = 0;
-        if (center)
-        {
-            int screenWidth = GetSystemMetrics(SM_CXSCREEN);
-            int screenHeight = GetSystemMetrics(SM_CYSCREEN);
-            posX = (screenWidth - width) / 2;
-            posY = (screenHeight - height) / 2;
-            SetWindowPos(m_handle, HWND_TOP, posX, posY, width, height, SWP_SHOWWINDOW);
-        }
-        else
-        {
-            // Just resize, keep position
-            SetWindowPos(m_handle, HWND_TOP, 0, 0, width, height, SWP_NOMOVE | SWP_SHOWWINDOW);
-        }
+        int screen_w, screen_h;
+        get_desktop_size(screen_w, screen_h);
+        int pos_x = (screen_w - width) / 2;
+        int pos_y = (screen_h - height) / 2;
+        move_window(pos_x, pos_y, width, height);
+    }
+    else
+    {
+        hb::platform::resize_window(m_handle, width, height);
     }
 
     // Re-apply mouse cursor grab to update grab boundaries to new window size
     m_renderWindow.setMouseCursorGrabbed(false);
-    m_renderWindow.setMouseCursorGrabbed(m_mouse_capture_enabled);
+    apply_cursor_grab();
 }
 
 void SFMLWindow::show()
 {
     m_renderWindow.setVisible(true);
     m_renderWindow.requestFocus();
-    // On Windows, also force foreground window to ensure focus
+
+    // Position the window after it's visible. On Linux, window managers like
+    // GNOME/Mutter ignore setPosition on newly created windows before they're
+    // fully mapped. Calling it here (after show) ensures the WM honors it.
+    {
+        int screen_w, screen_h;
+        get_desktop_size(screen_w, screen_h);
+        if (m_fullscreen)
+        {
+            move_window(0, 0, screen_w, screen_h);
+        }
+        else
+        {
+            int pos_x = (screen_w - m_width) / 2;
+            int pos_y = (screen_h - m_height) / 2;
+            move_window(pos_x, pos_y, m_width, m_height);
+        }
+    }
+
+    // Force foreground window to ensure focus
     if (m_handle)
     {
-        SetForegroundWindow(m_handle);
-        SetFocus(m_handle);
+        hb::platform::focus_window(m_handle);
     }
 }
 
@@ -394,16 +440,7 @@ void SFMLWindow::set_vsync_enabled(bool enabled)
     {
         // Query the monitor's refresh rate and use it as the FPS target
         // This avoids SFML's blocking display() and keeps our engine-owned timing
-        int refreshRate = 60; // Safe fallback
-#ifdef _WIN32
-        DEVMODE devMode = {};
-        devMode.dmSize = sizeof(devMode);
-        if (EnumDisplaySettings(nullptr, ENUM_CURRENT_SETTINGS, &devMode))
-        {
-            if (devMode.dmDisplayFrequency > 0)
-                refreshRate = static_cast<int>(devMode.dmDisplayFrequency);
-        }
-#endif
+        int refreshRate = hb::platform::get_monitor_refresh_rate();
         sfml_renderer->SetVSyncMode(true);
         sfml_renderer->SetFramerateLimit(refreshRate);
     }
@@ -423,6 +460,7 @@ bool SFMLWindow::is_vsync_enabled() const
 void SFMLWindow::set_fullscreen_stretch(bool stretch)
 {
     m_fullscreen_stretch = stretch;
+    update_cursor_clip();
 }
 
 bool SFMLWindow::is_fullscreen_stretch() const
@@ -450,16 +488,12 @@ void SFMLWindow::set_mouse_capture_enabled(bool enabled)
 {
     m_mouse_capture_enabled = enabled;
     if (m_realized)
-        m_renderWindow.setMouseCursorGrabbed(enabled);
+        apply_cursor_grab();
 }
 
 void SFMLWindow::show_message_box(const char* title, const char* message)
 {
-#ifdef _WIN32
-    MessageBox(m_handle, message, title, MB_ICONEXCLAMATION | MB_OK);
-#else
-    fprintf(stderr, "%s: %s\n", title, message);
-#endif
+    hb::platform::show_error_dialog(m_handle, title, message);
 }
 
 bool SFMLWindow::process_messages()
@@ -496,7 +530,8 @@ bool SFMLWindow::process_messages()
             // Reactivate OpenGL context when focus is regained
             (void)m_renderWindow.setActive(true);
             // Re-grab mouse cursor if capture is enabled
-            m_renderWindow.setMouseCursorGrabbed(m_mouse_capture_enabled);
+            apply_cursor_grab();
+            update_cursor_clip();
             if (m_event_handler)
                 m_event_handler->on_activate(true);
         }
@@ -504,6 +539,9 @@ bool SFMLWindow::process_messages()
         if (const auto* focusLost = event->getIf<sf::Event::FocusLost>())
         {
             m_active = false;
+#ifdef _WIN32
+            ClipCursor(nullptr);
+#endif
             if (m_event_handler)
                 m_event_handler->on_activate(false);
         }
@@ -607,7 +645,7 @@ void SFMLWindow::wait_for_message()
         {
             m_active = true;
             (void)m_renderWindow.setActive(true);
-            m_renderWindow.setMouseCursorGrabbed(m_mouse_capture_enabled);
+            apply_cursor_grab();
             if (m_event_handler)
                 m_event_handler->on_activate(true);
         }
@@ -752,23 +790,13 @@ void SFMLWindow::TransformMouseCoords(int windowX, int windowY, int& logicalX, i
     // get actual window size in physical pixels
     float windowWidth, windowHeight;
 
-#ifdef _WIN32
-    if (m_handle)
+    int client_w = 0, client_h = 0;
+    if (m_handle && hb::platform::get_client_size(m_handle, client_w, client_h))
     {
-        RECT clientRect;
-        if (GetClientRect(m_handle, &clientRect))
-        {
-            windowWidth = static_cast<float>(clientRect.right - clientRect.left);
-            windowHeight = static_cast<float>(clientRect.bottom - clientRect.top);
-        }
-        else
-        {
-            windowWidth = static_cast<float>(m_width);
-            windowHeight = static_cast<float>(m_height);
-        }
+        windowWidth = static_cast<float>(client_w);
+        windowHeight = static_cast<float>(client_h);
     }
     else
-#endif
     {
         windowWidth = static_cast<float>(m_width);
         windowHeight = static_cast<float>(m_height);
@@ -807,4 +835,74 @@ void SFMLWindow::TransformMouseCoords(int windowX, int windowY, int& logicalX, i
     if (logicalX > LOGICAL_MAX_X()) logicalX = LOGICAL_MAX_X();
     if (logicalY < 0) logicalY = 0;
     if (logicalY > LOGICAL_MAX_Y()) logicalY = LOGICAL_MAX_Y();
+}
+
+void SFMLWindow::apply_cursor_grab()
+{
+    // In fullscreen the cursor is already confined to the window by the OS,
+    // and calling setMouseCursorGrabbed(true) on Linux/X11 can lock the
+    // pointer completely.  Only grab in windowed mode when the user has
+    // enabled mouse capture.
+    bool grab = !m_fullscreen && m_mouse_capture_enabled;
+    m_renderWindow.setMouseCursorGrabbed(grab);
+}
+
+void SFMLWindow::get_desktop_size(int& width, int& height) const
+{
+#ifdef _WIN32
+    width = hb::platform::get_screen_width();
+    height = hb::platform::get_screen_height();
+#else
+    sf::VideoMode desktop = sf::VideoMode::getDesktopMode();
+    width = static_cast<int>(desktop.size.x);
+    height = static_cast<int>(desktop.size.y);
+#endif
+}
+
+void SFMLWindow::move_window(int x, int y, int width, int height)
+{
+#ifdef _WIN32
+    hb::platform::position_window(m_handle, x, y, width, height);
+#else
+    (void)width; (void)height;
+    m_renderWindow.setPosition(sf::Vector2i{x, y});
+#endif
+}
+
+void SFMLWindow::update_cursor_clip()
+{
+#ifdef _WIN32
+    if (m_fullscreen && !m_fullscreen_stretch && m_handle)
+    {
+        // In 4:3 letterbox mode, clip the OS cursor to the rendered area
+        // so the hidden cursor can't drift into the black bars.
+        int client_w = 0, client_h = 0;
+        if (!hb::platform::get_client_size(m_handle, client_w, client_h))
+            return;
+
+        float scaleX = static_cast<float>(client_w) / static_cast<float>(RENDER_LOGICAL_WIDTH());
+        float scaleY = static_cast<float>(client_h) / static_cast<float>(RENDER_LOGICAL_HEIGHT());
+        float scale = (scaleY < scaleX) ? scaleY : scaleX;
+
+        int destW = static_cast<int>(RENDER_LOGICAL_WIDTH() * scale);
+        int destH = static_cast<int>(RENDER_LOGICAL_HEIGHT() * scale);
+        int offsetX = (client_w - destW) / 2;
+        int offsetY = (client_h - destH) / 2;
+
+        POINT topLeft = {offsetX, offsetY};
+        ClientToScreen(m_handle, &topLeft);
+
+        RECT clipRect;
+        clipRect.left = topLeft.x;
+        clipRect.top = topLeft.y;
+        clipRect.right = topLeft.x + destW;
+        clipRect.bottom = topLeft.y + destH;
+        ClipCursor(&clipRect);
+    }
+    else
+    {
+        // Windowed or fullscreen-stretch — no clipping needed
+        ClipCursor(nullptr);
+    }
+#endif
 }

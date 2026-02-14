@@ -470,7 +470,7 @@ bool DialogBox_Shop::on_click_item_list(short sX, short sY, short mouse_x, short
 
 bool DialogBox_Shop::on_click_item_details(short sX, short sY, short mouse_x, short mouse_y)
 {
-    char temp[21];
+    char temp[hb::shared::limits::ItemNameLen];
 
     // +10 quantity button
     if ((mouse_x >= sX + 145) && (mouse_x <= sX + 162) && (mouse_y >= sY + 209) && (mouse_y <= sY + 230)) {

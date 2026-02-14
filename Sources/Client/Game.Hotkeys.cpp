@@ -5,7 +5,7 @@
 #include "AudioManager.h"
 #include "ConfigManager.h"
 #include "HotkeyManager.h"
-#include "LAN_ENG.H"
+#include "lan_eng.h"
 #include <format>
 #include <string>
 
@@ -201,9 +201,9 @@ void CGame::hotkey_whisper_target()
 		char buff[64];
 		int i = (139 - mouse_y + sY) / 13;
 		int msg_idx = i + m_dialog_box_manager.Info(DialogBoxId::ChatHistory).m_view;
-		CMsg* chat_msg = ChatManager::get().GetMessage(msg_idx);
+		CMsg* chat_msg = ChatManager::get().get_message(msg_idx);
 		if (chat_msg == nullptr) return;
-		if (chat_msg->m_pMsg[0] == ' ') { i++; chat_msg = ChatManager::get().GetMessage(i + m_dialog_box_manager.Info(DialogBoxId::ChatHistory).m_view); }
+		if (chat_msg->m_pMsg[0] == ' ') { i++; chat_msg = ChatManager::get().get_message(i + m_dialog_box_manager.Info(DialogBoxId::ChatHistory).m_view); }
 		if (chat_msg == nullptr) return;
 		std::snprintf(buff, sizeof(buff), "%s", chat_msg->m_pMsg);
 		char* sep = std::strchr(buff, ':');

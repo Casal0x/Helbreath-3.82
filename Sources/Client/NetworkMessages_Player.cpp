@@ -3,7 +3,6 @@
 #include "NetworkMessageManager.h"
 #include "Packet/SharedPackets.h"
 #include "lan_eng.h"
-#include <windows.h>
 #include <cstdio>
 #include <cstring>
 #include <string_view>
@@ -108,7 +107,7 @@ namespace NetworkMessageHandlers {
 	{
 		char name[12]{};
 		std::string txt;
-		WORD time;
+		uint16_t time;
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyPlayerShutUp>(
 			data, sizeof(hb::net::PacketNotifyPlayerShutUp));
 		if (!pkt) return;

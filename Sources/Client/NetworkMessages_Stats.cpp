@@ -2,7 +2,6 @@
 #include "NetworkMessageManager.h"
 #include "Packet/SharedPackets.h"
 #include "lan_eng.h"
-#include <windows.h>
 #include <cstdio>
 #include <cstring>
 #include <cmath>
@@ -93,7 +92,7 @@ namespace NetworkMessageHandlers {
 
 	void HandleExp(CGame* game, char* data)
 	{
-		DWORD prev_exp;
+		uint32_t prev_exp;
 		std::string txt;
 
 		prev_exp = game->m_player->m_exp;

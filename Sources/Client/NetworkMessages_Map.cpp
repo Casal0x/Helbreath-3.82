@@ -5,7 +5,6 @@
 #include "DialogBoxIDs.h"
 #include <cstdio>
 #include <cstring>
-#include <windows.h>
 #include <format>
 #include <string>
 
@@ -40,7 +39,7 @@ namespace NetworkMessageHandlers {
 
 	void HandleShowMap(CGame* game, char* data)
 	{
-		WORD w1, w2;
+		uint16_t w1, w2;
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyShowMap>(
 			data, sizeof(hb::net::PacketNotifyShowMap));
 		if (!pkt) return;

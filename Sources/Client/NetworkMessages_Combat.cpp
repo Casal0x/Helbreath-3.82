@@ -2,7 +2,6 @@
 #include "NetworkMessageManager.h"
 #include "Packet/SharedPackets.h"
 #include "lan_eng.h"
-#include <windows.h>
 #include <cstdio>
 #include <cstring>
 #include <cmath>
@@ -33,7 +32,7 @@ namespace NetworkMessageHandlers {
 
 	void HandlePKcaptured(CGame* game, char* data)
 	{
-		DWORD exp, reward_gold;
+		uint32_t exp, reward_gold;
 		int     p_kcount, level;
 		std::string txt;
 
@@ -47,7 +46,7 @@ namespace NetworkMessageHandlers {
 		exp = pkt->exp;
 		txt = std::format(NOTIFYMSG_PK_CAPTURED1, level, name, p_kcount);
 		game->add_event_list(txt.c_str(), 10);
-		if (exp > static_cast<DWORD>(game->m_player->m_exp))
+		if (exp > static_cast<uint32_t>(game->m_player->m_exp))
 		{
 			txt = std::format(EXP_INCREASED, exp - game->m_player->m_exp);
 			game->add_event_list(txt.c_str(), 10);
@@ -58,7 +57,7 @@ namespace NetworkMessageHandlers {
 
 	void HandlePKpenalty(CGame* game, char* data)
 	{
-		DWORD exp;
+		uint32_t exp;
 		int     p_kcount, str, vit, dex, iInt, mag, chr;
 		std::string txt;
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyPKpenalty>(
@@ -99,7 +98,7 @@ namespace NetworkMessageHandlers {
 
 	void HandleEnemyKillReward(CGame* game, char* data)
 	{
-		DWORD exp;
+		uint32_t exp;
 		short guild_rank;
 		std::string txt;
 

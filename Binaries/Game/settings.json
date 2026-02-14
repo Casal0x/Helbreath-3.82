@@ -20,7 +20,7 @@
         "fullscreen": false,
         "fullscreenStretch": false,
         "patchingGrid": false,
-        "runningMode": false,
+        "runningMode": true,
         "showFps": true,
         "showLatency": true,
         "tileGrid": false,

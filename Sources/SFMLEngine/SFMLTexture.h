@@ -17,21 +17,8 @@ public:
     virtual ~SFMLTexture();
 
     // ============== hb::shared::render::ITexture Implementation ==============
-
-    // Dimensions
     uint16_t get_width() const override;
     uint16_t get_height() const override;
-
-    // Blitting
-    bool Blt(RECT* destRect, hb::shared::render::ITexture* src, RECT* srcRect, uint32_t flags) override;
-    bool BltFast(int x, int y, hb::shared::render::ITexture* src, RECT* srcRect, uint32_t flags) override;
-
-    // Native Handle (returns sf::Texture*)
-    void* GetNativeHandle() override;
-
-    // Device loss (no-op for SFML)
-    bool IsLost() const override;
-    bool Restore() override;
 
     // ============== SFML-Specific Access ==============
 

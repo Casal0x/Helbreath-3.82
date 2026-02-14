@@ -7,10 +7,6 @@
 
 #include <cstdint>
 
-// Forward declare RECT to avoid including windows.h (causes macro pollution)
-struct tagRECT;
-typedef struct tagRECT RECT;
-
 namespace hb::shared::sprite {
 
 // Frame rectangle - matches PAKLib::sprite_rect binary layout exactly
@@ -67,6 +63,7 @@ struct DrawParams {
     bool m_reverse = false;     // Reverse blend effect
     bool m_fade = false;        // Fade effect
     bool m_additive = false;    // Deprecated: use blendMode instead
+    bool m_nearest_filter = false; // Force nearest-neighbor filtering (no bilinear smoothing)
     BlendMode m_blend_mode = BlendMode::Alpha;  // Blend mode for rendering
 
     // Static factory methods for common configurations

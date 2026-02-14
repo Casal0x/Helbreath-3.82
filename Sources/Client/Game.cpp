@@ -1,8 +1,3 @@
-#ifdef _WIN32
-#define NOMINMAX
-#define WIN32_LEAN_AND_MEAN
-#endif
-
 #include "Game.h"
 #include "GameConstants.h"
 #include "ObjectIDRange.h"
@@ -17,17 +12,20 @@
 #include "SharedCalculations.h"
 #include "Log.h"
 #include "ClientLogChannels.h"
-#include <cstdio>
-#include <filesystem>
-#include <fstream>
-#include <format>
-#include <chrono>
-#include <string>
+
 #include <algorithm>
-#include <cstring>
 #include <charconv>
+#include <chrono>
+#include <cstdio>
+#include <cstring>
+#include <filesystem>
+#include <format>
+#include <fstream>
+#include <string>
+
+#include "platform_headers.h"
+
 #ifdef _WIN32
-#include <windows.h>
 #include <windowsx.h>
 #endif
 
@@ -2142,7 +2140,7 @@ void CGame::item_drop_external_screen(char item_id, short mouse_x, short mouse_y
 
 void CGame::common_event_handler(char* data)
 {
-	WORD event_type;
+	uint16_t event_type;
 	short sX, sY, v1, v2, v3;
 	uint32_t dw_v4;
 
@@ -2684,7 +2682,7 @@ void CGame::read_map_data(short pivot_x, short pivot_y, const char* packet_data)
 
 void CGame::log_event_handler(char* data)
 {
-	WORD event_type, object_id;
+	uint16_t event_type, object_id;
 	short sX, sY, type;
 	short npcConfigId = -1;
 	hb::shared::entity::PlayerStatus status;
@@ -2831,7 +2829,7 @@ void CGame::on_log_socket_event()
 
 void CGame::log_response_handler(char* packet_data)
 {
-	WORD response = 0;
+	uint16_t response = 0;
 	char char_name[12]{};
 
 	const auto* header = hb::net::PacketCast<hb::net::PacketHeader>(packet_data, sizeof(hb::net::PacketHeader));
@@ -3257,7 +3255,7 @@ void CGame::chat_msg_handler(char* packet_data)
 	short map_x = 0, map_y = 0;
 	std::string text2;
 
-	char msg_type = 0, temp[100]{}, message[100]{}, text1[100]{};
+	char msg_type = 0, temp[100]{}, message[204]{}, text1[100]{};
 	std::string name;
 	uint32_t current_time = m_cur_time;
 	bool is_done = false;
@@ -3767,7 +3765,7 @@ void CGame::load_text_dlg_contents(int type)
 			m_msg_text_list[i].reset();
 	}
 
-	std::string fileName = std::format("contents\\\\contents{}.txt", type);
+	std::string fileName = std::format("contents/contents{}.txt", type);
 
 	std::ifstream file(fileName);
 	if (!file) return;
@@ -3792,7 +3790,7 @@ int CGame::load_text_dlg_contents2(int type)
 			m_msg_text_list2[i].reset();
 	}
 
-	std::string fileName = std::format("contents\\\\contents{}.txt", type);
+	std::string fileName = std::format("contents/contents{}.txt", type);
 
 	std::ifstream file(fileName);
 	if (!file) return -1;
@@ -3818,7 +3816,7 @@ void CGame::load_game_msg_text_contents()
 			m_game_msg_list[i].reset();
 	}
 
-	std::ifstream file("contents\\\\gamemsglist.txt");
+	std::ifstream file("contents/gamemsglist.txt");
 	if (!file) return;
 
 	std::string content((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
@@ -4531,7 +4529,7 @@ void CGame::noticement_handler(char* data)
 			data, sizeof(hb::net::PacketResponseNoticementText));
 		if (!pkt) return;
 		{
-			std::ofstream file("contents\\contents1000.txt");
+			std::ofstream file("contents/contents1000.txt");
 			if (!file) return;
 			file << pkt->text;
 		}
@@ -4596,7 +4594,11 @@ void CGame::create_screen_shot()
 	auto now = std::chrono::system_clock::now();
 	auto time = std::chrono::system_clock::to_time_t(now);
 	std::tm tm{};
+#ifdef _WIN32
 	localtime_s(&tm, &time);
+#else
+	localtime_r(&time, &tm);
+#endif
 
 	std::string timeStr = std::format("{:02d}:{:02d} - {:02d}:{:02d}:{:02d}",
 		tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
@@ -4608,7 +4610,7 @@ void CGame::create_screen_shot()
 
 	for (int i = 0; i < 1000; i++)
 	{
-		std::string fileName = std::format("save\\helshot{:04d}{:02d}{:02d}_{:02d}{:02d}{:02d}_{}{:03d}.png",
+		std::string fileName = std::format("save/helshot{:04d}{:02d}{:02d}_{:02d}{:02d}{:02d}_{}{:03d}.png",
 			tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,
 			tm.tm_hour, tm.tm_min, tm.tm_sec,
 			longMapName, i);
@@ -5872,7 +5874,7 @@ void CGame::start_bgm()
 
 void CGame::motion_response_handler(char* packet_data)
 {
-	WORD response = 0;
+	uint16_t response = 0;
 	short map_x = 0, map_y = 0;
 	char direction = 0;
 	int previous_hp = 0;
@@ -7543,7 +7545,7 @@ void CGame::process_motion_commands(uint16_t action_type)
 			m_floating_text.remove_by_object_id(m_player->m_player_object_id);
 			{
 				text = std::format("{}!", m_magic_cfg_list[m_casting_magic_type]->m_name);
-				m_floating_text.add_notify_text(notify_text_type::magic_cast_name, text.c_str(), GameClock::get_time_ms(),
+				m_floating_text.add_notify_text(notify_text_type::magic_cast_name, text, GameClock::get_time_ms(),
 					m_player->m_player_object_id, m_map_data.get());
 			}
 			return;
@@ -7571,7 +7573,6 @@ void CGame::init_data_response_handler(char* packet_data)
 
 	char map_filename[32]{};
 	bool is_observer = false;
-	HANDLE file_handle = INVALID_HANDLE_VALUE;
 	uint32_t file_size = 0;
 
 	m_player->m_paralyze = false;
@@ -7700,11 +7701,11 @@ void CGame::init_data_response_handler(char* packet_data)
 		[](unsigned char c) { return static_cast<char>(std::tolower(c)); });
 
 	std::memset(map_filename, 0, sizeof(map_filename));
-	std::snprintf(map_filename + strlen(map_filename), sizeof(map_filename) - strlen(map_filename), "%s", "mapdata\\");
+	std::snprintf(map_filename + strlen(map_filename), sizeof(map_filename) - strlen(map_filename), "%s", "mapdata/");
 	// CLEROTH - MW MAPS
 	if (lower_map_name.starts_with("defaultmw"))
 	{
-		std::snprintf(map_filename + strlen(map_filename), sizeof(map_filename) - strlen(map_filename), "%s", "mw\\defaultmw");
+		std::snprintf(map_filename + strlen(map_filename), sizeof(map_filename) - strlen(map_filename), "%s", "mw/defaultmw");
 	}
 	else
 	{
@@ -7762,21 +7763,16 @@ void CGame::init_data_response_handler(char* packet_data)
 	if (m_is_first_conn == true)
 	{
 		m_is_first_conn = false;
-		file_handle = CreateFile("contents\\contents1000.txt", GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
-		if (file_handle == INVALID_HANDLE_VALUE)
-			file_size = 0;
-		else
-		{
-			file_size = GetFileSize(file_handle, 0);
-			CloseHandle(file_handle);
-		}
+		std::error_code ec;
+		auto sz = std::filesystem::file_size("contents/contents1000.txt", ec);
+		file_size = ec ? 0 : static_cast<uint32_t>(sz);
 		send_command(MsgId::RequestNoticement, 0, 0, static_cast<int>(file_size), 0, 0, 0);
 	}
 }
 
 void CGame::motion_event_handler(char* packet_data)
 {
-	WORD event_type = 0, object_id = 0;
+	uint16_t event_type = 0, object_id = 0;
 	short map_x = -1, map_y = -1, owner_type = 0, value1 = 0, value2 = 0, value3 = 0;
 	short npc_config_id = -1;
 	hb::shared::entity::PlayerStatus status;
@@ -7923,7 +7919,7 @@ void CGame::motion_event_handler(char* packet_data)
 		m_floating_text.remove_by_object_id(hb::shared::object_id::ToRealID(object_id));
 		{
 			text = std::format("{}!", m_magic_cfg_list[value1]->m_name);
-			m_floating_text.add_notify_text(notify_text_type::magic_cast_name, text.c_str(), m_cur_time,
+			m_floating_text.add_notify_text(notify_text_type::magic_cast_name, text, m_cur_time,
 				hb::shared::object_id::ToRealID(object_id), m_map_data.get());
 		}
 		break;
@@ -8260,7 +8256,7 @@ void CGame::use_shortcut(int num)
 }
 
 /*********************************************************************************************************************
-**  void check_active_aura(short sX, short sY, DWORD time, short owner_type)( initially Cleroth fixed by Snoopy )	**
+**  void check_active_aura(short sX, short sY, uint32_t time, short owner_type)( initially Cleroth fixed by Snoopy )	**
 **  description			: Generates special auras around players													**
 **						: v351 implements this in each drawn function,beter to regroup in single function.			**
 **********************************************************************************************************************/
@@ -8304,7 +8300,7 @@ void CGame::check_active_aura(short sX, short sY, uint32_t time, short owner_typ
 }
 
 /*********************************************************************************************************************
-**  void check_active_aura2(short sX, short sY, DWORD time,  m_entity_state.m_owner_type) ( initially Cleroth fixed by Snoopy )	**
+**  void check_active_aura2(short sX, short sY, uint32_t time,  m_entity_state.m_owner_type) ( initially Cleroth fixed by Snoopy )	**
 **  description			: Generates poison aura around players. This one should be use later...						**
 **						: v351 implements this in each drawn function,beter to regroup in single function.			**
 **********************************************************************************************************************/

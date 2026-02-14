@@ -8,7 +8,9 @@
 #include "IInput.h"
 #include "RendererFactory.h"
 #include "ITextRenderer.h"
+#include <chrono>
 #include <cstring>
+#include <ctime>
 #include <format>
 #include <string>
 using namespace hb::client::sprite_id;
@@ -266,13 +268,21 @@ void DialogBox_SysMenu::draw_general_tab(short sX, short sY, short mouse_x, shor
 	put_string(contentX + 6, contentY + 5, UPDATE_SCREEN_ON_SELECT_CHARACTER36, GameColors::UILabel);
 
 	// Current time centered below server name (MM/DD/YYYY HH:MM AM/PM)
-	SYSTEMTIME SysTime;
-	GetLocalTime(&SysTime);
+	auto now = std::chrono::system_clock::now();
+	std::time_t t = std::chrono::system_clock::to_time_t(now);
+	std::tm local_time{};
+#ifdef _WIN32
+	localtime_s(&local_time, &t);
+#else
+	localtime_r(&t, &local_time);
+#endif
 	std::string timeBuf;
-	int hour12 = SysTime.wHour % 12;
+	int hour12 = local_time.tm_hour % 12;
 	if (hour12 == 0) hour12 = 12;
-	const char* ampm = (SysTime.wHour < 12) ? "AM" : "PM";
-	timeBuf = std::format("{:02}/{:02}/{:04} {}:{:02} {}", SysTime.wMonth, SysTime.wDay, SysTime.wYear, hour12, SysTime.wMinute, ampm);
+	const char* ampm = (local_time.tm_hour < 12) ? "AM" : "PM";
+	timeBuf = std::format("{:02}/{:02}/{:04} {}:{:02} {}",
+		local_time.tm_mon + 1, local_time.tm_mday, local_time.tm_year + 1900,
+		hour12, local_time.tm_min, ampm);
 
 	int textWidth = hb::shared::text::GetTextRenderer()->measure_text(timeBuf.c_str()).width;
 	int timeX = centerX - (textWidth / 2);
@@ -510,8 +520,8 @@ void DialogBox_SysMenu::draw_graphics_tab(short sX, short sY, short mouse_x, sho
 
 	int resWidth, resHeight;
 	if (fullscreen) {
-		resWidth = GetSystemMetrics(SM_CXSCREEN);
-		resHeight = GetSystemMetrics(SM_CYSCREEN);
+		resWidth = hb::platform::get_screen_width();
+		resHeight = hb::platform::get_screen_height();
 	}
 	else {
 		int resIndex = get_current_resolution_index();

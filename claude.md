@@ -12,17 +12,35 @@ powershell -ExecutionPolicy Bypass -File Sources\build.ps1 -Target Server -Confi
 - Output: `Sources\Debug\Game_SFML_x64.exe` (client), `Sources\Debug\Server.exe` (server).
 - x64 platform. `Sources\Helbreath.sln`. C++20 server and client.
 - 78 LNK4099 warnings (missing SFML/freetype PDBs) are cosmetic — ignore.
+- SFML 3 libs are bundled in `Sources/Dependencies/SFML/`. To rebuild from source: `Scripts\build_sfml.bat`
 
-### Linux (CMake — Server only)
+### Linux (CMake — Server)
 ```bash
-./Sources/build_linux.sh            # Incremental debug build
-./Sources/build_linux.sh clean      # Delete build directory
-./Sources/build_linux.sh release    # Release build
+./Sources/build_linux.sh                 # Incremental debug build
+./Sources/build_linux.sh release         # Release build
+./Sources/build_linux.sh clean           # Delete build directory
+./Sources/build_linux.sh clean release   # Clean then rebuild release
 ```
 - CMakeLists.txt: `Sources/Server/CMakeLists.txt`
-- Output: `Sources/Server/build/HelbreathServer`
-- Deploy: `cp Sources/Server/build/HelbreathServer Binaries/Server/ && chmod +x Binaries/Server/HelbreathServer`
+- Output: `Sources/Debug/HelbreathServer` or `Sources/Release/HelbreathServer` (mirrors Windows layout)
+- Auto-reconfigures when switching between Debug and Release
+- Deploy: `cp Sources/Debug/HelbreathServer Binaries/Server/ && chmod +x Binaries/Server/HelbreathServer`
 - Run from: `cd Binaries/Server && ./HelbreathServer`
+
+### Linux (CMake — Client)
+```bash
+./Sources/build_client_linux.sh                 # Incremental debug build
+./Sources/build_client_linux.sh release         # Release build
+./Sources/build_client_linux.sh clean           # Delete build directory
+./Sources/build_client_linux.sh clean release   # Clean then rebuild release
+```
+- CMakeLists.txt: `Sources/Client/CMakeLists.txt`
+- Output: `Sources/Debug/HelbreathClient` or `Sources/Release/HelbreathClient` (mirrors Windows layout)
+- Auto-reconfigures when switching between Debug and Release
+- SFML 3 is auto-fetched and built via CMake FetchContent (no manual SFML install needed)
+- Prerequisites: `sudo apt install cmake g++ libx11-dev libxrandr-dev libxcursor-dev libgl1-mesa-dev libudev-dev libfreetype-dev`
+- Deploy: `cp Sources/Debug/HelbreathClient Binaries/Game/ && chmod +x Binaries/Game/HelbreathClient`
+- Run from: `cd Binaries/Game && ./HelbreathClient`
 
 ## Workflow
 
@@ -91,8 +109,8 @@ Brief (`-b`): prints `file:line | match` to stdout. Detailed (default): writes t
 
 ## Project Structure
 
-- **Client** (`Sources/Client/`) — Game client, C++20. Depends on SFMLEngine.
-- **SFMLEngine** (`Sources/SFMLEngine/`) — Rendering abstraction over SFML.
+- **Client** (`Sources/Client/`) — Game client, C++20. Cross-platform (Windows + Linux). Depends on SFMLEngine.
+- **SFMLEngine** (`Sources/SFMLEngine/`) — Rendering abstraction over SFML. Cross-platform (Windows + Linux).
 - **Server** (`Sources/Server/`) — Game server, C++20. Cross-platform (Windows + Linux). Standalone.
 - **Shared** (`Sources/Dependencies/Shared/`) — Protocol, enums, items, packets, networking.
 - `Binaries/Game/` — Client runtime (configs, sprites, sounds, maps, fonts).
@@ -100,9 +118,9 @@ Brief (`-b`): prints `file:line | match` to stdout. Detailed (default): writes t
 
 See `CLAUDE_ARCHITECTURE.md` for detailed client/server/shared architecture.
 
-## Cross-Platform Rules (Server)
+## Cross-Platform Rules
 
-The server builds and runs on both Windows and Linux. **All server and shared code must be cross-platform:**
+Both the client and server build and run on Windows and Linux. **All new code (client, server, shared, SFMLEngine) must be cross-platform:**
 - **No Windows API calls** (`DeleteFile`, `wsprintf`, `GetCursorPos`, `POINT`, etc.) — use C++ standard library equivalents.
 - **No MSVC-specific types/keywords** (`__int64` → `int64_t`, `__fastcall` → remove, `_TRUNCATE` → don't use).
 - **No `#ifdef _WIN32` guarding standard headers** (e.g. `<filesystem>` must be included unconditionally).
@@ -110,6 +128,7 @@ The server builds and runs on both Windows and Linux. **All server and shared co
 - **All headers must include what they use** — GCC is stricter than MSVC (e.g. `<cstddef>` for `size_t`).
 - **Case-sensitive filenames** — `#include` must match the exact case of the file on disk.
 - **Linux filesystem is case-sensitive** — `Binaries/Server/mapdata/` must be lowercase.
+- **Prefer `std::string`/`std::string_view`** over raw `char*`/`char[]` — avoids buffer overruns that silently work on MSVC but fail on GCC.
 
 ## Modernization Direction
 
@@ -203,4 +222,4 @@ Already wired in both targets — do not call manually:
 
 No automated tests. Manual: run server, then client with configs in `Binaries/`.
 For network changes, rebuild both client and server.
-Server can be tested on Linux — build with `build_linux.sh`, run from `Binaries/Server/`.
+Both targets can be tested on Linux — server with `build_linux.sh`, client with `build_client_linux.sh`.

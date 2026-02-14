@@ -1,8 +1,6 @@
 ﻿// MapData.cpp: implementation of the CMapData class.
 //
 //////////////////////////////////////////////////////////////////////
-#define _WINSOCKAPI_
-
 #include "MapData.h"
 #include "OwnerType.h"
 #include "ObjectIDRange.h"
@@ -10,13 +8,15 @@
 #include "CommonTypes.h"
 #include "Benchmark.h"
 #include "EntityMotion.h"
-#include <cstring>
-#include <cstdio>
-#include <string_view>
 #include "WeatherManager.h"
-#include <string>
+
 #include <algorithm>
 #include <charconv>
+#include <cstdio>
+#include <cstring>
+#include <fstream>
+#include <string>
+#include <string_view>
 
 
 
@@ -850,19 +850,15 @@ CMapData::~CMapData()
 
 void CMapData::open_map_data_file(char* fn)
 {
-	HANDLE hFileRead;
-	DWORD nCount;
 	char header[260];
 	char* cp, * cpMapData;
 	std::memset(header, 0, sizeof(header));
-	hFileRead = CreateFile(fn, GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
-	if (hFileRead == INVALID_HANDLE_VALUE) return;
-	SetFilePointer(hFileRead, 0, 0, FILE_BEGIN);
-	ReadFile(hFileRead, header, 256, &nCount, 0);
+	std::ifstream file(fn, std::ios::binary);
+	if (!file) return;
+	file.read(header, 256);
 	decode_map_info(header);
 	cpMapData = new char[m_map_size_x * m_map_size_y * 10];
-	ReadFile(hFileRead, cpMapData, m_map_size_x * m_map_size_y * 10, &nCount, 0);
-	CloseHandle(hFileRead);
+	file.read(cpMapData, m_map_size_x * m_map_size_y * 10);
 	cp = cpMapData;
 	for (int y = 0; y < m_map_size_y; y++)
 	{
@@ -1314,7 +1310,7 @@ bool CMapData::set_owner(uint16_t object_id, int sX, int sY, int type, int dir, 
 						break;
 					}
 				}
-				if ((object_id != static_cast<WORD>(m_game->m_player->m_player_object_id))
+				if ((object_id != static_cast<uint16_t>(m_game->m_player->m_player_object_id))
 					&& (m_data[dX][dY].m_owner_type != 0) && (m_data[dX][dY].m_object_id != object_id))
 				{
 					m_game->request_full_object_data(object_id);
@@ -1377,7 +1373,7 @@ bool CMapData::set_owner(uint16_t object_id, int sX, int sY, int type, int dir, 
 						break;
 					}
 				}
-				if ((object_id != static_cast<WORD>(m_game->m_player->m_player_object_id)) &&
+				if ((object_id != static_cast<uint16_t>(m_game->m_player->m_player_object_id)) &&
 					(m_data[dX][dY].m_owner_type != 0) && (m_data[dX][dY].m_object_id != object_id))
 				{
 					m_game->request_full_object_data(object_id);
@@ -1427,7 +1423,7 @@ bool CMapData::set_owner(uint16_t object_id, int sX, int sY, int type, int dir, 
 							break;
 						}
 					}
-					if ((object_id != static_cast<WORD>(m_game->m_player->m_player_object_id))
+					if ((object_id != static_cast<uint16_t>(m_game->m_player->m_player_object_id))
 						&& (m_data[dX][dY].m_owner_type != 0) && (m_data[dX][dY].m_object_id != object_id))
 					{
 						m_game->request_full_object_data(object_id);
@@ -1478,7 +1474,7 @@ bool CMapData::set_owner(uint16_t object_id, int sX, int sY, int type, int dir, 
 							break;
 						}
 					}
-					if ((object_id != static_cast<WORD>(m_game->m_player->m_player_object_id)) &&
+					if ((object_id != static_cast<uint16_t>(m_game->m_player->m_player_object_id)) &&
 						(m_data[dX][dY].m_owner_type != 0) && (m_data[dX][dY].m_object_id != object_id))
 					{
 						m_game->request_full_object_data(object_id);
@@ -1555,8 +1551,8 @@ EXIT_SEARCH_LOOP:;
 
 	if (m_data[dX][dY].m_owner_type != 0)
 	{
-		if ((object_id != static_cast<WORD>(m_game->m_player->m_player_object_id))
-			&& (m_data[dX][dY].m_object_id == static_cast<WORD>(m_game->m_player->m_player_object_id)))
+		if ((object_id != static_cast<uint16_t>(m_game->m_player->m_player_object_id))
+			&& (m_data[dX][dY].m_object_id == static_cast<uint16_t>(m_game->m_player->m_player_object_id)))
 		{
 			m_game->request_full_object_data(object_id);
 			return false;
@@ -1740,7 +1736,7 @@ int CMapData::object_frame_counter(const std::string& player_name, short view_po
 	int  delay;
 	int  ret, sound_index;
 	int  dir, total_frame, frame_move_dots;
-	static DWORD S_dwUpdateTime = GameClock::get_time_ms();
+	static uint32_t S_dwUpdateTime = GameClock::get_time_ms();
 	int   weapon_type, center_x, center_y, dist;
 	bool  auto_update = false, dynObjsNeedUpdate = false;
 	short dx, dy;

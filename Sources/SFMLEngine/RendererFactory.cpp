@@ -243,7 +243,7 @@ void Window::destroy()
 
 hb::shared::types::NativeWindowHandle Window::get_handle()
 {
-    return s_window ? s_window->get_handle() : nullptr;
+    return s_window ? s_window->get_handle() : hb::shared::types::NativeWindowHandle{};
 }
 
 bool Window::is_active()

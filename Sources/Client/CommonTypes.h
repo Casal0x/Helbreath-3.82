@@ -26,16 +26,6 @@
 //
 // ============================================================================
 
-// Windows API types (platform-specific)
-// These are used with DirectX and Windows system calls and must remain Windows-specific
-#ifdef _WIN32
-    #ifndef _WINSOCKAPI_
-        #define _WINSOCKAPI_   // Prevent winsock.h from being included by windows.h
-    #endif
-    #include <windows.h>
-    // HWND, HANDLE, HRESULT, HINSTANCE, RECT are provided by windows.h
-#endif
-
 #include "GameGeometry.h"
 #include "PrimitiveTypes.h"
 

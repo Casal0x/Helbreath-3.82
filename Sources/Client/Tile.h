@@ -4,13 +4,12 @@
 
 #pragma once
 
-#include <windows.h>
-#include <mmsystem.h>
 #include "EntityMotion.h"
 #include "AnimationState.h"
 #include <string>
 #include "Appearance.h"
 #include "PlayerStatusData.h"
+#include <cstdint>
 
 class CTile
 {
@@ -85,9 +84,9 @@ public:
 	inline ~CTile()
 	{
 	}
-	DWORD m_effect_time;
-	DWORD m_dead_owner_time;
-	DWORD m_dynamic_object_time;
+	uint32_t m_effect_time;
+	uint32_t m_dead_owner_time;
+	uint32_t m_dynamic_object_time;
 
 	int   m_chat_msg;
 	int   m_item_color; // v1.4
@@ -95,8 +94,8 @@ public:
 	int   m_effect_frame, m_effect_total_frame;
 	int   m_dead_chat_msg;
 
-	WORD  m_dead_object_id;
-	WORD  m_object_id;
+	uint16_t  m_dead_object_id;
+	uint16_t  m_object_id;
 
 	short m_owner_type;							// +B2C
 	short m_npc_config_id;						// NPC config index (for name lookup, -1 if player)
@@ -112,7 +111,7 @@ public:
 	short m_dynamic_object_type;
 
 	short m_item_id;
-	DWORD m_item_attr;
+	uint32_t m_item_attr;
 
 	char  m_dead_owner_frame;
 	char  m_dead_dir;

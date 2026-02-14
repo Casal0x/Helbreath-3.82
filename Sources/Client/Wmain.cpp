@@ -44,7 +44,7 @@ int GameMain(hb::shared::types::NativeInstance native_instance, int icon_resourc
 // Platform-specific entry points
 
 #ifdef _WIN32
-#include <windows.h>
+#include "platform_headers.h" // included here for WinMain types; unconditional include is in NativeTypes.h
 
 // GPU Selection - Force discrete GPU on hybrid systems
 extern "C"

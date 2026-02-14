@@ -18,7 +18,7 @@ public:
 	// Message buffer management
 	void add_message(char* msg, char type);
 	void clear_messages();
-	CMsg* GetMessage(int index) const;
+	CMsg* get_message(int index) const;
 
 	// Whisper target management
 	void add_whisper_target(const char* name);

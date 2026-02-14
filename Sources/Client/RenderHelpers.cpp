@@ -1,5 +1,4 @@
-﻿#define NOMINMAX
-#include "RenderHelpers.h"
+﻿#include "RenderHelpers.h"
 #include "Game.h"
 #include "CommonTypes.h"
 #include "ConfigManager.h"

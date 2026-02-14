@@ -6,7 +6,6 @@
 #include "Packet/SharedPackets.h"
 #include "lan_eng.h"
 #include "DialogBoxIDs.h"
-#include <windows.h>
 #include <cstdio>
 #include <cstring>
 #include <cmath>
@@ -504,17 +503,17 @@ namespace NetworkMessageHandlers {
 	void HandleItemRepaired(CGame* game, char* data)
 	{
 		std::string txt;
-		DWORD item_id, life;
+		uint32_t item_id, life;
 
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyItemRepaired>(
 			data, sizeof(hb::net::PacketNotifyItemRepaired));
 		if (!pkt) return;
 		item_id = pkt->item_id;
-		if (item_id >= static_cast<DWORD>(hb::shared::limits::MaxItems)) return;
+		if (item_id >= static_cast<uint32_t>(hb::shared::limits::MaxItems)) return;
 		if (!game->m_item_list[item_id]) return;
 		life = pkt->life;
 
-		game->m_item_list[item_id]->m_cur_life_span = static_cast<WORD>(life);
+		game->m_item_list[item_id]->m_cur_life_span = static_cast<uint16_t>(life);
 		game->m_is_item_disabled[item_id] = false;
 		auto itemInfo5 = item_name_formatter::get().format(game->m_item_list[item_id].get());
 
@@ -526,7 +525,7 @@ namespace NetworkMessageHandlers {
 	void HandleRepairItemPrice(CGame* game, char* data)
 	{
 		char name[hb::shared::limits::ItemNameLen]{};
-		DWORD v1, v2, v3, v4;
+		uint32_t v1, v2, v3, v4;
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyRepairItemPrice>(
 			data, sizeof(hb::net::PacketNotifyRepairItemPrice));
 		if (!pkt) return;
@@ -567,7 +566,7 @@ namespace NetworkMessageHandlers {
 	void HandleSellItemPrice(CGame* game, char* data)
 	{
 		char name[hb::shared::limits::ItemNameLen]{};
-		DWORD v1, v2, v3, v4;
+		uint32_t v1, v2, v3, v4;
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifySellItemPrice>(
 			data, sizeof(hb::net::PacketNotifySellItemPrice));
 		if (!pkt) return;
@@ -719,7 +718,7 @@ namespace NetworkMessageHandlers {
 		std::string txt;
 
 		char name[hb::shared::limits::ItemNameLen]{};
-		WORD item_index;
+		uint16_t item_index;
 		int amount;
 
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyGiveItemFinCountChanged>(
@@ -743,7 +742,7 @@ namespace NetworkMessageHandlers {
 		short dir, sprite, sprite_frame, cur_life, max_life, performance, item_id;
 		int amount, i;
 		char color, item_name[hb::shared::limits::ItemNameLen], char_name[12];
-		DWORD attribute;
+		uint32_t attribute;
 		std::memset(item_name, 0, sizeof(item_name));
 
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyExchangeItem>(
@@ -798,7 +797,7 @@ namespace NetworkMessageHandlers {
 		short dir, sprite, sprite_frame, cur_life, max_life, performance, item_id;
 		int amount;
 		char color, item_name[hb::shared::limits::ItemNameLen], char_name[12];
-		DWORD attribute;
+		uint32_t attribute;
 		std::memset(item_name, 0, sizeof(item_name));
 
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyExchangeItem>(
@@ -874,7 +873,7 @@ namespace NetworkMessageHandlers {
 		if (game->m_item_list[item_index] == nullptr)
 			return;
 
-		game->m_item_list[item_index]->m_cur_life_span = static_cast<WORD>(pkt->cur_lifespan);
+		game->m_item_list[item_index]->m_cur_life_span = static_cast<uint16_t>(pkt->cur_lifespan);
 	}
 
 	void HandleNotEnoughGold(CGame* game, char* data)
@@ -900,7 +899,7 @@ namespace NetworkMessageHandlers {
 	void HandleItemAttributeChange(CGame* game, char* data)
 	{
 		short v1;
-		DWORD temp;
+		uint32_t temp;
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyItemAttributeChange>(
 			data, sizeof(hb::net::PacketNotifyItemAttributeChange));
 		if (!pkt) return;

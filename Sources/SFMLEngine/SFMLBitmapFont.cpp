@@ -109,6 +109,11 @@ void SFMLBitmapFont::draw_text(int x, int y, const char* text, const BitmapTextP
         drawParams.m_blend_mode = hb::shared::sprite::BlendMode::Additive;
     }
 
+    // Bitmap font glyphs must use nearest-neighbor filtering. Bilinear smoothing
+    // causes glyph edges to bleed into adjacent transparent pixels, producing
+    // visible artifacts with additive blending (especially on Linux/OpenGL).
+    drawParams.m_nearest_filter = true;
+
     int currentX = x;
 
     while (*text)
@@ -130,6 +135,7 @@ void SFMLBitmapFont::draw_text(int x, int y, const char* text, const BitmapTextP
                     shadowParams.m_tint_g = 1;
                     shadowParams.m_tint_b = 1;
                     shadowParams.m_has_tint = true;
+                    shadowParams.m_nearest_filter = true;
                     m_sprite->draw(currentX + 1, y, frame, shadowParams);
                     m_sprite->draw(currentX + 1, y + 1, frame, shadowParams);
                 }

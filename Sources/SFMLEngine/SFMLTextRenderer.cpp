@@ -34,18 +34,31 @@ SFMLTextRenderer::SFMLTextRenderer(sf::RenderTexture* backBuffer)
 
 bool SFMLTextRenderer::LoadDefaultFont()
 {
-    // Fallback to Windows system fonts if client didn't load a font
-    const char* defaultFonts[] = {
+    // Try bundled fonts first (most portable), then system fonts
+    const char* font_paths[] = {
+        "fonts/tahoma.ttf",
+        "fonts/arial.ttf",
+        "fonts/segoeui.ttf",
+#ifdef _WIN32
         "C:\\Windows\\Fonts\\tahoma.ttf",
         "C:\\Windows\\Fonts\\arial.ttf",
-        "C:\\Windows\\Fonts\\segoeui.ttf"
+        "C:\\Windows\\Fonts\\segoeui.ttf",
+#elif defined(__APPLE__)
+        "/Library/Fonts/Tahoma.ttf",
+        "/Library/Fonts/Arial.ttf",
+        "/System/Library/Fonts/Supplemental/Tahoma.ttf",
+#else
+        "/usr/share/fonts/truetype/msttcorefonts/tahoma.ttf",
+        "/usr/share/fonts/truetype/msttcorefonts/arial.ttf",
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+        "/usr/share/fonts/TTF/DejaVuSans.ttf",
+#endif
     };
 
-    for (const char* path : defaultFonts)
+    for (const char* path : font_paths)
     {
         if (m_font.openFromFile(path))
         {
-            // Disable texture smoothing for pixel-perfect rendering to match DDraw
             m_font.setSmooth(false);
             m_fontLoaded = true;
             return true;
@@ -76,22 +89,34 @@ bool SFMLTextRenderer::LoadFontByName(const char* fontName)
     if (!fontName)
         return false;
 
-    // Try to find the font in Windows Fonts folder
-    std::string fontPath = "C:\\Windows\\Fonts\\";
-    fontPath += fontName;
+    // Search directories: bundled first, then platform system fonts
+    const char* font_directories[] = {
+        "fonts/",
+#ifdef _WIN32
+        "C:\\Windows\\Fonts\\",
+#elif defined(__APPLE__)
+        "/Library/Fonts/",
+        "/System/Library/Fonts/Supplemental/",
+#else
+        "/usr/share/fonts/truetype/msttcorefonts/",
+        "/usr/share/fonts/truetype/",
+        "/usr/share/fonts/TTF/",
+#endif
+    };
 
-    // Try with common extensions
     const char* extensions[] = { ".ttf", ".otf", ".TTF", ".OTF", "" };
 
-    for (const char* ext : extensions)
+    for (const char* dir : font_directories)
     {
-        std::string fullPath = fontPath + ext;
-        if (m_font.openFromFile(fullPath))
+        for (const char* ext : extensions)
         {
-            // Disable texture smoothing for pixel-perfect rendering to match DDraw
-            m_font.setSmooth(false);
-            m_fontLoaded = true;
-            return true;
+            std::string full_path = std::string(dir) + fontName + ext;
+            if (m_font.openFromFile(full_path))
+            {
+                m_font.setSmooth(false);
+                m_fontLoaded = true;
+                return true;
+            }
         }
     }
 

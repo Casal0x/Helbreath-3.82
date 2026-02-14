@@ -13,11 +13,11 @@ namespace NetworkMessageHandlers {
 	void HandleItemToBank(CGame* game, char* data)
 	{
 		int index;
-		DWORD count, attribute;
+		uint32_t count, attribute;
 		char  name[hb::shared::limits::ItemNameLen]{}, item_type, equip_pos, gender_limit, item_color;
 		bool  is_equipped;
 		short sprite, sprite_frame, level_limit, item_effect_value2, item_spec_effect_value2;
-		WORD weight, cur_life_span;
+		uint16_t weight, cur_life_span;
 		std::string txt;
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyItemToBank>(
 			data, sizeof(hb::net::PacketNotifyItemToBank));
