@@ -90,25 +90,23 @@ void CursorTarget::end_frame(EntityRelationship relationship, int commandType, b
         }
     }
 
-    // Ground item cursor - only when NOT in spell targeting mode
+    // Entity focus takes priority — mobs/NPCs/players over ground items
+    if (s_focusedObject.m_valid) {
+        if (IsHostile(relationship) || hb::shared::input::is_ctrl_down())
+            s_cursorType = CursorType::TargetHostile;
+        else
+            s_cursorType = CursorType::TargetNeutral;
+        return;
+    }
+
+    // Ground item cursor - only when no entity is focused on the tile
     if (s_overGroundItem) {
-        // Animate every 200ms
         if (now - s_itemAnimTime > 200) {
             s_itemAnimTime = now;
             s_itemAnimFrame = (s_itemAnimFrame == 1) ? 2 : 1;
         }
         s_cursorType = (s_itemAnimFrame == 1) ?
             CursorType::ItemGround1 : CursorType::ItemGround2;
-        return;
-    }
-
-    // Normal mode - show target cursor based on focus
-    if (s_focusedObject.m_valid) {
-        // Holding Control treats neutral targets as hostile (for force-attack)
-        if (IsHostile(relationship) || hb::shared::input::is_ctrl_down())
-            s_cursorType = CursorType::TargetHostile;
-        else
-            s_cursorType = CursorType::TargetNeutral;
         return;
     }
 
