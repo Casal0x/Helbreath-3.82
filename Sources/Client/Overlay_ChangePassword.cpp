@@ -71,6 +71,8 @@ void Overlay_ChangePassword::update_focused_input()
         get_centered_dialog_pos(InterfaceNdGame4, 0, dlgX, dlgY);
 
         end_input_string();
+        if (m_iCurFocus >= 1 && m_iCurFocus <= 4)
+            m_error_msg.clear();
         switch (m_iCurFocus)
         {
         case 1:
@@ -120,10 +122,39 @@ bool Overlay_ChangePassword::validate_inputs()
 
 void Overlay_ChangePassword::handle_submit()
 {
-    if (!validate_inputs())
-        return;
-
     end_input_string();
+
+    if (m_account_name.empty() || !CMisc::check_valid_string(m_account_name.data()))
+    {
+        m_error_msg = "Account name is not valid.";
+        return;
+    }
+    if (m_cOldPassword.empty() || !CMisc::check_valid_string(m_cOldPassword.data()))
+    {
+        m_error_msg = "Please enter your current password.";
+        return;
+    }
+    if (m_cNewPassword.size() < 8)
+    {
+        m_error_msg = "New password must be at least 8 characters.";
+        return;
+    }
+    if (!CMisc::check_valid_string(m_cNewPassword.data()))
+    {
+        m_error_msg = "New password contains invalid characters.";
+        return;
+    }
+    if (m_cNewPassword != m_cConfirmPassword)
+    {
+        m_error_msg = "Password confirmation does not match.";
+        return;
+    }
+    if (m_cOldPassword == m_cNewPassword)
+    {
+        m_error_msg = "New password must be different from current.";
+        return;
+    }
+    m_error_msg.clear();
 
     // Copy account name/password to player session
     m_game->m_player->m_account_name = m_account_name;
@@ -344,10 +375,18 @@ void Overlay_ChangePassword::on_render()
     else if (m_iCurFocus >= 2 && m_iCurFocus <= 4)
         show_received_string();  // Hide (mask) password
 
-    // Help text
-    put_aligned_string(dlgX, dlgX + 334, dlgY + 146, UPDATE_SCREEN_ON_CHANGE_PASSWORD5);
-    put_aligned_string(dlgX, dlgX + 334, dlgY + 161, UPDATE_SCREEN_ON_CHANGE_PASSWORD6);
-    put_aligned_string(dlgX, dlgX + 334, dlgY + 176, UPDATE_SCREEN_ON_CHANGE_PASSWORD7);
+    // Help text or error message
+    if (!m_error_msg.empty())
+    {
+        hb::shared::text::draw_text_aligned(GameFont::Default, dlgX, dlgY + 146, 334, 15, m_error_msg.c_str(),
+            hb::shared::text::TextStyle::from_color({195, 25, 25}), hb::shared::text::Align::TopCenter);
+    }
+    else
+    {
+        put_aligned_string(dlgX, dlgX + 334, dlgY + 146, UPDATE_SCREEN_ON_CHANGE_PASSWORD5);
+        put_aligned_string(dlgX, dlgX + 334, dlgY + 161, UPDATE_SCREEN_ON_CHANGE_PASSWORD6);
+        put_aligned_string(dlgX, dlgX + 334, dlgY + 176, UPDATE_SCREEN_ON_CHANGE_PASSWORD7);
+    }
 
     // OK button (enabled only when inputs are valid)
     int okFrame = (valid_inputs && m_iCurFocus == 5) ? 21 : 20;

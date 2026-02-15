@@ -472,6 +472,14 @@ void CGame::hotkey_simple_escape()
 	// Note: Escape handling is automatic through hb::shared::input::is_key_pressed(KeyCode::Escape)
 	if (GameModeManager::get_mode() == GameMode::MainGame)
 	{
+		// Cancel active chat input
+		if (text_input_manager::get().is_active())
+		{
+			m_chat_msg.clear();
+			text_input_manager::get().end_input();
+			return;
+		}
+
 		if ((m_is_observer_mode == true) && (hb::shared::input::is_shift_down())) {
 			if (m_logout_count == -1) m_logout_count = 1;
 			m_dialog_box_manager.disable_dialog_box(DialogBoxId::SystemMenu);

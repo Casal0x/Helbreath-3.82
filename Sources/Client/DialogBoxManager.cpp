@@ -751,41 +751,7 @@ void DialogBoxManager::enable_dialog_box(int box_id, int type, int v1, int v2, c
 			Info(DialogBoxId::ItemUpgrade).m_v1 = -1;
 			Info(DialogBoxId::ItemUpgrade).m_dw_v1 = 0;
 		}
-		else
-		{
-			// Clear disabled flag for any item currently in the dialog before resetting
-			{ int old_idx = Info(DialogBoxId::ItemUpgrade).m_v1;
-			if (old_idx >= 0 && old_idx < hb::shared::limits::MaxItems) m_game->m_is_item_disabled[old_idx] = false; }
-			int so_x, so_m;
-			so_x = so_m = 0;
-			for (i = 0; i < hb::shared::limits::MaxItems; i++)
-				if (m_game->m_item_list[i] != 0)
-				{
-					if ((m_game->m_item_list[i]->m_sprite == 6) && (m_game->m_item_list[i]->m_sprite_frame == 128)) so_x++;
-					if ((m_game->m_item_list[i]->m_sprite == 6) && (m_game->m_item_list[i]->m_sprite_frame == 129)) so_m++;
-				}
-			if ((so_x > 0) || (so_m > 0))
-			{
-				Info(DialogBoxId::ItemUpgrade).m_mode = 6; // Stone upgrade
-				Info(DialogBoxId::ItemUpgrade).m_v2 = so_x;
-				Info(DialogBoxId::ItemUpgrade).m_v3 = so_m;
-				Info(DialogBoxId::ItemUpgrade).m_v1 = -1;
-				Info(DialogBoxId::ItemUpgrade).m_dw_v1 = 0;
-			}
-			else if (m_game->m_gizon_item_upgrade_left > 0)
-			{
-				Info(DialogBoxId::ItemUpgrade).m_mode = 1;
-				Info(DialogBoxId::ItemUpgrade).m_v2 = -1;
-				Info(DialogBoxId::ItemUpgrade).m_v3 = -1;
-				Info(DialogBoxId::ItemUpgrade).m_v1 = -1;
-				Info(DialogBoxId::ItemUpgrade).m_dw_v1 = 0;
-			}
-			else
-			{
-				m_game->add_event_list(DRAW_DIALOGBOX_ITEMUPGRADE30, 10); // "Stone of Xelima or Merien is not present."
-				return;
-			}
-		}
+		// If already open, do nothing (matches original behavior)
 		break;
 
 	case DialogBoxId::MagicShop:
@@ -854,6 +820,12 @@ void DialogBoxManager::enable_dialog_box(int box_id, int type, int v1, int v2, c
 			Info(DialogBoxId::Resurrect).m_view = 0;
 			m_game->m_skill_using_status = false;
 		}
+		break;
+
+	// These dialogs should not cancel text input when toggled
+	case DialogBoxId::CharacterInfo:
+	case DialogBoxId::Inventory:
+	case DialogBoxId::ChatHistory:
 		break;
 
 	default:
