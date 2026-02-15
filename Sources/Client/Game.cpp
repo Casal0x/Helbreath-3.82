@@ -6298,7 +6298,8 @@ void CGame::command_processor(short mouse_x, short mouse_y, short tile_x, short 
 			int yc = m_player->m_player_y - m_map_data->m_pivot_y;
 			if (xc >= 0 && xc < MapDataSizeX && yc >= 0 && yc < MapDataSizeY) {
 				int8_t animAction = m_map_data->m_data[xc][yc].m_animation.m_action;
-				if (animAction == Type::Attack || animAction == Type::AttackMove || animAction == Type::Magic)
+				if (animAction == Type::Attack || animAction == Type::AttackMove || animAction == Type::Magic
+				|| animAction == Type::GetItem || animAction == Type::Damage || animAction == Type::DamageMove)
 					return;
 			}
 			direction = CMisc::get_next_move_dir(m_player->m_player_x, m_player->m_player_y, tile_x, tile_y);
