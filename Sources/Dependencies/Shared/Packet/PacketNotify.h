@@ -508,7 +508,7 @@ namespace net {
 		int16_t who;
 		int16_t quest_type;
 		int16_t contribution;
-		int16_t target_type;
+		int16_t target_config_id;
 		int16_t target_count;
 		int16_t x;
 		int16_t y;
@@ -751,7 +751,7 @@ namespace net {
 		int16_t response;
 		int16_t amount;
 		int16_t contribution;
-		int16_t target_type;
+		int16_t target_config_id;
 		int16_t target_count;
 		int16_t x;
 		int16_t y;

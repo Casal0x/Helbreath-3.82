@@ -147,6 +147,7 @@ void CursorTarget::test_object(const hb::shared::sprite::BoundRect& bounds, cons
         s_focusedObject.m_data_x = info.m_data_x;
         s_focusedObject.m_data_y = info.m_data_y;
         s_focusedObject.m_owner_type = info.m_owner_type;
+        s_focusedObject.m_npc_config_id = info.m_npc_config_id;
         s_focusedObject.m_type = info.m_type;
         s_focusedObject.m_action = info.m_action;
         s_focusedObject.m_direction = info.m_direction;
@@ -249,7 +250,8 @@ const hb::shared::entity::PlayerStatus& CursorTarget::GetFocusStatus()
 bool CursorTarget::get_focus_highlight_data(
     short& outScreenX, short& outScreenY,
     uint16_t& outObjectID,
-    short& outOwnerType, char& outAction, direction& outDir, char& outFrame,
+    short& outOwnerType, short& outNpcConfigId,
+    char& outAction, direction& outDir, char& outFrame,
     hb::shared::entity::PlayerAppearance& outAppearance, hb::shared::entity::PlayerStatus& outStatus,
     short& outDataX, short& outDataY)
 {
@@ -261,6 +263,7 @@ bool CursorTarget::get_focus_highlight_data(
     outScreenY = s_focusedObject.m_screen_y;
     outObjectID = s_focusedObject.m_object_id;
     outOwnerType = s_focusedObject.m_owner_type;
+    outNpcConfigId = s_focusedObject.m_npc_config_id;
     outAction = s_focusedObject.m_action;
     outDir = s_focusedObject.m_direction;
     outFrame = s_focusedObject.m_frame;

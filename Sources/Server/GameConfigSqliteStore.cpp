@@ -320,7 +320,7 @@ bool EnsureGameConfigDatabase(sqlite3** outDb, std::string& outPath, bool* outCr
         " quest_index INTEGER PRIMARY KEY,"
         " side INTEGER NOT NULL,"
         " quest_type INTEGER NOT NULL,"
-        " target_type INTEGER NOT NULL,"
+        " target_config_id INTEGER NOT NULL,"
         " max_count INTEGER NOT NULL,"
         " quest_from INTEGER NOT NULL,"
         " min_level INTEGER NOT NULL,"
@@ -1740,7 +1740,7 @@ bool SaveQuestConfigs(sqlite3* db, const CGame* game)
 
     const char* sql =
         "INSERT INTO quest_configs("
-        " quest_index, side, quest_type, target_type, max_count, quest_from, min_level, max_level,"
+        " quest_index, side, quest_type, target_config_id, max_count, quest_from, min_level, max_level,"
         " required_skill_num, required_skill_level, time_limit, assign_type,"
         " reward_type1, reward_amount1, reward_type2, reward_amount2, reward_type3, reward_amount3,"
         " contribution, contribution_limit, response_mode, target_name, target_x, target_y, target_range,"
@@ -1766,7 +1766,7 @@ bool SaveQuestConfigs(sqlite3* db, const CGame* game)
         ok &= (sqlite3_bind_int(stmt, col++, i) == SQLITE_OK);
         ok &= (sqlite3_bind_int(stmt, col++, quest->m_side) == SQLITE_OK);
         ok &= (sqlite3_bind_int(stmt, col++, quest->m_type) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, quest->m_target_type) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, quest->m_target_config_id) == SQLITE_OK);
         ok &= (sqlite3_bind_int(stmt, col++, quest->m_max_count) == SQLITE_OK);
         ok &= (sqlite3_bind_int(stmt, col++, quest->m_from) == SQLITE_OK);
         ok &= (sqlite3_bind_int(stmt, col++, quest->m_min_level) == SQLITE_OK);
@@ -1818,7 +1818,7 @@ bool LoadQuestConfigs(sqlite3* db, CGame* game)
     }
 
     const char* sql =
-        "SELECT quest_index, side, quest_type, target_type, max_count, quest_from, min_level, max_level,"
+        "SELECT quest_index, side, quest_type, target_config_id, max_count, quest_from, min_level, max_level,"
         " required_skill_num, required_skill_level, time_limit, assign_type,"
         " reward_type1, reward_amount1, reward_type2, reward_amount2, reward_type3, reward_amount3,"
         " contribution, contribution_limit, response_mode, target_name, target_x, target_y, target_range,"
@@ -1840,7 +1840,7 @@ bool LoadQuestConfigs(sqlite3* db, CGame* game)
         CQuest* quest = new CQuest();
         quest->m_side = (char)sqlite3_column_int(stmt, col++);
         quest->m_type = sqlite3_column_int(stmt, col++);
-        quest->m_target_type = sqlite3_column_int(stmt, col++);
+        quest->m_target_config_id = sqlite3_column_int(stmt, col++);
         quest->m_max_count = sqlite3_column_int(stmt, col++);
         quest->m_from = sqlite3_column_int(stmt, col++);
         quest->m_min_level = sqlite3_column_int(stmt, col++);

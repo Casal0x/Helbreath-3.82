@@ -38,8 +38,8 @@ void DialogBox_NpcActionQuery::DrawMode0_NpcMenu(short sX, short sY, short mouse
 		put_string(sX + 33 - 1, sY + 23 - 1, "Heldenian staff officer", GameColors::UIWhite);
 	}
 	else {
-		put_string(sX + 33, sY + 23, m_game->get_npc_config_name(Info().m_v3), GameColors::UILabel);
-		put_string(sX + 33 - 1, sY + 23 - 1, m_game->get_npc_config_name(Info().m_v3), GameColors::UIWhite);
+		put_string(sX + 33, sY + 23, Info().m_str, GameColors::UILabel);
+		put_string(sX + 33 - 1, sY + 23 - 1, Info().m_str, GameColors::UIWhite);
 	}
 
 	if (Info().m_v3 == 25) {
@@ -126,8 +126,8 @@ void DialogBox_NpcActionQuery::DrawMode4_TalkToNpcOrUnicorn(short sX, short sY, 
 {
 	draw_new_dialog_box(InterfaceNdGame2, sX, sY, 5);
 
-	put_string(sX + 35, sY + 25, m_game->get_npc_config_name(Info().m_v3), GameColors::UILabel);
-	put_string(sX + 35 - 1, sY + 25 - 1, m_game->get_npc_config_name(Info().m_v3), GameColors::UIWhite);
+	put_string(sX + 35, sY + 25, Info().m_str, GameColors::UILabel);
+	put_string(sX + 35 - 1, sY + 25 - 1, Info().m_str, GameColors::UIWhite);
 
 	if (m_game->m_dialog_box_manager.is_enabled(DialogBoxId::NpcTalk) == false) {
 		draw_highlighted_text(sX + 125, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY25, mouse_x, mouse_y, sX + 125, sX + 180, sY + 55, sY + 70);
@@ -138,8 +138,8 @@ void DialogBox_NpcActionQuery::DrawMode5_ShopWithSell(short sX, short sY, short 
 {
 	draw_new_dialog_box(InterfaceNdGame2, sX, sY, 6);
 
-	put_string(sX + 33, sY + 23, m_game->get_npc_config_name(Info().m_v3), GameColors::UILabel);
-	put_string(sX + 33 - 1, sY + 23 - 1, m_game->get_npc_config_name(Info().m_v3), GameColors::UIWhite);
+	put_string(sX + 33, sY + 23, Info().m_str, GameColors::UILabel);
+	put_string(sX + 33 - 1, sY + 23 - 1, Info().m_str, GameColors::UIWhite);
 
 	if (Info().m_v3 == 24) {
 		// Repair All button (Blacksmith only)

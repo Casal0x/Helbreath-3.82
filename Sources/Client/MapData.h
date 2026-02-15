@@ -42,7 +42,7 @@ public:
 	bool set_chat_msg_owner(uint16_t object_id, short sX, short sY, int index);
 	bool set_dead_owner(uint16_t object_id, short sX, short sY, short type, direction dir, const hb::shared::entity::PlayerAppearance& appearance, const hb::shared::entity::PlayerStatus& status, std::string& name, short npcConfigId = -1);
 	bool set_owner(uint16_t object_id, int sX, int sY, int type, direction dir, const hb::shared::entity::PlayerAppearance& appearance, const hb::shared::entity::PlayerStatus& status, std::string& name, short action, short v1, short v2, short v3, int pre_loc = 0, int frame = 0, short npcConfigId = -1);
-	bool get_owner(short sX, short sY, std::string& name, short * owner_type, hb::shared::entity::PlayerStatus * owner_status, uint16_t * object_id);
+	bool get_owner(short sX, short sY, std::string& name, short * owner_type, hb::shared::entity::PlayerStatus * owner_status, uint16_t * object_id, short* npc_config_id = nullptr);
 	bool set_dynamic_object(short sX, short sY, uint16_t id, short type, bool is_event);
 	bool is_teleport_loc(short sX, short sY);
 	bool get_is_locatable(short sX, short sY);

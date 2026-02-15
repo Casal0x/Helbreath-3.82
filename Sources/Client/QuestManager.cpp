@@ -27,7 +27,7 @@ void quest_manager::handle_quest_contents(char* data)
 	m_game->m_quest.who = pkt->who;
 	m_game->m_quest.quest_type = pkt->quest_type;
 	m_game->m_quest.contribution = pkt->contribution;
-	m_game->m_quest.target_type = pkt->target_type;
+	m_game->m_quest.target_type = pkt->target_config_id;
 	m_game->m_quest.target_count = pkt->target_count;
 	m_game->m_quest.x = pkt->x;
 	m_game->m_quest.y = pkt->y;

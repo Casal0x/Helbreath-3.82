@@ -128,7 +128,6 @@ public:
 	CItem* get_item_config(int item_id) const;
 	short find_item_id_by_name(const char* item_name);
 	void load_game_msg_text_contents();
-	const char* get_npc_config_name(short type) const;
 	const char* get_npc_config_name_by_id(short npcConfigId) const;
 	short resolve_npc_type(short npcConfigId) const;
 
@@ -475,7 +474,6 @@ std::array<bool, hb::shared::limits::MaxItems> m_is_item_equipped{};
 
 	struct NpcConfig { short npcType = 0; std::string name; bool valid = false; };
 	std::array<NpcConfig, hb::shared::limits::MaxNpcConfigs> m_npc_config_list{};   // indexed by npc_id
-	std::array<std::string, 120> m_npc_name_by_type;                    // type->name reverse map (last config wins)
 	int m_npc_configs_received = 0;
 
 	enum class ConfigRetryLevel : uint8_t { None = 0, CacheTried = 1, ServerRequested = 2, Failed = 3 };

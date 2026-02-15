@@ -1572,10 +1572,7 @@ bool CGame::decode_npc_config_file_contents(char* data, uint32_t msg_size)
 			m_npc_config_list[npcId].valid = true;
 		}
 
-		// update type->name reverse map (last config per type wins)
-		if (npcType >= 0 && npcType < 120) {
-			m_npc_name_by_type[npcType] = entry.name;
-		}
+		// (type-based reverse map removed — use config_id for all name lookups)
 	}
 
 	// Track raw entries received across packets
@@ -1589,14 +1586,6 @@ bool CGame::decode_npc_config_file_contents(char* data, uint32_t msg_size)
 	}
 
 	return true;
-}
-
-const char* CGame::get_npc_config_name(short type) const
-{
-	if (type >= 0 && type < 120 && !m_npc_name_by_type[type].empty()) {
-		return m_npc_name_by_type[type].c_str();
-	}
-	return "Unknown";
 }
 
 const char* CGame::get_npc_config_name_by_id(short npcConfigId) const
@@ -1995,6 +1984,7 @@ void CGame::item_drop_external_screen(char item_id, short mouse_x, short mouse_y
 {
 	std::string name;
 	short owner_type, dialog_x, dialog_y;
+	short npc_config_id = -1;
 	hb::shared::entity::PlayerStatus status;
 
 	if (inventory_manager::get().check_item_operation_enabled(item_id) == false) return;
@@ -2002,7 +1992,7 @@ void CGame::item_drop_external_screen(char item_id, short mouse_x, short mouse_y
 	if ((m_mcx != 0) && (m_mcy != 0) && (abs(m_player->m_player_x - m_mcx) <= 8) && (abs(m_player->m_player_y - m_mcy) <= 8))
 	{
 		name.clear();
-		m_map_data->get_owner(m_mcx, m_mcy, name, &owner_type, &status, &m_comm_object_id);
+		m_map_data->get_owner(m_mcx, m_mcy, name, &owner_type, &status, &m_comm_object_id, &npc_config_id);
 		if (m_player->m_player_name == name)
 		{
 		}
@@ -2024,7 +2014,7 @@ void CGame::item_drop_external_screen(char item_id, short mouse_x, short mouse_y
 					std::snprintf(m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_str, sizeof(m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_str), "%s", name.c_str());
 				else
 				{
-					std::snprintf(m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_str, sizeof(m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_str), "%s", get_npc_config_name(owner_type));
+					std::snprintf(m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_str, sizeof(m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_str), "%s", get_npc_config_name_by_id(npc_config_id));
 				}
 				m_dialog_box_manager.enable_dialog_box(DialogBoxId::ItemDropExternal, item_id, m_item_list[item_id]->m_count, 0);
 			}
@@ -2072,7 +2062,7 @@ void CGame::item_drop_external_screen(char item_id, short mouse_x, short mouse_y
 					m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_x = dialog_x;
 					m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_y = dialog_y;
 
-					std::snprintf(m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_str, hb::shared::limits::NpcNameLen, "%s", get_npc_config_name(owner_type));
+					std::snprintf(m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_str, hb::shared::limits::NpcNameLen, "%s", get_npc_config_name_by_id(npc_config_id));
 					break;
 
 				case hb::shared::owner::ShopKeeper: // ShopKeeper-W
@@ -2092,7 +2082,7 @@ void CGame::item_drop_external_screen(char item_id, short mouse_x, short mouse_y
 					m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_x = dialog_x;
 					m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_y = dialog_y;
 
-					std::snprintf(m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_str, hb::shared::limits::NpcNameLen, "%s", get_npc_config_name(owner_type));
+					std::snprintf(m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_str, hb::shared::limits::NpcNameLen, "%s", get_npc_config_name_by_id(npc_config_id));
 					break;
 
 				default:
@@ -2631,7 +2621,9 @@ void CGame::read_map_data(short pivot_x, short pivot_y, const char* packet_data)
 				name.assign(obj->name, strnlen(obj->name, sizeof(obj->name)));
 				cursor += sizeof(hb::net::PacketMapDataObjectNpc);
 			}
-			{ m_map_data->set_owner(object_id, pivot_x + map_x, pivot_y + map_y, owner_type, move_dir, appearance, status, name, Type::stop, 0, 0, 0, 0, 0, npc_config_id); }
+			{
+				m_map_data->set_owner(object_id, pivot_x + map_x, pivot_y + map_y, owner_type, move_dir, appearance, status, name, Type::stop, 0, 0, 0, 0, 0, npc_config_id);
+			}
 		}
 		if (header_byte & 0x02) // object ID
 		{
@@ -4951,10 +4943,10 @@ void CGame::draw_npc_name(short screen_x, short screen_y, short owner_type, cons
 {
 	std::string text, text2;
 
-	// Name lookup: prefer config_id (direct), fall back to type-based lookup
 	auto npcName = [&]() -> const char* {
-		if (npc_config_id >= 0) return get_npc_config_name_by_id(npc_config_id);
-		return get_npc_config_name(owner_type);
+		if (npc_config_id >= 0)
+			return get_npc_config_name_by_id(npc_config_id);
+		return "Unknown";
 	};
 
 	// Crop subtypes override the base "Crop" name from config
@@ -5078,7 +5070,7 @@ void CGame::draw_object_name(short screen_x, short screen_y, const char* name, c
 		if (m_is_crusade_mode == false) text = name;
 		else
 		{
-			if (!hb::shared::object_id::is_player_id(m_entity_state.m_object_id)) text = get_npc_config_name(hb::shared::owner::Barbarian);
+			if (!hb::shared::object_id::is_player_id(m_entity_state.m_object_id)) text = "Barbarian";
 			else
 			{
 				if (relationship == EntityRelationship::Enemy) text = std::format("{}", m_entity_state.m_object_id);
@@ -5642,7 +5634,7 @@ void CGame::npc_talk_handler(char* packet_data)
 	short response = pkt->response;
 	int amount = pkt->amount;
 	int contribution = pkt->contribution;
-	int target_type = pkt->target_type;
+	int target_type = pkt->target_config_id;
 	int target_count = pkt->target_count;
 	int target_x = pkt->x;
 	int target_y = pkt->y;
@@ -5664,7 +5656,7 @@ void CGame::npc_talk_handler(char* packet_data)
 		question_type = 0;
 		switch (npc_type) {
 		case 1: //Monster Hunt
-			std::snprintf(temp, hb::shared::limits::NpcNameLen, "%s", get_npc_config_name(target_type));
+			std::snprintf(temp, hb::shared::limits::NpcNameLen, "%s", get_npc_config_name_by_id(target_type));
 			text = std::format(NPC_TALK_HANDLER16, target_count, temp);
 			m_msg_text_list2[index] = std::make_unique<CMsg>(0, text.c_str(), 0);
 			index++;
@@ -6680,7 +6672,8 @@ bool CGame::process_left_click(short mouse_x, short mouse_y, short tile_x, short
 				}
 				else // CTRL not pressed
 				{
-					m_map_data->get_owner(m_mcx, m_mcy, name, &object_type, &object_status, &m_comm_object_id);
+					short npc_config_id = -1;
+					m_map_data->get_owner(m_mcx, m_mcy, name, &object_type, &object_status, &m_comm_object_id, &npc_config_id);
 					if (object_type >= 10 || ((object_type >= 1) && (object_type <= 6)))
 					{
 						switch (object_type) { 	// CLEROTH - NPC TALK
@@ -6695,6 +6688,7 @@ bool CGame::process_left_click(short mouse_x, short mouse_y, short tile_x, short
 							m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_x = dialog_x;
 							m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_y = dialog_y;
 							m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_v3 = 15;
+							std::snprintf(m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_str, sizeof(m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_str), "%s", get_npc_config_name_by_id(npc_config_id));
 							break;
 
 						case hb::shared::owner::Gandalf: // Gandlf
@@ -6708,6 +6702,7 @@ bool CGame::process_left_click(short mouse_x, short mouse_y, short tile_x, short
 							m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_x = dialog_x;
 							m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_y = dialog_y;
 							m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_v3 = 19;
+							std::snprintf(m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_str, sizeof(m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_str), "%s", get_npc_config_name_by_id(npc_config_id));
 							break;
 
 						case hb::shared::owner::Howard: // Howard
@@ -6721,6 +6716,7 @@ bool CGame::process_left_click(short mouse_x, short mouse_y, short tile_x, short
 							m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_x = dialog_x;
 							m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_y = dialog_y;
 							m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_v3 = 20;
+							std::snprintf(m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_str, sizeof(m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_str), "%s", get_npc_config_name_by_id(npc_config_id));
 							m_dialog_box_manager.Info(DialogBoxId::GiveItem).m_v3 = 20;
 							m_dialog_box_manager.Info(DialogBoxId::GiveItem).m_v4 = m_comm_object_id;
 							m_dialog_box_manager.Info(DialogBoxId::GiveItem).m_v5 = m_mcx;
@@ -6738,6 +6734,7 @@ bool CGame::process_left_click(short mouse_x, short mouse_y, short tile_x, short
 							m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_x = dialog_x;
 							m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_y = dialog_y;
 							m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_v3 = 24;
+							std::snprintf(m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_str, sizeof(m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_str), "%s", get_npc_config_name_by_id(npc_config_id));
 							m_dialog_box_manager.Info(DialogBoxId::GiveItem).m_v3 = 24;
 							m_dialog_box_manager.Info(DialogBoxId::GiveItem).m_v4 = m_comm_object_id;
 							m_dialog_box_manager.Info(DialogBoxId::GiveItem).m_v5 = m_mcx;
@@ -6755,6 +6752,7 @@ bool CGame::process_left_click(short mouse_x, short mouse_y, short tile_x, short
 							m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_x = dialog_x;
 							m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_y = dialog_y;
 							m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_v3 = 25;
+							std::snprintf(m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_str, sizeof(m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_str), "%s", get_npc_config_name_by_id(npc_config_id));
 							break;
 
 						case hb::shared::owner::Kennedy: // Kennedy
@@ -6768,6 +6766,7 @@ bool CGame::process_left_click(short mouse_x, short mouse_y, short tile_x, short
 							m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_x = dialog_x;
 							m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_y = dialog_y;
 							m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_v3 = 26;
+							std::snprintf(m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_str, sizeof(m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_str), "%s", get_npc_config_name_by_id(npc_config_id));
 							break;
 
 						case hb::shared::owner::Guard: // Guard
@@ -6783,6 +6782,7 @@ bool CGame::process_left_click(short mouse_x, short mouse_y, short tile_x, short
 								m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_x = dialog_x;
 								m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_y = dialog_y;
 								m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_v3 = 21;
+								std::snprintf(m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_str, sizeof(m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_str), "%s", get_npc_config_name_by_id(npc_config_id));
 							}
 							break;
 						case hb::shared::owner::McGaffin: // McGaffin
@@ -6800,6 +6800,7 @@ bool CGame::process_left_click(short mouse_x, short mouse_y, short tile_x, short
 								m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_x = dialog_x;
 								m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_y = dialog_y;
 								m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_v3 = object_type;
+								std::snprintf(m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_str, sizeof(m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_str), "%s", get_npc_config_name_by_id(npc_config_id));
 							}
 							break;
 
@@ -6816,6 +6817,7 @@ bool CGame::process_left_click(short mouse_x, short mouse_y, short tile_x, short
 								m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_x = dialog_x;
 								m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_y = dialog_y;
 								m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_v3 = 32;
+								std::snprintf(m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_str, sizeof(m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_str), "%s", get_npc_config_name_by_id(npc_config_id));
 							}
 							break;
 
@@ -6830,6 +6832,7 @@ bool CGame::process_left_click(short mouse_x, short mouse_y, short tile_x, short
 							m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_x = dialog_x;
 							m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_y = dialog_y;
 							m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_v3 = 90;
+							std::snprintf(m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_str, sizeof(m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_str), "%s", get_npc_config_name_by_id(npc_config_id));
 							break;
 
 						default: // Other mobs

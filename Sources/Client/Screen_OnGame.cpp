@@ -158,7 +158,7 @@ void Screen_OnGame::on_update()
                                 if (tY < 0) tY = 0;
                                 if ((tY + 100) > LOGICAL_MAX_Y()) tY = LOGICAL_MAX_Y() - 100;
                                 m_game->m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_x = tX; m_game->m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_y = tY;
-                                std::snprintf(m_game->m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_str, hb::shared::limits::NpcNameLen, "%s", m_game->get_npc_config_name(m_game->m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_v3));
+                                std::snprintf(m_game->m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_str, hb::shared::limits::NpcNameLen, "%s", m_game->m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_str);
                                 break;
                             case 15: case 24:
                                 m_game->m_dialog_box_manager.enable_dialog_box(DialogBoxId::NpcActionQuery, 2, m_game->m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_view, m_game->m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_v3);
@@ -170,7 +170,7 @@ void Screen_OnGame::on_update()
                                 if (tY < 0) tY = 0;
                                 if ((tY + 100) > LOGICAL_MAX_Y()) tY = LOGICAL_MAX_Y() - 100;
                                 m_game->m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_x = tX; m_game->m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_y = tY;
-                                std::snprintf(m_game->m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_str, hb::shared::limits::NpcNameLen, "%s", m_game->get_npc_config_name(m_game->m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_v3));
+                                std::snprintf(m_game->m_dialog_box_manager.Info(DialogBoxId::NpcActionQuery).m_str, hb::shared::limits::NpcNameLen, "%s", m_game->m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_str);
                                 break;
                             case 1000:
                             {

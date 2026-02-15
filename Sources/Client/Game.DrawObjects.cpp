@@ -460,6 +460,7 @@ void CGame::draw_objects(short pivot_x, short pivot_y, short div_x, short div_y,
 					info.m_data_x = m_entity_state.m_data_x;
 					info.m_data_y = m_entity_state.m_data_y;
 					info.m_owner_type = m_entity_state.m_owner_type;
+					info.m_npc_config_id = m_entity_state.m_npc_config_id;
 					info.m_action = ObjectDead;
 					info.m_direction = m_entity_state.m_dir;
 					info.m_frame = m_entity_state.m_frame;
@@ -569,6 +570,7 @@ void CGame::draw_objects(short pivot_x, short pivot_y, short div_x, short div_y,
 					info.m_data_x = m_entity_state.m_data_x;
 					info.m_data_y = m_entity_state.m_data_y;
 					info.m_owner_type = m_entity_state.m_owner_type;
+					info.m_npc_config_id = m_entity_state.m_npc_config_id;
 					info.m_action = m_entity_state.m_action;
 					info.m_direction = m_entity_state.m_dir;
 					info.m_frame = m_entity_state.m_frame;
@@ -834,7 +836,7 @@ void CGame::draw_objects(short pivot_x, short pivot_y, short div_x, short div_y,
 	{
 		short focusSX, focusSY;
 		uint16_t focusObjID;
-		short focusOwnerType;
+		short focusOwnerType, focusNpcConfigId;
 		char focusAction, focusFrame;
 		direction focusDir;
 		hb::shared::entity::PlayerAppearance focusAppearance;
@@ -842,12 +844,13 @@ void CGame::draw_objects(short pivot_x, short pivot_y, short div_x, short div_y,
 		short focusDataX, focusDataY;
 
 		if (CursorTarget::get_focus_highlight_data(focusSX, focusSY, focusObjID, focusOwnerType,
-			focusAction, focusDir, focusFrame, focusAppearance,
+			focusNpcConfigId, focusAction, focusDir, focusFrame, focusAppearance,
 			focusStatus, focusDataX, focusDataY))
 		{
 			// Set up temporary vars for drawing
 			m_entity_state.m_object_id = focusObjID;
 			m_entity_state.m_owner_type = focusOwnerType;
+			m_entity_state.m_npc_config_id = focusNpcConfigId;
 			m_entity_state.m_action = focusAction;
 			m_entity_state.m_frame = focusFrame;
 			m_entity_state.m_dir = focusDir;

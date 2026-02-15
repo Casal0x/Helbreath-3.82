@@ -6338,7 +6338,7 @@ void CGame::send_notify_msg(int from_h, int to_h, uint16_t msg_type, uint32_t v1
 		pkt.who = static_cast<int16_t>(v1);
 		pkt.quest_type = static_cast<int16_t>(v2);
 		pkt.contribution = static_cast<int16_t>(v3);
-		pkt.target_type = static_cast<int16_t>(v4);
+		pkt.target_config_id = static_cast<int16_t>(v4);
 		pkt.target_count = static_cast<int16_t>(v5);
 		pkt.x = static_cast<int16_t>(v6);
 		pkt.y = static_cast<int16_t>(v7);
@@ -6538,7 +6538,7 @@ void CGame::send_notify_msg(int from_h, int to_h, uint16_t msg_type, uint32_t v1
 		pkt.response = static_cast<int16_t>(v2);
 		pkt.amount = static_cast<int16_t>(v3);
 		pkt.contribution = static_cast<int16_t>(v4);
-		pkt.target_type = static_cast<int16_t>(v5);
+		pkt.target_config_id = static_cast<int16_t>(v5);
 		pkt.target_count = static_cast<int16_t>(v6);
 		pkt.x = static_cast<int16_t>(v7);
 		pkt.y = static_cast<int16_t>(v8);

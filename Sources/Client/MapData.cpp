@@ -4072,7 +4072,7 @@ void CMapData::clear_dead_chat_msg(short sX, short sY)
 	m_data[sX - m_pivot_x][sY - m_pivot_y].m_dead_chat_msg = 0;
 }
 
-bool CMapData::get_owner(short sX, short sY, std::string& name, short* owner_type, hb::shared::entity::PlayerStatus* owner_status, uint16_t* object_id)
+bool CMapData::get_owner(short sX, short sY, std::string& name, short* owner_type, hb::shared::entity::PlayerStatus* owner_status, uint16_t* object_id, short* npc_config_id)
 {
 	int dX, dY;
 
@@ -4089,6 +4089,7 @@ bool CMapData::get_owner(short sX, short sY, std::string& name, short* owner_typ
 	name = m_data[dX][dY].m_owner_name;
 	*owner_status = m_data[dX][dY].m_status;
 	*object_id = m_data[dX][dY].m_object_id;
+	if (npc_config_id) *npc_config_id = m_data[dX][dY].m_npc_config_id;
 
 	return true;
 }

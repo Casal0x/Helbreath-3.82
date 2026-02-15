@@ -44,7 +44,7 @@ void DialogBox_Quest::on_draw(short mouse_x, short mouse_y, short z, char lb)
 			case 1:
 			case 2:
 			case 3: break;
-			case 4: std::snprintf(temp, sizeof(temp), "%s", m_game->get_npc_config_name(hb::shared::owner::William)); break;
+			case 4: std::snprintf(temp, sizeof(temp), "%s", "William"); break;
 			case 5:
 			case 6:
 			case 7: break;
@@ -52,7 +52,7 @@ void DialogBox_Quest::on_draw(short mouse_x, short mouse_y, short z, char lb)
 			txt = std::format(DRAW_DIALOGBOX_QUEST5, temp);
 			put_aligned_string(sX, sX + size_x, sY + 50 + 45, txt.c_str(), GameColors::UILabel);
 
-			std::snprintf(temp, sizeof(temp), "%s", m_game->get_npc_config_name(m_game->m_quest.target_type));
+			std::snprintf(temp, sizeof(temp), "%s", m_game->get_npc_config_name_by_id(m_game->m_quest.target_type));
 			txt = std::format(NPC_TALK_HANDLER16, m_game->m_quest.target_count, temp);
 			put_aligned_string(sX, sX + size_x, sY + 50 + 60, txt.c_str(), GameColors::UILabel);
 
@@ -87,7 +87,7 @@ void DialogBox_Quest::on_draw(short mouse_x, short mouse_y, short z, char lb)
 			case 1:
 			case 2:
 			case 3: break;
-			case 4: std::snprintf(temp, sizeof(temp), "%s", m_game->get_npc_config_name(hb::shared::owner::William)); break;
+			case 4: std::snprintf(temp, sizeof(temp), "%s", "William"); break;
 			case 5:
 			case 6:
 			case 7: break;

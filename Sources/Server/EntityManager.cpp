@@ -581,7 +581,7 @@ void CEntityManager::on_entity_killed(int entity_handle, short attacker_h, char 
             switch (m_game->m_quest_manager->m_quest_config_list[quest_index]->m_type) {
             case hb::server::quest::Type::MonsterHunt:
                 if (m_game->m_client_list[attacker_h]->m_quest_match_flag_loc &&
-                    m_game->m_quest_manager->m_quest_config_list[quest_index]->m_target_type == type) {
+                    m_game->m_quest_manager->m_quest_config_list[quest_index]->m_target_config_id == entity->m_npc_config_id) {
                     m_game->m_client_list[attacker_h]->m_cur_quest_count++;
                     char quest_remain = (m_game->m_quest_manager->m_quest_config_list[quest_index]->m_max_count -
                         m_game->m_client_list[attacker_h]->m_cur_quest_count);

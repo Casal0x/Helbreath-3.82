@@ -57,6 +57,7 @@ struct FocusedObject {
     // Type info
     FocusedObjectType m_type = FocusedObjectType::None;
     short m_owner_type = 0;
+    short m_npc_config_id = -1;
     char m_action = 0;
     direction m_direction = direction{};
     char m_frame = 0;
@@ -81,6 +82,7 @@ struct TargetObjectInfo {
     short m_screen_x, m_screen_y;
     short m_data_x, m_data_y;  // Map data array indices
     short m_owner_type;
+    short m_npc_config_id;
     char m_action, m_frame;
     direction m_direction;
     const char* m_name;  // Points to existing string, no copy
@@ -165,7 +167,8 @@ namespace CursorTarget {
     bool get_focus_highlight_data(
         short& outScreenX, short& outScreenY,
         uint16_t& outObjectID,
-        short& outOwnerType, char& outAction, direction& outDir, char& outFrame,
+        short& outOwnerType, short& outNpcConfigId,
+        char& outAction, direction& outDir, char& outFrame,
         hb::shared::entity::PlayerAppearance& outAppearance, hb::shared::entity::PlayerStatus& outStatus,
         short& outDataX, short& outDataY
     );
