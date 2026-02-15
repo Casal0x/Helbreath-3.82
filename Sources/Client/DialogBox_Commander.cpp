@@ -16,6 +16,7 @@ DialogBox_Commander::DialogBox_Commander(CGame* game)
 	: IDialogBox(DialogBoxId::CrusadeCommander, game)
 {
 	set_default_rect(20 , 20 , 310, 386);
+	set_can_close_on_right_click(false);
 }
 
 void DialogBox_Commander::on_update()

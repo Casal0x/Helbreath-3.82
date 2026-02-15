@@ -15,7 +15,6 @@ public:
 	~DialogBoxManager() = default;  // unique_ptr handles cleanup automatically
 
 	void initialize(CGame* game);
-	void init_defaults();
 	void initialize_dialog_boxes();
 	void register_dialog_box(std::unique_ptr<IDialogBox> dialog_box);
 	IDialogBox* get_dialog_box(DialogBoxId::Type id) const;

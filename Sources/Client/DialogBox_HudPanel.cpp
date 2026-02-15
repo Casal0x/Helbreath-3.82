@@ -24,6 +24,7 @@ DialogBox_HudPanel::DialogBox_HudPanel(CGame* game)
 	: IDialogBox(DialogBoxId::HudPanel, game)
 {
 	set_default_rect(0, LOGICAL_HEIGHT() - ICON_PANEL_HEIGHT(), ICON_PANEL_WIDTH(), ICON_PANEL_HEIGHT());
+	set_can_close_on_right_click(false);
 }
 
 bool DialogBox_HudPanel::is_in_button(short mouse_x, short mouse_y, int x1, int x2) const

@@ -14,6 +14,32 @@ using namespace hb::shared::net;
 using namespace hb::shared::item;
 using namespace hb::client::sprite_id;
 
+// Margin (in pixels) added around item sprites to make small items easier to click.
+// Checks if any opaque pixel exists within this distance of the cursor.
+constexpr int item_hit_margin = 8;
+
+static bool check_item_collision(auto&& sprite, int sprite_x, int sprite_y,
+	int frame, int point_x, int point_y, int margin)
+{
+	if (sprite->CheckCollision(sprite_x, sprite_y, frame, point_x, point_y))
+		return true;
+
+	if (margin <= 0)
+		return false;
+
+	for (int dy = -margin; dy <= margin; dy++)
+	{
+		for (int dx = -margin; dx <= margin; dx++)
+		{
+			if (dx == 0 && dy == 0) continue;
+			if (dx * dx + dy * dy > margin * margin) continue;
+			if (sprite->CheckCollision(sprite_x, sprite_y, frame, point_x + dx, point_y + dy))
+				return true;
+		}
+	}
+	return false;
+}
+
 DialogBox_Inventory::DialogBox_Inventory(CGame* game)
 	: IDialogBox(DialogBoxId::Inventory, game)
 {
@@ -428,12 +454,12 @@ PressResult DialogBox_Inventory::on_press(short mouse_x, short mouse_y)
 		m_game->m_sprite[spriteIdx]->CalculateBounds(itemDrawX, itemDrawY, cfg->m_sprite_frame);
 		auto bounds = m_game->m_sprite[spriteIdx]->GetBoundRect();
 
-		// Check if click is within item bounds
-		if (mouse_x > bounds.left && mouse_x < bounds.right &&
-			mouse_y > bounds.top && mouse_y < bounds.bottom)
+		// Check if click is within item bounds (expanded by margin for small items)
+		if (mouse_x > bounds.left - item_hit_margin && mouse_x < bounds.right + item_hit_margin &&
+			mouse_y > bounds.top - item_hit_margin && mouse_y < bounds.bottom + item_hit_margin)
 		{
-			// Pixel-perfect collision check
-			if (m_game->m_sprite[spriteIdx]->CheckCollision(itemDrawX, itemDrawY, cfg->m_sprite_frame, mouse_x, mouse_y))
+			// Pixel-perfect collision check with margin for small items
+			if (check_item_collision(m_game->m_sprite[spriteIdx], itemDrawX, itemDrawY, cfg->m_sprite_frame, mouse_x, mouse_y, item_hit_margin))
 			{
 				// Bring item to top of order
 				inventory_manager::get().set_item_order(0, item_id);

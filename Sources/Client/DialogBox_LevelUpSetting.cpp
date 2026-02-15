@@ -10,6 +10,7 @@ DialogBox_LevelUpSetting::DialogBox_LevelUpSetting(CGame* game)
 	: IDialogBox(DialogBoxId::LevelUpSetting, game)
 {
 	set_default_rect(0 , 0 , 258, 339);
+	set_can_close_on_right_click(false);
 }
 
 void DialogBox_LevelUpSetting::draw_stat_row(short sX, short sY, int y_offset, const char* label,

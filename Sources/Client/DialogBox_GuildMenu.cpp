@@ -12,6 +12,7 @@ DialogBox_GuildMenu::DialogBox_GuildMenu(CGame* game)
 	: IDialogBox(DialogBoxId::GuildMenu, game)
 {
 	set_default_rect(337 , 57 , 258, 339);
+	set_can_close_on_right_click(false);
 }
 
 void DialogBox_GuildMenu::on_draw(short mouse_x, short mouse_y, short z, char lb)

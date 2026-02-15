@@ -17,6 +17,7 @@ DialogBox_Slates::DialogBox_Slates(CGame* game)
 	: IDialogBox(DialogBoxId::Slates, game)
 {
 	set_default_rect(100 , 60 , 258, 339);
+	set_can_close_on_right_click(false);
 }
 
 void DialogBox_Slates::on_draw(short mouse_x, short mouse_y, short z, char lb)

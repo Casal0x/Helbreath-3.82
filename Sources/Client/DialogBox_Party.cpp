@@ -10,6 +10,7 @@ DialogBox_Party::DialogBox_Party(CGame* game)
 	: IDialogBox(DialogBoxId::Party, game)
 {
 	set_default_rect(0 , 0 , 258, 339);
+	set_can_close_on_right_click(false);
 }
 
 void DialogBox_Party::on_draw(short mouse_x, short mouse_y, short z, char lb)

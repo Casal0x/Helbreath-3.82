@@ -264,7 +264,11 @@ bool CGame::on_initialize()
 	audio_manager::get().initialize();
 	ChatCommandManager::get().initialize(this);
 	GameModeManager::initialize(this);
+#ifdef _DEBUG
+	GameModeManager::set_screen<Screen_Loading>();
+#else
 	GameModeManager::set_screen<Screen_Splash>();
+#endif
 	m_hide_local_cursor = false;
 
 	m_log_server_addr = DEF_SERVER_IP;

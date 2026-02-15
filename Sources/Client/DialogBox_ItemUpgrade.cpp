@@ -16,6 +16,7 @@ DialogBox_ItemUpgrade::DialogBox_ItemUpgrade(CGame* game)
 	: IDialogBox(DialogBoxId::ItemUpgrade, game)
 {
 	set_default_rect(60 , 50 , 258, 339);
+	set_can_close_on_right_click(false);
 }
 
 void DialogBox_ItemUpgrade::on_draw(short mouse_x, short mouse_y, short z, char lb)

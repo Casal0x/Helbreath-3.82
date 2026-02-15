@@ -15,6 +15,32 @@ using namespace hb::shared::item;
 using hb::shared::item::EquipPos;
 using namespace hb::client::sprite_id;
 
+// Margin (in pixels) added around item sprites to make small items easier to click.
+// Checks if any opaque pixel exists within this distance of the cursor.
+constexpr int item_hit_margin = 8;
+
+static bool check_item_collision(auto&& sprite, int sprite_x, int sprite_y,
+	int frame, int point_x, int point_y, int margin)
+{
+	if (sprite->CheckCollision(sprite_x, sprite_y, frame, point_x, point_y))
+		return true;
+
+	if (margin <= 0)
+		return false;
+
+	for (int dy = -margin; dy <= margin; dy++)
+	{
+		for (int dx = -margin; dx <= margin; dx++)
+		{
+			if (dx == 0 && dy == 0) continue;
+			if (dx * dx + dy * dy > margin * margin) continue;
+			if (sprite->CheckCollision(sprite_x, sprite_y, frame, point_x + dx, point_y + dy))
+				return true;
+		}
+	}
+	return false;
+}
+
 // draw order: first entry drawn first (bottom layer), last entry drawn last (top layer).
 // Collision checks iterate in reverse so topmost-drawn item has highest click priority.
 static constexpr EquipSlotLayout MaleEquipSlots[] = {
@@ -84,8 +110,8 @@ static EquipPos FindHoverSlot(CGame* game, const EquipSlotLayout* slots, int slo
 		CItem* cfg = game->get_item_config(game->m_item_list[itemIdx]->m_id_num);
 		if (cfg == nullptr) continue;
 
-		if (game->m_sprite[ItemEquipPivotPoint + cfg->m_sprite + spriteOffset]->CheckCollision(
-			sX + slots[i].offsetX, sY + slots[i].offsetY, cfg->m_sprite_frame, mouse_x, mouse_y))
+		if (check_item_collision(game->m_sprite[ItemEquipPivotPoint + cfg->m_sprite + spriteOffset],
+			sX + slots[i].offsetX, sY + slots[i].offsetY, cfg->m_sprite_frame, mouse_x, mouse_y, item_hit_margin))
 		{
 			return slots[i].equipPos;
 		}
@@ -190,8 +216,8 @@ char DialogBox_Character::find_equip_item_at_point(short mouse_x, short mouse_y,
 		short spr_h = cfg->m_sprite;
 		short frame = cfg->m_sprite_frame;
 
-		if (m_game->m_sprite[ItemEquipPivotPoint + spr_h + spriteOffset]->CheckCollision(
-			sX + slots[i].offsetX, sY + slots[i].offsetY, frame, mouse_x, mouse_y))
+		if (check_item_collision(m_game->m_sprite[ItemEquipPivotPoint + spr_h + spriteOffset],
+			sX + slots[i].offsetX, sY + slots[i].offsetY, frame, mouse_x, mouse_y, item_hit_margin))
 		{
 			return static_cast<char>(itemIdx);
 		}
