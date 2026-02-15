@@ -8319,15 +8319,6 @@ void CGame::check_active_aura2(short sX, short sY, uint32_t time, short owner_ty
 
 void CGame::draw_angel(int sprite, short sX, short sY, char frame, uint32_t time)
 {
-	switch (m_entity_state.m_dir)
-	{
-	case 1:
-	case 2:
-	case 7:
-	case 8:
-		sX -= 30;
-		break;
-	}
 	if (m_entity_state.m_status.invisibility)
 	{
 		if (m_entity_state.m_status.angel_str)
