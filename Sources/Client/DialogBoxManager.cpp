@@ -856,6 +856,12 @@ void DialogBoxManager::enable_dialog_box(int box_id, int type, int v1, int v2, c
 		}
 		break;
 
+	// These dialogs should not cancel text input when toggled
+	case DialogBoxId::CharacterInfo:
+	case DialogBoxId::Inventory:
+	case DialogBoxId::ChatHistory:
+		break;
+
 	default:
 		text_input_manager::get().end_input();
 		if (is_enabled(box_id) == false) {
