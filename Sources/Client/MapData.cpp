@@ -25,6 +25,7 @@ namespace dynamic_object = hb::shared::dynamic_object;
 
 using namespace hb::shared::action;
 using namespace hb::client::config;
+using namespace hb::shared::direction;
 
 namespace
 {
@@ -919,7 +920,7 @@ void CMapData::decode_map_info(char* header)
 	}
 }
 
-void CMapData::shift_map_data(char dir)
+void CMapData::shift_map_data(direction dir)
 {
 	int ix, iy;
 	for (iy = 0; iy < MapDataSizeY; iy++)
@@ -927,57 +928,59 @@ void CMapData::shift_map_data(char dir)
 			m_tmp_data[ix][iy].clear();
 
 	switch (dir) {
-	case 1: // North
+	case direction::north:
 		for (ix = 0; ix < hb::shared::view::InitDataTilesX + 1; ix++)
 			for (iy = 0; iy < hb::shared::view::InitDataTilesY; iy++)
 				m_tmp_data[hb::shared::view::MapDataBufferX + ix][hb::shared::view::MapDataBufferY + 1 + iy] = m_data[hb::shared::view::MapDataBufferX + ix][hb::shared::view::MapDataBufferY + iy];
 		m_pivot_y--;
 		break;
-	case 2: // NE
+	case direction::northeast:
 		for (ix = 0; ix < hb::shared::view::InitDataTilesX; ix++)
 			for (iy = 0; iy < hb::shared::view::InitDataTilesY; iy++)
 				m_tmp_data[hb::shared::view::MapDataBufferX + ix][hb::shared::view::MapDataBufferY + 1 + iy] = m_data[hb::shared::view::MapDataBufferY + ix][hb::shared::view::MapDataBufferY + iy];
 		m_pivot_x++;
 		m_pivot_y--;
 		break;
-	case 3: // East
+	case direction::east:
 		for (ix = 0; ix < hb::shared::view::InitDataTilesX; ix++)
 			for (iy = 0; iy < hb::shared::view::InitDataTilesY + 1; iy++)
 				m_tmp_data[hb::shared::view::MapDataBufferX + ix][hb::shared::view::MapDataBufferY + iy] = m_data[hb::shared::view::MapDataBufferY + ix][hb::shared::view::MapDataBufferY + iy];
 		m_pivot_x++;
 		break;
-	case 4: // SE
+	case direction::southeast:
 		for (ix = 0; ix < hb::shared::view::InitDataTilesX; ix++)
 			for (iy = 0; iy < hb::shared::view::InitDataTilesY; iy++)
 				m_tmp_data[hb::shared::view::MapDataBufferX + ix][hb::shared::view::MapDataBufferY + iy] = m_data[hb::shared::view::MapDataBufferY + ix][hb::shared::view::MapDataBufferY + 1 + iy];
 		m_pivot_x++;
 		m_pivot_y++;
 		break;
-	case 5: // South
+	case direction::south:
 		for (ix = 0; ix < hb::shared::view::InitDataTilesX + 1; ix++)
 			for (iy = 0; iy < hb::shared::view::InitDataTilesY; iy++)
 				m_tmp_data[hb::shared::view::MapDataBufferX + ix][hb::shared::view::MapDataBufferY + iy] = m_data[hb::shared::view::MapDataBufferX + ix][hb::shared::view::MapDataBufferY + 1 + iy];
 		m_pivot_y++;
 		break;
-	case 6: // SW
+	case direction::southwest:
 		for (ix = 0; ix < hb::shared::view::InitDataTilesX; ix++)
 			for (iy = 0; iy < hb::shared::view::InitDataTilesY; iy++)
 				m_tmp_data[hb::shared::view::MapDataBufferY + ix][hb::shared::view::MapDataBufferY + iy] = m_data[hb::shared::view::MapDataBufferX + ix][hb::shared::view::MapDataBufferY + 1 + iy];
 		m_pivot_x--;
 		m_pivot_y++;
 		break;
-	case 7: // West
+	case direction::west:
 		for (ix = 0; ix < hb::shared::view::InitDataTilesX; ix++)
 			for (iy = 0; iy < hb::shared::view::InitDataTilesY + 1; iy++)
 				m_tmp_data[hb::shared::view::MapDataBufferY + ix][hb::shared::view::MapDataBufferY + iy] = m_data[hb::shared::view::MapDataBufferX + ix][hb::shared::view::MapDataBufferY + iy];
 		m_pivot_x--;
 		break;
-	case 8: // NW
+	case direction::northwest:
 		for (ix = 0; ix < hb::shared::view::InitDataTilesX; ix++)
 			for (iy = 0; iy < hb::shared::view::InitDataTilesY; iy++)
 				m_tmp_data[hb::shared::view::MapDataBufferY + ix][hb::shared::view::MapDataBufferY + 1 + iy] = m_data[hb::shared::view::MapDataBufferX + ix][hb::shared::view::MapDataBufferY + iy];
 		m_pivot_x--;
 		m_pivot_y--;
+		break;
+	default:
 		break;
 	}
 	for (ix = 0; ix < MapDataSizeX; ix++)
@@ -1048,7 +1051,7 @@ bool CMapData::is_teleport_loc(short sX, short sY)
 	return true;
 }
 
-bool CMapData::set_owner(uint16_t object_id, int sX, int sY, int type, int dir, const hb::shared::entity::PlayerAppearance& appearance, const hb::shared::entity::PlayerStatus& status, std::string& name, short action, short v1, short v2, short v3, int pre_loc, int frame, short npcConfigId)
+bool CMapData::set_owner(uint16_t object_id, int sX, int sY, int type, direction dir, const hb::shared::entity::PlayerAppearance& appearance, const hb::shared::entity::PlayerStatus& status, std::string& name, short action, short v1, short v2, short v3, int pre_loc, int frame, short npcConfigId)
 {
 	int   iX, iY, dX, dY;
 	int   chat_index, add;
@@ -3934,7 +3937,7 @@ bool CMapData::set_item(short sX, short sY, short i_dnum, char item_color, uint3
 	return true;
 }
 
-bool CMapData::set_dead_owner(uint16_t object_id, short sX, short sY, short type, char dir, const hb::shared::entity::PlayerAppearance& appearance, const hb::shared::entity::PlayerStatus& status, std::string& name, short npcConfigId)
+bool CMapData::set_dead_owner(uint16_t object_id, short sX, short sY, short type, direction dir, const hb::shared::entity::PlayerAppearance& appearance, const hb::shared::entity::PlayerStatus& status, std::string& name, short npcConfigId)
 {
 	int  dX, dY;
 	std::string tmp_name;
@@ -4158,7 +4161,7 @@ bool CMapData::set_dynamic_object(short sX, short sY, uint16_t id, short type, b
 	return true;
 }
 
-void CMapData::get_owner_status_by_object_id(uint16_t object_id, char* owner_type, char* dir, hb::shared::entity::PlayerAppearance* appearance, hb::shared::entity::PlayerStatus* status, std::string& name)
+void CMapData::get_owner_status_by_object_id(uint16_t object_id, char* owner_type, direction* dir, hb::shared::entity::PlayerAppearance* appearance, hb::shared::entity::PlayerStatus* status, std::string& name)
 {
 	int iX, iY;
 	for (iX = 0; iX < MapDataSizeX; iX++)

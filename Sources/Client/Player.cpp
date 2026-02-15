@@ -23,7 +23,7 @@ void CPlayer::reset()
     // POSITION & MOVEMENT
     m_player_x = 0;
     m_player_y = 0;
-    m_player_dir = 0;
+    m_player_dir = direction{};
     m_damage_move = 0;
     m_damage_move_amount = 0;
 

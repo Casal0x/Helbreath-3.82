@@ -101,8 +101,6 @@ public:
 	// Camera for viewport management
 	CCamera m_Camera;
 
-
-
 	void read_settings();
 	void write_settings();
 
@@ -457,7 +455,8 @@ std::array<bool, hb::shared::limits::MaxItems> m_is_item_equipped{};
 	std::string m_backup_chat_msg;
 
 	std::string m_world_server_name;
-	char m_menu_dir, m_menu_dir_cnt, m_menu_frame;
+	direction m_menu_dir;
+	char m_menu_dir_cnt, m_menu_frame;
 	char m_ilusion_owner_type;
 	std::string m_name_ie;
 	char m_loading;
@@ -497,11 +496,9 @@ std::array<bool, hb::shared::limits::MaxItems> m_is_item_equipped{};
 	bool ensure_skill_configs_loaded() { return ensure_config_loaded(2); }
 	bool ensure_npc_configs_loaded()   { return ensure_config_loaded(3); }
 
-	short m_item_drop_id[25];
-
 	hb::shared::geometry::GameRectangle m_player_rect, m_body_rect;
 
-
+	short m_item_drop_id[25];
 	bool m_item_drop;
 	int  m_item_drop_cnt;
 
@@ -522,9 +519,7 @@ std::array<bool, hb::shared::limits::MaxItems> m_is_item_equipped{};
 	CPlayerRenderer m_player_renderer;
 	CNpcRenderer m_npc_renderer;
 
-
 	int   m_contribution_price;
-
 
 	short m_max_stats;
 	int m_max_level;

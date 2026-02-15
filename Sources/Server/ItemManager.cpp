@@ -25,6 +25,7 @@
 #include "TimeUtils.h"
 
 using namespace hb::shared::net;
+using namespace hb::shared::direction;
 
 using hb::log_channel;
 using namespace hb::shared::action;
@@ -412,7 +413,7 @@ void ItemManager::drop_item_handler(int client_h, short item_index, int amount, 
 	m_game->calc_total_weight(client_h);
 }
 
-int ItemManager::client_motion_get_item_handler(int client_h, short sX, short sY, char dir)
+int ItemManager::client_motion_get_item_handler(int client_h, short sX, short sY, direction dir)
 {
 	char  remain_item_color;
 	int   ret, erase_req;

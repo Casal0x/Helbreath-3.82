@@ -30,6 +30,7 @@ using namespace hb::shared::action;
 using namespace hb::server::net;
 using namespace hb::server::config;
 using namespace hb::shared::item;
+using namespace hb::shared::direction;
 namespace sock = hb::shared::net::socket;
 namespace dynamic_object = hb::shared::dynamic_object;
 namespace smap = hb::server::map;

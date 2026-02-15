@@ -4,6 +4,7 @@
 #include "RenderHelpers.h"
 #include "CommonTypes.h"
 #include <algorithm>
+using namespace hb::shared::direction;
 
 hb::shared::sprite::BoundRect CPlayerRenderer::draw_stop(int indexX, int indexY, int sX, int sY, bool trans, uint32_t time)
 {
@@ -670,14 +671,14 @@ hb::shared::sprite::BoundRect CPlayerRenderer::draw_damage_move(int indexX, int 
 
 	// Direction inversion (knockback is opposite direction)
 	switch (state.m_dir) {
-	case 1: state.m_dir = 5; break;
-	case 2: state.m_dir = 6; break;
-	case 3: state.m_dir = 7; break;
-	case 4: state.m_dir = 8; break;
-	case 5: state.m_dir = 1; break;
-	case 6: state.m_dir = 2; break;
-	case 7: state.m_dir = 3; break;
-	case 8: state.m_dir = 4; break;
+	case direction::north:     state.m_dir = direction::south;     break;
+	case direction::northeast: state.m_dir = direction::southwest; break;
+	case direction::east:      state.m_dir = direction::west;      break;
+	case direction::southeast: state.m_dir = direction::northwest; break;
+	case direction::south:     state.m_dir = direction::north;     break;
+	case direction::southwest: state.m_dir = direction::northeast; break;
+	case direction::west:      state.m_dir = direction::east;      break;
+	case direction::northwest: state.m_dir = direction::southeast; break;
 	}
 
 	// bodyPose=10, weaponPose=5, shieldPose=5

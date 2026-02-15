@@ -129,7 +129,7 @@ void Screen_CreateNewCharacter::on_update()
         }
         m_game->m_menu_frame = 0;
     }
-    if (m_game->m_menu_dir > 8) m_game->m_menu_dir = 1;
+    if (m_game->m_menu_dir > direction::northwest) m_game->m_menu_dir = direction::north;
 
     // Handle button hover focus
     if ((mouse_x >= 384 + OX) && (mouse_x <= 384 + 72 + OX) && (mouse_y >= 445 + OY) && (mouse_y <= 445 + 15 + OY)) {

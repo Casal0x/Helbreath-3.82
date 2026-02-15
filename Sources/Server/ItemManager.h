@@ -3,6 +3,9 @@
 #include <cstdint>
 #include <map>
 
+#include "DirectionHelpers.h"
+using hb::shared::direction::direction;
+
 struct DropTable;
 class CGame;
 class CItem;
@@ -62,7 +65,7 @@ public:
 
 	// Drop / pickup
 	void drop_item_handler(int client_h, short item_index, int amount, const char* item_name, bool by_player = true);
-	int client_motion_get_item_handler(int client_h, short sX, short sY, char dir);
+	int client_motion_get_item_handler(int client_h, short sX, short sY, direction dir);
 
 	// Give / exchange
 	void give_item_handler(int client_h, short item_index, int amount, short dX, short dY, uint16_t object_id, const char* item_name);

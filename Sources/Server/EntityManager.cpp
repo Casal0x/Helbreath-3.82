@@ -20,6 +20,7 @@ using namespace hb::shared::action;
 using namespace hb::server::config;
 using namespace hb::server::npc;
 using namespace hb::server::net;
+using namespace hb::shared::direction;
 namespace smap = hb::server::map;
 namespace sdelay = hb::server::delay_event;
 using namespace hb::server::config;
@@ -327,18 +328,18 @@ int CEntityManager::create_entity(
                 case 24: // Tom
                 case 25: // William
                 case 26: // Kennedy
-                    m_npc_list[i]->m_dir = static_cast<char>(4 + m_game->dice(1, 3) - 1);
+                    m_npc_list[i]->m_dir = static_cast<direction>(4 + m_game->dice(1, 3) - 1);
                     break;
 
                 default:
-                    m_npc_list[i]->m_dir = static_cast<char>(m_game->dice(1, 8));
+                    m_npc_list[i]->m_dir = static_cast<direction>(m_game->dice(1, 8));
                     break;
                 }
                 break;
 
             default:
                 m_npc_list[i]->m_behavior = Behavior::Move;
-                m_npc_list[i]->m_dir = 5;
+                m_npc_list[i]->m_dir = direction::south;
                 break;
             }
 
@@ -873,7 +874,7 @@ void CEntityManager::update_flee_behavior(int entity_handle)
 
 void CEntityManager::npc_behavior_move(int npc_h)
 {
-	char  dir;
+	direction dir;
 	short sX, sY, dX, dY, absX, absY;
 	short target, distance;
 	char  target_type;
@@ -1120,7 +1121,7 @@ void CEntityManager::npc_behavior_attack(int npc_h)
 {
 	int   magic_type;
 	short sX, sY, dX, dY;
-	char  dir;
+	direction dir;
 	uint32_t time = GameClock::GetTimeMS();
 
 	if (m_npc_list[npc_h] == 0) return;
@@ -1583,7 +1584,7 @@ void CEntityManager::npc_behavior_attack(int npc_h)
 
 void CEntityManager::npc_behavior_flee(int npc_h)
 {
-	char dir;
+	direction dir;
 	short sX, sY, dX, dY;
 	short target;
 	char  target_type;

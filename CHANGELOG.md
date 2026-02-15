@@ -1,5 +1,42 @@
 # Changelog
 
+## Direction Enum — Type-Safe Compass Directions
+
+### New Type
+- Added `enum direction : int8_t` in `hb::shared::direction` namespace (DirectionHelpers.h) with values `north=1` through `northwest=8`; zero handled via `direction{}` (value-initialization)
+- Added `constexpr int8_t direction_count = 8`
+- Added `operator++` (prefix and postfix) for direction cycling
+- Changed `ApplyOffset()` overloads from `char dir` to `direction dir`
+
+### Client Headers (type changes: char/int8_t -> direction)
+- Player.h: `m_player_dir`
+- EntityMotion.h: `m_direction`, `m_pending_direction`, 4 function params
+- AnimationState.h: `m_dir`, `set_action`/`set_direction` params
+- Tile.h: `m_dead_dir`
+- EntityRenderState.h: `m_dir`
+- Effect.h: `m_dir`
+- PlayerController.h: `m_pending_stop_dir`, `get_next_move_dir` return type
+- CursorTarget.h: `FocusedObject::m_direction`, `TargetObjectInfo::m_direction`, `get_focus_highlight_data` param
+- Misc.h (client): `get_next_move_dir`, `calc_direction` return types
+- MapData.h: 4 function dir params
+- Game.h: `m_menu_dir`
+
+### Server Headers (type changes: char -> direction)
+- Client.h: `m_dir`
+- Npc.h: `m_dir`
+- TeleportLoc.h: `m_dir`
+- Map.h: `m_heldenian_gate_door[].dir`, `check_fly_space_available`/`search_teleport_dest` params
+- Misc.h (server): `get_next_move_dir` return, `GetDirPoint` param
+- Game.h: 4 function signatures, `get_next_move_dir` return
+- CombatManager.h, MagicManager.h, ItemManager.h: function params
+
+### Source Files Updated (~25 .cpp files)
+- All integer literals for directions (1-8) replaced with named enum values (`direction::north` through `direction::northwest`)
+- All `= 0` direction assignments replaced with `direction{}`
+- Wire protocol structs unchanged (`uint8_t` for network packets) — `static_cast<direction>()` used only at packet boundaries, database reads, and RNG results
+- Direction inversion switch cases (NpcRenderer, PlayerRenderer) use named enum values
+- Menu direction cycling (6 overlays + 2 screens) uses `operator++` with named wrap check
+
 ## FloatingTextManager: Modernize to std::string / std::string_view
 
 ### Bug Fix

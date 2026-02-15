@@ -92,6 +92,7 @@ using namespace hb::shared::net;
 using namespace hb::client::net;
 namespace sock = hb::shared::net::socket;
 using namespace hb::shared::action;
+using namespace hb::shared::direction;
 
 using namespace hb::shared::item;
 using namespace hb::client::config;
@@ -280,7 +281,7 @@ bool CGame::on_initialize()
 	m_dialog_box_manager.set_order_at(60, DialogBoxId::HudPanel);
 	m_dialog_box_manager.set_order_at(59, DialogBoxId::HudPanel);
 
-	m_menu_dir = 4;
+	m_menu_dir = direction::southeast;
 	m_menu_dir_cnt = 0;
 	m_menu_frame = 0;
 
@@ -2565,7 +2566,8 @@ void CGame::request_full_object_data(uint16_t object_id)
 
 void CGame::read_map_data(short pivot_x, short pivot_y, const char* packet_data)
 {
-	char header_byte = 0, direction = 0, item_color = 0;
+	char header_byte = 0, item_color = 0;
+	direction move_dir = direction{};
 	std::string name;
 	short total_entries = 0, map_x = 0, map_y = 0, owner_type = 0, dynamic_type = 0;
 	short npc_config_id = -1;
@@ -2602,7 +2604,7 @@ void CGame::read_map_data(short pivot_x, short pivot_y, const char* packet_data)
 				if (!obj) return;
 				object_id = obj->base.object_id;
 				owner_type = obj->type;
-				direction = static_cast<char>(obj->dir);
+				move_dir = static_cast<direction>(obj->dir);
 				appearance = obj->appearance;
 				status = obj->status;
 				name.clear();
@@ -2616,14 +2618,14 @@ void CGame::read_map_data(short pivot_x, short pivot_y, const char* packet_data)
 				object_id = obj->base.object_id;
 				npc_config_id = obj->config_id;
 				owner_type = resolve_npc_type(npc_config_id);
-				direction = static_cast<char>(obj->dir);
+				move_dir = static_cast<direction>(obj->dir);
 				appearance.SetFromNpcAppearance(obj->appearance);
 				status.SetFromEntityStatus(obj->status);
 				name.clear();
 				name.assign(obj->name, strnlen(obj->name, sizeof(obj->name)));
 				cursor += sizeof(hb::net::PacketMapDataObjectNpc);
 			}
-			{ m_map_data->set_owner(object_id, pivot_x + map_x, pivot_y + map_y, owner_type, direction, appearance, status, name, Type::stop, 0, 0, 0, 0, 0, npc_config_id); }
+			{ m_map_data->set_owner(object_id, pivot_x + map_x, pivot_y + map_y, owner_type, move_dir, appearance, status, name, Type::stop, 0, 0, 0, 0, 0, npc_config_id); }
 		}
 		if (header_byte & 0x02) // object ID
 		{
@@ -2635,7 +2637,7 @@ void CGame::read_map_data(short pivot_x, short pivot_y, const char* packet_data)
 				if (!obj) return;
 				object_id = obj->base.object_id;
 				owner_type = obj->type;
-				direction = static_cast<char>(obj->dir);
+				move_dir = static_cast<direction>(obj->dir);
 				appearance = obj->appearance;
 				status = obj->status;
 				name.clear();
@@ -2649,14 +2651,14 @@ void CGame::read_map_data(short pivot_x, short pivot_y, const char* packet_data)
 				object_id = obj->base.object_id;
 				npc_config_id = obj->config_id;
 				owner_type = resolve_npc_type(npc_config_id);
-				direction = static_cast<char>(obj->dir);
+				move_dir = static_cast<direction>(obj->dir);
 				appearance.SetFromNpcAppearance(obj->appearance);
 				status.SetFromEntityStatus(obj->status);
 				name.clear();
 				name.assign(obj->name, strnlen(obj->name, sizeof(obj->name)));
 				cursor += sizeof(hb::net::PacketMapDataObjectNpc);
 			}
-			{ m_map_data->set_dead_owner(object_id, pivot_x + map_x, pivot_y + map_y, owner_type, direction, appearance, status, name, npc_config_id); }
+			{ m_map_data->set_dead_owner(object_id, pivot_x + map_x, pivot_y + map_y, owner_type, move_dir, appearance, status, name, npc_config_id); }
 		}
 		if (header_byte & 0x04)
 		{
@@ -2686,7 +2688,7 @@ void CGame::log_event_handler(char* data)
 	short sX, sY, type;
 	short npcConfigId = -1;
 	hb::shared::entity::PlayerStatus status;
-	char dir;
+	direction dir;
 	std::string name;
 	hb::shared::entity::PlayerAppearance playerAppearance;
 
@@ -2702,7 +2704,7 @@ void CGame::log_event_handler(char* data)
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketEventLogPlayer>(data, sizeof(hb::net::PacketEventLogPlayer));
 		if (!pkt) return;
 		type = pkt->type;
-		dir = static_cast<char>(pkt->dir);
+		dir = static_cast<direction>(pkt->dir);
 		name.assign(pkt->name, strnlen(pkt->name, sizeof(pkt->name)));
 		playerAppearance = pkt->appearance;
 		status = pkt->status;
@@ -2713,7 +2715,7 @@ void CGame::log_event_handler(char* data)
 		if (!pkt) return;
 		npcConfigId = pkt->config_id;
 		type = resolve_npc_type(npcConfigId);
-		dir = static_cast<char>(pkt->dir);
+		dir = static_cast<direction>(pkt->dir);
 		name.assign(pkt->name, strnlen(pkt->name, sizeof(pkt->name)));
 		playerAppearance.SetFromNpcAppearance(pkt->appearance);
 		status.SetFromEntityStatus(pkt->status);
@@ -4544,35 +4546,36 @@ void CGame::noticement_handler(char* data)
 
 void CGame::set_ilusion_effect(int owner_h)
 {
-	char dir;
+	direction dir;
 
 	m_ilusion_owner_h = owner_h;
 
 	std::string nameBuf_IE;
 	m_map_data->get_owner_status_by_object_id(owner_h, &m_ilusion_owner_type, &dir, &m_player->m_illusionAppearance, &m_player->m_illusionStatus, nameBuf_IE);
-	m_name_ie = nameBuf_IE;
+	(void)nameBuf_IE; // Unused
 }
 
 void CGame::response_panning_handler(char* data)
 {
-	char dir;
+	direction dir;
 	short sX, sY;
 	const auto* pkt = hb::net::PacketCast<hb::net::PacketResponsePanningHeader>(
 		data, sizeof(hb::net::PacketResponsePanningHeader));
 	if (!pkt) return;
 	sX = pkt->x;
 	sY = pkt->y;
-	dir = static_cast<char>(pkt->dir);
+	dir = static_cast<direction>(pkt->dir);
 
 	switch (dir) {
-	case 1: m_Camera.move_destination(0, -32); m_player->m_player_y--; break;
-	case 2: m_Camera.move_destination(32, -32); m_player->m_player_y--; m_player->m_player_x++; break;
-	case 3: m_Camera.move_destination(32, 0); m_player->m_player_x++; break;
-	case 4: m_Camera.move_destination(32, 32); m_player->m_player_y++; m_player->m_player_x++; break;
-	case 5: m_Camera.move_destination(0, 32); m_player->m_player_y++; break;
-	case 6: m_Camera.move_destination(-32, 32); m_player->m_player_y++; m_player->m_player_x--; break;
-	case 7: m_Camera.move_destination(-32, 0); m_player->m_player_x--; break;
-	case 8: m_Camera.move_destination(-32, -32); m_player->m_player_y--; m_player->m_player_x--; break;
+	case direction::north: m_Camera.move_destination(0, -32); m_player->m_player_y--; break;
+	case direction::northeast: m_Camera.move_destination(32, -32); m_player->m_player_y--; m_player->m_player_x++; break;
+	case direction::east: m_Camera.move_destination(32, 0); m_player->m_player_x++; break;
+	case direction::southeast: m_Camera.move_destination(32, 32); m_player->m_player_y++; m_player->m_player_x++; break;
+	case direction::south: m_Camera.move_destination(0, 32); m_player->m_player_y++; break;
+	case direction::southwest: m_Camera.move_destination(-32, 32); m_player->m_player_y++; m_player->m_player_x--; break;
+	case direction::west: m_Camera.move_destination(-32, 0); m_player->m_player_x--; break;
+	case direction::northwest: m_Camera.move_destination(-32, -32); m_player->m_player_y--; m_player->m_player_x--; break;
+	default: break;
 	}
 
 	m_map_data->shift_map_data(dir);
@@ -5876,7 +5879,7 @@ void CGame::motion_response_handler(char* packet_data)
 {
 	uint16_t response = 0;
 	short map_x = 0, map_y = 0;
-	char direction = 0;
+	direction move_dir = direction{};
 	int previous_hp = 0;
 	//						          0 3        4 5						 6 7		8 9		   10	    11
 	// Confirm Code(4) | MsgSize(4) | MsgID(4) | Confirm::MoveConfirm(2) | Loc-X(2) | Loc-Y(2) | Dir(1) | MapData ...
@@ -5924,7 +5927,7 @@ void CGame::motion_response_handler(char* packet_data)
 		if (!pkt) return;
 		map_x = pkt->x;
 		map_y = pkt->y;
-		direction = static_cast<char>(pkt->dir);
+		move_dir = static_cast<direction>(pkt->dir);
 		m_player->m_sp = m_player->m_sp - pkt->stamina_cost;
 		if (m_player->m_sp < 0) m_player->m_sp = 0;
 		previous_hp = m_player->m_hp;
@@ -5950,7 +5953,7 @@ void CGame::motion_response_handler(char* packet_data)
 				add_event_list(G_cTxt.c_str(), 10);
 			}
 		}
-		m_map_data->shift_map_data(direction);
+		m_map_data->shift_map_data(move_dir);
 		const char* mapData = reinterpret_cast<const char*>(packet_data) + sizeof(hb::net::PacketResponseMotionMoveConfirm);
 		read_map_data(map_x, map_y, mapData);
 		m_player->m_Controller.decrement_command_count();
@@ -5967,7 +5970,7 @@ void CGame::motion_response_handler(char* packet_data)
 			m_player->m_player_x = pkt->x;
 			m_player->m_player_y = pkt->y;
 			m_player->m_player_type = pkt->type;
-			m_player->m_player_dir = static_cast<char>(pkt->dir);
+			m_player->m_player_dir = static_cast<direction>(pkt->dir);
 			m_player->m_playerAppearance = pkt->appearance;
 			m_player->m_playerStatus = pkt->status;
 			m_player->m_is_gm_mode = m_player->m_playerStatus.gm_mode;
@@ -6005,7 +6008,7 @@ void CGame::command_processor(short mouse_x, short mouse_y, short tile_x, short 
 	uint16_t action_type = 0;
 	int result = 0;
 	short dialog_x = 0, dialog_y = 0;
-	char direction = 0;
+	direction move_dir = direction{};
 
 	// Fixed by Snoopy
 	if ((m_is_observer_commanded == false) && (m_is_observer_mode == true))
@@ -6285,8 +6288,8 @@ void CGame::command_processor(short mouse_x, short mouse_y, short tile_x, short 
 				// Right click while moving: stop after current step and face click direction
 				m_player->m_Controller.set_destination(m_player->m_player_x, m_player->m_player_y);
 				// save pending direction to apply when movement stops
-				char pendingDir = CMisc::get_next_move_dir(m_player->m_player_x, m_player->m_player_y, tile_x, tile_y);
-				if (pendingDir != 0) m_player->m_Controller.set_pending_stop_dir(pendingDir);
+				direction pending_dir = CMisc::get_next_move_dir(m_player->m_player_x, m_player->m_player_y, tile_x, tile_y);
+				if (pending_dir != 0) m_player->m_Controller.set_pending_stop_dir(pending_dir);
 			}
 		}
 		else if (config_manager::get().is_quick_actions_enabled() && right_button != 0 && cmd == Type::stop && !m_is_get_pointing_mode)
@@ -6301,13 +6304,13 @@ void CGame::command_processor(short mouse_x, short mouse_y, short tile_x, short 
 				if (animAction == Type::Attack || animAction == Type::AttackMove || animAction == Type::Magic)
 					return;
 			}
-			direction = CMisc::get_next_move_dir(m_player->m_player_x, m_player->m_player_y, tile_x, tile_y);
-			if (direction != 0 && m_player->m_player_dir != direction)
+			move_dir = CMisc::get_next_move_dir(m_player->m_player_x, m_player->m_player_y, tile_x, tile_y);
+			if (move_dir != 0 && m_player->m_player_dir != move_dir)
 			{
-				m_player->m_player_dir = direction;
-				send_command(MsgId::CommandMotion, Type::stop, direction, 0, 0, 0, 0);
+				m_player->m_player_dir = move_dir;
+				send_command(MsgId::CommandMotion, Type::stop, move_dir, 0, 0, 0, 0);
 				m_map_data->set_owner(m_player->m_player_object_id, m_player->m_player_x, m_player->m_player_y,
-					m_player->m_player_type, direction, m_player->m_playerAppearance,
+					m_player->m_player_type, move_dir, m_player->m_playerAppearance,
 					m_player->m_playerStatus, m_player->m_player_name, Type::stop, 0, 0, 0, 0, 10);
 				m_player->m_Controller.set_command_time(current_time);
 			}
@@ -6995,7 +6998,8 @@ bool CGame::process_right_click(short mouse_x, short mouse_y, short tile_x, shor
 	std::string name;
 	short object_type = 0;
 	hb::shared::entity::PlayerStatus object_status;
-	char direction = 0, abs_x = 0, abs_y = 0;
+	direction move_dir = direction{};
+	char abs_x = 0, abs_y = 0;
 
 		// Right click on self = pickup (Quick Actions feature)
 		if (config_manager::get().is_quick_actions_enabled() &&
@@ -7219,12 +7223,12 @@ bool CGame::process_right_click(short mouse_x, short mouse_y, short tile_x, shor
 		}
 		else
 		{
-			direction = CMisc::get_next_move_dir(m_player->m_player_x, m_player->m_player_y, tile_x, tile_y);
+			move_dir = CMisc::get_next_move_dir(m_player->m_player_x, m_player->m_player_y, tile_x, tile_y);
 			if (m_player->m_hp <= 0) return true;
-			if (direction == 0) return true;
-			if (m_player->m_player_dir == direction) return true;
+			if (move_dir == 0) return true;
+			if (m_player->m_player_dir == move_dir) return true;
 			clear_skill_using_status();
-			m_player->m_player_dir = direction;
+			m_player->m_player_dir = move_dir;
 			send_command(MsgId::CommandMotion, Type::stop, m_player->m_player_dir, 0, 0, 0, 0);
 
 			m_map_data->set_owner(m_player->m_player_object_id, m_player->m_player_x, m_player->m_player_y, m_player->m_player_type, m_player->m_player_dir,
@@ -7242,7 +7246,7 @@ bool CGame::process_right_click(short mouse_x, short mouse_y, short tile_x, shor
 
 void CGame::process_motion_commands(uint16_t action_type)
 {
-	char direction = 0;
+	direction move_dir = direction{};
 	std::string dest_name;
 	short dest_owner_type = 0;
 	hb::shared::entity::PlayerStatus dest_owner_status;
@@ -7322,13 +7326,13 @@ void CGame::process_motion_commands(uint16_t action_type)
 			{
 				m_player->m_Controller.set_command(Type::stop);
 				// Apply pending stop direction if set (from right-click while moving)
-				char pendingDir = m_player->m_Controller.get_pending_stop_dir();
-				if (pendingDir != 0)
+				direction pending_dir = m_player->m_Controller.get_pending_stop_dir();
+				if (pending_dir != 0)
 				{
-					m_player->m_player_dir = pendingDir;
-					send_command(MsgId::CommandMotion, Type::stop, pendingDir, 0, 0, 0, 0);
+					m_player->m_player_dir = pending_dir;
+					send_command(MsgId::CommandMotion, Type::stop, pending_dir, 0, 0, 0, 0);
 					m_map_data->set_owner(m_player->m_player_object_id, m_player->m_player_x, m_player->m_player_y,
-						m_player->m_player_type, pendingDir, m_player->m_playerAppearance,
+						m_player->m_player_type, pending_dir, m_player->m_playerAppearance,
 						m_player->m_playerStatus, m_player->m_player_name, Type::stop, 0, 0, 0, 0, 10);
 					m_player->m_Controller.clear_pending_stop_dir();
 				}
@@ -7351,13 +7355,13 @@ void CGame::process_motion_commands(uint16_t action_type)
 					if (m_player->m_sp < 1) m_player->m_Controller.set_command(Type::Move);
 				}
 
-				direction = m_player->m_Controller.get_next_move_dir(m_player->m_player_x, m_player->m_player_y, m_player->m_Controller.get_destination_x(), m_player->m_Controller.get_destination_y(), m_map_data.get(), true);
+				move_dir = m_player->m_Controller.get_next_move_dir(m_player->m_player_x, m_player->m_player_y, m_player->m_Controller.get_destination_x(), m_player->m_Controller.get_destination_y(), m_map_data.get(), true);
 				// Snoopy: Illusion Movement
 				if ((m_illusion_mvt == true) && (m_player->m_Controller.get_command() != Type::DamageMove))
 				{
-					direction = m_player->m_Controller.get_next_move_dir(m_player->m_player_x, m_player->m_player_y, m_player->m_Controller.get_destination_x(), m_player->m_Controller.get_destination_y(), m_map_data.get(), true, true);
+					move_dir = m_player->m_Controller.get_next_move_dir(m_player->m_player_x, m_player->m_player_y, m_player->m_Controller.get_destination_x(), m_player->m_Controller.get_destination_y(), m_map_data.get(), true, true);
 				}
-				if (direction != 0)
+				if (move_dir != 0)
 				{
 					// Cancel logout countdown on movement
 					if ((m_logout_count > 0) && (m_force_disconn == false))
@@ -7366,17 +7370,18 @@ void CGame::process_motion_commands(uint16_t action_type)
 						add_event_list(DLGBOX_CLICK_SYSMENU2, 10);
 					}
 
-					m_player->m_player_dir = direction;
-					send_command(MsgId::CommandMotion, m_player->m_Controller.get_command(), direction, 0, 0, 0, 0);
-					switch (direction) {
-					case 1:	m_player->m_player_y--; break;
-					case 2:	m_player->m_player_y--; m_player->m_player_x++;	break;
-					case 3:	m_player->m_player_x++; break;
-					case 4:	m_player->m_player_x++; m_player->m_player_y++;	break;
-					case 5:	m_player->m_player_y++; break;
-					case 6:	m_player->m_player_x--; m_player->m_player_y++;	break;
-					case 7:	m_player->m_player_x--; break;
-					case 8:	m_player->m_player_x--; m_player->m_player_y--;	break;
+					m_player->m_player_dir = move_dir;
+					send_command(MsgId::CommandMotion, m_player->m_Controller.get_command(), move_dir, 0, 0, 0, 0);
+					switch (move_dir) {
+					case direction::north:	m_player->m_player_y--; break;
+					case direction::northeast:	m_player->m_player_y--; m_player->m_player_x++;	break;
+					case direction::east:	m_player->m_player_x++; break;
+					case direction::southeast:	m_player->m_player_x++; m_player->m_player_y++;	break;
+					case direction::south:	m_player->m_player_y++; break;
+					case direction::southwest:	m_player->m_player_x--; m_player->m_player_y++;	break;
+					case direction::west:	m_player->m_player_x--; break;
+					case direction::northwest:	m_player->m_player_x--; m_player->m_player_y--;	break;
+					default: break;
 					}
 					m_map_data->set_owner(m_player->m_player_object_id, m_player->m_player_x, m_player->m_player_y, m_player->m_player_type, m_player->m_player_dir,
 						m_player->m_playerAppearance, // v1.4
@@ -7398,14 +7403,14 @@ void CGame::process_motion_commands(uint16_t action_type)
 			break;
 
 		case Type::Attack:
-			direction = CMisc::get_next_move_dir(m_player->m_player_x, m_player->m_player_y, m_player->m_Controller.get_destination_x(), m_player->m_Controller.get_destination_y());
+			move_dir = CMisc::get_next_move_dir(m_player->m_player_x, m_player->m_player_y, m_player->m_Controller.get_destination_x(), m_player->m_Controller.get_destination_y());
 			// Snoopy: Illusion movement
 			if (m_illusion_mvt == true)
 			{
-				direction += 4;
-				if (direction > 8) direction -= 8;
+				move_dir = static_cast<direction>(move_dir + 4);
+				if (move_dir > 8) move_dir = static_cast<direction>(move_dir - 8);
 			}
-			if (direction != 0)
+			if (move_dir != 0)
 			{
 				// Cancel logout countdown on attack
 				if ((m_logout_count > 0) && (m_force_disconn == false))
@@ -7419,9 +7424,9 @@ void CGame::process_motion_commands(uint16_t action_type)
 					if (check_item_by_type(ItemType::Arrow) == false)
 						action_type = 0;
 				}
-					m_player->m_player_dir = direction;
+					m_player->m_player_dir = move_dir;
 				m_last_attack_target_id = m_comm_object_id;
-				send_command(MsgId::CommandMotion, Type::Attack, direction, m_player->m_Controller.get_destination_x(), m_player->m_Controller.get_destination_y(), action_type, 0, m_comm_object_id);
+				send_command(MsgId::CommandMotion, Type::Attack, move_dir, m_player->m_Controller.get_destination_x(), m_player->m_Controller.get_destination_y(), action_type, 0, m_comm_object_id);
 				m_map_data->set_owner(m_player->m_player_object_id, m_player->m_player_x, m_player->m_player_y, m_player->m_player_type, m_player->m_player_dir,
 					m_player->m_playerAppearance,
 					m_player->m_playerStatus, m_player->m_player_name,
@@ -7454,13 +7459,13 @@ void CGame::process_motion_commands(uint16_t action_type)
 				m_player->m_Controller.set_command(Type::stop);
 			else
 			{
-				direction = m_player->m_Controller.get_next_move_dir(m_player->m_player_x, m_player->m_player_y, m_player->m_Controller.get_destination_x(), m_player->m_Controller.get_destination_y(), m_map_data.get(), true);
+				move_dir = m_player->m_Controller.get_next_move_dir(m_player->m_player_x, m_player->m_player_y, m_player->m_Controller.get_destination_x(), m_player->m_Controller.get_destination_y(), m_map_data.get(), true);
 				// Snoopy: Illusion mvt
 				if (m_illusion_mvt == true)
 				{
-					direction = m_player->m_Controller.get_next_move_dir(m_player->m_player_x, m_player->m_player_y, m_player->m_Controller.get_destination_x(), m_player->m_Controller.get_destination_y(), m_map_data.get(), true, true);
+					move_dir = m_player->m_Controller.get_next_move_dir(m_player->m_player_x, m_player->m_player_y, m_player->m_Controller.get_destination_x(), m_player->m_Controller.get_destination_y(), m_map_data.get(), true, true);
 				}
-				if (direction != 0)
+				if (move_dir != 0)
 				{
 					// Cancel logout countdown on attack-move
 					if ((m_logout_count > 0) && (m_force_disconn == false))
@@ -7469,18 +7474,19 @@ void CGame::process_motion_commands(uint16_t action_type)
 						add_event_list(DLGBOX_CLICK_SYSMENU2, 10);
 					}
 
-					m_player->m_player_dir = direction;
+					m_player->m_player_dir = move_dir;
 					m_last_attack_target_id = m_comm_object_id;
-					send_command(MsgId::CommandMotion, Type::AttackMove, direction, m_player->m_Controller.get_destination_x(), m_player->m_Controller.get_destination_y(), action_type, 0, m_comm_object_id);
-					switch (direction) {
-					case 1:	m_player->m_player_y--; break;
-					case 2:	m_player->m_player_y--; m_player->m_player_x++;	break;
-					case 3:	m_player->m_player_x++; break;
-					case 4:	m_player->m_player_x++; m_player->m_player_y++;	break;
-					case 5:	m_player->m_player_y++; break;
-					case 6:	m_player->m_player_x--; m_player->m_player_y++;	break;
-					case 7:	m_player->m_player_x--; break;
-					case 8:	m_player->m_player_x--; m_player->m_player_y--;	break;
+					send_command(MsgId::CommandMotion, Type::AttackMove, move_dir, m_player->m_Controller.get_destination_x(), m_player->m_Controller.get_destination_y(), action_type, 0, m_comm_object_id);
+					switch (move_dir) {
+					case direction::north:	m_player->m_player_y--; break;
+					case direction::northeast:	m_player->m_player_y--; m_player->m_player_x++;	break;
+					case direction::east:	m_player->m_player_x++; break;
+					case direction::southeast:	m_player->m_player_x++; m_player->m_player_y++;	break;
+					case direction::south:	m_player->m_player_y++; break;
+					case direction::southwest:	m_player->m_player_x--; m_player->m_player_y++;	break;
+					case direction::west:	m_player->m_player_x--; break;
+					case direction::northwest:	m_player->m_player_x--; m_player->m_player_y--;	break;
+					default: break;
 					}
 
 					m_map_data->set_owner(m_player->m_player_object_id, m_player->m_player_x, m_player->m_player_y, m_player->m_player_type, m_player->m_player_dir,
@@ -7721,7 +7727,7 @@ void CGame::init_data_response_handler(char* packet_data)
 	m_player->m_player_x = pivot_x + hb::shared::view::PlayerPivotOffsetX;
 	m_player->m_player_y = pivot_y + hb::shared::view::PlayerPivotOffsetY;
 
-	m_player->m_player_dir = 5;
+	m_player->m_player_dir = direction::south;
 
 	if (is_observer == false)
 	{
@@ -7776,7 +7782,7 @@ void CGame::motion_event_handler(char* packet_data)
 	short map_x = -1, map_y = -1, owner_type = 0, value1 = 0, value2 = 0, value3 = 0;
 	short npc_config_id = -1;
 	hb::shared::entity::PlayerStatus status;
-	char direction = 0;
+	direction move_dir = direction{};
 	std::string name;
 	int location = 0;
 	hb::shared::entity::PlayerAppearance appearance;
@@ -7804,7 +7810,7 @@ void CGame::motion_event_handler(char* packet_data)
 			map_x = pkt->x;
 			map_y = pkt->y;
 			owner_type = pkt->type;
-			direction = static_cast<char>(pkt->dir);
+			move_dir = static_cast<direction>(pkt->dir);
 			name.assign(pkt->name, strnlen(pkt->name, sizeof(pkt->name)));
 			appearance = pkt->appearance;
 			status = pkt->status;
@@ -7818,7 +7824,7 @@ void CGame::motion_event_handler(char* packet_data)
 			map_y = pkt->y;
 			npc_config_id = pkt->config_id;
 			owner_type = resolve_npc_type(npc_config_id);
-			direction = static_cast<char>(pkt->dir);
+			move_dir = static_cast<direction>(pkt->dir);
 			name.assign(pkt->name, strnlen(pkt->name, sizeof(pkt->name)));
 			appearance.SetFromNpcAppearance(pkt->appearance);
 			status.SetFromEntityStatus(pkt->status);
@@ -7833,7 +7839,7 @@ void CGame::motion_event_handler(char* packet_data)
 		{
 			const auto* pkt = hb::net::PacketCast<hb::net::PacketEventMotionDirOnly>(packet_data, sizeof(hb::net::PacketEventMotionDirOnly));
 			if (!pkt) return;
-			direction = static_cast<char>(pkt->dir);
+			move_dir = static_cast<direction>(pkt->dir);
 			map_x = -1;
 			map_y = -1;
 		}
@@ -7845,7 +7851,7 @@ void CGame::motion_event_handler(char* packet_data)
 		{
 			const auto* pkt = hb::net::PacketCast<hb::net::PacketEventMotionShort>(packet_data, sizeof(hb::net::PacketEventMotionShort));
 			if (!pkt) return;
-			direction = static_cast<char>(pkt->dir);
+			move_dir = static_cast<direction>(pkt->dir);
 			value1 = pkt->v1; // Damage or 0
 			value2 = pkt->v2;
 			map_x = -1;
@@ -7857,7 +7863,7 @@ void CGame::motion_event_handler(char* packet_data)
 		{
 			const auto* pkt = hb::net::PacketCast<hb::net::PacketEventMotionMove>(packet_data, sizeof(hb::net::PacketEventMotionMove));
 			if (!pkt) return;
-			direction = static_cast<char>(pkt->dir);
+			move_dir = static_cast<direction>(pkt->dir);
 			value1 = pkt->v1;
 			value2 = pkt->v2;
 			map_x = pkt->x;
@@ -7870,7 +7876,7 @@ void CGame::motion_event_handler(char* packet_data)
 		{
 			const auto* pkt = hb::net::PacketCast<hb::net::PacketEventMotionAttack>(packet_data, sizeof(hb::net::PacketEventMotionAttack));
 			if (!pkt) return;
-			direction = static_cast<char>(pkt->dir);
+			move_dir = static_cast<direction>(pkt->dir);
 			value1 = pkt->v1;
 			value2 = pkt->v2;
 			value3 = pkt->v3;
@@ -7881,7 +7887,7 @@ void CGame::motion_event_handler(char* packet_data)
 		{
 			const auto* pkt = hb::net::PacketCast<hb::net::PacketEventMotionDirOnly>(packet_data, sizeof(hb::net::PacketEventMotionDirOnly));
 			if (!pkt) return;
-			direction = static_cast<char>(pkt->dir);
+			move_dir = static_cast<direction>(pkt->dir);
 		}
 		break;
 		}
@@ -7910,9 +7916,9 @@ void CGame::motion_event_handler(char* packet_data)
 				m_player->m_is_combat_mode = false;
 			}
 		}
-		if (m_player->m_Controller.get_command() != Type::Run && m_player->m_Controller.get_command() != Type::Move) { m_map_data->set_owner(object_id, map_x, map_y, owner_type, direction, appearance, status, name, (char)event_type, value1, value2, value3, location, 0, npc_config_id); }
+		if (m_player->m_Controller.get_command() != Type::Run && m_player->m_Controller.get_command() != Type::Move) { m_map_data->set_owner(object_id, map_x, map_y, owner_type, move_dir, appearance, status, name, (char)event_type, value1, value2, value3, location, 0, npc_config_id); }
 	}
-	else { m_map_data->set_owner(object_id, map_x, map_y, owner_type, direction, appearance, status, name, (char)event_type, value1, value2, value3, location, 0, npc_config_id); }
+	else { m_map_data->set_owner(object_id, map_x, map_y, owner_type, move_dir, appearance, status, name, (char)event_type, value1, value2, value3, location, 0, npc_config_id); }
 
 	switch (event_type) {
 	case Type::Magic: // Casting

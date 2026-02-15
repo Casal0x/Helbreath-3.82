@@ -21,6 +21,7 @@ using namespace hb::shared::action;
 using namespace hb::server::net;
 using namespace hb::server::config;
 using namespace hb::shared::item;
+using namespace hb::shared::direction;
 namespace sock = hb::shared::net::socket;
 namespace dynamic_object = hb::shared::dynamic_object;
 namespace smap = hb::server::map;
@@ -388,7 +389,8 @@ void CombatManager::client_killed_handler(int client_h, int attacker_h, char att
 void CombatManager::effect_damage_spot(short attacker_h, char attacker_type, short target_h, char target_type, short v1, short v2, short v3, bool exp, int attr)
 {
 	int party_id, damage, side_condition, index, remain_life, temp, max_super_attack, rep_damage;
-	char attacker_side, damage_move_dir;
+	char attacker_side;
+	direction damage_move_dir;
 	uint32_t time, exp_gained;
 	double tmp1, tmp2, tmp3;
 	short atk_x, atk_y, tgt_x, tgt_y, dX, dY, item_index;
@@ -715,25 +717,25 @@ void CombatManager::effect_damage_spot(short attacker_h, char attacker_type, sho
 		case 4:
 			if (tgt_x == atk_x) {
 				if (tgt_y == atk_y) return;
-				else if (tgt_y > atk_y) damage_move_dir = 5;
-				else if (tgt_y < atk_y) damage_move_dir = 1;
+				else if (tgt_y > atk_y) damage_move_dir = direction::south;
+				else if (tgt_y < atk_y) damage_move_dir = direction::north;
 			}
 			else if (tgt_x > atk_x) {
-				if (tgt_y == atk_y)     damage_move_dir = 3;
-				else if (tgt_y > atk_y) damage_move_dir = 4;
-				else if (tgt_y < atk_y) damage_move_dir = 2;
+				if (tgt_y == atk_y)     damage_move_dir = direction::east;
+				else if (tgt_y > atk_y) damage_move_dir = direction::southeast;
+				else if (tgt_y < atk_y) damage_move_dir = direction::northeast;
 			}
 			else if (tgt_x < atk_x) {
-				if (tgt_y == atk_y)     damage_move_dir = 7;
-				else if (tgt_y > atk_y) damage_move_dir = 6;
-				else if (tgt_y < atk_y) damage_move_dir = 8;
+				if (tgt_y == atk_y)     damage_move_dir = direction::west;
+				else if (tgt_y > atk_y) damage_move_dir = direction::southwest;
+				else if (tgt_y < atk_y) damage_move_dir = direction::northwest;
 			}
 
 			dX = m_game->m_npc_list[target_h]->m_x + _tmp_cTmpDirX[damage_move_dir];
 			dY = m_game->m_npc_list[target_h]->m_y + _tmp_cTmpDirY[damage_move_dir];
 
 			if (m_game->m_map_list[m_game->m_npc_list[target_h]->m_map_index]->get_moveable(dX, dY, 0) == false) {
-				damage_move_dir = static_cast<char>(m_game->dice(1, 8));
+				damage_move_dir = static_cast<direction>(m_game->dice(1, 8));
 				dX = m_game->m_npc_list[target_h]->m_x + _tmp_cTmpDirX[damage_move_dir];
 				dY = m_game->m_npc_list[target_h]->m_y + _tmp_cTmpDirY[damage_move_dir];
 				if (m_game->m_map_list[m_game->m_npc_list[target_h]->m_map_index]->get_moveable(dX, dY, 0) == false) return;
@@ -751,7 +753,7 @@ void CombatManager::effect_damage_spot(short attacker_h, char attacker_type, sho
 			dY = m_game->m_npc_list[target_h]->m_y + _tmp_cTmpDirY[damage_move_dir];
 
 			if (m_game->m_map_list[m_game->m_npc_list[target_h]->m_map_index]->get_moveable(dX, dY, 0) == false) {
-				damage_move_dir = static_cast<char>(m_game->dice(1, 8));
+				damage_move_dir = static_cast<direction>(m_game->dice(1, 8));
 				dX = m_game->m_npc_list[target_h]->m_x + _tmp_cTmpDirX[damage_move_dir];
 				dY = m_game->m_npc_list[target_h]->m_y + _tmp_cTmpDirY[damage_move_dir];
 
@@ -904,7 +906,8 @@ void CombatManager::effect_damage_spot_damage_move(short attacker_h, char attack
 {
 	int damage, side_condition, index, remain_life, temp, max_super_attack;
 	uint32_t time, weapon_type;
-	char attacker_side, damage_move_dir;
+	char attacker_side;
+	direction damage_move_dir;
 	double tmp1, tmp2, tmp3;
 	int party_id, move_damage;
 	short tgt_x, tgt_y;
@@ -1176,18 +1179,18 @@ void CombatManager::effect_damage_spot_damage_move(short attacker_h, char attack
 
 					if (tgt_x == atk_x) {
 						if (tgt_y == atk_y)     goto EDSD_SKIPDAMAGEMOVE;
-						else if (tgt_y > atk_y) damage_move_dir = 5;
-						else if (tgt_y < atk_y) damage_move_dir = 1;
+						else if (tgt_y > atk_y) damage_move_dir = direction::south;
+						else if (tgt_y < atk_y) damage_move_dir = direction::north;
 					}
 					else if (tgt_x > atk_x) {
-						if (tgt_y == atk_y)     damage_move_dir = 3;
-						else if (tgt_y > atk_y) damage_move_dir = 4;
-						else if (tgt_y < atk_y) damage_move_dir = 2;
+						if (tgt_y == atk_y)     damage_move_dir = direction::east;
+						else if (tgt_y > atk_y) damage_move_dir = direction::southeast;
+						else if (tgt_y < atk_y) damage_move_dir = direction::northeast;
 					}
 					else if (tgt_x < atk_x) {
-						if (tgt_y == atk_y)     damage_move_dir = 7;
-						else if (tgt_y > atk_y) damage_move_dir = 6;
-						else if (tgt_y < atk_y) damage_move_dir = 8;
+						if (tgt_y == atk_y)     damage_move_dir = direction::west;
+						else if (tgt_y > atk_y) damage_move_dir = direction::southwest;
+						else if (tgt_y < atk_y) damage_move_dir = direction::northwest;
 					}
 
 					m_game->m_client_list[target_h]->m_last_damage = damage;
@@ -1478,7 +1481,7 @@ void CombatManager::effect_sp_up_spot(short attacker_h, char attacker_type, shor
 }
 
 /*********************************************************************************************************************
-**  int bool CombatManager::check_resisting_magic_success(char attacker_dir, short target_h, char target_type, int hit_ratio) **
+**  int bool CombatManager::check_resisting_magic_success(direction attacker_dir, short target_h, char target_type, int hit_ratio) **
 **  description			:: calculates if a player resists magic														**
 **  last updated		:: November 20, 2004; 8:42 PM; Hypnotoad													**
 **	return value		:: bool																						**
@@ -1486,11 +1489,12 @@ void CombatManager::effect_sp_up_spot(short attacker_h, char attacker_type, shor
 **							-	10000 or more it ratio will deduct 10000 hit ratio									**
 **							-	invincible tablet is 100% magic resistance											**
 **********************************************************************************************************************/
-bool CombatManager::check_resisting_magic_success(char attacker_dir, short target_h, char target_type, int hit_ratio)
+bool CombatManager::check_resisting_magic_success(direction attacker_dir, short target_h, char target_type, int hit_ratio)
 {
 	double tmp1, tmp2, tmp3;
 	int    target_magic_resist_ratio, dest_hit_ratio, result;
-	char   target_dir, protect;
+	direction target_dir;
+	char   protect;
 
 	switch (target_type) {
 	case hb::shared::owner_class::Player:
@@ -1543,7 +1547,7 @@ bool CombatManager::check_resisting_magic_success(char attacker_dir, short targe
 	return true;
 }
 
-bool CombatManager::check_resisting_ice_success(char attacker_dir, short target_h, char target_type, int hit_ratio)
+bool CombatManager::check_resisting_ice_success(direction attacker_dir, short target_h, char target_type, int hit_ratio)
 {
 	int    target_ice_resist_ratio, result;
 
@@ -2230,7 +2234,8 @@ bool CombatManager::calculate_endurance_decrement(short target_h, short attacker
 uint32_t CombatManager::calculate_attack_effect(short target_h, char target_type, short attacker_h, char attacker_type, int tdX, int tdY, int attack_mode, bool near_attack, bool is_dash, bool arrow_use)
 {
 	int    iAP_SM, iAP_L, attacker_hit_ratio, target_defense_ratio, dest_hit_ratio, result, iAP_Abs_Armor, iAP_Abs_Shield;
-	char   attacker_name[hb::shared::limits::NpcNameLen], attacker_dir, attacker_side, target_dir, protect, crop_skill, farming_skill;
+	char   attacker_name[hb::shared::limits::NpcNameLen], attacker_side, protect, crop_skill, farming_skill;
+	direction attacker_dir, target_dir;
 	short  weapon_index, attacker_weapon, dX, dY, sX, sY, atk_x, atk_y, tgt_x, tgt_y;
 	uint32_t  time;
 	uint16_t   weapon_type;
@@ -2242,7 +2247,7 @@ uint32_t CombatManager::calculate_attack_effect(short target_h, char target_type
 	int    attacker_hp, move_damage, rep_damage;
 	char   attacker_sa;
 	int    attacker_s_avalue, hit_point;
-	char   damage_move_dir;
+	direction damage_move_dir;
 	int    party_id, construction_point, war_contribution, tX, tY, dst1, dst2;
 	short item_index;
 	short skill_used;
@@ -3178,18 +3183,18 @@ uint32_t CombatManager::calculate_attack_effect(short target_h, char target_type
 						if (iAP_SM >= move_damage) {
 							if (tgt_x == atk_x) {
 								if (tgt_y == atk_y)     goto CAE_SKIPDAMAGEMOVE;
-								else if (tgt_y > atk_y) damage_move_dir = 5;
-								else if (tgt_y < atk_y) damage_move_dir = 1;
+								else if (tgt_y > atk_y) damage_move_dir = direction::south;
+								else if (tgt_y < atk_y) damage_move_dir = direction::north;
 							}
 							else if (tgt_x > atk_x) {
-								if (tgt_y == atk_y)     damage_move_dir = 3;
-								else if (tgt_y > atk_y) damage_move_dir = 4;
-								else if (tgt_y < atk_y) damage_move_dir = 2;
+								if (tgt_y == atk_y)     damage_move_dir = direction::east;
+								else if (tgt_y > atk_y) damage_move_dir = direction::southeast;
+								else if (tgt_y < atk_y) damage_move_dir = direction::northeast;
 							}
 							else if (tgt_x < atk_x) {
-								if (tgt_y == atk_y)     damage_move_dir = 7;
-								else if (tgt_y > atk_y) damage_move_dir = 6;
-								else if (tgt_y < atk_y) damage_move_dir = 8;
+								if (tgt_y == atk_y)     damage_move_dir = direction::west;
+								else if (tgt_y > atk_y) damage_move_dir = direction::southwest;
+								else if (tgt_y < atk_y) damage_move_dir = direction::northwest;
 							}
 							m_game->m_client_list[target_h]->m_last_damage = iAP_SM;
 
@@ -3396,25 +3401,25 @@ uint32_t CombatManager::calculate_attack_effect(short target_h, char target_type
 				if ((weapon_type < 40) && (m_game->m_npc_list[target_h]->m_action_limit == 4)) {
 					if (tgt_x == atk_x) {
 						if (tgt_y == atk_y)     goto CAE_SKIPDAMAGEMOVE2;
-						else if (tgt_y > atk_y) damage_move_dir = 5;
-						else if (tgt_y < atk_y) damage_move_dir = 1;
+						else if (tgt_y > atk_y) damage_move_dir = direction::south;
+						else if (tgt_y < atk_y) damage_move_dir = direction::north;
 					}
 					else if (tgt_x > atk_x) {
-						if (tgt_y == atk_y)     damage_move_dir = 3;
-						else if (tgt_y > atk_y) damage_move_dir = 4;
-						else if (tgt_y < atk_y) damage_move_dir = 2;
+						if (tgt_y == atk_y)     damage_move_dir = direction::east;
+						else if (tgt_y > atk_y) damage_move_dir = direction::southeast;
+						else if (tgt_y < atk_y) damage_move_dir = direction::northeast;
 					}
 					else if (tgt_x < atk_x) {
-						if (tgt_y == atk_y)     damage_move_dir = 7;
-						else if (tgt_y > atk_y) damage_move_dir = 6;
-						else if (tgt_y < atk_y) damage_move_dir = 8;
+						if (tgt_y == atk_y)     damage_move_dir = direction::west;
+						else if (tgt_y > atk_y) damage_move_dir = direction::southwest;
+						else if (tgt_y < atk_y) damage_move_dir = direction::northwest;
 					}
 
 					dX = m_game->m_npc_list[target_h]->m_x + _tmp_cTmpDirX[damage_move_dir];
 					dY = m_game->m_npc_list[target_h]->m_y + _tmp_cTmpDirY[damage_move_dir];
 
 					if (m_game->m_map_list[m_game->m_npc_list[target_h]->m_map_index]->get_moveable(dX, dY, 0) == false) {
-						damage_move_dir = static_cast<char>(m_game->dice(1, 8));
+						damage_move_dir = static_cast<direction>(m_game->dice(1, 8));
 						dX = m_game->m_npc_list[target_h]->m_x + _tmp_cTmpDirX[damage_move_dir];
 						dY = m_game->m_npc_list[target_h]->m_y + _tmp_cTmpDirY[damage_move_dir];
 
@@ -3433,7 +3438,7 @@ uint32_t CombatManager::calculate_attack_effect(short target_h, char target_type
 					dY = m_game->m_npc_list[target_h]->m_y + _tmp_cTmpDirY[damage_move_dir];
 
 					if (m_game->m_map_list[m_game->m_npc_list[target_h]->m_map_index]->get_moveable(dX, dY, 0) == false) {
-						damage_move_dir = static_cast<char>(m_game->dice(1, 8));
+						damage_move_dir = static_cast<direction>(m_game->dice(1, 8));
 						dX = m_game->m_npc_list[target_h]->m_x + _tmp_cTmpDirX[damage_move_dir];
 						dY = m_game->m_npc_list[target_h]->m_y + _tmp_cTmpDirY[damage_move_dir];
 						if (m_game->m_map_list[m_game->m_npc_list[target_h]->m_map_index]->get_moveable(dX, dY, 0) == false) goto CAE_SKIPDAMAGEMOVE2;

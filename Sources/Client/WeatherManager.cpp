@@ -294,7 +294,7 @@ void weather_manager::draw_thunder_effect(int sX, int sY, int dX, int dY, int rX
 	if (!m_renderer || !m_effect_sprites) return;
 
 	int j, err, prev_x1, prev_y1, x1, y1, tX, tY;
-	char dir;
+	direction dir;
 	prev_x1 = x1 = tX = sX;
 	prev_y1 = y1 = tY = sY;
 

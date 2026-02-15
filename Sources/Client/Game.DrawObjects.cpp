@@ -17,6 +17,7 @@
 namespace dynamic_object = hb::shared::dynamic_object;
 
 using namespace hb::shared::action;
+using namespace hb::shared::direction;
 
 using namespace hb::shared::item;
 using namespace hb::client::config;
@@ -378,7 +379,7 @@ void CGame::draw_objects(short pivot_x, short pivot_y, short div_x, short div_y,
 			{
 				m_entity_state.m_object_id = m_entity_state.m_owner_type = 0; m_entity_state.m_status.clear();
 				m_entity_state.m_appearance.clear();
-				m_entity_state.m_dir = m_entity_state.m_frame = 0;
+				m_entity_state.m_dir = direction{}; m_entity_state.m_frame = 0;
 				m_entity_state.m_effect_type = m_entity_state.m_effect_frame = m_entity_state.m_chat_index = 0;
 				m_entity_state.m_name.fill('\0');
 				if ((indexX < mapMinX) || (indexX > mapMaxX) ||
@@ -471,7 +472,7 @@ void CGame::draw_objects(short pivot_x, short pivot_y, short div_x, short div_y,
 
 				m_entity_state.m_object_id = m_entity_state.m_owner_type = 0; m_entity_state.m_status.clear();
 				m_entity_state.m_appearance.clear();
-				m_entity_state.m_frame = m_entity_state.m_dir = 0;
+				m_entity_state.m_frame = 0; m_entity_state.m_dir = direction{};
 				m_entity_state.m_effect_type = m_entity_state.m_effect_frame = m_entity_state.m_chat_index = 0;
 				m_entity_state.m_name.fill('\0');
 
@@ -781,7 +782,8 @@ void CGame::draw_objects(short pivot_x, short pivot_y, short div_x, short div_y,
 
 				case dynamic_object::Fish:			// 2
 				{
-					char tmp_d_odir, tmp_d_oframe;
+					direction tmp_d_odir;
+					char tmp_d_oframe;
 					tmp_d_odir = CMisc::calc_direction(dynamic_object_data1, dynamic_object_data2, dynamic_object_data1 + dynamic_object_data3, dynamic_object_data2 + dynamic_object_data4);
 					tmp_d_oframe = ((tmp_d_odir - 1) * 4) + (rand() % 4);
 					m_sprite[ItemDynamicPivotPoint + 0]->draw(ix + dynamic_object_data1, iy + dynamic_object_data2, tmp_d_oframe, hb::shared::sprite::DrawParams::alpha_blend(0.25f));
@@ -833,7 +835,8 @@ void CGame::draw_objects(short pivot_x, short pivot_y, short div_x, short div_y,
 		short focusSX, focusSY;
 		uint16_t focusObjID;
 		short focusOwnerType;
-		char focusAction, focusDir, focusFrame;
+		char focusAction, focusFrame;
+		direction focusDir;
 		hb::shared::entity::PlayerAppearance focusAppearance;
 		hb::shared::entity::PlayerStatus focusStatus;
 		short focusDataX, focusDataY;

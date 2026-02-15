@@ -11,6 +11,9 @@
 #include "SpriteTypes.h"
 #include "Appearance.h"
 #include "PlayerStatusData.h"
+#include "DirectionHelpers.h"
+
+using hb::shared::direction::direction;
 
 //=============================================================================
 // Cursor Types (replacing magic frame numbers)
@@ -55,7 +58,7 @@ struct FocusedObject {
     FocusedObjectType m_type = FocusedObjectType::None;
     short m_owner_type = 0;
     char m_action = 0;
-    char m_direction = 0;
+    direction m_direction = direction{};
     char m_frame = 0;
 
     // Display info
@@ -78,7 +81,8 @@ struct TargetObjectInfo {
     short m_screen_x, m_screen_y;
     short m_data_x, m_data_y;  // Map data array indices
     short m_owner_type;
-    char m_action, m_direction, m_frame;
+    char m_action, m_frame;
+    direction m_direction;
     const char* m_name;  // Points to existing string, no copy
     hb::shared::entity::PlayerAppearance m_appearance;
     hb::shared::entity::PlayerStatus m_status;
@@ -161,7 +165,7 @@ namespace CursorTarget {
     bool get_focus_highlight_data(
         short& outScreenX, short& outScreenY,
         uint16_t& outObjectID,
-        short& outOwnerType, char& outAction, char& outDir, char& outFrame,
+        short& outOwnerType, char& outAction, direction& outDir, char& outFrame,
         hb::shared::entity::PlayerAppearance& outAppearance, hb::shared::entity::PlayerStatus& outStatus,
         short& outDataX, short& outDataY
     );

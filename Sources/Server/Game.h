@@ -390,7 +390,7 @@ public:
 	int get_npc_config_id_by_name(const char * npc_name) const;
 	void send_notify_msg(int from_h, int to_h, uint16_t msg_type, uint32_t v1, uint32_t v2, uint32_t v3, const char * string, uint32_t v4 = 0, uint32_t v5 = 0, uint32_t v6 = 0, uint32_t v7 = 0, uint32_t v8 = 0, uint32_t v9 = 0, const char * string2 = 0);
 	void broadcast_server_message(const char* message);
-	int  client_motion_stop_handler(int client_h, short sX, short sY, char dir);
+	int  client_motion_stop_handler(int client_h, short sX, short sY, direction dir);
 
 	
 	void client_common_handler(int client_h, char * data);
@@ -399,8 +399,8 @@ public:
 	bool put_msg_queue(char cFrom, char * data, size_t msg_size, int index, char key);
 	//int  calculate_attack_effect(short target_h, char target_type, short attacker_h, char attacker_type, int tdX, int tdY, int attack_mode, bool near_attack = false);
 	bool get_empty_position(short * pX, short * pY, char map_index);
-	char get_next_move_dir(short sX, short sY, short dstX, short dstY, char map_index, char turn, int * error_acc);
-	int  client_motion_attack_handler(int client_h, short sX, short sY, short dX, short dY, short type, char dir, uint16_t target_object_id, uint32_t client_time, bool response = true, bool is_dash = false);
+	direction get_next_move_dir(short sX, short sY, short dstX, short dstY, char map_index, char turn, int * error_acc);
+	int  client_motion_attack_handler(int client_h, short sX, short sY, short dX, short dY, short type, direction dir, uint16_t target_object_id, uint32_t client_time, bool response = true, bool is_dash = false);
 	void chat_msg_handler(int client_h, char * data, size_t msg_size);
 	bool is_blocked_by(int sender_h, int receiver_h) const;
 	void npc_process();
@@ -413,7 +413,7 @@ public:
 	void response_player_data_handler(char * data, uint32_t size);
 	void check_client_response_time();
 	void on_timer(char type);
-	int compose_move_map_data(short sX, short sY, int client_h, char dir, char * data);
+	int compose_move_map_data(short sX, short sY, int client_h, direction dir, char * data);
 	void send_event_to_near_client_type_b(uint32_t msg_id, uint16_t msg_type, char map_index, short sX, short sY, short v1, short v2, short v3, short v4 = 0);
 	void send_event_to_near_client_type_b(uint32_t msg_id, uint16_t msg_type, char map_index, short sX, short sY, short v1, short v2, short v3, uint32_t v4 = 0);
 	void send_event_to_near_client_type_a(short owner_h, char owner_type, uint32_t msg_id, uint16_t msg_type, short v1, short v2, short v3);
@@ -423,7 +423,7 @@ public:
 	void fill_npc_map_object(hb::net::PacketMapDataObjectNpc& obj, short owner_h, int viewer_h);
 	void request_init_data_handler(int client_h, char * data, char key, size_t msg_size = 0);
 	void request_init_player_handler(int client_h, char * data, char key);
-	int client_motion_move_handler(int client_h, short sX, short sY, char dir, char move_type);
+	int client_motion_move_handler(int client_h, short sX, short sY, direction dir, char move_type);
 	void client_motion_handler(int client_h, char * data);
 	void on_client_read(int client_h);
 	bool init();

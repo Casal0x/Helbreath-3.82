@@ -122,7 +122,7 @@ void Screen_SelectCharacter::on_update()
         }
         m_game->m_menu_frame = 0;
     }
-    if (m_game->m_menu_dir > 8) m_game->m_menu_dir = 1;
+    if (m_game->m_menu_dir > direction::northwest) m_game->m_menu_dir = direction::north;
 
     if (hb::shared::input::is_mouse_button_pressed(MouseButton::Left)) {
 

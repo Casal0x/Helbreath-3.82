@@ -22,6 +22,7 @@ using namespace hb::shared::action;
 using namespace hb::server::net;
 using namespace hb::server::config;
 using namespace hb::shared::item;
+using namespace hb::shared::direction;
 namespace sock = hb::shared::net::socket;
 namespace dynamic_object = hb::shared::dynamic_object;
 namespace smap = hb::server::map;
@@ -124,7 +125,7 @@ bool MagicManager::send_client_magic_configs(int client_h)
 	return true;
 }
 
-int MagicManager::client_motion_magic_handler(int client_h, short sX, short sY, char dir)
+int MagicManager::client_motion_magic_handler(int client_h, short sX, short sY, direction dir)
 {
 	int     ret;
 
@@ -181,7 +182,8 @@ int MagicManager::client_motion_magic_handler(int client_h, short sX, short sY, 
 void MagicManager::player_magic_handler(int client_h, int dX, int dY, short type, bool item_effect, int v1, uint16_t targetObjectID)
 {
 	short sX, sY, owner_h, magic_circle, rx, ry, level_magic;
-	char dir, owner_type, name[hb::shared::limits::CharNameLen], item_name[hb::shared::limits::ItemNameLen], npc_waypoint[11], cName_Master[hb::shared::limits::CharNameLen], npc_name[hb::shared::limits::NpcNameLen], remain_item_color, scan_message[256];
+	direction dir;
+	char owner_type, name[hb::shared::limits::CharNameLen], item_name[hb::shared::limits::ItemNameLen], npc_waypoint[11], cName_Master[hb::shared::limits::CharNameLen], npc_name[hb::shared::limits::NpcNameLen], remain_item_color, scan_message[256];
 	double dv1, dv2, dv3, dv4;
 	int err, ret, result, dice_res, naming_value, followers_num, erase_req, whether_bonus;
 	int tX, tY, mana_cost, magic_attr;

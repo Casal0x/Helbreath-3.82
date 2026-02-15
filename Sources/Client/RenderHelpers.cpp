@@ -3,6 +3,7 @@
 #include "CommonTypes.h"
 #include "ConfigManager.h"
 #include <algorithm>
+using namespace hb::shared::direction;
 
 // -----------------------------------------------------------------------
 // Drawing order arrays (moved from Game.cpp file scope)
@@ -314,11 +315,11 @@ void apply_direction_override(CEntityRenderState& state)
 {
 	switch (state.m_owner_type) {
 	case hb::shared::owner::AirElemental:
-		state.m_dir = 1;
+		state.m_dir = direction::north;
 		break;
 	case hb::shared::owner::Gate:
-		if (state.m_dir <= 3) state.m_dir = 3;
-		else state.m_dir = 5;
+		if (state.m_dir <= direction::east) state.m_dir = direction::east;
+		else state.m_dir = direction::south;
 		break;
 	}
 }

@@ -1,6 +1,8 @@
 #pragma once
 
 #include <cstdint>
+#include "DirectionHelpers.h"
+using hb::shared::direction::direction;
 
 class CGame;
 
@@ -18,7 +20,7 @@ public:
 
 	// Magic casting
 	void player_magic_handler(int client_h, int dX, int dY, short type, bool item_effect = false, int v1 = 0, uint16_t targetObjectID = 0);
-	int client_motion_magic_handler(int client_h, short sX, short sY, char dir);
+	int client_motion_magic_handler(int client_h, short sX, short sY, direction dir);
 
 	// Magic study
 	void request_study_magic_handler(int client_h, const char* name, bool is_purchase = true);

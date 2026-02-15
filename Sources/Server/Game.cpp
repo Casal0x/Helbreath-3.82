@@ -51,6 +51,7 @@ namespace sock = hb::shared::net::socket;
 namespace dynamic_object = hb::shared::dynamic_object;
 
 using namespace hb::shared::action;
+using namespace hb::shared::direction;
 
 using namespace hb::shared::item;
 
@@ -1159,7 +1160,7 @@ void CGame::client_motion_handler(int client_h, char* data)
 	uint32_t client_time;
 	uint16_t command, target_object_id = 0;
 	short sX, sY, dX, dY, type;
-	char dir;
+	direction dir;
 	int   ret, temp;
 
 	if (m_client_list[client_h] == 0) return;
@@ -1172,7 +1173,7 @@ void CGame::client_motion_handler(int client_h, char* data)
 	command = base->header.msg_type;
 	sX = base->x;
 	sY = base->y;
-	dir = static_cast<char>(base->dir);
+	dir = static_cast<direction>(base->dir);
 	dX = base->dx;
 	dY = base->dy;
 	type = base->type;
@@ -1285,7 +1286,7 @@ void CGame::client_motion_handler(int client_h, char* data)
 	}
 }
 
-int CGame::client_motion_move_handler(int client_h, short sX, short sY, char dir, char move_type)
+int CGame::client_motion_move_handler(int client_h, short sX, short sY, direction dir, char move_type)
 {
 	char moveMapData[3000];
 	class CTile* tile;
@@ -2439,7 +2440,7 @@ void CGame::fill_player_map_object(hb::net::PacketMapDataObjectPlayer& obj, shor
 	auto* client = m_client_list[owner_h];
 	obj.base.object_id = static_cast<uint16_t>(owner_h);
 	obj.type = client->m_type;
-	obj.dir = client->m_dir;
+	obj.dir = static_cast<uint8_t>(client->m_dir);
 	obj.appearance = client->m_appearance;
 	obj.status = client->m_status;
 	obj.status.pk = (client->m_player_kill_count != 0) ? 1 : 0;
@@ -2455,7 +2456,7 @@ void CGame::fill_npc_map_object(hb::net::PacketMapDataObjectNpc& obj, short owne
 	auto* npc = m_npc_list[owner_h];
 	obj.base.object_id = static_cast<uint16_t>(owner_h + hb::shared::object_id::NpcMin);
 	obj.config_id = npc->m_npc_config_id;
-	obj.dir = npc->m_dir;
+	obj.dir = static_cast<uint8_t>(npc->m_dir);
 	obj.appearance = npc->m_appearance;
 	obj.status = npc->m_status;
 	obj.status.relationship = m_entity_manager->get_npc_relationship(owner_h, viewer_h);
@@ -3253,7 +3254,7 @@ void CGame::send_event_to_near_client_type_a(short owner_h, char owner_type, uin
 	} // else - NPC
 }
 
-int CGame::compose_move_map_data(short sX, short sY, int client_h, char dir, char* data)
+int CGame::compose_move_map_data(short sX, short sY, int client_h, direction dir, char* data)
 {
 	int ix, iy, size, tile_exists, index;
 	class CTile* tile;
@@ -4811,7 +4812,7 @@ void CGame::chat_msg_handler_gsm(int msg_type, int v1, char* name, char* data, s
 //						   - fixed attack unmoving object
 // Incomplete: 
 //			- Direction Bow damage disabled
-int CGame::client_motion_attack_handler(int client_h, short sX, short sY, short dX, short dY, short type, char dir, uint16_t target_object_id, uint32_t client_time, bool response, bool is_dash)
+int CGame::client_motion_attack_handler(int client_h, short sX, short sY, short dX, short dY, short type, direction dir, uint16_t target_object_id, uint32_t client_time, bool response, bool is_dash)
 {
 	uint32_t time, exp;
 	int     ret, tdX = 0, tdY = 0;
@@ -5066,13 +5067,13 @@ int CGame::client_motion_attack_handler(int client_h, short sX, short sY, short 
 	return 1;
 }
 
-char CGame::get_next_move_dir(short sX, short sY, short dstX, short dstY, char map_index, char turn, int* error_acc)
+direction CGame::get_next_move_dir(short sX, short sY, short dstX, short dstY, char map_index, char turn, int* error_acc)
 {
-	char  dir, tmp_dir;
+	direction dir, tmp_dir;
 	int   aX, aY, dX, dY;
 	int   res_x, res_y;
 
-	if ((sX == dstX) && (sY == dstY)) return 0;
+	if ((sX == dstX) && (sY == dstY)) return direction{};
 
 	dX = sX;
 	dY = sY;
@@ -5087,8 +5088,8 @@ char CGame::get_next_move_dir(short sX, short sY, short dstX, short dstY, char m
 
 	if (turn == 0)
 		for(int i = dir; i <= dir + 7; i++) {
-			tmp_dir = i;
-			if (tmp_dir > 8) tmp_dir -= 8;
+			tmp_dir = static_cast<direction>(i);
+			if (tmp_dir > 8) tmp_dir = static_cast<direction>(tmp_dir - 8);
 			aX = _tmp_cTmpDirX[tmp_dir];
 			aY = _tmp_cTmpDirY[tmp_dir];
 			if (m_map_list[map_index]->get_moveable(dX + aX, dY + aY)) return tmp_dir;
@@ -5096,14 +5097,14 @@ char CGame::get_next_move_dir(short sX, short sY, short dstX, short dstY, char m
 
 	if (turn == 1)
 		for(int i = dir; i >= dir - 7; i--) {
-			tmp_dir = i;
-			if (tmp_dir < 1) tmp_dir += 8;
+			tmp_dir = static_cast<direction>(i);
+			if (tmp_dir < 1) tmp_dir = static_cast<direction>(tmp_dir + 8);
 			aX = _tmp_cTmpDirX[tmp_dir];
 			aY = _tmp_cTmpDirY[tmp_dir];
 			if (m_map_list[map_index]->get_moveable(dX + aX, dY + aY)) return tmp_dir;
 		}
 
-	return 0;
+	return direction{};
 }
 
 char _tmp_cEmptyPosX[] = { 0, 1, 1, 0, -1, -1, -1, 0 ,1, 2, 2, 2, 2, 1, 0, -1, -2, -2, -2, -2, -2, -1, 0, 1, 2 };
@@ -5380,7 +5381,7 @@ void CGame::client_common_handler(int client_h, char* data)
 	uint16_t command;
 	short sX, sY;
 	int v1, v2, v3, v4;
-	char dir;
+	direction dir;
 	const char* string;
 
 	if (m_client_list[client_h] == 0) return;
@@ -5393,7 +5394,7 @@ void CGame::client_common_handler(int client_h, char* data)
 	command = req->base.header.msg_type;
 	sX = req->base.x;
 	sY = req->base.y;
-	dir = static_cast<char>(req->base.dir);
+	dir = static_cast<direction>(req->base.dir);
 	v1 = req->v1;
 	v2 = req->v2;
 	v3 = req->v3;
@@ -5791,7 +5792,7 @@ void CGame::send_event_to_near_client_type_b(uint32_t msg_id, uint16_t msg_type,
 //  description			:: checks if player is stopped
 //  last updated		:: October 29, 2004; 6:46 PM; Hypnotoad
 //	return value		:: int
-int CGame::client_motion_stop_handler(int client_h, short sX, short sY, char dir)
+int CGame::client_motion_stop_handler(int client_h, short sX, short sY, direction dir)
 {
 	int     ret;
 	short   owner_h;
@@ -7774,7 +7775,8 @@ void CGame::toggle_combat_mode_handler(int client_h)
 void CGame::request_teleport_handler(int client_h, const char* data, const char* map_name, int dX, int dY)
 {
 	char temp_map_name[21];
-	char dest_map_name[11], dir, map_index, quest_remain;
+	char dest_map_name[11], map_index, quest_remain;
+	direction dir;
 	short sX, sY, summon_points;
 	int ret, size, dest_x, dest_y, ex_h, map_side;
 	bool    ret_ok, is_locked_map_notify;
@@ -10065,7 +10067,8 @@ void CGame::request_check_account_password_handler(char* data, size_t msg_size)
 
 int CGame::request_panning_map_data_request(int client_h, char* data)
 {
-	char dir, mapData[3000];
+	direction dir;
+	char mapData[3000];
 	short dX, dY;
 	int   ret, size;
 
@@ -10079,7 +10082,7 @@ int CGame::request_panning_map_data_request(int client_h, char* data)
 
 	const auto* req = hb::net::PacketCast<hb::net::PacketRequestPanning>(data, sizeof(hb::net::PacketRequestPanning));
 	if (!req) return 0;
-	dir = static_cast<char>(req->dir);
+	dir = static_cast<direction>(req->dir);
 	if ((dir <= 0) || (dir > 8)) return 0;
 
 	hb::shared::direction::ApplyOffset(dir, dX, dY);

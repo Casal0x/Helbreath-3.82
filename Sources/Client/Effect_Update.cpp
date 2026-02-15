@@ -17,7 +17,7 @@ void effect_manager::update_effects_impl()
 	uint32_t time;
 
 	short abs_x, abs_y, dist;
-	char  dir;
+	direction dir;
 	long lPan;
 	time = m_game->m_cur_time;
 	time += m_game->m_map_data->m_frame_adjust_time;
@@ -204,31 +204,31 @@ void effect_manager::update_effects_impl()
 				case EffectType::ICE_STORM: // Ice-Storm
 					dir = CMisc::get_next_move_dir(m_effect_list[i]->m_move_x, m_effect_list[i]->m_move_y, m_effect_list[i]->m_move_x3, m_effect_list[i]->m_move_y3);
 					switch (dir) {
-					case 1: // North
+					case direction::north:
 						m_effect_list[i]->m_render_y -= 2;
 						break;
-					case 2: // NorthEast
+					case direction::northeast:
 						m_effect_list[i]->m_render_y -= 2;
 						m_effect_list[i]->m_render_x += 2;
 						break;
-					case 3: // East
+					case direction::east:
 						m_effect_list[i]->m_render_x += 2;
 						break;
-					case 4: // SouthEast
+					case direction::southeast:
 						m_effect_list[i]->m_render_x += 2;
 						m_effect_list[i]->m_render_y += 2;
 						break;
-					case 5: // South
+					case direction::south:
 						m_effect_list[i]->m_render_y += 2;
 						break;
-					case 6: // SouthWest
+					case direction::southwest:
 						m_effect_list[i]->m_render_x -= 2;
 						m_effect_list[i]->m_render_y += 2;
 						break;
-					case 7: // West
+					case direction::west:
 						m_effect_list[i]->m_render_x -= 2;
 						break;
-					case 8: // NorthWest
+					case direction::northwest:
 						m_effect_list[i]->m_render_x -= 2;
 						m_effect_list[i]->m_render_y -= 2;
 						break;

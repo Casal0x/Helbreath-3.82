@@ -8,6 +8,9 @@
 #include "Appearance.h"
 #include "PlayerStatusData.h"
 #include "ActionID.h"
+#include "DirectionHelpers.h"
+
+using hb::shared::direction::direction;
 
 namespace hb::client::config
 {
@@ -80,7 +83,7 @@ public:
 
     // POSITION & MOVEMENT
     short m_player_x, m_player_y;
-    int8_t m_player_dir;
+    direction m_player_dir;
     short m_damage_move, m_damage_move_amount;
 
     // RESOURCES

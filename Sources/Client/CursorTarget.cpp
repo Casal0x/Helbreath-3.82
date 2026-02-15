@@ -7,6 +7,8 @@
 #include <cstring>
 #include <chrono>
 
+using namespace hb::shared::direction;
+
 // Internal state (static, not exposed)
 namespace {
     // Mouse position (cached from hb::shared::input:: at begin_frame)
@@ -249,7 +251,7 @@ const hb::shared::entity::PlayerStatus& CursorTarget::GetFocusStatus()
 bool CursorTarget::get_focus_highlight_data(
     short& outScreenX, short& outScreenY,
     uint16_t& outObjectID,
-    short& outOwnerType, char& outAction, char& outDir, char& outFrame,
+    short& outOwnerType, char& outAction, direction& outDir, char& outFrame,
     hb::shared::entity::PlayerAppearance& outAppearance, hb::shared::entity::PlayerStatus& outStatus,
     short& outDataX, short& outDataY)
 {

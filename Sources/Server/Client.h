@@ -21,6 +21,8 @@
 #include "Appearance.h"
 #include "PlayerStatusData.h"
 #include "StringCompat.h"
+#include "DirectionHelpers.h"
+using hb::shared::direction::direction;
 using namespace std;
 
 namespace hb::server::config { constexpr int ClientSocketBlockLimit = 2000; } // Queue size per client
@@ -79,7 +81,7 @@ public:
 	int   m_guild_rank;
 	int   m_guild_guid;
 	
-	char  m_dir;
+	direction m_dir;
 	short m_type;
 	short m_original_type;
 	hb::shared::entity::PlayerAppearance m_appearance;

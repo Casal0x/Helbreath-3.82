@@ -10,6 +10,7 @@
 
 
 using namespace hb::shared::action;
+using namespace hb::shared::direction;
 
 namespace NetworkMessageHandlers {
 	void HandleKilled(CGame* game, char* data)
@@ -198,7 +199,7 @@ namespace NetworkMessageHandlers {
 			game->m_is_observer_mode = true;
 			game->m_observer_cam_time = GameClock::get_time_ms();
 			std::string name = game->m_player->m_player_name;
-			game->m_map_data->set_owner(game->m_player->m_player_object_id, -1, -1, 0, 0, hb::shared::entity::PlayerAppearance{}, hb::shared::entity::PlayerStatus{}, name, 0, 0, 0, 0);
+			game->m_map_data->set_owner(game->m_player->m_player_object_id, -1, -1, 0, direction{}, hb::shared::entity::PlayerAppearance{}, hb::shared::entity::PlayerStatus{}, name, 0, 0, 0, 0);
 		}
 		else
 		{

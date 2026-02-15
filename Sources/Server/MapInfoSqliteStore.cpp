@@ -505,7 +505,7 @@ bool LoadMapTeleportLocations(sqlite3* db, const char* map_name, CMap* map)
 		CopyColumnText(stmt, 3, tele->m_dest_map_name, sizeof(tele->m_dest_map_name));
 		tele->m_dest_x = static_cast<short>(sqlite3_column_int(stmt, 4));
 		tele->m_dest_y = static_cast<short>(sqlite3_column_int(stmt, 5));
-		tele->m_dir = static_cast<char>(sqlite3_column_int(stmt, 6));
+		tele->m_dir = static_cast<direction>(sqlite3_column_int(stmt, 6));
 	}
 
 	sqlite3_finalize(stmt);
@@ -968,7 +968,7 @@ bool LoadMapHeldenianGateDoors(sqlite3* db, const char* map_name, CMap* map)
 		int idx = sqlite3_column_int(stmt, 0);
 		if (idx < 0 || idx >= hb::server::map::MaxHeldenianDoor) continue;
 
-		map->m_heldenian_gate_door[idx].dir = static_cast<char>(sqlite3_column_int(stmt, 1));
+		map->m_heldenian_gate_door[idx].dir = static_cast<direction>(sqlite3_column_int(stmt, 1));
 		map->m_heldenian_gate_door[idx].x = static_cast<short>(sqlite3_column_int(stmt, 2));
 		map->m_heldenian_gate_door[idx].y = static_cast<short>(sqlite3_column_int(stmt, 3));
 	}

@@ -2,6 +2,8 @@
 
 #include <cstdint>
 #include "EntityRelationship.h"
+#include "DirectionHelpers.h"
+using hb::shared::direction::direction;
 
 class CGame;
 
@@ -25,8 +27,8 @@ public:
 	void effect_sp_down_spot(short attacker_h, char attacker_type, short target_h, char target_type, short v1, short v2, short v3);
 
 	// Resistance checks
-	bool check_resisting_magic_success(char attacker_dir, short target_h, char target_type, int hit_ratio);
-	bool check_resisting_ice_success(char attacker_dir, short target_h, char target_type, int hit_ratio);
+	bool check_resisting_magic_success(direction attacker_dir, short target_h, char target_type, int hit_ratio);
+	bool check_resisting_ice_success(direction attacker_dir, short target_h, char target_type, int hit_ratio);
 	bool check_resisting_poison_success(short owner_h, char owner_type);
 
 	// Kill handler
