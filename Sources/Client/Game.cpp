@@ -2262,8 +2262,10 @@ void CGame::init_game_settings()
 	for (int i = 0; i < 61; i++)
 		m_dialog_box_manager.set_enabled(i, false);
 
-	//Snoopy: 58 because 2 last ones alreaddy defined
-	for (int i = 0; i < 58; i++)
+	// Clear all z-order slots then place HudPanel in the two reserved slots.
+	// Must clear 0-60 (not just 0-57) to prevent stale HudPanel entries from
+	// accumulating in slot 58 across map changes.
+	for (int i = 0; i < 61; i++)
 		m_dialog_box_manager.set_order_at(i, 0);
 	m_dialog_box_manager.set_order_at(60, DialogBoxId::HudPanel);
 	m_dialog_box_manager.set_order_at(59, DialogBoxId::HudPanel);
@@ -3749,11 +3751,16 @@ void CGame::draw_character_body(short sX, short sY, short type)
 
 int CGame::get_top_dialog_box_index()
 {
-	int i;
-	//Snoopy: 38->58
-	for (i = 58; i >= 0; i--)
-		if (m_dialog_box_manager.order_at(i) != 0)
-			return m_dialog_box_manager.order_at(i);
+	// Skip HudPanel — it occupies reserved slots 59/60 but the compact
+	// operation in enable/disable_dialog_box can shift it into 0-58.
+	// Without this filter, get_top returns HudPanel instead of the real
+	// topmost dialog, breaking scroll checks in Magic/Skill/etc.
+	for (int i = 58; i >= 0; i--)
+	{
+		uint8_t id = m_dialog_box_manager.order_at(i);
+		if (id != 0 && id != DialogBoxId::HudPanel)
+			return id;
+	}
 
 	return 0;
 }
