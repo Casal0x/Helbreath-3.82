@@ -40,6 +40,9 @@ private:
     int m_iPrevFocus;
     int m_iMaxFocus;
 
+    // Error feedback
+    std::string m_error_msg;
+
     // Timing
     uint32_t m_dwStartTime = 0;
     uint32_t m_dwAnimTime = 0;
