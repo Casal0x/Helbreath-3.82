@@ -9,7 +9,7 @@
 #include "InventoryManager.h"
 #include "GameModeManager.h"
 #include "CommonTypes.h"
-#include "FrameTiming.h"
+#include "performance_monitor.h"
 #include "AudioManager.h"
 #include "WeatherManager.h"
 #include "ChatManager.h"

@@ -6,7 +6,7 @@
 #include "GameFonts.h"
 #include "TextLibExt.h"
 #include "Benchmark.h"
-#include "FrameTiming.h"
+#include "performance_monitor.h"
 #include "lan_eng.h"
 #include "Packet/SharedPackets.h"
 #include "SharedCalculations.h"
@@ -50,6 +50,7 @@
 #include "ChatCommandManager.h"
 #include "HotkeyManager.h"
 #include "LocalCacheManager.h"
+#include "performance_monitor.h"
 
 // DialogBox system
 #include "IDialogBox.h"
@@ -634,49 +635,8 @@ void CGame::on_render()
 		m_Renderer->draw_rect_filled(0, 0, m_Renderer->get_width(), m_Renderer->get_height(), hb::shared::render::Color::Black(static_cast<uint8_t>(alpha * 255.0f)));
 	}
 
-	// HUD metrics — drawn on all screens, on top of fade overlay
-	{
-		std::string G_cTxt;
-		int display_y = 100;
-
-		// FPS (engine-tracked, counted at actual present)
-		if (config_manager::get().is_show_fps_enabled())
-		{
-			G_cTxt = std::format("fps : {}", m_Renderer->get_fps());
-			hb::shared::text::draw_text(GameFont::Default, 10, display_y, G_cTxt.c_str(), hb::shared::text::TextStyle::from_color(GameColors::UIWhite));
-			display_y += 14;
-		}
-
-		// Latency
-		if (config_manager::get().is_show_latency_enabled())
-		{
-			if (m_latency_ms >= 0)
-				G_cTxt = std::format("latency : {} ms", m_latency_ms);
-			else
-				G_cTxt = "latency : -- ms";
-			hb::shared::text::draw_text(GameFont::Default, 10, display_y, G_cTxt.c_str(), hb::shared::text::TextStyle::from_color(GameColors::UIWhite));
-			display_y += 14;
-		}
-
-		// Profiling stage breakdown
-		if (FrameTiming::is_profiling_enabled())
-		{
-			display_y += 4;
-			hb::shared::text::draw_text(GameFont::Default, 10, display_y, "--- Profile (avg ms) ---", hb::shared::text::TextStyle::from_color(GameColors::UIProfileYellow));
-			display_y += 14;
-
-			for (int i = 0; i < static_cast<int>(ProfileStage::COUNT); i++)
-			{
-				ProfileStage stage = static_cast<ProfileStage>(i);
-				double avgMs = FrameTiming::get_profile_avg_time_ms(stage);
-				int wholePart = static_cast<int>(avgMs);
-				int fracPart = static_cast<int>((avgMs - wholePart) * 100);
-				G_cTxt = std::format("{:<12}: {:3}.{:02}", FrameTiming::get_stage_name(stage), wholePart, fracPart);
-				hb::shared::text::draw_text(GameFont::Default, 10, display_y, G_cTxt.c_str(), hb::shared::text::TextStyle::from_color(GameColors::UINearWhite));
-				display_y += 12;
-			}
-		}
-	}
+	// Performance monitor overlay — top bar with FPS, latency, frame timing
+	performance_monitor::get().render(m_Renderer, m_latency_ms);
 
 	// Cursor always on top - drawn LAST after everything including fade overlay
 	draw_cursor();

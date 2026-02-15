@@ -1,7 +1,7 @@
 {
     "audio": {
         "ambientEnabled": true,
-        "ambientVolume": 15,
+        "ambientVolume": 22,
         "masterEnabled": true,
         "masterVolume": 42,
         "musicEnabled": false,
@@ -16,7 +16,7 @@
         "captureMouse": false,
         "detailLevel": 2,
         "dialogTransparency": false,
-        "fpsLimit": 60,
+        "fpsLimit": 0,
         "fullscreen": false,
         "fullscreenStretch": false,
         "patchingGrid": false,
@@ -43,7 +43,7 @@
         ]
     },
     "window": {
-        "height": 600,
-        "width": 800
+        "height": 1080,
+        "width": 1440
     }
 }

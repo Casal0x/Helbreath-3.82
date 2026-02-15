@@ -7,7 +7,7 @@
 #include "GameModeManager.h"
 #include "IGameScreen.h"
 #include "CommonTypes.h"  // For GameClock
-#include "FrameTiming.h"  // For FrameTiming::GetDeltaTime()
+#include "performance_monitor.h"  // For FrameTiming::GetDeltaTime()
 #include "IInput.h"       // For hb::shared::input::SetSuppressed
 #include "ConfigManager.h"
 #include "RendererFactory.h"
