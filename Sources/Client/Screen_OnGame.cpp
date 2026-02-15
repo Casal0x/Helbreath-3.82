@@ -455,11 +455,22 @@ void Screen_OnGame::on_render()
         int playerDY = m_game->m_player->m_player_y - m_game->m_map_data->m_pivot_y;
         if (playerDX >= 0 && playerDX < MapDataSizeX && playerDY >= 0 && playerDY < MapDataSizeY)
         {
-            auto& motion = m_game->m_map_data->m_data[playerDX][playerDY].m_motion;
-            int camX = (m_game->m_player->m_player_x - VIEW_CENTER_TILE_X()) * 32
+            // Only apply motion offset when alive — dead players don't move,
+            // but NPCs walking over the corpse tile update its motion state
+            int camX, camY;
+            if (m_game->m_player->m_hp > 0)
+            {
+                auto& motion = m_game->m_map_data->m_data[playerDX][playerDY].m_motion;
+                camX = (m_game->m_player->m_player_x - VIEW_CENTER_TILE_X()) * 32
                      + static_cast<int>(motion.m_current_offset_x) - 16;
-            int camY = (m_game->m_player->m_player_y - VIEW_CENTER_TILE_Y()) * 32
+                camY = (m_game->m_player->m_player_y - VIEW_CENTER_TILE_Y()) * 32
                      + static_cast<int>(motion.m_current_offset_y) - 16;
+            }
+            else
+            {
+                camX = (m_game->m_player->m_player_x - VIEW_CENTER_TILE_X()) * 32 - 16;
+                camY = (m_game->m_player->m_player_y - VIEW_CENTER_TILE_Y()) * 32 - 16;
+            }
             m_game->m_Camera.snap_to(camX, camY);
 
             // Recalculate viewport to match snapped camera
