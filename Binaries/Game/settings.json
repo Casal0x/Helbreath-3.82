@@ -24,7 +24,7 @@
         "showFps": true,
         "showLatency": true,
         "tileGrid": false,
-        "vsync": true,
+        "vsync": false,
         "zoomMap": true
     },
     "server": {

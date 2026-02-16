@@ -202,10 +202,13 @@ void MagicManager::player_magic_handler(int client_h, int dX, int dY, short type
 	if (m_game->m_client_list[client_h] == 0) return;
 	if (m_game->m_client_list[client_h]->m_is_init_complete == false) return;
 
-	// Auto-aim: If client clicked on an entity, use the target's current position
-	// This compensates for latency - players with high ping can still hit moving targets
-	// Security: Only allow if target is within reasonable distance of original click (prevents cross-map exploits)
-	constexpr int MAX_AUTOAIM_DISTANCE = 10;  // Max tiles target can move and still be tracked
+	int casterX = m_game->m_client_list[client_h]->m_x;
+	int casterY = m_game->m_client_list[client_h]->m_y;
+
+	// Viewport clamp: reject casts outside the caster's visible area
+	if (abs(dX - casterX) > MaxCastRangeX || abs(dY - casterY) > MaxCastRangeY) return;
+
+	// Auto-aim: snap to target's current server-side position to compensate for latency
 	if (targetObjectID != 0)
 	{
 		int targetMapIndex = m_game->m_client_list[client_h]->m_map_index;
@@ -213,10 +216,8 @@ void MagicManager::player_magic_handler(int client_h, int dX, int dY, short type
 
 		if (hb::shared::object_id::is_player_id(targetObjectID))
 		{
-			// Target is a player
 			if ((targetObjectID > 0) && (targetObjectID < MaxClients) && m_game->m_client_list[targetObjectID] != nullptr)
 			{
-				// Verify target is on the same map
 				if (m_game->m_client_list[targetObjectID]->m_map_index == targetMapIndex)
 				{
 					targetX = m_game->m_client_list[targetObjectID]->m_x;
@@ -226,11 +227,9 @@ void MagicManager::player_magic_handler(int client_h, int dX, int dY, short type
 		}
 		else
 		{
-			// Target is an NPC
 			int npcIndex = hb::shared::object_id::ToNpcIndex(targetObjectID);
 			if ((npcIndex > 0) && (npcIndex < MaxNpcs) && m_game->m_npc_list[npcIndex] != nullptr)
 			{
-				// Verify target is on the same map
 				if (m_game->m_npc_list[npcIndex]->m_map_index == targetMapIndex)
 				{
 					targetX = m_game->m_npc_list[npcIndex]->m_x;
@@ -239,18 +238,17 @@ void MagicManager::player_magic_handler(int client_h, int dX, int dY, short type
 			}
 		}
 
-		// Only use auto-aim if target was near the original click position
-		// This prevents exploits where hackers send fake objectIDs for targets across the map
 		if (targetX >= 0 && targetY >= 0)
 		{
 			int distX = abs(targetX - dX);
 			int distY = abs(targetY - dY);
-			if (distX <= MAX_AUTOAIM_DISTANCE && distY <= MAX_AUTOAIM_DISTANCE)
+			// Only snap if target is within auto-aim range AND still inside the caster's viewport
+			if (distX <= MaxAutoAimRange && distY <= MaxAutoAimRange &&
+				abs(targetX - casterX) <= MaxCastRangeX && abs(targetY - casterY) <= MaxCastRangeY)
 			{
 				dX = targetX;
 				dY = targetY;
 			}
-			// If target moved too far, fall back to original tile coordinates (no tracking)
 		}
 	}
 
