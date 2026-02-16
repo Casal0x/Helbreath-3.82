@@ -481,7 +481,7 @@ void CGame::hotkey_simple_escape()
 		}
 
 		if ((m_is_observer_mode == true) && (hb::shared::input::is_shift_down())) {
-			if (m_logout_count == -1) m_logout_count = 1;
+			if (m_logout_count == -1) { m_logout_count = 1; m_logout_count_time = GameClock::get_time_ms(); }
 			m_dialog_box_manager.disable_dialog_box(DialogBoxId::SystemMenu);
 			play_game_sound('E', 14, 5);
 		}

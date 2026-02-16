@@ -77,7 +77,11 @@ void HandleForceDisconn(CGame* game, char* data)
 	if (!pkt) return;
 	const auto wpCount = pkt->seconds;
 	game->m_force_disconn = true;
-	if (game->m_logout_count < 0 || game->m_logout_count > 5) game->m_logout_count = 5;
+	if (game->m_logout_count < 0 || game->m_logout_count > 5)
+	{
+		game->m_logout_count = 5;
+		game->m_logout_count_time = GameClock::get_time_ms();
+	}
 	game->add_event_list(NOTIFYMSG_FORCE_DISCONN1, 10);
 }
 

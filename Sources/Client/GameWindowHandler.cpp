@@ -38,10 +38,16 @@ void GameWindowHandler::on_close()
         // In main game, start logout countdown instead of closing immediately
 #ifdef _DEBUG
         if (m_game->m_logout_count == -1 || m_game->m_logout_count > 2)
+        {
             m_game->m_logout_count = 1;
+            m_game->m_logout_count_time = GameClock::get_time_ms();
+        }
 #else
         if (m_game->m_logout_count == -1 || m_game->m_logout_count > 11)
+        {
             m_game->m_logout_count = 11;
+            m_game->m_logout_count_time = GameClock::get_time_ms();
+        }
 #endif
     }
     else if (GameModeManager::get_mode() == GameMode::MainMenu)
