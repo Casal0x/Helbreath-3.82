@@ -1160,7 +1160,7 @@ bool InsertCharacterItems(sqlite3* db, const char* character_name, const std::ve
         ok &= PrepareAndBindText(stmt, col++, character_name);
         ok &= (sqlite3_bind_int(stmt, col++, item.slot) == SQLITE_OK);
         ok &= (sqlite3_bind_int(stmt, col++, item.item_id) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, item.count) == SQLITE_OK);
+        ok &= (sqlite3_bind_int64(stmt, col++, item.count) == SQLITE_OK);
         ok &= (sqlite3_bind_int(stmt, col++, item.touch_effect_type) == SQLITE_OK);
         ok &= (sqlite3_bind_int(stmt, col++, item.touch_effect_value1) == SQLITE_OK);
         ok &= (sqlite3_bind_int(stmt, col++, item.touch_effect_value2) == SQLITE_OK);
@@ -1210,7 +1210,7 @@ bool InsertCharacterBankItems(sqlite3* db, const char* character_name, const std
         ok &= PrepareAndBindText(stmt, col++, character_name);
         ok &= (sqlite3_bind_int(stmt, col++, item.slot) == SQLITE_OK);
         ok &= (sqlite3_bind_int(stmt, col++, item.item_id) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, item.count) == SQLITE_OK);
+        ok &= (sqlite3_bind_int64(stmt, col++, item.count) == SQLITE_OK);
         ok &= (sqlite3_bind_int(stmt, col++, item.touch_effect_type) == SQLITE_OK);
         ok &= (sqlite3_bind_int(stmt, col++, item.touch_effect_value1) == SQLITE_OK);
         ok &= (sqlite3_bind_int(stmt, col++, item.touch_effect_value2) == SQLITE_OK);

@@ -132,6 +132,10 @@ void SFMLWindow::destroy()
 
     if (m_renderWindow.isOpen())
     {
+        // Deactivate the GL context before closing. Without this, the WGL context
+        // destructor fires during member destruction and triggers Windows IME
+        // (msctf.dll) cleanup callbacks that can crash if the HWND is already gone.
+        [[maybe_unused]] bool deactivated = m_renderWindow.setActive(false);
         m_renderWindow.close();
     }
 
