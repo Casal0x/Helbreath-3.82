@@ -884,20 +884,20 @@
 #define	DRAW_DIALOGBOX_GUILDMENU31	"Failed on dismission of guild."
 
 #define	DRAW_DIALOGBOX_GUILDMENuint32_t	"The price for the guild joining paper"
-#define	DRAW_DIALOGBOX_GUILDMENU33	"paper is 50Gold. Give it to the master"
+#define	DRAW_DIALOGBOX_GUILDMENU33	"paper is {} Gold. Give it to the master"
 #define	DRAW_DIALOGBOX_GUILDMENU34	"of the guild you want to join. He will"
 #define	DRAW_DIALOGBOX_GUILDMENU35	"decide to your joining."
 #define	DRAW_DIALOGBOX_GUILDMENU36	"Do you want to buy?"
 #define	DRAW_DIALOGBOX_GUILDMENU37	"You bought the guild joining paper."
 
 #define	DRAW_DIALOGBOX_GUILDMENU38	"The price for the guild secession"
-#define	DRAW_DIALOGBOX_GUILDMENU39	"paper is 50Gold. Give it to the master"
+#define	DRAW_DIALOGBOX_GUILDMENU39	"paper is {} Gold. Give it to the master"
 #define	DRAW_DIALOGBOX_GUILDMENU40	"of the guild you want to join. He will"
 #define	DRAW_DIALOGBOX_GUILDMENU41	"to your secession."
 #define	DRAW_DIALOGBOX_GUILDMENU42	"Do you want to buy?"
 #define	DRAW_DIALOGBOX_GUILDMENU43	"You bought a guild secession paper."
 
-#define	DRAW_DIALOGBOX_GUILDMENU44	"It takes 1500gold to make"
+#define	DRAW_DIALOGBOX_GUILDMENU44	"It takes 1500 gold to make"
 #define	DRAW_DIALOGBOX_GUILDMENU45	"a reservation of arena."
 #define	DRAW_DIALOGBOX_GUILDMENU46	"Click the arena that you"
 #define	DRAW_DIALOGBOX_GUILDMENU47	"want to reserve. You will"

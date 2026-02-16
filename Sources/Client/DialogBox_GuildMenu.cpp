@@ -237,8 +237,10 @@ void DialogBox_GuildMenu::DrawMode5_DisbandConfirm(short sX, short sY, short siz
 
 void DialogBox_GuildMenu::DrawMode9_AdmissionTicket(short sX, short sY, short size_x, short mouse_x, short mouse_y)
 {
+	CItem* cfg = m_game->get_item_config(hb::shared::item::ItemId::GuildAdmissionTicket);
+	int price = cfg ? static_cast<int>(cfg->m_price) : 0;
 	put_aligned_string(sX, sX + size_x, sY + ADJY + 60, DRAW_DIALOGBOX_GUILDMENuint32_t);
-	put_aligned_string(sX, sX + size_x, sY + ADJY + 75, DRAW_DIALOGBOX_GUILDMENU33);
+	put_aligned_string(sX, sX + size_x, sY + ADJY + 75, std::format(DRAW_DIALOGBOX_GUILDMENU33, price).c_str());
 	put_aligned_string(sX, sX + size_x, sY + ADJY + 90, DRAW_DIALOGBOX_GUILDMENU34);
 	put_aligned_string(sX, sX + size_x, sY + ADJY + 105, DRAW_DIALOGBOX_GUILDMENU35);
 	put_aligned_string(sX, sX + size_x, sY + ADJY + 130, DRAW_DIALOGBOX_GUILDMENU36);
@@ -252,8 +254,10 @@ void DialogBox_GuildMenu::DrawMode9_AdmissionTicket(short sX, short sY, short si
 
 void DialogBox_GuildMenu::DrawMode11_SecessionTicket(short sX, short sY, short size_x, short mouse_x, short mouse_y)
 {
+	CItem* cfg = m_game->get_item_config(hb::shared::item::ItemId::GuildSecessionTicket);
+	int price = cfg ? static_cast<int>(cfg->m_price) : 0;
 	put_aligned_string(sX, sX + size_x, sY + ADJY + 60, DRAW_DIALOGBOX_GUILDMENU38);
-	put_aligned_string(sX, sX + size_x, sY + ADJY + 75, DRAW_DIALOGBOX_GUILDMENU39);
+	put_aligned_string(sX, sX + size_x, sY + ADJY + 75, std::format(DRAW_DIALOGBOX_GUILDMENU39, price).c_str());
 	put_aligned_string(sX, sX + size_x, sY + ADJY + 90, DRAW_DIALOGBOX_GUILDMENU40);
 	put_aligned_string(sX, sX + size_x, sY + ADJY + 105, DRAW_DIALOGBOX_GUILDMENU41);
 	put_aligned_string(sX, sX + size_x, sY + ADJY + 130, DRAW_DIALOGBOX_GUILDMENU42);
