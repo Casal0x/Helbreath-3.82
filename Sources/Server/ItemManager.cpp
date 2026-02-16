@@ -46,9 +46,9 @@ static std::string format_item_info(CItem* item)
 {
 	if (item == nullptr) return "(null)";
 	char buf[256];
-	std::snprintf(buf, sizeof(buf), "%s(count=%u attr=0x%08X touch=%d:%d:%d:%d)",
+	std::snprintf(buf, sizeof(buf), "%s(count=%llu attr=0x%08X touch=%d:%d:%d:%d)",
 		item->m_name,
-		item->m_count,
+		static_cast<unsigned long long>(item->m_count),
 		item->m_attribute,
 		item->m_touch_effect_type,
 		item->m_touch_effect_value1,
@@ -324,11 +324,11 @@ void ItemManager::drop_item_handler(int client_h, short item_index, int amount, 
 	if (((m_game->m_client_list[client_h]->m_item_list[item_index]->get_item_type() == ItemType::Consume) ||
 		(m_game->m_client_list[client_h]->m_item_list[item_index]->get_item_type() == ItemType::Arrow)) &&
 		(amount == -1))
-		amount = m_game->m_client_list[client_h]->m_item_list[item_index]->m_count;
+		amount = static_cast<int>(m_game->m_client_list[client_h]->m_item_list[item_index]->m_count);
 
 	if (((m_game->m_client_list[client_h]->m_item_list[item_index]->get_item_type() == ItemType::Consume) ||
 		(m_game->m_client_list[client_h]->m_item_list[item_index]->get_item_type() == ItemType::Arrow)) &&
-		(((int)m_game->m_client_list[client_h]->m_item_list[item_index]->m_count - amount) > 0)) {
+		(m_game->m_client_list[client_h]->m_item_list[item_index]->m_count > static_cast<uint64_t>(amount))) {
 		item = new CItem;
 		if (init_item_attr(item, m_game->m_client_list[client_h]->m_item_list[item_index]->m_name) == false) {
 			delete item;
@@ -339,10 +339,10 @@ void ItemManager::drop_item_handler(int client_h, short item_index, int amount, 
 				delete item;
 				return;
 			}
-			item->m_count = (uint32_t)amount;
+			item->m_count = amount;
 		}
 
-		if ((uint32_t)amount > m_game->m_client_list[client_h]->m_item_list[item_index]->m_count) {
+		if (static_cast<uint64_t>(amount) > m_game->m_client_list[client_h]->m_item_list[item_index]->m_count) {
 			delete item;
 			return;
 		}
@@ -508,7 +508,7 @@ bool ItemManager::add_client_item_list(int client_h, CItem* item, int* del_req)
 	if (item == 0) return false;
 
 	if ((item->get_item_type() == ItemType::Consume) || (item->get_item_type() == ItemType::Arrow)) {
-		if ((m_game->m_client_list[client_h]->m_cur_weight_load + get_item_weight(item, item->m_count)) > m_game->calc_max_load(client_h))
+		if ((m_game->m_client_list[client_h]->m_cur_weight_load + get_item_weight(item, static_cast<int>(item->m_count))) > m_game->calc_max_load(client_h))
 			return false;
 	}
 	else {
@@ -859,7 +859,8 @@ bool ItemManager::equip_item_handler(int client_h, short item_index, bool notify
 void ItemManager::request_purchase_item_handler(int client_h, const char* item_name, int num, int item_id)
 {
 	CItem* item;
-	uint32_t gold_count, item_count;
+	uint64_t gold_count;
+	uint32_t item_count;
 	uint16_t temp_price;
 	int   ret, erase_req, gold_weight;
 	int   cost, discount_ratio, discount_cost;
@@ -919,7 +920,7 @@ void ItemManager::request_purchase_item_handler(int client_h, const char* item_n
 
 			item->m_count = item_count;
 
-			cost = item->m_price * item->m_count;
+			cost = static_cast<int>(item->m_price * item->m_count);
 
 			gold_count = get_item_count_by_id(client_h, hb::shared::item::ItemId::Gold);
 
@@ -938,7 +939,7 @@ void ItemManager::request_purchase_item_handler(int client_h, const char* item_n
 
 			if (discount_cost >= (cost / 2)) discount_cost = (cost / 2) - 1;
 
-			if (gold_count < (uint32_t)(cost - discount_cost)) {
+			if (gold_count < static_cast<uint64_t>(cost - discount_cost)) {
 				delete item;
 
 				{
@@ -1020,7 +1021,7 @@ void ItemManager::give_item_handler(int client_h, short item_index, int amount, 
 
 	if (((m_game->m_client_list[client_h]->m_item_list[item_index]->get_item_type() == ItemType::Consume) ||
 		(m_game->m_client_list[client_h]->m_item_list[item_index]->get_item_type() == ItemType::Arrow)) &&
-		(m_game->m_client_list[client_h]->m_item_list[item_index]->m_count > (uint32_t)amount)) {
+		(m_game->m_client_list[client_h]->m_item_list[item_index]->m_count > static_cast<uint64_t>(amount))) {
 
 		item = new CItem;
 		if (init_item_attr(item, m_game->m_client_list[client_h]->m_item_list[item_index]->m_name) == false) {
@@ -1376,7 +1377,7 @@ void ItemManager::give_item_handler(int client_h, short item_index, int amount, 
 	m_game->calc_total_weight(client_h);
 }
 
-int ItemManager::set_item_count(int client_h, int item_index, uint32_t count)
+int ItemManager::set_item_count(int client_h, int item_index, uint64_t count)
 {
 	uint16_t weight;
 
@@ -1396,7 +1397,7 @@ int ItemManager::set_item_count(int client_h, int item_index, uint32_t count)
 	return weight;
 }
 
-uint32_t ItemManager::get_item_count_by_id(int client_h, short item_id)
+uint64_t ItemManager::get_item_count_by_id(int client_h, short item_id)
 {
 	if (m_game->m_client_list[client_h] == nullptr) return 0;
 
@@ -1410,7 +1411,7 @@ uint32_t ItemManager::get_item_count_by_id(int client_h, short item_id)
 	return 0;
 }
 
-int ItemManager::set_item_count_by_id(int client_h, short item_id, uint32_t count)
+int ItemManager::set_item_count_by_id(int client_h, short item_id, uint64_t count)
 {
 	if (m_game->m_client_list[client_h] == nullptr) return -1;
 
@@ -1569,7 +1570,7 @@ void ItemManager::request_retrieve_item_handler(int client_h, char* data)
 		else item_weight = get_item_weight(m_game->m_client_list[client_h]->m_item_in_bank_list[bank_item_index], 1); //m_game->m_client_list[client_h]->m_item_in_bank_list[bank_item_index]->m_weight;
 		*/
 		// v1.432
-		item_weight = get_item_weight(m_game->m_client_list[client_h]->m_item_in_bank_list[bank_item_index], m_game->m_client_list[client_h]->m_item_in_bank_list[bank_item_index]->m_count);
+		item_weight = get_item_weight(m_game->m_client_list[client_h]->m_item_in_bank_list[bank_item_index], static_cast<int>(m_game->m_client_list[client_h]->m_item_in_bank_list[bank_item_index]->m_count));
 
 		if ((item_weight + m_game->m_client_list[client_h]->m_cur_weight_load) > m_game->calc_max_load(client_h)) {
 		// Notify cannot carry more items.
@@ -2993,7 +2994,7 @@ void ItemManager::req_repair_item_cofirm_handler(int client_h, char item_id, con
 	short    remain_life, price;
 	char item_category;
 	double   d1, d2, d3;
-	uint32_t gold_count;
+	uint64_t gold_count;
 	int      ret, gold_weight;
 
 	if (m_game->m_client_list[client_h] == 0) return;
@@ -3032,7 +3033,7 @@ void ItemManager::req_repair_item_cofirm_handler(int client_h, char item_id, con
 		// price         .
 		gold_count = get_item_count_by_id(client_h, hb::shared::item::ItemId::Gold);
 
-		if (gold_count < (uint32_t)price) {
+		if (gold_count < static_cast<uint64_t>(price)) {
 			// Gold     .   .
 			{
 				hb::net::PacketNotifyNotEnoughGold pkt{};
@@ -4198,7 +4199,7 @@ void ItemManager::confirm_exchange_item(int client_h)
 						item_bcopy[i] = 0;
 						if ((m_game->m_client_list[ex_h]->m_item_list[m_game->m_client_list[ex_h]->m_exchange_item_index[i]]->get_item_type() == ItemType::Consume) ||
 							(m_game->m_client_list[ex_h]->m_item_list[m_game->m_client_list[ex_h]->m_exchange_item_index[i]]->get_item_type() == ItemType::Arrow)) {
-							amount_left = (int)m_game->m_client_list[ex_h]->m_item_list[m_game->m_client_list[ex_h]->m_exchange_item_index[i]]->m_count - m_game->m_client_list[ex_h]->m_exchange_item_amount[i];
+							amount_left = static_cast<int>(m_game->m_client_list[ex_h]->m_item_list[m_game->m_client_list[ex_h]->m_exchange_item_index[i]]->m_count) - m_game->m_client_list[ex_h]->m_exchange_item_amount[i];
 							if (amount_left < 0) amount_left = 0;
 							// v1.41 !!!
 							set_item_count(ex_h, m_game->m_client_list[ex_h]->m_exchange_item_index[i], amount_left);
@@ -4219,7 +4220,7 @@ void ItemManager::confirm_exchange_item(int client_h)
 
 						if ((m_game->m_client_list[client_h]->m_item_list[m_game->m_client_list[client_h]->m_exchange_item_index[i]]->get_item_type() == ItemType::Consume) ||
 							(m_game->m_client_list[client_h]->m_item_list[m_game->m_client_list[client_h]->m_exchange_item_index[i]]->get_item_type() == ItemType::Arrow)) {
-							amount_left = (int)m_game->m_client_list[client_h]->m_item_list[m_game->m_client_list[client_h]->m_exchange_item_index[i]]->m_count - m_game->m_client_list[client_h]->m_exchange_item_amount[i];
+							amount_left = static_cast<int>(m_game->m_client_list[client_h]->m_item_list[m_game->m_client_list[client_h]->m_exchange_item_index[i]]->m_count) - m_game->m_client_list[client_h]->m_exchange_item_amount[i];
 							if (amount_left < 0) amount_left = 0;
 							// v1.41 !!!
 							set_item_count(client_h, m_game->m_client_list[client_h]->m_exchange_item_index[i], amount_left);
@@ -4379,7 +4380,7 @@ bool ItemManager::check_item_receive_condition(int client_h, CItem* item)
 
 	if (m_game->m_client_list[client_h] == 0) return false;
 
-	if (m_game->m_client_list[client_h]->m_cur_weight_load + get_item_weight(item, item->m_count) > m_game->calc_max_load(client_h))
+	if (m_game->m_client_list[client_h]->m_cur_weight_load + get_item_weight(item, static_cast<int>(item->m_count)) > m_game->calc_max_load(client_h))
 		return false;
 
 	for(int i = 0; i < hb::shared::limits::MaxItems; i++)
@@ -4456,7 +4457,7 @@ void ItemManager::build_item_handler(int client_h, char* data)
 
 				for (x = 0; x < hb::shared::limits::MaxItems; x++)
 					if (m_game->m_client_list[client_h]->m_item_list[x] != 0)
-						item_count[x] = m_game->m_client_list[client_h]->m_item_list[x]->m_count;
+						item_count[x] = static_cast<int>(m_game->m_client_list[client_h]->m_item_list[x]->m_count);
 					else item_count[x] = 0;
 
 				match = 0;
@@ -4594,7 +4595,7 @@ void ItemManager::build_item_handler(int client_h, char* data)
 							hb::logger::log<log_channel::events>("(?) Char({}) ElementItemID({})", m_game->m_client_list[client_h]->m_char_name, element_item_id[x]);
 						}
 						else {
-							count = m_game->m_client_list[client_h]->m_item_list[element_item_id[x]]->m_count - m_game->m_build_item_list[i]->m_material_item_count[x];
+							count = static_cast<int>(m_game->m_client_list[client_h]->m_item_list[element_item_id[x]]->m_count) - m_game->m_build_item_list[i]->m_material_item_count[x];
 							if (count < 0) count = 0;
 							set_item_count(client_h, element_item_id[x], count);
 						}
@@ -6550,7 +6551,7 @@ void ItemManager::request_repair_all_items_confirm_handler(int client_h)
 		totalPrice += m_game->m_client_list[client_h]->m_repair_all[i].price;
 	}
 
-	if (get_item_count_by_id(client_h, hb::shared::item::ItemId::Gold) < (uint32_t)totalPrice)
+	if (get_item_count_by_id(client_h, hb::shared::item::ItemId::Gold) < static_cast<uint64_t>(totalPrice))
 	{
 		{
 			hb::net::PacketNotifyNotEnoughGold pkt{};

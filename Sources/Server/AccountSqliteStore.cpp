@@ -794,7 +794,7 @@ bool LoadCharacterItems(sqlite3* db, const char* character_name, std::vector<Acc
         int col = 0;
         row.slot = sqlite3_column_int(stmt, col++);
         row.item_id = sqlite3_column_int(stmt, col++);
-        row.count = sqlite3_column_int(stmt, col++);
+        row.count = sqlite3_column_int64(stmt, col++);
         row.touch_effect_type = sqlite3_column_int(stmt, col++);
         row.touch_effect_value1 = sqlite3_column_int(stmt, col++);
         row.touch_effect_value2 = sqlite3_column_int(stmt, col++);
@@ -839,7 +839,7 @@ bool LoadCharacterBankItems(sqlite3* db, const char* character_name, std::vector
         int col = 0;
         row.slot = sqlite3_column_int(stmt, col++);
         row.item_id = sqlite3_column_int(stmt, col++);
-        row.count = sqlite3_column_int(stmt, col++);
+        row.count = sqlite3_column_int64(stmt, col++);
         row.touch_effect_type = sqlite3_column_int(stmt, col++);
         row.touch_effect_value1 = sqlite3_column_int(stmt, col++);
         row.touch_effect_value2 = sqlite3_column_int(stmt, col++);
@@ -1708,7 +1708,7 @@ bool SaveCharacterSnapshot(sqlite3* db, const CClient* client)
         ok &= PrepareAndBindText(stmt, col++, client->m_char_name);
         ok &= (sqlite3_bind_int(stmt, col++, i) == SQLITE_OK);
         ok &= (sqlite3_bind_int(stmt, col++, client->m_item_list[i]->m_id_num) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, static_cast<int>(client->m_item_list[i]->m_count)) == SQLITE_OK);
+        ok &= (sqlite3_bind_int64(stmt, col++, static_cast<int64_t>(client->m_item_list[i]->m_count)) == SQLITE_OK);
         ok &= (sqlite3_bind_int(stmt, col++, client->m_item_list[i]->m_touch_effect_type) == SQLITE_OK);
         ok &= (sqlite3_bind_int(stmt, col++, client->m_item_list[i]->m_touch_effect_value1) == SQLITE_OK);
         ok &= (sqlite3_bind_int(stmt, col++, client->m_item_list[i]->m_touch_effect_value2) == SQLITE_OK);
@@ -1765,7 +1765,7 @@ bool SaveCharacterSnapshot(sqlite3* db, const CClient* client)
         ok &= PrepareAndBindText(stmt, col++, client->m_char_name);
         ok &= (sqlite3_bind_int(stmt, col++, i) == SQLITE_OK);
         ok &= (sqlite3_bind_int(stmt, col++, client->m_item_in_bank_list[i]->m_id_num) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, static_cast<int>(client->m_item_in_bank_list[i]->m_count)) == SQLITE_OK);
+        ok &= (sqlite3_bind_int64(stmt, col++, static_cast<int64_t>(client->m_item_in_bank_list[i]->m_count)) == SQLITE_OK);
         ok &= (sqlite3_bind_int(stmt, col++, client->m_item_in_bank_list[i]->m_touch_effect_type) == SQLITE_OK);
         ok &= (sqlite3_bind_int(stmt, col++, client->m_item_in_bank_list[i]->m_touch_effect_value1) == SQLITE_OK);
         ok &= (sqlite3_bind_int(stmt, col++, client->m_item_in_bank_list[i]->m_touch_effect_value2) == SQLITE_OK);

@@ -153,7 +153,7 @@ struct DropTable
 // Shop system structures
 struct NpcShopMapping
 {
-	int npc_type;                    // NPC type (15=ShopKeeper, 24=Blacksmith)
+	int npc_config_id;               // NPC config ID from npc_configs table
 	int shop_id;                     // Which shop inventory to use
 	char description[64];           // For documentation
 };
@@ -274,6 +274,7 @@ public:
 	void local_update_configs(char config_type);
 
 	void reload_npc_configs();
+	void reload_shop_configs();
 	void send_config_reload_notification(bool items, bool magic, bool skills, bool npcs);
 	void push_config_reload_to_clients(bool items, bool magic, bool skills, bool npcs);
 
@@ -388,7 +389,7 @@ public:
 	uint32_t dice(uint32_t iThrow, uint32_t range);
 	bool init_npc_attr(class CNpc * npc, int npc_config_id, short sClass, char sa);
 	int get_npc_config_id_by_name(const char * npc_name) const;
-	void send_notify_msg(int from_h, int to_h, uint16_t msg_type, uint32_t v1, uint32_t v2, uint32_t v3, const char * string, uint32_t v4 = 0, uint32_t v5 = 0, uint32_t v6 = 0, uint32_t v7 = 0, uint32_t v8 = 0, uint32_t v9 = 0, const char * string2 = 0);
+	void send_notify_msg(int from_h, int to_h, uint16_t msg_type, uint32_t v1, uint64_t v2, uint32_t v3, const char * string, uint32_t v4 = 0, uint32_t v5 = 0, uint32_t v6 = 0, uint32_t v7 = 0, uint32_t v8 = 0, uint32_t v9 = 0, const char * string2 = 0);
 	void broadcast_server_message(const char* message);
 	int  client_motion_stop_handler(int client_h, short sX, short sY, direction dir);
 
@@ -511,7 +512,7 @@ public:
 
 	// Shop system - server sends shop contents to client by item IDs
 	bool m_is_shop_data_available;
-	std::map<int, int> m_npc_shop_mappings;        // npc_type  shop_id
+	std::map<int, int> m_npc_shop_mappings;        // npc_config_id  shop_id
 	std::map<int, ShopData> m_shop_data;          // shop_id  ShopData
 	CItem   * m_item_config_list[hb::server::config::MaxItemTypes];
 	class CNpc    * m_npc_config_list[hb::server::config::MaxNpcTypes];

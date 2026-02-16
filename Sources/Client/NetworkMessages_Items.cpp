@@ -19,7 +19,7 @@ namespace NetworkMessageHandlers {
 	void HandleItemPurchased(CGame* game, char* data)
 	{
 		int i, j;
-		uint32_t count;
+		uint64_t count;
 		char  name[hb::shared::limits::ItemNameLen]{}, equip_pos, gender_limit;
 		ItemType item_type;
 		bool  is_equipped;
@@ -106,7 +106,8 @@ namespace NetworkMessageHandlers {
 	void HandleItemObtained(CGame* game, char* data)
 	{
 		int i, j;
-		uint32_t count, attribute;
+		uint64_t count;
+		uint32_t attribute;
 		char  name[hb::shared::limits::ItemNameLen]{}, equip_pos;
 		ItemType item_type;
 		bool  is_equipped;
@@ -209,7 +210,7 @@ namespace NetworkMessageHandlers {
 		char name[hb::shared::limits::ItemNameLen]{};
 		memcpy(name, pkt->name, sizeof(pkt->name));
 
-		int total_count = pkt->count;
+		uint64_t total_count = pkt->count;
 		short item_id = pkt->item_id;
 		uint16_t cur_life_span = pkt->cur_lifespan;
 		uint16_t max_life_span = pkt->max_lifespan;
@@ -240,7 +241,7 @@ namespace NetworkMessageHandlers {
 		}
 
 		int created = 0;
-		for (int n = 0; n < total_count; n++)
+		for (uint64_t n = 0; n < total_count; n++)
 		{
 			for (int i = 0; i < hb::shared::limits::MaxItems; i++)
 			{
@@ -334,7 +335,7 @@ namespace NetworkMessageHandlers {
 	void HandleSetItemCount(CGame* game, char* data)
 	{
 		short  item_index;
-		uint32_t count;
+		uint64_t count;
 		bool   is_item_use_response;
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifySetItemCount>(
 			data, sizeof(hb::net::PacketNotifySetItemCount));

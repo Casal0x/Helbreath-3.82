@@ -162,7 +162,7 @@ void DialogBoxManager::draw_dialog_boxs(short mouse_x, short mouse_y, short z, c
 	m_game->draw_dialog_boxs(mouse_x, mouse_y, z, lb);
 }
 
-void DialogBoxManager::enable_dialog_box(int box_id, int type, int v1, int v2, char* string)
+void DialogBoxManager::enable_dialog_box(int box_id, int type, int64_t v1, int v2, char* string)
 {
 	int i;
 	short sX, sY;
@@ -188,7 +188,7 @@ void DialogBoxManager::enable_dialog_box(int box_id, int type, int v1, int v2, c
 					Info(DialogBoxId::SaleMenu).m_v3 = 1;
 				} else {
 					// Request contents from server - dialog will be shown when response arrives
-					shop_manager::get().set_pending_shop_type(type);
+					shop_manager::get().set_pending_npc_config_id(type);
 					shop_manager::get().request_shop_menu(type);
 				}
 				break;
@@ -281,7 +281,7 @@ void DialogBoxManager::enable_dialog_box(int box_id, int type, int v1, int v2, c
 				Info(DialogBoxId::SaleMenu).m_v4 = Info(DialogBoxId::SaleMenu).m_v5 = Info(DialogBoxId::SaleMenu).m_v6 = 0;
 			Info(DialogBoxId::NpcActionQuery).m_mode = type;
 			Info(DialogBoxId::NpcActionQuery).m_view = 0;
-			Info(DialogBoxId::NpcActionQuery).m_v1 = v1;
+			Info(DialogBoxId::NpcActionQuery).m_v1 = static_cast<int>(v1);
 			Info(DialogBoxId::NpcActionQuery).m_v2 = v2;
 		}
 		break;
@@ -291,14 +291,14 @@ void DialogBoxManager::enable_dialog_box(int box_id, int type, int v1, int v2, c
 		{
 			Info(DialogBoxId::NpcTalk).m_mode = type;
 			Info(DialogBoxId::NpcTalk).m_view = 0;
-			Info(DialogBoxId::NpcTalk).m_v1 = m_game->load_text_dlg_contents2(v1 + 20);
-			Info(DialogBoxId::NpcTalk).m_v2 = v1 + 20;
+			Info(DialogBoxId::NpcTalk).m_v1 = m_game->load_text_dlg_contents2(static_cast<int>(v1) + 20);
+			Info(DialogBoxId::NpcTalk).m_v2 = static_cast<int>(v1) + 20;
 		}
 		break;
 
 	case DialogBoxId::Map:
 		if (is_enabled(DialogBoxId::Map) == false) {
-			Info(DialogBoxId::Map).m_v1 = v1;
+			Info(DialogBoxId::Map).m_v1 = static_cast<int>(v1);
 			Info(DialogBoxId::Map).m_v2 = v2;
 
 			Info(DialogBoxId::Map).m_size_x = 290;
@@ -309,7 +309,7 @@ void DialogBoxManager::enable_dialog_box(int box_id, int type, int v1, int v2, c
 	case DialogBoxId::SellOrRepair:
 		if (is_enabled(DialogBoxId::SellOrRepair) == false) {
 			Info(DialogBoxId::SellOrRepair).m_mode = type;
-			Info(DialogBoxId::SellOrRepair).m_v1 = v1;		// ItemID
+			Info(DialogBoxId::SellOrRepair).m_v1 = static_cast<int>(v1);		// ItemID
 			Info(DialogBoxId::SellOrRepair).m_v2 = v2;
 			if (type == 2)
 			{
@@ -326,7 +326,7 @@ void DialogBoxManager::enable_dialog_box(int box_id, int type, int v1, int v2, c
 		if (is_enabled(DialogBoxId::Fishing) == false)
 		{
 			Info(DialogBoxId::Fishing).m_mode = type;
-			Info(DialogBoxId::Fishing).m_v1 = v1;
+			Info(DialogBoxId::Fishing).m_v1 = static_cast<int>(v1);
 			Info(DialogBoxId::Fishing).m_v2 = v2;
 			m_game->m_skill_using_status = true;
 		}
@@ -335,7 +335,7 @@ void DialogBoxManager::enable_dialog_box(int box_id, int type, int v1, int v2, c
 	case DialogBoxId::Noticement:
 		if (is_enabled(DialogBoxId::Noticement) == false) {
 			Info(DialogBoxId::Noticement).m_mode = type;
-			Info(DialogBoxId::Noticement).m_v1 = v1;
+			Info(DialogBoxId::Noticement).m_v1 = static_cast<int>(v1);
 			Info(DialogBoxId::Noticement).m_v2 = v2;
 		}
 		break;
@@ -391,7 +391,7 @@ void DialogBoxManager::enable_dialog_box(int box_id, int type, int v1, int v2, c
 			if (is_enabled(DialogBoxId::Manufacture) == false)
 			{
 				Info(DialogBoxId::Manufacture).m_mode = type;
-				Info(DialogBoxId::Manufacture).m_str[2] = v1;
+				Info(DialogBoxId::Manufacture).m_str[2] = static_cast<char>(v1);
 				Info(DialogBoxId::Manufacture).m_str[3] = v2;
 				Info(DialogBoxId::Manufacture).m_size_x = 270;
 				Info(DialogBoxId::Manufacture).m_size_y = 381;
@@ -476,7 +476,7 @@ void DialogBoxManager::enable_dialog_box(int box_id, int type, int v1, int v2, c
 			Info(DialogBoxId::CrusadeJob).m_mode = type;
 			Info(DialogBoxId::CrusadeJob).m_x = 360 ;
 			Info(DialogBoxId::CrusadeJob).m_y = 65 ;
-			Info(DialogBoxId::CrusadeJob).m_v1 = v1;
+			Info(DialogBoxId::CrusadeJob).m_v1 = static_cast<int>(v1);
 		}
 		break;
 
@@ -603,7 +603,7 @@ void DialogBoxManager::enable_dialog_box(int box_id, int type, int v1, int v2, c
 }
 
 
-void DialogBoxManager::enable_dialog_box(DialogBoxId::Type id, int type, int v1, int v2, char* string)
+void DialogBoxManager::enable_dialog_box(DialogBoxId::Type id, int type, int64_t v1, int v2, char* string)
 {
 	enable_dialog_box(static_cast<int>(id), type, v1, v2, string);
 }
@@ -774,7 +774,7 @@ void DialogBoxManager::disable_dialog_box(DialogBoxId::Type id)
 	disable_dialog_box(static_cast<int>(id));
 }
 
-void DialogBoxManager::toggle_dialog_box(DialogBoxId::Type id, int type, int v1, int v2, char* string)
+void DialogBoxManager::toggle_dialog_box(DialogBoxId::Type id, int type, int64_t v1, int v2, char* string)
 {
 	if (is_enabled(id))
 	{
@@ -887,7 +887,7 @@ bool DialogBoxManager::handle_dragging_item_release(short mouse_x, short mouse_y
 	return false; // Not consumed - should go to external screen
 }
 
-void DialogBoxManager::enable(DialogBoxId::Type id, int type, int v1, int v2, char* string)
+void DialogBoxManager::enable(DialogBoxId::Type id, int type, int64_t v1, int v2, char* string)
 {
 	enable_dialog_box(id, type, v1, v2, string);
 }
@@ -897,7 +897,7 @@ void DialogBoxManager::disable(DialogBoxId::Type id)
 	disable_dialog_box(id);
 }
 
-void DialogBoxManager::toggle(DialogBoxId::Type id, int type, int v1, int v2, char* string)
+void DialogBoxManager::toggle(DialogBoxId::Type id, int type, int64_t v1, int v2, char* string)
 {
 	toggle_dialog_box(id, type, v1, v2, string);
 }

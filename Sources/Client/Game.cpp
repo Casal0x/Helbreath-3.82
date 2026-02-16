@@ -1976,7 +1976,7 @@ void CGame::item_drop_external_screen(char item_id, short mouse_x, short mouse_y
 				{
 					std::snprintf(m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_str, sizeof(m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_str), "%s", get_npc_config_name_by_id(npc_config_id));
 				}
-				m_dialog_box_manager.enable_dialog_box(DialogBoxId::ItemDropExternal, item_id, m_item_list[item_id]->m_count, 0);
+				m_dialog_box_manager.enable_dialog_box(DialogBoxId::ItemDropExternal, item_id, static_cast<int64_t>(m_item_list[item_id]->m_count), 0);
 			}
 			else
 			{
@@ -2067,7 +2067,7 @@ void CGame::item_drop_external_screen(char item_id, short mouse_x, short mouse_y
 			m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_v3 = 0;
 			m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_v4 = 0;
 			std::memset(m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_str, 0, sizeof(m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_str));
-			m_dialog_box_manager.enable_dialog_box(DialogBoxId::ItemDropExternal, item_id, m_item_list[item_id]->m_count, 0);
+			m_dialog_box_manager.enable_dialog_box(DialogBoxId::ItemDropExternal, item_id, static_cast<int64_t>(m_item_list[item_id]->m_count), 0);
 		}
 		else
 		{
@@ -2082,7 +2082,7 @@ void CGame::item_drop_external_screen(char item_id, short mouse_x, short mouse_y
 				m_dialog_box_manager.Info(DialogBoxId::ItemDropConfirm).m_v4 = 0;
 				m_dialog_box_manager.Info(DialogBoxId::ItemDropConfirm).m_v5 = item_id;
 				std::memset(m_dialog_box_manager.Info(DialogBoxId::ItemDropConfirm).m_str, 0, sizeof(m_dialog_box_manager.Info(DialogBoxId::ItemDropConfirm).m_str));
-				m_dialog_box_manager.enable_dialog_box(DialogBoxId::ItemDropConfirm, item_id, m_item_list[item_id]->m_count, 0);
+				m_dialog_box_manager.enable_dialog_box(DialogBoxId::ItemDropConfirm, item_id, static_cast<int64_t>(m_item_list[item_id]->m_count), 0);
 			}
 			else
 			{
@@ -3919,6 +3919,7 @@ void CGame::draw_top_msg()
 		hb::shared::text::draw_text_aligned(GameFont::Default, 0, 10, LOGICAL_MAX_X(), 15, m_top_msg.c_str(), hb::shared::text::TextStyle::from_color(GameColors::UITopMsgYellow), hb::shared::text::Align::TopCenter);
 
 	if (GameClock::get_time_ms() > (m_top_msg_last_sec * 1000 + m_top_msg_time)) {
+		m_top_msg.clear();
 	}
 }
 
@@ -3945,7 +3946,7 @@ void CGame::cannot_construct(int code)
 	}
 }
 
-std::string CGame::format_comma_number(uint32_t value)
+std::string CGame::format_comma_number(uint64_t value)
 {
 	auto numStr = std::format("{}", value);
 #ifdef DEF_COMMA_GOLD
@@ -6638,7 +6639,7 @@ bool CGame::process_left_click(short mouse_x, short mouse_y, short tile_x, short
 					{
 						switch (object_type) { 	// CLEROTH - NPC TALK
 						case hb::shared::owner::ShopKeeper: // ShopKeeper-W�
-							m_dialog_box_manager.enable_dialog_box(DialogBoxId::NpcActionQuery, 5, 11, 1);
+							m_dialog_box_manager.enable_dialog_box(DialogBoxId::NpcActionQuery, 5, 11, npc_config_id);
 							dialog_x = mouse_x - 117;
 							dialog_y = mouse_y - 50;
 							if (dialog_x < 0) dialog_x = 0;
@@ -6684,7 +6685,7 @@ bool CGame::process_left_click(short mouse_x, short mouse_y, short tile_x, short
 							break;
 
 						case hb::shared::owner::Tom: // Tom
-							m_dialog_box_manager.enable_dialog_box(DialogBoxId::NpcActionQuery, 5, 11, 2);
+							m_dialog_box_manager.enable_dialog_box(DialogBoxId::NpcActionQuery, 5, 11, npc_config_id);
 							dialog_x = mouse_x - 117;
 							dialog_y = mouse_y - 50;
 							if (dialog_x < 0) dialog_x = 0;

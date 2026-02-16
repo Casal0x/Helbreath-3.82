@@ -5853,7 +5853,7 @@ int CGame::client_motion_stop_handler(int client_h, short sX, short sY, directio
 
 // 05/29/2004 - Hypnotoad - Purchase Dicount updated to take charisma into consideration
 
-void CGame::send_notify_msg(int from_h, int to_h, uint16_t msg_type, uint32_t v1, uint32_t v2, uint32_t v3, const char* string, uint32_t v4, uint32_t v5, uint32_t v6, uint32_t v7, uint32_t v8, uint32_t v9, const char* string2)
+void CGame::send_notify_msg(int from_h, int to_h, uint16_t msg_type, uint32_t v1, uint64_t v2, uint32_t v3, const char* string, uint32_t v4, uint32_t v5, uint32_t v6, uint32_t v7, uint32_t v8, uint32_t v9, const char* string2)
 {
 	int ret = 0;
 
@@ -7037,7 +7037,7 @@ void CGame::send_notify_msg(int from_h, int to_h, uint16_t msg_type, uint32_t v1
 		pkt.header.msg_id = MsgId::Notify;
 		pkt.header.msg_type = msg_type;
 		pkt.item_index = static_cast<uint16_t>(v1);
-		pkt.count = static_cast<uint32_t>(v2);
+		pkt.count = v2;
 		pkt.notify = static_cast<uint8_t>(v3);
 		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 	}
@@ -10204,13 +10204,13 @@ void CGame::request_shop_contents_handler(int client_h, char* data)
 	const auto* req = hb::net::PacketCast<hb::net::PacketShopRequest>(data, sizeof(hb::net::PacketShopRequest));
 	if (!req) return;
 
-	int16_t npc_type = req->npcType;
+	int16_t npc_config_id = req->npcConfigId;
 
-	// Look up shop ID for this NPC type
-	auto mappingIt = m_npc_shop_mappings.find(static_cast<int>(npc_type));
+	// Look up shop ID for this NPC config ID
+	auto mappingIt = m_npc_shop_mappings.find(static_cast<int>(npc_config_id));
 	if (mappingIt == m_npc_shop_mappings.end()) {
-		// No shop configured for this NPC type
-		hb::logger::log("Shop request for NPC type {} - no shop mapping found", npc_type);
+		// No shop configured for this NPC config ID
+		hb::logger::log("Shop request for NPC config {} - no shop mapping found", npc_config_id);
 		return;
 	}
 
@@ -10220,7 +10220,7 @@ void CGame::request_shop_contents_handler(int client_h, char* data)
 	auto shopIt = m_shop_data.find(shop_id);
 	if (shopIt == m_shop_data.end() || shopIt->second.item_ids.empty()) {
 		// Shop exists in mapping but has no items
-		hb::logger::log("Shop request for NPC type {}, shop {} - no items found", npc_type, shop_id);
+		hb::logger::log("Shop request for NPC config {}, shop {} - no items found", npc_config_id, shop_id);
 		return;
 	}
 
@@ -10239,7 +10239,7 @@ void CGame::request_shop_contents_handler(int client_h, char* data)
 	auto* resp = reinterpret_cast<hb::net::PacketShopResponseHeader*>(resp_data);
 	resp->header.msg_id = MSGID_RESPONSE_SHOP_CONTENTS;
 	resp->header.msg_type = MsgType::Confirm;
-	resp->npcType = npc_type;
+	resp->npcConfigId = npc_config_id;
 	resp->shopId = static_cast<int16_t>(shop_id);
 	resp->itemCount = itemCount;
 
@@ -10252,7 +10252,7 @@ void CGame::request_shop_contents_handler(int client_h, char* data)
 	// Send to client
 	m_client_list[client_h]->m_socket->send_msg(resp_data, static_cast<uint32_t>(packetSize));
 
-	hb::logger::log("Sent shop contents: NPC type {}, shop {}, {} items", npc_type, shop_id, itemCount);
+	hb::logger::log("Sent shop contents: NPC config {}, shop {}, {} items", npc_config_id, shop_id, itemCount);
 
 	delete[] resp_data;
 }
@@ -11881,6 +11881,35 @@ void CGame::reload_npc_configs()
 	CloseGameConfigDatabase(configDb);
 	compute_config_hashes();
 	hb::logger::log("NPC configs reloaded successfully");
+}
+
+void CGame::reload_shop_configs()
+{
+	sqlite3* configDb = nullptr;
+	std::string configDbPath;
+	bool configDbCreated = false;
+	if (!EnsureGameConfigDatabase(&configDb, configDbPath, &configDbCreated) || configDbCreated)
+	{
+		hb::logger::log("Shop config reload failed: gameconfigs.db unavailable");
+		return;
+	}
+
+	m_npc_shop_mappings.clear();
+	m_shop_data.clear();
+	m_is_shop_data_available = false;
+
+	if (HasGameConfigRows(configDb, "npc_shop_mapping") || HasGameConfigRows(configDb, "shop_items"))
+	{
+		LoadShopConfigs(configDb, this);
+	}
+
+	CloseGameConfigDatabase(configDb);
+
+	if (m_is_shop_data_available)
+		hb::logger::log("Shop configs reloaded successfully ({} shops, {} NPC config mappings)",
+			m_shop_data.size(), m_npc_shop_mappings.size());
+	else
+		hb::logger::log("Shop configs reloaded (no shop data found)");
 }
 
 void CGame::send_config_reload_notification(bool items, bool magic, bool skills, bool npcs)

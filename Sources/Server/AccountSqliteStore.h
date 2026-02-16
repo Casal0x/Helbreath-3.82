@@ -130,7 +130,7 @@ struct AccountDbItemRow
 {
     int slot;
     int item_id;
-    int count;
+    int64_t count;
     int touch_effect_type;
     int touch_effect_value1;
     int touch_effect_value2;
@@ -150,7 +150,7 @@ struct AccountDbBankItemRow
 {
     int slot;
     int item_id;
-    int count;
+    int64_t count;
     int touch_effect_type;
     int touch_effect_value1;
     int touch_effect_value2;

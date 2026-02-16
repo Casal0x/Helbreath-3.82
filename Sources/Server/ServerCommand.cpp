@@ -1,4 +1,5 @@
 #include "ServerCommand.h"
+#include "ServerConsole.h"
 #include "CmdHelp.h"
 #include "CmdShowChat.h"
 #include "CmdBroadcast.h"
@@ -9,7 +10,6 @@
 #include "Game.h"
 #include <cstring>
 #include <cstdio>
-#include "Log.h"
 #include "StringCompat.h"
 
 ServerCommandManager& ServerCommandManager::get()
@@ -68,7 +68,8 @@ bool ServerCommandManager::process_command(const char* input)
 		}
 	}
 
-	hb::logger::log("Unknown command: '{}'. Type 'help' for a list of commands.", cmdStart);
+	hb::console::error("Unknown command: '{}'. Type 'help' for a list of commands.",
+		std::string(cmdStart, cmdLen));
 	return false;
 }
 

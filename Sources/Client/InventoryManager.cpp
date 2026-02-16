@@ -4,6 +4,8 @@
 #include "ItemNameFormatter.h"
 #include "lan_eng.h"
 #include "NetMessages.h"
+#include <algorithm>
+#include <climits>
 #include <format>
 
 using namespace hb::shared::net;
@@ -50,9 +52,9 @@ void inventory_manager::set_item_order(int where, int item_id)
 
 int inventory_manager::calc_total_weight()
 {
-	int i, weight, cnt, temp;
+	int i, cnt;
+	int64_t weight = 0, temp;
 	cnt = 0;
-	weight = 0;
 	for (i = 0; i < hb::shared::limits::MaxItems; i++)
 		if (m_game->m_item_list[i] != 0)
 		{
@@ -60,7 +62,7 @@ int inventory_manager::calc_total_weight()
 			if (cfg && ((cfg->get_item_type() == ItemType::Consume)
 				|| (cfg->get_item_type() == ItemType::Arrow)))
 			{
-				temp = cfg->m_weight * m_game->m_item_list[i]->m_count;
+				temp = static_cast<int64_t>(cfg->m_weight) * static_cast<int64_t>(m_game->m_item_list[i]->m_count);
 				if (m_game->m_item_list[i]->m_id_num == hb::shared::item::ItemId::Gold) temp = temp / 20;
 				weight += temp;
 			}
@@ -68,7 +70,7 @@ int inventory_manager::calc_total_weight()
 			cnt++;
 		}
 
-	return weight;
+	return static_cast<int>(std::min<int64_t>(weight, INT_MAX));
 }
 
 int inventory_manager::get_total_item_count()

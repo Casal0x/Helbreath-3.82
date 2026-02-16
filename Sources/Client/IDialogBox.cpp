@@ -64,7 +64,7 @@ void IDialogBox::set_default_rect(short sX, short sY, short size_x, short size_y
 	info.m_size_y = size_y;
 }
 
-void IDialogBox::enable_dialog_box(DialogBoxId::Type id, int type, int v1, int v2, char* string)
+void IDialogBox::enable_dialog_box(DialogBoxId::Type id, int type, int64_t v1, int v2, char* string)
 {
 	m_game->m_dialog_box_manager.enable_dialog_box(id, type, v1, v2, string);
 }

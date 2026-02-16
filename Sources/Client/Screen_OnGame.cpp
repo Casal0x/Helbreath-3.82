@@ -26,7 +26,9 @@
 #include <string>
 #include <memory>
 #include <format>
+#include <algorithm>
 #include <charconv>
+#include <climits>
 
 
 using namespace hb::shared::net;
@@ -114,16 +116,17 @@ void Screen_OnGame::on_update()
             }
 
             if (m_game->m_amount_string.empty()) return;
-            amount = 0;
-            auto [ptr, ec] = std::from_chars(m_game->m_amount_string.data(), m_game->m_amount_string.data() + m_game->m_amount_string.size(), amount);
-            if (ec != std::errc{}) return;
-
-            if (static_cast<int>(m_game->m_item_list[m_game->m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_view]->m_count) < amount) {
-                amount = m_game->m_item_list[m_game->m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_view]->m_count;
+            {
+                uint64_t parsed_amount = 0;
+                auto [ptr, ec] = std::from_chars(m_game->m_amount_string.data(), m_game->m_amount_string.data() + m_game->m_amount_string.size(), parsed_amount);
+                if (ec != std::errc{}) return;
+                uint64_t item_count = m_game->m_item_list[m_game->m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_view]->m_count;
+                if (parsed_amount > item_count) parsed_amount = item_count;
+                amount = static_cast<int>(std::min<uint64_t>(parsed_amount, INT_MAX));
             }
 
             if (amount != 0) {
-                if (static_cast<int>(m_game->m_item_list[m_game->m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_view]->m_count) >= amount) {
+                if (m_game->m_item_list[m_game->m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_view]->m_count >= static_cast<uint64_t>(amount)) {
                     if (m_game->m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_v1 != 0) {
                         absX = abs(m_game->m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_v1 - m_game->m_player->m_player_x);
                         absY = abs(m_game->m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_v2 - m_game->m_player->m_player_y);

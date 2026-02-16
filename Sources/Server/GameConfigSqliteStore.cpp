@@ -428,13 +428,14 @@ bool EnsureGameConfigDatabase(sqlite3** outDb, std::string& outPath, bool* outCr
         " UNIQUE(event_type, schedule_index)"
         ");"
         "CREATE TABLE IF NOT EXISTS npc_shop_mapping ("
-        " npc_type INTEGER PRIMARY KEY,"
+        " npc_config_id INTEGER PRIMARY KEY,"
         " shop_id INTEGER NOT NULL,"
         " description TEXT"
         ");"
         "CREATE TABLE IF NOT EXISTS shop_items ("
         " shop_id INTEGER NOT NULL,"
         " item_id INTEGER NOT NULL,"
+        " sort_order INTEGER NOT NULL DEFAULT 0,"
         " PRIMARY KEY (shop_id, item_id)"
         ");"
         "COMMIT;";
@@ -1428,7 +1429,7 @@ bool LoadShopConfigs(sqlite3* db, CGame* game)
     game->m_is_shop_data_available = false;
 
     // Load NPC -> shop mappings
-    const char* mappingSql = "SELECT npc_type, shop_id, description FROM npc_shop_mapping ORDER BY npc_type;";
+    const char* mappingSql = "SELECT npc_config_id, shop_id, description FROM npc_shop_mapping ORDER BY npc_config_id;";
     sqlite3_stmt* stmt = nullptr;
     if (sqlite3_prepare_v2(db, mappingSql, -1, &stmt, nullptr) != SQLITE_OK) {
         char logMsg[256] = {};
@@ -1438,15 +1439,15 @@ bool LoadShopConfigs(sqlite3* db, CGame* game)
 
     int mappingCount = 0;
     while (sqlite3_step(stmt) == SQLITE_ROW) {
-        int npc_type = sqlite3_column_int(stmt, 0);
+        int npc_config_id = sqlite3_column_int(stmt, 0);
         int shop_id = sqlite3_column_int(stmt, 1);
-        game->m_npc_shop_mappings[npc_type] = shop_id;
+        game->m_npc_shop_mappings[npc_config_id] = shop_id;
         mappingCount++;
     }
     sqlite3_finalize(stmt);
 
     // Load shop items
-    const char* itemsSql = "SELECT shop_id, item_id FROM shop_items ORDER BY shop_id, item_id;";
+    const char* itemsSql = "SELECT shop_id, item_id FROM shop_items ORDER BY shop_id, sort_order, item_id;";
     if (sqlite3_prepare_v2(db, itemsSql, -1, &stmt, nullptr) != SQLITE_OK) {
         char logMsg[256] = {};
         hb::logger::log("LoadShopConfigs: Failed to prepare shop_items query");

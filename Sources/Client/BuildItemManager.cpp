@@ -76,7 +76,7 @@ bool build_item_manager::update_available_recipes()
 				// ItemCount
 				for (j = 0; j < hb::shared::limits::MaxItems; j++)
 					if (m_game->m_item_list[j] != 0)
-						item_count[j] = m_game->m_item_list[j]->m_count;
+						item_count[j] = static_cast<int>(m_game->m_item_list[j]->m_count);
 					else item_count[j] = 0;
 
 				// Element1
@@ -366,7 +366,7 @@ bool build_item_manager::validate_current_recipe()
 
 	for (i = 1; i <= 6; i++)
 		if (item_index[i] != -1)
-			item_count[i] = m_game->m_item_list[item_index[i]]->m_count;
+			item_count[i] = static_cast<int>(m_game->m_item_list[item_index[i]]->m_count);
 		else item_count[i] = 0;
 	match = 0;
 	for (i = 1; i <= 6; i++) item_flag[i] = false;

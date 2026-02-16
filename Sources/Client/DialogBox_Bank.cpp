@@ -284,7 +284,7 @@ bool DialogBox_Bank::on_item_drop(short mouse_x, short mouse_y)
 		dropInfo.m_v4 = giveInfo.m_v1;
 		std::memset(dropInfo.m_str, 0, sizeof(dropInfo.m_str));
 		m_game->m_dialog_box_manager.enable_dialog_box(DialogBoxId::ItemDropExternal, giveInfo.m_v1,
-			m_game->m_item_list[giveInfo.m_v1]->m_count, 0);
+			static_cast<int64_t>(m_game->m_item_list[giveInfo.m_v1]->m_count), 0);
 	}
 	else
 	{

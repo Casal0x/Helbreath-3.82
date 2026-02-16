@@ -2718,7 +2718,7 @@ bool WarManager::set_occupy_flag(char map_index, int dX, int dY, int side, int e
 void WarManager::fightzone_reserve_handler(int client_h, char* data, size_t msg_size)
 {
 	int fightzone_num, enable_reserve_time;
-	uint32_t gold_count;
+	uint64_t gold_count;
 	uint16_t msg_result;
 	int     ret, result = 1, cannot_reserve_day;
 	hb::time::local_time SysTime{};

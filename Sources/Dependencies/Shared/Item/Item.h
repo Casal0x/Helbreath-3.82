@@ -164,7 +164,7 @@ public:
 
     char  m_category;              // Item category (for shop filtering)
     bool  m_is_for_sale;             // Can be sold to NPC shops
-    uint32_t m_count;             // Stack count (for stackable items)
+    uint64_t m_count;             // Stack count (for stackable items)
 
     //------------------------------------------------------------------------
     // Attribute Flags

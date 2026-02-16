@@ -338,7 +338,7 @@ namespace net {
 		PacketHeader header;
 		uint8_t is_new;
 		char name[hb::shared::limits::ItemNameLen];
-		uint32_t count;
+		uint64_t count;
 		uint8_t item_type;
 		uint8_t equip_pos;
 		uint8_t is_equipped;
@@ -359,7 +359,7 @@ namespace net {
 		PacketHeader header;
 		uint8_t is_new;
 		char name[hb::shared::limits::ItemNameLen];
-		uint32_t count;
+		uint64_t count;
 		uint8_t item_type;
 		uint8_t equip_pos;
 		uint8_t is_equipped;
@@ -380,7 +380,7 @@ namespace net {
 		uint8_t bank_index;
 		uint8_t is_new;
 		char name[hb::shared::limits::ItemNameLen];
-		uint32_t count;
+		uint64_t count;
 		uint8_t item_type;
 		uint8_t equip_pos;
 		uint8_t is_equipped;
@@ -451,7 +451,7 @@ namespace net {
 	struct HB_PACKED PacketNotifySetItemCount {
 		PacketHeader header;
 		uint16_t item_index;
-		uint32_t count;
+		uint64_t count;
 		uint8_t notify;
 	};
 

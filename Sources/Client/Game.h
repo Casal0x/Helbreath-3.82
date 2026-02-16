@@ -120,7 +120,7 @@ public:
 	void add_map_status_info(const char* data, bool is_last_data);
 	void request_map_status(const char* map_name, int mode);
 	void draw_dialog_boxs(short mouse_x, short mouse_y, short mouse_z, char left_button);
-	std::string format_comma_number(uint32_t value);
+	std::string format_comma_number(uint64_t value);
 
 	void response_panning_handler(char * data);
 	void set_ilusion_effect(int owner_h);
@@ -428,7 +428,7 @@ std::array<bool, hb::shared::limits::MaxItems> m_is_item_equipped{};
 	uint16_t m_last_attack_target_id;
 	uint16_t m_enter_game_type;
 	char m_item_order[hb::shared::limits::MaxItems];
-	static constexpr int AmountStringMaxLen = 12;
+	static constexpr int AmountStringMaxLen = 20;
 	std::string m_amount_string;
 	int  m_logout_count;
 	int m_restart_count;

@@ -94,7 +94,7 @@ void DialogBox_Inventory::draw_inventory_item(CItem* item, int itemIdx, int base
 	if ((cfg->get_item_type() == ItemType::Consume) || (cfg->get_item_type() == ItemType::Arrow))
 	{
 		std::string countBuf;
-		countBuf = m_game->format_comma_number(static_cast<uint32_t>(item->m_count));
+		countBuf = m_game->format_comma_number(item->m_count);
 		hb::shared::text::draw_text(GameFont::Default, baseX + COUNT_OFFSET_X + item->m_x, baseY + COUNT_OFFSET_Y + item->m_y, countBuf.c_str(), hb::shared::text::TextStyle::with_shadow(GameColors::UIDescription));
 	}
 }

@@ -13,7 +13,8 @@ namespace NetworkMessageHandlers {
 	void HandleItemToBank(CGame* game, char* data)
 	{
 		int index;
-		uint32_t count, attribute;
+		uint64_t count;
+		uint32_t attribute;
 		char  name[hb::shared::limits::ItemNameLen]{}, item_type, equip_pos, gender_limit, item_color;
 		bool  is_equipped;
 		short sprite, sprite_frame, level_limit, item_effect_value2, item_spec_effect_value2;

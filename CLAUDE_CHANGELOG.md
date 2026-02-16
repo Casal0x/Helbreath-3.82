@@ -18,3 +18,5 @@ Fixed HudPanel right-click disabling bug and migrated right-click-close settings
 - No file paths, struct names, or code references
 - Append new entries to the bottom (oldest first, newest last)
 - The `#` header summarizes the overall changelog contents
+- If the log is empty, treat it as only the most recent thing done
+- Before writing, present an interactive multi-select prompt listing generalized items from the session. Include an "All" option. Only include items the user selects.

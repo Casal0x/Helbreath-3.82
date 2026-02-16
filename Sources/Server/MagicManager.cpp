@@ -2513,7 +2513,7 @@ MAGIC_NOEFFECT:
 void MagicManager::request_study_magic_handler(int client_h, const char* name, bool is_purchase)
 {
 	char magic_name[31];
-	uint32_t gold_count;
+	uint64_t gold_count;
 	int req_int, cost, ret;
 	bool magic = true;
 
@@ -2531,7 +2531,7 @@ void MagicManager::request_study_magic_handler(int client_h, const char* name, b
 		if (is_purchase) {
 			if (m_game->m_magic_config_list[ret]->m_gold_cost < 0) magic = false;
 			gold_count = m_game->m_item_manager->get_item_count_by_id(client_h, hb::shared::item::ItemId::Gold);
-			if ((uint32_t)cost > gold_count)  magic = false;
+			if (static_cast<uint64_t>(cost) > gold_count)  magic = false;
 		}
 		//wizard remove
 		//if (m_game->m_client_list[client_h]->m_is_inside_wizard_tower == false && is_purchase) return;

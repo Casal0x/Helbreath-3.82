@@ -104,7 +104,7 @@ void CraftingManager::req_create_portion_handler(int client_h, char* data)
 			if (item_index[i] < 0) return;
 			if ((item_index[i] >= 0) && (item_index[i] >= hb::shared::limits::MaxItems)) return;
 			if (m_game->m_client_list[client_h]->m_item_list[item_index[i]] == 0) return;
-			if (m_game->m_client_list[client_h]->m_item_list[item_index[i]]->m_count < static_cast<uint32_t>(item_number[i])) return;
+			if (m_game->m_client_list[client_h]->m_item_list[item_index[i]]->m_count < static_cast<uint64_t>(item_number[i])) return;
 		}
 
 	// . Bubble Sort
@@ -294,7 +294,7 @@ void CraftingManager::req_create_crafting_handler(int client_h, char* data)
 			if (item_index[i] < 0) return;
 			if ((item_index[i] >= 0) && (item_index[i] >= hb::shared::limits::MaxItems)) return;
 			if (m_game->m_client_list[client_h]->m_item_list[item_index[i]] == 0) return;
-			if (m_game->m_client_list[client_h]->m_item_list[item_index[i]]->m_count < static_cast<uint32_t>(item_number[i])) return;
+			if (m_game->m_client_list[client_h]->m_item_list[item_index[i]]->m_count < static_cast<uint64_t>(item_number[i])) return;
 			item_purity[i] = m_game->m_client_list[client_h]->m_item_list[item_index[i]]->m_item_special_effect_value2;
 			if ((m_game->m_client_list[client_h]->m_item_list[item_index[i]]->get_item_type() == ItemType::None)
 				&& (m_game->m_client_list[client_h]->m_item_list[item_index[i]]->m_sprite == 6)

@@ -54,7 +54,7 @@ protected:
 	void set_default_rect(short sX, short sY, short size_x, short size_y);
 
 	// Dialog management helpers
-	void enable_dialog_box(DialogBoxId::Type id, int type = 0, int v1 = 0, int v2 = 0, char* string = nullptr);
+	void enable_dialog_box(DialogBoxId::Type id, int type = 0, int64_t v1 = 0, int v2 = 0, char* string = nullptr);
 	void disable_dialog_box(DialogBoxId::Type id);
 	void disable_this_dialog();
 	void set_can_close_on_right_click(bool can_close);

@@ -30,13 +30,13 @@ bool shop_manager::has_items() const
 	return m_item_list[0] != nullptr;
 }
 
-void shop_manager::request_shop_menu(char type)
+void shop_manager::request_shop_menu(int16_t npc_config_id)
 {
-	// Request shop contents from server using NPC type
-	send_request(static_cast<int16_t>(type));
+	// Request shop contents from server using NPC config ID
+	send_request(npc_config_id);
 }
 
-void shop_manager::send_request(int16_t npcType)
+void shop_manager::send_request(int16_t npc_config_id)
 {
 	// clear existing shop items
 	for (int i = 0; i < game_limits::max_menu_items; i++) {
@@ -49,7 +49,7 @@ void shop_manager::send_request(int16_t npcType)
 	auto* req = reinterpret_cast<hb::net::PacketShopRequest*>(data);
 	req->header.msg_id = MSGID_REQUEST_SHOP_CONTENTS;
 	req->header.msg_type = MsgType::Confirm;
-	req->npcType = npcType;
+	req->npcConfigId = npc_config_id;
 
 	m_game->m_g_sock->send_msg(data, sizeof(hb::net::PacketShopRequest));
 }
@@ -122,14 +122,14 @@ void shop_manager::handle_response(char* data)
 	}
 
 	// Only show shop dialog if we have items and there was a pending request
-	if (shopIndex > 0 && m_pending_shop_type != 0) {
+	if (shopIndex > 0 && m_pending_npc_config_id != 0) {
 		// enable the SaleMenu dialog - this will call enable_dialog_box which sets up the dialog
-		m_game->m_dialog_box_manager.enable_dialog_box(DialogBoxId::SaleMenu, m_pending_shop_type, 0, 0, nullptr);
-		m_pending_shop_type = 0;  // clear pending request
-	} else if (m_pending_shop_type != 0) {
+		m_game->m_dialog_box_manager.enable_dialog_box(DialogBoxId::SaleMenu, m_pending_npc_config_id, 0, 0, nullptr);
+		m_pending_npc_config_id = 0;  // clear pending request
+	} else if (m_pending_npc_config_id != 0) {
 		// No items available - show message to user
 		m_game->add_event_list("This shop has no items available.", 10);
-		m_pending_shop_type = 0;
+		m_pending_npc_config_id = 0;
 	}
 }
 
