@@ -14,6 +14,11 @@
 #include "SFMLInput.h"
 #include "IInput.h"
 
+#ifdef _WIN32
+#include <imm.h>
+#pragma comment(lib, "imm32.lib")
+#endif
+
 
 namespace hb::shared::render {
 
@@ -43,6 +48,14 @@ void DestroyRenderer(IRenderer* renderer)
 
 IWindow* CreateGameWindow()
 {
+    // Disable IME for the process. SFML's shared GL context creates a hidden
+    // window internally. When that window is destroyed during cleanup,
+    // msctf.dll (Windows IME) hooks fire and access freed thread-local state,
+    // causing an access violation. Disabling IME prevents those hooks.
+#ifdef _WIN32
+    static bool ime_disabled = [] { ImmDisableIME(static_cast<DWORD>(-1)); return true; }();
+    (void)ime_disabled;
+#endif
     return new SFMLWindow();
 }
 
