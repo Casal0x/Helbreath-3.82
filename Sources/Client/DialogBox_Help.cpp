@@ -6,7 +6,7 @@ using namespace hb::client::sprite_id;
 DialogBox_Help::DialogBox_Help(CGame* game)
 	: IDialogBox(DialogBoxId::Help, game)
 {
-	set_default_rect(358 , 65 , 258, 339);
+	set_default_rect(518 , 65 , 258, 339);
 }
 
 bool DialogBox_Help::is_mouse_over_item(short mouse_x, short mouse_y, short sX, short sY, int item)

@@ -11,7 +11,7 @@ using namespace hb::client::sprite_id;
 DialogBox_GuildMenu::DialogBox_GuildMenu(CGame* game)
 	: IDialogBox(DialogBoxId::GuildMenu, game)
 {
-	set_default_rect(337 , 57 , 258, 339);
+	set_default_rect(497 , 57 , 258, 339);
 	set_can_close_on_right_click(false);
 }
 

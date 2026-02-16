@@ -474,7 +474,7 @@ void DialogBoxManager::enable_dialog_box(int box_id, int type, int64_t v1, int v
 		if (is_enabled(DialogBoxId::CrusadeJob) == false)
 		{
 			Info(DialogBoxId::CrusadeJob).m_mode = type;
-			Info(DialogBoxId::CrusadeJob).m_x = 360 ;
+			Info(DialogBoxId::CrusadeJob).m_x = 520 ;
 			Info(DialogBoxId::CrusadeJob).m_y = 65 ;
 			Info(DialogBoxId::CrusadeJob).m_v1 = static_cast<int>(v1);
 		}

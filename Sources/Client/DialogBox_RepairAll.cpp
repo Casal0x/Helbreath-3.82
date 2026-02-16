@@ -9,7 +9,7 @@ using namespace hb::client::sprite_id;
 DialogBox_RepairAll::DialogBox_RepairAll(CGame* game)
 	: IDialogBox(DialogBoxId::RepairAll, game)
 {
-	set_default_rect(337 , 57 , 258, 339);
+	set_default_rect(497 , 57 , 258, 339);
 }
 
 void DialogBox_RepairAll::on_draw(short mouse_x, short mouse_y, short z, char lb)

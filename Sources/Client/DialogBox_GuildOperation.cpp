@@ -8,7 +8,7 @@ using namespace hb::client::sprite_id;
 DialogBox_GuildOperation::DialogBox_GuildOperation(CGame* game)
 	: IDialogBox(DialogBoxId::GuildOperation, game)
 {
-	set_default_rect(337 , 57 , 295, 346);
+	set_default_rect(497 , 57 , 295, 346);
 }
 
 void DialogBox_GuildOperation::on_draw(short mouse_x, short mouse_y, short z, char lb)

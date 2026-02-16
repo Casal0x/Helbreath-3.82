@@ -10,7 +10,7 @@ using namespace hb::client::sprite_id;
 DialogBox_CrusadeJob::DialogBox_CrusadeJob(CGame* game)
 	: IDialogBox(DialogBoxId::CrusadeJob, game)
 {
-	set_default_rect(360 , 65 , 258, 339);
+	set_default_rect(520 , 65 , 258, 339);
 }
 
 void DialogBox_CrusadeJob::draw_mode_select_job(short sX, short sY, short mouse_x, short mouse_y)

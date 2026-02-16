@@ -18,7 +18,7 @@ DialogBox_Magic::DialogBox_Magic(CGame* game)
 	: IDialogBox(DialogBoxId::Magic, game)
 {
 	set_can_close_on_right_click(true);
-	set_default_rect(337 , 57 , 258, 328);
+	set_default_rect(497 , 57 , 258, 328);
 }
 
 void DialogBox_Magic::on_draw(short mouse_x, short mouse_y, short z, char lb)

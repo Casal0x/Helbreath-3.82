@@ -13,7 +13,7 @@ using namespace hb::client::sprite_id;
 DialogBox_ChatHistory::DialogBox_ChatHistory(CGame* game)
 	: IDialogBox(DialogBoxId::ChatHistory, game)
 {
-	set_default_rect(135 , 273  , 364, 162);
+	set_default_rect(218 , 385 , 364, 162);
 }
 
 void DialogBox_ChatHistory::on_draw(short mouse_x, short mouse_y, short z, char lb)

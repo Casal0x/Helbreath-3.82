@@ -11,7 +11,7 @@ using namespace hb::client::sprite_id;
 DialogBox_Map::DialogBox_Map(CGame* game)
 	: IDialogBox(DialogBoxId::Map, game)
 {
-	set_default_rect(336 , 88 , 270, 346);
+	set_default_rect(496 , 88 , 270, 346);
 }
 
 void DialogBox_Map::on_enable(int type, int v1, int v2, char* string)

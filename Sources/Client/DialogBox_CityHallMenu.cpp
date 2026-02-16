@@ -13,7 +13,7 @@ using namespace hb::client::sprite_id;
 DialogBox_CityHallMenu::DialogBox_CityHallMenu(CGame* game)
 	: IDialogBox(DialogBoxId::CityHallMenu, game)
 {
-	set_default_rect(337 , 57 , 258, 339);
+	set_default_rect(497 , 57 , 258, 339);
 }
 
 void DialogBox_CityHallMenu::on_draw(short mouse_x, short mouse_y, short z, char lb)

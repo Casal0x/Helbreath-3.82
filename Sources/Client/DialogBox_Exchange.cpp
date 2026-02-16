@@ -15,7 +15,7 @@ using namespace hb::client::sprite_id;
 DialogBox_Exchange::DialogBox_Exchange(CGame* game)
 	: IDialogBox(DialogBoxId::Exchange, game)
 {
-	set_default_rect(100 , 30 , 520, 357);
+	set_default_rect(140 , 30 , 520, 357);
 }
 
 void DialogBox_Exchange::on_draw(short mouse_x, short mouse_y, short z, char lb)

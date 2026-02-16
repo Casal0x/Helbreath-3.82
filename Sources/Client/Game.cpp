@@ -6176,7 +6176,7 @@ void CGame::command_processor(short mouse_x, short mouse_y, short tile_x, short 
 				if (CursorTarget::get_selected_id() == 9)
 				{
 					{
-						if (mouse_x < 400) //LifeX Fix Map
+						if (mouse_x < LOGICAL_WIDTH() / 2)
 						{
 							m_dialog_box_manager.Info(DialogBoxId::GuideMap).m_x = 0;
 						}
@@ -6185,13 +6185,13 @@ void CGame::command_processor(short mouse_x, short mouse_y, short tile_x, short 
 							m_dialog_box_manager.Info(DialogBoxId::GuideMap).m_x = LOGICAL_MAX_X() - m_dialog_box_manager.Info(DialogBoxId::GuideMap).m_size_x;
 						}
 
-						if (mouse_y < 273)
+						if (mouse_y < LOGICAL_HEIGHT() / 2)
 						{
 							m_dialog_box_manager.Info(DialogBoxId::GuideMap).m_y = 0;
 						}
 						else
 						{
-							m_dialog_box_manager.Info(DialogBoxId::GuideMap).m_y = 547 - m_dialog_box_manager.Info(DialogBoxId::GuideMap).m_size_y;
+							m_dialog_box_manager.Info(DialogBoxId::GuideMap).m_y = (LOGICAL_HEIGHT() - ICON_PANEL_HEIGHT()) - m_dialog_box_manager.Info(DialogBoxId::GuideMap).m_size_y;
 						}
 					}
 				}

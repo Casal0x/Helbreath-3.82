@@ -44,7 +44,7 @@ DialogBox_Inventory::DialogBox_Inventory(CGame* game)
 	: IDialogBox(DialogBoxId::Inventory, game)
 {
 	set_can_close_on_right_click(true);
-	set_default_rect(380 , 210 , 225, 185);
+	set_default_rect(540 , 210 , 225, 185);
 }
 
 // Helper: draw a single inventory item with proper coloring and state

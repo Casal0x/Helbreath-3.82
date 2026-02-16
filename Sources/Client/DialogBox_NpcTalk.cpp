@@ -9,7 +9,7 @@ using namespace hb::client::sprite_id;
 DialogBox_NpcTalk::DialogBox_NpcTalk(CGame* game)
 	: IDialogBox(DialogBoxId::NpcTalk, game)
 {
-	set_default_rect(337 , 57 , 258, 339);
+	set_default_rect(497 , 57 , 258, 339);
 }
 
 int DialogBox_NpcTalk::get_total_lines() const
