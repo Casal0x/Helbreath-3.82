@@ -54,7 +54,7 @@ public:
     // Path Configuration
     //------------------------------------------------------------------
 
-    // get the base path for sprite PAK files (e.g., "SPRITES_PNG" or "SPRITES_BMP")
+    // get the base path for sprite PAK files
     virtual std::string get_sprite_path() const = 0;
 };
 

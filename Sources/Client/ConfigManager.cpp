@@ -90,6 +90,8 @@ void config_manager::set_defaults()
 	m_fullscreen_stretch = false;
 	m_tile_grid = false;     // Simple tile grid off by default
 	m_patching_grid = false; // Patching debug grid off by default
+	m_reduced_motion = false;
+	m_toggle_to_chat = true; // ON = current behavior (Enter required to chat)
 
 	m_dirty = false;
 }
@@ -256,6 +258,14 @@ bool config_manager::load(const char* filename)
 			{
 				m_fullscreen_stretch = display["fullscreenStretch"].get<bool>();
 			}
+			if (display.contains("reducedMotion"))
+			{
+				m_reduced_motion = display["reducedMotion"].get<bool>();
+			}
+			if (display.contains("toggleToChat"))
+			{
+				m_toggle_to_chat = display["toggleToChat"].get<bool>();
+			}
 		}
 
 		// Validate resolution to nearest 4:3 option
@@ -298,11 +308,6 @@ bool config_manager::save(const char* filename)
 {
 	json j;
 
-	// Server settings
-	j["server"]["address"] = DEF_SERVER_IP;
-	j["server"]["port"] = DEF_SERVER_PORT;
-	j["server"]["gamePort"] = DEF_GSERVER_PORT;
-
 	// Shortcuts
 	j["shortcuts"]["magic"] = m_magic_shortcut;
 	j["shortcuts"]["slots"] = json::array();
@@ -342,6 +347,8 @@ bool config_manager::save(const char* filename)
 	j["display"]["vsync"] = m_vsync;
 	j["display"]["fpsLimit"] = m_fps_limit;
 	j["display"]["fullscreenStretch"] = m_fullscreen_stretch;
+	j["display"]["reducedMotion"] = m_reduced_motion;
+	j["display"]["toggleToChat"] = m_toggle_to_chat;
 
 	std::ofstream file(filename);
 	if (!file.is_open())
@@ -666,6 +673,26 @@ void config_manager::set_fullscreen_stretch_enabled(bool enabled)
 	if (m_fullscreen_stretch != enabled)
 	{
 		m_fullscreen_stretch = enabled;
+		m_dirty = true;
+		save();
+	}
+}
+
+void config_manager::set_reduced_motion_enabled(bool enabled)
+{
+	if (m_reduced_motion != enabled)
+	{
+		m_reduced_motion = enabled;
+		m_dirty = true;
+		save();
+	}
+}
+
+void config_manager::set_toggle_to_chat_enabled(bool enabled)
+{
+	if (m_toggle_to_chat != enabled)
+	{
+		m_toggle_to_chat = enabled;
 		m_dirty = true;
 		save();
 	}

@@ -716,6 +716,20 @@ void DialogBox_SysMenu::draw_system_tab(short sX, short sY, short mouse_x, short
 	put_string(labelX, lineY, DRAW_DIALOGBOX_SYSMENU_GUIDEMAP, GameColors::UILabel);
 	put_string(labelX + 1, lineY, DRAW_DIALOGBOX_SYSMENU_GUIDEMAP, GameColors::UILabel);
 	draw_toggle(valueX, lineY, m_game->m_dialog_box_manager.is_enabled(DialogBoxId::GuideMap), mouse_x, mouse_y);
+
+	lineY += 20;
+
+	// Reduced Motion toggle
+	put_string(labelX, lineY, "Reduced Motion:", GameColors::UILabel);
+	put_string(labelX + 1, lineY, "Reduced Motion:", GameColors::UILabel);
+	draw_toggle(valueX, lineY, config_manager::get().is_reduced_motion_enabled(), mouse_x, mouse_y);
+
+	lineY += 20;
+
+	// Toggle to Chat toggle
+	put_string(labelX, lineY, "Toggle to Chat:", GameColors::UILabel);
+	put_string(labelX + 1, lineY, "Toggle to Chat:", GameColors::UILabel);
+	draw_toggle(valueX, lineY, config_manager::get().is_toggle_to_chat_enabled(), mouse_x, mouse_y);
 }
 
 // =============================================================================
@@ -1172,6 +1186,26 @@ bool DialogBox_SysMenu::on_click_system(short sX, short sY, short mouse_x, short
 			disable_dialog_box(DialogBoxId::GuideMap);
 		else
 			enable_dialog_box(DialogBoxId::GuideMap, 0, 0, 0);
+		play_sound_effect('E', 14, 5);
+		return true;
+	}
+
+	lineY += 20;
+
+	// Reduced Motion toggle
+	if (is_in_toggle_area(valueX, lineY, mouse_x, mouse_y)) {
+		bool enabled = config_manager::get().is_reduced_motion_enabled();
+		config_manager::get().set_reduced_motion_enabled(!enabled);
+		play_sound_effect('E', 14, 5);
+		return true;
+	}
+
+	lineY += 20;
+
+	// Toggle to Chat toggle
+	if (is_in_toggle_area(valueX, lineY, mouse_x, mouse_y)) {
+		bool enabled = config_manager::get().is_toggle_to_chat_enabled();
+		config_manager::get().set_toggle_to_chat_enabled(!enabled);
 		play_sound_effect('E', 14, 5);
 		return true;
 	}

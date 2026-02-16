@@ -291,11 +291,6 @@ void effect_manager::add_effect_impl(EffectType type, int sX, int sY, int dX, in
 				m_effect_list[i]->m_error = 0;
 				m_effect_list[i]->m_max_frame = 0;
 				m_effect_list[i]->m_frame_time = 20;
-				abs_x = abs(x - (sX - m_game->m_Camera.get_x()));
-				abs_y = abs(y - (sY - m_game->m_Camera.get_y()));
-				if (abs_x > abs_y) dist = abs_x;
-				else dist = abs_y;
-				dist = dist / 32;
 				m_game->set_camera_shaking_effect(dist);
 				break;
 
@@ -580,11 +575,6 @@ void effect_manager::add_effect_impl(EffectType type, int sX, int sY, int dX, in
 				m_effect_list[i]->m_error = 0;
 				m_effect_list[i]->m_max_frame = 0;
 				m_effect_list[i]->m_frame_time = 20;
-				abs_x = abs(x - (sX - m_game->m_Camera.get_x()));
-				abs_y = abs(y - (sY - m_game->m_Camera.get_y()));
-				if (abs_x > abs_y) dist = abs_x;
-				else dist = abs_y;
-				dist = dist / 32;
 				m_game->set_camera_shaking_effect(dist);
 				break;
 
@@ -991,11 +981,6 @@ void effect_manager::add_effect_impl(EffectType type, int sX, int sY, int dX, in
 				m_effect_list[i]->m_error = 0;
 				m_effect_list[i]->m_max_frame = 30;
 				m_effect_list[i]->m_frame_time = 25;
-				abs_x = abs(x - (sX - m_game->m_Camera.get_x()));
-				abs_y = abs(y - (sY - m_game->m_Camera.get_y()));
-				if (abs_x > abs_y) dist = abs_x;
-				else dist = abs_y;
-				dist = dist / 32;
 				m_game->set_camera_shaking_effect(dist);
 				break;
 			case EffectType::SHOTSTAR_FALL_1: //

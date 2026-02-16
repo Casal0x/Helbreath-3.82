@@ -262,10 +262,6 @@ void Screen_OnGame::on_update()
         }
     }
 
-    // save viewport and apply camera shake
-    m_game->m_Camera.save_position();
-    m_game->m_Camera.apply_shake();
-
     // Calculate viewport tile coordinates
     m_pivot_x = m_game->m_map_data->m_pivot_x;
     m_pivot_y = m_game->m_map_data->m_pivot_y;
@@ -413,9 +409,6 @@ void Screen_OnGame::on_update()
         ((m_sDivY + m_pivot_y) * 32 + m_sModY + m_sMsY - 17) / 32 + 1,
         m_cLB, m_cRB);
 
-    // Restore viewport
-    m_game->m_Camera.restore_position();
-
     m_game->m_Camera.update(m_time);
 
     // Observer mode camera (additional updates for keyboard-driven movement)
@@ -485,6 +478,17 @@ void Screen_OnGame::on_render()
             m_sDivY = val / 32;
             m_sModY = val % 32;
         }
+    }
+
+    // Apply camera shake after position snap so it affects rendering
+    if (m_game->m_Camera.apply_shake())
+    {
+        int val = m_game->m_Camera.get_x() - (m_pivot_x * 32);
+        m_sDivX = val / 32;
+        m_sModX = val % 32;
+        val = m_game->m_Camera.get_y() - (m_pivot_y * 32);
+        m_sDivY = val / 32;
+        m_sModY = val % 32;
     }
 
     // Main scene rendering

@@ -20,17 +20,14 @@
         "fullscreen": false,
         "fullscreenStretch": false,
         "patchingGrid": false,
+        "reducedMotion": false,
         "runningMode": true,
         "showFps": true,
         "showLatency": true,
         "tileGrid": false,
+        "toggleToChat": true,
         "vsync": false,
         "zoomMap": true
-    },
-    "server": {
-        "address": "199.187.160.239",
-        "gamePort": 9907,
-        "port": 2500
     },
     "shortcuts": {
         "magic": 31,
@@ -43,7 +40,7 @@
         ]
     },
     "window": {
-        "height": 1080,
-        "width": 1440
+        "height": 600,
+        "width": 800
     }
 }

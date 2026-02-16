@@ -520,7 +520,23 @@ bool CGame::on_native_message(uint32_t message, uintptr_t wparam, intptr_t lpara
 bool CGame::on_text_input(hb::shared::types::NativeWindowHandle hwnd,
                            uint32_t message, uintptr_t wparam, intptr_t lparam)
 {
-	return text_input_manager::get().handle_char(hwnd, message, wparam, lparam) != 0;
+	if (text_input_manager::get().handle_char(hwnd, message, wparam, lparam))
+		return true;
+
+	// Auto-activate chat on printable keypress when toggle-to-chat is disabled
+	if (!config_manager::get().is_toggle_to_chat_enabled()
+		&& GameModeManager::get_mode() == GameMode::MainGame
+		&& GameModeManager::get_active_overlay() == nullptr
+		&& message == 0x0102 /*WM_CHAR*/
+		&& wparam >= 32 && wparam != 127)
+	{
+		text_input_manager::get().start_input(
+			CHAT_INPUT_X(), CHAT_INPUT_Y(), ChatMsgMaxLen, m_chat_msg);
+		text_input_manager::get().clear_input();
+		return text_input_manager::get().handle_char(hwnd, message, wparam, lparam);
+	}
+
+	return false;
 }
 
 // UpdateScreen and DrawScreen removed - all modes now handled by Screen/Overlay system via GameModeManager
@@ -2115,7 +2131,7 @@ void CGame::common_event_handler(char* data)
 		if (!pkt) return;
 		dw_v4 = pkt->v4;
 	}
-	if ((v1 == 6) && (v2 == 0)) {
+	if ((v1 == hb::shared::item::ItemId::Gold) && (v2 == 0)) {
 		m_effect_manager->add_effect(EffectType::GOLD_DROP, sX, sY, 0, 0, 0);
 	}
 	m_map_data->set_item(sX, sY, v1, static_cast<char>(v3), dw_v4);
@@ -3865,6 +3881,8 @@ void CGame::draw_new_dialog_box(char type, int sX, int sY, int frame, bool is_no
 
 void CGame::set_camera_shaking_effect(short dist, int mul)
 {
+	if (config_manager::get().is_reduced_motion_enabled()) return;
+
 	int degree = 5 - dist;
 	if (degree <= 0) degree = 0;
 	degree *= 2;
