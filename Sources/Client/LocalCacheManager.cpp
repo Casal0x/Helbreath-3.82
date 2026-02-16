@@ -1,5 +1,5 @@
 #include "LocalCacheManager.h"
-#include "CRC32.h"
+#include "SHA256.h"
 
 #include <cstdio>
 #include <cstring>
@@ -36,7 +36,7 @@ bool LocalCacheManager::has_cache(ConfigCacheType type) const
 	return m_state[static_cast<int>(type)].hasCache;
 }
 
-uint32_t LocalCacheManager::get_hash(ConfigCacheType type) const
+std::string LocalCacheManager::get_hash(ConfigCacheType type) const
 {
 	return m_state[static_cast<int>(type)].hash;
 }
@@ -66,13 +66,14 @@ bool LocalCacheManager::finalize_and_save(ConfigCacheType type)
 	auto& acc = m_accum[idx];
 	if (!acc.active || acc.data.empty()) return false;
 
-	uint32_t hash = _ComputePayloadHash(acc.data);
+	std::string hash = _ComputePayloadHash(acc.data);
 
 	CacheHeader hdr{};
 	hdr.magic = CACHE_MAGIC;
 	hdr.version = CACHE_VERSION;
 	hdr.configType = static_cast<uint32_t>(type);
-	hdr.crc32 = hash;
+	std::memset(hdr.sha256, 0, sizeof(hdr.sha256));
+	std::snprintf(hdr.sha256, sizeof(hdr.sha256), "%s", hash.c_str());
 	hdr.payloadSize = static_cast<uint32_t>(acc.data.size());
 
 	std::ofstream file(_GetFilename(type), std::ios::binary);
@@ -119,8 +120,8 @@ bool LocalCacheManager::replay_from_cache(ConfigCacheType type, PacketCallback c
 		return false;
 	}
 
-	uint32_t check = hb::shared::util::hb_crc32(payload.data(), payload.size());
-	if (check != hdr.crc32) {
+	std::string check = hb::shared::util::sha256(payload.data(), payload.size());
+	if (check != hdr.sha256) {
 		m_bIsReplaying = false;
 		return false;
 	}
@@ -166,7 +167,7 @@ bool LocalCacheManager::_LoadHeader(ConfigCacheType type)
 {
 	int idx = static_cast<int>(type);
 	m_state[idx].hasCache = false;
-	m_state[idx].hash = 0;
+	m_state[idx].hash.clear();
 
 	std::ifstream file(_GetFilename(type), std::ios::binary);
 	if (!file) return false;
@@ -185,11 +186,11 @@ bool LocalCacheManager::_LoadHeader(ConfigCacheType type)
 	}
 
 	m_state[idx].hasCache = true;
-	m_state[idx].hash = hdr.crc32;
+	m_state[idx].hash = hdr.sha256;
 	return true;
 }
 
-uint32_t LocalCacheManager::_ComputePayloadHash(const std::vector<uint8_t>& data) const
+std::string LocalCacheManager::_ComputePayloadHash(const std::vector<uint8_t>& data) const
 {
-	return hb::shared::util::hb_crc32(data.data(), data.size());
+	return hb::shared::util::sha256(data.data(), data.size());
 }

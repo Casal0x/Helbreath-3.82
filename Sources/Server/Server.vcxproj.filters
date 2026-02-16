@@ -266,7 +266,10 @@
     <ClInclude Include="..\Dependencies\Shared\Render\BitmapFontFactory.h">
       <Filter>Shared\Rendering</Filter>
     </ClInclude>
-    <ClInclude Include="..\Dependencies\Shared\Util\CRC32.h">
+    <ClInclude Include="..\Dependencies\Shared\Util\SHA256.h">
+      <Filter>Shared</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Dependencies\Shared\vendor\picosha2.h">
       <Filter>Shared</Filter>
     </ClInclude>
     <ClInclude Include="..\Dependencies\Shared\Render\ColorUtils.h">
@@ -577,6 +580,9 @@
     </ClCompile>
     <ClCompile Include="..\Dependencies\Shared\Log\LogBackend.cpp">
       <Filter>Shared\Log</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Dependencies\Shared\Util\SHA256.cpp">
+      <Filter>Shared</Filter>
     </ClCompile>
     <ClCompile Include="ServerLog.cpp">
       <Filter>Console</Filter>

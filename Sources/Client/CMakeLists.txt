@@ -33,6 +33,29 @@ set(SFMLENGINE_SOURCES
 add_library(SFMLEngine STATIC ${SFMLENGINE_SOURCES})
 
 # ---------------------------------------------------------------------------
+# AutoUpdater static library
+# ---------------------------------------------------------------------------
+set(AUTOUPDATER_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../AutoUpdater)
+set(AUTOUPDATER_SOURCES
+    ${AUTOUPDATER_DIR}/auto_updater.cpp
+    ${AUTOUPDATER_DIR}/updater_manifest.cpp
+    ${AUTOUPDATER_DIR}/updater_http.cpp
+    ${AUTOUPDATER_DIR}/updater_sha256.cpp
+    ${AUTOUPDATER_DIR}/updater_file_ops.cpp
+    ${AUTOUPDATER_DIR}/updater_gui_x11.cpp
+)
+
+add_library(AutoUpdater STATIC ${AUTOUPDATER_SOURCES})
+
+target_include_directories(AutoUpdater PRIVATE
+    ${AUTOUPDATER_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/../Dependencies/Shared
+)
+
+find_package(X11 REQUIRED)
+target_link_libraries(AutoUpdater PRIVATE X11::X11)
+
+# ---------------------------------------------------------------------------
 # Shared sources (8 .cpp files)
 # ---------------------------------------------------------------------------
 set(SHARED_SOURCES
@@ -44,6 +67,7 @@ set(SHARED_SOURCES
     ../Dependencies/Shared/Render/ISpriteFactory.cpp
     ../Dependencies/Shared/Render/ResolutionConfig.cpp
     ../Dependencies/Shared/Render/TextLib.cpp
+    ../Dependencies/Shared/Util/SHA256.cpp
 )
 
 # ---------------------------------------------------------------------------
@@ -59,6 +83,14 @@ add_executable(HelbreathClient
     ${SHARED_SOURCES}
 )
 
+# Output name: Game_x64_linux / Game_x86_linux
+if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+    set(_arch "x64")
+else()
+    set(_arch "x86")
+endif()
+set_target_properties(HelbreathClient PROPERTIES OUTPUT_NAME "Game_${_arch}_linux")
+
 # ---------------------------------------------------------------------------
 # Include directories (mirrors vcxproj IncludePath)
 # ---------------------------------------------------------------------------
@@ -67,6 +99,7 @@ set(SHARED_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../Dependencies/Shared)
 set(COMMON_INCLUDE_DIRS
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/../SFMLEngine
+    ${CMAKE_CURRENT_SOURCE_DIR}/../AutoUpdater
     ${SHARED_DIR}
     ${SHARED_DIR}/Entity
     ${SHARED_DIR}/Game
@@ -116,10 +149,12 @@ target_link_libraries(SFMLEngine PRIVATE SFML::Graphics SFML::Window SFML::Syste
 find_package(Threads REQUIRED)
 
 target_link_libraries(HelbreathClient PRIVATE
+    AutoUpdater
     SFMLEngine
     SFML::Graphics
     SFML::Window
     SFML::System
     Threads::Threads
+    X11::X11
     ${CMAKE_DL_LIBS}
 )

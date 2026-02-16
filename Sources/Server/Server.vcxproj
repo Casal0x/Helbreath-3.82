@@ -349,7 +349,8 @@
     <ClInclude Include="..\Dependencies\Shared\Game\AdminLevel.h" />
     <ClInclude Include="..\Dependencies\Shared\Entity\Appearance.h" />
     <ClInclude Include="..\Dependencies\Shared\Render\BitmapFontFactory.h" />
-    <ClInclude Include="..\Dependencies\Shared\Util\CRC32.h" />
+    <ClInclude Include="..\Dependencies\Shared\Util\SHA256.h" />
+    <ClInclude Include="..\Dependencies\Shared\vendor\picosha2.h" />
     <ClInclude Include="..\Dependencies\Shared\Render\ColorUtils.h" />
     <ClInclude Include="..\Dependencies\Shared\Net\ConcurrentMsgQueue.h" />
     <ClInclude Include="..\Dependencies\Shared\Entity\DynamicObjectID.h" />
@@ -459,6 +460,7 @@
     <ClCompile Include="..\Dependencies\Shared\Net\ASIOSocket.cpp" />
     <ClCompile Include="..\Dependencies\Shared\Net\IOServicePool.cpp" />
     <ClCompile Include="..\Dependencies\Shared\Log\LogBackend.cpp" />
+    <ClCompile Include="..\Dependencies\Shared\Util\SHA256.cpp" />
     <ClCompile Include="ServerLog.cpp" />
   </ItemGroup>
   <ItemGroup>

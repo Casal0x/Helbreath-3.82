@@ -3,6 +3,7 @@
 #include "Application.h"
 #include "RendererFactory.h"
 #include "resource.h"
+#include "auto_updater.h"
 #include <memory>
 #include <cstdlib>
 #include <ctime>
@@ -15,6 +16,14 @@ int GameMain(hb::shared::types::NativeInstance native_instance, int icon_resourc
 #ifdef _DEBUG
 	DebugConsole::allocate();
 #endif
+
+#ifndef _DEBUG
+	// Check for updates before any SFML initialization
+	auto update_status = hb::updater::check_for_updates();
+	if (update_status == hb::updater::update_result::restart_required)
+		hb::updater::relaunch(); // Re-exec; next launch swaps .update → exe
+#endif
+
 	using namespace hb::shared::render;
     srand(static_cast<unsigned>(time(0)));
 

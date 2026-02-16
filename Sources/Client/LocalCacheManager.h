@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <string>
 #include <vector>
 
 enum class ConfigCacheType : uint8_t
@@ -21,7 +22,7 @@ public:
 	void shutdown();
 
 	bool     has_cache(ConfigCacheType type) const;
-	uint32_t get_hash(ConfigCacheType type) const;
+	std::string get_hash(ConfigCacheType type) const;
 
 	void accumulate_packet(ConfigCacheType type, const char* data, uint32_t size);
 	bool finalize_and_save(ConfigCacheType type);
@@ -35,21 +36,21 @@ public:
 
 private:
 	static constexpr uint32_t CACHE_MAGIC   = 0x48424346;
-	static constexpr uint32_t CACHE_VERSION = 1;
+	static constexpr uint32_t CACHE_VERSION = 2;
 
 	struct CacheHeader
 	{
 		uint32_t magic;
 		uint32_t version;
 		uint32_t configType;
-		uint32_t crc32;
+		char sha256[65];
 		uint32_t payloadSize;
 	};
 
 	struct CacheState
 	{
-		bool     hasCache;
-		uint32_t hash;
+		bool        hasCache;
+		std::string hash;
 	};
 
 	struct Accumulator
@@ -64,5 +65,5 @@ private:
 
 	const char* _GetFilename(ConfigCacheType type) const;
 	bool _LoadHeader(ConfigCacheType type);
-	uint32_t _ComputePayloadHash(const std::vector<uint8_t>& data) const;
+	std::string _ComputePayloadHash(const std::vector<uint8_t>& data) const;
 };

@@ -79,6 +79,7 @@ set(SHARED_SOURCES
     ../Dependencies/Shared/Net/ASIOSocket.cpp
     ../Dependencies/Shared/Net/IOServicePool.cpp
     ../Dependencies/Shared/Log/LogBackend.cpp
+    ../Dependencies/Shared/Util/SHA256.cpp
 )
 
 # ---------------------------------------------------------------------------

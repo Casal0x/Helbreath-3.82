@@ -20,10 +20,10 @@ namespace net {
 		char server[20];
 		uint8_t padding;
 		// --- Cache extension ---
-		uint32_t itemConfigHash;
-		uint32_t magicConfigHash;
-		uint32_t skillConfigHash;
-		uint32_t npcConfigHash;
+		char itemConfigHash[65];
+		char magicConfigHash[65];
+		char skillConfigHash[65];
+		char npcConfigHash[65];
 	};
 
 	struct HB_PACKED PacketResponseConfigCacheStatus {

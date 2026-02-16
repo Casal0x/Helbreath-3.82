@@ -1002,10 +1002,14 @@ bool CGame::send_command(uint32_t message_id, uint16_t command, char direction, 
 		req.is_observer = static_cast<uint8_t>(m_is_observer_mode);
 		std::snprintf(req.server, sizeof(req.server), "%s", m_game_server_name.c_str());
 		req.padding = 0;
-		req.itemConfigHash = LocalCacheManager::get().get_hash(ConfigCacheType::Items);
-		req.magicConfigHash = LocalCacheManager::get().get_hash(ConfigCacheType::Magic);
-		req.skillConfigHash = LocalCacheManager::get().get_hash(ConfigCacheType::Skills);
-		req.npcConfigHash = LocalCacheManager::get().get_hash(ConfigCacheType::Npcs);
+		std::snprintf(req.itemConfigHash, sizeof(req.itemConfigHash), "%s",
+			LocalCacheManager::get().get_hash(ConfigCacheType::Items).c_str());
+		std::snprintf(req.magicConfigHash, sizeof(req.magicConfigHash), "%s",
+			LocalCacheManager::get().get_hash(ConfigCacheType::Magic).c_str());
+		std::snprintf(req.skillConfigHash, sizeof(req.skillConfigHash), "%s",
+			LocalCacheManager::get().get_hash(ConfigCacheType::Skills).c_str());
+		std::snprintf(req.npcConfigHash, sizeof(req.npcConfigHash), "%s",
+			LocalCacheManager::get().get_hash(ConfigCacheType::Npcs).c_str());
 		result = m_g_sock->send_msg(reinterpret_cast<char*>(&req), sizeof(req), key);
 	}
 	break;

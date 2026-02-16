@@ -1710,10 +1710,10 @@
 
 #define DEF_MSG_CHARACTERNAME	"Character Name"
 #define DEF_MSG_GENDER			"Gender"
-#define DEF_MSG_SKINCOLOR		"Skin hb::shared::render::Color"
+#define DEF_MSG_SKINCOLOR		"Skin Color"
 #define DEF_MSG_HAIRSTYLE		"Hair Style"
-#define DEF_MSG_HAIRCOLOR		"Hair hb::shared::render::Color"
-#define DEF_MSG_UNDERWEARCOLOR	"Underwear hb::shared::render::Color"
+#define DEF_MSG_HAIRCOLOR		"Hair Color"
+#define DEF_MSG_UNDERWEARCOLOR	"Underwear Color"
 #define DEF_MSG_STRENGTH		"Strength"
 #define DEF_MSG_VITALITY		"Vitality"
 #define DEF_MSG_DEXTERITY		"Dexterity"

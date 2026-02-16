@@ -358,7 +358,9 @@ void SFMLWindow::set_size(int width, int height, bool center)
     }
 
     // Re-apply mouse cursor grab to update grab boundaries to new window size
+#ifdef _WIN32
     m_renderWindow.setMouseCursorGrabbed(false);
+#endif
     apply_cursor_grab();
 }
 
@@ -591,6 +593,25 @@ bool SFMLWindow::process_messages()
 
         if (const auto* mouseMoved = event->getIf<sf::Event::MouseMoved>())
         {
+#ifndef _WIN32
+            // Software mouse capture for Linux: warp cursor back if it escapes
+            // the window bounds.  We cannot use SFML's setMouseCursorGrabbed on
+            // X11 because it calls XGrabPointer with an empty event mask which
+            // swallows all mouse events.
+            if (!m_fullscreen && m_mouse_capture_enabled && m_active)
+            {
+                auto winSize = m_renderWindow.getSize();
+                int mx = mouseMoved->position.x;
+                int my = mouseMoved->position.y;
+                bool clamped = false;
+                if (mx < 0) { mx = 0; clamped = true; }
+                if (my < 0) { my = 0; clamped = true; }
+                if (mx >= static_cast<int>(winSize.x)) { mx = static_cast<int>(winSize.x) - 1; clamped = true; }
+                if (my >= static_cast<int>(winSize.y)) { my = static_cast<int>(winSize.y) - 1; clamped = true; }
+                if (clamped)
+                    sf::Mouse::setPosition({mx, my}, m_renderWindow);
+            }
+#endif
             if (m_event_handler)
             {
                 int logicalX, logicalY;
@@ -860,11 +881,20 @@ void SFMLWindow::TransformMouseCoords(int windowX, int windowY, int& logicalX, i
 void SFMLWindow::apply_cursor_grab()
 {
     // In fullscreen the cursor is already confined to the window by the OS,
-    // and calling setMouseCursorGrabbed(true) on Linux/X11 can lock the
-    // pointer completely.  Only grab in windowed mode when the user has
-    // enabled mouse capture.
+    // so only grab in windowed mode when the user has enabled mouse capture.
     bool grab = !m_fullscreen && m_mouse_capture_enabled;
+
+#ifdef _WIN32
+    // On Windows, SFML uses ClipCursor which confines the pointer without
+    // interfering with mouse events.
     m_renderWindow.setMouseCursorGrabbed(grab);
+#else
+    // On Linux/X11, SFML's setMouseCursorGrabbed calls XGrabPointer with an
+    // empty event mask (None), which swallows ALL mouse events and makes the
+    // cursor appear frozen.  Instead we do software clamping in process_messages
+    // by warping the cursor back when it leaves the window bounds.
+    (void)grab;
+#endif
 }
 
 void SFMLWindow::get_desktop_size(int& width, int& height) const

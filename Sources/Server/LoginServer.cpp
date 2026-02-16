@@ -265,13 +265,6 @@ void LoginServer::response_character(int h, char* data)
 		return;
 	}
 
-	// Check if character name conflicts with an existing account name
-	if (AccountNameExists(name)) {
-		hb::logger::log("Character name '{}' conflicts with existing account name", name);
-		send_login_msg(LogResMsg::NewCharacterFailed, LogResMsg::NewCharacterFailed, 0, 0, h);
-		return;
-	}
-
 	// Also check within current account (redundant but kept for safety)
 	for (const auto& entry : chars) {
 		if (hb_strnicmp(entry.character_name, name, hb::shared::limits::CharNameLen - 1) == 0) {

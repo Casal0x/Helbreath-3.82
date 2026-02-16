@@ -15,7 +15,7 @@
 #include "MapInfoSqliteStore.h"
 #include "sqlite3.h"
 #include "Packet/SharedPackets.h"
-#include "CRC32.h"
+#include "SHA256.h"
 #include "SharedCalculations.h"
 #include "Item/ItemAttributes.h"
 #include "ObjectIDRange.h"
@@ -1659,7 +1659,7 @@ void CGame::request_init_data_handler(int client_h, char* data, char key, size_t
 
 	// Send configs FIRST so the client has item/magic/skill definitions
 	// before receiving player data that references them.
-	uint32_t clientItemHash = 0, clientMagicHash = 0, clientSkillHash = 0, clientNpcHash = 0;
+	std::string clientItemHash, clientMagicHash, clientSkillHash, clientNpcHash;
 	if (msg_size >= sizeof(hb::net::PacketRequestInitDataEx)) {
 		const auto* exReq = reinterpret_cast<const hb::net::PacketRequestInitDataEx*>(data);
 		clientItemHash = exReq->itemConfigHash;
@@ -1668,10 +1668,10 @@ void CGame::request_init_data_handler(int client_h, char* data, char key, size_t
 		clientNpcHash = exReq->npcConfigHash;
 	}
 
-	bool item_cache_valid  = (clientItemHash != 0 && clientItemHash == m_config_hash[0]);
-	bool magic_cache_valid = (clientMagicHash != 0 && clientMagicHash == m_config_hash[1]);
-	bool skill_cache_valid = (clientSkillHash != 0 && clientSkillHash == m_config_hash[2]);
-	bool npc_cache_valid   = (clientNpcHash != 0 && clientNpcHash == m_config_hash[3]);
+	bool item_cache_valid  = (!clientItemHash.empty() && clientItemHash == m_config_hash[0]);
+	bool magic_cache_valid = (!clientMagicHash.empty() && clientMagicHash == m_config_hash[1]);
+	bool skill_cache_valid = (!clientSkillHash.empty() && clientSkillHash == m_config_hash[2]);
+	bool npc_cache_valid   = (!clientNpcHash.empty() && clientNpcHash == m_config_hash[3]);
 
 	{
 		hb::net::PacketResponseConfigCacheStatus cacheStatus{};
@@ -2184,7 +2184,7 @@ bool CGame::send_client_npc_configs(int client_h)
 
 void CGame::compute_config_hashes()
 {
-	// Compute CRC32 for item configs
+	// Compute SHA256 for item configs
 	{
 		constexpr size_t headerSize = sizeof(hb::net::PacketItemConfigHeader);
 		constexpr size_t entrySize = sizeof(hb::net::PacketItemConfigEntry);
@@ -2258,10 +2258,10 @@ void CGame::compute_config_hashes()
 			itemsSent += entriesInPacket;
 			packetIndex++;
 		}
-		m_config_hash[0] = allData.empty() ? 0 : hb::shared::util::hb_crc32(allData.data(), allData.size());
+		m_config_hash[0] = allData.empty() ? std::string{} : hb::shared::util::sha256(allData.data(), allData.size());
 	}
 
-	// Compute CRC32 for magic configs
+	// Compute SHA256 for magic configs
 	{
 		constexpr size_t headerSize = sizeof(hb::net::PacketMagicConfigHeader);
 		constexpr size_t entrySize = sizeof(hb::net::PacketMagicConfigEntry);
@@ -2320,10 +2320,10 @@ void CGame::compute_config_hashes()
 			magicsSent += entriesInPacket;
 			packetIndex++;
 		}
-		m_config_hash[1] = allData.empty() ? 0 : hb::shared::util::hb_crc32(allData.data(), allData.size());
+		m_config_hash[1] = allData.empty() ? std::string{} : hb::shared::util::sha256(allData.data(), allData.size());
 	}
 
-	// Compute CRC32 for skill configs
+	// Compute SHA256 for skill configs
 	{
 		constexpr size_t headerSize = sizeof(hb::net::PacketSkillConfigHeader);
 		constexpr size_t entrySize = sizeof(hb::net::PacketSkillConfigEntry);
@@ -2375,10 +2375,10 @@ void CGame::compute_config_hashes()
 			skillsSent += entriesInPacket;
 			packetIndex++;
 		}
-		m_config_hash[2] = allData.empty() ? 0 : hb::shared::util::hb_crc32(allData.data(), allData.size());
+		m_config_hash[2] = allData.empty() ? std::string{} : hb::shared::util::sha256(allData.data(), allData.size());
 	}
 
-	// Compute CRC32 for NPC configs
+	// Compute SHA256 for NPC configs
 	{
 		constexpr size_t headerSize = sizeof(hb::net::PacketNpcConfigHeader);
 		constexpr size_t entrySize = sizeof(hb::net::PacketNpcConfigEntry);
@@ -2429,10 +2429,10 @@ void CGame::compute_config_hashes()
 			npcsSent += entriesInPacket;
 			packetIndex++;
 		}
-		m_config_hash[3] = allData.empty() ? 0 : hb::shared::util::hb_crc32(allData.data(), allData.size());
+		m_config_hash[3] = allData.empty() ? std::string{} : hb::shared::util::sha256(allData.data(), allData.size());
 	}
 
-	hb::logger::log("Config hashes computed - Items: 0x{:08X}, Magic: 0x{:08X}, Skills: 0x{:08X}, Npcs: 0x{:08X}", m_config_hash[0], m_config_hash[1], m_config_hash[2], m_config_hash[3]);
+	hb::logger::log("Config hashes computed - Items: {}, Magic: {}, Skills: {}, Npcs: {}", m_config_hash[0], m_config_hash[1], m_config_hash[2], m_config_hash[3]);
 }
 
 void CGame::fill_player_map_object(hb::net::PacketMapDataObjectPlayer& obj, short owner_h, int viewer_h)

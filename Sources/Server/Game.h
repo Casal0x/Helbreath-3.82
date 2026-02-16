@@ -520,7 +520,7 @@ public:
 	class CSkill  * m_skill_config_list[hb::shared::limits::MaxSkillType];
 	//class CTeleport * m_pTeleportConfigList[DEF_MAXTELEPORTTYPE];
 
-	uint32_t m_config_hash[4]{};
+	std::string m_config_hash[4];
 	void compute_config_hashes();
 
 	class hb::shared::net::ASIOSocket* _lsock;
