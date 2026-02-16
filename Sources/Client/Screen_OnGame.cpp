@@ -375,19 +375,20 @@ void Screen_OnGame::on_update()
         // finished (update_ret == 2 was blocked) but the tile hasn't transitioned to STOP
         // yet (so path 2 can't fire). Only active when this lock is from the attack that
         // set attackEnd (cmdTime <= attackEnd), not for subsequent movement locks.
-        // Also skip if a damage animation is currently playing — the player must wait
-        // for the damage stun to finish even if attackEndTime has expired.
+        // Also skip if a blocking animation is still playing — the player must wait
+        // for damage stun or dash slide to finish even if attackEndTime has expired.
         uint32_t attack_end = m_game->m_player->m_Controller.get_attack_end_time();
         uint32_t cmd_time = m_game->m_player->m_Controller.get_command_time();
         if (attack_end != 0 && cmd_time <= attack_end && GameClock::get_time_ms() >= attack_end) {
             int x4 = m_game->m_player->m_player_x - m_game->m_map_data->m_pivot_x;
             int y4 = m_game->m_player->m_player_y - m_game->m_map_data->m_pivot_y;
-            bool damage_anim_playing = false;
+            bool blocking_anim_playing = false;
             if (x4 >= 0 && x4 < MapDataSizeX && y4 >= 0 && y4 < MapDataSizeY) {
                 int8_t animAction = m_game->m_map_data->m_data[x4][y4].m_animation.m_action;
-                damage_anim_playing = (animAction == Type::Damage || animAction == Type::DamageMove);
+                blocking_anim_playing = (animAction == Type::Damage || animAction == Type::DamageMove
+                    || animAction == Type::AttackMove);
             }
-            if (!damage_anim_playing) {
+            if (!blocking_anim_playing) {
                 m_game->m_player->m_Controller.set_attack_end_time(0);
                 m_game->m_player->m_Controller.set_command_available(true);
                 m_game->m_player->m_Controller.set_command_time(0);
