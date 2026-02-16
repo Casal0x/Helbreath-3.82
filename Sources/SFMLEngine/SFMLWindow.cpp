@@ -10,6 +10,7 @@
 #include "RendererFactory.h"
 #include "RenderConstants.h"
 #include <SFML/Window/Event.hpp>
+#include <SFML/Graphics/Image.hpp>
 
 #include "platform_headers.h"
 
