@@ -392,7 +392,8 @@ bool WarManager::read_crusade_guid_file(const char* fn)
 	else {
 		cp = new char[file_size + 2];
 		std::memset(cp, 0, file_size + 2);
-		fread(cp, file_size, 1, file);
+		if (fread(cp, file_size, 1, file) != 1)
+			hb::logger::warn("Short read on guid file");
 
 		token = strtok(cp, seps);
 
@@ -2155,7 +2156,8 @@ bool WarManager::read_apocalypse_guid_file(const char* fn)
 	else {
 		cp = new char[file_size + 2];
 		std::memset(cp, 0, file_size + 2);
-		fread(cp, file_size, 1, file);
+		if (fread(cp, file_size, 1, file) != 1)
+			hb::logger::warn("Short read on guid file");
 
 		token = strtok(cp, seps);
 
@@ -2204,7 +2206,8 @@ bool WarManager::read_heldenian_guid_file(const char* fn)
 	else {
 		cp = new char[file_size + 2];
 		std::memset(cp, 0, file_size + 2);
-		fread(cp, file_size, 1, file);
+		if (fread(cp, file_size, 1, file) != 1)
+			hb::logger::warn("Short read on guid file");
 
 		token = strtok(cp, seps);
 

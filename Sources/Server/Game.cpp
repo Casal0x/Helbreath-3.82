@@ -9387,7 +9387,8 @@ bool CGame::read_notify_msg_list_file(const char* fn)
 		hb::logger::log("Reading notify message list file");
 		cp = new char[file_size + 2];
 		std::memset(cp, 0, file_size + 2);
-		fread(cp, file_size, 1, file);
+		if (fread(cp, file_size, 1, file) != 1)
+			hb::logger::warn("Short read on notify message list file");
 
 		token = strtok(cp, seps);
 		while (token != 0) {
@@ -10018,7 +10019,8 @@ void CGame::request_noticement_handler(int client_h)
 
 	std::memset(G_cData50000, 0, sizeof(G_cData50000));
 
-	fread(G_cData50000 + sizeof(hb::net::PacketHeader), 1, file_size, noti_file);
+	if (fread(G_cData50000 + sizeof(hb::net::PacketHeader), 1, file_size, noti_file) != file_size)
+		hb::logger::warn("Short read on noticement file");
 	fclose(noti_file);
 
 	{

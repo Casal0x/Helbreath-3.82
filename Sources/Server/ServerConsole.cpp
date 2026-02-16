@@ -353,7 +353,7 @@ bool ServerConsole::poll_input(char* out_cmd, int maxLen)
 						case '3': // Delete key: ESC[3~
 						{
 							char tilde = 0;
-							read(STDIN_FILENO, &tilde, 1);
+							[[maybe_unused]] auto n = read(STDIN_FILENO, &tilde, 1);
 							if (m_cursor_pos < m_input_len) {
 								std::memmove(&m_input[m_cursor_pos], &m_input[m_cursor_pos + 1], m_input_len - m_cursor_pos - 1);
 								m_input_len--;
