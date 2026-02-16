@@ -130,6 +130,16 @@ Both the client and server build and run on Windows and Linux. **All new code (c
 - **Linux filesystem is case-sensitive** — `Binaries/Server/mapdata/` must be lowercase.
 - **Prefer `std::string`/`std::string_view`** over raw `char*`/`char[]` — avoids buffer overruns that silently work on MSVC but fail on GCC.
 
+## Versioning
+
+Three-track system managed from `Sources/version.cfg`. Full reference: `VERSION_STANDARDS.md`.
+
+- **Compatibility** — Protocol version. Must match between client and server (major.minor.patch). Bump when changing packets or net messages.
+- **Client** — Client identity. Displayed in window title and in-game overlay. Bump for client-only changes.
+- **Server** — Server identity. Displayed in console banner and logs. Bump for server-only changes.
+- Pre-build script `Sources/version_gen.py` generates `version_info.h`, `version_rc.h`, and `version.cmake` automatically.
+- Edit `Sources/version.cfg` to change versions. Never edit generated files.
+
 ## Modernization Direction
 
 - Legacy C-style → C++20 while preserving game logic.

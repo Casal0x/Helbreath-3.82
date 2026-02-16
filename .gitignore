@@ -338,6 +338,7 @@ PLANS/
 !/CLAUDE*.md
 !/CHANGELOG.md
 !/CODING_STANDARDS.md
+!/VERSION_STANDARDS.md
 
 # Game logs and runtime data
 **/GameLogs/
