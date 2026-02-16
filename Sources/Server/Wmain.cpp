@@ -112,8 +112,8 @@ int main()
 	printf("=======================================================================\n");
 	printf("         HELBREATH GAME SERVER                                         \n");
 	printf("=======================================================================\n");
-	printf("Version: %s.%s\n", hb::server::version::Upper, hb::server::version::Lower);
-	printf("Build: %d\n", hb::server::version::BuildDate);
+	printf("Version: %s\n", hb::version::server::display_version);
+	printf("Build: %s\n", hb::version::server::full_version);
 	printf("Started: %d/%d/%d %02d:%02d\n",
 		tm_buf.tm_mon + 1, tm_buf.tm_mday, tm_buf.tm_year + 1900,
 		tm_buf.tm_hour, tm_buf.tm_min);

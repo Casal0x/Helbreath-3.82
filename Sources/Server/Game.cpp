@@ -6106,7 +6106,7 @@ void CGame::send_notify_msg(int from_h, int to_h, uint16_t msg_type, uint32_t v1
 		pkt.header.msg_id = MsgId::Notify;
 		pkt.header.msg_type = msg_type;
 		pkt.item_index = static_cast<int16_t>(v1);
-		pkt.attribute = v2;
+		pkt.attribute = static_cast<uint32_t>(v2);
 		pkt.spec_value1 = v3;
 		pkt.spec_value2 = v4;
 		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
@@ -8819,7 +8819,7 @@ int CGame::calc_total_weight(int client_h)
 	for(int i = 0; i < hb::shared::limits::MaxItems; i++)
 		if (m_client_list[client_h]->m_item_list[i] != 0) {
 
-			weight += m_item_manager->get_item_weight(m_client_list[client_h]->m_item_list[i], m_client_list[client_h]->m_item_list[i]->m_count);
+			weight += m_item_manager->get_item_weight(m_client_list[client_h]->m_item_list[i], static_cast<int>(m_client_list[client_h]->m_item_list[i]->m_count));
 		}
 
 	m_client_list[client_h]->m_cur_weight_load = weight;
@@ -10995,7 +10995,7 @@ void CGame::show_version(int client_h)
 	char ver_message[256];
 
 	std::memset(ver_message, 0, sizeof(ver_message));
-	std::snprintf(ver_message, sizeof(ver_message), "Helbreath Sources %s.%s - www.xtremehb.com", hb::server::version::Upper, hb::server::version::Lower);
+	std::snprintf(ver_message, sizeof(ver_message), "Helbreath %s", hb::version::server::display_version);
 	show_client_msg(client_h, ver_message);
 
 }

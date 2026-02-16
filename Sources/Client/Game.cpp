@@ -24,6 +24,7 @@
 #include <string>
 
 #include "platform_headers.h"
+#include "embedded_icon.h"
 
 #ifdef _WIN32
 #include <windowsx.h>
@@ -250,7 +251,7 @@ bool CGame::on_initialize()
 
 	// Configure window params via staged setters (no OS window yet)
 	auto* window = get_window();
-	window->set_title("Helbreath");
+	window->set_title(std::format("Helbreath {}", hb::version::client::display_version).c_str());
 	window->set_size(config_manager::get().get_window_width(),
 	                 config_manager::get().get_window_height());
 	window->set_borderless(config_manager::get().is_borderless_enabled());
@@ -305,6 +306,10 @@ bool CGame::on_initialize()
 // Called by application::run() AFTER the OS window is created.
 bool CGame::on_start()
 {
+	// Set window icon from embedded pixel data (cross-platform — on Windows the .rc
+	// resource handles the exe icon, but this sets it for the SFML window on Linux/macOS).
+	get_window()->set_icon(hb::embedded_icon::width, hb::embedded_icon::height, hb::embedded_icon::pixels);
+
 	FrameTiming::initialize();
 
 	// Create and initialize the renderer
@@ -890,6 +895,9 @@ bool CGame::send_command(uint32_t message_id, uint16_t command, char direction, 
 		std::snprintf(req.account_name, sizeof(req.account_name), "%s", m_player->m_account_name.c_str());
 		std::snprintf(req.password, sizeof(req.password), "%s", m_player->m_account_password.c_str());
 		std::snprintf(req.world_name, sizeof(req.world_name), "%s", m_world_server_name.c_str());
+		req.version_major = hb::version::compatibility::major;
+		req.version_minor = hb::version::compatibility::minor;
+		req.version_patch = hb::version::compatibility::patch;
 		result = m_l_sock->send_msg(reinterpret_cast<char*>(&req), sizeof(req), key);
 	}
 
@@ -932,6 +940,9 @@ bool CGame::send_command(uint32_t message_id, uint16_t command, char direction, 
 		std::snprintf(req.password, sizeof(req.password), "%s", m_player->m_account_password.c_str());
 		req.level = m_player->m_level;
 		std::snprintf(req.world_name, sizeof(req.world_name), "%s", m_world_server_name.c_str());
+		req.version_major = hb::version::compatibility::major;
+		req.version_minor = hb::version::compatibility::minor;
+		req.version_patch = hb::version::compatibility::patch;
 		result = m_l_sock->send_msg(reinterpret_cast<char*>(&req), sizeof(req), key);
 	}
 	break;
@@ -3074,6 +3085,10 @@ void CGame::log_response_handler(char* packet_data)
 		std::snprintf(m_msg, sizeof(m_msg), "%s", "1b");
 		change_game_mode(GameMode::LogResMsg);
 		break;
+
+	case LogResMsg::VersionMismatch:
+		change_game_mode(GameMode::VersionNotMatch);
+		break;
 	}
 	m_l_sock.reset();
 }
@@ -5200,7 +5215,7 @@ bool CGame::find_guild_name(const char* name, int* ipIndex)
 void CGame::draw_version()
 {
 	std::string G_cTxt;
-	G_cTxt = std::format("Ver: {}", hb::version::get_display_string());
+	G_cTxt = std::format("Ver: {}", hb::version::client::full_version);
 	hb::shared::text::draw_text(GameFont::Default, 12 , (LOGICAL_HEIGHT() - 12 - 14) , G_cTxt.c_str(), hb::shared::text::TextStyle::with_shadow(GameColors::UIDisabled));
 }
 

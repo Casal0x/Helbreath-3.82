@@ -60,6 +60,9 @@ public:
     void set_native_instance(hb::shared::types::NativeInstance instance) override;
     void set_icon_resource_id(int id) override;
 
+    // Icon (cross-platform)
+    void set_icon(unsigned int width, unsigned int height, const unsigned char* rgba_pixels) override;
+
     // Cursor
     void set_mouse_cursor_visible(bool visible) override;
     void set_mouse_capture_enabled(bool enabled) override;

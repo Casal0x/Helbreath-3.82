@@ -15,6 +15,7 @@ using namespace std;
 #include "PasswordHash.h"
 #include "../../Dependencies/Shared/Packet/SharedPackets.h"
 #include "Log.h"
+#include "version_info.h"
 #include <filesystem>
 
 using namespace hb::shared::net;
@@ -100,6 +101,17 @@ void LoginServer::request_login(int h, char* data)
 	LowercaseInPlace(name, sizeof(name));
 	std::memcpy(password, req->password, sizeof(req->password));
 	std::memcpy(world_name, req->world_name, 30);
+
+	if (req->version_major != hb::version::compatibility::major ||
+		req->version_minor != hb::version::compatibility::minor ||
+		req->version_patch != hb::version::compatibility::patch)
+	{
+		hb::logger::warn("Version mismatch on login from {}: client={}.{}.{} server={}.{}.{}",
+			G_pGame->_lclients[h]->ip, req->version_major, req->version_minor, req->version_patch,
+			hb::version::compatibility::major, hb::version::compatibility::minor, hb::version::compatibility::patch);
+		send_login_msg(LogResMsg::VersionMismatch, LogResMsg::VersionMismatch, 0, 0, h);
+		return;
+	}
 
 	if (string(world_name) != WORLDNAMELS)
 		return;
@@ -728,6 +740,17 @@ void LoginServer::request_enter_game(int h, char* data)
 
 	const auto* req = hb::net::PacketCast<hb::net::EnterGameRequest>(data, sizeof(hb::net::EnterGameRequest));
 	if (!req) return;
+
+	if (req->version_major != hb::version::compatibility::major ||
+		req->version_minor != hb::version::compatibility::minor ||
+		req->version_patch != hb::version::compatibility::patch)
+	{
+		hb::logger::warn("Version mismatch on enter-game from {}: client={}.{}.{} server={}.{}.{}",
+			G_pGame->_lclients[h]->ip, req->version_major, req->version_minor, req->version_patch,
+			hb::version::compatibility::major, hb::version::compatibility::minor, hb::version::compatibility::patch);
+		send_login_msg(LogResMsg::VersionMismatch, LogResMsg::VersionMismatch, 0, 0, h);
+		return;
+	}
 
 	std::memcpy(name, req->character_name, sizeof(req->character_name));
 	std::memcpy(map_name, req->map_name, sizeof(req->map_name));

@@ -15,6 +15,9 @@ namespace net {
 		char account_name[hb::shared::limits::AccountNameLen];
 		char password[hb::shared::limits::AccountPassLen];
 		char world_name[30];
+		uint16_t version_major;
+		uint16_t version_minor;
+		uint16_t version_patch;
 	};
 	HB_PACK_END
 
@@ -82,6 +85,9 @@ namespace net {
 		char password[hb::shared::limits::AccountPassLen];
 		std::int32_t level;
 		char world_name[30];
+		uint16_t version_major;
+		uint16_t version_minor;
+		uint16_t version_patch;
 	};
 	HB_PACK_END
 
@@ -95,6 +101,9 @@ namespace net {
 		char password[hb::shared::limits::AccountPassLen];
 		std::int32_t level;
 		char world_name[30];
+		uint16_t version_major;
+		uint16_t version_minor;
+		uint16_t version_patch;
 	};
 	HB_PACK_END
 

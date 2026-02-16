@@ -373,6 +373,7 @@ namespace LogResMsg
 		ForceChangePassword                     = 0x0A05,
 		InvalidKoreanSsn                        = 0x0A06,
 		LessThenFifteen                         = 0x0A07,
+		VersionMismatch                         = 0x0A08,
 	};
 }
 

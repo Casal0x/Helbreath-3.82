@@ -478,6 +478,25 @@ void SFMLWindow::set_icon_resource_id(int id)
     m_icon_resource_id = id;
 }
 
+void SFMLWindow::set_icon(unsigned int width, unsigned int height, const unsigned char* rgba_pixels)
+{
+    if (!rgba_pixels)
+        return;
+
+    // On Windows the icon is set via the .rc resource file (embedded in the .exe).
+    // On Linux/macOS, we use SFML's setIcon to set the window title bar icon.
+#ifndef _WIN32
+    if (m_realized)
+    {
+        sf::Image icon({width, height}, rgba_pixels);
+        m_renderWindow.setIcon(icon);
+    }
+#else
+    (void)width;
+    (void)height;
+#endif
+}
+
 void SFMLWindow::set_mouse_cursor_visible(bool visible)
 {
     if (m_realized)

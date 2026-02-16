@@ -18,7 +18,7 @@
 *****************************************************************/
 
 /*** Put here global data for your server ***/
-#include "Version.h"
+#include "version_info.h"
 
 constexpr const char* NAME_WORLDNAME1 = "WS1";
 constexpr const char* DEF_SERVER_IP = "199.187.160.239";//"192.168.1.140"; //"199.187.160.239";

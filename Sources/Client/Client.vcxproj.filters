@@ -444,9 +444,6 @@
     <ClInclude Include="TileSpr.h">
       <Filter>World</Filter>
     </ClInclude>
-    <ClInclude Include="Version.h">
-      <Filter>Core</Filter>
-    </ClInclude>
     <ClInclude Include="WeatherManager.h">
       <Filter>Managers</Filter>
     </ClInclude>
@@ -530,9 +527,6 @@
     </ClInclude>
     <ClInclude Include="..\Dependencies\Shared\Item\SharedItem.h">
       <Filter>Shared\Item</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Dependencies\Shared\Render\NativeTypes.h">
-      <Filter>Shared</Filter>
     </ClInclude>
     <ClInclude Include="..\Dependencies\Shared\Game\MagicTypes.h">
       <Filter>Shared\Game</Filter>
@@ -648,6 +642,12 @@
     <ClInclude Include="performance_monitor.h" />
     <ClInclude Include="$(SolutionDir)Dependencies\Shared\Entity\OwnerType.h" />
     <ClInclude Include="$(SolutionDir)Dependencies\Shared\Entity\ObjectIDRange.h" />
+    <ClInclude Include="..\Dependencies\Shared\version_info.h">
+      <Filter>Shared</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Dependencies\Shared\platform_headers.h">
+      <Filter>Shared</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AnimationState.cpp">
@@ -1044,9 +1044,6 @@
     <ClCompile Include="SpellAoE.cpp">
       <Filter>Effects</Filter>
     </ClCompile>
-    <ClCompile Include="Version.cpp">
-      <Filter>Core</Filter>
-    </ClCompile>
     <ClCompile Include="WeatherManager.cpp">
       <Filter>Managers</Filter>
     </ClCompile>
@@ -1081,5 +1078,8 @@
     <Image Include="icon1.ico">
       <Filter>Resources</Filter>
     </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\version.cfg" />
   </ItemGroup>
 </Project>

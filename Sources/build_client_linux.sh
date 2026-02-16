@@ -64,6 +64,9 @@ if [ ! -f CMakeCache.txt ]; then
     cmake "$SCRIPT_DIR/Client" -DCMAKE_BUILD_TYPE="$BUILD_TYPE"
 fi
 
+# Generate version header
+python3 "$SCRIPT_DIR/version_gen.py"
+
 echo "Building (${BUILD_TYPE})..."
 make -j$(nproc)
 

@@ -1,5 +1,12 @@
 cmake_minimum_required(VERSION 3.16)
-project(HelbreathServer LANGUAGES C CXX)
+
+# Include generated version info (provides HB_SERVER_VERSION etc.)
+include(${CMAKE_CURRENT_SOURCE_DIR}/../version.cmake OPTIONAL)
+
+project(HelbreathServer
+    VERSION ${HB_SERVER_VERSION}
+    LANGUAGES C CXX
+)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)

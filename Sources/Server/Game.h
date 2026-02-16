@@ -32,7 +32,7 @@ extern bool G_bRunning;
 #include "Skill.h"
 #include "DynamicObject.h"
 #include "DelayEvent.h"
-#include "Version.h"
+#include "version_info.h"
 #include "Fish.h"
 #include "DynamicObject.h"
 #include "DynamicObjectID.h"

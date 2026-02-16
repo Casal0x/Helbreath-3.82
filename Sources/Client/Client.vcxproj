@@ -252,10 +252,11 @@
     </ResourceCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="..\Dependencies\Shared\platform_headers.h" />
+    <ClInclude Include="..\Dependencies\Shared\version_info.h" />
     <ClInclude Include="ActionID_Client.h" />
     <ClInclude Include="Benchmark.h" />
     <ClInclude Include="performance_monitor.h" />
-    <ClInclude Include="Version.h" />
     <ClInclude Include="BuildItem.h" />
     <ClInclude Include="CharInfo.h" />
     <ClInclude Include="CommonTypes.h" />
@@ -409,7 +410,6 @@
     <ClInclude Include="..\Dependencies\Shared\Item\ItemAttributes.h" />
     <ClInclude Include="..\Dependencies\Shared\Item\ItemEnums.h" />
     <ClInclude Include="..\Dependencies\Shared\Item\SharedItem.h" />
-    <ClInclude Include="..\Dependencies\Shared\Render\NativeTypes.h" />
     <ClInclude Include="..\Dependencies\Shared\Game\MagicTypes.h" />
     <ClInclude Include="..\Dependencies\Shared\Net\NetConstants.h" />
     <ClInclude Include="..\Dependencies\Shared\Net\NetMessages.h" />
@@ -498,7 +498,6 @@
     <ClCompile Include="DialogBox_Manufacture.cpp" />
     <ClCompile Include="performance_monitor.cpp" />
     <ClCompile Include="HotkeyManager.cpp" />
-    <ClCompile Include="Version.cpp" />
     <ClCompile Include="Game.Hotkeys.cpp" />
     <ClCompile Include="Game.DrawObjects.cpp" />
     <ClCompile Include="EquipmentIndices.cpp" />
@@ -603,6 +602,9 @@
     <ProjectReference Include="..\SFMLEngine\SFMLEngine.vcxproj">
       <Project>{C4A8D9E2-5D3F-4C8B-9F2E-3D4E5F6A8B9C}</Project>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\version.cfg" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

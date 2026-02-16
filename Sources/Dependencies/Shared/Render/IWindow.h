@@ -73,6 +73,11 @@ public:
     virtual void set_native_instance(hb::shared::types::NativeInstance instance) = 0;
     virtual void set_icon_resource_id(int id) = 0;
 
+    // ============== Icon (cross-platform) ==============
+    // Sets the window icon from raw RGBA pixel data (used on Linux/macOS).
+    // On Windows the icon is embedded via the .rc resource file instead.
+    virtual void set_icon(unsigned int width, unsigned int height, const unsigned char* rgba_pixels) = 0;
+
     // ============== Cursor ==============
     virtual void set_mouse_cursor_visible(bool visible) = 0;
     virtual void set_mouse_capture_enabled(bool enabled) = 0;
