@@ -1971,11 +1971,13 @@ void CombatManager::armor_life_decrement(int attacker_h, int target_h, char owne
 	temp = m_game->m_client_list[target_h]->m_item_equipment_status[to_int(EquipPos::Body)];
 	if ((temp != -1) && (m_game->m_client_list[target_h]->m_item_list[temp] != 0)) {
 		if ((m_game->m_client_list[target_h]->m_side != 0) && (m_game->m_client_list[target_h]->m_item_list[temp]->m_cur_life_span > 0)) {
-			m_game->m_client_list[target_h]->m_item_list[temp]->m_cur_life_span -= value;
+			if (m_game->m_client_list[target_h]->m_item_list[temp]->m_cur_life_span < static_cast<uint16_t>(value))
+				m_game->m_client_list[target_h]->m_item_list[temp]->m_cur_life_span = 0;
+			else
+				m_game->m_client_list[target_h]->m_item_list[temp]->m_cur_life_span -= value;
 			m_game->send_notify_msg(0, target_h, Notify::CurLifeSpan, temp, m_game->m_client_list[target_h]->m_item_list[temp]->m_cur_life_span, 0, 0);
 		}
-		if ((m_game->m_client_list[target_h]->m_item_list[temp]->m_cur_life_span <= 0) || (m_game->m_client_list[target_h]->m_item_list[temp]->m_cur_life_span > 64000)) {
-			m_game->m_client_list[target_h]->m_item_list[temp]->m_cur_life_span = 0;
+		if (m_game->m_client_list[target_h]->m_item_list[temp]->m_cur_life_span == 0) {
 			m_game->send_notify_msg(0, target_h, Notify::ItemLifeSpanEnd, m_game->m_client_list[target_h]->m_item_list[temp]->m_equip_pos, temp, 0, 0);
 			m_game->m_item_manager->release_item_handler(target_h, temp, true);
 		}
@@ -1985,11 +1987,13 @@ void CombatManager::armor_life_decrement(int attacker_h, int target_h, char owne
 	if ((temp != -1) && (m_game->m_client_list[target_h]->m_item_list[temp] != 0)) {
 
 		if ((m_game->m_client_list[target_h]->m_side != 0) && (m_game->m_client_list[target_h]->m_item_list[temp]->m_cur_life_span > 0)) {
-			m_game->m_client_list[target_h]->m_item_list[temp]->m_cur_life_span -= value;
+			if (m_game->m_client_list[target_h]->m_item_list[temp]->m_cur_life_span < static_cast<uint16_t>(value))
+				m_game->m_client_list[target_h]->m_item_list[temp]->m_cur_life_span = 0;
+			else
+				m_game->m_client_list[target_h]->m_item_list[temp]->m_cur_life_span -= value;
 			m_game->send_notify_msg(0, target_h, Notify::CurLifeSpan, temp, m_game->m_client_list[target_h]->m_item_list[temp]->m_cur_life_span, 0, 0);
 		}
-		if ((m_game->m_client_list[target_h]->m_item_list[temp]->m_cur_life_span <= 0) || (m_game->m_client_list[target_h]->m_item_list[temp]->m_cur_life_span > 64000)) {
-			m_game->m_client_list[target_h]->m_item_list[temp]->m_cur_life_span = 0;
+		if (m_game->m_client_list[target_h]->m_item_list[temp]->m_cur_life_span == 0) {
 			m_game->send_notify_msg(0, target_h, Notify::ItemLifeSpanEnd, m_game->m_client_list[target_h]->m_item_list[temp]->m_equip_pos, temp, 0, 0);
 			m_game->m_item_manager->release_item_handler(target_h, temp, true);
 		}
@@ -1999,11 +2003,13 @@ void CombatManager::armor_life_decrement(int attacker_h, int target_h, char owne
 	if ((temp != -1) && (m_game->m_client_list[target_h]->m_item_list[temp] != 0)) {
 
 		if ((m_game->m_client_list[target_h]->m_side != 0) && (m_game->m_client_list[target_h]->m_item_list[temp]->m_cur_life_span > 0)) {
-			m_game->m_client_list[target_h]->m_item_list[temp]->m_cur_life_span -= value;
+			if (m_game->m_client_list[target_h]->m_item_list[temp]->m_cur_life_span < static_cast<uint16_t>(value))
+				m_game->m_client_list[target_h]->m_item_list[temp]->m_cur_life_span = 0;
+			else
+				m_game->m_client_list[target_h]->m_item_list[temp]->m_cur_life_span -= value;
 			m_game->send_notify_msg(0, target_h, Notify::CurLifeSpan, temp, m_game->m_client_list[target_h]->m_item_list[temp]->m_cur_life_span, 0, 0);
 		}
-		if ((m_game->m_client_list[target_h]->m_item_list[temp]->m_cur_life_span <= 0) || (m_game->m_client_list[target_h]->m_item_list[temp]->m_cur_life_span > 64000)) {
-			m_game->m_client_list[target_h]->m_item_list[temp]->m_cur_life_span = 0;
+		if (m_game->m_client_list[target_h]->m_item_list[temp]->m_cur_life_span == 0) {
 			m_game->send_notify_msg(0, target_h, Notify::ItemLifeSpanEnd, m_game->m_client_list[target_h]->m_item_list[temp]->m_equip_pos, temp, 0, 0);
 			m_game->m_item_manager->release_item_handler(target_h, temp, true);
 		}
@@ -2013,11 +2019,13 @@ void CombatManager::armor_life_decrement(int attacker_h, int target_h, char owne
 	if ((temp != -1) && (m_game->m_client_list[target_h]->m_item_list[temp] != 0)) {
 
 		if ((m_game->m_client_list[target_h]->m_side != 0) && (m_game->m_client_list[target_h]->m_item_list[temp]->m_cur_life_span > 0)) {
-			m_game->m_client_list[target_h]->m_item_list[temp]->m_cur_life_span -= value;
+			if (m_game->m_client_list[target_h]->m_item_list[temp]->m_cur_life_span < static_cast<uint16_t>(value))
+				m_game->m_client_list[target_h]->m_item_list[temp]->m_cur_life_span = 0;
+			else
+				m_game->m_client_list[target_h]->m_item_list[temp]->m_cur_life_span -= value;
 			m_game->send_notify_msg(0, target_h, Notify::CurLifeSpan, temp, m_game->m_client_list[target_h]->m_item_list[temp]->m_cur_life_span, 0, 0);
 		}
-		if ((m_game->m_client_list[target_h]->m_item_list[temp]->m_cur_life_span <= 0) || (m_game->m_client_list[target_h]->m_item_list[temp]->m_cur_life_span > 64000)) {
-			m_game->m_client_list[target_h]->m_item_list[temp]->m_cur_life_span = 0;
+		if (m_game->m_client_list[target_h]->m_item_list[temp]->m_cur_life_span == 0) {
 			m_game->send_notify_msg(0, target_h, Notify::ItemLifeSpanEnd, m_game->m_client_list[target_h]->m_item_list[temp]->m_equip_pos, temp, 0, 0);
 			m_game->m_item_manager->release_item_handler(target_h, temp, true);
 		}
@@ -2027,11 +2035,13 @@ void CombatManager::armor_life_decrement(int attacker_h, int target_h, char owne
 	if ((temp != -1) && (m_game->m_client_list[target_h]->m_item_list[temp] != 0)) {
 
 		if ((m_game->m_client_list[target_h]->m_side != 0) && (m_game->m_client_list[target_h]->m_item_list[temp]->m_cur_life_span > 0)) {
-			m_game->m_client_list[target_h]->m_item_list[temp]->m_cur_life_span -= value;
+			if (m_game->m_client_list[target_h]->m_item_list[temp]->m_cur_life_span < static_cast<uint16_t>(value))
+				m_game->m_client_list[target_h]->m_item_list[temp]->m_cur_life_span = 0;
+			else
+				m_game->m_client_list[target_h]->m_item_list[temp]->m_cur_life_span -= value;
 			m_game->send_notify_msg(0, target_h, Notify::CurLifeSpan, temp, m_game->m_client_list[target_h]->m_item_list[temp]->m_cur_life_span, 0, 0);
 		}
-		if ((m_game->m_client_list[target_h]->m_item_list[temp]->m_cur_life_span <= 0) || (m_game->m_client_list[target_h]->m_item_list[temp]->m_cur_life_span > 64000)) {
-			m_game->m_client_list[target_h]->m_item_list[temp]->m_cur_life_span = 0;
+		if (m_game->m_client_list[target_h]->m_item_list[temp]->m_cur_life_span == 0) {
 			m_game->send_notify_msg(0, target_h, Notify::ItemLifeSpanEnd, m_game->m_client_list[target_h]->m_item_list[temp]->m_equip_pos, temp, 0, 0);
 			m_game->m_item_manager->release_item_handler(target_h, temp, true);
 		}
@@ -2181,10 +2191,13 @@ bool CombatManager::calculate_endurance_decrement(short target_h, short attacker
 		}
 	}
 	if ((m_game->m_client_list[target_h]->m_side != 0) && (m_game->m_client_list[target_h]->m_item_list[armor_type]->m_cur_life_span > 0)) {
-		m_game->m_client_list[target_h]->m_item_list[armor_type]->m_cur_life_span -= down_value;
+		if (m_game->m_client_list[target_h]->m_item_list[armor_type]->m_cur_life_span < static_cast<uint16_t>(down_value))
+			m_game->m_client_list[target_h]->m_item_list[armor_type]->m_cur_life_span = 0;
+		else
+			m_game->m_client_list[target_h]->m_item_list[armor_type]->m_cur_life_span -= down_value;
 		m_game->send_notify_msg(0, target_h, Notify::CurLifeSpan, armor_type, m_game->m_client_list[target_h]->m_item_list[armor_type]->m_cur_life_span, 0, 0);
 	}
-	if (m_game->m_client_list[target_h]->m_item_list[armor_type]->m_cur_life_span <= 0) {
+	if (m_game->m_client_list[target_h]->m_item_list[armor_type]->m_cur_life_span == 0) {
 		m_game->m_client_list[target_h]->m_item_list[armor_type]->m_cur_life_span = 0;
 		m_game->send_notify_msg(0, target_h, Notify::ItemLifeSpanEnd, m_game->m_client_list[target_h]->m_item_list[armor_type]->m_equip_pos, armor_type, 0, 0);
 		m_game->m_item_manager->release_item_handler(target_h, armor_type, true);
