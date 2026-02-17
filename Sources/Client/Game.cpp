@@ -4682,7 +4682,8 @@ void CGame::handle_key_up(KeyCode _key)
 		break;
 
 	case KeyCode::F4:
-		hotkey_simple_use_magic_shortcut();
+		if (!hb::shared::input::is_alt_down())
+			hotkey_simple_use_magic_shortcut();
 		break;
 
 	case KeyCode::F5:
@@ -5167,7 +5168,13 @@ void CGame::draw_object_name(short screen_x, short screen_y, const char* name, c
 		}
 	}
 
-	if (is_citizen == false)	text = DRAW_OBJECT_NAME60;// "Traveller"
+	if (is_citizen == false)
+	{
+		text = DRAW_OBJECT_NAME60;// "Traveller"
+		red = GameColors::NeutralNamePlate.r;
+		green = GameColors::NeutralNamePlate.g;
+		blue = GameColors::NeutralNamePlate.b;
+	}
 	else
 	{
 		if (is_aresden)

@@ -191,8 +191,15 @@ static void DrawEquipmentStack(CGame& game, const EquipmentIndices& eq,
 	// Hair (only if no helm)
 	if (eq.m_hair_index != -1 && eq.m_helm_index == -1)
 	{
-		const auto& hc = GameColors::Hair[state.m_appearance.hair_color];
-		game.m_sprite[eq.m_hair_index]->draw(sX, sY, dirFrame, hb::shared::sprite::DrawParams::tint(hc.r, hc.g, hc.b));
+		if (inv)
+		{
+			game.m_sprite[eq.m_hair_index]->draw(sX, sY, dirFrame, hb::shared::sprite::DrawParams::alpha_blend(0.25f));
+		}
+		else
+		{
+			const auto& hc = GameColors::Hair[state.m_appearance.hair_color];
+			game.m_sprite[eq.m_hair_index]->draw(sX, sY, dirFrame, hb::shared::sprite::DrawParams::tint(hc.r, hc.g, hc.b));
+		}
 	}
 
 	// Boots before pants if wearing skirt
