@@ -260,6 +260,8 @@ namespace net {
 	struct HB_PACKED PacketNotifyServerShutdown {
 		PacketHeader header;
 		uint8_t mode;
+		uint16_t seconds;
+		char message[128];
 	};
 
 	struct HB_PACKED PacketNotifyFishCanceled {

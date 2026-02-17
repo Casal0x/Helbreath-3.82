@@ -969,6 +969,8 @@ bool CGame::init()
 	m_on_exit_process = false;
 	m_shutdown_start_time = 0;
 	m_shutdown_delay_ms = 0;
+	m_shutdown_next_milestone = 0;
+	m_shutdown_message[0] = '\0';
 
 	for(int i = 0; i <= 100; i++) {
 		m_skill_progress_threshold[i] = m_skill_manager->calc_skill_ssn_point(i);
@@ -6658,6 +6660,12 @@ void CGame::send_notify_msg(int from_h, int to_h, uint16_t msg_type, uint32_t v1
 		pkt.header.msg_id = MsgId::Notify;
 		pkt.header.msg_type = msg_type;
 		pkt.mode = static_cast<uint8_t>(v1);
+		pkt.seconds = static_cast<uint16_t>(v2);
+		if (string != nullptr)
+		{
+			std::strncpy(pkt.message, string, sizeof(pkt.message) - 1);
+			pkt.message[sizeof(pkt.message) - 1] = '\0';
+		}
 		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 	}
 	break;
@@ -11299,23 +11307,42 @@ void CGame::on_timer(char type)
 		m_can_fightzone_reserve_time = time;
 	}
 
-	// Scheduled shutdown: when delay has elapsed, save again and begin disconnect sequence
-	if (m_shutdown_start_time != 0 && !m_on_exit_process
-		&& (time - m_shutdown_start_time) >= m_shutdown_delay_ms)
+	// Scheduled shutdown: send milestone notifications, then begin disconnect
+	if (m_shutdown_start_time != 0 && !m_on_exit_process)
 	{
-		hb::logger::log("Scheduled shutdown delay elapsed, beginning disconnect sequence...");
-		save_all_players();
+		uint32_t elapsed_ms = time - m_shutdown_start_time;
 
-		// Send mode=2 (shutdown started) to all players
-		for (int i = 1; i < MaxClients; i++)
+		if (elapsed_ms >= m_shutdown_delay_ms)
 		{
-			if (m_client_list[i] != nullptr && m_client_list[i]->m_is_init_complete)
-				send_notify_msg(0, i, Notify::ServerShutdown, 2, 0, 0, nullptr);
+			// Delay elapsed — save and begin disconnect sequence
+			hb::logger::log("Scheduled shutdown delay elapsed, beginning disconnect sequence...");
+			save_all_players();
+			m_on_exit_process = true;
+			m_exit_process_time = time;
+			m_shutdown_start_time = 0;
 		}
+		else
+		{
+			// Check if we've crossed a milestone
+			uint32_t remaining_ms = m_shutdown_delay_ms - elapsed_ms;
+			int remaining_sec = static_cast<int>(remaining_ms / 1000);
 
-		m_on_exit_process = true;
-		m_exit_process_time = time;
-		m_shutdown_start_time = 0;
+			if (m_shutdown_next_milestone < static_cast<int>(m_shutdown_milestones.size()))
+			{
+				int milestone = m_shutdown_milestones[m_shutdown_next_milestone];
+				if (remaining_sec <= milestone)
+				{
+					hb::logger::log("Shutdown countdown: {} seconds remaining", milestone);
+					for (int i = 1; i < MaxClients; i++)
+					{
+						if (m_client_list[i] != nullptr && m_client_list[i]->m_is_init_complete)
+							send_notify_msg(0, i, Notify::ServerShutdown, 1, milestone, 0,
+								m_shutdown_message[0] != '\0' ? m_shutdown_message : nullptr);
+					}
+					m_shutdown_next_milestone++;
+				}
+			}
+		}
 	}
 
 	if ((m_is_server_shutdown == false) && (m_on_exit_process) && ((time - m_exit_process_time) > 1000 * 2)) {

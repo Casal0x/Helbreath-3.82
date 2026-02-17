@@ -1,6 +1,10 @@
 #include "DialogBox_Noticement.h"
 #include "Game.h"
+#include "GameFonts.h"
 #include "lan_eng.h"
+#include "TextLib.h"
+#include "SpriteCollection.h"
+#include "ISprite.h"
 #include <format>
 #include <string>
 using namespace hb::client::sprite_id;
@@ -8,44 +12,73 @@ using namespace hb::client::sprite_id;
 DialogBox_Noticement::DialogBox_Noticement(CGame* game)
 	: IDialogBox(DialogBoxId::Noticement, game)
 {
-	set_default_rect(162 , 40 , 315, 171);
+	set_default_rect(0, 0, 315, 171);
+}
+
+void DialogBox_Noticement::set_shutdown_info(uint16_t seconds, const char* message)
+{
+	m_seconds_remaining = seconds;
+	if (message != nullptr && message[0] != '\0')
+		m_custom_message = message;
 }
 
 void DialogBox_Noticement::on_draw(short mouse_x, short mouse_y, short z, char lb)
 {
-	short sX = Info().m_x;
-	short sY = Info().m_y;
-	short size_x = Info().m_size_x;
+	// Center the dialog on screen (same method as Connecting overlay)
+	auto rect = m_game->m_sprite[InterfaceNdGame4]->GetFrameRect(2);
+	short sX = static_cast<short>((LOGICAL_WIDTH() - rect.width) / 2);
+	short sY = static_cast<short>((LOGICAL_HEIGHT() - rect.height) / 2);
+	short size_x = static_cast<short>(rect.width);
+
+	// Update stored position for click handling
+	Info().m_x = sX;
+	Info().m_y = sY;
+	Info().m_size_x = size_x;
+	Info().m_size_y = static_cast<short>(rect.height);
 
 	draw_new_dialog_box(InterfaceNdGame4, sX, sY, 2);
 
-	switch (Info().m_mode)
-	{
-	case 1: // Server shutting down in X minutes
-		{
-			std::string msgBuf;
-			if (Info().m_v1 != 0)
-				msgBuf = std::format(DRAW_DIALOGBOX_NOTICEMSG1, Info().m_v1);
-			else
-				msgBuf = DRAW_DIALOGBOX_NOTICEMSG2;
-			put_aligned_string(sX, sX + size_x, sY + 31, msgBuf.c_str(), GameColors::UINoticeRed);
-		}
-		put_aligned_string(sX, sX + size_x, sY + 48, DRAW_DIALOGBOX_NOTICEMSG3);
-		put_aligned_string(sX, sX + size_x, sY + 65, DRAW_DIALOGBOX_NOTICEMSG4);
-		put_aligned_string(sX, sX + size_x, sY + 82, DRAW_DIALOGBOX_NOTICEMSG5);
-		put_aligned_string(sX, sX + size_x, sY + 99, DRAW_DIALOGBOX_NOTICEMSG6);
-		break;
+	using namespace hb::shared::text;
+	const auto title_style = TextStyle::with_highlight(GameColors::UIDarkRed);
+	constexpr int pad_left = 18;
+	constexpr int pad_right = 18;
+	int text_width = size_x - pad_left - pad_right;
 
-	case 2: // shutdown has started
-		put_aligned_string(sX, sX + size_x, sY + 31, DRAW_DIALOGBOX_NOTICEMSG7, GameColors::UINoticeRed);
-		put_aligned_string(sX, sX + size_x, sY + 48, DRAW_DIALOGBOX_NOTICEMSG8);
-		put_aligned_string(sX, sX + size_x, sY + 65, DRAW_DIALOGBOX_NOTICEMSG9);
-		put_aligned_string(sX, sX + size_x, sY + 82, DRAW_DIALOGBOX_NOTICEMSG10);
-		put_aligned_string(sX, sX + size_x, sY + 99, DRAW_DIALOGBOX_NOTICEMSG11);
-		break;
+	// Title line: countdown text (same font/color as Connecting overlay)
+	std::string title;
+	if (m_seconds_remaining == 0)
+	{
+		title = "Server shutting down now!";
+	}
+	else if (m_seconds_remaining >= 120)
+	{
+		int minutes = m_seconds_remaining / 60;
+		title = std::format("Server shutting down in {} minute{}!", minutes, minutes != 1 ? "s" : "");
+	}
+	else
+	{
+		title = std::format("Server shutting down in {} second{}!", m_seconds_remaining, m_seconds_remaining != 1 ? "s" : "");
 	}
 
-	// OK button (same position for both modes)
+	draw_text_aligned(GameFont::Bitmap1, sX + pad_left, sY + 31, text_width, 15,
+		title.c_str(), title_style, Align::TopCenter);
+
+	// Custom message or default warning (word-wrapped)
+	int msg_y = sY + 52;
+	int msg_height = Info().m_size_y - 52 - 40; // Leave room for OK button
+
+	if (!m_custom_message.empty())
+	{
+		draw_text_wrapped(GameFont::Default, sX + pad_left, msg_y, text_width, msg_height,
+			m_custom_message.c_str(), TextStyle::from_color(GameColors::UIBlack), Align::TopCenter);
+	}
+	else
+	{
+		draw_text_wrapped(GameFont::Default, sX + pad_left, msg_y, text_width, msg_height,
+			DRAW_DIALOGBOX_NOTICEMSG1, TextStyle::from_color(GameColors::UIBlack), Align::TopCenter);
+	}
+
+	// OK button
 	if ((mouse_x >= sX + 210) && (mouse_x <= sX + 210 + ui_layout::btn_size_x) && (mouse_y > sY + 127) && (mouse_y < sY + 127 + ui_layout::btn_size_y))
 		draw_new_dialog_box(InterfaceNdButton, sX + 210, sY + 127, 1);
 	else

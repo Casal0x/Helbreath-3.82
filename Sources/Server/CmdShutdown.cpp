@@ -8,9 +8,38 @@
 #include <cstdlib>
 #include <cstring>
 #include <cstdio>
+#include <algorithm>
 
 using namespace hb::shared::net;
 using namespace hb::server::config;
+
+static void compute_milestones(int total_seconds, std::vector<int>& milestones)
+{
+	milestones.clear();
+	if (total_seconds <= 0) return;
+
+	milestones.push_back(total_seconds);
+
+	// Halve repeatedly until we reach 60s or below
+	int t = total_seconds / 2;
+	while (t > 60)
+	{
+		milestones.push_back(t);
+		t /= 2;
+	}
+
+	// Add fixed low-range milestones
+	const int fixed[] = {60, 30, 15, 5};
+	for (int m : fixed)
+	{
+		if (m < total_seconds)
+			milestones.push_back(m);
+	}
+
+	// Sort descending, remove duplicates
+	std::sort(milestones.begin(), milestones.end(), std::greater<int>());
+	milestones.erase(std::unique(milestones.begin(), milestones.end()), milestones.end());
+}
 
 void CmdShutdown::execute(CGame* game, const char* args)
 {
@@ -47,33 +76,37 @@ void CmdShutdown::execute(CGame* game, const char* args)
 	int count = game->save_all_players();
 	hb::console::success("Saved {} player(s)", count);
 
-	// Send shutdown notice dialog to all connected players (mode=1 = warning)
-	for (int i = 1; i < MaxClients; i++)
+	// Store custom message
+	if (message != nullptr)
 	{
-		if (game->m_client_list[i] != nullptr && game->m_client_list[i]->m_is_init_complete)
-			game->send_notify_msg(0, i, Notify::ServerShutdown, 1, 0, 0, nullptr);
-	}
-
-	// Send broadcast message with timing info and custom text
-	char buf[512];
-	if (delay_seconds > 0)
-	{
-		if (message != nullptr)
-			std::snprintf(buf, sizeof(buf), "Server shutting down in %d seconds. %s", delay_seconds, message);
-		else
-			std::snprintf(buf, sizeof(buf), "Server shutting down in %d seconds.", delay_seconds);
+		std::strncpy(game->m_shutdown_message, message, sizeof(game->m_shutdown_message) - 1);
+		game->m_shutdown_message[sizeof(game->m_shutdown_message) - 1] = '\0';
 	}
 	else
 	{
-		if (message != nullptr)
-			std::snprintf(buf, sizeof(buf), "Server shutting down now. %s", message);
-		else
-			std::snprintf(buf, sizeof(buf), "Server shutting down now.");
+		game->m_shutdown_message[0] = '\0';
 	}
-	game->broadcast_server_message(buf);
 
 	if (delay_seconds > 0)
 	{
+		// Compute countdown milestones
+		compute_milestones(delay_seconds, game->m_shutdown_milestones);
+		game->m_shutdown_next_milestone = 0;
+
+		// Send first noticement immediately (the total time)
+		for (int i = 1; i < MaxClients; i++)
+		{
+			if (game->m_client_list[i] != nullptr && game->m_client_list[i]->m_is_init_complete)
+				game->send_notify_msg(0, i, Notify::ServerShutdown, 1, delay_seconds, 0,
+					message != nullptr ? message : nullptr);
+		}
+		// Skip the first milestone since we just sent it
+		if (!game->m_shutdown_milestones.empty()
+			&& game->m_shutdown_milestones[0] == delay_seconds)
+		{
+			game->m_shutdown_next_milestone = 1;
+		}
+
 		// Schedule delayed shutdown
 		game->m_shutdown_start_time = GameClock::GetTimeMS();
 		game->m_shutdown_delay_ms = static_cast<uint32_t>(delay_seconds) * 1000;
@@ -81,7 +114,14 @@ void CmdShutdown::execute(CGame* game, const char* args)
 	}
 	else
 	{
-		// Immediate shutdown
+		// Immediate shutdown — send noticement then begin disconnect
+		for (int i = 1; i < MaxClients; i++)
+		{
+			if (game->m_client_list[i] != nullptr && game->m_client_list[i]->m_is_init_complete)
+				game->send_notify_msg(0, i, Notify::ServerShutdown, 1, 0, 0,
+					message != nullptr ? message : nullptr);
+		}
+
 		game->m_on_exit_process = true;
 		game->m_exit_process_time = GameClock::GetTimeMS();
 		hb::console::info("Disconnecting players and shutting down...");
