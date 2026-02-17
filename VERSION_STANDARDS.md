@@ -71,7 +71,7 @@ Update when the client and server **must be updated together** to communicate:
 | **minor** | New packets, changed packet fields, new login/enter-game requirements |
 | **patch** | Hotfixes to protocol behavior (changed validation, fixed packet handling) |
 
-**Rule**: If you change anything in `Sources/Dependencies/Shared/Packet/` or `Sources/Dependencies/Shared/Net/NetMessages.h`, you almost certainly need a compatibility bump.
+**Rule**: If you change anything in `Sources/Dependencies/Shared/Packet/` or `Sources/Dependencies/Shared/Net/NetMessages.h`, you almost certainly need a compatibility bump. The key test is: **does the client need a code change to handle this correctly?** If a new server paired with an old client (or vice versa) would break or behave incorrectly, bump compatibility. If the server is just sending an existing, already-handled message more or less frequently (e.g. changing how often exp updates are sent), that's a server-only change — no compatibility bump needed.
 
 ### Client Version
 
@@ -99,18 +99,20 @@ Update when the server changes, regardless of client:
 - **Fixed a client rendering bug**: Client patch bump only
 - **Fixed a server crash**: Server patch bump only
 - **Changed how damage packets work**: Compatibility patch bump + Server patch bump + Client patch bump
-- **New version check behavior**: Compatibility patch bump (protocol behavior changed)
+- **Changed how often exp updates are sent**: Server patch bump only (client already handles the message)
+- **Added a new field to an existing packet**: Compatibility minor bump (client needs code to read the new field)
 
 ## Build Flow
 
 The pre-build script `Sources/version_gen.py` runs automatically before every build:
 
 ```
-Sources/version.cfg         (you edit this)
-Sources/build_counter.txt   (auto-incremented)
+Sources/version.cfg                (you edit this)
+Sources/build_counter_client.txt   (auto-incremented per client build)
+Sources/build_counter_server.txt   (auto-incremented per server build)
         |
         v
-Sources/version_gen.py      (runs pre-build)
+Sources/version_gen.py             (runs pre-build)
         |
         +---> Sources/Dependencies/Shared/version_info.h   (C++ constexpr header)
         +---> Sources/Dependencies/Shared/version_rc.h     (Windows RC #defines)
@@ -121,30 +123,51 @@ Sources/version_gen.py      (runs pre-build)
 
 **`version_info.h`** — C++ constexpr values used in game code:
 ```cpp
-hb::version::compatibility::major      // Protocol version check
-hb::version::client::display_version   // "0.1-alpha" in window title
-hb::version::server::full_version      // "0.1.0-alpha+build.42" in server logs
-hb::version::build_number              // Auto-incremented build counter
-hb::version::build_timestamp           // ISO 8601 build time
+hb::version::compatibility::major          // Protocol version check
+hb::version::compatibility::build_number   // Always 0 (no per-build counter)
+hb::version::client::display_version       // "0.2.6-alpha" in window title
+hb::version::client::build_number          // Per-client build counter
+hb::version::server::full_version          // "0.1.7-alpha+build.81" in server logs
+hb::version::server::build_number          // Per-server build counter
+hb::version::build_timestamp               // ISO 8601 build time
 ```
 
 **`version_rc.h`** — `#define` values for Windows resource (VERSIONINFO) metadata:
 ```c
-VER_CLIENT_FILEVERSION   0,1,0,42    // Shows in file Properties > Details
-VER_SERVER_FILEVERSION   0,1,0,42
-VER_CLIENT_FULL          "0.1.0-alpha+build.42"
+VER_CLIENT_MAJOR         0
+VER_CLIENT_MINOR         2
+VER_CLIENT_PATCH         6
+VER_CLIENT_BUILD         81              // Per-client build counter
+VER_CLIENT_FILEVERSION   0,2,6,81        // Shows in file Properties > Details
+VER_CLIENT_DISPLAY       "0.2.6-alpha"
+VER_CLIENT_FULL          "0.2.6-alpha+build.81"
+
+VER_SERVER_MAJOR         0               // Same structure for server
+VER_SERVER_FILEVERSION   0,1,7,81
+VER_SERVER_FULL          "0.1.7-alpha+build.81"
 ```
 
 **`version.cmake`** — CMake variables for Linux builds:
 ```cmake
-HB_CLIENT_VERSION "0.1.0"   // Used in project(VERSION ...)
-HB_SERVER_VERSION "0.1.0"
-HB_BUILD_NUMBER 42
+set(HB_CLIENT_VERSION_MAJOR 0)
+set(HB_CLIENT_VERSION_MINOR 2)
+set(HB_CLIENT_VERSION_PATCH 6)
+set(HB_CLIENT_BUILD_NUMBER 81)        // Per-client build counter
+set(HB_CLIENT_VERSION "0.2.6")        // Used in project(VERSION ...)
+
+set(HB_SERVER_VERSION_MAJOR 0)        // Same structure for server
+set(HB_SERVER_BUILD_NUMBER 81)        // Per-server build counter
+set(HB_SERVER_VERSION "0.1.7")
 ```
 
-### Build Counter
+### Build Counters
 
-`Sources/build_counter.txt` contains a single integer that increments on every build. This is shared across all three version tracks. Don't edit it manually — it auto-increments when `version_gen.py` runs.
+Build counters are **per-project** — client and server each have their own:
+
+- `Sources/build_counter_client.txt` — incremented on client builds
+- `Sources/build_counter_server.txt` — incremented on server builds
+
+The Compatibility track has no build counter (always 0). Don't edit these manually — they auto-increment when the build system invokes `version_gen.py` with `--increment-version --target client|server`.
 
 ## Platform-Specific Versioning
 

@@ -132,14 +132,14 @@ Both the client and server build and run on Windows and Linux. **All new code (c
 
 ## Versioning
 
-Three-track system managed from `Sources/version.cfg`. Full reference: `VERSION_STANDARDS.md`.
+Three-track system managed from `Sources/version.cfg`. See `VERSION_STANDARDS.md` for full reference (version format, bump rules, generated files, platform details).
 
-- **Compatibility** — Protocol version. Must match between client and server (major.minor.patch). Bump when changing packets or net messages.
+- **Compatibility** — Protocol version. Must match between client and server (major.minor.patch). Key test: **does the client need a code change to handle this?** If yes, bump. If the server is just sending an existing message more/less frequently, that's server-only — no compatibility bump.
 - **Client** — Client identity. Displayed in window title and in-game overlay. Bump for client-only changes.
 - **Server** — Server identity. Displayed in console banner and logs. Bump for server-only changes.
 - Pre-build script `Sources/version_gen.py` generates `version_info.h`, `version_rc.h`, and `version.cmake` automatically.
 - Edit `Sources/version.cfg` to change versions. Never edit generated files.
-- **Build counters** (`build_counter_client.txt`, `build_counter_server.txt`) are incremented automatically by the build system (vcxproj pre-build events and `build.ps1`). **Never pass `--increment-version` manually** — your builds are for compile verification only.
+- **Build counters** (`build_counter_client.txt`, `build_counter_server.txt`) are per-project and incremented automatically by the build system. **Never pass `--increment-version` manually** — your builds are for compile verification only.
 
 ## Modernization Direction
 
@@ -149,7 +149,7 @@ Three-track system managed from `Sources/version.cfg`. Full reference: `VERSION_
 
 ## Coding Standards
 
-**Convention: `snake_case` throughout.** Full reference: `CODING_STANDARDS.md`.
+**Convention: `snake_case` throughout.** See `CODING_STANDARDS.md` for full reference (naming, formatting, ownership, error handling, enum patterns).
 
 Key rules:
 - **Tabs** for indentation, **Allman** braces.
