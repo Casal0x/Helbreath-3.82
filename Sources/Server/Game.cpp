@@ -967,6 +967,8 @@ bool CGame::init()
 	_lsock->init_buffer_size(hb::shared::limits::MsgBufferSize);
 
 	m_on_exit_process = false;
+	m_shutdown_start_time = 0;
+	m_shutdown_delay_ms = 0;
 
 	for(int i = 0; i <= 100; i++) {
 		m_skill_progress_threshold[i] = m_skill_manager->calc_skill_ssn_point(i);
@@ -9640,6 +9642,20 @@ int CGame::force_player_disconnect(int num)
 	return cnt;
 }
 
+int CGame::save_all_players()
+{
+	int count = 0;
+	for (int i = 1; i < MaxClients; i++)
+	{
+		if (m_client_list[i] != nullptr && m_client_list[i]->m_is_init_complete)
+		{
+			g_login->local_save_player_data(i);
+			count++;
+		}
+	}
+	return count;
+}
+
 void CGame::special_event_handler()
 {
 	uint32_t time;
@@ -11281,6 +11297,25 @@ void CGame::on_timer(char type)
 	if ((time - m_can_fightzone_reserve_time) > 7200000) {
 		m_war_manager->fightzone_reserve_processor();
 		m_can_fightzone_reserve_time = time;
+	}
+
+	// Scheduled shutdown: when delay has elapsed, save again and begin disconnect sequence
+	if (m_shutdown_start_time != 0 && !m_on_exit_process
+		&& (time - m_shutdown_start_time) >= m_shutdown_delay_ms)
+	{
+		hb::logger::log("Scheduled shutdown delay elapsed, beginning disconnect sequence...");
+		save_all_players();
+
+		// Send mode=2 (shutdown started) to all players
+		for (int i = 1; i < MaxClients; i++)
+		{
+			if (m_client_list[i] != nullptr && m_client_list[i]->m_is_init_complete)
+				send_notify_msg(0, i, Notify::ServerShutdown, 2, 0, 0, nullptr);
+		}
+
+		m_on_exit_process = true;
+		m_exit_process_time = time;
+		m_shutdown_start_time = 0;
 	}
 
 	if ((m_is_server_shutdown == false) && (m_on_exit_process) && ((time - m_exit_process_time) > 1000 * 2)) {

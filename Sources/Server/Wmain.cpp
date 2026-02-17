@@ -4,6 +4,10 @@
 #include <thread>
 #include <chrono>
 #include <ctime>
+#include <csignal>
+#ifdef _WIN32
+#include <windows.h>
+#endif
 
 #include "Game.h"
 #include "LoginServer.h"
@@ -36,6 +40,25 @@ hb::shared::net::ConcurrentQueue<asio::ip::tcp::socket> G_loginAcceptQueue;
 hb::shared::net::ConcurrentQueue<hb::shared::net::SocketErrorEvent> G_errorQueue;
 
 bool G_bRunning = true;
+
+// --- Signal handlers for graceful shutdown ---
+
+static void signal_handler(int sig)
+{
+	G_bRunning = false;
+}
+
+#ifdef _WIN32
+static BOOL WINAPI console_ctrl_handler(DWORD ctrl_type)
+{
+	if (ctrl_type == CTRL_C_EVENT || ctrl_type == CTRL_CLOSE_EVENT || ctrl_type == CTRL_BREAK_EVENT)
+	{
+		G_bRunning = false;
+		return TRUE;
+	}
+	return FALSE;
+}
+#endif
 
 // --- Async I/O helpers (called from main loop) ---
 
@@ -98,6 +121,13 @@ void PollAllSockets()
 
 int main()
 {
+	// Register signal handlers for graceful shutdown
+	std::signal(SIGINT, signal_handler);
+	std::signal(SIGTERM, signal_handler);
+#ifdef _WIN32
+	SetConsoleCtrlHandler(console_ctrl_handler, TRUE);
+#endif
+
 	// Portable startup timestamp
 	auto now = std::chrono::system_clock::now();
 	std::time_t t = std::chrono::system_clock::to_time_t(now);
@@ -185,6 +215,10 @@ int main()
 	}
 
 	// --- shutdown ---
+	hb::logger::log("Saving all player data before shutdown...");
+	int saved = G_pGame->save_all_players();
+	hb::logger::log("Saved {} player(s)", saved);
+
 	G_pIOPool->stop();
 
 	delete G_pListenSock;

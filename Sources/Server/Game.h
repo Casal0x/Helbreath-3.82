@@ -352,6 +352,7 @@ public:
 	void special_event_handler();
 	
 	int force_player_disconnect(int num);
+	int save_all_players();
 	int get_map_index(char * map_name);
 	void weather_processor();
 	int calc_player_num(char map_index, short dX, short dY, char radius);
@@ -541,6 +542,9 @@ public:
 
 	bool  m_on_exit_process;
 	uint32_t m_exit_process_time;
+
+	uint32_t m_shutdown_start_time; // When scheduled shutdown was requested (0 = not scheduled)
+	uint32_t m_shutdown_delay_ms;   // Delay in ms from m_shutdown_start_time
 
 	uint32_t m_weather_time, m_game_time_1, m_game_time_2, m_game_time_3, m_game_time_4, m_game_time_5, m_game_time_6;
 	

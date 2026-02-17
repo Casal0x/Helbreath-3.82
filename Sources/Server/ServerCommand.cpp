@@ -7,6 +7,8 @@
 #include "CmdReload.h"
 #include "CmdSetAdmin.h"
 #include "CmdSetCmdLevel.h"
+#include "CmdSaveAll.h"
+#include "CmdShutdown.h"
 #include "Game.h"
 #include <cstring>
 #include <cstdio>
@@ -82,4 +84,6 @@ void ServerCommandManager::register_built_in_commands()
 	register_command(std::make_unique<CmdReload>());
 	register_command(std::make_unique<CmdSetAdmin>());
 	register_command(std::make_unique<CmdSetCmdLevel>());
+	register_command(std::make_unique<CmdSaveAll>());
+	register_command(std::make_unique<CmdShutdown>());
 }

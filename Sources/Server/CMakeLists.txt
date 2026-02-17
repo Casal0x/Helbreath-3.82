@@ -26,7 +26,9 @@ set(SERVER_SOURCES
     CmdHelp.cpp
     CmdReload.cpp
     CmdSetAdmin.cpp
+    CmdSaveAll.cpp
     CmdSetCmdLevel.cpp
+    CmdShutdown.cpp
     CmdShowChat.cpp
     CombatManager.cpp
     CommonTypes.cpp
@@ -45,6 +47,7 @@ set(SERVER_SOURCES
     GameCmdGoto.cpp
     GameCmdInvis.cpp
     GameCmdRegen.cpp
+    GameCmdSaveAll.cpp
     GameCmdSpawn.cpp
     GameCmdUnblock.cpp
     GameCmdWhisper.cpp

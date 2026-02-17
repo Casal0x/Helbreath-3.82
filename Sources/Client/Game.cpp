@@ -4686,7 +4686,27 @@ void CGame::handle_key_up(KeyCode _key)
 		break;
 
 	case KeyCode::F4:
-		if (!hb::shared::input::is_alt_down())
+		if (hb::shared::input::is_alt_down())
+		{
+			// Alt+F4: trigger logout countdown (same as window close)
+			if ((GameModeManager::get_mode() == GameMode::MainGame) && (m_force_disconn == false))
+			{
+#ifdef _DEBUG
+				if (m_logout_count == -1 || m_logout_count > 2)
+				{
+					m_logout_count = 1;
+					m_logout_count_time = GameClock::get_time_ms();
+				}
+#else
+				if (m_logout_count == -1 || m_logout_count > 11)
+				{
+					m_logout_count = 11;
+					m_logout_count_time = GameClock::get_time_ms();
+				}
+#endif
+			}
+		}
+		else
 			hotkey_simple_use_magic_shortcut();
 		break;
 
