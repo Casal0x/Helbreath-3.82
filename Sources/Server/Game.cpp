@@ -1426,6 +1426,7 @@ int CGame::client_motion_move_handler(int client_h, short sX, short sY, directio
 				if (m_client_list[client_h]->m_time_left_firm_stamina == 0) {
 					m_client_list[client_h]->m_sp--;
 					pkt->stamina_cost = 1;
+					send_notify_msg(0, client_h, Notify::Sp, 0, 0, 0, 0);
 				}
 			}
 		}

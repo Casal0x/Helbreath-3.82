@@ -4,6 +4,7 @@
 #include "SharedCalculations.h"
 #include "GameFonts.h"
 #include "TextLibExt.h"
+#include <algorithm>
 #include <cstdlib>
 #include <format>
 #include <string>
@@ -43,7 +44,7 @@ void DialogBox_HudPanel::toggle_dialog_with_sound(DialogBoxId::Type dialogId)
 
 void DialogBox_HudPanel::draw_gauge_bars()
 {
-	int max_point, bar_width;
+	int max_point, bar_width, display_value;
 	uint32_t time = m_game->m_cur_time;
 	auto sprite = m_game->m_sprite[InterfaceNdIconPanel];
 
@@ -51,15 +52,15 @@ void DialogBox_HudPanel::draw_gauge_bars()
 	max_point = hb::shared::calc::CalculateMaxHP(m_game->m_player->m_vit, m_game->m_player->m_level,
 	                           m_game->m_player->m_str, m_game->m_player->m_angelic_str);
 	if (max_point <= 0) max_point = 1;
-	if (m_game->m_player->m_hp > max_point) m_game->m_player->m_hp = max_point;
-	bar_width = HP_MP_BAR_WIDTH - (m_game->m_player->m_hp * HP_MP_BAR_WIDTH) / max_point;
+	display_value = std::min(m_game->m_player->m_hp, max_point);
+	bar_width = HP_MP_BAR_WIDTH - (display_value * HP_MP_BAR_WIDTH) / max_point;
 	if (bar_width < 0) bar_width = 0;
 	if (bar_width > HP_MP_BAR_WIDTH) bar_width = HP_MP_BAR_WIDTH;
 	sprite->DrawWidth(HP_BAR_X(), HP_BAR_Y(), 12, bar_width);
 
 	// HP number
 	std::string statBuf;
-	statBuf = std::format("{}", static_cast<short>(m_game->m_player->m_hp));
+	statBuf = std::format("{}", display_value);
 	if (m_game->m_player->m_is_poisoned)
 	{
 		hb::shared::text::draw_text(GameFont::Numbers, 85 + hud_x_offset(), HP_NUM_Y(), statBuf.c_str(),
@@ -77,28 +78,28 @@ void DialogBox_HudPanel::draw_gauge_bars()
 	max_point = hb::shared::calc::CalculateMaxMP(m_game->m_player->m_mag, m_game->m_player->m_angelic_mag,
 	                           m_game->m_player->m_level, m_game->m_player->m_int, m_game->m_player->m_angelic_int);
 	if (max_point <= 0) max_point = 1;
-	if (m_game->m_player->m_mp > max_point) m_game->m_player->m_mp = max_point;
-	bar_width = HP_MP_BAR_WIDTH - (m_game->m_player->m_mp * HP_MP_BAR_WIDTH) / max_point;
+	display_value = std::min(m_game->m_player->m_mp, max_point);
+	bar_width = HP_MP_BAR_WIDTH - (display_value * HP_MP_BAR_WIDTH) / max_point;
 	if (bar_width < 0) bar_width = 0;
 	if (bar_width > HP_MP_BAR_WIDTH) bar_width = HP_MP_BAR_WIDTH;
 	sprite->DrawWidth(HP_BAR_X(), MP_BAR_Y(), 12, bar_width);
 
 	// MP number
-	statBuf = std::format("{}", static_cast<short>(m_game->m_player->m_mp));
+	statBuf = std::format("{}", display_value);
 	hb::shared::text::draw_text(GameFont::Numbers, HP_NUM_X() + 1, MP_NUM_Y() + 1, statBuf.c_str(), hb::shared::text::TextStyle::from_color(GameColors::UIBlack));
 	hb::shared::text::draw_text(GameFont::Numbers, HP_NUM_X(), MP_NUM_Y(), statBuf.c_str(), hb::shared::text::TextStyle::from_color(GameColors::UIWhite));
 
 	// SP bar
 	max_point = hb::shared::calc::CalculateMaxSP(m_game->m_player->m_str, m_game->m_player->m_angelic_str, m_game->m_player->m_level);
 	if (max_point <= 0) max_point = 1;
-	if (m_game->m_player->m_sp > max_point) m_game->m_player->m_sp = max_point;
-	bar_width = SP_BAR_WIDTH - (m_game->m_player->m_sp * SP_BAR_WIDTH) / max_point;
+	display_value = std::min(m_game->m_player->m_sp, max_point);
+	bar_width = SP_BAR_WIDTH - (display_value * SP_BAR_WIDTH) / max_point;
 	if (bar_width < 0) bar_width = 0;
 	if (bar_width > SP_BAR_WIDTH) bar_width = SP_BAR_WIDTH;
 	sprite->DrawWidth(SP_BAR_X(), SP_BAR_Y(), 13, bar_width);
 
 	// SP number
-	statBuf = std::format("{}", static_cast<short>(m_game->m_player->m_sp));
+	statBuf = std::format("{}", display_value);
 	hb::shared::text::draw_text(GameFont::Numbers, SP_NUM_X() + 1, SP_NUM_Y() + 1, statBuf.c_str(), hb::shared::text::TextStyle::from_color(GameColors::UIBlack));
 	hb::shared::text::draw_text(GameFont::Numbers, SP_NUM_X(), SP_NUM_Y(), statBuf.c_str(), hb::shared::text::TextStyle::from_color(GameColors::UIWhite));
 
