@@ -71,13 +71,13 @@ static void InitDpiAwareness()
 
 int APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPSTR lpCmdLine, _In_ int nCmdShow)
 {
-    InitDpiAwareness();
+    //InitDpiAwareness();
     return GameMain(hInstance, IDI_ICON1, lpCmdLine);
 }
 
 int main(int argc, char* argv[])
 {
-    InitDpiAwareness();
+    //InitDpiAwareness();
     return GameMain(GetModuleHandle(nullptr), IDI_ICON1, argc > 1 ? argv[1] : "");
 }
 #else

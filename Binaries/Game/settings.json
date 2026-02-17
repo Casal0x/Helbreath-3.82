@@ -1,19 +1,19 @@
 {
     "audio": {
         "ambientEnabled": true,
-        "ambientVolume": 100,
+        "ambientVolume": 20,
         "masterEnabled": true,
         "masterVolume": 100,
-        "musicEnabled": true,
-        "musicVolume": 100,
+        "musicEnabled": false,
+        "musicVolume": 15,
         "soundEnabled": true,
-        "soundVolume": 100,
+        "soundVolume": 22,
         "uiEnabled": true,
-        "uiVolume": 100
+        "uiVolume": 14
     },
     "display": {
-        "borderless": true,
-        "captureMouse": true,
+        "borderless": false,
+        "captureMouse": false,
         "detailLevel": 2,
         "dialogTransparency": false,
         "fpsLimit": 60,
@@ -21,12 +21,12 @@
         "fullscreenStretch": false,
         "patchingGrid": false,
         "reducedMotion": false,
-        "runningMode": false,
-        "showFps": false,
-        "showLatency": false,
+        "runningMode": true,
+        "showFps": true,
+        "showLatency": true,
         "tileGrid": false,
         "toggleToChat": true,
-        "vsync": false,
+        "vsync": true,
         "zoomMap": true
     },
     "shortcuts": {
