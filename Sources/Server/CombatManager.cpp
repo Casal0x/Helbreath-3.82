@@ -526,6 +526,7 @@ void CombatManager::effect_damage_spot(short attacker_h, char attacker_type, sho
 
 		if (attacker_type == hb::shared::owner_class::Player) {
 			if (m_game->m_client_list[attacker_h]->m_is_safe_attack_mode) {
+				if (attacker_h == target_h) return;
 				side_condition = get_player_relationship_raw(attacker_h, target_h);
 				if ((side_condition == 7) || (side_condition == 2) || (side_condition == 6)) {
 
@@ -1015,6 +1016,7 @@ void CombatManager::effect_damage_spot_damage_move(short attacker_h, char attack
 		if (attacker_type == hb::shared::owner_class::Player) {
 
 			if (m_game->m_client_list[attacker_h]->m_is_safe_attack_mode) {
+				if (attacker_h == target_h) return;
 				side_condition = get_player_relationship_raw(attacker_h, target_h);
 				if ((side_condition == 7) || (side_condition == 2) || (side_condition == 6)) {
 				}
@@ -2592,6 +2594,7 @@ uint32_t CombatManager::calculate_attack_effect(short target_h, char target_type
 		target_defense_ratio = m_game->m_client_list[target_h]->m_defense_ratio;
 		m_game->m_client_list[target_h]->m_logout_hack_check = time;
 		if ((attacker_type == hb::shared::owner_class::Player) && (m_game->m_client_list[attacker_h]->m_is_safe_attack_mode)) {
+			if (attacker_h == target_h) return 0;
 			side_condition = get_player_relationship_raw(attacker_h, target_h);
 			if ((side_condition == 7) || (side_condition == 2) || (side_condition == 6)) {
 				iAP_SM = iAP_SM / 2;

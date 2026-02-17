@@ -125,11 +125,14 @@ void DialogBox_HudPanel::draw_status_icons(short mouse_x, short mouse_y)
 		hb::shared::text::draw_text(GameFont::Bitmap1, LEVELUP_TEXT_X(), LEVELUP_TEXT_Y(), "Restart", hb::shared::text::TextStyle::with_integrated_shadow(hb::shared::render::Color(flashColor, flashColor, 0)));
 	}
 
-	// Combat mode / Safe attack icon
-	if (m_game->m_player->m_is_safe_attack_mode)
-		sprite->draw(COMBAT_ICON_X(), COMBAT_ICON_Y(), 4);
-	else if (m_game->m_player->m_is_combat_mode)
-		sprite->draw(COMBAT_ICON_X(), COMBAT_ICON_Y(), 5);
+	// Combat mode / Safe attack icon (only shown while in attack mode)
+	if (m_game->m_player->m_is_combat_mode)
+	{
+		if (m_game->m_player->m_is_safe_attack_mode)
+			sprite->draw(COMBAT_ICON_X(), COMBAT_ICON_Y(), 4);
+		else
+			sprite->draw(COMBAT_ICON_X(), COMBAT_ICON_Y(), 5);
+	}
 
 	// Combat mode button hover
 	if (is_in_button(mouse_x, mouse_y, BTN_COMBAT_X1(), BTN_COMBAT_X2()))
