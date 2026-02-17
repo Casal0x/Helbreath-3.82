@@ -999,17 +999,7 @@
 #define DRAW_DIALOGBOX_MAGICSHOP15	"Req Str"
 #define	DRAW_DIALOGBOX_MAGICSHOP12	"Int"
 
-#define DRAW_DIALOGBOX_NOTICEMSG1	"GameServer will be shut down after {} Minutes!"
-#define	DRAW_DIALOGBOX_NOTICEMSG2	"GameServer will be shut down soon!"
-#define	DRAW_DIALOGBOX_NOTICEMSG3	"You have to logout now to save your data"
-#define	DRAW_DIALOGBOX_NOTICEMSG4	"safely. After beginning of shutdown, user's"
-#define	DRAW_DIALOGBOX_NOTICEMSG5	"data are not saved and the lost data cannot"
-#define	DRAW_DIALOGBOX_NOTICEMSG6	"be recovered. So be careful!!"
-#define	DRAW_DIALOGBOX_NOTICEMSG7	" shutdown has started.!!!!"
-#define	DRAW_DIALOGBOX_NOTICEMSG8	"Your connection will be lost automatically"
-#define	DRAW_DIALOGBOX_NOTICEMSG9	"soon. Don't drop items or give them other"
-#define	DRAW_DIALOGBOX_NOTICEMSG10	"people. Data could be lost. And lost data"
-#define	DRAW_DIALOGBOX_NOTICEMSG11	"cannot be recorvered."
+#define	DRAW_DIALOGBOX_NOTICEMSG1	"You should find a safe place to logout."
 
 
 #define	DRAW_DIALOGBOX_NPCACTION_QUERY13	"Offer"
