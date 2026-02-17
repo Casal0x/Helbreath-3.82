@@ -11313,6 +11313,7 @@ void CGame::on_start_game_signal()
 					m_map_list[i]->m_is_snow_enabled = true;
 
 				if (LoadMapConfig(mapInfoDb, m_map_list[i]->m_name, m_map_list[i])) {
+					m_map_list[i]->setup_no_attack_area();
 					mapsLoaded++;
 					spawn_map_npcs_from_database(mapInfoDb, i);
 				}
