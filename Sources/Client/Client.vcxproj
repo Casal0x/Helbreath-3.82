@@ -213,6 +213,10 @@
       <Culture>0x0409</Culture>
       <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ResourceCompile>
+    <PreBuildEvent>
+      <Command Condition="'$(SkipVersionIncrement)' != 'true'">python "$(SolutionDir)version_gen.py" --increment-version --target client</Command>
+      <Message>Generating version header (client)...</Message>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -250,6 +254,10 @@
       <Culture>0x0809</Culture>
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ResourceCompile>
+    <PreBuildEvent>
+      <Command Condition="'$(SkipVersionIncrement)' != 'true'">python "$(SolutionDir)version_gen.py" --increment-version --target client</Command>
+      <Message>Generating version header (client)...</Message>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="..\Dependencies\Shared\platform_headers.h" />

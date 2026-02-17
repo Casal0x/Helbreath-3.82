@@ -230,6 +230,10 @@
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <Culture>0x0412</Culture>
     </ResourceCompile>
+    <PreBuildEvent>
+      <Command Condition="'$(SkipVersionIncrement)' != 'true'">python "$(SolutionDir)version_gen.py" --increment-version --target server</Command>
+      <Message>Generating version header (server)...</Message>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -271,6 +275,10 @@
       <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <Culture>0x0412</Culture>
     </ResourceCompile>
+    <PreBuildEvent>
+      <Command Condition="'$(SkipVersionIncrement)' != 'true'">python "$(SolutionDir)version_gen.py" --increment-version --target server</Command>
+      <Message>Generating version header (server)...</Message>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="AccountSqliteStore.h" />

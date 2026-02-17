@@ -379,6 +379,7 @@ public:
 	uint32_t m_fightzone_dead_time;
 	char m_save_count;
 
+	uint32_t m_last_version_warning_time = 0;
 	uint32_t m_last_config_request_time = 0;
 	uint32_t m_last_damage_taken_time = 0;
 

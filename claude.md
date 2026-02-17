@@ -139,6 +139,7 @@ Three-track system managed from `Sources/version.cfg`. Full reference: `VERSION_
 - **Server** — Server identity. Displayed in console banner and logs. Bump for server-only changes.
 - Pre-build script `Sources/version_gen.py` generates `version_info.h`, `version_rc.h`, and `version.cmake` automatically.
 - Edit `Sources/version.cfg` to change versions. Never edit generated files.
+- **Build counters** (`build_counter_client.txt`, `build_counter_server.txt`) are incremented automatically by the build system (vcxproj pre-build events and `build.ps1`). **Never pass `--increment-version` manually** — your builds are for compile verification only.
 
 ## Modernization Direction
 

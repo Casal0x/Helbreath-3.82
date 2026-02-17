@@ -48,6 +48,7 @@ $msbuildArgs = @(
     $solutionPath
     "/p:Configuration=$configString"
     "/p:Platform=$Platform"
+    "/p:SkipVersionIncrement=true"
     "/nologo"
     "/v:minimal"
     "/consoleloggerparameters:Summary;ErrorsOnly;WarningsOnly"

@@ -49,6 +49,10 @@ namespace net {
 	struct HB_PACKED PacketCommandCheckConnection {
 		PacketHeader header;
 		uint32_t time_ms;
+		uint8_t client_major;
+		uint8_t client_minor;
+		uint8_t client_patch;
+		uint16_t client_build;
 	};
 
 	struct HB_PACKED PacketRequestInitPlayer {

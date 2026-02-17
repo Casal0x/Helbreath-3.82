@@ -10488,6 +10488,30 @@ void CGame::check_connection_handler(int client_h, char* data, bool already_resp
 		resp.time_ms = time_rcv;
 		m_client_list[client_h]->m_socket->send_msg(reinterpret_cast<char*>(&resp), sizeof(resp));
 	}
+
+	// Client version check — warn outdated clients every 5 minutes
+	if (req->client_major != 0 || req->client_minor != 0 || req->client_patch != 0 || req->client_build != 0) {
+		uint64_t client_ver = static_cast<uint64_t>(req->client_major) * 10000000
+			+ static_cast<uint64_t>(req->client_minor) * 100000
+			+ static_cast<uint64_t>(req->client_patch) * 1000
+			+ req->client_build;
+		uint64_t expected_ver = static_cast<uint64_t>(hb::version::client::major) * 10000000
+			+ static_cast<uint64_t>(hb::version::client::minor) * 100000
+			+ static_cast<uint64_t>(hb::version::client::patch) * 1000
+			+ hb::version::client::build_number;
+		if (client_ver < expected_ver) {
+			if (time - m_client_list[client_h]->m_last_version_warning_time >= 300000) {
+				m_client_list[client_h]->m_last_version_warning_time = time;
+				char msg[128];
+				std::snprintf(msg, sizeof(msg),
+					"Your client (%d.%d.%d.%d) is outdated. Expected: %d.%d.%d.%d. Please relaunch to update.",
+					req->client_major, req->client_minor, req->client_patch, req->client_build,
+					hb::version::client::major, hb::version::client::minor,
+					hb::version::client::patch, hb::version::client::build_number);
+				send_notify_msg(0, client_h, Notify::NoticeMsg, 0, 0, 0, msg);
+			}
+		}
+	}
 }
 
 void CGame::request_help_handler(int client_h)

@@ -986,6 +986,10 @@ bool CGame::send_command(uint32_t message_id, uint16_t command, char direction, 
 		req.header.msg_id = message_id;
 		req.header.msg_type = 0;
 		req.time_ms = current_time;
+		req.client_major = static_cast<uint8_t>(hb::version::client::major);
+		req.client_minor = static_cast<uint8_t>(hb::version::client::minor);
+		req.client_patch = static_cast<uint8_t>(hb::version::client::patch);
+		req.client_build = static_cast<uint16_t>(hb::version::client::build_number);
 		result = m_g_sock->send_msg(reinterpret_cast<char*>(&req), sizeof(req), key);
 	}
 
