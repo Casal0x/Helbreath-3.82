@@ -448,30 +448,7 @@ void CGame::draw_objects(short pivot_x, short pivot_y, short div_x, short div_y,
 
 				if ((ret == true) && (m_entity_state.m_object_id != 0))
 				{
-					hb::shared::sprite::BoundRect bounds = draw_object_on_dead(indexX, indexY, ix, iy, false, time);
-
-					// Only test targeting for solid corpses (frame -1), skip fading ones (frame 0+)
-					if (m_entity_state.m_frame < 0)
-					{
-						TargetObjectInfo info = {};
-						info.m_object_id = m_entity_state.m_object_id;
-						info.m_map_x = indexX;
-						info.m_map_y = indexY;
-						info.m_screen_x = ix;
-						info.m_screen_y = iy;
-						info.m_data_x = m_entity_state.m_data_x;
-						info.m_data_y = m_entity_state.m_data_y;
-						info.m_owner_type = m_entity_state.m_owner_type;
-						info.m_npc_config_id = m_entity_state.m_npc_config_id;
-						info.m_action = ObjectDead;
-						info.m_direction = m_entity_state.m_dir;
-						info.m_frame = m_entity_state.m_frame;
-						info.m_name = m_entity_state.m_name.data();
-						info.m_appearance = m_entity_state.m_appearance;
-						info.m_status = m_entity_state.m_status;
-						info.m_type = FocusedObjectType::DeadBody;
-						CursorTarget::test_object(bounds, info, iy, res_msy);
-					}
+					draw_object_on_dead(indexX, indexY, ix, iy, false, time);
 				}
 
 				m_entity_state.m_object_id = m_entity_state.m_owner_type = 0; m_entity_state.m_status.clear();

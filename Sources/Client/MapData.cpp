@@ -998,7 +998,8 @@ bool CMapData::get_is_locatable(short sX, short sY)
 	dY = sY - m_pivot_y;
 	//Helltrayn 28/05/09. A�adimos esto para corregir el bug MIM que cierra el cliente
 	if (dX <= 0 || dY <= 0) return false;
-	if (m_data[dX][dY].m_owner_type != 0) return false;
+	// Allow pathing through dying entities — server already considers them dead
+	if (m_data[dX][dY].m_owner_type != 0 && m_data[dX][dY].m_animation.m_action != Type::Dying) return false;
 	if (m_tile[sX][sY].m_bIsMoveAllowed == false) return false;
 	if (m_data[dX][dY].m_dynamic_object_type == dynamic_object::Mineral1) return false; // 4
 	if (m_data[dX][dY].m_dynamic_object_type == dynamic_object::Mineral2) return false; // 5
