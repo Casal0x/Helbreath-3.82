@@ -945,8 +945,8 @@ namespace net {
 		uint8_t padding[2];
 	};
 
-#ifdef _DEBUG
-	// TESTER MENU — debug-only packet structs
+#ifdef TESTER_ONLY
+	// TESTER MENU — tester-only packet structs
 	struct HB_PACKED TesterItemSearchEntry {
 		int16_t item_id;
 		int16_t effect_type;  // ItemEffectType — determines valid prefixes
@@ -968,7 +968,7 @@ namespace net {
 		int16_t count;
 		TesterMapEntry entries[100];
 	};
-#endif // _DEBUG
+#endif // TESTER_ONLY
 	HB_PACK_END
 }
 }

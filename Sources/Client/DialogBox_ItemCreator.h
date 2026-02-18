@@ -1,6 +1,6 @@
-// TESTER MENU — entire file is debug-only
+// TESTER MENU — entire file is tester-only
 #pragma once
-#ifdef _DEBUG
+#ifdef TESTER_ONLY
 #include "IDialogBox.h"
 #include "Packet/PacketNotify.h"
 #include "Item/ItemAttributes.h"
@@ -68,4 +68,4 @@ private:
 	// UI helpers
 	void draw_selector(int sX, int sY, int size_x, int y_offset, const char* label, bool hover) const;
 };
-#endif // _DEBUG
+#endif // TESTER_ONLY

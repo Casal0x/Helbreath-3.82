@@ -1,6 +1,6 @@
-// TESTER MENU — entire file is debug-only
+// TESTER MENU — entire file is tester-only
 #pragma once
-#ifdef _DEBUG
+#ifdef TESTER_ONLY
 #include "IDialogBox.h"
 #include "Packet/PacketNotify.h"
 
@@ -48,4 +48,4 @@ private:
 	bool on_click_level_picker(short sX, short sY, short mouse_x, short mouse_y);
 	bool on_click_teleport(short sX, short sY, short mouse_x, short mouse_y);
 };
-#endif // _DEBUG
+#endif // TESTER_ONLY

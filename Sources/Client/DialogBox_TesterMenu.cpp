@@ -1,5 +1,5 @@
-// TESTER MENU — entire file is debug-only
-#ifdef _DEBUG
+// TESTER MENU — entire file is tester-only
+#ifdef TESTER_ONLY
 #include "DialogBox_TesterMenu.h"
 #include "Game.h"
 #include "GlobalDef.h"
@@ -359,4 +359,4 @@ void DialogBox_TesterMenu::receive_map_list(const hb::net::PacketNotifyTesterMap
 	std::memcpy(m_maps, pkt->entries, sizeof(m_maps));
 	m_map_scroll = 0;
 }
-#endif // _DEBUG
+#endif // TESTER_ONLY

@@ -125,8 +125,8 @@ void DialogBox_HudPanel::draw_status_icons(short mouse_x, short mouse_y)
 		hb::shared::text::draw_text(GameFont::Bitmap1, LEVELUP_TEXT_X(), LEVELUP_TEXT_Y(), "Restart", hb::shared::text::TextStyle::with_integrated_shadow(hb::shared::render::Color(flashColor, flashColor, 0)));
 	}
 
-#ifdef _DEBUG
-	// TESTER MENU — overlay indicator (debug builds only)
+#ifdef TESTER_ONLY
+	// TESTER MENU — overlay indicator (tester builds only)
 	if (!m_game->m_dialog_box_manager.is_enabled(DialogBoxId::TesterMenu))
 	{
 		int flash = (GameClock::get_time_ms() / 3) % 255;
@@ -134,7 +134,7 @@ void DialogBox_HudPanel::draw_status_icons(short mouse_x, short mouse_y)
 			"Tester",
 			hb::shared::text::TextStyle::with_integrated_shadow(hb::shared::render::Color(flash, flash, 0)));
 	}
-#endif
+#endif // TESTER_ONLY
 
 	// Combat mode / Safe attack icon (only shown while in attack mode)
 	if (m_game->m_player->m_is_combat_mode)

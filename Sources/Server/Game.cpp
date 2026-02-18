@@ -5686,8 +5686,8 @@ void CGame::client_common_handler(int client_h, char* data)
 		request_accept_join_party_handler(client_h, v1);
 		break;
 
-#ifdef _DEBUG
-	// TESTER MENU — all tester handlers are debug-only
+#ifdef TESTER_ONLY
+	// TESTER MENU — all tester handlers
 	case CommonType::TesterAction:
 	{
 		// No permission check — tester menu is available to all players
@@ -5992,7 +5992,7 @@ void CGame::client_common_handler(int client_h, char* data)
 			m_client_list[client_h]->m_char_name, item_id, attribute);
 		break;
 	}
-#endif // _DEBUG
+#endif // TESTER_ONLY
 
 	default:
 		hb::logger::log("Unknown message: 0x{:X}", command);
@@ -6777,7 +6777,7 @@ void CGame::send_notify_msg(int from_h, int to_h, uint16_t msg_type, uint32_t v1
 	}
 	break;
 
-#ifdef _DEBUG
+#ifdef TESTER_ONLY
 	case Notify::Contribution:
 	{
 		hb::net::PacketNotifySimpleInt pkt{};
@@ -6787,7 +6787,7 @@ void CGame::send_notify_msg(int from_h, int to_h, uint16_t msg_type, uint32_t v1
 		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 	}
 	break;
-#endif
+#endif // TESTER_ONLY
 
 	case Notify::Crusade:
 	{

@@ -3694,8 +3694,8 @@ void CGame::draw_dialog_boxs(short mouse_x, short mouse_y, short mouse_z, char l
 					dlg->on_draw(mouse_x, mouse_y, mouse_z, left_button);
 				break;
 
-#ifdef _DEBUG
-			// TESTER MENU — dialog draw cases (debug builds only)
+#ifdef TESTER_ONLY
+			// TESTER MENU — dialog draw cases (tester builds only)
 			case DialogBoxId::TesterMenu:
 				if (auto* dlg = m_dialog_box_manager.get_dialog_box(DialogBoxId::TesterMenu))
 					dlg->on_draw(mouse_x, mouse_y, mouse_z, left_button);
@@ -3704,7 +3704,7 @@ void CGame::draw_dialog_boxs(short mouse_x, short mouse_y, short mouse_z, char l
 				if (auto* dlg = m_dialog_box_manager.get_dialog_box(DialogBoxId::ItemCreator))
 					dlg->on_draw(mouse_x, mouse_y, mouse_z, left_button);
 				break;
-#endif
+#endif // TESTER_ONLY
 			}
 		}
 	if (icon_panel_drawn == false)
@@ -6096,7 +6096,7 @@ void CGame::command_processor(short mouse_x, short mouse_y, short tile_x, short 
 	case CursorStatus::Null:
 		if (left_button != 0)
 		{
-#ifdef _DEBUG
+#ifdef TESTER_ONLY
 			// Tester menu click (above Level Up text) — check before dialog handling
 			if (!m_dialog_box_manager.is_enabled(DialogBoxId::TesterMenu)
 				&& (mouse_x > LEVELUP_TEXT_X()) && (mouse_x < LEVELUP_TEXT_X() + 55)
@@ -6108,7 +6108,7 @@ void CGame::command_processor(short mouse_x, short mouse_y, short tile_x, short 
 				return;
 			}
 
-#endif
+#endif // TESTER_ONLY
 			result = m_dialog_box_manager.handle_mouse_down(mouse_x, mouse_y);
 			if (result == 1)
 			{

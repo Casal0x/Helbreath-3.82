@@ -42,11 +42,11 @@
 #include "DialogBox_GuildHallMenu.h"
 #include "DialogBox_SellOrRepair.h"
 #include "DialogBox_Manufacture.h"
-#ifdef _DEBUG
-// TESTER MENU — includes (debug builds only)
+#ifdef TESTER_ONLY
+// TESTER MENU — includes (tester builds only)
 #include "DialogBox_TesterMenu.h"
 #include "DialogBox_ItemCreator.h"
-#endif
+#endif // TESTER_ONLY
 #include "Game.h"
 #include "lan_eng.h"
 #include "BuildItemManager.h"
@@ -113,11 +113,11 @@ void DialogBoxManager::initialize_dialog_boxes()
 	register_dialog_box(std::make_unique<DialogBox_GuildHallMenu>(m_game));
 	register_dialog_box(std::make_unique<DialogBox_SellOrRepair>(m_game));
 	register_dialog_box(std::make_unique<DialogBox_Manufacture>(m_game));
-#ifdef _DEBUG
-	// TESTER MENU — dialog registration (debug builds only)
+#ifdef TESTER_ONLY
+	// TESTER MENU — dialog registration (tester builds only)
 	register_dialog_box(std::make_unique<DialogBox_TesterMenu>(m_game));
 	register_dialog_box(std::make_unique<DialogBox_ItemCreator>(m_game));
-#endif
+#endif // TESTER_ONLY
 }
 
 void DialogBoxManager::register_dialog_box(std::unique_ptr<IDialogBox> dialog_box)
@@ -546,8 +546,8 @@ void DialogBoxManager::enable_dialog_box(int box_id, int type, int64_t v1, int v
 			disable_dialog_box(DialogBoxId::Manufacture);
 		}
 		break;
-#ifdef _DEBUG
-	// TESTER MENU — enable positioning (debug builds only)
+#ifdef TESTER_ONLY
+	// TESTER MENU — enable positioning (tester builds only)
 	case DialogBoxId::TesterMenu:
 		if (is_enabled(DialogBoxId::TesterMenu) == false)
 		{
@@ -572,7 +572,7 @@ void DialogBoxManager::enable_dialog_box(int box_id, int type, int64_t v1, int v
 			Info(DialogBoxId::ItemCreator).m_y = ic_y;
 		}
 		break;
-#endif
+#endif // TESTER_ONLY
 
 	case DialogBoxId::ChangeStatsMajestic:
 		if (is_enabled(DialogBoxId::ChangeStatsMajestic) == false) {

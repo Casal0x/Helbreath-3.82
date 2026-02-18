@@ -1,11 +1,11 @@
 ﻿#include "Game.h"
 #include "NetworkMessageManager.h"
 #include "Packet/SharedPackets.h"
-#ifdef _DEBUG
-// TESTER MENU — includes (debug builds only)
+#ifdef TESTER_ONLY
+// TESTER MENU — includes (tester builds only)
 #include "DialogBox_ItemCreator.h"
 #include "DialogBox_TesterMenu.h"
-#endif
+#endif // TESTER_ONLY
 #include "lan_eng.h"
 #include <cstdio>
 #include <cstring>
@@ -102,8 +102,8 @@ namespace NetworkMessageHandlers {
 		game->m_player->m_enemy_kill_count = pkt->count;
 	}
 
-#ifdef _DEBUG
-	// TESTER MENU — notification handlers (debug builds only)
+#ifdef TESTER_ONLY
+	// TESTER MENU — notification handlers (tester builds only)
 	void HandleContribution(CGame* game, char* data)
 	{
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifySimpleInt>(
@@ -133,7 +133,7 @@ namespace NetworkMessageHandlers {
 			game->m_dialog_box_manager.get_dialog_box(DialogBoxId::TesterMenu));
 		if (dlg) dlg->receive_map_list(pkt);
 	}
-#endif
+#endif // TESTER_ONLY
 
 	void HandleEnemyKillReward(CGame* game, char* data)
 	{

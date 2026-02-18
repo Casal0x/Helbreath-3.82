@@ -1,5 +1,5 @@
-// TESTER MENU — entire file is debug-only
-#ifdef _DEBUG
+// TESTER MENU — entire file is tester-only
+#ifdef TESTER_ONLY
 #include "DialogBox_ItemCreator.h"
 #include "Game.h"
 #include "GlobalDef.h"
@@ -569,4 +569,4 @@ bool DialogBox_ItemCreator::on_click(short mouse_x, short mouse_y)
 	else
 		return on_click_configure(sX, sY, size_x, mouse_x, mouse_y);
 }
-#endif // _DEBUG
+#endif // TESTER_ONLY
