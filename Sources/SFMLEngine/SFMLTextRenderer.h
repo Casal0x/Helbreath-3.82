@@ -32,9 +32,9 @@ public:
 
     // Drawing (fontSize: 0 = use default, nonzero = per-call override)
     void draw_text(int x, int y, const char* text, const hb::shared::render::Color& color,
-                  int fontSize = 0) override;
+                  int fontSize = 0, bool bold = false) override;
     void draw_text_aligned(int x, int y, int width, int height, const char* text, const hb::shared::render::Color& color,
-                         Align alignment = Align::TopLeft, int fontSize = 0) override;
+                         Align alignment = Align::TopLeft, int fontSize = 0, bool bold = false) override;
 
     // Batching (no-op for SFML, no DC acquisition needed)
     void begin_batch() override;
