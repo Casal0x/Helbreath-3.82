@@ -73,9 +73,9 @@ public:
     // fontSize: 0 = use default, nonzero = override for this call only.
     // sf::Font lazily caches glyph pages per character size, so per-call size is free.
     virtual void draw_text(int x, int y, const char* text, const hb::shared::render::Color& color,
-                          int fontSize = 0) = 0;
+                          int fontSize = 0, bool bold = false) = 0;
     virtual void draw_text_aligned(int x, int y, int width, int height, const char* text, const hb::shared::render::Color& color,
-                                 Align alignment = Align::TopLeft, int fontSize = 0) = 0;
+                                 Align alignment = Align::TopLeft, int fontSize = 0, bool bold = false) = 0;
 
     // Batching for performance (DDraw needs DC acquisition)
     virtual void begin_batch() = 0;

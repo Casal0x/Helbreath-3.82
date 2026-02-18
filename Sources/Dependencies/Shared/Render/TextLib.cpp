@@ -173,6 +173,7 @@ void draw_text(int fontId, int x, int y, const char* text, const TextStyle& styl
 		// Per-call font size: passed through to renderer (0 = use default).
 		// sf::Font lazily caches glyph pages per character size, so no global mutation needed.
 		int fs = style.fontSize;
+		bool bl = style.bold;
 
 		// Handle shadow styles
 		switch (style.shadow)
@@ -180,22 +181,22 @@ void draw_text(int fontId, int x, int y, const char* text, const TextStyle& styl
 			case ShadowStyle::ThreePoint:
 			{
 				// 3-point shadow: +1,+1, 0,+1, +1,0 in black
-				renderer->draw_text(x + 1, y + 1, text, hb::shared::render::Color::Black(), fs);
-				renderer->draw_text(x, y + 1, text, hb::shared::render::Color::Black(), fs);
-				renderer->draw_text(x + 1, y, text, hb::shared::render::Color::Black(), fs);
+				renderer->draw_text(x + 1, y + 1, text, hb::shared::render::Color::Black(), fs, bl);
+				renderer->draw_text(x, y + 1, text, hb::shared::render::Color::Black(), fs, bl);
+				renderer->draw_text(x + 1, y, text, hb::shared::render::Color::Black(), fs, bl);
 				break;
 			}
 			case ShadowStyle::DropShadow:
 			{
 				// Simple drop shadow at +1,+1 in black
-				renderer->draw_text(x + 1, y + 1, text, hb::shared::render::Color::Black(), fs);
+				renderer->draw_text(x + 1, y + 1, text, hb::shared::render::Color::Black(), fs, bl);
 				break;
 			}
 			case ShadowStyle::TwoPoint:
 			{
 				// 2-point shadow: 0,+1 and +1,+1 in black
-				renderer->draw_text(x, y + 1, text, hb::shared::render::Color::Black(), fs);
-				renderer->draw_text(x + 1, y + 1, text, hb::shared::render::Color::Black(), fs);
+				renderer->draw_text(x, y + 1, text, hb::shared::render::Color::Black(), fs, bl);
+				renderer->draw_text(x + 1, y + 1, text, hb::shared::render::Color::Black(), fs, bl);
 				break;
 			}
 			case ShadowStyle::Highlight:
@@ -203,7 +204,7 @@ void draw_text(int fontId, int x, int y, const char* text, const TextStyle& styl
 				// Highlight at +1,0 with brightened color
 				uint8_t hr, hg, hb;
 				GetHighlightColor(style, hr, hg, hb);
-				renderer->draw_text(x + 1, y, text, hb::shared::render::Color(hr, hg, hb), fs);
+				renderer->draw_text(x + 1, y, text, hb::shared::render::Color(hr, hg, hb), fs, bl);
 				break;
 			}
 			default:
@@ -212,7 +213,7 @@ void draw_text(int fontId, int x, int y, const char* text, const TextStyle& styl
 		}
 
 		// draw main text
-		renderer->draw_text(x, y, text, style.color, fs);
+		renderer->draw_text(x, y, text, style.color, fs, bl);
 	}
 }
 
@@ -382,29 +383,30 @@ static void DrawTextAlignedSingleLine(int fontId, int rectX, int rectY, int rect
 
 		// Per-call font size: passed through to renderer (0 = use default)
 		int fs = style.fontSize;
+		bool bl = style.bold;
 
 		switch (style.shadow)
 		{
 			case ShadowStyle::ThreePoint:
-				renderer->draw_text_aligned(rectX + 1, rectY + 1, rectWidth, rectHeight, text, hb::shared::render::Color::Black(), alignment, fs);
-				renderer->draw_text_aligned(rectX, rectY + 1, rectWidth, rectHeight, text, hb::shared::render::Color::Black(), alignment, fs);
-				renderer->draw_text_aligned(rectX + 1, rectY, rectWidth, rectHeight, text, hb::shared::render::Color::Black(), alignment, fs);
+				renderer->draw_text_aligned(rectX + 1, rectY + 1, rectWidth, rectHeight, text, hb::shared::render::Color::Black(), alignment, fs, bl);
+				renderer->draw_text_aligned(rectX, rectY + 1, rectWidth, rectHeight, text, hb::shared::render::Color::Black(), alignment, fs, bl);
+				renderer->draw_text_aligned(rectX + 1, rectY, rectWidth, rectHeight, text, hb::shared::render::Color::Black(), alignment, fs, bl);
 				break;
 			case ShadowStyle::DropShadow:
-				renderer->draw_text_aligned(rectX + 1, rectY + 1, rectWidth, rectHeight, text, hb::shared::render::Color::Black(), alignment, fs);
+				renderer->draw_text_aligned(rectX + 1, rectY + 1, rectWidth, rectHeight, text, hb::shared::render::Color::Black(), alignment, fs, bl);
 				break;
 			case ShadowStyle::Highlight:
 			{
 				uint8_t hr, hg, hb;
 				GetHighlightColor(style, hr, hg, hb);
-				renderer->draw_text_aligned(rectX + 1, rectY, rectWidth, rectHeight, text, hb::shared::render::Color(hr, hg, hb), alignment, fs);
+				renderer->draw_text_aligned(rectX + 1, rectY, rectWidth, rectHeight, text, hb::shared::render::Color(hr, hg, hb), alignment, fs, bl);
 				break;
 			}
 			default:
 				break;
 		}
 
-		renderer->draw_text_aligned(rectX, rectY, rectWidth, rectHeight, text, style.color, alignment, fs);
+		renderer->draw_text_aligned(rectX, rectY, rectWidth, rectHeight, text, style.color, alignment, fs, bl);
 	}
 }
 

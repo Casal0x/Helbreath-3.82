@@ -193,7 +193,7 @@ int SFMLTextRenderer::get_line_height(int fontSize) const
 }
 
 void SFMLTextRenderer::draw_text(int x, int y, const char* text, const hb::shared::render::Color& color,
-                                int fontSize)
+                                int fontSize, bool bold)
 {
     if (!text || !m_fontLoaded || !m_back_buffer)
         return;
@@ -201,17 +201,21 @@ void SFMLTextRenderer::draw_text(int x, int y, const char* text, const hb::share
     sf::Text sfText(m_font, text, resolve_font_size(fontSize));
     sfText.setPosition({static_cast<float>(x), static_cast<float>(y)});
     sfText.setFillColor(sf::Color(color.r, color.g, color.b));
+    if (bold)
+        sfText.setStyle(sf::Text::Bold);
 
     m_back_buffer->draw(sfText);
 }
 
 void SFMLTextRenderer::draw_text_aligned(int x, int y, int width, int height, const char* text, const hb::shared::render::Color& color,
-                                        Align alignment, int fontSize)
+                                        Align alignment, int fontSize, bool bold)
 {
     if (!text || !m_fontLoaded || !m_back_buffer)
         return;
 
     sf::Text sfText(m_font, text, resolve_font_size(fontSize));
+    if (bold)
+        sfText.setStyle(sf::Text::Bold);
     sf::FloatRect bounds = sfText.getLocalBounds();
 
     // Extract alignment components

@@ -56,7 +56,7 @@ void Screen_CreateAccount::on_initialize()
 
     _clear_fields();
 
-    text_input_manager::get().start_input(427, 84, 11, m_cNewAcctName);
+    text_input_manager::get().start_input(340, 210, 11, m_cNewAcctName);
     text_input_manager::get().clear_input();
 }
 
@@ -95,10 +95,10 @@ void Screen_CreateAccount::on_update()
     {
         text_input_manager::get().end_input();
         switch (m_cur_focus) {
-        case 1: text_input_manager::get().start_input(427, 84, 11, m_cNewAcctName); break;
-        case 2: text_input_manager::get().start_input(427, 106, 11, m_cNewAcctPassword, true); break;
-        case 3: text_input_manager::get().start_input(427, 129, 11, m_cNewAcctConfirm, true); break;
-        case 4: text_input_manager::get().start_input(311, 48 + 190 - 25 + 2, 49, m_cEmail); break;
+        case 1: text_input_manager::get().start_input(340, 210, 11, m_cNewAcctName); break;
+        case 2: text_input_manager::get().start_input(340, 232, 11, m_cNewAcctPassword, true); break;
+        case 3: text_input_manager::get().start_input(340, 254, 11, m_cNewAcctConfirm, true); break;
+        case 4: text_input_manager::get().start_input(340, 276, 49, m_cEmail); break;
         }
         m_cNewAcctPrevFocus = m_cur_focus;
     }
@@ -106,10 +106,10 @@ void Screen_CreateAccount::on_update()
     // Direct mouse click focus selection
     if (lb != 0 && m_cNewAcctPrevLB == 0)
     {
-        if (hb::shared::input::is_mouse_in_rect(427, 84, 100, 18)) m_cur_focus = 1;
-        if (hb::shared::input::is_mouse_in_rect(427, 106, 100, 18)) m_cur_focus = 2;
-        if (hb::shared::input::is_mouse_in_rect(427, 129, 100, 18)) m_cur_focus = 3;
-        if (hb::shared::input::is_mouse_in_rect(311, 215, 250, 18)) m_cur_focus = 4;
+        if (hb::shared::input::is_mouse_in_rect(340, 210, 250, 18)) m_cur_focus = 1;
+        if (hb::shared::input::is_mouse_in_rect(340, 232, 250, 18)) m_cur_focus = 2;
+        if (hb::shared::input::is_mouse_in_rect(340, 254, 250, 18)) m_cur_focus = 3;
+        if (hb::shared::input::is_mouse_in_rect(340, 276, 250, 18)) m_cur_focus = 4;
 
         // Button 5: Create
         if (hb::shared::input::is_mouse_in_rect(297, 398, 72, 20))
@@ -252,17 +252,20 @@ void Screen_CreateAccount::on_render()
     if (m_cNewAcctPassword.empty())                                      flag = 2;
     if (m_cNewAcctName.empty())                                          flag = 1;
 
-    auto labelStyle = hb::shared::text::TextStyle::from_color(GameColors::UIFormLabel);
-    auto blackStyle = hb::shared::text::TextStyle::from_color(GameColors::UIBlack);
+    auto labelStyle = hb::shared::text::TextStyle::from_color(GameColors::UINearWhite).with_bold();
+    auto helpStyle = hb::shared::text::TextStyle::from_color(hb::shared::render::Color(255, 181, 0));
 
     // draw background
     m_game->draw_new_dialog_box(InterfaceNdNewAccount, 0, 0, 0, true);
 
+    // draw backdrop panel behind input fields
+    m_game->m_Renderer->draw_rounded_rect_filled(258, 198, 344, 108, 8, hb::shared::render::Color::Black(200));
+
     // draw labels
-    hb::shared::text::draw_text(GameFont::Default, 377, 84, "Account:", labelStyle);
-    hb::shared::text::draw_text(GameFont::Default, 372, 106, "Password:", labelStyle);
-    hb::shared::text::draw_text(GameFont::Default, 372, 129, "(confirm)", labelStyle);
-    hb::shared::text::draw_text(GameFont::Default, 271, 215, "eMail:", labelStyle);
+    hb::shared::text::draw_text(GameFont::Default, 270, 210, "Account:", labelStyle);
+    hb::shared::text::draw_text(GameFont::Default, 270, 232, "Password:", labelStyle);
+    hb::shared::text::draw_text(GameFont::Default, 270, 254, "Confirm:", labelStyle);
+    hb::shared::text::draw_text(GameFont::Default, 270, 276, "Email:", labelStyle);
 
     // Show active input string
     if ((m_cur_focus == 2) || (m_cur_focus == 3))
@@ -276,77 +279,77 @@ void Screen_CreateAccount::on_render()
 
     if (m_cur_focus != 1) {
         bool valid = CMisc::check_valid_name(m_cNewAcctName.data()) != false;
-        hb::shared::text::draw_text(GameFont::Default, 427, 84, m_cNewAcctName.c_str(), valid ? validStyle : invalidStyle);
+        hb::shared::text::draw_text(GameFont::Default, 340, 210, m_cNewAcctName.c_str(), valid ? validStyle : invalidStyle);
     }
     if (m_cur_focus != 2) {
         std::string masked2(m_cNewAcctPassword.size(), '*');
         bool valid = CMisc::check_valid_name(m_cNewAcctPassword.data()) != false;
-        hb::shared::text::draw_text(GameFont::Default, 427, 106, masked2.c_str(), valid ? validStyle : invalidStyle);
+        hb::shared::text::draw_text(GameFont::Default, 340, 232, masked2.c_str(), valid ? validStyle : invalidStyle);
     }
     if (m_cur_focus != 3) {
         std::string masked3(m_cNewAcctConfirm.size(), '*');
         bool valid = (m_cNewAcctPassword == m_cNewAcctConfirm);
-        hb::shared::text::draw_text(GameFont::Default, 427, 129, masked3.c_str(), valid ? validStyle : invalidStyle);
+        hb::shared::text::draw_text(GameFont::Default, 340, 254, masked3.c_str(), valid ? validStyle : invalidStyle);
     }
     if (m_cur_focus != 4) {
         bool valid = CMisc::is_valid_email(m_cEmail.data());
-        hb::shared::text::draw_text(GameFont::Default, 311, 48 + 190 - 25 + 2, m_cEmail.c_str(), valid ? validStyle : invalidStyle);
+        hb::shared::text::draw_text(GameFont::Default, 340, 276, m_cEmail.c_str(), valid ? validStyle : invalidStyle);
     }
 
     // draw help text based on focus
     switch (m_cur_focus) {
     case 1:
-        hb::shared::text::draw_text_aligned(GameFont::Default, 290, 330, (575) - (290), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT1, blackStyle, hb::shared::text::Align::TopCenter);
-        hb::shared::text::draw_text_aligned(GameFont::Default, 290, 345, (575) - (290), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT2, blackStyle, hb::shared::text::Align::TopCenter);
+        hb::shared::text::draw_text_aligned(GameFont::Default, 290, 330, (575) - (290), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT1, helpStyle, hb::shared::text::Align::TopCenter);
+        hb::shared::text::draw_text_aligned(GameFont::Default, 290, 345, (575) - (290), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT2, helpStyle, hb::shared::text::Align::TopCenter);
         break;
     case 2:
-        hb::shared::text::draw_text_aligned(GameFont::Default, 290, 330, (575) - (290), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT4, blackStyle, hb::shared::text::Align::TopCenter);
+        hb::shared::text::draw_text_aligned(GameFont::Default, 290, 330, (575) - (290), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT4, helpStyle, hb::shared::text::Align::TopCenter);
         break;
     case 3:
-        hb::shared::text::draw_text_aligned(GameFont::Default, 290, 330, (575) - (290), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT8, blackStyle, hb::shared::text::Align::TopCenter);
+        hb::shared::text::draw_text_aligned(GameFont::Default, 290, 330, (575) - (290), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT8, helpStyle, hb::shared::text::Align::TopCenter);
         break;
     case 4:
-        hb::shared::text::draw_text_aligned(GameFont::Default, 290, 330, (575) - (290), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT21, blackStyle, hb::shared::text::Align::TopCenter);
-        hb::shared::text::draw_text_aligned(GameFont::Default, 290, 345, (575) - (290), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT22, blackStyle, hb::shared::text::Align::TopCenter);
-        hb::shared::text::draw_text_aligned(GameFont::Default, 290, 360, (575) - (290), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT23, blackStyle, hb::shared::text::Align::TopCenter);
+        hb::shared::text::draw_text_aligned(GameFont::Default, 290, 330, (575) - (290), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT21, helpStyle, hb::shared::text::Align::TopCenter);
+        hb::shared::text::draw_text_aligned(GameFont::Default, 290, 345, (575) - (290), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT22, helpStyle, hb::shared::text::Align::TopCenter);
+        hb::shared::text::draw_text_aligned(GameFont::Default, 290, 360, (575) - (290), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT23, helpStyle, hb::shared::text::Align::TopCenter);
         break;
     case 5:
         switch (flag) {
         case 0:
-            hb::shared::text::draw_text_aligned(GameFont::Default, 290, 330, (575) - (290), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT33, blackStyle, hb::shared::text::Align::TopCenter);
+            hb::shared::text::draw_text_aligned(GameFont::Default, 290, 330, (575) - (290), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT33, helpStyle, hb::shared::text::Align::TopCenter);
             break;
         case 1:
-            hb::shared::text::draw_text_aligned(GameFont::Default, 290, 330, (575) - (290), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT35, blackStyle, hb::shared::text::Align::TopCenter);
+            hb::shared::text::draw_text_aligned(GameFont::Default, 290, 330, (575) - (290), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT35, helpStyle, hb::shared::text::Align::TopCenter);
             break;
         case 2:
-            hb::shared::text::draw_text_aligned(GameFont::Default, 290, 330, (575) - (290), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT38, blackStyle, hb::shared::text::Align::TopCenter);
+            hb::shared::text::draw_text_aligned(GameFont::Default, 290, 330, (575) - (290), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT38, helpStyle, hb::shared::text::Align::TopCenter);
             break;
         case 3:
-            hb::shared::text::draw_text_aligned(GameFont::Default, 290, 330, (575) - (290), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT42, blackStyle, hb::shared::text::Align::TopCenter);
+            hb::shared::text::draw_text_aligned(GameFont::Default, 290, 330, (575) - (290), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT42, helpStyle, hb::shared::text::Align::TopCenter);
             break;
         case 5:
-            hb::shared::text::draw_text_aligned(GameFont::Default, 290, 330, (575) - (290), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT50, blackStyle, hb::shared::text::Align::TopCenter);
+            hb::shared::text::draw_text_aligned(GameFont::Default, 290, 330, (575) - (290), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT50, helpStyle, hb::shared::text::Align::TopCenter);
             break;
         case 6:
-            hb::shared::text::draw_text_aligned(GameFont::Default, 290, 330, (575) - (290), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT52, blackStyle, hb::shared::text::Align::TopCenter);
-            hb::shared::text::draw_text_aligned(GameFont::Default, 290, 345, (575) - (290), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT53, blackStyle, hb::shared::text::Align::TopCenter);
+            hb::shared::text::draw_text_aligned(GameFont::Default, 290, 330, (575) - (290), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT52, helpStyle, hb::shared::text::Align::TopCenter);
+            hb::shared::text::draw_text_aligned(GameFont::Default, 290, 345, (575) - (290), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT53, helpStyle, hb::shared::text::Align::TopCenter);
             break;
         case 7:
-            hb::shared::text::draw_text_aligned(GameFont::Default, 290, 330, (575) - (290), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT56, blackStyle, hb::shared::text::Align::TopCenter);
-            hb::shared::text::draw_text_aligned(GameFont::Default, 290, 345, (575) - (290), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT57, blackStyle, hb::shared::text::Align::TopCenter);
+            hb::shared::text::draw_text_aligned(GameFont::Default, 290, 330, (575) - (290), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT56, helpStyle, hb::shared::text::Align::TopCenter);
+            hb::shared::text::draw_text_aligned(GameFont::Default, 290, 345, (575) - (290), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT57, helpStyle, hb::shared::text::Align::TopCenter);
             break;
         case 9:
-            hb::shared::text::draw_text_aligned(GameFont::Default, 290, 330, (575) - (290), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT63, blackStyle, hb::shared::text::Align::TopCenter);
-            hb::shared::text::draw_text_aligned(GameFont::Default, 290, 345, (575) - (290), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT64, blackStyle, hb::shared::text::Align::TopCenter);
-            hb::shared::text::draw_text_aligned(GameFont::Default, 290, 360, (575) - (290), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT65, blackStyle, hb::shared::text::Align::TopCenter);
+            hb::shared::text::draw_text_aligned(GameFont::Default, 290, 330, (575) - (290), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT63, helpStyle, hb::shared::text::Align::TopCenter);
+            hb::shared::text::draw_text_aligned(GameFont::Default, 290, 345, (575) - (290), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT64, helpStyle, hb::shared::text::Align::TopCenter);
+            hb::shared::text::draw_text_aligned(GameFont::Default, 290, 360, (575) - (290), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT65, helpStyle, hb::shared::text::Align::TopCenter);
             break;
         }
         break;
     case 6:
-        hb::shared::text::draw_text_aligned(GameFont::Default, 290, 330, (575) - (290), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT80, blackStyle, hb::shared::text::Align::TopCenter);
+        hb::shared::text::draw_text_aligned(GameFont::Default, 290, 330, (575) - (290), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT80, helpStyle, hb::shared::text::Align::TopCenter);
         break;
     case 7:
-        hb::shared::text::draw_text_aligned(GameFont::Default, 290, 330, (575) - (290), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT81, blackStyle, hb::shared::text::Align::TopCenter);
+        hb::shared::text::draw_text_aligned(GameFont::Default, 290, 330, (575) - (290), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT81, helpStyle, hb::shared::text::Align::TopCenter);
         break;
     }
 
