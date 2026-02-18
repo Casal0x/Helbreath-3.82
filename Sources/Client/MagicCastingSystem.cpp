@@ -28,20 +28,21 @@ int magic_casting_system::get_mana_cost(int magic_no)
 		if (m_game->m_item_list[i] == 0) continue;
 		if (m_game->m_is_item_equipped[i] == true)
 		{
-			// Data-driven mana save calculation using ItemEffectType
-			auto effectType = m_game->m_item_list[i]->get_item_effect_type();
+			// Look up the item config — inventory items don't carry effect data
+			CItem* cfg = m_game->get_item_config(m_game->m_item_list[i]->m_id_num);
+			if (!cfg) continue;
+
+			auto effectType = cfg->get_item_effect_type();
 			switch (effectType)
 			{
 			case hb::shared::item::ItemEffectType::AttackManaSave:
-				// Weapons with mana save: value stored in m_item_effect_value4
-				mana_save += m_game->m_item_list[i]->m_item_effect_value4;
+				mana_save += cfg->m_item_effect_value4;
 				break;
 
 			case hb::shared::item::ItemEffectType::add_effect:
-				// add_effect with sub-type ManaSave (necklaces, etc.)
-				if (m_game->m_item_list[i]->m_item_effect_value1 == hb::shared::item::to_int(hb::shared::item::AddEffectType::ManaSave))
+				if (cfg->m_item_effect_value1 == hb::shared::item::to_int(hb::shared::item::AddEffectType::ManaSave))
 				{
-					mana_save += m_game->m_item_list[i]->m_item_effect_value2;
+					mana_save += cfg->m_item_effect_value2;
 				}
 				break;
 
