@@ -29,6 +29,7 @@ using namespace hb::shared::direction;
 
 namespace
 {
+	constexpr uint32_t corpse_linger_time_ms = 1000;
 	const uint32_t DEF_FULLDATA_REQUEST_INTERVAL = 2000;
 	uint32_t g_dwLastFullDataRequestTime[hb::shared::object_id::NpcMax];
 	bool ShouldRequestFullData(uint16_t object_id, int sX, int sY)
@@ -1926,8 +1927,20 @@ int CMapData::object_frame_counter(const std::string& player_name, short view_po
 			}
 
 			// Dead think 00496F43
-			if (m_data[dX][dY].m_dead_owner_type != 0) //00496F62  JE SHORT 00496FD8
-				if ((m_data[dX][dY].m_dead_owner_frame >= 0) && ((time - m_data[dX][dY].m_dead_owner_time) > 150))
+			if (m_data[dX][dY].m_dead_owner_type != 0)
+			{
+				if ((m_data[dX][dY].m_dead_owner_frame == -1) && ((time - m_data[dX][dY].m_dead_owner_time) > corpse_linger_time_ms))
+				{
+					// Auto-start fade after linger delay
+					m_data[dX][dY].m_dead_owner_frame = 0;
+					m_data[dX][dY].m_dead_owner_time = time;
+					if (ret == 0)
+					{
+						ret = -1;
+						S_dwUpdateTime = time;
+					}
+				}
+				else if ((m_data[dX][dY].m_dead_owner_frame >= 0) && ((time - m_data[dX][dY].m_dead_owner_time) > 150))
 				{
 					m_data[dX][dY].m_dead_owner_time = time;
 					m_data[dX][dY].m_dead_owner_frame++;
@@ -1943,6 +1956,7 @@ int CMapData::object_frame_counter(const std::string& player_name, short view_po
 						m_data[dX][dY].m_dead_owner_name.clear();
 					}
 				}
+			}
 
 			// Alive thing 00496FD8
 			if (m_data[dX][dY].m_owner_type != 0)
@@ -2017,6 +2031,7 @@ int CMapData::object_frame_counter(const std::string& player_name, short view_po
 								m_data[dX][dY].m_deadStatus = m_data[dX][dY].m_status;
 								m_data[dX][dY].m_dead_chat_msg = m_data[dX][dY].m_chat_msg; // v1.411
 								m_data[dX][dY].m_dead_owner_frame = -1;
+								m_data[dX][dY].m_dead_owner_time = time;
 								m_data[dX][dY].m_dead_owner_name = m_data[dX][dY].m_owner_name;
 								m_data[dX][dY].m_object_id = 0;
 								m_data[dX][dY].m_owner_type = 0;
@@ -4002,6 +4017,7 @@ bool CMapData::set_dead_owner(uint16_t object_id, short sX, short sY, short type
 	m_data[dX][dY].m_dead_appearance = appearance;
 	m_data[dX][dY].m_deadStatus = status;
 	m_data[dX][dY].m_dead_owner_frame = -1;
+	m_data[dX][dY].m_dead_owner_time = m_frame_time;
 	m_data[dX][dY].m_dead_owner_name = tmp_name;
 
 	m_object_id_cache_loc_x[object_id] = -1 * sX;
