@@ -23,6 +23,9 @@
 #include "SpellAoE.h"
 #include "Magic.h"
 #include "Log.h"
+#ifdef _DEBUG
+#include "DialogBox_ItemCreator.h"
+#endif
 #include <string>
 #include <memory>
 #include <format>
@@ -228,6 +231,15 @@ void Screen_OnGame::on_update()
             }
             m_game->m_dialog_box_manager.disable_dialog_box(DialogBoxId::ItemDropExternal);
         }
+#ifdef _DEBUG
+        else if ((m_game->m_dialog_box_manager.is_enabled(DialogBoxId::ItemCreator) == true) &&
+                 (m_game->m_dialog_box_manager.get_top_dialog_box_index() == DialogBoxId::ItemCreator))
+        {
+            auto* dlg = dynamic_cast<DialogBox_ItemCreator*>(
+                m_game->m_dialog_box_manager.get_dialog_box(DialogBoxId::ItemCreator));
+            if (dlg) dlg->on_enter_pressed();
+        }
+#endif
         else
         {
             if (!text_input_manager::get().is_active()) {

@@ -49,6 +49,11 @@ namespace DialogBoxId
 		ChangeStatsMajestic = 42,
 		Resurrect = 50,
 		GuildHallMenu = 51,
-		RepairAll = 52
+		RepairAll = 52,
+#ifdef _DEBUG
+		// TESTER MENU — dialog IDs (debug builds only)
+		TesterMenu = 53,
+		ItemCreator = 54
+#endif
 	};
 }

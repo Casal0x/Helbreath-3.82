@@ -159,6 +159,12 @@ namespace NetworkMessageHandlers {
 	void HandlePKcaptured(CGame* game, char* data);
 	void HandlePKpenalty(CGame* game, char* data);
 	void HandleEnemyKills(CGame* game, char* data);
+#ifdef _DEBUG
+	// TESTER MENU — notification handlers (debug builds only)
+	void HandleContribution(CGame* game, char* data);
+	void HandleTesterItemSearchResult(CGame* game, char* data);
+	void HandleTesterMapListResult(CGame* game, char* data);
+#endif
 	void HandleEnemyKillReward(CGame* game, char* data);
 	void HandleGlobalAttackMode(CGame* game, char* data);
 	void HandleDamageMove(CGame* game, char* data);
@@ -324,6 +330,10 @@ bool NetworkMessageManager::process_message(uint32_t msg_id, char* data, uint32_
 		case Notify::PkCaptured: NetworkMessageHandlers::HandlePKcaptured(m_game, data); return true;
 		case Notify::PkPenalty: NetworkMessageHandlers::HandlePKpenalty(m_game, data); return true;
 		case Notify::EnemyKills: NetworkMessageHandlers::HandleEnemyKills(m_game, data); return true;
+#ifdef _DEBUG
+		// TESTER MENU — contribution notify (debug builds only)
+		case Notify::Contribution: NetworkMessageHandlers::HandleContribution(m_game, data); return true;
+#endif
 		case Notify::EnemyKillReward: NetworkMessageHandlers::HandleEnemyKillReward(m_game, data); return true;
 		case Notify::GlobalAttackMode: NetworkMessageHandlers::HandleGlobalAttackMode(m_game, data); return true;
 		case Notify::DamageMove: NetworkMessageHandlers::HandleDamageMove(m_game, data); return true;
@@ -471,6 +481,12 @@ bool NetworkMessageManager::process_message(uint32_t msg_id, char* data, uint32_
 		case Notify::TravelerLimitedLevel: NetworkMessageHandlers::HandleTravelerLimitedLevel(m_game, data); return true;
 		case Notify::LimitedLevel: NetworkMessageHandlers::HandleLimitedLevel(m_game, data); return true;
 		case Notify::ToBeRecalled: NetworkMessageHandlers::HandleToBeRecalled(m_game, data); return true;
+
+#ifdef _DEBUG
+		// TESTER MENU — notification handlers (debug builds only)
+		case Notify::TesterItemSearchResult: NetworkMessageHandlers::HandleTesterItemSearchResult(m_game, data); return true;
+		case Notify::TesterMapListResult: NetworkMessageHandlers::HandleTesterMapListResult(m_game, data); return true;
+#endif
 
 		}
 		return false;

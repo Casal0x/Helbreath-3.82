@@ -98,6 +98,9 @@ private:
 	static constexpr int LOCAL_LEVELUP_TEXT_X = 32;
 	static constexpr int LOCAL_LEVELUP_TEXT_Y = 448;
 
+	// Tester menu text position (above Level Up text)
+	static constexpr int BASE_TESTER_TEXT_Y = 433;
+
 	// Helper methods
 	void draw_gauge_bars();
 	void draw_icon_buttons(short mouse_x, short mouse_y);
