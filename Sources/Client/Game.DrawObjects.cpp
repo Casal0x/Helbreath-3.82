@@ -448,7 +448,7 @@ void CGame::draw_objects(short pivot_x, short pivot_y, short div_x, short div_y,
 
 				if ((ret == true) && (m_entity_state.m_object_id != 0))
 				{
-					draw_object_on_dead(indexX, indexY, ix, iy, false, time);
+					(void)draw_object_on_dead(indexX, indexY, ix, iy, false, time);
 				}
 
 				m_entity_state.m_object_id = m_entity_state.m_owner_type = 0; m_entity_state.m_status.clear();
