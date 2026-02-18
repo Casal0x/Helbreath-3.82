@@ -482,8 +482,7 @@ void CGame::on_key_event(KeyCode key, bool pressed)
 
 	if (pressed)
 	{
-		// Enter and Escape are handled in handle_key_up, not handle_key_down
-		if (key != KeyCode::Enter && key != KeyCode::Escape)
+		if (key != KeyCode::Enter)
 			handle_key_down(key);
 	}
 	else
@@ -4642,49 +4641,72 @@ void CGame::create_screen_shot()
 
 void CGame::handle_key_up(KeyCode _key)
 {
-	if (HotkeyManager::get().handle_key_up(_key)) {
+	// Ctrl+letter combos (Ctrl+A, Ctrl+D, etc.) still fire on key release
+	HotkeyManager::get().handle_key_up(_key);
+}
+
+void CGame::handle_key_down(KeyCode _key)
+{
+
+	// When an overlay is active, only allow screenshot (F11)
+	if (GameModeManager::get_active_overlay() != nullptr)
+	{
+		if (_key == KeyCode::F11)
+			hotkey_simple_screenshot();
 		return;
 	}
 
-	// When an overlay is active, only allow certain hotkeys (like screenshot)
-	// Block most hotkeys to prevent interaction with base screen
-	if (GameModeManager::get_active_overlay() != nullptr)
+	// Potions fire repeatedly while held — allow auto-repeat with 500ms cooldown
+	if (_key == KeyCode::Insert || _key == KeyCode::Delete)
 	{
-		// Only allow screenshot hotkey when overlay is visible
-		if (_key == KeyCode::F11) {
-			hotkey_simple_screenshot();
+		static uint32_t last_potion_time = 0;
+		uint32_t now = GameClock::get_time_ms();
+		if (now - last_potion_time >= 500)
+		{
+			last_potion_time = now;
+			if (_key == KeyCode::Insert) hotkey_simple_use_health_potion();
+			else hotkey_simple_use_mana_potion();
 		}
 		return;
 	}
 
-	switch (_key) {
-	case KeyCode::NumpadAdd:      // Numpad +
-		hotkey_simple_zoom_in();
-		break;
-	case KeyCode::NumpadSubtract: // Numpad -
-		hotkey_simple_zoom_out();
-		break;
+	// Ignore auto-repeat key events — only act on initial key press
+	if (!hb::shared::input::is_key_pressed(_key)) return;
 
+	// Filter out keys that have no action
+	switch (_key) {
+	case KeyCode::F10:
+	case KeyCode::PageDown:
+	case KeyCode::LWin:
+	case KeyCode::RWin:
+	case KeyCode::NumpadMultiply:
+	case KeyCode::NumpadSeparator:
+	case KeyCode::NumpadDecimal:
+	case KeyCode::NumpadDivide:
+	case KeyCode::NumLock:
+	case KeyCode::ScrollLock:
+		return;
+	default:
+		break;
+	}
+
+	// Action keys — fire on initial key press for responsive input
+	switch (_key) {
+	case KeyCode::NumpadAdd:
+		hotkey_simple_zoom_in();
+		return;
+	case KeyCode::NumpadSubtract:
+		hotkey_simple_zoom_out();
+		return;
+	case KeyCode::F1:
+		hotkey_simple_use_shortcut1();
+		return;
 	case KeyCode::F2:
 		hotkey_simple_use_shortcut2();
-		break;
-
+		return;
 	case KeyCode::F3:
 		hotkey_simple_use_shortcut3();
-		break;
-
-	case KeyCode::Insert:
-		hotkey_simple_use_health_potion();
-		break;
-
-	case KeyCode::Delete:
-		hotkey_simple_use_mana_potion();
-		break;
-
-	case KeyCode::End:
-		hotkey_simple_load_backup_chat();
-		break;
-
+		return;
 	case KeyCode::F4:
 		if (hb::shared::input::is_alt_down())
 		{
@@ -4708,120 +4730,54 @@ void CGame::handle_key_up(KeyCode _key)
 		}
 		else
 			hotkey_simple_use_magic_shortcut();
-		break;
-
+		return;
 	case KeyCode::F5:
 		hotkey_simple_toggle_character_info();
-		break;
-
+		return;
 	case KeyCode::F6:
 		hotkey_simple_toggle_inventory();
-		break;
-
+		return;
 	case KeyCode::F7:
 		hotkey_simple_toggle_magic();
-		break;
-
+		return;
 	case KeyCode::F8:
 		hotkey_simple_toggle_skill();
-		break;
-
+		return;
 	case KeyCode::F9:
 		hotkey_simple_toggle_chat_history();
-		break;
-
-	case KeyCode::F12:
-		hotkey_simple_toggle_system_menu();
-		break;
-
-	case KeyCode::F1:
-		hotkey_simple_use_shortcut1();
-		break;
-
-	case KeyCode::Up:
-		hotkey_simple_whisper_cycle_up();
-		break;
-
-	case KeyCode::Right:
-		hotkey_simple_arrow_right();
-		break;
-
-	case KeyCode::Down:
-		hotkey_simple_whisper_cycle_down();
-		break;
-
-	case KeyCode::Left:
-		hotkey_simple_arrow_left();
-		break;
-
-	case KeyCode::Tab:
-		hotkey_simple_tab_toggle_combat();
-		break;
-
-	case KeyCode::Home:
-		hotkey_simple_toggle_safe_attack();
-		break;
-
-	case KeyCode::Escape:
-		hotkey_simple_escape();
-		break;
-
-	case KeyCode::PageUp:
-		hotkey_simple_special_ability();
-		break;
-
+		return;
 	case KeyCode::F11:
 		hotkey_simple_screenshot();
-		break;
-
-	default:
 		return;
-	}
-}
-
-void CGame::handle_key_down(KeyCode _key)
-{
-
-	// When an overlay is active, block all on_key_down actions
-	// Overlays handle their own input in on_update()
-	if (GameModeManager::get_active_overlay() != nullptr)
-	{
-		return;
-	}
-
-	// Filter out keys that should not trigger any action in on_key_down
-	// These are handled in on_key_up or elsewhere
-	switch (_key) {
-	case KeyCode::Insert:
-	case KeyCode::Delete:
-	case KeyCode::Tab:
-	case KeyCode::Escape:
-	case KeyCode::End:
-	case KeyCode::Home:
-	case KeyCode::F1:
-	case KeyCode::F2:
-	case KeyCode::F3:
-	case KeyCode::F4:
-	case KeyCode::F5:
-	case KeyCode::F6:
-	case KeyCode::F7:
-	case KeyCode::F8:
-	case KeyCode::F9:
-	case KeyCode::F10:
-	case KeyCode::F11:
 	case KeyCode::F12:
+		hotkey_simple_toggle_system_menu();
+		return;
+	case KeyCode::End:
+		hotkey_simple_load_backup_chat();
+		return;
+	case KeyCode::Up:
+		hotkey_simple_whisper_cycle_up();
+		return;
+	case KeyCode::Right:
+		hotkey_simple_arrow_right();
+		return;
+	case KeyCode::Down:
+		hotkey_simple_whisper_cycle_down();
+		return;
+	case KeyCode::Left:
+		hotkey_simple_arrow_left();
+		return;
+	case KeyCode::Tab:
+		hotkey_simple_tab_toggle_combat();
+		return;
+	case KeyCode::Home:
+		hotkey_simple_toggle_safe_attack();
+		return;
+	case KeyCode::Escape:
+		hotkey_simple_escape();
+		return;
 	case KeyCode::PageUp:
-	case KeyCode::PageDown:
-	case KeyCode::LWin:
-	case KeyCode::RWin:
-	case KeyCode::NumpadMultiply:
-	case KeyCode::NumpadAdd:
-	case KeyCode::NumpadSeparator:
-	case KeyCode::NumpadSubtract:
-	case KeyCode::NumpadDecimal:
-	case KeyCode::NumpadDivide:
-	case KeyCode::NumLock:
-	case KeyCode::ScrollLock:
+		hotkey_simple_special_ability();
 		return;
 	default:
 		break;
