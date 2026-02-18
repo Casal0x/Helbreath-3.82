@@ -815,18 +815,22 @@ hb::shared::sprite::BoundRect CPlayerRenderer::draw_dead(int indexX, int indexY,
 		}
 		else if (state.m_status.berserk)
 		{
-			// Berserk corpse fade — reddish tint (clamped to prevent negative color values)
-			int r = (std::max)(0, 202 - 4 * state.m_frame);
-			int gb = (std::max)(0, 182 - 4 * state.m_frame);
+			// Berserk corpse fade — smoothly reaches full transparency by frame 10
+			int remaining = (std::max)(0, 10 - state.m_frame);
+			int r = 202 * remaining / 10;
+			int gb = 182 * remaining / 10;
+			float alpha = 0.7f * remaining / 10.0f;
 			m_game.m_sprite[eq.m_body_index + (state.m_dir - 1)]->draw(sX, sY, frame,
-				hb::shared::sprite::DrawParams::tinted_alpha(r, gb, gb, 0.7f));
+				hb::shared::sprite::DrawParams::tinted_alpha(r, gb, gb, alpha));
 		}
 		else
 		{
-			// Normal corpse fade (clamped to prevent negative color values)
-			int fade = (std::max)(0, 192 - 4 * state.m_frame);
+			// Normal corpse fade — smoothly reaches full transparency by frame 10
+			int remaining = (std::max)(0, 10 - state.m_frame);
+			int fade = 192 * remaining / 10;
+			float alpha = 0.7f * remaining / 10.0f;
 			m_game.m_sprite[eq.m_body_index + (state.m_dir - 1)]->draw(sX, sY, frame,
-				hb::shared::sprite::DrawParams::tinted_alpha(fade, fade, fade, 0.7f));
+				hb::shared::sprite::DrawParams::tinted_alpha(fade, fade, fade, alpha));
 		}
 	}
 	else if (state.m_name[0] != '\0')
