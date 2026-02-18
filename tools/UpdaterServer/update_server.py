@@ -8,9 +8,12 @@ Settings are saved to update_server.json — delete it to reconfigure.
 import json
 import os
 import sys
+import threading
 import time
-from http.server import HTTPServer, SimpleHTTPRequestHandler
+from collections import defaultdict
 from functools import partial
+from http.server import SimpleHTTPRequestHandler
+from socketserver import ThreadingMixIn, TCPServer
 
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -21,13 +24,107 @@ DEFAULTS = {
     "host": "0.0.0.0",
     "port": 8080,
     "rate_limit_mbps": 10,
+    "max_requests_per_minute": 300,
+    "connection_timeout": 30,
 }
+
+
+class ConnectionTracker:
+    """Per-IP request rate limiting.
+
+    Tracks timestamps of requests per IP. Once an IP exceeds
+    max_per_minute within a rolling 60-second window, further
+    requests are silently dropped.
+    """
+
+    def __init__(self, max_per_minute):
+        self.max_per_minute = max_per_minute
+        self._hits = defaultdict(list)
+        self._lock = threading.Lock()
+        self._last_cleanup = time.monotonic()
+
+    def allow(self, ip):
+        if self.max_per_minute <= 0:
+            return True
+        now = time.monotonic()
+        with self._lock:
+            # Purge stale IPs every 60 seconds to prevent memory growth
+            if now - self._last_cleanup > 60:
+                self._cleanup(now)
+                self._last_cleanup = now
+            timestamps = self._hits[ip]
+            cutoff = now - 60
+            timestamps[:] = [t for t in timestamps if t > cutoff]
+            if len(timestamps) >= self.max_per_minute:
+                return False
+            timestamps.append(now)
+            return True
+
+    def _cleanup(self, now):
+        cutoff = now - 60
+        stale = [ip for ip, ts in self._hits.items()
+                 if not ts or ts[-1] <= cutoff]
+        for ip in stale:
+            del self._hits[ip]
+
+
+class ThreadingHTTPServer(ThreadingMixIn, TCPServer):
+    """Handle each connection in a new daemon thread."""
+
+    daemon_threads = True
+    allow_reuse_address = True
+
+    def server_bind(self):
+        self.server_name = self.server_address[0]
+        self.server_port = self.server_address[1]
+        self.socket.bind(self.server_address)
 
 
 class UpdateRequestHandler(SimpleHTTPRequestHandler):
     """HTTP handler with CORS support, rate limiting, and cleaner logging."""
 
     rate_limit_bps = 0
+    connection_timeout = 30
+
+    def setup(self):
+        super().setup()
+        self.request.settimeout(self.connection_timeout)
+
+    def handle_one_request(self):
+        """Override to silently reject non-updater traffic."""
+        try:
+            # Per-IP rate limiting
+            ip = self.client_address[0]
+            tracker = getattr(self.server, 'connection_tracker', None)
+            if tracker is not None and not tracker.allow(ip):
+                self.close_connection = True
+                return
+
+            self.raw_requestline = self.rfile.readline(65537)
+            if len(self.raw_requestline) > 65536:
+                self.close_connection = True
+                return
+            if not self.raw_requestline:
+                self.close_connection = True
+                return
+            # TLS ClientHello: 0x16 (handshake) followed by 0x03 (TLS version)
+            if (len(self.raw_requestline) >= 2
+                    and self.raw_requestline[0] == 0x16
+                    and self.raw_requestline[1] == 0x03):
+                self.close_connection = True
+                return
+            if not self.parse_request():
+                return
+            # Only allow GET and HEAD — silently drop everything else
+            if self.command not in ('GET', 'HEAD'):
+                self.close_connection = True
+                return
+            mname = 'do_' + self.command
+            method = getattr(self, mname)
+            method()
+            self.wfile.flush()
+        except (TimeoutError, ConnectionError, BrokenPipeError):
+            self.close_connection = True
 
     def copyfile(self, source, outputfile):
         """Rate-limited file copy."""
@@ -48,24 +145,37 @@ class UpdateRequestHandler(SimpleHTTPRequestHandler):
             if sleep_time > 0:
                 time.sleep(sleep_time)
 
+    def send_error(self, code, message=None, explain=None):
+        """Silently close instead of sending HTTP error responses."""
+        self.close_connection = True
+
+    def do_GET(self):
+        """Only serve files that exist. Silently drop everything else."""
+        path = self.translate_path(self.path)
+        if not os.path.isfile(path):
+            self.close_connection = True
+            return
+        super().do_GET()
+
+    def do_HEAD(self):
+        """Only serve files that exist. Silently drop everything else."""
+        path = self.translate_path(self.path)
+        if not os.path.isfile(path):
+            self.close_connection = True
+            return
+        super().do_HEAD()
+
     def end_headers(self):
-        # Permissive CORS for dev use
         self.send_header("Access-Control-Allow-Origin", "*")
-        self.send_header("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS")
+        self.send_header("Access-Control-Allow-Methods", "GET, HEAD")
         self.send_header("Access-Control-Allow-Headers", "Range")
         super().end_headers()
 
-    def list_directory(self, path):
-        self.send_error(403, "Directory listing disabled")
-        return None
-
-    def do_OPTIONS(self):
-        self.send_response(200)
-        self.end_headers()
-
     def log_message(self, format, *args):
-        # Cleaner log format
-        print(f"[{self.log_date_time_string()}] {args[0]}" if args else "")
+        if not args:
+            return
+        msg = format % args
+        print(f"[{self.log_date_time_string()}] {msg}")
 
 
 def resolve_path(path: str) -> str:
@@ -163,6 +273,8 @@ def main():
     host = cfg.get("host", DEFAULTS["host"])
     port = cfg.get("port", DEFAULTS["port"])
     rate_mbps = cfg.get("rate_limit_mbps", DEFAULTS["rate_limit_mbps"])
+    max_rpm = cfg.get("max_requests_per_minute", DEFAULTS["max_requests_per_minute"])
+    conn_timeout = cfg.get("connection_timeout", DEFAULTS["connection_timeout"])
 
     # Resolve directory
     directory = resolve_path(directory)
@@ -177,22 +289,27 @@ def main():
         print(f"\n  Warning: No update.manifest.json found in {directory}")
         print("  Run gen_update_manifest.py first to generate one.")
 
-    # Apply rate limit
+    # Apply settings to handler class
     if rate_mbps > 0:
         UpdateRequestHandler.rate_limit_bps = int(rate_mbps * 1024 * 1024)
     else:
         UpdateRequestHandler.rate_limit_bps = 0
+    UpdateRequestHandler.connection_timeout = conn_timeout
 
     # Start
     abs_dir = os.path.abspath(directory)
     rate_display = f"{rate_mbps} MB/s" if rate_mbps > 0 else "unlimited"
+    rpm_display = f"{max_rpm}/min per IP" if max_rpm > 0 else "unlimited"
     print(f"\n  Directory:  {abs_dir}")
     print(f"  Rate limit: {rate_display}")
+    print(f"  Requests:   {rpm_display}")
+    print(f"  Timeout:    {conn_timeout}s")
     print(f"  Listening:  http://{host}:{port}")
     print("  Press Ctrl+C to stop\n")
 
     handler = partial(UpdateRequestHandler, directory=directory)
-    server = HTTPServer((host, port), handler)
+    server = ThreadingHTTPServer((host, port), handler)
+    server.connection_tracker = ConnectionTracker(max_rpm)
 
     try:
         server.serve_forever()

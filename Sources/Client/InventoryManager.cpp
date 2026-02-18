@@ -328,5 +328,12 @@ void inventory_manager::equip_item(int item_id)
 	auto itemInfo3 = item_name_formatter::get().format(m_game->m_item_list[item_id].get());
 	G_cTxt = std::format(BITEMDROP_CHARACTER9, itemInfo3.name.c_str());
 	m_game->add_event_list(G_cTxt.c_str(), 10);
-	m_game->play_game_sound('E', 28, 0);
+	{
+		short id = m_game->m_item_list[item_id]->m_id_num;
+		if (id == hb::shared::item::ItemId::AngelicPandentSTR || id == hb::shared::item::ItemId::AngelicPandentDEX ||
+			id == hb::shared::item::ItemId::AngelicPandentINT || id == hb::shared::item::ItemId::AngelicPandentMAG)
+			m_game->play_game_sound('E', 52, 0);
+		else
+			m_game->play_game_sound('E', 28, 0);
+	}
 }
