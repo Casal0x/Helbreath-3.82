@@ -2,6 +2,7 @@
 #include "CursorTarget.h"
 #include "Game.h"
 #include "ItemNameFormatter.h"
+#include "ItemSpriteMetadata.h"
 #include "GameFonts.h"
 #include "TextLibExt.h"
 #include "lan_eng.h"
@@ -10,6 +11,8 @@
 
 using namespace hb::shared::net;
 using namespace hb::shared::item;
+using hb::shared::item::EquipPos;
+using hb::shared::item::to_int;
 using namespace hb::client::sprite_id;
 
 DialogBox_Exchange::DialogBox_Exchange(CGame* game)
@@ -101,22 +104,16 @@ void DialogBox_Exchange::draw_items(short sX, short sY, short mouse_x, short mou
 
 		if (m_game->m_dialog_box_exchange_info[i].v1 != -1) {
 			item_color = m_game->m_dialog_box_exchange_info[i].v4;
+			CItem* ex_cfg = m_game->get_item_config(m_game->m_dialog_box_exchange_info[i].item_id);
+			auto ex_draw = m_game->get_item_draw(ex_cfg ? ex_cfg->m_display_id : 0, item_atlas::pack, false);
 			if (item_color == 0) {
-				m_game->m_sprite[ItemPackPivotPoint + m_game->m_dialog_box_exchange_info[i].v1]->draw(sX + xadd, sY + 130, m_game->m_dialog_box_exchange_info[i].v2);
+				ex_draw.sprite->draw(sX + xadd, sY + 130, ex_draw.frame);
 			}
 			else {
-				switch (m_game->m_dialog_box_exchange_info[i].v1) {
-				case 1:  // Swds
-				case 2:  // Bows
-				case 3:  // Shields
-				case 15: // Axes hammers
-				case 17: // Wands
-					m_game->m_sprite[ItemPackPivotPoint + m_game->m_dialog_box_exchange_info[i].v1]->draw(sX + xadd, sY + 130, m_game->m_dialog_box_exchange_info[i].v2, hb::shared::sprite::DrawParams::tint(GameColors::Weapons[item_color].r, GameColors::Weapons[item_color].g, GameColors::Weapons[item_color].b));
-					break;
-				default:
-					m_game->m_sprite[ItemPackPivotPoint + m_game->m_dialog_box_exchange_info[i].v1]->draw(sX + xadd, sY + 130, m_game->m_dialog_box_exchange_info[i].v2, hb::shared::sprite::DrawParams::tint(GameColors::Items[item_color].r, GameColors::Items[item_color].g, GameColors::Items[item_color].b));
-					break;
-				}
+				bool ex_is_weapon = ex_cfg && (ex_cfg->m_equip_pos == to_int(EquipPos::LeftHand) ||
+					ex_cfg->m_equip_pos == to_int(EquipPos::RightHand) || ex_cfg->m_equip_pos == to_int(EquipPos::TwoHand));
+				const auto& ex_tint = ex_is_weapon ? GameColors::Weapons[item_color] : GameColors::Items[item_color];
+				ex_draw.sprite->draw(sX + xadd, sY + 130, ex_draw.frame, hb::shared::sprite::DrawParams::tint(ex_tint.r, ex_tint.g, ex_tint.b));
 			}
 
 			draw_item_info(sX, sY, Info().m_size_x, mouse_x, mouse_y, i, xadd);
@@ -165,13 +162,12 @@ void DialogBox_Exchange::draw_item_info(short sX, short sY, short size_x, short 
 
 		if (m_game->m_dialog_box_exchange_info[item_index].v5 != -1) {
 			// Crafting Magins completion fix
-			if (m_game->m_dialog_box_exchange_info[item_index].v1 == 22) {
-				if ((m_game->m_dialog_box_exchange_info[item_index].v2 > 5) &&
-					(m_game->m_dialog_box_exchange_info[item_index].v2 < 10)) {
-					txt = std::format(GET_ITEM_NAME2, (m_game->m_dialog_box_exchange_info[item_index].v7 - 100));
-				}
+			CItem* magin_cfg = m_game->get_item_config(m_game->m_dialog_box_exchange_info[item_index].item_id);
+			if (magin_cfg && magin_cfg->m_category == 46 && magin_cfg->get_item_type() == ItemType::Equip) {
+				// Magic gems (Diamond/Emerald/Ruby/Sapphire Ware) — show completion %
+				txt = std::format(GET_ITEM_NAME2, (m_game->m_dialog_box_exchange_info[item_index].v7 - 100));
 			}
-			else if (m_game->m_dialog_box_exchange_info[item_index].v1 == 6) {
+			else if (magin_cfg && magin_cfg->get_item_type() == ItemType::Material) {
 				txt = std::format(GET_ITEM_NAME1, (m_game->m_dialog_box_exchange_info[item_index].v7 - 100));
 			}
 			else {

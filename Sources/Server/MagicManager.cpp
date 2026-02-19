@@ -312,7 +312,7 @@ void MagicManager::player_magic_handler(int client_h, int dX, int dY, short type
 	}
 
 	if (m_game->m_client_list[client_h]->m_item_equipment_status[to_int(EquipPos::RightHand)] != -1) {
-		weapon_type = m_game->m_client_list[client_h]->m_appearance.weapon_type;
+		weapon_type = m_game->m_client_list[client_h]->get_equipped_weapon_type();
 		if ((weapon_type >= 34) && (weapon_type <= 39)) {
 		}
 		else return;
@@ -425,7 +425,7 @@ void MagicManager::player_magic_handler(int client_h, int dX, int dY, short type
 		if (mana_cost <= 0) mana_cost = 1;
 	}
 
-	weapon_type = m_game->m_client_list[client_h]->m_appearance.weapon_type;
+	weapon_type = m_game->m_client_list[client_h]->get_equipped_weapon_type();
 	if (weapon_type == 34) {
 		mana_cost += 20;
 	}

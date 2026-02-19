@@ -42,8 +42,7 @@ public:
         m_x = 0;
         m_y = 0;
 
-        m_sprite = 0;
-        m_sprite_frame = 0;
+        m_display_id = -1;
 
         m_appearance_value = 0;
         m_speed = 0;
@@ -128,8 +127,7 @@ public:
     // Visual Properties
     //------------------------------------------------------------------------
 
-    short m_sprite;                // Sprite sheet index
-    short m_sprite_frame;           // Frame within sprite sheet
+    short m_display_id = -1;       // Atlas display ID (maps to ItemSpriteMetadata, -1 = unmapped)
     char  m_appearance_value;             // Appearance value (for equipped items)
     char  m_item_color;             // Item color variant
 

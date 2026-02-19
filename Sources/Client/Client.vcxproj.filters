@@ -132,6 +132,9 @@
     <ClInclude Include="ItemNameFormatter.h">
       <Filter>Managers</Filter>
     </ClInclude>
+    <ClInclude Include="ItemSpriteMetadata.h">
+      <Filter>Managers</Filter>
+    </ClInclude>
     <ClInclude Include="ClientMessages.h">
       <Filter>Network</Filter>
     </ClInclude>
@@ -693,6 +696,9 @@
       <Filter>Chat</Filter>
     </ClCompile>
     <ClCompile Include="ItemNameFormatter.cpp">
+      <Filter>Managers</Filter>
+    </ClCompile>
+    <ClCompile Include="ItemSpriteMetadata.cpp">
       <Filter>Managers</Filter>
     </ClCompile>
     <ClCompile Include="CommonTypes.cpp">

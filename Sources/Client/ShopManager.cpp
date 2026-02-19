@@ -102,8 +102,6 @@ void shop_manager::handle_response(char* data)
 		std::memcpy(item->m_name, config->m_name, sizeof(item->m_name));
 		item->m_item_type = config->m_item_type;
 		item->m_equip_pos = config->m_equip_pos;
-		item->m_sprite = config->m_sprite;
-		item->m_sprite_frame = config->m_sprite_frame;
 		item->m_price = config->m_price;
 		item->m_weight = config->m_weight;
 		item->m_item_effect_value1 = config->m_item_effect_value1;

@@ -1,6 +1,7 @@
 ﻿#include "DialogBox_Fishing.h"
 #include "Game.h"
 #include "ItemNameFormatter.h"
+#include "ItemSpriteMetadata.h"
 #include "GameFonts.h"
 #include "GlobalDef.h"
 #include "TextLibExt.h"
@@ -30,7 +31,12 @@ void DialogBox_Fishing::on_draw(short mouse_x, short mouse_y, short z, char lb)
 	switch (Info().m_mode)
 	{
 	case 0:
-		m_game->m_sprite[ItemPackPivotPoint + Info().m_v3]->draw(sX + 18 + 35, sY + 18 + 17, Info().m_v4);
+		{
+			int fish_cfg_id = m_game->find_item_id_by_name(Info().m_str);
+			CItem* fish_cfg = m_game->get_item_config(fish_cfg_id);
+			auto fish_draw = m_game->get_item_draw(fish_cfg ? fish_cfg->m_display_id : 0, item_atlas::pack, false);
+			fish_draw.sprite->draw(sX + 18 + 35, sY + 18 + 17, fish_draw.frame);
+		}
 
 		txt = itemInfo.name.c_str();
 		put_string(sX + 98, sY + 14, txt.c_str(), GameColors::UIWhite);

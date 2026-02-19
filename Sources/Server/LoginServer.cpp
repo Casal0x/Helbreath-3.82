@@ -15,10 +15,12 @@ using namespace std;
 #include "PasswordHash.h"
 #include "../../Dependencies/Shared/Packet/SharedPackets.h"
 #include "Log.h"
+#include "Item/ItemEnums.h"
 #include "version_info.h"
 #include <filesystem>
 
 using namespace hb::shared::net;
+using namespace hb::shared::item;
 using namespace hb::server::config;
 namespace sock = hb::shared::net::socket;
 extern char	G_cData50000[50000];
@@ -202,7 +204,60 @@ LogIn LoginServer::AccountLogIn(string acc, string pass, std::vector<AccountDbCh
 			for (const auto& item : equippedItems) {
 				if (item.item_id > 0 && item.item_id < MaxItemTypes && G_pGame->m_item_config_list[item.item_id] != nullptr) {
 					auto* config = G_pGame->m_item_config_list[item.item_id];
-					hb::shared::entity::ApplyEquipAppearance(entry.appearance, config->get_equip_pos(), config->m_appearance_value, item.item_color);
+					// Populate item_id + display_id + color/flags for each equipment slot
+					uint8_t color = static_cast<uint8_t>(item.item_color);
+					switch (config->get_equip_pos()) {
+					case EquipPos::Head:
+						entry.appearance.helm_item_id = static_cast<int16_t>(item.item_id);
+						entry.appearance.helm_display_id = config->m_display_id;
+						entry.appearance.helm_color = color;
+						break;
+					case EquipPos::Body:
+						entry.appearance.armor_item_id = static_cast<int16_t>(item.item_id);
+						entry.appearance.armor_display_id = config->m_display_id;
+						entry.appearance.armor_color = color;
+						entry.appearance.hide_armor = (config->m_appearance_value >= 100);
+						break;
+					case EquipPos::FullBody:
+						entry.appearance.armor_item_id = static_cast<int16_t>(item.item_id);
+						entry.appearance.armor_display_id = config->m_display_id;
+						entry.appearance.mantle_color = 0;
+						break;
+					case EquipPos::Arms:
+						entry.appearance.arm_item_id = static_cast<int16_t>(item.item_id);
+						entry.appearance.arm_display_id = config->m_display_id;
+						entry.appearance.arm_color = color;
+						break;
+					case EquipPos::Pants:
+						entry.appearance.pants_item_id = static_cast<int16_t>(item.item_id);
+						entry.appearance.pants_display_id = config->m_display_id;
+						entry.appearance.pants_color = color;
+						entry.appearance.is_skirt = (config->m_appearance_value == 1);
+						break;
+					case EquipPos::Leggings:
+						entry.appearance.boots_item_id = static_cast<int16_t>(item.item_id);
+						entry.appearance.boots_display_id = config->m_display_id;
+						entry.appearance.boots_color = color;
+						break;
+					case EquipPos::RightHand:
+					case EquipPos::TwoHand:
+						entry.appearance.weapon_item_id = static_cast<int16_t>(item.item_id);
+						entry.appearance.weapon_display_id = config->m_display_id;
+						entry.appearance.weapon_color = color;
+						break;
+					case EquipPos::LeftHand:
+						entry.appearance.shield_item_id = static_cast<int16_t>(item.item_id);
+						entry.appearance.shield_display_id = config->m_display_id;
+						entry.appearance.shield_color = color;
+						break;
+					case EquipPos::Back:
+						entry.appearance.mantle_item_id = static_cast<int16_t>(item.item_id);
+						entry.appearance.mantle_display_id = config->m_display_id;
+						entry.appearance.mantle_color = color;
+						break;
+					default:
+						break;
+					}
 				}
 			}
 		}

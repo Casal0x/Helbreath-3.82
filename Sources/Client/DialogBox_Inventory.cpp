@@ -3,6 +3,7 @@
 #include "Game.h"
 #include "InventoryManager.h"
 #include "ItemNameFormatter.h"
+#include "ItemSpriteMetadata.h"
 #include "IInput.h"
 #include "lan_eng.h"
 #include "GameFonts.h"
@@ -61,21 +62,21 @@ void DialogBox_Inventory::draw_inventory_item(CItem* item, int itemIdx, int base
 
 	int drawX = baseX + ITEM_OFFSET_X + item->m_x;
 	int drawY = baseY + ITEM_OFFSET_Y + item->m_y;
-	auto sprite = m_game->m_sprite[ItemPackPivotPoint + cfg->m_sprite];
+	auto inv_draw = m_game->get_item_draw(cfg->m_display_id, item_atlas::pack, false);
+	auto sprite = inv_draw.sprite;
+	int16_t frame = inv_draw.frame;
 	uint32_t time = m_game->m_cur_time;
 
 	// Select color arrays (weapons use different color set)
 	const hb::shared::render::Color* colors = is_weapon ? GameColors::Weapons : GameColors::Items;
-	// (wG/wB merged into hb::shared::render::Color array above)
-
 
 	if (item_color == 0)
 	{
 		// No color tint
 		if (disabled)
-			sprite->draw(drawX, drawY, cfg->m_sprite_frame, hb::shared::sprite::DrawParams::alpha_blend(0.25f));
+			sprite->draw(drawX, drawY, frame, hb::shared::sprite::DrawParams::alpha_blend(0.25f));
 		else
-			sprite->draw(drawX, drawY, cfg->m_sprite_frame);
+			sprite->draw(drawX, drawY, frame);
 	}
 	else
 	{
@@ -85,9 +86,9 @@ void DialogBox_Inventory::draw_inventory_item(CItem* item, int itemIdx, int base
 		int b = colors[item_color].b;
 
 		if (disabled)
-			sprite->draw(drawX, drawY, cfg->m_sprite_frame, hb::shared::sprite::DrawParams::tinted_alpha(r, g, b, 0.7f));
+			sprite->draw(drawX, drawY, frame, hb::shared::sprite::DrawParams::tinted_alpha(r, g, b, 0.7f));
 		else
-			sprite->draw(drawX, drawY, cfg->m_sprite_frame, hb::shared::sprite::DrawParams::tint(r, g, b));
+			sprite->draw(drawX, drawY, frame, hb::shared::sprite::DrawParams::tint(r, g, b));
 	}
 
 	// Show item count for consumables and arrows
@@ -188,7 +189,7 @@ bool DialogBox_Inventory::on_click(short mouse_x, short mouse_y)
 				CItem* cfg = m_game->get_item_config(item->m_id_num);
 				if (cfg != nullptr &&
 				    cfg->get_item_type() == ItemType::UseSkillEnableDialogBox &&
-				    cfg->m_sprite_frame == 113 &&
+				    item->m_id_num == 236 &&
 				    item->m_cur_life_span > 0)
 				{
 					enable_dialog_box(DialogBoxId::Manufacture, 3, 0, 0);
@@ -271,9 +272,7 @@ bool DialogBox_Inventory::on_double_click(short mouse_x, short mouse_y)
 		// Check damage cooldown for scrolls
 		if ((m_game->m_cur_time - m_game->m_damaged_time) < 10000)
 		{
-			if ((cfg->m_sprite == 6) &&
-				(cfg->m_sprite_frame == 9 ||
-				 cfg->m_sprite_frame == 89))
+			if (cfg->m_item_effect_type == hb::shared::item::to_int(hb::shared::item::ItemEffectType::ShowLocation))
 			{
 				std::string G_cTxt;
 				G_cTxt = std::format(BDLBBOX_DOUBLE_CLICK_INVENTORY3, itemInfo.name.c_str());
@@ -365,9 +364,9 @@ bool DialogBox_Inventory::on_double_click(short mouse_x, short mouse_y)
 		}
 		else
 		{
-			switch (cfg->m_sprite_frame)
+			switch (m_game->m_item_list[item_id]->m_id_num)
 			{
-			case 55: // Alchemy pot
+			case 227: // Alchemy Bowl
 				if (m_game->m_player->m_skill_mastery[12] == 0)
 					add_event_list(BDLBBOX_DOUBLE_CLICK_INVENTORY9, 10);
 				else
@@ -377,7 +376,7 @@ bool DialogBox_Inventory::on_double_click(short mouse_x, short mouse_y)
 				}
 				break;
 
-			case 113: // Smith's Anvil
+			case 236: // Smith's Anvil
 				if (m_game->m_player->m_skill_mastery[13] == 0)
 					add_event_list(BDLBBOX_DOUBLE_CLICK_INVENTORY11, 10);
 				else
@@ -387,15 +386,15 @@ bool DialogBox_Inventory::on_double_click(short mouse_x, short mouse_y)
 				}
 				break;
 
-			case 0: // Crafting
+			case 1107: // Crafting Vessel
 				enable_dialog_box(DialogBoxId::Manufacture, 7, 0, 0);
 				add_event_list(BDLBBOX_DOUBLE_CLICK_INVENTORY17, 10);
 				break;
 
-			case 151:
-			case 152:
-			case 153:
-			case 154: // Slates
+			case 868: // Slate UL
+			case 869: // Slate LL
+			case 870: // Slate UR
+			case 871: // Slate LR
 				enable_dialog_box(DialogBoxId::Slates, 1, 0, 0);
 				break;
 			}
@@ -446,20 +445,20 @@ PressResult DialogBox_Inventory::on_press(short mouse_x, short mouse_y)
 		if (m_game->m_is_item_disabled[item_id]) continue;
 		if (m_game->m_is_item_equipped[item_id]) continue;
 
-		// Calculate item bounds
-		int spriteIdx = ItemPackPivotPoint + cfg->m_sprite;
+		// Calculate item bounds using atlas
+		auto inv_draw = m_game->get_item_draw(cfg->m_display_id, item_atlas::pack, false);
 		int itemDrawX = sX + ITEM_OFFSET_X + item->m_x;
 		int itemDrawY = sY + ITEM_OFFSET_Y + item->m_y;
 
-		m_game->m_sprite[spriteIdx]->CalculateBounds(itemDrawX, itemDrawY, cfg->m_sprite_frame);
-		auto bounds = m_game->m_sprite[spriteIdx]->GetBoundRect();
+		inv_draw.sprite->CalculateBounds(itemDrawX, itemDrawY, inv_draw.frame);
+		auto bounds = inv_draw.sprite->GetBoundRect();
 
 		// Check if click is within item bounds (expanded by margin for small items)
 		if (mouse_x > bounds.left - item_hit_margin && mouse_x < bounds.right + item_hit_margin &&
 			mouse_y > bounds.top - item_hit_margin && mouse_y < bounds.bottom + item_hit_margin)
 		{
 			// Pixel-perfect collision check with margin for small items
-			if (check_item_collision(m_game->m_sprite[spriteIdx], itemDrawX, itemDrawY, cfg->m_sprite_frame, mouse_x, mouse_y, item_hit_margin))
+			if (check_item_collision(inv_draw.sprite, itemDrawX, itemDrawY, inv_draw.frame, mouse_x, mouse_y, item_hit_margin))
 			{
 				// Bring item to top of order
 				inventory_manager::get().set_item_order(0, item_id);

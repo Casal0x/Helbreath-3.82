@@ -3,6 +3,7 @@
 #include "ShopManager.h"
 #include "InventoryManager.h"
 #include "ItemNameFormatter.h"
+#include "ItemSpriteMetadata.h"
 #include "IInput.h"
 #include "lan_eng.h"
 #include <format>
@@ -144,7 +145,8 @@ void DialogBox_Shop::draw_item_details(short sX, short sY, short mouse_x, short 
     bool flag_stat_low = false;
     bool flag_red_shown = false;
 
-    m_game->m_sprite[ItemPackPivotPoint + shop_manager::get().get_item_list()[item_index]->m_sprite]->draw(sX + 62 + 30 - 35, sY + 84 + 30 - 10, shop_manager::get().get_item_list()[item_index]->m_sprite_frame);
+    auto shop_draw = m_game->get_item_draw(shop_manager::get().get_item_list()[item_index]->m_display_id, item_atlas::pack, false);
+    shop_draw.sprite->draw(sX + 62 + 30 - 35, sY + 84 + 30 - 10, shop_draw.frame);
 
     auto itemInfo2 = item_name_formatter::get().format(shop_manager::get().get_item_list()[item_index].get());
 

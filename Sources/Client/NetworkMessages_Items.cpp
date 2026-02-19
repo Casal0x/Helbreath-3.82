@@ -23,7 +23,7 @@ namespace NetworkMessageHandlers {
 		char  name[hb::shared::limits::ItemNameLen]{}, equip_pos, gender_limit;
 		ItemType item_type;
 		bool  is_equipped;
-		short sprite, sprite_frame, level_limit;
+		short level_limit;
 		uint16_t cost, weight, cur_life_span, max_life_span;
 		std::string txt;
 
@@ -43,8 +43,6 @@ namespace NetworkMessageHandlers {
 		cur_life_span = pkt->cur_lifespan;
 		max_life_span = pkt->max_lifespan;
 		weight = pkt->weight;
-		sprite = static_cast<short>(pkt->sprite);
-		sprite_frame = static_cast<short>(pkt->sprite_frame);
 		item_color = static_cast<char>(pkt->item_color);
 		cost = pkt->cost;
 		txt = std::format(NOTIFYMSG_ITEMPURCHASED, name, cost);
@@ -111,7 +109,7 @@ namespace NetworkMessageHandlers {
 		char  name[hb::shared::limits::ItemNameLen]{}, equip_pos;
 		ItemType item_type;
 		bool  is_equipped;
-		short sprite, sprite_frame, level_limit, special_ev2;
+		short level_limit, special_ev2;
 		std::string txt;
 
 		char gender_limit, item_color;
@@ -131,8 +129,6 @@ namespace NetworkMessageHandlers {
 		cur_life_span = pkt->cur_lifespan;
 		max_life_span = pkt->max_lifespan;
 		weight = pkt->weight;
-		sprite = static_cast<short>(pkt->sprite);
-		sprite_frame = static_cast<short>(pkt->sprite_frame);
 		item_color = static_cast<char>(pkt->item_color);
 		special_ev2 = static_cast<short>(pkt->spec_value2);
 		attribute = pkt->attribute;
@@ -215,8 +211,6 @@ namespace NetworkMessageHandlers {
 		uint16_t cur_life_span = pkt->cur_lifespan;
 		uint16_t max_life_span = pkt->max_lifespan;
 		uint16_t weight = pkt->weight;
-		short sprite = static_cast<short>(pkt->sprite);
-		short sprite_frame = static_cast<short>(pkt->sprite_frame);
 		char item_color = static_cast<char>(pkt->item_color);
 		short special_ev2 = static_cast<short>(pkt->spec_value2);
 		uint32_t attribute = pkt->attribute;
@@ -740,7 +734,7 @@ namespace NetworkMessageHandlers {
 
 	void HandleSetExchangeItem(CGame* game, char* data)
 	{
-		short dir, sprite, sprite_frame, cur_life, max_life, performance, item_id;
+		short dir, cur_life, max_life, performance, item_id;
 		int amount, i;
 		char color, item_name[hb::shared::limits::ItemNameLen], char_name[12];
 		uint32_t attribute;
@@ -750,8 +744,6 @@ namespace NetworkMessageHandlers {
 			data, sizeof(hb::net::PacketNotifyExchangeItem));
 		if (!pkt) return;
 		dir = static_cast<short>(pkt->dir);
-		sprite = pkt->sprite;
-		sprite_frame = pkt->sprite_frame;
 		amount = pkt->amount;
 		color = static_cast<char>(pkt->color);
 		cur_life = pkt->cur_life;
@@ -780,8 +772,8 @@ namespace NetworkMessageHandlers {
 				if (i >= 8) return; // Error situation
 			}
 		}
-		game->m_dialog_box_exchange_info[i].v1 = sprite;
-		game->m_dialog_box_exchange_info[i].v2 = sprite_frame;
+		game->m_dialog_box_exchange_info[i].v1 = 0; // occupied marker (was sprite)
+		game->m_dialog_box_exchange_info[i].v2 = 0; // unused (was sprite_frame)
 		game->m_dialog_box_exchange_info[i].v3 = amount;
 		game->m_dialog_box_exchange_info[i].v4 = color;
 		game->m_dialog_box_exchange_info[i].v5 = static_cast<int>(cur_life);
@@ -795,7 +787,7 @@ namespace NetworkMessageHandlers {
 
 	void HandleOpenExchangeWindow(CGame* game, char* data)
 	{
-		short dir, sprite, sprite_frame, cur_life, max_life, performance, item_id;
+		short dir, cur_life, max_life, performance, item_id;
 		int amount;
 		char color, item_name[hb::shared::limits::ItemNameLen], char_name[12];
 		uint32_t attribute;
@@ -805,8 +797,6 @@ namespace NetworkMessageHandlers {
 			data, sizeof(hb::net::PacketNotifyExchangeItem));
 		if (!pkt) return;
 		dir = static_cast<short>(pkt->dir);
-		sprite = pkt->sprite;
-		sprite_frame = pkt->sprite_frame;
 		amount = pkt->amount;
 		color = static_cast<char>(pkt->color);
 		cur_life = pkt->cur_life;
@@ -847,8 +837,8 @@ namespace NetworkMessageHandlers {
 		{
 			i = 4;
 		}
-		game->m_dialog_box_exchange_info[i].v1 = sprite;
-		game->m_dialog_box_exchange_info[i].v2 = sprite_frame;
+		game->m_dialog_box_exchange_info[i].v1 = 0; // occupied marker (was sprite)
+		game->m_dialog_box_exchange_info[i].v2 = 0; // unused (was sprite_frame)
 		game->m_dialog_box_exchange_info[i].v3 = amount;
 		game->m_dialog_box_exchange_info[i].v4 = color;
 		game->m_dialog_box_exchange_info[i].v5 = static_cast<int>(cur_life);

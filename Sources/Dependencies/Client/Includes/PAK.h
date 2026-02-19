@@ -179,11 +179,13 @@ namespace PAKLib {
 
 			uint32_t rect_count = 0;
 			file.read(reinterpret_cast<char*>(&rect_count), sizeof(uint32_t));
-			if (rect_count == 0 || rect_count > 1000) {
+			if (rect_count > 1000) {
 				throw std::runtime_error("Invalid rect count in: " + filepath);
 			}
 
 			auto& sprite_obj = pak_file.sprites[i];
+			if (rect_count == 0) continue; // empty sprite (no rectangles/image)
+
 			sprite_obj.sprite_rectangles.resize(rect_count);
 			file.read(reinterpret_cast<char*>(sprite_obj.sprite_rectangles.data()), rect_count * sizeof(sprite_rect));
 			if (file.fail()) {
@@ -303,9 +305,11 @@ namespace PAKLib {
 		sprite sprite_obj{};
 		uint32_t rect_count = 0;
 		file.read(reinterpret_cast<char*>(&rect_count), sizeof(uint32_t));
-		if (rect_count == 0 || rect_count > 1000) {
+		if (rect_count > 1000) {
 			throw std::runtime_error("Invalid rect count in: " + filepath);
 		}
+
+		if (rect_count == 0) return sprite_obj; // empty sprite (no rectangles/image)
 
 		sprite_obj.sprite_rectangles.resize(rect_count);
 		file.read(reinterpret_cast<char*>(sprite_obj.sprite_rectangles.data()), rect_count * sizeof(sprite_rect));
@@ -473,18 +477,20 @@ namespace PAKLib {
 			uint32_t rect_count = 0;
 			sprite_stream.read(reinterpret_cast<char*>(&rect_count), sizeof(uint32_t));
 
-			if (rect_count == 0 || rect_count > 1000)
+			if (rect_count > 1000)
 				throw std::runtime_error("Invalid rect count in encrypted PAK: " + filepath);
 
-			sprite_obj.sprite_rectangles.resize(rect_count);
-			sprite_stream.read(reinterpret_cast<char*>(sprite_obj.sprite_rectangles.data()), rect_count * sizeof(sprite_rect));
+			if (rect_count > 0) {
+				sprite_obj.sprite_rectangles.resize(rect_count);
+				sprite_stream.read(reinterpret_cast<char*>(sprite_obj.sprite_rectangles.data()), rect_count * sizeof(sprite_rect));
 
-			sprite_stream.seekg(PADDING_SIZE, std::ios::cur);
+				sprite_stream.seekg(PADDING_SIZE, std::ios::cur);
 
-			const long image_size = entry.size -
-				(sizeof(sprite_header) + (rect_count * sizeof(sprite_rect)) + RECT_COUNT_SIZE + PADDING_SIZE);
-			sprite_obj.image_data.resize(image_size);
-			sprite_stream.read(reinterpret_cast<char*>(sprite_obj.image_data.data()), image_size);
+				const long image_size = entry.size -
+					(sizeof(sprite_header) + (rect_count * sizeof(sprite_rect)) + RECT_COUNT_SIZE + PADDING_SIZE);
+				sprite_obj.image_data.resize(image_size);
+				sprite_stream.read(reinterpret_cast<char*>(sprite_obj.image_data.data()), image_size);
+			}
 
 			pak_file.sprites[i] = sprite_obj;
 		}
@@ -526,18 +532,20 @@ namespace PAKLib {
 
 			uint32_t rect_count = 0;
 			ss.read(reinterpret_cast<char*>(&rect_count), sizeof(uint32_t));
-			if (rect_count == 0 || rect_count > 1000)
+			if (rect_count > 1000)
 				throw std::runtime_error("Invalid rect count in encrypted fast load.");
 
-			sprite_obj.sprite_rectangles.resize(rect_count);
-			ss.read(reinterpret_cast<char*>(sprite_obj.sprite_rectangles.data()), rect_count * sizeof(sprite_rect));
+			if (rect_count > 0) {
+				sprite_obj.sprite_rectangles.resize(rect_count);
+				ss.read(reinterpret_cast<char*>(sprite_obj.sprite_rectangles.data()), rect_count * sizeof(sprite_rect));
 
-			ss.seekg(PADDING_SIZE, std::ios::cur);
-			const long image_size = entry.size -
-				(SPRITE_HEADER_SKIP + (rect_count * sizeof(sprite_rect)) + RECT_COUNT_SIZE + PADDING_SIZE);
+				ss.seekg(PADDING_SIZE, std::ios::cur);
+				const long image_size = entry.size -
+					(SPRITE_HEADER_SKIP + (rect_count * sizeof(sprite_rect)) + RECT_COUNT_SIZE + PADDING_SIZE);
 
-			sprite_obj.image_data.resize(image_size);
-			ss.read(reinterpret_cast<char*>(sprite_obj.image_data.data()), image_size);
+				sprite_obj.image_data.resize(image_size);
+				ss.read(reinterpret_cast<char*>(sprite_obj.image_data.data()), image_size);
+			}
 
 			pak_file.sprites[i] = sprite_obj;
 		}

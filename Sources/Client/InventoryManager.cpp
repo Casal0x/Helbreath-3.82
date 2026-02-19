@@ -136,7 +136,7 @@ bool inventory_manager::check_item_operation_enabled(int item_id)
 	if (teleport_manager::get().is_requested()) return false;
 	if (m_game->m_is_item_disabled[item_id] == true) return false;
 
-	if ((m_game->m_item_list[item_id]->m_sprite_frame == 155) && (m_game->m_using_slate == true))
+	if ((m_game->m_item_list[item_id]->m_id_num == 867) && (m_game->m_using_slate == true)) // Ancient Tablet
 	{
 		if ((m_game->m_map_index == 35) || (m_game->m_map_index == 36) || (m_game->m_map_index == 37))
 		{

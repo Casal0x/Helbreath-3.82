@@ -790,6 +790,8 @@ public:
 	void check_force_recall_time(int client_h);
 	void set_playing_status(int client_h);
 	void force_change_play_mode(int client_h, bool notify);
+	hb::shared::entity::PlayerAppearance build_broadcast_appearance(int client_h);
+
 	void show_version(int client_h);
 	void show_client_msg(int client_h, char* pMsg);
 	void request_resurrect_player(int client_h, bool resurrect);

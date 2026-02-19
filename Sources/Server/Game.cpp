@@ -63,6 +63,49 @@ extern char	G_cData50000[50000];
 // extern void PutDebugMsg(char * str);	// 2002-09-09 #2
 
 
+// Build a snapshot of a player's appearance with equipment item_id/display_id
+// populated from their currently equipped items. Called at each broadcast point
+// rather than stored, so it's always in sync with actual inventory.
+hb::shared::entity::PlayerAppearance CGame::build_broadcast_appearance(int client_h)
+{
+	auto* client = m_client_list[client_h];
+	auto appr = client->m_appearance;  // copy cosmetic + old type fields
+
+	// Helper: populate item_id + display_id for one equip slot.
+	// display_id comes from the item CONFIG template (m_item_config_list),
+	// not the player's inventory item instance (which has default -1).
+	auto fill_slot = [&](EquipPos pos, int16_t& out_item_id, int16_t& out_display_id) {
+		short slot_index = client->m_item_equipment_status[to_int(pos)];
+		if (slot_index >= 0 && client->m_item_list[slot_index] != nullptr) {
+			auto* item = client->m_item_list[slot_index];
+			out_item_id = item->m_id_num;
+			if (item->m_id_num > 0 && item->m_id_num < hb::server::config::MaxItemTypes
+				&& m_item_config_list[item->m_id_num] != nullptr)
+			{
+				out_display_id = m_item_config_list[item->m_id_num]->m_display_id;
+			}
+		}
+	};
+
+	fill_slot(EquipPos::Head,      appr.helm_item_id,   appr.helm_display_id);
+	fill_slot(EquipPos::Body,      appr.armor_item_id,  appr.armor_display_id);
+	fill_slot(EquipPos::FullBody,  appr.armor_item_id,  appr.armor_display_id);
+	fill_slot(EquipPos::Arms,      appr.arm_item_id,    appr.arm_display_id);
+	fill_slot(EquipPos::Pants,     appr.pants_item_id,  appr.pants_display_id);
+	fill_slot(EquipPos::Leggings,  appr.boots_item_id,  appr.boots_display_id);
+	fill_slot(EquipPos::RightHand, appr.weapon_item_id, appr.weapon_display_id);
+	fill_slot(EquipPos::TwoHand,   appr.weapon_item_id, appr.weapon_display_id);
+	fill_slot(EquipPos::LeftHand,  appr.shield_item_id, appr.shield_display_id);
+	fill_slot(EquipPos::Back,      appr.mantle_item_id, appr.mantle_display_id);
+
+	// Compute is_skirt from equipped pants
+	short pants_slot = client->m_item_equipment_status[to_int(EquipPos::Pants)];
+	if (pants_slot >= 0 && client->m_item_list[pants_slot] != nullptr)
+		appr.is_skirt = (client->m_item_list[pants_slot]->m_appearance_value == 1);
+
+	return appr;
+}
+
 // Move location tables  auto-calculated from hb::shared::view::InitDataTilesX/Y.
 // Each direction lists the (X,Y) tile offsets revealed when the player
 // moves one step in that direction, terminated by -1.
@@ -1468,7 +1511,7 @@ int CGame::client_motion_move_handler(int client_h, short sX, short sY, directio
 		pkt->type = m_client_list[object_id]->m_type;
 		pkt->dir = static_cast<std::uint8_t>(m_client_list[object_id]->m_dir);
 		std::memcpy(pkt->name, m_client_list[object_id]->m_char_name, sizeof(pkt->name));
-		pkt->appearance = m_client_list[object_id]->m_appearance;
+		pkt->appearance = build_broadcast_appearance(object_id);
 		{
 			auto pktStatus = m_client_list[object_id]->m_status;
 			pktStatus.pk = (m_client_list[object_id]->m_player_kill_count != 0) ? 1 : 0;
@@ -1783,8 +1826,6 @@ void CGame::request_init_data_handler(int client_h, char* data, char key, size_t
 		entry->gender_limit = m_client_list[client_h]->m_item_list[i]->m_gender_limit;
 		entry->cur_lifespan = m_client_list[client_h]->m_item_list[i]->m_cur_life_span;
 		entry->weight = m_client_list[client_h]->m_item_list[i]->m_weight;
-		entry->sprite = m_client_list[client_h]->m_item_list[i]->m_sprite;
-		entry->sprite_frame = m_client_list[client_h]->m_item_list[i]->m_sprite_frame;
 		entry->item_color = m_client_list[client_h]->m_item_list[i]->m_item_color;
 		entry->spec_value2 = static_cast<std::uint8_t>(m_client_list[client_h]->m_item_list[i]->m_item_special_effect_value2);
 		entry->attribute = m_client_list[client_h]->m_item_list[i]->m_attribute;
@@ -1817,8 +1858,6 @@ void CGame::request_init_data_handler(int client_h, char* data, char key, size_t
 		entry->gender_limit = m_client_list[client_h]->m_item_in_bank_list[i]->m_gender_limit;
 		entry->cur_lifespan = m_client_list[client_h]->m_item_in_bank_list[i]->m_cur_life_span;
 		entry->weight = m_client_list[client_h]->m_item_in_bank_list[i]->m_weight;
-		entry->sprite = m_client_list[client_h]->m_item_in_bank_list[i]->m_sprite;
-		entry->sprite_frame = m_client_list[client_h]->m_item_in_bank_list[i]->m_sprite_frame;
 		entry->item_color = m_client_list[client_h]->m_item_in_bank_list[i]->m_item_color;
 		entry->spec_value2 = static_cast<std::uint8_t>(m_client_list[client_h]->m_item_in_bank_list[i]->m_item_special_effect_value2);
 		entry->attribute = m_client_list[client_h]->m_item_in_bank_list[i]->m_attribute;
@@ -1857,7 +1896,7 @@ void CGame::request_init_data_handler(int client_h, char* data, char key, size_t
 	init_header->pivot_x = static_cast<std::int16_t>(m_client_list[client_h]->m_x - hb::shared::view::PlayerPivotOffsetX);
 	init_header->pivot_y = static_cast<std::int16_t>(m_client_list[client_h]->m_y - hb::shared::view::PlayerPivotOffsetY);
 	init_header->player_type = m_client_list[client_h]->m_type;
-	init_header->appearance = m_client_list[client_h]->m_appearance;
+	init_header->appearance = build_broadcast_appearance(client_h);
 	init_header->status = m_client_list[client_h]->m_status;
 	std::memcpy(init_header->map_name, m_client_list[client_h]->m_map_name, sizeof(init_header->map_name));
 	std::memcpy(init_header->cur_location, m_map_list[m_client_list[client_h]->m_map_index]->m_location_name, sizeof(init_header->cur_location));
@@ -2235,8 +2274,6 @@ void CGame::compute_config_hashes()
 				entry.effectValue6 = item->m_item_effect_value6;
 				entry.maxLifeSpan = item->m_max_life_span;
 				entry.specialEffect = item->m_special_effect;
-				entry.sprite = item->m_sprite;
-				entry.spriteFrame = item->m_sprite_frame;
 				entry.price = item->m_is_for_sale ? static_cast<int32_t>(item->m_price) : -static_cast<int32_t>(item->m_price);
 				entry.weight = item->m_weight;
 				entry.apprValue = item->m_appearance_value;
@@ -2446,7 +2483,7 @@ void CGame::fill_player_map_object(hb::net::PacketMapDataObjectPlayer& obj, shor
 	obj.base.object_id = static_cast<uint16_t>(owner_h);
 	obj.type = client->m_type;
 	obj.dir = static_cast<uint8_t>(client->m_dir);
-	obj.appearance = client->m_appearance;
+	obj.appearance = build_broadcast_appearance(owner_h);
 	obj.status = client->m_status;
 	obj.status.pk = (client->m_player_kill_count != 0) ? 1 : 0;
 	obj.status.citizen = (client->m_side != 0) ? 1 : 0;
@@ -2886,7 +2923,7 @@ void CGame::send_event_to_near_client_type_a(short owner_h, char owner_type, uin
 		base_all.type = m_client_list[owner_h]->m_type;
 		base_all.dir = static_cast<std::uint8_t>(m_client_list[owner_h]->m_dir);
 		std::memcpy(base_all.name, m_client_list[owner_h]->m_char_name, sizeof(base_all.name));
-		base_all.appearance = m_client_list[owner_h]->m_appearance;
+		base_all.appearance = build_broadcast_appearance(owner_h);
 		base_all.status = m_client_list[owner_h]->m_status;
 		base_all.loc = 0;
 		if (msg_type == Type::NullAction) {
@@ -6126,8 +6163,6 @@ void CGame::send_notify_msg(int from_h, int to_h, uint16_t msg_type, uint32_t v1
 		pkt.item_index = static_cast<int16_t>(v1);
 		pkt.item_type = static_cast<uint8_t>(v2);
 		pkt.cur_lifespan = static_cast<int16_t>(v3);
-		pkt.sprite = static_cast<int16_t>(v4);
-		pkt.sprite_frame = static_cast<int16_t>(v5);
 		pkt.item_color = static_cast<uint8_t>(v6);
 		pkt.spec_value2 = static_cast<uint8_t>(v7);
 		pkt.attribute = v8;
@@ -6394,8 +6429,6 @@ void CGame::send_notify_msg(int from_h, int to_h, uint16_t msg_type, uint32_t v1
 		pkt.header.msg_id = MsgId::Notify;
 		pkt.header.msg_type = msg_type;
 		pkt.dir = static_cast<int16_t>(v1);
-		pkt.sprite = static_cast<int16_t>(v2);
-		pkt.sprite_frame = static_cast<int16_t>(v3);
 		pkt.amount = static_cast<int32_t>(v4);
 		pkt.color = static_cast<uint8_t>(v5);
 		pkt.cur_life = static_cast<int16_t>(v6);
@@ -6417,8 +6450,6 @@ void CGame::send_notify_msg(int from_h, int to_h, uint16_t msg_type, uint32_t v1
 		pkt.header.msg_id = MsgId::Notify;
 		pkt.header.msg_type = msg_type;
 		pkt.dir = static_cast<int16_t>(v1);
-		pkt.sprite = static_cast<int16_t>(v2);
-		pkt.sprite_frame = static_cast<int16_t>(v3);
 		pkt.amount = static_cast<int32_t>(v4);
 		pkt.color = static_cast<uint8_t>(v5);
 		pkt.cur_life = static_cast<int16_t>(v6);
@@ -6746,8 +6777,6 @@ void CGame::send_notify_msg(int from_h, int to_h, uint16_t msg_type, uint32_t v1
 			pkt.header.msg_id = MsgId::Notify;
 			pkt.header.msg_type = msg_type;
 			pkt.price = static_cast<uint16_t>(v1);
-			pkt.sprite = static_cast<uint16_t>(v2);
-			pkt.sprite_frame = static_cast<uint16_t>(v3);
 			if (string != 0) {
 				memcpy(pkt.name, string, sizeof(pkt.name));
 			}
@@ -8074,7 +8103,7 @@ RTH_NEXTSTEP:
 	init_header->pivot_x = static_cast<std::int16_t>(m_client_list[client_h]->m_x - hb::shared::view::PlayerPivotOffsetX);
 	init_header->pivot_y = static_cast<std::int16_t>(m_client_list[client_h]->m_y - hb::shared::view::PlayerPivotOffsetY);
 	init_header->player_type = m_client_list[client_h]->m_type;
-	init_header->appearance = m_client_list[client_h]->m_appearance;
+	init_header->appearance = build_broadcast_appearance(client_h);
 	init_header->status = m_client_list[client_h]->m_status;
 	std::memcpy(init_header->map_name, m_client_list[client_h]->m_map_name, sizeof(init_header->map_name));
 	std::memcpy(init_header->cur_location, m_map_list[m_client_list[client_h]->m_map_index]->m_location_name, sizeof(init_header->cur_location));
@@ -8716,7 +8745,7 @@ void CGame::request_full_object_data(int client_h, char* data)
 		pkt.type = m_client_list[object_id]->m_type;
 		pkt.dir = static_cast<uint8_t>(m_client_list[object_id]->m_dir);
 		memcpy(pkt.name, m_client_list[object_id]->m_char_name, sizeof(pkt.name));
-		pkt.appearance = m_client_list[object_id]->m_appearance;
+		pkt.appearance = build_broadcast_appearance(object_id);
 
 		{
 			auto pktStatus = m_client_list[object_id]->m_status;
@@ -10805,7 +10834,7 @@ bool CGame::gm_teleport_to(int client_h, const char* dest_map, short dest_x, sho
 	init_header->pivot_x = static_cast<std::int16_t>(m_client_list[client_h]->m_x - hb::shared::view::PlayerPivotOffsetX);
 	init_header->pivot_y = static_cast<std::int16_t>(m_client_list[client_h]->m_y - hb::shared::view::PlayerPivotOffsetY);
 	init_header->player_type = m_client_list[client_h]->m_type;
-	init_header->appearance = m_client_list[client_h]->m_appearance;
+	init_header->appearance = build_broadcast_appearance(client_h);
 	init_header->status = m_client_list[client_h]->m_status;
 	std::memcpy(init_header->map_name, m_client_list[client_h]->m_map_name, sizeof(init_header->map_name));
 	std::memcpy(init_header->cur_location, m_map_list[m_client_list[client_h]->m_map_index]->m_location_name, sizeof(init_header->cur_location));
@@ -12736,7 +12765,7 @@ void CGame::time_hit_points_up(int client_h)
 		if ((target_type == hb::shared::owner_class::Player) && (m_client_list[target_h]->m_side != m_client_list[attacker_h]->m_side)) {
 			switch (m_client_list[attacker_h]->m_using_weapon_skill) {
 				case 14:
-					if ((31 == m_client_list[attacker_h]->m_appearance.weapon_type) || (32 == m_client_list[attacker_h]->m_appearance.weapon_type)) {
+					if ((31 == m_client_list[attacker_h]->get_equipped_weapon_type()) || (32 == m_client_list[attacker_h]->get_equipped_weapon_type())) {
 						item_index = m_client_list[attacker_h]->m_item_equipment_status[to_int(EquipPos::TwoHand)];
 						if ((item_index != -1) && (m_client_list[attacker_h]->m_item_list[item_index] != 0)) {
 							if (m_client_list[attacker_h]->m_item_list[item_index]->m_id_num == 761) { // BattleHammer
@@ -12806,7 +12835,7 @@ void CGame::time_hit_points_up(int client_h)
 				hammer_chance = dice(4, (m_client_list[target_h]->m_item_list[armor_type]->m_max_life_span - m_client_list[target_h]->m_item_list[armor_type]->m_cur_life_span));
 			}
 
-			if ((31 == m_client_list[attacker_h]->m_appearance.weapon_type) || (32 == m_client_list[attacker_h]->m_appearance.weapon_type)) {
+			if ((31 == m_client_list[attacker_h]->get_equipped_weapon_type()) || (32 == m_client_list[attacker_h]->get_equipped_weapon_type())) {
 				item_index = m_client_list[attacker_h]->m_item_equipment_status[to_int(EquipPos::TwoHand)];
 				if ((item_index != -1) && (m_client_list[attacker_h]->m_item_list[item_index] != 0)) {
 					if (m_client_list[attacker_h]->m_item_list[item_index]->m_id_num == 761) { // BattleHammer

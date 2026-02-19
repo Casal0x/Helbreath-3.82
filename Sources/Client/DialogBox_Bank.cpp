@@ -3,6 +3,7 @@
 #include "Game.h"
 #include "InventoryManager.h"
 #include "ItemNameFormatter.h"
+#include "ItemSpriteMetadata.h"
 #include "IInput.h"
 #include "lan_eng.h"
 #include <format>
@@ -122,17 +123,18 @@ void DialogBox_Bank::draw_item_details(short sX, short sY, short size_x, int ite
 
 	// draw item sprite
 	char item_color = item->m_item_color;
+	auto bank_draw = m_game->get_item_draw(cfg->m_display_id, item_atlas::pack, false);
 	if (item_color == 0) {
-		m_game->m_sprite[ItemPackPivotPoint + cfg->m_sprite]->draw(sX + 60, sY + 68, cfg->m_sprite_frame);
+		bank_draw.sprite->draw(sX + 60, sY + 68, bank_draw.frame);
 	}
 	else {
 		if ((cfg->get_equip_pos() == EquipPos::LeftHand) ||
 			(cfg->get_equip_pos() == EquipPos::RightHand) ||
 			(cfg->get_equip_pos() == EquipPos::TwoHand)) {
-			m_game->m_sprite[ItemPackPivotPoint + cfg->m_sprite]->draw(sX + 60, sY + 68, cfg->m_sprite_frame, hb::shared::sprite::DrawParams::tint(GameColors::Weapons[item_color].r, GameColors::Weapons[item_color].g, GameColors::Weapons[item_color].b));
+			bank_draw.sprite->draw(sX + 60, sY + 68, bank_draw.frame, hb::shared::sprite::DrawParams::tint(GameColors::Weapons[item_color].r, GameColors::Weapons[item_color].g, GameColors::Weapons[item_color].b));
 		}
 		else {
-			m_game->m_sprite[ItemPackPivotPoint + cfg->m_sprite]->draw(sX + 60, sY + 68, cfg->m_sprite_frame, hb::shared::sprite::DrawParams::tint(GameColors::Items[item_color].r, GameColors::Items[item_color].g, GameColors::Items[item_color].b));
+			bank_draw.sprite->draw(sX + 60, sY + 68, bank_draw.frame, hb::shared::sprite::DrawParams::tint(GameColors::Items[item_color].r, GameColors::Items[item_color].g, GameColors::Items[item_color].b));
 		}
 	}
 }

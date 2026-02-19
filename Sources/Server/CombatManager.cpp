@@ -199,7 +199,7 @@ void CombatManager::client_killed_handler(int client_h, int attacker_h, char att
 
 	m_game->send_notify_msg(0, client_h, Notify::Killed, 0, 0, 0, attacker_name);
 	if (attacker_type == hb::shared::owner_class::Player) {
-		attacker_weapon = m_game->m_client_list[attacker_h]->m_appearance.weapon_type;
+		attacker_weapon = m_game->m_client_list[attacker_h]->get_equipped_weapon_type();
 	}
 	else attacker_weapon = 1;
 	m_game->send_event_to_near_client_type_a(client_h, hb::shared::owner_class::Player, MsgId::EventMotion, Type::Dying, damage, attacker_weapon, 0);
@@ -962,7 +962,7 @@ void CombatManager::effect_damage_spot_damage_move(short attacker_h, char attack
 			damage += 4;
 		}
 
-		weapon_type = m_game->m_client_list[attacker_h]->m_appearance.weapon_type;
+		weapon_type = m_game->m_client_list[attacker_h]->get_equipped_weapon_type();
 		if (weapon_type == 34) {
 			damage += damage / 3;
 		}
@@ -1807,7 +1807,7 @@ void CombatManager::check_attack_type(int client_h, short* spType)
 	uint16_t type;
 
 	if (m_game->m_client_list[client_h] == 0) return;
-	type = m_game->m_client_list[client_h]->m_appearance.weapon_type;
+	type = m_game->m_client_list[client_h]->get_equipped_weapon_type();
 
 	switch (*spType) {
 	case 2:
@@ -1891,7 +1891,7 @@ int CombatManager::get_weapon_skill_type(int client_h)
 
 	if (m_game->m_client_list[client_h] == 0) return 0;
 
-	weapon_type = m_game->m_client_list[client_h]->m_appearance.weapon_type;
+	weapon_type = m_game->m_client_list[client_h]->get_equipped_weapon_type();
 
 	if (weapon_type == 0) {
 		return 5;
@@ -2150,7 +2150,7 @@ bool CombatManager::calculate_endurance_decrement(short target_h, short attacker
 	if (m_game->m_client_list[target_h] == 0) return false;
 	if (attacker_h > MaxClients) return false;
 	if ((target_type == hb::shared::owner_class::Player) && (m_game->m_client_list[attacker_h] == 0)) return false;
-	weapon_type = m_game->m_client_list[attacker_h]->m_appearance.weapon_type;		// attacker_h was 2536 == null
+	weapon_type = m_game->m_client_list[attacker_h]->get_equipped_weapon_type();		// attacker_h was 2536 == null
 	if ((target_type == hb::shared::owner_class::Player) && (m_game->m_client_list[target_h]->m_side != m_game->m_client_list[attacker_h]->m_side)) {
 		switch (m_game->m_client_list[attacker_h]->m_using_weapon_skill) {
 		case 14:
@@ -2296,7 +2296,7 @@ uint32_t CombatManager::calculate_attack_effect(short target_h, char target_type
 		iAP_SM = 0;
 		iAP_L = 0;
 
-		weapon_type = m_game->m_client_list[attacker_h]->m_appearance.weapon_type;
+		weapon_type = m_game->m_client_list[attacker_h]->get_equipped_weapon_type();
 
 		skill_used = m_game->m_client_list[attacker_h]->m_using_weapon_skill;
 		if ((is_dash) && (m_game->m_client_list[attacker_h]->m_skill_mastery[skill_used] != 100) && (weapon_type != 25) && (weapon_type != 27)) {
@@ -3189,7 +3189,7 @@ uint32_t CombatManager::calculate_attack_effect(short target_h, char target_type
 						m_game->send_notify_msg(0, target_h, Notify::Hp, 0, 0, 0, 0);
 
 						if (attacker_type == hb::shared::owner_class::Player)
-							attacker_weapon = m_game->m_client_list[attacker_h]->m_appearance.weapon_type;
+							attacker_weapon = m_game->m_client_list[attacker_h]->get_equipped_weapon_type();
 						else attacker_weapon = 1;
 
 						if ((attacker_type == hb::shared::owner_class::Player) && (m_game->m_map_list[m_game->m_client_list[attacker_h]->m_map_index]->m_is_fight_zone))
@@ -3411,7 +3411,7 @@ uint32_t CombatManager::calculate_attack_effect(short target_h, char target_type
 					m_game->m_npc_list[target_h]->m_time = time;
 
 				if (attacker_type == hb::shared::owner_class::Player)
-					attacker_weapon = m_game->m_client_list[attacker_h]->m_appearance.weapon_type;
+					attacker_weapon = m_game->m_client_list[attacker_h]->get_equipped_weapon_type();
 				else attacker_weapon = 1;
 
 				if ((weapon_type < 40) && (m_game->m_npc_list[target_h]->m_action_limit == 4)) {

@@ -253,7 +253,7 @@ bool DialogBox_Magic::on_click(short mouse_x, short mouse_y)
 				if (m_game->m_item_list[i] == 0) continue;
 				CItem* cfg = m_game->get_item_config(m_game->m_item_list[i]->m_id_num);
 				if (cfg && (cfg->get_item_type() == ItemType::UseSkillEnableDialogBox) &&
-					(cfg->m_sprite_frame == 55))
+					(m_game->m_item_list[i]->m_id_num == 227)) // Alchemy Bowl
 				{
 					enable_dialog_box(DialogBoxId::Manufacture, 1, 0, 0, 0);
 					add_event_list(BDLBBOX_DOUBLE_CLICK_INVENTORY10, 10);

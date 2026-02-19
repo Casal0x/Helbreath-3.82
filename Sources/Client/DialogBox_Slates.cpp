@@ -140,15 +140,13 @@ bool DialogBox_Slates::on_item_drop(short mouse_x, short mouse_y)
 	switch (Info().m_mode) {
 	case 1:
 	{
-		// Only accept slate items (sprite frame 151-154)
-		CItem* cfg = m_game->get_item_config(m_game->m_item_list[item_id]->m_id_num);
-		if (cfg && (cfg->get_item_type() == ItemType::UseSkillEnableDialogBox) &&
-			(cfg->m_sprite_frame >= 151) &&
-			(cfg->m_sprite_frame <= 154))
+		// Only accept slate items (IDs 868-871)
+		short slate_id = m_game->m_item_list[item_id]->m_id_num;
+		if (slate_id >= 868 && slate_id <= 871)
 		{
 			std::string item_id_text;
-			switch (cfg->m_sprite_frame) {
-			case 151:
+			switch (slate_id) {
+			case 868: // Slate UL
 				if (Info().m_v1 == -1) {
 					m_game->m_is_item_disabled[item_id] = true;
 					Info().m_v1 = item_id;
@@ -156,7 +154,7 @@ bool DialogBox_Slates::on_item_drop(short mouse_x, short mouse_y)
 					add_event_list(item_id_text.c_str(), 10);
 				}
 				break;
-			case 152:
+			case 869: // Slate LL
 				if (Info().m_v2 == -1) {
 					m_game->m_is_item_disabled[item_id] = true;
 					Info().m_v2 = item_id;
@@ -164,7 +162,7 @@ bool DialogBox_Slates::on_item_drop(short mouse_x, short mouse_y)
 					add_event_list(item_id_text.c_str(), 10);
 				}
 				break;
-			case 153:
+			case 870: // Slate UR
 				if (Info().m_v3 == -1) {
 					m_game->m_is_item_disabled[item_id] = true;
 					Info().m_v3 = item_id;
@@ -172,7 +170,7 @@ bool DialogBox_Slates::on_item_drop(short mouse_x, short mouse_y)
 					add_event_list(item_id_text.c_str(), 10);
 				}
 				break;
-			case 154:
+			case 871: // Slate LR
 				if (Info().m_v4 == -1) {
 					m_game->m_is_item_disabled[item_id] = true;
 					Info().m_v4 = item_id;
