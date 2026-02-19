@@ -20,6 +20,7 @@ public:
     void on_uninitialize() override;
     void on_update() override;
     void on_render() override;
+    bool wants_background_dim() const override;
 
 private:
     uint32_t m_dwStartTime = 0;

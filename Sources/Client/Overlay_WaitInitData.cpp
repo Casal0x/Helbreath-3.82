@@ -58,12 +58,19 @@ void Overlay_WaitInitData::on_update()
     }
 }
 
+bool Overlay_WaitInitData::wants_background_dim() const
+{
+    return (GameClock::get_time_ms() - m_dwStartTime) >= 3000;
+}
+
 void Overlay_WaitInitData::on_render()
 {
-    std::string G_cTxt;
     uint32_t time = GameClock::get_time_ms();
     uint32_t elapsed = time - m_dwStartTime;
 
+    if (elapsed < 3000) return;
+
+    std::string G_cTxt;
     int dlgX, dlgY;
     get_centered_dialog_pos(InterfaceNdGame4, 2, dlgX, dlgY);
 

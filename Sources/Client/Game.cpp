@@ -1925,7 +1925,8 @@ void CGame::init_player_response_handler(char* data)
 	switch (header->msg_type) {
 	case MsgType::Confirm:
 		send_command(MsgId::RequestInitData, 0, 0, 0, 0, 0, 0);
-		change_game_mode(GameMode::WaitingInitData);
+		if (GameModeManager::get_mode() != GameMode::WaitingInitData)
+			change_game_mode(GameMode::WaitingInitData);
 		break;
 
 	case MsgType::Reject:
@@ -7648,6 +7649,7 @@ void CGame::process_motion_commands(uint16_t action_type)
 void CGame::request_teleport_and_wait_data()
 {
 	if (teleport_manager::get().is_requested()) return;
+	if (GameModeManager::get_mode() == GameMode::WaitingInitData) return;
 
 	send_command(MsgId::RequestTeleport, 0, 0, 0, 0, 0, 0);
 	change_game_mode(GameMode::WaitingInitData);
