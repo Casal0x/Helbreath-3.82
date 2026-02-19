@@ -425,11 +425,6 @@ void MagicManager::player_magic_handler(int client_h, int dX, int dY, short type
 		if (mana_cost <= 0) mana_cost = 1;
 	}
 
-	weapon_type = m_game->m_client_list[client_h]->get_equipped_weapon_type();
-	if (weapon_type == 34) {
-		mana_cost += 20;
-	}
-
 	if (result < 100) {
 		dice_res = m_game->dice(1, 100);
 		if (result < dice_res) {
