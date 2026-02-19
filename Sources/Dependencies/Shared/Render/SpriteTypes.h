@@ -64,6 +64,7 @@ struct DrawParams {
     bool m_fade = false;        // Fade effect
     bool m_additive = false;    // Deprecated: use blendMode instead
     bool m_nearest_filter = false; // Force nearest-neighbor filtering (no bilinear smoothing)
+    bool m_ignore_pivot = false;   // Draw at exact position, ignoring the sprite's baked-in pivot offset
     BlendMode m_blend_mode = BlendMode::Alpha;  // Blend mode for rendering
 
     // Static factory methods for common configurations
