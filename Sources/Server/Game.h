@@ -385,6 +385,7 @@ public:
 	void quit();
 	void release_follow_mode(short owner_h, char owner_type);
 	void request_teleport_handler(int client_h, const char * data, const char * map_name = 0, int dX = -1, int dY = -1);
+	void request_teleport_auth_handler(int client_h, const char * data);
 	void toggle_combat_mode_handler(int client_h);
 	void time_hit_points_up(int client_h);
 	void on_start_game_signal();

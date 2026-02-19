@@ -26,7 +26,7 @@
         "showLatency": true,
         "tileGrid": false,
         "toggleToChat": true,
-        "vsync": true,
+        "vsync": false,
         "zoomMap": true
     },
     "shortcuts": {

@@ -1,5 +1,6 @@
 #include "Game.h"
 #include "NetworkMessageManager.h"
+#include "TeleportManager.h"
 #include "Packet/SharedPackets.h"
 #include "lan_eng.h"
 #include <cstdio>
@@ -474,6 +475,7 @@ bool NetworkMessageManager::process_message(uint32_t msg_id, char* data, uint32_
 		case Notify::TotalUsers: NetworkMessageHandlers::HandleTotalUsers(m_game, data); return true;
 		case Notify::ForceRecallTime: NetworkMessageHandlers::HandleForceRecallTime(m_game, data); return true;
 		case Notify::NoRecall: NetworkMessageHandlers::HandleNoRecall(m_game, data); return true;
+		case Notify::TeleportApproved: teleport_manager::get().on_auth_approved(); return true;
 		case Notify::FightZoneReserve: NetworkMessageHandlers::HandleFightZoneReserve(m_game, data); return true;
 		case Notify::LoteryLost: NetworkMessageHandlers::HandleLoteryLost(m_game, data); return true;
 		case Notify::NotFlagSpot: NetworkMessageHandlers::HandleNotFlagSpot(m_game, data); return true;

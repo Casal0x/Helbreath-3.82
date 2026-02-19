@@ -626,6 +626,9 @@ void CGame::on_update()
 	// update game mode transition state (fade in/out progress)
 	GameModeManager::update();
 
+	// update teleport pre-auth fade state machine
+	teleport_manager::get().update();
+
 	// update game screens/overlays
 	FrameTiming::begin_profile(ProfileStage::update);
 	GameModeManager::update_screens();
@@ -661,6 +664,13 @@ void CGame::on_render()
 	{
 		float alpha = GameModeManager::get_fade_alpha();
 		m_Renderer->draw_rect_filled(0, 0, m_Renderer->get_width(), m_Renderer->get_height(), hb::shared::render::Color::Black(static_cast<uint8_t>(alpha * 255.0f)));
+	}
+
+	// draw teleport fade overlay (fading to/from black during teleport transitions)
+	float tp_alpha = teleport_manager::get().get_fade_alpha();
+	if (tp_alpha > 0.0f) {
+		m_Renderer->draw_rect_filled(0, 0, m_Renderer->get_width(), m_Renderer->get_height(),
+			hb::shared::render::Color::Black(static_cast<uint8_t>(tp_alpha * 255.0f)));
 	}
 
 	// Performance monitor overlay — top bar with FPS, latency, frame timing
@@ -1238,6 +1248,15 @@ bool CGame::send_command(uint32_t message_id, uint16_t command, char direction, 
 	}
 
 	teleport_manager::get().set_requested(true);
+	break;
+
+	case MsgId::RequestTeleportAuth:
+	{
+		hb::net::PacketRequestHeaderOnly req{};
+		req.header.msg_id = message_id;
+		req.header.msg_type = 0;
+		result = m_g_sock->send_msg(reinterpret_cast<char*>(&req), sizeof(req));
+	}
 	break;
 
 	case MsgId::RequestCivilRight:
@@ -1996,8 +2015,7 @@ void CGame::init_player_response_handler(char* data)
 	switch (header->msg_type) {
 	case MsgType::Confirm:
 		send_command(MsgId::RequestInitData, 0, 0, 0, 0, 0, 0);
-		if (GameModeManager::get_mode() != GameMode::WaitingInitData)
-			change_game_mode(GameMode::WaitingInitData);
+		change_game_mode(GameMode::WaitingInitData);
 		break;
 
 	case MsgType::Reject:
@@ -6498,7 +6516,8 @@ void CGame::command_processor(short mouse_x, short mouse_y, short tile_x, short 
 		process_motion_commands(action_type); return;
 	}
 
-	if ((m_map_data->is_teleport_loc(m_player->m_player_x, m_player->m_player_y) == true) && (m_player->m_Controller.get_command_count() == 0))
+	if ((m_map_data->is_teleport_loc(m_player->m_player_x, m_player->m_player_y) == true) && (m_player->m_Controller.get_command_count() == 0)
+		&& !teleport_manager::get().is_rejected_tile(m_player->m_player_x, m_player->m_player_y))
 		request_teleport_and_wait_data();
 
 	// indexX, indexY
@@ -7742,10 +7761,9 @@ void CGame::process_motion_commands(uint16_t action_type)
 void CGame::request_teleport_and_wait_data()
 {
 	if (teleport_manager::get().is_requested()) return;
-	if (GameModeManager::get_mode() == GameMode::WaitingInitData) return;
+	if (teleport_manager::get().is_active()) return;
 
-	send_command(MsgId::RequestTeleport, 0, 0, 0, 0, 0, 0);
-	change_game_mode(GameMode::WaitingInitData);
+	teleport_manager::get().request_auth(m_player->m_player_x, m_player->m_player_y);
 }
 
 void CGame::init_data_response_handler(char* packet_data)
@@ -7928,6 +7946,10 @@ void CGame::init_data_response_handler(char* packet_data)
 		m_dialog_box_manager.enable_dialog_box(DialogBoxId::WarningBattleArea, 0, 0, 0);
 
 	m_is_server_changing = false;
+
+	// Notify TeleportManager that map data has loaded (screen is still black)
+	if (teleport_manager::get().get_state() == teleport_state::awaiting_data)
+		teleport_manager::get().on_map_loaded();
 
 	// Wait for configs before entering the game world
 	m_init_data_ready = true;

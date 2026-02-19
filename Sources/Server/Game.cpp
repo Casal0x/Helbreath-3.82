@@ -1157,8 +1157,6 @@ bool CGame::init()
 		return false;
 	}
 
-	compute_config_hashes();
-
 	m_is_quest_available = false;
 	if (HasGameConfigRows(configDb, "quest_configs")) {
 		m_is_quest_available = LoadQuestConfigs(configDb, this);
@@ -5411,6 +5409,10 @@ void CGame::msg_process()
 				request_teleport_handler(client_h, data);
 				break;
 
+			case MsgId::RequestTeleportAuth:
+				request_teleport_auth_handler(client_h, data);
+				break;
+
 			case MsgId::RequestInitPlayer:
 				request_init_player_handler(client_h, data, key);
 				break;
@@ -6447,6 +6449,7 @@ void CGame::send_notify_msg(int from_h, int to_h, uint16_t msg_type, uint32_t v1
 	case Notify::ApocGateStartMsg:
 	case Notify::ApocGateEndMsg:
 	case Notify::NoRecall:
+	case Notify::TeleportApproved:
 	{
 		hb::net::PacketNotifyEmpty pkt{};
 		pkt.header.msg_id = MsgId::Notify;
@@ -9032,6 +9035,98 @@ void CGame::state_change_handler(int client_h, char* data, size_t msg_size)
 	m_client_list[client_h]->m_sp = get_max_sp(client_h);
 
 	send_notify_msg(0, client_h, Notify::StateChangeSuccess, 0, 0, 0, 0);
+}
+
+void CGame::request_teleport_auth_handler(int client_h, const char* data)
+{
+	using namespace hb::shared::net;
+	using namespace hb::server::config;
+
+	// Basic player state validation (same checks as request_teleport_handler)
+	if (m_client_list[client_h] == 0) return;
+	if (m_client_list[client_h]->m_is_init_complete == false) {
+		send_notify_msg(0, client_h, Notify::NoticeMsg, 0, 0, 0, "Teleport not available");
+		return;
+	}
+	if (m_client_list[client_h]->m_is_killed) {
+		send_notify_msg(0, client_h, Notify::NoticeMsg, 0, 0, 0, "Teleport not available");
+		return;
+	}
+	if (m_client_list[client_h]->m_is_on_waiting_process) {
+		send_notify_msg(0, client_h, Notify::NoticeMsg, 0, 0, 0, "Teleport not available");
+		return;
+	}
+
+	// Apocalypse recall-impossible map check
+	if ((m_map_list[m_client_list[client_h]->m_map_index]->m_is_recall_impossible) &&
+		(m_client_list[client_h]->m_is_killed == false) && (m_is_apocalypse_mode) && (m_client_list[client_h]->m_hp > 0)) {
+		send_notify_msg(0, client_h, Notify::NoRecall, 0, 0, 0, 0);
+		return;
+	}
+
+	// Crusade force-recall restrictions (enemy city)
+	if ((memcmp(m_client_list[client_h]->m_location, "elvine", 6) == 0)
+		&& (m_client_list[client_h]->m_time_left_force_recall > 0)
+		&& (memcmp(m_map_list[m_client_list[client_h]->m_map_index]->m_location_name, "aresden", 7) == 0)
+		&& (m_is_crusade_mode == false)) {
+		send_notify_msg(0, client_h, Notify::NoticeMsg, 0, 0, 0, "Teleport not available");
+		return;
+	}
+	if ((memcmp(m_client_list[client_h]->m_location, "aresden", 7) == 0)
+		&& (m_client_list[client_h]->m_time_left_force_recall > 0)
+		&& (memcmp(m_map_list[m_client_list[client_h]->m_map_index]->m_location_name, "elvine", 6) == 0)
+		&& (m_is_crusade_mode == false)) {
+		send_notify_msg(0, client_h, Notify::NoticeMsg, 0, 0, 0, "Teleport not available");
+		return;
+	}
+
+	// Check teleport tile exists at current position
+	short sX = m_client_list[client_h]->m_x;
+	short sY = m_client_list[client_h]->m_y;
+	char dest_map_name[11]{};
+	int dest_x, dest_y;
+	direction dir;
+	bool ret_ok = m_map_list[m_client_list[client_h]->m_map_index]->search_teleport_dest(sX, sY, dest_map_name, &dest_x, &dest_y, &dir);
+	if (!ret_ok) {
+		send_notify_msg(0, client_h, Notify::NoticeMsg, 0, 0, 0, "No teleport at this location");
+		return;
+	}
+
+	// Crusade locked-map override — redirect destination
+	if ((strcmp(m_client_list[client_h]->m_locked_map_name, "NONE") != 0) && (m_client_list[client_h]->m_locked_map_time > 0)) {
+		int map_side = get_map_location_side(dest_map_name);
+		if (map_side > 3) map_side -= 2;
+		if (!((map_side != 0) && (m_client_list[client_h]->m_side == map_side))) {
+			std::memset(dest_map_name, 0, sizeof(dest_map_name));
+			strcpy(dest_map_name, m_client_list[client_h]->m_locked_map_name);
+		}
+	}
+
+	// Look up destination map on this server
+	int dest_map_index = -1;
+	for (int i = 0; i < MaxMaps; i++) {
+		if (m_map_list[i] != 0 && memcmp(m_map_list[i]->m_name, dest_map_name, 10) == 0) {
+			dest_map_index = i;
+			break;
+		}
+	}
+
+	// Destination map not on this server — still valid (server change), approve
+	if (dest_map_index >= 0) {
+		// Check level limits on destination map
+		if (m_client_list[client_h]->m_level < m_map_list[dest_map_index]->m_level_limit) {
+			send_notify_msg(0, client_h, Notify::LimitedLevel, 0, 0, 0, 0);
+			return;
+		}
+		if ((m_map_list[dest_map_index]->m_upper_level_limit != 0) &&
+			(m_client_list[client_h]->m_level > m_map_list[dest_map_index]->m_upper_level_limit)) {
+			send_notify_msg(0, client_h, Notify::TravelerLimitedLevel, 0, 0, 0, 0);
+			return;
+		}
+	}
+
+	// All checks pass — approve teleport
+	send_notify_msg(0, client_h, Notify::TeleportApproved, 0, 0, 0, 0);
 }
 
 // 2003-04-21     ...
@@ -11936,6 +12031,8 @@ void CGame::on_start_game_signal()
 		hb::logger::log("Loaded {} map configurations from database.", mapsLoaded);
 		CloseMapInfoDatabase(mapInfoDb);
 	}
+
+	compute_config_hashes();
 
 	bool loadedSchedules = false;
 	sqlite3* configDb = nullptr;

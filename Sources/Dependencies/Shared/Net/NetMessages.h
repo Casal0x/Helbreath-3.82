@@ -71,6 +71,7 @@ namespace MsgId
 		ResponseRetrieveItem                    = 0x0DF30752,
 		request_full_object_data                   = 0x0DF40000,
 		RequestTeleport                         = 0x0EA03201,
+		RequestTeleportAuth                     = 0x0EA03203,
 		RequestHeldenianScroll                  = 0x3D001244,
 		LevelUpSettings                         = 0x11A01000,
 		DynamicObject                           = 0x12A01001,
@@ -348,6 +349,7 @@ namespace Notify
 		SpellSkill                              = 0x0BF6,
 		SpellInterrupted                        = 0x0BF7,
 		ItemObtainedBulk                        = 0x0BF8,
+		TeleportApproved                        = 0x0BF9,
 		RepairAllPrices                         = 0x0F11,
 		MobKills                                = 0x0A68,
 #ifdef TESTER_ONLY

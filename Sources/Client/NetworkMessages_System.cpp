@@ -2,7 +2,7 @@
 #include "GameModeManager.h"
 #include "AudioManager.h"
 #include "WeatherManager.h"
-
+#include "TeleportManager.h"
 
 #include "NetworkMessageManager.h"
 #include "Packet/SharedPackets.h"
@@ -53,6 +53,8 @@ void HandleTimeChange(CGame* game, char* data)
 
 void HandleNoticeMsg(CGame* game, char* data)
 {
+	if (teleport_manager::get().get_state() == teleport_state::awaiting_auth)
+		teleport_manager::get().on_auth_rejected();
 	const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyNoticeMsg>(
 		data, sizeof(hb::net::PacketNotifyNoticeMsg));
 	if (!pkt) return;
@@ -215,6 +217,8 @@ void HandleForceRecallTime(CGame* game, char* data)
 
 void HandleNoRecall(CGame* game, char* data)
 {
+	if (teleport_manager::get().get_state() == teleport_state::awaiting_auth)
+		teleport_manager::get().on_auth_rejected();
 	game->add_event_list("You can not recall in this map.", 10);
 }
 
@@ -274,11 +278,15 @@ void HandleNpcTalk(CGame* game, char* data)
 
 void HandleTravelerLimitedLevel(CGame* game, char* data)
 {
+	if (teleport_manager::get().get_state() == teleport_state::awaiting_auth)
+		teleport_manager::get().on_auth_rejected();
 	game->add_event_list(NOTIFY_MSG_HANDLER64, 10);
 }
 
 void HandleLimitedLevel(CGame* game, char* data)
 {
+	if (teleport_manager::get().get_state() == teleport_state::awaiting_auth)
+		teleport_manager::get().on_auth_rejected();
 	game->add_event_list(NOTIFYMSG_LIMITED_LEVEL1, 10);
 }
 
