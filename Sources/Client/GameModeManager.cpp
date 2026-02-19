@@ -224,20 +224,12 @@ void GameModeManager::apply_screen_change()
         {
             m_pCurrentScreen->on_initialize();
 
-            // Game screen uses user's configured FPS limit;
-            // all other screens cap at 60 FPS (no reason to render menus faster)
+            // Apply user's configured display settings on every screen transition
             hb::shared::render::IWindow* window = hb::shared::render::Window::get();
             if (window)
             {
-                if (m_currentMode == GameMode::MainGame)
-                {
-                    window->set_vsync_enabled(config_manager::get().is_vsync_enabled());
-                    window->set_framerate_limit(config_manager::get().get_fps_limit());
-                }
-                else
-                {
-                    window->set_framerate_limit(60);
-                }
+                window->set_vsync_enabled(config_manager::get().is_vsync_enabled());
+                window->set_framerate_limit(config_manager::get().get_fps_limit());
             }
         }
     }
