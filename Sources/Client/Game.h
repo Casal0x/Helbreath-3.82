@@ -78,6 +78,12 @@ enum class OverlayType {
 	QueryDeleteCharacter
 };
 
+struct item_draw_ref
+{
+	hb::shared::sprite::ISprite* sprite;
+	int16_t frame;
+};
+
 class CGame : public hb::shared::render::application
 {
 public:
@@ -126,6 +132,7 @@ public:
 	void set_ilusion_effect(int owner_h);
 	void noticement_handler(char * data);
 	CItem* get_item_config(int item_id) const;
+	item_draw_ref get_item_draw(int16_t display_id, int atlas_type, bool is_female);
 	short find_item_id_by_name(const char* item_name);
 	void load_game_msg_text_contents();
 	const char* get_npc_config_name_by_id(short npcConfigId) const;
@@ -252,7 +259,7 @@ public:
 
 	int has_hero_set(const hb::shared::entity::PlayerAppearance& appr, short OwnerType);
 	void show_heldenian_victory(short side);
-	void dk_glare(int weapon_color, int weapon_index, int *weapon_glare);
+	void dk_glare(int weapon_color, int16_t weapon_item_id, int* weapon_glare);
 	void abaddon_corpse(int sX, int sY);
 	void draw_angel(int sprite, short sX, short sY, char frame, uint32_t time);
 
@@ -326,6 +333,8 @@ public:
 	hb::shared::sprite::SpriteCollection m_sprite;
 	hb::shared::sprite::SpriteCollection m_tile_spr;
 	hb::shared::sprite::SpriteCollection m_effect_sprites;
+	hb::shared::sprite::SpriteCollection m_item_sprites;	// Atlas: [0]=equip, [1]=ground, [2]=pack
+	hb::shared::sprite::SpriteCollection m_equip_sprites;	// Per-item equipment sprites (indexed via equip_sprite::index)
 
 	std::unique_ptr<CPlayer> m_player;  // Main player data
 	std::unique_ptr<class CMapData> m_map_data;

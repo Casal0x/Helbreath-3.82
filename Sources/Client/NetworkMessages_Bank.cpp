@@ -17,7 +17,7 @@ namespace NetworkMessageHandlers {
 		uint32_t attribute;
 		char  name[hb::shared::limits::ItemNameLen]{}, item_type, equip_pos, gender_limit, item_color;
 		bool  is_equipped;
-		short sprite, sprite_frame, level_limit, item_effect_value2, item_spec_effect_value2;
+		short level_limit, item_effect_value2, item_spec_effect_value2;
 		uint16_t weight, cur_life_span;
 		std::string txt;
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyItemToBank>(
@@ -35,8 +35,6 @@ namespace NetworkMessageHandlers {
 		gender_limit = static_cast<char>(pkt->gender_limit);
 		cur_life_span = pkt->cur_lifespan;
 		weight = pkt->weight;
-		sprite = static_cast<short>(pkt->sprite);
-		sprite_frame = static_cast<short>(pkt->sprite_frame);
 		item_color = static_cast<char>(pkt->item_color);
 		item_effect_value2 = static_cast<short>(pkt->item_effect_value2);
 		attribute = pkt->attribute;

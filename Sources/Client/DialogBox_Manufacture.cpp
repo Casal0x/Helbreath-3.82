@@ -3,6 +3,7 @@
 #include "Game.h"
 #include "BuildItemManager.h"
 #include "ItemNameFormatter.h"
+#include "ItemSpriteMetadata.h"
 #include "GameFonts.h"
 #include "GlobalDef.h"
 #include "SpriteID.h"
@@ -123,38 +124,38 @@ void DialogBox_Manufacture::draw_alchemy_waiting(short sX, short sY, short mouse
 
 	if (Info().m_v1 != -1) {
 		CItem* cfg = m_game->get_item_config(m_game->m_item_list[Info().m_v1]->m_id_num);
-		if (cfg) m_game->m_sprite[ItemPackPivotPoint +
-		cfg->m_sprite]->draw(sX + adj_x + 55 + (1 - (rand() % 3)), sY + adj_y + 55 + (1 - (rand() % 3)), cfg->m_sprite_frame, hb::shared::sprite::DrawParams::alpha_blend(0.5f));
+		if (cfg) { auto d = m_game->get_item_draw(cfg->m_display_id, item_atlas::pack, false);
+		d.sprite->draw(sX + adj_x + 55 + (1 - (rand() % 3)), sY + adj_y + 55 + (1 - (rand() % 3)), d.frame, hb::shared::sprite::DrawParams::alpha_blend(0.5f)); }
 	}
 
 	if (Info().m_v2 != -1) {
 		CItem* cfg = m_game->get_item_config(m_game->m_item_list[Info().m_v2]->m_id_num);
-		if (cfg) m_game->m_sprite[ItemPackPivotPoint +
-		cfg->m_sprite]->draw(sX + adj_x + 55 + 45 * 1 + (1 - (rand() % 3)), sY + adj_y + 55 + (1 - (rand() % 3)), cfg->m_sprite_frame, hb::shared::sprite::DrawParams::alpha_blend(0.5f));
+		if (cfg) { auto d = m_game->get_item_draw(cfg->m_display_id, item_atlas::pack, false);
+		d.sprite->draw(sX + adj_x + 55 + 45 * 1 + (1 - (rand() % 3)), sY + adj_y + 55 + (1 - (rand() % 3)), d.frame, hb::shared::sprite::DrawParams::alpha_blend(0.5f)); }
 	}
 
 	if (Info().m_v3 != -1) {
 		CItem* cfg = m_game->get_item_config(m_game->m_item_list[Info().m_v3]->m_id_num);
-		if (cfg) m_game->m_sprite[ItemPackPivotPoint +
-		cfg->m_sprite]->draw(sX + adj_x + 55 + 45 * 2 + (1 - (rand() % 3)), sY + adj_y + 55 + (1 - (rand() % 3)), cfg->m_sprite_frame, hb::shared::sprite::DrawParams::alpha_blend(0.5f));
+		if (cfg) { auto d = m_game->get_item_draw(cfg->m_display_id, item_atlas::pack, false);
+		d.sprite->draw(sX + adj_x + 55 + 45 * 2 + (1 - (rand() % 3)), sY + adj_y + 55 + (1 - (rand() % 3)), d.frame, hb::shared::sprite::DrawParams::alpha_blend(0.5f)); }
 	}
 
 	if (Info().m_v4 != -1) {
 		CItem* cfg = m_game->get_item_config(m_game->m_item_list[Info().m_v4]->m_id_num);
-		if (cfg) m_game->m_sprite[ItemPackPivotPoint +
-		cfg->m_sprite]->draw(sX + adj_x + 55 + (1 - (rand() % 3)), sY + adj_y + 100 + (1 - (rand() % 3)), cfg->m_sprite_frame, hb::shared::sprite::DrawParams::alpha_blend(0.5f));
+		if (cfg) { auto d = m_game->get_item_draw(cfg->m_display_id, item_atlas::pack, false);
+		d.sprite->draw(sX + adj_x + 55 + (1 - (rand() % 3)), sY + adj_y + 100 + (1 - (rand() % 3)), d.frame, hb::shared::sprite::DrawParams::alpha_blend(0.5f)); }
 	}
 
 	if (Info().m_v5 != -1) {
 		CItem* cfg = m_game->get_item_config(m_game->m_item_list[Info().m_v5]->m_id_num);
-		if (cfg) m_game->m_sprite[ItemPackPivotPoint +
-		cfg->m_sprite]->draw(sX + adj_x + 55 + 45 * 1 + (1 - (rand() % 3)), sY + adj_y + 100 + (1 - (rand() % 3)), cfg->m_sprite_frame, hb::shared::sprite::DrawParams::alpha_blend(0.5f));
+		if (cfg) { auto d = m_game->get_item_draw(cfg->m_display_id, item_atlas::pack, false);
+		d.sprite->draw(sX + adj_x + 55 + 45 * 1 + (1 - (rand() % 3)), sY + adj_y + 100 + (1 - (rand() % 3)), d.frame, hb::shared::sprite::DrawParams::alpha_blend(0.5f)); }
 	}
 
 	if (Info().m_v6 != -1) {
 		CItem* cfg = m_game->get_item_config(m_game->m_item_list[Info().m_v6]->m_id_num);
-		if (cfg) m_game->m_sprite[ItemPackPivotPoint +
-		cfg->m_sprite]->draw(sX + adj_x + 55 + 45 * 2 + (1 - (rand() % 3)), sY + adj_y + 100 + (1 - (rand() % 3)), cfg->m_sprite_frame, hb::shared::sprite::DrawParams::alpha_blend(0.5f));
+		if (cfg) { auto d = m_game->get_item_draw(cfg->m_display_id, item_atlas::pack, false);
+		d.sprite->draw(sX + adj_x + 55 + 45 * 2 + (1 - (rand() % 3)), sY + adj_y + 100 + (1 - (rand() % 3)), d.frame, hb::shared::sprite::DrawParams::alpha_blend(0.5f)); }
 	}
 
 	if ((mouse_x >= sX + adj_x + 60) && (mouse_x <= sX + adj_x + 153) && (mouse_y >= sY + adj_y + 175) && (mouse_y <= sY + adj_y + 195))
@@ -172,38 +173,38 @@ void DialogBox_Manufacture::draw_alchemy_creating(short sX, short sY)
 
 	if (Info().m_v1 != -1) {
 		CItem* cfg = m_game->get_item_config(m_game->m_item_list[Info().m_v1]->m_id_num);
-		if (cfg) m_game->m_sprite[ItemPackPivotPoint +
-		cfg->m_sprite]->draw(sX + adj_x + 55 + (1 - (rand() % 3)), sY + adj_y + 55 + (1 - (rand() % 3)), cfg->m_sprite_frame, hb::shared::sprite::DrawParams::alpha_blend(0.5f));
+		if (cfg) { auto d = m_game->get_item_draw(cfg->m_display_id, item_atlas::pack, false);
+		d.sprite->draw(sX + adj_x + 55 + (1 - (rand() % 3)), sY + adj_y + 55 + (1 - (rand() % 3)), d.frame, hb::shared::sprite::DrawParams::alpha_blend(0.5f)); }
 	}
 
 	if (Info().m_v2 != -1) {
 		CItem* cfg = m_game->get_item_config(m_game->m_item_list[Info().m_v2]->m_id_num);
-		if (cfg) m_game->m_sprite[ItemPackPivotPoint +
-		cfg->m_sprite]->draw(sX + adj_x + 55 + 45 * 1 + (1 - (rand() % 3)), sY + adj_y + 55 + (1 - (rand() % 3)), cfg->m_sprite_frame, hb::shared::sprite::DrawParams::alpha_blend(0.5f));
+		if (cfg) { auto d = m_game->get_item_draw(cfg->m_display_id, item_atlas::pack, false);
+		d.sprite->draw(sX + adj_x + 55 + 45 * 1 + (1 - (rand() % 3)), sY + adj_y + 55 + (1 - (rand() % 3)), d.frame, hb::shared::sprite::DrawParams::alpha_blend(0.5f)); }
 	}
 
 	if (Info().m_v3 != -1) {
 		CItem* cfg = m_game->get_item_config(m_game->m_item_list[Info().m_v3]->m_id_num);
-		if (cfg) m_game->m_sprite[ItemPackPivotPoint +
-		cfg->m_sprite]->draw(sX + adj_x + 55 + 45 * 2 + (1 - (rand() % 3)), sY + adj_y + 55 + (1 - (rand() % 3)), cfg->m_sprite_frame, hb::shared::sprite::DrawParams::alpha_blend(0.5f));
+		if (cfg) { auto d = m_game->get_item_draw(cfg->m_display_id, item_atlas::pack, false);
+		d.sprite->draw(sX + adj_x + 55 + 45 * 2 + (1 - (rand() % 3)), sY + adj_y + 55 + (1 - (rand() % 3)), d.frame, hb::shared::sprite::DrawParams::alpha_blend(0.5f)); }
 	}
 
 	if (Info().m_v4 != -1) {
 		CItem* cfg = m_game->get_item_config(m_game->m_item_list[Info().m_v4]->m_id_num);
-		if (cfg) m_game->m_sprite[ItemPackPivotPoint +
-		cfg->m_sprite]->draw(sX + adj_x + 55 + (1 - (rand() % 3)), sY + adj_y + 100 + (1 - (rand() % 3)), cfg->m_sprite_frame, hb::shared::sprite::DrawParams::alpha_blend(0.5f));
+		if (cfg) { auto d = m_game->get_item_draw(cfg->m_display_id, item_atlas::pack, false);
+		d.sprite->draw(sX + adj_x + 55 + (1 - (rand() % 3)), sY + adj_y + 100 + (1 - (rand() % 3)), d.frame, hb::shared::sprite::DrawParams::alpha_blend(0.5f)); }
 	}
 
 	if (Info().m_v5 != -1) {
 		CItem* cfg = m_game->get_item_config(m_game->m_item_list[Info().m_v5]->m_id_num);
-		if (cfg) m_game->m_sprite[ItemPackPivotPoint +
-		cfg->m_sprite]->draw(sX + adj_x + 55 + 45 * 1 + (1 - (rand() % 3)), sY + adj_y + 100 + (1 - (rand() % 3)), cfg->m_sprite_frame, hb::shared::sprite::DrawParams::alpha_blend(0.5f));
+		if (cfg) { auto d = m_game->get_item_draw(cfg->m_display_id, item_atlas::pack, false);
+		d.sprite->draw(sX + adj_x + 55 + 45 * 1 + (1 - (rand() % 3)), sY + adj_y + 100 + (1 - (rand() % 3)), d.frame, hb::shared::sprite::DrawParams::alpha_blend(0.5f)); }
 	}
 
 	if (Info().m_v6 != -1) {
 		CItem* cfg = m_game->get_item_config(m_game->m_item_list[Info().m_v6]->m_id_num);
-		if (cfg) m_game->m_sprite[ItemPackPivotPoint +
-		cfg->m_sprite]->draw(sX + adj_x + 55 + 45 * 2 + (1 - (rand() % 3)), sY + adj_y + 100 + (1 - (rand() % 3)), cfg->m_sprite_frame, hb::shared::sprite::DrawParams::alpha_blend(0.5f));
+		if (cfg) { auto d = m_game->get_item_draw(cfg->m_display_id, item_atlas::pack, false);
+		d.sprite->draw(sX + adj_x + 55 + 45 * 2 + (1 - (rand() % 3)), sY + adj_y + 100 + (1 - (rand() % 3)), d.frame, hb::shared::sprite::DrawParams::alpha_blend(0.5f)); }
 	}
 
 	hb::shared::text::draw_text(GameFont::Bitmap1, sX + adj_x + 60, sY + adj_y + 175, "Creating...", hb::shared::text::TextStyle::with_highlight(GameColors::BmpBtnRed));
@@ -316,7 +317,12 @@ void DialogBox_Manufacture::draw_manufacture_waiting(short sX, short sY, short m
 
 	draw_new_dialog_box(InterfaceNdGame3, sX, sY, 0);
 	draw_new_dialog_box(InterfaceNdText, sX, sY, 8);
-	m_game->m_sprite[ItemPackPivotPoint + build_item_manager::get().get_display_list()[Info().m_str[0]]->m_sprite_handle]->draw(sX + adj_x + 62 + 5, sY + adj_y + 84 + 17, build_item_manager::get().get_display_list()[Info().m_str[0]]->m_sprite_frame);
+	{
+		int recipe_cfg_id = m_game->find_item_id_by_name(build_item_manager::get().get_display_list()[Info().m_str[0]]->m_name.c_str());
+		CItem* recipe_cfg = m_game->get_item_config(recipe_cfg_id);
+		auto recipe_draw = m_game->get_item_draw(recipe_cfg ? recipe_cfg->m_display_id : 0, item_atlas::pack, false);
+		recipe_draw.sprite->draw(sX + adj_x + 62 + 5, sY + adj_y + 84 + 17, recipe_draw.frame);
+	};
 
 	auto itemInfo2 = item_name_formatter::get().format(m_game->find_item_id_by_name(build_item_manager::get().get_display_list()[Info().m_str[0]]->m_name.c_str()),  0);
 	temp = itemInfo2.name.c_str();
@@ -364,27 +370,33 @@ void DialogBox_Manufacture::draw_manufacture_waiting(short sX, short sY, short m
 		// draw items in slots
 		if (Info().m_v1 != -1) {
 			CItem* cfg = m_game->get_item_config(m_game->m_item_list[Info().m_v1]->m_id_num);
-			if (cfg) m_game->m_sprite[ItemPackPivotPoint + cfg->m_sprite]->draw(sX + adj_x + 55 + 30 + 13, sY + adj_y + 55 + 180, cfg->m_sprite_frame);
+			if (cfg) { auto d = m_game->get_item_draw(cfg->m_display_id, item_atlas::pack, false);
+			d.sprite->draw(sX + adj_x + 55 + 30 + 13, sY + adj_y + 55 + 180, d.frame); }
 		}
 		if (Info().m_v2 != -1) {
 			CItem* cfg = m_game->get_item_config(m_game->m_item_list[Info().m_v2]->m_id_num);
-			if (cfg) m_game->m_sprite[ItemPackPivotPoint + cfg->m_sprite]->draw(sX + adj_x + 55 + 45 + 30 + 13, sY + adj_y + 55 + 180, cfg->m_sprite_frame);
+			if (cfg) { auto d = m_game->get_item_draw(cfg->m_display_id, item_atlas::pack, false);
+			d.sprite->draw(sX + adj_x + 55 + 45 + 30 + 13, sY + adj_y + 55 + 180, d.frame); }
 		}
 		if (Info().m_v3 != -1) {
 			CItem* cfg = m_game->get_item_config(m_game->m_item_list[Info().m_v3]->m_id_num);
-			if (cfg) m_game->m_sprite[ItemPackPivotPoint + cfg->m_sprite]->draw(sX + adj_x + 55 + 90 + 30 + 13, sY + adj_y + 55 + 180, cfg->m_sprite_frame);
+			if (cfg) { auto d = m_game->get_item_draw(cfg->m_display_id, item_atlas::pack, false);
+			d.sprite->draw(sX + adj_x + 55 + 90 + 30 + 13, sY + adj_y + 55 + 180, d.frame); }
 		}
 		if (Info().m_v4 != -1) {
 			CItem* cfg = m_game->get_item_config(m_game->m_item_list[Info().m_v4]->m_id_num);
-			if (cfg) m_game->m_sprite[ItemPackPivotPoint + cfg->m_sprite]->draw(sX + adj_x + 55 + 30 + 13, sY + adj_y + 100 + 180, cfg->m_sprite_frame);
+			if (cfg) { auto d = m_game->get_item_draw(cfg->m_display_id, item_atlas::pack, false);
+			d.sprite->draw(sX + adj_x + 55 + 30 + 13, sY + adj_y + 100 + 180, d.frame); }
 		}
 		if (Info().m_v5 != -1) {
 			CItem* cfg = m_game->get_item_config(m_game->m_item_list[Info().m_v5]->m_id_num);
-			if (cfg) m_game->m_sprite[ItemPackPivotPoint + cfg->m_sprite]->draw(sX + adj_x + 55 + 45 + 30 + 13, sY + adj_y + 100 + 180, cfg->m_sprite_frame);
+			if (cfg) { auto d = m_game->get_item_draw(cfg->m_display_id, item_atlas::pack, false);
+			d.sprite->draw(sX + adj_x + 55 + 45 + 30 + 13, sY + adj_y + 100 + 180, d.frame); }
 		}
 		if (Info().m_v6 != -1) {
 			CItem* cfg = m_game->get_item_config(m_game->m_item_list[Info().m_v6]->m_id_num);
-			if (cfg) m_game->m_sprite[ItemPackPivotPoint + cfg->m_sprite]->draw(sX + adj_x + 55 + 90 + 30 + 13, sY + adj_y + 100 + 180, cfg->m_sprite_frame);
+			if (cfg) { auto d = m_game->get_item_draw(cfg->m_display_id, item_atlas::pack, false);
+			d.sprite->draw(sX + adj_x + 55 + 90 + 30 + 13, sY + adj_y + 100 + 180, d.frame); }
 		}
 
 		put_aligned_string(sX, sX + size_x, sY + adj_y + 230 + 75, DRAW_DIALOGBOX_SKILLDLG15, GameColors::UILabel);
@@ -427,7 +439,12 @@ void DialogBox_Manufacture::draw_manufacture_in_progress(short sX, short sY)
 
 	draw_new_dialog_box(InterfaceNdGame3, sX, sY, 0);
 	draw_new_dialog_box(InterfaceNdText, sX, sY, 8);
-	m_game->m_sprite[ItemPackPivotPoint + build_item_manager::get().get_display_list()[Info().m_str[0]]->m_sprite_handle]->draw(sX + adj_x + 62 + 5, sY + adj_y + 84 + 17, build_item_manager::get().get_display_list()[Info().m_str[0]]->m_sprite_frame);
+	{
+		int recipe_cfg_id = m_game->find_item_id_by_name(build_item_manager::get().get_display_list()[Info().m_str[0]]->m_name.c_str());
+		CItem* recipe_cfg = m_game->get_item_config(recipe_cfg_id);
+		auto recipe_draw = m_game->get_item_draw(recipe_cfg ? recipe_cfg->m_display_id : 0, item_atlas::pack, false);
+		recipe_draw.sprite->draw(sX + adj_x + 62 + 5, sY + adj_y + 84 + 17, recipe_draw.frame);
+	};
 
 	auto itemInfo4 = item_name_formatter::get().format(m_game->find_item_id_by_name(build_item_manager::get().get_display_list()[Info().m_str[0]]->m_name.c_str()),  0);
 	temp = itemInfo4.name.c_str();
@@ -473,27 +490,33 @@ void DialogBox_Manufacture::draw_manufacture_in_progress(short sX, short sY)
 	// draw items in slots
 	if (Info().m_v1 != -1) {
 		CItem* cfg = m_game->get_item_config(m_game->m_item_list[Info().m_v1]->m_id_num);
-		if (cfg) m_game->m_sprite[ItemPackPivotPoint + cfg->m_sprite]->draw(sX + adj_x + 55 + 30 + 13, sY + adj_y + 55 + 180, cfg->m_sprite_frame);
+		if (cfg) { auto d = m_game->get_item_draw(cfg->m_display_id, item_atlas::pack, false);
+		d.sprite->draw(sX + adj_x + 55 + 30 + 13, sY + adj_y + 55 + 180, d.frame); }
 	}
 	if (Info().m_v2 != -1) {
 		CItem* cfg = m_game->get_item_config(m_game->m_item_list[Info().m_v2]->m_id_num);
-		if (cfg) m_game->m_sprite[ItemPackPivotPoint + cfg->m_sprite]->draw(sX + adj_x + 55 + 45 + 30 + 13, sY + adj_y + 55 + 180, cfg->m_sprite_frame);
+		if (cfg) { auto d = m_game->get_item_draw(cfg->m_display_id, item_atlas::pack, false);
+		d.sprite->draw(sX + adj_x + 55 + 45 + 30 + 13, sY + adj_y + 55 + 180, d.frame); }
 	}
 	if (Info().m_v3 != -1) {
 		CItem* cfg = m_game->get_item_config(m_game->m_item_list[Info().m_v3]->m_id_num);
-		if (cfg) m_game->m_sprite[ItemPackPivotPoint + cfg->m_sprite]->draw(sX + adj_x + 55 + 90 + 30 + 13, sY + adj_y + 55 + 180, cfg->m_sprite_frame);
+		if (cfg) { auto d = m_game->get_item_draw(cfg->m_display_id, item_atlas::pack, false);
+		d.sprite->draw(sX + adj_x + 55 + 90 + 30 + 13, sY + adj_y + 55 + 180, d.frame); }
 	}
 	if (Info().m_v4 != -1) {
 		CItem* cfg = m_game->get_item_config(m_game->m_item_list[Info().m_v4]->m_id_num);
-		if (cfg) m_game->m_sprite[ItemPackPivotPoint + cfg->m_sprite]->draw(sX + adj_x + 55 + 30 + 13, sY + adj_y + 100 + 180, cfg->m_sprite_frame);
+		if (cfg) { auto d = m_game->get_item_draw(cfg->m_display_id, item_atlas::pack, false);
+		d.sprite->draw(sX + adj_x + 55 + 30 + 13, sY + adj_y + 100 + 180, d.frame); }
 	}
 	if (Info().m_v5 != -1) {
 		CItem* cfg = m_game->get_item_config(m_game->m_item_list[Info().m_v5]->m_id_num);
-		if (cfg) m_game->m_sprite[ItemPackPivotPoint + cfg->m_sprite]->draw(sX + adj_x + 55 + 45 + 30 + 13, sY + adj_y + 100 + 180, cfg->m_sprite_frame);
+		if (cfg) { auto d = m_game->get_item_draw(cfg->m_display_id, item_atlas::pack, false);
+		d.sprite->draw(sX + adj_x + 55 + 45 + 30 + 13, sY + adj_y + 100 + 180, d.frame); }
 	}
 	if (Info().m_v6 != -1) {
 		CItem* cfg = m_game->get_item_config(m_game->m_item_list[Info().m_v6]->m_id_num);
-		if (cfg) m_game->m_sprite[ItemPackPivotPoint + cfg->m_sprite]->draw(sX + adj_x + 55 + 90 + 30 + 13, sY + adj_y + 100 + 180, cfg->m_sprite_frame);
+		if (cfg) { auto d = m_game->get_item_draw(cfg->m_display_id, item_atlas::pack, false);
+		d.sprite->draw(sX + adj_x + 55 + 90 + 30 + 13, sY + adj_y + 100 + 180, d.frame); }
 	}
 
 	put_string(sX + adj_x + 33, sY + adj_y + 230 + 75, DRAW_DIALOGBOX_SKILLDLG29, GameColors::UILabel);
@@ -522,7 +545,12 @@ void DialogBox_Manufacture::draw_manufacture_done(short sX, short sY, short mous
 
 	draw_new_dialog_box(InterfaceNdGame3, sX, sY, 0);
 	draw_new_dialog_box(InterfaceNdText, sX, sY, 8);
-	m_game->m_sprite[ItemPackPivotPoint + build_item_manager::get().get_display_list()[Info().m_str[0]]->m_sprite_handle]->draw(sX + adj_x + 62 + 5, sY + adj_y + 84 + 17, build_item_manager::get().get_display_list()[Info().m_str[0]]->m_sprite_frame);
+	{
+		int recipe_cfg_id = m_game->find_item_id_by_name(build_item_manager::get().get_display_list()[Info().m_str[0]]->m_name.c_str());
+		CItem* recipe_cfg = m_game->get_item_config(recipe_cfg_id);
+		auto recipe_draw = m_game->get_item_draw(recipe_cfg ? recipe_cfg->m_display_id : 0, item_atlas::pack, false);
+		recipe_draw.sprite->draw(sX + adj_x + 62 + 5, sY + adj_y + 84 + 17, recipe_draw.frame);
+	};
 
 	auto itemInfo6 = item_name_formatter::get().format(m_game->find_item_id_by_name(build_item_manager::get().get_display_list()[Info().m_str[0]]->m_name.c_str()),  0);
 
@@ -561,27 +589,33 @@ void DialogBox_Manufacture::draw_crafting_waiting(short sX, short sY, short mous
 
 	if (Info().m_v1 != -1) {
 		CItem* cfg = m_game->get_item_config(m_game->m_item_list[Info().m_v1]->m_id_num);
-		if (cfg) m_game->m_sprite[ItemPackPivotPoint + cfg->m_sprite]->draw(sX + adj_x + 55 + (1 - (rand() % 3)), sY + adj_y + 55 + (1 - (rand() % 3)), cfg->m_sprite_frame);
+		if (cfg) { auto d = m_game->get_item_draw(cfg->m_display_id, item_atlas::pack, false);
+		d.sprite->draw(sX + adj_x + 55 + (1 - (rand() % 3)), sY + adj_y + 55 + (1 - (rand() % 3)), d.frame); }
 	}
 	if (Info().m_v2 != -1) {
 		CItem* cfg = m_game->get_item_config(m_game->m_item_list[Info().m_v2]->m_id_num);
-		if (cfg) m_game->m_sprite[ItemPackPivotPoint + cfg->m_sprite]->draw(sX + adj_x + 65 + 45 + (1 - (rand() % 3)), sY + adj_y + 40 + (1 - (rand() % 3)), cfg->m_sprite_frame);
+		if (cfg) { auto d = m_game->get_item_draw(cfg->m_display_id, item_atlas::pack, false);
+		d.sprite->draw(sX + adj_x + 65 + 45 + (1 - (rand() % 3)), sY + adj_y + 40 + (1 - (rand() % 3)), d.frame); }
 	}
 	if (Info().m_v3 != -1) {
 		CItem* cfg = m_game->get_item_config(m_game->m_item_list[Info().m_v3]->m_id_num);
-		if (cfg) m_game->m_sprite[ItemPackPivotPoint + cfg->m_sprite]->draw(sX + adj_x + 65 + 90 + (1 - (rand() % 3)), sY + adj_y + 55 + (1 - (rand() % 3)), cfg->m_sprite_frame);
+		if (cfg) { auto d = m_game->get_item_draw(cfg->m_display_id, item_atlas::pack, false);
+		d.sprite->draw(sX + adj_x + 65 + 90 + (1 - (rand() % 3)), sY + adj_y + 55 + (1 - (rand() % 3)), d.frame); }
 	}
 	if (Info().m_v4 != -1) {
 		CItem* cfg = m_game->get_item_config(m_game->m_item_list[Info().m_v4]->m_id_num);
-		if (cfg) m_game->m_sprite[ItemPackPivotPoint + cfg->m_sprite]->draw(sX + adj_x + 65 + (1 - (rand() % 3)), sY + adj_y + 100 + (1 - (rand() % 3)), cfg->m_sprite_frame);
+		if (cfg) { auto d = m_game->get_item_draw(cfg->m_display_id, item_atlas::pack, false);
+		d.sprite->draw(sX + adj_x + 65 + (1 - (rand() % 3)), sY + adj_y + 100 + (1 - (rand() % 3)), d.frame); }
 	}
 	if (Info().m_v5 != -1) {
 		CItem* cfg = m_game->get_item_config(m_game->m_item_list[Info().m_v5]->m_id_num);
-		if (cfg) m_game->m_sprite[ItemPackPivotPoint + cfg->m_sprite]->draw(sX + adj_x + 65 + 45 + (1 - (rand() % 3)), sY + adj_y + 115 + (1 - (rand() % 3)), cfg->m_sprite_frame);
+		if (cfg) { auto d = m_game->get_item_draw(cfg->m_display_id, item_atlas::pack, false);
+		d.sprite->draw(sX + adj_x + 65 + 45 + (1 - (rand() % 3)), sY + adj_y + 115 + (1 - (rand() % 3)), d.frame); }
 	}
 	if (Info().m_v6 != -1) {
 		CItem* cfg = m_game->get_item_config(m_game->m_item_list[Info().m_v6]->m_id_num);
-		if (cfg) m_game->m_sprite[ItemPackPivotPoint + cfg->m_sprite]->draw(sX + adj_x + 75 + 90 + (1 - (rand() % 3)), sY + adj_y + 100 + (1 - (rand() % 3)), cfg->m_sprite_frame);
+		if (cfg) { auto d = m_game->get_item_draw(cfg->m_display_id, item_atlas::pack, false);
+		d.sprite->draw(sX + adj_x + 75 + 90 + (1 - (rand() % 3)), sY + adj_y + 100 + (1 - (rand() % 3)), d.frame); }
 	}
 
 	if ((mouse_x >= sX + adj_x + 60) && (mouse_x <= sX + adj_x + 153) && (mouse_y >= sY + adj_y + 175) && (mouse_y <= sY + adj_y + 195))
@@ -601,7 +635,8 @@ void DialogBox_Manufacture::draw_crafting_in_progress(short sX, short sY)
 	{
 		CItem* cfg = m_game->get_item_config(m_game->m_item_list[Info().m_v1]->m_id_num);
 		if (cfg) {
-			m_game->m_sprite[ItemPackPivotPoint + cfg->m_sprite]->draw(sX + adj_x + 55 + (1 - (rand() % 3)), sY + adj_y + 55 + (1 - (rand() % 3)), cfg->m_sprite_frame);
+			auto d = m_game->get_item_draw(cfg->m_display_id, item_atlas::pack, false);
+			d.sprite->draw(sX + adj_x + 55 + (1 - (rand() % 3)), sY + adj_y + 55 + (1 - (rand() % 3)), d.frame);
 			if ((cfg->get_item_type() == ItemType::Equip) && (cfg->get_equip_pos() == EquipPos::Neck))
 				m_game->m_contribution_price = 10;
 		}
@@ -610,7 +645,8 @@ void DialogBox_Manufacture::draw_crafting_in_progress(short sX, short sY)
 	{
 		CItem* cfg = m_game->get_item_config(m_game->m_item_list[Info().m_v2]->m_id_num);
 		if (cfg) {
-			m_game->m_sprite[ItemPackPivotPoint + cfg->m_sprite]->draw(sX + adj_x + 65 + 45 + (1 - (rand() % 3)), sY + adj_y + 40 + (1 - (rand() % 3)), cfg->m_sprite_frame);
+			auto d = m_game->get_item_draw(cfg->m_display_id, item_atlas::pack, false);
+			d.sprite->draw(sX + adj_x + 65 + 45 + (1 - (rand() % 3)), sY + adj_y + 40 + (1 - (rand() % 3)), d.frame);
 			if ((cfg->get_item_type() == ItemType::Equip) && (cfg->get_equip_pos() == EquipPos::Neck))
 				m_game->m_contribution_price = 10;
 		}
@@ -619,7 +655,8 @@ void DialogBox_Manufacture::draw_crafting_in_progress(short sX, short sY)
 	{
 		CItem* cfg = m_game->get_item_config(m_game->m_item_list[Info().m_v3]->m_id_num);
 		if (cfg) {
-			m_game->m_sprite[ItemPackPivotPoint + cfg->m_sprite]->draw(sX + adj_x + 65 + 90 + (1 - (rand() % 3)), sY + adj_y + 55 + (1 - (rand() % 3)), cfg->m_sprite_frame);
+			auto d = m_game->get_item_draw(cfg->m_display_id, item_atlas::pack, false);
+			d.sprite->draw(sX + adj_x + 65 + 90 + (1 - (rand() % 3)), sY + adj_y + 55 + (1 - (rand() % 3)), d.frame);
 			if ((cfg->get_item_type() == ItemType::Equip) && (cfg->get_equip_pos() == EquipPos::Neck))
 				m_game->m_contribution_price = 10;
 		}
@@ -628,7 +665,8 @@ void DialogBox_Manufacture::draw_crafting_in_progress(short sX, short sY)
 	{
 		CItem* cfg = m_game->get_item_config(m_game->m_item_list[Info().m_v4]->m_id_num);
 		if (cfg) {
-			m_game->m_sprite[ItemPackPivotPoint + cfg->m_sprite]->draw(sX + adj_x + 65 + (1 - (rand() % 3)), sY + adj_y + 100 + (1 - (rand() % 3)), cfg->m_sprite_frame);
+			auto d = m_game->get_item_draw(cfg->m_display_id, item_atlas::pack, false);
+			d.sprite->draw(sX + adj_x + 65 + (1 - (rand() % 3)), sY + adj_y + 100 + (1 - (rand() % 3)), d.frame);
 			if ((cfg->get_item_type() == ItemType::Equip) && (cfg->get_equip_pos() == EquipPos::Neck))
 				m_game->m_contribution_price = 10;
 		}
@@ -637,7 +675,8 @@ void DialogBox_Manufacture::draw_crafting_in_progress(short sX, short sY)
 	{
 		CItem* cfg = m_game->get_item_config(m_game->m_item_list[Info().m_v5]->m_id_num);
 		if (cfg) {
-			m_game->m_sprite[ItemPackPivotPoint + cfg->m_sprite]->draw(sX + adj_x + 65 + 45 + (1 - (rand() % 3)), sY + adj_y + 115 + (1 - (rand() % 3)), cfg->m_sprite_frame);
+			auto d = m_game->get_item_draw(cfg->m_display_id, item_atlas::pack, false);
+			d.sprite->draw(sX + adj_x + 65 + 45 + (1 - (rand() % 3)), sY + adj_y + 115 + (1 - (rand() % 3)), d.frame);
 			if ((cfg->get_item_type() == ItemType::Equip) && (cfg->get_equip_pos() == EquipPos::Neck))
 				m_game->m_contribution_price = 10;
 		}
@@ -646,7 +685,8 @@ void DialogBox_Manufacture::draw_crafting_in_progress(short sX, short sY)
 	{
 		CItem* cfg = m_game->get_item_config(m_game->m_item_list[Info().m_v6]->m_id_num);
 		if (cfg) {
-			m_game->m_sprite[ItemPackPivotPoint + cfg->m_sprite]->draw(sX + adj_x + 75 + 90 + (1 - (rand() % 3)), sY + adj_y + 100 + (1 - (rand() % 3)), cfg->m_sprite_frame);
+			auto d = m_game->get_item_draw(cfg->m_display_id, item_atlas::pack, false);
+			d.sprite->draw(sX + adj_x + 75 + 90 + (1 - (rand() % 3)), sY + adj_y + 100 + (1 - (rand() % 3)), d.frame);
 			if ((cfg->get_item_type() == ItemType::Equip) && (cfg->get_equip_pos() == EquipPos::Neck))
 				m_game->m_contribution_price = 10;
 		}
@@ -789,9 +829,9 @@ bool DialogBox_Manufacture::check_slot_item_click(int slotIndex, int itemIdx, in
 	CItem* cfg = m_game->get_item_config(m_game->m_item_list[itemIdx]->m_id_num);
 	if (!cfg) return false;
 
-	int spriteIdx = ItemPackPivotPoint + cfg->m_sprite;
-	m_game->m_sprite[spriteIdx]->CalculateBounds(drawX, drawY, cfg->m_sprite_frame);
-	auto bounds = m_game->m_sprite[spriteIdx]->GetBoundRect();
+	auto mfg_draw = m_game->get_item_draw(cfg->m_display_id, item_atlas::pack, false);
+	mfg_draw.sprite->CalculateBounds(drawX, drawY, mfg_draw.frame);
+	auto bounds = mfg_draw.sprite->GetBoundRect();
 
 	if (mouse_x > bounds.left && mouse_x < bounds.right && mouse_y > bounds.top && mouse_y < bounds.bottom)
 	{

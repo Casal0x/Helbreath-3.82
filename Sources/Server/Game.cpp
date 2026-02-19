@@ -63,6 +63,49 @@ extern char	G_cData50000[50000];
 // extern void PutDebugMsg(char * str);	// 2002-09-09 #2
 
 
+// Build a snapshot of a player's appearance with equipment item_id/display_id
+// populated from their currently equipped items. Called at each broadcast point
+// rather than stored, so it's always in sync with actual inventory.
+hb::shared::entity::PlayerAppearance CGame::build_broadcast_appearance(int client_h)
+{
+	auto* client = m_client_list[client_h];
+	auto appr = client->m_appearance;  // copy cosmetic + old type fields
+
+	// Helper: populate item_id + display_id for one equip slot.
+	// display_id comes from the item CONFIG template (m_item_config_list),
+	// not the player's inventory item instance (which has default -1).
+	auto fill_slot = [&](EquipPos pos, int16_t& out_item_id, int16_t& out_display_id) {
+		short slot_index = client->m_item_equipment_status[to_int(pos)];
+		if (slot_index >= 0 && client->m_item_list[slot_index] != nullptr) {
+			auto* item = client->m_item_list[slot_index];
+			out_item_id = item->m_id_num;
+			if (item->m_id_num > 0 && item->m_id_num < hb::server::config::MaxItemTypes
+				&& m_item_config_list[item->m_id_num] != nullptr)
+			{
+				out_display_id = m_item_config_list[item->m_id_num]->m_display_id;
+			}
+		}
+	};
+
+	fill_slot(EquipPos::Head,      appr.helm_item_id,   appr.helm_display_id);
+	fill_slot(EquipPos::Body,      appr.armor_item_id,  appr.armor_display_id);
+	fill_slot(EquipPos::FullBody,  appr.armor_item_id,  appr.armor_display_id);
+	fill_slot(EquipPos::Arms,      appr.arm_item_id,    appr.arm_display_id);
+	fill_slot(EquipPos::Pants,     appr.pants_item_id,  appr.pants_display_id);
+	fill_slot(EquipPos::Leggings,  appr.boots_item_id,  appr.boots_display_id);
+	fill_slot(EquipPos::RightHand, appr.weapon_item_id, appr.weapon_display_id);
+	fill_slot(EquipPos::TwoHand,   appr.weapon_item_id, appr.weapon_display_id);
+	fill_slot(EquipPos::LeftHand,  appr.shield_item_id, appr.shield_display_id);
+	fill_slot(EquipPos::Back,      appr.mantle_item_id, appr.mantle_display_id);
+
+	// Compute is_skirt from equipped pants
+	short pants_slot = client->m_item_equipment_status[to_int(EquipPos::Pants)];
+	if (pants_slot >= 0 && client->m_item_list[pants_slot] != nullptr)
+		appr.is_skirt = (client->m_item_list[pants_slot]->m_appearance_value == 1);
+
+	return appr;
+}
+
 // Move location tables  auto-calculated from hb::shared::view::InitDataTilesX/Y.
 // Each direction lists the (X,Y) tile offsets revealed when the player
 // moves one step in that direction, terminated by -1.
@@ -1468,7 +1511,7 @@ int CGame::client_motion_move_handler(int client_h, short sX, short sY, directio
 		pkt->type = m_client_list[object_id]->m_type;
 		pkt->dir = static_cast<std::uint8_t>(m_client_list[object_id]->m_dir);
 		std::memcpy(pkt->name, m_client_list[object_id]->m_char_name, sizeof(pkt->name));
-		pkt->appearance = m_client_list[object_id]->m_appearance;
+		pkt->appearance = build_broadcast_appearance(object_id);
 		{
 			auto pktStatus = m_client_list[object_id]->m_status;
 			pktStatus.pk = (m_client_list[object_id]->m_player_kill_count != 0) ? 1 : 0;
@@ -1783,8 +1826,6 @@ void CGame::request_init_data_handler(int client_h, char* data, char key, size_t
 		entry->gender_limit = m_client_list[client_h]->m_item_list[i]->m_gender_limit;
 		entry->cur_lifespan = m_client_list[client_h]->m_item_list[i]->m_cur_life_span;
 		entry->weight = m_client_list[client_h]->m_item_list[i]->m_weight;
-		entry->sprite = m_client_list[client_h]->m_item_list[i]->m_sprite;
-		entry->sprite_frame = m_client_list[client_h]->m_item_list[i]->m_sprite_frame;
 		entry->item_color = m_client_list[client_h]->m_item_list[i]->m_item_color;
 		entry->spec_value2 = static_cast<std::uint8_t>(m_client_list[client_h]->m_item_list[i]->m_item_special_effect_value2);
 		entry->attribute = m_client_list[client_h]->m_item_list[i]->m_attribute;
@@ -1817,8 +1858,6 @@ void CGame::request_init_data_handler(int client_h, char* data, char key, size_t
 		entry->gender_limit = m_client_list[client_h]->m_item_in_bank_list[i]->m_gender_limit;
 		entry->cur_lifespan = m_client_list[client_h]->m_item_in_bank_list[i]->m_cur_life_span;
 		entry->weight = m_client_list[client_h]->m_item_in_bank_list[i]->m_weight;
-		entry->sprite = m_client_list[client_h]->m_item_in_bank_list[i]->m_sprite;
-		entry->sprite_frame = m_client_list[client_h]->m_item_in_bank_list[i]->m_sprite_frame;
 		entry->item_color = m_client_list[client_h]->m_item_in_bank_list[i]->m_item_color;
 		entry->spec_value2 = static_cast<std::uint8_t>(m_client_list[client_h]->m_item_in_bank_list[i]->m_item_special_effect_value2);
 		entry->attribute = m_client_list[client_h]->m_item_in_bank_list[i]->m_attribute;
@@ -1857,7 +1896,7 @@ void CGame::request_init_data_handler(int client_h, char* data, char key, size_t
 	init_header->pivot_x = static_cast<std::int16_t>(m_client_list[client_h]->m_x - hb::shared::view::PlayerPivotOffsetX);
 	init_header->pivot_y = static_cast<std::int16_t>(m_client_list[client_h]->m_y - hb::shared::view::PlayerPivotOffsetY);
 	init_header->player_type = m_client_list[client_h]->m_type;
-	init_header->appearance = m_client_list[client_h]->m_appearance;
+	init_header->appearance = build_broadcast_appearance(client_h);
 	init_header->status = m_client_list[client_h]->m_status;
 	std::memcpy(init_header->map_name, m_client_list[client_h]->m_map_name, sizeof(init_header->map_name));
 	std::memcpy(init_header->cur_location, m_map_list[m_client_list[client_h]->m_map_index]->m_location_name, sizeof(init_header->cur_location));
@@ -2235,8 +2274,6 @@ void CGame::compute_config_hashes()
 				entry.effectValue6 = item->m_item_effect_value6;
 				entry.maxLifeSpan = item->m_max_life_span;
 				entry.specialEffect = item->m_special_effect;
-				entry.sprite = item->m_sprite;
-				entry.spriteFrame = item->m_sprite_frame;
 				entry.price = item->m_is_for_sale ? static_cast<int32_t>(item->m_price) : -static_cast<int32_t>(item->m_price);
 				entry.weight = item->m_weight;
 				entry.apprValue = item->m_appearance_value;
@@ -2446,7 +2483,7 @@ void CGame::fill_player_map_object(hb::net::PacketMapDataObjectPlayer& obj, shor
 	obj.base.object_id = static_cast<uint16_t>(owner_h);
 	obj.type = client->m_type;
 	obj.dir = static_cast<uint8_t>(client->m_dir);
-	obj.appearance = client->m_appearance;
+	obj.appearance = build_broadcast_appearance(owner_h);
 	obj.status = client->m_status;
 	obj.status.pk = (client->m_player_kill_count != 0) ? 1 : 0;
 	obj.status.citizen = (client->m_side != 0) ? 1 : 0;
@@ -2886,7 +2923,7 @@ void CGame::send_event_to_near_client_type_a(short owner_h, char owner_type, uin
 		base_all.type = m_client_list[owner_h]->m_type;
 		base_all.dir = static_cast<std::uint8_t>(m_client_list[owner_h]->m_dir);
 		std::memcpy(base_all.name, m_client_list[owner_h]->m_char_name, sizeof(base_all.name));
-		base_all.appearance = m_client_list[owner_h]->m_appearance;
+		base_all.appearance = build_broadcast_appearance(owner_h);
 		base_all.status = m_client_list[owner_h]->m_status;
 		base_all.loc = 0;
 		if (msg_type == Type::NullAction) {
@@ -4221,6 +4258,8 @@ void CGame::init_player_data(int client_h, char* data, uint32_t size)
 	total_points = 0;
 	for(int i = 0; i < hb::shared::limits::MaxSkillType; i++)
 		total_points += m_client_list[client_h]->m_skill_mastery[i];
+#ifndef _DEBUG
+	// Skill point validation — disabled in debug builds for tester menu "Max all skills"
 	if ((total_points - 21 > MaxSkillPoints) ) {
 		try
 		{
@@ -4232,6 +4271,7 @@ void CGame::init_player_data(int client_h, char* data, uint32_t size)
 		}
 		return;
 	}
+#endif
 
 	check_special_event(client_h);
 	m_magic_manager->check_magic_int(client_h);
@@ -5683,6 +5723,314 @@ void CGame::client_common_handler(int client_h, char* data)
 		request_accept_join_party_handler(client_h, v1);
 		break;
 
+#ifdef TESTER_ONLY
+	// TESTER MENU — all tester handlers
+	case CommonType::TesterAction:
+	{
+		// No permission check — tester menu is available to all players
+
+		int action_id = v1;
+		switch (action_id)
+		{
+		case 0: // Reset stats
+		{
+			m_client_list[client_h]->m_str = 10;
+			m_client_list[client_h]->m_int = 10;
+			m_client_list[client_h]->m_vit = 10;
+			m_client_list[client_h]->m_dex = 10;
+			m_client_list[client_h]->m_mag = 10;
+			m_client_list[client_h]->m_charisma = 10;
+			// Recalculate levelup pool: total available = (level-1)*3, base stats = 70, now 60
+			m_client_list[client_h]->m_levelup_pool = (m_client_list[client_h]->m_level - 1) * 3 + 10;
+			// Clamp HP/MP/SP to new maximums — check_character_data() kicks if HP > max
+			m_client_list[client_h]->m_hp = get_max_hp(client_h);
+			m_client_list[client_h]->m_mp = get_max_mp(client_h);
+			m_client_list[client_h]->m_sp = get_max_sp(client_h);
+			// LevelUp refreshes all stats on client, Exp refreshes XP bar
+			send_notify_msg(0, client_h, Notify::LevelUp, 0, 0, 0, 0);
+			send_notify_msg(0, client_h, Notify::Exp, 0, 0, 0, 0);
+			hb::logger::log<log_channel::commands>("[TesterMenu] '{}' reset stats (lu_pool={})",
+				m_client_list[client_h]->m_char_name, m_client_list[client_h]->m_levelup_pool);
+			break;
+		}
+		case 1: // Add 100 contribution
+		{
+			m_client_list[client_h]->m_contribution += 100;
+			send_notify_msg(0, client_h, Notify::Contribution,
+				m_client_list[client_h]->m_contribution, 0, 0, 0);
+			hb::logger::log<log_channel::commands>("[TesterMenu] '{}' added 100 contribution (now {})",
+				m_client_list[client_h]->m_char_name, m_client_list[client_h]->m_contribution);
+			break;
+		}
+		case 2: // Add 100 majestics
+		{
+			m_client_list[client_h]->m_gizon_item_upgrade_left += 100;
+			send_notify_msg(0, client_h, Notify::GizonItemUpgradeLeft,
+				m_client_list[client_h]->m_gizon_item_upgrade_left, 0, 0, 0);
+			hb::logger::log<log_channel::commands>("[TesterMenu] '{}' added 100 majestics (now {})",
+				m_client_list[client_h]->m_char_name, m_client_list[client_h]->m_gizon_item_upgrade_left);
+			break;
+		}
+		case 3: // Add 100 eks
+		{
+			m_client_list[client_h]->m_enemy_kill_count += 100;
+			send_notify_msg(0, client_h, Notify::EnemyKills,
+				m_client_list[client_h]->m_enemy_kill_count, 0, 0, 0);
+			hb::logger::log<log_channel::commands>("[TesterMenu] '{}' added 100 eks (now {})",
+				m_client_list[client_h]->m_char_name, m_client_list[client_h]->m_enemy_kill_count);
+			break;
+		}
+		case 4: // Add 1m gold
+		{
+			CItem* gold_item = new CItem();
+			if (m_item_manager->init_item_attr(gold_item, hb::shared::item::ItemId::Gold))
+			{
+				gold_item->m_count = 1000000;
+				int erase_req = 0;
+				if (m_item_manager->add_client_item_list(client_h, gold_item, &erase_req))
+				{
+					m_item_manager->send_item_notify_msg(client_h, Notify::ItemObtained, gold_item, 0);
+				}
+				else
+				{
+					delete gold_item;
+					send_notify_msg(0, client_h, Notify::CannotCarryMoreItem, 0, 0, 0, 0);
+				}
+			}
+			else
+			{
+				delete gold_item;
+			}
+			hb::logger::log<log_channel::commands>("[TesterMenu] '{}' added 1m gold",
+				m_client_list[client_h]->m_char_name);
+			break;
+		}
+		case 5: // Add 100 crits
+		{
+			m_client_list[client_h]->m_super_attack_left += 100;
+			send_notify_msg(0, client_h, Notify::SuperAttackLeft, 0, 0, 0, 0);
+			hb::logger::log<log_channel::commands>("[TesterMenu] '{}' added 100 crits (now {})",
+				m_client_list[client_h]->m_char_name, m_client_list[client_h]->m_super_attack_left);
+			break;
+		}
+		case 6: // Max all skills
+		{
+			for (int i = 0; i < hb::shared::limits::MaxSkillType; i++)
+			{
+				m_client_list[client_h]->m_skill_mastery[i] = 100;
+				send_notify_msg(0, client_h, Notify::Skill, i, 100, 0, 0);
+			}
+			hb::logger::log<log_channel::commands>("[TesterMenu] '{}' maxed all skills",
+				m_client_list[client_h]->m_char_name);
+			break;
+		}
+		case 7: // Set level
+		{
+			int target_level = std::clamp(static_cast<int>(v2), 1, hb::shared::limits::PlayerMaxLevel);
+
+			// Traveller anti-hack kicks players at level >= 20 if not in a faction city.
+			// Teleport them to their faction city first, or clamp if no faction.
+			if (target_level >= 20)
+			{
+				bool is_traveller =
+					(strcmp(m_client_list[client_h]->m_location, "elvine") != 0) &&
+					(strcmp(m_client_list[client_h]->m_location, "elvhunter") != 0) &&
+					(strcmp(m_client_list[client_h]->m_location, "arehunter") != 0) &&
+					(strcmp(m_client_list[client_h]->m_location, "aresden") != 0);
+
+				if (is_traveller)
+				{
+					if (m_client_list[client_h]->m_side == 1)
+						gm_teleport_to(client_h, "aresden", -1, -1);
+					else if (m_client_list[client_h]->m_side == 2)
+						gm_teleport_to(client_h, "elvine", -1, -1);
+					else
+						target_level = 19;
+					if (m_client_list[client_h] == nullptr) break;
+				}
+			}
+
+			m_client_list[client_h]->m_level = target_level;
+			m_client_list[client_h]->m_exp = m_level_exp_table[target_level];
+			m_client_list[client_h]->m_next_level_exp = m_level_exp_table[target_level + 1];
+
+			// Recalculate levelup pool: (level-1)*3 total points, minus points already spent
+			int total_stats = m_client_list[client_h]->m_str + m_client_list[client_h]->m_int
+				+ m_client_list[client_h]->m_vit + m_client_list[client_h]->m_dex
+				+ m_client_list[client_h]->m_mag + m_client_list[client_h]->m_charisma;
+			m_client_list[client_h]->m_levelup_pool = (target_level - 1) * 3 - (total_stats - 70);
+			if (m_client_list[client_h]->m_levelup_pool < 0)
+				m_client_list[client_h]->m_levelup_pool = 0;
+
+			// Clamp HP/MP/SP — check_character_data() kicks if HP > max
+			m_client_list[client_h]->m_hp = std::min(m_client_list[client_h]->m_hp, get_max_hp(client_h));
+			m_client_list[client_h]->m_mp = std::min(m_client_list[client_h]->m_mp, get_max_mp(client_h));
+			m_client_list[client_h]->m_sp = std::min(m_client_list[client_h]->m_sp, get_max_sp(client_h));
+
+			// Match natural level-up notification order (check_level_up)
+			send_notify_msg(0, client_h, Notify::SuperAttackLeft, 0, 0, 0, 0);
+			send_notify_msg(0, client_h, Notify::LevelUp, 0, 0, 0, 0);
+			send_notify_msg(0, client_h, Notify::Exp, 0, 0, 0, 0);
+			hb::logger::log<log_channel::commands>("[TesterMenu] '{}' set level to {} (lu_pool={})",
+				m_client_list[client_h]->m_char_name, target_level, m_client_list[client_h]->m_levelup_pool);
+			break;
+		}
+		case 9: // Teleport to map
+		{
+			if (string == nullptr || string[0] == '\0') break;
+
+			if (!gm_teleport_to(client_h, string, -1, -1))
+			{
+				send_notify_msg(0, client_h, Notify::NoticeMsg, 0, 0, 0, "Teleport failed — map not found.");
+			}
+			else
+			{
+				hb::logger::log<log_channel::commands>("[TesterMenu] '{}' teleported to '{}'",
+					m_client_list[client_h]->m_char_name, string);
+			}
+			break;
+		}
+		default:
+			break;
+		}
+		break;
+	}
+
+	case CommonType::TesterMapList:
+	{
+		if (m_client_list[client_h] == nullptr) break;
+
+		hb::net::PacketNotifyTesterMapListResult result{};
+		result.header.msg_id = MsgId::Notify;
+		result.header.msg_type = Notify::TesterMapListResult;
+		result.count = 0;
+
+		for (int i = 0; i < hb::server::config::MaxMaps && result.count < 100; i++)
+		{
+			if (m_map_list[i] == nullptr) continue;
+			auto& entry = result.entries[result.count];
+			std::memset(entry.name, 0, sizeof(entry.name));
+			std::memcpy(entry.name, m_map_list[i]->m_name, 10);
+			result.count++;
+		}
+
+		m_client_list[client_h]->m_socket->send_msg(
+			reinterpret_cast<char*>(&result), sizeof(result));
+		hb::logger::log<log_channel::commands>("[TesterMenu] '{}' requested map list ({} maps)",
+			m_client_list[client_h]->m_char_name, result.count);
+		break;
+	}
+
+	case CommonType::TesterItemSearch:
+	{
+		if (m_client_list[client_h] == nullptr) break;
+
+		// Empty search = return first 50 items; otherwise filter by substring
+		bool has_filter = (string != nullptr && string[0] != '\0');
+		char search_lower[64]{};
+		if (has_filter)
+		{
+			std::snprintf(search_lower, sizeof(search_lower), "%s", string);
+			for (int i = 0; search_lower[i]; i++)
+				search_lower[i] = static_cast<char>(std::tolower(static_cast<unsigned char>(search_lower[i])));
+		}
+
+		hb::net::PacketNotifyTesterItemSearchResult result{};
+		result.header.msg_id = MsgId::Notify;
+		result.header.msg_type = Notify::TesterItemSearchResult;
+		result.count = 0;
+
+		for (int i = 0; i < hb::server::config::MaxItemTypes && result.count < 50; i++)
+		{
+			if (m_item_config_list[i] == nullptr) continue;
+
+			if (has_filter)
+			{
+				char name_lower[64]{};
+				std::snprintf(name_lower, sizeof(name_lower), "%s", m_item_config_list[i]->m_name);
+				for (int j = 0; name_lower[j]; j++)
+					name_lower[j] = static_cast<char>(std::tolower(static_cast<unsigned char>(name_lower[j])));
+
+				if (std::strstr(name_lower, search_lower) == nullptr)
+					continue;
+			}
+
+			auto& entry = result.entries[result.count];
+			entry.item_id = static_cast<int16_t>(i);
+			entry.effect_type = m_item_config_list[i]->m_item_effect_type;
+			std::memset(entry.name, 0, sizeof(entry.name));
+			std::snprintf(entry.name, sizeof(entry.name), "%s", m_item_config_list[i]->m_name);
+			result.count++;
+		}
+
+		m_client_list[client_h]->m_socket->send_msg(
+			reinterpret_cast<char*>(&result), sizeof(result));
+		hb::logger::log<log_channel::commands>("[TesterMenu] '{}' searched items '{}' ({} results)",
+			m_client_list[client_h]->m_char_name, has_filter ? string : "(all)", result.count);
+		break;
+	}
+
+	case CommonType::TesterCreateItem:
+	{
+		if (m_client_list[client_h] == nullptr) break;
+
+		int item_id = static_cast<int>(v1);
+		uint32_t attribute = static_cast<uint32_t>(v2);
+
+		if (item_id < 0 || item_id >= hb::server::config::MaxItemTypes
+			|| m_item_config_list[item_id] == nullptr)
+		{
+			send_notify_msg(0, client_h, Notify::NoticeMsg, 0, 0, 0, "Invalid item ID.");
+			break;
+		}
+
+		CItem* item = new CItem();
+		if (!m_item_manager->init_item_attr(item, item_id))
+		{
+			delete item;
+			send_notify_msg(0, client_h, Notify::NoticeMsg, 0, 0, 0, "Failed to create item.");
+			break;
+		}
+
+		item->m_attribute = attribute;
+		m_item_manager->adjust_rare_item_value(item);
+
+		// Set item color based on prefix type — matches generate_item_attributes() color table
+		auto parsed = hb::shared::item::parse_attribute(attribute);
+		switch (parsed.prefixType)
+		{
+		case hb::shared::item::AttributePrefixType::Agile:      item->m_item_color = 1; break;
+		case hb::shared::item::AttributePrefixType::Light:       item->m_item_color = 2; break;
+		case hb::shared::item::AttributePrefixType::Strong:      item->m_item_color = 3; break;
+		case hb::shared::item::AttributePrefixType::Poisoning:   item->m_item_color = 4; break;
+		case hb::shared::item::AttributePrefixType::Critical:    item->m_item_color = 5; break;
+		case hb::shared::item::AttributePrefixType::Special:     item->m_item_color = 5; break;
+		case hb::shared::item::AttributePrefixType::Sharp:       item->m_item_color = 6; break;
+		case hb::shared::item::AttributePrefixType::Righteous:   item->m_item_color = 7; break;
+		case hb::shared::item::AttributePrefixType::Ancient:     item->m_item_color = 8; break;
+		default: break;
+		}
+
+		int erase_req = 0;
+		if (m_item_manager->add_client_item_list(client_h, item, &erase_req))
+		{
+			m_item_manager->send_item_notify_msg(client_h, Notify::ItemObtained, item, 0);
+			char buf[128];
+			std::snprintf(buf, sizeof(buf), "Created: %s (ID: %d)", m_item_config_list[item_id]->m_name, item_id);
+			send_notify_msg(0, client_h, Notify::NoticeMsg, 0, 0, 0, buf);
+		}
+		else
+		{
+			delete item;
+			send_notify_msg(0, client_h, Notify::CannotCarryMoreItem, 0, 0, 0, 0);
+		}
+
+		hb::logger::log<log_channel::commands>("[TesterMenu] '{}' created item ID {} attr=0x{:08X}",
+			m_client_list[client_h]->m_char_name, item_id, attribute);
+		break;
+	}
+#endif // TESTER_ONLY
+
 	default:
 		hb::logger::log("Unknown message: 0x{:X}", command);
 		break;
@@ -6126,8 +6474,6 @@ void CGame::send_notify_msg(int from_h, int to_h, uint16_t msg_type, uint32_t v1
 		pkt.item_index = static_cast<int16_t>(v1);
 		pkt.item_type = static_cast<uint8_t>(v2);
 		pkt.cur_lifespan = static_cast<int16_t>(v3);
-		pkt.sprite = static_cast<int16_t>(v4);
-		pkt.sprite_frame = static_cast<int16_t>(v5);
 		pkt.item_color = static_cast<uint8_t>(v6);
 		pkt.spec_value2 = static_cast<uint8_t>(v7);
 		pkt.attribute = v8;
@@ -6394,8 +6740,6 @@ void CGame::send_notify_msg(int from_h, int to_h, uint16_t msg_type, uint32_t v1
 		pkt.header.msg_id = MsgId::Notify;
 		pkt.header.msg_type = msg_type;
 		pkt.dir = static_cast<int16_t>(v1);
-		pkt.sprite = static_cast<int16_t>(v2);
-		pkt.sprite_frame = static_cast<int16_t>(v3);
 		pkt.amount = static_cast<int32_t>(v4);
 		pkt.color = static_cast<uint8_t>(v5);
 		pkt.cur_life = static_cast<int16_t>(v6);
@@ -6417,8 +6761,6 @@ void CGame::send_notify_msg(int from_h, int to_h, uint16_t msg_type, uint32_t v1
 		pkt.header.msg_id = MsgId::Notify;
 		pkt.header.msg_type = msg_type;
 		pkt.dir = static_cast<int16_t>(v1);
-		pkt.sprite = static_cast<int16_t>(v2);
-		pkt.sprite_frame = static_cast<int16_t>(v3);
 		pkt.amount = static_cast<int32_t>(v4);
 		pkt.color = static_cast<uint8_t>(v5);
 		pkt.cur_life = static_cast<int16_t>(v6);
@@ -6465,6 +6807,18 @@ void CGame::send_notify_msg(int from_h, int to_h, uint16_t msg_type, uint32_t v1
 		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 	}
 	break;
+
+#ifdef TESTER_ONLY
+	case Notify::Contribution:
+	{
+		hb::net::PacketNotifySimpleInt pkt{};
+		pkt.header.msg_id = MsgId::Notify;
+		pkt.header.msg_type = msg_type;
+		pkt.value = static_cast<int32_t>(v1);
+		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+	}
+	break;
+#endif // TESTER_ONLY
 
 	case Notify::Crusade:
 	{
@@ -6746,8 +7100,6 @@ void CGame::send_notify_msg(int from_h, int to_h, uint16_t msg_type, uint32_t v1
 			pkt.header.msg_id = MsgId::Notify;
 			pkt.header.msg_type = msg_type;
 			pkt.price = static_cast<uint16_t>(v1);
-			pkt.sprite = static_cast<uint16_t>(v2);
-			pkt.sprite_frame = static_cast<uint16_t>(v3);
 			if (string != 0) {
 				memcpy(pkt.name, string, sizeof(pkt.name));
 			}
@@ -8074,7 +8426,7 @@ RTH_NEXTSTEP:
 	init_header->pivot_x = static_cast<std::int16_t>(m_client_list[client_h]->m_x - hb::shared::view::PlayerPivotOffsetX);
 	init_header->pivot_y = static_cast<std::int16_t>(m_client_list[client_h]->m_y - hb::shared::view::PlayerPivotOffsetY);
 	init_header->player_type = m_client_list[client_h]->m_type;
-	init_header->appearance = m_client_list[client_h]->m_appearance;
+	init_header->appearance = build_broadcast_appearance(client_h);
 	init_header->status = m_client_list[client_h]->m_status;
 	std::memcpy(init_header->map_name, m_client_list[client_h]->m_map_name, sizeof(init_header->map_name));
 	std::memcpy(init_header->cur_location, m_map_list[m_client_list[client_h]->m_map_index]->m_location_name, sizeof(init_header->cur_location));
@@ -8716,7 +9068,7 @@ void CGame::request_full_object_data(int client_h, char* data)
 		pkt.type = m_client_list[object_id]->m_type;
 		pkt.dir = static_cast<uint8_t>(m_client_list[object_id]->m_dir);
 		memcpy(pkt.name, m_client_list[object_id]->m_char_name, sizeof(pkt.name));
-		pkt.appearance = m_client_list[object_id]->m_appearance;
+		pkt.appearance = build_broadcast_appearance(object_id);
 
 		{
 			auto pktStatus = m_client_list[object_id]->m_status;
@@ -10805,7 +11157,7 @@ bool CGame::gm_teleport_to(int client_h, const char* dest_map, short dest_x, sho
 	init_header->pivot_x = static_cast<std::int16_t>(m_client_list[client_h]->m_x - hb::shared::view::PlayerPivotOffsetX);
 	init_header->pivot_y = static_cast<std::int16_t>(m_client_list[client_h]->m_y - hb::shared::view::PlayerPivotOffsetY);
 	init_header->player_type = m_client_list[client_h]->m_type;
-	init_header->appearance = m_client_list[client_h]->m_appearance;
+	init_header->appearance = build_broadcast_appearance(client_h);
 	init_header->status = m_client_list[client_h]->m_status;
 	std::memcpy(init_header->map_name, m_client_list[client_h]->m_map_name, sizeof(init_header->map_name));
 	std::memcpy(init_header->cur_location, m_map_list[m_client_list[client_h]->m_map_index]->m_location_name, sizeof(init_header->cur_location));
@@ -12736,7 +13088,7 @@ void CGame::time_hit_points_up(int client_h)
 		if ((target_type == hb::shared::owner_class::Player) && (m_client_list[target_h]->m_side != m_client_list[attacker_h]->m_side)) {
 			switch (m_client_list[attacker_h]->m_using_weapon_skill) {
 				case 14:
-					if ((31 == m_client_list[attacker_h]->m_appearance.weapon_type) || (32 == m_client_list[attacker_h]->m_appearance.weapon_type)) {
+					if ((31 == m_client_list[attacker_h]->get_equipped_weapon_type()) || (32 == m_client_list[attacker_h]->get_equipped_weapon_type())) {
 						item_index = m_client_list[attacker_h]->m_item_equipment_status[to_int(EquipPos::TwoHand)];
 						if ((item_index != -1) && (m_client_list[attacker_h]->m_item_list[item_index] != 0)) {
 							if (m_client_list[attacker_h]->m_item_list[item_index]->m_id_num == 761) { // BattleHammer
@@ -12806,7 +13158,7 @@ void CGame::time_hit_points_up(int client_h)
 				hammer_chance = dice(4, (m_client_list[target_h]->m_item_list[armor_type]->m_max_life_span - m_client_list[target_h]->m_item_list[armor_type]->m_cur_life_span));
 			}
 
-			if ((31 == m_client_list[attacker_h]->m_appearance.weapon_type) || (32 == m_client_list[attacker_h]->m_appearance.weapon_type)) {
+			if ((31 == m_client_list[attacker_h]->get_equipped_weapon_type()) || (32 == m_client_list[attacker_h]->get_equipped_weapon_type())) {
 				item_index = m_client_list[attacker_h]->m_item_equipment_status[to_int(EquipPos::TwoHand)];
 				if ((item_index != -1) && (m_client_list[attacker_h]->m_item_list[item_index] != 0)) {
 					if (m_client_list[attacker_h]->m_item_list[item_index]->m_id_num == 761) { // BattleHammer

@@ -42,6 +42,11 @@
 #include "DialogBox_GuildHallMenu.h"
 #include "DialogBox_SellOrRepair.h"
 #include "DialogBox_Manufacture.h"
+#ifdef TESTER_ONLY
+// TESTER MENU — includes (tester builds only)
+#include "DialogBox_TesterMenu.h"
+#include "DialogBox_ItemCreator.h"
+#endif // TESTER_ONLY
 #include "Game.h"
 #include "lan_eng.h"
 #include "BuildItemManager.h"
@@ -108,6 +113,11 @@ void DialogBoxManager::initialize_dialog_boxes()
 	register_dialog_box(std::make_unique<DialogBox_GuildHallMenu>(m_game));
 	register_dialog_box(std::make_unique<DialogBox_SellOrRepair>(m_game));
 	register_dialog_box(std::make_unique<DialogBox_Manufacture>(m_game));
+#ifdef TESTER_ONLY
+	// TESTER MENU — dialog registration (tester builds only)
+	register_dialog_box(std::make_unique<DialogBox_TesterMenu>(m_game));
+	register_dialog_box(std::make_unique<DialogBox_ItemCreator>(m_game));
+#endif // TESTER_ONLY
 }
 
 void DialogBoxManager::register_dialog_box(std::unique_ptr<IDialogBox> dialog_box)
@@ -536,6 +546,34 @@ void DialogBoxManager::enable_dialog_box(int box_id, int type, int64_t v1, int v
 			disable_dialog_box(DialogBoxId::Manufacture);
 		}
 		break;
+#ifdef TESTER_ONLY
+	// TESTER MENU — enable positioning (tester builds only)
+	case DialogBoxId::TesterMenu:
+		if (is_enabled(DialogBoxId::TesterMenu) == false)
+		{
+			// Position at bottom-right, above HUD panel
+			int tester_x = LOGICAL_WIDTH() - 258 - 10;
+			int tester_y = LOGICAL_HEIGHT() - 339 - ICON_PANEL_HEIGHT() - 10;
+			// Offset upward if LevelUpSetting is also open
+			if (is_enabled(DialogBoxId::LevelUpSetting))
+				tester_y -= 30;
+			Info(DialogBoxId::TesterMenu).m_x = tester_x;
+			Info(DialogBoxId::TesterMenu).m_y = tester_y;
+		}
+		break;
+
+	case DialogBoxId::ItemCreator:
+		if (is_enabled(DialogBoxId::ItemCreator) == false)
+		{
+			// Position left of the tester menu
+			int ic_x = LOGICAL_WIDTH() - 258 * 2 - 20;
+			int ic_y = LOGICAL_HEIGHT() - 339 - ICON_PANEL_HEIGHT() - 10;
+			Info(DialogBoxId::ItemCreator).m_x = ic_x;
+			Info(DialogBoxId::ItemCreator).m_y = ic_y;
+		}
+		break;
+#endif // TESTER_ONLY
+
 	case DialogBoxId::ChangeStatsMajestic:
 		if (is_enabled(DialogBoxId::ChangeStatsMajestic) == false) {
 			Info(DialogBoxId::ChangeStatsMajestic).m_x = Info(DialogBoxId::LevelUpSetting).m_x + 10;

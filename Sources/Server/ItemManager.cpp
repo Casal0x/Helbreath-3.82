@@ -149,8 +149,6 @@ bool ItemManager::send_client_item_configs(int client_h)
 			entry.effectValue6 = item->m_item_effect_value6;
 			entry.maxLifeSpan = item->m_max_life_span;
 			entry.specialEffect = item->m_special_effect;
-			entry.sprite = item->m_sprite;
-			entry.spriteFrame = item->m_sprite_frame;
 			entry.price = item->m_is_for_sale ? static_cast<int32_t>(item->m_price) : -static_cast<int32_t>(item->m_price);
 			entry.weight = item->m_weight;
 			entry.apprValue = item->m_appearance_value;
@@ -162,6 +160,7 @@ bool ItemManager::send_client_item_configs(int client_h)
 			entry.relatedSkill = item->m_related_skill;
 			entry.category = item->m_category;
 			entry.itemColor = item->m_item_color;
+			entry.displayId = item->m_display_id;
 
 			entriesInPacket++;
 		}
@@ -244,8 +243,6 @@ bool ItemManager::init_item_attr(CItem* item, const char* item_name)
 				item->m_cur_life_span = item->m_max_life_span;
 				item->m_special_effect = m_game->m_item_config_list[i]->m_special_effect;
 
-				item->m_sprite = m_game->m_item_config_list[i]->m_sprite;
-				item->m_sprite_frame = m_game->m_item_config_list[i]->m_sprite_frame;
 				item->m_price = m_game->m_item_config_list[i]->m_price;
 				item->m_weight = m_game->m_item_config_list[i]->m_weight;
 				item->m_appearance_value = m_game->m_item_config_list[i]->m_appearance_value;
@@ -291,8 +288,6 @@ bool ItemManager::init_item_attr(CItem* item, int item_id)
 	item->m_max_life_span = config->m_max_life_span;
 	item->m_cur_life_span = item->m_max_life_span;
 	item->m_special_effect = config->m_special_effect;
-	item->m_sprite = config->m_sprite;
-	item->m_sprite_frame = config->m_sprite_frame;
 	item->m_price = config->m_price;
 	item->m_weight = config->m_weight;
 	item->m_appearance_value = config->m_appearance_value;
@@ -614,8 +609,6 @@ int ItemManager::add_client_bulk_item_list(int client_h, const char* item_name, 
 		pkt.gender_limit = first_item->m_gender_limit;
 		pkt.cur_lifespan = first_item->m_cur_life_span;
 		pkt.weight = first_item->m_weight;
-		pkt.sprite = first_item->m_sprite;
-		pkt.sprite_frame = first_item->m_sprite_frame;
 		pkt.item_color = first_item->m_item_color;
 		pkt.spec_value2 = static_cast<uint8_t>(first_item->m_item_special_effect_value2);
 		pkt.attribute = first_item->m_attribute;
@@ -800,11 +793,28 @@ bool ItemManager::equip_item_handler(int client_h, short item_index, bool notify
 	m_game->m_client_list[client_h]->m_item_equipment_status[to_int(equip_pos)] = item_index;
 	m_game->m_client_list[client_h]->m_is_item_equipped[item_index] = true;
 
-	hb::shared::entity::ApplyEquipAppearance(
-		m_game->m_client_list[client_h]->m_appearance,
-		equip_pos,
-		m_game->m_client_list[client_h]->m_item_list[item_index]->m_appearance_value,
-		m_game->m_client_list[client_h]->m_item_list[item_index]->m_item_color);
+	// Set item color and armor visibility for this equip slot
+	{
+		auto& appr = m_game->m_client_list[client_h]->m_appearance;
+		auto* item = m_game->m_client_list[client_h]->m_item_list[item_index];
+		uint8_t color = static_cast<uint8_t>(item->m_item_color);
+		switch (equip_pos) {
+		case EquipPos::Head:      appr.helm_color = color; break;
+		case EquipPos::Body:
+			appr.armor_color = color;
+			appr.hide_armor = (item->m_appearance_value >= 100);
+			break;
+		case EquipPos::Arms:      appr.arm_color = color; break;
+		case EquipPos::Pants:     appr.pants_color = color; break;
+		case EquipPos::Leggings:  appr.boots_color = color; break;
+		case EquipPos::LeftHand:  appr.shield_color = color; break;
+		case EquipPos::RightHand:
+		case EquipPos::TwoHand:   appr.weapon_color = color; break;
+		case EquipPos::Back:      appr.mantle_color = color; break;
+		case EquipPos::FullBody:  appr.mantle_color = 0; break;
+		default: break;
+		}
+	}
 
 	// Weapon-specific: compute attack delay and reset combo
 	if (equip_pos == EquipPos::RightHand || equip_pos == EquipPos::TwoHand) {
@@ -1461,57 +1471,38 @@ void ItemManager::release_item_handler(int client_h, short item_index, bool noti
 		}
 	}
 
-	// Appr .
+	// Clear color and flags for unequipped slot
 	switch (equip_pos) {
 	case EquipPos::RightHand:
-		m_game->m_client_list[client_h]->m_appearance.weapon_type = 0;
 		m_game->m_client_list[client_h]->m_appearance.weapon_color = 0;
 		m_game->m_client_list[client_h]->m_status.attack_delay = 0;
 		break;
-
 	case EquipPos::LeftHand:
-		m_game->m_client_list[client_h]->m_appearance.shield_type = 0;
 		m_game->m_client_list[client_h]->m_appearance.shield_color = 0;
 		break;
-
 	case EquipPos::TwoHand:
-		m_game->m_client_list[client_h]->m_appearance.weapon_type = 0;
 		m_game->m_client_list[client_h]->m_appearance.weapon_color = 0;
 		break;
-
 	case EquipPos::Body:
-		m_game->m_client_list[client_h]->m_appearance.armor_type = 0;
 		m_game->m_client_list[client_h]->m_appearance.hide_armor = false;
 		m_game->m_client_list[client_h]->m_appearance.armor_color = 0;
 		break;
-
 	case EquipPos::Back:
-		m_game->m_client_list[client_h]->m_appearance.mantle_type = 0;
 		m_game->m_client_list[client_h]->m_appearance.mantle_color = 0;
 		break;
-
 	case EquipPos::Arms:
-		m_game->m_client_list[client_h]->m_appearance.arm_armor_type = 0;
 		m_game->m_client_list[client_h]->m_appearance.arm_color = 0;
 		break;
-
 	case EquipPos::Pants:
-		m_game->m_client_list[client_h]->m_appearance.pants_type = 0;
 		m_game->m_client_list[client_h]->m_appearance.pants_color = 0;
 		break;
-
 	case EquipPos::Leggings:
-		m_game->m_client_list[client_h]->m_appearance.boots_type = 0;
 		m_game->m_client_list[client_h]->m_appearance.boots_color = 0;
 		break;
-
 	case EquipPos::Head:
-		m_game->m_client_list[client_h]->m_appearance.helm_type = 0;
 		m_game->m_client_list[client_h]->m_appearance.helm_color = 0;
 		break;
-
 	case EquipPos::FullBody:
-		m_game->m_client_list[client_h]->m_appearance.armor_type = 0;
 		m_game->m_client_list[client_h]->m_appearance.mantle_color = 0;
 		break;
 	}
@@ -1729,8 +1720,6 @@ bool ItemManager::set_item_to_bank_item(int client_h, short item_index)
 				pkt.gender_limit = item->m_gender_limit;
 				pkt.cur_lifespan = item->m_cur_life_span;
 				pkt.weight = item->m_weight;
-				pkt.sprite = item->m_sprite;
-				pkt.sprite_frame = item->m_sprite_frame;
 				pkt.item_color = item->m_item_color;
 				pkt.item_effect_value2 = item->m_item_effect_value2;
 				pkt.attribute = item->m_attribute;
@@ -2263,8 +2252,8 @@ void ItemManager::use_item_handler(int client_h, short item_index, short dX, sho
 				break;
 
 			case 4:
-				temp_short = m_game->m_client_list[client_h]->m_appearance.helm_type;
-				if (temp_short == 0) {
+				temp_short = m_game->m_client_list[client_h]->m_item_equipment_status[to_int(EquipPos::Head)];
+				if (temp_short == -1) {
 					// temp_short 0  , ,     .    .
 					if (m_game->m_client_list[client_h]->m_sex == 1)
 						m_game->m_client_list[client_h]->m_sex = 2;
@@ -2427,8 +2416,6 @@ bool ItemManager::set_item_to_bank_item(int client_h, CItem* item)
 				pkt.gender_limit = item->m_gender_limit;
 				pkt.cur_lifespan = item->m_cur_life_span;
 				pkt.weight = item->m_weight;
-				pkt.sprite = item->m_sprite;
-				pkt.sprite_frame = item->m_sprite_frame;
 				pkt.item_color = item->m_item_color;
 				pkt.item_effect_value2 = item->m_item_effect_value2;
 				pkt.attribute = item->m_attribute;
@@ -3987,16 +3974,16 @@ void ItemManager::exchange_item_handler(int client_h, short item_index, int amou
 				strcpy(m_game->m_client_list[owner_h]->m_exchange_name, m_game->m_client_list[client_h]->m_char_name);
 
 				m_game->m_client_list[client_h]->exchange_count++;
-				m_game->send_notify_msg(client_h, client_h, Notify::OpenExchangeWindow, item_index + 1000, m_game->m_client_list[client_h]->m_item_list[item_index]->m_sprite,
-					m_game->m_client_list[client_h]->m_item_list[item_index]->m_sprite_frame, m_game->m_client_list[client_h]->m_item_list[item_index]->m_name, amount, m_game->m_client_list[client_h]->m_item_list[item_index]->m_item_color,
+				m_game->send_notify_msg(client_h, client_h, Notify::OpenExchangeWindow, item_index + 1000, 0,
+					0, m_game->m_client_list[client_h]->m_item_list[item_index]->m_name, amount, m_game->m_client_list[client_h]->m_item_list[item_index]->m_item_color,
 					m_game->m_client_list[client_h]->m_item_list[item_index]->m_cur_life_span,
 					m_game->m_client_list[client_h]->m_item_list[item_index]->m_max_life_span,
 					m_game->m_client_list[client_h]->m_item_list[item_index]->m_item_special_effect_value2 + 100,
 					m_game->m_client_list[client_h]->m_item_list[item_index]->m_attribute,
 					reinterpret_cast<char*>(static_cast<intptr_t>(m_game->m_client_list[client_h]->m_item_list[item_index]->m_id_num)));
 
-				m_game->send_notify_msg(client_h, owner_h, Notify::OpenExchangeWindow, item_index, m_game->m_client_list[client_h]->m_item_list[item_index]->m_sprite,
-					m_game->m_client_list[client_h]->m_item_list[item_index]->m_sprite_frame, m_game->m_client_list[client_h]->m_item_list[item_index]->m_name, amount, m_game->m_client_list[client_h]->m_item_list[item_index]->m_item_color,
+				m_game->send_notify_msg(client_h, owner_h, Notify::OpenExchangeWindow, item_index, 0,
+					0, m_game->m_client_list[client_h]->m_item_list[item_index]->m_name, amount, m_game->m_client_list[client_h]->m_item_list[item_index]->m_item_color,
 					m_game->m_client_list[client_h]->m_item_list[item_index]->m_cur_life_span,
 					m_game->m_client_list[client_h]->m_item_list[item_index]->m_max_life_span,
 					m_game->m_client_list[client_h]->m_item_list[item_index]->m_item_special_effect_value2 + 100,
@@ -4045,16 +4032,16 @@ void ItemManager::set_exchange_item(int client_h, int item_index, int amount)
 			m_game->m_client_list[client_h]->m_exchange_item_id[m_game->m_client_list[client_h]->exchange_count] = m_game->m_client_list[client_h]->m_item_list[item_index]->m_id_num;
 
 			m_game->m_client_list[client_h]->exchange_count++;
-			m_game->send_notify_msg(client_h, client_h, Notify::set_exchange_item, item_index + 1000, m_game->m_client_list[client_h]->m_item_list[item_index]->m_sprite,
-				m_game->m_client_list[client_h]->m_item_list[item_index]->m_sprite_frame, m_game->m_client_list[client_h]->m_item_list[item_index]->m_name, amount, m_game->m_client_list[client_h]->m_item_list[item_index]->m_item_color,
+			m_game->send_notify_msg(client_h, client_h, Notify::set_exchange_item, item_index + 1000, 0,
+				0, m_game->m_client_list[client_h]->m_item_list[item_index]->m_name, amount, m_game->m_client_list[client_h]->m_item_list[item_index]->m_item_color,
 				m_game->m_client_list[client_h]->m_item_list[item_index]->m_cur_life_span,
 				m_game->m_client_list[client_h]->m_item_list[item_index]->m_max_life_span,
 				m_game->m_client_list[client_h]->m_item_list[item_index]->m_item_special_effect_value2 + 100,
 				m_game->m_client_list[client_h]->m_item_list[item_index]->m_attribute,
 				reinterpret_cast<char*>(static_cast<intptr_t>(m_game->m_client_list[client_h]->m_item_list[item_index]->m_id_num)));
 
-			m_game->send_notify_msg(client_h, ex_h, Notify::set_exchange_item, item_index, m_game->m_client_list[client_h]->m_item_list[item_index]->m_sprite,
-				m_game->m_client_list[client_h]->m_item_list[item_index]->m_sprite_frame, m_game->m_client_list[client_h]->m_item_list[item_index]->m_name, amount, m_game->m_client_list[client_h]->m_item_list[item_index]->m_item_color,
+			m_game->send_notify_msg(client_h, ex_h, Notify::set_exchange_item, item_index, 0,
+				0, m_game->m_client_list[client_h]->m_item_list[item_index]->m_name, amount, m_game->m_client_list[client_h]->m_item_list[item_index]->m_item_color,
 				m_game->m_client_list[client_h]->m_item_list[item_index]->m_cur_life_span,
 				m_game->m_client_list[client_h]->m_item_list[item_index]->m_max_life_span,
 				m_game->m_client_list[client_h]->m_item_list[item_index]->m_item_special_effect_value2 + 100,
@@ -4325,8 +4312,6 @@ int ItemManager::send_item_notify_msg(int client_h, uint16_t msg_type, CItem* it
 		pkt.gender_limit = item->m_gender_limit;
 		pkt.cur_lifespan = item->m_cur_life_span;
 		pkt.weight = item->m_weight;
-		pkt.sprite = item->m_sprite;
-		pkt.sprite_frame = item->m_sprite_frame;
 		pkt.item_color = item->m_item_color;
 		pkt.spec_value2 = static_cast<uint8_t>(item->m_item_special_effect_value2);
 		pkt.attribute = item->m_attribute;
@@ -4351,8 +4336,6 @@ int ItemManager::send_item_notify_msg(int client_h, uint16_t msg_type, CItem* it
 		pkt.gender_limit = item->m_gender_limit;
 		pkt.cur_lifespan = item->m_cur_life_span;
 		pkt.weight = item->m_weight;
-		pkt.sprite = item->m_sprite;
-		pkt.sprite_frame = item->m_sprite_frame;
 		pkt.item_color = item->m_item_color;
 		pkt.cost = static_cast<uint16_t>(v1);
 		pkt.item_id = item->m_id_num;
@@ -4897,9 +4880,6 @@ bool ItemManager::copy_item_contents(CItem* copy, CItem* original)
 	//short m_sSM_HitRatio, m_sL_HitRatio;
 	copy->m_special_effect_value1 = original->m_special_effect_value1;
 	copy->m_special_effect_value2 = original->m_special_effect_value2;
-
-	copy->m_sprite = original->m_sprite;
-	copy->m_sprite_frame = original->m_sprite_frame;
 
 	copy->m_appearance_value = original->m_appearance_value;
 	copy->m_speed = original->m_speed;
@@ -5687,8 +5667,8 @@ void ItemManager::request_item_upgrade_handler(int client_h, int item_index)
 
 				m_game->send_notify_msg(0, client_h, Notify::GizoneItemChange, item_index, m_game->m_client_list[client_h]->m_item_list[item_index]->m_item_type,
 					m_game->m_client_list[client_h]->m_item_list[item_index]->m_cur_life_span, m_game->m_client_list[client_h]->m_item_list[item_index]->m_name,
-					m_game->m_client_list[client_h]->m_item_list[item_index]->m_sprite,
-					m_game->m_client_list[client_h]->m_item_list[item_index]->m_sprite_frame,
+					0,
+					0,
 					m_game->m_client_list[client_h]->m_item_list[item_index]->m_item_color,
 					m_game->m_client_list[client_h]->m_item_list[item_index]->m_item_special_effect_value2,
 					m_game->m_client_list[client_h]->m_item_list[item_index]->m_attribute,
@@ -5730,8 +5710,8 @@ void ItemManager::request_item_upgrade_handler(int client_h, int item_index)
 					m_game->m_client_list[client_h]->m_item_list[item_index]->m_item_type,
 					m_game->m_client_list[client_h]->m_item_list[item_index]->m_cur_life_span,
 					m_game->m_client_list[client_h]->m_item_list[item_index]->m_name,
-					m_game->m_client_list[client_h]->m_item_list[item_index]->m_sprite,
-					m_game->m_client_list[client_h]->m_item_list[item_index]->m_sprite_frame,
+					0,
+					0,
 					m_game->m_client_list[client_h]->m_item_list[item_index]->m_item_color,
 					m_game->m_client_list[client_h]->m_item_list[item_index]->m_item_special_effect_value2,
 					m_game->m_client_list[client_h]->m_item_list[item_index]->m_attribute,
@@ -5773,8 +5753,8 @@ void ItemManager::request_item_upgrade_handler(int client_h, int item_index)
 					m_game->m_client_list[client_h]->m_item_list[item_index]->m_item_type,
 					m_game->m_client_list[client_h]->m_item_list[item_index]->m_cur_life_span,
 					m_game->m_client_list[client_h]->m_item_list[item_index]->m_name,
-					m_game->m_client_list[client_h]->m_item_list[item_index]->m_sprite,
-					m_game->m_client_list[client_h]->m_item_list[item_index]->m_sprite_frame,
+					0,
+					0,
 					m_game->m_client_list[client_h]->m_item_list[item_index]->m_item_color,
 					m_game->m_client_list[client_h]->m_item_list[item_index]->m_item_special_effect_value2,
 					m_game->m_client_list[client_h]->m_item_list[item_index]->m_attribute,
@@ -5816,8 +5796,8 @@ void ItemManager::request_item_upgrade_handler(int client_h, int item_index)
 					m_game->m_client_list[client_h]->m_item_list[item_index]->m_item_type,
 					m_game->m_client_list[client_h]->m_item_list[item_index]->m_cur_life_span,
 					m_game->m_client_list[client_h]->m_item_list[item_index]->m_name,
-					m_game->m_client_list[client_h]->m_item_list[item_index]->m_sprite,
-					m_game->m_client_list[client_h]->m_item_list[item_index]->m_sprite_frame,
+					0,
+					0,
 					m_game->m_client_list[client_h]->m_item_list[item_index]->m_item_color,
 					m_game->m_client_list[client_h]->m_item_list[item_index]->m_item_special_effect_value2,
 					m_game->m_client_list[client_h]->m_item_list[item_index]->m_attribute,
@@ -6116,8 +6096,8 @@ void ItemManager::request_item_upgrade_handler(int client_h, int item_index)
 
 				m_game->send_notify_msg(0, client_h, Notify::GizoneItemChange, item_index, m_game->m_client_list[client_h]->m_item_list[item_index]->m_item_type,
 					m_game->m_client_list[client_h]->m_item_list[item_index]->m_cur_life_span, m_game->m_client_list[client_h]->m_item_list[item_index]->m_name,
-					m_game->m_client_list[client_h]->m_item_list[item_index]->m_sprite,
-					m_game->m_client_list[client_h]->m_item_list[item_index]->m_sprite_frame,
+					0,
+					0,
 					m_game->m_client_list[client_h]->m_item_list[item_index]->m_item_color,
 					m_game->m_client_list[client_h]->m_item_list[item_index]->m_item_special_effect_value2,
 					m_game->m_client_list[client_h]->m_item_list[item_index]->m_attribute,
@@ -6157,8 +6137,8 @@ void ItemManager::request_item_upgrade_handler(int client_h, int item_index)
 
 				m_game->send_notify_msg(0, client_h, Notify::GizoneItemChange, item_index, m_game->m_client_list[client_h]->m_item_list[item_index]->m_item_type,
 					m_game->m_client_list[client_h]->m_item_list[item_index]->m_cur_life_span, m_game->m_client_list[client_h]->m_item_list[item_index]->m_name,
-					m_game->m_client_list[client_h]->m_item_list[item_index]->m_sprite,
-					m_game->m_client_list[client_h]->m_item_list[item_index]->m_sprite_frame,
+					0,
+					0,
 					m_game->m_client_list[client_h]->m_item_list[item_index]->m_item_color,
 					m_game->m_client_list[client_h]->m_item_list[item_index]->m_item_special_effect_value2,
 					m_game->m_client_list[client_h]->m_item_list[item_index]->m_attribute,
@@ -6198,8 +6178,8 @@ void ItemManager::request_item_upgrade_handler(int client_h, int item_index)
 
 				m_game->send_notify_msg(0, client_h, Notify::GizoneItemChange, item_index, m_game->m_client_list[client_h]->m_item_list[item_index]->m_item_type,
 					m_game->m_client_list[client_h]->m_item_list[item_index]->m_cur_life_span, m_game->m_client_list[client_h]->m_item_list[item_index]->m_name,
-					m_game->m_client_list[client_h]->m_item_list[item_index]->m_sprite,
-					m_game->m_client_list[client_h]->m_item_list[item_index]->m_sprite_frame,
+					0,
+					0,
 					m_game->m_client_list[client_h]->m_item_list[item_index]->m_item_color,
 					m_game->m_client_list[client_h]->m_item_list[item_index]->m_item_special_effect_value2,
 					m_game->m_client_list[client_h]->m_item_list[item_index]->m_attribute,
@@ -6327,8 +6307,8 @@ void ItemManager::request_item_upgrade_handler(int client_h, int item_index)
 
 				m_game->send_notify_msg(0, client_h, Notify::GizoneItemChange, item_index, m_game->m_client_list[client_h]->m_item_list[item_index]->m_item_type,
 					m_game->m_client_list[client_h]->m_item_list[item_index]->m_cur_life_span, m_game->m_client_list[client_h]->m_item_list[item_index]->m_name,
-					m_game->m_client_list[client_h]->m_item_list[item_index]->m_sprite,
-					m_game->m_client_list[client_h]->m_item_list[item_index]->m_sprite_frame,
+					0,
+					0,
 					m_game->m_client_list[client_h]->m_item_list[item_index]->m_item_color,
 					m_game->m_client_list[client_h]->m_item_list[item_index]->m_item_special_effect_value2,
 					m_game->m_client_list[client_h]->m_item_list[item_index]->m_attribute,

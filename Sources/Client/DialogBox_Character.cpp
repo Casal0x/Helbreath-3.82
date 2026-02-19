@@ -4,6 +4,7 @@
 #include "Game.h"
 #include "InventoryManager.h"
 #include "ItemNameFormatter.h"
+#include "ItemSpriteMetadata.h"
 #include "lan_eng.h"
 #include "SharedCalculations.h"
 #include <format>
@@ -101,6 +102,7 @@ void DialogBox_Character::draw_stat(int x1, int x2, int y, int baseStat, int ang
 static EquipPos FindHoverSlot(CGame* game, const EquipSlotLayout* slots, int slotCount,
 	short sX, short sY, short mouse_x, short mouse_y, const char* equip_poi_status, int spriteOffset)
 {
+	bool is_female = (spriteOffset == 40);
 	for (int i = slotCount - 1; i >= 0; i--)
 	{
 		int ep = static_cast<int>(slots[i].equipPos);
@@ -110,8 +112,9 @@ static EquipPos FindHoverSlot(CGame* game, const EquipSlotLayout* slots, int slo
 		CItem* cfg = game->get_item_config(game->m_item_list[itemIdx]->m_id_num);
 		if (cfg == nullptr) continue;
 
-		if (check_item_collision(game->m_sprite[ItemEquipPivotPoint + cfg->m_sprite + spriteOffset],
-			sX + slots[i].offsetX, sY + slots[i].offsetY, cfg->m_sprite_frame, mouse_x, mouse_y, item_hit_margin))
+		auto draw = game->get_item_draw(cfg->m_display_id, item_atlas::equip, is_female);
+		if (check_item_collision(draw.sprite,
+			sX + slots[i].offsetX, sY + slots[i].offsetY, draw.frame, mouse_x, mouse_y, item_hit_margin))
 		{
 			return slots[i].equipPos;
 		}
@@ -130,15 +133,16 @@ void DialogBox_Character::draw_equipped_item(hb::shared::item::EquipPos equipPos
 	CItem* cfg = m_game->get_item_config(item->m_id_num);
 	if (cfg == nullptr) return;
 
-	short spr_h = cfg->m_sprite;
-	short frame = cfg->m_sprite_frame;
 	char item_color = item->m_item_color;
 	bool disabled = m_game->m_is_item_disabled[itemIdx];
 
 	// Select color array based on item type (weapons use different colors)
 	const hb::shared::render::Color* colors = useWeaponColors ? GameColors::Weapons : GameColors::Items;
 
-	auto sprite = m_game->m_sprite[ItemEquipPivotPoint + spr_h + spriteOffset];
+	bool is_female = (spriteOffset == 40);
+	auto equip_draw = m_game->get_item_draw(cfg->m_display_id, item_atlas::equip, is_female);
+	auto sprite = equip_draw.sprite;
+	int16_t frame = equip_draw.frame;
 
 	if (!disabled)
 	{
@@ -213,11 +217,10 @@ char DialogBox_Character::find_equip_item_at_point(short mouse_x, short mouse_y,
 		CItem* cfg = m_game->get_item_config(m_game->m_item_list[itemIdx]->m_id_num);
 		if (cfg == nullptr) continue;
 
-		short spr_h = cfg->m_sprite;
-		short frame = cfg->m_sprite_frame;
-
-		if (check_item_collision(m_game->m_sprite[ItemEquipPivotPoint + spr_h + spriteOffset],
-			sX + slots[i].offsetX, sY + slots[i].offsetY, frame, mouse_x, mouse_y, item_hit_margin))
+		bool is_female = (spriteOffset == 40);
+		auto draw = m_game->get_item_draw(cfg->m_display_id, item_atlas::equip, is_female);
+		if (check_item_collision(draw.sprite,
+			sX + slots[i].offsetX, sY + slots[i].offsetY, draw.frame, mouse_x, mouse_y, item_hit_margin))
 		{
 			return static_cast<char>(itemIdx);
 		}
@@ -368,24 +371,6 @@ void DialogBox_Character::draw_male_character(short sX, short sY, short mouse_x,
 			equip_poi_status, slot.useWeaponColors, slot.equipPos == hoverSlot);
 	}
 
-	// Angel staff special case
-	if (equip_poi_status[to_int(EquipPos::TwoHand)] != -1)
-	{
-		int itemIdx = equip_poi_status[to_int(EquipPos::TwoHand)];
-		CItem* cfg = m_game->get_item_config(m_game->m_item_list[itemIdx]->m_id_num);
-		if (cfg != nullptr)
-		{
-			short spr_h = cfg->m_sprite;
-			short frame = cfg->m_sprite_frame;
-			if (spr_h == 8) // Angel staff
-			{
-				if (!m_game->m_is_item_disabled[itemIdx])
-					m_game->m_sprite[ItemEquipPivotPoint + spr_h + 40]->draw(sX + 45, sY + 143, frame);
-				else
-					m_game->m_sprite[ItemEquipPivotPoint + spr_h + 40]->draw(sX + 45, sY + 143, frame, hb::shared::sprite::DrawParams::alpha_blend(0.5f));
-			}
-		}
-	}
 }
 
 void DialogBox_Character::draw_female_character(short sX, short sY, short mouse_x, short mouse_y,
@@ -409,7 +394,7 @@ void DialogBox_Character::draw_female_character(short sX, short sY, short mouse_
 	if (equip_poi_status[to_int(EquipPos::Pants)] != -1)
 	{
 		CItem* cfg = m_game->get_item_config(m_game->m_item_list[equip_poi_status[to_int(EquipPos::Pants)]]->m_id_num);
-		if (cfg != nullptr && cfg->m_sprite == 12 && cfg->m_sprite_frame == 0)
+		if (cfg != nullptr && m_game->m_item_list[equip_poi_status[to_int(EquipPos::Pants)]]->m_id_num == 479) // Skirt (W)
 			skirt = true;
 	}
 
@@ -431,24 +416,6 @@ void DialogBox_Character::draw_female_character(short sX, short sY, short mouse_
 			equip_poi_status, slot.useWeaponColors, slot.equipPos == hoverSlot, 40);
 	}
 
-	// Angel staff special case
-	if (equip_poi_status[to_int(EquipPos::TwoHand)] != -1)
-	{
-		int itemIdx = equip_poi_status[to_int(EquipPos::TwoHand)];
-		CItem* cfg = m_game->get_item_config(m_game->m_item_list[itemIdx]->m_id_num);
-		if (cfg != nullptr)
-		{
-			short spr_h = cfg->m_sprite;
-			short frame = cfg->m_sprite_frame;
-			if (spr_h == 8) // Angel staff
-			{
-				if (!m_game->m_is_item_disabled[itemIdx])
-					m_game->m_sprite[ItemEquipPivotPoint + spr_h + 40]->draw(sX + 45, sY + 143, frame);
-				else
-					m_game->m_sprite[ItemEquipPivotPoint + spr_h + 40]->draw(sX + 45, sY + 143, frame, hb::shared::sprite::DrawParams::alpha_blend(0.5f));
-			}
-		}
-	}
 }
 
 bool DialogBox_Character::on_click(short mouse_x, short mouse_y)

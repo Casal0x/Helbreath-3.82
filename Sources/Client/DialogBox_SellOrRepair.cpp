@@ -1,6 +1,7 @@
 ﻿#include "DialogBox_SellOrRepair.h"
 #include "Game.h"
 #include "ItemNameFormatter.h"
+#include "ItemSpriteMetadata.h"
 #include "GlobalDef.h"
 #include "SpriteID.h"
 #include "lan_eng.h"
@@ -10,6 +11,8 @@
 
 using namespace hb::shared::net;
 using namespace hb::client::sprite_id;
+using hb::shared::item::EquipPos;
+using hb::shared::item::to_int;
 DialogBox_SellOrRepair::DialogBox_SellOrRepair(CGame* game)
 	: IDialogBox(DialogBoxId::SellOrRepair, game)
 {
@@ -38,19 +41,17 @@ void DialogBox_SellOrRepair::on_draw(short mouse_x, short mouse_y, short z, char
 		item_id = Info().m_v1;
 
 		item_color = m_game->m_item_list[item_id]->m_item_color;
-		if (item_color == 0)
-			m_game->m_sprite[ItemPackPivotPoint + m_game->m_item_list[item_id]->m_sprite]->draw(sX + 62 + 15, sY + 84 + 30, m_game->m_item_list[item_id]->m_sprite_frame);
-		else
 		{
-			switch (m_game->m_item_list[item_id]->m_sprite) {
-			case 1: // Swds
-			case 2: // Bows
-			case 3: // Shields
-			case 15: // Axes hammers
-				m_game->m_sprite[ItemPackPivotPoint + m_game->m_item_list[item_id]->m_sprite]->draw(sX + 62 + 15, sY + 84 + 30, m_game->m_item_list[item_id]->m_sprite_frame, hb::shared::sprite::DrawParams::tint(GameColors::Weapons[item_color].r, GameColors::Weapons[item_color].g, GameColors::Weapons[item_color].b));
-				break;
-			default: m_game->m_sprite[ItemPackPivotPoint + m_game->m_item_list[item_id]->m_sprite]->draw(sX + 62 + 15, sY + 84 + 30, m_game->m_item_list[item_id]->m_sprite_frame, hb::shared::sprite::DrawParams::tint(GameColors::Items[item_color].r, GameColors::Items[item_color].g, GameColors::Items[item_color].b));
-				break;
+			CItem* sell_cfg = m_game->get_item_config(m_game->m_item_list[item_id]->m_id_num);
+			auto sell_draw = m_game->get_item_draw(sell_cfg ? sell_cfg->m_display_id : 0, item_atlas::pack, false);
+			if (item_color == 0)
+				sell_draw.sprite->draw(sX + 62 + 15, sY + 84 + 30, sell_draw.frame);
+			else
+			{
+				bool sell_is_weapon = sell_cfg && (sell_cfg->m_equip_pos == to_int(EquipPos::LeftHand) ||
+					sell_cfg->m_equip_pos == to_int(EquipPos::RightHand) || sell_cfg->m_equip_pos == to_int(EquipPos::TwoHand));
+				const auto& sell_tint = sell_is_weapon ? GameColors::Weapons[item_color] : GameColors::Items[item_color];
+				sell_draw.sprite->draw(sX + 62 + 15, sY + 84 + 30, sell_draw.frame, hb::shared::sprite::DrawParams::tint(sell_tint.r, sell_tint.g, sell_tint.b));
 			}
 		}
 
@@ -91,20 +92,17 @@ void DialogBox_SellOrRepair::on_draw(short mouse_x, short mouse_y, short z, char
 		draw_new_dialog_box(InterfaceNdText, sX, sY, 10);
 		item_id = Info().m_v1;
 		item_color = m_game->m_item_list[item_id]->m_item_color;
-		if (item_color == 0)
-			m_game->m_sprite[ItemPackPivotPoint + m_game->m_item_list[item_id]->m_sprite]->draw(sX + 62 + 15, sY + 84 + 30, m_game->m_item_list[item_id]->m_sprite_frame);
-		else
 		{
-			switch (m_game->m_item_list[item_id]->m_sprite) {
-			case 1: // Swds
-			case 2: // Bows
-			case 3: // Shields
-			case 15: // Axes hammers
-				m_game->m_sprite[ItemPackPivotPoint + m_game->m_item_list[item_id]->m_sprite]->draw(sX + 62 + 15, sY + 84 + 30, m_game->m_item_list[item_id]->m_sprite_frame, hb::shared::sprite::DrawParams::tint(GameColors::Weapons[item_color].r, GameColors::Weapons[item_color].g, GameColors::Weapons[item_color].b));
-				break;
-
-			default: m_game->m_sprite[ItemPackPivotPoint + m_game->m_item_list[item_id]->m_sprite]->draw(sX + 62 + 15, sY + 84 + 30, m_game->m_item_list[item_id]->m_sprite_frame, hb::shared::sprite::DrawParams::tint(GameColors::Items[item_color].r, GameColors::Items[item_color].g, GameColors::Items[item_color].b));
-				break;
+			CItem* rep_cfg = m_game->get_item_config(m_game->m_item_list[item_id]->m_id_num);
+			auto rep_draw = m_game->get_item_draw(rep_cfg ? rep_cfg->m_display_id : 0, item_atlas::pack, false);
+			if (item_color == 0)
+				rep_draw.sprite->draw(sX + 62 + 15, sY + 84 + 30, rep_draw.frame);
+			else
+			{
+				bool rep_is_weapon = rep_cfg && (rep_cfg->m_equip_pos == to_int(EquipPos::LeftHand) ||
+					rep_cfg->m_equip_pos == to_int(EquipPos::RightHand) || rep_cfg->m_equip_pos == to_int(EquipPos::TwoHand));
+				const auto& rep_tint = rep_is_weapon ? GameColors::Weapons[item_color] : GameColors::Items[item_color];
+				rep_draw.sprite->draw(sX + 62 + 15, sY + 84 + 30, rep_draw.frame, hb::shared::sprite::DrawParams::tint(rep_tint.r, rep_tint.g, rep_tint.b));
 			}
 		}
 		auto itemInfo2 = item_name_formatter::get().format(m_game->m_item_list[item_id].get());

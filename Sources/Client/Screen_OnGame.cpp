@@ -7,6 +7,7 @@
 #include "EventListManager.h"
 #include "TextInputManager.h"
 #include "InventoryManager.h"
+#include "ItemSpriteMetadata.h"
 #include "GameModeManager.h"
 #include "CommonTypes.h"
 #include "performance_monitor.h"
@@ -23,6 +24,9 @@
 #include "SpellAoE.h"
 #include "Magic.h"
 #include "Log.h"
+#ifdef TESTER_ONLY
+#include "DialogBox_ItemCreator.h"
+#endif // TESTER_ONLY
 #include <string>
 #include <memory>
 #include <format>
@@ -228,6 +232,15 @@ void Screen_OnGame::on_update()
             }
             m_game->m_dialog_box_manager.disable_dialog_box(DialogBoxId::ItemDropExternal);
         }
+#ifdef TESTER_ONLY
+        else if ((m_game->m_dialog_box_manager.is_enabled(DialogBoxId::ItemCreator) == true) &&
+                 (m_game->m_dialog_box_manager.get_top_dialog_box_index() == DialogBoxId::ItemCreator))
+        {
+            auto* dlg = dynamic_cast<DialogBox_ItemCreator*>(
+                m_game->m_dialog_box_manager.get_dialog_box(DialogBoxId::ItemCreator));
+            if (dlg) dlg->on_enter_pressed();
+        }
+#endif // TESTER_ONLY
         else
         {
             if (!text_input_manager::get().is_active()) {
@@ -610,19 +623,20 @@ void Screen_OnGame::render_item_tooltip()
 
     char item_color = item->m_item_color;
     bool is_hand_item = cfg->get_equip_pos() == EquipPos::LeftHand || cfg->get_equip_pos() == EquipPos::RightHand || cfg->get_equip_pos() == EquipPos::TwoHand;
-    size_t item_sprite_index = ItemPackPivotPoint + cfg->m_sprite;
-    hb::shared::sprite::ISprite* sprite = m_game->m_sprite[item_sprite_index].get();
+    auto tooltip_draw = m_game->get_item_draw(cfg->m_display_id, item_atlas::pack, false);
+    hb::shared::sprite::ISprite* sprite = tooltip_draw.sprite;
+    int16_t frame = tooltip_draw.frame;
     bool is_equippable = cfg->is_armor() || cfg->is_weapon() || cfg->is_accessory();
 
     if (item_color != 0) {
         if (is_hand_item) {
-            sprite->draw(m_sMsX - CursorTarget::get_drag_dist_x(), m_sMsY - CursorTarget::get_drag_dist_y(), cfg->m_sprite_frame, hb::shared::sprite::DrawParams::tint(GameColors::Weapons[item_color].r, GameColors::Weapons[item_color].g, GameColors::Weapons[item_color].b));
+            sprite->draw(m_sMsX - CursorTarget::get_drag_dist_x(), m_sMsY - CursorTarget::get_drag_dist_y(), frame, hb::shared::sprite::DrawParams::tint(GameColors::Weapons[item_color].r, GameColors::Weapons[item_color].g, GameColors::Weapons[item_color].b));
         }
         else {
-            sprite->draw(m_sMsX - CursorTarget::get_drag_dist_x(), m_sMsY - CursorTarget::get_drag_dist_y(), cfg->m_sprite_frame, hb::shared::sprite::DrawParams::tint(GameColors::Items[item_color].r, GameColors::Items[item_color].g, GameColors::Items[item_color].b));
+            sprite->draw(m_sMsX - CursorTarget::get_drag_dist_x(), m_sMsY - CursorTarget::get_drag_dist_y(), frame, hb::shared::sprite::DrawParams::tint(GameColors::Items[item_color].r, GameColors::Items[item_color].g, GameColors::Items[item_color].b));
         }
     }
-    else sprite->draw(m_sMsX - CursorTarget::get_drag_dist_x(), m_sMsY - CursorTarget::get_drag_dist_y(), cfg->m_sprite_frame);
+    else sprite->draw(m_sMsX - CursorTarget::get_drag_dist_x(), m_sMsY - CursorTarget::get_drag_dist_y(), frame);
 
     int loc;
     auto itemInfo = item_name_formatter::get().format(item);

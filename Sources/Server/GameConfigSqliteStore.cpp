@@ -187,8 +187,6 @@ bool EnsureGameConfigDatabase(sqlite3** outDb, std::string& outPath, bool* outCr
         " item_effect_value6 INTEGER NOT NULL,"
         " max_lifespan INTEGER NOT NULL,"
         " special_effect INTEGER NOT NULL,"
-        " sprite INTEGER NOT NULL,"
-        " sprite_frame INTEGER NOT NULL,"
         " price INTEGER NOT NULL,"
         " is_for_sale INTEGER NOT NULL,"
         " weight INTEGER NOT NULL,"
@@ -200,7 +198,8 @@ bool EnsureGameConfigDatabase(sqlite3** outDb, std::string& outPath, bool* outCr
         " special_effect_value2 INTEGER NOT NULL,"
         " related_skill INTEGER NOT NULL,"
         " category INTEGER NOT NULL,"
-        " item_color INTEGER NOT NULL"
+        " item_color INTEGER NOT NULL,"
+        " display_id INTEGER NOT NULL DEFAULT -1"
         ");"
         "CREATE TABLE IF NOT EXISTS realmlist ("
         " id INTEGER PRIMARY KEY,"
@@ -478,10 +477,11 @@ bool SaveItemConfigs(sqlite3* db, CItem* const* itemList, int maxItems)
         "INSERT INTO items("
         " item_id, name, item_type, equip_pos, item_effect_type, item_effect_value1,"
         " item_effect_value2, item_effect_value3, item_effect_value4, item_effect_value5,"
-        " item_effect_value6, max_lifespan, special_effect, sprite, sprite_frame, price,"
+        " item_effect_value6, max_lifespan, special_effect, price,"
         " is_for_sale, weight, appr_value, speed, level_limit, gender_limit,"
-        " special_effect_value1, special_effect_value2, related_skill, category, item_color"
-        ") VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);";
+        " special_effect_value1, special_effect_value2, related_skill, category, item_color,"
+        " display_id"
+        ") VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);";
 
     sqlite3_stmt* stmt = nullptr;
     if (sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr) != SQLITE_OK) {
@@ -511,8 +511,6 @@ bool SaveItemConfigs(sqlite3* db, CItem* const* itemList, int maxItems)
         ok &= (sqlite3_bind_int(stmt, col++, itemList[i]->m_item_effect_value6) == SQLITE_OK);
         ok &= (sqlite3_bind_int(stmt, col++, itemList[i]->m_max_life_span) == SQLITE_OK);
         ok &= (sqlite3_bind_int(stmt, col++, itemList[i]->m_special_effect) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, itemList[i]->m_sprite) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, itemList[i]->m_sprite_frame) == SQLITE_OK);
         ok &= (sqlite3_bind_int(stmt, col++, static_cast<int>(itemList[i]->m_price)) == SQLITE_OK);
         ok &= (sqlite3_bind_int(stmt, col++, itemList[i]->m_is_for_sale ? 1 : 0) == SQLITE_OK);
         ok &= (sqlite3_bind_int(stmt, col++, itemList[i]->m_weight) == SQLITE_OK);
@@ -525,6 +523,7 @@ bool SaveItemConfigs(sqlite3* db, CItem* const* itemList, int maxItems)
         ok &= (sqlite3_bind_int(stmt, col++, itemList[i]->m_related_skill) == SQLITE_OK);
         ok &= (sqlite3_bind_int(stmt, col++, itemList[i]->m_category) == SQLITE_OK);
         ok &= (sqlite3_bind_int(stmt, col++, itemList[i]->m_item_color) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, itemList[i]->m_display_id) == SQLITE_OK);
 
         if (!ok || sqlite3_step(stmt) != SQLITE_DONE) {
             sqlite3_finalize(stmt);
@@ -550,9 +549,10 @@ bool LoadItemConfigs(sqlite3* db, CItem** itemList, int maxItems)
     const char* sql =
         "SELECT item_id, name, item_type, equip_pos, item_effect_type, item_effect_value1,"
         " item_effect_value2, item_effect_value3, item_effect_value4, item_effect_value5,"
-        " item_effect_value6, max_lifespan, special_effect, sprite, sprite_frame, price,"
+        " item_effect_value6, max_lifespan, special_effect, price,"
         " is_for_sale, weight, appr_value, speed, level_limit, gender_limit,"
-        " special_effect_value1, special_effect_value2, related_skill, category, item_color"
+        " special_effect_value1, special_effect_value2, related_skill, category, item_color,"
+        " display_id"
         " FROM items ORDER BY item_id;";
 
     sqlite3_stmt* stmt = nullptr;
@@ -586,8 +586,6 @@ bool LoadItemConfigs(sqlite3* db, CItem** itemList, int maxItems)
         item->m_item_effect_value6 = (short)sqlite3_column_int(stmt, col++);
         item->m_max_life_span = (uint16_t)sqlite3_column_int(stmt, col++);
         item->m_special_effect = (short)sqlite3_column_int(stmt, col++);
-        item->m_sprite = (short)sqlite3_column_int(stmt, col++);
-        item->m_sprite_frame = (short)sqlite3_column_int(stmt, col++);
         item->m_price = (uint32_t)sqlite3_column_int(stmt, col++);
         item->m_is_for_sale = (sqlite3_column_int(stmt, col++) != 0);
         item->m_weight = (uint16_t)sqlite3_column_int(stmt, col++);
@@ -600,6 +598,7 @@ bool LoadItemConfigs(sqlite3* db, CItem** itemList, int maxItems)
         item->m_related_skill = (short)sqlite3_column_int(stmt, col++);
         item->m_category = (char)sqlite3_column_int(stmt, col++);
         item->m_item_color = (char)sqlite3_column_int(stmt, col++);
+        item->m_display_id = (short)sqlite3_column_int(stmt, col++);
 
         itemList[item_id] = item;
     }

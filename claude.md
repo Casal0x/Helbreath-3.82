@@ -44,7 +44,7 @@ powershell -ExecutionPolicy Bypass -File Sources\build.ps1 -Target Server -Confi
 
 ## Workflow
 
-**Never use git commands. The user handles all git operations. Backups use `.bak_<guid>` files via `Scripts/bak.py`.**
+**Never use git commands. The user handles all git operations. Backups use `.bak_<guid>` files via `bak.py`.**
 
 Two modes. **Default to Mode 1.** Use Mode 2 only when justified.
 
@@ -54,10 +54,10 @@ Two modes. **Default to Mode 1.** Use Mode 2 only when justified.
 bak.py guard <files>  →  Read/Edit tools  →  Build  →  bak.py commit (or revert)
 ```
 
-1. **Guard** — `python Scripts/bak.py guard <file1> [file2 ...]` — creates versioned checkpoint (.bak_<guid>).
+1. **Guard** — `python bak.py guard <file1> [file2 ...]` — creates versioned checkpoint (.bak_<guid>).
 2. **Edit** — Read and Edit tools.
 3. **Build** — `powershell -ExecutionPolicy Bypass -File Sources/build.ps1 -Target All -Config Debug`
-4. **If build succeeds** — `python Scripts/bak.py commit` — deletes all .bak files, accepts changes.
+4. **If build succeeds** — `python bak.py commit` — deletes all .bak files, accepts changes.
 5. **If build fails** — choose:
    - `guard` again to checkpoint, then fix and rebuild (layer the fix).
    - `revert <id>` to undo a specific checkpoint, retry from previous.
@@ -96,13 +96,13 @@ Safety rules:
 
 ## Code Search
 
-`Scripts/grep.py` — two modes: brief (`-b`) for quick stdout, detailed for full-context log file.
+`grep.py` — two modes: brief (`-b`) for quick stdout, detailed for full-context log file.
 
 ```
-python Scripts/grep.py "pattern" -b                       # brief: one line per match to stdout
-python Scripts/grep.py "pattern"                          # detailed: context blocks to log file
-python Scripts/grep.py "pattern" -F --path Sources/Client # fixed string, scoped to directory
-python Scripts/grep.py "pattern" -C 8 -i -o results.log  # 8 context lines, case-insensitive
+python grep.py "pattern" -b                       # brief: one line per match to stdout
+python grep.py "pattern"                          # detailed: context blocks to log file
+python grep.py "pattern" -F --path Sources/Client # fixed string, scoped to directory
+python grep.py "pattern" -C 8 -i -o results.log  # 8 context lines, case-insensitive
 ```
 
 Brief (`-b`): prints `file:line | match` to stdout. Detailed (default): writes to `Scripts/output/grep_results.log` with context, enclosing scope, `>>>` markers. Output dir auto-clears at 10MB.

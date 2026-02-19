@@ -2492,7 +2492,9 @@ int CMapData::object_frame_counter(const std::string& player_name, short view_po
 							}
 							else if (m_data[dX][dY].m_animation.m_current_frame == 5) // vu comme case 5
 							{
-								weapon_type = m_data[dX][dY].m_appearance.weapon_type;
+								int16_t wid = m_data[dX][dY].m_appearance.weapon_item_id;
+								CItem* wcfg = (wid > 0) ? m_game->get_item_config(wid) : nullptr;
+								weapon_type = wcfg ? static_cast<int>(wcfg->m_appearance_value) : 0;
 								if ((weapon_type >= 1) && (weapon_type <= 2))
 								{
 									m_game->play_game_sound('C', 1, dist, lPan);
@@ -2575,7 +2577,10 @@ int CMapData::object_frame_counter(const std::string& player_name, short view_po
 											, 0, m_data[dX][dY].m_owner_type);
 										if (m_data[dX][dY].m_v3 >= 20) m_game->play_game_sound('E', 43, dist, lPan); // Son "loup�"
 									}
-									if (m_data[dX][dY].m_appearance.weapon_type == 15) // StormBlade
+									int16_t wid2 = m_data[dX][dY].m_appearance.weapon_item_id;
+								CItem* wcfg2 = (wid2 > 0) ? m_game->get_item_config(wid2) : nullptr;
+								int weapon_appr = wcfg2 ? static_cast<int>(wcfg2->m_appearance_value) : 0;
+								if (weapon_appr == 15) // StormBlade
 									{
 										m_game->m_effect_manager->add_effect(EffectType::STORM_BLADE, m_pivot_x + dX, m_pivot_y + dY
 											, m_pivot_x + dX + m_data[dX][dY].m_v1, m_pivot_y + dY + m_data[dX][dY].m_v2
@@ -2627,7 +2632,9 @@ int CMapData::object_frame_counter(const std::string& player_name, short view_po
 						case 6:
 							if (m_data[dX][dY].m_appearance.is_walking)
 							{
-								weapon_type = m_data[dX][dY].m_appearance.weapon_type;
+								int16_t wid3 = m_data[dX][dY].m_appearance.weapon_item_id;
+								CItem* wcfg3 = (wid3 > 0) ? m_game->get_item_config(wid3) : nullptr;
+								weapon_type = wcfg3 ? static_cast<int>(wcfg3->m_appearance_value) : 0;
 								if ((weapon_type >= 1) && (weapon_type <= 2))
 								{
 									if (m_data[dX][dY].m_animation.m_current_frame == 5)

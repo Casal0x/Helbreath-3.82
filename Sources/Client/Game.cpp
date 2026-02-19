@@ -12,6 +12,7 @@
 #include "SharedCalculations.h"
 #include "Log.h"
 #include "ClientLogChannels.h"
+#include "ItemSpriteMetadata.h"
 
 #include <algorithm>
 #include <charconv>
@@ -185,6 +186,7 @@ CGame::CGame(hb::shared::types::NativeInstance native_instance, int icon_resourc
 	// initialize CPlayer first since it's used below
 	m_player = std::make_unique<CPlayer>();
 	combat_system::get().set_player(*m_player);
+	combat_system::get().set_game(*this);
 	inventory_manager::get().set_game(this);
 	magic_casting_system::get().set_game(this);
 	build_item_manager::get().set_game(this);
@@ -482,8 +484,7 @@ void CGame::on_key_event(KeyCode key, bool pressed)
 
 	if (pressed)
 	{
-		// Enter and Escape are handled in handle_key_up, not handle_key_down
-		if (key != KeyCode::Enter && key != KeyCode::Escape)
+		if (key != KeyCode::Enter)
 			handle_key_down(key);
 	}
 	else
@@ -1393,8 +1394,6 @@ bool CGame::decode_item_config_file_contents(char* data, uint32_t msg_size)
 		item->m_item_effect_value6 = entry.effectValue6;
 		item->m_max_life_span = entry.maxLifeSpan;
 		item->m_special_effect = entry.specialEffect;
-		item->m_sprite = entry.sprite;
-		item->m_sprite_frame = entry.spriteFrame;
 		item->m_is_for_sale = (entry.price >= 0);
 		item->m_price = static_cast<uint32_t>(entry.price >= 0 ? entry.price : -entry.price);
 		item->m_weight = entry.weight;
@@ -1407,6 +1406,7 @@ bool CGame::decode_item_config_file_contents(char* data, uint32_t msg_size)
 		item->m_related_skill = entry.relatedSkill;
 		item->m_category = entry.category;
 		item->m_item_color = entry.itemColor;
+		item->m_display_id = entry.displayId;
 	}
 
 	// Log total count on last packet
@@ -3693,6 +3693,18 @@ void CGame::draw_dialog_boxs(short mouse_x, short mouse_y, short mouse_z, char l
 				if (auto* dlg = m_dialog_box_manager.get_dialog_box(DialogBoxId::RepairAll))
 					dlg->on_draw(mouse_x, mouse_y, mouse_z, left_button);
 				break;
+
+#ifdef TESTER_ONLY
+			// TESTER MENU — dialog draw cases (tester builds only)
+			case DialogBoxId::TesterMenu:
+				if (auto* dlg = m_dialog_box_manager.get_dialog_box(DialogBoxId::TesterMenu))
+					dlg->on_draw(mouse_x, mouse_y, mouse_z, left_button);
+				break;
+			case DialogBoxId::ItemCreator:
+				if (auto* dlg = m_dialog_box_manager.get_dialog_box(DialogBoxId::ItemCreator))
+					dlg->on_draw(mouse_x, mouse_y, mouse_z, left_button);
+				break;
+#endif // TESTER_ONLY
 			}
 		}
 	if (icon_panel_drawn == false)
@@ -4312,7 +4324,6 @@ void CGame::dynamic_object_handler(char* data)
 bool CGame::is_item_on_hand() // Snoopy: Fixed to remove ShieldCast
 {
 	int i;
-	uint16_t weapon_type;
 	for (i = 0; i < hb::shared::limits::MaxItems; i++)
 		if ((m_item_list[i] != 0) && (m_is_item_equipped[i] == true))
 		{
@@ -4327,9 +4338,9 @@ bool CGame::is_item_on_hand() // Snoopy: Fixed to remove ShieldCast
 			CItem* cfg = get_item_config(m_item_list[i]->m_id_num);
 			if (cfg && cfg->get_equip_pos() == EquipPos::RightHand)
 			{
-				weapon_type = m_player->m_playerAppearance.weapon_type;
-				// Snoopy 34 for all wands.
-				if ((weapon_type >= 34) && (weapon_type < 40)) return false;
+				// Wands (appearance_value 34-39) don't count as "item on hand" for combat
+				uint8_t appr_val = static_cast<uint8_t>(cfg->m_appearance_value);
+				if ((appr_val >= 34) && (appr_val < 40)) return false;
 				else return true;
 			}
 		}
@@ -4398,6 +4409,56 @@ CItem* CGame::get_item_config(int item_id) const
 {
 	if (item_id <= 0 || item_id >= 5000) return nullptr;
 	return m_item_config_list[item_id].get();
+}
+
+item_draw_ref CGame::get_item_draw(int16_t display_id, int atlas_type, bool is_female)
+{
+	if (display_id >= 0)
+	{
+		const auto* entry = item_sprite_manager::get().find(display_id);
+		if (entry != nullptr)
+		{
+			auto* atlas_spr = m_item_sprites.get(static_cast<size_t>(atlas_type));
+			if (atlas_spr != nullptr)
+			{
+				int16_t frame = 0;
+				if (entry->is_equippable)
+				{
+					const auto& gd = is_female ? entry->female : entry->male;
+					switch (atlas_type)
+					{
+					case item_atlas::equip:  frame = gd.equip_frame;  break;
+					case item_atlas::ground: frame = gd.ground_frame; break;
+					case item_atlas::pack:   frame = gd.pack_frame;   break;
+					}
+				}
+				else
+				{
+					// Non-equippable items (accessories, potions, etc.) have no equip
+					// sprite — redirect equip requests to the pack atlas instead.
+					if (atlas_type == item_atlas::equip)
+						atlas_spr = m_item_sprites.get(static_cast<size_t>(item_atlas::pack));
+
+					switch (atlas_type)
+					{
+					case item_atlas::ground: frame = entry->ground_frame;    break;
+					default:                 frame = entry->inventory_frame; break;
+					}
+				}
+				item_draw_ref ref;
+				ref.sprite = atlas_spr;
+				ref.frame = frame;
+				return ref;
+			}
+		}
+	}
+
+	// No atlas entry — return null sprite
+	hb::logger::warn("get_item_draw: unmapped display_id={} atlas_type={}", display_id, atlas_type);
+	item_draw_ref ref;
+	ref.sprite = hb::shared::sprite::GetNullSprite();
+	ref.frame = 0;
+	return ref;
 }
 
 bool CGame::ensure_config_loaded(int type)
@@ -4642,49 +4703,72 @@ void CGame::create_screen_shot()
 
 void CGame::handle_key_up(KeyCode _key)
 {
-	if (HotkeyManager::get().handle_key_up(_key)) {
+	// Ctrl+letter combos (Ctrl+A, Ctrl+D, etc.) still fire on key release
+	HotkeyManager::get().handle_key_up(_key);
+}
+
+void CGame::handle_key_down(KeyCode _key)
+{
+
+	// When an overlay is active, only allow screenshot (F11)
+	if (GameModeManager::get_active_overlay() != nullptr)
+	{
+		if (_key == KeyCode::F11)
+			hotkey_simple_screenshot();
 		return;
 	}
 
-	// When an overlay is active, only allow certain hotkeys (like screenshot)
-	// Block most hotkeys to prevent interaction with base screen
-	if (GameModeManager::get_active_overlay() != nullptr)
+	// Potions fire repeatedly while held — allow auto-repeat with 500ms cooldown
+	if (_key == KeyCode::Insert || _key == KeyCode::Delete)
 	{
-		// Only allow screenshot hotkey when overlay is visible
-		if (_key == KeyCode::F11) {
-			hotkey_simple_screenshot();
+		static uint32_t last_potion_time = 0;
+		uint32_t now = GameClock::get_time_ms();
+		if (now - last_potion_time >= 500)
+		{
+			last_potion_time = now;
+			if (_key == KeyCode::Insert) hotkey_simple_use_health_potion();
+			else hotkey_simple_use_mana_potion();
 		}
 		return;
 	}
 
-	switch (_key) {
-	case KeyCode::NumpadAdd:      // Numpad +
-		hotkey_simple_zoom_in();
-		break;
-	case KeyCode::NumpadSubtract: // Numpad -
-		hotkey_simple_zoom_out();
-		break;
+	// Ignore auto-repeat key events — only act on initial key press
+	if (!hb::shared::input::is_key_pressed(_key)) return;
 
+	// Filter out keys that have no action
+	switch (_key) {
+	case KeyCode::F10:
+	case KeyCode::PageDown:
+	case KeyCode::LWin:
+	case KeyCode::RWin:
+	case KeyCode::NumpadMultiply:
+	case KeyCode::NumpadSeparator:
+	case KeyCode::NumpadDecimal:
+	case KeyCode::NumpadDivide:
+	case KeyCode::NumLock:
+	case KeyCode::ScrollLock:
+		return;
+	default:
+		break;
+	}
+
+	// Action keys — fire on initial key press for responsive input
+	switch (_key) {
+	case KeyCode::NumpadAdd:
+		hotkey_simple_zoom_in();
+		return;
+	case KeyCode::NumpadSubtract:
+		hotkey_simple_zoom_out();
+		return;
+	case KeyCode::F1:
+		hotkey_simple_use_shortcut1();
+		return;
 	case KeyCode::F2:
 		hotkey_simple_use_shortcut2();
-		break;
-
+		return;
 	case KeyCode::F3:
 		hotkey_simple_use_shortcut3();
-		break;
-
-	case KeyCode::Insert:
-		hotkey_simple_use_health_potion();
-		break;
-
-	case KeyCode::Delete:
-		hotkey_simple_use_mana_potion();
-		break;
-
-	case KeyCode::End:
-		hotkey_simple_load_backup_chat();
-		break;
-
+		return;
 	case KeyCode::F4:
 		if (hb::shared::input::is_alt_down())
 		{
@@ -4708,120 +4792,54 @@ void CGame::handle_key_up(KeyCode _key)
 		}
 		else
 			hotkey_simple_use_magic_shortcut();
-		break;
-
+		return;
 	case KeyCode::F5:
 		hotkey_simple_toggle_character_info();
-		break;
-
+		return;
 	case KeyCode::F6:
 		hotkey_simple_toggle_inventory();
-		break;
-
+		return;
 	case KeyCode::F7:
 		hotkey_simple_toggle_magic();
-		break;
-
+		return;
 	case KeyCode::F8:
 		hotkey_simple_toggle_skill();
-		break;
-
+		return;
 	case KeyCode::F9:
 		hotkey_simple_toggle_chat_history();
-		break;
-
-	case KeyCode::F12:
-		hotkey_simple_toggle_system_menu();
-		break;
-
-	case KeyCode::F1:
-		hotkey_simple_use_shortcut1();
-		break;
-
-	case KeyCode::Up:
-		hotkey_simple_whisper_cycle_up();
-		break;
-
-	case KeyCode::Right:
-		hotkey_simple_arrow_right();
-		break;
-
-	case KeyCode::Down:
-		hotkey_simple_whisper_cycle_down();
-		break;
-
-	case KeyCode::Left:
-		hotkey_simple_arrow_left();
-		break;
-
-	case KeyCode::Tab:
-		hotkey_simple_tab_toggle_combat();
-		break;
-
-	case KeyCode::Home:
-		hotkey_simple_toggle_safe_attack();
-		break;
-
-	case KeyCode::Escape:
-		hotkey_simple_escape();
-		break;
-
-	case KeyCode::PageUp:
-		hotkey_simple_special_ability();
-		break;
-
+		return;
 	case KeyCode::F11:
 		hotkey_simple_screenshot();
-		break;
-
-	default:
 		return;
-	}
-}
-
-void CGame::handle_key_down(KeyCode _key)
-{
-
-	// When an overlay is active, block all on_key_down actions
-	// Overlays handle their own input in on_update()
-	if (GameModeManager::get_active_overlay() != nullptr)
-	{
-		return;
-	}
-
-	// Filter out keys that should not trigger any action in on_key_down
-	// These are handled in on_key_up or elsewhere
-	switch (_key) {
-	case KeyCode::Insert:
-	case KeyCode::Delete:
-	case KeyCode::Tab:
-	case KeyCode::Escape:
-	case KeyCode::End:
-	case KeyCode::Home:
-	case KeyCode::F1:
-	case KeyCode::F2:
-	case KeyCode::F3:
-	case KeyCode::F4:
-	case KeyCode::F5:
-	case KeyCode::F6:
-	case KeyCode::F7:
-	case KeyCode::F8:
-	case KeyCode::F9:
-	case KeyCode::F10:
-	case KeyCode::F11:
 	case KeyCode::F12:
+		hotkey_simple_toggle_system_menu();
+		return;
+	case KeyCode::End:
+		hotkey_simple_load_backup_chat();
+		return;
+	case KeyCode::Up:
+		hotkey_simple_whisper_cycle_up();
+		return;
+	case KeyCode::Right:
+		hotkey_simple_arrow_right();
+		return;
+	case KeyCode::Down:
+		hotkey_simple_whisper_cycle_down();
+		return;
+	case KeyCode::Left:
+		hotkey_simple_arrow_left();
+		return;
+	case KeyCode::Tab:
+		hotkey_simple_tab_toggle_combat();
+		return;
+	case KeyCode::Home:
+		hotkey_simple_toggle_safe_attack();
+		return;
+	case KeyCode::Escape:
+		hotkey_simple_escape();
+		return;
 	case KeyCode::PageUp:
-	case KeyCode::PageDown:
-	case KeyCode::LWin:
-	case KeyCode::RWin:
-	case KeyCode::NumpadMultiply:
-	case KeyCode::NumpadAdd:
-	case KeyCode::NumpadSeparator:
-	case KeyCode::NumpadSubtract:
-	case KeyCode::NumpadDecimal:
-	case KeyCode::NumpadDivide:
-	case KeyCode::NumLock:
-	case KeyCode::ScrollLock:
+		hotkey_simple_special_ability();
 		return;
 	default:
 		break;
@@ -6084,6 +6102,19 @@ void CGame::command_processor(short mouse_x, short mouse_y, short tile_x, short 
 	case CursorStatus::Null:
 		if (left_button != 0)
 		{
+#ifdef TESTER_ONLY
+			// Tester menu click (above Level Up text) — check before dialog handling
+			if (!m_dialog_box_manager.is_enabled(DialogBoxId::TesterMenu)
+				&& (mouse_x > LEVELUP_TEXT_X()) && (mouse_x < LEVELUP_TEXT_X() + 55)
+				&& (mouse_y > LEVELUP_TEXT_Y() - 30) && (mouse_y < LEVELUP_TEXT_Y() - 15))
+			{
+				CursorTarget::set_cursor_status(CursorStatus::Pressed);
+				m_dialog_box_manager.enable_dialog_box(DialogBoxId::TesterMenu, 0, 0, 0);
+				play_game_sound('E', 14, 5);
+				return;
+			}
+
+#endif // TESTER_ONLY
 			result = m_dialog_box_manager.handle_mouse_down(mouse_x, mouse_y);
 			if (result == 1)
 			{
@@ -6414,7 +6445,7 @@ bool CGame::process_left_click(short mouse_x, short mouse_y, short tile_x, short
 		if (m_magic_cast_time > 0 && (current_time - m_magic_cast_time) < 750) return true;
 
 		m_map_data->get_owner(m_mcx, m_mcy - 1, name, &object_type, &object_status, &m_comm_object_id); // v1.4
-		if (m_mc_name == m_player->m_player_name && (object_type <= 6 || (m_map_data->m_data[m_player->m_player_x - m_map_data->m_pivot_x][m_player->m_player_y - m_map_data->m_pivot_y].m_item_id != 0 && m_item_config_list[m_map_data->m_data[m_player->m_player_x - m_map_data->m_pivot_x][m_player->m_player_y - m_map_data->m_pivot_y].m_item_id]->m_sprite != 0)))
+		if (m_mc_name == m_player->m_player_name && (object_type <= 6 || (m_map_data->m_data[m_player->m_player_x - m_map_data->m_pivot_x][m_player->m_player_y - m_map_data->m_pivot_y].m_item_id != 0 && m_item_config_list[m_map_data->m_data[m_player->m_player_x - m_map_data->m_pivot_x][m_player->m_player_y - m_map_data->m_pivot_y].m_item_id] != nullptr)))
 		{
 			if ((m_player->m_player_type >= 1) && (m_player->m_player_type <= 6)/* && (!m_player->m_playerAppearance.is_walking)*/)
 			{
@@ -8398,27 +8429,34 @@ void CGame::draw_angel(int sprite, short sX, short sY, char frame, uint32_t time
 **********************************************************************************************************************/
 int CGame::has_hero_set(const hb::shared::entity::PlayerAppearance& appr, short OwnerType)
 {
-	char armor, leg, berk, hat;
-	armor = appr.armor_type;
-	leg = appr.pants_type;
-	hat = appr.helm_type;
-	berk = appr.arm_armor_type;
+	// Look up appearance_value for each armor slot via item config
+	auto get_appr = [this](int16_t item_id) -> int {
+		if (item_id <= 0) return 0;
+		CItem* cfg = get_item_config(item_id);
+		return cfg ? cfg->m_appearance_value : 0;
+	};
+
+	int armor = get_appr(appr.armor_item_id);
+	int leg   = get_appr(appr.pants_item_id);
+	int hat   = get_appr(appr.helm_item_id);
+	int berk  = get_appr(appr.arm_item_id);
+
 	switch (OwnerType) {
 	case 1:
 	case 2:
 	case 3:
-		if ((armor == 8) && (leg == 5) && (hat == 9) && (berk == 3)) return (1); // Warr elv M
-		if ((armor == 9) && (leg == 6) && (hat == 10) && (berk == 4)) return (1); // Warr ares M
-		if ((armor == 10) && (leg == 5) && (hat == 11) && (berk == 3)) return (2); // Mage elv M
-		if ((armor == 11) && (leg == 6) && (hat == 12) && (berk == 4)) return (2); // Mage ares M
+		if (armor == 8  && leg == 5 && hat == 9  && berk == 3) return 1; // Warr elv M
+		if (armor == 9  && leg == 6 && hat == 10 && berk == 4) return 1; // Warr ares M
+		if (armor == 10 && leg == 5 && hat == 11 && berk == 3) return 2; // Mage elv M
+		if (armor == 11 && leg == 6 && hat == 12 && berk == 4) return 2; // Mage ares M
 		break;
 	case 4:
 	case 5:
-	case 6: // fixed
-		if ((armor == 9) && (leg == 6) && (hat == 9) && (berk == 4)) return (1); //warr elv W
-		if ((armor == 10) && (leg == 7) && (hat == 10) && (berk == 5)) return (1); //warr ares W
-		if ((armor == 11) && (leg == 6) && (hat == 11) && (berk == 4)) return (2); //mage elv W
-		if ((armor == 12) && (leg == 7) && (hat == 12) && (berk == 5)) return (2); //mage ares W
+	case 6:
+		if (armor == 9  && leg == 6 && hat == 9  && berk == 4) return 1; // Warr elv W
+		if (armor == 10 && leg == 7 && hat == 10 && berk == 5) return 1; // Warr ares W
+		if (armor == 11 && leg == 6 && hat == 11 && berk == 4) return 2; // Mage elv W
+		if (armor == 12 && leg == 7 && hat == 12 && berk == 5) return 2; // Mage ares W
 		break;
 	}
 	return 0;
@@ -8512,16 +8550,18 @@ void CGame::show_heldenian_victory(short side)
 **  bool dk_glare(int weapon_index, int weapon_index, int *weapon_glare)	( Snoopy )									**
 **  description			: test glowing condition for DK set															**
 **********************************************************************************************************************/
-void CGame::dk_glare(int weapon_color, int weapon_index, int* weapon_glare)
+void CGame::dk_glare(int weapon_color, int16_t weapon_item_id, int* weapon_glare)
 {
 	if (weapon_color != 9) return;
-	if (((weapon_index >= WeaponM + 64 * 14) && (weapon_index < WeaponM + 64 * 14 + 56)) //msw3
-		|| ((weapon_index >= WeaponW + 64 * 14) && (weapon_index < WeaponW + 64 * 14 + 56))) //wsw3
+	if (weapon_item_id <= 0) return;
+	CItem* cfg = get_item_config(weapon_item_id);
+	if (!cfg) return;
+	uint8_t appr_val = static_cast<uint8_t>(cfg->m_appearance_value);
+	if (appr_val == 14) // Sword3 (msw3/wsw3)
 	{
 		*weapon_glare = 3;
 	}
-	else if (((weapon_index >= WeaponM + 64 * 37) && (weapon_index < WeaponM + 64 * 37 + 56)) //MStaff3
-		|| ((weapon_index >= WeaponW + 64 * 37) && (weapon_index < WeaponW + 64 * 37 + 56)))//WStaff3
+	else if (appr_val == 37) // Staff3 (MStaff3/WStaff3)
 	{
 		*weapon_glare = 2;
 	}

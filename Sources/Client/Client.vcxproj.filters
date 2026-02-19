@@ -132,6 +132,9 @@
     <ClInclude Include="ItemNameFormatter.h">
       <Filter>Managers</Filter>
     </ClInclude>
+    <ClInclude Include="ItemSpriteMetadata.h">
+      <Filter>Managers</Filter>
+    </ClInclude>
     <ClInclude Include="ClientMessages.h">
       <Filter>Network</Filter>
     </ClInclude>
@@ -157,6 +160,12 @@
       <Filter>DialogBox</Filter>
     </ClInclude>
     <ClInclude Include="DialogBox_ChangeStatsMajestic.h">
+      <Filter>DialogBox</Filter>
+    </ClInclude>
+    <ClInclude Include="DialogBox_TesterMenu.h">
+      <Filter>DialogBox</Filter>
+    </ClInclude>
+    <ClInclude Include="DialogBox_ItemCreator.h">
       <Filter>DialogBox</Filter>
     </ClInclude>
     <ClInclude Include="DialogBox_Character.h">
@@ -695,6 +704,9 @@
     <ClCompile Include="ItemNameFormatter.cpp">
       <Filter>Managers</Filter>
     </ClCompile>
+    <ClCompile Include="ItemSpriteMetadata.cpp">
+      <Filter>Managers</Filter>
+    </ClCompile>
     <ClCompile Include="CommonTypes.cpp">
       <Filter>Core</Filter>
     </ClCompile>
@@ -711,6 +723,12 @@
       <Filter>DialogBox</Filter>
     </ClCompile>
     <ClCompile Include="DialogBox_ChangeStatsMajestic.cpp">
+      <Filter>DialogBox</Filter>
+    </ClCompile>
+    <ClCompile Include="DialogBox_TesterMenu.cpp">
+      <Filter>DialogBox</Filter>
+    </ClCompile>
+    <ClCompile Include="DialogBox_ItemCreator.cpp">
       <Filter>DialogBox</Filter>
     </ClCompile>
     <ClCompile Include="DialogBox_Character.cpp">

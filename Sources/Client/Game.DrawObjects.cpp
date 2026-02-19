@@ -5,6 +5,7 @@
 #include "Game.h"
 #include "WeatherManager.h"
 #include "ItemNameFormatter.h"
+#include "ItemSpriteMetadata.h"
 #include "RenderHelpers.h"
 #include "EntityRenderState.h"
 #include "ConfigManager.h"
@@ -34,55 +35,33 @@ struct MenuCharEquipment {
 // Calculate equipment indices for human characters (male/female) in menu
 static void CalcHumanEquipment(const CEntityRenderState& state, bool female, MenuCharEquipment& eq)
 {
-	// Sprite base IDs differ by gender
-	int UNDIES  = female ? UndiesW    : UndiesM;
-	int HAIR    = female ? HairW      : HairM;
-	int ARMOR   = female ? BodyArmorW : BodyArmorM;
-	int BERK    = female ? BerkW      : BerkM;
-	int LEGG    = female ? LeggW      : LeggM;
-	int BOOT    = female ? BootW      : BootM;
-	int WEAPON  = female ? WeaponW    : WeaponM;
-	int SHIELD  = female ? ShieldW    : ShieldM;
-	int MANTLE  = female ? MantleW    : MantleM;
-	int HEAD    = female ? HeadW      : HeadM;
+	const auto& appr = state.m_appearance;
 
 	// Walking uses pose 3, standing uses pose 2
-	bool walking = state.m_appearance.is_walking;
+	bool walking = appr.is_walking;
 	int pose = walking ? 3 : 2;
 
-	// Read from unpacked appearance
-	const auto& appr = state.m_appearance;
-	int undiesType   = appr.underwear_type;
-	int hairType     = appr.hair_style;
-	int armorType    = appr.armor_type;
-	int armType      = appr.arm_armor_type;
-	int pantsType    = appr.pants_type;
-	int helmType     = appr.helm_type;
-	int bootsType    = appr.boots_type;
-	int weaponType   = appr.weapon_type;
-	int shieldType   = appr.shield_type;
-	int mantleType   = appr.mantle_type;
-	bool hideArmor   = appr.hide_armor;
-
-	// Body index
+	// Body index (still from m_sprite)
 	eq.body = 500 + (state.m_owner_type - 1) * 8 * 15 + (pose * 8);
 
-	// Equipment indices (-1 = not equipped)
-	eq.undies    = UNDIES + undiesType * 15 + pose;
-	eq.hair      = HAIR + hairType * 15 + pose;
-	eq.bodyArmor = (!hideArmor && armorType != 0) ? ARMOR + armorType * 15 + pose : -1;
-	eq.armArmor  = (armType != 0)   ? BERK + armType * 15 + pose : -1;
-	eq.pants     = (pantsType != 0) ? LEGG + pantsType * 15 + pose : -1;
-	eq.boots     = (bootsType != 0) ? BOOT + bootsType * 15 + pose : -1;
-	eq.mantle    = (mantleType != 0) ? MANTLE + mantleType * 15 + pose : -1;
-	eq.helm      = (helmType != 0)  ? HEAD + helmType * 15 + pose : -1;
+	// Cosmetics — still from m_sprite with old base IDs
+	int UNDIES = female ? UndiesW : UndiesM;
+	int HAIR   = female ? HairW  : HairM;
+	eq.undies = UNDIES + appr.underwear_type * 15 + pose;
+	eq.hair   = HAIR + appr.hair_style * 15 + pose;
 
-	// Weapon/shield use direction in frame calculation
-	eq.weapon = (weaponType != 0) ? WEAPON + weaponType * 64 + 8 * pose + (state.m_dir - 1) : -1;
-	eq.shield = (shieldType != 0) ? SHIELD + shieldType * 8 + pose : -1;
+	// Equipment — from m_equip_sprites via equip_sprite::index()
+	eq.bodyArmor = (!appr.hide_armor && appr.armor_item_id > 0)  ? equip_sprite::index(female, appr.armor_display_id, pose)   : -1;
+	eq.armArmor  = (appr.arm_item_id > 0)    ? equip_sprite::index(female, appr.arm_display_id, pose)    : -1;
+	eq.pants     = (appr.pants_item_id > 0)   ? equip_sprite::index(female, appr.pants_display_id, pose)  : -1;
+	eq.boots     = (appr.boots_item_id > 0)   ? equip_sprite::index(female, appr.boots_display_id, pose)  : -1;
+	eq.mantle    = (appr.mantle_item_id > 0)  ? equip_sprite::index(female, appr.mantle_display_id, pose) : -1;
+	eq.helm      = (appr.helm_item_id > 0)    ? equip_sprite::index(female, appr.helm_display_id, pose)   : -1;
+	eq.weapon    = (appr.weapon_item_id > 0)  ? equip_sprite::index(female, appr.weapon_display_id, pose) : -1;
+	eq.shield    = (appr.shield_item_id > 0)  ? equip_sprite::index(female, appr.shield_display_id, pose) : -1;
 
-	// Female skirt check (pants type 1)
-	eq.skirtDraw = female && (pantsType == 1);
+	// Female skirt check — from is_skirt flag computed at broadcast time
+	eq.skirtDraw = female && appr.is_skirt;
 }
 
 hb::shared::sprite::BoundRect CGame::draw_object_on_move_for_menu(int indexX, int indexY, int sX, int sY, bool trans, uint32_t time)
@@ -121,7 +100,8 @@ hb::shared::sprite::BoundRect CGame::draw_object_on_move_for_menu(int indexX, in
 	int dirFrame = (m_entity_state.m_dir - 1) * 8 + m_entity_state.m_frame;
 	int hairColor = m_entity_state.m_appearance.hair_color;
 
-	auto drawEquipment = [&](int idx, int color) {
+	// Equipment draws from m_equip_sprites, cosmetics from m_sprite
+	auto drawCosmeticLayer = [&](int idx, int color) {
 		if (idx == -1) return;
 		if (color == 0)
 			m_sprite[idx]->draw(sX, sY, dirFrame);
@@ -129,17 +109,25 @@ hb::shared::sprite::BoundRect CGame::draw_object_on_move_for_menu(int indexX, in
 			m_sprite[idx]->draw(sX, sY, dirFrame, hb::shared::sprite::DrawParams::tint(GameColors::Items[color].r, GameColors::Items[color].g, GameColors::Items[color].b));
 	};
 
+	auto drawEquipLayer = [&](int idx, int color) {
+		if (idx == -1) return;
+		if (color == 0)
+			m_equip_sprites[idx]->draw(sX, sY, dirFrame);
+		else
+			m_equip_sprites[idx]->draw(sX, sY, dirFrame, hb::shared::sprite::DrawParams::tint(GameColors::Items[color].r, GameColors::Items[color].g, GameColors::Items[color].b));
+	};
+
 	auto drawWeapon = [&]() {
 		if (eq.weapon == -1) return;
 		if (eq.weaponColor == 0)
-			m_sprite[eq.weapon]->draw(sX, sY, m_entity_state.m_frame);
+			m_equip_sprites[eq.weapon]->draw(sX, sY, dirFrame);
 		else
-			m_sprite[eq.weapon]->draw(sX, sY, m_entity_state.m_frame, hb::shared::sprite::DrawParams::tint(GameColors::Weapons[eq.weaponColor].r, GameColors::Weapons[eq.weaponColor].g, GameColors::Weapons[eq.weaponColor].b));
+			m_equip_sprites[eq.weapon]->draw(sX, sY, dirFrame, hb::shared::sprite::DrawParams::tint(GameColors::Weapons[eq.weaponColor].r, GameColors::Weapons[eq.weaponColor].g, GameColors::Weapons[eq.weaponColor].b));
 	};
 
 	auto drawMantle = [&](int order) {
 		if (eq.mantle != -1 && mantle_draw_order[m_entity_state.m_dir] == order)
-			drawEquipment(eq.mantle, eq.mantleColor);
+			drawEquipLayer(eq.mantle, eq.mantleColor);
 	};
 
 	// Check if mob type should skip shadow
@@ -168,9 +156,9 @@ hb::shared::sprite::BoundRect CGame::draw_object_on_move_for_menu(int indexX, in
 
 	// draw equipment layers (back-to-front order)
 	drawMantle(0);  // Mantle behind body
-	drawEquipment(eq.undies, 0);
+	drawCosmeticLayer(eq.undies, 0);  // Undies from m_sprite
 
-	// Hair (only if no helm)
+	// Hair (cosmetic, from m_sprite, only if no helm)
 	if (eq.hair != -1 && eq.helm == -1)
 	{
 		const auto& hc = GameColors::Hair[hairColor];
@@ -179,19 +167,19 @@ hb::shared::sprite::BoundRect CGame::draw_object_on_move_for_menu(int indexX, in
 
 	// Boots before pants if wearing skirt
 	if (eq.skirtDraw)
-		drawEquipment(eq.boots, eq.bootsColor);
+		drawEquipLayer(eq.boots, eq.bootsColor);
 
-	drawEquipment(eq.pants, eq.pantsColor);
-	drawEquipment(eq.armArmor, eq.armColor);
+	drawEquipLayer(eq.pants, eq.pantsColor);
+	drawEquipLayer(eq.armArmor, eq.armColor);
 
 	// Boots after pants if not wearing skirt
 	if (!eq.skirtDraw)
-		drawEquipment(eq.boots, eq.bootsColor);
+		drawEquipLayer(eq.boots, eq.bootsColor);
 
-	drawEquipment(eq.bodyArmor, eq.armorColor);
-	drawEquipment(eq.helm, eq.helmColor);
+	drawEquipLayer(eq.bodyArmor, eq.armorColor);
+	drawEquipLayer(eq.helm, eq.helmColor);
 	drawMantle(2);  // Mantle over armor
-	drawEquipment(eq.shield, eq.shieldColor);
+	drawEquipLayer(eq.shield, eq.shieldColor);
 	drawMantle(1);  // Mantle in front
 
 	// draw weapon last if drawing order is not 1
@@ -418,21 +406,17 @@ void CGame::draw_objects(short pivot_x, short pivot_y, short div_x, short div_y,
 
 				if ((ret == true) && (item_id != 0) && m_item_config_list[item_id] != 0)
 				{
+					auto ground_draw = get_item_draw(m_item_config_list[item_id]->m_display_id, item_atlas::ground, false);
 					if (item_color == 0)
-						m_sprite[ItemGroundPivotPoint + m_item_config_list[item_id]->m_sprite]->draw(ix, iy, m_item_config_list[item_id]->m_sprite_frame);
+						ground_draw.sprite->draw(ix, iy, ground_draw.frame);
 					else
 					{
-						switch (m_item_config_list[item_id]->m_sprite) {
-						case 1: // Swds
-						case 2: // Bows
-						case 3: // Shields
-						case 15: // Axes/hammers ground sprite (not ShopKeeper NPC — coincidental value match)
-							m_sprite[ItemGroundPivotPoint + m_item_config_list[item_id]->m_sprite]->draw(ix, iy, m_item_config_list[item_id]->m_sprite_frame, hb::shared::sprite::DrawParams::tint(GameColors::Weapons[item_color].r, GameColors::Weapons[item_color].g, GameColors::Weapons[item_color].b));
-							break;
-						default:
-							m_sprite[ItemGroundPivotPoint + m_item_config_list[item_id]->m_sprite]->draw(ix, iy, m_item_config_list[item_id]->m_sprite_frame, hb::shared::sprite::DrawParams::tint(GameColors::Items[item_color].r, GameColors::Items[item_color].g, GameColors::Items[item_color].b));
-							break;
-						}
+						int eq = m_item_config_list[item_id]->m_equip_pos;
+						bool is_weapon = (eq == hb::shared::item::to_int(hb::shared::item::EquipPos::LeftHand) ||
+							eq == hb::shared::item::to_int(hb::shared::item::EquipPos::RightHand) ||
+							eq == hb::shared::item::to_int(hb::shared::item::EquipPos::TwoHand));
+						const auto& tint = is_weapon ? GameColors::Weapons[item_color] : GameColors::Items[item_color];
+						ground_draw.sprite->draw(ix, iy, ground_draw.frame, hb::shared::sprite::DrawParams::tint(tint.r, tint.g, tint.b));
 					}
 
 					if (hb::shared::input::is_shift_down() && mouse_x >= ix - 16 && mouse_y >= iy - 16 && mouse_x <= ix + 16 && mouse_y <= iy + 16) {

@@ -15,6 +15,8 @@
 #include "AudioManager.h"
 #include "WeatherManager.h"
 #include "SpriteLoader.h"
+#include "ItemSpriteMetadata.h"
+#include "Log.h"
 using namespace hb::client::sprite_id;
 
 Screen_Loading::Screen_Loading(CGame* game)
@@ -53,19 +55,11 @@ void Screen_Loading::on_update()
     case 36:  LoadStage_Monsters4();    break;
     case 40:  LoadStage_Monsters5();    break;
     case 44:  LoadStage_Monsters6();    break;
-    case 48:  LoadStage_MaleUndies();   break;
-    case 52:  LoadStage_MaleArmor();    break;
-    case 56:  LoadStage_MaleLegs();     break;
-    case 60:  LoadStage_MaleSwords();   break;
-    case 64:  LoadStage_MaleWeapons();  break;
-    case 68:  LoadStage_MaleBows();     break;
-    case 72:  LoadStage_FemaleBase();   break;
-    case 76:  LoadStage_FemaleArmor();  break;
-    case 80:  LoadStage_FemaleLegs();   break;
-    case 84:  LoadStage_FemaleSwords(); break;
-    case 88:  LoadStage_FemaleWeapons(); break;
-    case 92:  LoadStage_FemaleMantles(); break;
-    case 96:  LoadStage_FemaleBows();   break;
+    case 48:  LoadStage_CosmeticsMale();   break;
+    case 52:  LoadStage_CosmeticsFemale(); break;
+    case 56: case 60: case 64: case 68: case 72: case 76:
+    case 80: case 84: case 88: case 92: case 96:
+              LoadStage_EquipmentBatch();  break;
     case 100: LoadStage_Effects();      break;
     }
 }
@@ -242,27 +236,18 @@ void Screen_Loading::LoadStage_Tiles3()
     make_tile_spr("tile531-540", 531, 10, true);
     make_tile_spr("tile541-545", 541, 5, true);
 
-    // Item pack sprites
-    hb::shared::sprite::SpriteLoader::open_pak("item-pack", [&](hb::shared::sprite::SpriteLoader& loader) {
-        for (size_t i = 0; i < 27 && i < loader.get_sprite_count(); i++) {
-            m_game->m_sprite[ItemPackPivotPoint + 1 + i] = loader.get_sprite(i, false);
-        }
-        m_game->m_sprite[ItemPackPivotPoint + 20] = loader.get_sprite(17, false);
-        m_game->m_sprite[ItemPackPivotPoint + 21] = loader.get_sprite(18, false);
-        m_game->m_sprite[ItemPackPivotPoint + 22] = loader.get_sprite(19, false);
-    });
-
-    // Item ground sprites
-    hb::shared::sprite::SpriteLoader::open_pak("item-ground", [&](hb::shared::sprite::SpriteLoader& loader) {
-        for (size_t i = 0; i < 19 && i < loader.get_sprite_count(); i++) {
-            m_game->m_sprite[ItemGroundPivotPoint + 1 + i] = loader.get_sprite(i, false);
-        }
-        m_game->m_sprite[ItemGroundPivotPoint + 20] = loader.get_sprite(17, false);
-        m_game->m_sprite[ItemGroundPivotPoint + 21] = loader.get_sprite(18, false);
-        m_game->m_sprite[ItemGroundPivotPoint + 22] = loader.get_sprite(19, false);
-    });
-
     make_sprite("item-dynamic", ItemDynamicPivotPoint, 3, false);
+
+    // Item atlas sprites (unified atlas for new display_id system)
+    hb::shared::sprite::SpriteLoader::open_pak("item_atlas", [&](hb::shared::sprite::SpriteLoader& loader) {
+        for (size_t i = 0; i < 3 && i < loader.get_sprite_count(); i++) {
+            m_game->m_item_sprites[i] = loader.get_sprite(i, false);
+        }
+        hb::logger::log("Item atlas loaded: {} sprites", loader.get_sprite_count());
+    });
+
+    // Item sprite metadata (display_id → frame index mappings)
+    item_sprite_manager::get().load("contents/ItemSpriteMetadata.json");
 
     m_iLoadingStage = 16;
 }
@@ -308,14 +293,6 @@ void Screen_Loading::LoadStage_Equipment1()
         m_game->m_sprite[ItemEquipPivotPoint + 59] = loader.get_sprite(10, false);
         m_game->m_sprite[ItemEquipPivotPoint + 60] = loader.get_sprite(13, false);
         m_game->m_sprite[ItemEquipPivotPoint + 61] = loader.get_sprite(14, false);
-    });
-
-    // Necks and angels for both genders
-    hb::shared::sprite::SpriteLoader::open_pak("item-pack", [&](hb::shared::sprite::SpriteLoader& loader) {
-        m_game->m_sprite[ItemEquipPivotPoint + 16] = loader.get_sprite(15, false);
-        m_game->m_sprite[ItemEquipPivotPoint + 22] = loader.get_sprite(19, false);
-        m_game->m_sprite[ItemEquipPivotPoint + 56] = loader.get_sprite(15, false);
-        m_game->m_sprite[ItemEquipPivotPoint + 62] = loader.get_sprite(19, false);
     });
 
     // Player body sprites
@@ -483,9 +460,9 @@ void Screen_Loading::LoadStage_Monsters6()
 }
 
 //=============================================================================
-// Stage 48: Male underwear, Gail, Heldenian Gate
+// Stage 48: Gail, Gate, Male cosmetics (underwear, hair)
 //=============================================================================
-void Screen_Loading::LoadStage_MaleUndies()
+void Screen_Loading::LoadStage_CosmeticsMale()
 {
     make_sprite("gail", Mob + 7 * 8 * 80, 8, true);
     make_sprite("gate", Mob + 7 * 8 * 81, 24, true);
@@ -499,14 +476,6 @@ void Screen_Loading::LoadStage_MaleUndies()
         }
     });
 
-    m_iLoadingStage = 52;
-}
-
-//=============================================================================
-// Stage 52: Male hair, armor, shirts
-//=============================================================================
-void Screen_Loading::LoadStage_MaleArmor()
-{
     // Male hair
     hb::shared::sprite::SpriteLoader::open_pak("mhr", [&](hb::shared::sprite::SpriteLoader& loader) {
         for (int g = 0; g < 8; g++) {
@@ -516,168 +485,13 @@ void Screen_Loading::LoadStage_MaleArmor()
         }
     });
 
-    // Male body armor
-    make_sprite("mlarmor", BodyArmorM + 15 * 1, 12, true);
-    make_sprite("mcmail", BodyArmorM + 15 * 2, 12, true);
-    make_sprite("msmail", BodyArmorM + 15 * 3, 12, true);
-    make_sprite("mpmail", BodyArmorM + 15 * 4, 12, true);
-    make_sprite("mtunic", BodyArmorM + 15 * 5, 12, true);
-    make_sprite("mrobe1", BodyArmorM + 15 * 6, 12, true);
-    make_sprite("msanta", BodyArmorM + 15 * 7, 12, true);
-    make_sprite("mhrobe1", BodyArmorM + 15 * 10, 12, true);
-    make_sprite("mhrobe2", BodyArmorM + 15 * 11, 12, true);
-    make_sprite("mhpmail1", BodyArmorM + 15 * 8, 12, true);
-    make_sprite("mhpmail2", BodyArmorM + 15 * 9, 12, true);
-
-    // Male shirts
-    make_sprite("mshirt", BerkM + 15 * 1, 12, true);
-    make_sprite("mhauberk", BerkM + 15 * 2, 12, true);
-    make_sprite("mhhauberk1", BerkM + 15 * 3, 12, true);
-    make_sprite("mhhauberk2", BerkM + 15 * 4, 12, true);
-
-    m_iLoadingStage = 56;
+    m_iLoadingStage = 52;
 }
 
 //=============================================================================
-// Stage 56: Male pants, shoes, swords
+// Stage 52: Female cosmetics (underwear, hair)
 //=============================================================================
-void Screen_Loading::LoadStage_MaleLegs()
-{
-    // Male leggings
-    make_sprite("mtrouser", LeggM + 15 * 1, 12, true);
-    make_sprite("mhtrouser", LeggM + 15 * 2, 12, true);
-    make_sprite("mchoses", LeggM + 15 * 3, 12, true);
-    make_sprite("mleggings", LeggM + 15 * 4, 12, true);
-    make_sprite("mhleggings1", LeggM + 15 * 5, 12, true);
-    make_sprite("mhleggings2", LeggM + 15 * 6, 12, true);
-
-    // Male boots
-    make_sprite("mshoes", BootM + 15 * 1, 12, true);
-    make_sprite("mlboots", BootM + 15 * 2, 12, true);
-
-    // Male swords (batch load)
-    hb::shared::sprite::SpriteLoader::open_pak("msw", [&](hb::shared::sprite::SpriteLoader& loader) {
-        for (int i = 0; i < 56; i++) m_game->m_sprite[WeaponM + i + 64 * 1] = loader.get_sprite(i + 56 * 0, true);
-        for (int i = 0; i < 56; i++) m_game->m_sprite[WeaponM + i + 64 * 2] = loader.get_sprite(i + 56 * 1, true);
-        for (int i = 0; i < 56; i++) m_game->m_sprite[WeaponM + i + 64 * 3] = loader.get_sprite(i + 56 * 2, true);
-        for (int i = 0; i < 56; i++) m_game->m_sprite[WeaponM + i + 64 * 4] = loader.get_sprite(i + 56 * 3, true);
-        for (int i = 0; i < 56; i++) m_game->m_sprite[WeaponM + i + 64 * 6] = loader.get_sprite(i + 56 * 5, true);
-        for (int i = 0; i < 56; i++) m_game->m_sprite[WeaponM + i + 64 * 7] = loader.get_sprite(i + 56 * 6, true);
-        for (int i = 0; i < 56; i++) m_game->m_sprite[WeaponM + i + 64 * 8] = loader.get_sprite(i + 56 * 7, true);
-        for (int i = 0; i < 56; i++) m_game->m_sprite[WeaponM + i + 64 * 9] = loader.get_sprite(i + 56 * 8, true);
-        for (int i = 0; i < 56; i++) m_game->m_sprite[WeaponM + i + 64 * 10] = loader.get_sprite(i + 56 * 9, true);
-        for (int i = 0; i < 56; i++) m_game->m_sprite[WeaponM + i + 64 * 11] = loader.get_sprite(i + 56 * 10, true);
-        for (int i = 0; i < 56; i++) m_game->m_sprite[WeaponM + i + 64 * 12] = loader.get_sprite(i + 56 * 11, true);
-    });
-
-    m_iLoadingStage = 60;
-}
-
-//=============================================================================
-// Stage 60: Male swords continued
-//=============================================================================
-void Screen_Loading::LoadStage_MaleSwords()
-{
-    make_sprite("mswx", WeaponM + 64 * 5, 56, true);
-    make_sprite("msw2", WeaponM + 64 * 13, 56, true);
-    make_sprite("msw3", WeaponM + 64 * 14, 56, true);
-    make_sprite("mstormbringer", WeaponM + 64 * 15, 56, true);
-    make_sprite("mdarkexec", WeaponM + 64 * 16, 56, true);
-    make_sprite("mklonessblade", WeaponM + 64 * 17, 56, true);
-    make_sprite("mklonessastock", WeaponM + 64 * 18, 56, true);
-    make_sprite("mdebastator", WeaponM + 64 * 19, 56, true);
-    make_sprite("maxe1", WeaponM + 64 * 20, 56, true);
-    make_sprite("maxe2", WeaponM + 64 * 21, 56, true);
-    make_sprite("maxe3", WeaponM + 64 * 22, 56, true);
-    make_sprite("maxe4", WeaponM + 64 * 23, 56, true);
-    make_sprite("maxe5", WeaponM + 64 * 24, 56, true);
-    make_sprite("mpickaxe1", WeaponM + 64 * 25, 56, true);
-    make_sprite("maxe6", WeaponM + 64 * 26, 56, true);
-    make_sprite("mhoe", WeaponM + 64 * 27, 56, true);
-    make_sprite("mklonessaxe", WeaponM + 64 * 28, 56, true);
-    make_sprite("mlightblade", WeaponM + 64 * 29, 56, true);
-
-    m_iLoadingStage = 64;
-}
-
-//=============================================================================
-// Stage 64: Male hammers, staves, bows setup
-//=============================================================================
-void Screen_Loading::LoadStage_MaleWeapons()
-{
-    make_sprite("mhammer", WeaponM + 64 * 30, 56, true);
-    make_sprite("mbhammer", WeaponM + 64 * 31, 56, true);
-    make_sprite("mbabhammer", WeaponM + 64 * 32, 56, true);
-    make_sprite("mbshadowsword", WeaponM + 64 * 33, 56, true);
-    make_sprite("mberserkwand", WeaponM + 64 * 34, 56, true);
-    make_sprite("mstaff1", WeaponM + 64 * 35, 56, true);
-    make_sprite("mstaff2", WeaponM + 64 * 36, 56, true);
-    make_sprite("mstaff3", WeaponM + 64 * 37, 56, true);
-    make_sprite("mremagicwand", WeaponM + 64 * 38, 56, true);
-    make_sprite("mklonesswand", WeaponM + 64 * 39, 56, true);
-    make_sprite("mdirectbow", WeaponM + 64 * 42, 56, true);
-    make_sprite("mfirebow", WeaponM + 64 * 43, 56, true);
-
-    m_iLoadingStage = 68;
-}
-
-//=============================================================================
-// Stage 68: Male bows, shields
-//=============================================================================
-void Screen_Loading::LoadStage_MaleBows()
-{
-    // Male bows
-    hb::shared::sprite::SpriteLoader::open_pak("mbo", [&](hb::shared::sprite::SpriteLoader& loader) {
-        for (int i = 0; i < 56; i++) m_game->m_sprite[WeaponM + i + 64 * 40] = loader.get_sprite(i + 56 * 0, true);
-        for (int i = 0; i < 56; i++) m_game->m_sprite[WeaponM + i + 64 * 41] = loader.get_sprite(i + 56 * 1, true);
-    });
-
-    // Male shields
-    hb::shared::sprite::SpriteLoader::open_pak("msh", [&](hb::shared::sprite::SpriteLoader& loader) {
-        for (int g = 0; g < 9; g++) {
-            for (int i = 0; i < 7; i++) {
-                m_game->m_sprite[ShieldM + i + 8 * (g + 1)] = loader.get_sprite(i + 7 * g, true);
-            }
-        }
-    });
-
-    m_iLoadingStage = 72;
-}
-
-//=============================================================================
-// Stage 72: Male mantles, helms
-//=============================================================================
-void Screen_Loading::LoadStage_FemaleBase()
-{
-    // Male mantles
-    make_sprite("mmantle01", MantleM + 15 * 1, 12, true);
-    make_sprite("mmantle02", MantleM + 15 * 2, 12, true);
-    make_sprite("mmantle03", MantleM + 15 * 3, 12, true);
-    make_sprite("mmantle04", MantleM + 15 * 4, 12, true);
-    make_sprite("mmantle05", MantleM + 15 * 5, 12, true);
-    make_sprite("mmantle06", MantleM + 15 * 6, 12, true);
-
-    // Male helms
-    make_sprite("mhelm1", HeadM + 15 * 1, 12, true);
-    make_sprite("mhelm2", HeadM + 15 * 2, 12, true);
-    make_sprite("mhelm3", HeadM + 15 * 3, 12, true);
-    make_sprite("mhelm4", HeadM + 15 * 4, 12, true);
-    make_sprite("mhcap1", HeadM + 15 * 11, 12, true);
-    make_sprite("mhcap2", HeadM + 15 * 12, 12, true);
-    make_sprite("mhhelm1", HeadM + 15 * 9, 12, true);
-    make_sprite("mhhelm2", HeadM + 15 * 10, 12, true);
-    make_sprite("nmhelm1", HeadM + 15 * 5, 12, true);
-    make_sprite("nmhelm2", HeadM + 15 * 6, 12, true);
-    make_sprite("nmhelm3", HeadM + 15 * 7, 12, true);
-    make_sprite("nmhelm4", HeadM + 15 * 8, 12, true);
-
-    m_iLoadingStage = 76;
-}
-
-//=============================================================================
-// Stage 76: Female underwear and hair
-//=============================================================================
-void Screen_Loading::LoadStage_FemaleArmor()
+void Screen_Loading::LoadStage_CosmeticsFemale()
 {
     // Female underwear
     hb::shared::sprite::SpriteLoader::open_pak("wpt", [&](hb::shared::sprite::SpriteLoader& loader) {
@@ -697,163 +511,67 @@ void Screen_Loading::LoadStage_FemaleArmor()
         }
     });
 
-    m_iLoadingStage = 80;
+    m_iLoadingStage = 56;
 }
 
 //=============================================================================
-// Stage 80: Female armor, shirts, legs, shoes
+// Stages 56-96: Per-item equipment sprites from metadata (batched)
 //=============================================================================
-void Screen_Loading::LoadStage_FemaleLegs()
+void Screen_Loading::LoadStage_EquipmentBatch()
 {
-    // Female body armor
-    make_sprite("wbodice1", BodyArmorW + 15 * 1, 12, true);
-    make_sprite("wbodice2", BodyArmorW + 15 * 2, 12, true);
-    make_sprite("wlarmor", BodyArmorW + 15 * 3, 12, true);
-    make_sprite("wcmail", BodyArmorW + 15 * 4, 12, true);
-    make_sprite("wsmail", BodyArmorW + 15 * 5, 12, true);
-    make_sprite("wpmail", BodyArmorW + 15 * 6, 12, true);
-    make_sprite("wrobe1", BodyArmorW + 15 * 7, 12, true);
-    make_sprite("wsanta", BodyArmorW + 15 * 8, 12, true);
-    make_sprite("whrobe1", BodyArmorW + 15 * 11, 12, true);
-    make_sprite("whrobe2", BodyArmorW + 15 * 12, 12, true);
-    make_sprite("whpmail1", BodyArmorW + 15 * 9, 12, true);
-    make_sprite("whpmail2", BodyArmorW + 15 * 10, 12, true);
+    constexpr int equip_stages = 11; // stages 56, 60, 64, 68, 72, 76, 80, 84, 88, 92, 96
 
-    // Female shirts
-    make_sprite("wchemiss", BerkW + 15 * 1, 12, true);
-    make_sprite("wshirt", BerkW + 15 * 2, 12, true);
-    make_sprite("whauberk", BerkW + 15 * 3, 12, true);
-    make_sprite("whhauberk1", BerkW + 15 * 4, 12, true);
-    make_sprite("whhauberk2", BerkW + 15 * 5, 12, true);
-
-    // Female leggings
-    make_sprite("wskirt", LeggW + 15 * 1, 12, true);
-    make_sprite("wtrouser", LeggW + 15 * 2, 12, true);
-    make_sprite("whtrouser", LeggW + 15 * 3, 12, true);
-    make_sprite("whleggings1", LeggW + 15 * 6, 12, true);
-    make_sprite("whleggings2", LeggW + 15 * 7, 12, true);
-    make_sprite("wchoses", LeggW + 15 * 4, 12, true);
-    make_sprite("wleggings", LeggW + 15 * 5, 12, true);
-
-    // Female boots
-    make_sprite("wshoes", BootW + 15 * 1, 12, true);
-    make_sprite("wlboots", BootW + 15 * 2, 12, true);
-
-    m_iLoadingStage = 84;
-}
-
-//=============================================================================
-// Stage 84: Female swords
-//=============================================================================
-void Screen_Loading::LoadStage_FemaleSwords()
-{
-    // Female swords (batch load)
-    hb::shared::sprite::SpriteLoader::open_pak("wsw", [&](hb::shared::sprite::SpriteLoader& loader) {
-        for (int i = 0; i < 56; i++) m_game->m_sprite[WeaponW + i + 64 * 1] = loader.get_sprite(i + 56 * 0, true);
-        for (int i = 0; i < 56; i++) m_game->m_sprite[WeaponW + i + 64 * 2] = loader.get_sprite(i + 56 * 1, true);
-        for (int i = 0; i < 56; i++) m_game->m_sprite[WeaponW + i + 64 * 3] = loader.get_sprite(i + 56 * 2, true);
-        for (int i = 0; i < 56; i++) m_game->m_sprite[WeaponW + i + 64 * 4] = loader.get_sprite(i + 56 * 3, true);
-        for (int i = 0; i < 56; i++) m_game->m_sprite[WeaponW + i + 64 * 6] = loader.get_sprite(i + 56 * 5, true);
-        for (int i = 0; i < 56; i++) m_game->m_sprite[WeaponW + i + 64 * 7] = loader.get_sprite(i + 56 * 6, true);
-        for (int i = 0; i < 56; i++) m_game->m_sprite[WeaponW + i + 64 * 8] = loader.get_sprite(i + 56 * 7, true);
-        for (int i = 0; i < 56; i++) m_game->m_sprite[WeaponW + i + 64 * 9] = loader.get_sprite(i + 56 * 8, true);
-        for (int i = 0; i < 56; i++) m_game->m_sprite[WeaponW + i + 64 * 10] = loader.get_sprite(i + 56 * 9, true);
-        for (int i = 0; i < 56; i++) m_game->m_sprite[WeaponW + i + 64 * 11] = loader.get_sprite(i + 56 * 10, true);
-        for (int i = 0; i < 56; i++) m_game->m_sprite[WeaponW + i + 64 * 12] = loader.get_sprite(i + 56 * 11, true);
+    // Count total loadable entries
+    int total = 0;
+    item_sprite_manager::get().for_each_equippable([&](const item_sprite_entry&) {
+        total++;
     });
 
-    make_sprite("wswx", WeaponW + 64 * 5, 56, true);
-    make_sprite("wsw2", WeaponW + 64 * 13, 56, true);
-    make_sprite("wsw3", WeaponW + 64 * 14, 56, true);
-    make_sprite("wstormbringer", WeaponW + 64 * 15, 56, true);
-    make_sprite("wdarkexec", WeaponW + 64 * 16, 56, true);
-    make_sprite("wklonessblade", WeaponW + 64 * 17, 56, true);
-    make_sprite("wklonessastock", WeaponW + 64 * 18, 56, true);
-    make_sprite("wdebastator", WeaponW + 64 * 19, 56, true);
+    int per_batch = (total + equip_stages - 1) / equip_stages;
+    int batch_end = m_equip_load_cursor + per_batch;
 
-    m_iLoadingStage = 88;
-}
+    int current = 0;
+    item_sprite_manager::get().for_each_equippable([&](const item_sprite_entry& entry) {
+        if (current < m_equip_load_cursor || current >= batch_end) { current++; return; }
+        current++;
 
-//=============================================================================
-// Stage 88: Female axes, staves
-//=============================================================================
-void Screen_Loading::LoadStage_FemaleWeapons()
-{
-    make_sprite("waxe1", WeaponW + 64 * 20, 56, true);
-    make_sprite("waxe2", WeaponW + 64 * 21, 56, true);
-    make_sprite("waxe3", WeaponW + 64 * 22, 56, true);
-    make_sprite("waxe4", WeaponW + 64 * 23, 56, true);
-    make_sprite("waxe5", WeaponW + 64 * 24, 56, true);
-    make_sprite("wpickaxe1", WeaponW + 64 * 25, 56, true);
-    make_sprite("waxe6", WeaponW + 64 * 26, 56, true);
-    make_sprite("whoe", WeaponW + 64 * 27, 56, true);
-    make_sprite("wklonessaxe", WeaponW + 64 * 28, 56, true);
-    make_sprite("wlightblade", WeaponW + 64 * 29, 56, true);
-    make_sprite("whammer", WeaponW + 64 * 30, 56, true);
-    make_sprite("wbhammer", WeaponW + 64 * 31, 56, true);
-    make_sprite("wbabhammer", WeaponW + 64 * 32, 56, true);
-    make_sprite("wbshadowsword", WeaponW + 64 * 33, 56, true);
-    make_sprite("wberserkwand", WeaponW + 64 * 34, 56, true);
-    make_sprite("wstaff1", WeaponW + 64 * 35, 56, true);
-    make_sprite("wstaff2", WeaponW + 64 * 36, 56, true);
-    make_sprite("wstaff3", WeaponW + 64 * 37, 56, true);
-    make_sprite("wklonesswand", WeaponW + 64 * 39, 56, true);
-    make_sprite("wremagicwand", WeaponW + 64 * 38, 56, true);
-    make_sprite("wdirectbow", WeaponW + 64 * 42, 56, true);
-    make_sprite("wfirebow", WeaponW + 64 * 43, 56, true);
+        if (entry.pak_file.empty()) return;
 
-    m_iLoadingStage = 92;
-}
+        // Strip .pak extension and prepend items/ subdirectory
+        std::string pak_name = entry.pak_file;
+        if (pak_name.size() > 4 && pak_name.compare(pak_name.size() - 4, 4, ".pak") == 0)
+            pak_name.resize(pak_name.size() - 4);
+        std::string pak_path = "items/" + pak_name;
 
-//=============================================================================
-// Stage 92: Female mantles, helms
-//=============================================================================
-void Screen_Loading::LoadStage_FemaleMantles()
-{
-    // Female mantles
-    make_sprite("wmantle01", MantleW + 15 * 1, 12, true);
-    make_sprite("wmantle02", MantleW + 15 * 2, 12, true);
-    make_sprite("wmantle03", MantleW + 15 * 3, 12, true);
-    make_sprite("wmantle04", MantleW + 15 * 4, 12, true);
-    make_sprite("wmantle05", MantleW + 15 * 5, 12, true);
-    make_sprite("wmantle06", MantleW + 15 * 6, 12, true);
-
-    // Female helms
-    make_sprite("whelm1", HeadW + 15 * 1, 12, true);
-    make_sprite("whelm4", HeadW + 15 * 4, 12, true);
-    make_sprite("whhelm1", HeadW + 15 * 9, 12, true);
-    make_sprite("whhelm2", HeadW + 15 * 10, 12, true);
-    make_sprite("whcap1", HeadW + 15 * 11, 12, true);
-    make_sprite("whcap2", HeadW + 15 * 12, 12, true);
-    make_sprite("nwhelm1", HeadW + 15 * 5, 12, true);
-    make_sprite("nwhelm2", HeadW + 15 * 6, 12, true);
-    make_sprite("nwhelm3", HeadW + 15 * 7, 12, true);
-    make_sprite("nwhelm4", HeadW + 15 * 8, 12, true);
-
-    m_iLoadingStage = 96;
-}
-
-//=============================================================================
-// Stage 96: Female bows, shields
-//=============================================================================
-void Screen_Loading::LoadStage_FemaleBows()
-{
-    // Female bows
-    hb::shared::sprite::SpriteLoader::open_pak("wbo", [&](hb::shared::sprite::SpriteLoader& loader) {
-        for (int i = 0; i < 56; i++) m_game->m_sprite[WeaponW + i + 64 * 40] = loader.get_sprite(i + 56 * 0, true);
-        for (int i = 0; i < 56; i++) m_game->m_sprite[WeaponW + i + 64 * 41] = loader.get_sprite(i + 56 * 1, true);
-    });
-
-    // Female shields
-    hb::shared::sprite::SpriteLoader::open_pak("wsh", [&](hb::shared::sprite::SpriteLoader& loader) {
-        for (int g = 0; g < 9; g++) {
-            for (int i = 0; i < 7; i++) {
-                m_game->m_sprite[ShieldW + i + 8 * (g + 1)] = loader.get_sprite(i + 7 * g, true);
-            }
+        try {
+            hb::shared::sprite::SpriteLoader::open_pak(pak_path.c_str(), [&](hb::shared::sprite::SpriteLoader& loader) {
+                size_t sprite_count = loader.get_sprite_count();
+                // Male sprites: pak indices 0-11
+                for (int pose = 0; pose < equip_sprite::sprites_per_item; pose++) {
+                    int slot = equip_sprite::index(false, entry.id, pose);
+                    if (slot >= 0 && static_cast<size_t>(pose) < sprite_count)
+                        m_game->m_equip_sprites[slot] = loader.get_sprite(pose, true);
+                }
+                // Female sprites: pak indices 12-23
+                for (int pose = 0; pose < equip_sprite::sprites_per_item; pose++) {
+                    int pak_idx = equip_sprite::sprites_per_item + pose;
+                    int slot = equip_sprite::index(true, entry.id, pose);
+                    if (slot >= 0 && static_cast<size_t>(pak_idx) < sprite_count)
+                        m_game->m_equip_sprites[slot] = loader.get_sprite(pak_idx, true);
+                }
+            });
+        } catch (const std::exception& ex) {
+            hb::logger::warn("Failed to load equipment pak '{}': {}", pak_path, ex.what());
         }
     });
 
-    m_iLoadingStage = 100;
+    m_equip_load_cursor = batch_end;
+
+    if (m_iLoadingStage == 96) {
+        hb::logger::log("Equipment sprites: loaded {} equippable items into m_equip_sprites", total);
+    }
+
+    m_iLoadingStage += 4;
 }
 
 //=============================================================================

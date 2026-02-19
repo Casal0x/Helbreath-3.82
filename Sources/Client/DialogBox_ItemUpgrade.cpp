@@ -2,6 +2,7 @@
 #include "CursorTarget.h"
 #include "Game.h"
 #include "ItemNameFormatter.h"
+#include "ItemSpriteMetadata.h"
 #include "lan_eng.h"
 #include "GameFonts.h"
 #include "TextLibExt.h"
@@ -100,19 +101,20 @@ void DialogBox_ItemUpgrade::draw_item_preview(int sX, int sY, int item_index)
     CItem* cfg = m_game->get_item_config(m_game->m_item_list[item_index]->m_id_num);
     if (!cfg) return;
 
+    auto upg_draw = m_game->get_item_draw(cfg->m_display_id, item_atlas::pack, false);
     if (item_color == 0)
     {
-        m_game->m_sprite[ItemPackPivotPoint + cfg->m_sprite]->draw(sX + 134, sY + 182, cfg->m_sprite_frame);
+        upg_draw.sprite->draw(sX + 134, sY + 182, upg_draw.frame);
     }
     else if ((cfg->get_equip_pos() == EquipPos::LeftHand)
         || (cfg->get_equip_pos() == EquipPos::RightHand)
         || (cfg->get_equip_pos() == EquipPos::TwoHand))
     {
-        m_game->m_sprite[ItemPackPivotPoint + cfg->m_sprite]->draw(sX + 134, sY + 182, cfg->m_sprite_frame, hb::shared::sprite::DrawParams::tint(GameColors::Weapons[item_color].r, GameColors::Weapons[item_color].g, GameColors::Weapons[item_color].b));
+        upg_draw.sprite->draw(sX + 134, sY + 182, upg_draw.frame, hb::shared::sprite::DrawParams::tint(GameColors::Weapons[item_color].r, GameColors::Weapons[item_color].g, GameColors::Weapons[item_color].b));
     }
     else
     {
-        m_game->m_sprite[ItemPackPivotPoint + cfg->m_sprite]->draw(sX + 134, sY + 182, cfg->m_sprite_frame, hb::shared::sprite::DrawParams::tint(GameColors::Items[item_color].r, GameColors::Items[item_color].g, GameColors::Items[item_color].b));
+        upg_draw.sprite->draw(sX + 134, sY + 182, upg_draw.frame, hb::shared::sprite::DrawParams::tint(GameColors::Items[item_color].r, GameColors::Items[item_color].g, GameColors::Items[item_color].b));
     }
 
     auto itemInfo = item_name_formatter::get().format(m_game->m_item_list[item_index].get());
@@ -185,24 +187,25 @@ void DialogBox_ItemUpgrade::DrawMode2_InProgress(int sX, int sY)
 
         if (cfg)
         {
+            auto upg2_draw = m_game->get_item_draw(cfg->m_display_id, item_atlas::pack, false);
             if (item_color == 0)
             {
-                m_game->m_sprite[ItemPackPivotPoint + cfg->m_sprite]->draw(sX + 134, sY + 182, cfg->m_sprite_frame);
+                upg2_draw.sprite->draw(sX + 134, sY + 182, upg2_draw.frame);
             }
             else if ((cfg->get_equip_pos() == EquipPos::LeftHand)
                 || (cfg->get_equip_pos() == EquipPos::RightHand)
                 || (cfg->get_equip_pos() == EquipPos::TwoHand))
             {
-                m_game->m_sprite[ItemPackPivotPoint + cfg->m_sprite]->draw(sX + 134, sY + 182, cfg->m_sprite_frame, hb::shared::sprite::DrawParams::tint(GameColors::Weapons[item_color].r, GameColors::Weapons[item_color].g, GameColors::Weapons[item_color].b));
+                upg2_draw.sprite->draw(sX + 134, sY + 182, upg2_draw.frame, hb::shared::sprite::DrawParams::tint(GameColors::Weapons[item_color].r, GameColors::Weapons[item_color].g, GameColors::Weapons[item_color].b));
             }
             else
             {
-                m_game->m_sprite[ItemPackPivotPoint + cfg->m_sprite]->draw(sX + 134, sY + 182, cfg->m_sprite_frame, hb::shared::sprite::DrawParams::tint(GameColors::Items[item_color].r, GameColors::Items[item_color].g, GameColors::Items[item_color].b));
+                upg2_draw.sprite->draw(sX + 134, sY + 182, upg2_draw.frame, hb::shared::sprite::DrawParams::tint(GameColors::Items[item_color].r, GameColors::Items[item_color].g, GameColors::Items[item_color].b));
             }
 
             // Flickering effect
             if ((rand() % 5) == 0)
-                m_game->m_sprite[ItemPackPivotPoint + cfg->m_sprite]->draw(sX + 134, sY + 182, cfg->m_sprite_frame, hb::shared::sprite::DrawParams::alpha_blend(0.25f));
+                upg2_draw.sprite->draw(sX + 134, sY + 182, upg2_draw.frame, hb::shared::sprite::DrawParams::alpha_blend(0.25f));
         }
 
         auto itemInfo2 = item_name_formatter::get().format(m_game->m_item_list[item_index].get());
@@ -461,8 +464,8 @@ bool DialogBox_ItemUpgrade::on_click(short mouse_x, short mouse_y)
                 {
                     CItem* cfg = m_game->get_item_config(m_game->m_item_list[i]->m_id_num);
                     if (!cfg) continue;
-                    if ((cfg->m_sprite == 6) && (cfg->m_sprite_frame == 128)) so_x++;
-                    if ((cfg->m_sprite == 6) && (cfg->m_sprite_frame == 129)) so_m++;
+                    if (m_game->m_item_list[i]->m_id_num == 656) so_x++; // Stone of Xelima
+                    if (m_game->m_item_list[i]->m_id_num == 657) so_m++; // Stone of Merien
                 }
 
             if ((so_x > 0) || (so_m > 0))

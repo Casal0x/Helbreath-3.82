@@ -23,7 +23,6 @@ void fishing_manager::handle_fish_chance(char* data)
 void fishing_manager::handle_event_fish_mode(char* data)
 {
 	if (!m_game) return;
-	short sprite, sprite_frame;
 	char name[hb::shared::limits::ItemNameLen]{};
 	uint16_t price;
 
@@ -32,15 +31,13 @@ void fishing_manager::handle_event_fish_mode(char* data)
 	if (!pkt) return;
 
 	price = pkt->price;
-	sprite = static_cast<short>(pkt->sprite);
-	sprite_frame = static_cast<short>(pkt->sprite_frame);
 
 	static_assert(sizeof(pkt->name) <= sizeof(name), "Packet name field exceeds local buffer");
 	memcpy(name, pkt->name, sizeof(pkt->name));
 
 	m_game->m_dialog_box_manager.enable_dialog_box(DialogBoxId::Fishing, 0, 0, price, name);
-	m_game->m_dialog_box_manager.Info(DialogBoxId::Fishing).m_v3 = sprite;
-	m_game->m_dialog_box_manager.Info(DialogBoxId::Fishing).m_v4 = sprite_frame;
+	m_game->m_dialog_box_manager.Info(DialogBoxId::Fishing).m_v3 = 0; // unused (was sprite)
+	m_game->m_dialog_box_manager.Info(DialogBoxId::Fishing).m_v4 = 0; // unused (was sprite_frame)
 
 	m_game->add_event_list(NOTIFYMSG_EVENTFISHMODE1, 10);
 }

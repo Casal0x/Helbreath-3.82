@@ -5,6 +5,7 @@
 #include "CommonTypes.h"
 #include <algorithm>
 using namespace hb::shared::direction;
+using hb::shared::item::EquipPos;
 
 hb::shared::sprite::BoundRect CPlayerRenderer::draw_stop(int indexX, int indexY, int sX, int sY, bool trans, uint32_t time)
 {
@@ -30,7 +31,7 @@ hb::shared::sprite::BoundRect CPlayerRenderer::draw_stop(int indexX, int indexY,
 	// Calculate equipment indices — walking uses pose 1, standing uses pose 0
 	bool walking = state.m_appearance.is_walking;
 	int bodyPose = walking ? 1 : 0;
-	EquipmentIndices eq = EquipmentIndices::CalcPlayer(state, bodyPose, bodyPose, bodyPose);
+	EquipmentIndices eq = EquipmentIndices::CalcPlayer(state, bodyPose);
 	eq.calc_colors(state);
 
 	// Crusade FOE indicator
@@ -102,7 +103,7 @@ hb::shared::sprite::BoundRect CPlayerRenderer::draw_move(int indexX, int indexY,
 	// Calculate equipment indices — walking uses pose 3, standing uses pose 2
 	bool walking = state.m_appearance.is_walking;
 	int bodyPose = walking ? 3 : 2;
-	EquipmentIndices eq = EquipmentIndices::CalcPlayer(state, bodyPose, bodyPose, bodyPose);
+	EquipmentIndices eq = EquipmentIndices::CalcPlayer(state, bodyPose);
 	eq.calc_colors(state);
 
 	// Motion offset
@@ -166,8 +167,8 @@ hb::shared::sprite::BoundRect CPlayerRenderer::draw_run(int indexX, int indexY, 
 	if (RenderHelpers::check_invisibility(m_game, state, inv, admin_invis))
 		return invalidRect;
 
-	// bodyPose=4, weaponPose=6, shieldPose=6 for running
-	EquipmentIndices eq = EquipmentIndices::CalcPlayer(state, 4, 6, 6);
+	// bodyPose=4 for running (weapon/shield use same pose in new system)
+	EquipmentIndices eq = EquipmentIndices::CalcPlayer(state, 4);
 	eq.calc_colors(state);
 
 	// Motion offset
@@ -256,14 +257,18 @@ hb::shared::sprite::BoundRect CPlayerRenderer::draw_attack(int indexX, int index
 	if (state.m_appearance.is_walking)
 	{
 		// Walking attack: body pose depends on weapon type (6 for one-hand, 7 for two-hand)
-		int weapon = state.m_appearance.weapon_type;
-		int add = ((weapon >= 40) && (weapon <= 59)) ? 7 : 6;
-		eq = EquipmentIndices::CalcPlayer(state, add, 4, 4);
+		bool two_hand = false;
+		if (state.m_appearance.weapon_item_id > 0) {
+			CItem* cfg = m_game.get_item_config(state.m_appearance.weapon_item_id);
+			if (cfg) two_hand = (cfg->get_equip_pos() == EquipPos::TwoHand);
+		}
+		int add = two_hand ? 7 : 6;
+		eq = EquipmentIndices::CalcPlayer(state, add);
 	}
 	else
 	{
 		// Standing attack: bodyPose=5, no weapon/shield drawn
-		eq = EquipmentIndices::CalcPlayer(state, 5, -1, -1);
+		eq = EquipmentIndices::CalcPlayer(state, 5, false, false);
 	}
 	eq.calc_colors(state);
 
@@ -283,8 +288,11 @@ hb::shared::sprite::BoundRect CPlayerRenderer::draw_attack(int indexX, int index
 
 		// Attack-specific: weapon swing trail at frame 3
 		if (eq.m_weapon_index != -1 && state.m_frame == 3)
-			m_game.m_sprite[eq.m_weapon_index]->draw(sX, sY, state.m_frame - 1,
+		{
+			int trailFrame = (state.m_dir - 1) * 8 + (state.m_frame - 1);
+			m_game.m_equip_sprites[eq.m_weapon_index]->draw(sX, sY, trailFrame,
 				hb::shared::sprite::DrawParams::tinted_alpha(126, 192, 242, 0.7f));
+		}
 
 		// Berserk glow
 		RenderHelpers::draw_berserk_glow(m_game, eq, state, sX, sY);
@@ -336,13 +344,17 @@ hb::shared::sprite::BoundRect CPlayerRenderer::draw_attack_move(int indexX, int 
 	EquipmentIndices eq;
 	if (state.m_appearance.is_walking)
 	{
-		int weapon = state.m_appearance.weapon_type;
-		int add = ((weapon >= 40) && (weapon <= 59)) ? 7 : 6;
-		eq = EquipmentIndices::CalcPlayer(state, add, 4, 4);
+		bool two_hand = false;
+		if (state.m_appearance.weapon_item_id > 0) {
+			CItem* cfg = m_game.get_item_config(state.m_appearance.weapon_item_id);
+			if (cfg) two_hand = (cfg->get_equip_pos() == EquipPos::TwoHand);
+		}
+		int add = two_hand ? 7 : 6;
+		eq = EquipmentIndices::CalcPlayer(state, add);
 	}
 	else
 	{
-		eq = EquipmentIndices::CalcPlayer(state, 5, -1, -1);
+		eq = EquipmentIndices::CalcPlayer(state, 5, false, false);
 	}
 	eq.calc_colors(state);
 
@@ -419,8 +431,11 @@ hb::shared::sprite::BoundRect CPlayerRenderer::draw_attack_move(int indexX, int 
 
 		// Attack-specific: weapon swing trail at frame 3
 		if (eq.m_weapon_index != -1 && state.m_frame == 3)
-			m_game.m_sprite[eq.m_weapon_index]->draw(sX + dx, sY + dy, state.m_frame - 1,
+		{
+			int trailFrame = (state.m_dir - 1) * 8 + (state.m_frame - 1);
+			m_game.m_equip_sprites[eq.m_weapon_index]->draw(sX + dx, sY + dy, trailFrame,
 				hb::shared::sprite::DrawParams::tinted_alpha(126, 192, 242, 0.7f));
+		}
 
 		// Berserk glow
 		RenderHelpers::draw_berserk_glow(m_game, eq, state, sX + dx, sY + dy);
@@ -432,13 +447,14 @@ hb::shared::sprite::BoundRect CPlayerRenderer::draw_attack_move(int indexX, int 
 		// Dash ghost effect
 		if (dash_draw)
 		{
+			int ghostDirFrame = (state.m_dir - 1) * 8 + state.m_frame;
 			m_game.m_sprite[eq.m_body_index + (state.m_dir - 1)]->draw(sX + dsx, sY + dsy, state.m_frame,
 				hb::shared::sprite::DrawParams::tinted_alpha(126, 192, 242, 0.7f));
 			if (eq.m_weapon_index != -1)
-				m_game.m_sprite[eq.m_weapon_index]->draw(sX + dsx, sY + dsy, state.m_frame,
+				m_game.m_equip_sprites[eq.m_weapon_index]->draw(sX + dsx, sY + dsy, ghostDirFrame,
 					hb::shared::sprite::DrawParams::tinted_alpha(126, 192, 242, 0.7f));
 			if (eq.m_shield_index != -1)
-				m_game.m_sprite[eq.m_shield_index]->draw(sX + dsx, sY + dsy, (state.m_dir - 1) * 8 + state.m_frame,
+				m_game.m_equip_sprites[eq.m_shield_index]->draw(sX + dsx, sY + dsy, ghostDirFrame,
 					hb::shared::sprite::DrawParams::tinted_alpha(126, 192, 242, 0.7f));
 		}
 	}
@@ -495,7 +511,7 @@ hb::shared::sprite::BoundRect CPlayerRenderer::draw_magic(int indexX, int indexY
 	}
 
 	// bodyPose=8, no weapon/shield
-	EquipmentIndices eq = EquipmentIndices::CalcPlayer(state, 8, -1, -1);
+	EquipmentIndices eq = EquipmentIndices::CalcPlayer(state, 8, false, false);
 	eq.calc_colors(state);
 
 	// Crusade FOE indicator
@@ -545,7 +561,7 @@ hb::shared::sprite::BoundRect CPlayerRenderer::draw_get_item(int indexX, int ind
 		return invalidRect;
 
 	// bodyPose=9, no weapon/shield
-	EquipmentIndices eq = EquipmentIndices::CalcPlayer(state, 9, -1, -1);
+	EquipmentIndices eq = EquipmentIndices::CalcPlayer(state, 9, false, false);
 	eq.calc_colors(state);
 
 	// Crusade FOE indicator
@@ -604,15 +620,15 @@ hb::shared::sprite::BoundRect CPlayerRenderer::draw_damage(int indexX, int index
 		// Idle state — walking or standing, with weapon/shield
 		bool walking = state.m_appearance.is_walking;
 		int bodyPose = walking ? 1 : 0;
-		eq = EquipmentIndices::CalcPlayer(state, bodyPose, bodyPose, bodyPose);
+		eq = EquipmentIndices::CalcPlayer(state, bodyPose);
 		equipFrameMul = 8;
 	}
 	else
 	{
-		// Damage recoil state — pose 10, weapon pose 5, shield pose 5
+		// Damage recoil state — pose 10
 		frame -= 4;
 		state.m_frame = frame;
-		eq = EquipmentIndices::CalcPlayer(state, 10, 5, 5);
+		eq = EquipmentIndices::CalcPlayer(state, 10);
 		equipFrameMul = 4;
 	}
 	eq.calc_colors(state);
@@ -681,8 +697,8 @@ hb::shared::sprite::BoundRect CPlayerRenderer::draw_damage_move(int indexX, int 
 	case direction::northwest: state.m_dir = direction::southeast; break;
 	}
 
-	// bodyPose=10, weaponPose=5, shieldPose=5
-	EquipmentIndices eq = EquipmentIndices::CalcPlayer(state, 10, 5, 5);
+	// bodyPose=10 for damage knockback
+	EquipmentIndices eq = EquipmentIndices::CalcPlayer(state, 10);
 	eq.calc_colors(state);
 
 	// Motion offset
@@ -751,14 +767,14 @@ hb::shared::sprite::BoundRect CPlayerRenderer::draw_dying(int indexX, int indexY
 	if (frame < 6)
 	{
 		// Standing idle — bodyPose=0, no weapon/shield
-		eq = EquipmentIndices::CalcPlayer(state, 0, -1, -1);
+		eq = EquipmentIndices::CalcPlayer(state, 0, false, false);
 	}
 	else
 	{
 		// Dying animation — bodyPose=11, no weapon/shield
 		frame -= 6;
 		state.m_frame = frame;
-		eq = EquipmentIndices::CalcPlayer(state, 11, -1, -1);
+		eq = EquipmentIndices::CalcPlayer(state, 11, false, false);
 	}
 	eq.calc_colors(state);
 
@@ -801,7 +817,7 @@ hb::shared::sprite::BoundRect CPlayerRenderer::draw_dead(int indexX, int indexY,
 	auto& state = m_game.m_entity_state;
 
 	// bodyPose=11, frame=7 fixed for dead players
-	EquipmentIndices eq = EquipmentIndices::CalcPlayer(state, 11, -1, -1);
+	EquipmentIndices eq = EquipmentIndices::CalcPlayer(state, 11, false, false);
 	eq.calc_colors(state);
 	int frame = 7;
 

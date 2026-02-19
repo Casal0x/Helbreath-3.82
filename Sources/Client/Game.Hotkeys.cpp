@@ -11,6 +11,7 @@
 
 
 using namespace hb::shared::net;
+using hb::shared::item::ItemType;
 namespace MouseButton = hb::shared::input::MouseButton;
 
 void CGame::register_hotkeys()
@@ -244,22 +245,7 @@ void CGame::hotkey_simple_use_health_potion()
 		if ((m_item_list[i] != 0) && (m_is_item_disabled[i] != true))
 		{
 			CItem* cfg = get_item_config(m_item_list[i]->m_id_num);
-			if (cfg && (cfg->m_sprite == 6) && (cfg->m_sprite_frame == 1))
-			{
-				send_command(MsgId::CommandCommon, CommonType::ReqUseItem, 0, i, 0, 0, 0);
-				m_is_item_disabled[i] = true;
-				m_item_using_status = true;
-				return;
-			}
-		}
-	}
-
-	for (i = 0; i < hb::shared::limits::MaxItems; i++)
-	{
-		if ((m_item_list[i] != 0) && (m_is_item_disabled[i] != true))
-		{
-			CItem* cfg = get_item_config(m_item_list[i]->m_id_num);
-			if (cfg && (cfg->m_sprite == 6) && (cfg->m_sprite_frame == 2))
+			if (cfg && cfg->get_item_type() == ItemType::Consume && cfg->m_item_effect_type == hb::shared::item::to_int(hb::shared::item::ItemEffectType::HP))
 			{
 				send_command(MsgId::CommandCommon, CommonType::ReqUseItem, 0, i, 0, 0, 0);
 				m_is_item_disabled[i] = true;
@@ -290,22 +276,7 @@ void CGame::hotkey_simple_use_mana_potion()
 		if ((m_item_list[i] != 0) && (m_is_item_disabled[i] != true))
 		{
 			CItem* cfg = get_item_config(m_item_list[i]->m_id_num);
-			if (cfg && (cfg->m_sprite == 6) && (cfg->m_sprite_frame == 3))
-			{
-				send_command(MsgId::CommandCommon, CommonType::ReqUseItem, 0, i, 0, 0, 0);
-				m_is_item_disabled[i] = true;
-				m_item_using_status = true;
-				return;
-			}
-		}
-	}
-
-	for (i = 0; i < hb::shared::limits::MaxItems; i++)
-	{
-		if ((m_item_list[i] != 0) && (m_is_item_disabled[i] != true))
-		{
-			CItem* cfg = get_item_config(m_item_list[i]->m_id_num);
-			if (cfg && (cfg->m_sprite == 6) && (cfg->m_sprite_frame == 4))
+			if (cfg && cfg->get_item_type() == ItemType::Consume && cfg->m_item_effect_type == hb::shared::item::to_int(hb::shared::item::ItemEffectType::MP))
 			{
 				send_command(MsgId::CommandCommon, CommonType::ReqUseItem, 0, i, 0, 0, 0);
 				m_is_item_disabled[i] = true;

@@ -152,6 +152,13 @@ namespace CommonType
 		EnchantItem                             = 0x0A73,
 		UpgradeEnchant                          = 0x0A74,
 		DisenchantItem                          = 0x0A75,
+#ifdef TESTER_ONLY
+		// TESTER MENU — tester-only commands
+		TesterAction                            = 0x0A76,
+		TesterItemSearch                        = 0x0A77,
+		TesterCreateItem                        = 0x0A78,
+		TesterMapList                           = 0x0A79,
+#endif // TESTER_ONLY
 		ReqRepairAll                            = 0x0F10,
 		ReqRepairAllDelete                      = 0x0F12,
 		ReqRepairAllConfirm                     = 0x0F13,
@@ -342,6 +349,12 @@ namespace Notify
 		ItemObtainedBulk                        = 0x0BF8,
 		RepairAllPrices                         = 0x0F11,
 		MobKills                                = 0x0A68,
+#ifdef TESTER_ONLY
+		// TESTER MENU — tester-only notifications
+		Contribution                            = 0x0A69,
+		TesterItemSearchResult                  = 0x0A6A,
+		TesterMapListResult                     = 0x0A6B,
+#endif // TESTER_ONLY
 	};
 }
 
