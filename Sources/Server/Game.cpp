@@ -1889,7 +1889,19 @@ void CGame::request_init_data_handler(int client_h, char* data, char key, size_t
 	init_header->header.msg_type = MsgType::Confirm;
 
 	if (m_client_list[client_h]->m_is_observer_mode == false)
+	{
+		// When dest is -1,-1 (teleport to initial points), resolve to a random spawn first
+		// so get_empty_position searches near a valid point instead of (-1,-1).
+		// Use the destination map's location_name (not player's m_location) to ensure
+		// randomization even for players with location "NONE".
+		if (m_client_list[client_h]->m_x == -1 && m_client_list[client_h]->m_y == -1)
+		{
+			get_map_initial_point(m_client_list[client_h]->m_map_index,
+				&m_client_list[client_h]->m_x, &m_client_list[client_h]->m_y,
+				m_map_list[m_client_list[client_h]->m_map_index]->m_location_name);
+		}
 		get_empty_position(&m_client_list[client_h]->m_x, &m_client_list[client_h]->m_y, m_client_list[client_h]->m_map_index);
+	}
 	else get_map_initial_point(m_client_list[client_h]->m_map_index, &m_client_list[client_h]->m_x, &m_client_list[client_h]->m_y);
 
 	init_header->player_object_id = static_cast<std::int16_t>(client_h);
@@ -8419,7 +8431,19 @@ RTH_NEXTSTEP:
 	init_header->header.msg_type = MsgType::Confirm;
 
 	if (m_client_list[client_h]->m_is_observer_mode == false)
+	{
+		// When dest is -1,-1 (teleport to initial points), resolve to a random spawn first
+		// so get_empty_position searches near a valid point instead of (-1,-1).
+		// Use the destination map's location_name (not player's m_location) to ensure
+		// randomization even for players with location "NONE".
+		if (m_client_list[client_h]->m_x == -1 && m_client_list[client_h]->m_y == -1)
+		{
+			get_map_initial_point(m_client_list[client_h]->m_map_index,
+				&m_client_list[client_h]->m_x, &m_client_list[client_h]->m_y,
+				m_map_list[m_client_list[client_h]->m_map_index]->m_location_name);
+		}
 		get_empty_position(&m_client_list[client_h]->m_x, &m_client_list[client_h]->m_y, m_client_list[client_h]->m_map_index);
+	}
 	else get_map_initial_point(m_client_list[client_h]->m_map_index, &m_client_list[client_h]->m_x, &m_client_list[client_h]->m_y);
 
 	init_header->player_object_id = static_cast<std::int16_t>(client_h);
