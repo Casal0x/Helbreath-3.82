@@ -103,6 +103,7 @@ public:
 	class CGame * m_game;
 	char  m_name[11];
 	char  m_location_name[11];
+	char  m_display_name[31];
 	short m_size_x, m_size_y, m_tile_data_size;
 	class CTeleportLoc * m_teleport_loc[hb::server::map::MaxTeleportLoc];
 	

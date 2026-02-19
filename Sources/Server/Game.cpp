@@ -1707,19 +1707,21 @@ void CGame::request_init_data_handler(int client_h, char* data, char key, size_t
 
 	// Send configs FIRST so the client has item/magic/skill definitions
 	// before receiving player data that references them.
-	std::string clientItemHash, clientMagicHash, clientSkillHash, clientNpcHash;
+	std::string clientItemHash, clientMagicHash, clientSkillHash, clientNpcHash, clientMapHash;
 	if (msg_size >= sizeof(hb::net::PacketRequestInitDataEx)) {
 		const auto* exReq = reinterpret_cast<const hb::net::PacketRequestInitDataEx*>(data);
 		clientItemHash = exReq->itemConfigHash;
 		clientMagicHash = exReq->magicConfigHash;
 		clientSkillHash = exReq->skillConfigHash;
 		clientNpcHash = exReq->npcConfigHash;
+		clientMapHash = exReq->mapConfigHash;
 	}
 
 	bool item_cache_valid  = (!clientItemHash.empty() && clientItemHash == m_config_hash[0]);
 	bool magic_cache_valid = (!clientMagicHash.empty() && clientMagicHash == m_config_hash[1]);
 	bool skill_cache_valid = (!clientSkillHash.empty() && clientSkillHash == m_config_hash[2]);
 	bool npc_cache_valid   = (!clientNpcHash.empty() && clientNpcHash == m_config_hash[3]);
+	bool map_cache_valid   = (!clientMapHash.empty() && clientMapHash == m_config_hash[4]);
 
 	{
 		hb::net::PacketResponseConfigCacheStatus cacheStatus{};
@@ -1729,6 +1731,7 @@ void CGame::request_init_data_handler(int client_h, char* data, char key, size_t
 		cacheStatus.magicCacheValid = magic_cache_valid ? 1 : 0;
 		cacheStatus.skillCacheValid = skill_cache_valid ? 1 : 0;
 		cacheStatus.npcCacheValid = npc_cache_valid ? 1 : 0;
+		cacheStatus.mapCacheValid = map_cache_valid ? 1 : 0;
 		m_client_list[client_h]->m_socket->send_msg(
 			reinterpret_cast<char*>(&cacheStatus), sizeof(cacheStatus));
 	}
@@ -1737,6 +1740,7 @@ void CGame::request_init_data_handler(int client_h, char* data, char key, size_t
 	if (!magic_cache_valid) m_magic_manager->send_client_magic_configs(client_h);
 	if (!skill_cache_valid) m_skill_manager->send_client_skill_configs(client_h);
 	if (!npc_cache_valid)   send_client_npc_configs(client_h);
+	if (!map_cache_valid)   send_client_map_configs(client_h);
 
 	// Now send player data (configs are guaranteed loaded on client)
 	writer.Reset();
@@ -2226,6 +2230,73 @@ bool CGame::send_client_npc_configs(int client_h)
 	return true;
 }
 
+bool CGame::send_client_map_configs(int client_h)
+{
+	if (m_client_list[client_h] == 0) {
+		return false;
+	}
+
+	constexpr size_t maxPacketSize = 7000;
+	constexpr size_t headerSize = sizeof(hb::net::PacketMapConfigHeader);
+	constexpr size_t entrySize = sizeof(hb::net::PacketMapConfigEntry);
+	constexpr size_t maxEntriesPerPacket = (maxPacketSize - headerSize) / entrySize;
+
+	int totalMaps = 0;
+	for (int i = 0; i < MaxMaps; i++) {
+		if (m_map_list[i] != 0 && m_map_list[i]->m_display_name[0] != '\0') totalMaps++;
+	}
+
+	int mapsSent = 0;
+	int packetIndex = 0;
+
+	while (mapsSent < totalMaps) {
+		std::memset(G_cData50000, 0, sizeof(G_cData50000));
+
+		auto* pktHeader = reinterpret_cast<hb::net::PacketMapConfigHeader*>(G_cData50000);
+		pktHeader->header.msg_id = MsgId::MapConfigContents;
+		pktHeader->header.msg_type = MsgType::Confirm;
+		pktHeader->totalMaps = static_cast<uint16_t>(totalMaps);
+		pktHeader->packetIndex = static_cast<uint16_t>(packetIndex);
+
+		auto* entries = reinterpret_cast<hb::net::PacketMapConfigEntry*>(G_cData50000 + headerSize);
+
+		uint16_t entriesInPacket = 0;
+		int skipped = 0;
+
+		for (int i = 0; i < MaxMaps && entriesInPacket < maxEntriesPerPacket; i++) {
+			if (m_map_list[i] == 0 || m_map_list[i]->m_display_name[0] == '\0') continue;
+			if (skipped < mapsSent) { skipped++; continue; }
+
+			auto& entry = entries[entriesInPacket];
+			std::memset(&entry, 0, sizeof(entry));
+			std::snprintf(entry.map_name, sizeof(entry.map_name), "%s", m_map_list[i]->m_name);
+			std::snprintf(entry.display_name, sizeof(entry.display_name), "%s", m_map_list[i]->m_display_name);
+			entriesInPacket++;
+		}
+
+		pktHeader->mapCount = entriesInPacket;
+		size_t packetSize = headerSize + (entriesInPacket * entrySize);
+
+		int ret = m_client_list[client_h]->m_socket->send_msg(G_cData50000, static_cast<int>(packetSize));
+		switch (ret) {
+		case sock::Event::QueueFull:
+		case sock::Event::SocketError:
+		case sock::Event::CriticalError:
+		case sock::Event::SocketClosed:
+			hb::logger::log("Failed to send map configs: Client({}) Packet({})", client_h, packetIndex);
+			delete_client(client_h, true, true);
+			delete m_client_list[client_h];
+			m_client_list[client_h] = 0;
+			return false;
+		}
+
+		mapsSent += entriesInPacket;
+		packetIndex++;
+	}
+
+	return true;
+}
+
 void CGame::compute_config_hashes()
 {
 	// Compute SHA256 for item configs
@@ -2474,7 +2545,59 @@ void CGame::compute_config_hashes()
 		m_config_hash[3] = allData.empty() ? std::string{} : hb::shared::util::sha256(allData.data(), allData.size());
 	}
 
-	hb::logger::log("Config hashes computed - Items: {}, Magic: {}, Skills: {}, Npcs: {}", m_config_hash[0], m_config_hash[1], m_config_hash[2], m_config_hash[3]);
+	// Compute SHA256 for map display name configs
+	{
+		constexpr size_t headerSize = sizeof(hb::net::PacketMapConfigHeader);
+		constexpr size_t entrySize = sizeof(hb::net::PacketMapConfigEntry);
+		constexpr size_t maxEntriesPerPacket = (7000 - headerSize) / entrySize;
+
+		std::vector<uint8_t> allData;
+		int totalMaps = 0;
+		for (int i = 0; i < MaxMaps; i++) {
+			if (m_map_list[i] != 0 && m_map_list[i]->m_display_name[0] != '\0') totalMaps++;
+		}
+
+		int mapsSent = 0;
+		int packetIndex = 0;
+		while (mapsSent < totalMaps) {
+			char buf[7000]{};
+			auto* pktHeader = reinterpret_cast<hb::net::PacketMapConfigHeader*>(buf);
+			pktHeader->header.msg_id = MsgId::MapConfigContents;
+			pktHeader->header.msg_type = MsgType::Confirm;
+			pktHeader->totalMaps = static_cast<uint16_t>(totalMaps);
+			pktHeader->packetIndex = static_cast<uint16_t>(packetIndex);
+
+			auto* entries = reinterpret_cast<hb::net::PacketMapConfigEntry*>(buf + headerSize);
+			uint16_t entriesInPacket = 0;
+			int skipped = 0;
+
+			for (int i = 0; i < MaxMaps && entriesInPacket < maxEntriesPerPacket; i++) {
+				if (m_map_list[i] == 0 || m_map_list[i]->m_display_name[0] == '\0') continue;
+				if (skipped < mapsSent) { skipped++; continue; }
+
+				auto& entry = entries[entriesInPacket];
+				std::memset(&entry, 0, sizeof(entry));
+				std::snprintf(entry.map_name, sizeof(entry.map_name), "%s", m_map_list[i]->m_name);
+				std::snprintf(entry.display_name, sizeof(entry.display_name), "%s", m_map_list[i]->m_display_name);
+				entriesInPacket++;
+			}
+
+			pktHeader->mapCount = entriesInPacket;
+			size_t packetSize = headerSize + (entriesInPacket * entrySize);
+
+			uint16_t len = static_cast<uint16_t>(packetSize);
+			const uint8_t* lenBytes = reinterpret_cast<const uint8_t*>(&len);
+			allData.push_back(lenBytes[0]);
+			allData.push_back(lenBytes[1]);
+			allData.insert(allData.end(), reinterpret_cast<uint8_t*>(buf), reinterpret_cast<uint8_t*>(buf) + packetSize);
+
+			mapsSent += entriesInPacket;
+			packetIndex++;
+		}
+		m_config_hash[4] = allData.empty() ? std::string{} : hb::shared::util::sha256(allData.data(), allData.size());
+	}
+
+	hb::logger::log("Config hashes computed - Items: {}, Magic: {}, Skills: {}, Npcs: {}, Maps: {}", m_config_hash[0], m_config_hash[1], m_config_hash[2], m_config_hash[3], m_config_hash[4]);
 }
 
 void CGame::fill_player_map_object(hb::net::PacketMapDataObjectPlayer& obj, short owner_h, int viewer_h)
@@ -5353,6 +5476,7 @@ void CGame::msg_process()
 				if (reqPkt->requestMagic)  m_magic_manager->send_client_magic_configs(client_h);
 				if (reqPkt->requestSkills) m_skill_manager->send_client_skill_configs(client_h);
 				if (reqPkt->requestNpcs)   send_client_npc_configs(client_h);
+				if (reqPkt->requestMaps)   send_client_map_configs(client_h);
 			}
 			break;
 

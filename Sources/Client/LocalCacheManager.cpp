@@ -159,6 +159,7 @@ const char* LocalCacheManager::_GetFilename(ConfigCacheType type) const
 	case ConfigCacheType::Magic:  return "cache/{d9e2a1c4-8f37-4b6d-a5c0-1e9f3d7b2a4c}.bin";
 	case ConfigCacheType::Skills: return "cache/{b4c8e6f1-2a5d-4739-8e1b-6f0c3d9a5e2b}.bin";
 	case ConfigCacheType::Npcs:   return "cache/{e3a7f5d2-1b8c-4e6a-9d0f-5c2b7a4e8f1d}.bin";
+	case ConfigCacheType::Maps:   return "cache/{a1b2c3d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d}.bin";
 	default: return "";
 	}
 }
