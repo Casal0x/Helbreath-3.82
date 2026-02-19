@@ -76,7 +76,7 @@ namespace NetworkMessageHandlers {
 		if (skill_num < 0 || skill_num >= hb::shared::limits::MaxSkillType) return;
 		if (!game->m_skill_cfg_list[skill_num]) return;
 		skill_level = static_cast<char>(pkt->skill_level);
-		temp = std::format(NOTIFYMSG_SKILL_TRAIN_SUCCESS1, game->m_skill_cfg_list[skill_num]->m_name, skill_level);
+		temp = std::format(NOTIFYMSG_SKILL_TRAIN_SUCCESS1, game->m_skill_cfg_list[skill_num]->m_name, static_cast<int>(skill_level));
 		game->add_event_list(temp.c_str(), 10);
 		game->m_skill_cfg_list[skill_num]->m_level = skill_level;
 		game->m_player->m_skill_mastery[skill_num] = static_cast<unsigned char>(skill_level);
