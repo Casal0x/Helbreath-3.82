@@ -5469,32 +5469,32 @@ char CGame::get_official_map_name(const char* map_name, char* name)
 		std::snprintf(name, 21, "%s", GET_OFFICIAL_MAP_NAME38);	// Elvine Guildhall
 		return -1;
 	}
-	else if (strcmp(map_name, "bsmith_1") == 0)
+	else if (strcmp(map_name, "bsmith_1") == 0 || strcmp(map_name, "bsmith_1f") == 0)
 	{
 		std::snprintf(name, 21, "%s", GET_OFFICIAL_MAP_NAME33);	// Aresden Blacksmith
 		return -1;
 	}
-	else if (strcmp(map_name, "bsmith_2") == 0)
+	else if (strcmp(map_name, "bsmith_2") == 0 || strcmp(map_name, "bsmith_2f") == 0)
 	{
 		std::snprintf(name, 21, "%s", GET_OFFICIAL_MAP_NAME34);	// Elvine Blacksmith
 		return -1;
 	}
-	else if (strcmp(map_name, "gshop_1") == 0)
+	else if (strcmp(map_name, "gshop_1") == 0 || strcmp(map_name, "gshop_1f") == 0)
 	{
 		std::snprintf(name, 21, "%s", GET_OFFICIAL_MAP_NAME39);	// Aresden Shop
 		return -1;
 	}
-	else if (strcmp(map_name, "gshop_2") == 0)
+	else if (strcmp(map_name, "gshop_2") == 0 || strcmp(map_name, "gshop_2f") == 0)
 	{
 		std::snprintf(name, 21, "%s", GET_OFFICIAL_MAP_NAME40);	// Elvine Shop
 		return -1;
 	}
-	else if (strcmp(map_name, "wrhus_1") == 0)
+	else if (strcmp(map_name, "wrhus_1") == 0 || strcmp(map_name, "wrhus_1f") == 0)
 	{
 		std::snprintf(name, 21, "%s", GET_OFFICIAL_MAP_NAME43);	// Aresden Warehouse
 		return -1;
 	}
-	else if (strcmp(map_name, "wrhus_2") == 0)
+	else if (strcmp(map_name, "wrhus_2") == 0 || strcmp(map_name, "wrhus_2f") == 0)
 	{
 		std::snprintf(name, 21, "%s", GET_OFFICIAL_MAP_NAME44);	// Elvine Warehouse
 		return -1;
