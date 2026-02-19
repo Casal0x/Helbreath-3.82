@@ -280,6 +280,13 @@ bool DialogBox_NpcActionQuery::on_click(short mouse_x, short mouse_y)
 	{
 		CItem* cfg = m_game->get_item_config(m_game->m_item_list[Info().m_v1]->m_id_num);
 		if ((mouse_x > sX + 25) && (mouse_x < sX + 100) && (mouse_y > sY + 55) && (mouse_y < sY + 70)) {
+			// Can't sell gold
+			if (m_game->m_item_list[Info().m_v1]->m_id_num == ItemId::Gold)
+			{
+				add_event_list(BITEMDROP_SELLLIST2, 10);
+				disable_this_dialog();
+				return true;
+			}
 			if (cfg) send_command(MsgId::CommandCommon, CommonType::ReqSellItem, 0, Info().m_v1, Info().m_v2, Info().m_v3, cfg->m_name, Info().m_v4);
 			disable_this_dialog();
 			return true;

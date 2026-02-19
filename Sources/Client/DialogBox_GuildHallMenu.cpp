@@ -142,7 +142,7 @@ void DialogBox_GuildHallMenu::on_draw(short mouse_x, short mouse_y, short z, cha
 		break;
 
 	case 4: // Tutelar Angel Diag
-		put_aligned_string(sX, sX + size_x, sY + 45, "5 magesty points will be deducted", GameColors::UIMagicBlue);
+		put_aligned_string(sX, sX + size_x, sY + 45, "5 majestic points will be deducted", GameColors::UIMagicBlue);
 		put_aligned_string(sX, sX + size_x, sY + 80, "upon receiving the Pendant of Tutelary Angel.", GameColors::UIMagicBlue);
 		put_aligned_string(sX, sX + size_x, sY + 105, "Would you like to receive the Tutelary Angel?", GameColors::UIMagicBlue);
 		auto angelBuf = std::format(DRAW_DIALOGBOX_ITEMUPGRADE11, m_game->m_gizon_item_upgrade_left);
