@@ -1211,6 +1211,8 @@ void ItemManager::give_item_handler(int client_h, short item_index, int amount, 
 		else {
 			// . @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
+			bool guild_item_handled = false;
+
 			if (owner_type == hb::shared::owner_class::Player) {
 				memcpy(char_name, m_game->m_client_list[owner_h]->m_char_name, hb::shared::limits::CharNameLen - 1);
 				item = m_game->m_client_list[client_h]->m_item_list[item_index];
@@ -1228,11 +1230,11 @@ void ItemManager::give_item_handler(int client_h, short item_index, int amount, 
 
 						item_log(ItemLogAction::Deplete, client_h, (int)-1, item);
 
-						goto REMOVE_ITEM_PROCEDURE;
+						guild_item_handled = true;
 					}
 				}
 
-				if ((m_game->m_is_crusade_mode == false) && (m_game->m_client_list[client_h]->m_item_list[item_index]->m_id_num == 89)) {
+				if (!guild_item_handled && (m_game->m_is_crusade_mode == false) && (m_game->m_client_list[client_h]->m_item_list[item_index]->m_id_num == 89)) {
 
 					// client_h  owner_h   .
 					// owner_h  client_h    client_h
@@ -1244,51 +1246,53 @@ void ItemManager::give_item_handler(int client_h, short item_index, int amount, 
 
 						item_log(ItemLogAction::Deplete, client_h, (int)-1, item);
 
-						goto REMOVE_ITEM_PROCEDURE;
+						guild_item_handled = true;
 					}
 				}
 
-				if (add_client_item_list(owner_h, item, &erase_req)) {
+				if (!guild_item_handled) {
+					if (add_client_item_list(owner_h, item, &erase_req)) {
 
-					item_log(ItemLogAction::Give, client_h, owner_h, item);
+						item_log(ItemLogAction::Give, client_h, owner_h, item);
 
-					ret = send_item_notify_msg(owner_h, Notify::ItemObtained, item, 0);
-					switch (ret) {
-					case sock::Event::QueueFull:
-					case sock::Event::SocketError:
-					case sock::Event::CriticalError:
-					case sock::Event::SocketClosed:
-						m_game->delete_client(owner_h, true, true);
-						break;
+						ret = send_item_notify_msg(owner_h, Notify::ItemObtained, item, 0);
+						switch (ret) {
+						case sock::Event::QueueFull:
+						case sock::Event::SocketError:
+						case sock::Event::CriticalError:
+						case sock::Event::SocketClosed:
+							m_game->delete_client(owner_h, true, true);
+							break;
+						}
 					}
-				}
-				else {
-					m_game->m_map_list[m_game->m_client_list[client_h]->m_map_index]->set_item(m_game->m_client_list[client_h]->m_x,
-						m_game->m_client_list[client_h]->m_y,
-						m_game->m_client_list[client_h]->m_item_list[item_index]);
-					item_log(ItemLogAction::Drop, client_h, 0, m_game->m_client_list[client_h]->m_item_list[item_index]);
+					else {
+						m_game->m_map_list[m_game->m_client_list[client_h]->m_map_index]->set_item(m_game->m_client_list[client_h]->m_x,
+							m_game->m_client_list[client_h]->m_y,
+							m_game->m_client_list[client_h]->m_item_list[item_index]);
+						item_log(ItemLogAction::Drop, client_h, 0, m_game->m_client_list[client_h]->m_item_list[item_index]);
 
-					m_game->send_event_to_near_client_type_b(MsgId::EventCommon, CommonType::ItemDrop, m_game->m_client_list[client_h]->m_map_index,
-						m_game->m_client_list[client_h]->m_x, m_game->m_client_list[client_h]->m_y,
-						m_game->m_client_list[client_h]->m_item_list[item_index]->m_id_num,
-						0,
-						m_game->m_client_list[client_h]->m_item_list[item_index]->m_item_color,
-						m_game->m_client_list[client_h]->m_item_list[item_index]->m_attribute); // v1.4 color
+						m_game->send_event_to_near_client_type_b(MsgId::EventCommon, CommonType::ItemDrop, m_game->m_client_list[client_h]->m_map_index,
+							m_game->m_client_list[client_h]->m_x, m_game->m_client_list[client_h]->m_y,
+							m_game->m_client_list[client_h]->m_item_list[item_index]->m_id_num,
+							0,
+							m_game->m_client_list[client_h]->m_item_list[item_index]->m_item_color,
+							m_game->m_client_list[client_h]->m_item_list[item_index]->m_attribute); // v1.4 color
 
-					{
-						ret = send_item_notify_msg(owner_h, Notify::CannotCarryMoreItem, 0, 0);
+						{
+							ret = send_item_notify_msg(owner_h, Notify::CannotCarryMoreItem, 0, 0);
+						}
+
+						switch (ret) {
+						case sock::Event::QueueFull:
+						case sock::Event::SocketError:
+						case sock::Event::CriticalError:
+						case sock::Event::SocketClosed:
+							m_game->delete_client(owner_h, true, true);
+							break;
+						}
+
+						std::memset(char_name, 0, sizeof(char_name));
 					}
-
-					switch (ret) {
-					case sock::Event::QueueFull:
-					case sock::Event::SocketError:
-					case sock::Event::CriticalError:
-					case sock::Event::SocketClosed:
-						m_game->delete_client(owner_h, true, true);
-						break;
-					}
-
-					std::memset(char_name, 0, sizeof(char_name));
 				}
 			}
 			else {
@@ -1370,10 +1374,10 @@ void ItemManager::give_item_handler(int client_h, short item_index, int amount, 
 				}
 			}
 
-			m_game->send_notify_msg(0, client_h, Notify::GiveItemFinEraseItem, item_index, amount, 0, char_name);
+			if (!guild_item_handled) {
+				m_game->send_notify_msg(0, client_h, Notify::GiveItemFinEraseItem, item_index, amount, 0, char_name);
+			}
 		}
-
-	REMOVE_ITEM_PROCEDURE:
 
 		if (m_game->m_client_list[client_h] == 0) return;
 
@@ -1620,10 +1624,9 @@ void ItemManager::request_retrieve_item_handler(int client_h, char* data)
 					return;
 				}
 
-			goto RRIH_NOQUANTITY;
 		}
-		else {
-		RRIH_NOQUANTITY:
+
+		{
 			for(int i = 0; i < hb::shared::limits::MaxItems; i++)
 				if (m_game->m_client_list[client_h]->m_item_list[i] == 0) {
 					m_game->m_client_list[client_h]->m_item_list[i] = m_game->m_client_list[client_h]->m_item_in_bank_list[bank_item_index];
@@ -4468,10 +4471,9 @@ void ItemManager::build_item_handler(int client_h, char* data)
 									match++;
 									item_flag[z] = true;
 
-									goto BIH_LOOPBREAK;
+									break;
 								}
 							}
-					BIH_LOOPBREAK:;
 					}
 				}
 

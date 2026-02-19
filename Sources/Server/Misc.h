@@ -89,7 +89,7 @@ namespace CMisc
 					result_y += y_inc;
 				}
 				result_x += x_inc;
-				goto CALC_OK;
+				break;
 			}
 		}
 		else
@@ -103,11 +103,9 @@ namespace CMisc
 					result_x += x_inc;
 				}
 				result_y += y_inc;
-				goto CALC_OK;
+				break;
 			}
 		}
-
-	CALC_OK:;
 
 		*pX = result_x;
 		*pY = result_y;

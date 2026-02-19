@@ -439,23 +439,22 @@ bool CGame::accept_login(hb::shared::net::ASIOSocket* sock)
 	if (m_is_game_started == false)
 	{
 		hb::logger::log("Connection closed (not initialized)");
-		goto CLOSE_ANYWAY;
 	}
-
-	for(int i = 0; i < MaxClientLoginSock; i++)
+	else
 	{
-		auto& p = _lclients[i];
-		if (!p)
+		for(int i = 0; i < MaxClientLoginSock; i++)
 		{
-			p = new LoginClient(G_pIOPool->get_context());
-			sock->accept(p->sock);  // MODERNIZED: Removed WM_USER_BOT_ACCEPT message ID
-			std::memset(p->ip, 0, sizeof(p->ip));
-			p->sock->get_peer_address(p->ip);
-			return true;
+			auto& p = _lclients[i];
+			if (!p)
+			{
+				p = new LoginClient(G_pIOPool->get_context());
+				sock->accept(p->sock);  // MODERNIZED: Removed WM_USER_BOT_ACCEPT message ID
+				std::memset(p->ip, 0, sizeof(p->ip));
+				p->sock->get_peer_address(p->ip);
+				return true;
+			}
 		}
 	}
-
-CLOSE_ANYWAY:
 
 	// MODERNIZED: Removed m_hWnd parameter
 	auto tmp_sock = new hb::shared::net::ASIOSocket(G_pIOPool->get_context(), ServerSocketBlockLimit);
@@ -471,88 +470,95 @@ bool CGame::accept(class hb::shared::net::ASIOSocket* x_sock)
 	class hb::shared::net::ASIOSocket* tmp_sock;
 	char i_pto_ban[21];
 	FILE* file;
+	bool close_conn = false;
 
 	if (m_is_game_started == false)
-		goto CLOSE_ANYWAY;
+	{
+		// Fall through to CLOSE_ANYWAY
+	}
+	else
+	{
+		for(int i = 1; i < MaxClients; i++)
+			if (m_client_list[i] == 0) {
 
-	for(int i = 1; i < MaxClients; i++)
-		if (m_client_list[i] == 0) {
+				m_client_list[i] = new class CClient(G_pIOPool->get_context());
+				add_client_short_cut(i);
+				m_client_list[i]->m_sp_time = m_client_list[i]->m_mp_time =
+					m_client_list[i]->m_hp_time = m_client_list[i]->m_auto_save_time =
+					m_client_list[i]->m_time = m_client_list[i]->m_hunger_time = m_client_list[i]->m_exp_stock_time =
+					m_client_list[i]->m_recent_attack_time = m_client_list[i]->m_auto_exp_time = m_client_list[i]->m_speed_hack_check_time =
+					m_client_list[i]->m_afk_activity_time = GameClock::GetTimeMS();
 
-			m_client_list[i] = new class CClient(G_pIOPool->get_context());
-			add_client_short_cut(i);
-			m_client_list[i]->m_sp_time = m_client_list[i]->m_mp_time =
-				m_client_list[i]->m_hp_time = m_client_list[i]->m_auto_save_time =
-				m_client_list[i]->m_time = m_client_list[i]->m_hunger_time = m_client_list[i]->m_exp_stock_time =
-				m_client_list[i]->m_recent_attack_time = m_client_list[i]->m_auto_exp_time = m_client_list[i]->m_speed_hack_check_time =
-				m_client_list[i]->m_afk_activity_time = GameClock::GetTimeMS();
+				x_sock->accept(m_client_list[i]->m_socket);
 
-			x_sock->accept(m_client_list[i]->m_socket);
+				std::memset(m_client_list[i]->m_ip_address, 0, sizeof(m_client_list[i]->m_ip_address));
+				m_client_list[i]->m_socket->get_peer_address(m_client_list[i]->m_ip_address);
 
-			std::memset(m_client_list[i]->m_ip_address, 0, sizeof(m_client_list[i]->m_ip_address));
-			m_client_list[i]->m_socket->get_peer_address(m_client_list[i]->m_ip_address);
+				a = i;
 
-			a = i;
-
-			for(int v = 0; v < MaxBanned; v++)
-			{
-				if (strcmp(m_banned_list[v].banned_ip_address, m_client_list[i]->m_ip_address) == 0)
+				for(int v = 0; v < MaxBanned; v++)
 				{
-					goto CLOSE_CONN;
+					if (strcmp(m_banned_list[v].banned_ip_address, m_client_list[i]->m_ip_address) == 0)
+					{
+						close_conn = true;
+						break;
+					}
 				}
-			}
-			//centu: Anti-Downer
-			for(int j = 0; j < MaxClients; j++) {
-				if (m_client_list[j] != 0) {
-					if (strcmp(m_client_list[j]->m_ip_address, m_client_list[i]->m_ip_address) == 0) totalip++;
+				if (!close_conn) {
+					//centu: Anti-Downer
+					for(int j = 0; j < MaxClients; j++) {
+						if (m_client_list[j] != 0) {
+							if (strcmp(m_client_list[j]->m_ip_address, m_client_list[i]->m_ip_address) == 0) totalip++;
+						}
+					}
+					if (totalip > 9) {
+						std::memset(i_pto_ban, 0, sizeof(i_pto_ban));
+						strcpy(i_pto_ban, m_client_list[i]->m_ip_address);
+						//opens cfg file
+						file = fopen("gameconfigs/bannedlist.cfg", "a");
+						//shows log
+						hb::logger::log("Client {}: IP banned ({})", i, i_pto_ban);
+						//modifys cfg file
+						fprintf(file, "banned-ip = %s", i_pto_ban);
+						fprintf(file, "\n");
+						fclose(file);
+
+						//updates bannedlist.cfg on the server
+						for(int x = 0; x < MaxBanned; x++)
+							if (strlen(m_banned_list[x].banned_ip_address) == 0)
+								strcpy(m_banned_list[x].banned_ip_address, i_pto_ban);
+
+						close_conn = true;
+					}
 				}
+
+				if (close_conn) {
+					delete m_client_list[a];
+					m_client_list[a] = 0;
+					remove_client_short_cut(a);
+					return false;
+				}
+
+				hb::logger::log("Client {}: connected from {}", i, m_client_list[i]->m_ip_address);
+
+				m_total_clients++;
+
+				if (m_total_clients > m_max_clients) {
+					m_max_clients = m_total_clients;
+					//m_max_user_sys_time = hb::time::local_time::now();
+					//std::snprintf(txt, sizeof(txt), "Maximum Players: %d", m_max_clients);
+					//PutLogFileList(txt);
+				}
+
+				// m_client_list[client_h]->m_is_init_complete   .
+				return true;
 			}
-			if (totalip > 9) {
-				std::memset(i_pto_ban, 0, sizeof(i_pto_ban));
-				strcpy(i_pto_ban, m_client_list[i]->m_ip_address);
-				//opens cfg file
-				file = fopen("gameconfigs/bannedlist.cfg", "a");
-				//shows log
-				hb::logger::log("Client {}: IP banned ({})", i, i_pto_ban);
-				//modifys cfg file
-				fprintf(file, "banned-ip = %s", i_pto_ban);
-				fprintf(file, "\n");
-				fclose(file);
-
-				//updates bannedlist.cfg on the server
-				for(int x = 0; x < MaxBanned; x++)
-					if (strlen(m_banned_list[x].banned_ip_address) == 0)
-						strcpy(m_banned_list[x].banned_ip_address, i_pto_ban);
-
-				goto CLOSE_CONN;
-			}
-
-			hb::logger::log("Client {}: connected from {}", i, m_client_list[i]->m_ip_address);
-
-			m_total_clients++;
-
-			if (m_total_clients > m_max_clients) {
-				m_max_clients = m_total_clients;
-				//m_max_user_sys_time = hb::time::local_time::now();
-				//std::snprintf(txt, sizeof(txt), "Maximum Players: %d", m_max_clients);
-				//PutLogFileList(txt);
-			}
-
-			// m_client_list[client_h]->m_is_init_complete   .
-			return true;
-		}
-
-CLOSE_ANYWAY:
+	}
 
 	tmp_sock = new class hb::shared::net::ASIOSocket(G_pIOPool->get_context(), ServerSocketBlockLimit);
 	x_sock->accept(tmp_sock);
 	delete tmp_sock;
 
-	return false;
-
-CLOSE_CONN:
-	delete m_client_list[a];
-	m_client_list[a] = 0;
-	remove_client_short_cut(a);
 	return false;
 }
 
@@ -581,6 +587,7 @@ bool CGame::accept_from_async(asio::ip::tcp::socket&& peer)
 	int totalip = 0, a;
 	char i_pto_ban[21];
 	FILE* file;
+	bool close_conn = false;
 
 	if (m_is_game_started == false) return false;
 
@@ -606,29 +613,39 @@ bool CGame::accept_from_async(asio::ip::tcp::socket&& peer)
 			{
 				if (strcmp(m_banned_list[v].banned_ip_address, m_client_list[i]->m_ip_address) == 0)
 				{
-					goto CLOSE_CONN_ASYNC;
+					close_conn = true;
+					break;
 				}
 			}
 
-			for(int j = 0; j < MaxClients; j++) {
-				if (m_client_list[j] != 0) {
-					if (strcmp(m_client_list[j]->m_ip_address, m_client_list[i]->m_ip_address) == 0) totalip++;
+			if (!close_conn) {
+				for(int j = 0; j < MaxClients; j++) {
+					if (m_client_list[j] != 0) {
+						if (strcmp(m_client_list[j]->m_ip_address, m_client_list[i]->m_ip_address) == 0) totalip++;
+					}
+				}
+				if (totalip > 9) {
+					std::memset(i_pto_ban, 0, sizeof(i_pto_ban));
+					strcpy(i_pto_ban, m_client_list[i]->m_ip_address);
+					file = fopen("gameconfigs/bannedlist.cfg", "a");
+					hb::logger::log("Client {}: IP banned ({})", i, i_pto_ban);
+					fprintf(file, "banned-ip = %s", i_pto_ban);
+					fprintf(file, "\n");
+					fclose(file);
+
+					for(int x = 0; x < MaxBanned; x++)
+						if (strlen(m_banned_list[x].banned_ip_address) == 0)
+							strcpy(m_banned_list[x].banned_ip_address, i_pto_ban);
+
+					close_conn = true;
 				}
 			}
-			if (totalip > 9) {
-				std::memset(i_pto_ban, 0, sizeof(i_pto_ban));
-				strcpy(i_pto_ban, m_client_list[i]->m_ip_address);
-				file = fopen("gameconfigs/bannedlist.cfg", "a");
-				hb::logger::log("Client {}: IP banned ({})", i, i_pto_ban);
-				fprintf(file, "banned-ip = %s", i_pto_ban);
-				fprintf(file, "\n");
-				fclose(file);
 
-				for(int x = 0; x < MaxBanned; x++)
-					if (strlen(m_banned_list[x].banned_ip_address) == 0)
-						strcpy(m_banned_list[x].banned_ip_address, i_pto_ban);
-
-				goto CLOSE_CONN_ASYNC;
+			if (close_conn) {
+				delete m_client_list[a];
+				m_client_list[a] = 0;
+				remove_client_short_cut(a);
+				return false;
 			}
 
 			hb::logger::log("Client {}: connected from {}", i, m_client_list[i]->m_ip_address);
@@ -671,12 +688,6 @@ bool CGame::accept_from_async(asio::ip::tcp::socket&& peer)
 			return true;
 		}
 
-	return false;
-
-CLOSE_CONN_ASYNC:
-	delete m_client_list[a];
-	m_client_list[a] = 0;
-	remove_client_short_cut(a);
 	return false;
 }
 
@@ -2873,9 +2884,9 @@ void CGame::delete_client(int client_h, bool save, bool notify, bool count_logou
 				m_client_list[client_h]->m_party_status = PartyStatus::Null;
 				m_client_list[client_h]->m_req_join_party_client_h = 0;
 				hb::logger::log("Party {}: member {} removed (deleted), total={}", m_client_list[client_h]->m_party_id, client_h, m_party_info[m_client_list[client_h]->m_party_id].total_members);
-				goto DC_LOOPBREAK1;
+				break;
 			}
-	DC_LOOPBREAK1:
+
 		for(int i = 0; i < hb::shared::limits::MaxPartyMembers - 1; i++)
 			if ((m_party_info[m_client_list[client_h]->m_party_id].index[i] == 0) && (m_party_info[m_client_list[client_h]->m_party_id].index[i + 1] != 0)) {
 				m_party_info[m_client_list[client_h]->m_party_id].index[i] = m_party_info[m_client_list[client_h]->m_party_id].index[i + 1];
@@ -8229,6 +8240,7 @@ void CGame::request_teleport_handler(int client_h, const char* data, const char*
 	}
 
 	if ((ret_ok) && (map_name == 0)) {
+		bool map_found = false;
 		for(int i = 0; i < MaxMaps; i++)
 			if (m_map_list[i] != 0) {
 				if (memcmp(m_map_list[i]->m_name, dest_map_name, 10) == 0) {
@@ -8238,30 +8250,34 @@ void CGame::request_teleport_handler(int client_h, const char* data, const char*
 					m_client_list[client_h]->m_map_index = i;
 					std::memset(m_client_list[client_h]->m_map_name, 0, sizeof(m_client_list[client_h]->m_map_name));
 					memcpy(m_client_list[client_h]->m_map_name, m_map_list[i]->m_name, 10);
-					goto RTH_NEXTSTEP;
+					map_found = true;
+					break;
 				}
 			}
 
-		m_client_list[client_h]->m_x = dest_x;
-		m_client_list[client_h]->m_y = dest_y;
-		m_client_list[client_h]->m_dir = dir;
-		std::memset(m_client_list[client_h]->m_map_name, 0, sizeof(m_client_list[client_h]->m_map_name));
-		memcpy(m_client_list[client_h]->m_map_name, dest_map_name, 10);
+		if (!map_found) {
+			m_client_list[client_h]->m_x = dest_x;
+			m_client_list[client_h]->m_y = dest_y;
+			m_client_list[client_h]->m_dir = dir;
+			std::memset(m_client_list[client_h]->m_map_name, 0, sizeof(m_client_list[client_h]->m_map_name));
+			memcpy(m_client_list[client_h]->m_map_name, dest_map_name, 10);
 
-		// New 18/05/2004
-		send_notify_msg(0, client_h, Notify::MagicEffectOff, hb::shared::magic::Confuse,
-			m_client_list[client_h]->m_magic_effect_status[hb::shared::magic::Confuse], 0, 0);
-		m_item_manager->set_slate_flag(client_h, SlateClearNotify, false);
+			// New 18/05/2004
+			send_notify_msg(0, client_h, Notify::MagicEffectOff, hb::shared::magic::Confuse,
+				m_client_list[client_h]->m_magic_effect_status[hb::shared::magic::Confuse], 0, 0);
+			m_item_manager->set_slate_flag(client_h, SlateClearNotify, false);
 
-		// send_msg_to_ls(ServerMsgId::RequestSavePlayerDataReply, client_h, false);  // !   .
-		m_client_list[client_h]->m_is_on_server_change = true;
-		m_client_list[client_h]->m_is_on_waiting_process = true;
-		return;
+			// send_msg_to_ls(ServerMsgId::RequestSavePlayerDataReply, client_h, false);  // !   .
+			m_client_list[client_h]->m_is_on_server_change = true;
+			m_client_list[client_h]->m_is_on_waiting_process = true;
+			return;
+		}
 	}
 	else {
 		switch (data[0]) {
 		case '0':
-			// Forced Recall. 
+		{
+			// Forced Recall.
 			std::memset(temp_map_name, 0, sizeof(temp_map_name));
 			if (memcmp(m_client_list[client_h]->m_location, "NONE", 4) == 0) {
 				strcpy(temp_map_name, "default");
@@ -8281,6 +8297,7 @@ void CGame::request_teleport_handler(int client_h, const char* data, const char*
 				strcpy(temp_map_name, m_client_list[client_h]->m_locked_map_name);
 			}
 
+			bool map_found = false;
 			for(int i = 0; i < MaxMaps; i++)
 				if (m_map_list[i] != 0) {
 					if (memcmp(m_map_list[i]->m_name, temp_map_name, 10) == 0) {
@@ -8289,28 +8306,34 @@ void CGame::request_teleport_handler(int client_h, const char* data, const char*
 						m_client_list[client_h]->m_map_index = i;
 						std::memset(m_client_list[client_h]->m_map_name, 0, sizeof(m_client_list[client_h]->m_map_name));
 						memcpy(m_client_list[client_h]->m_map_name, temp_map_name, 10);
-						goto RTH_NEXTSTEP;
+						map_found = true;
+						break;
 					}
 				}
 
-			m_client_list[client_h]->m_x = -1;
-			m_client_list[client_h]->m_y = -1;	  // -1 InitialPoint .
+			if (!map_found) {
+				m_client_list[client_h]->m_x = -1;
+				m_client_list[client_h]->m_y = -1;	  // -1 InitialPoint .
 
-			std::memset(m_client_list[client_h]->m_map_name, 0, sizeof(m_client_list[client_h]->m_map_name));
-			memcpy(m_client_list[client_h]->m_map_name, temp_map_name, 10);
+				std::memset(m_client_list[client_h]->m_map_name, 0, sizeof(m_client_list[client_h]->m_map_name));
+				memcpy(m_client_list[client_h]->m_map_name, temp_map_name, 10);
 
-			// New 18/05/2004
-			send_notify_msg(0, client_h, Notify::MagicEffectOff, hb::shared::magic::Confuse,
-				m_client_list[client_h]->m_magic_effect_status[hb::shared::magic::Confuse], 0, 0);
-			m_item_manager->set_slate_flag(client_h, SlateClearNotify, false);
+				// New 18/05/2004
+				send_notify_msg(0, client_h, Notify::MagicEffectOff, hb::shared::magic::Confuse,
+					m_client_list[client_h]->m_magic_effect_status[hb::shared::magic::Confuse], 0, 0);
+				m_item_manager->set_slate_flag(client_h, SlateClearNotify, false);
 
-			// send_msg_to_ls(ServerMsgId::RequestSavePlayerDataReply, client_h, false); // !   .
+				// send_msg_to_ls(ServerMsgId::RequestSavePlayerDataReply, client_h, false); // !   .
 
-			m_client_list[client_h]->m_is_on_server_change = true;
-			m_client_list[client_h]->m_is_on_waiting_process = true;
-			return;
+				m_client_list[client_h]->m_is_on_server_change = true;
+				m_client_list[client_h]->m_is_on_waiting_process = true;
+				return;
+			}
+			break;
+		}
 
 		case '1':
+		{
 			// Recall.     .
 			// if (memcmp(m_map_list[ m_client_list[client_h]->m_map_index ]->m_name, "resurr", 6) == 0) return;
 
@@ -8336,6 +8359,7 @@ void CGame::request_teleport_handler(int client_h, const char* data, const char*
 				strcpy(temp_map_name, m_client_list[client_h]->m_locked_map_name);
 			}
 
+			bool map_found = false;
 			for(int i = 0; i < MaxMaps; i++)
 				if (m_map_list[i] != 0) {
 					if (memcmp(m_map_list[i]->m_name, temp_map_name, 10) == 0) {
@@ -8345,25 +8369,30 @@ void CGame::request_teleport_handler(int client_h, const char* data, const char*
 						m_client_list[client_h]->m_map_index = i;
 						std::memset(m_client_list[client_h]->m_map_name, 0, sizeof(m_client_list[client_h]->m_map_name));
 						memcpy(m_client_list[client_h]->m_map_name, m_map_list[i]->m_name, 10);
-						goto RTH_NEXTSTEP;
+						map_found = true;
+						break;
 					}
 				}
 
-			m_client_list[client_h]->m_x = -1;
-			m_client_list[client_h]->m_y = -1;	  // -1 InitialPoint .
+			if (!map_found) {
+				m_client_list[client_h]->m_x = -1;
+				m_client_list[client_h]->m_y = -1;	  // -1 InitialPoint .
 
-			std::memset(m_client_list[client_h]->m_map_name, 0, sizeof(m_client_list[client_h]->m_map_name));
-			memcpy(m_client_list[client_h]->m_map_name, temp_map_name, 10);
+				std::memset(m_client_list[client_h]->m_map_name, 0, sizeof(m_client_list[client_h]->m_map_name));
+				memcpy(m_client_list[client_h]->m_map_name, temp_map_name, 10);
 
-			// New 18/05/2004
-			send_notify_msg(0, client_h, Notify::MagicEffectOff, hb::shared::magic::Confuse,
-				m_client_list[client_h]->m_magic_effect_status[hb::shared::magic::Confuse], 0, 0);
-			m_item_manager->set_slate_flag(client_h, SlateClearNotify, false);
+				// New 18/05/2004
+				send_notify_msg(0, client_h, Notify::MagicEffectOff, hb::shared::magic::Confuse,
+					m_client_list[client_h]->m_magic_effect_status[hb::shared::magic::Confuse], 0, 0);
+				m_item_manager->set_slate_flag(client_h, SlateClearNotify, false);
 
-			// send_msg_to_ls(ServerMsgId::RequestSavePlayerDataReply, client_h, false); // !   .
-			m_client_list[client_h]->m_is_on_server_change = true;
-			m_client_list[client_h]->m_is_on_waiting_process = true;
-			return;
+				// send_msg_to_ls(ServerMsgId::RequestSavePlayerDataReply, client_h, false); // !   .
+				m_client_list[client_h]->m_is_on_server_change = true;
+				m_client_list[client_h]->m_is_on_waiting_process = true;
+				return;
+			}
+			break;
+		}
 
 		case '2':
 
@@ -8408,8 +8437,6 @@ void CGame::request_teleport_handler(int client_h, const char* data, const char*
 			break;
 		}
 	}
-
-RTH_NEXTSTEP:
 
 	// New 17/05/2004
 	set_playing_status(client_h);
@@ -9788,9 +9815,9 @@ bool CGame::read_notify_msg_list_file(const char* fn)
 							m_notice_msg_list[i] = new class CMsg;
 							m_notice_msg_list[i]->put(0, token, strlen(token), 0, 0);
 							m_total_notice_msg++;
-							goto LNML_NEXTSTEP1;
+							break;
 						}
-				LNML_NEXTSTEP1:
+
 					read_mode = 0;
 					break;
 				}
@@ -10955,10 +10982,8 @@ void CGame::remove_client_short_cut(int client_h)
 	for(int i = 0; i < MaxClients + 1; i++)
 		if (m_client_shortcut[i] == client_h) {
 			m_client_shortcut[i] = 0;
-			goto RCSC_LOOPBREAK;
+			break;
 		}
-
-RCSC_LOOPBREAK:
 
 	//m_client_shortcut[i] = m_client_shortcut[m_total_clients+1];
 	//m_client_shortcut[m_total_clients+1] = 0;
@@ -12507,9 +12532,8 @@ void CGame::party_operation_result_handler(char* data)
 				m_party_info[m_client_list[client_h]->m_party_id].total_members--;
 
 				hb::logger::log("Party {}: member {} left, total={}", m_client_list[client_h]->m_party_id, client_h, m_party_info[m_client_list[client_h]->m_party_id].total_members);
-				goto PORH_LOOPBREAK1;
+				break;
 			}
-	PORH_LOOPBREAK1:
 
 		for (int i = 0; i < hb::shared::limits::MaxPartyMembers - 1; i++)
 			if ((m_party_info[m_client_list[client_h]->m_party_id].index[i] == 0) && (m_party_info[m_client_list[client_h]->m_party_id].index[i + 1] != 0)) {
@@ -12601,9 +12625,8 @@ void CGame::party_operation_result_create(int client_h, char* name, int result, 
 				m_party_info[m_client_list[client_h]->m_party_id].total_members++;
 				//testcode
 				hb::logger::log("Party {}: member {} added, total={}", m_client_list[client_h]->m_party_id, client_h, m_party_info[m_client_list[client_h]->m_party_id].total_members);
-				goto PORC_LOOPBREAK1;
+				break;
 			}
-	PORC_LOOPBREAK1:
 
 		if ((m_client_list[client_h]->m_req_join_party_client_h != 0) && (strlen(m_client_list[client_h]->m_req_join_party_name) != 0)) {
 			std::memset(data, 0, sizeof(data));
@@ -12658,9 +12681,8 @@ void CGame::party_operation_result_join(int client_h, char* name, int result, in
 				m_party_info[m_client_list[client_h]->m_party_id].total_members++;
 
 				hb::logger::log("PartyID:{} member:{} In(Join) Total:{}", m_client_list[client_h]->m_party_id, client_h, m_party_info[m_client_list[client_h]->m_party_id].total_members);
-				goto PORC_LOOPBREAK1;
+				break;
 			}
-	PORC_LOOPBREAK1:
 
 		for(int i = 1; i < MaxClients; i++)
 			if ((i != client_h) && (m_client_list[i] != 0) && (m_client_list[i]->m_party_id != 0) && (m_client_list[i]->m_party_id == party_id)) {
@@ -12685,9 +12707,8 @@ void CGame::party_operation_result_dismiss(int client_h, char* name, int result,
 			for(int i = 1; i < MaxClients; i++)
 				if ((m_client_list[i] != 0) && (hb_stricmp(m_client_list[i]->m_char_name, name) == 0)) {
 					client_h = i;
-					goto PORD_LOOPBREAK;
+					break;
 				}
-		PORD_LOOPBREAK:
 
 			for(int i = 0; i < hb::shared::limits::MaxPartyMembers; i++)
 				if (m_party_info[party_id].index[i] == client_h) {
@@ -12695,9 +12716,9 @@ void CGame::party_operation_result_dismiss(int client_h, char* name, int result,
 					m_party_info[party_id].total_members--;
 					//testcode
 					hb::logger::log("PartyID:{} member:{} Out Total:{}", party_id, client_h, m_party_info[party_id].total_members);
-					goto PORC_LOOPBREAK1;
+					break;
 				}
-		PORC_LOOPBREAK1:
+
 			for(int i = 0; i < hb::shared::limits::MaxPartyMembers - 1; i++)
 				if ((m_party_info[party_id].index[i] == 0) && (m_party_info[party_id].index[i + 1] != 0)) {
 					m_party_info[party_id].index[i] = m_party_info[party_id].index[i + 1];
@@ -12731,9 +12752,9 @@ void CGame::party_operation_result_dismiss(int client_h, char* name, int result,
 				m_party_info[party_id].total_members--;
 				//testcode
 				hb::logger::log("PartyID:{} member:{} Out Total:{}", party_id, client_h, m_party_info[party_id].total_members);
-				goto PORC_LOOPBREAK2;
+				break;
 			}
-	PORC_LOOPBREAK2:
+
 		for(int i = 0; i < hb::shared::limits::MaxPartyMembers - 1; i++)
 			if ((m_party_info[party_id].index[i] == 0) && (m_party_info[party_id].index[i + 1] != 0)) {
 				m_party_info[party_id].index[i] = m_party_info[party_id].index[i + 1];

@@ -6,6 +6,8 @@ writes update.manifest.json.
 
 Skips: settings.json, cache/, logs/, save/, updates/, *.old, *.update,
        update.manifest.json
+
+Settings are saved to manifest_config.json — delete it to reconfigure.
 """
 
 import hashlib
@@ -17,6 +19,9 @@ import sys
 SKIP_DIRS = {"cache", "logs", "save", "updates", ".git", "__pycache__"}
 SKIP_FILES = {"settings.json", "update.manifest.json", "gen_update_manifest.py"}
 SKIP_EXTENSIONS = {".old", ".update", ".log", ".bak"}
+
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+CONFIG_PATH = os.path.join(SCRIPT_DIR, "manifest_config.json")
 
 
 def sha256_file(path: str) -> str:
@@ -130,9 +135,6 @@ def prompt(text: str, default: str = "") -> str:
     return input(f"{text}: ").strip()
 
 
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-
-
 def resolve_path(path: str) -> str:
     """Resolve a path relative to the script's directory, not CWD."""
     path = path.strip("\"'")
@@ -141,12 +143,41 @@ def resolve_path(path: str) -> str:
     return os.path.normpath(os.path.join(SCRIPT_DIR, path))
 
 
+def make_relative(path: str) -> str:
+    """Convert an absolute path to relative (from SCRIPT_DIR) if possible."""
+    try:
+        rel = os.path.relpath(path, SCRIPT_DIR)
+        if os.path.isabs(rel):
+            return path
+        return rel
+    except ValueError:
+        return path
+
+
+def load_config() -> dict:
+    if os.path.isfile(CONFIG_PATH):
+        try:
+            with open(CONFIG_PATH, "r") as f:
+                return json.load(f)
+        except (json.JSONDecodeError, OSError):
+            pass
+    return {}
+
+
+def save_config(cfg: dict) -> None:
+    with open(CONFIG_PATH, "w", newline="\n") as f:
+        json.dump(cfg, f, indent=4)
+
+
 def main():
     print("=== Helbreath Update Manifest Generator ===")
     print(f"  Working from: {SCRIPT_DIR}\n")
 
+    cfg = load_config()
+
     # Directory
-    directory = prompt("Game directory to scan", "Binaries/Game")
+    default_dir = cfg.get("directory", "../../Binaries/Game")
+    directory = prompt("Game directory to scan", default_dir)
     while True:
         directory = resolve_path(directory)
 
@@ -162,17 +193,20 @@ def main():
         directory = prompt("Game directory to scan")
 
     # Version
-    version_str = prompt("Version (MAJOR.MINOR.PATCH)", "0.1.0")
+    default_version = cfg.get("version", "0.1.0")
+    version_str = prompt("Version (MAJOR.MINOR.PATCH)", default_version)
     while True:
         parts = version_str.split(".")
         if len(parts) == 3 and all(p.isdigit() for p in parts):
             break
         print("  Invalid format. Use MAJOR.MINOR.PATCH (e.g. 0.2.0)")
-        version_str = prompt("Version (MAJOR.MINOR.PATCH)", "0.1.0")
+        version_str = prompt("Version (MAJOR.MINOR.PATCH)", default_version)
 
-    # Output path
-    default_output = os.path.join(directory, "update.manifest.json")
-    output_path = prompt("Output path", default_output)
+    # Save config for next run
+    save_config({
+        "directory": make_relative(directory),
+        "version": version_str,
+    })
 
     # Scan
     print(f"\nScanning {directory}...")
@@ -186,12 +220,8 @@ def main():
     print(f"  {exe_count} executable(s), {data_count} data file(s)")
     print(f"  Platform: {win_count} windows, {linux_count} linux, {any_count} cross-platform")
 
-    # Confirm
-    confirm = prompt(f"\nWrite manifest to {output_path}? (y/n)", "y")
-    if confirm.lower() not in ("y", "yes"):
-        print("Cancelled.")
-        return 0
-
+    # Write manifest directly into the scanned directory
+    output_path = os.path.join(directory, "update.manifest.json")
     version_parts = version_str.split(".")
     manifest = {
         "version": {

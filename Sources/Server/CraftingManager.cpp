@@ -93,9 +93,8 @@ void CraftingManager::req_create_portion_handler(int client_h, char* data)
 					if (item_index[j] == -1) {
 						item_index[j] = cI[i];
 						item_number[j]++;
-						goto RCPH_LOOPBREAK;
+						break;
 					}
-			RCPH_LOOPBREAK:;
 			}
 		}
 
@@ -282,9 +281,8 @@ void CraftingManager::req_create_crafting_handler(int client_h, char* data)
 					{
 						item_index[j] = cI[i];
 						item_number[j]++;
-						goto RCPH_LOOPBREAK;
+						break;
 					}
-			RCPH_LOOPBREAK:;
 			}
 		}
 

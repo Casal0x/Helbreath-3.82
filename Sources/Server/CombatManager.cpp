@@ -1174,14 +1174,12 @@ void CombatManager::effect_damage_spot_damage_move(short attacker_h, char attack
 					move_damage = 80;
 				else move_damage = 50;
 
-				if (damage >= move_damage) {
-			///		char damage_move_dir;
-					tgt_x = m_game->m_client_list[target_h]->m_x;
-					tgt_y = m_game->m_client_list[target_h]->m_y;
+				tgt_x = m_game->m_client_list[target_h]->m_x;
+				tgt_y = m_game->m_client_list[target_h]->m_y;
 
+				if ((damage >= move_damage) && !(tgt_x == atk_x && tgt_y == atk_y)) {
 					if (tgt_x == atk_x) {
-						if (tgt_y == atk_y)     goto EDSD_SKIPDAMAGEMOVE;
-						else if (tgt_y > atk_y) damage_move_dir = direction::south;
+						if (tgt_y > atk_y) damage_move_dir = direction::south;
 						else if (tgt_y < atk_y) damage_move_dir = direction::north;
 					}
 					else if (tgt_x > atk_x) {
@@ -1200,7 +1198,6 @@ void CombatManager::effect_damage_spot_damage_move(short attacker_h, char attack
 					m_game->send_notify_msg(0, target_h, Notify::DamageMove, damage_move_dir, damage, 0, 0);
 				}
 				else {
-				EDSD_SKIPDAMAGEMOVE:
 					m_game->send_notify_msg(0, target_h, Notify::Hp, 0, 0, 0, 0);
 					m_game->send_event_to_near_client_type_a(target_h, hb::shared::owner_class::Player, MsgId::EventMotion, Type::Damage, damage, 0, 0);
 				}
@@ -3196,10 +3193,9 @@ uint32_t CombatManager::calculate_attack_effect(short target_h, char target_type
 							move_damage = 60;
 						else move_damage = 40;
 
-						if (iAP_SM >= move_damage) {
+						if ((iAP_SM >= move_damage) && !(tgt_x == atk_x && tgt_y == atk_y)) {
 							if (tgt_x == atk_x) {
-								if (tgt_y == atk_y)     goto CAE_SKIPDAMAGEMOVE;
-								else if (tgt_y > atk_y) damage_move_dir = direction::south;
+								if (tgt_y > atk_y) damage_move_dir = direction::south;
 								else if (tgt_y < atk_y) damage_move_dir = direction::north;
 							}
 							else if (tgt_x > atk_x) {
@@ -3217,7 +3213,6 @@ uint32_t CombatManager::calculate_attack_effect(short target_h, char target_type
 							m_game->send_notify_msg(0, target_h, Notify::DamageMove, damage_move_dir, iAP_SM, attacker_weapon, 0);
 						}
 						else {
-						CAE_SKIPDAMAGEMOVE:
 							int prob;
 							if (attacker_type == hb::shared::owner_class::Player) {
 								switch (m_game->m_client_list[attacker_h]->m_using_weapon_skill) {
@@ -3342,70 +3337,70 @@ uint32_t CombatManager::calculate_attack_effect(short target_h, char target_type
 				killed_dice = m_game->m_npc_list[target_h]->m_hit_dice;
 			}
 			else {
-				if ((m_game->m_npc_list[target_h]->m_type != 21) && (m_game->m_npc_list[target_h]->m_type != 55) && (m_game->m_npc_list[target_h]->m_type != 56)
-					&& (m_game->m_npc_list[target_h]->m_side == attacker_side)) goto CAE_SKIPCOUNTERATTACK;
+				bool skip_counter =
+					((m_game->m_npc_list[target_h]->m_type != 21) && (m_game->m_npc_list[target_h]->m_type != 55) && (m_game->m_npc_list[target_h]->m_type != 56)
+						&& (m_game->m_npc_list[target_h]->m_side == attacker_side))
+					|| (m_game->m_npc_list[target_h]->m_action_limit != 0)
+					|| (m_game->m_npc_list[target_h]->m_is_perm_attack_mode)
+					|| ((m_game->m_npc_list[target_h]->m_is_summoned) && (m_game->m_npc_list[target_h]->m_summon_control_mode == 1))
+					|| (m_game->m_npc_list[target_h]->m_type == 51);
 
-				if (m_game->m_npc_list[target_h]->m_action_limit != 0) goto CAE_SKIPCOUNTERATTACK;
-				if (m_game->m_npc_list[target_h]->m_is_perm_attack_mode) goto CAE_SKIPCOUNTERATTACK;
-				if ((m_game->m_npc_list[target_h]->m_is_summoned) && (m_game->m_npc_list[target_h]->m_summon_control_mode == 1)) goto CAE_SKIPCOUNTERATTACK;
-				if (m_game->m_npc_list[target_h]->m_type == 51) goto CAE_SKIPCOUNTERATTACK;
+				if (!skip_counter) {
+					if (m_game->dice(1, 3) == 2) {
+						if (m_game->m_npc_list[target_h]->m_behavior == Behavior::Attack) {
+							tX = tY = 0;
+							switch (m_game->m_npc_list[target_h]->m_target_type) {
+							case hb::shared::owner_class::Player:
+								if (m_game->m_client_list[m_game->m_npc_list[target_h]->m_target_index] != 0) {
+									tX = m_game->m_client_list[m_game->m_npc_list[target_h]->m_target_index]->m_x;
+									tY = m_game->m_client_list[m_game->m_npc_list[target_h]->m_target_index]->m_y;
+								}
+								break;
 
-				if (m_game->dice(1, 3) == 2) {
-					if (m_game->m_npc_list[target_h]->m_behavior == Behavior::Attack) {
-						tX = tY = 0;
-						switch (m_game->m_npc_list[target_h]->m_target_type) {
-						case hb::shared::owner_class::Player:
-							if (m_game->m_client_list[m_game->m_npc_list[target_h]->m_target_index] != 0) {
-								tX = m_game->m_client_list[m_game->m_npc_list[target_h]->m_target_index]->m_x;
-								tY = m_game->m_client_list[m_game->m_npc_list[target_h]->m_target_index]->m_y;
+							case hb::shared::owner_class::Npc:
+								if (m_game->m_npc_list[m_game->m_npc_list[target_h]->m_target_index] != 0) {
+									tX = m_game->m_npc_list[m_game->m_npc_list[target_h]->m_target_index]->m_x;
+									tY = m_game->m_npc_list[m_game->m_npc_list[target_h]->m_target_index]->m_y;
+								}
+								break;
 							}
-							break;
 
-						case hb::shared::owner_class::Npc:
-							if (m_game->m_npc_list[m_game->m_npc_list[target_h]->m_target_index] != 0) {
-								tX = m_game->m_npc_list[m_game->m_npc_list[target_h]->m_target_index]->m_x;
-								tY = m_game->m_npc_list[m_game->m_npc_list[target_h]->m_target_index]->m_y;
+							dst1 = (m_game->m_npc_list[target_h]->m_x - tX) * (m_game->m_npc_list[target_h]->m_x - tX) + (m_game->m_npc_list[target_h]->m_y - tY) * (m_game->m_npc_list[target_h]->m_y - tY);
+
+							tX = tY = 0;
+							switch (attacker_type) {
+							case hb::shared::owner_class::Player:
+								if (m_game->m_client_list[attacker_h] != 0) {
+									tX = m_game->m_client_list[attacker_h]->m_x;
+									tY = m_game->m_client_list[attacker_h]->m_y;
+								}
+								break;
+
+							case hb::shared::owner_class::Npc:
+								if (m_game->m_npc_list[attacker_h] != 0) {
+									tX = m_game->m_npc_list[attacker_h]->m_x;
+									tY = m_game->m_npc_list[attacker_h]->m_y;
+								}
+								break;
 							}
-							break;
+
+							dst2 = (m_game->m_npc_list[target_h]->m_x - tX) * (m_game->m_npc_list[target_h]->m_x - tX) + (m_game->m_npc_list[target_h]->m_y - tY) * (m_game->m_npc_list[target_h]->m_y - tY);
+
+							if (dst2 <= dst1) {
+								m_game->m_npc_list[target_h]->m_behavior = Behavior::Attack;
+								m_game->m_npc_list[target_h]->m_behavior_turn_count = 0;
+								m_game->m_npc_list[target_h]->m_target_index = attacker_h;
+								m_game->m_npc_list[target_h]->m_target_type = attacker_type;
+							}
 						}
-
-						dst1 = (m_game->m_npc_list[target_h]->m_x - tX) * (m_game->m_npc_list[target_h]->m_x - tX) + (m_game->m_npc_list[target_h]->m_y - tY) * (m_game->m_npc_list[target_h]->m_y - tY);
-
-						tX = tY = 0;
-						switch (attacker_type) {
-						case hb::shared::owner_class::Player:
-							if (m_game->m_client_list[attacker_h] != 0) {
-								tX = m_game->m_client_list[attacker_h]->m_x;
-								tY = m_game->m_client_list[attacker_h]->m_y;
-							}
-							break;
-
-						case hb::shared::owner_class::Npc:
-							if (m_game->m_npc_list[attacker_h] != 0) {
-								tX = m_game->m_npc_list[attacker_h]->m_x;
-								tY = m_game->m_npc_list[attacker_h]->m_y;
-							}
-							break;
-						}
-
-						dst2 = (m_game->m_npc_list[target_h]->m_x - tX) * (m_game->m_npc_list[target_h]->m_x - tX) + (m_game->m_npc_list[target_h]->m_y - tY) * (m_game->m_npc_list[target_h]->m_y - tY);
-
-						if (dst2 <= dst1) {
+						else {
 							m_game->m_npc_list[target_h]->m_behavior = Behavior::Attack;
 							m_game->m_npc_list[target_h]->m_behavior_turn_count = 0;
 							m_game->m_npc_list[target_h]->m_target_index = attacker_h;
 							m_game->m_npc_list[target_h]->m_target_type = attacker_type;
 						}
 					}
-					else {
-						m_game->m_npc_list[target_h]->m_behavior = Behavior::Attack;
-						m_game->m_npc_list[target_h]->m_behavior_turn_count = 0;
-						m_game->m_npc_list[target_h]->m_target_index = attacker_h;
-						m_game->m_npc_list[target_h]->m_target_type = attacker_type;
-					}
 				}
-
-			CAE_SKIPCOUNTERATTACK:
 
 				if ((m_game->dice(1, 3) == 2) && (m_game->m_npc_list[target_h]->m_action_limit == 0))
 					m_game->m_npc_list[target_h]->m_time = time;
@@ -3415,84 +3410,84 @@ uint32_t CombatManager::calculate_attack_effect(short target_h, char target_type
 				else attacker_weapon = 1;
 
 				if ((weapon_type < 40) && (m_game->m_npc_list[target_h]->m_action_limit == 4)) {
-					if (tgt_x == atk_x) {
-						if (tgt_y == atk_y)     goto CAE_SKIPDAMAGEMOVE2;
-						else if (tgt_y > atk_y) damage_move_dir = direction::south;
-						else if (tgt_y < atk_y) damage_move_dir = direction::north;
-					}
-					else if (tgt_x > atk_x) {
-						if (tgt_y == atk_y)     damage_move_dir = direction::east;
-						else if (tgt_y > atk_y) damage_move_dir = direction::southeast;
-						else if (tgt_y < atk_y) damage_move_dir = direction::northeast;
-					}
-					else if (tgt_x < atk_x) {
-						if (tgt_y == atk_y)     damage_move_dir = direction::west;
-						else if (tgt_y > atk_y) damage_move_dir = direction::southwest;
-						else if (tgt_y < atk_y) damage_move_dir = direction::northwest;
-					}
-
-					dX = m_game->m_npc_list[target_h]->m_x + _tmp_cTmpDirX[damage_move_dir];
-					dY = m_game->m_npc_list[target_h]->m_y + _tmp_cTmpDirY[damage_move_dir];
-
-					if (m_game->m_map_list[m_game->m_npc_list[target_h]->m_map_index]->get_moveable(dX, dY, 0) == false) {
-						damage_move_dir = static_cast<direction>(m_game->dice(1, 8));
-						dX = m_game->m_npc_list[target_h]->m_x + _tmp_cTmpDirX[damage_move_dir];
-						dY = m_game->m_npc_list[target_h]->m_y + _tmp_cTmpDirY[damage_move_dir];
-
-						if (m_game->m_map_list[m_game->m_npc_list[target_h]->m_map_index]->get_moveable(dX, dY, 0) == false) goto CAE_SKIPDAMAGEMOVE2;
-					}
-
-					m_game->m_map_list[m_game->m_npc_list[target_h]->m_map_index]->clear_owner(5, target_h, hb::shared::owner_class::Npc, m_game->m_npc_list[target_h]->m_x, m_game->m_npc_list[target_h]->m_y);
-					m_game->m_map_list[m_game->m_npc_list[target_h]->m_map_index]->set_owner(target_h, hb::shared::owner_class::Npc, dX, dY);
-					m_game->m_npc_list[target_h]->m_x = dX;
-					m_game->m_npc_list[target_h]->m_y = dY;
-					m_game->m_npc_list[target_h]->m_dir = damage_move_dir;
-
-					m_game->send_event_to_near_client_type_a(target_h, hb::shared::owner_class::Npc, MsgId::EventMotion, Type::Move, 0, 0, 0);
-
-					dX = m_game->m_npc_list[target_h]->m_x + _tmp_cTmpDirX[damage_move_dir];
-					dY = m_game->m_npc_list[target_h]->m_y + _tmp_cTmpDirY[damage_move_dir];
-
-					if (m_game->m_map_list[m_game->m_npc_list[target_h]->m_map_index]->get_moveable(dX, dY, 0) == false) {
-						damage_move_dir = static_cast<direction>(m_game->dice(1, 8));
-						dX = m_game->m_npc_list[target_h]->m_x + _tmp_cTmpDirX[damage_move_dir];
-						dY = m_game->m_npc_list[target_h]->m_y + _tmp_cTmpDirY[damage_move_dir];
-						if (m_game->m_map_list[m_game->m_npc_list[target_h]->m_map_index]->get_moveable(dX, dY, 0) == false) goto CAE_SKIPDAMAGEMOVE2;
-					}
-
-					m_game->m_map_list[m_game->m_npc_list[target_h]->m_map_index]->clear_owner(5, target_h, hb::shared::owner_class::Npc, m_game->m_npc_list[target_h]->m_x, m_game->m_npc_list[target_h]->m_y);
-					m_game->m_map_list[m_game->m_npc_list[target_h]->m_map_index]->set_owner(target_h, hb::shared::owner_class::Npc, dX, dY);
-					m_game->m_npc_list[target_h]->m_x = dX;
-					m_game->m_npc_list[target_h]->m_y = dY;
-					m_game->m_npc_list[target_h]->m_dir = damage_move_dir;
-
-					m_game->send_event_to_near_client_type_a(target_h, hb::shared::owner_class::Npc, MsgId::EventMotion, Type::Move, 0, 0, 0);
-
-					if (m_game->m_war_manager->check_energy_sphere_destination(target_h, attacker_h, attacker_type)) {
-						if (attacker_type == hb::shared::owner_class::Player) {
-							exp = (m_game->m_npc_list[target_h]->m_exp / 3);
-							if (m_game->m_npc_list[target_h]->m_no_die_remain_exp > 0)
-								exp += m_game->m_npc_list[target_h]->m_no_die_remain_exp;
-
-							if (m_game->m_client_list[attacker_h]->m_add_exp != 0) {
-								tmp1 = (double)m_game->m_client_list[attacker_h]->m_add_exp;
-								tmp2 = (double)exp;
-								tmp3 = (tmp1 / 100.0f) * tmp2;
-								exp += (int)tmp3;
-							}
-
-							if ((m_game->m_is_crusade_mode) && (exp > 10)) exp = 10;
-
-							m_game->get_exp(attacker_h, exp);
-
-							// Use EntityManager for NPC deletion
-							if (m_game->m_entity_manager != NULL)
-								m_game->m_entity_manager->delete_entity(target_h);
-							return false;
+					do {
+						if (tgt_x == atk_x) {
+							if (tgt_y == atk_y)     break;
+							else if (tgt_y > atk_y) damage_move_dir = direction::south;
+							else if (tgt_y < atk_y) damage_move_dir = direction::north;
 						}
-					}
+						else if (tgt_x > atk_x) {
+							if (tgt_y == atk_y)     damage_move_dir = direction::east;
+							else if (tgt_y > atk_y) damage_move_dir = direction::southeast;
+							else if (tgt_y < atk_y) damage_move_dir = direction::northeast;
+						}
+						else if (tgt_x < atk_x) {
+							if (tgt_y == atk_y)     damage_move_dir = direction::west;
+							else if (tgt_y > atk_y) damage_move_dir = direction::southwest;
+							else if (tgt_y < atk_y) damage_move_dir = direction::northwest;
+						}
 
-				CAE_SKIPDAMAGEMOVE2:;
+						dX = m_game->m_npc_list[target_h]->m_x + _tmp_cTmpDirX[damage_move_dir];
+						dY = m_game->m_npc_list[target_h]->m_y + _tmp_cTmpDirY[damage_move_dir];
+
+						if (m_game->m_map_list[m_game->m_npc_list[target_h]->m_map_index]->get_moveable(dX, dY, 0) == false) {
+							damage_move_dir = static_cast<direction>(m_game->dice(1, 8));
+							dX = m_game->m_npc_list[target_h]->m_x + _tmp_cTmpDirX[damage_move_dir];
+							dY = m_game->m_npc_list[target_h]->m_y + _tmp_cTmpDirY[damage_move_dir];
+
+							if (m_game->m_map_list[m_game->m_npc_list[target_h]->m_map_index]->get_moveable(dX, dY, 0) == false) break;
+						}
+
+						m_game->m_map_list[m_game->m_npc_list[target_h]->m_map_index]->clear_owner(5, target_h, hb::shared::owner_class::Npc, m_game->m_npc_list[target_h]->m_x, m_game->m_npc_list[target_h]->m_y);
+						m_game->m_map_list[m_game->m_npc_list[target_h]->m_map_index]->set_owner(target_h, hb::shared::owner_class::Npc, dX, dY);
+						m_game->m_npc_list[target_h]->m_x = dX;
+						m_game->m_npc_list[target_h]->m_y = dY;
+						m_game->m_npc_list[target_h]->m_dir = damage_move_dir;
+
+						m_game->send_event_to_near_client_type_a(target_h, hb::shared::owner_class::Npc, MsgId::EventMotion, Type::Move, 0, 0, 0);
+
+						dX = m_game->m_npc_list[target_h]->m_x + _tmp_cTmpDirX[damage_move_dir];
+						dY = m_game->m_npc_list[target_h]->m_y + _tmp_cTmpDirY[damage_move_dir];
+
+						if (m_game->m_map_list[m_game->m_npc_list[target_h]->m_map_index]->get_moveable(dX, dY, 0) == false) {
+							damage_move_dir = static_cast<direction>(m_game->dice(1, 8));
+							dX = m_game->m_npc_list[target_h]->m_x + _tmp_cTmpDirX[damage_move_dir];
+							dY = m_game->m_npc_list[target_h]->m_y + _tmp_cTmpDirY[damage_move_dir];
+							if (m_game->m_map_list[m_game->m_npc_list[target_h]->m_map_index]->get_moveable(dX, dY, 0) == false) break;
+						}
+
+						m_game->m_map_list[m_game->m_npc_list[target_h]->m_map_index]->clear_owner(5, target_h, hb::shared::owner_class::Npc, m_game->m_npc_list[target_h]->m_x, m_game->m_npc_list[target_h]->m_y);
+						m_game->m_map_list[m_game->m_npc_list[target_h]->m_map_index]->set_owner(target_h, hb::shared::owner_class::Npc, dX, dY);
+						m_game->m_npc_list[target_h]->m_x = dX;
+						m_game->m_npc_list[target_h]->m_y = dY;
+						m_game->m_npc_list[target_h]->m_dir = damage_move_dir;
+
+						m_game->send_event_to_near_client_type_a(target_h, hb::shared::owner_class::Npc, MsgId::EventMotion, Type::Move, 0, 0, 0);
+
+						if (m_game->m_war_manager->check_energy_sphere_destination(target_h, attacker_h, attacker_type)) {
+							if (attacker_type == hb::shared::owner_class::Player) {
+								exp = (m_game->m_npc_list[target_h]->m_exp / 3);
+								if (m_game->m_npc_list[target_h]->m_no_die_remain_exp > 0)
+									exp += m_game->m_npc_list[target_h]->m_no_die_remain_exp;
+
+								if (m_game->m_client_list[attacker_h]->m_add_exp != 0) {
+									tmp1 = (double)m_game->m_client_list[attacker_h]->m_add_exp;
+									tmp2 = (double)exp;
+									tmp3 = (tmp1 / 100.0f) * tmp2;
+									exp += (int)tmp3;
+								}
+
+								if ((m_game->m_is_crusade_mode) && (exp > 10)) exp = 10;
+
+								m_game->get_exp(attacker_h, exp);
+
+								// Use EntityManager for NPC deletion
+								if (m_game->m_entity_manager != NULL)
+									m_game->m_entity_manager->delete_entity(target_h);
+								return false;
+							}
+						}
+					} while (false);
 				}
 				else {
 					m_game->send_event_to_near_client_type_a(target_h, hb::shared::owner_class::Npc, MsgId::EventMotion, Type::Damage, damage, attacker_weapon, 0);

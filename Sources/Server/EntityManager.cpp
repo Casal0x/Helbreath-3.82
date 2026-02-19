@@ -200,13 +200,13 @@ int CEntityManager::create_entity(
                                     flag = false;
                                 }
                             }
-                        if (flag) goto GET_VALIDLOC_SUCCESS;
+                        if (flag) break;
                     }
-                    delete m_npc_list[i];
-                    m_npc_list[i] = 0;
-                    return -1;
-
-                GET_VALIDLOC_SUCCESS:;
+                    if (!flag) {
+                        delete m_npc_list[i];
+                        m_npc_list[i] = 0;
+                        return -1;
+                    }
                     // sX, sY found
                 }
                 break;
@@ -1045,7 +1045,7 @@ void CEntityManager::target_search(int npc_h, short* target, char* target_type)
 					else {
 						// Skip GM mode and admin invisible players
 						if (m_game->m_client_list[owner]->m_is_gm_mode || m_game->m_client_list[owner]->m_is_admin_invisible)
-							goto SKIP_SEARCH;
+							continue;
 						dX = m_game->m_client_list[owner]->m_x;
 						dY = m_game->m_client_list[owner]->m_y;
 						target_side = m_game->m_client_list[owner]->m_side;
@@ -1079,25 +1079,25 @@ void CEntityManager::target_search(int npc_h, short* target, char* target_type)
 				if (m_npc_list[npc_h]->m_is_summoned &&
 					m_npc_list[npc_h]->m_follow_owner_type == owner_type &&
 					m_npc_list[npc_h]->m_follow_owner_index == owner) {
-					goto SKIP_SEARCH;
+					continue;
 				}
 
 				if (m_npc_list[npc_h]->m_side < 10) {
 					// NPC
 					if (target_side == 0) {
-						if (pk_count == 0) goto SKIP_SEARCH;
+						if (pk_count == 0) continue;
 					}
 					else {
-						if ((pk_count == 0) && (target_side == m_npc_list[npc_h]->m_side)) goto SKIP_SEARCH;
-						if (m_npc_list[npc_h]->m_side == 0) goto SKIP_SEARCH;
+						if ((pk_count == 0) && (target_side == m_npc_list[npc_h]->m_side)) continue;
+						if (m_npc_list[npc_h]->m_side == 0) continue;
 					}
 				}
 				else {
-					if ((owner_type == hb::shared::owner_class::Npc) && (target_side == 0)) goto SKIP_SEARCH;
-					if (target_side == m_npc_list[npc_h]->m_side) goto SKIP_SEARCH;
+					if ((owner_type == hb::shared::owner_class::Npc) && (target_side == 0)) continue;
+					if (target_side == m_npc_list[npc_h]->m_side) continue;
 				}
 
-				if ((inv != 0) && (m_npc_list[npc_h]->m_special_ability != 1)) goto SKIP_SEARCH;
+				if ((inv != 0) && (m_npc_list[npc_h]->m_special_ability != 1)) continue;
 
 				if (abs(sX - dX) >= abs(sY - dY))
 					temp_distance = abs(sX - dX);
@@ -1108,7 +1108,6 @@ void CEntityManager::target_search(int npc_h, short* target, char* target_type)
 					target_owner = owner;
 					local_target_type = owner_type;
 				}
-			SKIP_SEARCH:;
 			}
 		}
 
@@ -1257,6 +1256,7 @@ void CEntityManager::npc_behavior_attack(int npc_h)
 		}
 	}
 	else {
+		bool skip_to_chase = false;
 		dir = CMisc::get_next_move_dir(sX, sY, dX, dY);
 		if (dir == 0) return;
 		m_npc_list[npc_h]->m_dir = dir;
@@ -1386,9 +1386,9 @@ void CEntityManager::npc_behavior_attack(int npc_h)
 								m_npc_list[npc_h]->m_behavior = Behavior::Move;
 								return;
 							}
-							else goto NBA_CHASE;
+							else { skip_to_chase = true; break; }
 						}
-						if ((magic_type == 35) && (m_game->m_client_list[m_npc_list[npc_h]->m_target_index]->m_magic_effect_status[hb::shared::magic::HoldObject] != 0)) goto NBA_CHASE;
+						if ((magic_type == 35) && (m_game->m_client_list[m_npc_list[npc_h]->m_target_index]->m_magic_effect_status[hb::shared::magic::HoldObject] != 0)) { skip_to_chase = true; break; }
 						break;
 
 					case hb::shared::owner_class::Npc:
@@ -1398,21 +1398,23 @@ void CEntityManager::npc_behavior_attack(int npc_h)
 								m_npc_list[npc_h]->m_behavior = Behavior::Move;
 								return;
 							}
-							else goto NBA_CHASE;
+							else { skip_to_chase = true; break; }
 						}
-						if ((magic_type == 35) && (m_npc_list[m_npc_list[npc_h]->m_target_index]->m_magic_effect_status[hb::shared::magic::HoldObject] != 0)) goto NBA_CHASE;
+						if ((magic_type == 35) && (m_npc_list[m_npc_list[npc_h]->m_target_index]->m_magic_effect_status[hb::shared::magic::HoldObject] != 0)) { skip_to_chase = true; break; }
 						break;
 					}
 				}
 
-				m_game->send_event_to_near_client_type_a(npc_h, hb::shared::owner_class::Npc, MsgId::EventMotion, Type::Attack, m_npc_list[npc_h]->m_x + _tmp_cTmpDirX[dir], m_npc_list[npc_h]->m_y + _tmp_cTmpDirY[dir], 1);
-				npc_magic_handler(npc_h, dX, dY, magic_type);
-				m_npc_list[npc_h]->m_time = time + 2000;
-				return;
+				if (!skip_to_chase) {
+					m_game->send_event_to_near_client_type_a(npc_h, hb::shared::owner_class::Npc, MsgId::EventMotion, Type::Attack, m_npc_list[npc_h]->m_x + _tmp_cTmpDirX[dir], m_npc_list[npc_h]->m_y + _tmp_cTmpDirY[dir], 1);
+					npc_magic_handler(npc_h, dX, dY, magic_type);
+					m_npc_list[npc_h]->m_time = time + 2000;
+					return;
+				}
 			}
 		}
 
-		if ((m_npc_list[npc_h]->m_magic_level < 0) && (m_game->dice(1, 2) == 1) &&
+		if (!skip_to_chase && (m_npc_list[npc_h]->m_magic_level < 0) && (m_game->dice(1, 2) == 1) &&
 			(abs(sX - dX) <= 9) && (abs(sY - dY) <= 7)) {
 			magic_type = -1;
 			if (m_game->m_magic_config_list[43]->m_value_1 <= m_npc_list[npc_h]->m_mana)
@@ -1431,7 +1433,7 @@ void CEntityManager::npc_behavior_attack(int npc_h)
 		}
 
 		// v1.41
-		if ((m_npc_list[npc_h]->m_attack_range > 1) &&
+		if (!skip_to_chase && (m_npc_list[npc_h]->m_attack_range > 1) &&
 			(abs(sX - dX) <= m_npc_list[npc_h]->m_attack_range) && (abs(sY - dY) <= m_npc_list[npc_h]->m_attack_range)) {
 
 			dir = CMisc::get_next_move_dir(sX, sY, dX, dY);
@@ -1469,32 +1471,34 @@ void CEntityManager::npc_behavior_attack(int npc_h)
 				case 79: // Nizie
 					switch (m_npc_list[npc_h]->m_target_type) {
 					case hb::shared::owner_class::Player:
-						if (m_game->m_client_list[m_npc_list[npc_h]->m_target_index] == 0) goto NBA_BREAK1;
-						if ((m_game->m_magic_config_list[57]->m_value_1 <= m_npc_list[npc_h]->m_mana) && (m_game->dice(1, 3) == 2))
-							npc_magic_handler(npc_h, dX, dY, 57);
-						if ((m_game->m_client_list[m_npc_list[npc_h]->m_target_index]->m_hp > 0) &&
-							(m_game->m_combat_manager->check_resisting_ice_success(m_npc_list[npc_h]->m_dir, m_npc_list[npc_h]->m_target_index, hb::shared::owner_class::Player, m_npc_list[npc_h]->m_magic_hit_ratio) == false)) {
-							if (m_game->m_client_list[m_npc_list[npc_h]->m_target_index]->m_magic_effect_status[hb::shared::magic::Ice] == 0) {
-								m_game->m_client_list[m_npc_list[npc_h]->m_target_index]->m_magic_effect_status[hb::shared::magic::Ice] = 1;
-							m_game->m_status_effect_manager->set_ice_flag(m_npc_list[npc_h]->m_target_index, hb::shared::owner_class::Player, true);
-								m_game->m_delay_event_manager->register_delay_event(sdelay::Type::MagicRelease, hb::shared::magic::Ice, time + (5 * 1000),
-									m_npc_list[npc_h]->m_target_index, hb::shared::owner_class::Player, 0, 0, 0, 1, 0, 0);
-								m_game->send_notify_msg(0, m_npc_list[npc_h]->m_target_index, Notify::MagicEffectOn, hb::shared::magic::Ice, 1, 0, 0);
+						if (m_game->m_client_list[m_npc_list[npc_h]->m_target_index] != 0) {
+							if ((m_game->m_magic_config_list[57]->m_value_1 <= m_npc_list[npc_h]->m_mana) && (m_game->dice(1, 3) == 2))
+								npc_magic_handler(npc_h, dX, dY, 57);
+							if ((m_game->m_client_list[m_npc_list[npc_h]->m_target_index]->m_hp > 0) &&
+								(m_game->m_combat_manager->check_resisting_ice_success(m_npc_list[npc_h]->m_dir, m_npc_list[npc_h]->m_target_index, hb::shared::owner_class::Player, m_npc_list[npc_h]->m_magic_hit_ratio) == false)) {
+								if (m_game->m_client_list[m_npc_list[npc_h]->m_target_index]->m_magic_effect_status[hb::shared::magic::Ice] == 0) {
+									m_game->m_client_list[m_npc_list[npc_h]->m_target_index]->m_magic_effect_status[hb::shared::magic::Ice] = 1;
+								m_game->m_status_effect_manager->set_ice_flag(m_npc_list[npc_h]->m_target_index, hb::shared::owner_class::Player, true);
+									m_game->m_delay_event_manager->register_delay_event(sdelay::Type::MagicRelease, hb::shared::magic::Ice, time + (5 * 1000),
+										m_npc_list[npc_h]->m_target_index, hb::shared::owner_class::Player, 0, 0, 0, 1, 0, 0);
+									m_game->send_notify_msg(0, m_npc_list[npc_h]->m_target_index, Notify::MagicEffectOn, hb::shared::magic::Ice, 1, 0, 0);
+								}
 							}
 						}
 						break;
 
 					case hb::shared::owner_class::Npc:
-						if (m_npc_list[m_npc_list[npc_h]->m_target_index] == 0) goto NBA_BREAK1;
-						if ((m_game->m_magic_config_list[57]->m_value_1 <= m_npc_list[npc_h]->m_mana) && (m_game->dice(1, 3) == 2))
-							npc_magic_handler(npc_h, dX, dY, 57);
-						if ((m_npc_list[m_npc_list[npc_h]->m_target_index]->m_hp > 0) &&
-							(m_game->m_combat_manager->check_resisting_ice_success(m_npc_list[npc_h]->m_dir, m_npc_list[npc_h]->m_target_index, hb::shared::owner_class::Npc, m_npc_list[npc_h]->m_magic_hit_ratio) == false)) {
-							if (m_npc_list[m_npc_list[npc_h]->m_target_index]->m_magic_effect_status[hb::shared::magic::Ice] == 0) {
-								m_npc_list[m_npc_list[npc_h]->m_target_index]->m_magic_effect_status[hb::shared::magic::Ice] = 1;
-							m_game->m_status_effect_manager->set_ice_flag(m_npc_list[npc_h]->m_target_index, hb::shared::owner_class::Npc, true);
-								m_game->m_delay_event_manager->register_delay_event(sdelay::Type::MagicRelease, hb::shared::magic::Ice, time + (5 * 1000),
-									m_npc_list[npc_h]->m_target_index, hb::shared::owner_class::Npc, 0, 0, 0, 1, 0, 0);
+						if (m_npc_list[m_npc_list[npc_h]->m_target_index] != 0) {
+							if ((m_game->m_magic_config_list[57]->m_value_1 <= m_npc_list[npc_h]->m_mana) && (m_game->dice(1, 3) == 2))
+								npc_magic_handler(npc_h, dX, dY, 57);
+							if ((m_npc_list[m_npc_list[npc_h]->m_target_index]->m_hp > 0) &&
+								(m_game->m_combat_manager->check_resisting_ice_success(m_npc_list[npc_h]->m_dir, m_npc_list[npc_h]->m_target_index, hb::shared::owner_class::Npc, m_npc_list[npc_h]->m_magic_hit_ratio) == false)) {
+								if (m_npc_list[m_npc_list[npc_h]->m_target_index]->m_magic_effect_status[hb::shared::magic::Ice] == 0) {
+									m_npc_list[m_npc_list[npc_h]->m_target_index]->m_magic_effect_status[hb::shared::magic::Ice] = 1;
+								m_game->m_status_effect_manager->set_ice_flag(m_npc_list[npc_h]->m_target_index, hb::shared::owner_class::Npc, true);
+									m_game->m_delay_event_manager->register_delay_event(sdelay::Type::MagicRelease, hb::shared::magic::Ice, time + (5 * 1000),
+										m_npc_list[npc_h]->m_target_index, hb::shared::owner_class::Npc, 0, 0, 0, 1, 0, 0);
+								}
 							}
 						}
 						break;
@@ -1502,33 +1506,34 @@ void CEntityManager::npc_behavior_attack(int npc_h)
 				case 53: //Beholder
 					switch (m_npc_list[npc_h]->m_target_type) {
 					case hb::shared::owner_class::Player:
-						if (m_game->m_client_list[m_npc_list[npc_h]->m_target_index] == 0) goto NBA_BREAK1;
-						if ((m_game->m_client_list[m_npc_list[npc_h]->m_target_index]->m_hp > 0) &&
-							(m_game->m_combat_manager->check_resisting_ice_success(m_npc_list[npc_h]->m_dir, m_npc_list[npc_h]->m_target_index, hb::shared::owner_class::Player, m_npc_list[npc_h]->m_magic_hit_ratio) == false)) {
-							if (m_game->m_client_list[m_npc_list[npc_h]->m_target_index]->m_magic_effect_status[hb::shared::magic::Ice] == 0) {
-								m_game->m_client_list[m_npc_list[npc_h]->m_target_index]->m_magic_effect_status[hb::shared::magic::Ice] = 1;
-							m_game->m_status_effect_manager->set_ice_flag(m_npc_list[npc_h]->m_target_index, hb::shared::owner_class::Player, true);
-								m_game->m_delay_event_manager->register_delay_event(sdelay::Type::MagicRelease, hb::shared::magic::Ice, time + (5 * 1000),
-									m_npc_list[npc_h]->m_target_index, hb::shared::owner_class::Player, 0, 0, 0, 1, 0, 0);
-								m_game->send_notify_msg(0, m_npc_list[npc_h]->m_target_index, Notify::MagicEffectOn, hb::shared::magic::Ice, 1, 0, 0);
+						if (m_game->m_client_list[m_npc_list[npc_h]->m_target_index] != 0) {
+							if ((m_game->m_client_list[m_npc_list[npc_h]->m_target_index]->m_hp > 0) &&
+								(m_game->m_combat_manager->check_resisting_ice_success(m_npc_list[npc_h]->m_dir, m_npc_list[npc_h]->m_target_index, hb::shared::owner_class::Player, m_npc_list[npc_h]->m_magic_hit_ratio) == false)) {
+								if (m_game->m_client_list[m_npc_list[npc_h]->m_target_index]->m_magic_effect_status[hb::shared::magic::Ice] == 0) {
+									m_game->m_client_list[m_npc_list[npc_h]->m_target_index]->m_magic_effect_status[hb::shared::magic::Ice] = 1;
+								m_game->m_status_effect_manager->set_ice_flag(m_npc_list[npc_h]->m_target_index, hb::shared::owner_class::Player, true);
+									m_game->m_delay_event_manager->register_delay_event(sdelay::Type::MagicRelease, hb::shared::magic::Ice, time + (5 * 1000),
+										m_npc_list[npc_h]->m_target_index, hb::shared::owner_class::Player, 0, 0, 0, 1, 0, 0);
+									m_game->send_notify_msg(0, m_npc_list[npc_h]->m_target_index, Notify::MagicEffectOn, hb::shared::magic::Ice, 1, 0, 0);
+								}
 							}
 						}
 						break;
 
 					case hb::shared::owner_class::Npc:
-						if (m_npc_list[m_npc_list[npc_h]->m_target_index] == 0) goto NBA_BREAK1;
-						if ((m_npc_list[m_npc_list[npc_h]->m_target_index]->m_hp > 0) &&
-							(m_game->m_combat_manager->check_resisting_ice_success(m_npc_list[npc_h]->m_dir, m_npc_list[npc_h]->m_target_index, hb::shared::owner_class::Npc, m_npc_list[npc_h]->m_magic_hit_ratio) == false)) {
-							if (m_npc_list[m_npc_list[npc_h]->m_target_index]->m_magic_effect_status[hb::shared::magic::Ice] == 0) {
-								m_npc_list[m_npc_list[npc_h]->m_target_index]->m_magic_effect_status[hb::shared::magic::Ice] = 1;
-							m_game->m_status_effect_manager->set_ice_flag(m_npc_list[npc_h]->m_target_index, hb::shared::owner_class::Npc, true);
-								m_game->m_delay_event_manager->register_delay_event(sdelay::Type::MagicRelease, hb::shared::magic::Ice, time + (5 * 1000),
-									m_npc_list[npc_h]->m_target_index, hb::shared::owner_class::Npc, 0, 0, 0, 1, 0, 0);
+						if (m_npc_list[m_npc_list[npc_h]->m_target_index] != 0) {
+							if ((m_npc_list[m_npc_list[npc_h]->m_target_index]->m_hp > 0) &&
+								(m_game->m_combat_manager->check_resisting_ice_success(m_npc_list[npc_h]->m_dir, m_npc_list[npc_h]->m_target_index, hb::shared::owner_class::Npc, m_npc_list[npc_h]->m_magic_hit_ratio) == false)) {
+								if (m_npc_list[m_npc_list[npc_h]->m_target_index]->m_magic_effect_status[hb::shared::magic::Ice] == 0) {
+									m_npc_list[m_npc_list[npc_h]->m_target_index]->m_magic_effect_status[hb::shared::magic::Ice] = 1;
+								m_game->m_status_effect_manager->set_ice_flag(m_npc_list[npc_h]->m_target_index, hb::shared::owner_class::Npc, true);
+									m_game->m_delay_event_manager->register_delay_event(sdelay::Type::MagicRelease, hb::shared::magic::Ice, time + (5 * 1000),
+										m_npc_list[npc_h]->m_target_index, hb::shared::owner_class::Npc, 0, 0, 0, 1, 0, 0);
+								}
 							}
 						}
 						break;
 					}
-				NBA_BREAK1:
 					m_game->send_event_to_near_client_type_a(npc_h, hb::shared::owner_class::Npc, MsgId::EventMotion, Type::Attack, dX, dY, 20);
 					m_game->m_combat_manager->calculate_attack_effect(m_npc_list[npc_h]->m_target_index, m_npc_list[npc_h]->m_target_type, npc_h, hb::shared::owner_class::Npc, dX, dY, 20);
 					break;
@@ -1558,8 +1563,6 @@ void CEntityManager::npc_behavior_attack(int npc_h)
 			}
 			return;
 		}
-
-	NBA_CHASE:
 
 		if (m_npc_list[npc_h]->m_action_limit != 0) return;
 
@@ -1793,13 +1796,13 @@ void CEntityManager::calc_next_waypoint_destination(int npc_h)
 						flag = false;
 					}
 				}
-			if (flag) goto CNW_GET_VALIDLOC_SUCCESS;
+			if (flag) break;
 		}
-		// Fail! 
-		m_npc_list[npc_h]->m_tmp_error = 0;
-		return;
-
-	CNW_GET_VALIDLOC_SUCCESS:
+		if (!flag) {
+			// Fail!
+			m_npc_list[npc_h]->m_tmp_error = 0;
+			return;
+		}
 		m_npc_list[npc_h]->m_dx = sX;
 		m_npc_list[npc_h]->m_dy = sY;
 		break;
@@ -1813,6 +1816,7 @@ void CEntityManager::npc_magic_handler(int npc_h, short dX, short dY, short type
 	short  owner_h;
 	char   owner_type;
 	int err, sX, sY, tX, tY, result, whether_bonus, magic_attr;
+	bool no_effect = false;
 	uint32_t  time = GameClock::GetTimeMS();
 
 	if (m_npc_list[npc_h] == 0) return;
@@ -1839,16 +1843,16 @@ void CEntityManager::npc_magic_handler(int npc_h, short dX, short dY, short type
 
 				switch (owner_type) {
 				case hb::shared::owner_class::Player:
-					if (m_game->m_client_list[owner_h] == 0) goto NMH_NOEFFECT;
-					if (m_game->m_client_list[owner_h]->m_magic_effect_status[hb::shared::magic::Invisibility] != 0) goto NMH_NOEFFECT;
+					if (m_game->m_client_list[owner_h] == 0) { no_effect = true; break; }
+					if (m_game->m_client_list[owner_h]->m_magic_effect_status[hb::shared::magic::Invisibility] != 0) { no_effect = true; break; }
 					m_game->m_client_list[owner_h]->m_magic_effect_status[hb::shared::magic::Invisibility] = (char)m_game->m_magic_config_list[type]->m_value_4;
 					m_game->m_status_effect_manager->set_invisibility_flag(owner_h, owner_type, true);
 					m_game->m_combat_manager->remove_from_target(owner_h, hb::shared::owner_class::Player);
 					break;
 
 				case hb::shared::owner_class::Npc:
-					if (m_npc_list[owner_h] == 0) goto NMH_NOEFFECT;
-					if (m_npc_list[owner_h]->m_magic_effect_status[hb::shared::magic::Invisibility] != 0) goto NMH_NOEFFECT;
+					if (m_npc_list[owner_h] == 0) { no_effect = true; break; }
+					if (m_npc_list[owner_h]->m_magic_effect_status[hb::shared::magic::Invisibility] != 0) { no_effect = true; break; }
 					m_npc_list[owner_h]->m_magic_effect_status[hb::shared::magic::Invisibility] = (char)m_game->m_magic_config_list[type]->m_value_4;
 					m_game->m_status_effect_manager->set_invisibility_flag(owner_h, owner_type, true);
 					// NPC    .
@@ -1856,22 +1860,24 @@ void CEntityManager::npc_magic_handler(int npc_h, short dX, short dY, short type
 					break;
 				}
 
-				m_game->m_delay_event_manager->register_delay_event(sdelay::Type::MagicRelease, hb::shared::magic::Invisibility, time + (m_game->m_magic_config_list[type]->m_last_time * 1000),
-					owner_h, owner_type, 0, 0, 0, m_game->m_magic_config_list[type]->m_value_4, 0, 0);
+				if (!no_effect) {
+					m_game->m_delay_event_manager->register_delay_event(sdelay::Type::MagicRelease, hb::shared::magic::Invisibility, time + (m_game->m_magic_config_list[type]->m_last_time * 1000),
+						owner_h, owner_type, 0, 0, 0, m_game->m_magic_config_list[type]->m_value_4, 0, 0);
 
-				if (owner_type == hb::shared::owner_class::Player)
-					m_game->send_notify_msg(0, owner_h, Notify::MagicEffectOn, hb::shared::magic::Invisibility, m_game->m_magic_config_list[type]->m_value_4, 0, 0);
+					if (owner_type == hb::shared::owner_class::Player)
+						m_game->send_notify_msg(0, owner_h, Notify::MagicEffectOn, hb::shared::magic::Invisibility, m_game->m_magic_config_list[type]->m_value_4, 0, 0);
+				}
 				break;
 
 			case 2:
 				// dX, dY  8  Invisibility  Object   .
-				for(int ix = dX - 8; ix <= dX + 8; ix++)
-					for(int iy = dY - 8; iy <= dY + 8; iy++) {
+				for(int ix = dX - 8; ix <= dX + 8 && !no_effect; ix++)
+					for(int iy = dY - 8; iy <= dY + 8 && !no_effect; iy++) {
 						m_map_list[m_npc_list[npc_h]->m_map_index]->get_owner(&owner_h, &owner_type, ix, iy);
 						if (owner_h != 0) {
 							switch (owner_type) {
 							case hb::shared::owner_class::Player:
-								if (m_game->m_client_list[owner_h] == 0) goto NMH_NOEFFECT;
+								if (m_game->m_client_list[owner_h] == 0) { no_effect = true; break; }
 								if (m_game->m_client_list[owner_h]->m_magic_effect_status[hb::shared::magic::Invisibility] != 0) {
 									if (m_game->m_client_list[owner_h]->m_type != 66) {
 										m_game->m_client_list[owner_h]->m_magic_effect_status[hb::shared::magic::Invisibility] = 0;
@@ -1882,7 +1888,7 @@ void CEntityManager::npc_magic_handler(int npc_h, short dX, short dY, short type
 								break;
 
 							case hb::shared::owner_class::Npc:
-								if (m_npc_list[owner_h] == 0) goto NMH_NOEFFECT;
+								if (m_npc_list[owner_h] == 0) { no_effect = true; break; }
 								if (m_npc_list[owner_h]->m_magic_effect_status[hb::shared::magic::Invisibility] != 0) {
 									if (m_game->m_client_list[owner_h]->m_type != 66) {
 										m_npc_list[owner_h]->m_magic_effect_status[hb::shared::magic::Invisibility] = 0;
@@ -1904,25 +1910,27 @@ void CEntityManager::npc_magic_handler(int npc_h, short dX, short dY, short type
 
 				switch (owner_type) {
 				case hb::shared::owner_class::Player:
-					if (m_game->m_client_list[owner_h] == 0) goto NMH_NOEFFECT;
-					if (m_game->m_client_list[owner_h]->m_magic_effect_status[hb::shared::magic::HoldObject] != 0) goto NMH_NOEFFECT;
-					if (m_game->m_client_list[owner_h]->m_add_poison_resistance >= 500) goto NMH_NOEFFECT;
+					if (m_game->m_client_list[owner_h] == 0) { no_effect = true; break; }
+					if (m_game->m_client_list[owner_h]->m_magic_effect_status[hb::shared::magic::HoldObject] != 0) { no_effect = true; break; }
+					if (m_game->m_client_list[owner_h]->m_add_poison_resistance >= 500) { no_effect = true; break; }
 					m_game->m_client_list[owner_h]->m_magic_effect_status[hb::shared::magic::HoldObject] = (char)m_game->m_magic_config_list[type]->m_value_4;
 					break;
 
 				case hb::shared::owner_class::Npc:
-					if (m_npc_list[owner_h] == 0) goto NMH_NOEFFECT;
-					if (m_npc_list[owner_h]->m_magic_level >= 6) goto NMH_NOEFFECT;
-					if (m_npc_list[owner_h]->m_magic_effect_status[hb::shared::magic::HoldObject] != 0) goto NMH_NOEFFECT;
+					if (m_npc_list[owner_h] == 0) { no_effect = true; break; }
+					if (m_npc_list[owner_h]->m_magic_level >= 6) { no_effect = true; break; }
+					if (m_npc_list[owner_h]->m_magic_effect_status[hb::shared::magic::HoldObject] != 0) { no_effect = true; break; }
 					m_npc_list[owner_h]->m_magic_effect_status[hb::shared::magic::HoldObject] = (char)m_game->m_magic_config_list[type]->m_value_4;
 					break;
 				}
 
-				m_game->m_delay_event_manager->register_delay_event(sdelay::Type::MagicRelease, hb::shared::magic::HoldObject, time + (m_game->m_magic_config_list[type]->m_last_time * 1000),
-					owner_h, owner_type, 0, 0, 0, m_game->m_magic_config_list[type]->m_value_4, 0, 0);
+				if (!no_effect) {
+					m_game->m_delay_event_manager->register_delay_event(sdelay::Type::MagicRelease, hb::shared::magic::HoldObject, time + (m_game->m_magic_config_list[type]->m_last_time * 1000),
+						owner_h, owner_type, 0, 0, 0, m_game->m_magic_config_list[type]->m_value_4, 0, 0);
 
-				if (owner_type == hb::shared::owner_class::Player)
-					m_game->send_notify_msg(0, owner_h, Notify::MagicEffectOn, hb::shared::magic::HoldObject, m_game->m_magic_config_list[type]->m_value_4, 0, 0);
+					if (owner_type == hb::shared::owner_class::Player)
+						m_game->send_notify_msg(0, owner_h, Notify::MagicEffectOn, hb::shared::magic::HoldObject, m_game->m_magic_config_list[type]->m_value_4, 0, 0);
+				}
 			}
 			break;
 
@@ -2113,8 +2121,6 @@ void CEntityManager::npc_magic_handler(int npc_h, short dX, short dY, short type
 		// Casting
 
 	}
-
-NMH_NOEFFECT:
 
 	// Mana .
 	m_npc_list[npc_h]->m_mana -= m_game->m_magic_config_list[type]->m_value_1; // value1 Mana Cost
@@ -2336,10 +2342,8 @@ bool CEntityManager::set_npc_follow_mode(char* name, char* follow_name, char fol
 		if ((m_npc_list[i] != 0) && (memcmp(m_npc_list[i]->m_name, name, 5) == 0)) {
 			index = i;
 			map_index = m_npc_list[i]->m_map_index;
-			goto NEXT_STEP_SNFM1;
+			break;
 		}
-
-NEXT_STEP_SNFM1:
 
 	switch (follow_owner_type) {
 	case hb::shared::owner_class::Npc:
@@ -2348,7 +2352,7 @@ NEXT_STEP_SNFM1:
 				if (m_npc_list[i]->m_map_index != map_index) return false;
 				follow_index = i;
 				follow_side = m_npc_list[i]->m_side;
-				goto NEXT_STEP_SNFM2;
+				break;
 			}
 		break;
 
@@ -2358,12 +2362,10 @@ NEXT_STEP_SNFM1:
 				if (m_game->m_client_list[i]->m_map_index != map_index) return false;
 				follow_index = i;
 				follow_side = m_game->m_client_list[i]->m_side;
-				goto NEXT_STEP_SNFM2;
+				break;
 			}
 		break;
 	}
-
-NEXT_STEP_SNFM2:
 
 	if ((index == -1) || (follow_index == -1)) return false;
 
@@ -2379,18 +2381,17 @@ void CEntityManager::set_npc_attack_mode(char* name, int target_h, char target_t
 {
 	int index;
 
+	index = -1;
 	for(int i = 1; i < MaxNpcs; i++)
 		if ((m_npc_list[i] != 0) && (memcmp(m_npc_list[i]->m_name, name, 5) == 0)) {
 			index = i;
-			goto NEXT_STEP_SNAM1;
+			break;
 
 			//testcode
 			//PutLogList("set_npc_attack_mode - Npc found");
 		}
 	// NPC .
-	return;
-
-NEXT_STEP_SNAM1:
+	if (index == -1) return;
 
 	switch (target_type) {
 	case hb::shared::owner_class::Player:

@@ -1170,6 +1170,8 @@ bool CMapData::set_owner(uint16_t object_id, int sX, int sY, int type, direction
 	}
 	chat_index = 0;
 
+	bool found_old = false;
+
 	if ((!hb::shared::object_id::IsNearbyOffset(object_id)) && (action != Type::NullAction))
 	{
 		tmp_name.clear();
@@ -1208,10 +1210,10 @@ bool CMapData::set_owner(uint16_t object_id, int sX, int sY, int type, direction
 				m_data[iX][iY].m_owner_name.clear();
 				m_object_id_cache_loc_x[object_id] = sX;
 				m_object_id_cache_loc_y[object_id] = sY;
-				goto EXIT_SEARCH_LOOP;
+				found_old = true;
 			}
 		}
-		else if (m_object_id_cache_loc_x[object_id] < 0)
+		if (!found_old && m_object_id_cache_loc_x[object_id] < 0)
 		{
 			iX = abs(m_object_id_cache_loc_x[object_id]) - m_pivot_x;
 			iY = abs(m_object_id_cache_loc_y[object_id]) - m_pivot_y;
@@ -1232,52 +1234,60 @@ bool CMapData::set_owner(uint16_t object_id, int sX, int sY, int type, direction
 				m_data[iX][iY].m_dead_owner_type = 0;
 				m_object_id_cache_loc_x[object_id] = -1 * sX;
 				m_object_id_cache_loc_y[object_id] = -1 * sY;
-				goto EXIT_SEARCH_LOOP;
+				found_old = true;
 			}
 		}
 
-		add = 7;
-		for (iX = sX - add; iX <= sX + add; iX++)
-			for (iY = sY - add; iY <= sY + add; iY++)
-			{
-				if (iX < m_pivot_x) break;
-				else if (iX >= m_pivot_x + MapDataSizeX) break;
-				if (iY < m_pivot_y) break;
-				else if (iY >= m_pivot_y + MapDataSizeY) break;
-				if (m_data[iX - m_pivot_x][iY - m_pivot_y].m_object_id == object_id)
+		if (!found_old)
+		{
+			add = 7;
+			for (iX = sX - add; iX <= sX + add && !found_old; iX++)
+				for (iY = sY - add; iY <= sY + add; iY++)
 				{
-					chat_index = m_data[iX - m_pivot_x][iY - m_pivot_y].m_chat_msg;
-					effect_type = m_data[iX - m_pivot_x][iY - m_pivot_y].m_effect_type;
-					effect_frame = m_data[iX - m_pivot_x][iY - m_pivot_y].m_effect_frame;
-					effect_total_frame = m_data[iX - m_pivot_x][iY - m_pivot_y].m_effect_total_frame;
-					m_data[iX - m_pivot_x][iY - m_pivot_y].m_object_id = 0; //-1; v1.41
-					m_data[iX - m_pivot_x][iY - m_pivot_y].m_chat_msg = 0;
-					m_data[iX - m_pivot_x][iY - m_pivot_y].m_owner_type = 0;
-					m_data[iX - m_pivot_x][iY - m_pivot_y].m_npc_config_id = -1;
-					m_data[iX - m_pivot_x][iY - m_pivot_y].m_effect_type = 0;
-					m_data[iX - m_pivot_x][iY - m_pivot_y].m_owner_name.clear();
-					m_object_id_cache_loc_x[object_id] = sX;
-					m_object_id_cache_loc_y[object_id] = sY;
-					goto EXIT_SEARCH_LOOP;
-				}
+					if (iX < m_pivot_x) break;
+					else if (iX >= m_pivot_x + MapDataSizeX) break;
+					if (iY < m_pivot_y) break;
+					else if (iY >= m_pivot_y + MapDataSizeY) break;
+					if (m_data[iX - m_pivot_x][iY - m_pivot_y].m_object_id == object_id)
+					{
+						chat_index = m_data[iX - m_pivot_x][iY - m_pivot_y].m_chat_msg;
+						effect_type = m_data[iX - m_pivot_x][iY - m_pivot_y].m_effect_type;
+						effect_frame = m_data[iX - m_pivot_x][iY - m_pivot_y].m_effect_frame;
+						effect_total_frame = m_data[iX - m_pivot_x][iY - m_pivot_y].m_effect_total_frame;
+						m_data[iX - m_pivot_x][iY - m_pivot_y].m_object_id = 0; //-1; v1.41
+						m_data[iX - m_pivot_x][iY - m_pivot_y].m_chat_msg = 0;
+						m_data[iX - m_pivot_x][iY - m_pivot_y].m_owner_type = 0;
+						m_data[iX - m_pivot_x][iY - m_pivot_y].m_npc_config_id = -1;
+						m_data[iX - m_pivot_x][iY - m_pivot_y].m_effect_type = 0;
+						m_data[iX - m_pivot_x][iY - m_pivot_y].m_owner_name.clear();
+						m_object_id_cache_loc_x[object_id] = sX;
+						m_object_id_cache_loc_y[object_id] = sY;
+						found_old = true;
+						break;
+					}
 
-				if (m_data[iX - m_pivot_x][iY - m_pivot_y].m_dead_object_id == object_id)
-				{
-					chat_index = m_data[iX - m_pivot_x][iY - m_pivot_y].m_dead_chat_msg;
-					effect_type = m_data[iX - m_pivot_x][iY - m_pivot_y].m_effect_type;
-					effect_frame = m_data[iX - m_pivot_x][iY - m_pivot_y].m_effect_frame;
-					effect_total_frame = m_data[iX - m_pivot_x][iY - m_pivot_y].m_effect_total_frame;
-					m_data[iX - m_pivot_x][iY - m_pivot_y].m_dead_object_id = 0; //-1; v1.41
-					m_data[iX - m_pivot_x][iY - m_pivot_y].m_dead_chat_msg = 0;
-					m_data[iX - m_pivot_x][iY - m_pivot_y].m_dead_owner_type = 0;
-					m_data[iX - m_pivot_x][iY - m_pivot_y].m_dead_owner_name.clear();
-					m_object_id_cache_loc_x[object_id] = -1 * sX;
-					m_object_id_cache_loc_y[object_id] = -1 * sY;
-					goto EXIT_SEARCH_LOOP;
+					if (m_data[iX - m_pivot_x][iY - m_pivot_y].m_dead_object_id == object_id)
+					{
+						chat_index = m_data[iX - m_pivot_x][iY - m_pivot_y].m_dead_chat_msg;
+						effect_type = m_data[iX - m_pivot_x][iY - m_pivot_y].m_effect_type;
+						effect_frame = m_data[iX - m_pivot_x][iY - m_pivot_y].m_effect_frame;
+						effect_total_frame = m_data[iX - m_pivot_x][iY - m_pivot_y].m_effect_total_frame;
+						m_data[iX - m_pivot_x][iY - m_pivot_y].m_dead_object_id = 0; //-1; v1.41
+						m_data[iX - m_pivot_x][iY - m_pivot_y].m_dead_chat_msg = 0;
+						m_data[iX - m_pivot_x][iY - m_pivot_y].m_dead_owner_type = 0;
+						m_data[iX - m_pivot_x][iY - m_pivot_y].m_dead_owner_name.clear();
+						m_object_id_cache_loc_x[object_id] = -1 * sX;
+						m_object_id_cache_loc_y[object_id] = -1 * sY;
+						found_old = true;
+						break;
+					}
 				}
-			}
-		m_object_id_cache_loc_x[object_id] = sX;
-		m_object_id_cache_loc_y[object_id] = sY;
+		}
+		if (!found_old)
+		{
+			m_object_id_cache_loc_x[object_id] = sX;
+			m_object_id_cache_loc_y[object_id] = sY;
+		}
 	}
 	else
 	{
@@ -1345,10 +1355,10 @@ bool CMapData::set_owner(uint16_t object_id, int sX, int sY, int type, direction
 				m_data[iX][iY].m_owner_name.clear();
 				m_object_id_cache_loc_x[object_id] = dX + m_pivot_x;
 				m_object_id_cache_loc_y[object_id] = dY + m_pivot_y;
-				goto EXIT_SEARCH_LOOP;
+				found_old = true;
 			}
 		}
-		else if (m_object_id_cache_loc_x[object_id] < 0)
+		if (!found_old && m_object_id_cache_loc_x[object_id] < 0)
 		{
 			iX = abs(m_object_id_cache_loc_x[object_id]) - m_pivot_x;
 			iY = abs(m_object_id_cache_loc_y[object_id]) - m_pivot_y;
@@ -1401,121 +1411,127 @@ bool CMapData::set_owner(uint16_t object_id, int sX, int sY, int type, direction
 				m_data[iX][iY].m_dead_owner_name.clear();
 				m_object_id_cache_loc_x[object_id] = -1 * (dX + m_pivot_x);
 				m_object_id_cache_loc_y[object_id] = -1 * (dY + m_pivot_y);
-				goto EXIT_SEARCH_LOOP;
+				found_old = true;
 			}
 		}
 
-		for (iX = 0; iX < MapDataSizeX; iX++)
-			for (iY = 0; iY < MapDataSizeY; iY++)
-			{
-				if (m_data[iX][iY].m_object_id == object_id)
+		if (!found_old)
+		{
+			for (iX = 0; iX < MapDataSizeX && !found_old; iX++)
+				for (iY = 0; iY < MapDataSizeY; iY++)
 				{
-					dX = iX;
-					dY = iY;
-					if (use_abs_pos) {
-						dX = sX - m_pivot_x;
-						dY = sY - m_pivot_y;
-					}
-					else {
-						switch (action) {
-						case Type::Run:
-						case Type::Move:
-						case Type::DamageMove:
-						case Type::AttackMove:
-							hb::shared::direction::ApplyOffset(dir, dX, dY);
-							break;
-						default:
-							break;
-						}
-					}
-					if ((object_id != static_cast<uint16_t>(m_game->m_player->m_player_object_id))
-						&& (m_data[dX][dY].m_owner_type != 0) && (m_data[dX][dY].m_object_id != object_id))
+					if (m_data[iX][iY].m_object_id == object_id)
 					{
-						m_game->request_full_object_data(object_id);
-						name.clear();
-						return false;
-					}
-					chat_index = m_data[iX][iY].m_chat_msg;
-					if (action != Type::NullAction) {
-						type = m_data[iX][iY].m_owner_type;
-						localNpcConfigId = m_data[iX][iY].m_npc_config_id;
-						localAppearance = m_data[iX][iY].m_appearance;
-						localStatus = m_data[iX][iY].m_status;
-						effect_type = m_data[iX][iY].m_effect_type;
-						effect_frame = m_data[iX][iY].m_effect_frame;
-						effect_total_frame = m_data[iX][iY].m_effect_total_frame;
-					}
-					tmp_name.clear();
-					tmp_name = m_data[iX][iY].m_owner_name;
-					name.clear();
-					name = m_data[iX][iY].m_owner_name;
-					m_data[iX][iY].m_object_id = 0; //-1; v1.41
-					m_data[iX][iY].m_chat_msg = 0;
-					m_data[iX][iY].m_owner_type = 0;
-					m_data[iX][iY].m_npc_config_id = -1;
-					m_data[iX][iY].m_effect_type = 0;
-					m_data[iX][iY].m_owner_name.clear();
-					m_object_id_cache_loc_x[object_id] = dX + m_pivot_x;
-					m_object_id_cache_loc_y[object_id] = dY + m_pivot_y;
-					goto EXIT_SEARCH_LOOP;
-				}
-				if (m_data[iX][iY].m_dead_object_id == object_id)
-				{
-					dX = iX;
-					dY = iY;
-					if (use_abs_pos) {
-						dX = sX - m_pivot_x;
-						dY = sY - m_pivot_y;
-					}
-					else {
-						switch (action) {
-						case Type::Move:
-						case Type::Run:
-						case Type::DamageMove:
-						case Type::AttackMove:
-							hb::shared::direction::ApplyOffset(dir, dX, dY);
-							break;
-						default:
-							break;
+						dX = iX;
+						dY = iY;
+						if (use_abs_pos) {
+							dX = sX - m_pivot_x;
+							dY = sY - m_pivot_y;
 						}
-					}
-					if ((object_id != static_cast<uint16_t>(m_game->m_player->m_player_object_id)) &&
-						(m_data[dX][dY].m_owner_type != 0) && (m_data[dX][dY].m_object_id != object_id))
-					{
-						m_game->request_full_object_data(object_id);
+						else {
+							switch (action) {
+							case Type::Run:
+							case Type::Move:
+							case Type::DamageMove:
+							case Type::AttackMove:
+								hb::shared::direction::ApplyOffset(dir, dX, dY);
+								break;
+							default:
+								break;
+							}
+						}
+						if ((object_id != static_cast<uint16_t>(m_game->m_player->m_player_object_id))
+							&& (m_data[dX][dY].m_owner_type != 0) && (m_data[dX][dY].m_object_id != object_id))
+						{
+							m_game->request_full_object_data(object_id);
+							name.clear();
+							return false;
+						}
+						chat_index = m_data[iX][iY].m_chat_msg;
+						if (action != Type::NullAction) {
+							type = m_data[iX][iY].m_owner_type;
+							localNpcConfigId = m_data[iX][iY].m_npc_config_id;
+							localAppearance = m_data[iX][iY].m_appearance;
+							localStatus = m_data[iX][iY].m_status;
+							effect_type = m_data[iX][iY].m_effect_type;
+							effect_frame = m_data[iX][iY].m_effect_frame;
+							effect_total_frame = m_data[iX][iY].m_effect_total_frame;
+						}
+						tmp_name.clear();
+						tmp_name = m_data[iX][iY].m_owner_name;
 						name.clear();
-						return false;
+						name = m_data[iX][iY].m_owner_name;
+						m_data[iX][iY].m_object_id = 0; //-1; v1.41
+						m_data[iX][iY].m_chat_msg = 0;
+						m_data[iX][iY].m_owner_type = 0;
+						m_data[iX][iY].m_npc_config_id = -1;
+						m_data[iX][iY].m_effect_type = 0;
+						m_data[iX][iY].m_owner_name.clear();
+						m_object_id_cache_loc_x[object_id] = dX + m_pivot_x;
+						m_object_id_cache_loc_y[object_id] = dY + m_pivot_y;
+						found_old = true;
+						break;
 					}
-					chat_index = m_data[iX][iY].m_dead_chat_msg;
-					if (action != Type::NullAction) {
-						type = m_data[iX][iY].m_dead_owner_type;
-						localNpcConfigId = m_data[iX][iY].m_dead_npc_config_id;
-						localAppearance = m_data[iX][iY].m_dead_appearance;
-						localStatus = m_data[iX][iY].m_deadStatus;
+					if (m_data[iX][iY].m_dead_object_id == object_id)
+					{
+						dX = iX;
+						dY = iY;
+						if (use_abs_pos) {
+							dX = sX - m_pivot_x;
+							dY = sY - m_pivot_y;
+						}
+						else {
+							switch (action) {
+							case Type::Move:
+							case Type::Run:
+							case Type::DamageMove:
+							case Type::AttackMove:
+								hb::shared::direction::ApplyOffset(dir, dX, dY);
+								break;
+							default:
+								break;
+							}
+						}
+						if ((object_id != static_cast<uint16_t>(m_game->m_player->m_player_object_id)) &&
+							(m_data[dX][dY].m_owner_type != 0) && (m_data[dX][dY].m_object_id != object_id))
+						{
+							m_game->request_full_object_data(object_id);
+							name.clear();
+							return false;
+						}
+						chat_index = m_data[iX][iY].m_dead_chat_msg;
+						if (action != Type::NullAction) {
+							type = m_data[iX][iY].m_dead_owner_type;
+							localNpcConfigId = m_data[iX][iY].m_dead_npc_config_id;
+							localAppearance = m_data[iX][iY].m_dead_appearance;
+							localStatus = m_data[iX][iY].m_deadStatus;
+						}
+						tmp_name.clear();
+						tmp_name = m_data[iX][iY].m_dead_owner_name;
+						name.clear();
+						name = m_data[iX][iY].m_dead_owner_name;
+						m_data[iX][iY].m_dead_object_id = 0; //-1; v1.41
+						m_data[iX][iY].m_dead_chat_msg = 0;
+						m_data[iX][iY].m_dead_owner_type = 0;
+						m_data[iX][iY].m_dead_npc_config_id = -1;
+						m_data[iX][iY].m_effect_type = 0;
+						m_data[iX][iY].m_dead_owner_name.clear();
+						m_object_id_cache_loc_x[object_id] = -1 * (dX + m_pivot_x);
+						m_object_id_cache_loc_y[object_id] = -1 * (dY + m_pivot_y);
+						found_old = true;
+						break;
 					}
-					tmp_name.clear();
-					tmp_name = m_data[iX][iY].m_dead_owner_name;
-					name.clear();
-					name = m_data[iX][iY].m_dead_owner_name;
-					m_data[iX][iY].m_dead_object_id = 0; //-1; v1.41
-					m_data[iX][iY].m_dead_chat_msg = 0;
-					m_data[iX][iY].m_dead_owner_type = 0;
-					m_data[iX][iY].m_dead_npc_config_id = -1;
-					m_data[iX][iY].m_effect_type = 0;
-					m_data[iX][iY].m_dead_owner_name.clear();
-					m_object_id_cache_loc_x[object_id] = -1 * (dX + m_pivot_x);
-					m_object_id_cache_loc_y[object_id] = -1 * (dY + m_pivot_y);
-					goto EXIT_SEARCH_LOOP;
 				}
-			}
-		if (ShouldRequestFullData(object_id, sX, sY)) {
-			m_game->request_full_object_data(object_id);
 		}
-		name.clear();
-		return false;
+		if (!found_old)
+		{
+			if (ShouldRequestFullData(object_id, sX, sY)) {
+				m_game->request_full_object_data(object_id);
+			}
+			name.clear();
+			return false;
+		}
 	}
-
-EXIT_SEARCH_LOOP:;
 
 	if (pre_loc == 0 && m_data[dX][dY].m_owner_type != 0)
 	{
@@ -4040,34 +4056,33 @@ bool CMapData::set_chat_msg_owner(uint16_t object_id, short sX, short sY, int in
 {
 	int dX, dY;
 
-	if ((sX == -10) && (sY == -10)) goto SCMO_FULL_SEARCH;
-
-	if ((sX < m_pivot_x) || (sX >= m_pivot_x + MapDataSizeX) ||
-		(sY < m_pivot_y) || (sY >= m_pivot_y + MapDataSizeY))
+	if ((sX != -10) || (sY != -10))
 	{
-		return false;
-	}
-	for (dX = sX - 4; dX <= sX + 4; dX++)
-		for (dY = sY - 4; dY <= sY + 4; dY++)
+		if ((sX < m_pivot_x) || (sX >= m_pivot_x + MapDataSizeX) ||
+			(sY < m_pivot_y) || (sY >= m_pivot_y + MapDataSizeY))
 		{
-			if (dX < m_pivot_x) break;
-			else
-				if (dX > m_pivot_x + MapDataSizeX) break;
-			if (dY < m_pivot_y) break;
-			else
-				if (dY > m_pivot_y + MapDataSizeY) break;
-
-			if (m_data[dX - m_pivot_x][dY - m_pivot_y].m_object_id == object_id) {
-				m_data[dX - m_pivot_x][dY - m_pivot_y].m_chat_msg = index;
-				return true;
-			}
-			if (m_data[dX - m_pivot_x][dY - m_pivot_y].m_dead_object_id == object_id) {
-				m_data[dX - m_pivot_x][dY - m_pivot_y].m_dead_chat_msg = index;
-				return true;
-			}
+			return false;
 		}
+		for (dX = sX - 4; dX <= sX + 4; dX++)
+			for (dY = sY - 4; dY <= sY + 4; dY++)
+			{
+				if (dX < m_pivot_x) break;
+				else
+					if (dX > m_pivot_x + MapDataSizeX) break;
+				if (dY < m_pivot_y) break;
+				else
+					if (dY > m_pivot_y + MapDataSizeY) break;
 
-SCMO_FULL_SEARCH:;
+				if (m_data[dX - m_pivot_x][dY - m_pivot_y].m_object_id == object_id) {
+					m_data[dX - m_pivot_x][dY - m_pivot_y].m_chat_msg = index;
+					return true;
+				}
+				if (m_data[dX - m_pivot_x][dY - m_pivot_y].m_dead_object_id == object_id) {
+					m_data[dX - m_pivot_x][dY - m_pivot_y].m_dead_chat_msg = index;
+					return true;
+				}
+			}
+	}
 
 	for (dX = 0; dX < MapDataSizeX; dX++)
 		for (dY = 0; dY < MapDataSizeY; dY++) {

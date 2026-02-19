@@ -812,18 +812,18 @@ bool CMap::remove_crusade_structure_info(short sX, short sY)
 {
 	
 
+	bool found = false;
 	for(int i = 0; i < hb::shared::limits::MaxCrusadeStructures; i++)
 		if ((m_crusade_structure_info[i].x == sX) && (m_crusade_structure_info[i].y == sY)) {
 			m_crusade_structure_info[i].type = 0;
 			m_crusade_structure_info[i].side = 0;
 			m_crusade_structure_info[i].x = 0;
 			m_crusade_structure_info[i].y = 0;
-			goto RCSI_REARRANGE;
+			found = true;
+			break;
 		}
 
-	return false;
-
-RCSI_REARRANGE:;
+	if (!found) return false;
 
 	for(int i = 0; i < hb::shared::limits::MaxCrusadeStructures - 1; i++)
 		if ((m_crusade_structure_info[i].type == 0) && (m_crusade_structure_info[i + 1].type != 0)) {
