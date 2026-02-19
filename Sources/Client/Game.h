@@ -18,6 +18,7 @@
 #include <sstream>
 #include <array>
 #include <format>
+#include <unordered_map>
 
 #include "GlobalDef.h"
 #include "GameGeometry.h"
@@ -149,6 +150,7 @@ public:
 	bool check_ex_id(const char* name);
 	bool check_local_chat_command(const char* pMsg);
 	char get_official_map_name(const char* map_name, char* name);
+	char get_hardcoded_map_index(const char* map_name, char* name);
 	uint32_t get_level_exp(int level);
 	void draw_version();
 	bool is_item_on_hand();
@@ -454,6 +456,7 @@ std::array<bool, hb::shared::limits::MaxItems> m_is_item_equipped{};
 	std::string m_mc_name;
 	std::string m_map_name;
 	std::string m_map_message;
+	std::unordered_map<std::string, std::string> m_map_display_names;
 	char m_map_index;
 	char m_cur_focus, m_max_focus;
 	char m_arrow_pressed;
@@ -480,13 +483,15 @@ std::array<bool, hb::shared::limits::MaxItems> m_is_item_equipped{};
 	bool decode_magic_config_file_contents(char* data, uint32_t msg_size);
 	bool decode_skill_config_file_contents(char* data, uint32_t msg_size);
 	bool decode_npc_config_file_contents(char* data, uint32_t msg_size);
+	bool decode_map_config_file_contents(char* data, uint32_t msg_size);
 
 	struct NpcConfig { short npcType = 0; std::string name; bool valid = false; };
 	std::array<NpcConfig, hb::shared::limits::MaxNpcConfigs> m_npc_config_list{};   // indexed by npc_id
 	int m_npc_configs_received = 0;
+	int m_map_configs_received = 0;
 
 	enum class ConfigRetryLevel : uint8_t { None = 0, CacheTried = 1, ServerRequested = 2, Failed = 3 };
-	ConfigRetryLevel m_config_retry[4]{};  // indexed by ConfigCacheType (Items=0, Magic=1, Skills=2, Npcs=3)
+	ConfigRetryLevel m_config_retry[5]{};  // indexed by ConfigCacheType (Items=0, Magic=1, Skills=2, Npcs=3, Maps=4)
 	uint32_t m_config_request_time = 0;
 	static constexpr uint32_t CONFIG_REQUEST_TIMEOUT_MS = 10000;
 
@@ -495,7 +500,7 @@ std::array<bool, hb::shared::limits::MaxItems> m_is_item_equipped{};
 
 	bool ensure_config_loaded(int type);
 	bool try_replay_cache_for_config(int type);
-	void request_configs_from_server(bool items, bool magic, bool skills, bool npcs = false);
+	void request_configs_from_server(bool items, bool magic, bool skills, bool npcs = false, bool maps = false);
 	void check_configs_ready_and_enter_game();
 
 	bool ensure_item_configs_loaded()  { return ensure_config_loaded(0); }

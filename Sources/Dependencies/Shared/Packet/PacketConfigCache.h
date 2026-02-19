@@ -24,6 +24,7 @@ namespace net {
 		char magicConfigHash[65];
 		char skillConfigHash[65];
 		char npcConfigHash[65];
+		char mapConfigHash[65];
 	};
 
 	struct HB_PACKED PacketResponseConfigCacheStatus {
@@ -32,6 +33,7 @@ namespace net {
 		uint8_t magicCacheValid;
 		uint8_t skillCacheValid;
 		uint8_t npcCacheValid;
+		uint8_t mapCacheValid;
 	};
 
 	struct HB_PACKED PacketNotifyConfigReload {
@@ -40,6 +42,7 @@ namespace net {
 		uint8_t reloadMagic;
 		uint8_t reloadSkills;
 		uint8_t reloadNpcs;
+		uint8_t reloadMaps;
 	};
 
 	struct HB_PACKED PacketRequestConfigData {
@@ -48,6 +51,19 @@ namespace net {
 		uint8_t requestMagic;
 		uint8_t requestSkills;
 		uint8_t requestNpcs;
+		uint8_t requestMaps;
+	};
+
+	struct HB_PACKED PacketMapConfigHeader {
+		PacketHeader header;
+		uint16_t mapCount;
+		uint16_t totalMaps;
+		uint16_t packetIndex;
+	};
+
+	struct HB_PACKED PacketMapConfigEntry {
+		char map_name[hb::shared::limits::MapNameLen];
+		char display_name[hb::shared::limits::MapDisplayNameLen];
 	};
 	HB_PACK_END
 }

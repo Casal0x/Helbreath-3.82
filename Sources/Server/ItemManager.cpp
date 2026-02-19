@@ -2545,6 +2545,13 @@ void ItemManager::req_sell_item_handler(int client_h, char item_id, char sell_to
 	if (num <= 0) return;
 	if (m_game->m_client_list[client_h]->m_item_list[item_id]->m_count < static_cast<uint32_t>(num)) return;
 
+	// Can't sell gold
+	if (m_game->m_client_list[client_h]->m_item_list[item_id]->m_id_num == hb::shared::item::ItemId::Gold)
+	{
+		m_game->send_notify_msg(0, client_h, Notify::CannotSellItem, item_id, 1, 0, m_game->m_client_list[client_h]->m_item_list[item_id]->m_name);
+		return;
+	}
+
 	m_game->calc_total_weight(client_h);
 
 	m_pGold = new CItem;
@@ -2711,6 +2718,9 @@ void ItemManager::req_sell_item_confirm_handler(int client_h, char item_id, int 
 	if (m_game->m_client_list[client_h]->m_item_list[item_id] == 0) return;
 	if (num <= 0) return;
 	if (m_game->m_client_list[client_h]->m_item_list[item_id]->m_count < static_cast<uint32_t>(num)) return;
+
+	// Can't sell gold
+	if (m_game->m_client_list[client_h]->m_item_list[item_id]->m_id_num == hb::shared::item::ItemId::Gold) return;
 
 	// New 18/05/2004
 	if (m_game->m_client_list[client_h]->m_is_processing_allowed == false) return;
