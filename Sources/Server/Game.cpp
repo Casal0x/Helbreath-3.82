@@ -4258,6 +4258,8 @@ void CGame::init_player_data(int client_h, char* data, uint32_t size)
 	total_points = 0;
 	for(int i = 0; i < hb::shared::limits::MaxSkillType; i++)
 		total_points += m_client_list[client_h]->m_skill_mastery[i];
+#ifndef _DEBUG
+	// Skill point validation — disabled in debug builds for tester menu "Max all skills"
 	if ((total_points - 21 > MaxSkillPoints) ) {
 		try
 		{
@@ -4269,6 +4271,7 @@ void CGame::init_player_data(int client_h, char* data, uint32_t size)
 		}
 		return;
 	}
+#endif
 
 	check_special_event(client_h);
 	m_magic_manager->check_magic_int(client_h);
@@ -5720,6 +5723,314 @@ void CGame::client_common_handler(int client_h, char* data)
 		request_accept_join_party_handler(client_h, v1);
 		break;
 
+#ifdef TESTER_ONLY
+	// TESTER MENU — all tester handlers
+	case CommonType::TesterAction:
+	{
+		// No permission check — tester menu is available to all players
+
+		int action_id = v1;
+		switch (action_id)
+		{
+		case 0: // Reset stats
+		{
+			m_client_list[client_h]->m_str = 10;
+			m_client_list[client_h]->m_int = 10;
+			m_client_list[client_h]->m_vit = 10;
+			m_client_list[client_h]->m_dex = 10;
+			m_client_list[client_h]->m_mag = 10;
+			m_client_list[client_h]->m_charisma = 10;
+			// Recalculate levelup pool: total available = (level-1)*3, base stats = 70, now 60
+			m_client_list[client_h]->m_levelup_pool = (m_client_list[client_h]->m_level - 1) * 3 + 10;
+			// Clamp HP/MP/SP to new maximums — check_character_data() kicks if HP > max
+			m_client_list[client_h]->m_hp = get_max_hp(client_h);
+			m_client_list[client_h]->m_mp = get_max_mp(client_h);
+			m_client_list[client_h]->m_sp = get_max_sp(client_h);
+			// LevelUp refreshes all stats on client, Exp refreshes XP bar
+			send_notify_msg(0, client_h, Notify::LevelUp, 0, 0, 0, 0);
+			send_notify_msg(0, client_h, Notify::Exp, 0, 0, 0, 0);
+			hb::logger::log<log_channel::commands>("[TesterMenu] '{}' reset stats (lu_pool={})",
+				m_client_list[client_h]->m_char_name, m_client_list[client_h]->m_levelup_pool);
+			break;
+		}
+		case 1: // Add 100 contribution
+		{
+			m_client_list[client_h]->m_contribution += 100;
+			send_notify_msg(0, client_h, Notify::Contribution,
+				m_client_list[client_h]->m_contribution, 0, 0, 0);
+			hb::logger::log<log_channel::commands>("[TesterMenu] '{}' added 100 contribution (now {})",
+				m_client_list[client_h]->m_char_name, m_client_list[client_h]->m_contribution);
+			break;
+		}
+		case 2: // Add 100 majestics
+		{
+			m_client_list[client_h]->m_gizon_item_upgrade_left += 100;
+			send_notify_msg(0, client_h, Notify::GizonItemUpgradeLeft,
+				m_client_list[client_h]->m_gizon_item_upgrade_left, 0, 0, 0);
+			hb::logger::log<log_channel::commands>("[TesterMenu] '{}' added 100 majestics (now {})",
+				m_client_list[client_h]->m_char_name, m_client_list[client_h]->m_gizon_item_upgrade_left);
+			break;
+		}
+		case 3: // Add 100 eks
+		{
+			m_client_list[client_h]->m_enemy_kill_count += 100;
+			send_notify_msg(0, client_h, Notify::EnemyKills,
+				m_client_list[client_h]->m_enemy_kill_count, 0, 0, 0);
+			hb::logger::log<log_channel::commands>("[TesterMenu] '{}' added 100 eks (now {})",
+				m_client_list[client_h]->m_char_name, m_client_list[client_h]->m_enemy_kill_count);
+			break;
+		}
+		case 4: // Add 1m gold
+		{
+			CItem* gold_item = new CItem();
+			if (m_item_manager->init_item_attr(gold_item, hb::shared::item::ItemId::Gold))
+			{
+				gold_item->m_count = 1000000;
+				int erase_req = 0;
+				if (m_item_manager->add_client_item_list(client_h, gold_item, &erase_req))
+				{
+					m_item_manager->send_item_notify_msg(client_h, Notify::ItemObtained, gold_item, 0);
+				}
+				else
+				{
+					delete gold_item;
+					send_notify_msg(0, client_h, Notify::CannotCarryMoreItem, 0, 0, 0, 0);
+				}
+			}
+			else
+			{
+				delete gold_item;
+			}
+			hb::logger::log<log_channel::commands>("[TesterMenu] '{}' added 1m gold",
+				m_client_list[client_h]->m_char_name);
+			break;
+		}
+		case 5: // Add 100 crits
+		{
+			m_client_list[client_h]->m_super_attack_left += 100;
+			send_notify_msg(0, client_h, Notify::SuperAttackLeft, 0, 0, 0, 0);
+			hb::logger::log<log_channel::commands>("[TesterMenu] '{}' added 100 crits (now {})",
+				m_client_list[client_h]->m_char_name, m_client_list[client_h]->m_super_attack_left);
+			break;
+		}
+		case 6: // Max all skills
+		{
+			for (int i = 0; i < hb::shared::limits::MaxSkillType; i++)
+			{
+				m_client_list[client_h]->m_skill_mastery[i] = 100;
+				send_notify_msg(0, client_h, Notify::Skill, i, 100, 0, 0);
+			}
+			hb::logger::log<log_channel::commands>("[TesterMenu] '{}' maxed all skills",
+				m_client_list[client_h]->m_char_name);
+			break;
+		}
+		case 7: // Set level
+		{
+			int target_level = std::clamp(static_cast<int>(v2), 1, hb::shared::limits::PlayerMaxLevel);
+
+			// Traveller anti-hack kicks players at level >= 20 if not in a faction city.
+			// Teleport them to their faction city first, or clamp if no faction.
+			if (target_level >= 20)
+			{
+				bool is_traveller =
+					(strcmp(m_client_list[client_h]->m_location, "elvine") != 0) &&
+					(strcmp(m_client_list[client_h]->m_location, "elvhunter") != 0) &&
+					(strcmp(m_client_list[client_h]->m_location, "arehunter") != 0) &&
+					(strcmp(m_client_list[client_h]->m_location, "aresden") != 0);
+
+				if (is_traveller)
+				{
+					if (m_client_list[client_h]->m_side == 1)
+						gm_teleport_to(client_h, "aresden", -1, -1);
+					else if (m_client_list[client_h]->m_side == 2)
+						gm_teleport_to(client_h, "elvine", -1, -1);
+					else
+						target_level = 19;
+					if (m_client_list[client_h] == nullptr) break;
+				}
+			}
+
+			m_client_list[client_h]->m_level = target_level;
+			m_client_list[client_h]->m_exp = m_level_exp_table[target_level];
+			m_client_list[client_h]->m_next_level_exp = m_level_exp_table[target_level + 1];
+
+			// Recalculate levelup pool: (level-1)*3 total points, minus points already spent
+			int total_stats = m_client_list[client_h]->m_str + m_client_list[client_h]->m_int
+				+ m_client_list[client_h]->m_vit + m_client_list[client_h]->m_dex
+				+ m_client_list[client_h]->m_mag + m_client_list[client_h]->m_charisma;
+			m_client_list[client_h]->m_levelup_pool = (target_level - 1) * 3 - (total_stats - 70);
+			if (m_client_list[client_h]->m_levelup_pool < 0)
+				m_client_list[client_h]->m_levelup_pool = 0;
+
+			// Clamp HP/MP/SP — check_character_data() kicks if HP > max
+			m_client_list[client_h]->m_hp = std::min(m_client_list[client_h]->m_hp, get_max_hp(client_h));
+			m_client_list[client_h]->m_mp = std::min(m_client_list[client_h]->m_mp, get_max_mp(client_h));
+			m_client_list[client_h]->m_sp = std::min(m_client_list[client_h]->m_sp, get_max_sp(client_h));
+
+			// Match natural level-up notification order (check_level_up)
+			send_notify_msg(0, client_h, Notify::SuperAttackLeft, 0, 0, 0, 0);
+			send_notify_msg(0, client_h, Notify::LevelUp, 0, 0, 0, 0);
+			send_notify_msg(0, client_h, Notify::Exp, 0, 0, 0, 0);
+			hb::logger::log<log_channel::commands>("[TesterMenu] '{}' set level to {} (lu_pool={})",
+				m_client_list[client_h]->m_char_name, target_level, m_client_list[client_h]->m_levelup_pool);
+			break;
+		}
+		case 9: // Teleport to map
+		{
+			if (string == nullptr || string[0] == '\0') break;
+
+			if (!gm_teleport_to(client_h, string, -1, -1))
+			{
+				send_notify_msg(0, client_h, Notify::NoticeMsg, 0, 0, 0, "Teleport failed — map not found.");
+			}
+			else
+			{
+				hb::logger::log<log_channel::commands>("[TesterMenu] '{}' teleported to '{}'",
+					m_client_list[client_h]->m_char_name, string);
+			}
+			break;
+		}
+		default:
+			break;
+		}
+		break;
+	}
+
+	case CommonType::TesterMapList:
+	{
+		if (m_client_list[client_h] == nullptr) break;
+
+		hb::net::PacketNotifyTesterMapListResult result{};
+		result.header.msg_id = MsgId::Notify;
+		result.header.msg_type = Notify::TesterMapListResult;
+		result.count = 0;
+
+		for (int i = 0; i < hb::server::config::MaxMaps && result.count < 100; i++)
+		{
+			if (m_map_list[i] == nullptr) continue;
+			auto& entry = result.entries[result.count];
+			std::memset(entry.name, 0, sizeof(entry.name));
+			std::memcpy(entry.name, m_map_list[i]->m_name, 10);
+			result.count++;
+		}
+
+		m_client_list[client_h]->m_socket->send_msg(
+			reinterpret_cast<char*>(&result), sizeof(result));
+		hb::logger::log<log_channel::commands>("[TesterMenu] '{}' requested map list ({} maps)",
+			m_client_list[client_h]->m_char_name, result.count);
+		break;
+	}
+
+	case CommonType::TesterItemSearch:
+	{
+		if (m_client_list[client_h] == nullptr) break;
+
+		// Empty search = return first 50 items; otherwise filter by substring
+		bool has_filter = (string != nullptr && string[0] != '\0');
+		char search_lower[64]{};
+		if (has_filter)
+		{
+			std::snprintf(search_lower, sizeof(search_lower), "%s", string);
+			for (int i = 0; search_lower[i]; i++)
+				search_lower[i] = static_cast<char>(std::tolower(static_cast<unsigned char>(search_lower[i])));
+		}
+
+		hb::net::PacketNotifyTesterItemSearchResult result{};
+		result.header.msg_id = MsgId::Notify;
+		result.header.msg_type = Notify::TesterItemSearchResult;
+		result.count = 0;
+
+		for (int i = 0; i < hb::server::config::MaxItemTypes && result.count < 50; i++)
+		{
+			if (m_item_config_list[i] == nullptr) continue;
+
+			if (has_filter)
+			{
+				char name_lower[64]{};
+				std::snprintf(name_lower, sizeof(name_lower), "%s", m_item_config_list[i]->m_name);
+				for (int j = 0; name_lower[j]; j++)
+					name_lower[j] = static_cast<char>(std::tolower(static_cast<unsigned char>(name_lower[j])));
+
+				if (std::strstr(name_lower, search_lower) == nullptr)
+					continue;
+			}
+
+			auto& entry = result.entries[result.count];
+			entry.item_id = static_cast<int16_t>(i);
+			entry.effect_type = m_item_config_list[i]->m_item_effect_type;
+			std::memset(entry.name, 0, sizeof(entry.name));
+			std::snprintf(entry.name, sizeof(entry.name), "%s", m_item_config_list[i]->m_name);
+			result.count++;
+		}
+
+		m_client_list[client_h]->m_socket->send_msg(
+			reinterpret_cast<char*>(&result), sizeof(result));
+		hb::logger::log<log_channel::commands>("[TesterMenu] '{}' searched items '{}' ({} results)",
+			m_client_list[client_h]->m_char_name, has_filter ? string : "(all)", result.count);
+		break;
+	}
+
+	case CommonType::TesterCreateItem:
+	{
+		if (m_client_list[client_h] == nullptr) break;
+
+		int item_id = static_cast<int>(v1);
+		uint32_t attribute = static_cast<uint32_t>(v2);
+
+		if (item_id < 0 || item_id >= hb::server::config::MaxItemTypes
+			|| m_item_config_list[item_id] == nullptr)
+		{
+			send_notify_msg(0, client_h, Notify::NoticeMsg, 0, 0, 0, "Invalid item ID.");
+			break;
+		}
+
+		CItem* item = new CItem();
+		if (!m_item_manager->init_item_attr(item, item_id))
+		{
+			delete item;
+			send_notify_msg(0, client_h, Notify::NoticeMsg, 0, 0, 0, "Failed to create item.");
+			break;
+		}
+
+		item->m_attribute = attribute;
+		m_item_manager->adjust_rare_item_value(item);
+
+		// Set item color based on prefix type — matches generate_item_attributes() color table
+		auto parsed = hb::shared::item::parse_attribute(attribute);
+		switch (parsed.prefixType)
+		{
+		case hb::shared::item::AttributePrefixType::Agile:      item->m_item_color = 1; break;
+		case hb::shared::item::AttributePrefixType::Light:       item->m_item_color = 2; break;
+		case hb::shared::item::AttributePrefixType::Strong:      item->m_item_color = 3; break;
+		case hb::shared::item::AttributePrefixType::Poisoning:   item->m_item_color = 4; break;
+		case hb::shared::item::AttributePrefixType::Critical:    item->m_item_color = 5; break;
+		case hb::shared::item::AttributePrefixType::Special:     item->m_item_color = 5; break;
+		case hb::shared::item::AttributePrefixType::Sharp:       item->m_item_color = 6; break;
+		case hb::shared::item::AttributePrefixType::Righteous:   item->m_item_color = 7; break;
+		case hb::shared::item::AttributePrefixType::Ancient:     item->m_item_color = 8; break;
+		default: break;
+		}
+
+		int erase_req = 0;
+		if (m_item_manager->add_client_item_list(client_h, item, &erase_req))
+		{
+			m_item_manager->send_item_notify_msg(client_h, Notify::ItemObtained, item, 0);
+			char buf[128];
+			std::snprintf(buf, sizeof(buf), "Created: %s (ID: %d)", m_item_config_list[item_id]->m_name, item_id);
+			send_notify_msg(0, client_h, Notify::NoticeMsg, 0, 0, 0, buf);
+		}
+		else
+		{
+			delete item;
+			send_notify_msg(0, client_h, Notify::CannotCarryMoreItem, 0, 0, 0, 0);
+		}
+
+		hb::logger::log<log_channel::commands>("[TesterMenu] '{}' created item ID {} attr=0x{:08X}",
+			m_client_list[client_h]->m_char_name, item_id, attribute);
+		break;
+	}
+#endif // TESTER_ONLY
+
 	default:
 		hb::logger::log("Unknown message: 0x{:X}", command);
 		break;
@@ -6496,6 +6807,18 @@ void CGame::send_notify_msg(int from_h, int to_h, uint16_t msg_type, uint32_t v1
 		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 	}
 	break;
+
+#ifdef TESTER_ONLY
+	case Notify::Contribution:
+	{
+		hb::net::PacketNotifySimpleInt pkt{};
+		pkt.header.msg_id = MsgId::Notify;
+		pkt.header.msg_type = msg_type;
+		pkt.value = static_cast<int32_t>(v1);
+		ret = m_client_list[to_h]->m_socket->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+	}
+	break;
+#endif // TESTER_ONLY
 
 	case Notify::Crusade:
 	{

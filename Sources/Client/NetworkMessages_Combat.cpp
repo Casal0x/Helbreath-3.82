@@ -1,6 +1,11 @@
 ﻿#include "Game.h"
 #include "NetworkMessageManager.h"
 #include "Packet/SharedPackets.h"
+#ifdef TESTER_ONLY
+// TESTER MENU — includes (tester builds only)
+#include "DialogBox_ItemCreator.h"
+#include "DialogBox_TesterMenu.h"
+#endif // TESTER_ONLY
 #include "lan_eng.h"
 #include <cstdio>
 #include <cstring>
@@ -96,6 +101,39 @@ namespace NetworkMessageHandlers {
 		if (!pkt) return;
 		game->m_player->m_enemy_kill_count = pkt->count;
 	}
+
+#ifdef TESTER_ONLY
+	// TESTER MENU — notification handlers (tester builds only)
+	void HandleContribution(CGame* game, char* data)
+	{
+		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifySimpleInt>(
+			data, sizeof(hb::net::PacketNotifySimpleInt));
+		if (!pkt) return;
+		game->m_player->m_contribution = pkt->value;
+	}
+
+	void HandleTesterItemSearchResult(CGame* game, char* data)
+	{
+		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyTesterItemSearchResult>(
+			data, sizeof(hb::net::PacketNotifyTesterItemSearchResult));
+		if (!pkt) return;
+
+		auto* dlg = dynamic_cast<DialogBox_ItemCreator*>(
+			game->m_dialog_box_manager.get_dialog_box(DialogBoxId::ItemCreator));
+		if (dlg) dlg->receive_search_results(pkt);
+	}
+
+	void HandleTesterMapListResult(CGame* game, char* data)
+	{
+		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyTesterMapListResult>(
+			data, sizeof(hb::net::PacketNotifyTesterMapListResult));
+		if (!pkt) return;
+
+		auto* dlg = dynamic_cast<DialogBox_TesterMenu*>(
+			game->m_dialog_box_manager.get_dialog_box(DialogBoxId::TesterMenu));
+		if (dlg) dlg->receive_map_list(pkt);
+	}
+#endif // TESTER_ONLY
 
 	void HandleEnemyKillReward(CGame* game, char* data)
 	{

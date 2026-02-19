@@ -932,6 +932,31 @@ namespace net {
 		char name[hb::shared::limits::ItemNameLen];
 		uint8_t padding[2];
 	};
+
+#ifdef TESTER_ONLY
+	// TESTER MENU — tester-only packet structs
+	struct HB_PACKED TesterItemSearchEntry {
+		int16_t item_id;
+		int16_t effect_type;  // ItemEffectType — determines valid prefixes
+		char name[hb::shared::limits::ItemNameLen];
+	};
+
+	struct HB_PACKED PacketNotifyTesterItemSearchResult {
+		PacketHeader header;
+		int16_t count;
+		TesterItemSearchEntry entries[50];
+	};
+
+	struct HB_PACKED TesterMapEntry {
+		char name[11];
+	};
+
+	struct HB_PACKED PacketNotifyTesterMapListResult {
+		PacketHeader header;
+		int16_t count;
+		TesterMapEntry entries[100];
+	};
+#endif // TESTER_ONLY
 	HB_PACK_END
 }
 }
