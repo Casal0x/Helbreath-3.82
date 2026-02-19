@@ -33,10 +33,23 @@ DEFAULTS = {
 
 
 def resolve_path(path: str) -> str:
+    """Resolve a (possibly relative) path to absolute, based on SCRIPT_DIR."""
     path = path.strip("\"'")
     if os.path.isabs(path):
         return os.path.normpath(path)
     return os.path.normpath(os.path.join(SCRIPT_DIR, path))
+
+
+def make_relative(path: str) -> str:
+    """Convert an absolute path to relative (from SCRIPT_DIR) if possible."""
+    try:
+        rel = os.path.relpath(path, SCRIPT_DIR)
+        # On Windows, relpath across drives raises or returns an absolute path
+        if os.path.isabs(rel):
+            return path
+        return rel
+    except ValueError:
+        return path
 
 
 def prompt(text: str, default: str = "") -> str:
@@ -151,9 +164,9 @@ def run_setup() -> dict:
         exe_name = prompt("Windows executable name", default_exe)
 
     cfg = {
-        "source_dir": source_dir,
+        "source_dir": make_relative(source_dir),
         "game_title": game_title,
-        "output_dir": output_dir,
+        "output_dir": make_relative(output_dir),
         "platforms": platforms,
         "exe_name": exe_name,
     }
@@ -162,9 +175,9 @@ def run_setup() -> dict:
 
 
 def print_config(cfg: dict):
-    print(f"  Source:    {cfg.get('source_dir', DEFAULTS['source_dir'])}")
+    print(f"  Source:    {resolve_path(cfg.get('source_dir', DEFAULTS['source_dir']))}")
     print(f"  Title:     {cfg.get('game_title', DEFAULTS['game_title'])}")
-    print(f"  Output:    {cfg.get('output_dir', DEFAULTS['output_dir'])}")
+    print(f"  Output:    {resolve_path(cfg.get('output_dir', DEFAULTS['output_dir']))}")
     platforms = cfg.get("platforms", "3")
     plat_str = {"1": "Windows", "2": "Linux", "3": "Both"}.get(platforms, platforms)
     print(f"  Platforms: {plat_str}")
@@ -478,8 +491,19 @@ def main():
 
     if not os.path.isdir(source_dir):
         print(f"  Error: '{source_dir}' is not a valid directory.")
-        print(f"  Delete {CONFIG_PATH} to reconfigure.")
-        return 1
+        rerun = prompt("  Run setup to reconfigure?", "y")
+        if rerun.lower() in ("y", "yes"):
+            cfg = run_setup()
+            source_dir = resolve_path(cfg.get("source_dir", DEFAULTS["source_dir"]))
+            output_dir = resolve_path(cfg.get("output_dir", DEFAULTS["output_dir"]))
+            game_title = cfg.get("game_title", DEFAULTS["game_title"])
+            platforms = cfg.get("platforms", "3")
+            exe_name = cfg.get("exe_name", DEFAULTS["exe_name"])
+            if not os.path.isdir(source_dir):
+                print(f"  Error: '{source_dir}' is still not a valid directory.")
+                return 1
+        else:
+            return 1
 
     os.makedirs(output_dir, exist_ok=True)
 

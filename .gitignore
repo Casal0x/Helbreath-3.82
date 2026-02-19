@@ -375,5 +375,8 @@ tmpclaude*cwd
 nul
 !/Scripts
 
+# Installer staging folder
+tools/InstallerCreator/Helbreath/
+
 # Backup checkpoints (bak.py)
 **/*.bak_*

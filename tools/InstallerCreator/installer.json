@@ -1,7 +1,7 @@
 {
-    "source_dir": "C:\\Users\\ShadowEvil\\source\\Repos3\\Release\\Helbreath",
+    "source_dir": "Helbreath",
     "game_title": "Helbreath",
-    "output_dir": "C:\\Users\\ShadowEvil\\source\\Repos3\\Release",
-    "platforms": "2",
+    "output_dir": ".",
+    "platforms": "1",
     "exe_name": "Game_x64_win.exe"
 }
