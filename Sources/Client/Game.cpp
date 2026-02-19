@@ -1015,6 +1015,8 @@ bool CGame::send_command(uint32_t message_id, uint16_t command, char direction, 
 			LocalCacheManager::get().get_hash(ConfigCacheType::Skills).c_str());
 		std::snprintf(req.npcConfigHash, sizeof(req.npcConfigHash), "%s",
 			LocalCacheManager::get().get_hash(ConfigCacheType::Npcs).c_str());
+		std::snprintf(req.mapConfigHash, sizeof(req.mapConfigHash), "%s",
+			LocalCacheManager::get().get_hash(ConfigCacheType::Maps).c_str());
 		result = m_g_sock->send_msg(reinterpret_cast<char*>(&req), sizeof(req), key);
 	}
 	break;
@@ -1604,6 +1606,46 @@ short CGame::resolve_npc_type(short npcConfigId) const
 	return 0;
 }
 
+bool CGame::decode_map_config_file_contents(char* data, uint32_t msg_size)
+{
+	LocalCacheManager::get().accumulate_packet(ConfigCacheType::Maps, data, msg_size);
+
+	constexpr size_t headerSize = sizeof(hb::net::PacketMapConfigHeader);
+	constexpr size_t entrySize = sizeof(hb::net::PacketMapConfigEntry);
+
+	if (msg_size < headerSize) {
+		return false;
+	}
+
+	const auto* pktHeader = reinterpret_cast<const hb::net::PacketMapConfigHeader*>(data);
+	uint16_t mapCount = pktHeader->mapCount;
+	uint16_t totalMaps = pktHeader->totalMaps;
+
+	if (msg_size < headerSize + (mapCount * entrySize)) {
+		return false;
+	}
+
+	const auto* entries = reinterpret_cast<const hb::net::PacketMapConfigEntry*>(data + headerSize);
+
+	for (uint16_t i = 0; i < mapCount; i++) {
+		const auto& entry = entries[i];
+		std::string map_name(entry.map_name, strnlen(entry.map_name, sizeof(entry.map_name)));
+		std::string display_name(entry.display_name, strnlen(entry.display_name, sizeof(entry.display_name)));
+		if (!map_name.empty() && !display_name.empty()) {
+			m_map_display_names[map_name] = display_name;
+		}
+	}
+
+	if (pktHeader->packetIndex == 0) m_map_configs_received = 0;
+	m_map_configs_received += mapCount;
+
+	if (m_map_configs_received >= totalMaps && !LocalCacheManager::get().is_replaying()) {
+		LocalCacheManager::get().finalize_and_save(ConfigCacheType::Maps);
+	}
+
+	return true;
+}
+
 void CGame::game_recv_msg_handler(uint32_t msg_size, char* data)
 {
 	const auto* header = hb::net::PacketCast<hb::net::PacketHeader>(data, sizeof(hb::net::PacketHeader));
@@ -1717,8 +1759,28 @@ void CGame::game_recv_msg_handler(uint32_t msg_size, char* data)
 			need_npcs = true;
 		}
 
-		if (need_items || need_magic || need_skills || need_npcs) {
-			request_configs_from_server(need_items, need_magic, need_skills, need_npcs);
+		bool need_maps = false;
+		m_map_display_names.clear();
+		if (cachePkt->mapCacheValid) {
+			bool replay_ok = LocalCacheManager::get().replay_from_cache(ConfigCacheType::Maps,
+				[](char* p, uint32_t s, void* c) -> bool {
+					return static_cast<ReplayCtx*>(c)->game->decode_map_config_file_contents(p, s);
+				}, &ctx);
+			if (replay_ok && !m_map_display_names.empty()) {
+				m_config_retry[4] = ConfigRetryLevel::None;
+			} else {
+				LocalCacheManager::get().reset_accumulator(ConfigCacheType::Maps);
+				m_config_retry[4] = ConfigRetryLevel::ServerRequested;
+				need_maps = true;
+			}
+		} else {
+			LocalCacheManager::get().reset_accumulator(ConfigCacheType::Maps);
+			m_config_retry[4] = ConfigRetryLevel::ServerRequested;
+			need_maps = true;
+		}
+
+		if (need_items || need_magic || need_skills || need_npcs || need_maps) {
+			request_configs_from_server(need_items, need_magic, need_skills, need_npcs, need_maps);
 			m_config_request_time = GameClock::get_time_ms();
 		} else {
 			m_configs_ready = true;
@@ -1747,6 +1809,10 @@ void CGame::game_recv_msg_handler(uint32_t msg_size, char* data)
 			m_npc_config_list.fill({});
 			m_npc_configs_received = 0;
 		}
+		if (reloadPkt->reloadMaps) {
+			LocalCacheManager::get().reset_accumulator(ConfigCacheType::Maps);
+			m_map_display_names.clear();
+		}
 
 		set_top_msg((char*)"Administration kicked off a config reload, some lag may occur.", 5);
 	}
@@ -1770,6 +1836,11 @@ void CGame::game_recv_msg_handler(uint32_t msg_size, char* data)
 	case MsgId::NpcConfigContents:
 		decode_npc_config_file_contents(data, msg_size);
 		m_config_retry[3] = ConfigRetryLevel::None;
+		check_configs_ready_and_enter_game();
+		break;
+	case MsgId::MapConfigContents:
+		decode_map_config_file_contents(data, msg_size);
+		m_config_retry[4] = ConfigRetryLevel::None;
 		check_configs_ready_and_enter_game();
 		break;
 	case ClientMsgId::ResponseChargedTeleport:
@@ -4478,6 +4549,9 @@ bool CGame::ensure_config_loaded(int type)
 	case 3: // Npcs
 		for (int i = 0; i < hb::shared::limits::MaxNpcConfigs; i++) { if (m_npc_config_list[i].valid) { loaded = true; break; } }
 		break;
+	case 4: // Maps
+		loaded = !m_map_display_names.empty();
+		break;
 	}
 
 	if (loaded) {
@@ -4485,7 +4559,7 @@ bool CGame::ensure_config_loaded(int type)
 		return true;
 	}
 
-	const char* configNames[] = { "ITEMCFG", "MAGICCFG", "SKILLCFG", "NPCCFG" };
+	const char* configNames[] = { "ITEMCFG", "MAGICCFG", "SKILLCFG", "NPCCFG", "MAPCFG" };
 
 	switch (m_config_retry[type]) {
 	case ConfigRetryLevel::None:
@@ -4496,7 +4570,7 @@ bool CGame::ensure_config_loaded(int type)
 		return false;
 
 	case ConfigRetryLevel::CacheTried:
-		request_configs_from_server(type == 0, type == 1, type == 2, type == 3);
+		request_configs_from_server(type == 0, type == 1, type == 2, type == 3, type == 4);
 		m_config_retry[type] = ConfigRetryLevel::ServerRequested;
 		m_config_request_time = GameClock::get_time_ms();
 		return false;
@@ -4542,11 +4616,16 @@ bool CGame::try_replay_cache_for_config(int type)
 			[](char* p, uint32_t s, void* c) -> bool {
 				return static_cast<ReplayCtx*>(c)->game->decode_npc_config_file_contents(p, s);
 			}, &ctx);
+	case 4:
+		return LocalCacheManager::get().replay_from_cache(cacheType,
+			[](char* p, uint32_t s, void* c) -> bool {
+				return static_cast<ReplayCtx*>(c)->game->decode_map_config_file_contents(p, s);
+			}, &ctx);
 	}
 	return false;
 }
 
-void CGame::request_configs_from_server(bool items, bool magic, bool skills, bool npcs)
+void CGame::request_configs_from_server(bool items, bool magic, bool skills, bool npcs, bool maps)
 {
 	if (!m_g_sock) return;
 	hb::net::PacketRequestConfigData pkt{};
@@ -4556,6 +4635,7 @@ void CGame::request_configs_from_server(bool items, bool magic, bool skills, boo
 	pkt.requestMagic = magic ? 1 : 0;
 	pkt.requestSkills = skills ? 1 : 0;
 	pkt.requestNpcs = npcs ? 1 : 0;
+	pkt.requestMaps = maps ? 1 : 0;
 	m_g_sock->send_msg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 }
 
@@ -4563,14 +4643,15 @@ void CGame::check_configs_ready_and_enter_game()
 {
 	if (m_configs_ready) return;
 
-	// Check if all four config types have at least one entry loaded
+	// Check if all five config types have at least one entry loaded
 	bool has_items = false, has_magic = false, has_skills = false, has_npcs = false;
 	for (int i = 1; i < 5000; i++) { if (m_item_config_list[i]) { has_items = true; break; } }
 	for (int i = 0; i < hb::shared::limits::MaxMagicType; i++) { if (m_magic_cfg_list[i]) { has_magic = true; break; } }
 	for (int i = 0; i < hb::shared::limits::MaxSkillType; i++) { if (m_skill_cfg_list[i]) { has_skills = true; break; } }
 	for (int i = 0; i < hb::shared::limits::MaxNpcConfigs; i++) { if (m_npc_config_list[i].valid) { has_npcs = true; break; } }
+	bool has_maps = !m_map_display_names.empty();
 
-	if (has_items && has_magic && has_skills && has_npcs) {
+	if (has_items && has_magic && has_skills && has_npcs && has_maps) {
 		m_configs_ready = true;
 		if (m_init_data_ready) {
 			GameModeManager::set_screen<Screen_OnGame>();
@@ -5280,6 +5361,18 @@ void CGame::draw_version()
 
 char CGame::get_official_map_name(const char* map_name, char* name)
 {	// MapIndex
+	// Run the hardcoded chain to get the map_index, then override name from cache if available.
+	char map_index = get_hardcoded_map_index(map_name, name);
+
+	auto it = m_map_display_names.find(map_name);
+	if (it != m_map_display_names.end() && !it->second.empty()) {
+		std::snprintf(name, 21, "%s", it->second.c_str());
+	}
+	return map_index;
+}
+
+char CGame::get_hardcoded_map_index(const char* map_name, char* name)
+{
 	if (strcmp(map_name, "middleland") == 0)
 	{
 		std::snprintf(name, 21, "%s", GET_OFFICIAL_MAP_NAME28);	// Middleland
@@ -5469,32 +5562,32 @@ char CGame::get_official_map_name(const char* map_name, char* name)
 		std::snprintf(name, 21, "%s", GET_OFFICIAL_MAP_NAME38);	// Elvine Guildhall
 		return -1;
 	}
-	else if (strcmp(map_name, "bsmith_1") == 0)
+	else if (strcmp(map_name, "bsmith_1") == 0 || strcmp(map_name, "bsmith_1f") == 0)
 	{
 		std::snprintf(name, 21, "%s", GET_OFFICIAL_MAP_NAME33);	// Aresden Blacksmith
 		return -1;
 	}
-	else if (strcmp(map_name, "bsmith_2") == 0)
+	else if (strcmp(map_name, "bsmith_2") == 0 || strcmp(map_name, "bsmith_2f") == 0)
 	{
 		std::snprintf(name, 21, "%s", GET_OFFICIAL_MAP_NAME34);	// Elvine Blacksmith
 		return -1;
 	}
-	else if (strcmp(map_name, "gshop_1") == 0)
+	else if (strcmp(map_name, "gshop_1") == 0 || strcmp(map_name, "gshop_1f") == 0)
 	{
 		std::snprintf(name, 21, "%s", GET_OFFICIAL_MAP_NAME39);	// Aresden Shop
 		return -1;
 	}
-	else if (strcmp(map_name, "gshop_2") == 0)
+	else if (strcmp(map_name, "gshop_2") == 0 || strcmp(map_name, "gshop_2f") == 0)
 	{
 		std::snprintf(name, 21, "%s", GET_OFFICIAL_MAP_NAME40);	// Elvine Shop
 		return -1;
 	}
-	else if (strcmp(map_name, "wrhus_1") == 0)
+	else if (strcmp(map_name, "wrhus_1") == 0 || strcmp(map_name, "wrhus_1f") == 0)
 	{
 		std::snprintf(name, 21, "%s", GET_OFFICIAL_MAP_NAME43);	// Aresden Warehouse
 		return -1;
 	}
-	else if (strcmp(map_name, "wrhus_2") == 0)
+	else if (strcmp(map_name, "wrhus_2") == 0 || strcmp(map_name, "wrhus_2f") == 0)
 	{
 		std::snprintf(name, 21, "%s", GET_OFFICIAL_MAP_NAME44);	// Elvine Warehouse
 		return -1;

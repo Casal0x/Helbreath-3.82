@@ -258,6 +258,7 @@ public:
 
 	void request_noticement_handler(int client_h);
 	bool send_client_npc_configs(int client_h);
+	bool send_client_map_configs(int client_h);
 
 	LoginClient* _lclients[hb::server::config::MaxClientLoginSock];
 
@@ -521,7 +522,7 @@ public:
 	class CSkill  * m_skill_config_list[hb::shared::limits::MaxSkillType];
 	//class CTeleport * m_pTeleportConfigList[DEF_MAXTELEPORTTYPE];
 
-	std::string m_config_hash[4];
+	std::string m_config_hash[5];
 	void compute_config_hashes();
 
 	class hb::shared::net::ASIOSocket* _lsock;

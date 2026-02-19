@@ -445,6 +445,7 @@ bool CMap::init(char* name)
 	strcpy(m_name, name);
 
 	std::memset(m_location_name, 0, sizeof(m_location_name));
+	std::memset(m_display_name, 0, sizeof(m_display_name));
 
 	if (decode_map_data_file_contents() == false)
 		return false;

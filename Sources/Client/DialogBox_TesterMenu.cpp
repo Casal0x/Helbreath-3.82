@@ -178,9 +178,13 @@ void DialogBox_TesterMenu::draw_teleport_page(short sX, short sY, short size_x, 
 			int idx = m_map_scroll + i;
 			int y = sY + first_row_y + i * row_height;
 			auto color = (idx == hovered) ? GameColors::UIWhite : GameColors::UIMagicBlue;
+			const char* label = m_maps[idx].name;
+			auto it = m_game->m_map_display_names.find(m_maps[idx].name);
+			if (it != m_game->m_map_display_names.end() && !it->second.empty())
+				label = it->second.c_str();
 			hb::shared::text::draw_text_aligned(GameFont::Default,
 				list_x, y, list_w, 15,
-				m_maps[idx].name,
+				label,
 				hb::shared::text::TextStyle::from_color(color),
 				hb::shared::text::Align::TopCenter);
 		}

@@ -16,6 +16,7 @@ namespace hb::shared::limits
 	constexpr int AccountEmailLen      = 51;   // 50 chars + null
 	constexpr int GuildNameLen         = 21;   // 20 chars + null
 	constexpr int MapNameLen           = 11;   // 10 chars + null
+	constexpr int MapDisplayNameLen    = 31;   // 30 chars + null
 	constexpr int MaxMagicType         = 100;
 	constexpr int MaxSkillType         = 60;
 	constexpr int MaxNpcConfigs        = 200;
