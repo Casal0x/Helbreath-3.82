@@ -6196,18 +6196,44 @@ void CGame::command_processor(short mouse_x, short mouse_y, short tile_x, short 
 		if (left_button != 0)
 		{
 #ifdef TESTER_ONLY
-			// Tester menu click (above Level Up text) — check before dialog handling
-			if (!m_dialog_box_manager.is_enabled(DialogBoxId::TesterMenu)
-				&& (mouse_x > LEVELUP_TEXT_X()) && (mouse_x < LEVELUP_TEXT_X() + 55)
-				&& (mouse_y > LEVELUP_TEXT_Y() - 30) && (mouse_y < LEVELUP_TEXT_Y() - 15))
+			// Tester overlay — always block map input when clicking this area
+			if ((mouse_x >= LEVELUP_TEXT_X()) && (mouse_x < LEVELUP_TEXT_X() + 75)
+				&& (mouse_y >= LEVELUP_TEXT_Y() - 35) && (mouse_y < LEVELUP_TEXT_Y()))
 			{
-				CursorTarget::set_cursor_status(CursorStatus::Pressed);
-				m_dialog_box_manager.enable_dialog_box(DialogBoxId::TesterMenu, 0, 0, 0);
-				play_game_sound('E', 14, 5);
+				if (!m_dialog_box_manager.is_enabled(DialogBoxId::TesterMenu))
+				{
+					m_dialog_box_manager.enable_dialog_box(DialogBoxId::TesterMenu, 0, 0, 0);
+					play_game_sound('E', 14, 5);
+				}
+				return;
+			}
+#endif // TESTER_ONLY
+			// Level Up / Restart overlay — always block map input when clicking this area
+			if ((mouse_x >= LEVELUP_TEXT_X()) && (mouse_x < LEVELUP_TEXT_X() + 75)
+				&& (mouse_y >= LEVELUP_TEXT_Y()) && (mouse_y < LEVELUP_TEXT_Y() + 21))
+			{
+				if (m_player->m_hp > 0)
+				{
+					if (!m_dialog_box_manager.is_enabled(DialogBoxId::LevelUpSetting) && (m_player->m_lu_point > 0))
+					{
+						m_dialog_box_manager.enable_dialog_box(DialogBoxId::LevelUpSetting, 0, 0, 0);
+						play_game_sound('E', 14, 5);
+					}
+				}
+				else
+				{
+					if (m_restart_count == -1)
+					{
+						m_restart_count = 5;
+						m_restart_count_time = GameClock::get_time_ms();
+						std::string txt = std::format(DLGBOX_CLICK_SYSMENU1, m_restart_count);
+						add_event_list(txt.c_str(), 10);
+						play_game_sound('E', 14, 5);
+					}
+				}
 				return;
 			}
 
-#endif // TESTER_ONLY
 			result = m_dialog_box_manager.handle_mouse_down(mouse_x, mouse_y);
 			if (result == 1)
 			{
@@ -6217,32 +6243,6 @@ void CGame::command_processor(short mouse_x, short mouse_y, short tile_x, short 
 			else if (result == 0)
 			{
 				CursorTarget::set_cursor_status(CursorStatus::Pressed);
-				// Snoopy: Added Golden LevelUp
-				if ((mouse_x > LEVELUP_TEXT_X()) && (mouse_x < (LEVELUP_TEXT_X())+75) && (mouse_y > LEVELUP_TEXT_Y()) && (mouse_y < (LEVELUP_TEXT_Y())+21))
-				{
-					if (m_player->m_hp > 0)
-					{
-						if ((m_dialog_box_manager.is_enabled(DialogBoxId::LevelUpSetting) != true) && (m_player->m_lu_point > 0))
-						{
-							m_dialog_box_manager.enable_dialog_box(DialogBoxId::LevelUpSetting, 0, 0, 0);
-							play_game_sound('E', 14, 5);
-						}
-					}
-					else // Centuu : restart
-					{
-						if (m_restart_count == -1)
-						{
-							std::string G_cTxt;
-							m_restart_count = 5;
-							m_restart_count_time = GameClock::get_time_ms();
-							G_cTxt = std::format(DLGBOX_CLICK_SYSMENU1, m_restart_count); // "Restarting game....%d"
-							add_event_list(G_cTxt.c_str(), 10);
-							play_game_sound('E', 14, 5);
-
-						}
-					}
-					return;
-				}
 			}
 			else if (result == -1)
 			{

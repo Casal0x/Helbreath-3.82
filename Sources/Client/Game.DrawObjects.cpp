@@ -407,8 +407,18 @@ void CGame::draw_objects(short pivot_x, short pivot_y, short div_x, short div_y,
 				if ((ret == true) && (item_id != 0) && m_item_config_list[item_id] != 0)
 				{
 					auto ground_draw = get_item_draw(m_item_config_list[item_id]->m_display_id, item_atlas::ground, false);
+
+					// Center ground item sprite on tile, offset by half-tile to align with tile center
+					auto rect = ground_draw.sprite->GetFrameRect(ground_draw.frame);
+					int cx = ix + (TILE_SIZE - rect.width) / 2 - (TILE_SIZE / 2);
+					int cy = iy + (TILE_SIZE - rect.height) / 2 - (TILE_SIZE / 2);
+
 					if (item_color == 0)
-						ground_draw.sprite->draw(ix, iy, ground_draw.frame);
+					{
+						hb::shared::sprite::DrawParams params;
+						params.m_ignore_pivot = true;
+						ground_draw.sprite->draw(cx, cy, ground_draw.frame, params);
+					}
 					else
 					{
 						int eq = m_item_config_list[item_id]->m_equip_pos;
@@ -416,7 +426,9 @@ void CGame::draw_objects(short pivot_x, short pivot_y, short div_x, short div_y,
 							eq == hb::shared::item::to_int(hb::shared::item::EquipPos::RightHand) ||
 							eq == hb::shared::item::to_int(hb::shared::item::EquipPos::TwoHand));
 						const auto& tint = is_weapon ? GameColors::Weapons[item_color] : GameColors::Items[item_color];
-						ground_draw.sprite->draw(ix, iy, ground_draw.frame, hb::shared::sprite::DrawParams::tint(tint.r, tint.g, tint.b));
+						auto params = hb::shared::sprite::DrawParams::tint(tint.r, tint.g, tint.b);
+						params.m_ignore_pivot = true;
+						ground_draw.sprite->draw(cx, cy, ground_draw.frame, params);
 					}
 
 					if (hb::shared::input::is_shift_down() && mouse_x >= ix - 16 && mouse_y >= iy - 16 && mouse_x <= ix + 16 && mouse_y <= iy + 16) {

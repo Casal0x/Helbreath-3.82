@@ -221,9 +221,9 @@ void SFMLSprite::DrawInternal(sf::RenderTexture* target, int x, int y, int frame
         return;
     }
 
-    // Calculate draw position (apply pivot) - must ADD pivot like DDraw does
-    int drawX = x + frameRect.pivotX;
-    int drawY = y + frameRect.pivotY;
+    // Calculate draw position — apply pivot unless caller opted out
+    int drawX = params.m_ignore_pivot ? x : x + frameRect.pivotX;
+    int drawY = params.m_ignore_pivot ? y : y + frameRect.pivotY;
 
     // Update bounds
     m_boundRect.left = drawX;
