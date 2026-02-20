@@ -102,8 +102,6 @@ namespace NetworkMessageHandlers {
 		game->m_player->m_enemy_kill_count = pkt->count;
 	}
 
-#ifdef TESTER_ONLY
-	// TESTER MENU — notification handlers (tester builds only)
 	void HandleContribution(CGame* game, char* data)
 	{
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifySimpleInt>(
@@ -112,6 +110,8 @@ namespace NetworkMessageHandlers {
 		game->m_player->m_contribution = pkt->value;
 	}
 
+#ifdef TESTER_ONLY
+	// TESTER MENU — notification handlers (tester builds only)
 	void HandleTesterItemSearchResult(CGame* game, char* data)
 	{
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyTesterItemSearchResult>(
