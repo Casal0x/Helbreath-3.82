@@ -44,6 +44,8 @@ private:
 	int m_secondary_index = 0;
 	int m_secondary_value = 1;
 	static constexpr int max_value = 13;
+	int m_enchant_value = 0;    // 0-15 (bits 28-31 of attribute)
+	int m_item_count = 1;       // 1-10
 
 	item_category m_category = item_category::none;
 	struct attr_option
@@ -55,17 +57,31 @@ private:
 	std::vector<attr_option> m_valid_prefixes;
 	std::vector<attr_option> m_valid_secondaries;
 
+	// Dropdown state
+	enum class dropdown_id : int
+	{
+		none = -1,
+		prefix_type, prefix_value,
+		effect_type, effect_value,
+		upgrade, count
+	};
+	dropdown_id m_open_dropdown = dropdown_id::none;
+	int m_dropdown_scroll = 0;
+	static constexpr int dropdown_h = 14;
+	static constexpr int dropdown_max_vis = 8;
+
 	void build_valid_options(int16_t effect_type);
 	static item_category classify_item(int16_t effect_type);
 	static const char* category_name(item_category cat);
 	std::string build_preview_string() const;
 
 	void draw_search_page(short sX, short sY, short size_x, short mouse_x, short mouse_y, short z);
-	void draw_configure_page(short sX, short sY, short size_x, short mouse_x, short mouse_y);
+	void draw_configure_page(short sX, short sY, short size_x, short mouse_x, short mouse_y, short z);
 	bool on_click_search(short sX, short sY, short size_x, short mouse_x, short mouse_y);
 	bool on_click_configure(short sX, short sY, short size_x, short mouse_x, short mouse_y);
 
 	// UI helpers
-	void draw_selector(int sX, int sY, int size_x, int y_offset, const char* label, bool hover) const;
+	void draw_dropdown_field(int x, int y, int w, const char* text, bool is_open, bool is_hover);
+	int get_open_dropdown_count() const;
 };
 #endif // TESTER_ONLY

@@ -6128,6 +6128,7 @@ void CGame::client_common_handler(int client_h, char* data)
 
 		int item_id = static_cast<int>(v1);
 		uint32_t attribute = static_cast<uint32_t>(v2);
+		int count = std::clamp(static_cast<int>(v3), 1, 10);
 
 		if (item_id < 0 || item_id >= hb::server::config::MaxItemTypes
 			|| m_item_config_list[item_id] == nullptr)
@@ -6136,49 +6137,64 @@ void CGame::client_common_handler(int client_h, char* data)
 			break;
 		}
 
-		CItem* item = new CItem();
-		if (!m_item_manager->init_item_attr(item, item_id))
-		{
-			delete item;
-			send_notify_msg(0, client_h, Notify::NoticeMsg, 0, 0, 0, "Failed to create item.");
-			break;
-		}
-
-		item->m_attribute = attribute;
-		m_item_manager->adjust_rare_item_value(item);
-
-		// Set item color based on prefix type — matches generate_item_attributes() color table
+		// Parse attribute once for color lookup
 		auto parsed = hb::shared::item::parse_attribute(attribute);
-		switch (parsed.prefixType)
+
+		int created = 0;
+		for (int i = 0; i < count; i++)
 		{
-		case hb::shared::item::AttributePrefixType::Agile:      item->m_item_color = 1; break;
-		case hb::shared::item::AttributePrefixType::Light:       item->m_item_color = 2; break;
-		case hb::shared::item::AttributePrefixType::Strong:      item->m_item_color = 3; break;
-		case hb::shared::item::AttributePrefixType::Poisoning:   item->m_item_color = 4; break;
-		case hb::shared::item::AttributePrefixType::Critical:    item->m_item_color = 5; break;
-		case hb::shared::item::AttributePrefixType::Special:     item->m_item_color = 5; break;
-		case hb::shared::item::AttributePrefixType::Sharp:       item->m_item_color = 6; break;
-		case hb::shared::item::AttributePrefixType::Righteous:   item->m_item_color = 7; break;
-		case hb::shared::item::AttributePrefixType::Ancient:     item->m_item_color = 8; break;
-		default: break;
+			CItem* item = new CItem();
+			if (!m_item_manager->init_item_attr(item, item_id))
+			{
+				delete item;
+				continue;
+			}
+
+			item->m_attribute = attribute;
+			m_item_manager->adjust_rare_item_value(item);
+
+			// Set item color based on prefix type — matches generate_item_attributes() color table
+			switch (parsed.prefixType)
+			{
+			case hb::shared::item::AttributePrefixType::Agile:      item->m_item_color = 1; break;
+			case hb::shared::item::AttributePrefixType::Light:       item->m_item_color = 2; break;
+			case hb::shared::item::AttributePrefixType::Strong:      item->m_item_color = 3; break;
+			case hb::shared::item::AttributePrefixType::Poisoning:   item->m_item_color = 4; break;
+			case hb::shared::item::AttributePrefixType::Critical:    item->m_item_color = 5; break;
+			case hb::shared::item::AttributePrefixType::Special:     item->m_item_color = 5; break;
+			case hb::shared::item::AttributePrefixType::Sharp:       item->m_item_color = 6; break;
+			case hb::shared::item::AttributePrefixType::Righteous:   item->m_item_color = 7; break;
+			case hb::shared::item::AttributePrefixType::Ancient:     item->m_item_color = 8; break;
+			default: break;
+			}
+
+			int erase_req = 0;
+			if (m_item_manager->add_client_item_list(client_h, item, &erase_req))
+			{
+				m_item_manager->send_item_notify_msg(client_h, Notify::ItemObtained, item, 0);
+				created++;
+			}
+			else
+			{
+				delete item;
+				send_notify_msg(0, client_h, Notify::CannotCarryMoreItem, 0, 0, 0, 0);
+				break;
+			}
 		}
 
-		int erase_req = 0;
-		if (m_item_manager->add_client_item_list(client_h, item, &erase_req))
+		if (created > 0)
 		{
-			m_item_manager->send_item_notify_msg(client_h, Notify::ItemObtained, item, 0);
 			char buf[128];
-			std::snprintf(buf, sizeof(buf), "Created: %s (ID: %d)", m_item_config_list[item_id]->m_name, item_id);
+			std::snprintf(buf, sizeof(buf), "Created %dx %s (ID: %d)", created, m_item_config_list[item_id]->m_name, item_id);
 			send_notify_msg(0, client_h, Notify::NoticeMsg, 0, 0, 0, buf);
 		}
 		else
 		{
-			delete item;
-			send_notify_msg(0, client_h, Notify::CannotCarryMoreItem, 0, 0, 0, 0);
+			send_notify_msg(0, client_h, Notify::NoticeMsg, 0, 0, 0, "Failed to create item.");
 		}
 
-		hb::logger::log<log_channel::commands>("[TesterMenu] '{}' created item ID {} attr=0x{:08X}",
-			m_client_list[client_h]->m_char_name, item_id, attribute);
+		hb::logger::log<log_channel::commands>("[TesterMenu] '{}' created {}x item ID {} attr=0x{:08X}",
+			m_client_list[client_h]->m_char_name, created, item_id, attribute);
 		break;
 	}
 #endif // TESTER_ONLY
