@@ -94,13 +94,15 @@ void DialogBox_Bank::draw_item_details(short sX, short sY, short size_x, int ite
 	else
 		put_aligned_string(sX + 70, sX + size_x, sY + loc, itemInfo2.name.c_str(), GameColors::UIWhite);
 
-	if (itemInfo2.effect.size() > 0) {
+	auto effect = itemInfo2.effect_text();
+	auto extra = itemInfo2.extra_text();
+	if (!effect.empty()) {
 		loc += 15;
-		put_aligned_string(sX + 70, sX + size_x, sY + loc, itemInfo2.effect.c_str(), GameColors::UIDisabled);
+		put_aligned_string(sX + 70, sX + size_x, sY + loc, effect.c_str(), GameColors::UIDisabled);
 	}
-	if (itemInfo2.extra.size() > 0) {
+	if (!extra.empty()) {
 		loc += 15;
-		put_aligned_string(sX + 70, sX + size_x, sY + loc, itemInfo2.extra.c_str(), GameColors::UIDisabled);
+		put_aligned_string(sX + 70, sX + size_x, sY + loc, extra.c_str(), GameColors::UIDisabled);
 	}
 
 	// Level limit

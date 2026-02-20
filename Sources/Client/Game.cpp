@@ -8425,7 +8425,9 @@ void CGame::use_shortcut(int num)
 				}
 
 				auto itemInfo2 = item_name_formatter::get().format(m_item_list[m_short_cut[num]].get());
-				G_cTxt = std::format(MSG_SHORTCUT4, itemInfo2.name.c_str(), itemInfo2.effect.c_str(), itemInfo2.extra.c_str(), index);// (%s %s %s) [F%d]
+				auto effect2 = itemInfo2.effect_text();
+				auto extra2 = itemInfo2.extra_text();
+				G_cTxt = std::format(MSG_SHORTCUT4, itemInfo2.name.c_str(), effect2.c_str(), extra2.c_str(), index);// (%s %s %s) [F%d]
 				add_event_list(G_cTxt.c_str(), 10);
 			}
 			else if (m_short_cut[num] >= 100)

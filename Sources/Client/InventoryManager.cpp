@@ -103,8 +103,10 @@ void inventory_manager::erase_item(int item_id)
 		{
 			std::string G_cTxt;
 			auto itemInfo = item_name_formatter::get().format(m_game->m_item_list[item_id].get());
-			if (i < 3) G_cTxt = std::format(ERASE_ITEM, itemInfo.name.c_str(), itemInfo.effect.c_str(), itemInfo.extra.c_str(), i + 1);
-			else G_cTxt = std::format(ERASE_ITEM, itemInfo.name.c_str(), itemInfo.effect.c_str(), itemInfo.extra.c_str(), i + 7);
+			auto effect = itemInfo.effect_text();
+			auto extra = itemInfo.extra_text();
+			if (i < 3) G_cTxt = std::format(ERASE_ITEM, itemInfo.name.c_str(), effect.c_str(), extra.c_str(), i + 1);
+			else G_cTxt = std::format(ERASE_ITEM, itemInfo.name.c_str(), effect.c_str(), extra.c_str(), i + 7);
 			m_game->add_event_list(G_cTxt.c_str(), 10);
 			m_game->m_short_cut[i] = -1;
 		}

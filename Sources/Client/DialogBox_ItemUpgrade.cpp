@@ -119,8 +119,10 @@ void DialogBox_ItemUpgrade::draw_item_preview(int sX, int sY, int item_index)
 
     auto itemInfo = item_name_formatter::get().format(m_game->m_item_list[item_index].get());
     hb::shared::text::draw_text_aligned(GameFont::Default, sX + 24, sY + 230 + 20, (sX + 248) - (sX + 24), 15, itemInfo.name.c_str(), hb::shared::text::TextStyle::from_color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
-    hb::shared::text::draw_text_aligned(GameFont::Default, sX + 24, sY + 245 + 20, (sX + 248) - (sX + 24), 15, itemInfo.effect.c_str(), hb::shared::text::TextStyle::from_color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
-    hb::shared::text::draw_text_aligned(GameFont::Default, sX + 24, sY + 260 + 20, (sX + 248) - (sX + 24), 15, itemInfo.extra.c_str(), hb::shared::text::TextStyle::from_color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
+    auto effect = itemInfo.effect_text();
+    auto extra = itemInfo.extra_text();
+    hb::shared::text::draw_text_aligned(GameFont::Default, sX + 24, sY + 245 + 20, (sX + 248) - (sX + 24), 15, effect.c_str(), hb::shared::text::TextStyle::from_color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
+    hb::shared::text::draw_text_aligned(GameFont::Default, sX + 24, sY + 260 + 20, (sX + 248) - (sX + 24), 15, extra.c_str(), hb::shared::text::TextStyle::from_color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
 }
 
 void DialogBox_ItemUpgrade::DrawMode1_GizonUpgrade(int sX, int sY, int mouse_x, int mouse_y)
@@ -209,9 +211,11 @@ void DialogBox_ItemUpgrade::DrawMode2_InProgress(int sX, int sY)
         }
 
         auto itemInfo2 = item_name_formatter::get().format(m_game->m_item_list[item_index].get());
+        auto effect2 = itemInfo2.effect_text();
+        auto extra2 = itemInfo2.extra_text();
         hb::shared::text::draw_text_aligned(GameFont::Default, sX + 24, sY + 230 + 20, (sX + 248) - (sX + 24), 15, itemInfo2.name.c_str(), hb::shared::text::TextStyle::from_color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
-        hb::shared::text::draw_text_aligned(GameFont::Default, sX + 24, sY + 245 + 20, (sX + 248) - (sX + 24), 15, itemInfo2.effect.c_str(), hb::shared::text::TextStyle::from_color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
-        hb::shared::text::draw_text_aligned(GameFont::Default, sX + 24, sY + 260 + 20, (sX + 248) - (sX + 24), 15, itemInfo2.extra.c_str(), hb::shared::text::TextStyle::from_color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
+        hb::shared::text::draw_text_aligned(GameFont::Default, sX + 24, sY + 245 + 20, (sX + 248) - (sX + 24), 15, effect2.c_str(), hb::shared::text::TextStyle::from_color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
+        hb::shared::text::draw_text_aligned(GameFont::Default, sX + 24, sY + 260 + 20, (sX + 248) - (sX + 24), 15, extra2.c_str(), hb::shared::text::TextStyle::from_color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
     }
 
     // Send upgrade command after 4 seconds

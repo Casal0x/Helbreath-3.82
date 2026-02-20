@@ -49,6 +49,8 @@ void DialogBox_SellList::draw_item_list(short sX, short sY, short size_x, short 
 		{
 			int item_index = m_game->m_sell_item_list[i].index;
 			auto itemInfo = item_name_formatter::get().format(m_game->m_item_list[item_index].get());
+			auto effect = itemInfo.effect_text();
+			auto extra = itemInfo.extra_text();
 
 			bool hover = (mouse_x > sX + 25) && (mouse_x < sX + 250) && (mouse_y >= sY + 55 + row * 15) && (mouse_y <= sY + 55 + 14 + row * 15);
 
@@ -69,26 +71,26 @@ void DialogBox_SellList::draw_item_list(short sX, short sY, short size_x, short 
 				// Single item
 				if (hover)
 				{
-					if ((itemInfo.effect.size() == 0) && (itemInfo.extra.size() == 0))
+					if (effect.empty() && extra.empty())
 					{
 						put_aligned_string(sX, sX + size_x, sY + 55 + row * 15, itemInfo.name.c_str(), GameColors::UIWhite);
 					}
 					else
 					{
-						if ((itemInfo.name.size() + itemInfo.effect.size() + itemInfo.extra.size()) < 36)
+						if ((itemInfo.name.size() + effect.size() + extra.size()) < 36)
 						{
-							if ((itemInfo.effect.size() > 0) && (itemInfo.extra.size() > 0))
-								txt = std::format("{}({}, {})", itemInfo.name.c_str(), itemInfo.effect.c_str(), itemInfo.extra.c_str());
+							if (!effect.empty() && !extra.empty())
+								txt = std::format("{}({}, {})", itemInfo.name.c_str(), effect.c_str(), extra.c_str());
 							else
-								txt = std::format("{}({}{})", itemInfo.name.c_str(), itemInfo.effect.c_str(), itemInfo.extra.c_str());
+								txt = std::format("{}({}{})", itemInfo.name.c_str(), effect.c_str(), extra.c_str());
 							put_aligned_string(sX, sX + size_x, sY + 55 + row * 15, txt.c_str(), GameColors::UIWhite);
 						}
 						else
 						{
-							if ((itemInfo.effect.size() > 0) && (itemInfo.extra.size() > 0))
-								txt = std::format("({}, {})", itemInfo.effect.c_str(), itemInfo.extra.c_str());
+							if (!effect.empty() && !extra.empty())
+								txt = std::format("({}, {})", effect.c_str(), extra.c_str());
 							else
-								txt = std::format("({}{})", itemInfo.effect.c_str(), itemInfo.extra.c_str());
+								txt = std::format("({}{})", effect.c_str(), extra.c_str());
 							put_aligned_string(sX, sX + size_x, sY + 55 + row * 15, itemInfo.name.c_str(), GameColors::UIWhite);
 							put_aligned_string(sX, sX + size_x, sY + 55 + row * 15 + 15, txt.c_str(), GameColors::UIDisabled);
 							row++;
@@ -97,7 +99,7 @@ void DialogBox_SellList::draw_item_list(short sX, short sY, short size_x, short 
 				}
 				else
 				{
-					if ((itemInfo.effect.size() == 0) && (itemInfo.extra.size() == 0))
+					if (effect.empty() && extra.empty())
 					{
 						if (itemInfo.is_special)
 							put_aligned_string(sX, sX + size_x, sY + 55 + row * 15, itemInfo.name.c_str(), GameColors::UIItemName_Special);
@@ -106,12 +108,12 @@ void DialogBox_SellList::draw_item_list(short sX, short sY, short size_x, short 
 					}
 					else
 					{
-						if ((itemInfo.name.size() + itemInfo.effect.size() + itemInfo.extra.size()) < 36)
+						if ((itemInfo.name.size() + effect.size() + extra.size()) < 36)
 						{
-							if ((itemInfo.effect.size() > 0) && (itemInfo.extra.size() > 0))
-								txt = std::format("{}({}, {})", itemInfo.name.c_str(), itemInfo.effect.c_str(), itemInfo.extra.c_str());
+							if (!effect.empty() && !extra.empty())
+								txt = std::format("{}({}, {})", itemInfo.name.c_str(), effect.c_str(), extra.c_str());
 							else
-								txt = std::format("{}({}{})", itemInfo.name.c_str(), itemInfo.effect.c_str(), itemInfo.extra.c_str());
+								txt = std::format("{}({}{})", itemInfo.name.c_str(), effect.c_str(), extra.c_str());
 
 							if (itemInfo.is_special)
 								put_aligned_string(sX, sX + size_x, sY + 55 + row * 15, txt.c_str(), GameColors::UIItemName_Special);
