@@ -84,12 +84,6 @@ protected:
     // Event/message helpers
     void add_event_list(const char* txt, char color = 0, bool dup_allow = true);
 
-    // Input string helpers (for text entry screens)
-    void start_input_string(int sX, int sY, unsigned char len, std::string& buffer, bool is_hide = false);
-    void end_input_string();
-    void clear_input_string();
-    void show_received_string();
-
     // Screen transition helper - request transition to a new screen
     // This delegates to GameModeManager::set_screen<T>()
     template<typename T, typename... Args>

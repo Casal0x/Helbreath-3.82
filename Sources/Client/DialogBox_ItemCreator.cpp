@@ -8,6 +8,7 @@
 #include "GameFonts.h"
 #include "TextLibExt.h"
 #include "TextInputManager.h"
+#include "TextFieldRenderer.h"
 #include "Item/ItemEnums.h"
 #include <algorithm>
 #include <format>

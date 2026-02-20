@@ -30,6 +30,11 @@ set(SFMLENGINE_SOURCES
     ../SFMLEngine/SFMLWindow.cpp
 )
 
+# ---------------------------------------------------------------------------
+# CControls static library (UI controls — no game/engine dependencies)
+# ---------------------------------------------------------------------------
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../CControls ${CMAKE_CURRENT_BINARY_DIR}/CControls_build)
+
 add_library(SFMLEngine STATIC ${SFMLENGINE_SOURCES})
 
 # ---------------------------------------------------------------------------
@@ -98,6 +103,7 @@ set(SHARED_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../Dependencies/Shared)
 
 set(COMMON_INCLUDE_DIRS
     ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/../CControls
     ${CMAKE_CURRENT_SOURCE_DIR}/../SFMLEngine
     ${CMAKE_CURRENT_SOURCE_DIR}/../AutoUpdater
     ${SHARED_DIR}
@@ -150,6 +156,7 @@ target_link_libraries(SFMLEngine PRIVATE SFML::Graphics SFML::Window SFML::Syste
 find_package(Threads REQUIRED)
 
 target_link_libraries(HelbreathClient PRIVATE
+    CControls
     AutoUpdater
     SFMLEngine
     SFML::Graphics

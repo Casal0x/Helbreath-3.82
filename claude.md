@@ -109,7 +109,8 @@ Brief (`-b`): prints `file:line | match` to stdout. Detailed (default): writes t
 
 ## Project Structure
 
-- **Client** (`Sources/Client/`) — Game client, C++20. Cross-platform (Windows + Linux). Depends on SFMLEngine.
+- **Client** (`Sources/Client/`) — Game client, C++20. Cross-platform (Windows + Linux). Depends on SFMLEngine and CControls.
+- **CControls** (`Sources/CControls/`) — UI control library, C++20. Pure logic, no game/engine dependencies. Static library (`cc::` namespace). See `PLANS/CControls_Library_Plan.md` for full design.
 - **SFMLEngine** (`Sources/SFMLEngine/`) — Rendering abstraction over SFML. Cross-platform (Windows + Linux).
 - **Server** (`Sources/Server/`) — Game server, C++20. Cross-platform (Windows + Linux). Standalone.
 - **Shared** (`Sources/Dependencies/Shared/`) — Protocol, enums, items, packets, networking.
@@ -140,6 +141,20 @@ Three-track system managed from `Sources/version.cfg`. See `VERSION_STANDARDS.md
 - Pre-build script `Sources/version_gen.py` generates `version_info.h`, `version_rc.h`, and `version.cmake` automatically.
 - Edit `Sources/version.cfg` to change versions. Never edit generated files.
 - **Build counters** (`build_counter_client.txt`, `build_counter_server.txt`) are per-project and incremented automatically by the build system. **Never pass `--increment-version` manually** — your builds are for compile verification only.
+
+## UI Controls (CControls Library)
+
+**All menu screen UI (buttons, textboxes, focus, tooltips) must use CControls** (`#include "CControls.h"`, namespace `cc::`). Do NOT write manual `is_mouse_in_rect()` hit-testing, manual `m_cur_focus` tracking, or manual per-control rendering loops.
+
+Pattern for each screen:
+- `cc::control_collection m_controls;` member in the screen class
+- `on_initialize()`: create controls via `m_controls.add<cc::button>(...)`, set render handlers, callbacks, focus order, click sound
+- `on_update()`: fill `cc::input_state` from engine input, call `m_controls.update(input, time_ms)`
+- `on_render()`: draw background, call `m_controls.render()`, draw overlays
+
+Key types: `cc::button`, `cc::textbox`, `cc::label`, `cc::toggle_button`, `cc::panel` (grouping), `cc::control_collection` (screen-level owner).
+
+See `CCONTROLS_REFERENCE.md` for full API reference, render handler patterns, and usage examples.
 
 ## Modernization Direction
 

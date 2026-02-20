@@ -90,6 +90,9 @@ void Screen_OnGame::on_update()
     // Sync manager singletons with game state
     audio_manager::get().set_listener_position(m_game->m_player->m_player_x, m_game->m_player->m_player_y);
 
+    // Pump CControls input for text_input_manager (before Enter key handling)
+    text_input_manager::get().update(m_time);
+
     // Enter key handling
     if (hb::shared::input::is_key_pressed(KeyCode::Enter) == true)
     {
@@ -249,9 +252,11 @@ void Screen_OnGame::on_update()
                     m_game->m_chat_msg.clear();
                     m_game->m_chat_msg += m_game->m_backup_chat_msg[0];
                     text_input_manager::get().start_input(CHAT_INPUT_X(), CHAT_INPUT_Y(), CGame::ChatMsgMaxLen, m_game->m_chat_msg);
+                    text_input_manager::get().set_chat_background(true);
                     break;
                 default:
                     text_input_manager::get().start_input(CHAT_INPUT_X(), CHAT_INPUT_Y(), CGame::ChatMsgMaxLen, m_game->m_chat_msg);
+                    text_input_manager::get().set_chat_background(true);
                     text_input_manager::get().clear_input();
                     break;
                 }
@@ -567,10 +572,8 @@ void Screen_OnGame::on_render()
 
     FrameTiming::begin_profile(ProfileStage::DrawMisc);
     if (text_input_manager::get().is_active()) {
-        if (((m_game->m_dialog_box_manager.is_enabled(DialogBoxId::GuildMenu) == true) && (m_game->m_dialog_box_manager.Info(DialogBoxId::GuildMenu).m_mode == 1)) ||
-            ((m_game->m_dialog_box_manager.is_enabled(DialogBoxId::ItemDropExternal) == true) && (m_game->m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_mode == 1))) {
-        }
-        else m_game->m_Renderer->draw_rect_filled(0, LOGICAL_HEIGHT() - 69, LOGICAL_MAX_X(), 18, hb::shared::render::Color::Black(128));
+        if (text_input_manager::get().shows_chat_background())
+            m_game->m_Renderer->draw_rect_filled(0, LOGICAL_HEIGHT() - 69, LOGICAL_MAX_X(), 18, hb::shared::render::Color::Black(128));
         text_input_manager::get().show_input();
     }
 

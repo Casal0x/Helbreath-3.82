@@ -223,6 +223,7 @@ void CGame::hotkey_whisper_target()
 		text_input_manager::get().end_input();
 		m_chat_msg = "/to ";
 		text_input_manager::get().start_input(CHAT_INPUT_X(), CHAT_INPUT_Y(), ChatMsgMaxLen, m_chat_msg);
+		text_input_manager::get().set_chat_background(true);
 	}
 }
 
@@ -299,6 +300,7 @@ void CGame::hotkey_simple_load_backup_chat()
 	{
 		m_chat_msg = m_backup_chat_msg;
 		text_input_manager::get().start_input(CHAT_INPUT_X(), CHAT_INPUT_Y(), ChatMsgMaxLen, m_chat_msg);
+		text_input_manager::get().set_chat_background(true);
 	}
 }
 
@@ -378,6 +380,7 @@ void CGame::hotkey_simple_whisper_cycle_up()
 			text_input_manager::get().end_input();
 			m_chat_msg = std::format("/to {}", name);
 			text_input_manager::get().start_input(CHAT_INPUT_X(), CHAT_INPUT_Y(), ChatMsgMaxLen, m_chat_msg);
+			text_input_manager::get().set_chat_background(true);
 		}
 	}
 }
@@ -394,6 +397,7 @@ void CGame::hotkey_simple_whisper_cycle_down()
 			text_input_manager::get().end_input();
 			m_chat_msg = std::format("/to {}", name);
 			text_input_manager::get().start_input(CHAT_INPUT_X(), CHAT_INPUT_Y(), ChatMsgMaxLen, m_chat_msg);
+			text_input_manager::get().set_chat_background(true);
 		}
 	}
 }

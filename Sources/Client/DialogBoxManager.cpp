@@ -52,6 +52,7 @@
 #include "BuildItemManager.h"
 #include "ShopManager.h"
 #include "TextInputManager.h"
+#include "TextFieldRenderer.h"
 #include "CursorTarget.h"
 
 using namespace hb::shared::net;
@@ -235,7 +236,7 @@ void DialogBoxManager::enable_dialog_box(int box_id, int type, int64_t v1, int v
 			sX = Info(DialogBoxId::GuildMenu).m_x;
 			sY = Info(DialogBoxId::GuildMenu).m_y;
 			text_input_manager::get().end_input();
-			text_input_manager::get().start_input(sX + 75, sY + 140, 21, m_game->m_player->m_guild_name);
+			text_input_manager::get().start_input(sX + 75, sY + 140, 21, m_game->m_player->m_guild_name, false, hb::client::character_name_allowed_chars);
 		}
 		break;
 
@@ -248,7 +249,7 @@ void DialogBoxManager::enable_dialog_box(int box_id, int type, int64_t v1, int v
 			m_game->m_amount_string = std::to_string(v1);
 			sX = Info(DialogBoxId::ItemDropExternal).m_x;
 			sY = Info(DialogBoxId::ItemDropExternal).m_y;
-			text_input_manager::get().start_input(sX + 40, sY + 57, CGame::AmountStringMaxLen, m_game->m_amount_string);
+			text_input_manager::get().start_input(sX + 40, sY + 57, CGame::AmountStringMaxLen, m_game->m_amount_string, false, hb::client::digits_only);
 		}
 		else
 		{
@@ -257,7 +258,7 @@ void DialogBoxManager::enable_dialog_box(int box_id, int type, int64_t v1, int v
 				sX = Info(DialogBoxId::ItemDropExternal).m_x;
 				sY = Info(DialogBoxId::ItemDropExternal).m_y;
 				text_input_manager::get().end_input();
-				text_input_manager::get().start_input(sX + 40, sY + 57, CGame::AmountStringMaxLen, m_game->m_amount_string);
+				text_input_manager::get().start_input(sX + 40, sY + 57, CGame::AmountStringMaxLen, m_game->m_amount_string, false, hb::client::digits_only);
 			}
 		}
 		break;

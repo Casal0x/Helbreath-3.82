@@ -1,6 +1,7 @@
 ﻿#include "DialogBox_GuildMenu.h"
 #include "Game.h"
 #include "TextInputManager.h"
+#include "TextFieldRenderer.h"
 #include "lan_eng.h"
 #include "GameFonts.h"
 #include "TextLibExt.h"
@@ -375,7 +376,7 @@ bool DialogBox_GuildMenu::on_click_mode0(short sX, short sY, short mouse_x, shor
 		if (m_game->m_player->m_level < 20) return false;
 		if (m_game->m_is_crusade_mode) return false;
 		text_input_manager::get().end_input();
-		text_input_manager::get().start_input(sX + 75, sY + 140, 21, m_game->m_player->m_guild_name);
+		text_input_manager::get().start_input(sX + 75, sY + 140, 21, m_game->m_player->m_guild_name, false, hb::client::character_name_allowed_chars);
 		Info().m_mode = 1;
 		play_sound_effect('E', 14, 5);
 		return true;

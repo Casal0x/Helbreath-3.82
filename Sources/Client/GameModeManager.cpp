@@ -45,6 +45,7 @@ void GameModeManager::shutdown_impl()
 {
     // clear overlay first
     clear_overlay_impl();
+    m_dying_overlay.reset();
 
     // Ensure screen is properly uninitialized before destruction
     if (m_pCurrentScreen)
@@ -63,7 +64,10 @@ void GameModeManager::clear_overlay_impl()
     if (m_pActiveOverlay)
     {
         m_pActiveOverlay->on_uninitialize();
-        m_pActiveOverlay.reset();
+        // Defer destruction — the overlay may still be on the call stack
+        // (e.g., clear_overlay() called from a button handler inside m_controls.update()).
+        // Moving to m_dying_overlay keeps it alive until update_screens_impl() finishes.
+        m_dying_overlay = std::move(m_pActiveOverlay);
     }
 }
 
@@ -143,6 +147,10 @@ void GameModeManager::update_screens_impl()
     {
         m_pActiveOverlay->on_update();
     }
+
+    // Destroy overlay that was cleared during this frame's update.
+    // Safe now — we're no longer inside the overlay's call stack.
+    m_dying_overlay.reset();
 }
 
 void GameModeManager::render_impl()

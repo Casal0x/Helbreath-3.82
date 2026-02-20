@@ -495,7 +495,7 @@ void CGame::on_key_event(KeyCode key, bool pressed)
 	}
 }
 
-// on_native_message: Platform-specific message handling (absorbs GameWindowHandler::on_custom_message)
+// on_native_message: Platform-specific message handling
 bool CGame::on_native_message(uint32_t message, uintptr_t wparam, intptr_t lparam)
 {
 #ifdef _WIN32
@@ -528,27 +528,29 @@ bool CGame::on_native_message(uint32_t message, uintptr_t wparam, intptr_t lpara
 	return false;
 }
 
-// on_text_input: Text/IME input handling (absorbs GameWindowHandler::on_text_input)
+// on_text_input: Text/IME input handling
 bool CGame::on_text_input(hb::shared::types::NativeWindowHandle hwnd,
                            uint32_t message, uintptr_t wparam, intptr_t lparam)
 {
-	if (text_input_manager::get().handle_char(hwnd, message, wparam, lparam))
-		return true;
+	if (message != 0x0102 /*WM_CHAR*/)
+		return false;
 
 	// Auto-activate chat on printable keypress when toggle-to-chat is disabled
-	if (!config_manager::get().is_toggle_to_chat_enabled()
+	if (!text_input_manager::get().is_active()
+		&& !config_manager::get().is_toggle_to_chat_enabled()
 		&& GameModeManager::get_mode() == GameMode::MainGame
 		&& GameModeManager::get_active_overlay() == nullptr
-		&& message == 0x0102 /*WM_CHAR*/
 		&& wparam >= 32 && wparam != 127)
 	{
 		text_input_manager::get().start_input(
 			CHAT_INPUT_X(), CHAT_INPUT_Y(), ChatMsgMaxLen, m_chat_msg);
+		text_input_manager::get().set_chat_background(true);
 		text_input_manager::get().clear_input();
-		return text_input_manager::get().handle_char(hwnd, message, wparam, lparam);
 	}
 
-	return false;
+	// All chars go through engine input system for CControls consumption
+	hb::shared::input::on_text_char(static_cast<uint32_t>(wparam));
+	return true;
 }
 
 // UpdateScreen and DrawScreen removed - all modes now handled by Screen/Overlay system via GameModeManager
@@ -4968,6 +4970,7 @@ void CGame::handle_key_down(KeyCode _key)
 		else if (_key == KeyCode::Enter && (text_input_manager::get().is_active() == false) && (!hb::shared::input::is_alt_down()))
 		{
 			text_input_manager::get().start_input(CHAT_INPUT_X(), CHAT_INPUT_Y(), ChatMsgMaxLen, m_chat_msg);
+			text_input_manager::get().set_chat_background(true);
 			text_input_manager::get().clear_input();
 		}
 	}
