@@ -16,6 +16,7 @@
 using namespace hb::shared::net;
 using namespace hb::client::sprite_id;
 using namespace hb::shared::item;
+using render_color = hb::shared::render::Color;
 
 // Layout constants
 namespace layout
@@ -35,19 +36,47 @@ namespace layout
 	constexpr int list_h = list_rows * row_h;
 	constexpr int status_y = list_y + list_h + 2;
 
-	// Configure page
-	constexpr int item_name_y = 32;
-	constexpr int item_cat_y = 48;
-	constexpr int prefix_label_y = 66;
-	constexpr int prefix_sel_y = 82;
-	constexpr int prefix_val_y = 100;
-	constexpr int effect_label_y = 122;
-	constexpr int effect_sel_y = 138;
-	constexpr int effect_val_y = 156;
-	constexpr int preview_label_y = 182;
+	// Configure page — two-column layout
+	constexpr int item_info_y = 38;    // "Dagger (Weapon)" combined line
+
+	// Column boundaries (inset from frame edges)
+	constexpr int col_left_x1 = 22;
+	constexpr int col_left_x2 = 122;
+	constexpr int col_left_w = col_left_x2 - col_left_x1;
+	constexpr int col_right_x1 = 136;
+	constexpr int col_right_x2 = 236;
+	constexpr int col_right_w = col_right_x2 - col_right_x1;
+
+	// Row 1: First Stat / Second Stat type dropdowns
+	constexpr int row1_label_y = 62;
+	constexpr int row1_sel_y = 78;
+
+	// Row 2: Value dropdowns
+	constexpr int row2_label_y = 100;
+	constexpr int row2_sel_y = 116;
+
+	// Row 3: Upgrade / Count dropdowns
+	constexpr int row3_label_y = 138;
+	constexpr int row3_sel_y = 154;
+
+	// Preview + buttons
+	constexpr int preview_label_y = 180;
 	constexpr int preview_text_y = 198;
-	constexpr int btn_y = 232;
+	constexpr int btn_y = 234;
 	constexpr int btn_w = 100;
+}
+
+// Dropdown visual style — warm tones to match parchment dialog background
+namespace dd_style
+{
+	const auto bg           = render_color(40, 35, 28, 190);
+	const auto border       = render_color(80, 70, 50);
+	const auto border_hover = render_color(140, 125, 90);
+	const auto border_open  = render_color(180, 160, 100);
+	const auto list_bg      = render_color(30, 25, 18, 235);
+	const auto list_border  = render_color(100, 90, 60);
+	const auto item_hover   = render_color(90, 75, 45, 180);
+	const auto scrollbar    = render_color(130, 115, 75, 160);
 }
 
 DialogBox_ItemCreator::DialogBox_ItemCreator(CGame* game)
@@ -62,6 +91,7 @@ void DialogBox_ItemCreator::on_disable()
 	text_input_manager::get().end_input();
 	m_initial_load = false;
 	m_last_sent_search.clear();
+	m_open_dropdown = dropdown_id::none;
 }
 
 DialogBox_ItemCreator::item_category DialogBox_ItemCreator::classify_item(int16_t effect_type)
@@ -168,6 +198,9 @@ std::string DialogBox_ItemCreator::build_preview_string() const
 		result += std::format(" {} {}", m_valid_secondaries[m_secondary_index].name, real_val);
 	}
 
+	if (m_enchant_value > 0)
+		result += std::format(" +{}", m_enchant_value);
+
 	return result;
 }
 
@@ -184,16 +217,36 @@ void DialogBox_ItemCreator::receive_search_results(const hb::net::PacketNotifyTe
 	m_scroll_offset = 0;
 }
 
-// Helper: draw a selector row  < Label >  with optional hover
-void DialogBox_ItemCreator::draw_selector(int sX, int sY, int size_x, int y_offset,
-	const char* label, bool hover) const
+// ---------------------------------------------------------------------------
+// UI HELPERS
+// ---------------------------------------------------------------------------
+
+void DialogBox_ItemCreator::draw_dropdown_field(int x, int y, int w,
+	const char* text, bool is_open, bool is_hover)
 {
-	auto text = std::format("<  {}  >", label);
-	hb::shared::text::draw_text_aligned(GameFont::Default,
-		sX, sY + y_offset, size_x, 15,
-		text.c_str(),
-		hb::shared::text::TextStyle::from_color(hover ? GameColors::UIWhite : GameColors::UIMagicBlue),
-		hb::shared::text::Align::TopCenter);
+	// Background box
+	m_game->m_Renderer->draw_rect_filled(x, y, w, dropdown_h, dd_style::bg);
+
+	// Border — color depends on state
+	auto border = is_open ? dd_style::border_open : (is_hover ? dd_style::border_hover : dd_style::border);
+	m_game->m_Renderer->draw_rect_outline(x, y, w, dropdown_h, border);
+
+	// Selected value text (left-aligned with padding) — always gold
+	put_string(x + 4, y + 2, text, GameColors::UIPaleYellow);
+}
+
+int DialogBox_ItemCreator::get_open_dropdown_count() const
+{
+	switch (m_open_dropdown)
+	{
+	case dropdown_id::prefix_type:  return static_cast<int>(m_valid_prefixes.size());
+	case dropdown_id::effect_type:  return static_cast<int>(m_valid_secondaries.size());
+	case dropdown_id::prefix_value: return max_value;
+	case dropdown_id::effect_value: return max_value;
+	case dropdown_id::upgrade:      return 16;
+	case dropdown_id::count:        return 10;
+	default:                        return 0;
+	}
 }
 
 // ---------------------------------------------------------------------------
@@ -289,7 +342,7 @@ void DialogBox_ItemCreator::draw_search_page(short sX, short sY, short size_x, s
 // CONFIGURE PAGE
 // ---------------------------------------------------------------------------
 
-void DialogBox_ItemCreator::draw_configure_page(short sX, short sY, short size_x, short mouse_x, short mouse_y)
+void DialogBox_ItemCreator::draw_configure_page(short sX, short sY, short size_x, short mouse_x, short mouse_y, short z)
 {
 	// Title
 	hb::shared::text::draw_text_aligned(GameFont::Bitmap1,
@@ -298,92 +351,119 @@ void DialogBox_ItemCreator::draw_configure_page(short sX, short sY, short size_x
 		hb::shared::text::TextStyle::with_integrated_shadow(GameColors::UIWarningRed),
 		hb::shared::text::Align::TopCenter);
 
-	// Item name + category
+	// Item name + category (single line)
 	if (m_selected_index >= 0 && m_selected_index < m_result_count)
 	{
+		auto info_str = std::format("{} ({})", m_results[m_selected_index].name, category_name(m_category));
 		hb::shared::text::draw_text_aligned(GameFont::Default,
-			sX, sY + layout::item_name_y, size_x, 15,
-			m_results[m_selected_index].name,
+			sX, sY + layout::item_info_y, size_x, 15,
+			info_str.c_str(),
 			hb::shared::text::TextStyle::from_color(GameColors::UIPaleYellow),
 			hb::shared::text::Align::TopCenter);
-
-		auto cat_str = std::format("({})", category_name(m_category));
-		hb::shared::text::draw_text_aligned(GameFont::Default,
-			sX, sY + layout::item_cat_y, size_x, 15,
-			cat_str.c_str(),
-			hb::shared::text::TextStyle::from_color(GameColors::UIBlack),
-			hb::shared::text::Align::TopCenter);
 	}
+
+	// Absolute column positions
+	int lx = sX + layout::col_left_x1;
+	int rx = sX + layout::col_right_x1;
 
 	if (m_category == item_category::none)
 	{
-		put_aligned_string(sX, sX + size_x, sY + layout::prefix_label_y + 10, "No attributes for this type.", GameColors::UIBlack);
-		put_aligned_string(sX, sX + size_x, sY + layout::prefix_label_y + 30, "Item will be created plain.", GameColors::UIBlack);
+		put_aligned_string(sX + layout::col_left_x1, sX + layout::col_right_x2, sY + layout::row1_label_y + 10, "No attributes for this type.", GameColors::UIWhite);
+		put_aligned_string(sX + layout::col_left_x1, sX + layout::col_right_x2, sY + layout::row1_label_y + 30, "Item will be created plain.", GameColors::UIWhite);
+
+		// Count dropdown (still available for plain items)
+		put_string(rx + 4, sY + layout::row3_label_y, "Count:", GameColors::UIWhite);
+		auto count_str = std::to_string(m_item_count);
+		bool cnt_open = (m_open_dropdown == dropdown_id::count);
+		bool cnt_hover = !cnt_open && (mouse_x >= rx && mouse_x <= rx + layout::col_right_w
+			&& mouse_y >= sY + layout::row3_sel_y && mouse_y < sY + layout::row3_sel_y + dropdown_h);
+		draw_dropdown_field(rx, sY + layout::row3_sel_y, layout::col_right_w, count_str.c_str(), cnt_open, cnt_hover);
 	}
 	else
 	{
-		// --- PREFIX SECTION ---
-		put_string(sX + layout::content_x1 + 4, sY + layout::prefix_label_y, "Prefix:", GameColors::UIWhite);
+		// --- ROW 1: Prefix type (left) / Effect type (right) ---
+		put_string(lx + 4, sY + layout::row1_label_y, "First Stat", GameColors::UIWhite);
+		put_string(rx + 4, sY + layout::row1_label_y, "Second Stat", GameColors::UIWhite);
 
 		const char* prefix_name = (m_prefix_index < static_cast<int>(m_valid_prefixes.size()))
 			? m_valid_prefixes[m_prefix_index].name : "None";
-		bool pn_hover = (mouse_x >= sX + layout::content_x1 && mouse_x <= sX + layout::content_x2
-			&& mouse_y >= sY + layout::prefix_sel_y && mouse_y <= sY + layout::prefix_sel_y + 14);
-		draw_selector(sX, sY, size_x, layout::prefix_sel_y, prefix_name, pn_hover);
-
-		// Prefix value
-		if (m_prefix_index > 0 && m_prefix_index < static_cast<int>(m_valid_prefixes.size()))
-		{
-			int mult = m_valid_prefixes[m_prefix_index].multiplier;
-			int real_val = m_prefix_value * mult;
-			bool pv_hover = (mouse_x >= sX + layout::content_x1 && mouse_x <= sX + layout::content_x2
-				&& mouse_y >= sY + layout::prefix_val_y && mouse_y <= sY + layout::prefix_val_y + 14);
-			auto val_str = std::to_string(real_val);
-			draw_selector(sX, sY, size_x, layout::prefix_val_y, val_str.c_str(), pv_hover);
-		}
-
-		// --- EFFECT SECTION ---
-		put_string(sX + layout::content_x1 + 4, sY + layout::effect_label_y, "Effect:", GameColors::UIWhite);
+		bool pn_open = (m_open_dropdown == dropdown_id::prefix_type);
+		bool pn_hover = !pn_open && (mouse_x >= lx && mouse_x <= lx + layout::col_left_w
+			&& mouse_y >= sY + layout::row1_sel_y && mouse_y < sY + layout::row1_sel_y + dropdown_h);
+		draw_dropdown_field(lx, sY + layout::row1_sel_y, layout::col_left_w, prefix_name, pn_open, pn_hover);
 
 		const char* sec_name = (m_secondary_index < static_cast<int>(m_valid_secondaries.size()))
 			? m_valid_secondaries[m_secondary_index].name : "None";
-		bool sn_hover = (mouse_x >= sX + layout::content_x1 && mouse_x <= sX + layout::content_x2
-			&& mouse_y >= sY + layout::effect_sel_y && mouse_y <= sY + layout::effect_sel_y + 14);
-		draw_selector(sX, sY, size_x, layout::effect_sel_y, sec_name, sn_hover);
+		bool sn_open = (m_open_dropdown == dropdown_id::effect_type);
+		bool sn_hover = !sn_open && (mouse_x >= rx && mouse_x <= rx + layout::col_right_w
+			&& mouse_y >= sY + layout::row1_sel_y && mouse_y < sY + layout::row1_sel_y + dropdown_h);
+		draw_dropdown_field(rx, sY + layout::row1_sel_y, layout::col_right_w, sec_name, sn_open, sn_hover);
 
-		// Secondary value
+		// --- ROW 2: Prefix value (left) / Effect value (right) ---
+		if (m_prefix_index > 0 && m_prefix_index < static_cast<int>(m_valid_prefixes.size()))
+		{
+			put_string(lx + 4, sY + layout::row2_label_y, "Value:", GameColors::UIWhite);
+			int real_val = m_prefix_value * m_valid_prefixes[m_prefix_index].multiplier;
+			auto val_str = std::to_string(real_val);
+			bool pv_open = (m_open_dropdown == dropdown_id::prefix_value);
+			bool pv_hover = !pv_open && (mouse_x >= lx && mouse_x <= lx + layout::col_left_w
+				&& mouse_y >= sY + layout::row2_sel_y && mouse_y < sY + layout::row2_sel_y + dropdown_h);
+			draw_dropdown_field(lx, sY + layout::row2_sel_y, layout::col_left_w, val_str.c_str(), pv_open, pv_hover);
+		}
+
 		if (m_secondary_index > 0 && m_secondary_index < static_cast<int>(m_valid_secondaries.size()))
 		{
-			int mult = m_valid_secondaries[m_secondary_index].multiplier;
-			int real_val = m_secondary_value * mult;
-			bool sv_hover = (mouse_x >= sX + layout::content_x1 && mouse_x <= sX + layout::content_x2
-				&& mouse_y >= sY + layout::effect_val_y && mouse_y <= sY + layout::effect_val_y + 14);
+			put_string(rx + 4, sY + layout::row2_label_y, "Value:", GameColors::UIWhite);
+			int real_val = m_secondary_value * m_valid_secondaries[m_secondary_index].multiplier;
 			auto val_str = std::to_string(real_val);
-			draw_selector(sX, sY, size_x, layout::effect_val_y, val_str.c_str(), sv_hover);
+			bool sv_open = (m_open_dropdown == dropdown_id::effect_value);
+			bool sv_hover = !sv_open && (mouse_x >= rx && mouse_x <= rx + layout::col_right_w
+				&& mouse_y >= sY + layout::row2_sel_y && mouse_y < sY + layout::row2_sel_y + dropdown_h);
+			draw_dropdown_field(rx, sY + layout::row2_sel_y, layout::col_right_w, val_str.c_str(), sv_open, sv_hover);
 		}
+
+		// --- ROW 3: Upgrade (left) / Count (right) ---
+		put_string(lx + 4, sY + layout::row3_label_y, "Upgrade:", GameColors::UIWhite);
+		auto enchant_str = std::format("+{}", m_enchant_value);
+		bool enc_open = (m_open_dropdown == dropdown_id::upgrade);
+		bool enc_hover = !enc_open && (mouse_x >= lx && mouse_x <= lx + layout::col_left_w
+			&& mouse_y >= sY + layout::row3_sel_y && mouse_y < sY + layout::row3_sel_y + dropdown_h);
+		draw_dropdown_field(lx, sY + layout::row3_sel_y, layout::col_left_w, enchant_str.c_str(), enc_open, enc_hover);
+
+		put_string(rx + 4, sY + layout::row3_label_y, "Count:", GameColors::UIWhite);
+		auto count_str = std::to_string(m_item_count);
+		bool cnt_open = (m_open_dropdown == dropdown_id::count);
+		bool cnt_hover = !cnt_open && (mouse_x >= rx && mouse_x <= rx + layout::col_right_w
+			&& mouse_y >= sY + layout::row3_sel_y && mouse_y < sY + layout::row3_sel_y + dropdown_h);
+		draw_dropdown_field(rx, sY + layout::row3_sel_y, layout::col_right_w, count_str.c_str(), cnt_open, cnt_hover);
 
 		// --- PREVIEW ---
 		auto preview = build_preview_string();
 		if (!preview.empty())
 		{
-			put_string(sX + layout::content_x1 + 4, sY + layout::preview_label_y, "Preview:", GameColors::UIWhite);
 			hb::shared::text::draw_text_aligned(GameFont::Default,
-				sX + layout::content_x1 + 4, sY + layout::preview_text_y, layout::content_w - 8, 15,
+				sX, sY + layout::preview_label_y, size_x, 15,
+				"Preview:",
+				hb::shared::text::TextStyle::from_color(GameColors::UIWhite),
+				hb::shared::text::Align::TopCenter);
+			hb::shared::text::draw_text_aligned(GameFont::Default,
+				sX, sY + layout::preview_text_y, size_x, 15,
 				preview.c_str(),
 				hb::shared::text::TextStyle::from_color(GameColors::UIPaleYellow),
-				hb::shared::text::Align::TopLeft);
+				hb::shared::text::Align::TopCenter);
 		}
 	}
 
 	// --- BUTTONS ---
-	int left_btn_x = sX + layout::content_x1 + 6;
-	int right_btn_x = sX + layout::content_x2 - layout::btn_w - 6;
+	int left_btn_x = sX + layout::col_left_x1;
+	int right_btn_x = sX + layout::col_right_x2 - layout::btn_w;
 
+	auto create_label = (m_item_count > 1) ? std::format("[Create x{}]", m_item_count) : std::string("[Create]");
 	bool create_hover = (mouse_x >= left_btn_x && mouse_x <= left_btn_x + layout::btn_w
 		&& mouse_y >= sY + layout::btn_y && mouse_y <= sY + layout::btn_y + 18);
 	hb::shared::text::draw_text_aligned(GameFont::Default,
 		left_btn_x, sY + layout::btn_y, layout::btn_w, 15,
-		"[Create]",
+		create_label.c_str(),
 		hb::shared::text::TextStyle::from_color(create_hover ? GameColors::UIWhite : GameColors::UIMagicBlue),
 		hb::shared::text::Align::TopCenter);
 
@@ -401,6 +481,116 @@ void DialogBox_ItemCreator::draw_configure_page(short sX, short sY, short size_x
 		draw_new_dialog_box(InterfaceNdButton, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 1);
 	else
 		draw_new_dialog_box(InterfaceNdButton, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 0);
+
+	// --- DROPDOWN OVERLAY (drawn last, on top of everything) ---
+	if (m_open_dropdown != dropdown_id::none)
+	{
+		// Mouse wheel scrolls the open dropdown list
+		if (m_game->m_dialog_box_manager.get_top_dialog_box_index() == DialogBoxId::ItemCreator && z != 0)
+		{
+			int total = get_open_dropdown_count();
+			if (total > dropdown_max_vis)
+			{
+				m_dropdown_scroll -= z / 60;
+				int max_scroll = total - dropdown_max_vis;
+				m_dropdown_scroll = std::clamp(m_dropdown_scroll, 0, max_scroll);
+			}
+		}
+
+		// Determine dropdown anchor position and build option list
+		int dd_x = 0, dd_y = 0, dd_w = 0;
+		int dd_count = 0;
+		int dd_selected = -1;
+
+		// Temporary option text buffer (tester-only, allocation is fine)
+		std::vector<std::string> options;
+
+		switch (m_open_dropdown)
+		{
+		case dropdown_id::prefix_type:
+			dd_x = lx; dd_y = sY + layout::row1_sel_y; dd_w = layout::col_left_w;
+			dd_selected = m_prefix_index;
+			for (auto& p : m_valid_prefixes) options.push_back(p.name);
+			break;
+		case dropdown_id::effect_type:
+			dd_x = rx; dd_y = sY + layout::row1_sel_y; dd_w = layout::col_right_w;
+			dd_selected = m_secondary_index;
+			for (auto& s : m_valid_secondaries) options.push_back(s.name);
+			break;
+		case dropdown_id::prefix_value:
+			if (m_prefix_index > 0 && m_prefix_index < static_cast<int>(m_valid_prefixes.size()))
+			{
+				dd_x = lx; dd_y = sY + layout::row2_sel_y; dd_w = layout::col_left_w;
+				dd_selected = m_prefix_value - 1;
+				int mult = m_valid_prefixes[m_prefix_index].multiplier;
+				for (int i = 1; i <= max_value; i++) options.push_back(std::to_string(i * mult));
+			}
+			break;
+		case dropdown_id::effect_value:
+			if (m_secondary_index > 0 && m_secondary_index < static_cast<int>(m_valid_secondaries.size()))
+			{
+				dd_x = rx; dd_y = sY + layout::row2_sel_y; dd_w = layout::col_right_w;
+				dd_selected = m_secondary_value - 1;
+				int mult = m_valid_secondaries[m_secondary_index].multiplier;
+				for (int i = 1; i <= max_value; i++) options.push_back(std::to_string(i * mult));
+			}
+			break;
+		case dropdown_id::upgrade:
+			dd_x = lx; dd_y = sY + layout::row3_sel_y; dd_w = layout::col_left_w;
+			dd_selected = m_enchant_value;
+			for (int i = 0; i <= 15; i++) options.push_back(std::format("+{}", i));
+			break;
+		case dropdown_id::count:
+			dd_x = rx; dd_y = sY + layout::row3_sel_y; dd_w = layout::col_right_w;
+			dd_selected = m_item_count - 1;
+			for (int i = 1; i <= 10; i++) options.push_back(std::to_string(i));
+			break;
+		default:
+			break;
+		}
+
+		dd_count = static_cast<int>(options.size());
+		if (dd_count > 0)
+		{
+			int list_y = dd_y + dropdown_h;
+			int vis = std::min(dd_count, static_cast<int>(dropdown_max_vis));
+			int list_h = vis * dropdown_h;
+
+			// Clamp scroll
+			int max_scroll = std::max(0, dd_count - dropdown_max_vis);
+			m_dropdown_scroll = std::clamp(m_dropdown_scroll, 0, max_scroll);
+
+			// List background + border
+			m_game->m_Renderer->draw_rect_filled(dd_x, list_y, dd_w, list_h, dd_style::list_bg);
+			m_game->m_Renderer->draw_rect_outline(dd_x, list_y, dd_w, list_h, dd_style::list_border);
+
+			// Draw each visible option
+			for (int i = 0; i < vis; i++)
+			{
+				int idx = i + m_dropdown_scroll;
+				if (idx >= dd_count) break;
+
+				int iy = list_y + i * dropdown_h;
+				bool item_hover = (mouse_x >= dd_x && mouse_x <= dd_x + dd_w
+					&& mouse_y >= iy && mouse_y < iy + dropdown_h);
+
+				if (item_hover)
+					m_game->m_Renderer->draw_rect_filled(dd_x + 1, iy, dd_w - 2, dropdown_h, dd_style::item_hover);
+
+				auto color = (idx == dd_selected) ? GameColors::UIPaleYellow
+					: (item_hover ? GameColors::UIWhite : GameColors::UINearWhite);
+				put_string(dd_x + 4, iy + 1, options[idx].c_str(), color);
+			}
+
+			// Scrollbar indicator if list is scrollable
+			if (dd_count > dropdown_max_vis)
+			{
+				int bar_h = std::max(8, list_h * vis / dd_count);
+				int bar_y = list_y + (list_h - bar_h) * m_dropdown_scroll / max_scroll;
+				m_game->m_Renderer->draw_rect_filled(dd_x + dd_w - 4, bar_y, 3, bar_h, dd_style::scrollbar);
+			}
+		}
+	}
 }
 
 void DialogBox_ItemCreator::on_draw(short mouse_x, short mouse_y, short z, char lb)
@@ -414,7 +604,7 @@ void DialogBox_ItemCreator::on_draw(short mouse_x, short mouse_y, short z, char 
 	if (m_page == 0)
 		draw_search_page(sX, sY, size_x, mouse_x, mouse_y, z);
 	else
-		draw_configure_page(sX, sY, size_x, mouse_x, mouse_y);
+		draw_configure_page(sX, sY, size_x, mouse_x, mouse_y, z);
 }
 
 // ---------------------------------------------------------------------------
@@ -438,6 +628,9 @@ bool DialogBox_ItemCreator::on_click_search(short sX, short sY, short size_x, sh
 			m_prefix_value = 1;
 			m_secondary_index = 0;
 			m_secondary_value = 1;
+			m_enchant_value = 0;
+			m_item_count = 1;
+			m_open_dropdown = dropdown_id::none;
 			m_page = 1;
 			play_sound_effect('E', 14, 5);
 			return true;
@@ -458,53 +651,147 @@ bool DialogBox_ItemCreator::on_click_search(short sX, short sY, short size_x, sh
 
 bool DialogBox_ItemCreator::on_click_configure(short sX, short sY, short size_x, short mouse_x, short mouse_y)
 {
-	if (m_category != item_category::none)
+	int lx = sX + layout::col_left_x1;
+	int rx = sX + layout::col_right_x1;
+
+	// --- STEP 1: Handle clicks when a dropdown list is open ---
+	if (m_open_dropdown != dropdown_id::none)
 	{
-		// Prefix name click
-		if (mouse_x >= sX + layout::content_x1 && mouse_x <= sX + layout::content_x2
-			&& mouse_y >= sY + layout::prefix_sel_y && mouse_y <= sY + layout::prefix_sel_y + 14)
+		// Determine the open dropdown's anchor and option count
+		int dd_x = 0, dd_y = 0, dd_w = 0, dd_count = 0;
+
+		switch (m_open_dropdown)
 		{
-			if (!m_valid_prefixes.empty())
-				m_prefix_index = (m_prefix_index + 1) % static_cast<int>(m_valid_prefixes.size());
-			m_prefix_value = 1;
+		case dropdown_id::prefix_type:
+			dd_x = lx; dd_y = sY + layout::row1_sel_y; dd_w = layout::col_left_w;
+			dd_count = static_cast<int>(m_valid_prefixes.size());
+			break;
+		case dropdown_id::effect_type:
+			dd_x = rx; dd_y = sY + layout::row1_sel_y; dd_w = layout::col_right_w;
+			dd_count = static_cast<int>(m_valid_secondaries.size());
+			break;
+		case dropdown_id::prefix_value:
+			dd_x = lx; dd_y = sY + layout::row2_sel_y; dd_w = layout::col_left_w;
+			dd_count = max_value;
+			break;
+		case dropdown_id::effect_value:
+			dd_x = rx; dd_y = sY + layout::row2_sel_y; dd_w = layout::col_right_w;
+			dd_count = max_value;
+			break;
+		case dropdown_id::upgrade:
+			dd_x = lx; dd_y = sY + layout::row3_sel_y; dd_w = layout::col_left_w;
+			dd_count = 16;
+			break;
+		case dropdown_id::count:
+			dd_x = rx; dd_y = sY + layout::row3_sel_y; dd_w = layout::col_right_w;
+			dd_count = 10;
+			break;
+		default: break;
+		}
+
+		int list_y = dd_y + dropdown_h;
+		int vis = std::min(dd_count, static_cast<int>(dropdown_max_vis));
+		int list_h = vis * dropdown_h;
+
+		// Click on the dropdown field itself → toggle closed
+		if (mouse_x >= dd_x && mouse_x <= dd_x + dd_w
+			&& mouse_y >= dd_y && mouse_y < dd_y + dropdown_h)
+		{
+			m_open_dropdown = dropdown_id::none;
 			play_sound_effect('E', 14, 5);
 			return true;
 		}
 
-		// Prefix value click
-		if (m_prefix_index > 0
-			&& mouse_x >= sX + layout::content_x1 && mouse_x <= sX + layout::content_x2
-			&& mouse_y >= sY + layout::prefix_val_y && mouse_y <= sY + layout::prefix_val_y + 14)
+		// Click inside the expanded list → select item
+		if (mouse_x >= dd_x && mouse_x <= dd_x + dd_w
+			&& mouse_y >= list_y && mouse_y < list_y + list_h)
 		{
-			m_prefix_value = (m_prefix_value % max_value) + 1;
+			int clicked_idx = (mouse_y - list_y) / dropdown_h + m_dropdown_scroll;
+			if (clicked_idx >= 0 && clicked_idx < dd_count)
+			{
+				switch (m_open_dropdown)
+				{
+				case dropdown_id::prefix_type:
+					m_prefix_index = clicked_idx;
+					m_prefix_value = 1;
+					break;
+				case dropdown_id::effect_type:
+					m_secondary_index = clicked_idx;
+					m_secondary_value = 1;
+					break;
+				case dropdown_id::prefix_value:
+					m_prefix_value = clicked_idx + 1;
+					break;
+				case dropdown_id::effect_value:
+					m_secondary_value = clicked_idx + 1;
+					break;
+				case dropdown_id::upgrade:
+					m_enchant_value = clicked_idx;
+					break;
+				case dropdown_id::count:
+					m_item_count = clicked_idx + 1;
+					break;
+				default: break;
+				}
+			}
+			m_open_dropdown = dropdown_id::none;
 			play_sound_effect('E', 14, 5);
 			return true;
 		}
 
-		// Secondary name click
-		if (mouse_x >= sX + layout::content_x1 && mouse_x <= sX + layout::content_x2
-			&& mouse_y >= sY + layout::effect_sel_y && mouse_y <= sY + layout::effect_sel_y + 14)
-		{
-			if (!m_valid_secondaries.empty())
-				m_secondary_index = (m_secondary_index + 1) % static_cast<int>(m_valid_secondaries.size());
-			m_secondary_value = 1;
-			play_sound_effect('E', 14, 5);
-			return true;
-		}
-
-		// Secondary value click
-		if (m_secondary_index > 0
-			&& mouse_x >= sX + layout::content_x1 && mouse_x <= sX + layout::content_x2
-			&& mouse_y >= sY + layout::effect_val_y && mouse_y <= sY + layout::effect_val_y + 14)
-		{
-			m_secondary_value = (m_secondary_value % max_value) + 1;
-			play_sound_effect('E', 14, 5);
-			return true;
-		}
+		// Click outside → close dropdown and fall through to normal handling
+		m_open_dropdown = dropdown_id::none;
 	}
 
-	// Create button
-	int left_btn_x = sX + layout::content_x1 + 6;
+	// --- STEP 2: Check clicks on dropdown fields (to open them) ---
+	auto try_open_dropdown = [&](dropdown_id id, int x, int y, int w) -> bool
+	{
+		if (mouse_x >= x && mouse_x <= x + w
+			&& mouse_y >= y && mouse_y < y + dropdown_h)
+		{
+			m_open_dropdown = id;
+			m_dropdown_scroll = 0;
+			play_sound_effect('E', 14, 5);
+			return true;
+		}
+		return false;
+	};
+
+	if (m_category == item_category::none)
+	{
+		// Count dropdown
+		if (try_open_dropdown(dropdown_id::count, rx, sY + layout::row3_sel_y, layout::col_right_w))
+			return true;
+	}
+	else
+	{
+		// Row 1: Prefix type / Effect type
+		if (try_open_dropdown(dropdown_id::prefix_type, lx, sY + layout::row1_sel_y, layout::col_left_w))
+			return true;
+		if (try_open_dropdown(dropdown_id::effect_type, rx, sY + layout::row1_sel_y, layout::col_right_w))
+			return true;
+
+		// Row 2: Prefix value / Effect value (only if type is selected)
+		if (m_prefix_index > 0)
+		{
+			if (try_open_dropdown(dropdown_id::prefix_value, lx, sY + layout::row2_sel_y, layout::col_left_w))
+				return true;
+		}
+		if (m_secondary_index > 0)
+		{
+			if (try_open_dropdown(dropdown_id::effect_value, rx, sY + layout::row2_sel_y, layout::col_right_w))
+				return true;
+		}
+
+		// Row 3: Upgrade / Count
+		if (try_open_dropdown(dropdown_id::upgrade, lx, sY + layout::row3_sel_y, layout::col_left_w))
+			return true;
+		if (try_open_dropdown(dropdown_id::count, rx, sY + layout::row3_sel_y, layout::col_right_w))
+			return true;
+	}
+
+	// --- STEP 3: Create / Back / Close buttons ---
+	int left_btn_x = sX + layout::col_left_x1;
 	if (mouse_x >= left_btn_x && mouse_x <= left_btn_x + layout::btn_w
 		&& mouse_y >= sY + layout::btn_y && mouse_y <= sY + layout::btn_y + 18)
 	{
@@ -525,20 +812,21 @@ bool DialogBox_ItemCreator::on_click_configure(short sX, short sY, short size_x,
 				static_cast<uint8_t>(pval),
 				static_cast<SecondaryEffectType>(secondary_type),
 				static_cast<uint8_t>(sval),
-				0);
+				static_cast<uint8_t>(m_enchant_value));
 			send_command(MsgId::CommandCommon, CommonType::TesterCreateItem,
-				0, item_id, static_cast<int>(attr), 0, 0);
+				0, item_id, static_cast<int>(attr), m_item_count, 0);
 		}
 		play_sound_effect('E', 14, 5);
 		return true;
 	}
 
 	// Back button
-	int right_btn_x = sX + layout::content_x2 - layout::btn_w - 6;
+	int right_btn_x = sX + layout::col_right_x2 - layout::btn_w;
 	if (mouse_x >= right_btn_x && mouse_x <= right_btn_x + layout::btn_w
 		&& mouse_y >= sY + layout::btn_y && mouse_y <= sY + layout::btn_y + 18)
 	{
 		m_page = 0;
+		m_open_dropdown = dropdown_id::none;
 		text_input_manager::get().start_input(sX + 70, sY + layout::search_bar_y + 5, 20, m_search_text);
 		m_last_sx = sX;
 		m_last_sy = sY;

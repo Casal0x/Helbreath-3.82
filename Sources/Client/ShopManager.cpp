@@ -115,6 +115,7 @@ void shop_manager::handle_response(char* data)
 		item->m_gender_limit = config->m_gender_limit;
 		item->m_special_effect = config->m_special_effect;
 		item->m_speed = config->m_speed;
+		item->m_display_id = config->m_display_id;
 
 		shopIndex++;
 	}

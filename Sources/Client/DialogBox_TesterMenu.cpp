@@ -57,9 +57,6 @@ void DialogBox_TesterMenu::draw_main_menu(short sX, short sY, short size_x, shor
 		hb::shared::text::TextStyle::with_integrated_shadow(GameColors::UIWarningRed),
 		hb::shared::text::Align::TopCenter);
 
-	// Subtitle
-	put_aligned_string(sX, sX + size_x, sY + 35, "Relog to refresh stats", GameColors::UIBlack);
-
 	// Action rows
 	int hovered = get_hovered_row(sX, sY, mouse_x, mouse_y, action_count);
 	for (int i = 0; i < action_count; i++)
