@@ -44,6 +44,10 @@ void Overlay_VersionNotMatch::on_initialize()
 
     m_controls.set_focus_order({BTN_OK});
     m_controls.set_focus(BTN_OK);
+
+    cc::input_state init_input;
+    hb::client::fill_input_state(init_input);
+    m_controls.discard_pending_input(init_input);
 }
 
 void Overlay_VersionNotMatch::on_uninitialize()

@@ -113,6 +113,10 @@ void Overlay_ChangePassword::on_initialize()
 
     m_controls.set_focus_order({TXT_OLD_PW, TXT_NEW_PW, TXT_CONFIRM_PW, BTN_OK, BTN_CANCEL});
     m_controls.set_focus(TXT_OLD_PW);
+
+    cc::input_state init_input;
+    hb::client::fill_input_state(init_input);
+    m_controls.discard_pending_input(init_input);
 }
 
 void Overlay_ChangePassword::on_uninitialize()
