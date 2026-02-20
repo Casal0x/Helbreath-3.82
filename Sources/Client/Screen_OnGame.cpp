@@ -15,6 +15,7 @@
 #include "WeatherManager.h"
 #include "ChatManager.h"
 #include "ItemNameFormatter.h"
+#include "ItemTooltip.h"
 #include "ConfigManager.h"
 #include "IInput.h"
 #include "GlobalDef.h"
@@ -641,46 +642,86 @@ void Screen_OnGame::render_item_tooltip()
     }
     else sprite->draw(m_sMsX - CursorTarget::get_drag_dist_x(), m_sMsY - CursorTarget::get_drag_dist_y(), frame);
 
-    int loc;
     auto itemInfo = item_name_formatter::get().format(item);
-    loc = 0;
-    if (itemInfo.name.size() != 0) {
-        if (itemInfo.is_special) hb::shared::text::draw_text(GameFont::Default, m_sMsX, m_sMsY + 25, itemInfo.name.c_str(), hb::shared::text::TextStyle::with_shadow(GameColors::UIItemName_Special));
-        else hb::shared::text::draw_text(GameFont::Default, m_sMsX, m_sMsY + 25, itemInfo.name.c_str(), hb::shared::text::TextStyle::with_shadow(GameColors::UIWhite));
-        loc += 15;
-    }
-    if (itemInfo.effect.size() != 0) { hb::shared::text::draw_text(GameFont::Default, m_sMsX, m_sMsY + 25 + loc, itemInfo.effect.c_str(), hb::shared::text::TextStyle::with_shadow(GameColors::UIDescription)); loc += 15; }
-    if (itemInfo.extra.size() != 0) { hb::shared::text::draw_text(GameFont::Default, m_sMsX, m_sMsY + 25 + loc, itemInfo.extra.c_str(), hb::shared::text::TextStyle::with_shadow(GameColors::UIDescription)); loc += 15; }
-    if ((cfg->m_level_limit != 0) && item->is_custom_made()) {
-        G_cTxt = std::format("{}: {}", DRAW_DIALOGBOX_SHOP24, cfg->m_level_limit);
-        hb::shared::text::draw_text(GameFont::Default, m_sMsX, m_sMsY + 25 + loc, G_cTxt.c_str(), hb::shared::text::TextStyle::with_shadow(GameColors::UIDescription)); loc += 15;
-    }
-    if (is_equippable) {
-        // Weight below 1100 is not displayed as a strength requirement
-        if (cfg->m_weight >= 1100)
-        {
-            // Display weight, whatever the weight calculation is, divide by 100, and round up
-            int _wWeight = static_cast<int>(std::ceil(cfg->m_weight / 100.0f));
-            G_cTxt = std::format(DRAW_DIALOGBOX_SHOP15, _wWeight);
-            hb::shared::text::draw_text(GameFont::Default, m_sMsX, m_sMsY + 25 + loc, G_cTxt.c_str(), hb::shared::text::TextStyle::with_shadow(GameColors::UIDescription)); loc += 15;
-        }
 
-        // Display durability
+    item_tooltip tooltip;
+
+    // Item name
+    auto name_color = itemInfo.is_special ? GameColors::UIItemName_Special : GameColors::UIWhite;
+    tooltip.add_line(itemInfo.name, name_color);
+
+    // Attribute effects (label in gray, value in green)
+    for (const auto& eff : itemInfo.effects)
+    {
+        if (eff.label.empty() && eff.value.empty()) continue;
+        if (eff.value.empty())
+            tooltip.add_line(eff.label, GameColors::InfoGrayLight);
+        else
+            tooltip.add_dual_line(eff.label, GameColors::InfoGrayLight, eff.value, GameColors::UIItemName_Special);
+    }
+
+    // Weapon damage
+    if (cfg->get_equip_pos() == EquipPos::RightHand || cfg->get_equip_pos() == EquipPos::TwoHand)
+    {
+        auto range = cfg->get_damage_range();
+        G_cTxt = std::format("Damage: {}-{}", range.min, range.max);
+        tooltip.add_line(G_cTxt, GameColors::InfoGrayLight);
+    }
+    // Shield/armor defense
+    else if (cfg->is_armor() || cfg->get_equip_pos() == EquipPos::LeftHand)
+    {
+        G_cTxt = std::format("Defence: +{}%", cfg->m_item_effect_value1);
+        tooltip.add_line(G_cTxt, GameColors::InfoGrayLight);
+    }
+
+    // Endurance
+    if (is_equippable)
+    {
         G_cTxt = std::format(UPDATE_SCREEN_ONGAME10, item->m_cur_life_span, cfg->m_max_life_span);
-        hb::shared::text::draw_text(GameFont::Default, m_sMsX, m_sMsY + 25 + loc, G_cTxt.c_str(), hb::shared::text::TextStyle::with_shadow(GameColors::UIDescription)); loc += 15;
+        tooltip.add_line(G_cTxt, GameColors::InfoGrayLight);
     }
 
-    if (cfg->is_stackable()) {
+    // Required Str (use cfg base weight, apply light attribute from item instance)
+    int light_pct = item->get_light_percent();
+    int eff_weight = (light_pct > 0) ? cfg->m_weight * (100 - light_pct) / 100 : cfg->m_weight;
+    if (is_equippable && eff_weight >= 1100)
+    {
+        int req_str = static_cast<int>(std::ceil(eff_weight / 100.0f));
+        if (cfg->get_equip_pos() == EquipPos::RightHand || cfg->get_equip_pos() == EquipPos::TwoHand)
+        {
+            int full_speed_str = cfg->m_speed * 13;
+            G_cTxt = std::format("Required Str: {} ({} full speed)", req_str, full_speed_str);
+        }
+        else
+        {
+            G_cTxt = std::format("Required Str: {}", req_str);
+        }
+        tooltip.add_line(G_cTxt, GameColors::InfoGrayLight);
+    }
+
+    // Level requirement
+    if (cfg->m_level_limit != 0)
+    {
+        G_cTxt = std::format("{}: {}", DRAW_DIALOGBOX_SHOP24, cfg->m_level_limit);
+        tooltip.add_line(G_cTxt, GameColors::InfoGrayLight);
+    }
+
+    // Stack count
+    if (cfg->is_stackable())
+    {
         auto count = std::count_if(m_game->m_item_list.begin(), m_game->m_item_list.end(),
             [item](const std::unique_ptr<CItem>& otherItem) {
                 return otherItem != nullptr && otherItem->m_id_num == item->m_id_num;
             });
 
-        if (count > 1) {
+        if (count > 1)
+        {
             G_cTxt = std::format(DEF_MSG_TOTAL_NUMBER, static_cast<int>(count));
-            hb::shared::text::draw_text(GameFont::Default, m_sMsX, m_sMsY + 40, G_cTxt.c_str(), hb::shared::text::TextStyle::with_shadow(GameColors::UIDescription));
+            tooltip.add_line(G_cTxt, GameColors::UIDescription);
         }
     }
+
+    tooltip.draw(m_sMsX, m_sMsY + 25, m_game->m_Renderer);
 }
 
 //=============================================================================

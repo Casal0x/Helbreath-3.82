@@ -140,12 +140,14 @@ void DialogBox_Exchange::draw_item_info(short sX, short sY, short size_x, short 
 		}
 
 		loc = 0;
-		if (itemInfo.effect.size() != 0) {
-			put_aligned_string(sX + 16, sX + 155, sY + 235 + loc, itemInfo.effect.c_str(), GameColors::UIBlack);
+		auto effect = itemInfo.effect_text();
+		auto extra = itemInfo.extra_text();
+		if (!effect.empty()) {
+			put_aligned_string(sX + 16, sX + 155, sY + 235 + loc, effect.c_str(), GameColors::UIBlack);
 			loc += 15;
 		}
-		if (itemInfo.extra.size() != 0) {
-			put_aligned_string(sX + 16, sX + 155, sY + 235 + loc, itemInfo.extra.c_str(), GameColors::UIBlack);
+		if (!extra.empty()) {
+			put_aligned_string(sX + 16, sX + 155, sY + 235 + loc, extra.c_str(), GameColors::UIBlack);
 			loc += 15;
 		}
 
@@ -164,7 +166,7 @@ void DialogBox_Exchange::draw_item_info(short sX, short sY, short size_x, short 
 			// Crafting Magins completion fix
 			CItem* magin_cfg = m_game->get_item_config(m_game->m_dialog_box_exchange_info[item_index].item_id);
 			if (magin_cfg && magin_cfg->m_category == 46 && magin_cfg->get_item_type() == ItemType::Equip) {
-				// Magic gems (Diamond/Emerald/Ruby/Sapphire Ware) — show completion %
+				// Magic gems (Diamond/Emerald/Ruby/Sapphire Ware) ï¿½ show completion %
 				txt = std::format(GET_ITEM_NAME2, (m_game->m_dialog_box_exchange_info[item_index].v7 - 100));
 			}
 			else if (magin_cfg && magin_cfg->get_item_type() == ItemType::Material) {

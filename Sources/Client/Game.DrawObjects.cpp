@@ -5,6 +5,7 @@
 #include "Game.h"
 #include "WeatherManager.h"
 #include "ItemNameFormatter.h"
+#include "ItemTooltip.h"
 #include "ItemSpriteMetadata.h"
 #include "RenderHelpers.h"
 #include "EntityRenderState.h"
@@ -950,27 +951,19 @@ void CGame::draw_objects(short pivot_x, short pivot_y, short div_x, short div_y,
 	}
 
 	if (item_selected_id != -1) {
-		int  loc;
-		auto itemInfo = item_name_formatter::get().format(m_item_config_list[item_selected_id].get());
+		auto itemInfo = item_name_formatter::get().format(static_cast<short>(item_selected_id), item_selected_attr);
 
-		loc = 0;
-		if (itemInfo.name.size() != 0)
+		item_tooltip tooltip;
+		auto name_color = itemInfo.is_special ? GameColors::UIItemName_Special : GameColors::UIWhite;
+		tooltip.add_line(itemInfo.name, name_color);
+		for (const auto& eff : itemInfo.effects)
 		{
-			if (itemInfo.is_special)
-				hb::shared::text::draw_text(GameFont::Default, mouse_x, mouse_y + 25, itemInfo.name.c_str(), hb::shared::text::TextStyle::with_shadow(GameColors::UIItemName_Special));
+			if (eff.label.empty() && eff.value.empty()) continue;
+			if (eff.value.empty())
+				tooltip.add_line(eff.label, GameColors::InfoGrayLight);
 			else
-				hb::shared::text::draw_text(GameFont::Default, mouse_x, mouse_y + 25, itemInfo.name.c_str(), hb::shared::text::TextStyle::with_shadow(GameColors::UIWhite));
-			loc += 15;
+				tooltip.add_dual_line(eff.label, GameColors::InfoGrayLight, eff.value, GameColors::UIItemName_Special);
 		}
-		if (itemInfo.effect.size() != 0)
-		{
-			hb::shared::text::draw_text(GameFont::Default, mouse_x, mouse_y + 25 + loc, itemInfo.effect.c_str(), hb::shared::text::TextStyle::with_shadow(GameColors::UIDisabled));
-			loc += 15;
-		}
-		if (itemInfo.extra.size() != 0)
-		{
-			hb::shared::text::draw_text(GameFont::Default, mouse_x, mouse_y + 25 + loc, itemInfo.extra.c_str(), hb::shared::text::TextStyle::with_shadow(GameColors::UIDisabled));
-			loc += 15;
-		}
+		tooltip.draw(mouse_x, mouse_y + 25, m_Renderer);
 	}
 }

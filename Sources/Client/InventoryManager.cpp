@@ -62,11 +62,17 @@ int inventory_manager::calc_total_weight()
 			if (cfg && ((cfg->get_item_type() == ItemType::Consume)
 				|| (cfg->get_item_type() == ItemType::Arrow)))
 			{
-				temp = static_cast<int64_t>(cfg->m_weight) * static_cast<int64_t>(m_game->m_item_list[i]->m_count);
+				int lp = m_game->m_item_list[i]->get_light_percent();
+				int item_w = (lp > 0) ? cfg->m_weight * (100 - lp) / 100 : cfg->m_weight;
+				temp = static_cast<int64_t>(item_w) * static_cast<int64_t>(m_game->m_item_list[i]->m_count);
 				if (m_game->m_item_list[i]->m_id_num == hb::shared::item::ItemId::Gold) temp = temp / 20;
 				weight += temp;
 			}
-			else if (cfg) weight += cfg->m_weight;
+			else if (cfg)
+			{
+				int lp = m_game->m_item_list[i]->get_light_percent();
+				weight += (lp > 0) ? cfg->m_weight * (100 - lp) / 100 : cfg->m_weight;
+			}
 			cnt++;
 		}
 
@@ -103,8 +109,10 @@ void inventory_manager::erase_item(int item_id)
 		{
 			std::string G_cTxt;
 			auto itemInfo = item_name_formatter::get().format(m_game->m_item_list[item_id].get());
-			if (i < 3) G_cTxt = std::format(ERASE_ITEM, itemInfo.name.c_str(), itemInfo.effect.c_str(), itemInfo.extra.c_str(), i + 1);
-			else G_cTxt = std::format(ERASE_ITEM, itemInfo.name.c_str(), itemInfo.effect.c_str(), itemInfo.extra.c_str(), i + 7);
+			auto effect = itemInfo.effect_text();
+			auto extra = itemInfo.extra_text();
+			if (i < 3) G_cTxt = std::format(ERASE_ITEM, itemInfo.name.c_str(), effect.c_str(), extra.c_str(), i + 1);
+			else G_cTxt = std::format(ERASE_ITEM, itemInfo.name.c_str(), effect.c_str(), extra.c_str(), i + 7);
 			m_game->add_event_list(G_cTxt.c_str(), 10);
 			m_game->m_short_cut[i] = -1;
 		}
@@ -238,7 +246,9 @@ void inventory_manager::equip_item(int item_id)
 		m_game->add_event_list(BITEMDROP_CHARACTER1, 10);
 		return;
 	}
-	if (cfg->m_weight / 100 > m_game->m_player->m_str + m_game->m_player->m_angelic_str)
+	int light_pct = m_game->m_item_list[item_id]->get_light_percent();
+	int equip_weight = (light_pct > 0) ? cfg->m_weight * (100 - light_pct) / 100 : cfg->m_weight;
+	if (equip_weight / 100 > m_game->m_player->m_str + m_game->m_player->m_angelic_str)
 	{
 		m_game->add_event_list(BITEMDROP_CHARACTER2, 10);
 		return;

@@ -4848,8 +4848,7 @@ int ItemManager::get_item_weight(CItem* item, int count)
 {
 	int weight;
 
-	// . Gold   20 1
-	weight = (item->m_weight);
+	weight = item->get_effective_weight();
 	if (count < 0) count = 1;
 	weight = weight * count;
 	if (item->m_id_num == 90) weight = weight / 20;
