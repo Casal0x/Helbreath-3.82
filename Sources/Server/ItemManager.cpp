@@ -3921,6 +3921,7 @@ void ItemManager::get_hero_mantle_handler(int client_h, int item_id, const char*
 				}
 
 				m_game->send_notify_msg(0, client_h, Notify::EnemyKills, m_game->m_client_list[client_h]->m_enemy_kill_count, 0, 0, 0);
+				m_game->send_notify_msg(0, client_h, Notify::Contribution, m_game->m_client_list[client_h]->m_contribution, 0, 0, 0);
 			}
 			else
 			{
