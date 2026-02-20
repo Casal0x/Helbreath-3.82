@@ -2911,7 +2911,7 @@ void ItemManager::req_sell_item_confirm_handler(int client_h, char item_id, int 
 void ItemManager::req_repair_item_handler(int client_h, char item_id, char repair_whom, const char* string)
 {
 	char item_category;
-	short remain_life, price;
+	int32_t remain_life, price;
 	double d1, d2, d3;
 
 	if (m_game->m_client_list[client_h] == 0) return;
@@ -2978,7 +2978,7 @@ void ItemManager::req_repair_item_handler(int client_h, char item_id, char repai
 
 void ItemManager::req_repair_item_cofirm_handler(int client_h, char item_id, const char* string)
 {
-	short    remain_life, price;
+	int32_t  remain_life, price;
 	char item_category;
 	double   d1, d2, d3;
 	uint64_t gold_count;
@@ -6494,7 +6494,7 @@ void ItemManager::request_repair_all_items_handler(int client_h)
 					d3 = (double)((d1 / d2) * 0.5f);
 					d2 = (double)(m_game->m_client_list[client_h]->m_item_list[i]->m_price);
 					d3 = (d3 * d2);
-					price = ((m_game->m_client_list[client_h]->m_item_list[i]->m_price / 2) - (short)(d3));
+					price = ((m_game->m_client_list[client_h]->m_item_list[i]->m_price / 2) - static_cast<int32_t>(d3));
 				}
 				m_game->m_client_list[client_h]->m_repair_all[m_game->m_client_list[client_h]->total_item_repair].index = i;
 				m_game->m_client_list[client_h]->m_repair_all[m_game->m_client_list[client_h]->total_item_repair].price = price;

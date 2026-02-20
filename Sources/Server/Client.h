@@ -147,7 +147,7 @@ public:
 	struct
 	{
 		char index;
-		short price;
+		int32_t price;
 	} m_repair_all[hb::shared::limits::MaxItems];
 
 	char m_attack_dice_throw_sm;
