@@ -678,17 +678,26 @@ void Screen_OnGame::render_item_tooltip()
         tooltip.add_line(G_cTxt, GameColors::InfoGrayLight);
     }
 
-    // Required Str (weight >= 1100)
-    if (is_equippable && cfg->m_weight >= 1100)
+    // Required Str (use cfg base weight, apply light attribute from item instance)
+    int light_pct = item->get_light_percent();
+    int eff_weight = (light_pct > 0) ? cfg->m_weight * (100 - light_pct) / 100 : cfg->m_weight;
+    if (is_equippable && eff_weight >= 1100)
     {
-        int req_str = static_cast<int>(std::ceil(cfg->m_weight / 100.0f));
-        int full_speed_str = cfg->m_speed * 13;
-        G_cTxt = std::format("Required Str: {} ({} full speed)", req_str, full_speed_str);
+        int req_str = static_cast<int>(std::ceil(eff_weight / 100.0f));
+        if (cfg->get_equip_pos() == EquipPos::RightHand || cfg->get_equip_pos() == EquipPos::TwoHand)
+        {
+            int full_speed_str = cfg->m_speed * 13;
+            G_cTxt = std::format("Required Str: {} ({} full speed)", req_str, full_speed_str);
+        }
+        else
+        {
+            G_cTxt = std::format("Required Str: {}", req_str);
+        }
         tooltip.add_line(G_cTxt, GameColors::InfoGrayLight);
     }
 
-    // Level requirement (custom-made items)
-    if (cfg->m_level_limit != 0 && item->is_custom_made())
+    // Level requirement
+    if (cfg->m_level_limit != 0)
     {
         G_cTxt = std::format("{}: {}", DRAW_DIALOGBOX_SHOP24, cfg->m_level_limit);
         tooltip.add_line(G_cTxt, GameColors::InfoGrayLight);

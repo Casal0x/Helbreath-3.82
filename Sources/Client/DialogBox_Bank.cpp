@@ -106,20 +106,21 @@ void DialogBox_Bank::draw_item_details(short sX, short sY, short size_x, int ite
 	}
 
 	// Level limit
-	if (cfg->m_level_limit != 0 &&
-		item->m_attribute & 0x00000001) {
+	if (cfg->m_level_limit != 0) {
 		loc += 15;
 		auto buf = std::format("{}: {}", DRAW_DIALOGBOX_SHOP24, cfg->m_level_limit);
 		put_aligned_string(sX + 70, sX + size_x, sY + loc, buf.c_str(), GameColors::UIDisabled);
 	}
 
-	// Weight for equipment
+	// Weight for equipment (use cfg base weight, apply light attribute from item)
+	int bank_light = item->get_light_percent();
+	int eff_weight = (bank_light > 0) ? cfg->m_weight * (100 - bank_light) / 100 : cfg->m_weight;
 	if ((cfg->get_equip_pos() != EquipPos::None) &&
-		(cfg->m_weight >= 1100)) {
+		(eff_weight >= 1100)) {
 		loc += 15;
 		int _wWeight = 0;
-		if (cfg->m_weight % 100) _wWeight = 1;
-		auto strReq = std::format(DRAW_DIALOGBOX_SHOP15, cfg->m_weight / 100 + _wWeight);
+		if (eff_weight % 100) _wWeight = 1;
+		auto strReq = std::format(DRAW_DIALOGBOX_SHOP15, eff_weight / 100 + _wWeight);
 		put_aligned_string(sX + 70, sX + size_x, sY + loc, strReq.c_str(), GameColors::UIDisabled);
 	}
 

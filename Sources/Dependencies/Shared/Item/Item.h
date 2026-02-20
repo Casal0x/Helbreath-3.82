@@ -286,6 +286,28 @@ public:
         return parse_dice(m_item_effect_value1, m_item_effect_value2, m_item_effect_value3);
     }
 
+    // Light attribute percentage from special flag (bits 20-23 type, 16-19 value)
+    // Type 6 = light, percentage = value * 4
+    int get_light_percent() const
+    {
+        uint8_t special_type = static_cast<uint8_t>((m_attribute & 0x00F00000) >> 20);
+        if (special_type == 6)
+        {
+            uint8_t special_value = static_cast<uint8_t>((m_attribute & 0x000F0000) >> 16);
+            return special_value * 4;
+        }
+        return 0;
+    }
+
+    // Weight adjusted for light attribute
+    int get_effective_weight() const
+    {
+        int light = get_light_percent();
+        if (light > 0)
+            return static_cast<int>(m_weight) * (100 - light) / 100;
+        return m_weight;
+    }
+
     // Check if item is a weapon
     bool is_weapon() const
     {
