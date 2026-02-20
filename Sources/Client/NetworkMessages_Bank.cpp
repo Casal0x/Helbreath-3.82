@@ -1,4 +1,4 @@
-﻿#include "Game.h"
+#include "Game.h"
 #include "NetworkMessageManager.h"
 #include "Packet/SharedPackets.h"
 #include "lan_eng.h"
@@ -48,7 +48,8 @@ namespace NetworkMessageHandlers {
 		str2[0] = 0;
 		str3[0] = 0;
 
-		if (game->m_bank_list[index] == 0) {
+		if (game->m_bank_list[index] == 0)
+		{
 			game->m_bank_list[index] = std::make_unique<CItem>();
 			game->m_bank_list[index]->m_id_num = static_cast<short>(pkt->item_id);
 			game->m_bank_list[index]->m_count = count;
@@ -64,6 +65,16 @@ namespace NetworkMessageHandlers {
 				game->m_dialog_box_manager.Info(DialogBoxId::Bank).m_view = hb::shared::limits::MaxBankItems - 12;
 			game->add_event_list(txt.c_str(), 10);
 		}
+		else if (pkt->is_new == 0)
+		{
+			// Update existing bank item in-place (e.g., hero item sex swap)
+			game->m_bank_list[index]->m_id_num = static_cast<short>(pkt->item_id);
+			game->m_bank_list[index]->m_count = count;
+			game->m_bank_list[index]->m_cur_life_span = cur_life_span;
+			game->m_bank_list[index]->m_item_color = item_color;
+			game->m_bank_list[index]->m_attribute = attribute;
+			game->m_bank_list[index]->m_item_special_effect_value2 = item_spec_effect_value2;
+		}
 	}
 
 	void HandleCannotItemToBank(CGame* game, char* data)
@@ -71,4 +82,3 @@ namespace NetworkMessageHandlers {
 		game->add_event_list(NOTIFY_MSG_HANDLER63, 10);
 	}
 } // namespace NetworkMessageHandlers
-

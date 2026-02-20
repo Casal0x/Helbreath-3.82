@@ -2242,38 +2242,106 @@ void ItemManager::use_item_handler(int client_h, short item_index, short dX, sho
 				break;
 
 			case 4:
-				temp_short = m_game->m_client_list[client_h]->m_item_equipment_status[to_int(EquipPos::Head)];
-				if (temp_short == -1) {
-					// temp_short 0  , ,     .    .
-					if (m_game->m_client_list[client_h]->m_sex == 1)
-						m_game->m_client_list[client_h]->m_sex = 2;
-					else m_game->m_client_list[client_h]->m_sex = 1;
+			{
+				auto* client = m_game->m_client_list[client_h];
 
-					// Appearance , .
-					if (m_game->m_client_list[client_h]->m_sex == 1) {
-						tmp_type = 1;
-					}
-					else if (m_game->m_client_list[client_h]->m_sex == 2) {
-						tmp_type = 4;
-					}
+				// Toggle sex
+				if (client->m_sex == 1)
+					client->m_sex = 2;
+				else
+					client->m_sex = 1;
 
-					switch (m_game->m_client_list[client_h]->m_skin) {
-					case 1:
-						break;
-					case 2:
-						tmp_type += 1;
-						break;
-					case 3:
-						tmp_type += 2;
-						break;
-					}
-
-					m_game->m_client_list[client_h]->m_type = tmp_type;
-					m_game->m_client_list[client_h]->m_appearance.hair_style = m_game->m_client_list[client_h]->m_hair_style;
-					m_game->m_client_list[client_h]->m_appearance.hair_color = m_game->m_client_list[client_h]->m_hair_color;
-					m_game->m_client_list[client_h]->m_appearance.underwear_type = m_game->m_client_list[client_h]->m_underwear;
+				// Update character type based on new sex + skin
+				tmp_type = (client->m_sex == 1) ? 1 : 4;
+				switch (client->m_skin)
+				{
+				case 2: tmp_type += 1; break;
+				case 3: tmp_type += 2; break;
 				}
+				client->m_type = tmp_type;
+				client->m_appearance.hair_style = client->m_hair_style;
+				client->m_appearance.hair_color = client->m_hair_color;
+				client->m_appearance.underwear_type = client->m_underwear;
+
+				// Swap all gendered hero items (403-426) to the correct sex variant.
+				// Covers inventory (including equipped) and warehouse.
+				bool is_female = (client->m_sex == 2);
+				constexpr int gendered_first = ItemId::AresdenHeroHelmM;
+				constexpr int gendered_last = ItemId::ElvineHeroLeggingsW;
+				constexpr int group_size = 4;
+
+				auto swap_hero_item = [&](CItem* item) -> bool
+				{
+					if (item == nullptr) return false;
+					if (item->m_id_num < gendered_first || item->m_id_num > gendered_last) return false;
+
+					int group_base = gendered_first
+						+ ((item->m_id_num - gendered_first) / group_size) * group_size;
+					int current_offset = item->m_id_num - group_base;
+					int side_offset = (current_offset >= 2) ? 2 : 0;
+					int sex_offset = is_female ? 1 : 0;
+					int new_id = group_base + side_offset + sex_offset;
+
+					if (new_id == item->m_id_num) return false;
+
+					CItem* config = m_game->m_item_config_list[new_id];
+					if (config == nullptr) return false;
+
+					std::memcpy(item->m_name, config->m_name, sizeof(item->m_name));
+					item->m_id_num = config->m_id_num;
+					item->m_gender_limit = config->m_gender_limit;
+					item->m_appearance_value = config->m_appearance_value;
+					return true;
+				};
+
+				// Swap inventory items and notify client in-place (preserves positions)
+				for (int i = 0; i < hb::shared::limits::MaxItems; i++)
+				{
+					if (swap_hero_item(client->m_item_list[i]))
+					{
+						CItem* item = client->m_item_list[i];
+						m_game->send_notify_msg(
+							0, client_h, Notify::GizoneItemChange,
+							i, item->m_item_type, item->m_cur_life_span, item->m_name,
+							0, 0,
+							item->m_item_color, item->m_item_special_effect_value2,
+							item->m_attribute, item->m_id_num);
+					}
+				}
+
+				// Swap bank items and notify client per-item
+				for (int i = 0; i < hb::shared::limits::MaxBankItems; i++)
+				{
+					if (swap_hero_item(client->m_item_in_bank_list[i]))
+					{
+						CItem* item = client->m_item_in_bank_list[i];
+						hb::net::PacketNotifyItemToBank pkt{};
+						pkt.header.msg_id = MsgId::Notify;
+						pkt.header.msg_type = Notify::ItemToBank;
+						pkt.bank_index = static_cast<uint8_t>(i);
+						pkt.is_new = 0;
+						std::memcpy(pkt.name, item->m_name, sizeof(pkt.name));
+						pkt.count = item->m_count;
+						pkt.item_type = item->m_item_type;
+						pkt.equip_pos = item->m_equip_pos;
+						pkt.is_equipped = 0;
+						pkt.level_limit = item->m_level_limit;
+						pkt.gender_limit = item->m_gender_limit;
+						pkt.cur_lifespan = item->m_cur_life_span;
+						pkt.weight = item->m_weight;
+						pkt.item_color = item->m_item_color;
+						pkt.item_effect_value2 = item->m_item_effect_value2;
+						pkt.attribute = item->m_attribute;
+						pkt.spec_effect_value2 = static_cast<uint8_t>(item->m_item_special_effect_value2);
+						pkt.item_id = item->m_id_num;
+						pkt.max_lifespan = item->m_max_life_span;
+						client->m_socket->send_msg(
+							reinterpret_cast<char*>(&pkt), sizeof(pkt));
+					}
+				}
+
 				break;
+			}
 			}
 
 			m_game->send_event_to_near_client_type_a(client_h, hb::shared::owner_class::Player, MsgId::EventMotion, Type::NullAction, 0, 0, 0);
