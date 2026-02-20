@@ -660,10 +660,8 @@ void Screen_OnGame::render_item_tooltip()
     // Weapon damage
     if (cfg->get_equip_pos() == EquipPos::RightHand || cfg->get_equip_pos() == EquipPos::TwoHand)
     {
-        if (cfg->m_item_effect_value3 != 0)
-            G_cTxt = std::format("Damage: {}d{}+{}", cfg->m_item_effect_value1, cfg->m_item_effect_value2, cfg->m_item_effect_value3);
-        else
-            G_cTxt = std::format("Damage: {}d{}", cfg->m_item_effect_value1, cfg->m_item_effect_value2);
+        auto range = cfg->get_damage_range();
+        G_cTxt = std::format("Damage: {}-{}", range.min, range.max);
         tooltip.add_line(G_cTxt, GameColors::UIWhite);
     }
     // Shield/armor defense

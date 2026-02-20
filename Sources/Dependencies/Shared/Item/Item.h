@@ -15,6 +15,17 @@
 #include <cstring>
 #include <cstdint>
 
+struct dice_range
+{
+	int min;
+	int max;
+};
+
+constexpr dice_range parse_dice(int num_rolls, int num_sides, int bonus = 0)
+{
+	return { num_rolls + bonus, num_rolls * num_sides + bonus };
+}
+
 class CItem
 {
 public:
@@ -267,6 +278,12 @@ public:
     bool is_stackable() const
     {
         return hb::shared::item::is_stackable_type(get_item_type());
+    }
+
+    // Base damage range from dice values (throw D range + bonus)
+    dice_range get_damage_range() const
+    {
+        return parse_dice(m_item_effect_value1, m_item_effect_value2, m_item_effect_value3);
     }
 
     // Check if item is a weapon

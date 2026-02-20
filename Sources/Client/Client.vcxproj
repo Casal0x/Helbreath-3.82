@@ -333,6 +333,7 @@
     <ClInclude Include="ChatMsg.h" />
     <ClInclude Include="ChatManager.h" />
     <ClInclude Include="ItemNameFormatter.h" />
+    <ClInclude Include="ItemTooltip.h" />
     <ClInclude Include="ItemSpriteMetadata.h" />
     <ClInclude Include="ClientMessages.h" />
     <ClInclude Include="resource.h" />
@@ -592,6 +593,7 @@
     <ClCompile Include="EventListManager.cpp" />
     <ClCompile Include="ChatManager.cpp" />
     <ClCompile Include="ItemNameFormatter.cpp" />
+    <ClCompile Include="ItemTooltip.cpp" />
     <ClCompile Include="ItemSpriteMetadata.cpp" />
     <ClCompile Include="miniaudio_impl.cpp" />
     <ClCompile Include="WeatherManager.cpp" />
