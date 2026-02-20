@@ -3718,7 +3718,6 @@ bool ItemManager::deplete_dest_type_item_use_effect(int client_h, int dX, int dY
 void ItemManager::get_hero_mantle_handler(int client_h, int item_id, const char* string)
 {
 	int   num, ret, erase_req;
-	char item_name[hb::shared::limits::ItemNameLen];
 	CItem* item;
 
 	if (m_game->m_client_list[client_h] == 0) return;
@@ -3811,14 +3810,34 @@ void ItemManager::get_hero_mantle_handler(int client_h, int item_id, const char*
 		break;
 	}
 
-	std::memset(item_name, 0, sizeof(item_name));
-	memcpy(item_name, m_game->m_item_config_list[item_id]->m_name, hb::shared::limits::ItemNameLen - 1);
-	// ReqPurchaseItemHandler
+	// Server-authoritative correction for all hero items.
+	// Don't trust the client's item_id — derive the correct variant
+	// from the server's own m_side and m_sex.
+	bool is_elvine = (m_game->m_client_list[client_h]->m_side == 2);
+	bool is_female = (m_game->m_client_list[client_h]->m_sex == 2);
+
+	// Cape (400-401): [Aresden, Elvine] — no sex variant
+	if (item_id == ItemId::AresdenHeroCape || item_id == ItemId::ElvineHeroCape)
+	{
+		item_id = is_elvine ? ItemId::ElvineHeroCape : ItemId::AresdenHeroCape;
+	}
+	// Gendered items (403-426): groups of 4 [Aresden M, Aresden W, Elvine M, Elvine W]
+	else if (item_id >= ItemId::AresdenHeroHelmM && item_id <= ItemId::ElvineHeroLeggingsW)
+	{
+		constexpr int gendered_first = ItemId::AresdenHeroHelmM;
+		constexpr int group_size = 4;
+		int group_base = gendered_first
+			+ ((item_id - gendered_first) / group_size) * group_size;
+		int side_offset = is_elvine ? 2 : 0;
+		int sex_offset = is_female ? 1 : 0;
+		item_id = group_base + side_offset + sex_offset;
+	}
+
 	num = 1;
 	for(int i = 1; i <= num; i++)
 	{
 		item = new CItem;
-		if (init_item_attr(item, item_name) == false)
+		if (init_item_attr(item, item_id) == false)
 		{
 			delete item;
 		}
@@ -3827,7 +3846,7 @@ void ItemManager::get_hero_mantle_handler(int client_h, int item_id, const char*
 			if (add_client_item_list(client_h, item, &erase_req)) {
 				if (m_game->m_client_list[client_h]->m_cur_weight_load < 0) m_game->m_client_list[client_h]->m_cur_weight_load = 0;
 
-				hb::logger::log<log_channel::events>("get HeroItem : Char({}) Player-EK({}) Player-Contr({}) Hero Obtained({})", m_game->m_client_list[client_h]->m_char_name, m_game->m_client_list[client_h]->m_enemy_kill_count, m_game->m_client_list[client_h]->m_contribution, item_name);
+				hb::logger::log<log_channel::events>("get HeroItem : Char({}) Player-EK({}) Player-Contr({}) Hero Obtained({})", m_game->m_client_list[client_h]->m_char_name, m_game->m_client_list[client_h]->m_enemy_kill_count, m_game->m_client_list[client_h]->m_contribution, item->m_name);
 
 				item->set_touch_effect_type(TouchEffectType::UniqueOwner);
 				item->m_touch_effect_value1 = m_game->m_client_list[client_h]->m_char_id_num1;
