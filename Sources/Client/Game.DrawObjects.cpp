@@ -64,7 +64,7 @@ static void CalcHumanEquipment(const CEntityRenderState& state, bool female, Men
 	eq.skirtDraw = female && appr.is_skirt;
 }
 
-hb::shared::sprite::BoundRect CGame::draw_object_on_move_for_menu(int indexX, int indexY, int sX, int sY, bool trans, uint32_t time)
+hb::shared::sprite::BoundRect CGame::draw_object_on_move_for_menu(int indexX, int indexY, int sX, int sY, bool trans, uint32_t time, bool draw_shadow)
 {
 	if (m_entity_state.m_dir < 1 || m_entity_state.m_dir > 8) return {};
 
@@ -141,7 +141,7 @@ hb::shared::sprite::BoundRect CGame::draw_object_on_move_for_menu(int indexX, in
 	};
 
 	// draw body shadow
-	if (!shouldSkipShadow() && config_manager::get().get_detail_level() != 0 && !mob)
+	if (draw_shadow && !shouldSkipShadow() && config_manager::get().get_detail_level() != 0 && !mob)
 		m_sprite[eq.body + (m_entity_state.m_dir - 1)]->draw(sX, sY, m_entity_state.m_frame, hb::shared::sprite::DrawParams::shadow());
 
 	// draw weapon first if drawing order is 1
