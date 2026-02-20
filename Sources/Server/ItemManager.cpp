@@ -1150,15 +1150,13 @@ void ItemManager::give_item_handler(int client_h, short item_index, int amount, 
 					}
 				}
 				else {
-					// NPC       .
-					m_game->m_map_list[m_game->m_client_list[client_h]->m_map_index]->set_item(m_game->m_client_list[client_h]->m_x, m_game->m_client_list[client_h]->m_y, item);
-
-					// v1.411  
-					item_log(ItemLogAction::Drop, client_h, 0, item);
-
-					m_game->send_event_to_near_client_type_b(MsgId::EventCommon, CommonType::ItemDrop, m_game->m_client_list[client_h]->m_map_index,
-						m_game->m_client_list[client_h]->m_x, m_game->m_client_list[client_h]->m_y,
-						item->m_id_num, 0, item->m_item_color, item->m_attribute); // v1.4 color
+					// NPC cannot receive items — restore count and reject
+					m_game->m_client_list[client_h]->m_item_list[item_index]->m_count += amount;
+					set_item_count(client_h, item_index, m_game->m_client_list[client_h]->m_item_list[item_index]->m_count);
+					m_game->send_notify_msg(0, client_h, Notify::CannotGiveItem, item_index, amount, 0, char_name);
+					delete item;
+					m_game->calc_total_weight(client_h);
+					return;
 				}
 			}
 		}
@@ -1355,22 +1353,10 @@ void ItemManager::give_item_handler(int client_h, short item_index, int amount, 
 					}
 				}
 				else {
-					// NPC       .
-
-					m_game->m_map_list[m_game->m_client_list[client_h]->m_map_index]->set_item(m_game->m_client_list[client_h]->m_x,
-						m_game->m_client_list[client_h]->m_y,
-						m_game->m_client_list[client_h]->m_item_list[item_index]);
-
-					item_log(ItemLogAction::Drop, client_h, 0, m_game->m_client_list[client_h]->m_item_list[item_index]);
-
-					m_game->send_event_to_near_client_type_b(MsgId::EventCommon, CommonType::ItemDrop, m_game->m_client_list[client_h]->m_map_index,
-						m_game->m_client_list[client_h]->m_x, m_game->m_client_list[client_h]->m_y,
-						m_game->m_client_list[client_h]->m_item_list[item_index]->m_id_num,
-						0,
-						m_game->m_client_list[client_h]->m_item_list[item_index]->m_item_color,
-						m_game->m_client_list[client_h]->m_item_list[item_index]->m_attribute); // v1.4 color
-
-					std::memset(char_name, 0, sizeof(char_name));
+					// NPC cannot receive items — reject and keep item in inventory
+					m_game->send_notify_msg(0, client_h, Notify::CannotGiveItem, item_index, amount, 0, char_name);
+					m_game->calc_total_weight(client_h);
+					return;
 				}
 			}
 
@@ -2925,7 +2911,7 @@ void ItemManager::req_sell_item_confirm_handler(int client_h, char item_id, int 
 void ItemManager::req_repair_item_handler(int client_h, char item_id, char repair_whom, const char* string)
 {
 	char item_category;
-	short remain_life, price;
+	int32_t remain_life, price;
 	double d1, d2, d3;
 
 	if (m_game->m_client_list[client_h] == 0) return;
@@ -2962,7 +2948,7 @@ void ItemManager::req_repair_item_handler(int client_h, char item_id, char repai
 	}
 	else if (((item_category >= 43) && (item_category <= 50)) || ((item_category >= 11) && (item_category <= 12))) {
 
-		if (repair_whom != 15) {
+		if (repair_whom != 24) {
 			m_game->send_notify_msg(0, client_h, Notify::CannotRepairItem, item_id, 2, 0, m_game->m_client_list[client_h]->m_item_list[item_id]->m_name);
 			return;
 		}
@@ -2992,7 +2978,7 @@ void ItemManager::req_repair_item_handler(int client_h, char item_id, char repai
 
 void ItemManager::req_repair_item_cofirm_handler(int client_h, char item_id, const char* string)
 {
-	short    remain_life, price;
+	int32_t  remain_life, price;
 	char item_category;
 	double   d1, d2, d3;
 	uint64_t gold_count;
@@ -6508,7 +6494,7 @@ void ItemManager::request_repair_all_items_handler(int client_h)
 					d3 = (double)((d1 / d2) * 0.5f);
 					d2 = (double)(m_game->m_client_list[client_h]->m_item_list[i]->m_price);
 					d3 = (d3 * d2);
-					price = ((m_game->m_client_list[client_h]->m_item_list[i]->m_price / 2) - (short)(d3));
+					price = ((m_game->m_client_list[client_h]->m_item_list[i]->m_price / 2) - static_cast<int32_t>(d3));
 				}
 				m_game->m_client_list[client_h]->m_repair_all[m_game->m_client_list[client_h]->total_item_repair].index = i;
 				m_game->m_client_list[client_h]->m_repair_all[m_game->m_client_list[client_h]->total_item_repair].price = price;

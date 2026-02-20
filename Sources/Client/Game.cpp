@@ -2098,16 +2098,27 @@ void CGame::item_drop_external_screen(char item_id, short mouse_x, short mouse_y
 				m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_x = mouse_x - 140;
 				m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_y = mouse_y - 70;
 				if (m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_y < 0) m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_y = 0;
-				m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_v1 = m_mcx;
-				m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_v2 = m_mcy;
-				m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_v3 = owner_type;
-				m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_v4 = m_comm_object_id;
-				std::memset(m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_str, 0, sizeof(m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_str));
-				if (owner_type < 10)
-					std::snprintf(m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_str, sizeof(m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_str), "%s", name.c_str());
+				if (hb::shared::owner::can_receive_items(owner_type))
+				{
+					m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_v1 = m_mcx;
+					m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_v2 = m_mcy;
+					m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_v3 = owner_type;
+					m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_v4 = m_comm_object_id;
+					std::memset(m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_str, 0, sizeof(m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_str));
+					if (owner_type < 10)
+						std::snprintf(m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_str, sizeof(m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_str), "%s", name.c_str());
+					else
+					{
+						std::snprintf(m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_str, sizeof(m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_str), "%s", get_npc_config_name_by_id(npc_config_id));
+					}
+				}
 				else
 				{
-					std::snprintf(m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_str, sizeof(m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_str), "%s", get_npc_config_name_by_id(npc_config_id));
+					m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_v1 = 0;
+					m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_v2 = 0;
+					m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_v3 = 0;
+					m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_v4 = 0;
+					std::memset(m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_str, 0, sizeof(m_dialog_box_manager.Info(DialogBoxId::ItemDropExternal).m_str));
 				}
 				m_dialog_box_manager.enable_dialog_box(DialogBoxId::ItemDropExternal, item_id, static_cast<int64_t>(m_item_list[item_id]->m_count), 0);
 			}
@@ -2179,7 +2190,26 @@ void CGame::item_drop_external_screen(char item_id, short mouse_x, short mouse_y
 					break;
 
 				default:
-					if (cfg) send_command(MsgId::CommandCommon, CommonType::GiveItemToChar, item_id, 1, m_mcx, m_mcy, cfg->m_name);
+					if (cfg)
+					{
+						if (item_drop_history(m_item_list[item_id]->m_id_num))
+						{
+							m_dialog_box_manager.Info(DialogBoxId::ItemDropConfirm).m_x = mouse_x - 140;
+							m_dialog_box_manager.Info(DialogBoxId::ItemDropConfirm).m_y = mouse_y - 70;
+							if (m_dialog_box_manager.Info(DialogBoxId::ItemDropConfirm).m_y < 0) m_dialog_box_manager.Info(DialogBoxId::ItemDropConfirm).m_y = 0;
+							m_dialog_box_manager.Info(DialogBoxId::ItemDropConfirm).m_v1 = 0;
+							m_dialog_box_manager.Info(DialogBoxId::ItemDropConfirm).m_v2 = 0;
+							m_dialog_box_manager.Info(DialogBoxId::ItemDropConfirm).m_v3 = 1;
+							m_dialog_box_manager.Info(DialogBoxId::ItemDropConfirm).m_v4 = 0;
+							m_dialog_box_manager.Info(DialogBoxId::ItemDropConfirm).m_v5 = item_id;
+							std::memset(m_dialog_box_manager.Info(DialogBoxId::ItemDropConfirm).m_str, 0, sizeof(m_dialog_box_manager.Info(DialogBoxId::ItemDropConfirm).m_str));
+							m_dialog_box_manager.enable_dialog_box(DialogBoxId::ItemDropConfirm, item_id, static_cast<int64_t>(m_item_list[item_id]->m_count), 0);
+						}
+						else
+						{
+							send_command(MsgId::CommandCommon, CommonType::ItemDrop, 0, item_id, 1, 0, cfg->m_name);
+						}
+					}
 					break;
 				}
 			}

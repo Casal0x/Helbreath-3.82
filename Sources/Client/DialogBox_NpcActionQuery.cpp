@@ -99,7 +99,8 @@ void DialogBox_NpcActionQuery::DrawMode2_SellToShop(short sX, short sY, short mo
 
 	CItem* cfg = m_game->get_item_config(m_game->m_item_list[Info().m_v1]->m_id_num);
 	if (cfg && (cfg->get_item_type() != ItemType::Consume) &&
-		(cfg->get_item_type() != ItemType::Arrow))
+		(cfg->get_item_type() != ItemType::Arrow) &&
+		Info().m_v2 == hb::shared::owner::Tom)
 	{
 		draw_highlighted_text(sX + 125, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY43, mouse_x, mouse_y, sX + 125, sX + 180, sY + 55, sY + 70);
 	}

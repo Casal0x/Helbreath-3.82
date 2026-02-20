@@ -515,6 +515,7 @@ namespace NetworkMessageHandlers {
 		txt = std::format(NOTIFYMSG_ITEMREPAIRED1, itemInfo5.name.c_str());
 
 		game->add_event_list(txt.c_str(), 10);
+		game->m_dialog_box_manager.disable_dialog_box(DialogBoxId::SellOrRepair);
 	}
 
 	void HandleRepairItemPrice(CGame* game, char* data)
