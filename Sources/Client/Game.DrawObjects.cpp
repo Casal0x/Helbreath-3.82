@@ -960,9 +960,9 @@ void CGame::draw_objects(short pivot_x, short pivot_y, short div_x, short div_y,
 		{
 			if (eff.label.empty() && eff.value.empty()) continue;
 			if (eff.value.empty())
-				tooltip.add_line(eff.label, GameColors::UIWhite);
+				tooltip.add_line(eff.label, GameColors::InfoGrayLight);
 			else
-				tooltip.add_dual_line(eff.label, GameColors::UIWhite, eff.value, GameColors::UIItemName_Special);
+				tooltip.add_dual_line(eff.label, GameColors::InfoGrayLight, eff.value, GameColors::UIItemName_Special);
 		}
 		tooltip.draw(mouse_x, mouse_y + 25, m_Renderer);
 	}

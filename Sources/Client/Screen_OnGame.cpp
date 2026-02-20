@@ -647,14 +647,14 @@ void Screen_OnGame::render_item_tooltip()
     auto name_color = itemInfo.is_special ? GameColors::UIItemName_Special : GameColors::UIWhite;
     tooltip.add_line(itemInfo.name, name_color);
 
-    // Attribute effects (label in white, value in green)
+    // Attribute effects (label in gray, value in green)
     for (const auto& eff : itemInfo.effects)
     {
         if (eff.label.empty() && eff.value.empty()) continue;
         if (eff.value.empty())
-            tooltip.add_line(eff.label, GameColors::UIWhite);
+            tooltip.add_line(eff.label, GameColors::InfoGrayLight);
         else
-            tooltip.add_dual_line(eff.label, GameColors::UIWhite, eff.value, GameColors::UIItemName_Special);
+            tooltip.add_dual_line(eff.label, GameColors::InfoGrayLight, eff.value, GameColors::UIItemName_Special);
     }
 
     // Weapon damage
@@ -662,20 +662,20 @@ void Screen_OnGame::render_item_tooltip()
     {
         auto range = cfg->get_damage_range();
         G_cTxt = std::format("Damage: {}-{}", range.min, range.max);
-        tooltip.add_line(G_cTxt, GameColors::UIWhite);
+        tooltip.add_line(G_cTxt, GameColors::InfoGrayLight);
     }
     // Shield/armor defense
     else if (cfg->is_armor() || cfg->get_equip_pos() == EquipPos::LeftHand)
     {
         G_cTxt = std::format("Defence: +{}%", cfg->m_item_effect_value1);
-        tooltip.add_line(G_cTxt, GameColors::UIWhite);
+        tooltip.add_line(G_cTxt, GameColors::InfoGrayLight);
     }
 
     // Endurance
     if (is_equippable)
     {
         G_cTxt = std::format(UPDATE_SCREEN_ONGAME10, item->m_cur_life_span, cfg->m_max_life_span);
-        tooltip.add_line(G_cTxt, GameColors::UIWhite);
+        tooltip.add_line(G_cTxt, GameColors::InfoGrayLight);
     }
 
     // Required Str (weight >= 1100)
@@ -684,14 +684,14 @@ void Screen_OnGame::render_item_tooltip()
         int req_str = static_cast<int>(std::ceil(cfg->m_weight / 100.0f));
         int full_speed_str = cfg->m_speed * 13;
         G_cTxt = std::format("Required Str: {} ({} full speed)", req_str, full_speed_str);
-        tooltip.add_line(G_cTxt, GameColors::UIWhite);
+        tooltip.add_line(G_cTxt, GameColors::InfoGrayLight);
     }
 
     // Level requirement (custom-made items)
     if (cfg->m_level_limit != 0 && item->is_custom_made())
     {
         G_cTxt = std::format("{}: {}", DRAW_DIALOGBOX_SHOP24, cfg->m_level_limit);
-        tooltip.add_line(G_cTxt, GameColors::UIWhite);
+        tooltip.add_line(G_cTxt, GameColors::InfoGrayLight);
     }
 
     // Stack count

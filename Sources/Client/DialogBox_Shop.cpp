@@ -208,35 +208,17 @@ void DialogBox_Shop::draw_weapon_stats(short sX, short sY, int item_index, bool&
 
     hb::shared::text::draw_text(GameFont::Default, sX + 90, sY + 145, DRAW_DIALOGBOX_SHOP9, hb::shared::text::TextStyle::from_color(GameColors::UILabel));
     hb::shared::text::draw_text(GameFont::Default, sX + 91, sY + 145, DRAW_DIALOGBOX_SHOP9, hb::shared::text::TextStyle::from_color(GameColors::UILabel));
-    hb::shared::text::draw_text(GameFont::Default, sX + 40, sY + 175, DRAW_DIALOGBOX_SHOP10, hb::shared::text::TextStyle::from_color(GameColors::UILabel));
-    hb::shared::text::draw_text(GameFont::Default, sX + 41, sY + 175, DRAW_DIALOGBOX_SHOP10, hb::shared::text::TextStyle::from_color(GameColors::UILabel));
+    hb::shared::text::draw_text(GameFont::Default, sX + 40, sY + 160, DRAW_DIALOGBOX_SHOP10, hb::shared::text::TextStyle::from_color(GameColors::UILabel));
+    hb::shared::text::draw_text(GameFont::Default, sX + 41, sY + 160, DRAW_DIALOGBOX_SHOP10, hb::shared::text::TextStyle::from_color(GameColors::UILabel));
 
-    if (shop_manager::get().get_item_list()[item_index]->m_item_effect_value3 != 0) {
-        std::snprintf(temp_buf, sizeof(temp_buf), ": %dD%d+%d (S-M)", shop_manager::get().get_item_list()[item_index]->m_item_effect_value1,
-            shop_manager::get().get_item_list()[item_index]->m_item_effect_value2,
-            shop_manager::get().get_item_list()[item_index]->m_item_effect_value3);
-    }
-    else {
-        std::snprintf(temp_buf, sizeof(temp_buf), ": %dD%d (S-M)", shop_manager::get().get_item_list()[item_index]->m_item_effect_value1,
-            shop_manager::get().get_item_list()[item_index]->m_item_effect_value2);
-    }
-    hb::shared::text::draw_text(GameFont::Default, sX + 140, sY + 145, temp_buf, hb::shared::text::TextStyle::from_color(GameColors::UILabel));
-
-    if (shop_manager::get().get_item_list()[item_index]->m_item_effect_value6 != 0) {
-        std::snprintf(temp_buf, sizeof(temp_buf), ": %dD%d+%d (L)", shop_manager::get().get_item_list()[item_index]->m_item_effect_value4,
-            shop_manager::get().get_item_list()[item_index]->m_item_effect_value5,
-            shop_manager::get().get_item_list()[item_index]->m_item_effect_value6);
-    }
-    else {
-        std::snprintf(temp_buf, sizeof(temp_buf), ": %dD%d (L)", shop_manager::get().get_item_list()[item_index]->m_item_effect_value4,
-            shop_manager::get().get_item_list()[item_index]->m_item_effect_value5);
-    }
-    hb::shared::text::draw_text(GameFont::Default, sX + 140, sY + 160, temp_buf, hb::shared::text::TextStyle::from_color(GameColors::UILabel));
+    auto range = shop_manager::get().get_item_list()[item_index]->get_damage_range();
+    auto damage_str = std::format(": {}-{}", range.min, range.max);
+    hb::shared::text::draw_text(GameFont::Default, sX + 140, sY + 145, damage_str.c_str(), hb::shared::text::TextStyle::from_color(GameColors::UILabel));
 
     temp = shop_manager::get().get_item_list()[item_index]->m_weight / 100;
     if (shop_manager::get().get_item_list()[item_index]->m_speed == 0) std::snprintf(temp_buf, sizeof(temp_buf), ": 0(10~10)");
     else std::snprintf(temp_buf, sizeof(temp_buf), ": %d(%d ~ %d)", shop_manager::get().get_item_list()[item_index]->m_speed, temp, shop_manager::get().get_item_list()[item_index]->m_speed * 13);
-    hb::shared::text::draw_text(GameFont::Default, sX + 140, sY + 175, temp_buf, hb::shared::text::TextStyle::from_color(GameColors::UILabel));
+    hb::shared::text::draw_text(GameFont::Default, sX + 140, sY + 160, temp_buf, hb::shared::text::TextStyle::from_color(GameColors::UILabel));
 
     if ((shop_manager::get().get_item_list()[item_index]->m_weight / 100) > m_game->m_player->m_str) {
         auto strWarn = std::format(DRAW_DIALOGBOX_SHOP11, (shop_manager::get().get_item_list()[item_index]->m_weight / 100));
