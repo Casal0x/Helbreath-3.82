@@ -153,6 +153,9 @@ void CombatManager::client_killed_handler(int client_h, int attacker_h, char att
 	m_game->m_status_effect_manager->set_illusion_flag(client_h, hb::shared::owner_class::Player, false);
 	m_game->m_status_effect_manager->set_inhibition_casting_flag(client_h, hb::shared::owner_class::Player, false);
 	m_game->m_status_effect_manager->set_poison_flag(client_h, hb::shared::owner_class::Player, false);
+	m_game->m_client_list[client_h]->m_is_poisoned = false;
+	m_game->m_client_list[client_h]->m_poison_level = 0;
+	m_game->send_notify_msg(0, client_h, Notify::MagicEffectOff, hb::shared::magic::Poison, 0, 0, 0);
 	m_game->m_status_effect_manager->set_ice_flag(client_h, hb::shared::owner_class::Player, false);
 	m_game->m_status_effect_manager->set_berserk_flag(client_h, hb::shared::owner_class::Player, false);
 	m_game->m_status_effect_manager->set_invisibility_flag(client_h, hb::shared::owner_class::Player, false);
@@ -1674,14 +1677,20 @@ void CombatManager::poison_effect(int client_h, int v1)
 	if (m_game->m_client_list[client_h]->m_hp <= 0) m_game->m_client_list[client_h]->m_hp = 1;
 
 	if (prev_hp != m_game->m_client_list[client_h]->m_hp)
+	{
 		m_game->send_notify_msg(0, client_h, Notify::Hp, 0, 0, 0, 0);
+		char buf[64]{};
+		std::snprintf(buf, sizeof(buf), "You took -%d poison damage.", damage);
+		m_game->send_notify_msg(0, client_h, Notify::NoticeMsg, 0, 0, 0, buf);
+	}
 
 	prob = m_game->m_client_list[client_h]->m_skill_mastery[23] - 10 + m_game->m_client_list[client_h]->m_add_poison_resistance;
 	if (prob <= 10) prob = 10;
 	if (m_game->dice(1, 100) <= static_cast<uint32_t>(prob)) {
 		m_game->m_client_list[client_h]->m_is_poisoned = false;
-		m_game->m_status_effect_manager->set_poison_flag(client_h, hb::shared::owner_class::Player, false); // remove poison aura after effect complete
+		m_game->m_status_effect_manager->set_poison_flag(client_h, hb::shared::owner_class::Player, false);
 		m_game->send_notify_msg(0, client_h, Notify::MagicEffectOff, hb::shared::magic::Poison, 0, 0, 0);
+		m_game->send_notify_msg(0, client_h, Notify::NoticeMsg, 0, 0, 0, "Poison has been cured.");
 	}
 }
 

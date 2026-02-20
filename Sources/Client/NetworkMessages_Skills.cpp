@@ -304,7 +304,6 @@ namespace NetworkMessageHandlers {
 			break;
 
 		case hb::shared::magic::Poison:
-			if (game->m_player->m_is_poisoned) game->add_event_list(NOTIFYMSG_MAGICEFFECT_OFF10, 10);
 			game->m_player->m_is_poisoned = false;
 			break;
 

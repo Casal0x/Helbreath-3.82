@@ -3,7 +3,7 @@
         "ambientEnabled": true,
         "ambientVolume": 20,
         "masterEnabled": true,
-        "masterVolume": 100,
+        "masterVolume": 50,
         "musicEnabled": false,
         "musicVolume": 15,
         "soundEnabled": true,

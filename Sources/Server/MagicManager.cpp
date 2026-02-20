@@ -2307,9 +2307,9 @@ void MagicManager::player_magic_handler(int client_h, int dX, int dY, short type
 
 					if (m_game->m_client_list[owner_h]->m_is_poisoned) {
 						m_game->m_client_list[owner_h]->m_is_poisoned = false;
-						// 05/06/2004 - Hypnotoad - poison aura removed when cure cast
 						m_game->m_status_effect_manager->set_poison_flag(owner_h, owner_type, false);
 						m_game->send_notify_msg(0, owner_h, Notify::MagicEffectOff, hb::shared::magic::Poison, 0, 0, 0);
+						m_game->send_notify_msg(0, owner_h, Notify::NoticeMsg, 0, 0, 0, "Poison has been cured.");
 					}
 					break;
 

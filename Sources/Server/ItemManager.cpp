@@ -2093,8 +2093,9 @@ void ItemManager::use_item_handler(int client_h, short item_index, short dX, sho
 
 			if (m_game->m_client_list[client_h]->m_is_poisoned) {
 				m_game->m_client_list[client_h]->m_is_poisoned = false;
-				m_game->m_status_effect_manager->set_poison_flag(client_h, hb::shared::owner_class::Player, false); // removes poison aura when using a revitalizing potion
+				m_game->m_status_effect_manager->set_poison_flag(client_h, hb::shared::owner_class::Player, false);
 				m_game->send_notify_msg(0, client_h, Notify::MagicEffectOff, hb::shared::magic::Poison, 0, 0, 0);
+				m_game->send_notify_msg(0, client_h, Notify::NoticeMsg, 0, 0, 0, "Poison has been cured.");
 			}
 			break;
 
