@@ -4402,8 +4402,8 @@ void CGame::init_player_data(int client_h, char* data, uint32_t size)
 	total_points = 0;
 	for(int i = 0; i < hb::shared::limits::MaxSkillType; i++)
 		total_points += m_client_list[client_h]->m_skill_mastery[i];
-#ifndef _DEBUG
-	// Skill point validation — disabled in debug builds for tester menu "Max all skills"
+#ifndef TESTER_ONLY
+	// Skill point validation — disabled in tester builds for tester menu "Max all skills"
 	if ((total_points - 21 > MaxSkillPoints) ) {
 		try
 		{
@@ -5962,12 +5962,15 @@ void CGame::client_common_handler(int client_h, char* data)
 				m_client_list[client_h]->m_char_name, m_client_list[client_h]->m_super_attack_left);
 			break;
 		}
-		case 6: // Max all skills
+		case 6: // Max all skills (only valid skill slots)
 		{
 			for (int i = 0; i < hb::shared::limits::MaxSkillType; i++)
 			{
-				m_client_list[client_h]->m_skill_mastery[i] = 100;
-				send_notify_msg(0, client_h, Notify::Skill, i, 100, 0, 0);
+				if (m_skill_config_list[i] != 0)
+					m_client_list[client_h]->m_skill_mastery[i] = 100;
+				else
+					m_client_list[client_h]->m_skill_mastery[i] = 0;
+				send_notify_msg(0, client_h, Notify::Skill, i, m_client_list[client_h]->m_skill_mastery[i], 0, 0);
 			}
 			hb::logger::log<log_channel::commands>("[TesterMenu] '{}' maxed all skills",
 				m_client_list[client_h]->m_char_name);
