@@ -112,7 +112,7 @@ static EquipPos FindHoverSlot(CGame* game, const EquipSlotLayout* slots, int slo
 		CItem* cfg = game->get_item_config(game->m_item_list[itemIdx]->m_id_num);
 		if (cfg == nullptr) continue;
 
-		auto draw = game->get_item_draw(cfg->m_display_id, item_atlas::equip, is_female);
+		auto draw = game->get_item_draw(cfg->m_display_id, item_atlas::equip, cfg->sprite_is_female());
 		if (check_item_collision(draw.sprite,
 			sX + slots[i].offsetX, sY + slots[i].offsetY, draw.frame, mouse_x, mouse_y, item_hit_margin))
 		{
@@ -140,7 +140,7 @@ void DialogBox_Character::draw_equipped_item(hb::shared::item::EquipPos equipPos
 	const hb::shared::render::Color* colors = useWeaponColors ? GameColors::Weapons : GameColors::Items;
 
 	bool is_female = (spriteOffset == 40);
-	auto equip_draw = m_game->get_item_draw(cfg->m_display_id, item_atlas::equip, is_female);
+	auto equip_draw = m_game->get_item_draw(cfg->m_display_id, item_atlas::equip, cfg->sprite_is_female());
 	auto sprite = equip_draw.sprite;
 	int16_t frame = equip_draw.frame;
 
@@ -218,7 +218,7 @@ char DialogBox_Character::find_equip_item_at_point(short mouse_x, short mouse_y,
 		if (cfg == nullptr) continue;
 
 		bool is_female = (spriteOffset == 40);
-		auto draw = m_game->get_item_draw(cfg->m_display_id, item_atlas::equip, is_female);
+		auto draw = m_game->get_item_draw(cfg->m_display_id, item_atlas::equip, cfg->sprite_is_female());
 		if (check_item_collision(draw.sprite,
 			sX + slots[i].offsetX, sY + slots[i].offsetY, draw.frame, mouse_x, mouse_y, item_hit_margin))
 		{

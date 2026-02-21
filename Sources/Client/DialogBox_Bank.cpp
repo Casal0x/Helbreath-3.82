@@ -126,7 +126,7 @@ void DialogBox_Bank::draw_item_details(short sX, short sY, short size_x, int ite
 
 	// draw item sprite
 	char item_color = item->m_item_color;
-	auto bank_draw = m_game->get_item_draw(cfg->m_display_id, item_atlas::pack, false);
+	auto bank_draw = m_game->get_item_draw(cfg->m_display_id, item_atlas::pack, cfg->sprite_is_female());
 	if (item_color == 0) {
 		bank_draw.sprite->draw(sX + 60, sY + 68, bank_draw.frame);
 	}

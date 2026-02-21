@@ -43,7 +43,7 @@ void DialogBox_SellOrRepair::on_draw(short mouse_x, short mouse_y, short z, char
 		item_color = m_game->m_item_list[item_id]->m_item_color;
 		{
 			CItem* sell_cfg = m_game->get_item_config(m_game->m_item_list[item_id]->m_id_num);
-			auto sell_draw = m_game->get_item_draw(sell_cfg ? sell_cfg->m_display_id : 0, item_atlas::pack, false);
+			auto sell_draw = m_game->get_item_draw(sell_cfg ? sell_cfg->m_display_id : 0, item_atlas::pack, sell_cfg ? sell_cfg->sprite_is_female() : false);
 			if (item_color == 0)
 				sell_draw.sprite->draw(sX + 62 + 15, sY + 84 + 30, sell_draw.frame);
 			else
@@ -94,7 +94,7 @@ void DialogBox_SellOrRepair::on_draw(short mouse_x, short mouse_y, short z, char
 		item_color = m_game->m_item_list[item_id]->m_item_color;
 		{
 			CItem* rep_cfg = m_game->get_item_config(m_game->m_item_list[item_id]->m_id_num);
-			auto rep_draw = m_game->get_item_draw(rep_cfg ? rep_cfg->m_display_id : 0, item_atlas::pack, false);
+			auto rep_draw = m_game->get_item_draw(rep_cfg ? rep_cfg->m_display_id : 0, item_atlas::pack, rep_cfg ? rep_cfg->sprite_is_female() : false);
 			if (item_color == 0)
 				rep_draw.sprite->draw(sX + 62 + 15, sY + 84 + 30, rep_draw.frame);
 			else

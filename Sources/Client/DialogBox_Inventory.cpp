@@ -62,7 +62,7 @@ void DialogBox_Inventory::draw_inventory_item(CItem* item, int itemIdx, int base
 
 	int drawX = baseX + ITEM_OFFSET_X + item->m_x;
 	int drawY = baseY + ITEM_OFFSET_Y + item->m_y;
-	auto inv_draw = m_game->get_item_draw(cfg->m_display_id, item_atlas::pack, false);
+	auto inv_draw = m_game->get_item_draw(cfg->m_display_id, item_atlas::pack, cfg->sprite_is_female());
 	auto sprite = inv_draw.sprite;
 	int16_t frame = inv_draw.frame;
 	uint32_t time = m_game->m_cur_time;
@@ -446,7 +446,7 @@ PressResult DialogBox_Inventory::on_press(short mouse_x, short mouse_y)
 		if (m_game->m_is_item_equipped[item_id]) continue;
 
 		// Calculate item bounds using atlas
-		auto inv_draw = m_game->get_item_draw(cfg->m_display_id, item_atlas::pack, false);
+		auto inv_draw = m_game->get_item_draw(cfg->m_display_id, item_atlas::pack, cfg->sprite_is_female());
 		int itemDrawX = sX + ITEM_OFFSET_X + item->m_x;
 		int itemDrawY = sY + ITEM_OFFSET_Y + item->m_y;
 

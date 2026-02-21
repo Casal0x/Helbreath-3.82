@@ -253,17 +253,19 @@ hb::shared::sprite::BoundRect CPlayerRenderer::draw_attack(int indexX, int index
 		return invalidRect;
 
 	// Attack poses depend on walking state and weapon type
+	// Pose 6 = melee attack (all swords, axes, hammers, wands — both 1H and 2H)
+	// Pose 7 = bow attack (archery weapons only)
 	EquipmentIndices eq;
 	if (state.m_appearance.is_walking)
 	{
-		// Walking attack: body pose depends on weapon type (6 for one-hand, 7 for two-hand)
-		bool two_hand = false;
+		constexpr int archery_skill = 6;
+		bool is_bow = false;
 		if (state.m_appearance.weapon_item_id > 0) {
 			CItem* cfg = m_game.get_item_config(state.m_appearance.weapon_item_id);
-			if (cfg) two_hand = (cfg->get_equip_pos() == EquipPos::TwoHand);
+			if (cfg) is_bow = (cfg->m_related_skill == archery_skill);
 		}
-		int add = two_hand ? 7 : 6;
-		eq = EquipmentIndices::CalcPlayer(state, add);
+		int pose = is_bow ? 7 : 6;
+		eq = EquipmentIndices::CalcPlayer(state, pose);
 	}
 	else
 	{
@@ -286,12 +288,21 @@ hb::shared::sprite::BoundRect CPlayerRenderer::draw_attack(int indexX, int index
 		// draw all equipment layers
 		RenderHelpers::draw_player_layers(m_game, eq, state, sX, sY, inv, mantle_draw_order, 8, admin_invis);
 
-		// Attack-specific: weapon swing trail at frame 3
-		if (eq.m_weapon_index != -1 && state.m_frame == 3)
+		// Attack-specific: weapon swing trail at frame 3 (melee only, not bows)
+		if (eq.m_weapon_index != -1 && state.m_frame == 3 && state.m_appearance.is_walking)
 		{
-			int trailFrame = (state.m_dir - 1) * 8 + (state.m_frame - 1);
-			m_game.m_equip_sprites[eq.m_weapon_index]->draw(sX, sY, trailFrame,
-				hb::shared::sprite::DrawParams::tinted_alpha(126, 192, 242, 0.7f));
+			constexpr int archery_skill = 6;
+			bool is_bow = false;
+			if (state.m_appearance.weapon_item_id > 0) {
+				CItem* cfg = m_game.get_item_config(state.m_appearance.weapon_item_id);
+				if (cfg) is_bow = (cfg->m_related_skill == archery_skill);
+			}
+			if (!is_bow)
+			{
+				int trailFrame = (state.m_dir - 1) * 8 + (state.m_frame - 1);
+				m_game.m_equip_sprites[eq.m_weapon_index]->draw(sX, sY, trailFrame,
+					hb::shared::sprite::DrawParams::tinted_alpha(126, 192, 242, 0.7f));
+			}
 		}
 
 		// Berserk glow
@@ -340,17 +351,18 @@ hb::shared::sprite::BoundRect CPlayerRenderer::draw_attack_move(int indexX, int 
 	case 12: state.m_frame = 7; break;
 	}
 
-	// Same poses as OnAttack
+	// Same poses as draw_attack — pose 6 melee, pose 7 bow
 	EquipmentIndices eq;
 	if (state.m_appearance.is_walking)
 	{
-		bool two_hand = false;
+		constexpr int archery_skill = 6;
+		bool is_bow = false;
 		if (state.m_appearance.weapon_item_id > 0) {
 			CItem* cfg = m_game.get_item_config(state.m_appearance.weapon_item_id);
-			if (cfg) two_hand = (cfg->get_equip_pos() == EquipPos::TwoHand);
+			if (cfg) is_bow = (cfg->m_related_skill == archery_skill);
 		}
-		int add = two_hand ? 7 : 6;
-		eq = EquipmentIndices::CalcPlayer(state, add);
+		int pose = is_bow ? 7 : 6;
+		eq = EquipmentIndices::CalcPlayer(state, pose);
 	}
 	else
 	{

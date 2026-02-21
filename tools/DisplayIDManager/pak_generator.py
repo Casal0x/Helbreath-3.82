@@ -49,11 +49,15 @@ BODY_POSE_NAMES = [
     "Dying",             # 11
 ]
 
-EQUIP_TYPES = ['weapon', 'shield', 'armor', 'helm', 'pants', 'boots', 'mantle', 'arm_armor']
+EQUIP_TYPES = ['weapon', 'weapon_bow', 'shield', 'armor', 'helm', 'pants', 'boots', 'mantle', 'arm_armor']
 
 # Weapon/shield pose mapping: bodyPose index -> weapon/shield pose index (-1 = not drawn)
-WEAPON_POSE = [0, 1, 2, 3, 6, -1, 4, 4, -1, -1, 5, -1]
-SHIELD_POSE = [0, 1, 2, 3, 6, -1, 4, 4, -1, -1, 5, -1]
+# Pose 6 = melee attack (swords, axes, hammers, wands)
+# Pose 7 = bow attack (archery weapons only)
+# Melee weapons get attack sprite at pose 6 only; bows get it at pose 7 only.
+WEAPON_POSE_MELEE = [0, 1, 2, 3, 6, -1, 4, -1, -1, -1, 5, -1]
+WEAPON_POSE_BOW   = [0, 1, 2, 3, 6, -1, -1, 4, -1, -1, 5, -1]
+SHIELD_POSE       = [0, 1, 2, 3, 6, -1, 4, 4, -1, -1, 5, -1]
 
 # Colors (consistent with other tools)
 BG_DARK = '#1e1e1e'
@@ -136,11 +140,11 @@ def process_shield(pak, offset=0):
     return sprites
 
 
-def process_weapon(pak, offset=0):
+def _process_weapon_with_pose_map(pak, pose_map, offset=0):
     """Weapon: 7 poses x 8 dirs = 56 sprites. Composite 8 dirs into 1 per pose."""
     sprites = []
     for pose_idx in range(12):
-        wp = WEAPON_POSE[pose_idx]
+        wp = pose_map[pose_idx]
         if wp == -1:
             sprites.append(make_blank_sprite())
         else:
@@ -161,8 +165,19 @@ def process_weapon(pak, offset=0):
     return sprites
 
 
+def process_weapon_melee(pak, offset=0):
+    """Melee weapon: attack sprite at pose 6 only."""
+    return _process_weapon_with_pose_map(pak, WEAPON_POSE_MELEE, offset)
+
+
+def process_weapon_bow(pak, offset=0):
+    """Bow weapon: attack sprite at pose 7 only."""
+    return _process_weapon_with_pose_map(pak, WEAPON_POSE_BOW, offset)
+
+
 PROCESSORS = {
-    'weapon': process_weapon,
+    'weapon': process_weapon_melee,
+    'weapon_bow': process_weapon_bow,
     'shield': process_shield,
     'armor': process_armor,
     'helm': process_armor,

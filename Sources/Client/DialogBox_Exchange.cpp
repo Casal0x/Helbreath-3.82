@@ -105,7 +105,7 @@ void DialogBox_Exchange::draw_items(short sX, short sY, short mouse_x, short mou
 		if (m_game->m_dialog_box_exchange_info[i].v1 != -1) {
 			item_color = m_game->m_dialog_box_exchange_info[i].v4;
 			CItem* ex_cfg = m_game->get_item_config(m_game->m_dialog_box_exchange_info[i].item_id);
-			auto ex_draw = m_game->get_item_draw(ex_cfg ? ex_cfg->m_display_id : 0, item_atlas::pack, false);
+			auto ex_draw = m_game->get_item_draw(ex_cfg ? ex_cfg->m_display_id : 0, item_atlas::pack, ex_cfg ? ex_cfg->sprite_is_female() : false);
 			if (item_color == 0) {
 				ex_draw.sprite->draw(sX + xadd, sY + 130, ex_draw.frame);
 			}

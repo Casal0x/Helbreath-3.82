@@ -34,7 +34,7 @@ void DialogBox_Fishing::on_draw(short mouse_x, short mouse_y, short z, char lb)
 		{
 			int fish_cfg_id = m_game->find_item_id_by_name(Info().m_str);
 			CItem* fish_cfg = m_game->get_item_config(fish_cfg_id);
-			auto fish_draw = m_game->get_item_draw(fish_cfg ? fish_cfg->m_display_id : 0, item_atlas::pack, false);
+			auto fish_draw = m_game->get_item_draw(fish_cfg ? fish_cfg->m_display_id : 0, item_atlas::pack, fish_cfg ? fish_cfg->sprite_is_female() : false);
 			fish_draw.sprite->draw(sX + 18 + 35, sY + 18 + 17, fish_draw.frame);
 		}
 

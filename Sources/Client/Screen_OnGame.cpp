@@ -627,7 +627,7 @@ void Screen_OnGame::render_item_tooltip()
 
     char item_color = item->m_item_color;
     bool is_hand_item = cfg->get_equip_pos() == EquipPos::LeftHand || cfg->get_equip_pos() == EquipPos::RightHand || cfg->get_equip_pos() == EquipPos::TwoHand;
-    auto tooltip_draw = m_game->get_item_draw(cfg->m_display_id, item_atlas::pack, false);
+    auto tooltip_draw = m_game->get_item_draw(cfg->m_display_id, item_atlas::pack, cfg->sprite_is_female());
     hb::shared::sprite::ISprite* sprite = tooltip_draw.sprite;
     int16_t frame = tooltip_draw.frame;
     bool is_equippable = cfg->is_armor() || cfg->is_weapon() || cfg->is_accessory();

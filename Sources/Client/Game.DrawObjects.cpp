@@ -407,7 +407,7 @@ void CGame::draw_objects(short pivot_x, short pivot_y, short div_x, short div_y,
 
 				if ((ret == true) && (item_id != 0) && m_item_config_list[item_id] != 0)
 				{
-					auto ground_draw = get_item_draw(m_item_config_list[item_id]->m_display_id, item_atlas::ground, false);
+					auto ground_draw = get_item_draw(m_item_config_list[item_id]->m_display_id, item_atlas::ground, m_item_config_list[item_id]->sprite_is_female());
 
 					// Center ground item sprite on tile, offset by half-tile to align with tile center
 					auto rect = ground_draw.sprite->GetFrameRect(ground_draw.frame);

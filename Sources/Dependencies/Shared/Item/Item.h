@@ -235,6 +235,11 @@ public:
         m_item_effect_type = hb::shared::item::to_int(type);
     }
 
+    bool sprite_is_female() const
+    {
+        return m_gender_limit == 2;
+    }
+
     hb::shared::item::TouchEffectType get_touch_effect_type() const
     {
         return hb::shared::item::to_touch_effect_type(m_touch_effect_type);

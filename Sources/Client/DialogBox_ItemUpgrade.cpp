@@ -101,7 +101,7 @@ void DialogBox_ItemUpgrade::draw_item_preview(int sX, int sY, int item_index)
     CItem* cfg = m_game->get_item_config(m_game->m_item_list[item_index]->m_id_num);
     if (!cfg) return;
 
-    auto upg_draw = m_game->get_item_draw(cfg->m_display_id, item_atlas::pack, false);
+    auto upg_draw = m_game->get_item_draw(cfg->m_display_id, item_atlas::pack, cfg->sprite_is_female());
     if (item_color == 0)
     {
         upg_draw.sprite->draw(sX + 134, sY + 182, upg_draw.frame);
@@ -189,7 +189,7 @@ void DialogBox_ItemUpgrade::DrawMode2_InProgress(int sX, int sY)
 
         if (cfg)
         {
-            auto upg2_draw = m_game->get_item_draw(cfg->m_display_id, item_atlas::pack, false);
+            auto upg2_draw = m_game->get_item_draw(cfg->m_display_id, item_atlas::pack, cfg->sprite_is_female());
             if (item_color == 0)
             {
                 upg2_draw.sprite->draw(sX + 134, sY + 182, upg2_draw.frame);

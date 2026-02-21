@@ -145,7 +145,7 @@ void DialogBox_Shop::draw_item_details(short sX, short sY, short mouse_x, short 
     bool flag_stat_low = false;
     bool flag_red_shown = false;
 
-    auto shop_draw = m_game->get_item_draw(shop_manager::get().get_item_list()[item_index]->m_display_id, item_atlas::pack, false);
+    auto shop_draw = m_game->get_item_draw(shop_manager::get().get_item_list()[item_index]->m_display_id, item_atlas::pack, shop_manager::get().get_item_list()[item_index]->sprite_is_female());
     shop_draw.sprite->draw(sX + 62 + 30 - 35, sY + 84 + 30 - 10, shop_draw.frame);
 
     auto itemInfo2 = item_name_formatter::get().format(shop_manager::get().get_item_list()[item_index].get());
